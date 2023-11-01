@@ -5,9 +5,9 @@ from typing import Any, Callable, List, Optional
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
-from e2b.session.env_vars import EnvVars
-from e2b.session.exception import MultipleExceptions, RpcException, TerminalException
-from e2b.session.session_connection import SessionConnection
+from e2b.sandbox.env_vars import EnvVars
+from e2b.sandbox.exception import MultipleExceptions, RpcException, TerminalException
+from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
 from e2b.utils.threads import shutdown_executor
@@ -64,13 +64,13 @@ class Terminal:
     def __init__(
         self,
         terminal_id: str,
-        session: SessionConnection,
+        sandbox: SandboxConnection,
         trigger_exit: Callable[[], Any],
         finished: DeferredFuture[TerminalOutput],
         output: TerminalOutput,
     ):
         self._terminal_id = terminal_id
-        self._session = session
+        self._sandbox = sandbox
         self._trigger_exit = trigger_exit
         self._finished = finished
         self._output = output
@@ -83,7 +83,7 @@ class Terminal:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
-            self._session._call(
+            self._sandbox._call(
                 TerminalManager._service_name,
                 "data",
                 [self.terminal_id, data],
@@ -101,7 +101,7 @@ class Terminal:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
-            self._session._call(
+            self._sandbox._call(
                 TerminalManager._service_name,
                 "resize",
                 [self.terminal_id, cols, rows],
@@ -117,7 +117,7 @@ class Terminal:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
-            self._session._call(
+            self._sandbox._call(
                 TerminalManager._service_name,
                 "destroy",
                 [self.terminal_id],
@@ -130,13 +130,13 @@ class Terminal:
 
 class TerminalManager:
     """
-    Manager for starting and interacting with terminal sessions in the environment.
+    Manager for starting and interacting with terminal sessions in the sandbox.
     """
 
     _service_name = "terminal"
 
-    def __init__(self, session: SessionConnection):
-        self._session = session
+    def __init__(self, sandbox: SandboxConnection):
+        self._sandbox = sandbox
         self._process_cleanup: List[Callable[[], Any]] = []
 
     def _close(self):
@@ -173,7 +173,7 @@ class TerminalManager:
 
         :return: Terminal session
         """
-        env_vars = self._session.env_vars.update(env_vars or {})
+        env_vars = self._sandbox.env_vars.update(env_vars or {})
 
         future_exit = DeferredFuture(self._process_cleanup)
         terminal_id = terminal_id or create_id(12)
@@ -187,11 +187,11 @@ class TerminalManager:
             on_data(data)
 
         try:
-            unsub_all = self._session._handle_subscriptions(
-                self._session._subscribe(
+            unsub_all = self._sandbox._handle_subscriptions(
+                self._sandbox._subscribe(
                     self._service_name, handle_data, "onData", terminal_id
                 ),
-                self._session._subscribe(
+                self._sandbox._subscribe(
                     self._service_name, future_exit, "onExit", terminal_id
                 ),
             )
@@ -231,10 +231,10 @@ class TerminalManager:
             future_exit_handler_finish.result()
 
         try:
-            if not cwd and self._session.cwd:
-                cwd = self._session.cwd
+            if not cwd and self._sandbox.cwd:
+                cwd = self._sandbox.cwd
 
-            self._session._call(
+            self._sandbox._call(
                 self._service_name,
                 "start",
                 [
@@ -249,7 +249,7 @@ class TerminalManager:
             )
             return Terminal(
                 terminal_id=terminal_id,
-                session=self._session,
+                sandbox=self._sandbox,
                 trigger_exit=trigger_exit,
                 finished=future_exit_handler_finish,
                 output=output,

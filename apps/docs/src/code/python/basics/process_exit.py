@@ -1,8 +1,8 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(
+session = Sandbox.create(
     id="Nodejs",
-    on_exit=lambda: print("[session]", "process ended"), # $HighlightLine
+    on_exit=lambda: print("[sandbox]", "process ended"), # $HighlightLine
 )
 
 proc = session.process.start('echo "Hello World!"')

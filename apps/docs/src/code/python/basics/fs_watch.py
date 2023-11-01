@@ -1,5 +1,5 @@
 import time
-from e2b import Session
+from e2b import Sandbox
 
 watcher = None
 def create_watcher(session): # $HighlightLine
@@ -8,7 +8,7 @@ def create_watcher(session): # $HighlightLine
   watcher.add_event_listener(lambda event: print(event)) # $HighlightLine
   watcher.start() # $HighlightLine
 
-session = Session.create(id="Nodejs")
+session = Sandbox.create(id="Nodejs")
 
 create_watcher(session) # $HighlightLine
 

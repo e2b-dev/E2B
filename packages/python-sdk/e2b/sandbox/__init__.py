@@ -4,7 +4,7 @@ from .exception import (
     FilesystemException,
     ProcessException,
     RpcException,
-    SessionException,
+    SandboxException,
     TerminalException,
 )
 from .filesystem import FileInfo, FilesystemManager
@@ -13,7 +13,7 @@ from .filesystem_watcher import (
     FilesystemOperation,
     FilesystemWatcher,
 )
-from .main import Session
+from .main import Sandbox
 from .process import (
     Process,
     ProcessManager,

@@ -1,6 +1,6 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Nodejs")
+session = Sandbox.create(id="Nodejs")
 
 # File bytes will read file's content as bytes
 # `file_bytes` as a bytearray

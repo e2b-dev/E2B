@@ -1,6 +1,6 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Nodejs")
+session = Sandbox.create(id="Nodejs")
 
 with open('path/to/local/file', 'rb') as f:
   remote_path = session.upload_file(f) # $HighlightLine

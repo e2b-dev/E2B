@@ -1,11 +1,11 @@
 from typing import Dict, List, Optional
 
 
-class SessionException(Exception):
+class SandboxException(Exception):
     pass
 
 
-class RpcException(SessionException):
+class RpcException(SandboxException):
     def __init__(
         self,
         message: str,
@@ -20,31 +20,31 @@ class RpcException(SessionException):
         self.id = id
 
 
-class MultipleExceptions(SessionException):
+class MultipleExceptions(SandboxException):
     def __init__(self, message: str, exceptions: List[Exception]):
         super().__init__(f"Multiple exceptions occurred: {message}")
         self.exceptions = exceptions
 
 
-class FilesystemException(SessionException):
+class FilesystemException(SandboxException):
     pass
 
 
-class ProcessException(SessionException):
+class ProcessException(SandboxException):
     pass
 
 
-class TerminalException(SessionException):
+class TerminalException(SandboxException):
     pass
 
 
-class AuthenticationException(SessionException):
+class AuthenticationException(SandboxException):
     pass
 
 
-class UnsupportedRuntimeException(SessionException):
+class UnsupportedRuntimeException(SandboxException):
     pass
 
 
-class TimeoutException(SessionException):
+class TimeoutException(SandboxException):
     pass

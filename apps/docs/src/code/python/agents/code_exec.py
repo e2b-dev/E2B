@@ -1,10 +1,10 @@
-from e2b import Session
+from e2b import Sandbox
 
 def print_out(output):
   print(output.line)
 
 # 1. Start the playground session
-session = Session.create(
+session = Sandbox.create(
   # Select the right runtime
   # 'Node', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
   id="Nodejs",

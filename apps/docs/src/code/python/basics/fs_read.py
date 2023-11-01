@@ -1,7 +1,7 @@
 from os import getenv
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Nodejs")
+session = Sandbox.create(id="Nodejs")
 
 # Read the '/etc/hosts' file
 file_content = session.filesystem.read('/etc/hosts') # $HighlightLine

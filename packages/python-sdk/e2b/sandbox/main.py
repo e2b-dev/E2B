@@ -6,19 +6,19 @@ from os import path
 from typing import Any, Callable, List, Literal, Optional, IO
 
 from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
-from e2b.session.code_snippet import CodeSnippetManager, OpenPort
-from e2b.session.env_vars import EnvVars
-from e2b.session.filesystem import FilesystemManager
-from e2b.session.process import ProcessManager
-from e2b.session.session_connection import SessionConnection
-from e2b.session.terminal import TerminalManager
+from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
+from e2b.sandbox.env_vars import EnvVars
+from e2b.sandbox.filesystem import FilesystemManager
+from e2b.sandbox.process import ProcessManager
+from e2b.sandbox.sandbox_connection import SandboxConnection
+from e2b.sandbox.terminal import TerminalManager
 
 logger = logging.getLogger(__name__)
 
 
-class Session(SessionConnection):
+class Sandbox(SandboxConnection):
     """
-    E2B cloud environment gives your agent a full cloud development environment that's sandboxed.
+    E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
 
     That means:
 
@@ -28,7 +28,7 @@ class Session(SessionConnection):
     - Sandboxed - you can run any code
     - Access to the internet
 
-    These cloud environments are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
+    These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
     """
 
     @property
@@ -68,10 +68,10 @@ class Session(SessionConnection):
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
-        Create a new cloud environment session.
+        Create a new cloud sandbox.
 
-        :param id: ID of the environment or the environment type template.
-        Can be one of the following environment type templates or a custom environment ID:
+        :param id: ID of the sandbox template or the name of prepared template.
+        Can be one of the following environment type templates or a custom template ID:
         - `Nodejs`
         - `Bash`
         - `Python3`
@@ -90,18 +90,18 @@ class Session(SessionConnection):
         :param on_exit: A default callback that is called when the process exits
         """
 
-        logger.info(f"Creating session {id if isinstance(id, str) else type(id)}")
+        logger.info(f"Creating sandbox {id if isinstance(id, str) else type(id)}")
         if cwd and cwd.startswith("~"):
             cwd = cwd.replace("~", "/home/user")
 
         self._code_snippet = CodeSnippetManager(
-            session=self,
+            sandbox=self,
             on_scan_ports=on_scan_ports,
         )
-        self._terminal = TerminalManager(session=self)
-        self._filesystem = FilesystemManager(session=self)
+        self._terminal = TerminalManager(sandbox=self)
+        self._filesystem = FilesystemManager(sandbox=self)
         self._process = ProcessManager(
-            session=self, on_stdout=on_stdout, on_stderr=on_stderr, on_exit=on_exit
+            sandbox=self, on_stdout=on_stdout, on_stderr=on_stderr, on_exit=on_exit
         )
         super().__init__(
             id=id,
@@ -117,14 +117,14 @@ class Session(SessionConnection):
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Open the session.
+        Open the sandbox.
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
-        logger.info(f"Opening session {self._id}")
+        logger.info(f"Opening sandbox {self._id}")
         super()._open(timeout=timeout)
         self._code_snippet._subscribe()
-        logger.info(f"Session {self._id} opened")
+        logger.info(f"Sandbox {self._id} opened")
         if self.cwd:
             self.filesystem.make_dir(self.cwd)
 
@@ -134,14 +134,14 @@ class Session(SessionConnection):
 
     def close(self) -> None:
         """
-        Close the session.
+        Close the sandbox.
         """
         super().close()
         self._close()
 
     def file_url(self) -> str:
         """
-        Return a URL that can be used to upload files to the session via a multipart/form-data POST request.
+        Return a URL that can be used to upload files to the sandbox via a multipart/form-data POST request.
         This is useful if you're uploading files directly from the browser.
         The file will be uploaded to the user's home directory with the same name.
         If a file with the same name already exists, it will be overwritten.
@@ -155,7 +155,7 @@ class Session(SessionConnection):
 
     def upload_file(self, file: IO, timeout: Optional[float] = TIMEOUT) -> str:
         """
-        Upload a file to the session.
+        Upload a file to the sandbox.
         The file will be uploaded to the user's home (`/home/user`) directory with the same name.
         If a file with the same name already exists, it will be overwritten.
 
@@ -174,7 +174,7 @@ class Session(SessionConnection):
         self, remote_path: str, timeout: Optional[float] = TIMEOUT
     ) -> bytes:
         """
-        Download a file from the session and returns it's content as bytes.
+        Download a file from the sandbox and returns it's content as bytes.
 
         :param remote_path: The path of the file to download
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time

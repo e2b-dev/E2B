@@ -6,8 +6,8 @@ from typing import Any, Callable, Optional, Set
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
-from e2b.session.exception import FilesystemException, RpcException
-from e2b.session.session_connection import SessionConnection
+from e2b.sandbox.exception import FilesystemException, RpcException
+from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.utils.str import snake_case_to_camel_case
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ class FilesystemWatcher:
 
     def __init__(
         self,
-        connection: SessionConnection,
+        connection: SandboxConnection,
         path: str,
         service_name: str,
     ):

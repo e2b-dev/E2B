@@ -1,6 +1,6 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Nodejs")
+session = Sandbox.create(id="Nodejs")
 
 # `filesystem.make_dir()` will fail if any directory in the path doesn't exist
 

@@ -14,8 +14,8 @@ from pydantic import BaseModel, PrivateAttr, ConfigDict
 from websockets.typing import Data
 
 from e2b.constants import TIMEOUT
-from e2b.session.exception import RpcException, TimeoutException
-from e2b.session.websocket_client import WebSocket
+from e2b.sandbox.exception import RpcException, TimeoutException
+from e2b.sandbox.websocket_client import WebSocket
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.threads import shutdown_executor
 
@@ -51,7 +51,7 @@ def to_response_or_notification(response: Dict[str, Any]) -> Message:
     raise ValueError("Invalid response", response)
 
 
-class SessionRpc(BaseModel):
+class SandboxRpc(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     url: str

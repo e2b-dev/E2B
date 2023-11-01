@@ -3,11 +3,11 @@ from .api import (
     client,
 )
 from .constants import (
-    INSTANCE_DOMAIN,
+    SANDBOX_DOMAIN,
     API_HOST,
 )
-from .session import (
-    Session,
+from .sandbox import (
+    Sandbox,
     FilesystemOperation,
     FilesystemWatcher,
     FileInfo,
@@ -19,7 +19,7 @@ from .session import (
     Process,
     OpenPort,
     EnvVars,
-    SessionException,
+    SandboxException,
     TerminalException,
     ProcessException,
     FilesystemException,

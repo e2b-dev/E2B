@@ -12,10 +12,10 @@ from typing import (
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
-from e2b.session.env_vars import EnvVars
-from e2b.session.exception import MultipleExceptions, ProcessException, RpcException
-from e2b.session.out import OutStderrResponse, OutStdoutResponse
-from e2b.session.session_connection import SessionConnection
+from e2b.sandbox.env_vars import EnvVars
+from e2b.sandbox.exception import MultipleExceptions, ProcessException, RpcException
+from e2b.sandbox.out import OutStderrResponse, OutStdoutResponse
+from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
 from e2b.utils.threads import shutdown_executor
@@ -81,19 +81,19 @@ class ProcessOutput(BaseModel):
 
 class Process:
     """
-    A process running in the environment.
+    A process running in the sandbox.
     """
 
     def __init__(
         self,
         process_id: str,
-        session: SessionConnection,
+        sandbox: SandboxConnection,
         trigger_exit: Callable[[], Any],
         finished: DeferredFuture[ProcessOutput],
         output: ProcessOutput,
     ):
         self._process_id = process_id
-        self._session = session
+        self._sandbox = sandbox
         self._trigger_exit = trigger_exit
         self._finished = finished
         self._output = output
@@ -152,8 +152,8 @@ class Process:
     @property
     def process_id(self) -> str:
         """
-        The process id used to identify the process in the session.
-        This is not the system process id of the process running in the environment session.
+        The process id used to identify the process in the sandbox.
+        This is not the system process id of the process running in the sandbox.
         """
         return self._process_id
 
@@ -171,7 +171,7 @@ class Process:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
-            self._session._call(
+            self._sandbox._call(
                 ProcessManager._service_name,
                 "stdin",
                 [self.process_id, data],
@@ -187,7 +187,7 @@ class Process:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
-            self._session._call(
+            self._sandbox._call(
                 ProcessManager._service_name, "kill", [self.process_id], timeout=timeout
             )
         except RpcException as e:
@@ -197,19 +197,19 @@ class Process:
 
 class ProcessManager:
     """
-    Manager for starting and interacting with processes in the environment.
+    Manager for starting and interacting with processes in the sandbox.
     """
 
     _service_name = "process"
 
     def __init__(
         self,
-        session: SessionConnection,
+        sandbox: SandboxConnection,
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_exit: Optional[Callable[[], Any]] = None,
     ):
-        self._session = session
+        self._sandbox = sandbox
         self._process_cleanup: List[Callable[[], Any]] = []
         self._on_stdout = on_stdout
         self._on_stderr = on_stderr
@@ -235,7 +235,7 @@ class ProcessManager:
     ) -> Process:
         logger.info(f"Starting process: {cmd}")
         env_vars = env_vars or {}
-        env_vars = {**self._session.env_vars, **env_vars}
+        env_vars = {**self._sandbox.env_vars, **env_vars}
 
         on_stdout = on_stdout or self._on_stdout
         on_stderr = on_stderr or self._on_stderr
@@ -286,14 +286,14 @@ class ProcessManager:
                     logger.exception(f"Error in on_stdout callback: {error}")
 
         try:
-            unsub_all = self._session._handle_subscriptions(
-                self._session._subscribe(
+            unsub_all = self._sandbox._handle_subscriptions(
+                self._sandbox._subscribe(
                     self._service_name, handle_exit, "onExit", process_id
                 ),
-                self._session._subscribe(
+                self._sandbox._subscribe(
                     self._service_name, handle_stdout, "onStdout", process_id
                 ),
-                self._session._subscribe(
+                self._sandbox._subscribe(
                     self._service_name, handle_stderr, "onStderr", process_id
                 ),
             )
@@ -342,10 +342,10 @@ class ProcessManager:
                 cwd = rootdir
                 logger.warning("The rootdir parameter is deprecated, use cwd instead.")
 
-            if not cwd and self._session.cwd:
-                cwd = self._session.cwd
+            if not cwd and self._sandbox.cwd:
+                cwd = self._sandbox.cwd
 
-            self._session._call(
+            self._sandbox._call(
                 self._service_name,
                 "start",
                 [
@@ -359,7 +359,7 @@ class ProcessManager:
             logger.info(f"Started process (id: {process_id})")
             return Process(
                 output=output,
-                session=self._session,
+                sandbox=self._sandbox,
                 process_id=process_id,
                 trigger_exit=trigger_exit,
                 finished=future_exit_handler_finish,

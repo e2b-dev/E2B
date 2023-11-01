@@ -1,6 +1,6 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(
+session = Sandbox.create(
     id="Python3",
     cwd="/home/user/code"  # $HighlightLine
 )

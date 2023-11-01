@@ -1,6 +1,6 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(
+session = Sandbox.create(
     id="Nodejs",
     env_vars={"FOO": "Hello"}
 )

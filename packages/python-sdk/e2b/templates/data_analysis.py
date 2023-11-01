@@ -4,7 +4,7 @@ from typing import Optional, Callable, Any, Tuple, List, Union
 
 from pydantic import BaseModel, PrivateAttr
 
-from e2b import EnvVars, Session
+from e2b import EnvVars, Sandbox
 from e2b.constants import TIMEOUT
 
 logger = logging.getLogger(__name__)
@@ -12,20 +12,20 @@ logger = logging.getLogger(__name__)
 
 class Artifact(BaseModel):
     name: str
-    _session: Session = PrivateAttr()
+    _sandbox: Sandbox = PrivateAttr()
 
-    def __init__(self, **data: Any):
+    def __init__(self, sandbox: Sandbox, **data: Any):
         super().__init__(**data)
-        self._session = data["_session"]
+        self._sandbox = sandbox
 
     def __hash__(self):
         return hash(self.name)
 
     def download(self) -> bytes:
-        return self._session.download_file(self.name)
+        return self._sandbox.download_file(self.name)
 
 
-class DataAnalysis(Session):
+class DataAnalysis(Sandbox):
     env_id = "Python3-DataAnalysis"
 
     def __init__(
@@ -66,7 +66,7 @@ class DataAnalysis(Session):
         def register_artifacts(event: Any) -> None:
             on_artifact_func = on_artifact or self.on_artifact
             if event.operation == "Create":
-                artifact = Artifact(name=event.path, _session=self)
+                artifact = Artifact(name=event.path, sandbox=self)
                 artifacts.add(artifact)
                 if on_artifact_func:
                     try:

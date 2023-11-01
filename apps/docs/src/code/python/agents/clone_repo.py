@@ -1,5 +1,5 @@
 from os import getenv
-from e2b import Session
+from e2b import Sandbox
 
 E2B_API_KEY = getenv("E2B_API_KEY")
 
@@ -8,7 +8,7 @@ def print_out(output):
 
 def main():
   # 1. Start the playground session
-  session = Session.create(
+  session = Sandbox.create(
     # Select the right runtime
     id="Nodejs",
     api_key=E2B_API_KEY,

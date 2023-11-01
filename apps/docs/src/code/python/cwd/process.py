@@ -1,6 +1,6 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Python3", cwd="/code")  # $HighlightLine
+session = Sandbox.create(id="Python3", cwd="/code")  # $HighlightLine
 session_cwd = session.process.start("pwd")  # $HighlightLine
 session_cwd.wait()
 print(session_cwd.output.stdout)

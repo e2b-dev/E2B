@@ -1,7 +1,7 @@
 import pytest
 
 from e2b import run_code
-from e2b.session.exception import UnsupportedRuntimeException
+from e2b.sandbox.exception import UnsupportedRuntimeException
 
 
 def test_run_code():

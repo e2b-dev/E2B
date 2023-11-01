@@ -1,7 +1,7 @@
 from os import getenv
 from typing import Literal, Union, Optional
 
-from . import Session
+from . import Sandbox
 from .exception import UnsupportedRuntimeException
 
 CodeRuntime = Literal[
@@ -27,8 +27,8 @@ def run_code(
     """
     Run code in a sandboxed cloud playground and return the stdout and stderr.
 
-    `run_ode` wraps the `Session` class and provides a simple interface for running code in a sandboxed environment
-    without any need to manage lifecycle of the session.
+    `run_code` wraps the `Sandbox` class and provides a simple interface for running code in a sandbox
+    without any need to manage lifecycle of the sandbox.
     `run_code` automatically loads the E2B API key from the `E2B_API_KEY` environment variable.
 
     :param runtime: The runtime to run the code in. One of "Node16" or "Python3".
@@ -62,12 +62,12 @@ def run_code(
             f'Invalid runtime "{runtime}". Please contact us (hello@e2b.dev) if you need support for this runtime'
         )
 
-    session = Session(id=env_id, api_key=api_key)
-    session.filesystem.write(filepath, code)
+    sandbox = Sandbox(id=env_id, api_key=api_key)
+    sandbox.filesystem.write(filepath, code)
 
-    proc = session.process.start(cmd=f"{binary} {filepath}")
+    proc = sandbox.process.start(cmd=f"{binary} {filepath}")
     proc.wait()
 
-    session.close()
+    sandbox.close()
 
     return proc.output.stdout, proc.output.stderr

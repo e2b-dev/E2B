@@ -1,6 +1,6 @@
 import logging
 from os import getenv
-from e2b import Session
+from e2b import Sandbox
 
 E2B_API_KEY = getenv("E2B_API_KEY")
 
@@ -28,7 +28,7 @@ e2b_logger.addHandler(handler) # $HighlightLine
 
 
 def main():
-  session = Session.create(id="Nodejs", api_key=E2B_API_KEY)
+  session = Sandbox.create(id="Nodejs", api_key=E2B_API_KEY)
   session.filesystem.write("test.txt", "Hello World")
   session.close()
 

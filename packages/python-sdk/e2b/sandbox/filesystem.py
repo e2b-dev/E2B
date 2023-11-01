@@ -5,9 +5,9 @@ from typing import Any, List, Optional
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
-from e2b.session.exception import FilesystemException, RpcException
-from e2b.session.filesystem_watcher import FilesystemWatcher
-from e2b.session.session_connection import SessionConnection
+from e2b.sandbox.exception import FilesystemException, RpcException
+from e2b.sandbox.filesystem_watcher import FilesystemWatcher
+from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.utils.filesystem import resolve_path
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class FileInfo(BaseModel):
     """
-    Information about a file or a directory in the environment.
+    Information about a file or a directory in the sandbox.
     """
 
     is_dir: bool
@@ -25,12 +25,12 @@ class FileInfo(BaseModel):
 class FilesystemManager:
     _service_name = "filesystem"
 
-    def __init__(self, session: SessionConnection):
-        self._session = session
+    def __init__(self, sandbox: SandboxConnection):
+        self._sandbox = sandbox
 
     @property
     def cwd(self) -> Optional[str]:
-        return self._session.cwd
+        return self._sandbox.cwd
 
     def read_bytes(self, path: str, timeout: Optional[float] = TIMEOUT) -> bytes:
         """
@@ -42,7 +42,7 @@ class FilesystemManager:
         :return: byte array representing the content of a file
         """
         path = resolve_path(path, self.cwd)
-        result: str = self._session._call(
+        result: str = self._sandbox._call(
             self._service_name, "readBase64", [path], timeout=timeout
         )
         return base64.b64decode(result)
@@ -60,7 +60,7 @@ class FilesystemManager:
         """
         path = resolve_path(path, self.cwd)
         base64_content = base64.b64encode(content).decode("utf-8")
-        self._session._call(
+        self._sandbox._call(
             self._service_name, "writeBase64", [path, base64_content], timeout=timeout
         )
 
@@ -76,7 +76,7 @@ class FilesystemManager:
 
         path = resolve_path(path, self.cwd)
         try:
-            result: str = self._session._call(
+            result: str = self._sandbox._call(
                 self._service_name, "read", [path], timeout=timeout
             )
             logger.debug(f"Read file {path}")
@@ -98,7 +98,7 @@ class FilesystemManager:
 
         path = resolve_path(path, self.cwd)
         try:
-            self._session._call(
+            self._sandbox._call(
                 self._service_name, "write", [path, content], timeout=timeout
             )
             logger.debug(f"Wrote file {path}")
@@ -116,7 +116,7 @@ class FilesystemManager:
 
         path = resolve_path(path, self.cwd)
         try:
-            self._session._call(self._service_name, "remove", [path], timeout=timeout)
+            self._sandbox._call(self._service_name, "remove", [path], timeout=timeout)
             logger.debug(f"Removed file {path}")
         except RpcException as e:
             raise FilesystemException(e.message) from e
@@ -134,7 +134,7 @@ class FilesystemManager:
 
         path = resolve_path(path, self.cwd)
         try:
-            result: List[Any] = self._session._call(
+            result: List[Any] = self._sandbox._call(
                 self._service_name, "list", [path], timeout=timeout
             )
             logger.debug(f"Listed files in {path}, result: {result}")
@@ -156,7 +156,7 @@ class FilesystemManager:
 
         path = resolve_path(path, self.cwd)
         try:
-            self._session._call(self._service_name, "makeDir", [path], timeout=timeout)
+            self._sandbox._call(self._service_name, "makeDir", [path], timeout=timeout)
             logger.debug(f"Created directory {path}")
         except RpcException as e:
             raise FilesystemException(e.message) from e
@@ -173,7 +173,7 @@ class FilesystemManager:
 
         path = resolve_path(path, self.cwd)
         return FilesystemWatcher(
-            connection=self._session,
+            connection=self._sandbox,
             path=path,
             service_name=self._service_name,
         )

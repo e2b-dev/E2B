@@ -1,8 +1,8 @@
 from typing import Any, Callable, ClassVar, List, Optional
 from pydantic import BaseModel
 
-from e2b.session.exception import MultipleExceptions, RpcException, SessionException
-from e2b.session.session_connection import SessionConnection
+from e2b.sandbox.exception import MultipleExceptions, RpcException, SandboxException
+from e2b.sandbox.sandbox_connection import SandboxConnection
 
 
 class OpenPort(BaseModel):
@@ -20,14 +20,14 @@ class CodeSnippetManager(BaseModel):
         arbitrary_types_allowed = True
 
     service_name: ClassVar[str] = "codeSnippet"
-    session: SessionConnection
+    sandbox: SandboxConnection
 
     on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None
 
     def _subscribe(self):
         try:
-            self.session._handle_subscriptions(
-                self.session._subscribe(
+            self.sandbox._handle_subscriptions(
+                self.sandbox._subscribe(
                     self.service_name,
                     lambda ports: self.on_scan_ports(
                         [
@@ -47,8 +47,8 @@ class CodeSnippetManager(BaseModel):
                 else None,
             )
         except RpcException as e:
-            raise SessionException(e.message) from e
+            raise SandboxException(e.message) from e
         except MultipleExceptions as e:
-            raise SessionException("Failed to subscribe to RPC services") from e
+            raise SandboxException("Failed to subscribe to RPC services") from e
 
         return self

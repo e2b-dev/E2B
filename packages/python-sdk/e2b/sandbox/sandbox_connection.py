@@ -12,20 +12,20 @@ from urllib3.exceptions import ReadTimeoutError, MaxRetryError, ConnectTimeoutEr
 
 from e2b.api import E2BApiClient, exceptions, models, client
 from e2b.constants import (
-    INSTANCE_DOMAIN,
-    INSTANCE_REFRESH_PERIOD,
+    SANDBOX_DOMAIN,
+    SANDBOX_REFRESH_PERIOD,
     TIMEOUT,
     ENVD_PORT,
     WS_ROUTE,
 )
-from e2b.session.env_vars import EnvVars
-from e2b.session.exception import (
+from e2b.sandbox.env_vars import EnvVars
+from e2b.sandbox.exception import (
     AuthenticationException,
     MultipleExceptions,
-    SessionException,
+    SandboxException,
     TimeoutException,
 )
-from e2b.session.session_rpc import Notification, SessionRpc
+from e2b.sandbox.sandbox_rpc import Notification, SandboxRpc
 from e2b.utils.future import DeferredFuture
 from e2b.utils.str import camel_case_to_snake_case
 from e2b.utils.threads import shutdown_executor
@@ -39,20 +39,20 @@ class Subscription(BaseModel):
     handler: Callable[[Any], None]
 
 
-class SessionConnection:
+class SandboxConnection:
     _refresh_retries = 4
 
     @property
     def finished(self):
         """
-        A future that is resolved when the session exits.
+        A future that is resolved when the sandbox exits.
         """
         return self._finished
 
     @property
     def is_open(self) -> bool:
         """
-        Whether the session is open.
+        Whether the sandbox is open.
         """
         return self._is_open
 
@@ -84,34 +84,34 @@ class SessionConnection:
         self._debug_dev_env = _debug_dev_env
         self._on_close_child = on_close
 
-        self._instance: Optional[models.Instance] = None
+        self._sandbox: Optional[models.Instance] = None
         self._is_open = False
         self._process_cleanup: List[Callable[[], Any]] = []
         self._refreshing_task: Optional[Future] = None
         self._subscribers = {}
-        self._rpc: Optional[SessionRpc] = None
+        self._rpc: Optional[SandboxRpc] = None
         self._finished = DeferredFuture(self._process_cleanup)
 
-        logger.info(f"Session for code snippet {self._id} initialized")
+        logger.info(f"Sandbox for code snippet {self._id} initialized")
 
         self._open(timeout=timeout)
 
     @classmethod
     def create(cls, *args, **kwargs):
-        warnings.warn("Session.create() is deprecated, use Session() instead")
+        warnings.warn("Sandbox.create() is deprecated, use Sandbox() instead")
         return cls(*args, **kwargs)
 
     def get_hostname(self, port: Optional[int] = None):
         """
-        Get the hostname for the session or for the specified session's port.
+        Get the hostname for the sandbox or for the specified sandbox's port.
 
-        :param port: Specify if you want to connect to a specific port of the session
+        :param port: Specify if you want to connect to a specific port of the sandbox
 
-        :return: Hostname of the session or session's port
+        :return: Hostname of the sandbox or sandbox's port
         """
-        if not self._instance:
-            raise SessionException(
-                "Session is not running. You have to run `await session.open()` first or create the session with `await Session.create()"
+        if not self._sandbox:
+            raise SandboxException(
+                "Sandbox is not running. You have to run `await sandbox.open()` first or create the sandbox with `await Sandbox.create()"
             )
 
         if self._debug_hostname:
@@ -123,7 +123,7 @@ class SessionConnection:
                 return self._debug_hostname
 
         hostname = (
-            f"{self._instance.instance_id}-{self._instance.client_id}.{INSTANCE_DOMAIN}"
+            f"{self._sandbox.instance_id}-{self._sandbox.client_id}.{SANDBOX_DOMAIN}"
         )
         if port:
             return f"{port}-{hostname}"
@@ -131,15 +131,15 @@ class SessionConnection:
 
     def close(self) -> None:
         """
-        Close the session and unsubscribe from all the subscriptions.
+        Close the sandbox and unsubscribe from all the subscriptions.
         """
         self._close()
-        logger.info(f"Session closed")
+        logger.info(f"Sandbox closed")
 
     def _close(self):
-        if self._is_open and self._instance:
+        if self._is_open and self._sandbox:
             logger.info(
-                f"Closing session {self._instance.env_id} (id: {self._instance.instance_id})"
+                f"Closing sandbox {self._sandbox.env_id} (id: {self._sandbox.instance_id})"
             )
             self._is_open = False
             if self._rpc:
@@ -156,12 +156,12 @@ class SessionConnection:
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Open a connection to a new session.
+        Open a connection to a new sandbox.
 
-        You must call this method before using the session.
+        You must call this method before using the sandbox.
         """
-        if self._is_open or self._instance:
-            raise SessionException("Session connect was already called")
+        if self._is_open or self._sandbox:
+            raise SandboxException("Sandbox connect was already called")
         else:
             self._is_open = True
 
@@ -169,47 +169,47 @@ class SessionConnection:
             with E2BApiClient(api_key=self._api_key) as api_client:
                 api = client.InstancesApi(api_client)
 
-                self._instance = api.instances_post(
+                self._sandbox = api.instances_post(
                     models.NewInstance(envID=self._id, editEnabled=False),
                     _request_timeout=timeout,
                 )
                 logger.info(
-                    f"Session {self._instance.env_id} created (id:{self._instance.instance_id})"
+                    f"Sandbox {self._sandbox.env_id} created (id:{self._sandbox.instance_id})"
                 )
 
                 executor = ThreadPoolExecutor(thread_name_prefix="e2b-refresh")
                 self._refreshing_task = executor.submit(
-                    self._refresh, self._instance.instance_id
+                    self._refresh, self._sandbox.instance_id
                 )
 
                 self._process_cleanup.append(self._refreshing_task.cancel)
                 self._process_cleanup.append(lambda: shutdown_executor(executor))
 
         except ReadTimeoutError as e:
-            logger.error(f"Failed to acquire session")
+            logger.error(f"Failed to acquire sandbox")
             self._close()
             raise TimeoutException(
-                f"Failed to acquire session: {e}",
+                f"Failed to acquire sandbox: {e}",
             ) from e
         except MaxRetryError as e:
             if isinstance(e.reason, ConnectTimeoutError):
                 raise TimeoutException(
-                    f"Failed to acquire session: {e}",
+                    f"Failed to acquire sandbox: {e}",
                 ) from e
             raise e
         except Exception as e:
-            logger.error(f"Failed to acquire session")
+            logger.error(f"Failed to acquire sandbox")
             self._close()
             raise e
 
         hostname = self.get_hostname(self._debug_port or ENVD_PORT)
         protocol = "ws" if self._debug_dev_env == "local" else "wss"
 
-        session_url = f"{protocol}://{hostname}{WS_ROUTE}"
+        sandbox_url = f"{protocol}://{hostname}{WS_ROUTE}"
 
         try:
-            self._rpc = SessionRpc(
-                url=session_url,
+            self._rpc = SandboxRpc(
+                url=sandbox_url,
                 on_message=self._handle_notification,
             )
             self._rpc.connect()
@@ -232,7 +232,7 @@ class SessionConnection:
             params = []
 
         if not self.is_open:
-            raise SessionException("Session is not open")
+            raise SandboxException("Sandbox is not open")
 
         return self._rpc.send_message(f"{service}_{method}", params, timeout=timeout)
 
@@ -310,7 +310,7 @@ class SessionConnection:
     def _refresh(self, instance_id: str):
         try:
             logger.info(
-                f"Started refreshing session {self._instance.env_id} (id: {instance_id})"
+                f"Started refreshing sandbox {self._sandbox.env_id} (id: {instance_id})"
             )
 
             current_retry = 0
@@ -320,33 +320,33 @@ class SessionConnection:
                 while True:
                     if not self._is_open:
                         logger.debug(
-                            f"Cannot refresh session - it was closed. {self._instance.instance_id}"
+                            f"Cannot refresh sandbox - it was closed. {self._sandbox.instance_id}"
                         )
                         return
-                    sleep(INSTANCE_REFRESH_PERIOD)
+                    sleep(SANDBOX_REFRESH_PERIOD)
                     try:
                         api.instances_instance_id_refreshes_post(instance_id)
-                        logger.debug(f"Refreshed session {instance_id}")
+                        logger.debug(f"Refreshed sandbox {instance_id}")
                     except exceptions.ApiException as e:
                         if e.status == 404:
-                            raise SessionException(
-                                f"Session {instance_id} failed because it cannot be found"
+                            raise SandboxException(
+                                f"Sandbox {instance_id} failed because it cannot be found"
                             ) from e
                         else:
                             if current_retry < self._refresh_retries:
                                 logger.error(
-                                    f"Refreshing session {instance_id} failed. Retrying..."
+                                    f"Refreshing sandbox {instance_id} failed. Retrying..."
                                 )
                                 current_retry += 1
                             else:
                                 logger.error(
-                                    f"Refreshing session {instance_id} failed. Max retries exceeded"
+                                    f"Refreshing sandbox {instance_id} failed. Max retries exceeded"
                                 )
                                 raise e
         finally:
-            if self._instance:
-                logger.info(f"Stopped refreshing session (id: {instance_id})")
+            if self._sandbox:
+                logger.info(f"Stopped refreshing sandbox (id: {instance_id})")
             else:
-                logger.info("No session to stop refreshing. Session was not created")
+                logger.info("No sandbox to stop refreshing. Sandbox was not created")
 
             self._close()

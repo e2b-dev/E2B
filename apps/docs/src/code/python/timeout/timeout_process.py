@@ -1,6 +1,6 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Nodejs")
+session = Sandbox.create(id="Nodejs")
 
 # Timeout 3s for the process to start
 npm_init = session.process.start("npm init -y", timeout=3) # $HighlightLine

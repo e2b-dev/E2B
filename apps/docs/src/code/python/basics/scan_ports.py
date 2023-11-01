@@ -1,5 +1,5 @@
 import time
-from e2b import Session
+from e2b import Sandbox
 
 # List of ports that have already been printed
 printed_ports = []
@@ -19,7 +19,7 @@ def print_new_port_and_url(open_ports, session):
       port_url = f"https://{host}"
       print(port, port_url)
 
-session = Session.create(
+session = Sandbox.create(
   id="Python3",
   on_scan_ports=lambda open_ports: print_new_port_and_url(open_ports, session) # $HighlightLine
 )

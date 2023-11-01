@@ -1,6 +1,6 @@
 import time
 from os import getenv
-from e2b import Session
+from e2b import Sandbox
 
 E2B_API_KEY = getenv("E2B_API_KEY")
 
@@ -9,7 +9,7 @@ def print_stdout(output):
   print(output.line)
 
 def main():
-  session = Session.create(id="Python3", api_key=E2B_API_KEY)
+  session = Sandbox.create(id="Python3", api_key=E2B_API_KEY)
 
   # Start a server process in the background
   # We are not using `background_server.wait()` - that would wait for the process to finish running
