@@ -7,18 +7,18 @@ E2B_API_KEY = getenv("E2B_API_KEY")
 def main():
   # `id` can also be one of:
   # 'Nodejs', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
-  session = Sandbox.create(id="Nodejs", api_key=E2B_API_KEY) # $HighlightLine
+  sandbox = Sandbox.create(id="Nodejs", api_key=E2B_API_KEY) # $HighlightLine
 
   # 2. Use filesystem
-  session.filesystem # $HighlightLine
+  sandbox.filesystem # $HighlightLine
 
   # 3. Start processes
-  session.process.start() # $HighlightLine
+  sandbox.process.start() # $HighlightLine
 
   # 4. Upload/download files
-  session.read_bytes() # $HighlightLine
-  session.write_bytes() # $HighlightLine
+  sandbox.read_bytes() # $HighlightLine
+  sandbox.write_bytes() # $HighlightLine
 
-  session.close()
+  sandbox.close()
 
 main()

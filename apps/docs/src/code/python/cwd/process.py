@@ -1,15 +1,15 @@
 from e2b import Sandbox
 
-session = Sandbox.create(id="Python3", cwd="/code")  # $HighlightLine
-session_cwd = session.process.start("pwd")  # $HighlightLine
-session_cwd.wait()
-print(session_cwd.output.stdout)
+sandbox = Sandbox.create(id="Python3", cwd="/code")  # $HighlightLine
+sandbox_cwd = sandbox.process.start("pwd")  # $HighlightLine
+sandbox_cwd.wait()
+print(sandbox_cwd.output.stdout)
 # output: "/code"
 
-process_cwd = session.process.start("pwd", cwd="/home")  # $HighlightLine
+process_cwd = sandbox.process.start("pwd", cwd="/home")  # $HighlightLine
 process_cwd.wait()
 print(process_cwd.output.stdout)
 # output: "/home"
 
-session.close()
+sandbox.close()
 

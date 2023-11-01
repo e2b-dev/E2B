@@ -28,8 +28,8 @@ e2b_logger.addHandler(handler) # $HighlightLine
 
 
 def main():
-  session = Sandbox.create(id="Nodejs", api_key=E2B_API_KEY)
-  session.filesystem.write("test.txt", "Hello World")
-  session.close()
+  sandbox = Sandbox.create(id="Nodejs", api_key=E2B_API_KEY)
+  sandbox.filesystem.write("test.txt", "Hello World")
+  sandbox.close()
 
 main()

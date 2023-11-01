@@ -1,8 +1,8 @@
 from e2b import Sandbox
 
-session = Sandbox.create(
+sandbox = Sandbox.create(
     id="Nodejs",
     env_vars={"FOO": "Hello"}  # $HighlightLine
 )
 
-session.close()
+sandbox.close()

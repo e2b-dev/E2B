@@ -8,7 +8,7 @@ sandbox = Sandbox.create(
 # This command will fail and output to stderr because Golang isn't installed in the cloud playground
 proc = sandbox.process.start("go version")
 proc.wait()
-# output: [session] /bin/bash: line 1: go: command not found
+# output: [sandbox] /bin/bash: line 1: go: command not found
 
 proc_with_custom_handler = sandbox.process.start(
     "go version",

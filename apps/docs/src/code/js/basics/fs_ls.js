@@ -1,12 +1,12 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from "@e2b/sdk";
 
-const session = await Session.create({
-  id: 'Nodejs',
-})
+const sandbox = await Sandbox.create({
+  id: "Nodejs",
+});
 
-const dirContent = await session.filesystem.list('/') // $HighlightLine
-dirContent.forEach(item => {
-  console.log(item.name)
-})
+const dirContent = await sandbox.filesystem.list("/"); // $HighlightLine
+dirContent.forEach((item) => {
+  console.log(item.name);
+});
 
-await session.close()
+await sandbox.close();

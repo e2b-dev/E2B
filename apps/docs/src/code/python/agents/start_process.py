@@ -7,15 +7,15 @@ def print_out(output):
   print(output.line)
 
 def main():
-  # 1. Start the playground session
-  session = Sandbox.create(
+  # 1. Start the playground sandbox
+  sandbox = Sandbox.create(
     # Select the right runtime
     id="Nodejs",
     api_key=E2B_API_KEY,
   )
 
   # 2. Start the shell commdand
-  proc = session.process.start( # $HighlightLine
+  proc = sandbox.process.start( # $HighlightLine
     # Print names of all running processes
     cmd="ps aux | tr -s ' ' | cut -d ' ' -f 11", # $HighlightLine
     on_stdout=print_out, # $HighlightLine
@@ -28,6 +28,6 @@ def main():
   # 4. Or you can access output after the process has finished
   output = proc.output
 
-  session.close()
+  sandbox.close()
 
 main()

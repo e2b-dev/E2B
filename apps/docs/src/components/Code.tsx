@@ -1,5 +1,5 @@
-'use client'
-import Image from 'next/image'
+"use client";
+import Image from "next/image";
 import {
   Children,
   createContext,
@@ -9,36 +9,36 @@ import {
   useReducer,
   useRef,
   useState,
-} from 'react'
-import { Tab } from '@headlessui/react'
-import clsx from 'clsx'
-import { create } from 'zustand'
-import { LoaderIcon, PlayIcon } from 'lucide-react'
+} from "react";
+import { Tab } from "@headlessui/react";
+import clsx from "clsx";
+import { create } from "zustand";
+import { LoaderIcon, PlayIcon } from "lucide-react";
 
-import { CopyButton } from '@/components/CopyButton'
-import { useApiKey } from '@/utils/useUser'
-import { ProcessMessage } from '@e2b/sdk'
-import { useSessionsStore } from '@/utils/useSessions'
-import { useSignIn } from '@/utils/useSignIn'
-import { LangShort, languageNames, mdLangToLangShort } from '@/utils/consts'
-import { usePostHog } from 'posthog-js/react'
-import logoNode from '@/images/logos/node.svg'
-import logoPython from '@/images/logos/python.svg'
+import { CopyButton } from "@/components/CopyButton";
+import { useApiKey } from "@/utils/useUser";
+import { ProcessMessage } from "@e2b/sdk";
+import { useSandboxesStore } from "@/utils/useSandboxes";
+import { useSignIn } from "@/utils/useSignIn";
+import { LangShort, languageNames, mdLangToLangShort } from "@/utils/consts";
+import { usePostHog } from "posthog-js/react";
+import logoNode from "@/images/logos/node.svg";
+import logoPython from "@/images/logos/python.svg";
 
 export function getPanelTitle({
   title,
   language,
 }: {
-  title?: string
-  language?: string
+  title?: string;
+  language?: string;
 }) {
   if (title) {
-    return title
+    return title;
   }
   if (language && language in languageNames) {
-    return languageNames[language]
+    return languageNames[language];
   }
-  return 'Code'
+  return "Code";
 }
 
 function CodePanel({
@@ -47,109 +47,113 @@ function CodePanel({
   lang,
   isRunnable = true,
 }: {
-  children: React.ReactNode
-  code?: string
-  lang?: LangShort
-  isRunnable?: boolean
+  children: React.ReactNode;
+  code?: string;
+  lang?: LangShort;
+  isRunnable?: boolean;
 }) {
-  const signIn = useSignIn()
-  const apiKey = useApiKey()
-  const posthog = usePostHog()
+  const signIn = useSignIn();
+  const apiKey = useApiKey();
+  const posthog = usePostHog();
 
-  const codeGroupContext = useContext(CodeGroupContext)
+  const codeGroupContext = useContext(CodeGroupContext);
 
-  const sessionDef = useSessionsStore(s => s.sessions[lang])
-  const initSession = useSessionsStore(s => s.initSession)
-  const { outputLines, dispatch } = useOutputReducer()
-  const [isRunning, setIsRunning] = useState(false)
+  const sandboxDef = useSandboxesStore((s) => s.sandboxes[lang]);
+  const initSandbox = useSandboxesStore((s) => s.initSandbox);
+  const { outputLines, dispatch } = useOutputReducer();
+  const [isRunning, setIsRunning] = useState(false);
 
   function appendOutput(out: ProcessMessage) {
-    dispatch({ type: 'push', payload: out.line })
+    dispatch({ type: "push", payload: out.line });
   }
 
   function filterAndMaybeAppendOutput(out: ProcessMessage) {
-    if (out.line.includes('Cannot refresh session')) return
-    if (out.line.includes('Trying to reconnect')) return
-    console.log(`⚠️ Session stderr ${out.line}`)
+    if (out.line.includes("Cannot refresh sandbox")) return;
+    if (out.line.includes("Trying to reconnect")) return;
+    console.log(`⚠️ Sandbox stderr ${out.line}`);
     // appendOutput(out) // TODO: Reconsider logging to console after making the runs more stable
   }
 
-  function handleSessionCreationError(err: Error) {
-    console.error(err)
-    setIsRunning(false)
-    dispatch({ type: 'clear' })
+  function handleSandboxCreationError(err: Error) {
+    console.error(err);
+    setIsRunning(false);
+    dispatch({ type: "clear" });
   }
 
   async function onRun() {
     if (!apiKey) {
-      window.alert('You need to sign in to run code snippets')
-      void signIn()
-      return
+      window.alert("You need to sign in to run code snippets");
+      void signIn();
+      return;
     }
-    dispatch({ type: 'clear' })
-    setIsRunning(true)
-    posthog?.capture('run code snippet', {
+    dispatch({ type: "clear" });
+    setIsRunning(true);
+    posthog?.capture("run code snippet", {
       language: lang,
-      snippetPath: codeGroupContext?.path ?? 'unknown snippet',
-    })
+      snippetPath: codeGroupContext?.path ?? "unknown snippet",
+    });
 
-    let session = sessionDef?.session
+    let sandbox = sandboxDef?.sandbox;
     try {
-      if (!session) {
-        if (sessionDef?.promise) {
-          console.log(`Session for "${lang}" is still opening, waiting...`)
-          session = await sessionDef.promise
+      if (!sandbox) {
+        if (sandboxDef?.promise) {
+          console.log(`Sandbox for "${lang}" is still opening, waiting...`);
+          sandbox = await sandboxDef.promise;
         } else {
-          console.log(`Session not ready yet for "${lang}", opening...`)
-          session = await initSession(lang, apiKey)
+          console.log(`Sandbox not ready yet for "${lang}", opening...`);
+          sandbox = await initSandbox(lang, apiKey);
         }
       }
     } catch (err) {
-      handleSessionCreationError(err)
-      return
+      handleSandboxCreationError(err);
+      return;
     }
 
-    if (!session) {
-      console.warn('This should not happen, session is null, debug & fix properly later')
-      setIsRunning(false)
-      return
+    if (!sandbox) {
+      console.warn(
+        "This should not happen, sandbox is null, debug & fix properly later",
+      );
+      setIsRunning(false);
+      return;
     }
 
-    let runtime = `E2B_API_KEY=${apiKey}`
+    let runtime = `E2B_API_KEY=${apiKey}`;
     if (lang === LangShort.js) {
-      runtime += ' node'
-      const filename = '/code/index.js'
-      await session.filesystem.write(filename, code)
-      session.process.start({
+      runtime += " node";
+      const filename = "/code/index.js";
+      await sandbox.filesystem.write(filename, code);
+      sandbox.process.start({
         cmd: `${runtime} ${filename}`,
         onStdout: appendOutput,
         onStderr: filterAndMaybeAppendOutput,
         onExit: () => setIsRunning(false), // TODO: Inspect why it's exiting so late
-      })
+      });
     } else if (lang === LangShort.py) {
-      runtime += ' python3'
-      const filename = '/main.py'
-      await session.filesystem.write(filename, code)
-      session.process.start({
+      runtime += " python3";
+      const filename = "/main.py";
+      await sandbox.filesystem.write(filename, code);
+      sandbox.process.start({
         cmd: `${runtime} ${filename}`,
-        cwd: '/code',
+        cwd: "/code",
         onStdout: appendOutput,
         onStderr: filterAndMaybeAppendOutput,
         onExit: () => setIsRunning(false),
-      })
+      });
     } else {
-      throw new Error('Unsupported runtime for playground')
+      throw new Error("Unsupported runtime for playground");
     }
   }
 
-  const child = Children.only(children)
-  if (isValidElement(child)) code = child.props.code ?? code // Get code from child if available
+  const child = Children.only(children);
+  if (isValidElement(child)) code = child.props.code ?? code; // Get code from child if available
   if (isValidElement(child)) {
     // @ts-ignore
-    lang = mdLangToLangShort[child.props.language ?? lang] // Get lang from child if available
+    lang = mdLangToLangShort[child.props.language ?? lang]; // Get lang from child if available
   }
   if (!code) {
-    throw new Error('`CodePanel` requires a `code` prop, or a child with a `code` prop.')
+    throw new Error(
+      "`CodePanel` requires a `code` prop, or a child with a `code` prop.",
+    );
   }
 
   return (
@@ -171,7 +175,7 @@ function CodePanel({
                 space-x-2 rounded-md bg-transparent p-1 text-xs
                 transition-all
               `,
-              isRunning && 'cursor-wait',
+              isRunning && "cursor-wait",
             )}
             disabled={isRunning}
             onClick={onRun}
@@ -202,13 +206,13 @@ function CodePanel({
         <div className="flex max-h-[200px] flex-col items-start justify-start bg-zinc-800 px-4 py-1 font-mono">
           <span className="font-mono text-xs text-zinc-500">Output</span>
           <pre className="h-full w-full overflow-auto whitespace-pre text-xs text-white">
-            {outputLines.join('\n')}
+            {outputLines.join("\n")}
           </pre>
         </div>
       )}
       <CopyButton code={code} />
     </div>
-  )
+  );
 }
 
 export function CodeGroupHeader({
@@ -216,12 +220,12 @@ export function CodeGroupHeader({
   children,
   selectedIndex,
 }: {
-  title: string
-  children: React.ReactNode
-  selectedIndex: number
+  title: string;
+  children: React.ReactNode;
+  selectedIndex: number;
 }) {
-  const hasTabs = Children.count(children) > 1
-  if (!title && !hasTabs) return null
+  const hasTabs = Children.count(children) > 1;
+  if (!title && !hasTabs) return null;
 
   return (
     <div className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-700 bg-zinc-800 px-4 dark:border-zinc-800 dark:bg-transparent">
@@ -239,19 +243,23 @@ export function CodeGroupHeader({
                 /* Should ne fixed after updating Next to > 13.4.12 */
                 id={`code-tab-${childIndex}`}
                 className={clsx(
-                  'border-b py-3 transition ui-not-focus-visible:outline-none',
+                  "border-b py-3 transition ui-not-focus-visible:outline-none",
                   childIndex === selectedIndex
-                    ? 'border-brand-500 text-brand-400'
-                    : 'border-transparent text-zinc-400 hover:text-zinc-300',
+                    ? "border-brand-500 text-brand-400"
+                    : "border-transparent text-zinc-400 hover:text-zinc-300",
                 )}
               >
-                <div className="
+                <div
+                  className="
                   flex
                   items-center
                   px-1
                   gap-1
-                ">
-                  {getPanelTitle(isValidElement(child) ? child.props : {}).includes('JavaScript') ? (
+                "
+                >
+                  {getPanelTitle(
+                    isValidElement(child) ? child.props : {},
+                  ).includes("JavaScript") ? (
                     <Image
                       src={logoNode}
                       alt=""
@@ -274,25 +282,25 @@ export function CodeGroupHeader({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function CodeGroupPanels({
   children,
   ...props
 }: React.ComponentPropsWithoutRef<typeof CodePanel>) {
-  const hasTabs = Children.count(children) > 1
+  const hasTabs = Children.count(children) > 1;
 
   /* <INTERNAL> */
   // @ts-ignore
-  if (typeof window !== 'undefined' && window.DEBUG_COMPARE_LANGS) {
+  if (typeof window !== "undefined" && window.DEBUG_COMPARE_LANGS) {
     return (
       <div className="grid grid-cols-2">
-        {Children.map(children, child => (
+        {Children.map(children, (child) => (
           <CodePanel {...props}>{child}</CodePanel>
         ))}
       </div>
-    )
+    );
   }
   /* </INTERNAL> */
 
@@ -306,106 +314,110 @@ function CodeGroupPanels({
             <Tab.Panel id={`code-tab-${childIndex}`}>
               <CodePanel {...props}>{child}</CodePanel>
             </Tab.Panel>
-          )
+          );
         })}
       </Tab.Panels>
-    )
+    );
   }
 
-  return <CodePanel {...props}>{children}</CodePanel>
+  return <CodePanel {...props}>{children}</CodePanel>;
 }
 
 function usePreventLayoutShift() {
-  const positionRef = useRef<HTMLElement>(null)
-  const rafRef = useRef<number>()
+  const positionRef = useRef<HTMLElement>(null);
+  const rafRef = useRef<number>();
 
   useEffect(() => {
     return () => {
-      if (typeof rafRef.current !== 'undefined') {
-        window.cancelAnimationFrame(rafRef.current)
+      if (typeof rafRef.current !== "undefined") {
+        window.cancelAnimationFrame(rafRef.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   return {
     positionRef,
     preventLayoutShift(callback: () => void) {
       if (!positionRef.current) {
-        return
+        return;
       }
 
-      const initialTop = positionRef.current.getBoundingClientRect().top
+      const initialTop = positionRef.current.getBoundingClientRect().top;
 
-      callback()
+      callback();
 
       rafRef.current = window.requestAnimationFrame(() => {
-        const newTop = positionRef.current?.getBoundingClientRect().top ?? initialTop
-        window.scrollBy(0, newTop - initialTop)
-      })
+        const newTop =
+          positionRef.current?.getBoundingClientRect().top ?? initialTop;
+        window.scrollBy(0, newTop - initialTop);
+      });
     },
-  }
+  };
 }
 
 const usePreferredLanguageStore = create<{
-  preferredLanguages: Array<string>
-  addPreferredLanguage: (language: string) => void
-}>()(set => ({
+  preferredLanguages: Array<string>;
+  addPreferredLanguage: (language: string) => void;
+}>()((set) => ({
   preferredLanguages: [],
-  addPreferredLanguage: language =>
-    set(state => ({
+  addPreferredLanguage: (language) =>
+    set((state) => ({
       preferredLanguages: [
         ...state.preferredLanguages.filter(
-          preferredLanguage => preferredLanguage !== language,
+          (preferredLanguage) => preferredLanguage !== language,
         ),
         language,
       ],
     })),
-}))
+}));
 
 export function useTabGroupProps(availableLanguages: Array<string>) {
-  const { preferredLanguages, addPreferredLanguage } = usePreferredLanguageStore()
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const { preferredLanguages, addPreferredLanguage } =
+    usePreferredLanguageStore();
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const activeLanguage = [...availableLanguages].sort(
     (a, z) => preferredLanguages.indexOf(z) - preferredLanguages.indexOf(a),
-  )[0]
+  )[0];
 
-  const languageIndex = availableLanguages.indexOf(activeLanguage)
-  const newSelectedIndex = languageIndex === -1 ? selectedIndex : languageIndex
-  if (newSelectedIndex !== selectedIndex) setSelectedIndex(newSelectedIndex)
+  const languageIndex = availableLanguages.indexOf(activeLanguage);
+  const newSelectedIndex = languageIndex === -1 ? selectedIndex : languageIndex;
+  if (newSelectedIndex !== selectedIndex) setSelectedIndex(newSelectedIndex);
 
-  const { positionRef, preventLayoutShift } = usePreventLayoutShift()
+  const { positionRef, preventLayoutShift } = usePreventLayoutShift();
 
   return {
-    as: 'div' as const,
+    as: "div" as const,
     ref: positionRef,
     selectedIndex,
     onChange: (newSelectedIndex: number) => {
-      preventLayoutShift(() => addPreferredLanguage(availableLanguages[newSelectedIndex]))
+      preventLayoutShift(() =>
+        addPreferredLanguage(availableLanguages[newSelectedIndex]),
+      );
     },
-  }
+  };
 }
 
-const CodeGroupContext = createContext(null)
+const CodeGroupContext = createContext(null);
 
 function useOutputReducer() {
   const [outputLines, dispatch] = useReducer(
     (
       state: string[],
       action: {
-        type: 'push' | 'clear'
-        payload?: string
+        type: "push" | "clear";
+        payload?: string;
       },
     ) => {
       switch (action.type) {
-        case 'push':
-          return [...state, action.payload]
-        case 'clear':
-          return []
+        case "push":
+          return [...state, action.payload];
+        case "clear":
+          return [];
       }
     },
     [],
-  )
-  return { outputLines, dispatch }
+  );
+  return { outputLines, dispatch };
 }
 
 export function CodeGroup({
@@ -414,27 +426,24 @@ export function CodeGroup({
   path,
   ...props
 }: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
-  title?: string
-  path?: string // For analytics
+  title?: string;
+  path?: string; // For analytics
 }) {
-  const hasTabs = Children.count(children) > 1
+  const hasTabs = Children.count(children) > 1;
   const containerClassName =
-    'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
+    "not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10";
   const languages =
-    Children.map(children, child =>
+    Children.map(children, (child) =>
       getPanelTitle(isValidElement(child) ? child.props : {}),
-    ) ?? []
-  const tabGroupProps = useTabGroupProps(languages)
+    ) ?? [];
+  const tabGroupProps = useTabGroupProps(languages);
 
   const header = (
-    <CodeGroupHeader
-      title={title}
-      selectedIndex={tabGroupProps.selectedIndex}
-    >
+    <CodeGroupHeader title={title} selectedIndex={tabGroupProps.selectedIndex}>
       {children}
     </CodeGroupHeader>
-  )
-  const panels = <CodeGroupPanels {...props}>{children}</CodeGroupPanels>
+  );
+  const panels = <CodeGroupPanels {...props}>{children}</CodeGroupPanels>;
 
   return (
     <CodeGroupContext.Provider
@@ -443,10 +452,7 @@ export function CodeGroup({
       }}
     >
       {hasTabs ? (
-        <Tab.Group
-          {...tabGroupProps}
-          className={containerClassName}
-        >
+        <Tab.Group {...tabGroupProps} className={containerClassName}>
           {header}
           {panels}
         </Tab.Group>
@@ -457,45 +463,43 @@ export function CodeGroup({
         </div>
       )}
     </CodeGroupContext.Provider>
-  )
+  );
 }
 
-export function Code({ children, ...props }: React.ComponentPropsWithoutRef<'code'>) {
+export function Code({
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<"code">) {
   /* <DYNAMIC-API-REPLACEMENT> */
   // let apiKey = useApiKey()
   // if (children.replace && apiKey) children = children.replace(`{{API_KEY}}`, `${apiKey}`)
   /* </DYNAMIC-API-REPLACEMENT> */
 
-  const isGrouped = !!useContext(CodeGroupContext)
+  const isGrouped = !!useContext(CodeGroupContext);
 
   if (isGrouped) {
-    if (typeof children !== 'string') {
+    if (typeof children !== "string") {
       throw new Error(
-        '`Code` children must be a string when nested inside a `CodeGroup`.',
-      )
+        "`Code` children must be a string when nested inside a `CodeGroup`.",
+      );
     }
-    return (
-      <code
-        {...props}
-        dangerouslySetInnerHTML={{ __html: children }}
-      />
-    )
+    return <code {...props} dangerouslySetInnerHTML={{ __html: children }} />;
   }
 
-  return <code {...props}>{children}</code>
+  return <code {...props}>{children}</code>;
 }
 
 export function Pre({
   children,
   ...props
 }: React.ComponentPropsWithoutRef<typeof CodeGroup>) {
-  const isGrouped = useContext(CodeGroupContext)
+  const isGrouped = useContext(CodeGroupContext);
 
   if (isGrouped) {
-    return children
+    return children;
   }
 
-  return <CodeGroup {...props}>{children}</CodeGroup>
+  return <CodeGroup {...props}>{children}</CodeGroup>;
 }
 
 /**
@@ -504,9 +508,9 @@ export function Pre({
 export function CodeGroupAutoload({ children, isRunnable = true }) {
   if (!children) {
     console.warn(
-      'CodeGroupAutoload: No children provided - something is wrong with your MDX file',
-    )
-    return null
+      "CodeGroupAutoload: No children provided - something is wrong with your MDX file",
+    );
+    return null;
   }
-  return <CodeGroup isRunnable={isRunnable}>{children}</CodeGroup>
+  return <CodeGroup isRunnable={isRunnable}>{children}</CodeGroup>;
 }

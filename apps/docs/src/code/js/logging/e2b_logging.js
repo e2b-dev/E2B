@@ -1,4 +1,4 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from "@e2b/sdk";
 
 const logger = {
   debug: console.debug, // log debug messages, in default logger this is noop
@@ -6,10 +6,10 @@ const logger = {
   // don't forget to also specify warn & error handlers, otherwise they won't be logged when overriding the logger
   warn: console.warn,
   error: console.error,
-}
+};
 
-const session = await Session.create({
-  id: 'Nodejs',
+const sandbox = await Sandbox.create({
+  id: "Nodejs",
   apiKey: process.env.E2B_API_KEY,
   logger, // $HighlightLine
-})
+});

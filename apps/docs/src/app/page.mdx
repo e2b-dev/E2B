@@ -50,13 +50,13 @@ pip install e2b
 import { Sandbox } from '@e2b/sdk'
 
 // 2. Get your Sandbox session
-const session = await Sandbox({
+const sandbox = await Sandbox({
   // or 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
   id: 'Nodejs',
 })
 
-// 3. Close the session once done
-await session.close()
+// 3. Close the sandbox once done
+await sandbox.close()
 ```
 
 ```python {{ language: 'python' }}
@@ -64,13 +64,13 @@ await session.close()
 from e2b import Sandbox
 
 # 2. Get your Sandbox session
-session = Sandbox(
+sandbox = Sandbox(
   # or "Bash", "Python3", "Java", "Go", "Rust", "PHP", "Perl", "DotNET"
   id: "Nodejs",
 )
 
-# 3. Close the session once done
-session.close()
+# 3. Close the sandbox once done
+sandbox.close()
 ```
 </CodeGroup>
 

@@ -7,15 +7,15 @@ def print_out(output):
   print(output.line)
 
 def main():
-  # 1. Start the playground session
-  session = Sandbox.create(
+  # 1. Start the playground sandbox
+  sandbox = Sandbox.create(
     # Select the right runtime
     id="Nodejs",
     api_key=E2B_API_KEY,
   )
 
   # 2. Start a process that will clone a repository
-  proc = session.process.start( # $HighlightLine
+  proc = sandbox.process.start( # $HighlightLine
     cmd="git clone https://github.com/cruip/open-react-template.git /code/open-react-template", # $HighlightLine
     on_stdout=print_out, # $HighlightLine
     on_stderr=print_out, # $HighlightLine
@@ -24,12 +24,12 @@ def main():
   proc.wait()
 
   # Optional: 4. List the cntent of cloned repo
-  content = session.filesystem.list('/code/open-react-template')
+  content = sandbox.filesystem.list('/code/open-react-template')
   print(content)
 
   # Optional: 5. Install deps
   print("Installing deps...")
-  proc = session.process.start(
+  proc = sandbox.process.start(
     cmd="npm install",
     on_stdout=print_out,
     on_stderr=print_out,
@@ -38,6 +38,6 @@ def main():
 
   proc.wait()
 
-  session.close()
+  sandbox.close()
 
 main()

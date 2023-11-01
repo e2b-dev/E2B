@@ -1,18 +1,18 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from "@e2b/sdk";
 
-const session = await Session.create({
-  id: 'Nodejs',
-  cwd: '/code', // $HighlightLine
-})
+const sandbox = await Sandbox.create({
+  id: "Nodejs",
+  cwd: "/code", // $HighlightLine
+});
 
-const sessionCwd = await session.process.start({ cmd: 'pwd' }) // $HighlightLine
-await sessionCwd.wait()
-console.log(sessionCwd.output.stdout)
+const sandboxCwd = await sandbox.process.start({ cmd: "pwd" }); // $HighlightLine
+await sandboxCwd.wait();
+console.log(sandboxCwd.output.stdout);
 // output: /code
 
-const processCwd = await session.process.start({ cmd: 'pwd', cwd: '/home' }) // $HighlightLine
-await processCwd.wait()
-console.log(processCwd.output.stdout)
+const processCwd = await sandbox.process.start({ cmd: "pwd", cwd: "/home" }); // $HighlightLine
+await processCwd.wait();
+console.log(processCwd.output.stdout);
 // output: /home
 
-await session.close()
+await sandbox.close();
