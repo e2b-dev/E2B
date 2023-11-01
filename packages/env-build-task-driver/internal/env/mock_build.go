@@ -3,6 +3,7 @@ package env
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
@@ -61,7 +62,7 @@ func MockBuild(envID, buildID string) {
 
 	err = writer.Close()
 	if err != nil {
-		fmt.Printf("error closing writer: %v\n", err)
+		fmt.Fprintf(os.Stderr, "error closing writer: %v\n", err)
 	}
 
 	<-writer.Done

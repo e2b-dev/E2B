@@ -69,7 +69,7 @@ func (a *authenticator) Authenticate(ctx context.Context, input *openapi3filter.
 		return fmt.Errorf("%s %w", a.errorMessage, err)
 	}
 
-	telemetry.ReportEvent(ctx, "Validated "+a.securitySchemeName)
+	telemetry.ReportEvent(ctx, "validated "+a.securitySchemeName)
 	// Set the property on the gin context
 	middleware.GetGinContext(ctx).Set(a.contextKey, id)
 

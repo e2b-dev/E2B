@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/posthog/posthog-go"
 )
@@ -21,7 +22,7 @@ func (a *APIStore) IdentifyAnalyticsTeam(teamID string) {
 	},
 	)
 	if err != nil {
-		fmt.Printf("Error when setting group property in Posthog: %+v\n", err)
+		fmt.Fprintf(os.Stderr, "error when setting group property in Posthog: %+v\n", err)
 	}
 }
 
@@ -34,7 +35,7 @@ func (a *APIStore) CreateAnalyticsTeamEvent(teamID, event string, properties pos
 			Set("team", teamID),
 	})
 	if err != nil {
-		fmt.Printf("Error when sending event to Posthog: %+v\n", err)
+		fmt.Fprintf(os.Stderr, "error when sending event to Posthog: %+v\n", err)
 	}
 }
 
@@ -47,6 +48,6 @@ func (a *APIStore) CreateAnalyticsUserEvent(userID string, teamID string, event 
 			Set("team", teamID),
 	})
 	if err != nil {
-		fmt.Printf("Error when sending event to Posthog: %+v\n", err)
+		fmt.Fprintf(os.Stderr, "error when sending event to Posthog: %+v\n", err)
 	}
 }

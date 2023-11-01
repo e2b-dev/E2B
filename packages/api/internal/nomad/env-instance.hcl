@@ -25,7 +25,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
 
       resources {
         memory = 128
-        cpu = 200
+        cpu = 128
       }
 
       config {

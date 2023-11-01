@@ -4,12 +4,6 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
 
   priority = 20
 
-  meta {
-    # This makes sure the job always runs even though nothing has changed in the job spec file.
-    # See section "Always Deploy a New Job Version" in https://storiesfromtheherd.com/nomad-tips-and-tricks-766878dfebf4
-    run_uuid = "{{ .BuildID }}"
-  }
-
   group "build" {
     reschedule {
       attempts  = 0
@@ -34,6 +28,11 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
         CONTEXT_FILE_NAME = "context.tar.gz"
         API_SECRET = "{{ .APISecret }}"
         GOOGLE_SERVICE_ACCOUNT_BASE64 = "{{ .GoogleServiceAccountBase64 }}"
+      }
+
+      resources {
+        memory = 256
+        cpu = 256
       }
 
       config {

@@ -71,8 +71,7 @@ func NewAPIStore() *APIStore {
 	})
 
 	if posthogErr != nil {
-		fmt.Printf("Error initializing Posthog client\n: %s", posthogErr)
-		panic(posthogErr)
+		panic(fmt.Sprintf("Error initializing Posthog client\n: %s", posthogErr))
 	}
 
 	var initialInstances []*api.Instance
@@ -157,12 +156,12 @@ func (a *APIStore) Close() {
 
 	err := a.posthog.Close()
 	if err != nil {
-		fmt.Printf("Error closing Posthog client\n: %s", err)
+		fmt.Fprintf(os.Stderr, "Error closing Posthog client\n: %s", err)
 	}
 
 	err = a.cloudStorage.client.Close()
 	if err != nil {
-		fmt.Printf("Error closing Cloud Storage client\n: %s", err)
+		fmt.Fprintf(os.Stderr, "Error closing Cloud Storage client\n: %s", err)
 	}
 }
 
@@ -176,7 +175,7 @@ func (a *APIStore) sendAPIStoreError(c *gin.Context, code int, message string) {
 
 	err := c.Error(fmt.Errorf(message))
 	if err != nil {
-		fmt.Printf("Error sending error: %s", err)
+		fmt.Fprintf(os.Stderr, "Error sending error: %s", err)
 	}
 
 	c.JSON(code, apiErr)
@@ -252,7 +251,7 @@ func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, inst
 				Set("team", teamID),
 		})
 		if err != nil {
-			fmt.Printf("Error sending Posthog event: %s", err)
+			fmt.Fprintf(os.Stderr, "error sending Posthog event: %s", err)
 		}
 	}
 

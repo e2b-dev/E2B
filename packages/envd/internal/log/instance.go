@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -134,28 +135,28 @@ func sendLogs(logs []byte) {
 
 	mmdsToken, err := getMMDSToken(client)
 	if err != nil {
-		fmt.Printf("error getting mmds token: %w", err)
+		fmt.Fprintf(os.Stderr, "error getting mmds token: %w", err)
 
 		return
 	}
 
 	mmdsOpts, err := getMMDSOpts(client, mmdsToken)
 	if err != nil {
-		fmt.Printf("error getting instance logging options from mmds (token %s): %+v", mmdsToken, err)
+		fmt.Fprintf(os.Stderr, "error getting instance logging options from mmds (token %s): %+v", mmdsToken, err)
 
 		return
 	}
 
 	instanceLogs, err := addOptsToJSON(logs, mmdsOpts)
 	if err != nil {
-		fmt.Printf("error adding instance logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
+		fmt.Fprintf(os.Stderr, "error adding instance logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
 
 		return
 	}
 
 	err = sendInstanceLogs(client, instanceLogs, mmdsOpts.Address)
 	if err != nil {
-		fmt.Printf("error sending instance logs: %+v", err)
+		fmt.Fprint(os.Stderr, "error sending instance logs: %+v", err)
 
 		return
 	}

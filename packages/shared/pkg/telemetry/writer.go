@@ -16,7 +16,7 @@ type EventWriter struct {
 }
 
 func (w *EventWriter) Write(p []byte) (n int, err error) {
-	fmt.Printf("-> [%s] %s\n", w.name, strings.Trim(string(p), " \t\n"))
+	fmt.Printf("->> [%s] %s\n", w.name, strings.Trim(string(p), " \t\n"))
 
 	w.span.AddEvent(w.name,
 		trace.WithAttributes(

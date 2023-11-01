@@ -32,5 +32,5 @@ func (pr *Progress) PrintProgress() {
 	}
 
 	pct := float64(pr.BytesRead) / float64(pr.TotalSize) * TotalPercent
-	fmt.Printf("File upload progress: %.1f%%\n", pct)
+	fmt.Printf("file upload progress: %.1f%%\n", pct)
 }
