@@ -1,15 +1,12 @@
 import { Session } from '@e2b/sdk'
 
-const session = await Session.create({
-  id: 'Nodejs',
-  apiKey: process.env.E2B_API_KEY,
-})
+const session = await Session.create({ id: 'Nodejs' })
 
 // Start filesystem watcher for the /home directory
 const watcher = session.filesystem.watchDir('/home') // $HighlightLine
-watcher.addEventListener(event => {
-  console.log('Filesystem event', event)
-})
+watcher.addEventListener(event => { // $HighlightLine
+  console.log('Filesystem event', event) // $HighlightLine
+}) // $HighlightLine
 await watcher.start() // $HighlightLine
 
 // Create files in the /home directory inside the playground

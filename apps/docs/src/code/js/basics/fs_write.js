@@ -1,9 +1,6 @@
 import { Session } from '@e2b/sdk'
 
-const session = await Session.create({
-  id: 'Nodejs',
-  apiKey: process.env.E2B_API_KEY,
-})
+const session = await Session.create({ id: 'Nodejs' })
 
 // `filesystem.write()` will:
 // - create the file if it doesn't exist

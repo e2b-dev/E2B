@@ -5,7 +5,6 @@
     {
       "files": ["src/code/**/*.js"],
       "rules": {
-        "prettier/prettier": "off",
         "@typescript-eslint/no-unused-vars": "off",
         "no-useless-escape": "off"
       }

@@ -1,10 +1,7 @@
 import fs from 'fs'
 import { Session } from '@e2b/sdk'
 
-const session = await Session.create({
-  id: 'Nodejs',
-  apiKey: process.env.E2B_API_KEY,
-})
+const session = await Session.create({ id: 'Nodejs' })
 
 // File bytes will read file's content as bytes
 // `fileBytes` as a Uint8Array

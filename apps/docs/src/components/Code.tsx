@@ -1,5 +1,5 @@
 'use client'
-
+import Image from 'next/image'
 import {
   Children,
   createContext,
@@ -22,6 +22,8 @@ import { useSessionsStore } from '@/utils/useSessions'
 import { useSignIn } from '@/utils/useSignIn'
 import { LangShort, languageNames, mdLangToLangShort } from '@/utils/consts'
 import { usePostHog } from 'posthog-js/react'
+import logoNode from '@/images/logos/node.svg'
+import logoPython from '@/images/logos/python.svg'
 
 export function getPanelTitle({
   title,
@@ -223,9 +225,11 @@ export function CodeGroupHeader({
 
   return (
     <div className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-700 bg-zinc-800 px-4 dark:border-zinc-800 dark:bg-transparent">
-      <div className="flex items-start space-x-4">
+      <div className="flex flex-col items-start">
         {title && (
-          <h3 className="mr-auto pt-3 text-xs font-semibold text-white">{title}</h3>
+          <div className="pl-2 mt-3">
+            <h3 className="font-xs font-bold text-zinc-300">{title}</h3>
+          </div>
         )}
         {hasTabs && (
           <Tab.List className="-mb-px flex gap-4 text-xs font-medium">
@@ -241,7 +245,29 @@ export function CodeGroupHeader({
                     : 'border-transparent text-zinc-400 hover:text-zinc-300',
                 )}
               >
-                {getPanelTitle(isValidElement(child) ? child.props : {})}
+                <div className="
+                  flex
+                  items-center
+                  px-1
+                  gap-1
+                ">
+                  {getPanelTitle(isValidElement(child) ? child.props : {}).includes('JavaScript') ? (
+                    <Image
+                      src={logoNode}
+                      alt=""
+                      className="h-7 w-7"
+                      unoptimized
+                    />
+                  ) : (
+                    <Image
+                      src={logoPython}
+                      alt=""
+                      className="h-7 w-7"
+                      unoptimized
+                    />
+                  )}
+                  {getPanelTitle(isValidElement(child) ? child.props : {})}
+                </div>
               </Tab>
             ))}
           </Tab.List>

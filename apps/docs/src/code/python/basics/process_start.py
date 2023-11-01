@@ -1,15 +1,9 @@
-from os import getenv
 from e2b import Session
 
-E2B_API_KEY = getenv("E2B_API_KEY")
+session = Session.create(id="Nodejs")
 
-def main():
-  session = Session.create(id="Nodejs", api_key=E2B_API_KEY)
+npm_init = session.process.start("npm init -y") # $HighlightLine
+npm_init.wait()
+print(npm_init.stdout)
 
-  npm_init = session.process.start("npm init -y") # $HighlightLine
-  npm_init.wait()
-  print(npm_init.stdout)
-
-  session.close()
-
-main()
+session.close()
