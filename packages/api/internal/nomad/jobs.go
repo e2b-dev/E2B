@@ -20,8 +20,6 @@ const (
 	defaultTaskName = "start"
 
 	jobCheckInterval = 100 * time.Millisecond
-
-	pageSize = 100
 )
 
 var allowedSubscriptionJobs = []string{
@@ -37,14 +35,14 @@ type jobSubscriber struct {
 }
 
 func (s *jobSubscriber) close() {
-	close(s.wait)
 	s.subscribers.Remove(s.jobID)
 }
 
 func (n *NomadClient) newSubscriber(jobID string, taskState string) *jobSubscriber {
 	sub := &jobSubscriber{
-		jobID:       jobID,
-		wait:        make(chan api.AllocationListStub),
+		jobID: jobID,
+		// We add arbitrary buffer to the channel to avoid blocking the Nomad ListenToJobs goroutine
+		wait:        make(chan api.AllocationListStub, 10),
 		taskState:   taskState,
 		subscribers: n.subscribers,
 	}
@@ -71,31 +69,18 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 		// Loop with a ticker work differently than a loop with sleep.
 		// The ticker will tick every 100ms, but if the loop takes more than 100ms to run, the ticker will tick again immediately.
 		case <-ticker.C:
-			var nextToken string
+			allocs, _, err := n.client.Allocations().List(&api.QueryOptions{
+				Filter:  filterString,
+				Reverse: true,
+			})
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error getting jobs: %v\n", err)
 
-			var isLastPage bool
+				return
+			}
 
-			for !isLastPage {
-				allocs, meta, err := n.client.Allocations().List(&api.QueryOptions{
-					Filter:    filterString,
-					NextToken: nextToken,
-					PerPage:   pageSize,
-				})
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Error getting jobs: %v\n", err)
-
-					return
-				}
-
-				if nextToken == "" {
-					isLastPage = true
-				}
-
-				nextToken = meta.NextToken
-
-				for _, alloc := range allocs {
-					n.processAllocs(alloc)
-				}
+			for _, alloc := range allocs {
+				n.processAllocs(alloc)
 			}
 
 		case <-ctx.Done():
@@ -117,7 +102,11 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 	}
 
 	if sub.taskState == taskRunningState {
-		sub.wait <- *alloc
+		select {
+		case sub.wait <- *alloc:
+		default:
+			fmt.Fprintf(os.Stderr, "channel for job %s is full\n", alloc.JobID)
+		}
 	}
 
 	if alloc.TaskStates[defaultTaskName] == nil {
@@ -132,6 +121,10 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 
 		fallthrough
 	case taskDeadState:
-		sub.wait <- *alloc
+		select {
+		case sub.wait <- *alloc:
+		default:
+			fmt.Fprintf(os.Stderr, "channel for job %s is full\n", alloc.JobID)
+		}
 	}
 }
