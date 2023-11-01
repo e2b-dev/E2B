@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/nomad/api"
@@ -22,6 +23,11 @@ const (
 	pageSize = 100
 )
 
+var allowedSubscriptionJobs = []string{
+	buildJobNameWithSlash,
+	instanceJobNameWithSlash,
+}
+
 type AllocResult struct {
 	Alloc *api.AllocationListStub
 	Err   error
@@ -29,14 +35,14 @@ type AllocResult struct {
 
 type jobSubscriber struct {
 	jobID     string
-	events    chan AllocResult
+	events    chan api.AllocationListStub
 	taskState string
 }
 
 func (n *NomadClient) newSubscriber(jobID string, taskState string) *jobSubscriber {
 	sub := &jobSubscriber{
 		jobID:     jobID,
-		events:    make(chan AllocResult),
+		events:    make(chan api.AllocationListStub),
 		taskState: taskState,
 	}
 	n.subscribers.Insert(jobID, sub)
@@ -47,6 +53,14 @@ func (n *NomadClient) newSubscriber(jobID string, taskState string) *jobSubscrib
 func (n *NomadClient) ListenToJobs(ctx context.Context) {
 	ticker := time.NewTicker(jobCheckInterval)
 	defer ticker.Stop()
+
+	filterParts := make([]string, len(allowedSubscriptionJobs))
+
+	for i, job := range allowedSubscriptionJobs {
+		filterParts[i] = fmt.Sprintf("JobID contains \"%s\"", job)
+	}
+
+	filterString := strings.Join(filterParts, " or ")
 
 	for {
 		select {
@@ -59,7 +73,7 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 
 			for !isLastPage {
 				allocs, meta, err := n.client.Allocations().List(&api.QueryOptions{
-					// Filter:    "JobType == \"batch\"",
+					Filter:    filterString,
 					NextToken: nextToken,
 					PerPage:   pageSize,
 				})
@@ -102,8 +116,6 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 		return
 	}
 
-	fmt.Printf("type: %s", alloc.JobType)
-
 	switch alloc.TaskStates[defaultTaskName].State {
 	case taskRunningState:
 		if sub.taskState != taskRunningState {
@@ -112,10 +124,7 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 
 		fallthrough
 	case taskDeadState:
-		sub.events <- AllocResult{
-			Alloc: alloc,
-			Err:   nil,
-		}
+		sub.events <- *alloc
 	}
 }
 
@@ -129,8 +138,11 @@ func (n *NomadClient) WaitForJob(ctx context.Context, jobID, taskState string, r
 	defer close(sub.events)
 
 	select {
-	case err := <-sub.events:
-		result <- err
+	case alloc := <-sub.events:
+		result <- AllocResult{
+			Err:   nil,
+			Alloc: &alloc,
+		}
 
 	case <-childCtx.Done():
 		result <- AllocResult{
