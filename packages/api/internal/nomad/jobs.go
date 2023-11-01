@@ -18,6 +18,8 @@ const (
 	defaultTaskName = "start"
 
 	jobCheckInterval = 100 * time.Millisecond
+
+	pageSize = 100
 )
 
 type AllocResult struct {
@@ -51,21 +53,33 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 		// Loop with a ticker work differently than a loop with sleep.
 		// The ticker will tick every 100ms, but if the loop takes more than 100ms to run, the ticker will tick again immediately.
 		case <-ticker.C:
-			jobs, _, err := n.client.Jobs().List(nil)
-			if err != nil {
-				log.Printf("Error getting jobs: %s\n", err)
+			var nextToken string
 
-				return
-			}
+			var isLastPage bool
 
-			for _, job := range jobs {
-				procErr := n.processJobEvent(job)
-				if procErr != nil {
-					log.Printf("error processing job event: %s\n", procErr)
+			for !isLastPage {
+				allocs, meta, err := n.client.Allocations().List(&api.QueryOptions{
+					// Filter:    "JobType == \"batch\"",
+					NextToken: nextToken,
+					PerPage:   pageSize,
+				})
+				if err != nil {
+					log.Printf("Error getting jobs: %v\n", err)
 
 					return
 				}
+
+				if nextToken == "" {
+					isLastPage = true
+				}
+
+				nextToken = meta.NextToken
+
+				for _, alloc := range allocs {
+					n.processAllocs(alloc)
+				}
 			}
+
 		case <-ctx.Done():
 			log.Println("Context canceled, stopping ListenToJobs")
 
@@ -74,13 +88,23 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 	}
 }
 
-func (n *NomadClient) processJobEvent(job *api.JobListStub) error {
-	sub, ok := n.subscribers.Get(job.ID)
+func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
+	sub, ok := n.subscribers.Get(alloc.JobID)
 	if !ok {
-		return nil
+		return
 	}
 
-	switch job.Status {
+	if alloc.TaskStates == nil {
+		return
+	}
+
+	if alloc.TaskStates[defaultTaskName] == nil {
+		return
+	}
+
+	fmt.Printf("type: %s", alloc.JobType)
+
+	switch alloc.TaskStates[defaultTaskName].State {
 	case taskRunningState:
 		if sub.taskState != taskRunningState {
 			break
@@ -88,65 +112,11 @@ func (n *NomadClient) processJobEvent(job *api.JobListStub) error {
 
 		fallthrough
 	case taskDeadState:
-		alloc, allocErr, err := n.getFirstAlloc(job, defaultTaskName, sub.taskState == taskRunningState)
-		if err != nil {
-			errMsg := fmt.Errorf("error with getting allocation '%s': %w", job.ID, err)
-
-			return errMsg
-		}
-
-		if allocErr != nil {
-			errMsg := fmt.Errorf("allocation error '%s': %w", job.ID, allocErr)
-			sub.events <- AllocResult{
-				Alloc: nil,
-				Err:   errMsg,
-			}
-
-			return nil
-		}
-
 		sub.events <- AllocResult{
 			Alloc: alloc,
 			Err:   nil,
 		}
 	}
-
-	return nil
-}
-
-func (n *NomadClient) getFirstAlloc(job *api.JobListStub, taskName string, running bool) (*api.AllocationListStub, error, error) {
-	allocations, _, err := n.client.Jobs().Allocations(job.ID, false, nil)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error getting allocation for job %s: %w", job.ID, err)
-	}
-
-	for _, alloc := range allocations {
-		if alloc == nil {
-			continue
-		}
-
-		if running {
-			return alloc, nil, nil
-		}
-
-		if alloc.TaskStates[taskName] == nil {
-			continue
-		}
-
-		if alloc.TaskStates[taskName].State == taskRunningState && running {
-			return alloc, nil, nil
-		}
-
-		if alloc.TaskStates[taskName].State == taskDeadState {
-			if alloc.TaskStates[taskName].Failed {
-				return nil, fmt.Errorf("allocation is %s for '%s' job", alloc.TaskStates[taskName].State, job.ID), nil
-			} else {
-				return alloc, nil, nil
-			}
-		}
-	}
-
-	return nil, nil, fmt.Errorf("no allocation with the task name %s found", taskName)
 }
 
 func (n *NomadClient) WaitForJob(ctx context.Context, jobID, taskState string, result chan AllocResult, timeout time.Duration) {
