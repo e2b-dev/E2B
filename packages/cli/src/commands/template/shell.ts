@@ -19,8 +19,8 @@ export const shellCommand = new commander.Command("shell")
         };
 
       await connectSandbox({ apiKey, template: template });
-      // We explicitly call exit because the session is keeping the program alive.
-      // We also don't want to call session.close because that would disconnect other users from the edit session.
+      // We explicitly call exit because the sandbox is keeping the program alive.
+      // We also don't want to call sandbox.close because that would disconnect other users from the edit session.
       process.exit(0);
     } catch (err: any) {
       console.error(err);
@@ -35,19 +35,19 @@ async function connectSandbox({
   apiKey: string;
   template: Pick<e2b.components["schemas"]["Environment"], "envID">;
 }) {
-  const session = new e2b.Session({
+  const sandbox = new e2b.Sandbox({
     apiKey,
     id: template.envID,
   });
 
-  await session.open({});
+  await sandbox.open({});
 
-  if (session.terminal) {
+  if (sandbox.terminal) {
     const { exited } = await spawnConnectedTerminal(
-      session.terminal,
+      sandbox.terminal,
       `Terminal connected to sandbox ${asFormattedSandboxTemplate(
         template,
-      )}\nwith session URL ${asBold(`https://${session.getHostname()}`)}`,
+      )}\nwith sandbox URL ${asBold(`https://${sandbox.getHostname()}`)}`,
       `Disconnecting terminal from sandbox ${asFormattedSandboxTemplate(
         template,
       )}`,
@@ -60,6 +60,6 @@ async function connectSandbox({
       )}`,
     );
   } else {
-    throw new Error("Cannot start terminal - no session");
+    throw new Error("Cannot start terminal - no sandbox");
   }
 }

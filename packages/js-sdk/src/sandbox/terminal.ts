@@ -1,42 +1,42 @@
-import { EnvVars } from './envVars'
-import { SessionConnection } from './sessionConnection'
+import { EnvVars } from "./envVars";
+import { SandboxConnection } from "./sandboxConnection";
 
-export const terminalService = 'terminal'
+export const terminalService = "terminal";
 
 export class TerminalOutput {
-  private _data = ''
+  private _data = "";
 
   get data() {
-    return this._data
+    return this._data;
   }
 
   addData(data: string) {
-    this._data += data
+    this._data += data;
   }
 }
 
 /**
- * A terminal session running in the environment.
+ * A terminal session running in the sandbox.
  *
  */
 export class Terminal {
   /**
    * @deprecated use .wait() instead
    */
-  readonly finished: Promise<TerminalOutput>
+  readonly finished: Promise<TerminalOutput>;
 
   constructor(
     readonly terminalID: string,
-    private readonly session: SessionConnection,
+    private readonly sandbox: SandboxConnection,
     private readonly triggerExit: () => void,
     finished: Promise<TerminalOutput>,
     readonly output: TerminalOutput,
   ) {
-    this.finished = finished
+    this.finished = finished;
   }
 
   get data() {
-    return this.output.data
+    return this.output.data;
   }
 
   /**
@@ -45,10 +45,10 @@ export class Terminal {
   async kill(): Promise<void> {
     try {
       // TODO: Change the "destroy" to "kill" in devbookd
-      await this.session.call(terminalService, 'destroy', [this.terminalID])
+      await this.sandbox.call(terminalService, "destroy", [this.terminalID]);
     } finally {
-      this.triggerExit()
-      await this.finished
+      this.triggerExit();
+      await this.finished;
     }
   }
 
@@ -56,7 +56,7 @@ export class Terminal {
    * Waits for the terminal to finish.
    */
   async wait(): Promise<TerminalOutput> {
-    return this.finished
+    return this.finished;
   }
 
   /**
@@ -65,7 +65,7 @@ export class Terminal {
    * @param data Data to send
    */
   async sendData(data: string): Promise<void> {
-    await this.session.call(terminalService, 'data', [this.terminalID, data])
+    await this.sandbox.call(terminalService, "data", [this.terminalID, data]);
   }
 
   /**
@@ -75,38 +75,42 @@ export class Terminal {
    * @param rows Number of rows
    */
   async resize({ cols, rows }: { cols: number; rows: number }): Promise<void> {
-    await this.session.call(terminalService, 'resize', [this.terminalID, cols, rows])
+    await this.sandbox.call(terminalService, "resize", [
+      this.terminalID,
+      cols,
+      rows,
+    ]);
   }
 }
 
 export type TerminalOpts = {
-  onData: (data: string) => void
-  onExit?: () => void
-  size: { cols: number; rows: number }
-  terminalID?: string
+  onData: (data: string) => void;
+  onExit?: () => void;
+  size: { cols: number; rows: number };
+  terminalID?: string;
   /**
    * If the `cmd` parameter is defined it will be executed as a command
    * and this terminal session will exit when the command exits.
    */
-  cmd?: string
+  cmd?: string;
   /**
    * Working directory where will the terminal start.
    */
-  cwd?: string
+  cwd?: string;
   /**
    * @deprecated use cwd instead
    */
-  rootDir?: string
+  rootDir?: string;
   /**
    * Environment variables that will be accessible inside of the terminal.
    */
-  envVars?: EnvVars
+  envVars?: EnvVars;
   /**
    * Timeout in milliseconds (default is 60 seconds)
    */
-  timeout?: number
-}
+  timeout?: number;
+};
 
 export interface TerminalManager {
-  readonly start: (opts: TerminalOpts) => Promise<Terminal>
+  readonly start: (opts: TerminalOpts) => Promise<Terminal>;
 }

@@ -105,7 +105,7 @@ async function handleArtifact(artifact) {
   console.log('Chart saved to ', `file://${path}`)
 }
 
-async function startSession() {
+async function startSandbox() {
   s = await e2b.DataAnalysis.create()
 
   const localFile = fs.readFileSync('/Users/mlejva/Downloads/netflix.csv')
@@ -191,7 +191,7 @@ async function runFunction(name, args) {
   }
 }
 
-const remoteCSVFilePath = await startSession()
+const remoteCSVFilePath = await startSandbox()
 
 const response = await respond(
   `I uploaded a CSV file here "${remoteCSVFilePath}". What can you tell me about the data in this csv file?`,

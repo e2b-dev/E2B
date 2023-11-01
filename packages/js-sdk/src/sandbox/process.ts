@@ -1,7 +1,7 @@
-import { EnvVars } from './envVars'
-import { CallOpts, SessionConnection } from './sessionConnection'
+import { EnvVars } from "./envVars";
+import { CallOpts, SandboxConnection } from "./sandboxConnection";
 
-export const processService = 'process'
+export const processService = "process";
 
 /**
  * A message from a process.
@@ -19,7 +19,7 @@ export class ProcessMessage {
   }
 
   public toString() {
-    return this.line
+    return this.line;
   }
 }
 
@@ -27,27 +27,27 @@ export class ProcessMessage {
  * Output from a process.
  */
 export class ProcessOutput {
-  private readonly delimiter = '\n'
-  private readonly messages: ProcessMessage[] = []
-  private _error = false
-  private _exitCode?: number
-  private _finished = false
+  private readonly delimiter = "\n";
+  private readonly messages: ProcessMessage[] = [];
+  private _error = false;
+  private _exitCode?: number;
+  private _finished = false;
 
   /**
    * The exit code of the process.
    */
   get exitCode(): number | undefined {
     if (!this._finished) {
-      throw new Error('Process has not finished yet')
+      throw new Error("Process has not finished yet");
     }
-    return this._exitCode
+    return this._exitCode;
   }
 
   /**
    * Whether the process has errored.
    */
   get error(): boolean {
-    return this._error
+    return this._error;
   }
 
   /**
@@ -55,9 +55,9 @@ export class ProcessOutput {
    */
   get stdout(): string {
     return this.messages
-      .filter(out => !out.error)
-      .map(out => out.line)
-      .join(this.delimiter)
+      .filter((out) => !out.error)
+      .map((out) => out.line)
+      .join(this.delimiter);
   }
 
   /**
@@ -65,51 +65,51 @@ export class ProcessOutput {
    */
   get stderr(): string {
     return this.messages
-      .filter(out => out.error)
-      .map(out => out.line)
-      .join(this.delimiter)
+      .filter((out) => out.error)
+      .map((out) => out.line)
+      .join(this.delimiter);
   }
 
   addStdout(message: ProcessMessage) {
-    this.insertByTimestamp(message)
+    this.insertByTimestamp(message);
   }
 
   addStderr(message: ProcessMessage) {
-    this._error = true
-    this.insertByTimestamp(message)
+    this._error = true;
+    this.insertByTimestamp(message);
   }
 
   setExitCode(exitCode: number) {
-    this._exitCode = exitCode
-    this._finished = true
+    this._exitCode = exitCode;
+    this._finished = true;
   }
 
   private insertByTimestamp(message: ProcessMessage) {
-    let i = this.messages.length - 1
+    let i = this.messages.length - 1;
     while (i >= 0 && this.messages[i].timestamp > message.timestamp) {
-      i -= 1
+      i -= 1;
     }
-    this.messages.splice(i + 1, 0, message)
+    this.messages.splice(i + 1, 0, message);
   }
 }
 
 /**
- * A process running in the environment.
+ * A process running in the sandbox.
  */
 export class Process {
   /**
    * @deprecated use .wait() instead
    */
-  readonly finished: Promise<ProcessOutput>
+  readonly finished: Promise<ProcessOutput>;
 
   constructor(
     readonly processID: string,
-    private readonly session: SessionConnection,
+    private readonly sandbox: SandboxConnection,
     private readonly triggerExit: () => void,
     finished: Promise<ProcessOutput>,
     readonly output: ProcessOutput,
   ) {
-    this.finished = finished
+    this.finished = finished;
   }
 
   /**
@@ -117,10 +117,10 @@ export class Process {
    */
   async kill(): Promise<void> {
     try {
-      await this.session.call(processService, 'kill', [this.processID])
+      await this.sandbox.call(processService, "kill", [this.processID]);
     } finally {
-      this.triggerExit()
-      await this.finished
+      this.triggerExit();
+      await this.finished;
     }
   }
 
@@ -128,7 +128,7 @@ export class Process {
    * Waits for the process to finish.
    */
   async wait(): Promise<ProcessOutput> {
-    return this.finished
+    return this.finished;
   }
 
   /**
@@ -139,22 +139,27 @@ export class Process {
    * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
    */
   async sendStdin(data: string, opts?: CallOpts): Promise<void> {
-    await this.session.call(processService, 'stdin', [this.processID, data], opts)
+    await this.sandbox.call(
+      processService,
+      "stdin",
+      [this.processID, data],
+      opts,
+    );
   }
 }
 export interface ProcessOpts {
-  cmd: string
-  onStdout?: (out: ProcessMessage) => void
-  onStderr?: (out: ProcessMessage) => void
-  onExit?: () => void
-  envVars?: EnvVars
-  cwd?: string
+  cmd: string;
+  onStdout?: (out: ProcessMessage) => void;
+  onStderr?: (out: ProcessMessage) => void;
+  onExit?: () => void;
+  envVars?: EnvVars;
+  cwd?: string;
   /** @deprecated use cwd instead */
-  rootDir?: string
-  processID?: string
-  timeout?: number
+  rootDir?: string;
+  processID?: string;
+  timeout?: number;
 }
 
 export interface ProcessManager {
-  readonly start: (opts: ProcessOpts) => Promise<Process>
+  readonly start: (opts: ProcessOpts) => Promise<Process>;
 }

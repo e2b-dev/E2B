@@ -1,4 +1,4 @@
-import { Session } from '../src'
+import { Sandbox } from '../src'
 import { expect, test, vi } from 'vitest'
 
 import { id } from './setup.mjs'
@@ -11,9 +11,9 @@ test.skip('no logs in console during very basic scenario', async () => {
     error: vi.spyOn(console, 'error'),
   }
 
-  const session = await Session.create({ id })
-  await session.filesystem.write('test.txt', 'Hello World')
-  await session.close()
+  const sandbox = await Sandbox.create({ id })
+  await sandbox.filesystem.write('test.txt', 'Hello World')
+  await sandbox.close()
 
   expect(consoleSpy.debug).toHaveBeenCalledTimes(0)
   expect(consoleSpy.info).toHaveBeenCalledTimes(2)
@@ -29,12 +29,12 @@ test.skip('warn logs in console during convoluted scenario', async () => {
     error: vi.spyOn(console, 'error'),
   }
 
-  const session = await Session.create({ id })
-  await session.close() // Note that we are intentionally closing and then trying to write
+  const sandbox = await Sandbox.create({ id })
+  await sandbox.close() // Note that we are intentionally closing and then trying to write
   const warnsAmount = consoleSpy.warn.mock.calls.length
 
   // void to explicitly not awaiting, we wanna check if logging is happening correctly during retries
-  void session.filesystem.read('/etc/hosts') // this should trigger retries
+  void sandbox.filesystem.read('/etc/hosts') // this should trigger retries
   setTimeout(() => {
     expect(consoleSpy.warn.mock.calls.length).toBeGreaterThan(warnsAmount) // should have logged a warning
   }, 2000) // wait for some retries to occur
@@ -53,12 +53,12 @@ test.skip('verbose & info logs in console when opted-in', async () => {
     error: console.error,
   }
 
-  const session = await Session.create({
+  const sandbox = await Sandbox.create({
     id,
     logger,
   })
-  await session.filesystem.write('test.txt', 'Hello World')
-  await session.close()
+  await sandbox.filesystem.write('test.txt', 'Hello World')
+  await sandbox.close()
 
   expect(consoleSpy.info).toHaveBeenCalled()
   expect(consoleSpy.error).toHaveBeenCalledTimes(0)

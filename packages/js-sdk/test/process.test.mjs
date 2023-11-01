@@ -1,15 +1,15 @@
-import { Session } from '../src'
+import { Sandbox } from '../src'
 import { expect, test, vi } from 'vitest'
 
 import { id } from './setup.mjs'
 
 test('process on stdout/stderr', async () => {
-  const session = await Session.create({ id })
+  const sandbox = await Sandbox.create({ id })
 
   const stdout = []
   const stderr = []
 
-  const process = await session.process.start({
+  const process = await sandbox.process.start({
     cmd: 'pwd',
     onStdout: data => stdout.push(data),
     onStderr: data => stderr.push(data),
@@ -24,7 +24,7 @@ test('process on stdout/stderr', async () => {
   expect(stdout.map(message => message.line)).toEqual(['/tmp'])
   expect(stderr).toEqual([])
   expect(process.output.exitCode).toEqual(0)
-  await session.close()
+  await sandbox.close()
 })
 
 test('process expected stdout', async () => {
@@ -36,11 +36,11 @@ test('process expected stderr', async () => {
 })
 
 test('process on exit', async () => {
-  const session = await Session.create({ id })
+  const sandbox = await Sandbox.create({ id })
 
   const onExit = vi.fn(() => { })
 
-  const process = await session.process.start({
+  const process = await sandbox.process.start({
     cmd: 'pwd',
     onExit,
   })
@@ -48,13 +48,13 @@ test('process on exit', async () => {
   await process.finished
   expect(onExit).toHaveBeenCalled()
 
-  await session.close()
+  await sandbox.close()
 })
 
 test('process send stdin', async () => {
-  const session = await Session.create({ id })
+  const sandbox = await Sandbox.create({ id })
 
-  const process = await session.process.start({
+  const process = await sandbox.process.start({
     cmd: 'read -r line; echo "$line"',
     cwd: '/code',
   })
@@ -68,37 +68,37 @@ test('process send stdin', async () => {
   // assert.equal(message.line, "ping")
   // assert.equal(message.error, false)
 
-  await session.close()
+  await sandbox.close()
 }, 10000)
 
 test('test default on exit', async () => {
   const onExit = vi.fn(() => { })
 
-  const session = await Session.create({ id, onExit })
-  const processOverride = await session.process.start({
+  const sandbox = await Sandbox.create({ id, onExit })
+  const processOverride = await sandbox.process.start({
     cmd: 'pwd',
     onExit: console.log,
   })
   await processOverride.finished
   expect(onExit).not.toHaveBeenCalled()
 
-  const process = await session.process.start({
+  const process = await sandbox.process.start({
     cmd: 'pwd',
   })
 
   await process.finished
   expect(onExit).toHaveBeenCalled()
 
-  await session.close()
+  await sandbox.close()
 })
 
 test('test default on stdout/stderr', async () => {
   const onStdout = vi.fn(() => { })
   const onStderr = vi.fn(() => { })
 
-  const session = await Session.create({ id: 'Nodejs', onStdout, onStderr })
+  const sandbox = await Sandbox.create({ id: 'Nodejs', onStdout, onStderr })
 
-  const processOverride = await session.process.start({
+  const processOverride = await sandbox.process.start({
     cmd: "node -e \"console.log('Hello'); throw new Error('Ooopsie -_-')\"",
     onStdout: () => { },
     onStderr: () => { },
@@ -108,7 +108,7 @@ test('test default on stdout/stderr', async () => {
   expect(onStdout).not.toHaveBeenCalled()
   expect(onStderr).not.toHaveBeenCalled()
 
-  const process = await session.process.start({
+  const process = await sandbox.process.start({
     cmd: "node -e \"console.log('Hello'); throw new Error('Ooopsie -_-')\"",
   })
 
@@ -117,5 +117,5 @@ test('test default on stdout/stderr', async () => {
   expect(onStderr).toHaveBeenCalled()
   expect(process.output.exitCode).toEqual(1)
 
-  await session.close()
+  await sandbox.close()
 }, 10000)
