@@ -1,3 +1,5 @@
+import { Sandbox } from './sandbox'
+
 export { default as api, withAPIKey, withAccessToken } from './api'
 export type { ClientType, components, paths } from './api'
 
@@ -23,3 +25,5 @@ export type { EnvVars } from './sandbox/envVars'
 export { runCode, CodeRuntime } from './runCode' // Export CodeRuntime enum as value, not as type, so it can be actually used in consumer code
 // export { runCmd } from './runCmd'
 export { DataAnalysis } from './templates/dataAnalysis'
+
+export default Sandbox
