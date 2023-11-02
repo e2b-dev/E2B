@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"slices"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
@@ -14,9 +13,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-var publicEnvs = []string{
-	"base",
-	"Python3-DataAnalysis",
+// TODO: Update envIDs
+var publicEnvs map[string]string = map[string]string{
+	"base":                 "<id>",
+	"Python3-DataAnalysis": "<id>",
 }
 
 func (a *APIStore) PostInstances(
@@ -35,7 +35,9 @@ func (a *APIStore) PostInstances(
 	// Get team id from context, use TeamIDContextKey
 	teamID := c.Value(constants.TeamIDContextKey).(string)
 
-	if !slices.Contains(publicEnvs, envID) {
+	// Check if envID is in publicEnvs
+	originalEnvID, ok := publicEnvs[envID]
+	if !ok {
 		hasAccess, checkErr := a.CheckTeamAccessEnv(envID, teamID, true)
 		if checkErr != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", checkErr))
@@ -48,9 +50,17 @@ func (a *APIStore) PostInstances(
 
 			return
 		}
+	} else {
+		telemetry.SetAttributes(ctx,
+			attribute.String("instance.alias_id", envID),
+		)
+		envID = originalEnvID
 	}
 
-	telemetry.SetAttributes(ctx, attribute.String("instance.team_id", teamID))
+	telemetry.SetAttributes(ctx,
+		attribute.String("instance.team_id", teamID),
+		attribute.String("instance.env_id", envID),
+	)
 
 	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID)
 	if instanceErr != nil {
