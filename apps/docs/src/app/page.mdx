@@ -50,7 +50,7 @@ pip install e2b
 import { Sandbox } from '@e2b/sdk'
 
 // 2. Get your Sandbox session
-const sandbox = await Sandbox({
+const sandbox = await Sandbox.create({
   // or you can pass your own sandbox template id
   id: 'base',
 })
