@@ -50,15 +50,21 @@ jobs:
               - 'packages/cluster-disk-image/**'
               - '.github/workflows/cluster-disk-image.yml'
             api:
+              - 'packages/shared/**'
               - 'packages/api/**'
               - '.github/workflows/api.yml'
+              - 'api.Dockerfile'
+              - '.dockerignore'
             envd:
+              - 'packages/shared/**'
               - 'packages/envd/**'
               - '.github/workflows/envd.yml'
             env-instance-task-driver:
+              - 'packages/shared/**'
               - 'packages/env-instance-task-driver/**'
               - '.github/workflows/env-instance-task-driver.yml'
             env-build-task-driver:
+              - 'packages/shared/**'
               - 'packages/env-build-task-driver/**'
               - '.github/workflows/env-build-task-driver.yml'
             version:
