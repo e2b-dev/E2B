@@ -4,14 +4,7 @@ export enum CodeRuntime {
   Node16 = 'Node16',
   Python3 = 'Python3',
   Bash = 'Bash',
-  Python3_DataAnalysis = 'Python3_DataAnalysis',
-  // TODO: Support all runtimes that our infra supports
-  // DotNET = 'DotNET',
-  // Go = 'Go',
-  // Java = 'Java',
-  // Perl = 'Perl',
-  // PHP = 'PHP',
-  // Rust = 'Rust',
+  Python3_DataAnalysis = 'Python3-DataAnalysis',
 }
 
 /**
@@ -49,7 +42,7 @@ export async function runCode(
       filepath = '/main.py'
       break
     case CodeRuntime.Python3_DataAnalysis:
-      envID = 'YI58BPyX5KrK'
+      envID = 'Python3-DataAnalysis'
       binary = 'python3'
       filepath = '/main.py'
       break

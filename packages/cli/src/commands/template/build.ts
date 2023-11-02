@@ -233,13 +233,19 @@ async function waitForBuildFinish(
           process.stdout.write(asBuildLogs(line)),
         )
         throw new Error(
-          `\nBuilding sandbox template ${asFormattedSandboxTemplate(
+          `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
             template.data,
           )} failed.\n`,
         )
     }
   } while (template.data.status === 'building' && elapsed() < maxBuildTime)
-  //   TODO: add timeout
+  if (template.data.status !== 'building') {
+    throw new Error(
+      `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
+        template.data,
+      )} timed out.\n`,
+    )
+  }
 }
 
 function loadFile(filePath: string) {
