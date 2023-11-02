@@ -16,7 +16,7 @@ import (
 // TODO: Update envIDs
 var publicEnvs map[string]string = map[string]string{
 	"base":                 "rki5dems9wqfm4r03t7g",
-	"Python3-DataAnalysis": "z0kev9pl8n9n79fvppqe",
+	"Python3-DataAnalysis": "fv7bfqp4wyo42829htzt",
 }
 
 func (a *APIStore) PostInstances(
