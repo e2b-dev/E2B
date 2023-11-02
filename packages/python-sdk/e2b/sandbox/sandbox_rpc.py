@@ -102,7 +102,6 @@ class SandboxRpc(BaseModel):
             ).run(),
         )
         self._process_cleanup.append(websocket_task.cancel)
-        self._process_cleanup.append(loop.stop)
         self._process_cleanup.append(lambda: shutdown_executor(executor))
 
         logger.info("WebSocket waiting to start")
@@ -110,6 +109,9 @@ class SandboxRpc(BaseModel):
         signaled = started.wait(timeout=timeout)
         if not signaled:
             logger.error("WebSocket failed to start")
+            if loop.is_running():
+                loop.stop()
+
             self.close()
             raise TimeoutException("WebSocket failed to start")
 
