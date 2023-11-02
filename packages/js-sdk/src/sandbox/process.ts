@@ -32,6 +32,8 @@ export class ProcessOutput {
 
   private _error = false
 
+  private _exitCode?: number
+
   /**
    * Whether the process has errored.
    */
@@ -39,7 +41,6 @@ export class ProcessOutput {
     return this._error
   }
 
-  private _exitCode?: number
 
   /**
    * The exit code of the process.
@@ -153,7 +154,7 @@ export interface ProcessOpts {
   cmd: string;
   onStdout?: (out: ProcessMessage) => void;
   onStderr?: (out: ProcessMessage) => void;
-  onExit?: () => void;
+  onExit?: (code: number) => void;
   envVars?: EnvVars;
   cwd?: string;
   /** @deprecated use cwd instead */

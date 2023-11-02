@@ -158,25 +158,25 @@ export class Sandbox extends SandboxConnection {
     // Init Terminal handler
     this.terminal = {
       start: async ({
-                      onData,
-                      size,
-                      onExit,
-                      envVars,
-                      cmd,
-                      cwd = '',
-                      terminalID = id(12),
-                      timeout = undefined,
-                    }: TerminalOpts) => {
+        onData,
+        size,
+        onExit,
+        envVars,
+        cmd,
+        cwd = '',
+        terminalID = id(12),
+        timeout = undefined,
+      }: TerminalOpts) => {
         const start = async ({
-                               onData,
-                               size,
-                               onExit,
-                               envVars,
-                               cmd,
-                               cwd = '',
-                               rootDir,
-                               terminalID = id(12),
-                             }: Omit<TerminalOpts, 'timeout'>) => {
+          onData,
+          size,
+          onExit,
+          envVars,
+          cmd,
+          cwd = '',
+          rootDir,
+          terminalID = id(12),
+        }: Omit<TerminalOpts, 'timeout'>) => {
           this.logger.debug?.(`Starting terminal "${terminalID}"`)
           if (!cwd && rootDir) {
             this.logger.warn?.(
@@ -265,15 +265,15 @@ export class Sandbox extends SandboxConnection {
     this.process = {
       start: async (opts: ProcessOpts) => {
         const start = async ({
-                               cmd,
-                               onStdout,
-                               onStderr,
-                               onExit,
-                               envVars = {},
-                               cwd = '',
-                               rootDir,
-                               processID = id(12),
-                             }: Omit<ProcessOpts, 'timeout'>) => {
+          cmd,
+          onStdout,
+          onStderr,
+          onExit,
+          envVars = {},
+          cwd = '',
+          rootDir,
+          processID = id(12),
+        }: Omit<ProcessOpts, 'timeout'>) => {
           if (!cwd && rootDir) {
             this.logger.warn?.(
               'The rootDir parameter is deprecated, use cwd instead.',
@@ -361,7 +361,7 @@ export class Sandbox extends SandboxConnection {
             }
 
             if (onExit) {
-              onExit()
+              onExit(output.exitCode || 0)
             } else if ((this.opts as SandboxOpts).onExit) {
               // @ts-expect-error TS2339
               this.opts.onExit()
