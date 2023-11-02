@@ -2,7 +2,7 @@ from e2b import Sandbox
 
 
 def test_env_vars():
-    sandbox = Sandbox("Nodejs")
+    sandbox = Sandbox()
 
     process = sandbox.process.start("echo $FOO", env_vars={"FOO": "BAR"})
     process.wait()
@@ -13,7 +13,7 @@ def test_env_vars():
 
 
 def test_profile_env_vars():
-    sandbox = Sandbox("Nodejs")
+    sandbox = Sandbox()
 
     sandbox.filesystem.write("/home/user/.profile", "export FOO=BAR")
     process = sandbox.process.start("echo $FOO")
@@ -25,7 +25,7 @@ def test_profile_env_vars():
 
 
 def test_default_env_vars():
-    sandbox = Sandbox("Nodejs", env_vars={"FOO": "BAR"})
+    sandbox = Sandbox(env_vars={"FOO": "BAR"})
     process = sandbox.process.start("echo $FOO")
     process.wait()
     output = process.stdout
@@ -35,7 +35,7 @@ def test_default_env_vars():
 
 
 def test_overriding_env_vars():
-    sandbox = Sandbox("Bash", env_vars={"FOO": "BAR"})
+    sandbox = Sandbox(env_vars={"FOO": "BAR"})
 
     process = sandbox.process.start("echo $FOO", env_vars={"FOO": "QUX"})
     process.wait()

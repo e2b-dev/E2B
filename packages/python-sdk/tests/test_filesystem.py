@@ -8,7 +8,7 @@ from e2b import Sandbox, FilesystemEvent
 
 
 def test_list_files():
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
     sandbox.filesystem.make_dir("/test/new")
 
     ls = sandbox.filesystem.list("/test")
@@ -18,7 +18,7 @@ def test_list_files():
 
 
 def test_create_file():
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
     sandbox.filesystem.make_dir("/test")
     sandbox.filesystem.write("/test/test.txt", "Hello World!")
 
@@ -29,7 +29,7 @@ def test_create_file():
 
 
 def test_read_and_write():
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
 
     sandbox.filesystem.write("/tmp/test.txt", "Hello World!")
 
@@ -40,7 +40,7 @@ def test_read_and_write():
 
 
 def test_list_delete_files():
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
     sandbox.filesystem.make_dir("/test/new")
 
     ls = sandbox.filesystem.list("/test")
@@ -55,7 +55,7 @@ def test_list_delete_files():
 
 
 def test_watch_dir():
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
     sandbox.filesystem.write("/tmp/test.txt", "Hello")
 
     watcher = sandbox.filesystem.watch_dir("/tmp")
@@ -88,7 +88,7 @@ def test_write_bytes():
     # TODO: This test isn't complete since we can't verify the size of the file inside sandbox.
     # We don't have any SDK function to get the size of a file inside sandbox.
 
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
 
     # Upload the file
     with open(local_path, "rb") as f:
@@ -113,7 +113,7 @@ def test_read_bytes():
     # TODO: This test isn't complete since we can't verify the size of the file inside sandbox.
     # We don't have any SDK function to get the size of a file inside sandbox.
 
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
 
     # Upload the file first
     with open(local_path, "rb") as f:

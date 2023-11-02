@@ -14,7 +14,7 @@ def test_process_expected_stderr():
 
 
 def test_process_on_stdout_stderr():
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
 
     stdout = []
     stderr = []
@@ -39,13 +39,13 @@ def test_process_on_stdout_stderr():
 
 
 def test_process_on_exit():
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
 
     on_exit = MagicMock()
 
     proc = sandbox.process.start(
         "pwd",
-        on_exit=lambda: on_exit(),
+        on_exit=lambda exit_code: on_exit(exit_code),
     )
 
     proc.wait()
@@ -55,7 +55,7 @@ def test_process_on_exit():
 
 
 def test_process_send_stdin():
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
 
     proc = sandbox.process.start(
         'read -r line; echo "$line"',
@@ -77,7 +77,7 @@ def test_process_send_stdin():
 def test_default_on_exit():
     on_exit = MagicMock()
 
-    sandbox = Sandbox("Bash", on_exit=lambda: on_exit())
+    sandbox = Sandbox(on_exit=lambda exit_code: on_exit(exit_code))
     proc = sandbox.process.start(
         "pwd",
         on_exit=lambda: print("EXIT"),
@@ -99,7 +99,6 @@ def test_process_default_on_stdout_stderr():
     on_stderr = MagicMock()
 
     sandbox = Sandbox(
-        "Nodejs",
         on_stdout=lambda data: on_stdout(),
         on_stderr=lambda data: on_stderr(),
     )

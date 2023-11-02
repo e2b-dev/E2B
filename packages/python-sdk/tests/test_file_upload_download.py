@@ -10,7 +10,7 @@ def test_download():
 
     local_path = path.join(local_dir, file_name)
 
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
 
     # Upload the file first (it's uploaded to /home/user)
     with open(local_path, "rb") as f:

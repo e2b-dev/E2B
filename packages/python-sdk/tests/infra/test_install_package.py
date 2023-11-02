@@ -2,7 +2,7 @@ from e2b import Sandbox
 
 
 def test_python_package():
-    sandbox = Sandbox("Python3")
+    sandbox = Sandbox()
 
     process = sandbox.process.start("pip install pip-install-test")
     process.wait()

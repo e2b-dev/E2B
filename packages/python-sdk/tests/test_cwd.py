@@ -3,7 +3,7 @@ from e2b import Sandbox
 
 
 def test_process_cwd():
-    sandbox = Sandbox("Bash", cwd="/code/app")
+    sandbox = Sandbox(cwd="/code/app")
 
     proc = sandbox.process.start("pwd")
     output = proc.wait()
@@ -12,7 +12,7 @@ def test_process_cwd():
 
 
 def test_filesystem_cwd():
-    sandbox = Sandbox("Bash", cwd="/code/app")
+    sandbox = Sandbox(cwd="/code/app")
 
     sandbox.filesystem.write("hello.txt", "Hello VM!")
     proc = sandbox.process.start("cat /code/app/hello.txt")
@@ -23,7 +23,7 @@ def test_filesystem_cwd():
 
 
 def test_change_cwd():
-    sandbox = Sandbox("Bash", cwd="/code/app")
+    sandbox = Sandbox(cwd="/code/app")
 
     # change dir to /home/user
     sandbox.cwd = "/home/user"
@@ -43,7 +43,7 @@ def test_change_cwd():
 
 
 def test_initial_cwd_with_tilde():
-    sandbox = Sandbox("Bash", cwd="~/code/")
+    sandbox = Sandbox(cwd="~/code/")
 
     proc = sandbox.process.start("pwd")
     output = proc.wait()
@@ -53,7 +53,7 @@ def test_initial_cwd_with_tilde():
 
 
 def test_relative_paths():
-    sandbox = Sandbox("Bash", cwd="/home/user")
+    sandbox = Sandbox(cwd="/home/user")
 
     sandbox.filesystem.make_dir("./code")
     sandbox.filesystem.write("./code/hello.txt", "Hello Vasek!")
@@ -70,7 +70,7 @@ def test_relative_paths():
 
 
 def test_warnings():
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
 
     with pytest.warns(Warning):
         sandbox.filesystem.write("./hello.txt", "Hello Vasek!")

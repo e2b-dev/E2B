@@ -2,7 +2,7 @@ from e2b import Sandbox
 
 
 def test_homedir():
-    sandbox = Sandbox("Bash")
+    sandbox = Sandbox()
 
     process = sandbox.process.start("echo $HOME")
     process.wait()

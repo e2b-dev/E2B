@@ -8,7 +8,7 @@ def test_create_sandbox_timeout():
     sandbox: Sandbox | None = None
 
     with pytest.raises(TimeoutException):
-        sandbox = Sandbox("Bash", timeout=0.01)
+        sandbox = Sandbox(timeout=0.01)
 
     if sandbox:
         sandbox.close()
@@ -18,7 +18,7 @@ def test_process_timeout():
     sandbox: Sandbox | None = None
 
     with pytest.raises(TimeoutException):
-        sandbox = Sandbox("Bash")
+        sandbox = Sandbox()
         sandbox.process.start(
             "sleep 1",
             timeout=0.01,
@@ -32,7 +32,7 @@ def test_filesystem_timeout():
     sandbox: Sandbox | None = None
 
     with pytest.raises(TimeoutException):
-        sandbox = Sandbox("Bash")
+        sandbox = Sandbox()
         sandbox.filesystem.write(
             "test.txt",
             "Hello World",
