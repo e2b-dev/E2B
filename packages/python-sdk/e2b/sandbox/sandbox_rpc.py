@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 
@@ -16,7 +17,7 @@ from websockets.typing import Data
 from e2b.constants import TIMEOUT
 from e2b.sandbox.exception import RpcException, TimeoutException
 from e2b.sandbox.websocket_client import WebSocket
-from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
+from e2b.utils.future import DeferredFuture, run_async_func_in_loop
 from e2b.utils.threads import shutdown_executor
 
 logger = logging.getLogger(__name__)
@@ -73,7 +74,8 @@ class SandboxRpc(BaseModel):
             self._receive_message(data)
             self._queue_out.task_done()
 
-    def connect(self):
+    def connect(self, timeout: Optional[float] = None):
+        timeout = timeout or TIMEOUT
         started = Event()
         stopped = Event()
         self._process_cleanup.append(stopped.set)
@@ -87,8 +89,10 @@ class SandboxRpc(BaseModel):
         self._process_cleanup.append(lambda: shutdown_executor(messages_executor))
 
         executor = ThreadPoolExecutor(thread_name_prefix="e2b-websocket")
+        loop = asyncio.new_event_loop()
         websocket_task = executor.submit(
-            run_async_func_in_new_loop,
+            run_async_func_in_loop,
+            loop,
             WebSocket(
                 url=self.url,
                 queue_in=self._queue_in,
@@ -98,10 +102,17 @@ class SandboxRpc(BaseModel):
             ).run(),
         )
         self._process_cleanup.append(websocket_task.cancel)
+        self._process_cleanup.append(loop.stop)
         self._process_cleanup.append(lambda: shutdown_executor(executor))
 
         logger.info("WebSocket waiting to start")
-        started.wait()
+
+        signaled = started.wait(timeout=timeout)
+        if not signaled:
+            logger.error("WebSocket failed to start")
+            self.close()
+            raise TimeoutException("WebSocket failed to start")
+
         logger.info("WebSocket started")
 
     def send_message(
@@ -110,7 +121,7 @@ class SandboxRpc(BaseModel):
         params: List[Any],
         timeout: Optional[float],
     ) -> Any:
-        timeout = TIMEOUT if timeout is None else timeout
+        timeout = timeout or TIMEOUT
 
         id = next(self._id_generator)
         request = request_json(method, params, id)

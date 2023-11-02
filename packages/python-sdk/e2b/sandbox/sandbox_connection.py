@@ -212,10 +212,7 @@ class SandboxConnection:
                 url=sandbox_url,
                 on_message=self._handle_notification,
             )
-            self._rpc.connect()
-        except TimeoutError as e:
-            print(e)
-            raise e
+            self._rpc.connect(timeout=timeout)
         except Exception as e:
             print(e)
             self._close()
