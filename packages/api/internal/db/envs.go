@@ -53,7 +53,7 @@ func (db *DB) GetEnv(envID string, teamID string) (result *api.Environment, err 
 		return nil, fmt.Errorf("failed to parse teamID: %w", err)
 	}
 
-	dbEnv, err := db.Client.Env.Query().Where(env.Or(env.ID(envID), env.Public(true)), env.TeamID(id)).Only(db.ctx)
+	dbEnv, err := db.Client.Env.Query().Where(env.ID(envID), env.Or(env.TeamID(id), env.Public(true))).Only(db.ctx)
 	if err != nil {
 		return nil, ErrEnvNotFound
 	}
