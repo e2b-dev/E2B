@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
@@ -12,6 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 )
+
+var publicEnvs = []string{
+	"base",
+	"Python3-DataAnalysis",
+}
 
 func (a *APIStore) PostInstances(
 	c *gin.Context,
@@ -29,17 +35,19 @@ func (a *APIStore) PostInstances(
 	// Get team id from context, use TeamIDContextKey
 	teamID := c.Value(constants.TeamIDContextKey).(string)
 
-	hasAccess, err := a.CheckTeamAccessEnv(envID, teamID, true)
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", err))
+	if !slices.Contains(publicEnvs, envID) {
+		hasAccess, checkErr := a.CheckTeamAccessEnv(envID, teamID, true)
+		if checkErr != nil {
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", checkErr))
 
-		return
-	}
+			return
+		}
 
-	if !hasAccess {
-		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
+		if !hasAccess {
+			a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
 
-		return
+			return
+		}
 	}
 
 	telemetry.SetAttributes(ctx, attribute.String("instance.team_id", teamID))
