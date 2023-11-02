@@ -207,7 +207,7 @@ class ProcessManager:
         sandbox: SandboxConnection,
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Callable[[], Any]] = None,
+        on_exit: Optional[Callable[[int], Any]] = None,
     ):
         self._sandbox = sandbox
         self._process_cleanup: List[Callable[[], Any]] = []
@@ -226,7 +226,7 @@ class ProcessManager:
         cmd: str,
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Callable[[], Any]] = None,
+        on_exit: Optional[Callable[[int], Any]] = None,
         env_vars: Optional[EnvVars] = None,
         cwd: str = "",
         rootdir: str = "",  # DEPRECATED
@@ -320,7 +320,7 @@ class ProcessManager:
                 unsub_all()
             if on_exit:
                 try:
-                    on_exit()
+                    on_exit(output.exit_code or 0)
                 except TypeError as error:
                     logger.exception(f"Error in on_exit callback: {error}")
             future_exit_handler_finish(output)
