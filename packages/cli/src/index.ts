@@ -7,7 +7,10 @@ import { program } from './commands'
 
 export const pkg = packageJSON
 
-updateNotifier.default({ pkg }).notify()
+updateNotifier.default({
+  pkg,
+  updateCheckInterval: 1000 * 60 * 60 * 8 // 12 hours, 
+}).notify()
 
 program
   .version(packageJSON.version, undefined, 'Display E2B CLI version')
