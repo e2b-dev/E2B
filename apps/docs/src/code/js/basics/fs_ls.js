@@ -1,12 +1,12 @@
-import { Sandbox } from "@e2b/sdk";
+import {Sandbox} from '@e2b/sdk'
 
 const sandbox = await Sandbox.create({
-  id: "base"
-});
+  id: 'base',
+})
 
-const dirContent = await sandbox.filesystem.list("/"); // $HighlightLine
+const dirContent = await sandbox.filesystem.list('/') // $HighlightLine
 dirContent.forEach((item) => {
-  console.log(item.name);
-});
+  console.log(item.name)
+})
 
-await sandbox.close();
+await sandbox.close()

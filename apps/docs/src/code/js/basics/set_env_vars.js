@@ -1,8 +1,8 @@
-import { Sandbox } from "@e2b/sdk";
+import {Sandbox} from '@e2b/sdk'
 
 const sandbox = await Sandbox.create({
-  id: "base",
-  envVars: { FOO: "Hello" } // $HighlightLine
-});
+  id: 'base',
+  envVars: {FOO: 'Hello'}, // $HighlightLine
+})
 
-await sandbox.close();
+await sandbox.close()

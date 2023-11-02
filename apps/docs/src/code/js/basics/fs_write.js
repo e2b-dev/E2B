@@ -1,6 +1,6 @@
-import { Sandbox } from "@e2b/sdk";
+import {Sandbox} from '@e2b/sdk'
 
-const sandbox = await Sandbox.create({ id: "base" });
+const sandbox = await Sandbox.create({id: 'base'})
 
 // `filesystem.write()` will:
 // - create the file if it doesn't exist
@@ -8,9 +8,9 @@ const sandbox = await Sandbox.create({ id: "base" });
 // - overwrite the file if it exists
 
 // Write the content of the file '/hello.txt'
-await sandbox.filesystem.write("/hello.txt", "Hello World!"); // $HighlightLine
+await sandbox.filesystem.write('/hello.txt', 'Hello World!') // $HighlightLine
 
 // The following would fail because '/dir' doesn't exist
 // await sandbox.filesystem.write("/dir/hello.txt", "Hello World!")
 
-await sandbox.close();
+await sandbox.close()

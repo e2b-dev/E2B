@@ -1,10 +1,10 @@
-import { Sandbox } from "@e2b/sdk";
-import fs from "node:fs";
+import {Sandbox} from '@e2b/sdk'
+import fs from 'node:fs'
 
-const sandbox = await Sandbox.create({ id: "base" });
+const sandbox = await Sandbox.create({id: 'base'})
 
-const buffer = await sandbox.downloadFile("path/to/remote/file/inside/sandbox"); // $HighlightLine
+const buffer = await sandbox.downloadFile('path/to/remote/file/inside/sandbox') // $HighlightLine
 // Save file to local filesystem
-fs.writeFileSync("path/to/local/file", buffer);
+fs.writeFileSync('path/to/local/file', buffer)
 
-await sandbox.close();
+await sandbox.close()

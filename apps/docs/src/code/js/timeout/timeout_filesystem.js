@@ -1,16 +1,16 @@
-import { Sandbox } from "@e2b/sdk";
+import {Sandbox} from '@e2b/sdk'
 
-const sandbox = await Sandbox.create({ id: "base" });
+const sandbox = await Sandbox.create({id: 'base'})
 
 // Timeout 3s for the write operation
-await sandbox.filesystem.write("hello.txt", "Hello World!", { timeout: 3000 }); // $HighlightLine
+await sandbox.filesystem.write('hello.txt', 'Hello World!', {timeout: 3000}) // $HighlightLine
 
 // Timeout 3s for the list operation
-const files = await sandbox.filesystem.list(".", { timeout: 3000 }); // $HighlightLine
-console.log(files);
+const files = await sandbox.filesystem.list('.', {timeout: 3000}) // $HighlightLine
+console.log(files)
 
 // Timeout 3s for the read operation
-const content = await sandbox.filesystem.read("hello.txt", { timeout: 3000 }); // $HighlightLine
-console.log(content);
+const content = await sandbox.filesystem.read('hello.txt', {timeout: 3000}) // $HighlightLine
+console.log(content)
 
-await sandbox.close();
+await sandbox.close()

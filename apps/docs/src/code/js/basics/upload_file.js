@@ -1,12 +1,12 @@
-import { Sandbox } from "@e2b/sdk";
-import fs from "node:fs";
+import {Sandbox} from '@e2b/sdk'
+import fs from 'node:fs'
 
-const sandbox = await Sandbox.create({ id: "base" });
+const sandbox = await Sandbox.create({id: 'base'})
 
 // If you're in the server environment
-const filename = "data.csv"; // $HighlightLine
-const fileBuffer = fs.readFileSync("path/to/local/file"); // $HighlightLine
-const remotePath = await sandbox.uploadFile(fileBuffer, filename); // $HighlightLine
+const filename = 'data.csv' // $HighlightLine
+const fileBuffer = fs.readFileSync('path/to/local/file') // $HighlightLine
+const remotePath = await sandbox.uploadFile(fileBuffer, filename) // $HighlightLine
 
 // If you're in the browser environment, you can use the Blob API
 // const filename = 'data.csv'
@@ -19,7 +19,7 @@ const remotePath = await sandbox.uploadFile(fileBuffer, filename); // $Highlight
 // const remotePath = await sandbox.uploadFile(fileBlob, 'data.csv')
 
 console.log(
-  `The file was uploaded to '${remotePath}' path inside the sandbox `
-);
+  `The file was uploaded to '${remotePath}' path inside the sandbox `,
+)
 
-await sandbox.close();
+await sandbox.close()

@@ -1,19 +1,19 @@
-import { Sandbox } from "@e2b/sdk";
+import {Sandbox} from '@e2b/sdk'
 
 const sandbox = await Sandbox.create({
-  id: "base",
-  onExit: () => console.log("[sandbox]", "process ended") // $HighlightLine
-});
+  id: 'base',
+  onExit: () => console.log('[sandbox]', 'process ended'), // $HighlightLine
+})
 
-const proc = await sandbox.process.start({ cmd: 'echo "Hello World!"' });
-await proc.wait();
+const proc = await sandbox.process.start({cmd: 'echo "Hello World!"'})
+await proc.wait()
 // output: [sandbox] process ended
 
 const procWithCustomHandler = await sandbox.process.start({
   cmd: 'echo "Hello World!"',
-  onExit: () => console.log("[process]", "process ended") // $HighlightLine
-});
-await procWithCustomHandler.wait();
+  onExit: () => console.log('[process]', 'process ended'), // $HighlightLine
+})
+await procWithCustomHandler.wait()
 // output: [process] process ended
 
-await sandbox.close();
+await sandbox.close()
