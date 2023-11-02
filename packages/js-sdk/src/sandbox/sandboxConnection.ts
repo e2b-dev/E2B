@@ -34,7 +34,7 @@ export interface Logger {
 }
 
 export interface SandboxConnectionOpts {
-  id: string;
+  id?: string;
   apiKey?: string;
   cwd?: string;
   envVars?: EnvVars;
@@ -91,6 +91,10 @@ export class SandboxConnection {
       error: console.error,
     }
     this.logger.info?.(`Sandbox "${opts.id}" initialized`)
+  }
+
+  private get templateID(): string {
+    return this.opts.id || 'base'
   }
 
   /**
@@ -172,7 +176,7 @@ export class SandboxConnection {
       if (!this.opts.__debug_hostname) {
         try {
           const res = await createSandbox(this.apiKey, {
-            envID: this.opts.id,
+            envID: this.templateID,
           })
 
           this.sandbox = res.data
@@ -214,8 +218,7 @@ export class SandboxConnection {
       this.rpc.onError((err) => {
         // not warn, because this is somewhat expected behaviour during initialization
         this.logger.debug?.(
-          `Error in WebSocket of sandbox "${this.sandbox?.instanceID}": ${
-            err.message ?? err.code ?? err.toString()
+          `Error in WebSocket of sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
           }. Trying to reconnect...`,
         )
       })
@@ -265,8 +268,7 @@ export class SandboxConnection {
           } catch (err: any) {
             // not warn, because this is somewhat expected behaviour during initialization
             this.logger.debug?.(
-              `Failed reconnecting to sandbox "${this.sandbox?.instanceID}": ${
-                err.message ?? err.code ?? err.toString()
+              `Failed reconnecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
               }`,
             )
           }
@@ -287,8 +289,7 @@ export class SandboxConnection {
       } catch (err: any) {
         // not warn, because this is somewhat expected behaviour during initialization
         this.logger.debug?.(
-          `Error connecting to sandbox "${this.sandbox?.instanceID}": ${
-            err.message ?? err.code ?? err.toString()
+          `Error connecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
           }`,
         )
       }
@@ -332,8 +333,8 @@ export class SandboxConnection {
       return results.map((r) =>
         r.status === 'fulfilled' ? r.value : undefined,
       ) as {
-        [P in keyof T]: Awaited<T[P]>;
-      }
+          [P in keyof T]: Awaited<T[P]>;
+        }
     }
 
     await Promise.all(
@@ -370,8 +371,7 @@ export class SandboxConnection {
 
     if (typeof subID !== 'string') {
       throw new Error(
-        `Cannot subscribe to ${service}_${method}${
-          params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
+        `Cannot subscribe to ${service}_${method}${params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
         }. Expected response should have been a subscription ID, instead we got ${JSON.stringify(
           subID,
         )}`,
@@ -384,8 +384,7 @@ export class SandboxConnection {
       subID,
     })
     this.logger.debug?.(
-      `Subscribed to "${service}_${method}"${
-        params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
+      `Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
       } with id "${subID}"`,
     )
 
