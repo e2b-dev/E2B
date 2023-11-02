@@ -39,12 +39,12 @@ export async function runCode(
   let envID = ''
   switch (runtime) {
     case CodeRuntime.Node16:
-      envID = 'Nodejs'
+      envID = 'base'
       binary = 'node'
       filepath = '/index.js'
       break
     case CodeRuntime.Python3:
-      envID = 'Python3'
+      envID = 'base'
       binary = 'python3'
       filepath = '/main.py'
       break
@@ -54,7 +54,7 @@ export async function runCode(
       filepath = '/main.py'
       break
     case CodeRuntime.Bash:
-      envID = 'Bash'
+      envID = 'base'
       binary = 'bash'
       filepath = '/main.sh'
       break

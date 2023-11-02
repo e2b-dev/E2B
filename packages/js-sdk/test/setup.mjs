@@ -1,1 +1,1 @@
-export const id = 'Bash'
+export const id = 'base'

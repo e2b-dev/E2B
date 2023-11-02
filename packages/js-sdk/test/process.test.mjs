@@ -46,7 +46,7 @@ test('process on exit', async () => {
     onExit
   })
 
-  await process.finished
+  await process.wait()
   expect(onExit).toHaveBeenCalled()
 
   await sandbox.close()
@@ -60,7 +60,7 @@ test('process send stdin', async () => {
     cwd: '/code'
   })
   await process.sendStdin('ping\n')
-  await process.finished
+  await process.wait()
 
   expect(process.output.stdout).toEqual('ping')
   // TODO: Parity with Python SDK
@@ -88,7 +88,7 @@ test('test default on exit', async () => {
     cmd: 'pwd'
   })
 
-  await process.finished
+  await process.wait()
   expect(onExit).toHaveBeenCalled()
 
   await sandbox.close()
@@ -100,7 +100,7 @@ test('test default on stdout/stderr', async () => {
   const onStderr = vi.fn(() => {
   })
 
-  const sandbox = await Sandbox.create({ id: 'Nodejs', onStdout, onStderr })
+  const sandbox = await Sandbox.create({ id, onStdout, onStderr })
 
   const processOverride = await sandbox.process.start({
     cmd: 'node -e "console.log(\'Hello\'); throw new Error(\'Ooopsie -_-\')"',
@@ -110,7 +110,7 @@ test('test default on stdout/stderr', async () => {
     }
   })
 
-  await processOverride.finished
+  await processOverride.wait()
   expect(onStdout).not.toHaveBeenCalled()
   expect(onStderr).not.toHaveBeenCalled()
 
@@ -118,7 +118,7 @@ test('test default on stdout/stderr', async () => {
     cmd: 'node -e "console.log(\'Hello\'); throw new Error(\'Ooopsie -_-\')"'
   })
 
-  await process.finished
+  await process.wait()
   expect(onStdout).toHaveBeenCalledOnce()
   expect(onStderr).toHaveBeenCalled()
   expect(process.output.exitCode).toEqual(1)
