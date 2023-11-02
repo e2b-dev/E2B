@@ -1,6 +1,7 @@
 import {
   ChevronRightSquare,
   Cpu,
+  Database,
   DollarSign,
   FileDown,
   FileUp,
@@ -89,14 +90,35 @@ export const routes = [
       },
     ],
   },
-  // {
-  //   title: 'Sandbox Templates',
-  //   links: [
-  //     { title: 'Overview', href: '/sandbox/templates/overview' },
-  //     { title: 'Custom Template', href: '/sandbox/templates/custom' },
-  //     { title: 'Premade: Data Analysis', href: '/sandbox/templates/data-analysis' },
-  //   ],
-  // },
+  {
+    title: 'Sandbox Templates',
+    links: [
+      {
+        title: 'Overview',
+        href: '/sandbox/templates/overview',
+      },
+      {
+        icon: (
+          <ToyBrick
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Custom Template',
+        href: '/sandbox/templates/custom',
+      },
+      {
+        icon: (
+          <Database
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Premade: Data Analysis',
+        href: '/sandbox/templates/data-analysis',
+      },
+    ],
+  },
   {
     title: 'Sandbox API',
     links: [
@@ -221,21 +243,6 @@ export const routes = [
         ),
         title: 'Timeouts',
         href: '/sandbox/timeouts',
-      },
-    ],
-  },
-  {
-    title: 'Custom Sandbox',
-    links: [
-      {
-        icon: (
-          <ToyBrick
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Overview',
-        href: '/custom-envs/overview',
       },
     ],
   },
