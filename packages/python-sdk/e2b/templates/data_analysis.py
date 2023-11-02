@@ -84,8 +84,8 @@ class DataAnalysis(Sandbox):
 
         process = self.process.start(
             f"python {codefile_path}",
-            on_stdout=on_stdout,
-            on_stderr=on_stderr,
+            on_stdout=lambda out: on_stdout(out.line) if on_stdout else None,
+            on_stderr=lambda out: on_stderr(out.line) if on_stderr else None,
             on_exit=on_exit,
             env_vars=env_vars,
             cwd=cwd,

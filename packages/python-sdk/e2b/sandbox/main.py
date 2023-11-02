@@ -101,7 +101,10 @@ class Sandbox(SandboxConnection):
         self._terminal = TerminalManager(sandbox=self)
         self._filesystem = FilesystemManager(sandbox=self)
         self._process = ProcessManager(
-            sandbox=self, on_stdout=on_stdout, on_stderr=on_stderr, on_exit=on_exit
+            sandbox=self,
+            on_stdout=lambda out: on_stdout(out.line) if on_stdout else None,
+            on_stderr=lambda out: on_stderr(out.line) if on_stderr else None,
+            on_exit=on_exit,
         )
         super().__init__(
             id=id,

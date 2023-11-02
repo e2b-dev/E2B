@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 import logging
+
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from queue import Queue
 from threading import Event
-from typing import Any, Callable, Dict, Iterator, List, Union
-
+from typing import Any, Callable, Dict, Iterator, List, Union, Optional
 from jsonrpcclient import Error, Ok, request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
 from jsonrpcclient.responses import Response
@@ -105,8 +105,13 @@ class SandboxRpc(BaseModel):
         logger.info("WebSocket started")
 
     def send_message(
-        self, method: str, params: List[Any], timeout: float = TIMEOUT
+        self,
+        method: str,
+        params: List[Any],
+        timeout: Optional[float],
     ) -> Any:
+        timeout = TIMEOUT if timeout is None else timeout
+
         id = next(self._id_generator)
         request = request_json(method, params, id)
         future_reply = DeferredFuture(self._process_cleanup)
