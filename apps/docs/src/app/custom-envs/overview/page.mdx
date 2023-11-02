@@ -18,7 +18,7 @@ Here's a complete example of our prepared sandbox template for [Data Analysis](h
 
 You will need our CLI tool to build your own sandbox.
 
-## CLI tool
+### CLI tool
 
 The CLI is available as a npm package. You will need node>=18 on your machine.
 
@@ -26,20 +26,15 @@ The CLI is available as a npm package. You will need node>=18 on your machine.
 npm install -g @e2b/cli
 ```
 
-### Usage
-
-```bash
-e2b <command> [options]
-```
-
-We're using Docker to build your sandboxes, create a Dockerfile with all the dependencies you need.
+We're using Docker to build your sandboxes, create a Dockerfile with all files and dependencies you'll need.
 
 There are few limitations:
-- It must be based on Ubuntu
+- It must be based on Ubuntu {/* TODO: is this true? */}
 - Following commands doesn't work: ENTRYPOINT, EXPOSE
 
 {/* TODO: Anything else? */}
 
+### Build
 If you have your Dockerfile ready, just run the following command in the folder where your Dockerfile is located. The tool first tries to find `e2b.Dockerfile`, which should prevent with collisions with your main Dockerfile. If not found it fallbacks to `Dockerfile`.
 
 ```bash
@@ -48,7 +43,7 @@ e2b env build
 
 This will build your environment, it will also create a `e2b.toml` file in the same folder, which will store the sandbox id.
 
-If you want to keep your sandbox Dockerimage somewhere else, you can run  the `--dockerfile` flag.
+If you want to keep your sandbox Dockerfile somewhere else, you can run  the `--dockerfile` flag.
 
 The working directory will be the one where the CLI tool is executed. {{ className: 'red' }}
 
