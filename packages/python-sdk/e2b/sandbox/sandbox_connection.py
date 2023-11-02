@@ -2,7 +2,7 @@ import functools
 import logging
 import traceback
 import warnings
-from concurrent.futures import ThreadPoolExecutor, TimeoutError, Future
+from concurrent.futures import ThreadPoolExecutor, Future
 from os import getenv
 from time import sleep
 from typing import Any, Callable, List, Literal, Optional, Union
@@ -110,9 +110,7 @@ class SandboxConnection:
         :return: Hostname of the sandbox or sandbox's port
         """
         if not self._sandbox:
-            raise SandboxException(
-                "Sandbox is not running. You have to run `await sandbox.open()` first or create the sandbox with `await Sandbox.create()"
-            )
+            raise SandboxException("Sandbox is not running.")
 
         if self._debug_hostname:
             if port and self._debug_dev_env == "remote":

@@ -1,6 +1,7 @@
 import logging
 import time
 from typing import Optional, Callable, Any, Tuple, List, Union
+from e2b.sandbox.process import ProcessMessage
 
 from pydantic import BaseModel, PrivateAttr
 
@@ -34,8 +35,8 @@ class DataAnalysis(Sandbox):
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
         timeout: Optional[float] = TIMEOUT,
-        on_stdout: Optional[Callable[[str], Any]] = None,
-        on_stderr: Optional[Callable[[str], Any]] = None,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_artifact: Optional[Callable[[Artifact], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
     ):
@@ -54,8 +55,8 @@ class DataAnalysis(Sandbox):
     def run_python(
         self,
         code: str,
-        on_stdout: Optional[Callable[[str], Any]] = None,
-        on_stderr: Optional[Callable[[str], Any]] = None,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_artifact: Optional[Callable[[Artifact], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
         env_vars: Optional[EnvVars] = None,
@@ -86,8 +87,8 @@ class DataAnalysis(Sandbox):
 
         process = self.process.start(
             f"python {codefile_path}",
-            on_stdout=lambda out: on_stdout(out.line) if on_stdout else None,
-            on_stderr=lambda out: on_stderr(out.line) if on_stderr else None,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
             on_exit=on_exit,
             env_vars=env_vars,
             cwd=cwd,

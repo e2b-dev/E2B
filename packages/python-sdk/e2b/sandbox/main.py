@@ -9,7 +9,7 @@ from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.filesystem import FilesystemManager
-from e2b.sandbox.process import ProcessManager
+from e2b.sandbox.process import ProcessManager, ProcessMessage
 from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.sandbox.terminal import TerminalManager
 
@@ -59,8 +59,8 @@ class Sandbox(SandboxConnection):
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-        on_stdout: Optional[Callable[[str], Any]] = None,
-        on_stderr: Optional[Callable[[str], Any]] = None,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
         timeout: Optional[float] = TIMEOUT,
         _debug_hostname: Optional[str] = None,
@@ -102,8 +102,8 @@ class Sandbox(SandboxConnection):
         self._filesystem = FilesystemManager(sandbox=self)
         self._process = ProcessManager(
             sandbox=self,
-            on_stdout=lambda out: on_stdout(out.line) if on_stdout else None,
-            on_stderr=lambda out: on_stderr(out.line) if on_stderr else None,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
             on_exit=on_exit,
         )
         super().__init__(
