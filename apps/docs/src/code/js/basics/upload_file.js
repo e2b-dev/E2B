@@ -1,7 +1,7 @@
 import { Sandbox } from "@e2b/sdk";
 import fs from "node:fs";
 
-const sandbox = await Sandbox.create({ id: "Nodejs" });
+const sandbox = await Sandbox.create({ id: "base" });
 
 // If you're in the server environment
 const filename = "data.csv"; // $HighlightLine

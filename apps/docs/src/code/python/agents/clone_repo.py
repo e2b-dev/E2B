@@ -13,7 +13,7 @@ def main():
     # 1. Start the playground sandbox
     sandbox = Sandbox.create(
         # Select the right runtime
-        id="Nodejs",
+        id="base",
         api_key=E2B_API_KEY,
     )
 

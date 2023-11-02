@@ -1,7 +1,7 @@
 from e2b import Sandbox
 
 sandbox = Sandbox.create(
-    id="Nodejs",
+    id="base",
     on_stdout=lambda output: print("sandbox", output.line),  # $HighlightLine
 )
 

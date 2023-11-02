@@ -2,9 +2,7 @@ import { Sandbox } from "@e2b/sdk";
 
 // 1. Start the playground sandbox
 const sandbox = await Sandbox.create({
-  // Note we're using the 'Nodejs' runtime here since we want to run Node.js code
-  // and install NPM dependencies
-  id: "Nodejs", // $HighlightLine
+  id: "base", // $HighlightLine
   apiKey: process.env.E2B_API_KEY
 });
 

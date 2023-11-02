@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(id="Nodejs")
+sandbox = Sandbox.create(id="base")
 
 # `filesystem.write()` will:
 # - create the file if it doesn't exist

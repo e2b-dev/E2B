@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(id="Nodejs")
+sandbox = Sandbox.create(id="base")
 
 # File bytes will read file's content as bytes
 # `file_bytes` as a bytearray

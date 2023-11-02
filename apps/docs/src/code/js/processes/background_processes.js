@@ -1,7 +1,7 @@
 import { Sandbox } from "@e2b/sdk";
 
 const sandbox = await Sandbox.create({
-  id: "Python3",
+  id: "base",
   apiKey: process.env.E2B_API_KEY
 });
 

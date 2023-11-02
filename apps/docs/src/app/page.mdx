@@ -51,8 +51,8 @@ import { Sandbox } from '@e2b/sdk'
 
 // 2. Get your Sandbox session
 const sandbox = await Sandbox({
-  // or 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
-  id: 'Nodejs',
+  // or you can pass your own sandbox template id
+  id: 'base',
 })
 
 // 3. Close the sandbox once done
@@ -65,8 +65,8 @@ from e2b import Sandbox
 
 # 2. Get your Sandbox session
 sandbox = Sandbox(
-  # or "Bash", "Python3", "Java", "Go", "Rust", "PHP", "Perl", "DotNET"
-  id: "Nodejs",
+  # or you can pass your own sandbox template id
+  id: "base",
 )
 
 # 3. Close the sandbox once done

@@ -1,7 +1,7 @@
 from e2b import Sandbox
 
 sandbox = Sandbox.create(
-    id="Python3",
+    id="base",
     cwd="/code",  # $HighlightLine
 )
 

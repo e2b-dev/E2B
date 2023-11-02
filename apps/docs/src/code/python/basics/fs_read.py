@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(id="Nodejs")
+sandbox = Sandbox.create(id="base")
 
 # Read the '/etc/hosts' file
 file_content = sandbox.filesystem.read('/etc/hosts')  # $HighlightLine

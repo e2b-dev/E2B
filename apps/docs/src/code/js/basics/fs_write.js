@@ -1,6 +1,6 @@
 import { Sandbox } from "@e2b/sdk";
 
-const sandbox = await Sandbox.create({ id: "Nodejs" });
+const sandbox = await Sandbox.create({ id: "base" });
 
 // `filesystem.write()` will:
 // - create the file if it doesn't exist

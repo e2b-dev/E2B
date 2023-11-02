@@ -9,7 +9,7 @@ const logger = {
 };
 
 const sandbox = await Sandbox.create({
-  id: "Nodejs",
+  id: "base",
   apiKey: process.env.E2B_API_KEY,
   logger // $HighlightLine
 });

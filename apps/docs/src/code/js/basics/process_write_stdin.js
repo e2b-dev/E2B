@@ -1,6 +1,6 @@
 import { Sandbox } from "@e2b/sdk";
 
-const sandbox = await Sandbox.create({ id: "Nodejs" });
+const sandbox = await Sandbox.create({ id: "base" });
 
 // This example will print back the string we send to the process using `sendStdin()`
 

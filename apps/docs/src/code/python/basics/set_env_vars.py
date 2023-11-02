@@ -1,7 +1,7 @@
 from e2b import Sandbox
 
 sandbox = Sandbox.create(
-    id="Nodejs",
+    id="base",
     env_vars={"FOO": "Hello"}  # $HighlightLine
 )
 

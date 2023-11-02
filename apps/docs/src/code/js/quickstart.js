@@ -3,7 +3,7 @@ import { Sandbox } from "@e2b/sdk";
 // 1. Start cloud playground
 const sandbox = await Sandbox.create({
   // $HighlightLine
-  id: "Nodejs", // or 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
+  id: "base", // or you can pass your own sandbox template id
   apiKey: process.env.E2B_API_KEY
 });
 

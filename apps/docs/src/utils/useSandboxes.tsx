@@ -19,8 +19,8 @@ function log(message?: any, ...optionalParams: any[]) {
 }
 
 const envIds = {
-  js: 'Nodejs',
-  py: 'Python3',
+  js: 'rki5dems9wqfm4r03t7g',
+  py: 'rki5dems9wqfm4r03t7g',
 }
 
 const preps = {

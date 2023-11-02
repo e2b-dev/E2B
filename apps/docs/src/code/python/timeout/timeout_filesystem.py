@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(id="Nodejs")
+sandbox = Sandbox.create(id="base")
 
 # Timeout 3s for the write operation
 sandbox.filesystem.write("test.txt", "Hello World", timeout=3)  # $HighlightLine

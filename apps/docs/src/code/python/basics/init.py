@@ -2,9 +2,8 @@ from e2b import Sandbox
 
 
 def main():
-    # `id` can also be one of:
-    # 'Nodejs', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
-    sandbox = Sandbox(id="Nodejs")
+    # `id` can be your own template id
+    sandbox = Sandbox(id="base")
     sandbox.close()
 
 

@@ -1,7 +1,7 @@
 from e2b import Sandbox
 
 sandbox = Sandbox.create(
-    id="Nodejs",
+    id="base",
     on_exit=lambda: print("[sandbox]", "process ended"),  # $HighlightLine
 )
 

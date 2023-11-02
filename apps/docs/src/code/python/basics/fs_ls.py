@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(id="Nodejs")
+sandbox = Sandbox.create(id="base")
 
 # List the root directory
 content = sandbox.filesystem.list("/")  # $HighlightLine

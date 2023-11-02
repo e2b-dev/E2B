@@ -21,7 +21,7 @@ function printNewPortAndURL(openPorts, sandbox) {
 }
 
 const sandbox = await Sandbox.create({
-  id: "Python3",
+  id: "base",
   onScanPorts: (openPorts) => printNewPortAndURL(openPorts, sandbox) // $HighlightLine
 });
 

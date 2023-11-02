@@ -12,9 +12,8 @@ def print_out(output):
 def main():
     # 1. Start the playground sandbox
     sandbox = Sandbox.create(
-        # Select the right runtime
-        # 'Node', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
-        id="Python3",
+        # You can pass your own sandbox template id
+        id="base",
         api_key=E2B_API_KEY,
     )
 

@@ -7,9 +7,8 @@ def print_out(output):
 
 # 1. Start the playground sandbox
 sandbox = Sandbox.create(
-    # Select the right runtime
-    # 'Node', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
-    id="Nodejs",
+    # You can pass your own sandbox template id
+    id="base",
 )
 
 # 2. Save the JavaScript code to a file inside the playground

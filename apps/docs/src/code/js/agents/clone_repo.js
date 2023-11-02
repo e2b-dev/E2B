@@ -2,8 +2,8 @@ import { Sandbox } from "@e2b/sdk";
 
 // 1. Start the playground sandbox
 const sandbox = await Sandbox.create({
-  // 'Node', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
-  id: "Nodejs",
+  // You can pass your own sandbox template id
+  id: "base",
   apiKey: process.env.E2B_API_KEY
 });
 
