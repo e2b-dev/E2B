@@ -8,14 +8,7 @@ CodeRuntime = Literal[
     "Node16",
     "Python3",
     "Bash",
-    "Python3_DataAnalysis",
-    # TODO: Support all runtimes that our infra supports
-    # DotNET = 'DotNET',
-    # Go = 'Go',
-    # Java = 'Java',
-    # Perl = 'Perl',
-    # PHP = 'PHP',
-    # Rust = 'Rust',
+    "Python3-DataAnalysis",
 ]
 
 
@@ -42,19 +35,19 @@ def run_code(
         api_key = getenv("E2B_API_KEY")
 
     if runtime == "Node16":
-        env_id = "Nodejs"
+        env_id = "base"
         binary = "node"
         filepath = "/index.js"
     elif runtime == "Python3":
-        env_id = "Python3"
+        env_id = "base"
         binary = "python3"
         filepath = "/index.py"
-    elif runtime == "Python3_DataAnalysis":
-        env_id = "YI58BPyX5KrK"
+    elif runtime == "Python3-DataAnalysis":
+        env_id = "Python3-DataAnalysis"
         binary = "python3"
         filepath = "/index.py"
     elif runtime == "Bash":
-        env_id = "Bash"
+        env_id = "base"
         binary = "bash"
         filepath = "/main.sh"
     else:
