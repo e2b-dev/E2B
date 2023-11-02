@@ -52,11 +52,11 @@ e2b --help
    template:
 
 ```Dockerfile
-FROM ubuntu:20.04
-``` 
+FROM ubuntu:22.04
+```
 
 3. Run `e2b build` inside the directory with the `Dockerfile` to create and build the sandbox template. You will get *
-   *template ID** that you use for connecting to the sandbox via SDKs and for rebuilding the sandbox template
+   _template ID_* that you use for connecting to the sandbox via SDKs and for rebuilding the sandbox template
 
 5. Use the **template ID** that you got during the `e2b build` with the Python or JS/TS SDK as the `id` to create
    sandbox
@@ -69,21 +69,26 @@ All commands can be called with a `--path <path-to-dir>` flag that changes the d
 called, without the need to call `cd`.
 
 ```sh
--V, --version    Display e2b CLI version
+-V, --version    Display E2B CLI version
 -h, --help       display help for command
 ```
 
 ```sh
 Usage: e2b template [options] [command]
 
-Manage e2b sandbox templates
+Manage E2B sandbox templates
 
 Options:
   -h, --help               display help for command
 
 Commands:
-  build|bd [options] [id]  Build sandbox template
+  build|bd [options] [id]  Build sandbox template defined by ./e2b.Dockerfile or ./Dockerfile in root directory. By default the root directory is the current working directory. This command also creates e2b.toml config
+
   list|ls                  List sandbox templates
+
   shell|sh <id>            Connect terminal to sandbox
+
+  init|it [options]        Create basic E2B `e2b.Dockerfile` in root directory. You can then run `e2b template build` to build sandbox template from this Dockerfile
+
   help [command]           display help for command
 ```

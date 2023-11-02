@@ -6,7 +6,7 @@ import { shellCommand } from './shell'
 import { initCommand } from './init'
 
 export const templateCommand = new commander.Command('template')
-  .description('Manage e2b sandbox templates')
+  .description('Manage E2B sandbox templates')
   .addCommand(buildCommand)
   .addCommand(listCommand)
   .addCommand(shellCommand)
