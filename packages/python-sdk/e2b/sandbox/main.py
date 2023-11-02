@@ -54,7 +54,7 @@ class Sandbox(SandboxConnection):
 
     def __init__(
         self,
-        id: str,
+        id: str = "base",
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,

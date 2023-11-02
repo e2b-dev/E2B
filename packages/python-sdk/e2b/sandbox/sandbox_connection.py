@@ -170,7 +170,7 @@ class SandboxConnection:
                 api = client.InstancesApi(api_client)
 
                 self._sandbox = api.instances_post(
-                    models.NewInstance(envID=self._id, editEnabled=False),
+                    models.NewInstance(envID=self._id),
                     _request_timeout=timeout,
                 )
                 logger.info(
@@ -234,7 +234,10 @@ class SandboxConnection:
         if not self.is_open:
             raise SandboxException("Sandbox is not open")
 
-        return self._rpc.send_message(f"{service}_{method}", params, timeout=timeout)
+        if not self._rpc:
+            raise SandboxException("Sandbox is not connected")
+
+        return self._rpc.send_message(f"{service}_{method}", params, timeout)
 
     def _handle_subscriptions(
         self,
@@ -308,6 +311,10 @@ class SandboxConnection:
                 sub.handler(data.params["result"])
 
     def _refresh(self, instance_id: str):
+        if not self._sandbox:
+            logger.info("No sandbox to refresh. Sandbox was not created")
+            return
+
         try:
             logger.info(
                 f"Started refreshing sandbox {self._sandbox.env_id} (id: {instance_id})"
