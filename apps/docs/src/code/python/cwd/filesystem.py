@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(
+sandbox = Sandbox(
     id="base",
     cwd="/home/user/code"  # $HighlightLine
 )

@@ -8,7 +8,7 @@ E2B_API_KEY = getenv("E2B_API_KEY")
 # 1. Start cloud playground
 def main():
     # `id` can be your own template id
-    sandbox = Sandbox.create(id="base", api_key=E2B_API_KEY)  # $HighlightLine
+    sandbox = Sandbox(id="base", api_key=E2B_API_KEY)  # $HighlightLine
 
     # 2. Use filesystem
     sandbox.filesystem  # $HighlightLine

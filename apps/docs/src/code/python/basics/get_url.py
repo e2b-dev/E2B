@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(id="base")
+sandbox = Sandbox(id="base")
 
 url = sandbox.get_hostname()  # $HighlightLine
 print("https://" + url)

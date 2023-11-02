@@ -1,9 +1,9 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(id="base")
+sandbox = Sandbox(id="base")
 
 # Read the '/etc/hosts' file
-file_content = sandbox.filesystem.read('/etc/hosts')  # $HighlightLine
+file_content = sandbox.filesystem.read("/etc/hosts")  # $HighlightLine
 
 # Prints something like:
 # 127.0.0.1       localhost

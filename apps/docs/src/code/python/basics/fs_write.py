@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(id="base")
+sandbox = Sandbox(id="base")
 
 # `filesystem.write()` will:
 # - create the file if it doesn't exist

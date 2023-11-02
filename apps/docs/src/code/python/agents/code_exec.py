@@ -6,7 +6,7 @@ def print_out(output):
 
 
 # 1. Start the playground sandbox
-sandbox = Sandbox.create(
+sandbox = Sandbox(
     # You can pass your own sandbox template id
     id="base",
 )
@@ -19,7 +19,7 @@ code = """
     console.log('Root dir item inside playground:', item);
   });
 """
-sandbox.filesystem.write('/code/index.js', code)
+sandbox.filesystem.write("/code/index.js", code)
 
 # 3. Start the execution of the JavaScript file we saved
 proc = sandbox.process.start(  # $HighlightLine

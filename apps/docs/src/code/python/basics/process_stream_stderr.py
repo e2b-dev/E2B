@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(
+sandbox = Sandbox(
     id="base",
     on_stderr=lambda output: print("[sandbox]", output.line),  # $HighlightLine
 )

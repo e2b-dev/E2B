@@ -22,7 +22,7 @@ def print_new_port_and_url(open_ports, sandbox):
             print(port, port_url)
 
 
-sandbox = Sandbox.create(
+sandbox = Sandbox(
     id="base",
     on_scan_ports=lambda open_ports: print_new_port_and_url(open_ports, sandbox)  # $HighlightLine
 )

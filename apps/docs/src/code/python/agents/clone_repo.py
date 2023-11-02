@@ -11,7 +11,7 @@ def print_out(output):
 
 def main():
     # 1. Start the playground sandbox
-    sandbox = Sandbox.create(
+    sandbox = Sandbox(
         # Select the right runtime
         id="base",
         api_key=E2B_API_KEY,
@@ -27,7 +27,7 @@ def main():
     proc.wait()
 
     # Optional: 4. List the cntent of cloned repo
-    content = sandbox.filesystem.list('/code/open-react-template')
+    content = sandbox.filesystem.list("/code/open-react-template")
     print(content)
 
     # Optional: 5. Install deps
@@ -36,7 +36,7 @@ def main():
         cmd="npm install",
         on_stdout=print_out,
         on_stderr=print_out,
-        cwd="/code/open-react-template"
+        cwd="/code/open-react-template",
     )
 
     proc.wait()

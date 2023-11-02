@@ -1,8 +1,8 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(
+sandbox = Sandbox(
     id="base",
-    env_vars={"FOO": "Hello"}  # $HighlightLine
+    env_vars={"FOO": "Hello"},  # $HighlightLine
 )
 
 sandbox.close()
