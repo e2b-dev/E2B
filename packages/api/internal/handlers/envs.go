@@ -54,6 +54,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 		return
 	}
+	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
 
 	err = a.buildCache.Create(teamID, envID, buildID)
 	if err != nil {
@@ -138,6 +139,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 
 		return
 	}
+	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
 
 	hasAccess, accessErr := a.supabase.HasEnvAccess(envID, teamID, false)
 	if accessErr != nil {
