@@ -4,7 +4,6 @@ from e2b import Sandbox
 
 E2B_API_KEY = getenv("E2B_API_KEY")
 
-
 # 1. Start cloud playground
 def main():
     # `id` can be your own template id
@@ -21,6 +20,5 @@ def main():
     sandbox.write_bytes()  # $HighlightLine
 
     sandbox.close()
-
 
 main()
