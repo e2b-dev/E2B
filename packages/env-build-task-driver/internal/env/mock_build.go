@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
@@ -11,7 +12,8 @@ import (
 )
 
 func MockBuild(envID, buildID string) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute * 3)
+	defer cancel()
 
 	tracer := otel.Tracer("test")
 
@@ -32,7 +34,7 @@ func MockBuild(envID, buildID string) {
 	firecrackerBinaryPath := "/usr/bin/firecracker"
 	envdPath := "/fc-vm/envd"
 	contextFileName := "context.tar.gz"
-	vCPUCount := int64(1)
+	vCPUCount := int64(2)
 	memoryMB := int64(512)
 	diskSizeMB := int64(512)
 	apiSecret := "SUPER_SECR3T_4PI_K3Y"
