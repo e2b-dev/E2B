@@ -77,7 +77,8 @@ func (a *APIStore) PostInstances(
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	a.CreateAnalyticsTeamEvent(teamID, "created_instance", properties.
 		Set("environment", envID).
-		Set("instance_id", instance.InstanceID))
+		Set("instance_id", instance.InstanceID).
+		Set("infra_version", "v1"))
 
 	startingTime := time.Now()
 	if cacheErr := a.cache.Add(instance, &teamID, &startingTime); cacheErr != nil {
