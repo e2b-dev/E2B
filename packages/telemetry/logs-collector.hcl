@@ -118,7 +118,8 @@ auth.user = "${var.grafana_logs_username}"
 auth.password = "${var.grafana_api_key}"
 
 [sinks.grafana.labels]
-source = "vector"
+source = "logs-collector"
+service = "envd"
 
         EOH
       }
