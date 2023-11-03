@@ -93,8 +93,10 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 }
 
 func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir string) (ID, error) {
-	s.logger.Debugw("Start process",
+	s.logger.Infow("Start process",
 		"processID", id,
+		"cmd", cmd,
+		"rootdir", rootdir,
 	)
 
 	proc, ok := s.processes.Get(id)
@@ -249,7 +251,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			}
 		}()
 
-		s.logger.Infow("Started new process", "processID", newProc.ID)
+		s.logger.Debugw("Started new process", "processID", newProc.ID)
 
 		return newProc.ID, nil
 	}
