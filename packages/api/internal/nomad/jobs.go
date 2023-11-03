@@ -97,6 +97,7 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 
 func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 	sub, ok := n.subscribers.Get(alloc.JobID)
+
 	if !ok {
 		return
 	}

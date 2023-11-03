@@ -50,7 +50,7 @@ func (dw *DirWatcher) watchLoop() {
 		select {
 		case err, ok := <-dw.watcher.Errors:
 			if !ok {
-				dw.logger.Debug("watcher.Errors got closed")
+				dw.logger.Error("watcher.Errors got closed")
 				close(dw.watcher.Errors)
 
 				return
@@ -167,7 +167,7 @@ func (dw *DirWatcher) addToWatcher(dirpath string) error {
 		if p == dirpath {
 			watching = true
 
-			dw.logger.Debugw(
+			dw.logger.Warnw(
 				"The path is already being watched",
 				"path", dirpath,
 			)
@@ -219,7 +219,7 @@ func (dw *DirWatcher) Add(dirpath string) error {
 }
 
 func (dw *DirWatcher) Remove(dirpath string) error {
-	dw.logger.Debugw(
+	dw.logger.Infow(
 		"will try to remove path from WatchList",
 		"path", dirpath,
 		"watchList", dw.watcher.WatchList(),

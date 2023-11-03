@@ -81,7 +81,7 @@ func (m *Manager) Create(ctx context.Context, topic string) (*Subscriber, chan s
 		// Remove a subscriber once the error channel closes.
 		m.subs.Remove(string(sub.Subscription.ID))
 
-		m.logger.Infow("Unsubscribed",
+		m.logger.Debugw("Unsubscribed",
 			"subscription", m.label,
 			"topic", topic,
 			"subID", sub.Subscription.ID,

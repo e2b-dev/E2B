@@ -58,7 +58,7 @@ func (s *Service) hasSubscibers(id ID) bool {
 }
 
 func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cmd, rootdir *string) (ID, error) {
-	s.logger.Infow("Start terminal",
+	s.logger.Debugw("Start terminal",
 		"terminalID", id,
 	)
 
@@ -66,7 +66,7 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 
 	// Terminal doesn't exist, we will create a new one.
 	if !ok {
-		s.logger.Infow("Terminal with ID doesn't exist yet. Creating a new terminal",
+		s.logger.Debugw("Terminal with ID doesn't exist yet. Creating a new terminal",
 			"requestedTerminalID", id,
 		)
 
@@ -93,7 +93,7 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 			return "", fmt.Errorf("error starting new terminal '%s': %w", id, err)
 		}
 
-		s.logger.Infow("New terminal created",
+		s.logger.Debugw("New terminal created",
 			"terminalID", newTerm.ID,
 		)
 
@@ -109,7 +109,7 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 			}
 
 			s.terminals.Remove(newTerm.ID)
-			s.logger.Infow("Sending terminal exit notification", "terminalID", newTerm.ID)
+			s.logger.Debugw("Sending terminal exit notification", "terminalID", newTerm.ID)
 			notifyErr := s.exitSubs.Notify(id, struct{}{})
 
 			if notifyErr != nil {
@@ -118,7 +118,7 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 					"error", notifyErr,
 				)
 			} else {
-				s.logger.Infow("Sent terminal exit notification", "terminalID", newTerm.ID)
+				s.logger.Debugw("Sent terminal exit notification", "terminalID", newTerm.ID)
 			}
 		}()
 
@@ -129,7 +129,7 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 		return newTerm.ID, nil
 	}
 
-	s.logger.Infow("Terminal with this ID already exists",
+	s.logger.Warnw("Terminal with this ID already exists",
 		"terminalID", id,
 	)
 
@@ -199,7 +199,7 @@ func (s *Service) Destroy(id ID) {
 
 // Subscription
 func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribing to terminal data",
+	s.logger.Debugw("Subscribing to terminal data",
 		"terminalID", id,
 	)
 
@@ -231,7 +231,7 @@ func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) 
 
 // Subscription
 func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribing to terminal exit", "terminalID", id)
+	s.logger.Debugw("Subscribing to terminal exit", "terminalID", id)
 
 	sub, lastUnsubscribed, err := s.exitSubs.Create(ctx, id)
 	if err != nil {

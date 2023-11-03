@@ -43,7 +43,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 }
 
 func pingHandler(w http.ResponseWriter, r *http.Request) {
-	logger.Info("/ping request")
+	logger.Debug("/ping request")
 	w.WriteHeader(http.StatusOK)
 
 	_, err := w.Write([]byte("pong"))
@@ -106,11 +106,11 @@ func main() {
 
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Infow("panic", r)
+			logger.Debugw("panic", r)
 		}
 	}()
 	defer logger.Sync()
-	logger.Info("Logger and environment construction succeeded")
+	logger.Debug("Logger and environment construction succeeded")
 
 	// This server is for the Websocket-RPC communication.
 	rpcServer := rpc.NewServer()
@@ -168,7 +168,7 @@ func main() {
 		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(router),
 	}
 
-	logger.Infow("Starting server",
+	logger.Debug("Starting server",
 		"port", serverPort,
 	)
 

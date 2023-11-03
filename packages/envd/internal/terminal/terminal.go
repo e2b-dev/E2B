@@ -82,7 +82,7 @@ func (t *Terminal) Pid() int {
 }
 
 func (t *Terminal) Destroy() {
-	t.logger.Infow("Destroying terminal",
+	t.logger.Debugw("Destroying terminal",
 		"terminalID", t.ID,
 		"cmd", t.cmd,
 		"pid", t.cmd.Process.Pid,
@@ -97,7 +97,7 @@ func (t *Terminal) Destroy() {
 			"error", err,
 		)
 	} else {
-		t.logger.Infow("Closed terminal PTY",
+		t.logger.Debugw("Closed terminal PTY",
 			"terminalID", t.ID,
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,

@@ -93,14 +93,14 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 }
 
 func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir string) (ID, error) {
-	s.logger.Infow("Start process",
+	s.logger.Debugw("Start process",
 		"processID", id,
 	)
 
 	proc, ok := s.processes.Get(id)
 	// Process doesn't exist, we will create a new one.
 	if !ok {
-		s.logger.Infow("Process with ID doesn't exist yet. Creating a new process",
+		s.logger.Debugw("Process with ID doesn't exist yet. Creating a new process",
 			"requestedProcessID", id,
 		)
 
@@ -254,7 +254,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		return newProc.ID, nil
 	}
 
-	s.logger.Infow("Process with this ID already exists",
+	s.logger.Warnw("Process with this ID already exists",
 		"processID", id,
 	)
 
@@ -300,7 +300,7 @@ func (s *Service) Kill(id ID) {
 
 // Subscription
 func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribing to process exit", "processID", id)
+	s.logger.Debugw("Subscribing to process exit", "processID", id)
 
 	sub, lastUnsubscribed, err := s.exitSubs.Create(ctx, id)
 	if err != nil {
@@ -327,7 +327,7 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 
 // Subscription
 func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribing to process stdout",
+	s.logger.Debugw("Subscribing to process stdout",
 		"processID", id,
 	)
 
@@ -359,7 +359,7 @@ func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error
 
 // Subscription
 func (s *Service) OnStderr(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribe to process stderr",
+	s.logger.Debugw("Subscribe to process stderr",
 		"processID", id,
 	)
 

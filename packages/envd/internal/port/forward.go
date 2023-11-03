@@ -92,7 +92,7 @@ func (f *Forwarder) StartForwarding() {
 					// The actual socat process that handles forwarding should be running from the last iteration.
 					val.state = PortStateForward
 				} else {
-					f.logger.Infow("Detected new opened port on localhost that is not forwarded",
+					f.logger.Debugw("Detected new opened port on localhost that is not forwarded",
 						"ip", p.Ip,
 						"port", p.Port,
 						"state", p.State,
@@ -129,7 +129,7 @@ func (f *Forwarder) starPortForwarding(p *PortToForward) {
 		p.port,
 	)
 
-	f.logger.Infow("About to start port forwarding",
+	f.logger.Debugw("About to start port forwarding",
 		"socatCmd", socatCmd,
 		"pid", p.pid,
 		"sourceIP", f.sourceIP.To4(),
@@ -156,7 +156,7 @@ func (f *Forwarder) stopPortForwarding(p *PortToForward) {
 
 	defer func() { p.socat = nil }()
 
-	f.logger.Infow("About to stop port forwarding",
+	f.logger.Debugw("About to stop port forwarding",
 		"socatCmd", p.socat.String(),
 		"pid", p.pid,
 		"sourceIP", f.sourceIP.To4(),
@@ -164,7 +164,7 @@ func (f *Forwarder) stopPortForwarding(p *PortToForward) {
 	)
 
 	if err := p.socat.Process.Kill(); err != nil {
-		f.logger.Infow("Error when stopping port forwarding",
+		f.logger.Debugw("Error when stopping port forwarding",
 			"socatCmd", p.socat.String(),
 			"pid", p.pid,
 			"sourceIP", f.sourceIP.To4(),
@@ -175,7 +175,7 @@ func (f *Forwarder) stopPortForwarding(p *PortToForward) {
 		return
 	}
 
-	f.logger.Infow("Stopped port forwarding",
+	f.logger.Debugw("Stopped port forwarding",
 		"socatCmd", p.socat.String(),
 		"pid", p.pid,
 		"sourceIP", f.sourceIP.To4(),
