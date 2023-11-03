@@ -239,7 +239,7 @@ async function waitForBuildFinish(
         )
     }
   } while (template.data.status === 'building' && elapsed() < maxBuildTime)
-  if (template.data.status !== 'building') {
+  if (template.data.status === 'building' && elapsed() >= maxBuildTime) {
     throw new Error(
       `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
         template.data,
