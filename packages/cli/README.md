@@ -84,19 +84,26 @@ directory where the command will be called, without the need to call `cd`.
 ```sh
 Usage: e2b template [options] [command]
 
-Manage E2B sandbox templates
+Create sandbox templates from Dockerfiles by running e2b build then use our SDKs to create
+sandboxes from these templates.
+
+Visit E2B docs (https://e2b.dev/docs) to learn how to create sandbox templates
+and start sandboxes.
 
 Options:
   -h, --help               display help for command
 
 Commands:
-  build|bd [options] [id]  Build sandbox template defined by ./e2b.Dockerfile or ./Dockerfile in root directory. By default the root directory is the current working directory. This command also creates e2b.toml config
+  build|bd [options] [id]  Build sandbox template defined by ./e2b.Dockerfile or
+                           ./Dockerfile in root directory. By default the root directory is the
+                           current working directory. This command also creates e2b.toml config
 
   list|ls                  List sandbox templates
 
   shell|sh <id>            Connect terminal to sandbox
 
-  init|it [options]        Create basic E2B `e2b.Dockerfile` in root directory. You can then run `e2b template build` to build sandbox template from this Dockerfile
+  init|it [options]        Create basic E2B ./e2b.Dockerfile in root directory. You can then run
+                           e2b build to build sandbox template from this Dockerfile
 
   help [command]           display help for command
 ```

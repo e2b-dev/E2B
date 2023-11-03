@@ -29,6 +29,10 @@ export function asBold(content: string) {
   return chalk.default.bold(content)
 }
 
+export function asPrimary(content: string) {
+  return chalk.default.hex('#FFA500')(content)
+}
+
 export function asSandboxTemplate(pathInTemplate?: string) {
   return chalk.default.green(pathInTemplate)
 }

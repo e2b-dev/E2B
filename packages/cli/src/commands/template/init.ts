@@ -6,11 +6,11 @@ import * as path from 'path'
 import { basicDockerfile, defaultDockerfileName } from 'src/docker/constants'
 import { pathOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
-import { asLocalRelative } from 'src/utils/format'
+import { asLocalRelative, asPrimary } from 'src/utils/format'
 
 export const initCommand = new commander.Command('init')
   .description(
-    'Create basic E2B `e2b.Dockerfile` in root directory. You can then run `e2b template build` to build sandbox template from this Dockerfile',
+    `Create basic E2B ${asLocalRelative('e2b.Dockerfile')} in root directory. You can then run ${asPrimary('e2b build')} to build sandbox template from this Dockerfile`,
   )
   .addOption(pathOption)
   .alias('it')
