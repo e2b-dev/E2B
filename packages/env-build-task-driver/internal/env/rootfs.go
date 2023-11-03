@@ -259,7 +259,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		}
 
 		// Move prunning to separate goroutine
-		cacheTimeout := filters.Arg("until", "12h")
+		cacheTimeout := filters.Arg("until", "6h")
 
 		_, err = r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
 			Filters: filters.NewArgs(cacheTimeout),
