@@ -71,16 +71,9 @@ class Sandbox(SandboxConnection):
         Create a new cloud sandbox.
 
         :param id: ID of the sandbox template or the name of prepared template.
-        Can be one of the following environment type templates or a custom template ID:
-        - `Nodejs`
-        - `Bash`
-        - `Python3`
-        - `Java`
-        - `Go`
-        - `Rust`
-        - `PHP`
-        - `Perl`
-        - `DotNET`
+        Can be one of the following premade sandbox templates or a custom sandbox template ID:
+        - `base` - A basic sandbox with a Linux environment
+        - `Python3-DataAnalysis` - A Python3 sandbox with data analysis tools
 
         :param api_key: The API key to use, if not provided, the `E2B_API_KEY` environment variable is used
         :param cwd: The current working directory to use
