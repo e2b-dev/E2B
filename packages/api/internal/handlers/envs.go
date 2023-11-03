@@ -343,6 +343,7 @@ func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID,
 	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
+			attribute.String("build_id", buildID),
 		),
 	)
 	defer childSpan.End()
