@@ -90,7 +90,7 @@ export class SandboxConnection {
       warn: console.warn,
       error: console.error,
     }
-    this.logger.info?.(`Sandbox "${opts.id}" initialized`)
+    this.logger.info?.(`Sandbox "${this.templateID}" initialized`)
   }
 
   private get templateID(): string {
