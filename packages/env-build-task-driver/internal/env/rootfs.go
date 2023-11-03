@@ -245,7 +245,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 				"cleanup-container",
 			)
 			defer cleanupSpan.End()
-	
+
 			err = r.legacyClient.RemoveContainer(docker.RemoveContainerOptions{
 				ID:            cont.ID,
 				RemoveVolumes: true,
@@ -258,10 +258,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			} else {
 				telemetry.ReportEvent(cleanupContext, "removed container")
 			}
-	
+
 			// Move prunning to separate goroutine
 			cacheTimeout := filters.Arg("until", "6h")
-	
+
 			_, err = r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
 				Filters: filters.NewArgs(cacheTimeout),
 				All:     true,
@@ -272,7 +272,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned build cache")
 			}
-	
+
 			_, err = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeout))
 			if err != nil {
 				errMsg := fmt.Errorf("error pruning images %w", err)
@@ -280,7 +280,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned images")
 			}
-	
+
 			_, err = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeout))
 			if err != nil {
 				errMsg := fmt.Errorf("error pruning containers %w", err)
@@ -467,9 +467,9 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	pr, pw = io.Pipe()
 
 	go func() {
-		err := r.legacyClient.ExportContainer(docker.ExportContainerOptions{
-			ID: cont.ID,
+		err := r.legacyClient.DownloadFromContainer(cont.ID, docker.DownloadFromContainerOptions{
 			Context:      childCtx,
+			Path:         "/",
 			OutputStream: pw,
 		})
 		if err != nil {
