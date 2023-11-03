@@ -1,7 +1,6 @@
 import {
   ChevronRightSquare,
   Cpu,
-  Database,
   DollarSign,
   FileDown,
   FileUp,
@@ -14,8 +13,9 @@ import {
   Settings,
   ShieldQuestion,
   Timer,
-  ToyBrick,
   Variable,
+  Image as ImageIcon,
+  PencilRuler,
 } from 'lucide-react'
 
 export const routes = [
@@ -91,38 +91,12 @@ export const routes = [
     ],
   },
   {
-    title: 'Sandbox Templates',
+    title: 'Sandbox',
     links: [
       {
         title: 'Overview',
-        href: '/sandbox/templates/overview',
+        href: '/sandbox/overview',
       },
-      {
-        icon: (
-          <ToyBrick
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Custom Template',
-        href: '/sandbox/templates/custom',
-      },
-      {
-        icon: (
-          <Database
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Premade: Data Analysis',
-        href: '/sandbox/templates/data-analysis',
-      },
-    ],
-  },
-  {
-    title: 'Sandbox API',
-    links: [
-      { title: 'Overview', href: '/sandbox/overview' },
       {
         icon: (
           <Cpu
@@ -135,13 +109,48 @@ export const routes = [
       },
       {
         icon: (
+          <PencilRuler
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Sandbox Templates',
+        href: '/sandbox/templates/overview',
+      },
+      {
+        icon: (
+          <ImageIcon
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Premade Templates',
+        href: '/sandbox/templates/custom',
+      },
+      // {
+      //   icon: (
+      //     <Database
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: 'Premade: Data Analysis',
+      //   href: '/sandbox/templates/data-analysis',
+      // },
+    ],
+  },
+  {
+    title: 'Sandbox API',
+    links: [
+      {
+        icon: (
           <Variable
             strokeWidth={1}
             size={20}
           />
         ),
         title: 'Environment Variables',
-        href: '/sandbox/envs',
+        href: '/sandbox/api/envs',
       },
       {
         icon: (
@@ -151,7 +160,7 @@ export const routes = [
           />
         ),
         title: 'Filesystem',
-        href: '/sandbox/filesystem',
+        href: '/sandbox/api/filesystem',
       },
       {
         icon: (
@@ -161,7 +170,7 @@ export const routes = [
           />
         ),
         title: 'Process',
-        href: '/sandbox/process',
+        href: '/sandbox/api/process',
       },
       // TODO: Remove
       // {
@@ -182,7 +191,7 @@ export const routes = [
           />
         ),
         title: 'Working Directory',
-        href: '/sandbox/cwd',
+        href: '/sandbox/api/cwd',
       },
       // {
       //   icon: (
@@ -212,7 +221,7 @@ export const routes = [
           />
         ),
         title: 'Sandbox URL',
-        href: '/sandbox/url',
+        href: '/sandbox/api/url',
       },
       {
         icon: (
@@ -222,7 +231,7 @@ export const routes = [
           />
         ),
         title: 'Upload Files',
-        href: '/sandbox/upload',
+        href: '/sandbox/api/upload',
       },
       {
         icon: (
@@ -232,7 +241,7 @@ export const routes = [
           />
         ),
         title: 'Download Files',
-        href: '/sandbox/download',
+        href: '/sandbox/api/download',
       },
       {
         icon: (
@@ -242,7 +251,7 @@ export const routes = [
           />
         ),
         title: 'Timeouts',
-        href: '/sandbox/timeouts',
+        href: '/sandbox/api/timeouts',
       },
     ],
   },
