@@ -17,7 +17,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 const (
@@ -35,12 +34,9 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	pprof.Register(r, "debug/pprof")
 
-	otelMiddleware := customMiddleware.ExcludeRoutes(
-		otelgin.Middleware(serviceName),
-		ignoreLoggingForPaths...,
-	)
 	r.Use(
-		otelMiddleware,
+		// We use custom otelgin middleware because we want to log 4xx errors in the otel
+		customMiddleware.ExcludeRoutes(customMiddleware.Otel(serviceName), ignoreLoggingForPaths...),
 		gin.LoggerWithWriter(gin.DefaultWriter, ignoreLoggingForPaths...),
 		gin.Recovery(),
 	)
