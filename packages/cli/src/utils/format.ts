@@ -30,7 +30,7 @@ export function asBold(content: string) {
 }
 
 export function asPrimary(content: string) {
-  return chalk.default.hex('#FFA500')(content)
+  return chalk.default.hex('#FFB766')(content)
 }
 
 export function asSandboxTemplate(pathInTemplate?: string) {
