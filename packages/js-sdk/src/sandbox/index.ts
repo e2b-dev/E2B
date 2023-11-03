@@ -413,11 +413,11 @@ export class Sandbox extends SandboxConnection {
     return `${protocol}://${hostname}${FILE_ROUTE}`
   }
 
-  static async create(opts: SandboxOpts) {
+  static async create(opts?: SandboxOpts) {
     return new Sandbox(opts)
       .open({ timeout: opts?.timeout })
       .then(async (sandbox) => {
-        if (opts.cwd) {
+        if (opts?.cwd) {
           console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
           await sandbox.filesystem.makeDir(opts.cwd)
         }
