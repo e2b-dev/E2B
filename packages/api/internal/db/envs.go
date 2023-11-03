@@ -47,7 +47,7 @@ func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
 
 var ErrEnvNotFound = fmt.Errorf("env not found")
 
-func (db *DB) GetEnv(envID string, teamID string) (result *api.Environment, err error) {
+func (db *DB) GetEnv(envID string, teamID string, canBePublic bool) (result *api.Environment, err error) {
 	id, err := uuid.Parse(teamID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse teamID: %w", err)
@@ -56,6 +56,10 @@ func (db *DB) GetEnv(envID string, teamID string) (result *api.Environment, err 
 	dbEnv, err := db.Client.Env.Query().Where(env.ID(envID), env.Or(env.TeamID(id), env.Public(true))).Only(db.ctx)
 	if err != nil {
 		return nil, ErrEnvNotFound
+	}
+
+	if !canBePublic && dbEnv.TeamID != id {
+		return nil, fmt.Errorf("you don't have access to this env '%s'", envID)
 	}
 
 	return &api.Environment{
@@ -95,14 +99,10 @@ func (db *DB) UpsertEnv(teamID, envID, buildID, dockerfile string) error {
 	return nil
 }
 
-func (db *DB) HasEnvAccess(envID string, teamID string, public bool) (bool, error) {
-	e, err := db.GetEnv(envID, teamID)
+func (db *DB) HasEnvAccess(envID string, teamID string, canBePublic bool) (bool, error) {
+	_, err := db.GetEnv(envID, teamID, canBePublic)
 	if err != nil {
 		return false, fmt.Errorf("failed to get env '%s': %w", envID, err)
-	}
-
-	if !public && e.Public {
-		return false, nil
 	}
 
 	return true, nil
