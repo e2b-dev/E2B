@@ -467,9 +467,9 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	pr, pw = io.Pipe()
 
 	go func() {
-		err := r.legacyClient.DownloadFromContainer(cont.ID, docker.DownloadFromContainerOptions{
+		err := r.legacyClient.ExportContainer(docker.ExportContainerOptions{
+			ID: cont.ID,
 			Context:      childCtx,
-			Path:         "/",
 			OutputStream: pw,
 		})
 		if err != nil {
