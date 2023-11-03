@@ -91,10 +91,6 @@ provider "nomad" {
   secret_id = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
 }
 
-data "google_secret_manager_secret_version" "betterstack_logs_api_key" {
-  secret = "betterstack-logs-api-key"
-}
-
 provider "consul" {
   address = "http://${data.google_compute_global_address.orch_server_consul_ip.address}"
   token   = data.google_secret_manager_secret_version.consul_acl_token.secret_data
@@ -190,8 +186,6 @@ module "telemetry" {
   logs_proxy_port        = var.logs_proxy_port
 
   gcp_zone = var.gcp_zone
-
-  betterstack_logs_api_key = data.google_secret_manager_secret_version.betterstack_logs_api_key.secret_data
 
   grafana_traces_endpoint  = data.google_secret_manager_secret_version.grafana_traces_endpoint.secret_data
   grafana_logs_endpoint    = data.google_secret_manager_secret_version.grafana_logs_endpoint.secret_data

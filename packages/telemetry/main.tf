@@ -25,12 +25,16 @@ resource "nomad_job" "logs-collector" {
   hcl2 {
     enabled = true
     vars = {
-      betterstack_logs_api_key = var.betterstack_logs_api_key
-      logs_port_number         = var.logs_proxy_port.port
-      logs_health_port_number  = var.logs_health_proxy_port.port
-      logs_health_path         = var.logs_health_proxy_port.health_path
-      logs_port_name           = var.logs_proxy_port.name
-      gcp_zone                 = var.gcp_zone
+      gcp_zone = var.gcp_zone
+
+      logs_port_number        = var.logs_proxy_port.port
+      logs_health_port_number = var.logs_health_proxy_port.port
+      logs_health_path        = var.logs_health_proxy_port.health_path
+      logs_port_name          = var.logs_proxy_port.name
+
+      grafana_api_key       = var.grafana_api_key
+      grafana_logs_endpoint = var.grafana_logs_endpoint
+      grafana_logs_username = var.grafana_logs_username
     }
   }
 }

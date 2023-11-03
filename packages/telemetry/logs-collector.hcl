@@ -18,7 +18,15 @@ variable "logs_port_name" {
   type = string
 }
 
-variable "betterstack_logs_api_key" {
+variable "grafana_api_key" {
+  type = string
+}
+
+variable "grafana_logs_username" {
+  type = string
+}
+
+variable "grafana_logs_endpoint" {
   type = string
 }
 
@@ -63,7 +71,7 @@ job "logs-collector" {
 
       config {
         network_mode = "host"
-        image        = "timberio/vector:0.14.X-alpine"
+        image        = "timberio/vector:0.33.X-alpine"
 
         ports = [
           "health",
@@ -95,26 +103,23 @@ data_dir = "alloc/data/vector/"
   enabled = true
   address = "0.0.0.0:${var.logs_health_port_number}"
 
-[sources.http_source]
+[sources.envd]
 type = "http"
 address = "0.0.0.0:${var.logs_port_number}"
 encoding = "json"
 
-[transforms.logtail_transform_Ng2hNptjHFG5TLHYJnMKdrAY]
-type = "remap"
-inputs = [ "*" ]
-source = '''
-  del(.timestamp)
-  .dt = now()
-'''
-
-[sinks.logtail_http_sink_Ng2hNptjHFG5TLHYJnMKdrAY]
-type = "http"
-inputs = [ "logtail_transform_Ng2hNptjHFG5TLHYJnMKdrAY" ]
-uri = "https://in.logtail.com/"
+[sinks.grafana]
+type = "loki"
+inputs = [ "envd" ]
+endpoint = "${var.grafana_logs_endpoint}"
 encoding.codec = "json"
-auth.strategy = "bearer"
-auth.token = "${var.betterstack_logs_api_key}"
+auth.strategy = "basic"
+auth.user = "${var.grafana_logs_username}"
+auth.password = "${var.grafana_api_key}"
+
+[sinks.grafana.labels]
+source = "vector"
+
         EOH
       }
     }

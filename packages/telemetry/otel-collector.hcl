@@ -152,7 +152,7 @@ exporters:
     auth:
       authenticator: basicauth/grafana_cloud_traces
   loki/grafana_cloud_logs:
-    endpoint: "${var.grafana_logs_endpoint}"
+    endpoint: "${var.grafana_logs_endpoint}/loki/api/v1/push"
     auth:
       authenticator: basicauth/grafana_cloud_logs
   prometheusremotewrite/grafana_cloud_metrics:
