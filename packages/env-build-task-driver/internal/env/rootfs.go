@@ -239,54 +239,56 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "created container")
 
 	defer func() {
-		cleanupContext, cleanupSpan := tracer.Start(
-			trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
-			"cleanup-container",
-		)
-		defer cleanupSpan.End()
-
-		err = r.legacyClient.RemoveContainer(docker.RemoveContainerOptions{
-			ID:            cont.ID,
-			RemoveVolumes: true,
-			Force:         true,
-			Context:       cleanupContext,
-		})
-		if err != nil {
-			errMsg := fmt.Errorf("error removing container %w", err)
-			telemetry.ReportError(cleanupContext, errMsg)
-		} else {
-			telemetry.ReportEvent(cleanupContext, "removed container")
-		}
-
-		// Move prunning to separate goroutine
-		cacheTimeout := filters.Arg("until", "6h")
-
-		_, err = r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
-			Filters: filters.NewArgs(cacheTimeout),
-			All:     true,
-		})
-		if err != nil {
-			errMsg := fmt.Errorf("error pruning build cache %w", err)
-			telemetry.ReportError(cleanupContext, errMsg)
-		} else {
-			telemetry.ReportEvent(cleanupContext, "pruned build cache")
-		}
-
-		_, err = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeout))
-		if err != nil {
-			errMsg := fmt.Errorf("error pruning images %w", err)
-			telemetry.ReportError(cleanupContext, errMsg)
-		} else {
-			telemetry.ReportEvent(cleanupContext, "pruned images")
-		}
-
-		_, err = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeout))
-		if err != nil {
-			errMsg := fmt.Errorf("error pruning containers %w", err)
-			telemetry.ReportError(cleanupContext, errMsg)
-		} else {
-			telemetry.ReportEvent(cleanupContext, "pruned containers")
-		}
+		go func() {
+			cleanupContext, cleanupSpan := tracer.Start(
+				trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
+				"cleanup-container",
+			)
+			defer cleanupSpan.End()
+	
+			err = r.legacyClient.RemoveContainer(docker.RemoveContainerOptions{
+				ID:            cont.ID,
+				RemoveVolumes: true,
+				Force:         true,
+				Context:       cleanupContext,
+			})
+			if err != nil {
+				errMsg := fmt.Errorf("error removing container %w", err)
+				telemetry.ReportError(cleanupContext, errMsg)
+			} else {
+				telemetry.ReportEvent(cleanupContext, "removed container")
+			}
+	
+			// Move prunning to separate goroutine
+			cacheTimeout := filters.Arg("until", "6h")
+	
+			_, err = r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
+				Filters: filters.NewArgs(cacheTimeout),
+				All:     true,
+			})
+			if err != nil {
+				errMsg := fmt.Errorf("error pruning build cache %w", err)
+				telemetry.ReportError(cleanupContext, errMsg)
+			} else {
+				telemetry.ReportEvent(cleanupContext, "pruned build cache")
+			}
+	
+			_, err = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeout))
+			if err != nil {
+				errMsg := fmt.Errorf("error pruning images %w", err)
+				telemetry.ReportError(cleanupContext, errMsg)
+			} else {
+				telemetry.ReportEvent(cleanupContext, "pruned images")
+			}
+	
+			_, err = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeout))
+			if err != nil {
+				errMsg := fmt.Errorf("error pruning containers %w", err)
+				telemetry.ReportError(cleanupContext, errMsg)
+			} else {
+				telemetry.ReportEvent(cleanupContext, "pruned containers")
+			}
+		}()
 	}()
 
 	telemetry.ReportEvent(childCtx, "created container")
