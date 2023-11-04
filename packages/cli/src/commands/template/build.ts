@@ -7,7 +7,7 @@ import * as e2b from '@e2b/sdk'
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getFiles, getRoot } from 'src/utils/filesystem'
-import { asBold, asBuildLogs, asFormattedSandboxTemplate, asLocal, asLocalRelative } from 'src/utils/format'
+import { asBold, asBuildLogs, asFormattedSandboxTemplate, asLocal, asLocalRelative, asPrimary } from 'src/utils/format'
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
 import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
@@ -235,15 +235,16 @@ async function waitForBuildFinish(
         throw new Error(
           `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
             template.data,
-          )} failed.\n`,
+          )} failed.\nCheck the logs above for more details or contact us ${asPrimary('(https://e2b.dev/docs/getting-help)')} to get help.\n`,
         )
     }
   } while (template.data.status === 'building' && elapsed() < maxBuildTime)
+  // TODO: We do have another timeout for envs building in API so we probably should handle timeout only in one place
   if (template.data.status === 'building' && elapsed() >= maxBuildTime) {
     throw new Error(
       `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
         template.data,
-      )} timed out.\n`,
+      )} timed out.\nCheck the logs above for more details or contact us ${asPrimary('(https://e2b.dev/docs/getting-help)')} to get help.\n`,
     )
   }
 }
@@ -341,8 +342,7 @@ async function buildTemplate(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${
-          error.message ?? 'no message'
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
         }`,
       )
     }
