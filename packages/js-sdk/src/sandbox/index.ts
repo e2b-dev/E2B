@@ -21,9 +21,9 @@ export type DownloadFileFormat =
 export interface SandboxOpts extends SandboxConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler;
   timeout?: number;
-  onStdout?: (out: ProcessMessage) => void;
-  onStderr?: (out: ProcessMessage) => void;
-  onExit?: () => void;
+  onStdout?: (out: ProcessMessage) => Promise<void> | void;
+  onStderr?: (out: ProcessMessage) => Promise<void> | void;
+  onExit?: () => Promise<void> | void;
 }
 
 export class Sandbox extends SandboxConnection {

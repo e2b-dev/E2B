@@ -42,11 +42,11 @@ export class DataAnalysis extends Sandbox {
   async runPython(code: string, opts: RunPythonOpts = {}) {
     const artifacts: string[] = []
 
-    const registerArtifacts = (event: FilesystemEvent) => {
+    const registerArtifacts = async (event: FilesystemEvent) => {
       if (event.operation === FilesystemOperation.Create) {
         const artifact = new Artifact(event.path, this)
         artifacts.push(event.path)
-        opts.onArtifact?.(artifact)
+        await opts.onArtifact?.(artifact)
       }
     }
 
