@@ -415,7 +415,7 @@ export class Sandbox extends SandboxConnection {
 
   static async create(opts?: SandboxOpts) {
     return new Sandbox(opts)
-      .open({ timeout: opts?.timeout })
+      ._open({ timeout: opts?.timeout })
       .then(async (sandbox) => {
         if (opts?.cwd) {
           console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
@@ -425,8 +425,8 @@ export class Sandbox extends SandboxConnection {
       })
   }
 
-  override async open(opts: CallOpts) {
-    await super.open(opts)
+  protected override async _open(opts: CallOpts) {
+    await super._open(opts)
 
     const portsHandler = this.onScanPorts
       ? (ports: { State: string; Ip: string; Port: number }[]) =>
