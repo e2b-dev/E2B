@@ -9,7 +9,15 @@ import (
 )
 
 func (db *DB) GetTeamID(apiKey string) (string, error) {
-	result, err := db.Client.TeamApiKey.Query().WithTeam().Where(teamapikey.ID(apiKey)).QueryTeam().Where(team.IsDefault(true)).Only(db.ctx)
+	result, err := db.
+		Client.
+		TeamApiKey.
+		Query().
+		WithTeam().
+		Where(teamapikey.ID(apiKey)).
+		QueryTeam().
+		Where(team.IsDefault(true)).
+		Only(db.ctx)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get team from API key: %w", err)
 
@@ -20,6 +28,7 @@ func (db *DB) GetTeamID(apiKey string) (string, error) {
 	//
 	if result.IsBlocked {
 		errMsg := fmt.Errorf("team is blocked")
+
 		return "", errMsg
 	}
 	//
@@ -27,7 +36,12 @@ func (db *DB) GetTeamID(apiKey string) (string, error) {
 }
 
 func (db *DB) GetUserID(token string) (string, error) {
-	result, err := db.Client.AccessToken.Query().Where(accesstoken.ID(token)).Only(db.ctx)
+	result, err := db.
+		Client.
+		AccessToken.
+		Query().
+		Where(accesstoken.ID(token)).
+		Only(db.ctx)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get user from access token: %w", err)
 
