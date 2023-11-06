@@ -30,6 +30,8 @@ const (
 	FieldBuildCount = "build_count"
 	// EdgeTeam holds the string denoting the team edge name in mutations.
 	EdgeTeam = "team"
+	// EdgeEnvAliases holds the string denoting the env_aliases edge name in mutations.
+	EdgeEnvAliases = "env_aliases"
 	// Table holds the table name of the env in the database.
 	Table = "envs"
 	// TeamTable is the table that holds the team relation/edge.
@@ -39,6 +41,13 @@ const (
 	TeamInverseTable = "teams"
 	// TeamColumn is the table column denoting the team relation/edge.
 	TeamColumn = "team_id"
+	// EnvAliasesTable is the table that holds the env_aliases relation/edge.
+	EnvAliasesTable = "env_alias"
+	// EnvAliasesInverseTable is the table name for the EnvAlias entity.
+	// It exists in this package in order to avoid circular dependency with the "envalias" package.
+	EnvAliasesInverseTable = "env_alias"
+	// EnvAliasesColumn is the table column denoting the env_aliases relation/edge.
+	EnvAliasesColumn = "env_id"
 )
 
 // Columns holds all SQL columns for env fields.
@@ -121,10 +130,31 @@ func ByTeamField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newTeamStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByEnvAliasesCount orders the results by env_aliases count.
+func ByEnvAliasesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEnvAliasesStep(), opts...)
+	}
+}
+
+// ByEnvAliases orders the results by env_aliases terms.
+func ByEnvAliases(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEnvAliasesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTeamStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TeamInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, TeamTable, TeamColumn),
+	)
+}
+func newEnvAliasesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EnvAliasesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EnvAliasesTable, EnvAliasesColumn),
 	)
 }

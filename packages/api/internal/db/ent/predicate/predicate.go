@@ -12,6 +12,9 @@ type AccessToken func(*sql.Selector)
 // Env is the predicate function for env builders.
 type Env func(*sql.Selector)
 
+// EnvAlias is the predicate function for envalias builders.
+type EnvAlias func(*sql.Selector)
+
 // Team is the predicate function for team builders.
 type Team func(*sql.Selector)
 

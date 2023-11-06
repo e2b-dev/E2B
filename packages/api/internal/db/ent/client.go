@@ -18,6 +18,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/accesstoken"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/envalias"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/tier"
@@ -36,6 +37,8 @@ type Client struct {
 	AccessToken *AccessTokenClient
 	// Env is the client for interacting with the Env builders.
 	Env *EnvClient
+	// EnvAlias is the client for interacting with the EnvAlias builders.
+	EnvAlias *EnvAliasClient
 	// Team is the client for interacting with the Team builders.
 	Team *TeamClient
 	// TeamApiKey is the client for interacting with the TeamApiKey builders.
@@ -61,6 +64,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.AccessToken = NewAccessTokenClient(c.config)
 	c.Env = NewEnvClient(c.config)
+	c.EnvAlias = NewEnvAliasClient(c.config)
 	c.Team = NewTeamClient(c.config)
 	c.TeamApiKey = NewTeamApiKeyClient(c.config)
 	c.Tier = NewTierClient(c.config)
@@ -155,6 +159,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:      cfg,
 		AccessToken: NewAccessTokenClient(cfg),
 		Env:         NewEnvClient(cfg),
+		EnvAlias:    NewEnvAliasClient(cfg),
 		Team:        NewTeamClient(cfg),
 		TeamApiKey:  NewTeamApiKeyClient(cfg),
 		Tier:        NewTierClient(cfg),
@@ -181,6 +186,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:      cfg,
 		AccessToken: NewAccessTokenClient(cfg),
 		Env:         NewEnvClient(cfg),
+		EnvAlias:    NewEnvAliasClient(cfg),
 		Team:        NewTeamClient(cfg),
 		TeamApiKey:  NewTeamApiKeyClient(cfg),
 		Tier:        NewTierClient(cfg),
@@ -215,7 +221,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.AccessToken, c.Env, c.Team, c.TeamApiKey, c.Tier, c.User, c.UsersTeams,
+		c.AccessToken, c.Env, c.EnvAlias, c.Team, c.TeamApiKey, c.Tier, c.User,
+		c.UsersTeams,
 	} {
 		n.Use(hooks...)
 	}
@@ -225,7 +232,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.AccessToken, c.Env, c.Team, c.TeamApiKey, c.Tier, c.User, c.UsersTeams,
+		c.AccessToken, c.Env, c.EnvAlias, c.Team, c.TeamApiKey, c.Tier, c.User,
+		c.UsersTeams,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -238,6 +246,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AccessToken.mutate(ctx, m)
 	case *EnvMutation:
 		return c.Env.mutate(ctx, m)
+	case *EnvAliasMutation:
+		return c.EnvAlias.mutate(ctx, m)
 	case *TeamMutation:
 		return c.Team.mutate(ctx, m)
 	case *TeamApiKeyMutation:
@@ -532,6 +542,25 @@ func (c *EnvClient) QueryTeam(e *Env) *TeamQuery {
 	return query
 }
 
+// QueryEnvAliases queries the env_aliases edge of a Env.
+func (c *EnvClient) QueryEnvAliases(e *Env) *EnvAliasQuery {
+	query := (&EnvAliasClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := e.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(env.Table, env.FieldID, id),
+			sqlgraph.To(envalias.Table, envalias.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, env.EnvAliasesTable, env.EnvAliasesColumn),
+		)
+		schemaConfig := e.schemaConfig
+		step.To.Schema = schemaConfig.EnvAlias
+		step.Edge.Schema = schemaConfig.EnvAlias
+		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *EnvClient) Hooks() []Hook {
 	return c.hooks.Env
@@ -554,6 +583,158 @@ func (c *EnvClient) mutate(ctx context.Context, m *EnvMutation) (Value, error) {
 		return (&EnvDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Env mutation op: %q", m.Op())
+	}
+}
+
+// EnvAliasClient is a client for the EnvAlias schema.
+type EnvAliasClient struct {
+	config
+}
+
+// NewEnvAliasClient returns a client for the EnvAlias from the given config.
+func NewEnvAliasClient(c config) *EnvAliasClient {
+	return &EnvAliasClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `envalias.Hooks(f(g(h())))`.
+func (c *EnvAliasClient) Use(hooks ...Hook) {
+	c.hooks.EnvAlias = append(c.hooks.EnvAlias, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `envalias.Intercept(f(g(h())))`.
+func (c *EnvAliasClient) Intercept(interceptors ...Interceptor) {
+	c.inters.EnvAlias = append(c.inters.EnvAlias, interceptors...)
+}
+
+// Create returns a builder for creating a EnvAlias entity.
+func (c *EnvAliasClient) Create() *EnvAliasCreate {
+	mutation := newEnvAliasMutation(c.config, OpCreate)
+	return &EnvAliasCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of EnvAlias entities.
+func (c *EnvAliasClient) CreateBulk(builders ...*EnvAliasCreate) *EnvAliasCreateBulk {
+	return &EnvAliasCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EnvAliasClient) MapCreateBulk(slice any, setFunc func(*EnvAliasCreate, int)) *EnvAliasCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EnvAliasCreateBulk{err: fmt.Errorf("calling to EnvAliasClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EnvAliasCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EnvAliasCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for EnvAlias.
+func (c *EnvAliasClient) Update() *EnvAliasUpdate {
+	mutation := newEnvAliasMutation(c.config, OpUpdate)
+	return &EnvAliasUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EnvAliasClient) UpdateOne(ea *EnvAlias) *EnvAliasUpdateOne {
+	mutation := newEnvAliasMutation(c.config, OpUpdateOne, withEnvAlias(ea))
+	return &EnvAliasUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EnvAliasClient) UpdateOneID(id int) *EnvAliasUpdateOne {
+	mutation := newEnvAliasMutation(c.config, OpUpdateOne, withEnvAliasID(id))
+	return &EnvAliasUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for EnvAlias.
+func (c *EnvAliasClient) Delete() *EnvAliasDelete {
+	mutation := newEnvAliasMutation(c.config, OpDelete)
+	return &EnvAliasDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EnvAliasClient) DeleteOne(ea *EnvAlias) *EnvAliasDeleteOne {
+	return c.DeleteOneID(ea.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EnvAliasClient) DeleteOneID(id int) *EnvAliasDeleteOne {
+	builder := c.Delete().Where(envalias.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EnvAliasDeleteOne{builder}
+}
+
+// Query returns a query builder for EnvAlias.
+func (c *EnvAliasClient) Query() *EnvAliasQuery {
+	return &EnvAliasQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEnvAlias},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a EnvAlias entity by its id.
+func (c *EnvAliasClient) Get(ctx context.Context, id int) (*EnvAlias, error) {
+	return c.Query().Where(envalias.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EnvAliasClient) GetX(ctx context.Context, id int) *EnvAlias {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAliasEnv queries the alias_env edge of a EnvAlias.
+func (c *EnvAliasClient) QueryAliasEnv(ea *EnvAlias) *EnvQuery {
+	query := (&EnvClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ea.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(envalias.Table, envalias.FieldID, id),
+			sqlgraph.To(env.Table, env.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, envalias.AliasEnvTable, envalias.AliasEnvColumn),
+		)
+		schemaConfig := ea.schemaConfig
+		step.To.Schema = schemaConfig.Env
+		step.Edge.Schema = schemaConfig.EnvAlias
+		fromV = sqlgraph.Neighbors(ea.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *EnvAliasClient) Hooks() []Hook {
+	return c.hooks.EnvAlias
+}
+
+// Interceptors returns the client interceptors.
+func (c *EnvAliasClient) Interceptors() []Interceptor {
+	return c.inters.EnvAlias
+}
+
+func (c *EnvAliasClient) mutate(ctx context.Context, m *EnvAliasMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EnvAliasCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EnvAliasUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EnvAliasUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EnvAliasDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown EnvAlias mutation op: %q", m.Op())
 	}
 }
 
@@ -1434,10 +1615,11 @@ func (c *UsersTeamsClient) mutate(ctx context.Context, m *UsersTeamsMutation) (V
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		AccessToken, Env, Team, TeamApiKey, Tier, User, UsersTeams []ent.Hook
+		AccessToken, Env, EnvAlias, Team, TeamApiKey, Tier, User, UsersTeams []ent.Hook
 	}
 	inters struct {
-		AccessToken, Env, Team, TeamApiKey, Tier, User, UsersTeams []ent.Interceptor
+		AccessToken, Env, EnvAlias, Team, TeamApiKey, Tier, User,
+		UsersTeams []ent.Interceptor
 	}
 )
 

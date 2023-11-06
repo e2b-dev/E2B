@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/accesstoken"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/envalias"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/predicate"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
@@ -33,6 +34,7 @@ const (
 	// Node types.
 	TypeAccessToken = "AccessToken"
 	TypeEnv         = "Env"
+	TypeEnvAlias    = "EnvAlias"
 	TypeTeam        = "Team"
 	TypeTeamApiKey  = "TeamApiKey"
 	TypeTier        = "Tier"
@@ -522,22 +524,25 @@ func (m *AccessTokenMutation) ResetEdge(name string) error {
 // EnvMutation represents an operation that mutates the Env nodes in the graph.
 type EnvMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *string
-	created_at     *time.Time
-	updated_at     *time.Time
-	dockerfile     *string
-	public         *bool
-	build_id       *uuid.UUID
-	build_count    *int
-	addbuild_count *int
-	clearedFields  map[string]struct{}
-	team           *uuid.UUID
-	clearedteam    bool
-	done           bool
-	oldValue       func(context.Context) (*Env, error)
-	predicates     []predicate.Env
+	op                 Op
+	typ                string
+	id                 *string
+	created_at         *time.Time
+	updated_at         *time.Time
+	dockerfile         *string
+	public             *bool
+	build_id           *uuid.UUID
+	build_count        *int
+	addbuild_count     *int
+	clearedFields      map[string]struct{}
+	team               *uuid.UUID
+	clearedteam        bool
+	env_aliases        map[int]struct{}
+	removedenv_aliases map[int]struct{}
+	clearedenv_aliases bool
+	done               bool
+	oldValue           func(context.Context) (*Env, error)
+	predicates         []predicate.Env
 }
 
 var _ ent.Mutation = (*EnvMutation)(nil)
@@ -943,6 +948,60 @@ func (m *EnvMutation) ResetTeam() {
 	m.clearedteam = false
 }
 
+// AddEnvAliasIDs adds the "env_aliases" edge to the EnvAlias entity by ids.
+func (m *EnvMutation) AddEnvAliasIDs(ids ...int) {
+	if m.env_aliases == nil {
+		m.env_aliases = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.env_aliases[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEnvAliases clears the "env_aliases" edge to the EnvAlias entity.
+func (m *EnvMutation) ClearEnvAliases() {
+	m.clearedenv_aliases = true
+}
+
+// EnvAliasesCleared reports if the "env_aliases" edge to the EnvAlias entity was cleared.
+func (m *EnvMutation) EnvAliasesCleared() bool {
+	return m.clearedenv_aliases
+}
+
+// RemoveEnvAliasIDs removes the "env_aliases" edge to the EnvAlias entity by IDs.
+func (m *EnvMutation) RemoveEnvAliasIDs(ids ...int) {
+	if m.removedenv_aliases == nil {
+		m.removedenv_aliases = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.env_aliases, ids[i])
+		m.removedenv_aliases[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEnvAliases returns the removed IDs of the "env_aliases" edge to the EnvAlias entity.
+func (m *EnvMutation) RemovedEnvAliasesIDs() (ids []int) {
+	for id := range m.removedenv_aliases {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EnvAliasesIDs returns the "env_aliases" edge IDs in the mutation.
+func (m *EnvMutation) EnvAliasesIDs() (ids []int) {
+	for id := range m.env_aliases {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEnvAliases resets all changes to the "env_aliases" edge.
+func (m *EnvMutation) ResetEnvAliases() {
+	m.env_aliases = nil
+	m.clearedenv_aliases = false
+	m.removedenv_aliases = nil
+}
+
 // Where appends a list predicates to the EnvMutation builder.
 func (m *EnvMutation) Where(ps ...predicate.Env) {
 	m.predicates = append(m.predicates, ps...)
@@ -1193,9 +1252,12 @@ func (m *EnvMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EnvMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.team != nil {
 		edges = append(edges, env.EdgeTeam)
+	}
+	if m.env_aliases != nil {
+		edges = append(edges, env.EdgeEnvAliases)
 	}
 	return edges
 }
@@ -1208,27 +1270,47 @@ func (m *EnvMutation) AddedIDs(name string) []ent.Value {
 		if id := m.team; id != nil {
 			return []ent.Value{*id}
 		}
+	case env.EdgeEnvAliases:
+		ids := make([]ent.Value, 0, len(m.env_aliases))
+		for id := range m.env_aliases {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EnvMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.removedenv_aliases != nil {
+		edges = append(edges, env.EdgeEnvAliases)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *EnvMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case env.EdgeEnvAliases:
+		ids := make([]ent.Value, 0, len(m.removedenv_aliases))
+		for id := range m.removedenv_aliases {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EnvMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedteam {
 		edges = append(edges, env.EdgeTeam)
+	}
+	if m.clearedenv_aliases {
+		edges = append(edges, env.EdgeEnvAliases)
 	}
 	return edges
 }
@@ -1239,6 +1321,8 @@ func (m *EnvMutation) EdgeCleared(name string) bool {
 	switch name {
 	case env.EdgeTeam:
 		return m.clearedteam
+	case env.EdgeEnvAliases:
+		return m.clearedenv_aliases
 	}
 	return false
 }
@@ -1261,8 +1345,458 @@ func (m *EnvMutation) ResetEdge(name string) error {
 	case env.EdgeTeam:
 		m.ResetTeam()
 		return nil
+	case env.EdgeEnvAliases:
+		m.ResetEnvAliases()
+		return nil
 	}
 	return fmt.Errorf("unknown Env edge %s", name)
+}
+
+// EnvAliasMutation represents an operation that mutates the EnvAlias nodes in the graph.
+type EnvAliasMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	alias            *string
+	clearedFields    map[string]struct{}
+	alias_env        *string
+	clearedalias_env bool
+	done             bool
+	oldValue         func(context.Context) (*EnvAlias, error)
+	predicates       []predicate.EnvAlias
+}
+
+var _ ent.Mutation = (*EnvAliasMutation)(nil)
+
+// envaliasOption allows management of the mutation configuration using functional options.
+type envaliasOption func(*EnvAliasMutation)
+
+// newEnvAliasMutation creates new mutation for the EnvAlias entity.
+func newEnvAliasMutation(c config, op Op, opts ...envaliasOption) *EnvAliasMutation {
+	m := &EnvAliasMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeEnvAlias,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withEnvAliasID sets the ID field of the mutation.
+func withEnvAliasID(id int) envaliasOption {
+	return func(m *EnvAliasMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *EnvAlias
+		)
+		m.oldValue = func(ctx context.Context) (*EnvAlias, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().EnvAlias.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withEnvAlias sets the old EnvAlias of the mutation.
+func withEnvAlias(node *EnvAlias) envaliasOption {
+	return func(m *EnvAliasMutation) {
+		m.oldValue = func(context.Context) (*EnvAlias, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m EnvAliasMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m EnvAliasMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *EnvAliasMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *EnvAliasMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().EnvAlias.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetAlias sets the "alias" field.
+func (m *EnvAliasMutation) SetAlias(s string) {
+	m.alias = &s
+}
+
+// Alias returns the value of the "alias" field in the mutation.
+func (m *EnvAliasMutation) Alias() (r string, exists bool) {
+	v := m.alias
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAlias returns the old "alias" field's value of the EnvAlias entity.
+// If the EnvAlias object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvAliasMutation) OldAlias(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAlias is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAlias requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAlias: %w", err)
+	}
+	return oldValue.Alias, nil
+}
+
+// ResetAlias resets all changes to the "alias" field.
+func (m *EnvAliasMutation) ResetAlias() {
+	m.alias = nil
+}
+
+// SetEnvID sets the "env_id" field.
+func (m *EnvAliasMutation) SetEnvID(s string) {
+	m.alias_env = &s
+}
+
+// EnvID returns the value of the "env_id" field in the mutation.
+func (m *EnvAliasMutation) EnvID() (r string, exists bool) {
+	v := m.alias_env
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnvID returns the old "env_id" field's value of the EnvAlias entity.
+// If the EnvAlias object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvAliasMutation) OldEnvID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnvID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnvID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnvID: %w", err)
+	}
+	return oldValue.EnvID, nil
+}
+
+// ResetEnvID resets all changes to the "env_id" field.
+func (m *EnvAliasMutation) ResetEnvID() {
+	m.alias_env = nil
+}
+
+// SetAliasEnvID sets the "alias_env" edge to the Env entity by id.
+func (m *EnvAliasMutation) SetAliasEnvID(id string) {
+	m.alias_env = &id
+}
+
+// ClearAliasEnv clears the "alias_env" edge to the Env entity.
+func (m *EnvAliasMutation) ClearAliasEnv() {
+	m.clearedalias_env = true
+	m.clearedFields[envalias.FieldEnvID] = struct{}{}
+}
+
+// AliasEnvCleared reports if the "alias_env" edge to the Env entity was cleared.
+func (m *EnvAliasMutation) AliasEnvCleared() bool {
+	return m.clearedalias_env
+}
+
+// AliasEnvID returns the "alias_env" edge ID in the mutation.
+func (m *EnvAliasMutation) AliasEnvID() (id string, exists bool) {
+	if m.alias_env != nil {
+		return *m.alias_env, true
+	}
+	return
+}
+
+// AliasEnvIDs returns the "alias_env" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AliasEnvID instead. It exists only for internal usage by the builders.
+func (m *EnvAliasMutation) AliasEnvIDs() (ids []string) {
+	if id := m.alias_env; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAliasEnv resets all changes to the "alias_env" edge.
+func (m *EnvAliasMutation) ResetAliasEnv() {
+	m.alias_env = nil
+	m.clearedalias_env = false
+}
+
+// Where appends a list predicates to the EnvAliasMutation builder.
+func (m *EnvAliasMutation) Where(ps ...predicate.EnvAlias) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the EnvAliasMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *EnvAliasMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.EnvAlias, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *EnvAliasMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *EnvAliasMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (EnvAlias).
+func (m *EnvAliasMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *EnvAliasMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.alias != nil {
+		fields = append(fields, envalias.FieldAlias)
+	}
+	if m.alias_env != nil {
+		fields = append(fields, envalias.FieldEnvID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *EnvAliasMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case envalias.FieldAlias:
+		return m.Alias()
+	case envalias.FieldEnvID:
+		return m.EnvID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *EnvAliasMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case envalias.FieldAlias:
+		return m.OldAlias(ctx)
+	case envalias.FieldEnvID:
+		return m.OldEnvID(ctx)
+	}
+	return nil, fmt.Errorf("unknown EnvAlias field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EnvAliasMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case envalias.FieldAlias:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAlias(v)
+		return nil
+	case envalias.FieldEnvID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnvID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EnvAlias field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *EnvAliasMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *EnvAliasMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EnvAliasMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown EnvAlias numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *EnvAliasMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *EnvAliasMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *EnvAliasMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown EnvAlias nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *EnvAliasMutation) ResetField(name string) error {
+	switch name {
+	case envalias.FieldAlias:
+		m.ResetAlias()
+		return nil
+	case envalias.FieldEnvID:
+		m.ResetEnvID()
+		return nil
+	}
+	return fmt.Errorf("unknown EnvAlias field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *EnvAliasMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.alias_env != nil {
+		edges = append(edges, envalias.EdgeAliasEnv)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *EnvAliasMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case envalias.EdgeAliasEnv:
+		if id := m.alias_env; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *EnvAliasMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *EnvAliasMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *EnvAliasMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedalias_env {
+		edges = append(edges, envalias.EdgeAliasEnv)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *EnvAliasMutation) EdgeCleared(name string) bool {
+	switch name {
+	case envalias.EdgeAliasEnv:
+		return m.clearedalias_env
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *EnvAliasMutation) ClearEdge(name string) error {
+	switch name {
+	case envalias.EdgeAliasEnv:
+		m.ClearAliasEnv()
+		return nil
+	}
+	return fmt.Errorf("unknown EnvAlias unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *EnvAliasMutation) ResetEdge(name string) error {
+	switch name {
+	case envalias.EdgeAliasEnv:
+		m.ResetAliasEnv()
+		return nil
+	}
+	return fmt.Errorf("unknown EnvAlias edge %s", name)
 }
 
 // TeamMutation represents an operation that mutates the Team nodes in the graph.

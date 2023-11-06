@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/envalias"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/google/uuid"
 )
@@ -100,6 +101,21 @@ func (ec *EnvCreate) SetID(s string) *EnvCreate {
 // SetTeam sets the "team" edge to the Team entity.
 func (ec *EnvCreate) SetTeam(t *Team) *EnvCreate {
 	return ec.SetTeamID(t.ID)
+}
+
+// AddEnvAliasIDs adds the "env_aliases" edge to the EnvAlias entity by IDs.
+func (ec *EnvCreate) AddEnvAliasIDs(ids ...int) *EnvCreate {
+	ec.mutation.AddEnvAliasIDs(ids...)
+	return ec
+}
+
+// AddEnvAliases adds the "env_aliases" edges to the EnvAlias entity.
+func (ec *EnvCreate) AddEnvAliases(e ...*EnvAlias) *EnvCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return ec.AddEnvAliasIDs(ids...)
 }
 
 // Mutation returns the EnvMutation object of the builder.
@@ -254,6 +270,23 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.TeamID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ec.mutation.EnvAliasesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.EnvAliasesTable,
+			Columns: []string{env.EnvAliasesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+			},
+		}
+		edge.Schema = ec.schemaConfig.EnvAlias
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

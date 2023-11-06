@@ -34,6 +34,7 @@ func (Env) Fields() []ent.Field {
 func (Env) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("team", Team.Type).Ref("envs").Unique().Field("team_id").Required(),
+		edge.To("env_aliases", EnvAlias.Type),
 	}
 }
 

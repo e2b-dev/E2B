@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/envalias"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/internal"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/predicate"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
@@ -95,6 +96,21 @@ func (eu *EnvUpdate) SetTeam(t *Team) *EnvUpdate {
 	return eu.SetTeamID(t.ID)
 }
 
+// AddEnvAliasIDs adds the "env_aliases" edge to the EnvAlias entity by IDs.
+func (eu *EnvUpdate) AddEnvAliasIDs(ids ...int) *EnvUpdate {
+	eu.mutation.AddEnvAliasIDs(ids...)
+	return eu
+}
+
+// AddEnvAliases adds the "env_aliases" edges to the EnvAlias entity.
+func (eu *EnvUpdate) AddEnvAliases(e ...*EnvAlias) *EnvUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return eu.AddEnvAliasIDs(ids...)
+}
+
 // Mutation returns the EnvMutation object of the builder.
 func (eu *EnvUpdate) Mutation() *EnvMutation {
 	return eu.mutation
@@ -104,6 +120,27 @@ func (eu *EnvUpdate) Mutation() *EnvMutation {
 func (eu *EnvUpdate) ClearTeam() *EnvUpdate {
 	eu.mutation.ClearTeam()
 	return eu
+}
+
+// ClearEnvAliases clears all "env_aliases" edges to the EnvAlias entity.
+func (eu *EnvUpdate) ClearEnvAliases() *EnvUpdate {
+	eu.mutation.ClearEnvAliases()
+	return eu
+}
+
+// RemoveEnvAliasIDs removes the "env_aliases" edge to EnvAlias entities by IDs.
+func (eu *EnvUpdate) RemoveEnvAliasIDs(ids ...int) *EnvUpdate {
+	eu.mutation.RemoveEnvAliasIDs(ids...)
+	return eu
+}
+
+// RemoveEnvAliases removes "env_aliases" edges to EnvAlias entities.
+func (eu *EnvUpdate) RemoveEnvAliases(e ...*EnvAlias) *EnvUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return eu.RemoveEnvAliasIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -202,6 +239,54 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if eu.mutation.EnvAliasesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.EnvAliasesTable,
+			Columns: []string{env.EnvAliasesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+			},
+		}
+		edge.Schema = eu.schemaConfig.EnvAlias
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := eu.mutation.RemovedEnvAliasesIDs(); len(nodes) > 0 && !eu.mutation.EnvAliasesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.EnvAliasesTable,
+			Columns: []string{env.EnvAliasesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+			},
+		}
+		edge.Schema = eu.schemaConfig.EnvAlias
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := eu.mutation.EnvAliasesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.EnvAliasesTable,
+			Columns: []string{env.EnvAliasesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+			},
+		}
+		edge.Schema = eu.schemaConfig.EnvAlias
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.Node.Schema = eu.schemaConfig.Env
 	ctx = internal.NewSchemaConfigContext(ctx, eu.schemaConfig)
 	if n, err = sqlgraph.UpdateNodes(ctx, eu.driver, _spec); err != nil {
@@ -288,6 +373,21 @@ func (euo *EnvUpdateOne) SetTeam(t *Team) *EnvUpdateOne {
 	return euo.SetTeamID(t.ID)
 }
 
+// AddEnvAliasIDs adds the "env_aliases" edge to the EnvAlias entity by IDs.
+func (euo *EnvUpdateOne) AddEnvAliasIDs(ids ...int) *EnvUpdateOne {
+	euo.mutation.AddEnvAliasIDs(ids...)
+	return euo
+}
+
+// AddEnvAliases adds the "env_aliases" edges to the EnvAlias entity.
+func (euo *EnvUpdateOne) AddEnvAliases(e ...*EnvAlias) *EnvUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return euo.AddEnvAliasIDs(ids...)
+}
+
 // Mutation returns the EnvMutation object of the builder.
 func (euo *EnvUpdateOne) Mutation() *EnvMutation {
 	return euo.mutation
@@ -297,6 +397,27 @@ func (euo *EnvUpdateOne) Mutation() *EnvMutation {
 func (euo *EnvUpdateOne) ClearTeam() *EnvUpdateOne {
 	euo.mutation.ClearTeam()
 	return euo
+}
+
+// ClearEnvAliases clears all "env_aliases" edges to the EnvAlias entity.
+func (euo *EnvUpdateOne) ClearEnvAliases() *EnvUpdateOne {
+	euo.mutation.ClearEnvAliases()
+	return euo
+}
+
+// RemoveEnvAliasIDs removes the "env_aliases" edge to EnvAlias entities by IDs.
+func (euo *EnvUpdateOne) RemoveEnvAliasIDs(ids ...int) *EnvUpdateOne {
+	euo.mutation.RemoveEnvAliasIDs(ids...)
+	return euo
+}
+
+// RemoveEnvAliases removes "env_aliases" edges to EnvAlias entities.
+func (euo *EnvUpdateOne) RemoveEnvAliases(e ...*EnvAlias) *EnvUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return euo.RemoveEnvAliasIDs(ids...)
 }
 
 // Where appends a list predicates to the EnvUpdate builder.
@@ -420,6 +541,54 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 			},
 		}
 		edge.Schema = euo.schemaConfig.Env
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if euo.mutation.EnvAliasesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.EnvAliasesTable,
+			Columns: []string{env.EnvAliasesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+			},
+		}
+		edge.Schema = euo.schemaConfig.EnvAlias
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := euo.mutation.RemovedEnvAliasesIDs(); len(nodes) > 0 && !euo.mutation.EnvAliasesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.EnvAliasesTable,
+			Columns: []string{env.EnvAliasesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+			},
+		}
+		edge.Schema = euo.schemaConfig.EnvAlias
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := euo.mutation.EnvAliasesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.EnvAliasesTable,
+			Columns: []string{env.EnvAliasesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+			},
+		}
+		edge.Schema = euo.schemaConfig.EnvAlias
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}

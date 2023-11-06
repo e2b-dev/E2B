@@ -45,6 +45,26 @@ var (
 			},
 		},
 	}
+	// EnvAliasColumns holds the columns for the "env_alias" table.
+	EnvAliasColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "alias", Type: field.TypeString, Unique: true, Size: 2147483647},
+		{Name: "env_id", Type: field.TypeString},
+	}
+	// EnvAliasTable holds the schema information for the "env_alias" table.
+	EnvAliasTable = &schema.Table{
+		Name:       "env_alias",
+		Columns:    EnvAliasColumns,
+		PrimaryKey: []*schema.Column{EnvAliasColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "env_alias_envs_env_aliases",
+				Columns:    []*schema.Column{EnvAliasColumns[2]},
+				RefColumns: []*schema.Column{EnvsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// TeamsColumns holds the columns for the "teams" table.
 	TeamsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
@@ -158,6 +178,7 @@ var (
 	Tables = []*schema.Table{
 		AccessTokensTable,
 		EnvsTable,
+		EnvAliasTable,
 		TeamsTable,
 		TeamAPIKeysTable,
 		TiersTable,
@@ -168,6 +189,7 @@ var (
 
 func init() {
 	EnvsTable.ForeignKeys[0].RefTable = TeamsTable
+	EnvAliasTable.ForeignKeys[0].RefTable = EnvsTable
 	TeamsTable.ForeignKeys[0].RefTable = TiersTable
 	TeamAPIKeysTable.ForeignKeys[0].RefTable = TeamsTable
 	UsersTable.ForeignKeys[0].RefTable = AccessTokensTable

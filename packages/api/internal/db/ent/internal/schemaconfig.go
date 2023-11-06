@@ -9,6 +9,7 @@ import "context"
 type SchemaConfig struct {
 	AccessToken string // AccessToken table.
 	Env         string // Env table.
+	EnvAlias    string // EnvAlias table.
 	Team        string // Team table.
 	TeamApiKey  string // TeamApiKey table.
 	Tier        string // Tier table.

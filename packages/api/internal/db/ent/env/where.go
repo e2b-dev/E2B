@@ -386,6 +386,35 @@ func HasTeamWith(preds ...predicate.Team) predicate.Env {
 	})
 }
 
+// HasEnvAliases applies the HasEdge predicate on the "env_aliases" edge.
+func HasEnvAliases() predicate.Env {
+	return predicate.Env(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EnvAliasesTable, EnvAliasesColumn),
+		)
+		schemaConfig := internal.SchemaConfigFromContext(s.Context())
+		step.To.Schema = schemaConfig.EnvAlias
+		step.Edge.Schema = schemaConfig.EnvAlias
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEnvAliasesWith applies the HasEdge predicate on the "env_aliases" edge with a given conditions (other predicates).
+func HasEnvAliasesWith(preds ...predicate.EnvAlias) predicate.Env {
+	return predicate.Env(func(s *sql.Selector) {
+		step := newEnvAliasesStep()
+		schemaConfig := internal.SchemaConfigFromContext(s.Context())
+		step.To.Schema = schemaConfig.EnvAlias
+		step.Edge.Schema = schemaConfig.EnvAlias
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Env) predicate.Env {
 	return predicate.Env(sql.AndPredicates(predicates...))

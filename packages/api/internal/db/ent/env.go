@@ -43,9 +43,11 @@ type Env struct {
 type EnvEdges struct {
 	// Team holds the value of the team edge.
 	Team *Team `json:"team,omitempty"`
+	// EnvAliases holds the value of the env_aliases edge.
+	EnvAliases []*EnvAlias `json:"env_aliases,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // TeamOrErr returns the Team value or an error if the edge
@@ -59,6 +61,15 @@ func (e EnvEdges) TeamOrErr() (*Team, error) {
 		return e.Team, nil
 	}
 	return nil, &NotLoadedError{edge: "team"}
+}
+
+// EnvAliasesOrErr returns the EnvAliases value or an error if the edge
+// was not loaded in eager-loading.
+func (e EnvEdges) EnvAliasesOrErr() ([]*EnvAlias, error) {
+	if e.loadedTypes[1] {
+		return e.EnvAliases, nil
+	}
+	return nil, &NotLoadedError{edge: "env_aliases"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -155,6 +166,11 @@ func (e *Env) Value(name string) (ent.Value, error) {
 // QueryTeam queries the "team" edge of the Env entity.
 func (e *Env) QueryTeam() *TeamQuery {
 	return NewEnvClient(e.config).QueryTeam(e)
+}
+
+// QueryEnvAliases queries the "env_aliases" edge of the Env entity.
+func (e *Env) QueryEnvAliases() *EnvAliasQuery {
+	return NewEnvClient(e.config).QueryEnvAliases(e)
 }
 
 // Update returns a builder for updating this Env.

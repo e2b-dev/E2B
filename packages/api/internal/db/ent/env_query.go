@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -11,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/envalias"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/internal"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/predicate"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
@@ -20,11 +22,12 @@ import (
 // EnvQuery is the builder for querying Env entities.
 type EnvQuery struct {
 	config
-	ctx        *QueryContext
-	order      []env.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Env
-	withTeam   *TeamQuery
+	ctx            *QueryContext
+	order          []env.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.Env
+	withTeam       *TeamQuery
+	withEnvAliases *EnvAliasQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -80,6 +83,31 @@ func (eq *EnvQuery) QueryTeam() *TeamQuery {
 		schemaConfig := eq.schemaConfig
 		step.To.Schema = schemaConfig.Team
 		step.Edge.Schema = schemaConfig.Env
+		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEnvAliases chains the current query on the "env_aliases" edge.
+func (eq *EnvQuery) QueryEnvAliases() *EnvAliasQuery {
+	query := (&EnvAliasClient{config: eq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := eq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := eq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(env.Table, env.FieldID, selector),
+			sqlgraph.To(envalias.Table, envalias.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, env.EnvAliasesTable, env.EnvAliasesColumn),
+		)
+		schemaConfig := eq.schemaConfig
+		step.To.Schema = schemaConfig.EnvAlias
+		step.Edge.Schema = schemaConfig.EnvAlias
 		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
 		return fromU, nil
 	}
@@ -273,12 +301,13 @@ func (eq *EnvQuery) Clone() *EnvQuery {
 		return nil
 	}
 	return &EnvQuery{
-		config:     eq.config,
-		ctx:        eq.ctx.Clone(),
-		order:      append([]env.OrderOption{}, eq.order...),
-		inters:     append([]Interceptor{}, eq.inters...),
-		predicates: append([]predicate.Env{}, eq.predicates...),
-		withTeam:   eq.withTeam.Clone(),
+		config:         eq.config,
+		ctx:            eq.ctx.Clone(),
+		order:          append([]env.OrderOption{}, eq.order...),
+		inters:         append([]Interceptor{}, eq.inters...),
+		predicates:     append([]predicate.Env{}, eq.predicates...),
+		withTeam:       eq.withTeam.Clone(),
+		withEnvAliases: eq.withEnvAliases.Clone(),
 		// clone intermediate query.
 		sql:  eq.sql.Clone(),
 		path: eq.path,
@@ -293,6 +322,17 @@ func (eq *EnvQuery) WithTeam(opts ...func(*TeamQuery)) *EnvQuery {
 		opt(query)
 	}
 	eq.withTeam = query
+	return eq
+}
+
+// WithEnvAliases tells the query-builder to eager-load the nodes that are connected to
+// the "env_aliases" edge. The optional arguments are used to configure the query builder of the edge.
+func (eq *EnvQuery) WithEnvAliases(opts ...func(*EnvAliasQuery)) *EnvQuery {
+	query := (&EnvAliasClient{config: eq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	eq.withEnvAliases = query
 	return eq
 }
 
@@ -374,8 +414,9 @@ func (eq *EnvQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Env, err
 	var (
 		nodes       = []*Env{}
 		_spec       = eq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			eq.withTeam != nil,
+			eq.withEnvAliases != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -401,6 +442,13 @@ func (eq *EnvQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Env, err
 	if query := eq.withTeam; query != nil {
 		if err := eq.loadTeam(ctx, query, nodes, nil,
 			func(n *Env, e *Team) { n.Edges.Team = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := eq.withEnvAliases; query != nil {
+		if err := eq.loadEnvAliases(ctx, query, nodes,
+			func(n *Env) { n.Edges.EnvAliases = []*EnvAlias{} },
+			func(n *Env, e *EnvAlias) { n.Edges.EnvAliases = append(n.Edges.EnvAliases, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -433,6 +481,36 @@ func (eq *EnvQuery) loadTeam(ctx context.Context, query *TeamQuery, nodes []*Env
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (eq *EnvQuery) loadEnvAliases(ctx context.Context, query *EnvAliasQuery, nodes []*Env, init func(*Env), assign func(*Env, *EnvAlias)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Env)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(envalias.FieldEnvID)
+	}
+	query.Where(predicate.EnvAlias(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(env.EnvAliasesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EnvID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "env_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }
