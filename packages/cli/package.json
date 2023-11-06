@@ -1,9 +1,9 @@
 {
   "name": "@e2b/cli",
-  "version": "0.0.11",
-  "description": "CLI for managing e2b environments",
-  "homepage": "https://usedevbook.com",
-  "license": "SEE LICENSE IN LICENSE",
+  "version": "0.0.16",
+  "description": "CLI for managing e2b sandbox templates",
+  "homepage": "https://e2b.dev",
+  "license": "MIT",
   "author": {
     "name": "FoundryLabs, Inc.",
     "email": "hello@e2b.dev",
@@ -19,22 +19,23 @@
   },
   "sideEffects": false,
   "scripts": {
-    "prepublishOnly": "npm run build",
-    "build": "rm -rf ./dist && tsup --minify",
+    "prepublishOnly": "pnpm run build",
+    "build": "tsup --minify",
     "dev": "tsup --watch",
-    "test-e2b": "cd testground/demo-basic && ../../dist/index.js env create"
+    "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
+    "check-deps": "knip",
+    "update-deps": "ncu -u && pnpm i"
   },
   "devDependencies": {
     "@types/common-tags": "^1.8.2",
-    "@types/inquirer": "^8.0.0",
-    "@types/node": "16.11",
-    "@types/node-fetch": "^2.6.5",
-    "@types/parse-gitignore": "^1.0.0",
-    "@types/platform": "^1.3.4",
-    "@types/update-notifier": "5.1.0",
-    "platform": "^1.3.6",
-    "tsup": "^6.5.0",
-    "typescript": "^4.9.3"
+    "@types/node": "^18.18.6",
+    "@types/tar-fs": "^2.0.3",
+    "@types/update-notifier": "6.0.5",
+    "knip": "^2.33.4",
+    "npm-check-updates": "^16.14.6",
+    "tsup": "^7.2.0",
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6"
   },
   "files": [
     "dist",
@@ -47,31 +48,21 @@
   },
   "dependencies": {
     "@balena/dockerignore": "^1.0.2",
-    "@devbookhq/sdk": "^2.6.88",
-    "@e2b/sdk": "^0.7.3",
+    "@e2b/sdk": "^0.7.5",
     "@iarna/toml": "^2.2.5",
-    "@nodelib/fs.walk": "^1.2.8",
-    "@types/tar-fs": "^2.0.2",
+    "@nodelib/fs.walk": "^2.0.0",
     "async-listen": "^3.0.1",
-    "boxen": "^7.0.0",
-    "chalk": "^5.1.2",
-    "chokidar": "^3.5.3",
-    "commander": "^9.4.1",
+    "boxen": "^7.1.1",
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
     "common-tags": "^1.8.2",
-    "cross-blob": "^3.0.2",
-    "docker-names": "^1.2.1",
-    "formdata-node": "^5.0.1",
-    "get-port": "^7.0.0",
     "ignore": "^5.2.4",
-    "inquirer": "^8.0.0",
-    "node-fetch": "^3.3.2",
-    "open": "^8.4.2",
-    "parse-gitignore": "^2.0.0",
+    "open": "^9.1.0",
     "tar-fs": "^3.0.4",
     "update-notifier": "5.1.0",
-    "yup": "^0.32.11"
+    "yup": "^1.3.2"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   }
 }

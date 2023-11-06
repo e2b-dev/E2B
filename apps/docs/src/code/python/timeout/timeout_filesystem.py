@@ -1,16 +1,16 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Nodejs")
+sandbox = Sandbox(id="base")
 
 # Timeout 3s for the write operation
-session.filesystem.write("test.txt", "Hello World", timeout=3) # $HighlightLine
+sandbox.filesystem.write("test.txt", "Hello World", timeout=3)  # $HighlightLine
 
 # Timeout 3s for the list operation
-dir_content = session.filesystem.list(".", timeout=3) # $HighlightLine
+dir_content = sandbox.filesystem.list(".", timeout=3)  # $HighlightLine
 print(dir_content)
 
 # Timeout 3s for the read operation
-file_content = session.filesystem.read("test.txt", timeout=3) # $HighlightLine
+file_content = sandbox.filesystem.read("test.txt", timeout=3)  # $HighlightLine
 print(file_content)
 
-session.close()
+sandbox.close()

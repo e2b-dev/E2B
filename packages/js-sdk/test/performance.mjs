@@ -1,6 +1,6 @@
 import { writeFileSync } from 'fs'
 
-import { Session } from '../dist/cjs/index.js'
+import { Sandbox } from '../dist/index.js'
 
 const reportSummaryFile = process.env.SUMMARY_FILE || './test.md'
 
@@ -8,25 +8,25 @@ const codeSnippetIDs = ['5udkAFHBVrGz']
 const samplePerID = 15
 const upperBoundary = 1000 // 1s
 
-async function spinSession(id) {
-  console.log('Creating session...')
-  let session
+async function spinSandbox(id) {
+  console.log('Creating sandbox...')
+  let sandbox
   try {
     const startTime = performance.now()
-    session = new Session({
-      id,
+    sandbox = new Sandbox({
+      id
       // debug: true,
     })
-    session.open()
+    sandbox.open()
 
     const endTime = performance.now()
     return endTime - startTime
   } catch (e) {
     console.error(`Measuring ${id} failed`, e)
   } finally {
-    ; (async () => {
+    ;(async () => {
       try {
-        // await session?.close()
+        // await sandbox?.close()
       } catch (e) {
         // Do nothing
       }
@@ -37,7 +37,7 @@ async function spinSession(id) {
 }
 
 function createReport(data, time) {
-  let template = `# Devbook SDK - Session Performance
+  let template = `# E2B SDK - Sandbox Performance
 
 *${time}*
 
@@ -64,12 +64,12 @@ function writeMeasurements(data) {
 
 async function sample(id, size) {
   let totalTime = 0
-  const entryName = `Public session (${id})`
+  const entryName = `Public sandbox (${id})`
 
   try {
     for (let i = 0; i < size; i++) {
-      const timeToSession = await spinSession(id)
-      totalTime += timeToSession
+      const timeToSandbox = await spinSandbox(id)
+      totalTime += timeToSandbox
     }
 
     const averageTime = Math.round(totalTime / size)
@@ -77,16 +77,16 @@ async function sample(id, size) {
     return {
       [entryName]: {
         result: `${averageTime}ms ${averageTime < upperBoundary ? ':heavy_check_mark:' : ':x:'
-          }`,
-        size,
-      },
+        }`,
+        size
+      }
     }
   } catch (e) {
     return {
       [entryName]: {
         size,
-        result: e.message,
-      },
+        result: e.message
+      }
     }
   }
 }
@@ -100,7 +100,7 @@ async function main() {
   }
 
   // for (const id of codeSnippetIDs) {
-  //   // We do only one sample of persistent session because otherview we would get reconnected to the same session
+  //   // We do only one sample of persistent sandbox because otherview we would get reconnected to the same sandbox
   //   const entry = await sample(id, 1, true)
   //   entries = { ...entries, ...entry }
   // }

@@ -1,11 +1,11 @@
 import Link from 'next/link'
 
 export default function TopLevelNavItem({
-  href,
-  stat,
-  statType,
-  icon,
-}: {
+                                          href,
+                                          stat,
+                                          statType,
+                                          icon,
+                                        }: {
   href: string
   stat?: number | null
   statType?: string

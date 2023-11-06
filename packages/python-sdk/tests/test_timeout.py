@@ -1,43 +1,43 @@
 import pytest
 
-from e2b import Session
-from e2b.session.exception import TimeoutException
+from e2b import Sandbox
+from e2b.sandbox.exception import TimeoutException
 
 
-def test_create_session_timeout():
-    session: Session | None = None
+def test_create_sandbox_timeout():
+    sandbox: Sandbox | None = None
 
     with pytest.raises(TimeoutException):
-        session = Session("Bash", timeout=0.01)
+        sandbox = Sandbox(timeout=0.01)
 
-    if session:
-        session.close()
+    if sandbox:
+        sandbox.close()
 
 
 def test_process_timeout():
-    session: Session | None = None
+    sandbox: Sandbox | None = None
 
     with pytest.raises(TimeoutException):
-        session = Session("Bash")
-        session.process.start(
+        sandbox = Sandbox()
+        sandbox.process.start(
             "sleep 1",
             timeout=0.01,
         )
 
-    if session:
-        session.close()
+    if sandbox:
+        sandbox.close()
 
 
 def test_filesystem_timeout():
-    session: Session | None = None
+    sandbox: Sandbox | None = None
 
     with pytest.raises(TimeoutException):
-        session = Session("Bash")
-        session.filesystem.write(
+        sandbox = Sandbox()
+        sandbox.filesystem.write(
             "test.txt",
             "Hello World",
             timeout=0.01,
         )
 
-    if session:
-        session.close()
+    if sandbox:
+        sandbox.close()

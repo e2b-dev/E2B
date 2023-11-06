@@ -1,14 +1,14 @@
-const e2b = require("../dist/cjs/index")
-const fs = require("fs")
+const e2b = require('../dist/cjs/index')
+const fs = require('fs')
 
 async function main() {
   const s = await e2b.DataAnalysis.create({
-    apiKey: process.env.E2B_API_KEY,
+    apiKey: process.env.E2B_API_KEY
   })
-  const response = await fetch("https://storage.googleapis.com/e2b-examples/netflix.csv")
+  const response = await fetch('https://storage.googleapis.com/e2b-examples/netflix.csv')
   const buffer = await response.buffer()
 
-  const path = await s.uploadFile(buffer, "netflix.csv")
+  const path = await s.uploadFile(buffer, 'netflix.csv')
 
   const result = await s.runPython(`
 print(1)
@@ -25,7 +25,11 @@ plt.title('Number of content')
 plt.xlabel('Country')
 plt.ylabel('Count')
 plt.xticks(rotation=45)
-plt.show()`)
+plt.show()`, {
+    onArtifact: async (artifact) => {
+      await artifact.download()
+    }
+  })
 
   console.log(result)
   for (const artifact of result.artifacts) {

@@ -1,10 +1,10 @@
 import fs from 'fs'
-import { Session, runCode } from '../dist/index.js'
+import { runCode, Sandbox } from '../dist/index.js'
 
-async function localSession() {
-  return await Session.create({
+async function localSandbox() {
+  return await Sandbox.create({
     id: 'Nodejs',
-    apiKey: process.env.E2B_API_KEY,
+    apiKey: process.env.E2B_API_KEY
     // __debug_hostname: 'localhost',
     // __debug_port: 49982,
     // __debug_devEnv: 'local',
@@ -12,20 +12,20 @@ async function localSession() {
 }
 
 async function main() {
-  const session = await localSession()
+  const sandbox = await localSandbox()
 
   const f = fs.readFileSync('./package.json')
-  await session.uploadFile(f, 'package.json')
+  await sandbox.uploadFile(f, 'package.json')
 
-  const content = await session.filesystem.list('/home/user')
+  const content = await sandbox.filesystem.list('/home/user')
   content.forEach(c => console.log(c.name))
   process.exit()
 
-  const response = await session.downloadFile('/.dbkenv')
+  const response = await sandbox.downloadFile('/.dbkenv')
   const text = await response.text()
   console.log('text', text)
   process.exit()
-  // const session = await Session.create({
+  // const sandbox = await Sandbox.create({
   //   id: 'Nodejs',
   //   apiKey: process.env.E2B_API_KEY,
   // })
@@ -41,23 +41,23 @@ raise Exception("err")
     // console.log('stdout', stdout)
     // console.log('stderr', stderr)
 
-    // await session.filesystem.write('/code/file', 'test')
-    // const content = await session.filesystem.read('/code/file')
+    // await sandbox.filesystem.write('/code/file', 'test')
+    // const content = await sandbox.filesystem.read('/code/file')
     // console.log('content', content)
 
-    // const process = await session.process.start({
+    // const process = await sandbox.process.start({
     //   cmd: 'npm init -y',
     //   // onExit: () => console.log('exit'),
     //   // onStdout: data => console.log(data.line),
     // })
     // const cmd = 'npm i'
 
-    // await session.process.start({
+    // await sandbox.process.start({
     //   cmd,
     //   onStdout: o => console.log(o),
     // })
 
-    // const term = await session.terminal.createSession({
+    // const term = await sandbox.terminal.start({
     //   onData: data => console.log(data),
     //   onExit: () => console.log('exit'),
     //   size: {
@@ -72,7 +72,7 @@ raise Exception("err")
 
     // const dirWatchers = new Map()
 
-    // const w2 = session.filesystem.watchDir('/code/dir')
+    // const w2 = sandbox.filesystem.watchDir('/code/dir')
     // dirWatchers.set('/code/dir', w2)
     // await w2.start()
     // w2.addEventListener(fsevent => {
@@ -87,7 +87,7 @@ raise Exception("err")
     //   //}
     // })
 
-    // const w3 = session.filesystem.watchDir('/code/dir/subdir')
+    // const w3 = sandbox.filesystem.watchDir('/code/dir/subdir')
     // dirWatchers.set('/code/dir/subdir', w3)
     // await w3.start()
     // w3.addEventListener(fsevent => {
@@ -97,7 +97,7 @@ raise Exception("err")
     //   //}
     // })
   } catch (e) {
-    console.error('Session error', e)
+    console.error('Sandbox error', e)
   }
 }
 

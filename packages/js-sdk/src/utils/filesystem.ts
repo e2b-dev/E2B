@@ -1,5 +1,6 @@
 import path from 'path-browserify'
-import { Logger } from '../session/sessionConnection'
+
+import { Logger } from '../sandbox/sandboxConnection'
 
 export const resolvePath = (
   inputPath: string,

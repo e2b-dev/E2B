@@ -5,36 +5,37 @@ import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
-import { useSessionsStore } from './useSessions'
+import { useSandboxesStore } from './useSandboxes'
 import { LangShort } from './consts'
 
 type UserContextType = {
-  isLoading: boolean
-  session: Session | null
+  isLoading: boolean;
+  session: Session | null;
   user:
     | (User & {
-        teams: any[]
-        apiKeys: any[]
-        accessToken: string
-        defaultTeamId: string
-      })
-    | null
-  error: Error | null
-}
+    teams: any[];
+    apiKeys: any[];
+    accessToken: string;
+    defaultTeamId: string;
+  })
+    | null;
+  error: Error | null;
+};
 
 export const UserContext = createContext(undefined)
 
-export const CustomUserContextProvider = props => {
+export const CustomUserContextProvider = (props) => {
   const supabase = createPagesBrowserClient()
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const mounted = useRef<boolean>(false)
-  const initSession = useSessionsStore(state => state.initSession)
+  const initSandbox = useSandboxesStore((state) => state.initSandbox)
 
   useEffect(() => {
     mounted.current = true
+
     async function getSession() {
       const {
         data: { session },
@@ -52,6 +53,7 @@ export const CustomUserContextProvider = props => {
         if (!session) setIsLoading(false) // if session is present, we set setLoading to false in the second useEffect
       }
     }
+
     void getSession()
     return () => {
       mounted.current = false
@@ -64,7 +66,9 @@ export const CustomUserContextProvider = props => {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (
         session &&
-        (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED')
+        (event === 'SIGNED_IN' ||
+          event === 'TOKEN_REFRESHED' ||
+          event === 'USER_UPDATED')
       ) {
         setSession(session)
       }
@@ -91,15 +95,15 @@ export const CustomUserContextProvider = props => {
       const { data: apiKeys, error: apiKeysError } = await supabase
         .from('team_api_keys')
         .select('*')
-        .in('team_id', teams?.map(team => team.team_id)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+        .in('team_id', teams?.map((team) => team.team_id)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (apiKeysError) Sentry.captureException(apiKeysError)
 
-      // as soon as we have apiKey, start initializing sessions, so they are ready when user wanna use them
+      // as soon as we have apiKey, start initializing sandboxes, so they are ready when user want to use them
       const apiKey = apiKeys?.[0]?.api_key
       if (apiKey) {
         // We don't care about awaiting these, we just want to start them
-        void initSession(LangShort.js, apiKey)
-        void initSession(LangShort.py, apiKey)
+        void initSandbox(LangShort.js, apiKey)
+        void initSandbox(LangShort.py, apiKey)
       }
 
       const defaultTeamId = teams?.[0]?.team_id // TODO: Adjust when user can be part of multiple teams
@@ -122,6 +126,7 @@ export const CustomUserContextProvider = props => {
       })
       setIsLoading(false)
     }
+
     if (session) void getUserCustom()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
@@ -148,17 +153,12 @@ export const CustomUserContextProvider = props => {
     return {
       isLoading: false,
       error: null,
-      session,
+      session: session,
       user,
     }
   }, [isLoading, user, session, error])
 
-  return (
-    <UserContext.Provider
-      value={value}
-      {...props}
-    />
-  )
+  return <UserContext.Provider value={value} {...props} />
 }
 
 export const useUser = (): UserContextType => {

@@ -1,22 +1,22 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from '@e2b/sdk'
 
-const session = await Session.create({
-  id: 'Nodejs',
+const sandbox = await Sandbox.create({
+  id: 'base',
 })
 
 // This command will fail and output to stderr because Golang isn't installed in the cloud playground
-const golangVersion = await session.process.start({
+const golangVersion = await sandbox.process.start({
   cmd: 'go version',
-  onStderr: output => console.log('session', output.line), // $HighlightLine
+  onStderr: (output) => console.log('sandbox', output.line), // $HighlightLine
 })
 await golangVersion.wait()
-// output: [session] /bin/bash: line 1: go: command not found
+// output: [sandbox] /bin/bash: line 1: go: command not found
 
-const procWithCustomHandler = await session.process.start({
+const procWithCustomHandler = await sandbox.process.start({
   cmd: 'go version',
-  onStderr: data => console.log('process', data.line), // $HighlightLine
+  onStderr: (data) => console.log('process', data.line), // $HighlightLine
 })
 await procWithCustomHandler.wait()
 // output: process /bin/bash: line 1: go: command not found
 
-await session.close()
+await sandbox.close()

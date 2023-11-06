@@ -11,8 +11,17 @@ import { Section } from '@/components/SectionProvider'
 
 export const metadata: Metadata = {
   title: {
-    template: '%s - E2B Documentation',
-    default: 'E2B Documentation',
+    template: '%s - E2B Docs',
+    default: 'E2B Docs - Runtime Sandbox for LLM Apps',
+  },
+  description: 'Sandboxed cloud environments for AI-powered apps and agentic workflows',
+  twitter: {
+    title: 'E2B Docs - Runtime Sandbox for LLM Apps',
+    description: 'Sandboxed cloud environments for AI-powered apps and agentic workflows',
+  },
+  openGraph: {
+    title: 'E2B Docs - Runtime Sandbox for LLM Apps',
+    description: 'Sandboxed cloud environments for AI-powered apps and agentic workflows',
   },
 }
 
@@ -32,17 +41,17 @@ export default async function RootLayout({ children }) {
       className="h-full"
       suppressHydrationWarning
     >
-      <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
-        <Providers>
-          <div className="w-full">
-            <Layout allSections={allSections}>
-              {children}
-              <PostHogAnalytics />
-              <Analytics />
-            </Layout>
-          </div>
-        </Providers>
-      </body>
+    <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
+    <Providers>
+      <div className="w-full">
+        <Layout allSections={allSections}>
+          {children}
+          <PostHogAnalytics/>
+          <Analytics/>
+        </Layout>
+      </div>
+    </Providers>
+    </body>
     </html>
   )
 }

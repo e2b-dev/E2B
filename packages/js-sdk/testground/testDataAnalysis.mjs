@@ -12,14 +12,14 @@ let codeSnippets = []
 function askUserQuestion(query) {
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout,
+    output: process.stdout
   })
 
   return new Promise(resolve =>
     rl.question(query, ans => {
       rl.close()
       resolve(ans)
-    }),
+    })
   )
 }
 
@@ -36,22 +36,22 @@ SQLAlchemy`
 
 const exampleCodeInMarkdown = fs.readFileSync(
   '/Users/mlejva/Developer/e2b/packages/js-sdk/testground/code.md',
-  'utf8',
+  'utf8'
 )
 const history = [
   {
     role: 'system',
-    content: systemPrompt,
+    content: systemPrompt
   },
   {
     role: 'user',
     content:
-      'I uploaded a CSV file here "/home/user/data.csv". What can you tell me about the data in this csv file?',
+      'I uploaded a CSV file here "/home/user/data.csv". What can you tell me about the data in this csv file?'
   },
   {
     role: 'assistant',
-    content: `Let's start by loading the data and then we can explore its general characteristics such as the number of rows and columns, column names and types, missing values, and basic statistics. ${exampleCodeInMarkdown}`,
-  },
+    content: `Let's start by loading the data and then we can explore its general characteristics such as the number of rows and columns, column names and types, missing values, and basic statistics. ${exampleCodeInMarkdown}`
+  }
   // {
   //   role: 'assistant',
   //   content: ``,
@@ -70,12 +70,12 @@ const functions = [
       properties: {
         code: {
           type: 'string',
-          description: 'The Python code to run in Markdown format.',
-        },
-      },
+          description: 'The Python code to run in Markdown format.'
+        }
+      }
     },
-    required: ['code'],
-  },
+    required: ['code']
+  }
 ]
 
 let s
@@ -84,7 +84,7 @@ const openai = new OpenAI()
 async function chat() {
   const response = await openai.chat.completions.create({
     model: 'gpt-4',
-    messages: history,
+    messages: history
     // functions,
   })
   return response
@@ -93,7 +93,7 @@ async function chat() {
 function respond(msg) {
   history.push({
     role: 'user',
-    content: msg,
+    content: msg
   })
   return chat()
 }
@@ -105,7 +105,7 @@ async function handleArtifact(artifact) {
   console.log('Chart saved to ', `file://${path}`)
 }
 
-async function startSession() {
+async function startSandbox() {
   s = await e2b.DataAnalysis.create()
 
   const localFile = fs.readFileSync('/Users/mlejva/Downloads/netflix.csv')
@@ -117,7 +117,7 @@ async function runPython(code) {
   const { stdout, stderr } = await s.runPython(code, {
     onStdout: out => console.log(out.line),
     onStderr: out => console.error(out.line),
-    onArtifact: handleArtifact,
+    onArtifact: handleArtifact
   })
 
   if (stderr) {
@@ -128,7 +128,7 @@ async function runPython(code) {
     // codeSnippets.pop()
     console.log('Got an error in code, fixing mysekf...')
     const response = await respond(
-      `I ran your code and got the following error: ${stderr}`,
+      `I ran your code and got the following error: ${stderr}`
     )
 
     await parseResponse(response)
@@ -191,10 +191,10 @@ async function runFunction(name, args) {
   }
 }
 
-const remoteCSVFilePath = await startSession()
+const remoteCSVFilePath = await startSandbox()
 
 const response = await respond(
-  `I uploaded a CSV file here "${remoteCSVFilePath}". What can you tell me about the data in this csv file?`,
+  `I uploaded a CSV file here "${remoteCSVFilePath}". What can you tell me about the data in this csv file?`
 )
 await parseResponse(response)
 

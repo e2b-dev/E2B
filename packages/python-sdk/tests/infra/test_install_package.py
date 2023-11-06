@@ -1,14 +1,14 @@
-from e2b import Session
+from e2b import Sandbox
 
 
 def test_python_package():
-    session = Session("Python3")
+    sandbox = Sandbox()
 
-    process = session.process.start("pip install pip-install-test")
+    process = sandbox.process.start("pip install pip-install-test")
     process.wait()
 
-    process = session.process.start('python -c "import pip_install_test"')
+    process = sandbox.process.start('python -c "import pip_install_test"')
     process.wait()
     output = process.stdout
     assert "Good job!" in output
-    session.close()
+    sandbox.close()

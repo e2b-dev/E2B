@@ -68,8 +68,10 @@ const useCases = [
 
 function UseCaseIcon({ icon: Icon }) {
   return (
-    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-[2px] transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-brand-300/10 dark:group-hover:ring-brand-400">
-      <Icon className="h-5 w-5 fill-zinc-700/10 stroke-zinc-700 transition-colors duration-300 group-hover:stroke-zinc-900 dark:fill-white/10 dark:stroke-zinc-400 dark:group-hover:fill-brand-300/10 dark:group-hover:stroke-brand-400" />
+    <div
+      className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-[2px] transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-brand-300/10 dark:group-hover:ring-brand-400">
+      <Icon
+        className="h-5 w-5 fill-zinc-700/10 stroke-zinc-700 transition-colors duration-300 group-hover:stroke-zinc-900 dark:fill-white/10 dark:stroke-zinc-400 dark:group-hover:fill-brand-300/10 dark:group-hover:stroke-brand-400"/>
     </div>
   )
 }
@@ -80,7 +82,8 @@ function UseCasePattern({ mouseX, mouseY, ...gridProps }) {
 
   return (
     <div className="pointer-events-none">
-      <div className="absolute inset-0 rounded-2xl transition duration-300 [mask-image:linear-gradient(white,transparent)] group-hover:opacity-50">
+      <div
+        className="absolute inset-0 rounded-2xl transition duration-300 [mask-image:linear-gradient(white,transparent)] group-hover:opacity-50">
         {/* @ts-ignore */}
         <GridPattern
           width={72}
@@ -132,12 +135,13 @@ function UseCase({ useCase }) {
         mouseX={mouseX}
         mouseY={mouseY}
       />
-      <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
+      <div
+        className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20"/>
       <div className="relative rounded-2xl px-4 pb-4 pt-16">
-        <UseCaseIcon icon={useCase.icon} />
+        <UseCaseIcon icon={useCase.icon}/>
         <h3 className="mt-4 text-sm font-semibold leading-7 text-zinc-900 dark:text-white">
           <Link href={useCase.href}>
-            <span className="absolute inset-0 rounded-2xl" />
+            <span className="absolute inset-0 rounded-2xl"/>
             {useCase.name}
           </Link>
         </h3>
@@ -159,7 +163,8 @@ export function UseCases() {
       >
         Use Cases
       </Heading>
-      <div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
+      <div
+        className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
         {useCases.map(useCase => (
           <UseCase
             key={useCase.href}

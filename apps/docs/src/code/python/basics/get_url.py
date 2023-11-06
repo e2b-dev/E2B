@@ -1,8 +1,8 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Nodejs")
+sandbox = Sandbox(id="base")
 
-url = session.get_hostname() # $HighlightLine
+url = sandbox.get_hostname()  # $HighlightLine
 print("https://" + url)
 
-session.close()
+sandbox.close()

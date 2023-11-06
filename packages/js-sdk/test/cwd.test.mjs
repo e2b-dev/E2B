@@ -1,20 +1,20 @@
-import { Session } from '../src'
+import { Sandbox } from '../src'
 import { expect, test, vi } from 'vitest'
 
 import { id } from './setup.mjs'
 
 test('custom cwd', async () => {
-  const session = await Session.create({
+  const sandbox = await Sandbox.create({
     id,
-    cwd: '/code/app',
+    cwd: '/code/app'
   })
 
   // change dir to /home/user
-  session.cwd = '/home/user'
+  sandbox.cwd = '/home/user'
 
   // process respects cwd
   {
-    const proc = await session.process.start({ cmd: 'pwd' })
+    const proc = await sandbox.process.start({ cmd: 'pwd' })
     await proc.finished
     const out = proc.output.stdout
     expect(out).toEqual('/home/user')
@@ -22,8 +22,8 @@ test('custom cwd', async () => {
 
   // filesystem respects cwd
   {
-    await session.filesystem.write('hello.txt', 'Hello VM!')
-    const proc = await session.process.start({ cmd: 'cat /home/user/hello.txt' })
+    await sandbox.filesystem.write('hello.txt', 'Hello VM!')
+    const proc = await sandbox.process.start({ cmd: 'cat /home/user/hello.txt' })
     await proc.finished
     const out = proc.output.stdout
     expect(out).toEqual('Hello VM!')
@@ -31,73 +31,73 @@ test('custom cwd', async () => {
 
   // call cd in process
   {
-    const proc = await session.process.start({ cmd: 'cd /code' })
+    const proc = await sandbox.process.start({ cmd: 'cd /code' })
     await proc.finished
   }
 
   // process doesn't respect cd
   {
-    const proc = await session.process.start({ cmd: 'pwd' })
+    const proc = await sandbox.process.start({ cmd: 'pwd' })
     await proc.finished
     const out = proc.output.stdout
     expect(out).toEqual('/home/user')
   }
-  await session.close()
+  await sandbox.close()
 })
 
 test('test_process_cwd', async () => {
-  const session = await Session.create({ id, cwd: '/code/app' })
-  const proc = await session.process.start({ cmd: 'pwd' })
-  await proc.finished
+  const sandbox = await Sandbox.create({ id, cwd: '/code/app' })
+  const proc = await sandbox.process.start({ cmd: 'pwd' })
+  await proc.wait()
   expect(proc.output.stdout).toEqual('/code/app')
-  await session.close()
+  await sandbox.close()
 })
 
 test('test_filesystem_cwd', async () => {
-  const session = await Session.create({ id, cwd: '/code/app' })
+  const sandbox = await Sandbox.create({ id, cwd: '/code/app' })
 
-  await session.filesystem.write('hello.txt', 'Hello VM!')
-  const proc = await session.process.start({ cmd: 'cat /code/app/hello.txt' })
+  await sandbox.filesystem.write('hello.txt', 'Hello VM!')
+  const proc = await sandbox.process.start({ cmd: 'cat /code/app/hello.txt' })
 
-  await proc.finished
+  await proc.wait()
   expect(proc.output.stdout).toEqual('Hello VM!')
-  await session.close()
+  await sandbox.close()
 })
 
 test('test_initial_cwd_with_tilde', async () => {
-  const session = await Session.create({ id, cwd: '~/code/' })
-  const proc = await session.process.start({ cmd: 'pwd' })
-  await proc.finished
+  const sandbox = await Sandbox.create({ id, cwd: '~/code/' })
+  const proc = await sandbox.process.start({ cmd: 'pwd' })
+  await proc.wait()
   expect(proc.output.stdout).toEqual('/home/user/code')
-  await session.close()
+  await sandbox.close()
 })
 
 test('test_relative_paths', async () => {
-  const session = await Session.create({ id, cwd: '/home/user' })
-  await session.filesystem.makeDir('./code')
-  await session.filesystem.write('./code/hello.txt', 'Hello Vasek!')
-  const proc = await session.process.start({ cmd: 'cat /home/user/code/hello.txt' })
-  await proc.finished
+  const sandbox = await Sandbox.create({ id, cwd: '/home/user' })
+  await sandbox.filesystem.makeDir('./code')
+  await sandbox.filesystem.write('./code/hello.txt', 'Hello Vasek!')
+  const proc = await sandbox.process.start({ cmd: 'cat /home/user/code/hello.txt' })
+  await proc.wait()
   expect(proc.output.stdout).toEqual('Hello Vasek!')
 
-  await session.filesystem.write('../../hello.txt', 'Hello Tom!')
-  const proc2 = await session.process.start({ cmd: 'cat /hello.txt' })
-  await proc2.finished
+  await sandbox.filesystem.write('../../hello.txt', 'Hello Tom!')
+  const proc2 = await sandbox.process.start({ cmd: 'cat /hello.txt' })
+  await proc2.wait()
   expect(proc2.output.stdout).toEqual('Hello Tom!')
 
-  await session.close()
+  await sandbox.close()
 })
 
 test('test_warnings', async () => {
-  const session = await Session.create({
+  const sandbox = await Sandbox.create({
     id,
-    logger: { warn: vi.spyOn(console, 'warn') },
+    logger: { warn: vi.spyOn(console, 'warn') }
   })
-  await session.filesystem.write('./hello.txt', 'Hello Vasek!')
+  await sandbox.filesystem.write('./hello.txt', 'Hello Vasek!')
   expect(console.warn).toHaveBeenCalledTimes(1)
-  await session.filesystem.write('../hello.txt', 'Hello Vasek!')
+  await sandbox.filesystem.write('../hello.txt', 'Hello Vasek!')
   expect(console.warn).toHaveBeenCalledTimes(2)
-  await session.filesystem.write('~/hello.txt', 'Hello Vasek!')
+  await sandbox.filesystem.write('~/hello.txt', 'Hello Vasek!')
   expect(console.warn).toHaveBeenCalledTimes(3)
-  await session.close()
+  await sandbox.close()
 })

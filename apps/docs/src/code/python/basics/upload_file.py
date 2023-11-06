@@ -1,8 +1,8 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Nodejs")
+sandbox = Sandbox(id="base")
 
-with open('path/to/local/file', 'rb') as f:
-  remote_path = session.upload_file(f) # $HighlightLine
+with open("path/to/local/file", "rb") as f:
+    remote_path = sandbox.upload_file(f)  # $HighlightLine
 
-session.close()
+sandbox.close()

@@ -1,4 +1,5 @@
 import logging
+import os
 from os import getenv
 
 import requests
@@ -15,6 +16,7 @@ logging.basicConfig(level=logging.ERROR)
 def main():
     s = DataAnalysis(api_key=E2B_API_KEY)
 
+    os.makedirs("data", exist_ok=True)
     with open("data/netflix.csv", "wb") as f:
         response = requests.get(
             "https://storage.googleapis.com/e2b-examples/netflix.csv"
@@ -44,8 +46,8 @@ plt.show()
     )
 
     for artifact in artifacts:
-        content = artifact.read()
-        with open(artifact.name, "wb") as f:
+        content = artifact.download()
+        with open(os.path.split(artifact.name)[-1], "wb") as f:
             f.write(content)
 
     s.close()

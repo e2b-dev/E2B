@@ -1,6 +1,5 @@
 {
-  "name": "@e2b/monorepo",
-  "main": "index.js",
+  "name": "e2b",
   "private": true,
   "scripts": {
     "version": "changeset version && pnpm run -r postVersion",

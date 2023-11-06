@@ -1,6 +1,6 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Nodejs")
+sandbox = Sandbox(id="base")
 
 # `filesystem.write()` will:
 # - create the file if it doesn't exist
@@ -8,9 +8,9 @@ session = Session.create(id="Nodejs")
 # - overwrite the file if it exists
 
 # Write the content of the file '/hello.txt'
-session.filesystem.write("/hello.txt", "Hello World!") # $HighlightLine
+sandbox.filesystem.write("/hello.txt", "Hello World!")  # $HighlightLine
 
 # The following would fail because '/dir' doesn't exist
-# session.filesystem.write("/dir/hello.txt", "Hello World!")
+# sandbox.filesystem.write("/dir/hello.txt", "Hello World!")
 
-session.close()
+sandbox.close()

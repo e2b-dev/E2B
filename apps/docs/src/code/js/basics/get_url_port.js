@@ -1,9 +1,9 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from '@e2b/sdk'
 
-const session = await Session.create({ id: 'Nodejs' })
+const sandbox = await Sandbox.create({id: 'base'})
 
 const openPort = 3000
-const url = session.getHostname(openPort) // $HighlightLine
+const url = sandbox.getHostname(openPort) // $HighlightLine
 console.log('https://' + url)
 
-await session.close()
+await sandbox.close()

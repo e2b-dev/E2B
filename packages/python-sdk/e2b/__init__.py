@@ -1,5 +1,13 @@
-from .session import (
-    Session,
+from .api import (
+    E2BApiClient,
+    client,
+)
+from .constants import (
+    SANDBOX_DOMAIN,
+    API_HOST,
+)
+from .sandbox import (
+    Sandbox,
     FilesystemOperation,
     FilesystemWatcher,
     FileInfo,
@@ -11,7 +19,7 @@ from .session import (
     Process,
     OpenPort,
     EnvVars,
-    SessionException,
+    SandboxException,
     TerminalException,
     ProcessException,
     FilesystemException,
@@ -21,7 +29,6 @@ from .session import (
     TerminalOutput,
     run_code,
 )
-
 from .templates import (
     DataAnalysis,
 )

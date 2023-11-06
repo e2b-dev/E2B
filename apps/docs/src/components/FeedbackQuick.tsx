@@ -47,9 +47,10 @@ const FeedbackForm = forwardRef(function FeedbackForm({ onSubmit }, ref) {
       className="absolute inset-0 flex items-center justify-center gap-6 md:justify-start"
     >
       <p className="text-sm text-zinc-600 dark:text-zinc-400">Was this page helpful?</p>
-      <div className="group grid h-8 grid-cols-[1fr,1px,1fr] overflow-hidden rounded-full border border-zinc-900/10 dark:border-white/10">
+      <div
+        className="group grid h-8 grid-cols-[1fr,1px,1fr] overflow-hidden rounded-full border border-zinc-900/10 dark:border-white/10">
         <FeedbackButton data-response="yes">Yes</FeedbackButton>
-        <div className="bg-zinc-900/10 dark:bg-white/10" />
+        <div className="bg-zinc-900/10 dark:bg-white/10"/>
         <FeedbackButton data-response="no">No</FeedbackButton>
       </div>
     </form>
@@ -63,8 +64,10 @@ const FeedbackThanks = forwardRef(function FeedbackThanks(_props, ref) {
       ref={ref}
       className="absolute inset-0 flex justify-center md:justify-start"
     >
-      <div className="bg-brand-50/50 flex items-center gap-3 rounded-full py-1 pl-1.5 pr-3 text-sm text-brand-900 ring-1 ring-inset ring-brand-500/20 dark:bg-brand-500/5 dark:text-brand-200 dark:ring-brand-500/30">
-        <CheckIcon className="h-5 w-5 flex-none fill-brand-500 stroke-white dark:fill-brand-200/20 dark:stroke-brand-200" />
+      <div
+        className="bg-brand-50/50 flex items-center gap-3 rounded-full py-1 pl-1.5 pr-3 text-sm text-brand-900 ring-1 ring-inset ring-brand-500/20 dark:bg-brand-500/5 dark:text-brand-200 dark:ring-brand-500/30">
+        <CheckIcon
+          className="h-5 w-5 flex-none fill-brand-500 stroke-white dark:fill-brand-200/20 dark:stroke-brand-200"/>
         Thanks for your feedback!
       </div>
     </div>
@@ -93,7 +96,7 @@ export function FeedbackQuick() {
         leave="pointer-events-none duration-300"
       >
         {/* @ts-ignore */}
-        <FeedbackForm onSubmit={onSubmit} />
+        <FeedbackForm onSubmit={onSubmit}/>
       </Transition>
       <Transition
         show={submitted}
@@ -102,7 +105,7 @@ export function FeedbackQuick() {
         enterTo="opacity-100"
         enter="delay-150 duration-300"
       >
-        <FeedbackThanks />
+        <FeedbackThanks/>
       </Transition>
     </div>
   )

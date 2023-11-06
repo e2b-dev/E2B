@@ -3,7 +3,7 @@ from os import getenv
 
 from dotenv import load_dotenv
 
-from e2b import Session
+from e2b import Sandbox
 
 load_dotenv()
 id = "Python3"
@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.ERROR)
 
 
 def main():
-    s = Session("Nodejs", api_key=E2B_API_KEY)
+    s = Sandbox(api_key=E2B_API_KEY)
     a = s.process.start("ls -la /var ")
     a.wait()
     print(a.stdout)

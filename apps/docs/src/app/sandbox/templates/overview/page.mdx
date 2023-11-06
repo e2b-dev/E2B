@@ -1,0 +1,37 @@
+# Sandbox Templates
+
+Sandbox is a cloud environment for your AI apps.
+Read [here](/sandbox/overview) about how E2B Sandbox is made exactly for AI apps.
+
+To build a custom sandbox, you create the [sandbox template file](/sandbox/templates/template-file) and then build your custom sandbox with the E2B CLI.
+
+<Note>
+Follow [our guide](/guide/custom-sandbox) on how to create a custom sandbox.
+</Note>
+
+
+<CodeGroup title="Using custom sandbox with SDK" isRunnable={false}>
+```js {{ language: 'js' }}
+import { Sandbox } from '@e2b/sdk'
+
+// Create new sandbox
+const sandbox = await Sandbox.create({
+  id: '<sandbox-id>', // You get sandbox ID from the CLI after you run `$ e2b build`
+})
+
+// Close sandbox once done
+await sandbox.close()
+```
+
+```python {{ language: 'python' }}
+from e2b import Sandbox
+
+# Create new sandbox
+sandbox = Sandbox(
+  id: "<sandbox-id>", # You get sandbox ID from the CLI after you run `$ e2b build`
+)
+
+# Close sandbox once done
+sandbox.close()
+```
+</CodeGroup>

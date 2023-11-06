@@ -1,8 +1,8 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from '@e2b/sdk'
 
-const session = await Session.create({
-  id: 'Nodejs',
-  envVars: { FOO: 'Hello' }, // $HighlightLine
+const sandbox = await Sandbox.create({
+  id: 'base',
+  envVars: {FOO: 'Hello'}, // $HighlightLine
 })
 
-await session.close()
+await sandbox.close()

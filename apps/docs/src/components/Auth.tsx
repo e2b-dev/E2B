@@ -13,15 +13,15 @@ import { useSignIn } from '@/utils/useSignIn'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/Popover'
 
 function CopyableSecret({
-  secret = '',
-  onAfterCopy,
-  obfuscateStart,
-  obfuscateEnd,
-}: {
-  secret: string
-  onAfterCopy: () => void
-  obfuscateStart?: number
-  obfuscateEnd?: number
+                          secret = '',
+                          onAfterCopy,
+                          obfuscateStart,
+                          obfuscateEnd,
+                        }: {
+  secret: string;
+  onAfterCopy: () => void;
+  obfuscateStart?: number;
+  obfuscateEnd?: number;
 }) {
   return (
     <>
@@ -62,10 +62,7 @@ export const Auth = function () {
   if (error)
     return (
       <div className="flex flex-row items-center gap-4">
-        <span
-          className="text-sm text-red-500"
-          title={error?.message}
-        >
+        <span className="text-sm text-red-500" title={error?.message}>
           Something went wrong
         </span>
         {/* @ts-ignore */}
@@ -76,10 +73,7 @@ export const Auth = function () {
   if (isLoading)
     return (
       <div className="flex animate-pulse">
-        <div
-          title="Loading..."
-          className="h-2 w-40 rounded bg-slate-500"
-        ></div>
+        <div title="Loading..." className="h-2 w-40 rounded bg-slate-500"></div>
       </div>
     )
 
@@ -102,7 +96,7 @@ export const Auth = function () {
               onAfterCopy={() => posthog?.capture('copied API key')}
             />
           </div>
-          <HeaderSeparator />
+          <HeaderSeparator/>
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger
@@ -117,7 +111,7 @@ export const Auth = function () {
                   <div className="flex flex-col">
                     <span className="text-xs font-bold">API Key</span>
                     <span className="text-xs text-gray-200">
-                      Use for <strong>running</strong> the sessions.
+                      Use for <strong>running</strong> the sandboxes.
                     </span>
                     <div className="group relative text-xs">
                       <CopyableSecret
@@ -128,30 +122,33 @@ export const Auth = function () {
                       />
                     </div>
                     <span className="text-xs text-gray-400">
-                      TIP: Set as <code>E2B_API_KEY</code> env var to avoid passing it
-                      every time.
+                      TIP: Set as <code>E2B_API_KEY</code> env var to avoid
+                      passing it every time.
                     </span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs font-bold">Access Token</span>
                     <span className="text-xs text-gray-200">
-                      Use for <strong>managing</strong> the sessions
+                      Use for <strong>managing</strong> the sandboxes
                       (creating/listing/deleting).
                     </span>
                     <span className="text-xs text-gray-200">
-                      Not needed when logging in via CLI via <code>e2b login</code>
+                      Not needed when logging in via CLI via{' '}
+                      <code>e2b login</code>
                     </span>
                     <div className="group relative text-xs">
                       <CopyableSecret
                         secret={accessToken}
-                        onAfterCopy={() => posthog?.capture('copied Access Token')}
+                        onAfterCopy={() =>
+                          posthog?.capture('copied Access Token')
+                        }
                         obfuscateStart={12}
                         obfuscateEnd={5}
                       />
                     </div>
                     <span className="text-xs text-gray-400">
-                      TIP: Set as <code>E2B_ACCESS_TOKEN</code> env var to avoid passing
-                      it every time.
+                      TIP: Set as <code>E2B_ACCESS_TOKEN</code> env var to avoid
+                      passing it every time.
                     </span>
                   </div>
                 </div>
@@ -163,7 +160,7 @@ export const Auth = function () {
               title="Sign out"
               onClick={() => signOut()}
             >
-              <LogOutIcon className="h-5 w-5" />
+              <LogOutIcon className="h-5 w-5"/>
             </Button>
           </div>
         </div>

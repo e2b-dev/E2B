@@ -1,13 +1,13 @@
-from e2b import Session
+from e2b import Sandbox
 
 
-def test_create_session():
-    session = Session("Bash")
-    session.close()
+def test_create_sandbox():
+    sandbox = Sandbox()
+    sandbox.close()
 
 
-def test_create_multiple_sessions():
-    session = Session("Bash")
-    session2 = Session("Bash")
-    session.close()
-    session2.close()
+def test_create_multiple_sandboxes():
+    sandbox = Sandbox()
+    sandbox2 = Sandbox()
+    sandbox.close()
+    sandbox2.close()

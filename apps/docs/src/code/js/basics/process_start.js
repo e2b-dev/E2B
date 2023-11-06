@@ -1,12 +1,12 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from '@e2b/sdk'
 
-const session = await Session.create({ id: 'Nodejs' })
+const sandbox = await Sandbox.create({id: 'base'})
 
-const npmInit = await session.process.start({
+const npmInit = await sandbox.process.start({
   cmd: 'npm init -y', // $HighlightLine
 })
 await npmInit.wait()
 
 console.log(npmInit.output.stdout)
 
-await session.close()
+await sandbox.close()

@@ -30,7 +30,9 @@
       "src"
     ],
     "paths": {
-      "@e2b/sdk": ["../js-sdk/src"],
+      "@e2b/sdk": [
+        "../js-sdk/src"
+      ]
     }
   }
 }

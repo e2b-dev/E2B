@@ -1,21 +1,21 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from '@e2b/sdk'
 
-const session = await Session.create({
-  id: 'Nodejs',
-  onStdout: output => console.log('session', output.line), // $HighlightLine
+const sandbox = await Sandbox.create({
+  id: 'base',
+  onStdout: (output) => console.log('sandbox', output.line), // $HighlightLine
 })
 
-const proc = await session.process.start({
+const proc = await sandbox.process.start({
   cmd: 'echo "Hello World!"',
 })
 await proc.wait()
-// output: session Hello World!
+// output: sandbox Hello World!
 
-const procWithCustomHandler = await session.process.start({
+const procWithCustomHandler = await sandbox.process.start({
   cmd: 'echo "Hello World!"',
-  onStdout: data => console.log('process', data.line), // $HighlightLine
+  onStdout: (data) => console.log('process', data.line), // $HighlightLine
 })
 await procWithCustomHandler.wait()
 // output: process Hello World!
 
-await session.close()
+await sandbox.close()

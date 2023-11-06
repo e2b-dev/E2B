@@ -1,0 +1,21 @@
+# Current Working Directory
+
+You can set a working directory either for the whole sandbox, a filesystem operation, or a new process.
+
+## Sandbox
+
+If the current working directory for the sandbox is not set, it will default to the home directory - `/home/user`.
+
+<CodeGroupAutoload path="cwd/sandbox" />
+
+## Filesystem
+
+All filesystem operations with relative paths are relative to the current working directory.
+
+<CodeGroupAutoload path="cwd/filesystem"/>
+
+## Process
+
+If you set a working directory for the sandbox, all processes will inherit it. You can override it for each process.
+
+<CodeGroupAutoload path="cwd/process"/>

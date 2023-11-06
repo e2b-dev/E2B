@@ -1,8 +1,8 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from '@e2b/sdk'
 
-const session = await Session.create({ id: 'Nodejs' })
+const sandbox = await Sandbox.create({id: 'base'})
 
-const fileContent = await session.filesystem.read('/etc/hosts') // $HighlightLine
+const fileContent = await sandbox.filesystem.read('/etc/hosts') // $HighlightLine
 console.log(fileContent)
 
-await session.close()
+await sandbox.close()

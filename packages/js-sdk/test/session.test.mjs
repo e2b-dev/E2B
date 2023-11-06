@@ -1,16 +1,16 @@
-import { Session } from '../src'
+import { Sandbox } from '../src'
 import { test } from 'vitest'
 
 import { id } from './setup.mjs'
 
-test('create session', async () => {
-  const session = await Session.create({ id })
-  await session.close()
+test('create sandbox', async () => {
+  const sandbox = await Sandbox.create({ id })
+  await sandbox.close()
 })
 
-test('create multiple sessions', async () => {
-  const session = await Session.create({ id })
-  const session2 = await Session.create({ id })
-  await session.close()
-  await session2.close()
+test('create multiple sandbox', async () => {
+  const sandbox = await Sandbox.create({ id })
+  const sandbox2 = await Sandbox.create({ id })
+  await sandbox.close()
+  await sandbox2.close()
 })

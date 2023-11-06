@@ -9,7 +9,7 @@ import fs from 'fs'
 
 const lang2ext = {
   js: 'js',
-  python: 'py',
+  python: 'py'
 }
 
 function loadFileSnippet() {
@@ -27,7 +27,7 @@ function loadFileSnippet() {
 
       if (snippet && node.value) {
         throw new Error(
-          `Snippet that should be loaded from file "${snippetFileName}" has content in the markdown file already specified. Please remove the content from the markdown file."`,
+          `Snippet that should be loaded from file "${snippetFileName}" has content in the markdown file already specified. Please remove the content from the markdown file."`
         )
       }
 
@@ -37,7 +37,7 @@ function loadFileSnippet() {
             const file = path.resolve(`./src/code/${snippetFileName}`)
             const content = await readFile(file, 'utf8')
             node.value = content.trim()
-          })(),
+          })()
         )
       }
     })
@@ -64,7 +64,7 @@ function processCodeGroupAutoload() {
         const fileExists = fs.existsSync(path.resolve(`./src/code/${snippetPath}`))
         if (!fileExists) {
           console.warn(
-            `CodeGroupAutoload: snippet "${attrPath}" does not exist for language "${lang}"`,
+            `CodeGroupAutoload: snippet "${attrPath}" does not exist for language "${lang}"`
           )
           continue
         }
@@ -74,9 +74,9 @@ function processCodeGroupAutoload() {
           lang,
           data: {
             hProperties: {
-              annotation: `{ language: '${lang}', snippet: '${snippetPath}' }`,
-            },
-          },
+              annotation: `{ language: '${lang}', snippet: '${snippetPath}' }`
+            }
+          }
         })
       }
     })
@@ -87,5 +87,5 @@ export const remarkPlugins = [
   processCodeGroupAutoload,
   mdxAnnotations.remark,
   remarkGfm,
-  loadFileSnippet,
+  loadFileSnippet
 ]

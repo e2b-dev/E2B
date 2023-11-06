@@ -1,9 +1,17 @@
 #!/usr/bin/env node
+
 import * as updateNotifier from 'update-notifier'
 
 import * as packageJSON from '../package.json'
-import { program } from './commands/index'
+import { program } from './commands'
 
-updateNotifier.default({ pkg: packageJSON }).notify()
+export const pkg = packageJSON
 
-program.version(packageJSON.version, undefined, 'Display e2b CLI version').parse()
+updateNotifier.default({
+  pkg,
+  updateCheckInterval: 1000 * 60 * 60 * 8 // 8 hours
+}).notify()
+
+program
+  .version(packageJSON.version, undefined, 'Display E2B CLI version')
+  .parse()

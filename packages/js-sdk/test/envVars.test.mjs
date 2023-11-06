@@ -1,55 +1,55 @@
-import { Session } from '../src'
+import { Sandbox } from '../src'
 import { expect, test } from 'vitest'
 
 import { id } from './setup.mjs'
 
 test('test_env_vars', async () => {
-  const session = await Session.create({ id })
+  const sandbox = await Sandbox.create({ id })
 
-  const process = await session.process.start({
+  const process = await sandbox.process.start({
     cmd: 'echo $FOO',
-    envVars: { FOO: 'BAR' },
+    envVars: { FOO: 'BAR' }
   })
-  await process.finished
+  await process.wait()
   const output = process.output.stdout
   expect(output).toEqual('BAR')
 
-  await session.close()
+  await sandbox.close()
 })
 
 test('test_profile_env_vars', async () => {
-  const session = await Session.create({ id })
+  const sandbox = await Sandbox.create({ id })
 
-  await session.filesystem.write('/home/user/.profile', 'export FOO=BAR')
-  const process = await session.process.start({ cmd: 'echo $FOO' })
-  await process.finished
+  await sandbox.filesystem.write('/home/user/.profile', 'export FOO=BAR')
+  const process = await sandbox.process.start({ cmd: 'echo $FOO' })
+  await process.wait()
   const output = process.output.stdout
   expect(output).toEqual('BAR')
 
-  await session.close()
+  await sandbox.close()
 })
 
 test('test_default_env_vars', async () => {
-  const session = await Session.create({ id, envVars: { FOO: 'BAR' } })
+  const sandbox = await Sandbox.create({ id, envVars: { FOO: 'BAR' } })
 
-  const process = await session.process.start({ cmd: 'echo $FOO' })
-  await process.finished
+  const process = await sandbox.process.start({ cmd: 'echo $FOO' })
+  await process.wait()
   const output = process.output.stdout
   expect(output).toEqual('BAR')
 
-  await session.close()
+  await sandbox.close()
 })
 
 test('test_overriding_env_vars', async () => {
-  const session = await Session.create({ id, envVars: { FOO: 'BAR' } })
+  const sandbox = await Sandbox.create({ id, envVars: { FOO: 'BAR' } })
 
-  const process = await session.process.start({
+  const process = await sandbox.process.start({
     cmd: 'echo $FOO',
-    envVars: { FOO: 'QUX' },
+    envVars: { FOO: 'QUX' }
   })
-  await process.finished
+  await process.wait()
   const output = process.output.stdout
   expect(output).toEqual('QUX')
 
-  await session.close()
+  await sandbox.close()
 })

@@ -122,8 +122,8 @@ export default function (nextConfig = {}) {
                 }))
               }
             `
-          }),
-        ],
+          })
+        ]
       })
 
       if (typeof nextConfig.webpack === 'function') {
@@ -131,6 +131,6 @@ export default function (nextConfig = {}) {
       }
 
       return config
-    },
+    }
   })
 }

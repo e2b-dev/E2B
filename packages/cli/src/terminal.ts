@@ -1,4 +1,4 @@
-import * as sdk from '@e2b/sdk'
+import * as e2b from '@e2b/sdk'
 
 import { createDeferredPromise } from './utils/promise'
 
@@ -10,7 +10,7 @@ function getStdoutSize() {
 }
 
 export async function spawnConnectedTerminal(
-  terminal: sdk.TerminalManager,
+  terminal: e2b.TerminalManager,
   introText: string,
   exitText: string,
 ) {
@@ -39,7 +39,7 @@ export async function spawnConnectedTerminal(
     terminalSession.resize(getStdoutSize()),
   )
 
-  const stdinListener = process.stdin.on('data', data =>
+  const stdinListener = process.stdin.on('data', (data) =>
     terminalSession.sendData(data.toString('utf8')),
   )
 
@@ -50,7 +50,7 @@ export async function spawnConnectedTerminal(
   })
 
   return {
-    // destroy: terminalSession.destroy.bind(terminalSession), FIXME
+    kill: terminalSession.kill.bind(terminalSession),
     exited,
   }
 }

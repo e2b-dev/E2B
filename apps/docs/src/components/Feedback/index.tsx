@@ -7,9 +7,9 @@ import FeedbackModal from './FeedbackModal'
 import useExpiringState from '@/utils/useExpiringState'
 
 export function Feedback({
-  className,
-  variant,
-}: {
+                           className,
+                           variant,
+                         }: {
   className?: string
   variant?: string
 }) {

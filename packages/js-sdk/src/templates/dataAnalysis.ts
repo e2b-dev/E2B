@@ -1,52 +1,52 @@
-import { Session, SessionOpts, DownloadFileFormat } from '../session'
-import type { ProcessOpts } from '../session/process'
-import { FilesystemEvent, FilesystemOperation } from '../session/filesystemWatcher'
+import { DownloadFileFormat, Sandbox, SandboxOpts } from '../sandbox'
+import type { ProcessOpts } from '../sandbox/process'
+import { FilesystemEvent, FilesystemOperation } from '../sandbox/filesystemWatcher'
 
-class Artifact {
+export class Artifact {
   readonly path: string
-  readonly _session: Session
+  readonly _sandbox: Sandbox
 
-  constructor(path: string, session: Session) {
+  constructor(path: string, sandbox: Sandbox) {
     this.path = path
-    this._session = session
+    this._sandbox = sandbox
   }
 
-  download(format?: DownloadFileFormat) {
-    return this._session.downloadFile(this.path, format)
+  async download(format?: DownloadFileFormat) {
+    return this._sandbox.downloadFile(this.path, format)
   }
 }
 
-interface RunPythonOpts extends Omit<ProcessOpts, 'cmd'> {
-  onArtifact?: (artifact: Artifact) => void
+export interface RunPythonOpts extends Omit<ProcessOpts, 'cmd'> {
+  onArtifact?: (artifact: Artifact) => Promise<void> | void;
 }
 
 const DataAnalysisEnvId = 'Python3-DataAnalysis'
 
-export class DataAnalysis extends Session {
-  constructor(opts: Omit<SessionOpts, 'id'>) {
+export class DataAnalysis extends Sandbox {
+  constructor(opts: Omit<SandboxOpts, 'id'>) {
     super({ id: DataAnalysisEnvId, ...opts })
   }
 
-  static async create(opts?: Omit<SessionOpts, 'id'>) {
+  static override async create(opts?: Omit<SandboxOpts, 'id'>) {
     return new DataAnalysis({ ...opts })
-      .open({ timeout: opts?.timeout })
-      .then(async session => {
+      ._open({ timeout: opts?.timeout })
+      .then(async (sandbox) => {
         if (opts?.cwd) {
-          console.log(`Custom cwd for Session set: "${opts.cwd}"`)
-          await session.filesystem.makeDir(opts.cwd)
+          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
+          await sandbox.filesystem.makeDir(opts.cwd)
         }
-        return session
+        return sandbox
       })
   }
 
   async runPython(code: string, opts: RunPythonOpts = {}) {
     const artifacts: string[] = []
 
-    const registerArtifacts = (event: FilesystemEvent) => {
+    const registerArtifacts = async (event: FilesystemEvent) => {
       if (event.operation === FilesystemOperation.Create) {
         const artifact = new Artifact(event.path, this)
         artifacts.push(event.path)
-        opts.onArtifact?.(artifact)
+        await opts.onArtifact?.(artifact)
       }
     }
 
@@ -68,35 +68,35 @@ export class DataAnalysis extends Session {
     return {
       stdout: proc.output.stdout,
       stderr: proc.output.stderr,
-      artifacts: artifacts.map(artifact => new Artifact(artifact, this)),
+      artifacts: artifacts.map((artifact) => new Artifact(artifact, this)),
     }
   }
 
-  async installPythonPackages(packageName: string | string[]) {
-    if (Array.isArray(packageName)) {
-      packageName = packageName.join(' ')
-    }
-
-    const proc = await this.process.start({ cmd: `pip install ${packageName}` })
-    await proc.wait()
-
-    if (proc.output.exitCode !== 0) {
-      throw new Error(`Failed to install package ${packageName}`)
-    }
+  async installPythonPackages(packageNames: string | string[]) {
+    await this.installPackages('pip install', packageNames)
   }
 
-  async installSystemPackages(packageName: string | string[]) {
-    if (Array.isArray(packageName)) {
-      packageName = packageName.join(' ')
+  async installSystemPackages(packageNames: string | string[]) {
+    await this.installPackages('sudo apt-get install -y', packageNames)
+  }
+
+  private async installPackages(command: string, packageNames: string | string[]) {
+    if (Array.isArray(packageNames)) {
+      packageNames = packageNames.join(' ')
+    }
+
+    packageNames = packageNames.trim()
+    if (packageNames.length === 0) {
+      return
     }
 
     const proc = await this.process.start({
-      cmd: `sudo apt-get -y install ${packageName}`,
+      cmd: `${command} ${packageNames}`,
     })
     await proc.wait()
 
     if (proc.output.exitCode !== 0) {
-      throw new Error(`Failed to install package ${packageName}`)
+      throw new Error(`Failed to install package ${packageNames}: ${proc.output.stderr}`)
     }
   }
 }

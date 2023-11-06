@@ -15,7 +15,7 @@ export function wrapper({ children }: { children: React.ReactNode }) {
     <article className="mx-auto flex h-full max-w-6xl flex-col pb-10 pt-16">
       <Prose className="flex-auto">{children}</Prose>
       <footer className="mx-auto mt-10 w-full max-w-2xl lg:max-w-5xl">
-        <Feedback variant="textSubtle" />
+        <Feedback variant="textSubtle"/>
       </footer>
     </article>
   )
@@ -64,8 +64,10 @@ function InfoIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 
 export function Note({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-brand-50/50 my-6 flex gap-2.5 rounded-2xl border border-brand-500/20 p-4 leading-6 text-brand-900 dark:border-brand-500/30 dark:bg-brand-500/5 dark:text-brand-200 dark:[--tw-prose-links-hover:theme(colors.brand.300)] dark:[--tw-prose-links:theme(colors.white)]">
-      <InfoIcon className="mt-1 h-4 w-4 flex-none fill-brand-500 stroke-white dark:fill-brand-200/20 dark:stroke-brand-200" />
+    <div
+      className="bg-brand-50/50 my-6 flex gap-2.5 rounded-2xl border border-brand-500/20 p-4 leading-6 text-brand-900 dark:border-brand-500/30 dark:bg-brand-500/5 dark:text-brand-200 dark:[--tw-prose-links-hover:theme(colors.brand.300)] dark:[--tw-prose-links:theme(colors.white)]">
+      <InfoIcon
+        className="mt-1 h-4 w-4 flex-none fill-brand-500 stroke-white dark:fill-brand-200/20 dark:stroke-brand-200"/>
       <div className="[&>:first-child]:mt-0 [&>:last-child]:mb-0">{children}</div>
     </div>
   )
@@ -80,9 +82,9 @@ export function Row({ children }: { children: React.ReactNode }) {
 }
 
 export function Col({
-  children,
-  sticky = false,
-}: {
+                      children,
+                      sticky = false,
+                    }: {
   children: React.ReactNode
   sticky?: boolean
 }) {
@@ -112,10 +114,10 @@ export function Properties({ children }: { children: React.ReactNode }) {
 }
 
 export function Property({
-  name,
-  children,
-  type,
-}: {
+                           name,
+                           children,
+                           type,
+                         }: {
   name: string
   children: React.ReactNode
   type?: string

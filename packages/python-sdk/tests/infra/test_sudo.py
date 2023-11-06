@@ -1,11 +1,11 @@
-from e2b import Session
+from e2b import Sandbox
 
 
 def test_sudo():
-    session = Session("Bash")
+    sandbox = Sandbox()
 
-    process = session.process.start("sudo echo test")
+    process = sandbox.process.start("sudo echo test")
     process.wait()
     output = process.stdout
     assert output == "test"
-    session.close()
+    sandbox.close()

@@ -12,7 +12,7 @@ function rehypeParseCodeBlocks() {
       if (node.tagName === 'code' && node.properties.className) {
         parentNode.properties.language = node.properties.className[0]?.replace(
           /^language-/,
-          '',
+          ''
         )
       }
     })
@@ -38,7 +38,7 @@ const elements = {
 
   token({ style, children }) {
     return `<span style="${style}">${children}</span>` // no changes here
-  },
+  }
 }
 
 // From Shiki
@@ -47,7 +47,7 @@ const FontStyle = {
   None: 0,
   Italic: 1,
   Bold: 2,
-  Underline: 4,
+  Underline: 4
 }
 
 // Custom implementation of renderToHtml from https://raw.githubusercontent.com/shikijs/shiki/main/packages/shiki/src/renderer.ts
@@ -58,7 +58,7 @@ function customRenderToHtml(lines, language) {
       children = children.filter(Boolean)
       return element({
         ...props,
-        children: type === 'code' ? children.join('\n') : children.join(''),
+        children: type === 'code' ? children.join('\n') : children.join('')
       })
     }
     return ''
@@ -75,10 +75,10 @@ function customRenderToHtml(lines, language) {
           index === 0 && // Only supported on the first line
           line?.some(
             token =>
-              token.content === 'import' && token.color === 'var(--shiki-token-keyword)',
+              token.content === 'import' && token.color === 'var(--shiki-token-keyword)'
           ) && // works fine for Python and JS
           line?.some(
-            token => token.content === 'e2b' && token.color === 'var(--shiki-token-text)',
+            token => token.content === 'e2b' && token.color === 'var(--shiki-token-text)'
           ) // works fine for Python and JS
         ) {
           isE2bImport = true // TODO: Actually use, probably to dim the line
@@ -89,7 +89,7 @@ function customRenderToHtml(lines, language) {
           line?.some(
             token =>
               token.content.includes('$HighlightLine') &&
-              token.color === 'var(--shiki-token-comment)',
+              token.color === 'var(--shiki-token-comment)'
           )
         ) {
           isHighlightComment = true
@@ -109,7 +109,7 @@ function customRenderToHtml(lines, language) {
               !(
                 token.content.includes('$HighlightLine') &&
                 token.color === 'var(--shiki-token-comment)'
-              ),
+              )
           )
           lineClasses += ' Code-line_highlighted'
         }
@@ -120,7 +120,7 @@ function customRenderToHtml(lines, language) {
             className: lineClasses,
             lines,
             line,
-            index,
+            index
           },
           line.map((token, index) => {
             const cssDeclarations = [`color: ${token.color}`]
@@ -137,14 +137,14 @@ function customRenderToHtml(lines, language) {
                 style: cssDeclarations.join('; '),
                 tokens: line,
                 token,
-                index,
+                index
               },
-              [escapeHtml(token.content)],
+              [escapeHtml(token.content)]
             )
-          }),
+          })
         )
-      }),
-    ),
+      })
+    )
   ])
 }
 
@@ -153,7 +153,7 @@ const htmlEscapes = {
   '<': '&lt;',
   '>': '&gt;',
   '"': '&quot;',
-  "'": '&#39;',
+  "'": '&#39;'
 }
 
 function escapeHtml(html) {
@@ -220,9 +220,9 @@ function rehypeAddMDXExports(getExports) {
         data: {
           estree: acorn.parse(exportStr, {
             sourceType: 'module',
-            ecmaVersion: 'latest',
-          }),
-        },
+            ecmaVersion: 'latest'
+          })
+        }
       })
     }
   }
@@ -254,7 +254,7 @@ export const rehypePlugins = [
   [
     rehypeAddMDXExports,
     tree => ({
-      sections: `[${getSections(tree).join()}]`,
-    }),
-  ],
+      sections: `[${getSections(tree).join()}]`
+    })
+  ]
 ]

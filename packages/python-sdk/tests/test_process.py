@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from e2b import Session
+from e2b import Sandbox
 
 
 def test_process_expected_stdout():
@@ -14,12 +14,12 @@ def test_process_expected_stderr():
 
 
 def test_process_on_stdout_stderr():
-    session = Session("Bash")
+    sandbox = Sandbox()
 
     stdout = []
     stderr = []
 
-    proc = session.process.start(
+    proc = sandbox.process.start(
         "pwd",
         on_stdout=lambda data: stdout.append(data),
         on_stderr=lambda data: stderr.append(data),
@@ -35,29 +35,29 @@ def test_process_on_stdout_stderr():
     assert stderr == []
     assert proc.exit_code == 0
 
-    session.close()
+    sandbox.close()
 
 
 def test_process_on_exit():
-    session = Session("Bash")
+    sandbox = Sandbox()
 
     on_exit = MagicMock()
 
-    proc = session.process.start(
+    proc = sandbox.process.start(
         "pwd",
-        on_exit=lambda: on_exit(),
+        on_exit=lambda exit_code: on_exit(exit_code),
     )
 
     proc.wait()
     on_exit.assert_called_once()
 
-    session.close()
+    sandbox.close()
 
 
 def test_process_send_stdin():
-    session = Session("Bash")
+    sandbox = Sandbox()
 
-    proc = session.process.start(
+    proc = sandbox.process.start(
         'read -r line; echo "$line"',
         cwd="/code",
     )
@@ -71,35 +71,34 @@ def test_process_send_stdin():
     assert message.line == "ping"
     assert not message.error
 
-    session.close()
+    sandbox.close()
 
 
 def test_default_on_exit():
     on_exit = MagicMock()
 
-    session = Session("Bash", on_exit=lambda: on_exit())
-    proc = session.process.start(
+    sandbox = Sandbox(on_exit=lambda exit_code: on_exit(exit_code))
+    proc = sandbox.process.start(
         "pwd",
         on_exit=lambda: print("EXIT"),
     )
     proc.wait()
     on_exit.assert_not_called()
 
-    proc = session.process.start(
+    proc = sandbox.process.start(
         "pwd",
     )
     proc.wait()
     on_exit.assert_called_once()
 
-    session.close()
+    sandbox.close()
 
 
 def test_process_default_on_stdout_stderr():
     on_stdout = MagicMock()
     on_stderr = MagicMock()
 
-    session = Session(
-        "Nodejs",
+    sandbox = Sandbox(
         on_stdout=lambda data: on_stdout(),
         on_stderr=lambda data: on_stderr(),
     )
@@ -108,7 +107,7 @@ def test_process_default_on_stdout_stderr():
     stdout = []
     stderr = []
 
-    proc = session.process.start(
+    proc = sandbox.process.start(
         code,
         on_stdout=lambda data: stdout.append(data),
         on_stderr=lambda data: stderr.append(data),
@@ -118,11 +117,11 @@ def test_process_default_on_stdout_stderr():
     on_stdout.assert_not_called()
     on_stderr.assert_not_called()
 
-    proc = session.process.start(code)
+    proc = sandbox.process.start(code)
     proc.wait()
 
     on_stdout.assert_called_once()
     on_stderr.assert_called()
     assert proc.exit_code == 1
 
-    session.close()
+    sandbox.close()

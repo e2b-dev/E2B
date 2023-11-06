@@ -9,9 +9,9 @@ import { Navigation } from '@/components/Navigation'
 import { Section, SectionProvider } from '@/components/SectionProvider'
 
 export function Layout({
-  children,
-  allSections,
-}: {
+                         children,
+                         allSections,
+                       }: {
   children: React.ReactNode
   allSections: Record<string, Array<Section>>
 }) {
@@ -39,8 +39,8 @@ export function Layout({
               lg:pb-8
             "
           >
-            <Header />
-            <Navigation className="hidden lg:my-4 lg:block" />
+            <Header/>
+            <Navigation className="hidden lg:my-4 lg:block"/>
           </div>
         </motion.header>
         <div
@@ -62,7 +62,7 @@ export function Layout({
           <main className="
             flex-auto
           ">{children}</main>
-          <Footer />
+          <Footer/>
         </div>
       </div>
     </SectionProvider>

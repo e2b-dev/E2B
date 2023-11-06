@@ -1,22 +1,10 @@
 import * as boxen from 'boxen'
 
-import { getUserConfig } from './commands/auth'
+import { getUserConfig } from './user'
 import { asBold } from './utils/format'
 
-// const client: sdk.ClientType = sdk.api
-
-// client.configure({
-//   baseUrl: 'http://localhost:3003',
-// })
-
-export const apiBaseDefault = 'https://api.e2b.dev'
-export const apiBaseUrl = process.env.E2B_API_BASE ?? apiBaseDefault
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
-
-if (apiBaseUrl !== apiBaseDefault) {
-  console.warn(`\nBeware: Using custom API base URL: ${asBold(apiBaseUrl)}\n`)
-}
 
 const authErrorBox = boxen.default(
   `You must be logged in to use this command. Run ${asBold('e2b login')}.`,

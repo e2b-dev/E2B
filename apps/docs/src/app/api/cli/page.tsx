@@ -6,6 +6,8 @@ import { DialogAnimated } from '@/components/DialogAnimated'
 import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { useSignIn } from '@/utils/useSignIn'
+import { usePostHog } from 'posthog-js/react'
+import { useEffect } from 'react'
 
 type UserConfig = {
   email: string
@@ -16,6 +18,7 @@ type UserConfig = {
 
 export default function Page() {
   const signIn = useSignIn()
+  const posthog = usePostHog()
   const { user, isLoading: userIsLoading } = useUser()
   const apiKey = useApiKey()
   const searchParams = useSearchParams()
@@ -23,9 +26,12 @@ export default function Page() {
   const { next, state } = searchParamsObj
 
   // TODO: Consider sending back onetime code to be used to get access token
-  function redirectToCli() {
+  function redirectToCLI() {
     if (!next) return
     if (!(user?.email && apiKey)) return
+
+    posthog?.capture('started CLI authorization', { email: user.email })
+
     const { email, accessToken, defaultTeamId } = user
     const newUrl = new URL(next)
     const searchParamsObj: UserConfig = {
@@ -38,13 +44,34 @@ export default function Page() {
     window.location.href = newUrl.toString()
   }
 
+  useEffect(
+    function sendAuthorizationStartAnalytics() {
+      posthog?.capture('opened CLI authorization page')
+    },
+    [posthog],
+  )
+
+  useEffect(
+    function sendAuthorizationAnalytics() {
+      if (state === 'success') {
+        posthog?.capture('successfully authorized CLI')
+      } else if (state === 'error') {
+        posthog?.capture('failed to authorize CLI', {
+          error: searchParamsObj.error,
+        })
+      }
+    },
+    [state, posthog, searchParamsObj.error],
+  )
+
   let content
   if (state === 'error') {
     content = (
       <>
         <div className="font-bold text-red-500">Error</div>
         <div>Something went wrong, please try again</div>
-        <pre>{searchParamsObj.error}</pre> {/* TODO: Nicer, but it should never happen */}
+        <pre>{searchParamsObj.error}</pre>
+        {/* TODO: Nicer, but it should never happen */}
       </>
     )
   } else if (state === 'success') {
@@ -74,7 +101,7 @@ export default function Page() {
     } else {
       content = (
         <>
-          <Button onClick={() => redirectToCli()}>
+          <Button onClick={() => redirectToCLI()}>
             Authorize CLI to use your account
           </Button>
         </>
@@ -89,7 +116,8 @@ export default function Page() {
       {/* https://github.com/vercel/next.js/issues/50591 */}
       <DialogAnimated
         open={true}
-        setOpen={() => {}} // intentionally prevent closing
+        setOpen={() => {
+        }} // intentionally prevent closing
       >
         <div className="py-6 sm:py-12">
           <div className="mx-auto px-6 lg:px-8">
@@ -101,13 +129,13 @@ export default function Page() {
               "
               >
                 <span className="text-gray-200">
-                  <LaptopIcon size={60} />
+                  <LaptopIcon size={60}/>
                 </span>
                 <span className="text-gray-400">
-                  <Link2Icon size={30} />
+                  <Link2Icon size={30}/>
                 </span>
                 <span className="text-gray-200">
-                  <CloudIcon size={60} />
+                  <CloudIcon size={60}/>
                 </span>
               </p>
               <h2 className="mt-6 text-base font-semibold leading-7">

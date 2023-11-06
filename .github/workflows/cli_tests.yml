@@ -1,10 +1,6 @@
 name: Test CLI
 
 on:
-  push:
-    paths:
-      - packages/cli/**/*
-      - .github/workflows/cli_tests.yml
   workflow_call:
 
 permissions:
@@ -30,7 +26,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
+          node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml

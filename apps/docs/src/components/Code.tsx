@@ -1,15 +1,6 @@
 'use client'
 import Image from 'next/image'
-import {
-  Children,
-  createContext,
-  isValidElement,
-  useContext,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-} from 'react'
+import { Children, createContext, isValidElement, useContext, useEffect, useReducer, useRef, useState } from 'react'
 import { Tab } from '@headlessui/react'
 import clsx from 'clsx'
 import { create } from 'zustand'
@@ -18,7 +9,7 @@ import { LoaderIcon, PlayIcon } from 'lucide-react'
 import { CopyButton } from '@/components/CopyButton'
 import { useApiKey } from '@/utils/useUser'
 import { ProcessMessage } from '@e2b/sdk'
-import { useSessionsStore } from '@/utils/useSessions'
+import { useSandboxesStore } from '@/utils/useSandboxes'
 import { useSignIn } from '@/utils/useSignIn'
 import { LangShort, languageNames, mdLangToLangShort } from '@/utils/consts'
 import { usePostHog } from 'posthog-js/react'
@@ -26,31 +17,31 @@ import logoNode from '@/images/logos/node.svg'
 import logoPython from '@/images/logos/python.svg'
 
 export function getPanelTitle({
-  title,
-  language,
-}: {
-  title?: string
-  language?: string
+                                title,
+                                language,
+                              }: {
+  title?: string;
+  language?: string;
 }) {
   if (title) {
     return title
   }
   if (language && language in languageNames) {
-    return languageNames[language]
+      return languageNames[language]
   }
   return 'Code'
 }
 
 function CodePanel({
-  children,
-  code,
-  lang,
-  isRunnable = true,
-}: {
-  children: React.ReactNode
-  code?: string
-  lang?: LangShort
-  isRunnable?: boolean
+                     children,
+                     code,
+                     lang,
+                     isRunnable = true,
+                   }: {
+  children: React.ReactNode;
+  code?: string;
+  lang?: LangShort;
+  isRunnable?: boolean;
 }) {
   const signIn = useSignIn()
   const apiKey = useApiKey()
@@ -58,8 +49,8 @@ function CodePanel({
 
   const codeGroupContext = useContext(CodeGroupContext)
 
-  const sessionDef = useSessionsStore(s => s.sessions[lang])
-  const initSession = useSessionsStore(s => s.initSession)
+  const sandboxDef = useSandboxesStore((s) => s.sandboxes[lang])
+  const initSandbox = useSandboxesStore((s) => s.initSandbox)
   const { outputLines, dispatch } = useOutputReducer()
   const [isRunning, setIsRunning] = useState(false)
 
@@ -68,13 +59,13 @@ function CodePanel({
   }
 
   function filterAndMaybeAppendOutput(out: ProcessMessage) {
-    if (out.line.includes('Cannot refresh session')) return
+    if (out.line.includes('Cannot refresh sandbox')) return
     if (out.line.includes('Trying to reconnect')) return
-    console.log(`⚠️ Session stderr ${out.line}`)
+    console.log(`⚠️ Sandbox stderr ${out.line}`)
     // appendOutput(out) // TODO: Reconsider logging to console after making the runs more stable
   }
 
-  function handleSessionCreationError(err: Error) {
+  function handleSandboxCreationError(err: Error) {
     console.error(err)
     setIsRunning(false)
     dispatch({ type: 'clear' })
@@ -93,24 +84,26 @@ function CodePanel({
       snippetPath: codeGroupContext?.path ?? 'unknown snippet',
     })
 
-    let session = sessionDef?.session
+    let sandbox = sandboxDef?.sandbox
     try {
-      if (!session) {
-        if (sessionDef?.promise) {
-          console.log(`Session for "${lang}" is still opening, waiting...`)
-          session = await sessionDef.promise
+      if (!sandbox) {
+        if (sandboxDef?.promise) {
+          console.log(`Sandbox for "${lang}" is still opening, waiting...`)
+          sandbox = await sandboxDef.promise
         } else {
-          console.log(`Session not ready yet for "${lang}", opening...`)
-          session = await initSession(lang, apiKey)
+          console.log(`Sandbox not ready yet for "${lang}", opening...`)
+          sandbox = await initSandbox(lang, apiKey)
         }
       }
     } catch (err) {
-      handleSessionCreationError(err)
+      handleSandboxCreationError(err)
       return
     }
 
-    if (!session) {
-      console.warn('This should not happen, session is null, debug & fix properly later')
+    if (!sandbox) {
+      console.warn(
+        'This should not happen, sandbox is null, debug & fix properly later',
+      )
       setIsRunning(false)
       return
     }
@@ -119,8 +112,8 @@ function CodePanel({
     if (lang === LangShort.js) {
       runtime += ' node'
       const filename = '/code/index.js'
-      await session.filesystem.write(filename, code)
-      session.process.start({
+      await sandbox.filesystem.write(filename, code)
+      sandbox.process.start({
         cmd: `${runtime} ${filename}`,
         onStdout: appendOutput,
         onStderr: filterAndMaybeAppendOutput,
@@ -129,8 +122,8 @@ function CodePanel({
     } else if (lang === LangShort.py) {
       runtime += ' python3'
       const filename = '/main.py'
-      await session.filesystem.write(filename, code)
-      session.process.start({
+      await sandbox.filesystem.write(filename, code)
+      sandbox.process.start({
         cmd: `${runtime} ${filename}`,
         cwd: '/code',
         onStdout: appendOutput,
@@ -149,7 +142,9 @@ function CodePanel({
     lang = mdLangToLangShort[child.props.language ?? lang] // Get lang from child if available
   }
   if (!code) {
-    throw new Error('`CodePanel` requires a `code` prop, or a child with a `code` prop.')
+    throw new Error(
+      '`CodePanel` requires a `code` prop, or a child with a `code` prop.',
+    )
   }
 
   return (
@@ -206,25 +201,26 @@ function CodePanel({
           </pre>
         </div>
       )}
-      <CopyButton code={code} />
+      <CopyButton code={code}/>
     </div>
   )
 }
 
 export function CodeGroupHeader({
-  title,
-  children,
-  selectedIndex,
-}: {
-  title: string
-  children: React.ReactNode
-  selectedIndex: number
+                                  title,
+                                  children,
+                                  selectedIndex,
+                                }: {
+  title: string;
+  children: React.ReactNode;
+  selectedIndex: number;
 }) {
   const hasTabs = Children.count(children) > 1
   if (!title && !hasTabs) return null
 
   return (
-    <div className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-700 bg-zinc-800 px-4 dark:border-zinc-800 dark:bg-transparent">
+    <div
+      className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-700 bg-zinc-800 px-4 dark:border-zinc-800 dark:bg-transparent">
       <div className="flex flex-col items-start">
         {title && (
           <div className="pl-2 mt-3">
@@ -245,13 +241,17 @@ export function CodeGroupHeader({
                     : 'border-transparent text-zinc-400 hover:text-zinc-300',
                 )}
               >
-                <div className="
+                <div
+                  className="
                   flex
                   items-center
                   px-1
                   gap-1
-                ">
-                  {getPanelTitle(isValidElement(child) ? child.props : {}).includes('JavaScript') ? (
+                "
+                >
+                  {getPanelTitle(
+                    isValidElement(child) ? child.props : {},
+                  ).includes('JavaScript') ? (
                     <Image
                       src={logoNode}
                       alt=""
@@ -278,9 +278,9 @@ export function CodeGroupHeader({
 }
 
 function CodeGroupPanels({
-  children,
-  ...props
-}: React.ComponentPropsWithoutRef<typeof CodePanel>) {
+                           children,
+                           ...props
+                         }: React.ComponentPropsWithoutRef<typeof CodePanel>) {
   const hasTabs = Children.count(children) > 1
 
   /* <INTERNAL> */
@@ -288,7 +288,7 @@ function CodeGroupPanels({
   if (typeof window !== 'undefined' && window.DEBUG_COMPARE_LANGS) {
     return (
       <div className="grid grid-cols-2">
-        {Children.map(children, child => (
+        {Children.map(children, (child) => (
           <CodePanel {...props}>{child}</CodePanel>
         ))}
       </div>
@@ -339,7 +339,8 @@ function usePreventLayoutShift() {
       callback()
 
       rafRef.current = window.requestAnimationFrame(() => {
-        const newTop = positionRef.current?.getBoundingClientRect().top ?? initialTop
+        const newTop =
+          positionRef.current?.getBoundingClientRect().top ?? initialTop
         window.scrollBy(0, newTop - initialTop)
       })
     },
@@ -347,15 +348,15 @@ function usePreventLayoutShift() {
 }
 
 const usePreferredLanguageStore = create<{
-  preferredLanguages: Array<string>
-  addPreferredLanguage: (language: string) => void
-}>()(set => ({
+  preferredLanguages: Array<string>;
+  addPreferredLanguage: (language: string) => void;
+}>()((set) => ({
   preferredLanguages: [],
-  addPreferredLanguage: language =>
-    set(state => ({
+  addPreferredLanguage: (language) =>
+    set((state) => ({
       preferredLanguages: [
         ...state.preferredLanguages.filter(
-          preferredLanguage => preferredLanguage !== language,
+          (preferredLanguage) => preferredLanguage !== language,
         ),
         language,
       ],
@@ -363,7 +364,8 @@ const usePreferredLanguageStore = create<{
 }))
 
 export function useTabGroupProps(availableLanguages: Array<string>) {
-  const { preferredLanguages, addPreferredLanguage } = usePreferredLanguageStore()
+  const { preferredLanguages, addPreferredLanguage } =
+    usePreferredLanguageStore()
   const [selectedIndex, setSelectedIndex] = useState(0)
   const activeLanguage = [...availableLanguages].sort(
     (a, z) => preferredLanguages.indexOf(z) - preferredLanguages.indexOf(a),
@@ -380,7 +382,9 @@ export function useTabGroupProps(availableLanguages: Array<string>) {
     ref: positionRef,
     selectedIndex,
     onChange: (newSelectedIndex: number) => {
-      preventLayoutShift(() => addPreferredLanguage(availableLanguages[newSelectedIndex]))
+      preventLayoutShift(() =>
+        addPreferredLanguage(availableLanguages[newSelectedIndex]),
+      )
     },
   }
 }
@@ -392,8 +396,8 @@ function useOutputReducer() {
     (
       state: string[],
       action: {
-        type: 'push' | 'clear'
-        payload?: string
+        type: 'push' | 'clear';
+        payload?: string;
       },
     ) => {
       switch (action.type) {
@@ -409,28 +413,25 @@ function useOutputReducer() {
 }
 
 export function CodeGroup({
-  children,
-  title,
-  path,
-  ...props
-}: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
-  title?: string
-  path?: string // For analytics
+                            children,
+                            title,
+                            path,
+                            ...props
+                          }: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
+  title?: string;
+  path?: string; // For analytics
 }) {
   const hasTabs = Children.count(children) > 1
   const containerClassName =
     'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
   const languages =
-    Children.map(children, child =>
+    Children.map(children, (child) =>
       getPanelTitle(isValidElement(child) ? child.props : {}),
     ) ?? []
   const tabGroupProps = useTabGroupProps(languages)
 
   const header = (
-    <CodeGroupHeader
-      title={title}
-      selectedIndex={tabGroupProps.selectedIndex}
-    >
+    <CodeGroupHeader title={title} selectedIndex={tabGroupProps.selectedIndex}>
       {children}
     </CodeGroupHeader>
   )
@@ -443,10 +444,7 @@ export function CodeGroup({
       }}
     >
       {hasTabs ? (
-        <Tab.Group
-          {...tabGroupProps}
-          className={containerClassName}
-        >
+        <Tab.Group {...tabGroupProps} className={containerClassName}>
           {header}
           {panels}
         </Tab.Group>
@@ -460,7 +458,10 @@ export function CodeGroup({
   )
 }
 
-export function Code({ children, ...props }: React.ComponentPropsWithoutRef<'code'>) {
+export function Code({
+                       children,
+                       ...props
+                     }: React.ComponentPropsWithoutRef<'code'>) {
   /* <DYNAMIC-API-REPLACEMENT> */
   // let apiKey = useApiKey()
   // if (children.replace && apiKey) children = children.replace(`{{API_KEY}}`, `${apiKey}`)
@@ -474,21 +475,16 @@ export function Code({ children, ...props }: React.ComponentPropsWithoutRef<'cod
         '`Code` children must be a string when nested inside a `CodeGroup`.',
       )
     }
-    return (
-      <code
-        {...props}
-        dangerouslySetInnerHTML={{ __html: children }}
-      />
-    )
+    return <code {...props} dangerouslySetInnerHTML={{ __html: children }}/>
   }
 
   return <code {...props}>{children}</code>
 }
 
 export function Pre({
-  children,
-  ...props
-}: React.ComponentPropsWithoutRef<typeof CodeGroup>) {
+                      children,
+                      ...props
+                    }: React.ComponentPropsWithoutRef<typeof CodeGroup>) {
   const isGrouped = useContext(CodeGroupContext)
 
   if (isGrouped) {

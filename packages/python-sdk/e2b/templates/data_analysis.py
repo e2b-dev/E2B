@@ -1,10 +1,11 @@
 import logging
 import time
 from typing import Optional, Callable, Any, Tuple, List, Union
+from e2b.sandbox.process import ProcessMessage
 
 from pydantic import BaseModel, PrivateAttr
 
-from e2b import EnvVars, Session
+from e2b import EnvVars, Sandbox
 from e2b.constants import TIMEOUT
 
 logger = logging.getLogger(__name__)
@@ -12,20 +13,20 @@ logger = logging.getLogger(__name__)
 
 class Artifact(BaseModel):
     name: str
-    _session: Session = PrivateAttr()
+    _sandbox: Sandbox = PrivateAttr()
 
-    def __init__(self, **data: Any):
+    def __init__(self, sandbox: Sandbox, **data: Any):
         super().__init__(**data)
-        self._session = data["_session"]
+        self._sandbox = sandbox
 
     def __hash__(self):
         return hash(self.name)
 
     def download(self) -> bytes:
-        return self._session.download_file(self.name)
+        return self._sandbox.download_file(self.name)
 
 
-class DataAnalysis(Session):
+class DataAnalysis(Sandbox):
     env_id = "Python3-DataAnalysis"
 
     def __init__(
@@ -33,8 +34,9 @@ class DataAnalysis(Session):
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
-        on_stdout: Optional[Callable[[str], Any]] = None,
-        on_stderr: Optional[Callable[[str], Any]] = None,
+        timeout: Optional[float] = TIMEOUT,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_artifact: Optional[Callable[[Artifact], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
     ):
@@ -44,6 +46,7 @@ class DataAnalysis(Session):
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
+            timeout=timeout,
             on_stdout=on_stdout,
             on_stderr=on_stderr,
             on_exit=on_exit,
@@ -52,8 +55,8 @@ class DataAnalysis(Session):
     def run_python(
         self,
         code: str,
-        on_stdout: Optional[Callable[[str], Any]] = None,
-        on_stderr: Optional[Callable[[str], Any]] = None,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_artifact: Optional[Callable[[Artifact], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
         env_vars: Optional[EnvVars] = None,
@@ -66,7 +69,7 @@ class DataAnalysis(Session):
         def register_artifacts(event: Any) -> None:
             on_artifact_func = on_artifact or self.on_artifact
             if event.operation == "Create":
-                artifact = Artifact(name=event.path, _session=self)
+                artifact = Artifact(name=event.path, sandbox=self)
                 artifacts.add(artifact)
                 if on_artifact_func:
                     try:
@@ -98,30 +101,27 @@ class DataAnalysis(Session):
 
         return process.output.stdout, process.output.stderr, list(artifacts)
 
-    def install_python_packages(
-        self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
-    ) -> None:
+    def _install_packages(self, command: str, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT) -> None:
         if isinstance(package_names, list):
             package_names = " ".join(package_names)
 
-        process = self.process.start(f"pip install {package_names}", timeout=timeout)
+        package_names = package_names.strip()
+        if not package_names:
+            return
+
+        process = self.process.start(f"{command} {package_names}", timeout=timeout)
         process.wait()
 
         if process.exit_code != 0:
             raise Exception(
                 f"Failed to install package {package_names}: {process.output.stderr}"
             )
+    def install_python_packages(
+        self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
+    ) -> None:
+        self._install_packages("pip install", package_names, timeout=timeout)
 
     def install_system_packages(
         self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
     ) -> None:
-        if isinstance(package_names, list):
-            package_names = " ".join(package_names)
-
-        process = self.process.start(f"sudo apt-get -y install {package_names}", timeout=timeout)
-        process.wait()
-
-        if process.exit_code != 0:
-            raise Exception(
-                f"Failed to install package {package_names}: {process.output.stderr}"
-            )
+        self._install_packages("sudo apt-get install -y", package_names, timeout=timeout)

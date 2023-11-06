@@ -1,12 +1,12 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from '@e2b/sdk'
 import fs from 'node:fs'
 
-const session = await Session.create({ id: 'Nodejs' })
+const sandbox = await Sandbox.create({id: 'base'})
 
 // If you're in the server environment
 const filename = 'data.csv' // $HighlightLine
 const fileBuffer = fs.readFileSync('path/to/local/file') // $HighlightLine
-const remotePath = await session.uploadFile(fileBuffer, filename) // $HighlightLine
+const remotePath = await sandbox.uploadFile(fileBuffer, filename) // $HighlightLine
 
 // If you're in the browser environment, you can use the Blob API
 // const filename = 'data.csv'
@@ -16,8 +16,10 @@ const remotePath = await session.uploadFile(fileBuffer, filename) // $HighlightL
 //   '"3","val1","val2","val3","val4"'
 // ].join('\n');
 // const fileBlob = new Blob([csv], { type: 'text/csv' })
-// const remotePath = await session.uploadFile(fileBlob, 'data.csv')
+// const remotePath = await sandbox.uploadFile(fileBlob, 'data.csv')
 
-console.log(`The file was uploaded to '${remotePath}' path inside the sandbox `)
+console.log(
+  `The file was uploaded to '${remotePath}' path inside the sandbox `,
+)
 
-await session.close()
+await sandbox.close()

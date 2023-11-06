@@ -1,84 +1,84 @@
 import pytest
-from e2b import Session
+from e2b import Sandbox
 
 
 def test_process_cwd():
-    session = Session("Bash", cwd="/code/app")
+    sandbox = Sandbox(cwd="/code/app")
 
-    proc = session.process.start("pwd")
+    proc = sandbox.process.start("pwd")
     output = proc.wait()
     assert output.stdout == "/code/app"
-    session.close()
+    sandbox.close()
 
 
 def test_filesystem_cwd():
-    session = Session("Bash", cwd="/code/app")
+    sandbox = Sandbox(cwd="/code/app")
 
-    session.filesystem.write("hello.txt", "Hello VM!")
-    proc = session.process.start("cat /code/app/hello.txt")
+    sandbox.filesystem.write("hello.txt", "Hello VM!")
+    proc = sandbox.process.start("cat /code/app/hello.txt")
     output = proc.wait()
     assert output.stdout == "Hello VM!"
 
-    session.close()
+    sandbox.close()
 
 
 def test_change_cwd():
-    session = Session("Bash", cwd="/code/app")
+    sandbox = Sandbox(cwd="/code/app")
 
     # change dir to /home/user
-    session.cwd = "/home/user"
+    sandbox.cwd = "/home/user"
 
     # process respects cwd
-    proc = session.process.start("pwd")
+    proc = sandbox.process.start("pwd")
     output = proc.wait()
     assert output.stdout == "/home/user"
 
     # filesystem respects cwd
-    session.filesystem.write("hello.txt", "Hello VM!")
-    proc = session.process.start("cat /home/user/hello.txt")
+    sandbox.filesystem.write("hello.txt", "Hello VM!")
+    proc = sandbox.process.start("cat /home/user/hello.txt")
     output = proc.wait()
     assert output.stdout == "Hello VM!"
 
-    session.close()
+    sandbox.close()
 
 
 def test_initial_cwd_with_tilde():
-    session = Session("Bash", cwd="~/code/")
+    sandbox = Sandbox(cwd="~/code/")
 
-    proc = session.process.start("pwd")
+    proc = sandbox.process.start("pwd")
     output = proc.wait()
     assert output.stdout == "/home/user/code"
 
-    session.close()
+    sandbox.close()
 
 
 def test_relative_paths():
-    session = Session("Bash", cwd="/home/user")
+    sandbox = Sandbox(cwd="/home/user")
 
-    session.filesystem.make_dir("./code")
-    session.filesystem.write("./code/hello.txt", "Hello Vasek!")
-    proc = session.process.start("cat /home/user/code/hello.txt")
+    sandbox.filesystem.make_dir("./code")
+    sandbox.filesystem.write("./code/hello.txt", "Hello Vasek!")
+    proc = sandbox.process.start("cat /home/user/code/hello.txt")
     output = proc.wait()
     assert output.stdout == "Hello Vasek!"
 
-    session.filesystem.write("../../hello.txt", "Hello Tom!")
-    proc = session.process.start("cat /hello.txt")
+    sandbox.filesystem.write("../../hello.txt", "Hello Tom!")
+    proc = sandbox.process.start("cat /hello.txt")
     output = proc.wait()
     assert output.stdout == "Hello Tom!"
 
-    session.close()
+    sandbox.close()
 
 
 def test_warnings():
-    session = Session("Bash")
+    sandbox = Sandbox()
 
     with pytest.warns(Warning):
-        session.filesystem.write("./hello.txt", "Hello Vasek!")
+        sandbox.filesystem.write("./hello.txt", "Hello Vasek!")
 
     with pytest.warns(Warning):
-        session.filesystem.write("../hello.txt", "Hello Vasek!")
+        sandbox.filesystem.write("../hello.txt", "Hello Vasek!")
 
     with pytest.warns(Warning):
-        session.filesystem.write("~/hello.txt", "Hello Vasek!")
+        sandbox.filesystem.write("~/hello.txt", "Hello Vasek!")
 
-    session.close()
+    sandbox.close()

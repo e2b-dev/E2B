@@ -1,19 +1,21 @@
 import {
   ChevronRightSquare,
+  Cpu,
+  DollarSign,
+  FileDown,
+  FileUp,
   Folder,
   FolderTree,
+  Hammer,
+  HeartHandshake,
   KeyRound,
+  Link,
   Settings,
   ShieldQuestion,
   Timer,
-  HeartHandshake,
-  DollarSign,
-  Hammer,
-  Cpu,
-  Link,
-  FileUp,
-  FileDown,
   Variable,
+  PencilRuler,
+  File,
 } from 'lucide-react'
 
 export const routes = [
@@ -83,23 +85,18 @@ export const routes = [
             size={20}
           />
         ),
-        title: 'Example: Run LLM-generated code',
+        title: 'Guide: Run LLM-generated code',
         href: '/guide/simple-gpt4-code-interpreter',
       },
     ],
   },
-  // {
-  //   title: 'Sandbox Templates',
-  //   links: [
-  //     { title: 'Overview', href: '/sandbox/templates/overview' },
-  //     { title: 'Custom Template', href: '/sandbox/templates/custom' },
-  //     { title: 'Premade: Data Analysis', href: '/sandbox/templates/data-analysis' },
-  //   ],
-  // },
   {
-    title: 'Sandbox API',
+    title: 'Sandbox',
     links: [
-      { title: 'Overview', href: '/sandbox/overview' },
+      {
+        title: 'Overview',
+        href: '/sandbox/overview',
+      },
       {
         icon: (
           <Cpu
@@ -107,9 +104,63 @@ export const routes = [
             size={20}
           />
         ),
-        title: 'Sandbox Resources',
+        title: 'Resources',
         href: '/sandbox/resources',
       },
+      {
+        icon: (
+          <PencilRuler
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Customization',
+        href: '/sandbox/custom',
+      },
+    ],
+  },
+  {
+    title: 'Sandbox Templates',
+    links: [
+      {
+        title: 'Overview',
+        href: '/sandbox/templates/overview',
+      },
+      {
+        icon: (
+          <File
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Template File',
+        href: '/sandbox/templates/template-file',
+      },
+      {
+        icon: (
+          <Hammer
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Guide: Creating Custom Sandbox',
+        href: '/guide/custom-sandbox',
+      },
+      // {
+      //   icon: (
+      //     <ImageIcon
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: 'Premade Templates',
+      //   href: '/sandbox/templates/premade',
+      // },
+    ]
+  },
+  {
+    title: 'Sandbox API',
+    links: [
       {
         icon: (
           <Variable
@@ -118,7 +169,7 @@ export const routes = [
           />
         ),
         title: 'Environment Variables',
-        href: '/sandbox/envs',
+        href: '/sandbox/api/envs',
       },
       {
         icon: (
@@ -128,7 +179,7 @@ export const routes = [
           />
         ),
         title: 'Filesystem',
-        href: '/sandbox/filesystem',
+        href: '/sandbox/api/filesystem',
       },
       {
         icon: (
@@ -138,19 +189,8 @@ export const routes = [
           />
         ),
         title: 'Process',
-        href: '/sandbox/process',
+        href: '/sandbox/api/process',
       },
-      // TODO: Remove
-      // {
-      //   icon: (
-      //     <Binary
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: 'Executing Code',
-      //   href: '/sandbox/execute',
-      // },
       {
         icon: (
           <Folder
@@ -159,28 +199,8 @@ export const routes = [
           />
         ),
         title: 'Working Directory',
-        href: '/sandbox/cwd',
+        href: '/sandbox/api/cwd',
       },
-      // {
-      //   icon: (
-      //     <TextQuote
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: '[TODO] Streaming',
-      //   href: '/sandbox/streaming',
-      // },
-      // {
-      //   icon: (
-      //     <TextQuote
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: '[TODO] Debug logs',
-      //   href: '/sandbox/debugging',
-      // },
       {
         icon: (
           <Link
@@ -189,7 +209,7 @@ export const routes = [
           />
         ),
         title: 'Sandbox URL',
-        href: '/sandbox/url',
+        href: '/sandbox/api/url',
       },
       {
         icon: (
@@ -199,7 +219,7 @@ export const routes = [
           />
         ),
         title: 'Upload Files',
-        href: '/sandbox/upload',
+        href: '/sandbox/api/upload',
       },
       {
         icon: (
@@ -209,7 +229,7 @@ export const routes = [
           />
         ),
         title: 'Download Files',
-        href: '/sandbox/download',
+        href: '/sandbox/api/download',
       },
       {
         icon: (
@@ -219,41 +239,17 @@ export const routes = [
           />
         ),
         title: 'Timeouts',
-        href: '/sandbox/timeouts',
+        href: '/sandbox/api/timeouts',
       },
     ],
   },
   // {
-  //   title: 'Guides',
+  //   title: 'E2B CLI',
   //   links: [
-  //     { title: 'AI Data Analysis With GPT-4', href: '/guides/ai-data-analysis' },
-  //     { title: 'GPT-4 Cloud Browser Assistant', href: '/guides/cloud-browser-assistant' },
-  //     { title: 'Custom Code Interpreter', href: '/guides/custom-code-interpreter' },
-  //     { title: 'GPT-controlled FFmpeg', href: '/guides/gpt-controlled-ffmpeg' }
-  //   ],
-  // },
-  // {
-  //   title: 'Framework Integrations',
-  //   links: [
-  //     { title: 'LangChain', href: '/integrations/framework/langchain' },
-  //     { title: 'LlamaIndex', href: '/integrations/framework/llamaindex' },
-  //     { title: 'Rivet', href: '/integrations/framework/rivet' },
-  //     { title: 'AutoGen', href: '/integrations/framework/autogen' },
-  //     { title: 'Fixie', href: '/integrations/framework/fixie' },
-  //     { title: 'Hugging Face Agents', href: '/integrations/framework/hf-agents' },
-  //     { title: 'AgentLabs', href: '/integrations/framework/agentlabs' },
-  //     { title: 'Chainlit', href: '/integrations/framework/chainlit' },
-  //     { title: 'Streamlit', href: '/integrations/framework/streamlit' },
-  //     { title: 'Gradio', href: '/integrations/framework/gradio' },
-  //   ],
-  // },
-  // {
-  //   title: 'LLMs Integrations',
-  //   links: [
-  //     { title: 'OpenAI', href: '/integrations/llm/openai' },
-  //     { title: 'Anthropic', href: '/integrations/llm/anthropic' },
-  //     { title: 'Hugging Face', href: '/integrations/llm/hugging-face' },
-  //     { title: 'Replicate', href: '/integrations/llm/replicate' },
+  //     {
+  //       title: 'Overview',
+  //       href: '/cli/overview',
+  //     },
   //   ],
   // },
 ]

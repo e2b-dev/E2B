@@ -1,19 +1,20 @@
-import { Session } from '@e2b/sdk'
+import { Sandbox } from '@e2b/sdk'
 
 // 1. Start cloud playground
-const session = await Session.create({ // $HighlightLine
-  id: 'Nodejs', // or 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
+const sandbox = await Sandbox.create({
+  // $HighlightLine
+  id: 'base', // or you can pass your own sandbox template id
   apiKey: process.env.E2B_API_KEY,
 })
 
 // 2. Use filesystem
-session.filesystem // $HighlightLine
+sandbox.filesystem // $HighlightLine
 
 // 3. Start processes
-session.process.start() // $HighlightLine
+sandbox.process.start() // $HighlightLine
 
 // 4. Upload/download files
-session.read_bytes() // $HighlightLine
-session.write_bytes() // $HighlightLine
+sandbox.read_bytes() // $HighlightLine
+sandbox.write_bytes() // $HighlightLine
 
-await session.close()
+await sandbox.close()

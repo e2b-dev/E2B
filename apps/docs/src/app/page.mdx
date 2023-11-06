@@ -28,14 +28,14 @@ Here are a few use cases:
 <Button variant="textLink">Sign in</Button> with your GitHub acccount.
 
 ### 2. Get your API key
-After sign in, get [your API key](/getting-started/api-key).
+After sign in, get [your API key](/getting-started/api-key) and set it in the `E2B_API_KEY` environment variable.
 
 ### 3. Install the E2B SDK
 We offer both JS and Python SDK.
 
 <CodeGroup isRunnable={false}>
 ```bash {{ language: 'js' }}
-npm i @e2b/sdk
+npm install @e2b/sdk
 ```
 
 ```bash {{ language: 'python' }}
@@ -44,40 +44,44 @@ pip install e2b
 </CodeGroup>
 
 ### 4. Start up the sandbox
+Sandbox is an isolated cloud environment for your AI app, agent, assistant, etc.
+
 <CodeGroup isRunnable={false}>
 ```js {{ language: 'js' }}
 // 1. Import E2B
-import { Session } from '@e2b/sdk'
+import { Sandbox } from '@e2b/sdk'
 
 // 2. Get your Sandbox session
-const session = await Session({
-  // or 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
-  id: 'Nodejs',
-})
+const sandbox = await Sandbox.create()
 
-// 3. Close the session once done
-await session.close()
+// 3. Close the sandbox once done
+await sandbox.close()
 ```
 
 ```python {{ language: 'python' }}
 # 1. Import E2B
-from e2b import Session
+from e2b import Sandbox
 
 # 2. Get your Sandbox session
-session = Session(
-  # or "Bash", "Python3", "Java", "Go", "Rust", "PHP", "Perl", "DotNET"
-  id: "Nodejs",
-)
+sandbox = Sandbox()
 
-# 3. Close the session once done
-session.close()
+# 3. Close the sandbox once done
+sandbox.close()
 ```
 </CodeGroup>
 
+{/* <Note>
+By default the `base` sandbox supports NodeJS 20 and Python 3.10. If you want customize your sandbox (copy files, install dependencies, etc), check out [Sandbox Templates](/sandbox/templates/custom).
+</Note> */}
+
+### Custom sandboxes
+You can create a custom sandbox with preinstalled libraries and prepared files by creating your own [Sandbox Template](/sandbox/templates/overview).
+
+{/* We offer a few [premade sandbox templates](/sandbox/template/prebuilt) for common use cases such as building code interpreters or AI browser assistans. */}
 
 ### 🎉 Build your AI app
 
-Now you can let your AI app control the sandbox by using our [Sandbox API](/sandbox/overview).
+Now you can let your AI app control the sandbox by using [Sandbox API](/sandbox/api/envs).
 
 {/* - [Run any code](/agents/exec) and terminal command in a sandboxed environment
 - [Start any process](/playgrounds/process) (even long-running such as a database)

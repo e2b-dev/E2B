@@ -1,14 +1,14 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(id="Nodejs")
+sandbox = Sandbox(id="base")
 
 # This example will print back the string we send to the process using `send_stdin()`
 
-proc = session.process.start(
-    "while IFS= read -r line; do echo \"$line\"; sleep 1; done",
+proc = sandbox.process.start(
+    'while IFS= read -r line; do echo "$line"; sleep 1; done',
     on_stdout=print,
 )
-proc.send_stdin("AI Playground\n") # $HighlightLine
+proc.send_stdin("AI Playground\n")  # $HighlightLine
 proc.kill()
 
-session.close()
+sandbox.close()

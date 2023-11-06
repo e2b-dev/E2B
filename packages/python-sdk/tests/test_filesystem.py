@@ -4,67 +4,67 @@ from os import path
 from time import sleep
 from typing import List
 
-from e2b import Session, FilesystemEvent
+from e2b import Sandbox, FilesystemEvent
 
 
 def test_list_files():
-    session = Session("Bash")
-    session.filesystem.make_dir("/test/new")
+    sandbox = Sandbox()
+    sandbox.filesystem.make_dir("/test/new")
 
-    ls = session.filesystem.list("/test")
+    ls = sandbox.filesystem.list("/test")
     assert ["new"] == [x.name for x in ls]
 
-    session.close()
+    sandbox.close()
 
 
 def test_create_file():
-    session = Session("Bash")
-    session.filesystem.make_dir("/test")
-    session.filesystem.write("/test/test.txt", "Hello World!")
+    sandbox = Sandbox()
+    sandbox.filesystem.make_dir("/test")
+    sandbox.filesystem.write("/test/test.txt", "Hello World!")
 
-    ls = session.filesystem.list("/test")
+    ls = sandbox.filesystem.list("/test")
     assert ["test.txt"] == [x.name for x in ls]
 
-    session.close()
+    sandbox.close()
 
 
 def test_read_and_write():
-    session = Session("Bash")
+    sandbox = Sandbox()
 
-    session.filesystem.write("/tmp/test.txt", "Hello World!")
+    sandbox.filesystem.write("/tmp/test.txt", "Hello World!")
 
-    content = session.filesystem.read("/tmp/test.txt")
+    content = sandbox.filesystem.read("/tmp/test.txt")
     assert content == "Hello World!"
 
-    session.close()
+    sandbox.close()
 
 
 def test_list_delete_files():
-    session = Session("Bash")
-    session.filesystem.make_dir("/test/new")
+    sandbox = Sandbox()
+    sandbox.filesystem.make_dir("/test/new")
 
-    ls = session.filesystem.list("/test")
+    ls = sandbox.filesystem.list("/test")
     assert ["new"] == [x.name for x in ls]
 
-    session.filesystem.remove("/test/new")
+    sandbox.filesystem.remove("/test/new")
 
-    ls = session.filesystem.list("/test")
+    ls = sandbox.filesystem.list("/test")
     assert [] == [x.name for x in ls]
 
-    session.close()
+    sandbox.close()
 
 
 def test_watch_dir():
-    session = Session("Bash")
-    session.filesystem.write("/tmp/test.txt", "Hello")
+    sandbox = Sandbox()
+    sandbox.filesystem.write("/tmp/test.txt", "Hello")
 
-    watcher = session.filesystem.watch_dir("/tmp")
+    watcher = sandbox.filesystem.watch_dir("/tmp")
 
     events: List[FilesystemEvent] = []
     watcher.add_event_listener(lambda e: events.append(e))
 
     watcher.start()
-    session.filesystem.write("/tmp/test.txt", "World!")
+    sandbox.filesystem.write("/tmp/test.txt", "World!")
     sleep(1)
     watcher.stop()
 
@@ -74,7 +74,7 @@ def test_watch_dir():
     assert event.operation == "Write"
     assert event.path == "/tmp/test.txt"
 
-    session.close()
+    sandbox.close()
 
 
 def test_write_bytes():
@@ -85,21 +85,21 @@ def test_write_bytes():
     local_path = path.join(local_dir, file_name)
     remote_path = path.join(remote_dir, file_name)
 
-    # TODO: This test isn't complete since we can't verify the size of the file inside session.
-    # We don't have any SDK function to get the size of a file inside session.
+    # TODO: This test isn't complete since we can't verify the size of the file inside sandbox.
+    # We don't have any SDK function to get the size of a file inside sandbox.
 
-    session = Session("Bash")
+    sandbox = Sandbox()
 
     # Upload the file
     with open(local_path, "rb") as f:
         content = f.read()
-        session.filesystem.write_bytes(remote_path, content)
+        sandbox.filesystem.write_bytes(remote_path, content)
 
-    # Check if the file exists inside session
-    files = session.filesystem.list(remote_dir)
+    # Check if the file exists inside sandbox
+    files = sandbox.filesystem.list(remote_dir)
     assert file_name in [x.name for x in files]
 
-    session.close()
+    sandbox.close()
 
 
 def test_read_bytes():
@@ -110,18 +110,18 @@ def test_read_bytes():
     local_path = path.join(local_dir, file_name)
     remote_path = path.join(remote_dir, file_name)
 
-    # TODO: This test isn't complete since we can't verify the size of the file inside session.
-    # We don't have any SDK function to get the size of a file inside session.
+    # TODO: This test isn't complete since we can't verify the size of the file inside sandbox.
+    # We don't have any SDK function to get the size of a file inside sandbox.
 
-    session = Session("Bash")
+    sandbox = Sandbox()
 
     # Upload the file first
     with open(local_path, "rb") as f:
         content = f.read()
-        session.filesystem.write_bytes(remote_path, content)
+        sandbox.filesystem.write_bytes(remote_path, content)
 
     # Download the file
-    content = session.filesystem.read_bytes(remote_path)
+    content = sandbox.filesystem.read_bytes(remote_path)
 
     # Save the file
     downloaded_path = path.join(local_dir, "video-downloaded.webm")
@@ -131,4 +131,4 @@ def test_read_bytes():
     # Compare if both files are equal
     assert filecmp.cmp(local_path, downloaded_path)
 
-    session.close()
+    sandbox.close()

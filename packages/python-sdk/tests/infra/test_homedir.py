@@ -1,11 +1,11 @@
-from e2b import Session
+from e2b import Sandbox
 
 
 def test_homedir():
-    session = Session("Bash")
+    sandbox = Sandbox()
 
-    process = session.process.start("echo $HOME")
+    process = sandbox.process.start("echo $HOME")
     process.wait()
     output = process.stdout
     assert output == "/home/user"
-    session.close()
+    sandbox.close()

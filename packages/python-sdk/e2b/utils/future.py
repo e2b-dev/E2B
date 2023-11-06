@@ -1,4 +1,6 @@
 import asyncio
+from asyncio import AbstractEventLoop
+
 from concurrent.futures import Future
 from typing import Any, Awaitable, Callable, Generic, List, Optional, TypeVar
 
@@ -31,9 +33,7 @@ class DeferredFuture(Generic[T]):
             self._future.set_exception(reason)
 
 
-def run_async_func_in_new_loop(coro: Awaitable):
-    # Create a new loop
-    loop = asyncio.new_event_loop()
+def run_async_func_in_loop(loop: AbstractEventLoop, coro: Awaitable):
     asyncio.set_event_loop(loop)
 
     try:

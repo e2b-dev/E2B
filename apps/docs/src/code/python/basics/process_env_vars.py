@@ -1,11 +1,11 @@
-from e2b import Session
+from e2b import Sandbox
 
-session = Session.create(
-    id="Nodejs",
+sandbox = Sandbox(
+    id="base",
     env_vars={"FOO": "Hello"}
 )
 
-proc = session.process.start(
+proc = sandbox.process.start(
     "echo $FOO $BAR!",
     env_vars={"BAR": "World"},  # $HighlightLine
 )
@@ -14,4 +14,4 @@ proc.wait()
 print(proc.output.stdout)
 # output: Hello World!
 
-session.close()
+sandbox.close()

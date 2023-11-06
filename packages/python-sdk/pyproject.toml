@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e2b"
-version = "0.9.7"
+version = "0.10.0-rc.0"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
@@ -35,6 +35,3 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"

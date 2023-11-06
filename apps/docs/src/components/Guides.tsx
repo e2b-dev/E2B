@@ -34,7 +34,8 @@ export function Guides() {
       >
         Guides
       </Heading>
-      <div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
+      <div
+        className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
         {guides.map(guide => (
           <div key={guide.href}>
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">

@@ -1,6 +1,4 @@
-from e2b import Session
+from e2b import Sandbox
 
-def main():
-    explicit_api_key = Session(id="Nodejs", api_key="YOUR_API_KEY")
-    explicit_api_key.close()
-main()
+sandbox = Sandbox(api_key="YOUR_API_KEY")
+sandbox.close()
