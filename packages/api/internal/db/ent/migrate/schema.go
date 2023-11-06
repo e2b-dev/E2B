@@ -91,9 +91,9 @@ var (
 	// TiersColumns holds the columns for the "tiers" table.
 	TiersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true, Size: 2147483647},
-		{Name: "vcpu", Type: field.TypeInt8},
-		{Name: "ram_mb", Type: field.TypeInt8},
-		{Name: "disk_mb", Type: field.TypeInt8},
+		{Name: "vcpu", Type: field.TypeInt64},
+		{Name: "ram_mb", Type: field.TypeInt64},
+		{Name: "disk_mb", Type: field.TypeInt64},
 	}
 	// TiersTable holds the schema information for the "tiers" table.
 	TiersTable = &schema.Table{

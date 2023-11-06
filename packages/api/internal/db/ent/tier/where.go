@@ -65,137 +65,137 @@ func IDContainsFold(id string) predicate.Tier {
 }
 
 // Vcpu applies equality check predicate on the "vcpu" field. It's identical to VcpuEQ.
-func Vcpu(v int8) predicate.Tier {
+func Vcpu(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldVcpu, v))
 }
 
 // RAMMB applies equality check predicate on the "ram_mb" field. It's identical to RAMMBEQ.
-func RAMMB(v int8) predicate.Tier {
+func RAMMB(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldRAMMB, v))
 }
 
 // DiskMB applies equality check predicate on the "disk_mb" field. It's identical to DiskMBEQ.
-func DiskMB(v int8) predicate.Tier {
+func DiskMB(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldDiskMB, v))
 }
 
 // VcpuEQ applies the EQ predicate on the "vcpu" field.
-func VcpuEQ(v int8) predicate.Tier {
+func VcpuEQ(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldVcpu, v))
 }
 
 // VcpuNEQ applies the NEQ predicate on the "vcpu" field.
-func VcpuNEQ(v int8) predicate.Tier {
+func VcpuNEQ(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldNEQ(FieldVcpu, v))
 }
 
 // VcpuIn applies the In predicate on the "vcpu" field.
-func VcpuIn(vs ...int8) predicate.Tier {
+func VcpuIn(vs ...int64) predicate.Tier {
 	return predicate.Tier(sql.FieldIn(FieldVcpu, vs...))
 }
 
 // VcpuNotIn applies the NotIn predicate on the "vcpu" field.
-func VcpuNotIn(vs ...int8) predicate.Tier {
+func VcpuNotIn(vs ...int64) predicate.Tier {
 	return predicate.Tier(sql.FieldNotIn(FieldVcpu, vs...))
 }
 
 // VcpuGT applies the GT predicate on the "vcpu" field.
-func VcpuGT(v int8) predicate.Tier {
+func VcpuGT(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldGT(FieldVcpu, v))
 }
 
 // VcpuGTE applies the GTE predicate on the "vcpu" field.
-func VcpuGTE(v int8) predicate.Tier {
+func VcpuGTE(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldGTE(FieldVcpu, v))
 }
 
 // VcpuLT applies the LT predicate on the "vcpu" field.
-func VcpuLT(v int8) predicate.Tier {
+func VcpuLT(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldLT(FieldVcpu, v))
 }
 
 // VcpuLTE applies the LTE predicate on the "vcpu" field.
-func VcpuLTE(v int8) predicate.Tier {
+func VcpuLTE(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldLTE(FieldVcpu, v))
 }
 
 // RAMMBEQ applies the EQ predicate on the "ram_mb" field.
-func RAMMBEQ(v int8) predicate.Tier {
+func RAMMBEQ(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldRAMMB, v))
 }
 
 // RAMMBNEQ applies the NEQ predicate on the "ram_mb" field.
-func RAMMBNEQ(v int8) predicate.Tier {
+func RAMMBNEQ(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldNEQ(FieldRAMMB, v))
 }
 
 // RAMMBIn applies the In predicate on the "ram_mb" field.
-func RAMMBIn(vs ...int8) predicate.Tier {
+func RAMMBIn(vs ...int64) predicate.Tier {
 	return predicate.Tier(sql.FieldIn(FieldRAMMB, vs...))
 }
 
 // RAMMBNotIn applies the NotIn predicate on the "ram_mb" field.
-func RAMMBNotIn(vs ...int8) predicate.Tier {
+func RAMMBNotIn(vs ...int64) predicate.Tier {
 	return predicate.Tier(sql.FieldNotIn(FieldRAMMB, vs...))
 }
 
 // RAMMBGT applies the GT predicate on the "ram_mb" field.
-func RAMMBGT(v int8) predicate.Tier {
+func RAMMBGT(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldGT(FieldRAMMB, v))
 }
 
 // RAMMBGTE applies the GTE predicate on the "ram_mb" field.
-func RAMMBGTE(v int8) predicate.Tier {
+func RAMMBGTE(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldGTE(FieldRAMMB, v))
 }
 
 // RAMMBLT applies the LT predicate on the "ram_mb" field.
-func RAMMBLT(v int8) predicate.Tier {
+func RAMMBLT(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldLT(FieldRAMMB, v))
 }
 
 // RAMMBLTE applies the LTE predicate on the "ram_mb" field.
-func RAMMBLTE(v int8) predicate.Tier {
+func RAMMBLTE(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldLTE(FieldRAMMB, v))
 }
 
 // DiskMBEQ applies the EQ predicate on the "disk_mb" field.
-func DiskMBEQ(v int8) predicate.Tier {
+func DiskMBEQ(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldDiskMB, v))
 }
 
 // DiskMBNEQ applies the NEQ predicate on the "disk_mb" field.
-func DiskMBNEQ(v int8) predicate.Tier {
+func DiskMBNEQ(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldNEQ(FieldDiskMB, v))
 }
 
 // DiskMBIn applies the In predicate on the "disk_mb" field.
-func DiskMBIn(vs ...int8) predicate.Tier {
+func DiskMBIn(vs ...int64) predicate.Tier {
 	return predicate.Tier(sql.FieldIn(FieldDiskMB, vs...))
 }
 
 // DiskMBNotIn applies the NotIn predicate on the "disk_mb" field.
-func DiskMBNotIn(vs ...int8) predicate.Tier {
+func DiskMBNotIn(vs ...int64) predicate.Tier {
 	return predicate.Tier(sql.FieldNotIn(FieldDiskMB, vs...))
 }
 
 // DiskMBGT applies the GT predicate on the "disk_mb" field.
-func DiskMBGT(v int8) predicate.Tier {
+func DiskMBGT(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldGT(FieldDiskMB, v))
 }
 
 // DiskMBGTE applies the GTE predicate on the "disk_mb" field.
-func DiskMBGTE(v int8) predicate.Tier {
+func DiskMBGTE(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldGTE(FieldDiskMB, v))
 }
 
 // DiskMBLT applies the LT predicate on the "disk_mb" field.
-func DiskMBLT(v int8) predicate.Tier {
+func DiskMBLT(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldLT(FieldDiskMB, v))
 }
 
 // DiskMBLTE applies the LTE predicate on the "disk_mb" field.
-func DiskMBLTE(v int8) predicate.Tier {
+func DiskMBLTE(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldLTE(FieldDiskMB, v))
 }
 

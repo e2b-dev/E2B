@@ -23,9 +23,9 @@ const (
 )
 
 type BuildConfig struct {
-	DiskSizeMB int
-	VCpuCount  int
-	MemoryMB   int
+	DiskSizeMB int64
+	VCpuCount  int64
+	MemoryMB   int64
 }
 
 //go:embed env-build.hcl
@@ -43,15 +43,7 @@ func (n *NomadClient) BuildEnvJob(
 	googleServiceAccountBase64 string,
 	vmConfig BuildConfig,
 ) error {
-	childCtx, childSpan := t.Start(ctx, "build-env-job",
-		trace.WithAttributes(
-			attribute.String("env_id", envID),
-			attribute.String("build_id", buildID),
-			attribute.Int("disk_size_mb", vmConfig.DiskSizeMB),
-			attribute.Int("vcpu_count", vmConfig.VCpuCount),
-			attribute.Int("memory_mb", vmConfig.MemoryMB),
-		),
-	)
+	childCtx, childSpan := t.Start(ctx, "build-env-job")
 	defer childSpan.End()
 
 	traceID := childSpan.SpanContext().TraceID().String()
@@ -61,6 +53,11 @@ func (n *NomadClient) BuildEnvJob(
 		childCtx,
 		attribute.String("passed_trace_id_hex", traceID),
 		attribute.String("passed_span_id_hex", spanID),
+		attribute.String("env_id", envID),
+		attribute.String("build_id", buildID),
+		attribute.Int64("disk_size_mb", vmConfig.DiskSizeMB),
+		attribute.Int64("vcpu_count", vmConfig.VCpuCount),
+		attribute.Int64("memory_mb", vmConfig.MemoryMB),
 	)
 
 	var jobDef bytes.Buffer
@@ -75,9 +72,9 @@ func (n *NomadClient) BuildEnvJob(
 		TaskName                   string
 		EnvsDisk                   string
 		GoogleServiceAccountBase64 string
-		VCpuCount                  int
-		MemoryMB                   int
-		DiskSizeMB                 int
+		VCpuCount                  int64
+		MemoryMB                   int64
+		DiskSizeMB                 int64
 	}{
 		APISecret:                  apiSecret,
 		BuildID:                    buildID,

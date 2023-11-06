@@ -2660,12 +2660,12 @@ type TierMutation struct {
 	op            Op
 	typ           string
 	id            *string
-	vcpu          *int8
-	addvcpu       *int8
-	ram_mb        *int8
-	addram_mb     *int8
-	disk_mb       *int8
-	adddisk_mb    *int8
+	vcpu          *int64
+	addvcpu       *int64
+	ram_mb        *int64
+	addram_mb     *int64
+	disk_mb       *int64
+	adddisk_mb    *int64
 	clearedFields map[string]struct{}
 	teams         map[uuid.UUID]struct{}
 	removedteams  map[uuid.UUID]struct{}
@@ -2780,13 +2780,13 @@ func (m *TierMutation) IDs(ctx context.Context) ([]string, error) {
 }
 
 // SetVcpu sets the "vcpu" field.
-func (m *TierMutation) SetVcpu(i int8) {
+func (m *TierMutation) SetVcpu(i int64) {
 	m.vcpu = &i
 	m.addvcpu = nil
 }
 
 // Vcpu returns the value of the "vcpu" field in the mutation.
-func (m *TierMutation) Vcpu() (r int8, exists bool) {
+func (m *TierMutation) Vcpu() (r int64, exists bool) {
 	v := m.vcpu
 	if v == nil {
 		return
@@ -2797,7 +2797,7 @@ func (m *TierMutation) Vcpu() (r int8, exists bool) {
 // OldVcpu returns the old "vcpu" field's value of the Tier entity.
 // If the Tier object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TierMutation) OldVcpu(ctx context.Context) (v int8, err error) {
+func (m *TierMutation) OldVcpu(ctx context.Context) (v int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldVcpu is only allowed on UpdateOne operations")
 	}
@@ -2812,7 +2812,7 @@ func (m *TierMutation) OldVcpu(ctx context.Context) (v int8, err error) {
 }
 
 // AddVcpu adds i to the "vcpu" field.
-func (m *TierMutation) AddVcpu(i int8) {
+func (m *TierMutation) AddVcpu(i int64) {
 	if m.addvcpu != nil {
 		*m.addvcpu += i
 	} else {
@@ -2821,7 +2821,7 @@ func (m *TierMutation) AddVcpu(i int8) {
 }
 
 // AddedVcpu returns the value that was added to the "vcpu" field in this mutation.
-func (m *TierMutation) AddedVcpu() (r int8, exists bool) {
+func (m *TierMutation) AddedVcpu() (r int64, exists bool) {
 	v := m.addvcpu
 	if v == nil {
 		return
@@ -2836,13 +2836,13 @@ func (m *TierMutation) ResetVcpu() {
 }
 
 // SetRAMMB sets the "ram_mb" field.
-func (m *TierMutation) SetRAMMB(i int8) {
+func (m *TierMutation) SetRAMMB(i int64) {
 	m.ram_mb = &i
 	m.addram_mb = nil
 }
 
 // RAMMB returns the value of the "ram_mb" field in the mutation.
-func (m *TierMutation) RAMMB() (r int8, exists bool) {
+func (m *TierMutation) RAMMB() (r int64, exists bool) {
 	v := m.ram_mb
 	if v == nil {
 		return
@@ -2853,7 +2853,7 @@ func (m *TierMutation) RAMMB() (r int8, exists bool) {
 // OldRAMMB returns the old "ram_mb" field's value of the Tier entity.
 // If the Tier object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TierMutation) OldRAMMB(ctx context.Context) (v int8, err error) {
+func (m *TierMutation) OldRAMMB(ctx context.Context) (v int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRAMMB is only allowed on UpdateOne operations")
 	}
@@ -2868,7 +2868,7 @@ func (m *TierMutation) OldRAMMB(ctx context.Context) (v int8, err error) {
 }
 
 // AddRAMMB adds i to the "ram_mb" field.
-func (m *TierMutation) AddRAMMB(i int8) {
+func (m *TierMutation) AddRAMMB(i int64) {
 	if m.addram_mb != nil {
 		*m.addram_mb += i
 	} else {
@@ -2877,7 +2877,7 @@ func (m *TierMutation) AddRAMMB(i int8) {
 }
 
 // AddedRAMMB returns the value that was added to the "ram_mb" field in this mutation.
-func (m *TierMutation) AddedRAMMB() (r int8, exists bool) {
+func (m *TierMutation) AddedRAMMB() (r int64, exists bool) {
 	v := m.addram_mb
 	if v == nil {
 		return
@@ -2892,13 +2892,13 @@ func (m *TierMutation) ResetRAMMB() {
 }
 
 // SetDiskMB sets the "disk_mb" field.
-func (m *TierMutation) SetDiskMB(i int8) {
+func (m *TierMutation) SetDiskMB(i int64) {
 	m.disk_mb = &i
 	m.adddisk_mb = nil
 }
 
 // DiskMB returns the value of the "disk_mb" field in the mutation.
-func (m *TierMutation) DiskMB() (r int8, exists bool) {
+func (m *TierMutation) DiskMB() (r int64, exists bool) {
 	v := m.disk_mb
 	if v == nil {
 		return
@@ -2909,7 +2909,7 @@ func (m *TierMutation) DiskMB() (r int8, exists bool) {
 // OldDiskMB returns the old "disk_mb" field's value of the Tier entity.
 // If the Tier object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TierMutation) OldDiskMB(ctx context.Context) (v int8, err error) {
+func (m *TierMutation) OldDiskMB(ctx context.Context) (v int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldDiskMB is only allowed on UpdateOne operations")
 	}
@@ -2924,7 +2924,7 @@ func (m *TierMutation) OldDiskMB(ctx context.Context) (v int8, err error) {
 }
 
 // AddDiskMB adds i to the "disk_mb" field.
-func (m *TierMutation) AddDiskMB(i int8) {
+func (m *TierMutation) AddDiskMB(i int64) {
 	if m.adddisk_mb != nil {
 		*m.adddisk_mb += i
 	} else {
@@ -2933,7 +2933,7 @@ func (m *TierMutation) AddDiskMB(i int8) {
 }
 
 // AddedDiskMB returns the value that was added to the "disk_mb" field in this mutation.
-func (m *TierMutation) AddedDiskMB() (r int8, exists bool) {
+func (m *TierMutation) AddedDiskMB() (r int64, exists bool) {
 	v := m.adddisk_mb
 	if v == nil {
 		return
@@ -3084,21 +3084,21 @@ func (m *TierMutation) OldField(ctx context.Context, name string) (ent.Value, er
 func (m *TierMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case tier.FieldVcpu:
-		v, ok := value.(int8)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetVcpu(v)
 		return nil
 	case tier.FieldRAMMB:
-		v, ok := value.(int8)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRAMMB(v)
 		return nil
 	case tier.FieldDiskMB:
-		v, ok := value.(int8)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -3145,21 +3145,21 @@ func (m *TierMutation) AddedField(name string) (ent.Value, bool) {
 func (m *TierMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case tier.FieldVcpu:
-		v, ok := value.(int8)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddVcpu(v)
 		return nil
 	case tier.FieldRAMMB:
-		v, ok := value.(int8)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRAMMB(v)
 		return nil
 	case tier.FieldDiskMB:
-		v, ok := value.(int8)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

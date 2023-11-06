@@ -25,19 +25,19 @@ type TierCreate struct {
 }
 
 // SetVcpu sets the "vcpu" field.
-func (tc *TierCreate) SetVcpu(i int8) *TierCreate {
+func (tc *TierCreate) SetVcpu(i int64) *TierCreate {
 	tc.mutation.SetVcpu(i)
 	return tc
 }
 
 // SetRAMMB sets the "ram_mb" field.
-func (tc *TierCreate) SetRAMMB(i int8) *TierCreate {
+func (tc *TierCreate) SetRAMMB(i int64) *TierCreate {
 	tc.mutation.SetRAMMB(i)
 	return tc
 }
 
 // SetDiskMB sets the "disk_mb" field.
-func (tc *TierCreate) SetDiskMB(i int8) *TierCreate {
+func (tc *TierCreate) SetDiskMB(i int64) *TierCreate {
 	tc.mutation.SetDiskMB(i)
 	return tc
 }
@@ -144,15 +144,15 @@ func (tc *TierCreate) createSpec() (*Tier, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := tc.mutation.Vcpu(); ok {
-		_spec.SetField(tier.FieldVcpu, field.TypeInt8, value)
+		_spec.SetField(tier.FieldVcpu, field.TypeInt64, value)
 		_node.Vcpu = value
 	}
 	if value, ok := tc.mutation.RAMMB(); ok {
-		_spec.SetField(tier.FieldRAMMB, field.TypeInt8, value)
+		_spec.SetField(tier.FieldRAMMB, field.TypeInt64, value)
 		_node.RAMMB = value
 	}
 	if value, ok := tc.mutation.DiskMB(); ok {
-		_spec.SetField(tier.FieldDiskMB, field.TypeInt8, value)
+		_spec.SetField(tier.FieldDiskMB, field.TypeInt64, value)
 		_node.DiskMB = value
 	}
 	if nodes := tc.mutation.TeamsIDs(); len(nodes) > 0 {
@@ -225,7 +225,7 @@ type (
 )
 
 // SetVcpu sets the "vcpu" field.
-func (u *TierUpsert) SetVcpu(v int8) *TierUpsert {
+func (u *TierUpsert) SetVcpu(v int64) *TierUpsert {
 	u.Set(tier.FieldVcpu, v)
 	return u
 }
@@ -237,13 +237,13 @@ func (u *TierUpsert) UpdateVcpu() *TierUpsert {
 }
 
 // AddVcpu adds v to the "vcpu" field.
-func (u *TierUpsert) AddVcpu(v int8) *TierUpsert {
+func (u *TierUpsert) AddVcpu(v int64) *TierUpsert {
 	u.Add(tier.FieldVcpu, v)
 	return u
 }
 
 // SetRAMMB sets the "ram_mb" field.
-func (u *TierUpsert) SetRAMMB(v int8) *TierUpsert {
+func (u *TierUpsert) SetRAMMB(v int64) *TierUpsert {
 	u.Set(tier.FieldRAMMB, v)
 	return u
 }
@@ -255,13 +255,13 @@ func (u *TierUpsert) UpdateRAMMB() *TierUpsert {
 }
 
 // AddRAMMB adds v to the "ram_mb" field.
-func (u *TierUpsert) AddRAMMB(v int8) *TierUpsert {
+func (u *TierUpsert) AddRAMMB(v int64) *TierUpsert {
 	u.Add(tier.FieldRAMMB, v)
 	return u
 }
 
 // SetDiskMB sets the "disk_mb" field.
-func (u *TierUpsert) SetDiskMB(v int8) *TierUpsert {
+func (u *TierUpsert) SetDiskMB(v int64) *TierUpsert {
 	u.Set(tier.FieldDiskMB, v)
 	return u
 }
@@ -273,7 +273,7 @@ func (u *TierUpsert) UpdateDiskMB() *TierUpsert {
 }
 
 // AddDiskMB adds v to the "disk_mb" field.
-func (u *TierUpsert) AddDiskMB(v int8) *TierUpsert {
+func (u *TierUpsert) AddDiskMB(v int64) *TierUpsert {
 	u.Add(tier.FieldDiskMB, v)
 	return u
 }
@@ -327,14 +327,14 @@ func (u *TierUpsertOne) Update(set func(*TierUpsert)) *TierUpsertOne {
 }
 
 // SetVcpu sets the "vcpu" field.
-func (u *TierUpsertOne) SetVcpu(v int8) *TierUpsertOne {
+func (u *TierUpsertOne) SetVcpu(v int64) *TierUpsertOne {
 	return u.Update(func(s *TierUpsert) {
 		s.SetVcpu(v)
 	})
 }
 
 // AddVcpu adds v to the "vcpu" field.
-func (u *TierUpsertOne) AddVcpu(v int8) *TierUpsertOne {
+func (u *TierUpsertOne) AddVcpu(v int64) *TierUpsertOne {
 	return u.Update(func(s *TierUpsert) {
 		s.AddVcpu(v)
 	})
@@ -348,14 +348,14 @@ func (u *TierUpsertOne) UpdateVcpu() *TierUpsertOne {
 }
 
 // SetRAMMB sets the "ram_mb" field.
-func (u *TierUpsertOne) SetRAMMB(v int8) *TierUpsertOne {
+func (u *TierUpsertOne) SetRAMMB(v int64) *TierUpsertOne {
 	return u.Update(func(s *TierUpsert) {
 		s.SetRAMMB(v)
 	})
 }
 
 // AddRAMMB adds v to the "ram_mb" field.
-func (u *TierUpsertOne) AddRAMMB(v int8) *TierUpsertOne {
+func (u *TierUpsertOne) AddRAMMB(v int64) *TierUpsertOne {
 	return u.Update(func(s *TierUpsert) {
 		s.AddRAMMB(v)
 	})
@@ -369,14 +369,14 @@ func (u *TierUpsertOne) UpdateRAMMB() *TierUpsertOne {
 }
 
 // SetDiskMB sets the "disk_mb" field.
-func (u *TierUpsertOne) SetDiskMB(v int8) *TierUpsertOne {
+func (u *TierUpsertOne) SetDiskMB(v int64) *TierUpsertOne {
 	return u.Update(func(s *TierUpsert) {
 		s.SetDiskMB(v)
 	})
 }
 
 // AddDiskMB adds v to the "disk_mb" field.
-func (u *TierUpsertOne) AddDiskMB(v int8) *TierUpsertOne {
+func (u *TierUpsertOne) AddDiskMB(v int64) *TierUpsertOne {
 	return u.Update(func(s *TierUpsert) {
 		s.AddDiskMB(v)
 	})
@@ -604,14 +604,14 @@ func (u *TierUpsertBulk) Update(set func(*TierUpsert)) *TierUpsertBulk {
 }
 
 // SetVcpu sets the "vcpu" field.
-func (u *TierUpsertBulk) SetVcpu(v int8) *TierUpsertBulk {
+func (u *TierUpsertBulk) SetVcpu(v int64) *TierUpsertBulk {
 	return u.Update(func(s *TierUpsert) {
 		s.SetVcpu(v)
 	})
 }
 
 // AddVcpu adds v to the "vcpu" field.
-func (u *TierUpsertBulk) AddVcpu(v int8) *TierUpsertBulk {
+func (u *TierUpsertBulk) AddVcpu(v int64) *TierUpsertBulk {
 	return u.Update(func(s *TierUpsert) {
 		s.AddVcpu(v)
 	})
@@ -625,14 +625,14 @@ func (u *TierUpsertBulk) UpdateVcpu() *TierUpsertBulk {
 }
 
 // SetRAMMB sets the "ram_mb" field.
-func (u *TierUpsertBulk) SetRAMMB(v int8) *TierUpsertBulk {
+func (u *TierUpsertBulk) SetRAMMB(v int64) *TierUpsertBulk {
 	return u.Update(func(s *TierUpsert) {
 		s.SetRAMMB(v)
 	})
 }
 
 // AddRAMMB adds v to the "ram_mb" field.
-func (u *TierUpsertBulk) AddRAMMB(v int8) *TierUpsertBulk {
+func (u *TierUpsertBulk) AddRAMMB(v int64) *TierUpsertBulk {
 	return u.Update(func(s *TierUpsert) {
 		s.AddRAMMB(v)
 	})
@@ -646,14 +646,14 @@ func (u *TierUpsertBulk) UpdateRAMMB() *TierUpsertBulk {
 }
 
 // SetDiskMB sets the "disk_mb" field.
-func (u *TierUpsertBulk) SetDiskMB(v int8) *TierUpsertBulk {
+func (u *TierUpsertBulk) SetDiskMB(v int64) *TierUpsertBulk {
 	return u.Update(func(s *TierUpsert) {
 		s.SetDiskMB(v)
 	})
 }
 
 // AddDiskMB adds v to the "disk_mb" field.
-func (u *TierUpsertBulk) AddDiskMB(v int8) *TierUpsertBulk {
+func (u *TierUpsertBulk) AddDiskMB(v int64) *TierUpsertBulk {
 	return u.Update(func(s *TierUpsert) {
 		s.AddDiskMB(v)
 	})

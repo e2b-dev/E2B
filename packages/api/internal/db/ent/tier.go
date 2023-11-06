@@ -17,11 +17,11 @@ type Tier struct {
 	// ID of the ent.
 	ID string `json:"id,omitempty"`
 	// Vcpu holds the value of the "vcpu" field.
-	Vcpu int8 `json:"vcpu,omitempty"`
+	Vcpu int64 `json:"vcpu,omitempty"`
 	// RAMMB holds the value of the "ram_mb" field.
-	RAMMB int8 `json:"ram_mb,omitempty"`
+	RAMMB int64 `json:"ram_mb,omitempty"`
 	// DiskMB holds the value of the "disk_mb" field.
-	DiskMB int8 `json:"disk_mb,omitempty"`
+	DiskMB int64 `json:"disk_mb,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TierQuery when eager-loading is set.
 	Edges        TierEdges `json:"edges"`
@@ -80,19 +80,19 @@ func (t *Tier) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field vcpu", values[i])
 			} else if value.Valid {
-				t.Vcpu = int8(value.Int64)
+				t.Vcpu = value.Int64
 			}
 		case tier.FieldRAMMB:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field ram_mb", values[i])
 			} else if value.Valid {
-				t.RAMMB = int8(value.Int64)
+				t.RAMMB = value.Int64
 			}
 		case tier.FieldDiskMB:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field disk_mb", values[i])
 			} else if value.Valid {
-				t.DiskMB = int8(value.Int64)
+				t.DiskMB = value.Int64
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])

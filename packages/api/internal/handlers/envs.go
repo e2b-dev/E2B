@@ -80,9 +80,9 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		var status api.EnvironmentBuildStatus
 
 		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties, nomad.BuildConfig{
-			VCpuCount:  int(tier.Vcpu),
-			MemoryMB:   int(tier.RAMMB),
-			DiskSizeMB: int(tier.DiskMB),
+			VCpuCount:  tier.Vcpu,
+			MemoryMB:   tier.RAMMB,
+			DiskSizeMB: tier.DiskMB,
 		})
 		if buildErr != nil {
 			status = api.EnvironmentBuildStatusError
@@ -135,6 +135,8 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		attribute.String("env.id", envID),
 		attribute.String("tier", tier.ID),
 	)
+
+	fmt.Printf("tier: %+v\n", tier)
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 
@@ -190,9 +192,9 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		var status api.EnvironmentBuildStatus
 
 		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties, nomad.BuildConfig{
-			VCpuCount:  int(tier.Vcpu),
-			MemoryMB:   int(tier.RAMMB),
-			DiskSizeMB: int(tier.DiskMB),
+			VCpuCount:  tier.Vcpu,
+			MemoryMB:   tier.RAMMB,
+			DiskSizeMB: tier.DiskMB,
 		})
 		if buildErr != nil {
 			status = api.EnvironmentBuildStatusError

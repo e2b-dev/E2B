@@ -302,7 +302,7 @@ func (tq *TierQuery) WithTeams(opts ...func(*TeamQuery)) *TierQuery {
 // Example:
 //
 //	var v []struct {
-//		Vcpu int8 `json:"vcpu,omitempty"`
+//		Vcpu int64 `json:"vcpu,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -325,7 +325,7 @@ func (tq *TierQuery) GroupBy(field string, fields ...string) *TierGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Vcpu int8 `json:"vcpu,omitempty"`
+//		Vcpu int64 `json:"vcpu,omitempty"`
 //	}
 //
 //	client.Tier.Query().
