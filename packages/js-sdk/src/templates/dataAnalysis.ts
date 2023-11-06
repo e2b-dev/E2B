@@ -2,7 +2,7 @@ import { DownloadFileFormat, Sandbox, SandboxOpts } from '../sandbox'
 import type { ProcessOpts } from '../sandbox/process'
 import { FilesystemEvent, FilesystemOperation } from '../sandbox/filesystemWatcher'
 
-class Artifact {
+export class Artifact {
   readonly path: string
   readonly _sandbox: Sandbox
 
