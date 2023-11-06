@@ -36,22 +36,14 @@ export const buildCommand = new commander.Command('build')
       '[id]',
     )} of sandbox template to rebuild it. If you don's specify ${asBold(
       '[id]',
-    )} new sandbox will be created`,
+    )} and there is no ${asLocal('e2b.toml')} a new sandbox will be created`,
   )
   .addOption(pathOption)
-  .option(
-    '-G, --no-gitignore',
-    `Ignore ${asLocalRelative('.gitignore')} file in root directory`,
-  )
   .option(
     '-d, --dockerfile <file>',
     `Specify path to Dockerfile. By default E2B tries to find ${asLocal(
       defaultDockerfileName,
     )} or ${asLocal(fallbackDockerfileName)} in root directory`,
-  )
-  .option(
-    '-D, --no-dockerignore',
-    `Ignore ${asLocalRelative('.dockerignore')} file in root directory`,
   )
   .alias('bd')
   .action(
@@ -59,8 +51,6 @@ export const buildCommand = new commander.Command('build')
       id: string | undefined,
       opts: {
         path?: string;
-        gitignore?: boolean;
-        dockerignore?: boolean;
         dockerfile?: string;
       },
     ) => {
@@ -94,15 +84,13 @@ export const buildCommand = new commander.Command('build')
         }
 
         const filePaths = await getFiles(root, {
-          respectGitignore: opts.gitignore,
-          respectDockerignore: opts.dockerignore,
+          respectGitignore: false,
+          respectDockerignore: true,
         })
 
         if (!filePaths.length) {
           console.log(commonTags.stripIndent`
-          No allowed files found in ${asLocalRelative(root)}.
-          Note that.gitignore and.dockerignore files are respected by default when building the sandbox template via from Dockerfile,
-  use--no - gitignore and--no - dockerignore to override.
+          No allowed files found in ${asLocalRelative(root)}. If you are using ${asLocal('.dockerignore')} check if it is configured correctly.
        `)
           return
         }
