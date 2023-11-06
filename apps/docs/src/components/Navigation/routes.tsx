@@ -16,6 +16,7 @@ import {
   Variable,
   PencilRuler,
   File,
+  Image as ImageIcon,
 } from 'lucide-react'
 
 export const routes = [
@@ -120,7 +121,7 @@ export const routes = [
     ],
   },
   {
-    title: 'Sandbox Templates',
+    title: 'Custom Sandboxes',
     links: [
       {
         title: 'Overview',
@@ -146,16 +147,16 @@ export const routes = [
         title: 'Guide: Creating Custom Sandbox',
         href: '/guide/custom-sandbox',
       },
-      // {
-      //   icon: (
-      //     <ImageIcon
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: 'Premade Templates',
-      //   href: '/sandbox/templates/premade',
-      // },
+      {
+        icon: (
+          <ImageIcon
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Premade Sandboxes',
+        href: '/sandbox/templates/premade',
+      },
     ]
   },
   {
