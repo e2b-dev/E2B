@@ -42,7 +42,7 @@ FROM ubuntu:22.04
 
 # Install dependencies and customize sandbox
 RUN apt update \
-	&& apt install -y sudo \\
+	&& apt install -y sudo \
   && sudo apt install -y ffmpeg
 ```
 
