@@ -11,13 +11,13 @@ class Artifact {
     this._sandbox = sandbox
   }
 
-  download(format?: DownloadFileFormat) {
+  async download(format?: DownloadFileFormat) {
     return this._sandbox.downloadFile(this.path, format)
   }
 }
 
-interface RunPythonOpts extends Omit<ProcessOpts, 'cmd'> {
-  onArtifact?: (artifact: Artifact) => void;
+export interface RunPythonOpts extends Omit<ProcessOpts, 'cmd'> {
+  onArtifact?: (artifact: Artifact) => Promise<void> | void;
 }
 
 const DataAnalysisEnvId = 'Python3-DataAnalysis'
