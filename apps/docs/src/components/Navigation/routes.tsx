@@ -14,7 +14,6 @@ import {
   ShieldQuestion,
   Timer,
   Variable,
-  Image as ImageIcon,
   PencilRuler,
   File,
 } from 'lucide-react'
@@ -147,16 +146,16 @@ export const routes = [
         title: 'Guide: Creating Custom Sandbox',
         href: '/guide/custom-sandbox',
       },
-      {
-        icon: (
-          <ImageIcon
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Premade Templates',
-        href: '/sandbox/templates/premade',
-      },
+      // {
+      //   icon: (
+      //     <ImageIcon
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: 'Premade Templates',
+      //   href: '/sandbox/templates/premade',
+      // },
     ]
   },
   {
