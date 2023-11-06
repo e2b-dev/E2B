@@ -49,6 +49,9 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 		"Origin",
 		"Content-Length",
 		"Content-Type",
+		// API Key header
+		"Authorization",
+		"X-API-Key",
 		// Custom headers sent from SDK
 		"browser",
 		"lang",
