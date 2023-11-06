@@ -27,9 +27,9 @@ export class DataAnalysis extends Sandbox {
     super({ id: DataAnalysisEnvId, ...opts })
   }
 
-  static async create(opts?: Omit<SandboxOpts, 'id'>) {
+  static override async create(opts?: Omit<SandboxOpts, 'id'>) {
     return new DataAnalysis({ ...opts })
-      .open({ timeout: opts?.timeout })
+      ._open({ timeout: opts?.timeout })
       .then(async (sandbox) => {
         if (opts?.cwd) {
           console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
