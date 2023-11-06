@@ -9,6 +9,25 @@ import { features } from './features'
 
 LLM sandboxes are an ideal fit as a playground for AI assistants like coding copilots, code interpreters, AI data analysts, AI browser assistants, and other AI-powered apps.
 
+## Features
+<div className="flex flex-col items-start space-y-2">
+  {features.map((feature, i) => (
+    <span key={i} className="flex items-center space-x-2">
+      <Check
+        className="w-4 h-4 text-brand-400"
+      />
+      <span className="text-brand-100">{feature}</span>
+    </span>
+  ))}
+</div>
+
+With more features coming in the future:
+- Out-of-the box working monitoring of what's happening inside the sandbox
+- LLM Access control to data, tools, and any internet requests
+- Statefull sandboxes
+- Resumable workflows (pause sandbox and load it later)
+- Unlimited long-running sessions
+
 ## Comparison to other services
 With LLMs, it's not safe to let the LLM run code and use tools in the same environment where your application is running.
 
@@ -32,24 +51,6 @@ Additionally, the AI apps present need for a new model:
 
 E2B Sandboxes are made exactly to solve these challenges. The sandbox is like an isolated runtime or playground for the LLM. **We give you our SDK to spawn and control these sandboxes.**
 
-### Features
-<div className="flex flex-col items-start space-y-2">
-  {features.map((feature, i) => (
-    <span key={i} className="flex items-center space-x-2">
-      <Check
-        className="w-4 h-4 text-brand-400"
-      />
-      <span className="text-brand-100">{feature}</span>
-    </span>
-  ))}
-</div>
-
-With more features coming in the future:
-- Out-of-the box working monitoring of what's happening inside the sandbox
-- LLM Access control to data, tools, and any internet requests
-- Statefull sandboxes
-- Resumable workflows (pause sandbox and load it later)
-- Unlimited long-running sessions
 
 ## How sandboxes work under the hood
 When you create a new sandbox session, we start a small VM in our cloud. This VM is running a Ubuntu OS and it takes about 400-600ms to start it.
