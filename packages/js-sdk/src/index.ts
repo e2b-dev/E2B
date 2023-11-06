@@ -24,6 +24,6 @@ export type { ProcessManager } from './sandbox/process'
 export type { EnvVars } from './sandbox/envVars'
 export { runCode, CodeRuntime } from './runCode' // Export CodeRuntime enum as value, not as type, so it can be actually used in consumer code
 // export { runCmd } from './runCmd'
-export { DataAnalysis } from './templates/dataAnalysis'
-
+export { Artifact, DataAnalysis} from './templates/dataAnalysis'
+export type { RunPythonOpts } from './templates/dataAnalysis'
 export default Sandbox

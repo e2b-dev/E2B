@@ -152,9 +152,9 @@ export class Process {
 
 export interface ProcessOpts {
   cmd: string;
-  onStdout?: (out: ProcessMessage) => void;
-  onStderr?: (out: ProcessMessage) => void;
-  onExit?: (code: number) => void;
+  onStdout?: (out: ProcessMessage) => Promise<void> | void;
+  onStderr?: (out: ProcessMessage) => Promise<void> | void;
+  onExit?: (code: number) => Promise<void> | void;
   envVars?: EnvVars;
   cwd?: string;
   /** @deprecated use cwd instead */

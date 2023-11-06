@@ -15,3 +15,20 @@ plt.show()
   await sandbox.close()
   expect(result.artifacts.length).toEqual(1)
 }, 10000)
+
+
+test('test_install_packages', async () => {
+  const sandbox = await DataAnalysis.create()
+  
+  await sandbox.installPythonPackages("pandas")
+  await sandbox.installPythonPackages(["pandas"])
+  await sandbox.installPythonPackages(" ")
+  await sandbox.installPythonPackages([])
+  
+  await sandbox.installSystemPackages("curl")
+  await sandbox.installSystemPackages(["curl"])
+  await sandbox.installSystemPackages("")
+  await sandbox.installSystemPackages([])
+  
+  await sandbox.close()
+})

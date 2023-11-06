@@ -21,9 +21,9 @@ export type DownloadFileFormat =
 export interface SandboxOpts extends SandboxConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler;
   timeout?: number;
-  onStdout?: (out: ProcessMessage) => void;
-  onStderr?: (out: ProcessMessage) => void;
-  onExit?: () => void;
+  onStdout?: (out: ProcessMessage) => Promise<void> | void;
+  onStderr?: (out: ProcessMessage) => Promise<void> | void;
+  onExit?: () => Promise<void> | void;
 }
 
 export class Sandbox extends SandboxConnection {
@@ -415,7 +415,7 @@ export class Sandbox extends SandboxConnection {
 
   static async create(opts?: SandboxOpts) {
     return new Sandbox(opts)
-      .open({ timeout: opts?.timeout })
+      ._open({ timeout: opts?.timeout })
       .then(async (sandbox) => {
         if (opts?.cwd) {
           console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
@@ -425,8 +425,8 @@ export class Sandbox extends SandboxConnection {
       })
   }
 
-  override async open(opts: CallOpts) {
-    await super.open(opts)
+  protected override async _open(opts: CallOpts) {
+    await super._open(opts)
 
     const portsHandler = this.onScanPorts
       ? (ports: { State: string; Ip: string; Port: number }[]) =>
