@@ -6,4 +6,4 @@ export interface OpenPort {
   port: number
 }
 
-export type ScanOpenedPortsHandler = (ports: OpenPort[]) => void
+export type ScanOpenedPortsHandler = (ports: OpenPort[]) => Promise<void> | void

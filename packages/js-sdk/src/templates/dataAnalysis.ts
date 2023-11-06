@@ -2,7 +2,7 @@ import { DownloadFileFormat, Sandbox, SandboxOpts } from '../sandbox'
 import type { ProcessOpts } from '../sandbox/process'
 import { FilesystemEvent, FilesystemOperation } from '../sandbox/filesystemWatcher'
 
-class Artifact {
+export class Artifact {
   readonly path: string
   readonly _sandbox: Sandbox
 
@@ -11,13 +11,13 @@ class Artifact {
     this._sandbox = sandbox
   }
 
-  download(format?: DownloadFileFormat) {
+  async download(format?: DownloadFileFormat) {
     return this._sandbox.downloadFile(this.path, format)
   }
 }
 
-interface RunPythonOpts extends Omit<ProcessOpts, 'cmd'> {
-  onArtifact?: (artifact: Artifact) => void;
+export interface RunPythonOpts extends Omit<ProcessOpts, 'cmd'> {
+  onArtifact?: (artifact: Artifact) => Promise<void> | void;
 }
 
 const DataAnalysisEnvId = 'Python3-DataAnalysis'
@@ -27,9 +27,9 @@ export class DataAnalysis extends Sandbox {
     super({ id: DataAnalysisEnvId, ...opts })
   }
 
-  static async create(opts?: Omit<SandboxOpts, 'id'>) {
+  static override async create(opts?: Omit<SandboxOpts, 'id'>) {
     return new DataAnalysis({ ...opts })
-      .open({ timeout: opts?.timeout })
+      ._open({ timeout: opts?.timeout })
       .then(async (sandbox) => {
         if (opts?.cwd) {
           console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
@@ -42,11 +42,11 @@ export class DataAnalysis extends Sandbox {
   async runPython(code: string, opts: RunPythonOpts = {}) {
     const artifacts: string[] = []
 
-    const registerArtifacts = (event: FilesystemEvent) => {
+    const registerArtifacts = async (event: FilesystemEvent) => {
       if (event.operation === FilesystemOperation.Create) {
         const artifact = new Artifact(event.path, this)
         artifacts.push(event.path)
-        opts.onArtifact?.(artifact)
+        await opts.onArtifact?.(artifact)
       }
     }
 

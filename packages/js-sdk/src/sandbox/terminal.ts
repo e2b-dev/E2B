@@ -84,8 +84,8 @@ export class Terminal {
 }
 
 export type TerminalOpts = {
-  onData: (data: string) => void;
-  onExit?: () => void;
+  onData: (data: string) => Promise<void> | void;
+  onExit?: () => Promise<void> | void;
   size: { cols: number; rows: number };
   terminalID?: string;
   /**

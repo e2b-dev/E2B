@@ -164,7 +164,7 @@ export class SandboxConnection {
    * @param opts Call options
    * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
    */
-  async open(opts: CallOpts) {
+  protected async _open(opts: CallOpts) {
     const open = async () => {
       if (this.isOpen || !!this.sandbox) {
         throw new Error('Sandbox connect was already called')

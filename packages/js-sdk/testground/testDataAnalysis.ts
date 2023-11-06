@@ -1,12 +1,12 @@
-const e2b = require('../dist/cjs/index')
-const fs = require('fs')
+import { DataAnalysis } from "../src"
+import { writeFileSync } from "fs"
 
 async function main() {
-  const s = await e2b.DataAnalysis.create({
+  const s = await DataAnalysis.create({
     apiKey: process.env.E2B_API_KEY
   })
   const response = await fetch('https://storage.googleapis.com/e2b-examples/netflix.csv')
-  const buffer = await response.buffer()
+  const buffer = await response.blob()
 
   const path = await s.uploadFile(buffer, 'netflix.csv')
 
@@ -34,7 +34,9 @@ plt.show()`, {
   console.log(result)
   for (const artifact of result.artifacts) {
     const data = await s.downloadFile(artifact.path, 'buffer')
-    fs.writeFileSync(artifact.path, data)
+    if (typeof data === 'string') {
+      writeFileSync(artifact.path, data)
+    }
   }
 
   await s.close()
