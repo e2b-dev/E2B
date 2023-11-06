@@ -69,7 +69,7 @@ export class SandboxConnection {
 
   // let's keep opts readonly, but public - for convenience, mainly when debugging
   constructor(readonly opts: SandboxConnectionOpts) {
-    const apiKey = opts.apiKey || process.env.E2B_API_KEY
+    const apiKey = opts.apiKey || process?.env?.E2B_API_KEY
     if (!apiKey) {
       throw new AuthenticationError(
         'API key is required, please visit https://e2b.dev/docs to get your API key',
