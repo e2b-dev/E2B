@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
