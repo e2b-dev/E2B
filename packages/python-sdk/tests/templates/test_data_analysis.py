@@ -14,3 +14,18 @@ plt.show()
     )
     s.close()
     assert len(artifacts) == 1
+
+
+def test_install_packages():
+    s = DataAnalysis()
+
+    s.install_python_packages("pandas")
+    s.install_python_packages(["pandas"])
+    s.install_python_packages(" ")
+    s.install_python_packages([])
+
+    s.install_system_packages("curl")
+    s.install_system_packages(["curl"])
+    s.install_system_packages("")
+    s.install_system_packages([])
+    s.close()

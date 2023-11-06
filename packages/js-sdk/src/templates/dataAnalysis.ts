@@ -72,33 +72,31 @@ export class DataAnalysis extends Sandbox {
     }
   }
 
-  async installPythonPackages(packageName: string | string[]) {
-    if (Array.isArray(packageName)) {
-      packageName = packageName.join(' ')
-    }
-
-    const proc = await this.process.start({
-      cmd: `pip install ${packageName}`,
-    })
-    await proc.wait()
-
-    if (proc.output.exitCode !== 0) {
-      throw new Error(`Failed to install package ${packageName}`)
-    }
+  async installPythonPackages(packageNames: string | string[]) {
+    await this.installPackages('pip install', packageNames)
   }
 
-  async installSystemPackages(packageName: string | string[]) {
-    if (Array.isArray(packageName)) {
-      packageName = packageName.join(' ')
+  async installSystemPackages(packageNames: string | string[]) {
+    await this.installPackages('sudo apt-get install -y', packageNames)
+  }
+
+  private async installPackages(command: string, packageNames: string | string[]) {
+    if (Array.isArray(packageNames)) {
+      packageNames = packageNames.join(' ')
+    }
+
+    packageNames = packageNames.trim()
+    if (packageNames.length === 0) {
+      return
     }
 
     const proc = await this.process.start({
-      cmd: `sudo apt-get -y install ${packageName}`,
+      cmd: `${command} ${packageNames}`,
     })
     await proc.wait()
 
     if (proc.output.exitCode !== 0) {
-      throw new Error(`Failed to install package ${packageName}`)
+      throw new Error(`Failed to install package ${packageNames}: ${proc.output.stderr}`)
     }
   }
 }

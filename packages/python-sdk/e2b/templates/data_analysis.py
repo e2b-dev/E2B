@@ -101,32 +101,27 @@ class DataAnalysis(Sandbox):
 
         return process.output.stdout, process.output.stderr, list(artifacts)
 
-    def install_python_packages(
-        self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
-    ) -> None:
+    def _install_packages(self, command: str, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT) -> None:
         if isinstance(package_names, list):
             package_names = " ".join(package_names)
 
-        process = self.process.start(f"pip install {package_names}", timeout=timeout)
+        package_names = package_names.strip()
+        if not package_names:
+            return
+
+        process = self.process.start(f"{command} {package_names}", timeout=timeout)
         process.wait()
 
         if process.exit_code != 0:
             raise Exception(
                 f"Failed to install package {package_names}: {process.output.stderr}"
             )
+    def install_python_packages(
+        self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
+    ) -> None:
+        self._install_packages("pip install", package_names, timeout=timeout)
 
     def install_system_packages(
         self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
     ) -> None:
-        if isinstance(package_names, list):
-            package_names = " ".join(package_names)
-
-        process = self.process.start(
-            f"sudo apt-get -y install {package_names}", timeout=timeout
-        )
-        process.wait()
-
-        if process.exit_code != 0:
-            raise Exception(
-                f"Failed to install package {package_names}: {process.output.stderr}"
-            )
+        self._install_packages("sudo apt-get install -y", package_names, timeout=timeout)
