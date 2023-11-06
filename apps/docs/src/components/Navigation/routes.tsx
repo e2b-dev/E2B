@@ -114,18 +114,8 @@ export const routes = [
             size={20}
           />
         ),
-        title: 'Sandbox Templates',
-        href: '/sandbox/templates/overview',
-      },
-      {
-        icon: (
-          <ImageIcon
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Premade Templates',
-        href: '/sandbox/templates/custom',
+        title: 'Custom Sandboxes',
+        href: '/sandbox/custom',
       },
       // {
       //   icon: (
@@ -138,6 +128,39 @@ export const routes = [
       //   href: '/sandbox/templates/data-analysis',
       // },
     ],
+  },
+  {
+    title: 'Sandbox Templates',
+    links: [
+      {
+        title: 'Overview',
+        href: '/sandbox/templates/overview',
+      },
+      {
+        title: 'Template File',
+        href: '/sandbox/templates/file',
+      },
+      {
+        icon: (
+          <PencilRuler
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Custom Templates',
+        href: '/sandbox/templates/custom',
+      },
+      {
+        icon: (
+          <ImageIcon
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Premade Templates',
+        href: '/sandbox/templates/premade',
+      },
+    ]
   },
   {
     title: 'Sandbox API',
