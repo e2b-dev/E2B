@@ -1,7 +1,6 @@
 /* eslint-disable react/jsx-key */
 import Link from 'next/link';
 
-
 export const features = [
   <span>
     <Link href="https://github.com/e2b-dev/e2b" target="_blank" rel="noreferrer noopener">Open-source</Link> sandbox for LLM

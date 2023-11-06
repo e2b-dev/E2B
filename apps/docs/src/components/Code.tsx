@@ -27,7 +27,7 @@ export function getPanelTitle({
     return title
   }
   if (language && language in languageNames) {
-    return languageNames[language]
+      return languageNames[language]
   }
   return 'Code'
 }

@@ -48,14 +48,8 @@ With more features coming in the future:
 - Out-of-the box working monitoring of what's happening inside the sandbox
 - LLM Access control to data, tools, and any internet requests
 - Statefull sandboxes
-- Pause & load sandbox
+- Resumable workflows (pause sandbox and load it later)
 - Unlimited long-running sessions
-
-## Customizability
-You can deploy and run your own custom sandbox by creating the [Sandbox Template](/sandbox/templates/overview).
-
-Sandbox template is a Dockerfile that describes the environment of your sandbox. You can then use our SDK to spawn and control the sandbox.
-Checkout out Sandbox Templates if you want to create your own custom sandbox.
 
 ## How sandboxes work under the hood
 When you create a new sandbox session, we start a small VM in our cloud. This VM is running a Ubuntu OS and it takes about 400-600ms to start it.

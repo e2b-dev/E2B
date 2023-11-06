@@ -1,38 +1,37 @@
-# Sandboxes Templates
+# Sandbox Templates
 
 Sandbox is a cloud environment for your AI apps.
+Read [here](/sandbox/overview) about how E2B Sandbox is made exactly for AI apps.
 
-You can customize sandboxes by [creating a sandbox template](/) or using one of our [premade sandbox templates](()).
+To build a custom sandbox, you create the [sandbox template file](/sandbox/templates/template-file) and then build your custom sandbox with the E2B CLI.
 
-### Creating custom sandbox templates
-Check out how to create custom sandbox templates [here](/sandbox/templats/custom).
-
-### Premade sandbox templates
-We have the following premade sandbox templates:
-- `base` - template with NodeJS 20 and Python 3.10
-- [`Python3-DataAnalysis`](/sandbox/templates/data-analysis) - template with Python 3.10 and data analysis libraries
+<Note>
+Follow [our guide](/sandbox/templates/custom) on how to create a custom sandbox.
+</Note>
 
 
-### Using sandbox templates in your code
-
-<CodeGroup isRunnable={false}>
+<CodeGroup title="Using custom sandbox with SDK" isRunnable={false}>
 ```js {{ language: 'js' }}
 import { Sandbox } from '@e2b/sdk'
 
+// Create new sandbox
 const sandbox = await Sandbox.create({
-  id: '<custom-or-premade-sandbox-template-id>',
+  id: '<sandbox-id>', // You get sandbox ID from the CLI after you run `$ e2b build`
 })
 
+// Close sandbox once done
 await sandbox.close()
 ```
 
 ```python {{ language: 'python' }}
 from e2b import Sandbox
 
+# Create new sandbox
 sandbox = Sandbox(
-  id: "<custom-or-premade-sandbox-template-id>",
+  id: "<sandbox-id>", # You get sandbox ID from the CLI after you run `$ e2b build`
 )
 
+# Close sandbox once done
 sandbox.close()
 ```
 </CodeGroup>
