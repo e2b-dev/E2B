@@ -45,6 +45,7 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "is_blocked", Type: field.TypeBool},
 		{Name: "env_team", Type: field.TypeString, Nullable: true},
+		{Name: "tier_teams", Type: field.TypeString, Nullable: true, Size: 2147483647},
 	}
 	// TeamsTable holds the schema information for the "teams" table.
 	TeamsTable = &schema.Table{
@@ -56,6 +57,12 @@ var (
 				Symbol:     "teams_envs_team",
 				Columns:    []*schema.Column{TeamsColumns[5]},
 				RefColumns: []*schema.Column{EnvsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "teams_tiers_teams",
+				Columns:    []*schema.Column{TeamsColumns[6]},
+				RefColumns: []*schema.Column{TiersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -79,6 +86,19 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+	}
+	// TiersColumns holds the columns for the "tiers" table.
+	TiersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 2147483647},
+		{Name: "vcpu", Type: field.TypeInt8},
+		{Name: "ram_mb", Type: field.TypeInt8},
+		{Name: "disk_mb", Type: field.TypeInt8},
+	}
+	// TiersTable holds the schema information for the "tiers" table.
+	TiersTable = &schema.Table{
+		Name:       "tiers",
+		Columns:    TiersColumns,
+		PrimaryKey: []*schema.Column{TiersColumns[0]},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -139,6 +159,7 @@ var (
 		EnvsTable,
 		TeamsTable,
 		TeamAPIKeysTable,
+		TiersTable,
 		UsersTable,
 		UsersTeamsTable,
 	}
@@ -146,6 +167,7 @@ var (
 
 func init() {
 	TeamsTable.ForeignKeys[0].RefTable = EnvsTable
+	TeamsTable.ForeignKeys[1].RefTable = TiersTable
 	TeamAPIKeysTable.ForeignKeys[0].RefTable = TeamsTable
 	UsersTable.ForeignKeys[0].RefTable = AccessTokensTable
 	UsersTeamsTable.ForeignKeys[0].RefTable = UsersTable

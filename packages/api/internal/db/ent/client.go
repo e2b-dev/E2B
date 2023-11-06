@@ -20,6 +20,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/tier"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/usersteams"
 
@@ -39,6 +40,8 @@ type Client struct {
 	Team *TeamClient
 	// TeamApiKey is the client for interacting with the TeamApiKey builders.
 	TeamApiKey *TeamApiKeyClient
+	// Tier is the client for interacting with the Tier builders.
+	Tier *TierClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// UsersTeams is the client for interacting with the UsersTeams builders.
@@ -60,6 +63,7 @@ func (c *Client) init() {
 	c.Env = NewEnvClient(c.config)
 	c.Team = NewTeamClient(c.config)
 	c.TeamApiKey = NewTeamApiKeyClient(c.config)
+	c.Tier = NewTierClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.UsersTeams = NewUsersTeamsClient(c.config)
 }
@@ -153,6 +157,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Env:         NewEnvClient(cfg),
 		Team:        NewTeamClient(cfg),
 		TeamApiKey:  NewTeamApiKeyClient(cfg),
+		Tier:        NewTierClient(cfg),
 		User:        NewUserClient(cfg),
 		UsersTeams:  NewUsersTeamsClient(cfg),
 	}, nil
@@ -178,6 +183,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Env:         NewEnvClient(cfg),
 		Team:        NewTeamClient(cfg),
 		TeamApiKey:  NewTeamApiKeyClient(cfg),
+		Tier:        NewTierClient(cfg),
 		User:        NewUserClient(cfg),
 		UsersTeams:  NewUsersTeamsClient(cfg),
 	}, nil
@@ -209,7 +215,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.AccessToken, c.Env, c.Team, c.TeamApiKey, c.User, c.UsersTeams,
+		c.AccessToken, c.Env, c.Team, c.TeamApiKey, c.Tier, c.User, c.UsersTeams,
 	} {
 		n.Use(hooks...)
 	}
@@ -219,7 +225,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.AccessToken, c.Env, c.Team, c.TeamApiKey, c.User, c.UsersTeams,
+		c.AccessToken, c.Env, c.Team, c.TeamApiKey, c.Tier, c.User, c.UsersTeams,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -236,6 +242,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Team.mutate(ctx, m)
 	case *TeamApiKeyMutation:
 		return c.TeamApiKey.mutate(ctx, m)
+	case *TierMutation:
+		return c.Tier.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	case *UsersTeamsMutation:
@@ -695,6 +703,25 @@ func (c *TeamClient) QueryTeamAPIKeys(t *Team) *TeamApiKeyQuery {
 	return query
 }
 
+// QueryTier queries the tier edge of a Team.
+func (c *TeamClient) QueryTier(t *Team) *TierQuery {
+	query := (&TierClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(team.Table, team.FieldID, id),
+			sqlgraph.To(tier.Table, tier.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, team.TierTable, team.TierColumn),
+		)
+		schemaConfig := t.schemaConfig
+		step.To.Schema = schemaConfig.Tier
+		step.Edge.Schema = schemaConfig.Team
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryUsersTeams queries the users_teams edge of a Team.
 func (c *TeamClient) QueryUsersTeams(t *Team) *UsersTeamsQuery {
 	query := (&UsersTeamsClient{config: c.config}).Query()
@@ -888,6 +915,158 @@ func (c *TeamApiKeyClient) mutate(ctx context.Context, m *TeamApiKeyMutation) (V
 		return (&TeamApiKeyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown TeamApiKey mutation op: %q", m.Op())
+	}
+}
+
+// TierClient is a client for the Tier schema.
+type TierClient struct {
+	config
+}
+
+// NewTierClient returns a client for the Tier from the given config.
+func NewTierClient(c config) *TierClient {
+	return &TierClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tier.Hooks(f(g(h())))`.
+func (c *TierClient) Use(hooks ...Hook) {
+	c.hooks.Tier = append(c.hooks.Tier, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tier.Intercept(f(g(h())))`.
+func (c *TierClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Tier = append(c.inters.Tier, interceptors...)
+}
+
+// Create returns a builder for creating a Tier entity.
+func (c *TierClient) Create() *TierCreate {
+	mutation := newTierMutation(c.config, OpCreate)
+	return &TierCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Tier entities.
+func (c *TierClient) CreateBulk(builders ...*TierCreate) *TierCreateBulk {
+	return &TierCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TierClient) MapCreateBulk(slice any, setFunc func(*TierCreate, int)) *TierCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TierCreateBulk{err: fmt.Errorf("calling to TierClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TierCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TierCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Tier.
+func (c *TierClient) Update() *TierUpdate {
+	mutation := newTierMutation(c.config, OpUpdate)
+	return &TierUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TierClient) UpdateOne(t *Tier) *TierUpdateOne {
+	mutation := newTierMutation(c.config, OpUpdateOne, withTier(t))
+	return &TierUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TierClient) UpdateOneID(id string) *TierUpdateOne {
+	mutation := newTierMutation(c.config, OpUpdateOne, withTierID(id))
+	return &TierUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Tier.
+func (c *TierClient) Delete() *TierDelete {
+	mutation := newTierMutation(c.config, OpDelete)
+	return &TierDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TierClient) DeleteOne(t *Tier) *TierDeleteOne {
+	return c.DeleteOneID(t.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TierClient) DeleteOneID(id string) *TierDeleteOne {
+	builder := c.Delete().Where(tier.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TierDeleteOne{builder}
+}
+
+// Query returns a query builder for Tier.
+func (c *TierClient) Query() *TierQuery {
+	return &TierQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTier},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Tier entity by its id.
+func (c *TierClient) Get(ctx context.Context, id string) (*Tier, error) {
+	return c.Query().Where(tier.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TierClient) GetX(ctx context.Context, id string) *Tier {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTeams queries the teams edge of a Tier.
+func (c *TierClient) QueryTeams(t *Tier) *TeamQuery {
+	query := (&TeamClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tier.Table, tier.FieldID, id),
+			sqlgraph.To(team.Table, team.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tier.TeamsTable, tier.TeamsColumn),
+		)
+		schemaConfig := t.schemaConfig
+		step.To.Schema = schemaConfig.Team
+		step.Edge.Schema = schemaConfig.Team
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TierClient) Hooks() []Hook {
+	return c.hooks.Tier
+}
+
+// Interceptors returns the client interceptors.
+func (c *TierClient) Interceptors() []Interceptor {
+	return c.inters.Tier
+}
+
+func (c *TierClient) mutate(ctx context.Context, m *TierMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TierCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TierUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TierUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TierDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Tier mutation op: %q", m.Op())
 	}
 }
 
@@ -1236,10 +1415,10 @@ func (c *UsersTeamsClient) mutate(ctx context.Context, m *UsersTeamsMutation) (V
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		AccessToken, Env, Team, TeamApiKey, User, UsersTeams []ent.Hook
+		AccessToken, Env, Team, TeamApiKey, Tier, User, UsersTeams []ent.Hook
 	}
 	inters struct {
-		AccessToken, Env, Team, TeamApiKey, User, UsersTeams []ent.Interceptor
+		AccessToken, Env, Team, TeamApiKey, Tier, User, UsersTeams []ent.Interceptor
 	}
 )
 

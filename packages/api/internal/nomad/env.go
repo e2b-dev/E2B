@@ -19,12 +19,14 @@ const (
 	buildJobName          = "env-build"
 	buildJobNameWithSlash = buildJobName + "/"
 
-	defaultVCpuCount  = 2
-	defaultMemoryMB   = 512
-	defaultDiskSizeMB = 512
-
 	buildFinishTimeout = time.Minute * 30
 )
+
+type BuildConfig struct {
+	DiskSizeMB int
+	VCpuCount  int
+	MemoryMB   int
+}
 
 //go:embed env-build.hcl
 var envBuildFile string
@@ -39,6 +41,7 @@ func (n *NomadClient) BuildEnvJob(
 	buildID string,
 	apiSecret string,
 	googleServiceAccountBase64 string,
+	vmConfig BuildConfig,
 ) error {
 	childCtx, childSpan := t.Start(ctx, "build-env-job",
 		trace.WithAttributes(
@@ -75,9 +78,9 @@ func (n *NomadClient) BuildEnvJob(
 		APISecret:                  apiSecret,
 		BuildID:                    buildID,
 		SpanID:                     spanID,
-		DiskSizeMB:                 defaultDiskSizeMB,
-		VCpuCount:                  defaultVCpuCount,
-		MemoryMB:                   defaultMemoryMB,
+		DiskSizeMB:                 vmConfig.DiskSizeMB,
+		VCpuCount:                  vmConfig.VCpuCount,
+		MemoryMB:                   vmConfig.MemoryMB,
 		TraceID:                    traceID,
 		EnvID:                      envID,
 		TaskName:                   defaultTaskName,

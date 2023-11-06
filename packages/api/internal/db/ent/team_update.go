@@ -14,6 +14,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/predicate"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/tier"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/usersteams"
 	"github.com/google/uuid"
@@ -80,6 +81,25 @@ func (tu *TeamUpdate) AddTeamAPIKeys(t ...*TeamApiKey) *TeamUpdate {
 	return tu.AddTeamAPIKeyIDs(ids...)
 }
 
+// SetTierID sets the "tier" edge to the Tier entity by ID.
+func (tu *TeamUpdate) SetTierID(id string) *TeamUpdate {
+	tu.mutation.SetTierID(id)
+	return tu
+}
+
+// SetNillableTierID sets the "tier" edge to the Tier entity by ID if the given value is not nil.
+func (tu *TeamUpdate) SetNillableTierID(id *string) *TeamUpdate {
+	if id != nil {
+		tu = tu.SetTierID(*id)
+	}
+	return tu
+}
+
+// SetTier sets the "tier" edge to the Tier entity.
+func (tu *TeamUpdate) SetTier(t *Tier) *TeamUpdate {
+	return tu.SetTierID(t.ID)
+}
+
 // AddUsersTeamIDs adds the "users_teams" edge to the UsersTeams entity by IDs.
 func (tu *TeamUpdate) AddUsersTeamIDs(ids ...int) *TeamUpdate {
 	tu.mutation.AddUsersTeamIDs(ids...)
@@ -140,6 +160,12 @@ func (tu *TeamUpdate) RemoveTeamAPIKeys(t ...*TeamApiKey) *TeamUpdate {
 		ids[i] = t[i].ID
 	}
 	return tu.RemoveTeamAPIKeyIDs(ids...)
+}
+
+// ClearTier clears the "tier" edge to the Tier entity.
+func (tu *TeamUpdate) ClearTier() *TeamUpdate {
+	tu.mutation.ClearTier()
+	return tu
 }
 
 // ClearUsersTeams clears all "users_teams" edges to the UsersTeams entity.
@@ -304,6 +330,37 @@ func (tu *TeamUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.TierCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   team.TierTable,
+			Columns: []string{team.TierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tier.FieldID, field.TypeString),
+			},
+		}
+		edge.Schema = tu.schemaConfig.Team
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.TierIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   team.TierTable,
+			Columns: []string{team.TierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tier.FieldID, field.TypeString),
+			},
+		}
+		edge.Schema = tu.schemaConfig.Team
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if tu.mutation.UsersTeamsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -422,6 +479,25 @@ func (tuo *TeamUpdateOne) AddTeamAPIKeys(t ...*TeamApiKey) *TeamUpdateOne {
 	return tuo.AddTeamAPIKeyIDs(ids...)
 }
 
+// SetTierID sets the "tier" edge to the Tier entity by ID.
+func (tuo *TeamUpdateOne) SetTierID(id string) *TeamUpdateOne {
+	tuo.mutation.SetTierID(id)
+	return tuo
+}
+
+// SetNillableTierID sets the "tier" edge to the Tier entity by ID if the given value is not nil.
+func (tuo *TeamUpdateOne) SetNillableTierID(id *string) *TeamUpdateOne {
+	if id != nil {
+		tuo = tuo.SetTierID(*id)
+	}
+	return tuo
+}
+
+// SetTier sets the "tier" edge to the Tier entity.
+func (tuo *TeamUpdateOne) SetTier(t *Tier) *TeamUpdateOne {
+	return tuo.SetTierID(t.ID)
+}
+
 // AddUsersTeamIDs adds the "users_teams" edge to the UsersTeams entity by IDs.
 func (tuo *TeamUpdateOne) AddUsersTeamIDs(ids ...int) *TeamUpdateOne {
 	tuo.mutation.AddUsersTeamIDs(ids...)
@@ -482,6 +558,12 @@ func (tuo *TeamUpdateOne) RemoveTeamAPIKeys(t ...*TeamApiKey) *TeamUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return tuo.RemoveTeamAPIKeyIDs(ids...)
+}
+
+// ClearTier clears the "tier" edge to the Tier entity.
+func (tuo *TeamUpdateOne) ClearTier() *TeamUpdateOne {
+	tuo.mutation.ClearTier()
+	return tuo
 }
 
 // ClearUsersTeams clears all "users_teams" edges to the UsersTeams entity.
@@ -671,6 +753,37 @@ func (tuo *TeamUpdateOne) sqlSave(ctx context.Context) (_node *Team, err error) 
 			},
 		}
 		edge.Schema = tuo.schemaConfig.TeamApiKey
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.TierCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   team.TierTable,
+			Columns: []string{team.TierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tier.FieldID, field.TypeString),
+			},
+		}
+		edge.Schema = tuo.schemaConfig.Team
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.TierIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   team.TierTable,
+			Columns: []string{team.TierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tier.FieldID, field.TypeString),
+			},
+		}
+		edge.Schema = tuo.schemaConfig.Team
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}

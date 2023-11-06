@@ -15,6 +15,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/predicate"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/tier"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/usersteams"
 	"github.com/google/uuid"
@@ -29,6 +30,7 @@ type TeamQuery struct {
 	predicates      []predicate.Team
 	withUsers       *UserQuery
 	withTeamAPIKeys *TeamApiKeyQuery
+	withTier        *TierQuery
 	withUsersTeams  *UsersTeamsQuery
 	withFKs         bool
 	// intermediate query (i.e. traversal path).
@@ -111,6 +113,31 @@ func (tq *TeamQuery) QueryTeamAPIKeys() *TeamApiKeyQuery {
 		schemaConfig := tq.schemaConfig
 		step.To.Schema = schemaConfig.TeamApiKey
 		step.Edge.Schema = schemaConfig.TeamApiKey
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTier chains the current query on the "tier" edge.
+func (tq *TeamQuery) QueryTier() *TierQuery {
+	query := (&TierClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(team.Table, team.FieldID, selector),
+			sqlgraph.To(tier.Table, tier.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, team.TierTable, team.TierColumn),
+		)
+		schemaConfig := tq.schemaConfig
+		step.To.Schema = schemaConfig.Tier
+		step.Edge.Schema = schemaConfig.Team
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
 	}
@@ -336,6 +363,7 @@ func (tq *TeamQuery) Clone() *TeamQuery {
 		predicates:      append([]predicate.Team{}, tq.predicates...),
 		withUsers:       tq.withUsers.Clone(),
 		withTeamAPIKeys: tq.withTeamAPIKeys.Clone(),
+		withTier:        tq.withTier.Clone(),
 		withUsersTeams:  tq.withUsersTeams.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
@@ -362,6 +390,17 @@ func (tq *TeamQuery) WithTeamAPIKeys(opts ...func(*TeamApiKeyQuery)) *TeamQuery 
 		opt(query)
 	}
 	tq.withTeamAPIKeys = query
+	return tq
+}
+
+// WithTier tells the query-builder to eager-load the nodes that are connected to
+// the "tier" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TeamQuery) WithTier(opts ...func(*TierQuery)) *TeamQuery {
+	query := (&TierClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withTier = query
 	return tq
 }
 
@@ -455,12 +494,16 @@ func (tq *TeamQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Team, e
 		nodes       = []*Team{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			tq.withUsers != nil,
 			tq.withTeamAPIKeys != nil,
+			tq.withTier != nil,
 			tq.withUsersTeams != nil,
 		}
 	)
+	if tq.withTier != nil {
+		withFKs = true
+	}
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, team.ForeignKeys...)
 	}
@@ -495,6 +538,12 @@ func (tq *TeamQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Team, e
 		if err := tq.loadTeamAPIKeys(ctx, query, nodes,
 			func(n *Team) { n.Edges.TeamAPIKeys = []*TeamApiKey{} },
 			func(n *Team, e *TeamApiKey) { n.Edges.TeamAPIKeys = append(n.Edges.TeamAPIKeys, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tq.withTier; query != nil {
+		if err := tq.loadTier(ctx, query, nodes, nil,
+			func(n *Team, e *Tier) { n.Edges.Tier = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -597,6 +646,38 @@ func (tq *TeamQuery) loadTeamAPIKeys(ctx context.Context, query *TeamApiKeyQuery
 			return fmt.Errorf(`unexpected referenced foreign-key "team_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (tq *TeamQuery) loadTier(ctx context.Context, query *TierQuery, nodes []*Team, init func(*Team), assign func(*Team, *Tier)) error {
+	ids := make([]string, 0, len(nodes))
+	nodeids := make(map[string][]*Team)
+	for i := range nodes {
+		if nodes[i].tier_teams == nil {
+			continue
+		}
+		fk := *nodes[i].tier_teams
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(tier.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tier_teams" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/predicate"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/tier"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/usersteams"
 	"github.com/google/uuid"
@@ -34,6 +35,7 @@ const (
 	TypeEnv         = "Env"
 	TypeTeam        = "Team"
 	TypeTeamApiKey  = "TeamApiKey"
+	TypeTier        = "Tier"
 	TypeUser        = "User"
 	TypeUsersTeams  = "UsersTeams"
 )
@@ -1319,6 +1321,8 @@ type TeamMutation struct {
 	team_api_keys        map[string]struct{}
 	removedteam_api_keys map[string]struct{}
 	clearedteam_api_keys bool
+	tier                 *string
+	clearedtier          bool
 	users_teams          map[int]struct{}
 	removedusers_teams   map[int]struct{}
 	clearedusers_teams   bool
@@ -1683,6 +1687,45 @@ func (m *TeamMutation) ResetTeamAPIKeys() {
 	m.removedteam_api_keys = nil
 }
 
+// SetTierID sets the "tier" edge to the Tier entity by id.
+func (m *TeamMutation) SetTierID(id string) {
+	m.tier = &id
+}
+
+// ClearTier clears the "tier" edge to the Tier entity.
+func (m *TeamMutation) ClearTier() {
+	m.clearedtier = true
+}
+
+// TierCleared reports if the "tier" edge to the Tier entity was cleared.
+func (m *TeamMutation) TierCleared() bool {
+	return m.clearedtier
+}
+
+// TierID returns the "tier" edge ID in the mutation.
+func (m *TeamMutation) TierID() (id string, exists bool) {
+	if m.tier != nil {
+		return *m.tier, true
+	}
+	return
+}
+
+// TierIDs returns the "tier" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TierID instead. It exists only for internal usage by the builders.
+func (m *TeamMutation) TierIDs() (ids []string) {
+	if id := m.tier; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTier resets all changes to the "tier" edge.
+func (m *TeamMutation) ResetTier() {
+	m.tier = nil
+	m.clearedtier = false
+}
+
 // AddUsersTeamIDs adds the "users_teams" edge to the UsersTeams entity by ids.
 func (m *TeamMutation) AddUsersTeamIDs(ids ...int) {
 	if m.users_teams == nil {
@@ -1921,12 +1964,15 @@ func (m *TeamMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TeamMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.users != nil {
 		edges = append(edges, team.EdgeUsers)
 	}
 	if m.team_api_keys != nil {
 		edges = append(edges, team.EdgeTeamAPIKeys)
+	}
+	if m.tier != nil {
+		edges = append(edges, team.EdgeTier)
 	}
 	if m.users_teams != nil {
 		edges = append(edges, team.EdgeUsersTeams)
@@ -1950,6 +1996,10 @@ func (m *TeamMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case team.EdgeTier:
+		if id := m.tier; id != nil {
+			return []ent.Value{*id}
+		}
 	case team.EdgeUsersTeams:
 		ids := make([]ent.Value, 0, len(m.users_teams))
 		for id := range m.users_teams {
@@ -1962,7 +2012,7 @@ func (m *TeamMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TeamMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedusers != nil {
 		edges = append(edges, team.EdgeUsers)
 	}
@@ -2003,12 +2053,15 @@ func (m *TeamMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TeamMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedusers {
 		edges = append(edges, team.EdgeUsers)
 	}
 	if m.clearedteam_api_keys {
 		edges = append(edges, team.EdgeTeamAPIKeys)
+	}
+	if m.clearedtier {
+		edges = append(edges, team.EdgeTier)
 	}
 	if m.clearedusers_teams {
 		edges = append(edges, team.EdgeUsersTeams)
@@ -2024,6 +2077,8 @@ func (m *TeamMutation) EdgeCleared(name string) bool {
 		return m.clearedusers
 	case team.EdgeTeamAPIKeys:
 		return m.clearedteam_api_keys
+	case team.EdgeTier:
+		return m.clearedtier
 	case team.EdgeUsersTeams:
 		return m.clearedusers_teams
 	}
@@ -2034,6 +2089,9 @@ func (m *TeamMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *TeamMutation) ClearEdge(name string) error {
 	switch name {
+	case team.EdgeTier:
+		m.ClearTier()
+		return nil
 	}
 	return fmt.Errorf("unknown Team unique edge %s", name)
 }
@@ -2047,6 +2105,9 @@ func (m *TeamMutation) ResetEdge(name string) error {
 		return nil
 	case team.EdgeTeamAPIKeys:
 		m.ResetTeamAPIKeys()
+		return nil
+	case team.EdgeTier:
+		m.ResetTier()
 		return nil
 	case team.EdgeUsersTeams:
 		m.ResetUsersTeams()
@@ -2493,6 +2554,641 @@ func (m *TeamApiKeyMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown TeamApiKey edge %s", name)
+}
+
+// TierMutation represents an operation that mutates the Tier nodes in the graph.
+type TierMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *string
+	vcpu          *int8
+	addvcpu       *int8
+	ram_mb        *int8
+	addram_mb     *int8
+	disk_mb       *int8
+	adddisk_mb    *int8
+	clearedFields map[string]struct{}
+	teams         map[uuid.UUID]struct{}
+	removedteams  map[uuid.UUID]struct{}
+	clearedteams  bool
+	done          bool
+	oldValue      func(context.Context) (*Tier, error)
+	predicates    []predicate.Tier
+}
+
+var _ ent.Mutation = (*TierMutation)(nil)
+
+// tierOption allows management of the mutation configuration using functional options.
+type tierOption func(*TierMutation)
+
+// newTierMutation creates new mutation for the Tier entity.
+func newTierMutation(c config, op Op, opts ...tierOption) *TierMutation {
+	m := &TierMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTier,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTierID sets the ID field of the mutation.
+func withTierID(id string) tierOption {
+	return func(m *TierMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Tier
+		)
+		m.oldValue = func(ctx context.Context) (*Tier, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Tier.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTier sets the old Tier of the mutation.
+func withTier(node *Tier) tierOption {
+	return func(m *TierMutation) {
+		m.oldValue = func(context.Context) (*Tier, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TierMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TierMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Tier entities.
+func (m *TierMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TierMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TierMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Tier.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetVcpu sets the "vcpu" field.
+func (m *TierMutation) SetVcpu(i int8) {
+	m.vcpu = &i
+	m.addvcpu = nil
+}
+
+// Vcpu returns the value of the "vcpu" field in the mutation.
+func (m *TierMutation) Vcpu() (r int8, exists bool) {
+	v := m.vcpu
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVcpu returns the old "vcpu" field's value of the Tier entity.
+// If the Tier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TierMutation) OldVcpu(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVcpu is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVcpu requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVcpu: %w", err)
+	}
+	return oldValue.Vcpu, nil
+}
+
+// AddVcpu adds i to the "vcpu" field.
+func (m *TierMutation) AddVcpu(i int8) {
+	if m.addvcpu != nil {
+		*m.addvcpu += i
+	} else {
+		m.addvcpu = &i
+	}
+}
+
+// AddedVcpu returns the value that was added to the "vcpu" field in this mutation.
+func (m *TierMutation) AddedVcpu() (r int8, exists bool) {
+	v := m.addvcpu
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVcpu resets all changes to the "vcpu" field.
+func (m *TierMutation) ResetVcpu() {
+	m.vcpu = nil
+	m.addvcpu = nil
+}
+
+// SetRAMMB sets the "ram_mb" field.
+func (m *TierMutation) SetRAMMB(i int8) {
+	m.ram_mb = &i
+	m.addram_mb = nil
+}
+
+// RAMMB returns the value of the "ram_mb" field in the mutation.
+func (m *TierMutation) RAMMB() (r int8, exists bool) {
+	v := m.ram_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRAMMB returns the old "ram_mb" field's value of the Tier entity.
+// If the Tier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TierMutation) OldRAMMB(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRAMMB is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRAMMB requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRAMMB: %w", err)
+	}
+	return oldValue.RAMMB, nil
+}
+
+// AddRAMMB adds i to the "ram_mb" field.
+func (m *TierMutation) AddRAMMB(i int8) {
+	if m.addram_mb != nil {
+		*m.addram_mb += i
+	} else {
+		m.addram_mb = &i
+	}
+}
+
+// AddedRAMMB returns the value that was added to the "ram_mb" field in this mutation.
+func (m *TierMutation) AddedRAMMB() (r int8, exists bool) {
+	v := m.addram_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRAMMB resets all changes to the "ram_mb" field.
+func (m *TierMutation) ResetRAMMB() {
+	m.ram_mb = nil
+	m.addram_mb = nil
+}
+
+// SetDiskMB sets the "disk_mb" field.
+func (m *TierMutation) SetDiskMB(i int8) {
+	m.disk_mb = &i
+	m.adddisk_mb = nil
+}
+
+// DiskMB returns the value of the "disk_mb" field in the mutation.
+func (m *TierMutation) DiskMB() (r int8, exists bool) {
+	v := m.disk_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDiskMB returns the old "disk_mb" field's value of the Tier entity.
+// If the Tier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TierMutation) OldDiskMB(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDiskMB is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDiskMB requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDiskMB: %w", err)
+	}
+	return oldValue.DiskMB, nil
+}
+
+// AddDiskMB adds i to the "disk_mb" field.
+func (m *TierMutation) AddDiskMB(i int8) {
+	if m.adddisk_mb != nil {
+		*m.adddisk_mb += i
+	} else {
+		m.adddisk_mb = &i
+	}
+}
+
+// AddedDiskMB returns the value that was added to the "disk_mb" field in this mutation.
+func (m *TierMutation) AddedDiskMB() (r int8, exists bool) {
+	v := m.adddisk_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDiskMB resets all changes to the "disk_mb" field.
+func (m *TierMutation) ResetDiskMB() {
+	m.disk_mb = nil
+	m.adddisk_mb = nil
+}
+
+// AddTeamIDs adds the "teams" edge to the Team entity by ids.
+func (m *TierMutation) AddTeamIDs(ids ...uuid.UUID) {
+	if m.teams == nil {
+		m.teams = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.teams[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTeams clears the "teams" edge to the Team entity.
+func (m *TierMutation) ClearTeams() {
+	m.clearedteams = true
+}
+
+// TeamsCleared reports if the "teams" edge to the Team entity was cleared.
+func (m *TierMutation) TeamsCleared() bool {
+	return m.clearedteams
+}
+
+// RemoveTeamIDs removes the "teams" edge to the Team entity by IDs.
+func (m *TierMutation) RemoveTeamIDs(ids ...uuid.UUID) {
+	if m.removedteams == nil {
+		m.removedteams = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.teams, ids[i])
+		m.removedteams[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTeams returns the removed IDs of the "teams" edge to the Team entity.
+func (m *TierMutation) RemovedTeamsIDs() (ids []uuid.UUID) {
+	for id := range m.removedteams {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TeamsIDs returns the "teams" edge IDs in the mutation.
+func (m *TierMutation) TeamsIDs() (ids []uuid.UUID) {
+	for id := range m.teams {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTeams resets all changes to the "teams" edge.
+func (m *TierMutation) ResetTeams() {
+	m.teams = nil
+	m.clearedteams = false
+	m.removedteams = nil
+}
+
+// Where appends a list predicates to the TierMutation builder.
+func (m *TierMutation) Where(ps ...predicate.Tier) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TierMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TierMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Tier, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TierMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TierMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Tier).
+func (m *TierMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TierMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.vcpu != nil {
+		fields = append(fields, tier.FieldVcpu)
+	}
+	if m.ram_mb != nil {
+		fields = append(fields, tier.FieldRAMMB)
+	}
+	if m.disk_mb != nil {
+		fields = append(fields, tier.FieldDiskMB)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TierMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case tier.FieldVcpu:
+		return m.Vcpu()
+	case tier.FieldRAMMB:
+		return m.RAMMB()
+	case tier.FieldDiskMB:
+		return m.DiskMB()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TierMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case tier.FieldVcpu:
+		return m.OldVcpu(ctx)
+	case tier.FieldRAMMB:
+		return m.OldRAMMB(ctx)
+	case tier.FieldDiskMB:
+		return m.OldDiskMB(ctx)
+	}
+	return nil, fmt.Errorf("unknown Tier field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TierMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case tier.FieldVcpu:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVcpu(v)
+		return nil
+	case tier.FieldRAMMB:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRAMMB(v)
+		return nil
+	case tier.FieldDiskMB:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDiskMB(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Tier field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TierMutation) AddedFields() []string {
+	var fields []string
+	if m.addvcpu != nil {
+		fields = append(fields, tier.FieldVcpu)
+	}
+	if m.addram_mb != nil {
+		fields = append(fields, tier.FieldRAMMB)
+	}
+	if m.adddisk_mb != nil {
+		fields = append(fields, tier.FieldDiskMB)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TierMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case tier.FieldVcpu:
+		return m.AddedVcpu()
+	case tier.FieldRAMMB:
+		return m.AddedRAMMB()
+	case tier.FieldDiskMB:
+		return m.AddedDiskMB()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TierMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case tier.FieldVcpu:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVcpu(v)
+		return nil
+	case tier.FieldRAMMB:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRAMMB(v)
+		return nil
+	case tier.FieldDiskMB:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDiskMB(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Tier numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TierMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TierMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TierMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Tier nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TierMutation) ResetField(name string) error {
+	switch name {
+	case tier.FieldVcpu:
+		m.ResetVcpu()
+		return nil
+	case tier.FieldRAMMB:
+		m.ResetRAMMB()
+		return nil
+	case tier.FieldDiskMB:
+		m.ResetDiskMB()
+		return nil
+	}
+	return fmt.Errorf("unknown Tier field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TierMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.teams != nil {
+		edges = append(edges, tier.EdgeTeams)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TierMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case tier.EdgeTeams:
+		ids := make([]ent.Value, 0, len(m.teams))
+		for id := range m.teams {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TierMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedteams != nil {
+		edges = append(edges, tier.EdgeTeams)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TierMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case tier.EdgeTeams:
+		ids := make([]ent.Value, 0, len(m.removedteams))
+		for id := range m.removedteams {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TierMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedteams {
+		edges = append(edges, tier.EdgeTeams)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TierMutation) EdgeCleared(name string) bool {
+	switch name {
+	case tier.EdgeTeams:
+		return m.clearedteams
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TierMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Tier unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TierMutation) ResetEdge(name string) error {
+	switch name {
+	case tier.EdgeTeams:
+		m.ResetTeams()
+		return nil
+	}
+	return fmt.Errorf("unknown Tier edge %s", name)
 }
 
 // UserMutation represents an operation that mutates the User nodes in the graph.

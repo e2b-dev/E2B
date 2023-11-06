@@ -16,6 +16,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/tier"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/usersteams"
 )
@@ -82,6 +83,7 @@ func checkColumn(table, column string) error {
 			env.Table:         env.ValidColumn,
 			team.Table:        team.ValidColumn,
 			teamapikey.Table:  teamapikey.ValidColumn,
+			tier.Table:        tier.ValidColumn,
 			user.Table:        user.ValidColumn,
 			usersteams.Table:  usersteams.ValidColumn,
 		})

@@ -30,5 +30,6 @@ func (Team) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("users", User.Type).Through("users_teams", UsersTeams.Type),
 		edge.To("team_api_keys", TeamApiKey.Type),
+		edge.From("tier", Tier.Type).Ref("teams").Unique(),
 	}
 }

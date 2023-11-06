@@ -20,6 +20,8 @@ type Tx struct {
 	Team *TeamClient
 	// TeamApiKey is the client for interacting with the TeamApiKey builders.
 	TeamApiKey *TeamApiKeyClient
+	// Tier is the client for interacting with the Tier builders.
+	Tier *TierClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// UsersTeams is the client for interacting with the UsersTeams builders.
@@ -159,6 +161,7 @@ func (tx *Tx) init() {
 	tx.Env = NewEnvClient(tx.config)
 	tx.Team = NewTeamClient(tx.config)
 	tx.TeamApiKey = NewTeamApiKeyClient(tx.config)
+	tx.Tier = NewTierClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.UsersTeams = NewUsersTeamsClient(tx.config)
 }

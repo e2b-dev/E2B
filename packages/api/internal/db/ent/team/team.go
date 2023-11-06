@@ -26,6 +26,8 @@ const (
 	EdgeUsers = "users"
 	// EdgeTeamAPIKeys holds the string denoting the team_api_keys edge name in mutations.
 	EdgeTeamAPIKeys = "team_api_keys"
+	// EdgeTier holds the string denoting the tier edge name in mutations.
+	EdgeTier = "tier"
 	// EdgeUsersTeams holds the string denoting the users_teams edge name in mutations.
 	EdgeUsersTeams = "users_teams"
 	// TeamApiKeyFieldID holds the string denoting the ID field of the TeamApiKey.
@@ -44,6 +46,13 @@ const (
 	TeamAPIKeysInverseTable = "team_api_keys"
 	// TeamAPIKeysColumn is the table column denoting the team_api_keys relation/edge.
 	TeamAPIKeysColumn = "team_id"
+	// TierTable is the table that holds the tier relation/edge.
+	TierTable = "teams"
+	// TierInverseTable is the table name for the Tier entity.
+	// It exists in this package in order to avoid circular dependency with the "tier" package.
+	TierInverseTable = "tiers"
+	// TierColumn is the table column denoting the tier relation/edge.
+	TierColumn = "tier_teams"
 	// UsersTeamsTable is the table that holds the users_teams relation/edge.
 	UsersTeamsTable = "users_teams"
 	// UsersTeamsInverseTable is the table name for the UsersTeams entity.
@@ -66,6 +75,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"env_team",
+	"tier_teams",
 }
 
 var (
@@ -150,6 +160,13 @@ func ByTeamAPIKeys(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByTierField orders the results by tier field.
+func ByTierField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTierStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByUsersTeamsCount orders the results by users_teams count.
 func ByUsersTeamsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -175,6 +192,13 @@ func newTeamAPIKeysStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TeamAPIKeysInverseTable, TeamApiKeyFieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, TeamAPIKeysTable, TeamAPIKeysColumn),
+	)
+}
+func newTierStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TierInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, TierTable, TierColumn),
 	)
 }
 func newUsersTeamsStep() *sqlgraph.Step {

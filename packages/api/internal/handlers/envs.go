@@ -10,6 +10,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
@@ -25,7 +26,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	span := trace.SpanFromContext(ctx)
 
 	// Prepare info for new env
-	userID, teamID, err := a.GetUserAndTeam(c)
+	userID, teamID, tier, err := a.GetUserAndTeam(c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
@@ -41,6 +42,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		attribute.String("env.user_id", userID),
 		attribute.String("env.team_id", teamID),
 		attribute.String("env.id", envID),
+		attribute.String("tier", tier.ID),
 	)
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
@@ -54,6 +56,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 		return
 	}
+
 	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
 
 	err = a.buildCache.Create(teamID, envID, buildID)
@@ -76,7 +79,11 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 		var status api.EnvironmentBuildStatus
 
-		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties)
+		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties, nomad.BuildConfig{
+			VCpuCount:  int(tier.Vcpu),
+			MemoryMB:   int(tier.RAMMB),
+			DiskSizeMB: int(tier.DiskMB),
+		})
 		if buildErr != nil {
 			status = api.EnvironmentBuildStatusError
 
@@ -112,7 +119,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 	span := trace.SpanFromContext(ctx)
 
 	// Prepare info for rebuilding env
-	userID, teamID, err := a.GetUserAndTeam(c)
+	userID, teamID, tier, err := a.GetUserAndTeam(c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
@@ -126,6 +133,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		attribute.String("env.user_id", userID),
 		attribute.String("env.team_id", teamID),
 		attribute.String("env.id", envID),
+		attribute.String("tier", tier.ID),
 	)
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
@@ -139,6 +147,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 
 		return
 	}
+
 	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
 
 	hasAccess, accessErr := a.supabase.HasEnvAccess(envID, teamID, false)
@@ -180,7 +189,11 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 
 		var status api.EnvironmentBuildStatus
 
-		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties)
+		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties, nomad.BuildConfig{
+			VCpuCount:  int(tier.Vcpu),
+			MemoryMB:   int(tier.RAMMB),
+			DiskSizeMB: int(tier.DiskMB),
+		})
 		if buildErr != nil {
 			status = api.EnvironmentBuildStatusError
 
@@ -341,7 +354,17 @@ func (a *APIStore) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvI
 	c.JSON(http.StatusCreated, nil)
 }
 
-func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID, dockerfile string, content io.Reader, posthogProperties posthog.Properties) (err error) {
+func (a *APIStore) buildEnv(
+	ctx context.Context,
+	userID,
+	teamID,
+	envID,
+	buildID,
+	dockerfile string,
+	content io.Reader,
+	posthogProperties posthog.Properties,
+	vmConfig nomad.BuildConfig,
+) (err error) {
 	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
@@ -369,7 +392,7 @@ func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID,
 		return err
 	}
 
-	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID, a.apiSecret, a.googleServiceAccountBase64)
+	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID, a.apiSecret, a.googleServiceAccountBase64, vmConfig)
 	if err != nil {
 		err = fmt.Errorf("error when starting build: %w", err)
 		telemetry.ReportCriticalError(childCtx, err)

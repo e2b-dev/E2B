@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/tier"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/usersteams"
 	"github.com/google/uuid"
@@ -93,6 +94,25 @@ func (tc *TeamCreate) AddTeamAPIKeys(t ...*TeamApiKey) *TeamCreate {
 		ids[i] = t[i].ID
 	}
 	return tc.AddTeamAPIKeyIDs(ids...)
+}
+
+// SetTierID sets the "tier" edge to the Tier entity by ID.
+func (tc *TeamCreate) SetTierID(id string) *TeamCreate {
+	tc.mutation.SetTierID(id)
+	return tc
+}
+
+// SetNillableTierID sets the "tier" edge to the Tier entity by ID if the given value is not nil.
+func (tc *TeamCreate) SetNillableTierID(id *string) *TeamCreate {
+	if id != nil {
+		tc = tc.SetTierID(*id)
+	}
+	return tc
+}
+
+// SetTier sets the "tier" edge to the Tier entity.
+func (tc *TeamCreate) SetTier(t *Tier) *TeamCreate {
+	return tc.SetTierID(t.ID)
 }
 
 // AddUsersTeamIDs adds the "users_teams" edge to the UsersTeams entity by IDs.
@@ -250,6 +270,24 @@ func (tc *TeamCreate) createSpec() (*Team, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.TierIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   team.TierTable,
+			Columns: []string{team.TierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tier.FieldID, field.TypeString),
+			},
+		}
+		edge.Schema = tc.schemaConfig.Team
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.tier_teams = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := tc.mutation.UsersTeamsIDs(); len(nodes) > 0 {
