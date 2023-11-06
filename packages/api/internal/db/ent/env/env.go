@@ -33,12 +33,12 @@ const (
 	// Table holds the table name of the env in the database.
 	Table = "envs"
 	// TeamTable is the table that holds the team relation/edge.
-	TeamTable = "teams"
+	TeamTable = "envs"
 	// TeamInverseTable is the table name for the Team entity.
 	// It exists in this package in order to avoid circular dependency with the "team" package.
 	TeamInverseTable = "teams"
 	// TeamColumn is the table column denoting the team relation/edge.
-	TeamColumn = "env_team"
+	TeamColumn = "team_id"
 )
 
 // Columns holds all SQL columns for env fields.
@@ -115,23 +115,16 @@ func ByBuildCount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBuildCount, opts...).ToFunc()
 }
 
-// ByTeamCount orders the results by team count.
-func ByTeamCount(opts ...sql.OrderTermOption) OrderOption {
+// ByTeamField orders the results by team field.
+func ByTeamField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newTeamStep(), opts...)
-	}
-}
-
-// ByTeam orders the results by team terms.
-func ByTeam(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newTeamStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newTeamStep(), sql.OrderByField(field, opts...))
 	}
 }
 func newTeamStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TeamInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, TeamTable, TeamColumn),
+		sqlgraph.Edge(sqlgraph.M2O, true, TeamTable, TeamColumn),
 	)
 }

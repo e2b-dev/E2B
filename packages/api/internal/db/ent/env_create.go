@@ -97,19 +97,9 @@ func (ec *EnvCreate) SetID(s string) *EnvCreate {
 	return ec
 }
 
-// AddTeamIDs adds the "team" edge to the Team entity by IDs.
-func (ec *EnvCreate) AddTeamIDs(ids ...uuid.UUID) *EnvCreate {
-	ec.mutation.AddTeamIDs(ids...)
-	return ec
-}
-
-// AddTeam adds the "team" edges to the Team entity.
-func (ec *EnvCreate) AddTeam(t ...*Team) *EnvCreate {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return ec.AddTeamIDs(ids...)
+// SetTeam sets the "team" edge to the Team entity.
+func (ec *EnvCreate) SetTeam(t *Team) *EnvCreate {
+	return ec.SetTeamID(t.ID)
 }
 
 // Mutation returns the EnvMutation object of the builder.
@@ -184,6 +174,9 @@ func (ec *EnvCreate) check() error {
 	if _, ok := ec.mutation.BuildCount(); !ok {
 		return &ValidationError{Name: "build_count", err: errors.New(`ent: missing required field "Env.build_count"`)}
 	}
+	if _, ok := ec.mutation.TeamID(); !ok {
+		return &ValidationError{Name: "team", err: errors.New(`ent: missing required edge "Env.team"`)}
+	}
 	return nil
 }
 
@@ -229,10 +222,6 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 		_spec.SetField(env.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := ec.mutation.TeamID(); ok {
-		_spec.SetField(env.FieldTeamID, field.TypeUUID, value)
-		_node.TeamID = value
-	}
 	if value, ok := ec.mutation.Dockerfile(); ok {
 		_spec.SetField(env.FieldDockerfile, field.TypeString, value)
 		_node.Dockerfile = value
@@ -251,8 +240,8 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 	}
 	if nodes := ec.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   env.TeamTable,
 			Columns: []string{env.TeamColumn},
 			Bidi:    false,
@@ -260,10 +249,11 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = ec.schemaConfig.Team
+		edge.Schema = ec.schemaConfig.Env
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.TeamID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

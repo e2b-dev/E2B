@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/tier"
@@ -51,6 +52,12 @@ func (tc *TeamCreate) SetIsDefault(b bool) *TeamCreate {
 // SetName sets the "name" field.
 func (tc *TeamCreate) SetName(s string) *TeamCreate {
 	tc.mutation.SetName(s)
+	return tc
+}
+
+// SetTier sets the "tier" field.
+func (tc *TeamCreate) SetTier(s string) *TeamCreate {
+	tc.mutation.SetTier(s)
 	return tc
 }
 
@@ -96,23 +103,30 @@ func (tc *TeamCreate) AddTeamAPIKeys(t ...*TeamApiKey) *TeamCreate {
 	return tc.AddTeamAPIKeyIDs(ids...)
 }
 
-// SetTierID sets the "tier" edge to the Tier entity by ID.
-func (tc *TeamCreate) SetTierID(id string) *TeamCreate {
-	tc.mutation.SetTierID(id)
+// SetTeamTierID sets the "team_tier" edge to the Tier entity by ID.
+func (tc *TeamCreate) SetTeamTierID(id string) *TeamCreate {
+	tc.mutation.SetTeamTierID(id)
 	return tc
 }
 
-// SetNillableTierID sets the "tier" edge to the Tier entity by ID if the given value is not nil.
-func (tc *TeamCreate) SetNillableTierID(id *string) *TeamCreate {
-	if id != nil {
-		tc = tc.SetTierID(*id)
+// SetTeamTier sets the "team_tier" edge to the Tier entity.
+func (tc *TeamCreate) SetTeamTier(t *Tier) *TeamCreate {
+	return tc.SetTeamTierID(t.ID)
+}
+
+// AddEnvIDs adds the "envs" edge to the Env entity by IDs.
+func (tc *TeamCreate) AddEnvIDs(ids ...string) *TeamCreate {
+	tc.mutation.AddEnvIDs(ids...)
+	return tc
+}
+
+// AddEnvs adds the "envs" edges to the Env entity.
+func (tc *TeamCreate) AddEnvs(e ...*Env) *TeamCreate {
+	ids := make([]string, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
 	}
-	return tc
-}
-
-// SetTier sets the "tier" edge to the Tier entity.
-func (tc *TeamCreate) SetTier(t *Tier) *TeamCreate {
-	return tc.SetTierID(t.ID)
+	return tc.AddEnvIDs(ids...)
 }
 
 // AddUsersTeamIDs adds the "users_teams" edge to the UsersTeams entity by IDs.
@@ -182,8 +196,14 @@ func (tc *TeamCreate) check() error {
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Team.name"`)}
 	}
+	if _, ok := tc.mutation.Tier(); !ok {
+		return &ValidationError{Name: "tier", err: errors.New(`ent: missing required field "Team.tier"`)}
+	}
 	if _, ok := tc.mutation.IsBlocked(); !ok {
 		return &ValidationError{Name: "is_blocked", err: errors.New(`ent: missing required field "Team.is_blocked"`)}
+	}
+	if _, ok := tc.mutation.TeamTierID(); !ok {
+		return &ValidationError{Name: "team_tier", err: errors.New(`ent: missing required edge "Team.team_tier"`)}
 	}
 	return nil
 }
@@ -272,12 +292,12 @@ func (tc *TeamCreate) createSpec() (*Team, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := tc.mutation.TierIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.TeamTierIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   team.TierTable,
-			Columns: []string{team.TierColumn},
+			Table:   team.TeamTierTable,
+			Columns: []string{team.TeamTierColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tier.FieldID, field.TypeString),
@@ -287,7 +307,24 @@ func (tc *TeamCreate) createSpec() (*Team, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.tier_teams = &nodes[0]
+		_node.Tier = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.EnvsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   team.EnvsTable,
+			Columns: []string{team.EnvsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(env.FieldID, field.TypeString),
+			},
+		}
+		edge.Schema = tc.schemaConfig.Env
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := tc.mutation.UsersTeamsIDs(); len(nodes) > 0 {
@@ -383,6 +420,18 @@ func (u *TeamUpsert) UpdateName() *TeamUpsert {
 	return u
 }
 
+// SetTier sets the "tier" field.
+func (u *TeamUpsert) SetTier(v string) *TeamUpsert {
+	u.Set(team.FieldTier, v)
+	return u
+}
+
+// UpdateTier sets the "tier" field to the value that was provided on create.
+func (u *TeamUpsert) UpdateTier() *TeamUpsert {
+	u.SetExcluded(team.FieldTier)
+	return u
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (u *TeamUpsert) SetIsBlocked(v bool) *TeamUpsert {
 	u.Set(team.FieldIsBlocked, v)
@@ -471,6 +520,20 @@ func (u *TeamUpsertOne) SetName(v string) *TeamUpsertOne {
 func (u *TeamUpsertOne) UpdateName() *TeamUpsertOne {
 	return u.Update(func(s *TeamUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetTier sets the "tier" field.
+func (u *TeamUpsertOne) SetTier(v string) *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetTier(v)
+	})
+}
+
+// UpdateTier sets the "tier" field to the value that was provided on create.
+func (u *TeamUpsertOne) UpdateTier() *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateTier()
 	})
 }
 
@@ -731,6 +794,20 @@ func (u *TeamUpsertBulk) SetName(v string) *TeamUpsertBulk {
 func (u *TeamUpsertBulk) UpdateName() *TeamUpsertBulk {
 	return u.Update(func(s *TeamUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetTier sets the "tier" field.
+func (u *TeamUpsertBulk) SetTier(v string) *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetTier(v)
+	})
+}
+
+// UpdateTier sets the "tier" field to the value that was provided on create.
+func (u *TeamUpsertBulk) UpdateTier() *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateTier()
 	})
 }
 

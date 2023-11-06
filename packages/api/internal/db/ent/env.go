@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/google/uuid"
 )
 
@@ -41,16 +42,20 @@ type Env struct {
 // EnvEdges holds the relations/edges for other nodes in the graph.
 type EnvEdges struct {
 	// Team holds the value of the team edge.
-	Team []*Team `json:"team,omitempty"`
+	Team *Team `json:"team,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
 // TeamOrErr returns the Team value or an error if the edge
-// was not loaded in eager-loading.
-func (e EnvEdges) TeamOrErr() ([]*Team, error) {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e EnvEdges) TeamOrErr() (*Team, error) {
 	if e.loadedTypes[0] {
+		if e.Team == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: team.Label}
+		}
 		return e.Team, nil
 	}
 	return nil, &NotLoadedError{edge: "team"}

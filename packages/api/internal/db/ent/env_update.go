@@ -90,19 +90,9 @@ func (eu *EnvUpdate) AddBuildCount(i int) *EnvUpdate {
 	return eu
 }
 
-// AddTeamIDs adds the "team" edge to the Team entity by IDs.
-func (eu *EnvUpdate) AddTeamIDs(ids ...uuid.UUID) *EnvUpdate {
-	eu.mutation.AddTeamIDs(ids...)
-	return eu
-}
-
-// AddTeam adds the "team" edges to the Team entity.
-func (eu *EnvUpdate) AddTeam(t ...*Team) *EnvUpdate {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return eu.AddTeamIDs(ids...)
+// SetTeam sets the "team" edge to the Team entity.
+func (eu *EnvUpdate) SetTeam(t *Team) *EnvUpdate {
+	return eu.SetTeamID(t.ID)
 }
 
 // Mutation returns the EnvMutation object of the builder.
@@ -110,25 +100,10 @@ func (eu *EnvUpdate) Mutation() *EnvMutation {
 	return eu.mutation
 }
 
-// ClearTeam clears all "team" edges to the Team entity.
+// ClearTeam clears the "team" edge to the Team entity.
 func (eu *EnvUpdate) ClearTeam() *EnvUpdate {
 	eu.mutation.ClearTeam()
 	return eu
-}
-
-// RemoveTeamIDs removes the "team" edge to Team entities by IDs.
-func (eu *EnvUpdate) RemoveTeamIDs(ids ...uuid.UUID) *EnvUpdate {
-	eu.mutation.RemoveTeamIDs(ids...)
-	return eu
-}
-
-// RemoveTeam removes "team" edges to Team entities.
-func (eu *EnvUpdate) RemoveTeam(t ...*Team) *EnvUpdate {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return eu.RemoveTeamIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -158,7 +133,18 @@ func (eu *EnvUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (eu *EnvUpdate) check() error {
+	if _, ok := eu.mutation.TeamID(); eu.mutation.TeamCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Env.team"`)
+	}
+	return nil
+}
+
 func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := eu.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(env.Table, env.Columns, sqlgraph.NewFieldSpec(env.FieldID, field.TypeString))
 	if ps := eu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -169,9 +155,6 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := eu.mutation.UpdatedAt(); ok {
 		_spec.SetField(env.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := eu.mutation.TeamID(); ok {
-		_spec.SetField(env.FieldTeamID, field.TypeUUID, value)
 	}
 	if value, ok := eu.mutation.Dockerfile(); ok {
 		_spec.SetField(env.FieldDockerfile, field.TypeString, value)
@@ -190,8 +173,8 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   env.TeamTable,
 			Columns: []string{env.TeamColumn},
 			Bidi:    false,
@@ -199,30 +182,13 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = eu.schemaConfig.Team
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := eu.mutation.RemovedTeamIDs(); len(nodes) > 0 && !eu.mutation.TeamCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   env.TeamTable,
-			Columns: []string{env.TeamColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
-			},
-		}
-		edge.Schema = eu.schemaConfig.Team
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
+		edge.Schema = eu.schemaConfig.Env
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := eu.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   env.TeamTable,
 			Columns: []string{env.TeamColumn},
 			Bidi:    false,
@@ -230,7 +196,7 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = eu.schemaConfig.Team
+		edge.Schema = eu.schemaConfig.Env
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
@@ -317,19 +283,9 @@ func (euo *EnvUpdateOne) AddBuildCount(i int) *EnvUpdateOne {
 	return euo
 }
 
-// AddTeamIDs adds the "team" edge to the Team entity by IDs.
-func (euo *EnvUpdateOne) AddTeamIDs(ids ...uuid.UUID) *EnvUpdateOne {
-	euo.mutation.AddTeamIDs(ids...)
-	return euo
-}
-
-// AddTeam adds the "team" edges to the Team entity.
-func (euo *EnvUpdateOne) AddTeam(t ...*Team) *EnvUpdateOne {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return euo.AddTeamIDs(ids...)
+// SetTeam sets the "team" edge to the Team entity.
+func (euo *EnvUpdateOne) SetTeam(t *Team) *EnvUpdateOne {
+	return euo.SetTeamID(t.ID)
 }
 
 // Mutation returns the EnvMutation object of the builder.
@@ -337,25 +293,10 @@ func (euo *EnvUpdateOne) Mutation() *EnvMutation {
 	return euo.mutation
 }
 
-// ClearTeam clears all "team" edges to the Team entity.
+// ClearTeam clears the "team" edge to the Team entity.
 func (euo *EnvUpdateOne) ClearTeam() *EnvUpdateOne {
 	euo.mutation.ClearTeam()
 	return euo
-}
-
-// RemoveTeamIDs removes the "team" edge to Team entities by IDs.
-func (euo *EnvUpdateOne) RemoveTeamIDs(ids ...uuid.UUID) *EnvUpdateOne {
-	euo.mutation.RemoveTeamIDs(ids...)
-	return euo
-}
-
-// RemoveTeam removes "team" edges to Team entities.
-func (euo *EnvUpdateOne) RemoveTeam(t ...*Team) *EnvUpdateOne {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return euo.RemoveTeamIDs(ids...)
 }
 
 // Where appends a list predicates to the EnvUpdate builder.
@@ -398,7 +339,18 @@ func (euo *EnvUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (euo *EnvUpdateOne) check() error {
+	if _, ok := euo.mutation.TeamID(); euo.mutation.TeamCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Env.team"`)
+	}
+	return nil
+}
+
 func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
+	if err := euo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(env.Table, env.Columns, sqlgraph.NewFieldSpec(env.FieldID, field.TypeString))
 	id, ok := euo.mutation.ID()
 	if !ok {
@@ -427,9 +379,6 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	if value, ok := euo.mutation.UpdatedAt(); ok {
 		_spec.SetField(env.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := euo.mutation.TeamID(); ok {
-		_spec.SetField(env.FieldTeamID, field.TypeUUID, value)
-	}
 	if value, ok := euo.mutation.Dockerfile(); ok {
 		_spec.SetField(env.FieldDockerfile, field.TypeString, value)
 	}
@@ -447,8 +396,8 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   env.TeamTable,
 			Columns: []string{env.TeamColumn},
 			Bidi:    false,
@@ -456,30 +405,13 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = euo.schemaConfig.Team
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := euo.mutation.RemovedTeamIDs(); len(nodes) > 0 && !euo.mutation.TeamCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   env.TeamTable,
-			Columns: []string{env.TeamColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
-			},
-		}
-		edge.Schema = euo.schemaConfig.Team
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
+		edge.Schema = euo.schemaConfig.Env
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := euo.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   env.TeamTable,
 			Columns: []string{env.TeamColumn},
 			Bidi:    false,
@@ -487,7 +419,7 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = euo.schemaConfig.Team
+		edge.Schema = euo.schemaConfig.Env
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}

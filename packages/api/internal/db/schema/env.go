@@ -32,7 +32,9 @@ func (Env) Fields() []ent.Field {
 }
 
 func (Env) Edges() []ent.Edge {
-	return []ent.Edge{edge.To("team", Team.Type)}
+	return []ent.Edge{
+		edge.From("team", Team.Type).Ref("envs").Unique().Field("team_id").Required(),
+	}
 }
 
 func (Env) Annotations() []schema.Annotation {

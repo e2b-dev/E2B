@@ -527,15 +527,13 @@ type EnvMutation struct {
 	id             *string
 	created_at     *time.Time
 	updated_at     *time.Time
-	team_id        *uuid.UUID
 	dockerfile     *string
 	public         *bool
 	build_id       *uuid.UUID
 	build_count    *int
 	addbuild_count *int
 	clearedFields  map[string]struct{}
-	team           map[uuid.UUID]struct{}
-	removedteam    map[uuid.UUID]struct{}
+	team           *uuid.UUID
 	clearedteam    bool
 	done           bool
 	oldValue       func(context.Context) (*Env, error)
@@ -720,12 +718,12 @@ func (m *EnvMutation) ResetUpdatedAt() {
 
 // SetTeamID sets the "team_id" field.
 func (m *EnvMutation) SetTeamID(u uuid.UUID) {
-	m.team_id = &u
+	m.team = &u
 }
 
 // TeamID returns the value of the "team_id" field in the mutation.
 func (m *EnvMutation) TeamID() (r uuid.UUID, exists bool) {
-	v := m.team_id
+	v := m.team
 	if v == nil {
 		return
 	}
@@ -751,7 +749,7 @@ func (m *EnvMutation) OldTeamID(ctx context.Context) (v uuid.UUID, err error) {
 
 // ResetTeamID resets all changes to the "team_id" field.
 func (m *EnvMutation) ResetTeamID() {
-	m.team_id = nil
+	m.team = nil
 }
 
 // SetDockerfile sets the "dockerfile" field.
@@ -918,19 +916,10 @@ func (m *EnvMutation) ResetBuildCount() {
 	m.addbuild_count = nil
 }
 
-// AddTeamIDs adds the "team" edge to the Team entity by ids.
-func (m *EnvMutation) AddTeamIDs(ids ...uuid.UUID) {
-	if m.team == nil {
-		m.team = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.team[ids[i]] = struct{}{}
-	}
-}
-
 // ClearTeam clears the "team" edge to the Team entity.
 func (m *EnvMutation) ClearTeam() {
 	m.clearedteam = true
+	m.clearedFields[env.FieldTeamID] = struct{}{}
 }
 
 // TeamCleared reports if the "team" edge to the Team entity was cleared.
@@ -938,29 +927,12 @@ func (m *EnvMutation) TeamCleared() bool {
 	return m.clearedteam
 }
 
-// RemoveTeamIDs removes the "team" edge to the Team entity by IDs.
-func (m *EnvMutation) RemoveTeamIDs(ids ...uuid.UUID) {
-	if m.removedteam == nil {
-		m.removedteam = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.team, ids[i])
-		m.removedteam[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedTeam returns the removed IDs of the "team" edge to the Team entity.
-func (m *EnvMutation) RemovedTeamIDs() (ids []uuid.UUID) {
-	for id := range m.removedteam {
-		ids = append(ids, id)
-	}
-	return
-}
-
 // TeamIDs returns the "team" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TeamID instead. It exists only for internal usage by the builders.
 func (m *EnvMutation) TeamIDs() (ids []uuid.UUID) {
-	for id := range m.team {
-		ids = append(ids, id)
+	if id := m.team; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -969,7 +941,6 @@ func (m *EnvMutation) TeamIDs() (ids []uuid.UUID) {
 func (m *EnvMutation) ResetTeam() {
 	m.team = nil
 	m.clearedteam = false
-	m.removedteam = nil
 }
 
 // Where appends a list predicates to the EnvMutation builder.
@@ -1013,7 +984,7 @@ func (m *EnvMutation) Fields() []string {
 	if m.updated_at != nil {
 		fields = append(fields, env.FieldUpdatedAt)
 	}
-	if m.team_id != nil {
+	if m.team != nil {
 		fields = append(fields, env.FieldTeamID)
 	}
 	if m.dockerfile != nil {
@@ -1234,11 +1205,9 @@ func (m *EnvMutation) AddedEdges() []string {
 func (m *EnvMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case env.EdgeTeam:
-		ids := make([]ent.Value, 0, len(m.team))
-		for id := range m.team {
-			ids = append(ids, id)
+		if id := m.team; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	}
 	return nil
 }
@@ -1246,23 +1215,12 @@ func (m *EnvMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EnvMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.removedteam != nil {
-		edges = append(edges, env.EdgeTeam)
-	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *EnvMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case env.EdgeTeam:
-		ids := make([]ent.Value, 0, len(m.removedteam))
-		for id := range m.removedteam {
-			ids = append(ids, id)
-		}
-		return ids
-	}
 	return nil
 }
 
@@ -1289,6 +1247,9 @@ func (m *EnvMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *EnvMutation) ClearEdge(name string) error {
 	switch name {
+	case env.EdgeTeam:
+		m.ClearTeam()
+		return nil
 	}
 	return fmt.Errorf("unknown Env unique edge %s", name)
 }
@@ -1321,8 +1282,11 @@ type TeamMutation struct {
 	team_api_keys        map[string]struct{}
 	removedteam_api_keys map[string]struct{}
 	clearedteam_api_keys bool
-	tier                 *string
-	clearedtier          bool
+	team_tier            *string
+	clearedteam_tier     bool
+	envs                 map[string]struct{}
+	removedenvs          map[string]struct{}
+	clearedenvs          bool
 	users_teams          map[int]struct{}
 	removedusers_teams   map[int]struct{}
 	clearedusers_teams   bool
@@ -1543,6 +1507,42 @@ func (m *TeamMutation) ResetName() {
 	m.name = nil
 }
 
+// SetTier sets the "tier" field.
+func (m *TeamMutation) SetTier(s string) {
+	m.team_tier = &s
+}
+
+// Tier returns the value of the "tier" field in the mutation.
+func (m *TeamMutation) Tier() (r string, exists bool) {
+	v := m.team_tier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTier returns the old "tier" field's value of the Team entity.
+// If the Team object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TeamMutation) OldTier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTier: %w", err)
+	}
+	return oldValue.Tier, nil
+}
+
+// ResetTier resets all changes to the "tier" field.
+func (m *TeamMutation) ResetTier() {
+	m.team_tier = nil
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (m *TeamMutation) SetIsBlocked(b bool) {
 	m.is_blocked = &b
@@ -1687,43 +1687,98 @@ func (m *TeamMutation) ResetTeamAPIKeys() {
 	m.removedteam_api_keys = nil
 }
 
-// SetTierID sets the "tier" edge to the Tier entity by id.
-func (m *TeamMutation) SetTierID(id string) {
-	m.tier = &id
+// SetTeamTierID sets the "team_tier" edge to the Tier entity by id.
+func (m *TeamMutation) SetTeamTierID(id string) {
+	m.team_tier = &id
 }
 
-// ClearTier clears the "tier" edge to the Tier entity.
-func (m *TeamMutation) ClearTier() {
-	m.clearedtier = true
+// ClearTeamTier clears the "team_tier" edge to the Tier entity.
+func (m *TeamMutation) ClearTeamTier() {
+	m.clearedteam_tier = true
+	m.clearedFields[team.FieldTier] = struct{}{}
 }
 
-// TierCleared reports if the "tier" edge to the Tier entity was cleared.
-func (m *TeamMutation) TierCleared() bool {
-	return m.clearedtier
+// TeamTierCleared reports if the "team_tier" edge to the Tier entity was cleared.
+func (m *TeamMutation) TeamTierCleared() bool {
+	return m.clearedteam_tier
 }
 
-// TierID returns the "tier" edge ID in the mutation.
-func (m *TeamMutation) TierID() (id string, exists bool) {
-	if m.tier != nil {
-		return *m.tier, true
+// TeamTierID returns the "team_tier" edge ID in the mutation.
+func (m *TeamMutation) TeamTierID() (id string, exists bool) {
+	if m.team_tier != nil {
+		return *m.team_tier, true
 	}
 	return
 }
 
-// TierIDs returns the "tier" edge IDs in the mutation.
+// TeamTierIDs returns the "team_tier" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// TierID instead. It exists only for internal usage by the builders.
-func (m *TeamMutation) TierIDs() (ids []string) {
-	if id := m.tier; id != nil {
+// TeamTierID instead. It exists only for internal usage by the builders.
+func (m *TeamMutation) TeamTierIDs() (ids []string) {
+	if id := m.team_tier; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetTier resets all changes to the "tier" edge.
-func (m *TeamMutation) ResetTier() {
-	m.tier = nil
-	m.clearedtier = false
+// ResetTeamTier resets all changes to the "team_tier" edge.
+func (m *TeamMutation) ResetTeamTier() {
+	m.team_tier = nil
+	m.clearedteam_tier = false
+}
+
+// AddEnvIDs adds the "envs" edge to the Env entity by ids.
+func (m *TeamMutation) AddEnvIDs(ids ...string) {
+	if m.envs == nil {
+		m.envs = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.envs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEnvs clears the "envs" edge to the Env entity.
+func (m *TeamMutation) ClearEnvs() {
+	m.clearedenvs = true
+}
+
+// EnvsCleared reports if the "envs" edge to the Env entity was cleared.
+func (m *TeamMutation) EnvsCleared() bool {
+	return m.clearedenvs
+}
+
+// RemoveEnvIDs removes the "envs" edge to the Env entity by IDs.
+func (m *TeamMutation) RemoveEnvIDs(ids ...string) {
+	if m.removedenvs == nil {
+		m.removedenvs = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.envs, ids[i])
+		m.removedenvs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEnvs returns the removed IDs of the "envs" edge to the Env entity.
+func (m *TeamMutation) RemovedEnvsIDs() (ids []string) {
+	for id := range m.removedenvs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EnvsIDs returns the "envs" edge IDs in the mutation.
+func (m *TeamMutation) EnvsIDs() (ids []string) {
+	for id := range m.envs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEnvs resets all changes to the "envs" edge.
+func (m *TeamMutation) ResetEnvs() {
+	m.envs = nil
+	m.clearedenvs = false
+	m.removedenvs = nil
 }
 
 // AddUsersTeamIDs adds the "users_teams" edge to the UsersTeams entity by ids.
@@ -1814,7 +1869,7 @@ func (m *TeamMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TeamMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, team.FieldCreatedAt)
 	}
@@ -1823,6 +1878,9 @@ func (m *TeamMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, team.FieldName)
+	}
+	if m.team_tier != nil {
+		fields = append(fields, team.FieldTier)
 	}
 	if m.is_blocked != nil {
 		fields = append(fields, team.FieldIsBlocked)
@@ -1841,6 +1899,8 @@ func (m *TeamMutation) Field(name string) (ent.Value, bool) {
 		return m.IsDefault()
 	case team.FieldName:
 		return m.Name()
+	case team.FieldTier:
+		return m.Tier()
 	case team.FieldIsBlocked:
 		return m.IsBlocked()
 	}
@@ -1858,6 +1918,8 @@ func (m *TeamMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldIsDefault(ctx)
 	case team.FieldName:
 		return m.OldName(ctx)
+	case team.FieldTier:
+		return m.OldTier(ctx)
 	case team.FieldIsBlocked:
 		return m.OldIsBlocked(ctx)
 	}
@@ -1889,6 +1951,13 @@ func (m *TeamMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case team.FieldTier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTier(v)
 		return nil
 	case team.FieldIsBlocked:
 		v, ok := value.(bool)
@@ -1955,6 +2024,9 @@ func (m *TeamMutation) ResetField(name string) error {
 	case team.FieldName:
 		m.ResetName()
 		return nil
+	case team.FieldTier:
+		m.ResetTier()
+		return nil
 	case team.FieldIsBlocked:
 		m.ResetIsBlocked()
 		return nil
@@ -1964,15 +2036,18 @@ func (m *TeamMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TeamMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.users != nil {
 		edges = append(edges, team.EdgeUsers)
 	}
 	if m.team_api_keys != nil {
 		edges = append(edges, team.EdgeTeamAPIKeys)
 	}
-	if m.tier != nil {
-		edges = append(edges, team.EdgeTier)
+	if m.team_tier != nil {
+		edges = append(edges, team.EdgeTeamTier)
+	}
+	if m.envs != nil {
+		edges = append(edges, team.EdgeEnvs)
 	}
 	if m.users_teams != nil {
 		edges = append(edges, team.EdgeUsersTeams)
@@ -1996,10 +2071,16 @@ func (m *TeamMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case team.EdgeTier:
-		if id := m.tier; id != nil {
+	case team.EdgeTeamTier:
+		if id := m.team_tier; id != nil {
 			return []ent.Value{*id}
 		}
+	case team.EdgeEnvs:
+		ids := make([]ent.Value, 0, len(m.envs))
+		for id := range m.envs {
+			ids = append(ids, id)
+		}
+		return ids
 	case team.EdgeUsersTeams:
 		ids := make([]ent.Value, 0, len(m.users_teams))
 		for id := range m.users_teams {
@@ -2012,12 +2093,15 @@ func (m *TeamMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TeamMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedusers != nil {
 		edges = append(edges, team.EdgeUsers)
 	}
 	if m.removedteam_api_keys != nil {
 		edges = append(edges, team.EdgeTeamAPIKeys)
+	}
+	if m.removedenvs != nil {
+		edges = append(edges, team.EdgeEnvs)
 	}
 	if m.removedusers_teams != nil {
 		edges = append(edges, team.EdgeUsersTeams)
@@ -2041,6 +2125,12 @@ func (m *TeamMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case team.EdgeEnvs:
+		ids := make([]ent.Value, 0, len(m.removedenvs))
+		for id := range m.removedenvs {
+			ids = append(ids, id)
+		}
+		return ids
 	case team.EdgeUsersTeams:
 		ids := make([]ent.Value, 0, len(m.removedusers_teams))
 		for id := range m.removedusers_teams {
@@ -2053,15 +2143,18 @@ func (m *TeamMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TeamMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedusers {
 		edges = append(edges, team.EdgeUsers)
 	}
 	if m.clearedteam_api_keys {
 		edges = append(edges, team.EdgeTeamAPIKeys)
 	}
-	if m.clearedtier {
-		edges = append(edges, team.EdgeTier)
+	if m.clearedteam_tier {
+		edges = append(edges, team.EdgeTeamTier)
+	}
+	if m.clearedenvs {
+		edges = append(edges, team.EdgeEnvs)
 	}
 	if m.clearedusers_teams {
 		edges = append(edges, team.EdgeUsersTeams)
@@ -2077,8 +2170,10 @@ func (m *TeamMutation) EdgeCleared(name string) bool {
 		return m.clearedusers
 	case team.EdgeTeamAPIKeys:
 		return m.clearedteam_api_keys
-	case team.EdgeTier:
-		return m.clearedtier
+	case team.EdgeTeamTier:
+		return m.clearedteam_tier
+	case team.EdgeEnvs:
+		return m.clearedenvs
 	case team.EdgeUsersTeams:
 		return m.clearedusers_teams
 	}
@@ -2089,8 +2184,8 @@ func (m *TeamMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *TeamMutation) ClearEdge(name string) error {
 	switch name {
-	case team.EdgeTier:
-		m.ClearTier()
+	case team.EdgeTeamTier:
+		m.ClearTeamTier()
 		return nil
 	}
 	return fmt.Errorf("unknown Team unique edge %s", name)
@@ -2106,8 +2201,11 @@ func (m *TeamMutation) ResetEdge(name string) error {
 	case team.EdgeTeamAPIKeys:
 		m.ResetTeamAPIKeys()
 		return nil
-	case team.EdgeTier:
-		m.ResetTier()
+	case team.EdgeTeamTier:
+		m.ResetTeamTier()
+		return nil
+	case team.EdgeEnvs:
+		m.ResetEnvs()
 		return nil
 	case team.EdgeUsersTeams:
 		m.ResetUsersTeams()

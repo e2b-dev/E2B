@@ -202,26 +202,6 @@ func TeamIDNotIn(vs ...uuid.UUID) predicate.Env {
 	return predicate.Env(sql.FieldNotIn(FieldTeamID, vs...))
 }
 
-// TeamIDGT applies the GT predicate on the "team_id" field.
-func TeamIDGT(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldGT(FieldTeamID, v))
-}
-
-// TeamIDGTE applies the GTE predicate on the "team_id" field.
-func TeamIDGTE(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldGTE(FieldTeamID, v))
-}
-
-// TeamIDLT applies the LT predicate on the "team_id" field.
-func TeamIDLT(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldLT(FieldTeamID, v))
-}
-
-// TeamIDLTE applies the LTE predicate on the "team_id" field.
-func TeamIDLTE(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldLTE(FieldTeamID, v))
-}
-
 // DockerfileEQ applies the EQ predicate on the "dockerfile" field.
 func DockerfileEQ(v string) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldDockerfile, v))
@@ -382,11 +362,11 @@ func HasTeam() predicate.Env {
 	return predicate.Env(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, TeamTable, TeamColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, TeamTable, TeamColumn),
 		)
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.Team
-		step.Edge.Schema = schemaConfig.Team
+		step.Edge.Schema = schemaConfig.Env
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
@@ -397,7 +377,7 @@ func HasTeamWith(preds ...predicate.Team) predicate.Env {
 		step := newTeamStep()
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.Team
-		step.Edge.Schema = schemaConfig.Team
+		step.Edge.Schema = schemaConfig.Env
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

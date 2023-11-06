@@ -25,17 +25,25 @@ var (
 		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "team_id", Type: field.TypeUUID},
 		{Name: "dockerfile", Type: field.TypeString},
 		{Name: "public", Type: field.TypeBool},
 		{Name: "build_id", Type: field.TypeUUID},
 		{Name: "build_count", Type: field.TypeInt, Default: 1},
+		{Name: "team_id", Type: field.TypeUUID},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
 	EnvsTable = &schema.Table{
 		Name:       "envs",
 		Columns:    EnvsColumns,
 		PrimaryKey: []*schema.Column{EnvsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "envs_teams_envs",
+				Columns:    []*schema.Column{EnvsColumns[7]},
+				RefColumns: []*schema.Column{TeamsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// TeamsColumns holds the columns for the "teams" table.
 	TeamsColumns = []*schema.Column{
@@ -44,8 +52,7 @@ var (
 		{Name: "is_default", Type: field.TypeBool},
 		{Name: "name", Type: field.TypeString},
 		{Name: "is_blocked", Type: field.TypeBool},
-		{Name: "env_team", Type: field.TypeString, Nullable: true},
-		{Name: "tier_teams", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "tier", Type: field.TypeString, Size: 2147483647},
 	}
 	// TeamsTable holds the schema information for the "teams" table.
 	TeamsTable = &schema.Table{
@@ -54,16 +61,10 @@ var (
 		PrimaryKey: []*schema.Column{TeamsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "teams_envs_team",
-				Columns:    []*schema.Column{TeamsColumns[5]},
-				RefColumns: []*schema.Column{EnvsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
 				Symbol:     "teams_tiers_teams",
-				Columns:    []*schema.Column{TeamsColumns[6]},
+				Columns:    []*schema.Column{TeamsColumns[5]},
 				RefColumns: []*schema.Column{TiersColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
@@ -166,8 +167,8 @@ var (
 )
 
 func init() {
-	TeamsTable.ForeignKeys[0].RefTable = EnvsTable
-	TeamsTable.ForeignKeys[1].RefTable = TiersTable
+	EnvsTable.ForeignKeys[0].RefTable = TeamsTable
+	TeamsTable.ForeignKeys[0].RefTable = TiersTable
 	TeamAPIKeysTable.ForeignKeys[0].RefTable = TeamsTable
 	UsersTable.ForeignKeys[0].RefTable = AccessTokensTable
 	UsersTeamsTable.ForeignKeys[0].RefTable = UsersTable

@@ -521,11 +521,11 @@ func (c *EnvClient) QueryTeam(e *Env) *TeamQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(env.Table, env.FieldID, id),
 			sqlgraph.To(team.Table, team.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, env.TeamTable, env.TeamColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, env.TeamTable, env.TeamColumn),
 		)
 		schemaConfig := e.schemaConfig
 		step.To.Schema = schemaConfig.Team
-		step.Edge.Schema = schemaConfig.Team
+		step.Edge.Schema = schemaConfig.Env
 		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
 		return fromV, nil
 	}
@@ -703,19 +703,38 @@ func (c *TeamClient) QueryTeamAPIKeys(t *Team) *TeamApiKeyQuery {
 	return query
 }
 
-// QueryTier queries the tier edge of a Team.
-func (c *TeamClient) QueryTier(t *Team) *TierQuery {
+// QueryTeamTier queries the team_tier edge of a Team.
+func (c *TeamClient) QueryTeamTier(t *Team) *TierQuery {
 	query := (&TierClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(team.Table, team.FieldID, id),
 			sqlgraph.To(tier.Table, tier.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, team.TierTable, team.TierColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, team.TeamTierTable, team.TeamTierColumn),
 		)
 		schemaConfig := t.schemaConfig
 		step.To.Schema = schemaConfig.Tier
 		step.Edge.Schema = schemaConfig.Team
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEnvs queries the envs edge of a Team.
+func (c *TeamClient) QueryEnvs(t *Team) *EnvQuery {
+	query := (&EnvClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(team.Table, team.FieldID, id),
+			sqlgraph.To(env.Table, env.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, team.EnvsTable, team.EnvsColumn),
+		)
+		schemaConfig := t.schemaConfig
+		step.To.Schema = schemaConfig.Env
+		step.Edge.Schema = schemaConfig.Env
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
 	}

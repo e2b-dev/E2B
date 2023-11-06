@@ -39,7 +39,7 @@ func (db *DB) GetDefaultTeamAndTierFromUserID(userID string) (*ent.Team, error) 
 		Query().
 		Select(team.FieldID).
 		Where(team.IsDefaultEQ(true), team.HasUsersWith(user.ID(userUUID))).
-		WithTier().
+		WithTeamTier().
 		Only(db.ctx)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get default team from user: %w", err)

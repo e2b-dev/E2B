@@ -38,5 +38,5 @@ func (a *APIStore) GetTeam(c *gin.Context) (*ent.Team, error) {
 func (a *APIStore) GetUserAndTeam(c *gin.Context) (string, string, *ent.Tier, error) {
 	team, err := a.GetTeam(c)
 
-	return a.GetUserID(c), team.ID.String(), team.Edges.Tier, err
+	return a.GetUserID(c), team.ID.String(), team.Edges.TeamTier, err
 }

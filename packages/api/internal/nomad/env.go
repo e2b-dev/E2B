@@ -46,6 +46,10 @@ func (n *NomadClient) BuildEnvJob(
 	childCtx, childSpan := t.Start(ctx, "build-env-job",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
+			attribute.String("build_id", buildID),
+			attribute.Int("disk_size_mb", vmConfig.DiskSizeMB),
+			attribute.Int("vcpu_count", vmConfig.VCpuCount),
+			attribute.Int("memory_mb", vmConfig.MemoryMB),
 		),
 	)
 	defer childSpan.End()

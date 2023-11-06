@@ -25,13 +25,13 @@ type Team struct {
 	IsDefault bool `json:"is_default,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Tier holds the value of the "tier" field.
+	Tier string `json:"tier,omitempty"`
 	// IsBlocked holds the value of the "is_blocked" field.
 	IsBlocked bool `json:"is_blocked,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TeamQuery when eager-loading is set.
 	Edges        TeamEdges `json:"edges"`
-	env_team     *string
-	tier_teams   *string
 	selectValues sql.SelectValues
 }
 
@@ -41,13 +41,15 @@ type TeamEdges struct {
 	Users []*User `json:"users,omitempty"`
 	// TeamAPIKeys holds the value of the team_api_keys edge.
 	TeamAPIKeys []*TeamApiKey `json:"team_api_keys,omitempty"`
-	// Tier holds the value of the tier edge.
-	Tier *Tier `json:"tier,omitempty"`
+	// TeamTier holds the value of the team_tier edge.
+	TeamTier *Tier `json:"team_tier,omitempty"`
+	// Envs holds the value of the envs edge.
+	Envs []*Env `json:"envs,omitempty"`
 	// UsersTeams holds the value of the users_teams edge.
 	UsersTeams []*UsersTeams `json:"users_teams,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // UsersOrErr returns the Users value or an error if the edge
@@ -68,23 +70,32 @@ func (e TeamEdges) TeamAPIKeysOrErr() ([]*TeamApiKey, error) {
 	return nil, &NotLoadedError{edge: "team_api_keys"}
 }
 
-// TierOrErr returns the Tier value or an error if the edge
+// TeamTierOrErr returns the TeamTier value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e TeamEdges) TierOrErr() (*Tier, error) {
+func (e TeamEdges) TeamTierOrErr() (*Tier, error) {
 	if e.loadedTypes[2] {
-		if e.Tier == nil {
+		if e.TeamTier == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: tier.Label}
 		}
-		return e.Tier, nil
+		return e.TeamTier, nil
 	}
-	return nil, &NotLoadedError{edge: "tier"}
+	return nil, &NotLoadedError{edge: "team_tier"}
+}
+
+// EnvsOrErr returns the Envs value or an error if the edge
+// was not loaded in eager-loading.
+func (e TeamEdges) EnvsOrErr() ([]*Env, error) {
+	if e.loadedTypes[3] {
+		return e.Envs, nil
+	}
+	return nil, &NotLoadedError{edge: "envs"}
 }
 
 // UsersTeamsOrErr returns the UsersTeams value or an error if the edge
 // was not loaded in eager-loading.
 func (e TeamEdges) UsersTeamsOrErr() ([]*UsersTeams, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.UsersTeams, nil
 	}
 	return nil, &NotLoadedError{edge: "users_teams"}
@@ -97,16 +108,12 @@ func (*Team) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case team.FieldIsDefault, team.FieldIsBlocked:
 			values[i] = new(sql.NullBool)
-		case team.FieldName:
+		case team.FieldName, team.FieldTier:
 			values[i] = new(sql.NullString)
 		case team.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case team.FieldID:
 			values[i] = new(uuid.UUID)
-		case team.ForeignKeys[0]: // env_team
-			values[i] = new(sql.NullString)
-		case team.ForeignKeys[1]: // tier_teams
-			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -146,25 +153,17 @@ func (t *Team) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Name = value.String
 			}
+		case team.FieldTier:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tier", values[i])
+			} else if value.Valid {
+				t.Tier = value.String
+			}
 		case team.FieldIsBlocked:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field is_blocked", values[i])
 			} else if value.Valid {
 				t.IsBlocked = value.Bool
-			}
-		case team.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field env_team", values[i])
-			} else if value.Valid {
-				t.env_team = new(string)
-				*t.env_team = value.String
-			}
-		case team.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field tier_teams", values[i])
-			} else if value.Valid {
-				t.tier_teams = new(string)
-				*t.tier_teams = value.String
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
@@ -189,9 +188,14 @@ func (t *Team) QueryTeamAPIKeys() *TeamApiKeyQuery {
 	return NewTeamClient(t.config).QueryTeamAPIKeys(t)
 }
 
-// QueryTier queries the "tier" edge of the Team entity.
-func (t *Team) QueryTier() *TierQuery {
-	return NewTeamClient(t.config).QueryTier(t)
+// QueryTeamTier queries the "team_tier" edge of the Team entity.
+func (t *Team) QueryTeamTier() *TierQuery {
+	return NewTeamClient(t.config).QueryTeamTier(t)
+}
+
+// QueryEnvs queries the "envs" edge of the Team entity.
+func (t *Team) QueryEnvs() *EnvQuery {
+	return NewTeamClient(t.config).QueryEnvs(t)
 }
 
 // QueryUsersTeams queries the "users_teams" edge of the Team entity.
@@ -230,6 +234,9 @@ func (t *Team) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(t.Name)
+	builder.WriteString(", ")
+	builder.WriteString("tier=")
+	builder.WriteString(t.Tier)
 	builder.WriteString(", ")
 	builder.WriteString("is_blocked=")
 	builder.WriteString(fmt.Sprintf("%v", t.IsBlocked))

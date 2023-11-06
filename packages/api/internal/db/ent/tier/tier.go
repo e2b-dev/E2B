@@ -28,7 +28,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "team" package.
 	TeamsInverseTable = "teams"
 	// TeamsColumn is the table column denoting the teams relation/edge.
-	TeamsColumn = "tier_teams"
+	TeamsColumn = "tier"
 )
 
 // Columns holds all SQL columns for tier fields.

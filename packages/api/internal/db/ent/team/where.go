@@ -72,6 +72,11 @@ func Name(v string) predicate.Team {
 	return predicate.Team(sql.FieldEQ(FieldName, v))
 }
 
+// Tier applies equality check predicate on the "tier" field. It's identical to TierEQ.
+func Tier(v string) predicate.Team {
+	return predicate.Team(sql.FieldEQ(FieldTier, v))
+}
+
 // IsBlocked applies equality check predicate on the "is_blocked" field. It's identical to IsBlockedEQ.
 func IsBlocked(v bool) predicate.Team {
 	return predicate.Team(sql.FieldEQ(FieldIsBlocked, v))
@@ -192,6 +197,71 @@ func NameContainsFold(v string) predicate.Team {
 	return predicate.Team(sql.FieldContainsFold(FieldName, v))
 }
 
+// TierEQ applies the EQ predicate on the "tier" field.
+func TierEQ(v string) predicate.Team {
+	return predicate.Team(sql.FieldEQ(FieldTier, v))
+}
+
+// TierNEQ applies the NEQ predicate on the "tier" field.
+func TierNEQ(v string) predicate.Team {
+	return predicate.Team(sql.FieldNEQ(FieldTier, v))
+}
+
+// TierIn applies the In predicate on the "tier" field.
+func TierIn(vs ...string) predicate.Team {
+	return predicate.Team(sql.FieldIn(FieldTier, vs...))
+}
+
+// TierNotIn applies the NotIn predicate on the "tier" field.
+func TierNotIn(vs ...string) predicate.Team {
+	return predicate.Team(sql.FieldNotIn(FieldTier, vs...))
+}
+
+// TierGT applies the GT predicate on the "tier" field.
+func TierGT(v string) predicate.Team {
+	return predicate.Team(sql.FieldGT(FieldTier, v))
+}
+
+// TierGTE applies the GTE predicate on the "tier" field.
+func TierGTE(v string) predicate.Team {
+	return predicate.Team(sql.FieldGTE(FieldTier, v))
+}
+
+// TierLT applies the LT predicate on the "tier" field.
+func TierLT(v string) predicate.Team {
+	return predicate.Team(sql.FieldLT(FieldTier, v))
+}
+
+// TierLTE applies the LTE predicate on the "tier" field.
+func TierLTE(v string) predicate.Team {
+	return predicate.Team(sql.FieldLTE(FieldTier, v))
+}
+
+// TierContains applies the Contains predicate on the "tier" field.
+func TierContains(v string) predicate.Team {
+	return predicate.Team(sql.FieldContains(FieldTier, v))
+}
+
+// TierHasPrefix applies the HasPrefix predicate on the "tier" field.
+func TierHasPrefix(v string) predicate.Team {
+	return predicate.Team(sql.FieldHasPrefix(FieldTier, v))
+}
+
+// TierHasSuffix applies the HasSuffix predicate on the "tier" field.
+func TierHasSuffix(v string) predicate.Team {
+	return predicate.Team(sql.FieldHasSuffix(FieldTier, v))
+}
+
+// TierEqualFold applies the EqualFold predicate on the "tier" field.
+func TierEqualFold(v string) predicate.Team {
+	return predicate.Team(sql.FieldEqualFold(FieldTier, v))
+}
+
+// TierContainsFold applies the ContainsFold predicate on the "tier" field.
+func TierContainsFold(v string) predicate.Team {
+	return predicate.Team(sql.FieldContainsFold(FieldTier, v))
+}
+
 // IsBlockedEQ applies the EQ predicate on the "is_blocked" field.
 func IsBlockedEQ(v bool) predicate.Team {
 	return predicate.Team(sql.FieldEQ(FieldIsBlocked, v))
@@ -260,12 +330,12 @@ func HasTeamAPIKeysWith(preds ...predicate.TeamApiKey) predicate.Team {
 	})
 }
 
-// HasTier applies the HasEdge predicate on the "tier" edge.
-func HasTier() predicate.Team {
+// HasTeamTier applies the HasEdge predicate on the "team_tier" edge.
+func HasTeamTier() predicate.Team {
 	return predicate.Team(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, TierTable, TierColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, TeamTierTable, TeamTierColumn),
 		)
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.Tier
@@ -274,13 +344,42 @@ func HasTier() predicate.Team {
 	})
 }
 
-// HasTierWith applies the HasEdge predicate on the "tier" edge with a given conditions (other predicates).
-func HasTierWith(preds ...predicate.Tier) predicate.Team {
+// HasTeamTierWith applies the HasEdge predicate on the "team_tier" edge with a given conditions (other predicates).
+func HasTeamTierWith(preds ...predicate.Tier) predicate.Team {
 	return predicate.Team(func(s *sql.Selector) {
-		step := newTierStep()
+		step := newTeamTierStep()
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.Tier
 		step.Edge.Schema = schemaConfig.Team
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasEnvs applies the HasEdge predicate on the "envs" edge.
+func HasEnvs() predicate.Team {
+	return predicate.Team(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EnvsTable, EnvsColumn),
+		)
+		schemaConfig := internal.SchemaConfigFromContext(s.Context())
+		step.To.Schema = schemaConfig.Env
+		step.Edge.Schema = schemaConfig.Env
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEnvsWith applies the HasEdge predicate on the "envs" edge with a given conditions (other predicates).
+func HasEnvsWith(preds ...predicate.Env) predicate.Team {
+	return predicate.Team(func(s *sql.Selector) {
+		step := newEnvsStep()
+		schemaConfig := internal.SchemaConfigFromContext(s.Context())
+		step.To.Schema = schemaConfig.Env
+		step.Edge.Schema = schemaConfig.Env
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

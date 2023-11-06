@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/internal"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/predicate"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
+	"github.com/google/uuid"
 )
 
 // EnvQuery is the builder for querying Env entities.
@@ -75,11 +75,11 @@ func (eq *EnvQuery) QueryTeam() *TeamQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(env.Table, env.FieldID, selector),
 			sqlgraph.To(team.Table, team.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, env.TeamTable, env.TeamColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, env.TeamTable, env.TeamColumn),
 		)
 		schemaConfig := eq.schemaConfig
 		step.To.Schema = schemaConfig.Team
-		step.Edge.Schema = schemaConfig.Team
+		step.Edge.Schema = schemaConfig.Env
 		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
 		return fromU, nil
 	}
@@ -399,9 +399,8 @@ func (eq *EnvQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Env, err
 		return nodes, nil
 	}
 	if query := eq.withTeam; query != nil {
-		if err := eq.loadTeam(ctx, query, nodes,
-			func(n *Env) { n.Edges.Team = []*Team{} },
-			func(n *Env, e *Team) { n.Edges.Team = append(n.Edges.Team, e) }); err != nil {
+		if err := eq.loadTeam(ctx, query, nodes, nil,
+			func(n *Env, e *Team) { n.Edges.Team = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -409,33 +408,31 @@ func (eq *EnvQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Env, err
 }
 
 func (eq *EnvQuery) loadTeam(ctx context.Context, query *TeamQuery, nodes []*Env, init func(*Env), assign func(*Env, *Team)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Env)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Env)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		fk := nodes[i].TeamID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
 		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.Team(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(env.TeamColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(team.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.env_team
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "env_team" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "env_team" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "team_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
@@ -466,6 +463,9 @@ func (eq *EnvQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != env.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if eq.withTeam != nil {
+			_spec.Node.AddColumnOnce(env.FieldTeamID)
 		}
 	}
 	if ps := eq.predicates; len(ps) > 0 {
