@@ -220,7 +220,7 @@ importers:
         version: 20.8.10
       '@types/react':
         specifier: latest
-        version: 18.2.33
+        version: 18.2.36
       '@types/react-dom':
         specifier: latest
         version: 18.2.8
@@ -263,6 +263,9 @@ importers:
       open:
         specifier: ^9.1.0
         version: 9.1.0
+      strip-ansi:
+        specifier: ^7.1.0
+        version: 7.1.0
       tar-fs:
         specifier: ^3.0.4
         version: 3.0.4
@@ -2921,14 +2924,6 @@ packages:
       '@types/scheduler': 0.16.3
       csstype: 3.1.2
     dev: false
-
-  /@types/react@18.2.33:
-    resolution: {integrity: sha512-v+I7S+hu3PIBoVkKGpSYYpiBT1ijqEzWpzQD62/jm4K74hPpSP7FF9BnKG6+fg2+62weJYkkBWDJlZt5JO/9hg==}
-    dependencies:
-      '@types/prop-types': 15.7.6
-      '@types/scheduler': 0.16.3
-      csstype: 3.1.2
-    dev: true
 
   /@types/react@18.2.36:
     resolution: {integrity: sha512-o9XFsHYLLZ4+sb9CWUYwHqFVoG61SesydF353vFMMsQziiyRu8np4n2OYMUSDZ8XuImxDr9c5tR7gidlH29Vnw==}
