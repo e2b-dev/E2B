@@ -567,7 +567,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		return errMsg
 	}
 
-	r.env.BuildLogsWriter.Write([]byte("\nPostprocessing finished.\n\n"))
+	r.env.BuildLogsWriter.Write([]byte("Postprocessing finished.\n"))
 	telemetry.ReportEvent(childCtx, "resized rootfs file")
 
 	return nil
