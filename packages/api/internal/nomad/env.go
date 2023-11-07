@@ -125,13 +125,55 @@ func (n *NomadClient) BuildEnvJob(
 
 		return fmt.Errorf("timeout waiting for env '%s' build", envID)
 
-	case <-sub.wait:
-		cleanupErr := n.DeleteEnvBuild(*job.ID, true)
-		if cleanupErr != nil {
-			errMsg := fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
-			telemetry.ReportError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "cleaned up env build job", attribute.String("env_id", envID))
+	case alloc := <-sub.wait:
+		var allocErr error
+
+		defer func() {
+			cleanupErr := n.DeleteEnvBuild(*job.ID, err == nil)
+			if cleanupErr != nil {
+				errMsg := fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
+				telemetry.ReportError(childCtx, errMsg)
+			} else {
+				telemetry.ReportEvent(childCtx, "cleaned up env build job", attribute.String("env_id", envID))
+			}
+		}()
+
+		if alloc.TaskStates == nil {
+			allocErr = fmt.Errorf("task states are nil")
+
+			telemetry.ReportCriticalError(childCtx, allocErr)
+
+			return allocErr
+		}
+
+		if alloc.TaskStates[defaultTaskName] == nil {
+			allocErr = fmt.Errorf("task state '%s' is nil", defaultTaskName)
+
+			telemetry.ReportCriticalError(childCtx, allocErr)
+
+			return allocErr
+		}
+
+		task := alloc.TaskStates[defaultTaskName]
+
+		var buildErr error
+
+		if task.Failed {
+			for _, event := range task.Events {
+				if event.Type == "Terminated" {
+					buildErr = fmt.Errorf("%s", event.Message)
+				}
+			}
+
+			if buildErr == nil {
+				allocErr = fmt.Errorf("building failed")
+			} else {
+				allocErr = fmt.Errorf("building failed %w", buildErr)
+			}
+
+			telemetry.ReportCriticalError(childCtx, allocErr)
+
+			return allocErr
 		}
 
 		return nil
