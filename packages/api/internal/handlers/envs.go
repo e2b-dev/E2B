@@ -84,6 +84,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 			MemoryMB:   tier.RAMMB,
 			DiskSizeMB: tier.DiskMB,
 		})
+
 		if buildErr != nil {
 			status = api.EnvironmentBuildStatusError
 
@@ -97,7 +98,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		}
 
 		cacheErr := a.buildCache.SetDone(envID, buildID, status)
-		if err != nil {
+		if cacheErr != nil {
 			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
 			telemetry.ReportCriticalError(buildContext, cacheErr)
 		}
@@ -196,6 +197,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 			MemoryMB:   tier.RAMMB,
 			DiskSizeMB: tier.DiskMB,
 		})
+
 		if buildErr != nil {
 			status = api.EnvironmentBuildStatusError
 
@@ -209,9 +211,9 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		}
 
 		cacheErr := a.buildCache.SetDone(envID, buildID, status)
-		if err != nil {
-			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
-			telemetry.ReportCriticalError(buildContext, cacheErr)
+		if cacheErr != nil {
+			errMsg := fmt.Errorf("error when setting build done in logs: %w", cacheErr)
+			telemetry.ReportCriticalError(buildContext, errMsg)
 		}
 
 		childSpan.End()
@@ -396,7 +398,7 @@ func (a *APIStore) buildEnv(
 
 	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID, a.apiSecret, a.googleServiceAccountBase64, vmConfig)
 	if err != nil {
-		err = fmt.Errorf("error when starting build: %w", err)
+		err = fmt.Errorf("error when building env: %w", err)
 		telemetry.ReportCriticalError(childCtx, err)
 
 		return err
