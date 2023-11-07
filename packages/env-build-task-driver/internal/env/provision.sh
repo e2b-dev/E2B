@@ -1,3 +1,4 @@
+export BASH_XTRACEFD=1
 set -euo xtrace pipefail
 
 echo "Starting provisioning script."
