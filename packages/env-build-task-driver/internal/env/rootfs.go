@@ -370,12 +370,16 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		containerStdoutWriter := telemetry.NewEventWriter(anonymousChildCtx, "stdout")
 		containerStderrWriter := telemetry.NewEventWriter(anonymousChildCtx, "stderr")
 
+		writer := &MultiWriter{
+			writers: []io.Writer{containerStderrWriter, r.env.BuildLogsWriter},
+		}
+
 		err := r.legacyClient.Logs(docker.LogsOptions{
 			Stdout:       true,
 			Stderr:       true,
 			RawTerminal:  false,
 			OutputStream: containerStdoutWriter,
-			ErrorStream:  containerStderrWriter,
+			ErrorStream:  writer,
 			Context:      childCtx,
 			Container:    cont.ID,
 			Follow:       true,
