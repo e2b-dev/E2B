@@ -97,6 +97,6 @@ echo "nameserver 8.8.8.8" >/etc/resolv.conf
 
 # Start systemd services
 systemctl enable envd
-systemctl enable chrony
+systemctl enable chrony 2>&1
 
 echo "Finished provisioning script"
