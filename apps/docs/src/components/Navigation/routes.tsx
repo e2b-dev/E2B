@@ -1,4 +1,5 @@
 import {
+  Boxes,
   ChevronRightSquare,
   Cpu,
   DollarSign,
@@ -16,7 +17,6 @@ import {
   Variable,
   PencilRuler,
   File,
-  Image as ImageIcon,
 } from 'lucide-react'
 
 export const routes = [
@@ -149,7 +149,7 @@ export const routes = [
       },
       {
         icon: (
-          <ImageIcon
+          <Boxes
             strokeWidth={1}
             size={20}
           />

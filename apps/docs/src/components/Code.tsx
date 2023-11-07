@@ -224,7 +224,7 @@ export function CodeGroupHeader({
       <div className="flex flex-col items-start">
         {title && (
           <div className="pl-2 mt-3">
-            <h3 className="font-xs font-bold text-zinc-300">{title}</h3>
+            <h3 className="font-xs font-medium text-brand-50">{title}</h3>
           </div>
         )}
         {hasTabs && (
