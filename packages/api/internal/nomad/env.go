@@ -129,7 +129,7 @@ func (n *NomadClient) BuildEnvJob(
 		var allocErr error
 
 		defer func() {
-			cleanupErr := n.DeleteEnvBuild(*job.ID, err == nil)
+			cleanupErr := n.DeleteEnvBuild(*job.ID, allocErr == nil)
 			if cleanupErr != nil {
 				errMsg := fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
 				telemetry.ReportError(childCtx, errMsg)
