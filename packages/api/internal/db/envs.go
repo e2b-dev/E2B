@@ -36,16 +36,23 @@ func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
 		Env.
 		Query().
 		Where(env.Or(env.TeamID(id), env.Public(true))).
+		WithEnvAliases().
 		All(db.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list envs: %w", err)
 	}
 
 	for _, item := range envs {
+		aliases := make([]string, len(item.Edges.EnvAliases))
+		for i, item := range item.Edges.EnvAliases {
+			aliases[i] = item.Alias
+		}
+
 		result = append(result, &api.Environment{
 			EnvID:   item.ID,
 			BuildID: item.BuildID.String(),
 			Public:  item.Public,
+			Aliases: &aliases,
 		})
 	}
 
@@ -64,8 +71,8 @@ func (db *DB) GetEnv(aliasOrEnvID string, teamID string, canBePublic bool) (resu
 		Client.
 		Env.
 		Query().
-		WithEnvAliases().
 		Where(env.Or(env.HasEnvAliasesWith(envalias.Alias(aliasOrEnvID)), env.ID(aliasOrEnvID)), env.Or(env.TeamID(id), env.Public(true))).
+		WithEnvAliases().
 		Only(db.ctx)
 	if err != nil {
 		return nil, ErrEnvNotFound
@@ -75,10 +82,16 @@ func (db *DB) GetEnv(aliasOrEnvID string, teamID string, canBePublic bool) (resu
 		return nil, fmt.Errorf("you don't have access to this env '%s'", aliasOrEnvID)
 	}
 
+	aliases := make([]string, len(dbEnv.Edges.EnvAliases))
+	for i, item := range dbEnv.Edges.EnvAliases {
+		aliases[i] = item.Alias
+	}
+
 	return &api.Environment{
 		EnvID:   dbEnv.ID,
 		BuildID: dbEnv.BuildID.String(),
 		Public:  dbEnv.Public,
+		Aliases: &aliases,
 	}, nil
 }
 

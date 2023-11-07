@@ -21,6 +21,9 @@ const (
 
 // Environment defines model for Environment.
 type Environment struct {
+	// Aliases Aliases of the environment
+	Aliases *[]string `json:"aliases,omitempty"`
+
 	// BuildID Identifier of the last successful build for given environment
 	BuildID string `json:"buildID"`
 

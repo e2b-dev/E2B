@@ -21,6 +21,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+
 func (a *APIStore) PostEnvs(c *gin.Context) {
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
