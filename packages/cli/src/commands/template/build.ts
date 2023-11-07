@@ -3,6 +3,7 @@ import * as commonTags from 'common-tags'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as e2b from '@e2b/sdk'
+import * as stripAnsi from 'strip-ansi'
 
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
@@ -205,7 +206,7 @@ async function waitForBuildFinish(
     switch (template.data.status) {
       case 'building':
         template.data.logs.forEach((line) =>
-          process.stdout.write(asBuildLogs(line)),
+          process.stdout.write(asBuildLogs(stripAnsi.default(line))),
         )
         break
       case 'ready':
@@ -218,7 +219,7 @@ async function waitForBuildFinish(
 
       case 'error':
         template.data.logs.forEach((line) =>
-          process.stdout.write(asBuildLogs(line)),
+          process.stdout.write(asBuildLogs(stripAnsi.default(line))),
         )
         throw new Error(
           `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
