@@ -17,6 +17,7 @@ import (
 var publicEnvs map[string]string = map[string]string{
 	"base":                 "rki5dems9wqfm4r03t7g",
 	"Python3-DataAnalysis": "fv7bfqp4wyo42829htzt",
+	"CloudBrowser":         "m3offcydl3x4ojazn9sz",
 }
 
 func (a *APIStore) PostInstances(
