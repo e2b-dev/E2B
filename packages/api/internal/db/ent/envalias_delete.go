@@ -41,7 +41,7 @@ func (ead *EnvAliasDelete) ExecX(ctx context.Context) int {
 }
 
 func (ead *EnvAliasDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(envalias.Table, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewDeleteSpec(envalias.Table, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	_spec.Node.Schema = ead.schemaConfig.EnvAlias
 	ctx = internal.NewSchemaConfigContext(ctx, ead.schemaConfig)
 	if ps := ead.mutation.predicates; len(ps) > 0 {

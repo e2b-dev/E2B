@@ -23,12 +23,12 @@ type Team struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// IsDefault holds the value of the "is_default" field.
 	IsDefault bool `json:"is_default,omitempty"`
+	// IsBlocked holds the value of the "is_blocked" field.
+	IsBlocked bool `json:"is_blocked,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Tier holds the value of the "tier" field.
 	Tier string `json:"tier,omitempty"`
-	// IsBlocked holds the value of the "is_blocked" field.
-	IsBlocked bool `json:"is_blocked,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TeamQuery when eager-loading is set.
 	Edges        TeamEdges `json:"edges"`
@@ -147,6 +147,12 @@ func (t *Team) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.IsDefault = value.Bool
 			}
+		case team.FieldIsBlocked:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_blocked", values[i])
+			} else if value.Valid {
+				t.IsBlocked = value.Bool
+			}
 		case team.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -158,12 +164,6 @@ func (t *Team) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field tier", values[i])
 			} else if value.Valid {
 				t.Tier = value.String
-			}
-		case team.FieldIsBlocked:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_blocked", values[i])
-			} else if value.Valid {
-				t.IsBlocked = value.Bool
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
@@ -232,14 +232,14 @@ func (t *Team) String() string {
 	builder.WriteString("is_default=")
 	builder.WriteString(fmt.Sprintf("%v", t.IsDefault))
 	builder.WriteString(", ")
+	builder.WriteString("is_blocked=")
+	builder.WriteString(fmt.Sprintf("%v", t.IsBlocked))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(t.Name)
 	builder.WriteString(", ")
 	builder.WriteString("tier=")
 	builder.WriteString(t.Tier)
-	builder.WriteString(", ")
-	builder.WriteString("is_blocked=")
-	builder.WriteString(fmt.Sprintf("%v", t.IsBlocked))
 	builder.WriteByte(')')
 	return builder.String()
 }

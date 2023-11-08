@@ -532,13 +532,13 @@ type EnvMutation struct {
 	dockerfile         *string
 	public             *bool
 	build_id           *uuid.UUID
-	build_count        *int
-	addbuild_count     *int
+	build_count        *int32
+	addbuild_count     *int32
 	clearedFields      map[string]struct{}
 	team               *uuid.UUID
 	clearedteam        bool
-	env_aliases        map[int]struct{}
-	removedenv_aliases map[int]struct{}
+	env_aliases        map[string]struct{}
+	removedenv_aliases map[string]struct{}
 	clearedenv_aliases bool
 	done               bool
 	oldValue           func(context.Context) (*Env, error)
@@ -866,13 +866,13 @@ func (m *EnvMutation) ResetBuildID() {
 }
 
 // SetBuildCount sets the "build_count" field.
-func (m *EnvMutation) SetBuildCount(i int) {
+func (m *EnvMutation) SetBuildCount(i int32) {
 	m.build_count = &i
 	m.addbuild_count = nil
 }
 
 // BuildCount returns the value of the "build_count" field in the mutation.
-func (m *EnvMutation) BuildCount() (r int, exists bool) {
+func (m *EnvMutation) BuildCount() (r int32, exists bool) {
 	v := m.build_count
 	if v == nil {
 		return
@@ -883,7 +883,7 @@ func (m *EnvMutation) BuildCount() (r int, exists bool) {
 // OldBuildCount returns the old "build_count" field's value of the Env entity.
 // If the Env object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldBuildCount(ctx context.Context) (v int, err error) {
+func (m *EnvMutation) OldBuildCount(ctx context.Context) (v int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldBuildCount is only allowed on UpdateOne operations")
 	}
@@ -898,7 +898,7 @@ func (m *EnvMutation) OldBuildCount(ctx context.Context) (v int, err error) {
 }
 
 // AddBuildCount adds i to the "build_count" field.
-func (m *EnvMutation) AddBuildCount(i int) {
+func (m *EnvMutation) AddBuildCount(i int32) {
 	if m.addbuild_count != nil {
 		*m.addbuild_count += i
 	} else {
@@ -907,7 +907,7 @@ func (m *EnvMutation) AddBuildCount(i int) {
 }
 
 // AddedBuildCount returns the value that was added to the "build_count" field in this mutation.
-func (m *EnvMutation) AddedBuildCount() (r int, exists bool) {
+func (m *EnvMutation) AddedBuildCount() (r int32, exists bool) {
 	v := m.addbuild_count
 	if v == nil {
 		return
@@ -949,9 +949,9 @@ func (m *EnvMutation) ResetTeam() {
 }
 
 // AddEnvAliasIDs adds the "env_aliases" edge to the EnvAlias entity by ids.
-func (m *EnvMutation) AddEnvAliasIDs(ids ...int) {
+func (m *EnvMutation) AddEnvAliasIDs(ids ...string) {
 	if m.env_aliases == nil {
-		m.env_aliases = make(map[int]struct{})
+		m.env_aliases = make(map[string]struct{})
 	}
 	for i := range ids {
 		m.env_aliases[ids[i]] = struct{}{}
@@ -969,9 +969,9 @@ func (m *EnvMutation) EnvAliasesCleared() bool {
 }
 
 // RemoveEnvAliasIDs removes the "env_aliases" edge to the EnvAlias entity by IDs.
-func (m *EnvMutation) RemoveEnvAliasIDs(ids ...int) {
+func (m *EnvMutation) RemoveEnvAliasIDs(ids ...string) {
 	if m.removedenv_aliases == nil {
-		m.removedenv_aliases = make(map[int]struct{})
+		m.removedenv_aliases = make(map[string]struct{})
 	}
 	for i := range ids {
 		delete(m.env_aliases, ids[i])
@@ -980,7 +980,7 @@ func (m *EnvMutation) RemoveEnvAliasIDs(ids ...int) {
 }
 
 // RemovedEnvAliases returns the removed IDs of the "env_aliases" edge to the EnvAlias entity.
-func (m *EnvMutation) RemovedEnvAliasesIDs() (ids []int) {
+func (m *EnvMutation) RemovedEnvAliasesIDs() (ids []string) {
 	for id := range m.removedenv_aliases {
 		ids = append(ids, id)
 	}
@@ -988,7 +988,7 @@ func (m *EnvMutation) RemovedEnvAliasesIDs() (ids []int) {
 }
 
 // EnvAliasesIDs returns the "env_aliases" edge IDs in the mutation.
-func (m *EnvMutation) EnvAliasesIDs() (ids []int) {
+func (m *EnvMutation) EnvAliasesIDs() (ids []string) {
 	for id := range m.env_aliases {
 		ids = append(ids, id)
 	}
@@ -1155,7 +1155,7 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 		m.SetBuildID(v)
 		return nil
 	case env.FieldBuildCount:
-		v, ok := value.(int)
+		v, ok := value.(int32)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -1192,7 +1192,7 @@ func (m *EnvMutation) AddedField(name string) (ent.Value, bool) {
 func (m *EnvMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case env.FieldBuildCount:
-		v, ok := value.(int)
+		v, ok := value.(int32)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -1357,8 +1357,7 @@ type EnvAliasMutation struct {
 	config
 	op               Op
 	typ              string
-	id               *int
-	alias            *string
+	id               *string
 	clearedFields    map[string]struct{}
 	alias_env        *string
 	clearedalias_env bool
@@ -1387,7 +1386,7 @@ func newEnvAliasMutation(c config, op Op, opts ...envaliasOption) *EnvAliasMutat
 }
 
 // withEnvAliasID sets the ID field of the mutation.
-func withEnvAliasID(id int) envaliasOption {
+func withEnvAliasID(id string) envaliasOption {
 	return func(m *EnvAliasMutation) {
 		var (
 			err   error
@@ -1437,9 +1436,15 @@ func (m EnvAliasMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of EnvAlias entities.
+func (m *EnvAliasMutation) SetID(id string) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *EnvAliasMutation) ID() (id int, exists bool) {
+func (m *EnvAliasMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1450,12 +1455,12 @@ func (m *EnvAliasMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *EnvAliasMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *EnvAliasMutation) IDs(ctx context.Context) ([]string, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []string{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -1463,42 +1468,6 @@ func (m *EnvAliasMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
-}
-
-// SetAlias sets the "alias" field.
-func (m *EnvAliasMutation) SetAlias(s string) {
-	m.alias = &s
-}
-
-// Alias returns the value of the "alias" field in the mutation.
-func (m *EnvAliasMutation) Alias() (r string, exists bool) {
-	v := m.alias
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAlias returns the old "alias" field's value of the EnvAlias entity.
-// If the EnvAlias object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvAliasMutation) OldAlias(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAlias is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAlias requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAlias: %w", err)
-	}
-	return oldValue.Alias, nil
-}
-
-// ResetAlias resets all changes to the "alias" field.
-func (m *EnvAliasMutation) ResetAlias() {
-	m.alias = nil
 }
 
 // SetEnvID sets the "env_id" field.
@@ -1611,10 +1580,7 @@ func (m *EnvAliasMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvAliasMutation) Fields() []string {
-	fields := make([]string, 0, 2)
-	if m.alias != nil {
-		fields = append(fields, envalias.FieldAlias)
-	}
+	fields := make([]string, 0, 1)
 	if m.alias_env != nil {
 		fields = append(fields, envalias.FieldEnvID)
 	}
@@ -1626,8 +1592,6 @@ func (m *EnvAliasMutation) Fields() []string {
 // schema.
 func (m *EnvAliasMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case envalias.FieldAlias:
-		return m.Alias()
 	case envalias.FieldEnvID:
 		return m.EnvID()
 	}
@@ -1639,8 +1603,6 @@ func (m *EnvAliasMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *EnvAliasMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case envalias.FieldAlias:
-		return m.OldAlias(ctx)
 	case envalias.FieldEnvID:
 		return m.OldEnvID(ctx)
 	}
@@ -1652,13 +1614,6 @@ func (m *EnvAliasMutation) OldField(ctx context.Context, name string) (ent.Value
 // type.
 func (m *EnvAliasMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case envalias.FieldAlias:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAlias(v)
-		return nil
 	case envalias.FieldEnvID:
 		v, ok := value.(string)
 		if !ok {
@@ -1715,9 +1670,6 @@ func (m *EnvAliasMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *EnvAliasMutation) ResetField(name string) error {
 	switch name {
-	case envalias.FieldAlias:
-		m.ResetAlias()
-		return nil
 	case envalias.FieldEnvID:
 		m.ResetEnvID()
 		return nil
@@ -1807,8 +1759,8 @@ type TeamMutation struct {
 	id                   *uuid.UUID
 	created_at           *time.Time
 	is_default           *bool
-	name                 *string
 	is_blocked           *bool
+	name                 *string
 	clearedFields        map[string]struct{}
 	users                map[uuid.UUID]struct{}
 	removedusers         map[uuid.UUID]struct{}
@@ -2005,6 +1957,42 @@ func (m *TeamMutation) ResetIsDefault() {
 	m.is_default = nil
 }
 
+// SetIsBlocked sets the "is_blocked" field.
+func (m *TeamMutation) SetIsBlocked(b bool) {
+	m.is_blocked = &b
+}
+
+// IsBlocked returns the value of the "is_blocked" field in the mutation.
+func (m *TeamMutation) IsBlocked() (r bool, exists bool) {
+	v := m.is_blocked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsBlocked returns the old "is_blocked" field's value of the Team entity.
+// If the Team object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TeamMutation) OldIsBlocked(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsBlocked is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsBlocked requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsBlocked: %w", err)
+	}
+	return oldValue.IsBlocked, nil
+}
+
+// ResetIsBlocked resets all changes to the "is_blocked" field.
+func (m *TeamMutation) ResetIsBlocked() {
+	m.is_blocked = nil
+}
+
 // SetName sets the "name" field.
 func (m *TeamMutation) SetName(s string) {
 	m.name = &s
@@ -2075,42 +2063,6 @@ func (m *TeamMutation) OldTier(ctx context.Context) (v string, err error) {
 // ResetTier resets all changes to the "tier" field.
 func (m *TeamMutation) ResetTier() {
 	m.team_tier = nil
-}
-
-// SetIsBlocked sets the "is_blocked" field.
-func (m *TeamMutation) SetIsBlocked(b bool) {
-	m.is_blocked = &b
-}
-
-// IsBlocked returns the value of the "is_blocked" field in the mutation.
-func (m *TeamMutation) IsBlocked() (r bool, exists bool) {
-	v := m.is_blocked
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsBlocked returns the old "is_blocked" field's value of the Team entity.
-// If the Team object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TeamMutation) OldIsBlocked(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsBlocked is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsBlocked requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsBlocked: %w", err)
-	}
-	return oldValue.IsBlocked, nil
-}
-
-// ResetIsBlocked resets all changes to the "is_blocked" field.
-func (m *TeamMutation) ResetIsBlocked() {
-	m.is_blocked = nil
 }
 
 // AddUserIDs adds the "users" edge to the User entity by ids.
@@ -2410,14 +2362,14 @@ func (m *TeamMutation) Fields() []string {
 	if m.is_default != nil {
 		fields = append(fields, team.FieldIsDefault)
 	}
+	if m.is_blocked != nil {
+		fields = append(fields, team.FieldIsBlocked)
+	}
 	if m.name != nil {
 		fields = append(fields, team.FieldName)
 	}
 	if m.team_tier != nil {
 		fields = append(fields, team.FieldTier)
-	}
-	if m.is_blocked != nil {
-		fields = append(fields, team.FieldIsBlocked)
 	}
 	return fields
 }
@@ -2431,12 +2383,12 @@ func (m *TeamMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case team.FieldIsDefault:
 		return m.IsDefault()
+	case team.FieldIsBlocked:
+		return m.IsBlocked()
 	case team.FieldName:
 		return m.Name()
 	case team.FieldTier:
 		return m.Tier()
-	case team.FieldIsBlocked:
-		return m.IsBlocked()
 	}
 	return nil, false
 }
@@ -2450,12 +2402,12 @@ func (m *TeamMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedAt(ctx)
 	case team.FieldIsDefault:
 		return m.OldIsDefault(ctx)
+	case team.FieldIsBlocked:
+		return m.OldIsBlocked(ctx)
 	case team.FieldName:
 		return m.OldName(ctx)
 	case team.FieldTier:
 		return m.OldTier(ctx)
-	case team.FieldIsBlocked:
-		return m.OldIsBlocked(ctx)
 	}
 	return nil, fmt.Errorf("unknown Team field %s", name)
 }
@@ -2479,6 +2431,13 @@ func (m *TeamMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIsDefault(v)
 		return nil
+	case team.FieldIsBlocked:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsBlocked(v)
+		return nil
 	case team.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -2492,13 +2451,6 @@ func (m *TeamMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTier(v)
-		return nil
-	case team.FieldIsBlocked:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsBlocked(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Team field %s", name)
@@ -2555,14 +2507,14 @@ func (m *TeamMutation) ResetField(name string) error {
 	case team.FieldIsDefault:
 		m.ResetIsDefault()
 		return nil
+	case team.FieldIsBlocked:
+		m.ResetIsBlocked()
+		return nil
 	case team.FieldName:
 		m.ResetName()
 		return nil
 	case team.FieldTier:
 		m.ResetTier()
-		return nil
-	case team.FieldIsBlocked:
-		m.ResetIsBlocked()
 		return nil
 	}
 	return fmt.Errorf("unknown Team field %s", name)

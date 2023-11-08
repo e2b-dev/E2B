@@ -67,6 +67,11 @@ func IsDefault(v bool) predicate.Team {
 	return predicate.Team(sql.FieldEQ(FieldIsDefault, v))
 }
 
+// IsBlocked applies equality check predicate on the "is_blocked" field. It's identical to IsBlockedEQ.
+func IsBlocked(v bool) predicate.Team {
+	return predicate.Team(sql.FieldEQ(FieldIsBlocked, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Team {
 	return predicate.Team(sql.FieldEQ(FieldName, v))
@@ -75,11 +80,6 @@ func Name(v string) predicate.Team {
 // Tier applies equality check predicate on the "tier" field. It's identical to TierEQ.
 func Tier(v string) predicate.Team {
 	return predicate.Team(sql.FieldEQ(FieldTier, v))
-}
-
-// IsBlocked applies equality check predicate on the "is_blocked" field. It's identical to IsBlockedEQ.
-func IsBlocked(v bool) predicate.Team {
-	return predicate.Team(sql.FieldEQ(FieldIsBlocked, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -130,6 +130,16 @@ func IsDefaultEQ(v bool) predicate.Team {
 // IsDefaultNEQ applies the NEQ predicate on the "is_default" field.
 func IsDefaultNEQ(v bool) predicate.Team {
 	return predicate.Team(sql.FieldNEQ(FieldIsDefault, v))
+}
+
+// IsBlockedEQ applies the EQ predicate on the "is_blocked" field.
+func IsBlockedEQ(v bool) predicate.Team {
+	return predicate.Team(sql.FieldEQ(FieldIsBlocked, v))
+}
+
+// IsBlockedNEQ applies the NEQ predicate on the "is_blocked" field.
+func IsBlockedNEQ(v bool) predicate.Team {
+	return predicate.Team(sql.FieldNEQ(FieldIsBlocked, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -260,16 +270,6 @@ func TierEqualFold(v string) predicate.Team {
 // TierContainsFold applies the ContainsFold predicate on the "tier" field.
 func TierContainsFold(v string) predicate.Team {
 	return predicate.Team(sql.FieldContainsFold(FieldTier, v))
-}
-
-// IsBlockedEQ applies the EQ predicate on the "is_blocked" field.
-func IsBlockedEQ(v bool) predicate.Team {
-	return predicate.Team(sql.FieldEQ(FieldIsBlocked, v))
-}
-
-// IsBlockedNEQ applies the NEQ predicate on the "is_blocked" field.
-func IsBlockedNEQ(v bool) predicate.Team {
-	return predicate.Team(sql.FieldNEQ(FieldIsBlocked, v))
 }
 
 // HasUsers applies the HasEdge predicate on the "users" edge.

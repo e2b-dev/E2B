@@ -32,6 +32,8 @@ const (
 	EdgeTeam = "team"
 	// EdgeEnvAliases holds the string denoting the env_aliases edge name in mutations.
 	EdgeEnvAliases = "env_aliases"
+	// EnvAliasFieldID holds the string denoting the ID field of the EnvAlias.
+	EnvAliasFieldID = "alias"
 	// Table holds the table name of the env in the database.
 	Table = "envs"
 	// TeamTable is the table that holds the team relation/edge.
@@ -42,10 +44,10 @@ const (
 	// TeamColumn is the table column denoting the team relation/edge.
 	TeamColumn = "team_id"
 	// EnvAliasesTable is the table that holds the env_aliases relation/edge.
-	EnvAliasesTable = "env_alias"
+	EnvAliasesTable = "env_aliases"
 	// EnvAliasesInverseTable is the table name for the EnvAlias entity.
 	// It exists in this package in order to avoid circular dependency with the "envalias" package.
-	EnvAliasesInverseTable = "env_alias"
+	EnvAliasesInverseTable = "env_aliases"
 	// EnvAliasesColumn is the table column denoting the env_aliases relation/edge.
 	EnvAliasesColumn = "env_id"
 )
@@ -78,7 +80,7 @@ var (
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// DefaultBuildCount holds the default value on creation for the "build_count" field.
-	DefaultBuildCount int
+	DefaultBuildCount int32
 )
 
 // OrderOption defines the ordering options for the Env queries.
@@ -154,7 +156,7 @@ func newTeamStep() *sqlgraph.Step {
 func newEnvAliasesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(EnvAliasesInverseTable, FieldID),
+		sqlgraph.To(EnvAliasesInverseTable, EnvAliasFieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EnvAliasesTable, EnvAliasesColumn),
 	)
 }

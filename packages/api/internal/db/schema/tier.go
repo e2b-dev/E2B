@@ -12,7 +12,7 @@ type Tier struct {
 
 func (Tier) Fields() []ent.Field {
 	return []ent.Field{
-		field.Text("id").Immutable().Unique(),
+		field.String("id").Immutable().Unique(),
 		field.Int64("vcpu"),
 		field.Int64("ram_mb"),
 		field.Int64("disk_mb"),

@@ -11,17 +11,17 @@ const (
 	// Label holds the string label denoting the envalias type in the database.
 	Label = "env_alias"
 	// FieldID holds the string denoting the id field in the database.
-	FieldID = "id"
-	// FieldAlias holds the string denoting the alias field in the database.
-	FieldAlias = "alias"
+	FieldID = "alias"
 	// FieldEnvID holds the string denoting the env_id field in the database.
 	FieldEnvID = "env_id"
 	// EdgeAliasEnv holds the string denoting the alias_env edge name in mutations.
 	EdgeAliasEnv = "alias_env"
+	// EnvFieldID holds the string denoting the ID field of the Env.
+	EnvFieldID = "id"
 	// Table holds the table name of the envalias in the database.
-	Table = "env_alias"
+	Table = "env_aliases"
 	// AliasEnvTable is the table that holds the alias_env relation/edge.
-	AliasEnvTable = "env_alias"
+	AliasEnvTable = "env_aliases"
 	// AliasEnvInverseTable is the table name for the Env entity.
 	// It exists in this package in order to avoid circular dependency with the "env" package.
 	AliasEnvInverseTable = "envs"
@@ -32,7 +32,6 @@ const (
 // Columns holds all SQL columns for envalias fields.
 var Columns = []string{
 	FieldID,
-	FieldAlias,
 	FieldEnvID,
 }
 
@@ -54,11 +53,6 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// ByAlias orders the results by the alias field.
-func ByAlias(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAlias, opts...).ToFunc()
-}
-
 // ByEnvID orders the results by the env_id field.
 func ByEnvID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnvID, opts...).ToFunc()
@@ -73,7 +67,7 @@ func ByAliasEnvField(field string, opts ...sql.OrderTermOption) OrderOption {
 func newAliasEnvStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(AliasEnvInverseTable, FieldID),
+		sqlgraph.To(AliasEnvInverseTable, EnvFieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, AliasEnvTable, AliasEnvColumn),
 	)
 }

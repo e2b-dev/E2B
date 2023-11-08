@@ -44,8 +44,8 @@ func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
 
 	for _, item := range envs {
 		aliases := make([]string, len(item.Edges.EnvAliases))
-		for i, item := range item.Edges.EnvAliases {
-			aliases[i] = item.Alias
+		for i, alias := range item.Edges.EnvAliases {
+			aliases[i] = alias.ID
 		}
 
 		result = append(result, &api.Environment{
@@ -71,7 +71,7 @@ func (db *DB) GetEnv(aliasOrEnvID string, teamID string, canBePublic bool) (resu
 		Client.
 		Env.
 		Query().
-		Where(env.Or(env.HasEnvAliasesWith(envalias.Alias(aliasOrEnvID)), env.ID(aliasOrEnvID)), env.Or(env.TeamID(id), env.Public(true))).
+		Where(env.Or(env.HasEnvAliasesWith(envalias.ID(aliasOrEnvID)), env.ID(aliasOrEnvID)), env.Or(env.TeamID(id), env.Public(true))).
 		WithEnvAliases().
 		Only(db.ctx)
 	if err != nil {
@@ -83,8 +83,8 @@ func (db *DB) GetEnv(aliasOrEnvID string, teamID string, canBePublic bool) (resu
 	}
 
 	aliases := make([]string, len(dbEnv.Edges.EnvAliases))
-	for i, item := range dbEnv.Edges.EnvAliases {
-		aliases[i] = item.Alias
+	for i, alias := range dbEnv.Edges.EnvAliases {
+		aliases[i] = alias.ID
 	}
 
 	return &api.Environment{

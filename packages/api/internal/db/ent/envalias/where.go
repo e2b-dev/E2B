@@ -10,123 +10,63 @@ import (
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.EnvAlias {
+func ID(id string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.EnvAlias {
+func IDEQ(id string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.EnvAlias {
+func IDNEQ(id string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.EnvAlias {
+func IDIn(ids ...string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.EnvAlias {
+func IDNotIn(ids ...string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.EnvAlias {
+func IDGT(id string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.EnvAlias {
+func IDGTE(id string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.EnvAlias {
+func IDLT(id string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.EnvAlias {
+func IDLTE(id string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldLTE(FieldID, id))
 }
 
-// Alias applies equality check predicate on the "alias" field. It's identical to AliasEQ.
-func Alias(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldEQ(FieldAlias, v))
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldContainsFold(FieldID, id))
 }
 
 // EnvID applies equality check predicate on the "env_id" field. It's identical to EnvIDEQ.
 func EnvID(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldEQ(FieldEnvID, v))
-}
-
-// AliasEQ applies the EQ predicate on the "alias" field.
-func AliasEQ(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldEQ(FieldAlias, v))
-}
-
-// AliasNEQ applies the NEQ predicate on the "alias" field.
-func AliasNEQ(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldNEQ(FieldAlias, v))
-}
-
-// AliasIn applies the In predicate on the "alias" field.
-func AliasIn(vs ...string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldIn(FieldAlias, vs...))
-}
-
-// AliasNotIn applies the NotIn predicate on the "alias" field.
-func AliasNotIn(vs ...string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldNotIn(FieldAlias, vs...))
-}
-
-// AliasGT applies the GT predicate on the "alias" field.
-func AliasGT(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldGT(FieldAlias, v))
-}
-
-// AliasGTE applies the GTE predicate on the "alias" field.
-func AliasGTE(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldGTE(FieldAlias, v))
-}
-
-// AliasLT applies the LT predicate on the "alias" field.
-func AliasLT(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldLT(FieldAlias, v))
-}
-
-// AliasLTE applies the LTE predicate on the "alias" field.
-func AliasLTE(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldLTE(FieldAlias, v))
-}
-
-// AliasContains applies the Contains predicate on the "alias" field.
-func AliasContains(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldContains(FieldAlias, v))
-}
-
-// AliasHasPrefix applies the HasPrefix predicate on the "alias" field.
-func AliasHasPrefix(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldHasPrefix(FieldAlias, v))
-}
-
-// AliasHasSuffix applies the HasSuffix predicate on the "alias" field.
-func AliasHasSuffix(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldHasSuffix(FieldAlias, v))
-}
-
-// AliasEqualFold applies the EqualFold predicate on the "alias" field.
-func AliasEqualFold(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldEqualFold(FieldAlias, v))
-}
-
-// AliasContainsFold applies the ContainsFold predicate on the "alias" field.
-func AliasContainsFold(v string) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldContainsFold(FieldAlias, v))
 }
 
 // EnvIDEQ applies the EQ predicate on the "env_id" field.

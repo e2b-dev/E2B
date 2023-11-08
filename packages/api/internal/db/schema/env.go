@@ -17,7 +17,7 @@ type Env struct {
 
 func (Env) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").Immutable(),
+		field.String("id").Unique().Immutable(),
 		field.Time("created_at").Immutable().Default(time.Now).
 			Annotations(
 				entsql.Default("CURRENT_TIMESTAMP"),
@@ -27,7 +27,7 @@ func (Env) Fields() []ent.Field {
 		field.String("dockerfile"),
 		field.Bool("public"),
 		field.UUID("build_id", uuid.UUID{}),
-		field.Int("build_count").Default(1),
+		field.Int32("build_count").Default(1),
 	}
 }
 

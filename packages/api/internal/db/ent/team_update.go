@@ -40,6 +40,12 @@ func (tu *TeamUpdate) SetIsDefault(b bool) *TeamUpdate {
 	return tu
 }
 
+// SetIsBlocked sets the "is_blocked" field.
+func (tu *TeamUpdate) SetIsBlocked(b bool) *TeamUpdate {
+	tu.mutation.SetIsBlocked(b)
+	return tu
+}
+
 // SetName sets the "name" field.
 func (tu *TeamUpdate) SetName(s string) *TeamUpdate {
 	tu.mutation.SetName(s)
@@ -49,12 +55,6 @@ func (tu *TeamUpdate) SetName(s string) *TeamUpdate {
 // SetTier sets the "tier" field.
 func (tu *TeamUpdate) SetTier(s string) *TeamUpdate {
 	tu.mutation.SetTier(s)
-	return tu
-}
-
-// SetIsBlocked sets the "is_blocked" field.
-func (tu *TeamUpdate) SetIsBlocked(b bool) *TeamUpdate {
-	tu.mutation.SetIsBlocked(b)
 	return tu
 }
 
@@ -274,11 +274,11 @@ func (tu *TeamUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.IsDefault(); ok {
 		_spec.SetField(team.FieldIsDefault, field.TypeBool, value)
 	}
-	if value, ok := tu.mutation.Name(); ok {
-		_spec.SetField(team.FieldName, field.TypeString, value)
-	}
 	if value, ok := tu.mutation.IsBlocked(); ok {
 		_spec.SetField(team.FieldIsBlocked, field.TypeBool, value)
+	}
+	if value, ok := tu.mutation.Name(); ok {
+		_spec.SetField(team.FieldName, field.TypeString, value)
 	}
 	if tu.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -531,6 +531,12 @@ func (tuo *TeamUpdateOne) SetIsDefault(b bool) *TeamUpdateOne {
 	return tuo
 }
 
+// SetIsBlocked sets the "is_blocked" field.
+func (tuo *TeamUpdateOne) SetIsBlocked(b bool) *TeamUpdateOne {
+	tuo.mutation.SetIsBlocked(b)
+	return tuo
+}
+
 // SetName sets the "name" field.
 func (tuo *TeamUpdateOne) SetName(s string) *TeamUpdateOne {
 	tuo.mutation.SetName(s)
@@ -540,12 +546,6 @@ func (tuo *TeamUpdateOne) SetName(s string) *TeamUpdateOne {
 // SetTier sets the "tier" field.
 func (tuo *TeamUpdateOne) SetTier(s string) *TeamUpdateOne {
 	tuo.mutation.SetTier(s)
-	return tuo
-}
-
-// SetIsBlocked sets the "is_blocked" field.
-func (tuo *TeamUpdateOne) SetIsBlocked(b bool) *TeamUpdateOne {
-	tuo.mutation.SetIsBlocked(b)
 	return tuo
 }
 
@@ -795,11 +795,11 @@ func (tuo *TeamUpdateOne) sqlSave(ctx context.Context) (_node *Team, err error) 
 	if value, ok := tuo.mutation.IsDefault(); ok {
 		_spec.SetField(team.FieldIsDefault, field.TypeBool, value)
 	}
-	if value, ok := tuo.mutation.Name(); ok {
-		_spec.SetField(team.FieldName, field.TypeString, value)
-	}
 	if value, ok := tuo.mutation.IsBlocked(); ok {
 		_spec.SetField(team.FieldIsBlocked, field.TypeBool, value)
+	}
+	if value, ok := tuo.mutation.Name(); ok {
+		_spec.SetField(team.FieldName, field.TypeString, value)
 	}
 	if tuo.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{

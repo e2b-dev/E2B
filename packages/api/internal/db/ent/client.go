@@ -647,7 +647,7 @@ func (c *EnvAliasClient) UpdateOne(ea *EnvAlias) *EnvAliasUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *EnvAliasClient) UpdateOneID(id int) *EnvAliasUpdateOne {
+func (c *EnvAliasClient) UpdateOneID(id string) *EnvAliasUpdateOne {
 	mutation := newEnvAliasMutation(c.config, OpUpdateOne, withEnvAliasID(id))
 	return &EnvAliasUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -664,7 +664,7 @@ func (c *EnvAliasClient) DeleteOne(ea *EnvAlias) *EnvAliasDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *EnvAliasClient) DeleteOneID(id int) *EnvAliasDeleteOne {
+func (c *EnvAliasClient) DeleteOneID(id string) *EnvAliasDeleteOne {
 	builder := c.Delete().Where(envalias.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -681,12 +681,12 @@ func (c *EnvAliasClient) Query() *EnvAliasQuery {
 }
 
 // Get returns a EnvAlias entity by its id.
-func (c *EnvAliasClient) Get(ctx context.Context, id int) (*EnvAlias, error) {
+func (c *EnvAliasClient) Get(ctx context.Context, id string) (*EnvAlias, error) {
 	return c.Query().Where(envalias.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *EnvAliasClient) GetX(ctx context.Context, id int) *EnvAlias {
+func (c *EnvAliasClient) GetX(ctx context.Context, id string) *EnvAlias {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)

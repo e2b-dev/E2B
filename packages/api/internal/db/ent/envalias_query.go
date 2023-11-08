@@ -109,8 +109,8 @@ func (eaq *EnvAliasQuery) FirstX(ctx context.Context) *EnvAlias {
 
 // FirstID returns the first EnvAlias ID from the query.
 // Returns a *NotFoundError when no EnvAlias ID was found.
-func (eaq *EnvAliasQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (eaq *EnvAliasQuery) FirstID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = eaq.Limit(1).IDs(setContextOp(ctx, eaq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -122,7 +122,7 @@ func (eaq *EnvAliasQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (eaq *EnvAliasQuery) FirstIDX(ctx context.Context) int {
+func (eaq *EnvAliasQuery) FirstIDX(ctx context.Context) string {
 	id, err := eaq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -160,8 +160,8 @@ func (eaq *EnvAliasQuery) OnlyX(ctx context.Context) *EnvAlias {
 // OnlyID is like Only, but returns the only EnvAlias ID in the query.
 // Returns a *NotSingularError when more than one EnvAlias ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (eaq *EnvAliasQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (eaq *EnvAliasQuery) OnlyID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = eaq.Limit(2).IDs(setContextOp(ctx, eaq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -177,7 +177,7 @@ func (eaq *EnvAliasQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (eaq *EnvAliasQuery) OnlyIDX(ctx context.Context) int {
+func (eaq *EnvAliasQuery) OnlyIDX(ctx context.Context) string {
 	id, err := eaq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -205,7 +205,7 @@ func (eaq *EnvAliasQuery) AllX(ctx context.Context) []*EnvAlias {
 }
 
 // IDs executes the query and returns a list of EnvAlias IDs.
-func (eaq *EnvAliasQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (eaq *EnvAliasQuery) IDs(ctx context.Context) (ids []string, err error) {
 	if eaq.ctx.Unique == nil && eaq.path != nil {
 		eaq.Unique(true)
 	}
@@ -217,7 +217,7 @@ func (eaq *EnvAliasQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (eaq *EnvAliasQuery) IDsX(ctx context.Context) []int {
+func (eaq *EnvAliasQuery) IDsX(ctx context.Context) []string {
 	ids, err := eaq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -301,12 +301,12 @@ func (eaq *EnvAliasQuery) WithAliasEnv(opts ...func(*EnvQuery)) *EnvAliasQuery {
 // Example:
 //
 //	var v []struct {
-//		Alias string `json:"alias,omitempty"`
+//		EnvID string `json:"env_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.EnvAlias.Query().
-//		GroupBy(envalias.FieldAlias).
+//		GroupBy(envalias.FieldEnvID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (eaq *EnvAliasQuery) GroupBy(field string, fields ...string) *EnvAliasGroupBy {
@@ -324,11 +324,11 @@ func (eaq *EnvAliasQuery) GroupBy(field string, fields ...string) *EnvAliasGroup
 // Example:
 //
 //	var v []struct {
-//		Alias string `json:"alias,omitempty"`
+//		EnvID string `json:"env_id,omitempty"`
 //	}
 //
 //	client.EnvAlias.Query().
-//		Select(envalias.FieldAlias).
+//		Select(envalias.FieldEnvID).
 //		Scan(ctx, &v)
 func (eaq *EnvAliasQuery) Select(fields ...string) *EnvAliasSelect {
 	eaq.ctx.Fields = append(eaq.ctx.Fields, fields...)
@@ -448,7 +448,7 @@ func (eaq *EnvAliasQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (eaq *EnvAliasQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	_spec.From = eaq.sql
 	if unique := eaq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

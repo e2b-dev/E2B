@@ -96,7 +96,7 @@ func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := eau.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	if ps := eau.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -237,7 +237,7 @@ func (eauo *EnvAliasUpdateOne) sqlSave(ctx context.Context) (_node *EnvAlias, er
 	if err := eauo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	id, ok := eauo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "EnvAlias.id" for update`)}

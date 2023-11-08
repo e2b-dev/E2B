@@ -79,13 +79,13 @@ func (ec *EnvCreate) SetBuildID(u uuid.UUID) *EnvCreate {
 }
 
 // SetBuildCount sets the "build_count" field.
-func (ec *EnvCreate) SetBuildCount(i int) *EnvCreate {
+func (ec *EnvCreate) SetBuildCount(i int32) *EnvCreate {
 	ec.mutation.SetBuildCount(i)
 	return ec
 }
 
 // SetNillableBuildCount sets the "build_count" field if the given value is not nil.
-func (ec *EnvCreate) SetNillableBuildCount(i *int) *EnvCreate {
+func (ec *EnvCreate) SetNillableBuildCount(i *int32) *EnvCreate {
 	if i != nil {
 		ec.SetBuildCount(*i)
 	}
@@ -104,14 +104,14 @@ func (ec *EnvCreate) SetTeam(t *Team) *EnvCreate {
 }
 
 // AddEnvAliasIDs adds the "env_aliases" edge to the EnvAlias entity by IDs.
-func (ec *EnvCreate) AddEnvAliasIDs(ids ...int) *EnvCreate {
+func (ec *EnvCreate) AddEnvAliasIDs(ids ...string) *EnvCreate {
 	ec.mutation.AddEnvAliasIDs(ids...)
 	return ec
 }
 
 // AddEnvAliases adds the "env_aliases" edges to the EnvAlias entity.
 func (ec *EnvCreate) AddEnvAliases(e ...*EnvAlias) *EnvCreate {
-	ids := make([]int, len(e))
+	ids := make([]string, len(e))
 	for i := range e {
 		ids[i] = e[i].ID
 	}
@@ -251,7 +251,7 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 		_node.BuildID = value
 	}
 	if value, ok := ec.mutation.BuildCount(); ok {
-		_spec.SetField(env.FieldBuildCount, field.TypeInt, value)
+		_spec.SetField(env.FieldBuildCount, field.TypeInt32, value)
 		_node.BuildCount = value
 	}
 	if nodes := ec.mutation.TeamIDs(); len(nodes) > 0 {
@@ -280,7 +280,7 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 			Columns: []string{env.EnvAliasesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString),
 			},
 		}
 		edge.Schema = ec.schemaConfig.EnvAlias
@@ -402,7 +402,7 @@ func (u *EnvUpsert) UpdateBuildID() *EnvUpsert {
 }
 
 // SetBuildCount sets the "build_count" field.
-func (u *EnvUpsert) SetBuildCount(v int) *EnvUpsert {
+func (u *EnvUpsert) SetBuildCount(v int32) *EnvUpsert {
 	u.Set(env.FieldBuildCount, v)
 	return u
 }
@@ -414,7 +414,7 @@ func (u *EnvUpsert) UpdateBuildCount() *EnvUpsert {
 }
 
 // AddBuildCount adds v to the "build_count" field.
-func (u *EnvUpsert) AddBuildCount(v int) *EnvUpsert {
+func (u *EnvUpsert) AddBuildCount(v int32) *EnvUpsert {
 	u.Add(env.FieldBuildCount, v)
 	return u
 }
@@ -541,14 +541,14 @@ func (u *EnvUpsertOne) UpdateBuildID() *EnvUpsertOne {
 }
 
 // SetBuildCount sets the "build_count" field.
-func (u *EnvUpsertOne) SetBuildCount(v int) *EnvUpsertOne {
+func (u *EnvUpsertOne) SetBuildCount(v int32) *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.SetBuildCount(v)
 	})
 }
 
 // AddBuildCount adds v to the "build_count" field.
-func (u *EnvUpsertOne) AddBuildCount(v int) *EnvUpsertOne {
+func (u *EnvUpsertOne) AddBuildCount(v int32) *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.AddBuildCount(v)
 	})
@@ -850,14 +850,14 @@ func (u *EnvUpsertBulk) UpdateBuildID() *EnvUpsertBulk {
 }
 
 // SetBuildCount sets the "build_count" field.
-func (u *EnvUpsertBulk) SetBuildCount(v int) *EnvUpsertBulk {
+func (u *EnvUpsertBulk) SetBuildCount(v int32) *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.SetBuildCount(v)
 	})
 }
 
 // AddBuildCount adds v to the "build_count" field.
-func (u *EnvUpsertBulk) AddBuildCount(v int) *EnvUpsertBulk {
+func (u *EnvUpsertBulk) AddBuildCount(v int32) *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.AddBuildCount(v)
 	})

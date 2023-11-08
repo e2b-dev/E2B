@@ -21,9 +21,9 @@ func (Team) Fields() []ent.Field {
 			entsql.Default("CURRENT_TIMESTAMP"),
 		),
 		field.Bool("is_default"),
+		field.Bool("is_blocked"),
 		field.String("name"),
 		field.String("tier"),
-		field.Bool("is_blocked"),
 	}
 }
 

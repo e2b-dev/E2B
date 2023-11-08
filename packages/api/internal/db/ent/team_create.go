@@ -49,6 +49,12 @@ func (tc *TeamCreate) SetIsDefault(b bool) *TeamCreate {
 	return tc
 }
 
+// SetIsBlocked sets the "is_blocked" field.
+func (tc *TeamCreate) SetIsBlocked(b bool) *TeamCreate {
+	tc.mutation.SetIsBlocked(b)
+	return tc
+}
+
 // SetName sets the "name" field.
 func (tc *TeamCreate) SetName(s string) *TeamCreate {
 	tc.mutation.SetName(s)
@@ -58,12 +64,6 @@ func (tc *TeamCreate) SetName(s string) *TeamCreate {
 // SetTier sets the "tier" field.
 func (tc *TeamCreate) SetTier(s string) *TeamCreate {
 	tc.mutation.SetTier(s)
-	return tc
-}
-
-// SetIsBlocked sets the "is_blocked" field.
-func (tc *TeamCreate) SetIsBlocked(b bool) *TeamCreate {
-	tc.mutation.SetIsBlocked(b)
 	return tc
 }
 
@@ -193,14 +193,14 @@ func (tc *TeamCreate) check() error {
 	if _, ok := tc.mutation.IsDefault(); !ok {
 		return &ValidationError{Name: "is_default", err: errors.New(`ent: missing required field "Team.is_default"`)}
 	}
+	if _, ok := tc.mutation.IsBlocked(); !ok {
+		return &ValidationError{Name: "is_blocked", err: errors.New(`ent: missing required field "Team.is_blocked"`)}
+	}
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Team.name"`)}
 	}
 	if _, ok := tc.mutation.Tier(); !ok {
 		return &ValidationError{Name: "tier", err: errors.New(`ent: missing required field "Team.tier"`)}
-	}
-	if _, ok := tc.mutation.IsBlocked(); !ok {
-		return &ValidationError{Name: "is_blocked", err: errors.New(`ent: missing required field "Team.is_blocked"`)}
 	}
 	if _, ok := tc.mutation.TeamTierID(); !ok {
 		return &ValidationError{Name: "team_tier", err: errors.New(`ent: missing required edge "Team.team_tier"`)}
@@ -250,13 +250,13 @@ func (tc *TeamCreate) createSpec() (*Team, *sqlgraph.CreateSpec) {
 		_spec.SetField(team.FieldIsDefault, field.TypeBool, value)
 		_node.IsDefault = value
 	}
-	if value, ok := tc.mutation.Name(); ok {
-		_spec.SetField(team.FieldName, field.TypeString, value)
-		_node.Name = value
-	}
 	if value, ok := tc.mutation.IsBlocked(); ok {
 		_spec.SetField(team.FieldIsBlocked, field.TypeBool, value)
 		_node.IsBlocked = value
+	}
+	if value, ok := tc.mutation.Name(); ok {
+		_spec.SetField(team.FieldName, field.TypeString, value)
+		_node.Name = value
 	}
 	if nodes := tc.mutation.UsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -408,6 +408,18 @@ func (u *TeamUpsert) UpdateIsDefault() *TeamUpsert {
 	return u
 }
 
+// SetIsBlocked sets the "is_blocked" field.
+func (u *TeamUpsert) SetIsBlocked(v bool) *TeamUpsert {
+	u.Set(team.FieldIsBlocked, v)
+	return u
+}
+
+// UpdateIsBlocked sets the "is_blocked" field to the value that was provided on create.
+func (u *TeamUpsert) UpdateIsBlocked() *TeamUpsert {
+	u.SetExcluded(team.FieldIsBlocked)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *TeamUpsert) SetName(v string) *TeamUpsert {
 	u.Set(team.FieldName, v)
@@ -429,18 +441,6 @@ func (u *TeamUpsert) SetTier(v string) *TeamUpsert {
 // UpdateTier sets the "tier" field to the value that was provided on create.
 func (u *TeamUpsert) UpdateTier() *TeamUpsert {
 	u.SetExcluded(team.FieldTier)
-	return u
-}
-
-// SetIsBlocked sets the "is_blocked" field.
-func (u *TeamUpsert) SetIsBlocked(v bool) *TeamUpsert {
-	u.Set(team.FieldIsBlocked, v)
-	return u
-}
-
-// UpdateIsBlocked sets the "is_blocked" field to the value that was provided on create.
-func (u *TeamUpsert) UpdateIsBlocked() *TeamUpsert {
-	u.SetExcluded(team.FieldIsBlocked)
 	return u
 }
 
@@ -509,6 +509,20 @@ func (u *TeamUpsertOne) UpdateIsDefault() *TeamUpsertOne {
 	})
 }
 
+// SetIsBlocked sets the "is_blocked" field.
+func (u *TeamUpsertOne) SetIsBlocked(v bool) *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetIsBlocked(v)
+	})
+}
+
+// UpdateIsBlocked sets the "is_blocked" field to the value that was provided on create.
+func (u *TeamUpsertOne) UpdateIsBlocked() *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateIsBlocked()
+	})
+}
+
 // SetName sets the "name" field.
 func (u *TeamUpsertOne) SetName(v string) *TeamUpsertOne {
 	return u.Update(func(s *TeamUpsert) {
@@ -534,20 +548,6 @@ func (u *TeamUpsertOne) SetTier(v string) *TeamUpsertOne {
 func (u *TeamUpsertOne) UpdateTier() *TeamUpsertOne {
 	return u.Update(func(s *TeamUpsert) {
 		s.UpdateTier()
-	})
-}
-
-// SetIsBlocked sets the "is_blocked" field.
-func (u *TeamUpsertOne) SetIsBlocked(v bool) *TeamUpsertOne {
-	return u.Update(func(s *TeamUpsert) {
-		s.SetIsBlocked(v)
-	})
-}
-
-// UpdateIsBlocked sets the "is_blocked" field to the value that was provided on create.
-func (u *TeamUpsertOne) UpdateIsBlocked() *TeamUpsertOne {
-	return u.Update(func(s *TeamUpsert) {
-		s.UpdateIsBlocked()
 	})
 }
 
@@ -783,6 +783,20 @@ func (u *TeamUpsertBulk) UpdateIsDefault() *TeamUpsertBulk {
 	})
 }
 
+// SetIsBlocked sets the "is_blocked" field.
+func (u *TeamUpsertBulk) SetIsBlocked(v bool) *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetIsBlocked(v)
+	})
+}
+
+// UpdateIsBlocked sets the "is_blocked" field to the value that was provided on create.
+func (u *TeamUpsertBulk) UpdateIsBlocked() *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateIsBlocked()
+	})
+}
+
 // SetName sets the "name" field.
 func (u *TeamUpsertBulk) SetName(v string) *TeamUpsertBulk {
 	return u.Update(func(s *TeamUpsert) {
@@ -808,20 +822,6 @@ func (u *TeamUpsertBulk) SetTier(v string) *TeamUpsertBulk {
 func (u *TeamUpsertBulk) UpdateTier() *TeamUpsertBulk {
 	return u.Update(func(s *TeamUpsert) {
 		s.UpdateTier()
-	})
-}
-
-// SetIsBlocked sets the "is_blocked" field.
-func (u *TeamUpsertBulk) SetIsBlocked(v bool) *TeamUpsertBulk {
-	return u.Update(func(s *TeamUpsert) {
-		s.SetIsBlocked(v)
-	})
-}
-
-// UpdateIsBlocked sets the "is_blocked" field to the value that was provided on create.
-func (u *TeamUpsertBulk) UpdateIsBlocked() *TeamUpsertBulk {
-	return u.Update(func(s *TeamUpsert) {
-		s.UpdateIsBlocked()
 	})
 }
 

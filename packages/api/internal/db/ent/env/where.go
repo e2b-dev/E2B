@@ -98,7 +98,7 @@ func BuildID(v uuid.UUID) predicate.Env {
 }
 
 // BuildCount applies equality check predicate on the "build_count" field. It's identical to BuildCountEQ.
-func BuildCount(v int) predicate.Env {
+func BuildCount(v int32) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldBuildCount, v))
 }
 
@@ -318,42 +318,42 @@ func BuildIDLTE(v uuid.UUID) predicate.Env {
 }
 
 // BuildCountEQ applies the EQ predicate on the "build_count" field.
-func BuildCountEQ(v int) predicate.Env {
+func BuildCountEQ(v int32) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldBuildCount, v))
 }
 
 // BuildCountNEQ applies the NEQ predicate on the "build_count" field.
-func BuildCountNEQ(v int) predicate.Env {
+func BuildCountNEQ(v int32) predicate.Env {
 	return predicate.Env(sql.FieldNEQ(FieldBuildCount, v))
 }
 
 // BuildCountIn applies the In predicate on the "build_count" field.
-func BuildCountIn(vs ...int) predicate.Env {
+func BuildCountIn(vs ...int32) predicate.Env {
 	return predicate.Env(sql.FieldIn(FieldBuildCount, vs...))
 }
 
 // BuildCountNotIn applies the NotIn predicate on the "build_count" field.
-func BuildCountNotIn(vs ...int) predicate.Env {
+func BuildCountNotIn(vs ...int32) predicate.Env {
 	return predicate.Env(sql.FieldNotIn(FieldBuildCount, vs...))
 }
 
 // BuildCountGT applies the GT predicate on the "build_count" field.
-func BuildCountGT(v int) predicate.Env {
+func BuildCountGT(v int32) predicate.Env {
 	return predicate.Env(sql.FieldGT(FieldBuildCount, v))
 }
 
 // BuildCountGTE applies the GTE predicate on the "build_count" field.
-func BuildCountGTE(v int) predicate.Env {
+func BuildCountGTE(v int32) predicate.Env {
 	return predicate.Env(sql.FieldGTE(FieldBuildCount, v))
 }
 
 // BuildCountLT applies the LT predicate on the "build_count" field.
-func BuildCountLT(v int) predicate.Env {
+func BuildCountLT(v int32) predicate.Env {
 	return predicate.Env(sql.FieldLT(FieldBuildCount, v))
 }
 
 // BuildCountLTE applies the LTE predicate on the "build_count" field.
-func BuildCountLTE(v int) predicate.Env {
+func BuildCountLTE(v int32) predicate.Env {
 	return predicate.Env(sql.FieldLTE(FieldBuildCount, v))
 }
 

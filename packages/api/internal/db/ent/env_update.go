@@ -71,14 +71,14 @@ func (eu *EnvUpdate) SetBuildID(u uuid.UUID) *EnvUpdate {
 }
 
 // SetBuildCount sets the "build_count" field.
-func (eu *EnvUpdate) SetBuildCount(i int) *EnvUpdate {
+func (eu *EnvUpdate) SetBuildCount(i int32) *EnvUpdate {
 	eu.mutation.ResetBuildCount()
 	eu.mutation.SetBuildCount(i)
 	return eu
 }
 
 // SetNillableBuildCount sets the "build_count" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableBuildCount(i *int) *EnvUpdate {
+func (eu *EnvUpdate) SetNillableBuildCount(i *int32) *EnvUpdate {
 	if i != nil {
 		eu.SetBuildCount(*i)
 	}
@@ -86,7 +86,7 @@ func (eu *EnvUpdate) SetNillableBuildCount(i *int) *EnvUpdate {
 }
 
 // AddBuildCount adds i to the "build_count" field.
-func (eu *EnvUpdate) AddBuildCount(i int) *EnvUpdate {
+func (eu *EnvUpdate) AddBuildCount(i int32) *EnvUpdate {
 	eu.mutation.AddBuildCount(i)
 	return eu
 }
@@ -97,14 +97,14 @@ func (eu *EnvUpdate) SetTeam(t *Team) *EnvUpdate {
 }
 
 // AddEnvAliasIDs adds the "env_aliases" edge to the EnvAlias entity by IDs.
-func (eu *EnvUpdate) AddEnvAliasIDs(ids ...int) *EnvUpdate {
+func (eu *EnvUpdate) AddEnvAliasIDs(ids ...string) *EnvUpdate {
 	eu.mutation.AddEnvAliasIDs(ids...)
 	return eu
 }
 
 // AddEnvAliases adds the "env_aliases" edges to the EnvAlias entity.
 func (eu *EnvUpdate) AddEnvAliases(e ...*EnvAlias) *EnvUpdate {
-	ids := make([]int, len(e))
+	ids := make([]string, len(e))
 	for i := range e {
 		ids[i] = e[i].ID
 	}
@@ -129,14 +129,14 @@ func (eu *EnvUpdate) ClearEnvAliases() *EnvUpdate {
 }
 
 // RemoveEnvAliasIDs removes the "env_aliases" edge to EnvAlias entities by IDs.
-func (eu *EnvUpdate) RemoveEnvAliasIDs(ids ...int) *EnvUpdate {
+func (eu *EnvUpdate) RemoveEnvAliasIDs(ids ...string) *EnvUpdate {
 	eu.mutation.RemoveEnvAliasIDs(ids...)
 	return eu
 }
 
 // RemoveEnvAliases removes "env_aliases" edges to EnvAlias entities.
 func (eu *EnvUpdate) RemoveEnvAliases(e ...*EnvAlias) *EnvUpdate {
-	ids := make([]int, len(e))
+	ids := make([]string, len(e))
 	for i := range e {
 		ids[i] = e[i].ID
 	}
@@ -203,10 +203,10 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
 	}
 	if value, ok := eu.mutation.BuildCount(); ok {
-		_spec.SetField(env.FieldBuildCount, field.TypeInt, value)
+		_spec.SetField(env.FieldBuildCount, field.TypeInt32, value)
 	}
 	if value, ok := eu.mutation.AddedBuildCount(); ok {
-		_spec.AddField(env.FieldBuildCount, field.TypeInt, value)
+		_spec.AddField(env.FieldBuildCount, field.TypeInt32, value)
 	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -247,7 +247,7 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{env.EnvAliasesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString),
 			},
 		}
 		edge.Schema = eu.schemaConfig.EnvAlias
@@ -261,7 +261,7 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{env.EnvAliasesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString),
 			},
 		}
 		edge.Schema = eu.schemaConfig.EnvAlias
@@ -278,7 +278,7 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{env.EnvAliasesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString),
 			},
 		}
 		edge.Schema = eu.schemaConfig.EnvAlias
@@ -348,14 +348,14 @@ func (euo *EnvUpdateOne) SetBuildID(u uuid.UUID) *EnvUpdateOne {
 }
 
 // SetBuildCount sets the "build_count" field.
-func (euo *EnvUpdateOne) SetBuildCount(i int) *EnvUpdateOne {
+func (euo *EnvUpdateOne) SetBuildCount(i int32) *EnvUpdateOne {
 	euo.mutation.ResetBuildCount()
 	euo.mutation.SetBuildCount(i)
 	return euo
 }
 
 // SetNillableBuildCount sets the "build_count" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableBuildCount(i *int) *EnvUpdateOne {
+func (euo *EnvUpdateOne) SetNillableBuildCount(i *int32) *EnvUpdateOne {
 	if i != nil {
 		euo.SetBuildCount(*i)
 	}
@@ -363,7 +363,7 @@ func (euo *EnvUpdateOne) SetNillableBuildCount(i *int) *EnvUpdateOne {
 }
 
 // AddBuildCount adds i to the "build_count" field.
-func (euo *EnvUpdateOne) AddBuildCount(i int) *EnvUpdateOne {
+func (euo *EnvUpdateOne) AddBuildCount(i int32) *EnvUpdateOne {
 	euo.mutation.AddBuildCount(i)
 	return euo
 }
@@ -374,14 +374,14 @@ func (euo *EnvUpdateOne) SetTeam(t *Team) *EnvUpdateOne {
 }
 
 // AddEnvAliasIDs adds the "env_aliases" edge to the EnvAlias entity by IDs.
-func (euo *EnvUpdateOne) AddEnvAliasIDs(ids ...int) *EnvUpdateOne {
+func (euo *EnvUpdateOne) AddEnvAliasIDs(ids ...string) *EnvUpdateOne {
 	euo.mutation.AddEnvAliasIDs(ids...)
 	return euo
 }
 
 // AddEnvAliases adds the "env_aliases" edges to the EnvAlias entity.
 func (euo *EnvUpdateOne) AddEnvAliases(e ...*EnvAlias) *EnvUpdateOne {
-	ids := make([]int, len(e))
+	ids := make([]string, len(e))
 	for i := range e {
 		ids[i] = e[i].ID
 	}
@@ -406,14 +406,14 @@ func (euo *EnvUpdateOne) ClearEnvAliases() *EnvUpdateOne {
 }
 
 // RemoveEnvAliasIDs removes the "env_aliases" edge to EnvAlias entities by IDs.
-func (euo *EnvUpdateOne) RemoveEnvAliasIDs(ids ...int) *EnvUpdateOne {
+func (euo *EnvUpdateOne) RemoveEnvAliasIDs(ids ...string) *EnvUpdateOne {
 	euo.mutation.RemoveEnvAliasIDs(ids...)
 	return euo
 }
 
 // RemoveEnvAliases removes "env_aliases" edges to EnvAlias entities.
 func (euo *EnvUpdateOne) RemoveEnvAliases(e ...*EnvAlias) *EnvUpdateOne {
-	ids := make([]int, len(e))
+	ids := make([]string, len(e))
 	for i := range e {
 		ids[i] = e[i].ID
 	}
@@ -510,10 +510,10 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
 	}
 	if value, ok := euo.mutation.BuildCount(); ok {
-		_spec.SetField(env.FieldBuildCount, field.TypeInt, value)
+		_spec.SetField(env.FieldBuildCount, field.TypeInt32, value)
 	}
 	if value, ok := euo.mutation.AddedBuildCount(); ok {
-		_spec.AddField(env.FieldBuildCount, field.TypeInt, value)
+		_spec.AddField(env.FieldBuildCount, field.TypeInt32, value)
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -554,7 +554,7 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 			Columns: []string{env.EnvAliasesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString),
 			},
 		}
 		edge.Schema = euo.schemaConfig.EnvAlias
@@ -568,7 +568,7 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 			Columns: []string{env.EnvAliasesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString),
 			},
 		}
 		edge.Schema = euo.schemaConfig.EnvAlias
@@ -585,7 +585,7 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 			Columns: []string{env.EnvAliasesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString),
 			},
 		}
 		edge.Schema = euo.schemaConfig.EnvAlias

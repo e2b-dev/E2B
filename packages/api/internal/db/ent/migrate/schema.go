@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -22,13 +23,13 @@ var (
 	}
 	// EnvsColumns holds the columns for the "envs" table.
 	EnvsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
+		{Name: "id", Type: field.TypeString, Unique: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "dockerfile", Type: field.TypeString},
 		{Name: "public", Type: field.TypeBool},
 		{Name: "build_id", Type: field.TypeUUID},
-		{Name: "build_count", Type: field.TypeInt, Default: 1},
+		{Name: "build_count", Type: field.TypeInt32, Default: 1},
 		{Name: "team_id", Type: field.TypeUUID},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
@@ -45,21 +46,20 @@ var (
 			},
 		},
 	}
-	// EnvAliasColumns holds the columns for the "env_alias" table.
-	EnvAliasColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "alias", Type: field.TypeString, Unique: true, Size: 2147483647},
+	// EnvAliasesColumns holds the columns for the "env_aliases" table.
+	EnvAliasesColumns = []*schema.Column{
+		{Name: "alias", Type: field.TypeString, Unique: true},
 		{Name: "env_id", Type: field.TypeString},
 	}
-	// EnvAliasTable holds the schema information for the "env_alias" table.
-	EnvAliasTable = &schema.Table{
-		Name:       "env_alias",
-		Columns:    EnvAliasColumns,
-		PrimaryKey: []*schema.Column{EnvAliasColumns[0]},
+	// EnvAliasesTable holds the schema information for the "env_aliases" table.
+	EnvAliasesTable = &schema.Table{
+		Name:       "env_aliases",
+		Columns:    EnvAliasesColumns,
+		PrimaryKey: []*schema.Column{EnvAliasesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "env_alias_envs_env_aliases",
-				Columns:    []*schema.Column{EnvAliasColumns[2]},
+				Symbol:     "env_aliases_envs_env_aliases",
+				Columns:    []*schema.Column{EnvAliasesColumns[1]},
 				RefColumns: []*schema.Column{EnvsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -70,9 +70,9 @@ var (
 		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "is_default", Type: field.TypeBool},
-		{Name: "name", Type: field.TypeString},
 		{Name: "is_blocked", Type: field.TypeBool},
-		{Name: "tier", Type: field.TypeString, Size: 2147483647},
+		{Name: "name", Type: field.TypeString},
+		{Name: "tier", Type: field.TypeString},
 	}
 	// TeamsTable holds the schema information for the "teams" table.
 	TeamsTable = &schema.Table{
@@ -90,7 +90,7 @@ var (
 	}
 	// TeamAPIKeysColumns holds the columns for the "team_api_keys" table.
 	TeamAPIKeysColumns = []*schema.Column{
-		{Name: "api_key", Type: field.TypeString},
+		{Name: "api_key", Type: field.TypeString, Unique: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "team_id", Type: field.TypeUUID},
 	}
@@ -110,7 +110,7 @@ var (
 	}
 	// TiersColumns holds the columns for the "tiers" table.
 	TiersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString, Unique: true, Size: 2147483647},
+		{Name: "id", Type: field.TypeString, Unique: true},
 		{Name: "vcpu", Type: field.TypeInt64},
 		{Name: "ram_mb", Type: field.TypeInt64},
 		{Name: "disk_mb", Type: field.TypeInt64},
@@ -123,7 +123,7 @@ var (
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "email", Type: field.TypeString},
 		{Name: "access_token_users", Type: field.TypeString, Nullable: true},
 	}
@@ -178,7 +178,7 @@ var (
 	Tables = []*schema.Table{
 		AccessTokensTable,
 		EnvsTable,
-		EnvAliasTable,
+		EnvAliasesTable,
 		TeamsTable,
 		TeamAPIKeysTable,
 		TiersTable,
@@ -189,7 +189,10 @@ var (
 
 func init() {
 	EnvsTable.ForeignKeys[0].RefTable = TeamsTable
-	EnvAliasTable.ForeignKeys[0].RefTable = EnvsTable
+	EnvAliasesTable.ForeignKeys[0].RefTable = EnvsTable
+	EnvAliasesTable.Annotation = &entsql.Annotation{
+		Table: "env_aliases",
+	}
 	TeamsTable.ForeignKeys[0].RefTable = TiersTable
 	TeamAPIKeysTable.ForeignKeys[0].RefTable = TeamsTable
 	UsersTable.ForeignKeys[0].RefTable = AccessTokensTable

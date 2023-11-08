@@ -18,12 +18,12 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldIsDefault holds the string denoting the is_default field in the database.
 	FieldIsDefault = "is_default"
+	// FieldIsBlocked holds the string denoting the is_blocked field in the database.
+	FieldIsBlocked = "is_blocked"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldTier holds the string denoting the tier field in the database.
 	FieldTier = "tier"
-	// FieldIsBlocked holds the string denoting the is_blocked field in the database.
-	FieldIsBlocked = "is_blocked"
 	// EdgeUsers holds the string denoting the users edge name in mutations.
 	EdgeUsers = "users"
 	// EdgeTeamAPIKeys holds the string denoting the team_api_keys edge name in mutations.
@@ -78,9 +78,9 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldIsDefault,
+	FieldIsBlocked,
 	FieldName,
 	FieldTier,
-	FieldIsBlocked,
 }
 
 var (
@@ -122,6 +122,11 @@ func ByIsDefault(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsDefault, opts...).ToFunc()
 }
 
+// ByIsBlocked orders the results by the is_blocked field.
+func ByIsBlocked(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsBlocked, opts...).ToFunc()
+}
+
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
@@ -130,11 +135,6 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByTier orders the results by the tier field.
 func ByTier(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTier, opts...).ToFunc()
-}
-
-// ByIsBlocked orders the results by the is_blocked field.
-func ByIsBlocked(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsBlocked, opts...).ToFunc()
 }
 
 // ByUsersCount orders the results by users count.

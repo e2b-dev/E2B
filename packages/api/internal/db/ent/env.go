@@ -32,7 +32,7 @@ type Env struct {
 	// BuildID holds the value of the "build_id" field.
 	BuildID uuid.UUID `json:"build_id,omitempty"`
 	// BuildCount holds the value of the "build_count" field.
-	BuildCount int `json:"build_count,omitempty"`
+	BuildCount int32 `json:"build_count,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvQuery when eager-loading is set.
 	Edges        EnvEdges `json:"edges"`
@@ -148,7 +148,7 @@ func (e *Env) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field build_count", values[i])
 			} else if value.Valid {
-				e.BuildCount = int(value.Int64)
+				e.BuildCount = int32(value.Int64)
 			}
 		default:
 			e.selectValues.Set(columns[i], values[i])

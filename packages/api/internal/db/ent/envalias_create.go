@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -22,15 +23,15 @@ type EnvAliasCreate struct {
 	conflict []sql.ConflictOption
 }
 
-// SetAlias sets the "alias" field.
-func (eac *EnvAliasCreate) SetAlias(s string) *EnvAliasCreate {
-	eac.mutation.SetAlias(s)
-	return eac
-}
-
 // SetEnvID sets the "env_id" field.
 func (eac *EnvAliasCreate) SetEnvID(s string) *EnvAliasCreate {
 	eac.mutation.SetEnvID(s)
+	return eac
+}
+
+// SetID sets the "id" field.
+func (eac *EnvAliasCreate) SetID(s string) *EnvAliasCreate {
+	eac.mutation.SetID(s)
 	return eac
 }
 
@@ -79,9 +80,6 @@ func (eac *EnvAliasCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (eac *EnvAliasCreate) check() error {
-	if _, ok := eac.mutation.Alias(); !ok {
-		return &ValidationError{Name: "alias", err: errors.New(`ent: missing required field "EnvAlias.alias"`)}
-	}
 	if _, ok := eac.mutation.EnvID(); !ok {
 		return &ValidationError{Name: "env_id", err: errors.New(`ent: missing required field "EnvAlias.env_id"`)}
 	}
@@ -102,8 +100,13 @@ func (eac *EnvAliasCreate) sqlSave(ctx context.Context) (*EnvAlias, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(string); ok {
+			_node.ID = id
+		} else {
+			return nil, fmt.Errorf("unexpected EnvAlias.ID type: %T", _spec.ID.Value)
+		}
+	}
 	eac.mutation.id = &_node.ID
 	eac.mutation.done = true
 	return _node, nil
@@ -112,13 +115,13 @@ func (eac *EnvAliasCreate) sqlSave(ctx context.Context) (*EnvAlias, error) {
 func (eac *EnvAliasCreate) createSpec() (*EnvAlias, *sqlgraph.CreateSpec) {
 	var (
 		_node = &EnvAlias{config: eac.config}
-		_spec = sqlgraph.NewCreateSpec(envalias.Table, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(envalias.Table, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	)
 	_spec.Schema = eac.schemaConfig.EnvAlias
 	_spec.OnConflict = eac.conflict
-	if value, ok := eac.mutation.Alias(); ok {
-		_spec.SetField(envalias.FieldAlias, field.TypeString, value)
-		_node.Alias = value
+	if id, ok := eac.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = id
 	}
 	if nodes := eac.mutation.AliasEnvIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -145,7 +148,7 @@ func (eac *EnvAliasCreate) createSpec() (*EnvAlias, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.EnvAlias.Create().
-//		SetAlias(v).
+//		SetEnvID(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -154,7 +157,7 @@ func (eac *EnvAliasCreate) createSpec() (*EnvAlias, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.EnvAliasUpsert) {
-//			SetAlias(v+v).
+//			SetEnvID(v+v).
 //		}).
 //		Exec(ctx)
 func (eac *EnvAliasCreate) OnConflict(opts ...sql.ConflictOption) *EnvAliasUpsertOne {
@@ -202,19 +205,22 @@ func (u *EnvAliasUpsert) UpdateEnvID() *EnvAliasUpsert {
 	return u
 }
 
-// UpdateNewValues updates the mutable fields using the new values that were set on create.
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
 //	client.EnvAlias.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(envalias.FieldID)
+//			}),
 //		).
 //		Exec(ctx)
 func (u *EnvAliasUpsertOne) UpdateNewValues() *EnvAliasUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		if _, exists := u.create.mutation.Alias(); exists {
-			s.SetIgnore(envalias.FieldAlias)
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(envalias.FieldID)
 		}
 	}))
 	return u
@@ -277,7 +283,12 @@ func (u *EnvAliasUpsertOne) ExecX(ctx context.Context) {
 }
 
 // Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *EnvAliasUpsertOne) ID(ctx context.Context) (id int, err error) {
+func (u *EnvAliasUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: EnvAliasUpsertOne.ID is not supported by MySQL driver. Use EnvAliasUpsertOne.Exec instead")
+	}
 	node, err := u.create.Save(ctx)
 	if err != nil {
 		return id, err
@@ -286,7 +297,7 @@ func (u *EnvAliasUpsertOne) ID(ctx context.Context) (id int, err error) {
 }
 
 // IDX is like ID, but panics if an error occurs.
-func (u *EnvAliasUpsertOne) IDX(ctx context.Context) int {
+func (u *EnvAliasUpsertOne) IDX(ctx context.Context) string {
 	id, err := u.ID(ctx)
 	if err != nil {
 		panic(err)
@@ -340,10 +351,6 @@ func (eacb *EnvAliasCreateBulk) Save(ctx context.Context) ([]*EnvAlias, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})
@@ -395,7 +402,7 @@ func (eacb *EnvAliasCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.EnvAliasUpsert) {
-//			SetAlias(v+v).
+//			SetEnvID(v+v).
 //		}).
 //		Exec(ctx)
 func (eacb *EnvAliasCreateBulk) OnConflict(opts ...sql.ConflictOption) *EnvAliasUpsertBulk {
@@ -430,14 +437,17 @@ type EnvAliasUpsertBulk struct {
 //	client.EnvAlias.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(envalias.FieldID)
+//			}),
 //		).
 //		Exec(ctx)
 func (u *EnvAliasUpsertBulk) UpdateNewValues() *EnvAliasUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		for _, b := range u.create.builders {
-			if _, exists := b.mutation.Alias(); exists {
-				s.SetIgnore(envalias.FieldAlias)
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(envalias.FieldID)
 			}
 		}
 	}))

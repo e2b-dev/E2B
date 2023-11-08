@@ -28,7 +28,7 @@ func init() {
 	// envDescBuildCount is the schema descriptor for build_count field.
 	envDescBuildCount := envFields[7].Descriptor()
 	// env.DefaultBuildCount holds the default value on creation for the build_count field.
-	env.DefaultBuildCount = envDescBuildCount.Default.(int)
+	env.DefaultBuildCount = envDescBuildCount.Default.(int32)
 	teamFields := schema.Team{}.Fields()
 	_ = teamFields
 	// teamDescCreatedAt is the schema descriptor for created_at field.
