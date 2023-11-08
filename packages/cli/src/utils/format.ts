@@ -49,3 +49,7 @@ export function asLocalRelative(absolutePathInLocal?: string) {
 export function asBuildLogs(content: string) {
   return chalk.default.blueBright(content)
 }
+
+export function asHeadline(content: string) {
+  return chalk.default.underline(asPrimary(asBold(content)))
+}

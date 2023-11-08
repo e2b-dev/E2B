@@ -8,14 +8,20 @@ import * as stripAnsi from 'strip-ansi'
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getFiles, getRoot } from 'src/utils/filesystem'
-import { asBold, asBuildLogs, asFormattedSandboxTemplate, asLocal, asLocalRelative, asPrimary } from 'src/utils/format'
+import {
+  asBold,
+  asBuildLogs,
+  asFormattedSandboxTemplate,
+  asLocal,
+  asLocalRelative,
+  asPrimary,
+} from 'src/utils/format'
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
 import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 
 const templateCheckInterval = 1_000 // 1 sec
-const maxBuildTime = 10 * 60 * 1_000 // 10 min
 
 const getTemplate = e2b.withAccessToken(
   e2b.api.path('/envs/{envID}/builds/{buildID}').method('get').create(),
@@ -164,12 +170,7 @@ async function waitForBuildFinish(
   envID: string,
   buildID: string,
 ) {
-  const startedAt = new Date()
   let logsOffset = 0
-
-  function elapsed() {
-    return Date.now() - startedAt.getTime()
-  }
 
   let template: Awaited<ReturnType<typeof getTemplate>> | undefined
 
@@ -213,7 +214,9 @@ async function waitForBuildFinish(
         console.log(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate(
             template.data,
-          )} finished.\n`,
+          )} finished.\n
+          Now you can start creating your sandboxes from this template. You can find more here: 
+          ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')}, section ${asBold('Spawn and control your sandbox')}\n`,
         )
         break
 
@@ -227,15 +230,7 @@ async function waitForBuildFinish(
           )} failed.\nCheck the logs above for more details or contact us ${asPrimary('(https://e2b.dev/docs/getting-help)')} to get help.\n`,
         )
     }
-  } while (template.data.status === 'building' && elapsed() < maxBuildTime)
-  // TODO: We do have another timeout for envs building in API so we probably should handle timeout only in one place
-  if (template.data.status === 'building' && elapsed() >= maxBuildTime) {
-    throw new Error(
-      `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
-        template.data,
-      )} timed out.\nCheck the logs above for more details or contact us ${asPrimary('(https://e2b.dev/docs/getting-help)')} to get help.\n`,
-    )
-  }
+  } while (template.data.status === 'building')
 }
 
 function loadFile(filePath: string) {

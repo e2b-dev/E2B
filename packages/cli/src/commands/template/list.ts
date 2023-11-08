@@ -1,8 +1,8 @@
-import * as chalk from 'chalk'
 import * as commander from 'commander'
 import * as e2b from '@e2b/sdk'
 
 import { ensureAccessToken } from 'src/api'
+import { asHeadline, asPrimary } from '../../utils/format'
 
 const listTemplates = e2b.withAccessToken(
   e2b.api.path('/envs').method('get').create(),
@@ -18,14 +18,14 @@ export const listCommand = new commander.Command('list')
 
       const templatesResponse = await listTemplates(accessToken, {})
 
-      console.log(
-        chalk.default.underline(chalk.default.green('Sandbox templates')),
-      )
+      console.log(asHeadline('Sandbox templates:'))
+
 
       const templates = templatesResponse.data
 
       if (!templates?.length) {
-        console.log('No templates found.')
+        console.log(`No templates found.\n
+You can create a template by running ${asPrimary('e2b template build')} or visit E2B docs ${asPrimary('(https://e2b.dev/docs/guide/custom-sandbox)')} to learn more.`)
       } else {
         templates
           .sort((a, b) => a.envID.localeCompare(b.envID))
