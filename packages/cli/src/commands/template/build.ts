@@ -8,7 +8,14 @@ import * as stripAnsi from 'strip-ansi'
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getFiles, getRoot } from 'src/utils/filesystem'
-import { asBold, asBuildLogs, asFormattedSandboxTemplate, asLocal, asLocalRelative, asPrimary } from 'src/utils/format'
+import {
+  asBold,
+  asBuildLogs,
+  asFormattedSandboxTemplate,
+  asLocal,
+  asLocalRelative,
+  asPrimary,
+} from 'src/utils/format'
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
 import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
@@ -207,7 +214,9 @@ async function waitForBuildFinish(
         console.log(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate(
             template.data,
-          )} finished.\n`,
+          )} finished.\n
+          Now you can start creating your sandboxes from this template. You can find more here: 
+          ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')}, section ${asBold('Spawn and control your sandbox')}\n`,
         )
         break
 

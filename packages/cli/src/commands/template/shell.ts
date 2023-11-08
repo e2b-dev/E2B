@@ -3,11 +3,11 @@ import * as commander from 'commander'
 
 import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal } from 'src/terminal'
-import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
+import { asBold, asFormattedSandboxTemplate, asPrimary } from 'src/utils/format'
 
 export const shellCommand = new commander.Command('shell')
-  .description('Connect terminal to sandbox')
-  .argument('<id>', `Connect to sandbox specified by ${asBold('<id>')}`)
+  .description('Connect to the terminal in the sandbox')
+  .argument('<id>', `Connect to sandbox specified by ${asPrimary('template id')}`)
   .alias('sh')
   .action(async (id: string) => {
     try {
@@ -35,12 +35,10 @@ async function connectSandbox({
   apiKey: string;
   template: Pick<e2b.components['schemas']['Environment'], 'envID'>;
 }) {
-  const sandbox = new e2b.Sandbox({
+  const sandbox = await e2b.Sandbox.create({
     apiKey,
     id: template.envID,
   })
-
-  await sandbox.open({})
 
   if (sandbox.terminal) {
     const { exited } = await spawnConnectedTerminal(
