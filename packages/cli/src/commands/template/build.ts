@@ -15,7 +15,6 @@ import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/consta
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 
 const templateCheckInterval = 1_000 // 1 sec
-const maxBuildTime = 10 * 60 * 1_000 // 10 min
 
 const getTemplate = e2b.withAccessToken(
   e2b.api.path('/envs/{envID}/builds/{buildID}').method('get').create(),
@@ -164,12 +163,7 @@ async function waitForBuildFinish(
   envID: string,
   buildID: string,
 ) {
-  const startedAt = new Date()
   let logsOffset = 0
-
-  function elapsed() {
-    return Date.now() - startedAt.getTime()
-  }
 
   let template: Awaited<ReturnType<typeof getTemplate>> | undefined
 
@@ -227,15 +221,7 @@ async function waitForBuildFinish(
           )} failed.\nCheck the logs above for more details or contact us ${asPrimary('(https://e2b.dev/docs/getting-help)')} to get help.\n`,
         )
     }
-  } while (template.data.status === 'building' && elapsed() < maxBuildTime)
-  // TODO: We do have another timeout for envs building in API so we probably should handle timeout only in one place
-  if (template.data.status === 'building' && elapsed() >= maxBuildTime) {
-    throw new Error(
-      `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
-        template.data,
-      )} timed out.\nCheck the logs above for more details or contact us ${asPrimary('(https://e2b.dev/docs/getting-help)')} to get help.\n`,
-    )
-  }
+  } while (template.data.status === 'building')
 }
 
 function loadFile(filePath: string) {
