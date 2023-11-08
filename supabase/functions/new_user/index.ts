@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
+// Created via https://slack.com/apps/new/A0F7XDUAZ-incoming-webhooks
 const SLACK_WEBHOOK_URL = Deno.env.get('SLACK_USER_SIGNUP_WEBHOOK_URL')
 if (!SLACK_WEBHOOK_URL) {
   throw new Error('Missing SLACK_NEW_USER_FEEDBACK_APP_OAUTH_TOKEN environment variable')
