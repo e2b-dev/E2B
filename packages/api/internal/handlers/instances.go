@@ -5,15 +5,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
-	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel/attribute"
 )
 
-// TODO: Update envIDs
 var publicEnvs map[string]string = map[string]string{
 	"base":                 "rki5dems9wqfm4r03t7g",
 	"Python3-DataAnalysis": "fv7bfqp4wyo42829htzt",
@@ -59,7 +58,7 @@ func (a *APIStore) PostInstances(
 		}
 
 		if !hasAccess {
-			a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
+			a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
 
 			return
 		}
@@ -106,7 +105,7 @@ func (a *APIStore) PostInstances(
 			telemetry.ReportEvent(ctx, "deleted instance that couldn't be added to cache")
 		}
 
-		a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a environment instance right now")
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a sandbox right now")
 
 		return
 	}
@@ -134,7 +133,7 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 	if err != nil {
 		errMsg := fmt.Errorf("error when refreshing instance: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error refreshing instance - instance '%s' was not found", instanceID))
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error refreshing sandbox - sandbox '%s' was not found", instanceID))
 
 		return
 	}

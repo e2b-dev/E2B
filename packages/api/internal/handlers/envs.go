@@ -8,17 +8,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-uuid"
 	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 func (a *APIStore) PostEnvs(c *gin.Context) {
@@ -28,7 +28,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	// Prepare info for new env
 	userID, teamID, tier, err := a.GetUserAndTeam(c)
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Failed to get the default team")
 
 		err = fmt.Errorf("error when getting default team: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
@@ -45,17 +45,50 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		attribute.String("tier", tier.ID),
 	)
 
-	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-
-	dockerfile, buildID, fileContent, err := a.getBuildData(c, ctx, userID, teamID, envID, properties)
+	buildID, err := uuid.GenerateUUID()
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when getting build data: %s", err))
-
-		err = fmt.Errorf("error when getting build data: %w", err)
+		err = fmt.Errorf("error when generating build id: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Failed to generate build id")
 		return
 	}
+
+	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
+	if err != nil {
+		err = fmt.Errorf("error when parsing form data: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		a.sendAPIStoreError(c, http.StatusBadRequest, "Failed to parse form data")
+		return
+	}
+
+	defer func() {
+		closeErr := fileContent.Close()
+		if closeErr != nil {
+			errMsg := fmt.Errorf("error when closing file: %w", closeErr)
+
+			telemetry.ReportError(ctx, errMsg)
+		}
+	}()
+
+	// Check if file is a tar.gz file
+	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz.e2b") {
+		err = fmt.Errorf("build context doesn't have correct extension, the file is %s", fileHandler.Filename)
+		telemetry.ReportCriticalError(ctx, err)
+
+		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz.e2b file")
+		return
+	}
+	dockerfile := c.PostForm("dockerfile")
+
+	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
+	a.IdentifyAnalyticsTeam(teamID)
+	a.CreateAnalyticsUserEvent(userID, teamID, "submitted environment build request", properties.
+		Set("environment", envID).
+		Set("build_id", buildID).
+		Set("dockerfile", dockerfile),
+	)
 
 	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
 
@@ -139,23 +172,56 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 
 	fmt.Printf("tier: %+v\n", tier)
 
-	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-
-	dockerfile, buildID, fileContent, err := a.getBuildData(c, ctx, userID, teamID, envID, properties)
+	buildID, err := uuid.GenerateUUID()
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when getting build data: %s", err))
-
-		err = fmt.Errorf("error when getting build data: %w", err)
+		err = fmt.Errorf("error when generating build id: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Failed to generate build id")
 		return
 	}
+
+	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
+	if err != nil {
+		err = fmt.Errorf("error when parsing form data: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		a.sendAPIStoreError(c, http.StatusBadRequest, "Failed to parse form data")
+		return
+	}
+
+	defer func() {
+		closeErr := fileContent.Close()
+		if closeErr != nil {
+			errMsg := fmt.Errorf("error when closing file: %w", closeErr)
+
+			telemetry.ReportError(ctx, errMsg)
+		}
+	}()
+
+	// Check if file is a tar.gz file
+	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz.e2b") {
+		err = fmt.Errorf("build context doesn't have correct extension, the file is %s", fileHandler.Filename)
+		telemetry.ReportCriticalError(ctx, err)
+
+		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz.e2b file")
+		return
+	}
+	dockerfile := c.PostForm("dockerfile")
+
+	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
+	a.IdentifyAnalyticsTeam(teamID)
+	a.CreateAnalyticsUserEvent(userID, teamID, "submitted environment build request", properties.
+		Set("environment", envID).
+		Set("build_id", buildID).
+		Set("dockerfile", dockerfile),
+	)
 
 	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
 
 	hasAccess, accessErr := a.supabase.HasEnvAccess(envID, teamID, false)
 	if accessErr != nil {
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The environment '%s' does not exist", envID))
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The sandbox template '%s' does not exist", envID))
 
 		errMsg := fmt.Errorf("error env not found: %w", accessErr)
 		telemetry.ReportError(ctx, errMsg)
@@ -164,7 +230,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 	}
 
 	if !hasAccess {
-		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
+		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
 
 		errMsg := fmt.Errorf("user doesn't have access to env '%s'", envID)
 		telemetry.ReportError(ctx, errMsg)
@@ -253,7 +319,7 @@ func (a *APIStore) GetEnvs(
 
 	envs, err := a.supabase.GetEnvs(teamID)
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting envs: %s", err))
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting sandbox templates: %s", err))
 
 		err = fmt.Errorf("error when getting envs: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
@@ -294,7 +360,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 	dockerBuild, err := a.buildCache.Get(envID, buildID)
 	if err != nil {
 		msg := fmt.Errorf("error finding cache for env %s and build %s", envID, buildID)
-		a.sendAPIStoreError(c, http.StatusNotFound, msg.Error())
+		a.sendAPIStoreError(c, http.StatusNotFound, "Build not found")
 
 		telemetry.ReportError(ctx, msg)
 
@@ -303,7 +369,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 
 	if teamID != dockerBuild.TeamID {
 		msg := fmt.Errorf("user doesn't have access to env '%s'", envID)
-		a.sendAPIStoreError(c, http.StatusForbidden, msg.Error())
+		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
 
 		telemetry.ReportError(ctx, msg)
 
@@ -414,51 +480,4 @@ func (a *APIStore) buildEnv(
 	}
 
 	return nil
-}
-
-func (a *APIStore) getBuildData(c *gin.Context, ctx context.Context, userID, teamID, envID string, properties posthog.Properties) (dockerfile, buildID string, fileContent io.ReadCloser, err error) {
-	a.IdentifyAnalyticsTeam(teamID)
-	a.CreateAnalyticsUserEvent(userID, teamID, "submitted environment build request", properties.
-		Set("environment", envID).
-		Set("build_id", buildID).
-		Set("dockerfile", dockerfile),
-	)
-
-	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
-	if err != nil {
-		err = fmt.Errorf("error when parsing form data: %w", err)
-
-		return dockerfile, buildID, fileContent, err
-	}
-
-	defer func() {
-		closeErr := fileContent.Close()
-		if closeErr != nil {
-			errMsg := fmt.Errorf("error when closing file: %w", closeErr)
-
-			telemetry.ReportError(ctx, errMsg)
-		}
-	}()
-
-	// Check if file is a tar.gz file
-	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz.e2b") {
-		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz.e2b file")
-
-		err = fmt.Errorf("build context doesn't have correct extension, the file is %s", fileHandler.Filename)
-		telemetry.ReportCriticalError(ctx, err)
-
-		return dockerfile, buildID, fileContent, err
-	}
-
-	dockerfile = c.PostForm("dockerfile")
-
-	buildID, err = uuid.GenerateUUID()
-	if err != nil {
-		err = fmt.Errorf("error when generating build id: %w", err)
-		telemetry.ReportCriticalError(ctx, err)
-
-		return dockerfile, buildID, fileContent, err
-	}
-
-	return dockerfile, buildID, fileContent, err
 }
