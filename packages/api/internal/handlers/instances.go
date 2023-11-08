@@ -5,20 +5,21 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
-	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel/attribute"
 )
 
-// TODO: Update envIDs
 var publicEnvs map[string]string = map[string]string{
 	"base":                 "rki5dems9wqfm4r03t7g",
 	"Python3-DataAnalysis": "fv7bfqp4wyo42829htzt",
 	"CloudBrowser":         "m3offcydl3x4ojazn9sz",
 }
+
+const maxInstancesPerTeam = 20
 
 func (a *APIStore) PostInstances(
 	c *gin.Context,
@@ -36,6 +37,16 @@ func (a *APIStore) PostInstances(
 	// Get team id from context, use TeamIDContextKey
 	teamID := c.Value(constants.TeamIDContextKey).(string)
 
+	// Check if team has reached max instances
+	if instanceCount := a.cache.CountForTeam(teamID); instanceCount >= maxInstancesPerTeam {
+		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", teamID, maxInstancesPerTeam)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
+			"You have reached the maximum number of sandboxes (%d). If you need more, "+
+				"please contact us at 'https://e2b.dev/docs/getting-help'", maxInstancesPerTeam))
+		return
+	}
 	// Check if envID is in publicEnvs
 	originalEnvID, ok := publicEnvs[envID]
 	if !ok {
@@ -47,7 +58,7 @@ func (a *APIStore) PostInstances(
 		}
 
 		if !hasAccess {
-			a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
+			a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
 
 			return
 		}
@@ -94,7 +105,7 @@ func (a *APIStore) PostInstances(
 			telemetry.ReportEvent(ctx, "deleted instance that couldn't be added to cache")
 		}
 
-		a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a environment instance right now")
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a sandbox right now")
 
 		return
 	}
@@ -122,7 +133,7 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 	if err != nil {
 		errMsg := fmt.Errorf("error when refreshing instance: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error refreshing instance - instance '%s' was not found", instanceID))
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error refreshing sandbox - sandbox '%s' was not found", instanceID))
 
 		return
 	}

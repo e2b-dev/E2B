@@ -164,3 +164,19 @@ func (c *InstanceCache) KeepInSync(client *NomadClient) {
 func (c *InstanceCache) Count() int {
 	return c.cache.Len()
 }
+
+func (c *InstanceCache) CountForTeam(teamID string) (count uint) {
+	for _, item := range c.cache.Items() {
+		currentTeamID := item.Value().TeamID
+
+		if currentTeamID == nil {
+			continue
+		}
+
+		if *currentTeamID == teamID {
+			count++
+		}
+	}
+
+	return count
+}
