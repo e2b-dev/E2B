@@ -1,25 +1,25 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { WebClient } from 'https://deno.land/x/slack_web_api@6.7.2/mod.js'
 
-const SLACK_API_TOKEN = Deno.env.get('SLACK_NEW_USER_FEEDBACK_APP_OAUTH_TOKEN')
-if (!SLACK_API_TOKEN) {
+const SLACK_WEBHOOK_URL = Deno.env.get('SLACK_USER_SIGNUP_WEBHOOK_URL')
+if (!SLACK_WEBHOOK_URL) {
   throw new Error('Missing SLACK_NEW_USER_FEEDBACK_APP_OAUTH_TOKEN environment variable')
 }
 const SLACK_CHANNEL = 'user-signups'
 
-console.log('Will create slack client')
 
-const slackClient = new WebClient(SLACK_API_TOKEN)
-
-console.log('Slack client created')
 
 function sendSlackMessage(email: string) {
   const message = `:fire: *New User Signed Up *\n*User*\n${email}\n`
 
-  return slackClient.chat.postMessage({
-    channel: SLACK_CHANNEL,
-    text: message,
-    link_names: true,
+  return fetch(SLACK_WEBHOOK_URL,{
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      channel: SLACK_CHANNEL,
+      text: message,
+    }),
   })
 }
 
