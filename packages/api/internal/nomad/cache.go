@@ -44,27 +44,53 @@ func (c *InstanceCache) Add(instance *api.Instance, teamID *string, startTime *t
 
 	c.cache.Set(instance.InstanceID, instanceData, ttlcache.DefaultTTL)
 	c.counter.Add(context.Background(), 1, metric.WithAttributes(attribute.String("instance_id", instance.InstanceID)))
+
 	return nil
+}
+
+func getMaxAllowedTTL(startTime time.Time) time.Duration {
+	runningTime := time.Since(startTime)
+	timeLeft := maxInstanceLength - runningTime
+
+	if timeLeft <= 0 {
+		return 0
+	} else if instanceExpiration < timeLeft {
+		return instanceExpiration
+	} else {
+		return timeLeft
+	}
 }
 
 // Refresh the instance's expiration timer.
 func (c *InstanceCache) Refresh(instanceID string) error {
-	item := c.cache.Get(instanceID)
+	item, err := c.Get(instanceID)
+	if err != nil {
+		return err
+	}
 
-	if item == nil {
-		return fmt.Errorf("instance \"%s\" doesn't exist", instanceID)
+	if (time.Since(*item.StartTime)) > maxInstanceLength {
+		c.cache.Delete(item.Instance.InstanceID)
+
+		return fmt.Errorf("instance \"%s\" reached maximal allowed uptime", instanceID)
+	} else {
+		maxAllowedTTL := getMaxAllowedTTL(*item.StartTime)
+
+		instance := c.cache.Get(instanceID, ttlcache.WithTTL[string, InstanceInfo](maxAllowedTTL))
+		if instance == nil {
+			return fmt.Errorf("instance \"%s\" doesn't exist", instanceID)
+		}
 	}
 
 	return nil
 }
 
 // Get the instance from the cache.
-func (c *InstanceCache) Get(instanceID string) InstanceInfo {
+func (c *InstanceCache) Get(instanceID string) (InstanceInfo, error) {
 	item := c.cache.Get(instanceID, ttlcache.WithDisableTouchOnHit[string, InstanceInfo]())
 	if item != nil {
-		return item.Value()
+		return item.Value(), nil
 	} else {
-		panic(fmt.Errorf("instance \"%s\" doesn't exist", instanceID))
+		return InstanceInfo{}, fmt.Errorf("instance \"%s\" doesn't exist", instanceID)
 	}
 }
 
@@ -131,18 +157,6 @@ func (c *InstanceCache) KeepInSync(client *NomadClient) {
 			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %v\n", err.Err)
 		} else {
 			c.Sync(activeInstances)
-		}
-	}
-}
-
-// RemoveAfterMaxInstanceLength Remove instances that are older than maxInstanceLength
-func (c *InstanceCache) RemoveAfterMaxInstanceLength() {
-	for {
-		time.Sleep(maxInstanceLengthInterval)
-		for _, item := range c.cache.Items() {
-			if (time.Since(*item.Value().StartTime)) > maxInstanceLength {
-				c.cache.Delete(item.Key())
-			}
 		}
 	}
 }
