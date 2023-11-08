@@ -319,7 +319,7 @@ func (a *APIStore) GetEnvs(
 
 	envs, err := a.supabase.GetEnvs(teamID)
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting sandbox templates: %s", err))
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Error when getting sandbox templates")
 
 		err = fmt.Errorf("error when getting envs: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
@@ -350,7 +350,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 
 	if err != nil {
 		errMsg := fmt.Errorf("error when getting default team: %w", err)
-		a.sendAPIStoreError(c, http.StatusInternalServerError, errMsg.Error())
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Failed to get the default team")
 
 		telemetry.ReportCriticalError(ctx, errMsg)
 
