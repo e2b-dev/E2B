@@ -18,7 +18,8 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, Field, StrictBool, StrictStr
+from typing import List, Optional
+from pydantic import BaseModel, Field, StrictBool, StrictStr, conlist
 
 
 class EnvsGet200ResponseInner(BaseModel):
@@ -38,7 +39,10 @@ class EnvsGet200ResponseInner(BaseModel):
         ...,
         description="Whether the environment is public or only accessible by the team",
     )
-    __properties = ["envID", "buildID", "public"]
+    aliases: Optional[conlist(StrictStr)] = Field(
+        None, description="Aliases of the environment"
+    )
+    __properties = ["envID", "buildID", "public", "aliases"]
 
     class Config:
         """Pydantic configuration"""
@@ -86,6 +90,7 @@ class EnvsGet200ResponseInner(BaseModel):
                 "env_id": obj.get("envID"),
                 "build_id": obj.get("buildID"),
                 "public": obj.get("public"),
+                "aliases": obj.get("aliases"),
             }
         )
         return _obj

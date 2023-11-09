@@ -18,7 +18,8 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, Field, StrictBool, StrictStr
+from typing import List, Optional
+from pydantic import BaseModel, Field, StrictBool, StrictStr, conlist
 
 
 class Environment(BaseModel):
@@ -37,6 +38,9 @@ class Environment(BaseModel):
     public: StrictBool = Field(
         ...,
         description="Whether the environment is public or only accessible by the team",
+    )
+    aliases: Optional[conlist(StrictStr)] = Field(
+        None, description="Aliases of the environment"
     )
 
     """Pydantic configuration"""
@@ -74,7 +78,7 @@ class Environment(BaseModel):
 
         # raise errors for additional fields in the input
         for _key in obj.keys():
-            if _key not in ["envID", "buildID", "public"]:
+            if _key not in ["envID", "buildID", "public", "aliases"]:
                 raise ValueError(
                     "Error due to additional fields (not defined in Environment) in the input: "
                     + obj
@@ -85,6 +89,7 @@ class Environment(BaseModel):
                 "env_id": obj.get("envID"),
                 "build_id": obj.get("buildID"),
                 "public": obj.get("public"),
+                "aliases": obj.get("aliases"),
             }
         )
         return _obj
