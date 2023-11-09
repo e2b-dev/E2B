@@ -116,7 +116,7 @@ jobs:
 
   release:
     needs: [ python-tests, js-tests, cli-tests ]
-    if: always() && needs.is_release.outputs.release == 'true'
+    if: always() && !contains(needs.*.result, 'failure') && needs.is_release.outputs.release == 'true'
     name: Release
     runs-on: ubuntu-latest
     steps:
