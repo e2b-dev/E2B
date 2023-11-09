@@ -239,8 +239,35 @@ async function waitForBuildFinish(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate(
             { aliases, ...template.data },
           )} finished.\n
-          Now you can start creating your sandboxes from this template. You can find more here: 
-          ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')}, section ${asBold('Spawn and control your sandbox')}\n`,
+          Now you can start creating your sandboxes from this template. You can find more here:
+          ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')}, section ${asBold('Spawn and control your sandbox.')}
+          | ${asBold('Python SDK')} |
+          ==============
+          from e2b import Sandbox
+
+          # Start sandbox
+          sandbox = Sandbox(id="${aliases?.length ? aliases[0] : template.data.envID}")
+
+          # Interact with sandbox. Learn more here:
+          # https://e2b.dev/docs/sandbox/overview
+
+          # Close sandbox once done
+          sandbox.close()
+
+
+          | ${asBold('JS SDK')} |
+          ==========
+          import { Sandbox } from '@e2b/sdk'
+
+          // Start sandbox
+          const sandbox = await Sandbox.create({ id: '${aliases?.length ? aliases[0] : template.data.envID}' })
+
+          // Interact with sandbox. Learn more here:
+          // https://e2b.dev/docs/sandbox/overview
+
+          // Close sandbox once done
+          await sandbox.close()
+          `,
         )
         break
 
