@@ -1,6 +1,6 @@
-<h1 align="center">
+<p align="center">
   <img width="100" src="readme-assets/logo-circle.png" alt="e2b logo">
-</h1>
+</p>
 
 <h1 align="center">
   Sandbox for AI Apps & Agents
