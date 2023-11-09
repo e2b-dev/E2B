@@ -102,14 +102,14 @@ type N500 = Error
 
 // PostEnvsMultipartBody defines parameters for PostEnvs.
 type PostEnvsMultipartBody struct {
+	// Alias Alias of the environment
+	Alias *string `json:"alias,omitempty"`
+
 	// BuildContext Docker build context
 	BuildContext openapi_types.File `json:"buildContext"`
 
 	// Dockerfile Dockerfile content
 	Dockerfile string `json:"dockerfile"`
-
-	// Name Name of the environment
-	Name *string `json:"name,omitempty"`
 }
 
 // PostEnvsEnvIDMultipartBody defines parameters for PostEnvsEnvID.
