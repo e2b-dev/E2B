@@ -21,7 +21,8 @@ update-driver:
 	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /opt/nomad/plugins/env-build-task-driver && \
 	sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-build-task-driver && \
-	sudo supervisorctl restart nomad'
+	sudo supervisorctl restart nomad
+	($$(pgrep firecracker) && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found"'
 
 update-driver-locally:
 	make build-debug
@@ -29,6 +30,7 @@ update-driver-locally:
 	sudo cp ./bin/debug/env-build-task-driver /opt/nomad/plugins/env-build-task-driver
 	sudo chmod +x /opt/nomad/plugins/env-build-task-driver
 	sudo supervisorctl restart nomad
+	($$(pgrep firecracker) && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found"
 
 test:
 	sudo go run -race -gcflags=all="-N -l" main.go -env zu6biammj4nr19vmspq5 -build 07ed806d-239d-b4cd-6189-4621769edc34

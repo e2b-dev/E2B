@@ -99,7 +99,6 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances, instancesCounter)
-	go cache.RemoveAfterMaxInstanceLength()
 
 	if os.Getenv("ENVIRONMENT") == "prod" {
 		go cache.KeepInSync(nomadClient)
@@ -212,7 +211,14 @@ func (a *APIStore) GetUserFromAccessToken(accessToken string) (string, error) {
 }
 
 func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
-	info := a.cache.Get(instanceID)
+	info, err := a.cache.Get(instanceID)
+	if err != nil {
+		return &api.APIError{
+			Err:       err,
+			ClientMsg: "Cannot delete the instance right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
 
 	return deleteInstance(a.nomad, a.posthog, instanceID, info.TeamID, info.StartTime, purge)
 }
