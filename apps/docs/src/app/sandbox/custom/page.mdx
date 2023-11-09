@@ -6,8 +6,8 @@ You can build a custom sandbox by creating the [Sandbox Template](/sandbox/templ
 Once you build your custom sandbox template, you can spawn multiple isolated sandboxes from it.
 
 ## How it works
-1. Provide a Dockerfile
-1. Build a sandbox template from it using our CLI
+1. [Provide a Dockerfile](/sandbox/templates/template-file)
+1. [Build a sandbox template from it using our CLI](/guide/custom-sandbox#4-build-custom-sandbox)
 1. Get a template ID from the CLI:
     ```sh
     # ... truncated CLI output
@@ -39,7 +39,7 @@ Once you build your custom sandbox template, you can spawn multiple isolated san
       sandbox.close()
       ```
     </CodeGroup>
-5. Run the code and we spawn a sandbox based on the template you built in step 2
+1. Run the code and we spawn a sandbox based on the template you built in step 2
 
 Now you can do step 4/5 multiple times using the same ID, always creating a separate sandbox instance.
 
