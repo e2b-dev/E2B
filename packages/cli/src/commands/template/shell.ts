@@ -3,7 +3,7 @@ import * as commander from 'commander'
 
 import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal } from 'src/terminal'
-import { asBold, asFormattedSandboxTemplate, asPrimary } from 'src/utils/format'
+import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { getRoot } from '../../utils/filesystem'
 import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
@@ -11,12 +11,8 @@ import { pathOption } from '../../options'
 import path from 'path'
 
 export const shellCommand = new commander.Command('shell')
-  .description('Connect to the terminal in the sandbox')
-  .argument('<id>', `Connect to sandbox specified by ${asPrimary('template id')}`)
-  .option(
-    '-n, --name <name>',
-    'Specify name of sandbox template. You can use the name to start the sandbox in the SDK.',
-  )
+  .description('Connect terminal to sandbox')
+  .argument('[id]', `Connect to sandbox specified by ${asBold('[id]')}`)
   .addOption(pathOption)
   .alias('sh')
   .action(async (id: string | undefined, opts: {
@@ -36,7 +32,7 @@ export const shellCommand = new commander.Command('shell')
         : undefined
       const relativeConfigPath = path.relative(root, configPath)
 
-      if (config) {
+      if (!envID && config) {
         console.log(
           `Found sandbox template ${asFormattedSandboxTemplate(
             {
