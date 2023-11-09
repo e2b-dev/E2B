@@ -43,6 +43,14 @@ func (eac *EnvAliasCreate) SetIsName(b bool) *EnvAliasCreate {
 	return eac
 }
 
+// SetNillableIsName sets the "is_name" field if the given value is not nil.
+func (eac *EnvAliasCreate) SetNillableIsName(b *bool) *EnvAliasCreate {
+	if b != nil {
+		eac.SetIsName(*b)
+	}
+	return eac
+}
+
 // SetID sets the "id" field.
 func (eac *EnvAliasCreate) SetID(s string) *EnvAliasCreate {
 	eac.mutation.SetID(s)
@@ -75,6 +83,7 @@ func (eac *EnvAliasCreate) Mutation() *EnvAliasMutation {
 
 // Save creates the EnvAlias in the database.
 func (eac *EnvAliasCreate) Save(ctx context.Context) (*EnvAlias, error) {
+	eac.defaults()
 	return withHooks(ctx, eac.sqlSave, eac.mutation, eac.hooks)
 }
 
@@ -97,6 +106,14 @@ func (eac *EnvAliasCreate) Exec(ctx context.Context) error {
 func (eac *EnvAliasCreate) ExecX(ctx context.Context) {
 	if err := eac.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (eac *EnvAliasCreate) defaults() {
+	if _, ok := eac.mutation.IsName(); !ok {
+		v := envalias.DefaultIsName
+		eac.mutation.SetIsName(v)
 	}
 }
 
@@ -386,6 +403,7 @@ func (eacb *EnvAliasCreateBulk) Save(ctx context.Context) ([]*EnvAlias, error) {
 	for i := range eacb.builders {
 		func(i int, root context.Context) {
 			builder := eacb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*EnvAliasMutation)
 				if !ok {

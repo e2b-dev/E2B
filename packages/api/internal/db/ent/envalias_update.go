@@ -55,6 +55,14 @@ func (eau *EnvAliasUpdate) SetIsName(b bool) *EnvAliasUpdate {
 	return eau
 }
 
+// SetNillableIsName sets the "is_name" field if the given value is not nil.
+func (eau *EnvAliasUpdate) SetNillableIsName(b *bool) *EnvAliasUpdate {
+	if b != nil {
+		eau.SetIsName(*b)
+	}
+	return eau
+}
+
 // SetAliasEnvID sets the "alias_env" edge to the Env entity by ID.
 func (eau *EnvAliasUpdate) SetAliasEnvID(id string) *EnvAliasUpdate {
 	eau.mutation.SetAliasEnvID(id)
@@ -200,6 +208,14 @@ func (eauo *EnvAliasUpdateOne) ClearEnvID() *EnvAliasUpdateOne {
 // SetIsName sets the "is_name" field.
 func (eauo *EnvAliasUpdateOne) SetIsName(b bool) *EnvAliasUpdateOne {
 	eauo.mutation.SetIsName(b)
+	return eauo
+}
+
+// SetNillableIsName sets the "is_name" field if the given value is not nil.
+func (eauo *EnvAliasUpdateOne) SetNillableIsName(b *bool) *EnvAliasUpdateOne {
+	if b != nil {
+		eauo.SetIsName(*b)
+	}
 	return eauo
 }
 

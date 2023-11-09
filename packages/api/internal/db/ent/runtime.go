@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/envalias"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
 	"github.com/e2b-dev/infra/packages/api/internal/db/schema"
@@ -29,6 +30,12 @@ func init() {
 	envDescBuildCount := envFields[7].Descriptor()
 	// env.DefaultBuildCount holds the default value on creation for the build_count field.
 	env.DefaultBuildCount = envDescBuildCount.Default.(int32)
+	envaliasFields := schema.EnvAlias{}.Fields()
+	_ = envaliasFields
+	// envaliasDescIsName is the schema descriptor for is_name field.
+	envaliasDescIsName := envaliasFields[2].Descriptor()
+	// envalias.DefaultIsName holds the default value on creation for the is_name field.
+	envalias.DefaultIsName = envaliasDescIsName.Default.(bool)
 	teamFields := schema.Team{}.Fields()
 	_ = teamFields
 	// teamDescCreatedAt is the schema descriptor for created_at field.

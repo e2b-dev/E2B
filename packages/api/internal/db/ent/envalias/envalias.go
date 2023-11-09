@@ -48,6 +48,11 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+var (
+	// DefaultIsName holds the default value on creation for the "is_name" field.
+	DefaultIsName bool
+)
+
 // OrderOption defines the ordering options for the EnvAlias queries.
 type OrderOption func(*sql.Selector)
 

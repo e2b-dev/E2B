@@ -16,7 +16,7 @@ func (EnvAlias) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").Unique().StorageKey("alias").Immutable(),
 		field.String("env_id").Nillable().Optional(),
-		field.Bool("is_name"),
+		field.Bool("is_name").Default(true),
 	}
 }
 
