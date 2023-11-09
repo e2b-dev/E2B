@@ -37,8 +37,8 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: ^0.8.3
-        version: 0.8.3
+        specifier: ^0.8.4
+        version: 0.8.4
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -234,8 +234,8 @@ importers:
         specifier: ^1.0.2
         version: 1.0.2
       '@e2b/sdk':
-        specifier: ^0.8.1
-        version: 0.8.1
+        specifier: ^0.8.4
+        version: 0.8.4
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
@@ -721,22 +721,8 @@ packages:
     dev: true
     optional: true
 
-  /@e2b/sdk@0.8.1:
-    resolution: {integrity: sha512-qSLCMTfpEHeTY8GQPUIUnv9xPBfj4YEa4t/dKmQUhd5ClxI2+pNdqwkKHoqY1yUFLJJGS5kXhICAr1JkUjpEyw==}
-    engines: {node: '>=18'}
-    dependencies:
-      normalize-path: 3.0.0
-      openapi-typescript-fetch: 1.1.3
-      path-browserify: 1.0.1
-      platform: 1.3.6
-      rpc-websocket-client: 1.1.4
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: false
-
-  /@e2b/sdk@0.8.3:
-    resolution: {integrity: sha512-fZaHSN6LFt7376mc9FOPmu4dkAR44fVXOKIg2PGVzb63CBMxWiKCIUt0V6OJl0x8WX3YLpNaelVZDVVgCjBFkw==}
+  /@e2b/sdk@0.8.4:
+    resolution: {integrity: sha512-JTlGIiNo6ziL/cjaMp+PoM7lkMh78sDAeQb5Yrmw3Bmt0pX/7vajLtuua3/MEdK5PuOLRZh1zrdPvHKRRGnPCg==}
     engines: {node: '>=18'}
     dependencies:
       normalize-path: 3.0.0
