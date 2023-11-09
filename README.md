@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img width="400" src="/repo-assets/logo-circle.png" alt="e2b">
+  <img width="100" src="readme-assets/logo-circle.png" alt="e2b logo">
 </h1>
 
 <h1 align="center">
