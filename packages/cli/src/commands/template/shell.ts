@@ -3,20 +3,55 @@ import * as commander from 'commander'
 
 import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal } from 'src/terminal'
-import { asBold, asFormattedSandboxTemplate, asPrimary } from 'src/utils/format'
+import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
+import { getRoot } from '../../utils/filesystem'
+import { getConfigPath, loadConfig } from '../../config'
+import fs from 'fs'
+import { pathOption } from '../../options'
+import path from 'path'
 
 export const shellCommand = new commander.Command('shell')
-  .description('Connect to the terminal in the sandbox')
-  .argument('<id>', `Connect to sandbox specified by ${asPrimary('template id')}`)
+  .description('Connect terminal to sandbox')
+  .argument('[id]', `Connect to sandbox specified by ${asBold('[id]')}`)
+  .addOption(pathOption)
   .alias('sh')
-  .action(async (id: string) => {
+  .action(async (id: string | undefined, opts: {
+    name?: string;
+    path?: string;
+  }) => {
     try {
       const apiKey = ensureAPIKey()
+      let envID = id
 
-      const template: Pick<e2b.components['schemas']['Environment'], 'envID'> =
-        {
-          envID: id,
-        }
+
+      const root = getRoot(opts.path)
+      const configPath = getConfigPath(root)
+
+      const config = fs.existsSync(configPath)
+        ? await loadConfig(configPath)
+        : undefined
+      const relativeConfigPath = path.relative(root, configPath)
+
+      if (!envID && config) {
+        console.log(
+          `Found sandbox template ${asFormattedSandboxTemplate(
+            {
+              envID: config.id,
+              aliases: config.name ? [config.name] : undefined,
+            },
+            relativeConfigPath,
+          )}`,
+        )
+        envID = config.id
+      }
+
+      if (!envID) {
+        console.error(
+          `You need to specify sandbox template ID or path to sandbox template config`,
+        )
+        process.exit(1)
+      }
+      const template: Pick<e2b.components['schemas']['Environment'], 'envID'> = { envID: envID }
 
       await connectSandbox({ apiKey, template: template })
       // We explicitly call exit because the sandbox is keeping the program alive.
@@ -29,9 +64,9 @@ export const shellCommand = new commander.Command('shell')
   })
 
 async function connectSandbox({
-                                apiKey,
-                                template,
-                              }: {
+    apiKey,
+    template,
+  }: {
   apiKey: string;
   template: Pick<e2b.components['schemas']['Environment'], 'envID'>;
 }) {

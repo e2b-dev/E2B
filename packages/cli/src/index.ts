@@ -9,7 +9,7 @@ export const pkg = packageJSON
 
 updateNotifier.default({
   pkg,
-  updateCheckInterval: 1000 * 60 * 60 * 8 // 8 hours
+  updateCheckInterval: 1000 * 60 * 60 * 8, // 8 hours
 }).notify()
 
 program

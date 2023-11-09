@@ -115,6 +115,8 @@ export interface paths {
       requestBody: {
         content: {
           "multipart/form-data": {
+            /** @description Alias of the environment */
+            alias?: string;
             /**
              * Format: binary
              * @description Docker build context
