@@ -77,7 +77,6 @@ async function connectSandbox({
   const sandbox = await e2b.Sandbox.create({
     apiKey,
     id: template.envID,
-    logger: console,
   })
 
   if (sandbox.terminal) {
