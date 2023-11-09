@@ -119,7 +119,7 @@ export class Process {
    */
   async kill(): Promise<void> {
     try {
-      await this.sandbox.call(processService, 'kill', [this.processID])
+      await this.sandbox._call(processService, 'kill', [this.processID])
     } finally {
       this.triggerExit()
       await this.finished
@@ -141,7 +141,7 @@ export class Process {
    * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
    */
   async sendStdin(data: string, opts?: CallOpts): Promise<void> {
-    await this.sandbox.call(
+    await this.sandbox._call(
       processService,
       'stdin',
       [this.processID, data],

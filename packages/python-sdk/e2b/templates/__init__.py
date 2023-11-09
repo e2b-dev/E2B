@@ -1,1 +1,1 @@
-from .data_analysis import Artifact, DataAnalysis
+from .data_analysis import Artifact, DataAnalysis, CodeInterpreter
