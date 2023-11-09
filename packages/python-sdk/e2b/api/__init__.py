@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from importlib.metadata import version
 
 from e2b.constants import API_HOST
