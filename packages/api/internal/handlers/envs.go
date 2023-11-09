@@ -21,7 +21,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-
 func (a *APIStore) PostEnvs(c *gin.Context) {
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
@@ -52,6 +51,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		telemetry.ReportCriticalError(ctx, err)
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Failed to generate build id")
+
 		return
 	}
 
@@ -61,6 +61,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		telemetry.ReportCriticalError(ctx, err)
 
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Failed to parse form data")
+
 		return
 	}
 
@@ -79,8 +80,10 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		telemetry.ReportCriticalError(ctx, err)
 
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz.e2b file")
+
 		return
 	}
+
 	dockerfile := c.PostForm("dockerfile")
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
@@ -179,6 +182,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		telemetry.ReportCriticalError(ctx, err)
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Failed to generate build id")
+
 		return
 	}
 
@@ -188,6 +192,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		telemetry.ReportCriticalError(ctx, err)
 
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Failed to parse form data")
+
 		return
 	}
 
@@ -206,8 +211,10 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		telemetry.ReportCriticalError(ctx, err)
 
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz.e2b file")
+
 		return
 	}
+
 	dockerfile := c.PostForm("dockerfile")
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
@@ -351,6 +358,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 
 	if err != nil {
 		errMsg := fmt.Errorf("error when getting default team: %w", err)
+
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Failed to get the default team")
 
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -361,6 +369,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 	dockerBuild, err := a.buildCache.Get(envID, buildID)
 	if err != nil {
 		msg := fmt.Errorf("error finding cache for env %s and build %s", envID, buildID)
+
 		a.sendAPIStoreError(c, http.StatusNotFound, "Build not found")
 
 		telemetry.ReportError(ctx, msg)
@@ -370,6 +379,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 
 	if teamID != dockerBuild.TeamID {
 		msg := fmt.Errorf("user doesn't have access to env '%s'", envID)
+
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
 
 		telemetry.ReportError(ctx, msg)
