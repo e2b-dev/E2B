@@ -55,7 +55,7 @@ var (
 	DefaultCreatedAt func() time.Time
 )
 
-// OrderOption defines the ordering options for the TeamApiKey queries.
+// OrderOption defines the ordering options for the TeamAPIKey queries.
 type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.

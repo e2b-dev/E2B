@@ -17,48 +17,48 @@ import (
 	"github.com/google/uuid"
 )
 
-// TeamApiKeyUpdate is the builder for updating TeamApiKey entities.
-type TeamApiKeyUpdate struct {
+// TeamAPIKeyUpdate is the builder for updating TeamAPIKey entities.
+type TeamAPIKeyUpdate struct {
 	config
 	hooks    []Hook
-	mutation *TeamApiKeyMutation
+	mutation *TeamAPIKeyMutation
 }
 
-// Where appends a list predicates to the TeamApiKeyUpdate builder.
-func (taku *TeamApiKeyUpdate) Where(ps ...predicate.TeamApiKey) *TeamApiKeyUpdate {
+// Where appends a list predicates to the TeamAPIKeyUpdate builder.
+func (taku *TeamAPIKeyUpdate) Where(ps ...predicate.TeamAPIKey) *TeamAPIKeyUpdate {
 	taku.mutation.Where(ps...)
 	return taku
 }
 
 // SetTeamID sets the "team_id" field.
-func (taku *TeamApiKeyUpdate) SetTeamID(u uuid.UUID) *TeamApiKeyUpdate {
+func (taku *TeamAPIKeyUpdate) SetTeamID(u uuid.UUID) *TeamAPIKeyUpdate {
 	taku.mutation.SetTeamID(u)
 	return taku
 }
 
 // SetTeam sets the "team" edge to the Team entity.
-func (taku *TeamApiKeyUpdate) SetTeam(t *Team) *TeamApiKeyUpdate {
+func (taku *TeamAPIKeyUpdate) SetTeam(t *Team) *TeamAPIKeyUpdate {
 	return taku.SetTeamID(t.ID)
 }
 
-// Mutation returns the TeamApiKeyMutation object of the builder.
-func (taku *TeamApiKeyUpdate) Mutation() *TeamApiKeyMutation {
+// Mutation returns the TeamAPIKeyMutation object of the builder.
+func (taku *TeamAPIKeyUpdate) Mutation() *TeamAPIKeyMutation {
 	return taku.mutation
 }
 
 // ClearTeam clears the "team" edge to the Team entity.
-func (taku *TeamApiKeyUpdate) ClearTeam() *TeamApiKeyUpdate {
+func (taku *TeamAPIKeyUpdate) ClearTeam() *TeamAPIKeyUpdate {
 	taku.mutation.ClearTeam()
 	return taku
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (taku *TeamApiKeyUpdate) Save(ctx context.Context) (int, error) {
+func (taku *TeamAPIKeyUpdate) Save(ctx context.Context) (int, error) {
 	return withHooks(ctx, taku.sqlSave, taku.mutation, taku.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (taku *TeamApiKeyUpdate) SaveX(ctx context.Context) int {
+func (taku *TeamAPIKeyUpdate) SaveX(ctx context.Context) int {
 	affected, err := taku.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -67,27 +67,27 @@ func (taku *TeamApiKeyUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (taku *TeamApiKeyUpdate) Exec(ctx context.Context) error {
+func (taku *TeamAPIKeyUpdate) Exec(ctx context.Context) error {
 	_, err := taku.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (taku *TeamApiKeyUpdate) ExecX(ctx context.Context) {
+func (taku *TeamAPIKeyUpdate) ExecX(ctx context.Context) {
 	if err := taku.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (taku *TeamApiKeyUpdate) check() error {
+func (taku *TeamAPIKeyUpdate) check() error {
 	if _, ok := taku.mutation.TeamID(); taku.mutation.TeamCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "TeamApiKey.team"`)
+		return errors.New(`ent: clearing a required unique edge "TeamAPIKey.team"`)
 	}
 	return nil
 }
 
-func (taku *TeamApiKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
+func (taku *TeamAPIKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := taku.check(); err != nil {
 		return n, err
 	}
@@ -110,7 +110,7 @@ func (taku *TeamApiKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = taku.schemaConfig.TeamApiKey
+		edge.Schema = taku.schemaConfig.TeamAPIKey
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := taku.mutation.TeamIDs(); len(nodes) > 0 {
@@ -124,13 +124,13 @@ func (taku *TeamApiKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = taku.schemaConfig.TeamApiKey
+		edge.Schema = taku.schemaConfig.TeamAPIKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_spec.Node.Schema = taku.schemaConfig.TeamApiKey
+	_spec.Node.Schema = taku.schemaConfig.TeamAPIKey
 	ctx = internal.NewSchemaConfigContext(ctx, taku.schemaConfig)
 	if n, err = sqlgraph.UpdateNodes(ctx, taku.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -144,56 +144,56 @@ func (taku *TeamApiKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	return n, nil
 }
 
-// TeamApiKeyUpdateOne is the builder for updating a single TeamApiKey entity.
-type TeamApiKeyUpdateOne struct {
+// TeamAPIKeyUpdateOne is the builder for updating a single TeamAPIKey entity.
+type TeamAPIKeyUpdateOne struct {
 	config
 	fields   []string
 	hooks    []Hook
-	mutation *TeamApiKeyMutation
+	mutation *TeamAPIKeyMutation
 }
 
 // SetTeamID sets the "team_id" field.
-func (takuo *TeamApiKeyUpdateOne) SetTeamID(u uuid.UUID) *TeamApiKeyUpdateOne {
+func (takuo *TeamAPIKeyUpdateOne) SetTeamID(u uuid.UUID) *TeamAPIKeyUpdateOne {
 	takuo.mutation.SetTeamID(u)
 	return takuo
 }
 
 // SetTeam sets the "team" edge to the Team entity.
-func (takuo *TeamApiKeyUpdateOne) SetTeam(t *Team) *TeamApiKeyUpdateOne {
+func (takuo *TeamAPIKeyUpdateOne) SetTeam(t *Team) *TeamAPIKeyUpdateOne {
 	return takuo.SetTeamID(t.ID)
 }
 
-// Mutation returns the TeamApiKeyMutation object of the builder.
-func (takuo *TeamApiKeyUpdateOne) Mutation() *TeamApiKeyMutation {
+// Mutation returns the TeamAPIKeyMutation object of the builder.
+func (takuo *TeamAPIKeyUpdateOne) Mutation() *TeamAPIKeyMutation {
 	return takuo.mutation
 }
 
 // ClearTeam clears the "team" edge to the Team entity.
-func (takuo *TeamApiKeyUpdateOne) ClearTeam() *TeamApiKeyUpdateOne {
+func (takuo *TeamAPIKeyUpdateOne) ClearTeam() *TeamAPIKeyUpdateOne {
 	takuo.mutation.ClearTeam()
 	return takuo
 }
 
-// Where appends a list predicates to the TeamApiKeyUpdate builder.
-func (takuo *TeamApiKeyUpdateOne) Where(ps ...predicate.TeamApiKey) *TeamApiKeyUpdateOne {
+// Where appends a list predicates to the TeamAPIKeyUpdate builder.
+func (takuo *TeamAPIKeyUpdateOne) Where(ps ...predicate.TeamAPIKey) *TeamAPIKeyUpdateOne {
 	takuo.mutation.Where(ps...)
 	return takuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (takuo *TeamApiKeyUpdateOne) Select(field string, fields ...string) *TeamApiKeyUpdateOne {
+func (takuo *TeamAPIKeyUpdateOne) Select(field string, fields ...string) *TeamAPIKeyUpdateOne {
 	takuo.fields = append([]string{field}, fields...)
 	return takuo
 }
 
-// Save executes the query and returns the updated TeamApiKey entity.
-func (takuo *TeamApiKeyUpdateOne) Save(ctx context.Context) (*TeamApiKey, error) {
+// Save executes the query and returns the updated TeamAPIKey entity.
+func (takuo *TeamAPIKeyUpdateOne) Save(ctx context.Context) (*TeamAPIKey, error) {
 	return withHooks(ctx, takuo.sqlSave, takuo.mutation, takuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (takuo *TeamApiKeyUpdateOne) SaveX(ctx context.Context) *TeamApiKey {
+func (takuo *TeamAPIKeyUpdateOne) SaveX(ctx context.Context) *TeamAPIKey {
 	node, err := takuo.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -202,34 +202,34 @@ func (takuo *TeamApiKeyUpdateOne) SaveX(ctx context.Context) *TeamApiKey {
 }
 
 // Exec executes the query on the entity.
-func (takuo *TeamApiKeyUpdateOne) Exec(ctx context.Context) error {
+func (takuo *TeamAPIKeyUpdateOne) Exec(ctx context.Context) error {
 	_, err := takuo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (takuo *TeamApiKeyUpdateOne) ExecX(ctx context.Context) {
+func (takuo *TeamAPIKeyUpdateOne) ExecX(ctx context.Context) {
 	if err := takuo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (takuo *TeamApiKeyUpdateOne) check() error {
+func (takuo *TeamAPIKeyUpdateOne) check() error {
 	if _, ok := takuo.mutation.TeamID(); takuo.mutation.TeamCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "TeamApiKey.team"`)
+		return errors.New(`ent: clearing a required unique edge "TeamAPIKey.team"`)
 	}
 	return nil
 }
 
-func (takuo *TeamApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamApiKey, err error) {
+func (takuo *TeamAPIKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamAPIKey, err error) {
 	if err := takuo.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(teamapikey.Table, teamapikey.Columns, sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString))
 	id, ok := takuo.mutation.ID()
 	if !ok {
-		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "TeamApiKey.id" for update`)}
+		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "TeamAPIKey.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
 	if fields := takuo.fields; len(fields) > 0 {
@@ -262,7 +262,7 @@ func (takuo *TeamApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamApiKe
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = takuo.schemaConfig.TeamApiKey
+		edge.Schema = takuo.schemaConfig.TeamAPIKey
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := takuo.mutation.TeamIDs(); len(nodes) > 0 {
@@ -276,15 +276,15 @@ func (takuo *TeamApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamApiKe
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = takuo.schemaConfig.TeamApiKey
+		edge.Schema = takuo.schemaConfig.TeamAPIKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_spec.Node.Schema = takuo.schemaConfig.TeamApiKey
+	_spec.Node.Schema = takuo.schemaConfig.TeamAPIKey
 	ctx = internal.NewSchemaConfigContext(ctx, takuo.schemaConfig)
-	_node = &TeamApiKey{config: takuo.config}
+	_node = &TeamAPIKey{config: takuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
 	if err = sqlgraph.UpdateNode(ctx, takuo.driver, _spec); err != nil {

@@ -73,14 +73,14 @@ func (tu *TeamUpdate) AddUsers(u ...*User) *TeamUpdate {
 	return tu.AddUserIDs(ids...)
 }
 
-// AddTeamAPIKeyIDs adds the "team_api_keys" edge to the TeamApiKey entity by IDs.
+// AddTeamAPIKeyIDs adds the "team_api_keys" edge to the TeamAPIKey entity by IDs.
 func (tu *TeamUpdate) AddTeamAPIKeyIDs(ids ...string) *TeamUpdate {
 	tu.mutation.AddTeamAPIKeyIDs(ids...)
 	return tu
 }
 
-// AddTeamAPIKeys adds the "team_api_keys" edges to the TeamApiKey entity.
-func (tu *TeamUpdate) AddTeamAPIKeys(t ...*TeamApiKey) *TeamUpdate {
+// AddTeamAPIKeys adds the "team_api_keys" edges to the TeamAPIKey entity.
+func (tu *TeamUpdate) AddTeamAPIKeys(t ...*TeamAPIKey) *TeamUpdate {
 	ids := make([]string, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
@@ -155,20 +155,20 @@ func (tu *TeamUpdate) RemoveUsers(u ...*User) *TeamUpdate {
 	return tu.RemoveUserIDs(ids...)
 }
 
-// ClearTeamAPIKeys clears all "team_api_keys" edges to the TeamApiKey entity.
+// ClearTeamAPIKeys clears all "team_api_keys" edges to the TeamAPIKey entity.
 func (tu *TeamUpdate) ClearTeamAPIKeys() *TeamUpdate {
 	tu.mutation.ClearTeamAPIKeys()
 	return tu
 }
 
-// RemoveTeamAPIKeyIDs removes the "team_api_keys" edge to TeamApiKey entities by IDs.
+// RemoveTeamAPIKeyIDs removes the "team_api_keys" edge to TeamAPIKey entities by IDs.
 func (tu *TeamUpdate) RemoveTeamAPIKeyIDs(ids ...string) *TeamUpdate {
 	tu.mutation.RemoveTeamAPIKeyIDs(ids...)
 	return tu
 }
 
-// RemoveTeamAPIKeys removes "team_api_keys" edges to TeamApiKey entities.
-func (tu *TeamUpdate) RemoveTeamAPIKeys(t ...*TeamApiKey) *TeamUpdate {
+// RemoveTeamAPIKeys removes "team_api_keys" edges to TeamAPIKey entities.
+func (tu *TeamUpdate) RemoveTeamAPIKeys(t ...*TeamAPIKey) *TeamUpdate {
 	ids := make([]string, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
@@ -339,7 +339,7 @@ func (tu *TeamUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString),
 			},
 		}
-		edge.Schema = tu.schemaConfig.TeamApiKey
+		edge.Schema = tu.schemaConfig.TeamAPIKey
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := tu.mutation.RemovedTeamAPIKeysIDs(); len(nodes) > 0 && !tu.mutation.TeamAPIKeysCleared() {
@@ -353,7 +353,7 @@ func (tu *TeamUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString),
 			},
 		}
-		edge.Schema = tu.schemaConfig.TeamApiKey
+		edge.Schema = tu.schemaConfig.TeamAPIKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
@@ -370,7 +370,7 @@ func (tu *TeamUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString),
 			},
 		}
-		edge.Schema = tu.schemaConfig.TeamApiKey
+		edge.Schema = tu.schemaConfig.TeamAPIKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
@@ -564,14 +564,14 @@ func (tuo *TeamUpdateOne) AddUsers(u ...*User) *TeamUpdateOne {
 	return tuo.AddUserIDs(ids...)
 }
 
-// AddTeamAPIKeyIDs adds the "team_api_keys" edge to the TeamApiKey entity by IDs.
+// AddTeamAPIKeyIDs adds the "team_api_keys" edge to the TeamAPIKey entity by IDs.
 func (tuo *TeamUpdateOne) AddTeamAPIKeyIDs(ids ...string) *TeamUpdateOne {
 	tuo.mutation.AddTeamAPIKeyIDs(ids...)
 	return tuo
 }
 
-// AddTeamAPIKeys adds the "team_api_keys" edges to the TeamApiKey entity.
-func (tuo *TeamUpdateOne) AddTeamAPIKeys(t ...*TeamApiKey) *TeamUpdateOne {
+// AddTeamAPIKeys adds the "team_api_keys" edges to the TeamAPIKey entity.
+func (tuo *TeamUpdateOne) AddTeamAPIKeys(t ...*TeamAPIKey) *TeamUpdateOne {
 	ids := make([]string, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
@@ -646,20 +646,20 @@ func (tuo *TeamUpdateOne) RemoveUsers(u ...*User) *TeamUpdateOne {
 	return tuo.RemoveUserIDs(ids...)
 }
 
-// ClearTeamAPIKeys clears all "team_api_keys" edges to the TeamApiKey entity.
+// ClearTeamAPIKeys clears all "team_api_keys" edges to the TeamAPIKey entity.
 func (tuo *TeamUpdateOne) ClearTeamAPIKeys() *TeamUpdateOne {
 	tuo.mutation.ClearTeamAPIKeys()
 	return tuo
 }
 
-// RemoveTeamAPIKeyIDs removes the "team_api_keys" edge to TeamApiKey entities by IDs.
+// RemoveTeamAPIKeyIDs removes the "team_api_keys" edge to TeamAPIKey entities by IDs.
 func (tuo *TeamUpdateOne) RemoveTeamAPIKeyIDs(ids ...string) *TeamUpdateOne {
 	tuo.mutation.RemoveTeamAPIKeyIDs(ids...)
 	return tuo
 }
 
-// RemoveTeamAPIKeys removes "team_api_keys" edges to TeamApiKey entities.
-func (tuo *TeamUpdateOne) RemoveTeamAPIKeys(t ...*TeamApiKey) *TeamUpdateOne {
+// RemoveTeamAPIKeys removes "team_api_keys" edges to TeamAPIKey entities.
+func (tuo *TeamUpdateOne) RemoveTeamAPIKeys(t ...*TeamAPIKey) *TeamUpdateOne {
 	ids := make([]string, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
@@ -860,7 +860,7 @@ func (tuo *TeamUpdateOne) sqlSave(ctx context.Context) (_node *Team, err error) 
 				IDSpec: sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString),
 			},
 		}
-		edge.Schema = tuo.schemaConfig.TeamApiKey
+		edge.Schema = tuo.schemaConfig.TeamAPIKey
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := tuo.mutation.RemovedTeamAPIKeysIDs(); len(nodes) > 0 && !tuo.mutation.TeamAPIKeysCleared() {
@@ -874,7 +874,7 @@ func (tuo *TeamUpdateOne) sqlSave(ctx context.Context) (_node *Team, err error) 
 				IDSpec: sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString),
 			},
 		}
-		edge.Schema = tuo.schemaConfig.TeamApiKey
+		edge.Schema = tuo.schemaConfig.TeamAPIKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
@@ -891,7 +891,7 @@ func (tuo *TeamUpdateOne) sqlSave(ctx context.Context) (_node *Team, err error) 
 				IDSpec: sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString),
 			},
 		}
-		edge.Schema = tuo.schemaConfig.TeamApiKey
+		edge.Schema = tuo.schemaConfig.TeamAPIKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}

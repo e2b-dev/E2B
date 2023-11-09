@@ -11,11 +11,11 @@ import (
 	"github.com/google/uuid"
 )
 
-type TeamApiKey struct {
+type TeamAPIKey struct {
 	ent.Schema
 }
 
-func (TeamApiKey) Fields() []ent.Field {
+func (TeamAPIKey) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").Unique().StorageKey("api_key").Sensitive(),
 		field.Time("created_at").Immutable().Default(time.Now).Annotations(
@@ -25,7 +25,7 @@ func (TeamApiKey) Fields() []ent.Field {
 	}
 }
 
-func (TeamApiKey) Edges() []ent.Edge {
+func (TeamAPIKey) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("team", Team.Type).Unique().Required().
 			Ref("team_api_keys").
@@ -33,6 +33,6 @@ func (TeamApiKey) Edges() []ent.Edge {
 	}
 }
 
-func (TeamApiKey) Annotations() []schema.Annotation {
+func (TeamAPIKey) Annotations() []schema.Annotation {
 	return nil
 }

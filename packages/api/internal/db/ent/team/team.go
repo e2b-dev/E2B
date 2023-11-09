@@ -34,8 +34,8 @@ const (
 	EdgeEnvs = "envs"
 	// EdgeUsersTeams holds the string denoting the users_teams edge name in mutations.
 	EdgeUsersTeams = "users_teams"
-	// TeamApiKeyFieldID holds the string denoting the ID field of the TeamApiKey.
-	TeamApiKeyFieldID = "api_key"
+	// TeamAPIKeyFieldID holds the string denoting the ID field of the TeamAPIKey.
+	TeamAPIKeyFieldID = "api_key"
 	// Table holds the table name of the team in the database.
 	Table = "teams"
 	// UsersTable is the table that holds the users relation/edge. The primary key declared below.
@@ -45,7 +45,7 @@ const (
 	UsersInverseTable = "users"
 	// TeamAPIKeysTable is the table that holds the team_api_keys relation/edge.
 	TeamAPIKeysTable = "team_api_keys"
-	// TeamAPIKeysInverseTable is the table name for the TeamApiKey entity.
+	// TeamAPIKeysInverseTable is the table name for the TeamAPIKey entity.
 	// It exists in this package in order to avoid circular dependency with the "teamapikey" package.
 	TeamAPIKeysInverseTable = "team_api_keys"
 	// TeamAPIKeysColumn is the table column denoting the team_api_keys relation/edge.
@@ -209,7 +209,7 @@ func newUsersStep() *sqlgraph.Step {
 func newTeamAPIKeysStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(TeamAPIKeysInverseTable, TeamApiKeyFieldID),
+		sqlgraph.To(TeamAPIKeysInverseTable, TeamAPIKeyFieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, TeamAPIKeysTable, TeamAPIKeysColumn),
 	)
 }

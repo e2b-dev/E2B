@@ -35,7 +35,7 @@ func init() {
 	teamDescCreatedAt := teamFields[1].Descriptor()
 	// team.DefaultCreatedAt holds the default value on creation for the created_at field.
 	team.DefaultCreatedAt = teamDescCreatedAt.Default.(func() time.Time)
-	teamapikeyFields := schema.TeamApiKey{}.Fields()
+	teamapikeyFields := schema.TeamAPIKey{}.Fields()
 	_ = teamapikeyFields
 	// teamapikeyDescCreatedAt is the schema descriptor for created_at field.
 	teamapikeyDescCreatedAt := teamapikeyFields[1].Descriptor()

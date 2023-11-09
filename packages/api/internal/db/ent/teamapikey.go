@@ -14,8 +14,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// TeamApiKey is the model entity for the TeamApiKey schema.
-type TeamApiKey struct {
+// TeamAPIKey is the model entity for the TeamAPIKey schema.
+type TeamAPIKey struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID string `json:"id,omitempty"`
@@ -24,13 +24,13 @@ type TeamApiKey struct {
 	// TeamID holds the value of the "team_id" field.
 	TeamID uuid.UUID `json:"team_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the TeamApiKeyQuery when eager-loading is set.
-	Edges        TeamApiKeyEdges `json:"edges"`
+	// The values are being populated by the TeamAPIKeyQuery when eager-loading is set.
+	Edges        TeamAPIKeyEdges `json:"edges"`
 	selectValues sql.SelectValues
 }
 
-// TeamApiKeyEdges holds the relations/edges for other nodes in the graph.
-type TeamApiKeyEdges struct {
+// TeamAPIKeyEdges holds the relations/edges for other nodes in the graph.
+type TeamAPIKeyEdges struct {
 	// Team holds the value of the team edge.
 	Team *Team `json:"team,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -40,7 +40,7 @@ type TeamApiKeyEdges struct {
 
 // TeamOrErr returns the Team value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e TeamApiKeyEdges) TeamOrErr() (*Team, error) {
+func (e TeamAPIKeyEdges) TeamOrErr() (*Team, error) {
 	if e.loadedTypes[0] {
 		if e.Team == nil {
 			// Edge was loaded but was not found.
@@ -52,7 +52,7 @@ func (e TeamApiKeyEdges) TeamOrErr() (*Team, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*TeamApiKey) scanValues(columns []string) ([]any, error) {
+func (*TeamAPIKey) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
@@ -70,8 +70,8 @@ func (*TeamApiKey) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the TeamApiKey fields.
-func (tak *TeamApiKey) assignValues(columns []string, values []any) error {
+// to the TeamAPIKey fields.
+func (tak *TeamAPIKey) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -102,39 +102,39 @@ func (tak *TeamApiKey) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the TeamApiKey.
+// Value returns the ent.Value that was dynamically selected and assigned to the TeamAPIKey.
 // This includes values selected through modifiers, order, etc.
-func (tak *TeamApiKey) Value(name string) (ent.Value, error) {
+func (tak *TeamAPIKey) Value(name string) (ent.Value, error) {
 	return tak.selectValues.Get(name)
 }
 
-// QueryTeam queries the "team" edge of the TeamApiKey entity.
-func (tak *TeamApiKey) QueryTeam() *TeamQuery {
-	return NewTeamApiKeyClient(tak.config).QueryTeam(tak)
+// QueryTeam queries the "team" edge of the TeamAPIKey entity.
+func (tak *TeamAPIKey) QueryTeam() *TeamQuery {
+	return NewTeamAPIKeyClient(tak.config).QueryTeam(tak)
 }
 
-// Update returns a builder for updating this TeamApiKey.
-// Note that you need to call TeamApiKey.Unwrap() before calling this method if this TeamApiKey
+// Update returns a builder for updating this TeamAPIKey.
+// Note that you need to call TeamAPIKey.Unwrap() before calling this method if this TeamAPIKey
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (tak *TeamApiKey) Update() *TeamApiKeyUpdateOne {
-	return NewTeamApiKeyClient(tak.config).UpdateOne(tak)
+func (tak *TeamAPIKey) Update() *TeamAPIKeyUpdateOne {
+	return NewTeamAPIKeyClient(tak.config).UpdateOne(tak)
 }
 
-// Unwrap unwraps the TeamApiKey entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the TeamAPIKey entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (tak *TeamApiKey) Unwrap() *TeamApiKey {
+func (tak *TeamAPIKey) Unwrap() *TeamAPIKey {
 	_tx, ok := tak.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: TeamApiKey is not a transactional entity")
+		panic("ent: TeamAPIKey is not a transactional entity")
 	}
 	tak.config.driver = _tx.drv
 	return tak
 }
 
 // String implements the fmt.Stringer.
-func (tak *TeamApiKey) String() string {
+func (tak *TeamAPIKey) String() string {
 	var builder strings.Builder
-	builder.WriteString("TeamApiKey(")
+	builder.WriteString("TeamAPIKey(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", tak.ID))
 	builder.WriteString("created_at=")
 	builder.WriteString(tak.CreatedAt.Format(time.ANSIC))
@@ -145,5 +145,5 @@ func (tak *TeamApiKey) String() string {
 	return builder.String()
 }
 
-// TeamApiKeys is a parsable slice of TeamApiKey.
-type TeamApiKeys []*TeamApiKey
+// TeamAPIKeys is a parsable slice of TeamAPIKey.
+type TeamAPIKeys []*TeamAPIKey

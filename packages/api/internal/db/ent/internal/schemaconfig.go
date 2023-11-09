@@ -11,7 +11,7 @@ type SchemaConfig struct {
 	Env         string // Env table.
 	EnvAlias    string // EnvAlias table.
 	Team        string // Team table.
-	TeamApiKey  string // TeamApiKey table.
+	TeamAPIKey  string // TeamAPIKey table.
 	Tier        string // Tier table.
 	User        string // User table.
 	UsersTeams  string // UsersTeams table.

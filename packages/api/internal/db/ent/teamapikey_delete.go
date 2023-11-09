@@ -13,26 +13,26 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
 )
 
-// TeamApiKeyDelete is the builder for deleting a TeamApiKey entity.
-type TeamApiKeyDelete struct {
+// TeamAPIKeyDelete is the builder for deleting a TeamAPIKey entity.
+type TeamAPIKeyDelete struct {
 	config
 	hooks    []Hook
-	mutation *TeamApiKeyMutation
+	mutation *TeamAPIKeyMutation
 }
 
-// Where appends a list predicates to the TeamApiKeyDelete builder.
-func (takd *TeamApiKeyDelete) Where(ps ...predicate.TeamApiKey) *TeamApiKeyDelete {
+// Where appends a list predicates to the TeamAPIKeyDelete builder.
+func (takd *TeamAPIKeyDelete) Where(ps ...predicate.TeamAPIKey) *TeamAPIKeyDelete {
 	takd.mutation.Where(ps...)
 	return takd
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (takd *TeamApiKeyDelete) Exec(ctx context.Context) (int, error) {
+func (takd *TeamAPIKeyDelete) Exec(ctx context.Context) (int, error) {
 	return withHooks(ctx, takd.sqlExec, takd.mutation, takd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (takd *TeamApiKeyDelete) ExecX(ctx context.Context) int {
+func (takd *TeamAPIKeyDelete) ExecX(ctx context.Context) int {
 	n, err := takd.Exec(ctx)
 	if err != nil {
 		panic(err)
@@ -40,9 +40,9 @@ func (takd *TeamApiKeyDelete) ExecX(ctx context.Context) int {
 	return n
 }
 
-func (takd *TeamApiKeyDelete) sqlExec(ctx context.Context) (int, error) {
+func (takd *TeamAPIKeyDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(teamapikey.Table, sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString))
-	_spec.Node.Schema = takd.schemaConfig.TeamApiKey
+	_spec.Node.Schema = takd.schemaConfig.TeamAPIKey
 	ctx = internal.NewSchemaConfigContext(ctx, takd.schemaConfig)
 	if ps := takd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -59,19 +59,19 @@ func (takd *TeamApiKeyDelete) sqlExec(ctx context.Context) (int, error) {
 	return affected, err
 }
 
-// TeamApiKeyDeleteOne is the builder for deleting a single TeamApiKey entity.
-type TeamApiKeyDeleteOne struct {
-	takd *TeamApiKeyDelete
+// TeamAPIKeyDeleteOne is the builder for deleting a single TeamAPIKey entity.
+type TeamAPIKeyDeleteOne struct {
+	takd *TeamAPIKeyDelete
 }
 
-// Where appends a list predicates to the TeamApiKeyDelete builder.
-func (takdo *TeamApiKeyDeleteOne) Where(ps ...predicate.TeamApiKey) *TeamApiKeyDeleteOne {
+// Where appends a list predicates to the TeamAPIKeyDelete builder.
+func (takdo *TeamAPIKeyDeleteOne) Where(ps ...predicate.TeamAPIKey) *TeamAPIKeyDeleteOne {
 	takdo.takd.mutation.Where(ps...)
 	return takdo
 }
 
 // Exec executes the deletion query.
-func (takdo *TeamApiKeyDeleteOne) Exec(ctx context.Context) error {
+func (takdo *TeamAPIKeyDeleteOne) Exec(ctx context.Context) error {
 	n, err := takdo.takd.Exec(ctx)
 	switch {
 	case err != nil:
@@ -84,7 +84,7 @@ func (takdo *TeamApiKeyDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (takdo *TeamApiKeyDeleteOne) ExecX(ctx context.Context) {
+func (takdo *TeamAPIKeyDeleteOne) ExecX(ctx context.Context) {
 	if err := takdo.Exec(ctx); err != nil {
 		panic(err)
 	}

@@ -57,16 +57,16 @@ func (f TeamFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TeamMutation", m)
 }
 
-// The TeamApiKeyFunc type is an adapter to allow the use of ordinary
-// function as TeamApiKey mutator.
-type TeamApiKeyFunc func(context.Context, *ent.TeamApiKeyMutation) (ent.Value, error)
+// The TeamAPIKeyFunc type is an adapter to allow the use of ordinary
+// function as TeamAPIKey mutator.
+type TeamAPIKeyFunc func(context.Context, *ent.TeamAPIKeyMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f TeamApiKeyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.TeamApiKeyMutation); ok {
+func (f TeamAPIKeyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TeamAPIKeyMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TeamApiKeyMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TeamAPIKeyMutation", m)
 }
 
 // The TierFunc type is an adapter to allow the use of ordinary

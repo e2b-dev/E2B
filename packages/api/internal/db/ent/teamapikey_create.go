@@ -17,22 +17,22 @@ import (
 	"github.com/google/uuid"
 )
 
-// TeamApiKeyCreate is the builder for creating a TeamApiKey entity.
-type TeamApiKeyCreate struct {
+// TeamAPIKeyCreate is the builder for creating a TeamAPIKey entity.
+type TeamAPIKeyCreate struct {
 	config
-	mutation *TeamApiKeyMutation
+	mutation *TeamAPIKeyMutation
 	hooks    []Hook
 	conflict []sql.ConflictOption
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (takc *TeamApiKeyCreate) SetCreatedAt(t time.Time) *TeamApiKeyCreate {
+func (takc *TeamAPIKeyCreate) SetCreatedAt(t time.Time) *TeamAPIKeyCreate {
 	takc.mutation.SetCreatedAt(t)
 	return takc
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (takc *TeamApiKeyCreate) SetNillableCreatedAt(t *time.Time) *TeamApiKeyCreate {
+func (takc *TeamAPIKeyCreate) SetNillableCreatedAt(t *time.Time) *TeamAPIKeyCreate {
 	if t != nil {
 		takc.SetCreatedAt(*t)
 	}
@@ -40,35 +40,35 @@ func (takc *TeamApiKeyCreate) SetNillableCreatedAt(t *time.Time) *TeamApiKeyCrea
 }
 
 // SetTeamID sets the "team_id" field.
-func (takc *TeamApiKeyCreate) SetTeamID(u uuid.UUID) *TeamApiKeyCreate {
+func (takc *TeamAPIKeyCreate) SetTeamID(u uuid.UUID) *TeamAPIKeyCreate {
 	takc.mutation.SetTeamID(u)
 	return takc
 }
 
 // SetID sets the "id" field.
-func (takc *TeamApiKeyCreate) SetID(s string) *TeamApiKeyCreate {
+func (takc *TeamAPIKeyCreate) SetID(s string) *TeamAPIKeyCreate {
 	takc.mutation.SetID(s)
 	return takc
 }
 
 // SetTeam sets the "team" edge to the Team entity.
-func (takc *TeamApiKeyCreate) SetTeam(t *Team) *TeamApiKeyCreate {
+func (takc *TeamAPIKeyCreate) SetTeam(t *Team) *TeamAPIKeyCreate {
 	return takc.SetTeamID(t.ID)
 }
 
-// Mutation returns the TeamApiKeyMutation object of the builder.
-func (takc *TeamApiKeyCreate) Mutation() *TeamApiKeyMutation {
+// Mutation returns the TeamAPIKeyMutation object of the builder.
+func (takc *TeamAPIKeyCreate) Mutation() *TeamAPIKeyMutation {
 	return takc.mutation
 }
 
-// Save creates the TeamApiKey in the database.
-func (takc *TeamApiKeyCreate) Save(ctx context.Context) (*TeamApiKey, error) {
+// Save creates the TeamAPIKey in the database.
+func (takc *TeamAPIKeyCreate) Save(ctx context.Context) (*TeamAPIKey, error) {
 	takc.defaults()
 	return withHooks(ctx, takc.sqlSave, takc.mutation, takc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (takc *TeamApiKeyCreate) SaveX(ctx context.Context) *TeamApiKey {
+func (takc *TeamAPIKeyCreate) SaveX(ctx context.Context) *TeamAPIKey {
 	v, err := takc.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -77,20 +77,20 @@ func (takc *TeamApiKeyCreate) SaveX(ctx context.Context) *TeamApiKey {
 }
 
 // Exec executes the query.
-func (takc *TeamApiKeyCreate) Exec(ctx context.Context) error {
+func (takc *TeamAPIKeyCreate) Exec(ctx context.Context) error {
 	_, err := takc.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (takc *TeamApiKeyCreate) ExecX(ctx context.Context) {
+func (takc *TeamAPIKeyCreate) ExecX(ctx context.Context) {
 	if err := takc.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (takc *TeamApiKeyCreate) defaults() {
+func (takc *TeamAPIKeyCreate) defaults() {
 	if _, ok := takc.mutation.CreatedAt(); !ok {
 		v := teamapikey.DefaultCreatedAt()
 		takc.mutation.SetCreatedAt(v)
@@ -98,20 +98,20 @@ func (takc *TeamApiKeyCreate) defaults() {
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (takc *TeamApiKeyCreate) check() error {
+func (takc *TeamAPIKeyCreate) check() error {
 	if _, ok := takc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "TeamApiKey.created_at"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "TeamAPIKey.created_at"`)}
 	}
 	if _, ok := takc.mutation.TeamID(); !ok {
-		return &ValidationError{Name: "team_id", err: errors.New(`ent: missing required field "TeamApiKey.team_id"`)}
+		return &ValidationError{Name: "team_id", err: errors.New(`ent: missing required field "TeamAPIKey.team_id"`)}
 	}
 	if _, ok := takc.mutation.TeamID(); !ok {
-		return &ValidationError{Name: "team", err: errors.New(`ent: missing required edge "TeamApiKey.team"`)}
+		return &ValidationError{Name: "team", err: errors.New(`ent: missing required edge "TeamAPIKey.team"`)}
 	}
 	return nil
 }
 
-func (takc *TeamApiKeyCreate) sqlSave(ctx context.Context) (*TeamApiKey, error) {
+func (takc *TeamAPIKeyCreate) sqlSave(ctx context.Context) (*TeamAPIKey, error) {
 	if err := takc.check(); err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (takc *TeamApiKeyCreate) sqlSave(ctx context.Context) (*TeamApiKey, error) 
 		if id, ok := _spec.ID.Value.(string); ok {
 			_node.ID = id
 		} else {
-			return nil, fmt.Errorf("unexpected TeamApiKey.ID type: %T", _spec.ID.Value)
+			return nil, fmt.Errorf("unexpected TeamAPIKey.ID type: %T", _spec.ID.Value)
 		}
 	}
 	takc.mutation.id = &_node.ID
@@ -134,12 +134,12 @@ func (takc *TeamApiKeyCreate) sqlSave(ctx context.Context) (*TeamApiKey, error) 
 	return _node, nil
 }
 
-func (takc *TeamApiKeyCreate) createSpec() (*TeamApiKey, *sqlgraph.CreateSpec) {
+func (takc *TeamAPIKeyCreate) createSpec() (*TeamAPIKey, *sqlgraph.CreateSpec) {
 	var (
-		_node = &TeamApiKey{config: takc.config}
+		_node = &TeamAPIKey{config: takc.config}
 		_spec = sqlgraph.NewCreateSpec(teamapikey.Table, sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString))
 	)
-	_spec.Schema = takc.schemaConfig.TeamApiKey
+	_spec.Schema = takc.schemaConfig.TeamAPIKey
 	_spec.OnConflict = takc.conflict
 	if id, ok := takc.mutation.ID(); ok {
 		_node.ID = id
@@ -160,7 +160,7 @@ func (takc *TeamApiKeyCreate) createSpec() (*TeamApiKey, *sqlgraph.CreateSpec) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = takc.schemaConfig.TeamApiKey
+		edge.Schema = takc.schemaConfig.TeamAPIKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
@@ -173,7 +173,7 @@ func (takc *TeamApiKeyCreate) createSpec() (*TeamApiKey, *sqlgraph.CreateSpec) {
 // OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
 // of the `INSERT` statement. For example:
 //
-//	client.TeamApiKey.Create().
+//	client.TeamAPIKey.Create().
 //		SetCreatedAt(v).
 //		OnConflict(
 //			// Update the row with the new values
@@ -182,13 +182,13 @@ func (takc *TeamApiKeyCreate) createSpec() (*TeamApiKey, *sqlgraph.CreateSpec) {
 //		).
 //		// Override some of the fields with custom
 //		// update values.
-//		Update(func(u *ent.TeamApiKeyUpsert) {
+//		Update(func(u *ent.TeamAPIKeyUpsert) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (takc *TeamApiKeyCreate) OnConflict(opts ...sql.ConflictOption) *TeamApiKeyUpsertOne {
+func (takc *TeamAPIKeyCreate) OnConflict(opts ...sql.ConflictOption) *TeamAPIKeyUpsertOne {
 	takc.conflict = opts
-	return &TeamApiKeyUpsertOne{
+	return &TeamAPIKeyUpsertOne{
 		create: takc,
 	}
 }
@@ -196,37 +196,37 @@ func (takc *TeamApiKeyCreate) OnConflict(opts ...sql.ConflictOption) *TeamApiKey
 // OnConflictColumns calls `OnConflict` and configures the columns
 // as conflict target. Using this option is equivalent to using:
 //
-//	client.TeamApiKey.Create().
+//	client.TeamAPIKey.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (takc *TeamApiKeyCreate) OnConflictColumns(columns ...string) *TeamApiKeyUpsertOne {
+func (takc *TeamAPIKeyCreate) OnConflictColumns(columns ...string) *TeamAPIKeyUpsertOne {
 	takc.conflict = append(takc.conflict, sql.ConflictColumns(columns...))
-	return &TeamApiKeyUpsertOne{
+	return &TeamAPIKeyUpsertOne{
 		create: takc,
 	}
 }
 
 type (
-	// TeamApiKeyUpsertOne is the builder for "upsert"-ing
-	//  one TeamApiKey node.
-	TeamApiKeyUpsertOne struct {
-		create *TeamApiKeyCreate
+	// TeamAPIKeyUpsertOne is the builder for "upsert"-ing
+	//  one TeamAPIKey node.
+	TeamAPIKeyUpsertOne struct {
+		create *TeamAPIKeyCreate
 	}
 
-	// TeamApiKeyUpsert is the "OnConflict" setter.
-	TeamApiKeyUpsert struct {
+	// TeamAPIKeyUpsert is the "OnConflict" setter.
+	TeamAPIKeyUpsert struct {
 		*sql.UpdateSet
 	}
 )
 
 // SetTeamID sets the "team_id" field.
-func (u *TeamApiKeyUpsert) SetTeamID(v uuid.UUID) *TeamApiKeyUpsert {
+func (u *TeamAPIKeyUpsert) SetTeamID(v uuid.UUID) *TeamAPIKeyUpsert {
 	u.Set(teamapikey.FieldTeamID, v)
 	return u
 }
 
 // UpdateTeamID sets the "team_id" field to the value that was provided on create.
-func (u *TeamApiKeyUpsert) UpdateTeamID() *TeamApiKeyUpsert {
+func (u *TeamAPIKeyUpsert) UpdateTeamID() *TeamAPIKeyUpsert {
 	u.SetExcluded(teamapikey.FieldTeamID)
 	return u
 }
@@ -234,7 +234,7 @@ func (u *TeamApiKeyUpsert) UpdateTeamID() *TeamApiKeyUpsert {
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
-//	client.TeamApiKey.Create().
+//	client.TeamAPIKey.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
 //			sql.ResolveWith(func(u *sql.UpdateSet) {
@@ -242,7 +242,7 @@ func (u *TeamApiKeyUpsert) UpdateTeamID() *TeamApiKeyUpsert {
 //			}),
 //		).
 //		Exec(ctx)
-func (u *TeamApiKeyUpsertOne) UpdateNewValues() *TeamApiKeyUpsertOne {
+func (u *TeamAPIKeyUpsertOne) UpdateNewValues() *TeamAPIKeyUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.ID(); exists {
@@ -258,65 +258,65 @@ func (u *TeamApiKeyUpsertOne) UpdateNewValues() *TeamApiKeyUpsertOne {
 // Ignore sets each column to itself in case of conflict.
 // Using this option is equivalent to using:
 //
-//	client.TeamApiKey.Create().
+//	client.TeamAPIKey.Create().
 //	    OnConflict(sql.ResolveWithIgnore()).
 //	    Exec(ctx)
-func (u *TeamApiKeyUpsertOne) Ignore() *TeamApiKeyUpsertOne {
+func (u *TeamAPIKeyUpsertOne) Ignore() *TeamAPIKeyUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
 	return u
 }
 
 // DoNothing configures the conflict_action to `DO NOTHING`.
 // Supported only by SQLite and PostgreSQL.
-func (u *TeamApiKeyUpsertOne) DoNothing() *TeamApiKeyUpsertOne {
+func (u *TeamAPIKeyUpsertOne) DoNothing() *TeamAPIKeyUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.DoNothing())
 	return u
 }
 
-// Update allows overriding fields `UPDATE` values. See the TeamApiKeyCreate.OnConflict
+// Update allows overriding fields `UPDATE` values. See the TeamAPIKeyCreate.OnConflict
 // documentation for more info.
-func (u *TeamApiKeyUpsertOne) Update(set func(*TeamApiKeyUpsert)) *TeamApiKeyUpsertOne {
+func (u *TeamAPIKeyUpsertOne) Update(set func(*TeamAPIKeyUpsert)) *TeamAPIKeyUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&TeamApiKeyUpsert{UpdateSet: update})
+		set(&TeamAPIKeyUpsert{UpdateSet: update})
 	}))
 	return u
 }
 
 // SetTeamID sets the "team_id" field.
-func (u *TeamApiKeyUpsertOne) SetTeamID(v uuid.UUID) *TeamApiKeyUpsertOne {
-	return u.Update(func(s *TeamApiKeyUpsert) {
+func (u *TeamAPIKeyUpsertOne) SetTeamID(v uuid.UUID) *TeamAPIKeyUpsertOne {
+	return u.Update(func(s *TeamAPIKeyUpsert) {
 		s.SetTeamID(v)
 	})
 }
 
 // UpdateTeamID sets the "team_id" field to the value that was provided on create.
-func (u *TeamApiKeyUpsertOne) UpdateTeamID() *TeamApiKeyUpsertOne {
-	return u.Update(func(s *TeamApiKeyUpsert) {
+func (u *TeamAPIKeyUpsertOne) UpdateTeamID() *TeamAPIKeyUpsertOne {
+	return u.Update(func(s *TeamAPIKeyUpsert) {
 		s.UpdateTeamID()
 	})
 }
 
 // Exec executes the query.
-func (u *TeamApiKeyUpsertOne) Exec(ctx context.Context) error {
+func (u *TeamAPIKeyUpsertOne) Exec(ctx context.Context) error {
 	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for TeamApiKeyCreate.OnConflict")
+		return errors.New("ent: missing options for TeamAPIKeyCreate.OnConflict")
 	}
 	return u.create.Exec(ctx)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (u *TeamApiKeyUpsertOne) ExecX(ctx context.Context) {
+func (u *TeamAPIKeyUpsertOne) ExecX(ctx context.Context) {
 	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *TeamApiKeyUpsertOne) ID(ctx context.Context) (id string, err error) {
+func (u *TeamAPIKeyUpsertOne) ID(ctx context.Context) (id string, err error) {
 	if u.create.driver.Dialect() == dialect.MySQL {
 		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
 		// fields from the database since MySQL does not support the RETURNING clause.
-		return id, errors.New("ent: TeamApiKeyUpsertOne.ID is not supported by MySQL driver. Use TeamApiKeyUpsertOne.Exec instead")
+		return id, errors.New("ent: TeamAPIKeyUpsertOne.ID is not supported by MySQL driver. Use TeamAPIKeyUpsertOne.Exec instead")
 	}
 	node, err := u.create.Save(ctx)
 	if err != nil {
@@ -326,7 +326,7 @@ func (u *TeamApiKeyUpsertOne) ID(ctx context.Context) (id string, err error) {
 }
 
 // IDX is like ID, but panics if an error occurs.
-func (u *TeamApiKeyUpsertOne) IDX(ctx context.Context) string {
+func (u *TeamAPIKeyUpsertOne) IDX(ctx context.Context) string {
 	id, err := u.ID(ctx)
 	if err != nil {
 		panic(err)
@@ -334,28 +334,28 @@ func (u *TeamApiKeyUpsertOne) IDX(ctx context.Context) string {
 	return id
 }
 
-// TeamApiKeyCreateBulk is the builder for creating many TeamApiKey entities in bulk.
-type TeamApiKeyCreateBulk struct {
+// TeamAPIKeyCreateBulk is the builder for creating many TeamAPIKey entities in bulk.
+type TeamAPIKeyCreateBulk struct {
 	config
 	err      error
-	builders []*TeamApiKeyCreate
+	builders []*TeamAPIKeyCreate
 	conflict []sql.ConflictOption
 }
 
-// Save creates the TeamApiKey entities in the database.
-func (takcb *TeamApiKeyCreateBulk) Save(ctx context.Context) ([]*TeamApiKey, error) {
+// Save creates the TeamAPIKey entities in the database.
+func (takcb *TeamAPIKeyCreateBulk) Save(ctx context.Context) ([]*TeamAPIKey, error) {
 	if takcb.err != nil {
 		return nil, takcb.err
 	}
 	specs := make([]*sqlgraph.CreateSpec, len(takcb.builders))
-	nodes := make([]*TeamApiKey, len(takcb.builders))
+	nodes := make([]*TeamAPIKey, len(takcb.builders))
 	mutators := make([]Mutator, len(takcb.builders))
 	for i := range takcb.builders {
 		func(i int, root context.Context) {
 			builder := takcb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				mutation, ok := m.(*TeamApiKeyMutation)
+				mutation, ok := m.(*TeamAPIKeyMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
 				}
@@ -399,7 +399,7 @@ func (takcb *TeamApiKeyCreateBulk) Save(ctx context.Context) ([]*TeamApiKey, err
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (takcb *TeamApiKeyCreateBulk) SaveX(ctx context.Context) []*TeamApiKey {
+func (takcb *TeamAPIKeyCreateBulk) SaveX(ctx context.Context) []*TeamAPIKey {
 	v, err := takcb.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -408,13 +408,13 @@ func (takcb *TeamApiKeyCreateBulk) SaveX(ctx context.Context) []*TeamApiKey {
 }
 
 // Exec executes the query.
-func (takcb *TeamApiKeyCreateBulk) Exec(ctx context.Context) error {
+func (takcb *TeamAPIKeyCreateBulk) Exec(ctx context.Context) error {
 	_, err := takcb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (takcb *TeamApiKeyCreateBulk) ExecX(ctx context.Context) {
+func (takcb *TeamAPIKeyCreateBulk) ExecX(ctx context.Context) {
 	if err := takcb.Exec(ctx); err != nil {
 		panic(err)
 	}
@@ -423,7 +423,7 @@ func (takcb *TeamApiKeyCreateBulk) ExecX(ctx context.Context) {
 // OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
 // of the `INSERT` statement. For example:
 //
-//	client.TeamApiKey.CreateBulk(builders...).
+//	client.TeamAPIKey.CreateBulk(builders...).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -431,13 +431,13 @@ func (takcb *TeamApiKeyCreateBulk) ExecX(ctx context.Context) {
 //		).
 //		// Override some of the fields with custom
 //		// update values.
-//		Update(func(u *ent.TeamApiKeyUpsert) {
+//		Update(func(u *ent.TeamAPIKeyUpsert) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (takcb *TeamApiKeyCreateBulk) OnConflict(opts ...sql.ConflictOption) *TeamApiKeyUpsertBulk {
+func (takcb *TeamAPIKeyCreateBulk) OnConflict(opts ...sql.ConflictOption) *TeamAPIKeyUpsertBulk {
 	takcb.conflict = opts
-	return &TeamApiKeyUpsertBulk{
+	return &TeamAPIKeyUpsertBulk{
 		create: takcb,
 	}
 }
@@ -445,26 +445,26 @@ func (takcb *TeamApiKeyCreateBulk) OnConflict(opts ...sql.ConflictOption) *TeamA
 // OnConflictColumns calls `OnConflict` and configures the columns
 // as conflict target. Using this option is equivalent to using:
 //
-//	client.TeamApiKey.Create().
+//	client.TeamAPIKey.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (takcb *TeamApiKeyCreateBulk) OnConflictColumns(columns ...string) *TeamApiKeyUpsertBulk {
+func (takcb *TeamAPIKeyCreateBulk) OnConflictColumns(columns ...string) *TeamAPIKeyUpsertBulk {
 	takcb.conflict = append(takcb.conflict, sql.ConflictColumns(columns...))
-	return &TeamApiKeyUpsertBulk{
+	return &TeamAPIKeyUpsertBulk{
 		create: takcb,
 	}
 }
 
-// TeamApiKeyUpsertBulk is the builder for "upsert"-ing
-// a bulk of TeamApiKey nodes.
-type TeamApiKeyUpsertBulk struct {
-	create *TeamApiKeyCreateBulk
+// TeamAPIKeyUpsertBulk is the builder for "upsert"-ing
+// a bulk of TeamAPIKey nodes.
+type TeamAPIKeyUpsertBulk struct {
+	create *TeamAPIKeyCreateBulk
 }
 
 // UpdateNewValues updates the mutable fields using the new values that
 // were set on create. Using this option is equivalent to using:
 //
-//	client.TeamApiKey.Create().
+//	client.TeamAPIKey.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
 //			sql.ResolveWith(func(u *sql.UpdateSet) {
@@ -472,7 +472,7 @@ type TeamApiKeyUpsertBulk struct {
 //			}),
 //		).
 //		Exec(ctx)
-func (u *TeamApiKeyUpsertBulk) UpdateNewValues() *TeamApiKeyUpsertBulk {
+func (u *TeamAPIKeyUpsertBulk) UpdateNewValues() *TeamAPIKeyUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		for _, b := range u.create.builders {
@@ -490,62 +490,62 @@ func (u *TeamApiKeyUpsertBulk) UpdateNewValues() *TeamApiKeyUpsertBulk {
 // Ignore sets each column to itself in case of conflict.
 // Using this option is equivalent to using:
 //
-//	client.TeamApiKey.Create().
+//	client.TeamAPIKey.Create().
 //		OnConflict(sql.ResolveWithIgnore()).
 //		Exec(ctx)
-func (u *TeamApiKeyUpsertBulk) Ignore() *TeamApiKeyUpsertBulk {
+func (u *TeamAPIKeyUpsertBulk) Ignore() *TeamAPIKeyUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
 	return u
 }
 
 // DoNothing configures the conflict_action to `DO NOTHING`.
 // Supported only by SQLite and PostgreSQL.
-func (u *TeamApiKeyUpsertBulk) DoNothing() *TeamApiKeyUpsertBulk {
+func (u *TeamAPIKeyUpsertBulk) DoNothing() *TeamAPIKeyUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.DoNothing())
 	return u
 }
 
-// Update allows overriding fields `UPDATE` values. See the TeamApiKeyCreateBulk.OnConflict
+// Update allows overriding fields `UPDATE` values. See the TeamAPIKeyCreateBulk.OnConflict
 // documentation for more info.
-func (u *TeamApiKeyUpsertBulk) Update(set func(*TeamApiKeyUpsert)) *TeamApiKeyUpsertBulk {
+func (u *TeamAPIKeyUpsertBulk) Update(set func(*TeamAPIKeyUpsert)) *TeamAPIKeyUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&TeamApiKeyUpsert{UpdateSet: update})
+		set(&TeamAPIKeyUpsert{UpdateSet: update})
 	}))
 	return u
 }
 
 // SetTeamID sets the "team_id" field.
-func (u *TeamApiKeyUpsertBulk) SetTeamID(v uuid.UUID) *TeamApiKeyUpsertBulk {
-	return u.Update(func(s *TeamApiKeyUpsert) {
+func (u *TeamAPIKeyUpsertBulk) SetTeamID(v uuid.UUID) *TeamAPIKeyUpsertBulk {
+	return u.Update(func(s *TeamAPIKeyUpsert) {
 		s.SetTeamID(v)
 	})
 }
 
 // UpdateTeamID sets the "team_id" field to the value that was provided on create.
-func (u *TeamApiKeyUpsertBulk) UpdateTeamID() *TeamApiKeyUpsertBulk {
-	return u.Update(func(s *TeamApiKeyUpsert) {
+func (u *TeamAPIKeyUpsertBulk) UpdateTeamID() *TeamAPIKeyUpsertBulk {
+	return u.Update(func(s *TeamAPIKeyUpsert) {
 		s.UpdateTeamID()
 	})
 }
 
 // Exec executes the query.
-func (u *TeamApiKeyUpsertBulk) Exec(ctx context.Context) error {
+func (u *TeamAPIKeyUpsertBulk) Exec(ctx context.Context) error {
 	if u.create.err != nil {
 		return u.create.err
 	}
 	for i, b := range u.create.builders {
 		if len(b.conflict) != 0 {
-			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the TeamApiKeyCreateBulk instead", i)
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the TeamAPIKeyCreateBulk instead", i)
 		}
 	}
 	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for TeamApiKeyCreateBulk.OnConflict")
+		return errors.New("ent: missing options for TeamAPIKeyCreateBulk.OnConflict")
 	}
 	return u.create.Exec(ctx)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (u *TeamApiKeyUpsertBulk) ExecX(ctx context.Context) {
+func (u *TeamAPIKeyUpsertBulk) ExecX(ctx context.Context) {
 	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}

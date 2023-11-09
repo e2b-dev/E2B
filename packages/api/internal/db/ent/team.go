@@ -40,7 +40,7 @@ type TeamEdges struct {
 	// Users holds the value of the users edge.
 	Users []*User `json:"users,omitempty"`
 	// TeamAPIKeys holds the value of the team_api_keys edge.
-	TeamAPIKeys []*TeamApiKey `json:"team_api_keys,omitempty"`
+	TeamAPIKeys []*TeamAPIKey `json:"team_api_keys,omitempty"`
 	// TeamTier holds the value of the team_tier edge.
 	TeamTier *Tier `json:"team_tier,omitempty"`
 	// Envs holds the value of the envs edge.
@@ -63,7 +63,7 @@ func (e TeamEdges) UsersOrErr() ([]*User, error) {
 
 // TeamAPIKeysOrErr returns the TeamAPIKeys value or an error if the edge
 // was not loaded in eager-loading.
-func (e TeamEdges) TeamAPIKeysOrErr() ([]*TeamApiKey, error) {
+func (e TeamEdges) TeamAPIKeysOrErr() ([]*TeamAPIKey, error) {
 	if e.loadedTypes[1] {
 		return e.TeamAPIKeys, nil
 	}
@@ -184,7 +184,7 @@ func (t *Team) QueryUsers() *UserQuery {
 }
 
 // QueryTeamAPIKeys queries the "team_api_keys" edge of the Team entity.
-func (t *Team) QueryTeamAPIKeys() *TeamApiKeyQuery {
+func (t *Team) QueryTeamAPIKeys() *TeamAPIKeyQuery {
 	return NewTeamClient(t.config).QueryTeamAPIKeys(t)
 }
 

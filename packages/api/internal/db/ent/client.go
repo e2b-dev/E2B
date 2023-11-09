@@ -41,8 +41,8 @@ type Client struct {
 	EnvAlias *EnvAliasClient
 	// Team is the client for interacting with the Team builders.
 	Team *TeamClient
-	// TeamApiKey is the client for interacting with the TeamApiKey builders.
-	TeamApiKey *TeamApiKeyClient
+	// TeamAPIKey is the client for interacting with the TeamAPIKey builders.
+	TeamAPIKey *TeamAPIKeyClient
 	// Tier is the client for interacting with the Tier builders.
 	Tier *TierClient
 	// User is the client for interacting with the User builders.
@@ -66,7 +66,7 @@ func (c *Client) init() {
 	c.Env = NewEnvClient(c.config)
 	c.EnvAlias = NewEnvAliasClient(c.config)
 	c.Team = NewTeamClient(c.config)
-	c.TeamApiKey = NewTeamApiKeyClient(c.config)
+	c.TeamAPIKey = NewTeamAPIKeyClient(c.config)
 	c.Tier = NewTierClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.UsersTeams = NewUsersTeamsClient(c.config)
@@ -161,7 +161,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Env:         NewEnvClient(cfg),
 		EnvAlias:    NewEnvAliasClient(cfg),
 		Team:        NewTeamClient(cfg),
-		TeamApiKey:  NewTeamApiKeyClient(cfg),
+		TeamAPIKey:  NewTeamAPIKeyClient(cfg),
 		Tier:        NewTierClient(cfg),
 		User:        NewUserClient(cfg),
 		UsersTeams:  NewUsersTeamsClient(cfg),
@@ -188,7 +188,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Env:         NewEnvClient(cfg),
 		EnvAlias:    NewEnvAliasClient(cfg),
 		Team:        NewTeamClient(cfg),
-		TeamApiKey:  NewTeamApiKeyClient(cfg),
+		TeamAPIKey:  NewTeamAPIKeyClient(cfg),
 		Tier:        NewTierClient(cfg),
 		User:        NewUserClient(cfg),
 		UsersTeams:  NewUsersTeamsClient(cfg),
@@ -221,7 +221,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.AccessToken, c.Env, c.EnvAlias, c.Team, c.TeamApiKey, c.Tier, c.User,
+		c.AccessToken, c.Env, c.EnvAlias, c.Team, c.TeamAPIKey, c.Tier, c.User,
 		c.UsersTeams,
 	} {
 		n.Use(hooks...)
@@ -232,7 +232,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.AccessToken, c.Env, c.EnvAlias, c.Team, c.TeamApiKey, c.Tier, c.User,
+		c.AccessToken, c.Env, c.EnvAlias, c.Team, c.TeamAPIKey, c.Tier, c.User,
 		c.UsersTeams,
 	} {
 		n.Intercept(interceptors...)
@@ -250,8 +250,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.EnvAlias.mutate(ctx, m)
 	case *TeamMutation:
 		return c.Team.mutate(ctx, m)
-	case *TeamApiKeyMutation:
-		return c.TeamApiKey.mutate(ctx, m)
+	case *TeamAPIKeyMutation:
+		return c.TeamAPIKey.mutate(ctx, m)
 	case *TierMutation:
 		return c.Tier.mutate(ctx, m)
 	case *UserMutation:
@@ -866,8 +866,8 @@ func (c *TeamClient) QueryUsers(t *Team) *UserQuery {
 }
 
 // QueryTeamAPIKeys queries the team_api_keys edge of a Team.
-func (c *TeamClient) QueryTeamAPIKeys(t *Team) *TeamApiKeyQuery {
-	query := (&TeamApiKeyClient{config: c.config}).Query()
+func (c *TeamClient) QueryTeamAPIKeys(t *Team) *TeamAPIKeyQuery {
+	query := (&TeamAPIKeyClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
@@ -876,8 +876,8 @@ func (c *TeamClient) QueryTeamAPIKeys(t *Team) *TeamApiKeyQuery {
 			sqlgraph.Edge(sqlgraph.O2M, false, team.TeamAPIKeysTable, team.TeamAPIKeysColumn),
 		)
 		schemaConfig := t.schemaConfig
-		step.To.Schema = schemaConfig.TeamApiKey
-		step.Edge.Schema = schemaConfig.TeamApiKey
+		step.To.Schema = schemaConfig.TeamAPIKey
+		step.Edge.Schema = schemaConfig.TeamAPIKey
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
 	}
@@ -966,107 +966,107 @@ func (c *TeamClient) mutate(ctx context.Context, m *TeamMutation) (Value, error)
 	}
 }
 
-// TeamApiKeyClient is a client for the TeamApiKey schema.
-type TeamApiKeyClient struct {
+// TeamAPIKeyClient is a client for the TeamAPIKey schema.
+type TeamAPIKeyClient struct {
 	config
 }
 
-// NewTeamApiKeyClient returns a client for the TeamApiKey from the given config.
-func NewTeamApiKeyClient(c config) *TeamApiKeyClient {
-	return &TeamApiKeyClient{config: c}
+// NewTeamAPIKeyClient returns a client for the TeamAPIKey from the given config.
+func NewTeamAPIKeyClient(c config) *TeamAPIKeyClient {
+	return &TeamAPIKeyClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
 // A call to `Use(f, g, h)` equals to `teamapikey.Hooks(f(g(h())))`.
-func (c *TeamApiKeyClient) Use(hooks ...Hook) {
-	c.hooks.TeamApiKey = append(c.hooks.TeamApiKey, hooks...)
+func (c *TeamAPIKeyClient) Use(hooks ...Hook) {
+	c.hooks.TeamAPIKey = append(c.hooks.TeamAPIKey, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `teamapikey.Intercept(f(g(h())))`.
-func (c *TeamApiKeyClient) Intercept(interceptors ...Interceptor) {
-	c.inters.TeamApiKey = append(c.inters.TeamApiKey, interceptors...)
+func (c *TeamAPIKeyClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TeamAPIKey = append(c.inters.TeamAPIKey, interceptors...)
 }
 
-// Create returns a builder for creating a TeamApiKey entity.
-func (c *TeamApiKeyClient) Create() *TeamApiKeyCreate {
-	mutation := newTeamApiKeyMutation(c.config, OpCreate)
-	return &TeamApiKeyCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a TeamAPIKey entity.
+func (c *TeamAPIKeyClient) Create() *TeamAPIKeyCreate {
+	mutation := newTeamAPIKeyMutation(c.config, OpCreate)
+	return &TeamAPIKeyCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of TeamApiKey entities.
-func (c *TeamApiKeyClient) CreateBulk(builders ...*TeamApiKeyCreate) *TeamApiKeyCreateBulk {
-	return &TeamApiKeyCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of TeamAPIKey entities.
+func (c *TeamAPIKeyClient) CreateBulk(builders ...*TeamAPIKeyCreate) *TeamAPIKeyCreateBulk {
+	return &TeamAPIKeyCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *TeamApiKeyClient) MapCreateBulk(slice any, setFunc func(*TeamApiKeyCreate, int)) *TeamApiKeyCreateBulk {
+func (c *TeamAPIKeyClient) MapCreateBulk(slice any, setFunc func(*TeamAPIKeyCreate, int)) *TeamAPIKeyCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &TeamApiKeyCreateBulk{err: fmt.Errorf("calling to TeamApiKeyClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &TeamAPIKeyCreateBulk{err: fmt.Errorf("calling to TeamAPIKeyClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*TeamApiKeyCreate, rv.Len())
+	builders := make([]*TeamAPIKeyCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &TeamApiKeyCreateBulk{config: c.config, builders: builders}
+	return &TeamAPIKeyCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for TeamApiKey.
-func (c *TeamApiKeyClient) Update() *TeamApiKeyUpdate {
-	mutation := newTeamApiKeyMutation(c.config, OpUpdate)
-	return &TeamApiKeyUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for TeamAPIKey.
+func (c *TeamAPIKeyClient) Update() *TeamAPIKeyUpdate {
+	mutation := newTeamAPIKeyMutation(c.config, OpUpdate)
+	return &TeamAPIKeyUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *TeamApiKeyClient) UpdateOne(tak *TeamApiKey) *TeamApiKeyUpdateOne {
-	mutation := newTeamApiKeyMutation(c.config, OpUpdateOne, withTeamApiKey(tak))
-	return &TeamApiKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *TeamAPIKeyClient) UpdateOne(tak *TeamAPIKey) *TeamAPIKeyUpdateOne {
+	mutation := newTeamAPIKeyMutation(c.config, OpUpdateOne, withTeamAPIKey(tak))
+	return &TeamAPIKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *TeamApiKeyClient) UpdateOneID(id string) *TeamApiKeyUpdateOne {
-	mutation := newTeamApiKeyMutation(c.config, OpUpdateOne, withTeamApiKeyID(id))
-	return &TeamApiKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *TeamAPIKeyClient) UpdateOneID(id string) *TeamAPIKeyUpdateOne {
+	mutation := newTeamAPIKeyMutation(c.config, OpUpdateOne, withTeamAPIKeyID(id))
+	return &TeamAPIKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for TeamApiKey.
-func (c *TeamApiKeyClient) Delete() *TeamApiKeyDelete {
-	mutation := newTeamApiKeyMutation(c.config, OpDelete)
-	return &TeamApiKeyDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for TeamAPIKey.
+func (c *TeamAPIKeyClient) Delete() *TeamAPIKeyDelete {
+	mutation := newTeamAPIKeyMutation(c.config, OpDelete)
+	return &TeamAPIKeyDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *TeamApiKeyClient) DeleteOne(tak *TeamApiKey) *TeamApiKeyDeleteOne {
+func (c *TeamAPIKeyClient) DeleteOne(tak *TeamAPIKey) *TeamAPIKeyDeleteOne {
 	return c.DeleteOneID(tak.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TeamApiKeyClient) DeleteOneID(id string) *TeamApiKeyDeleteOne {
+func (c *TeamAPIKeyClient) DeleteOneID(id string) *TeamAPIKeyDeleteOne {
 	builder := c.Delete().Where(teamapikey.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &TeamApiKeyDeleteOne{builder}
+	return &TeamAPIKeyDeleteOne{builder}
 }
 
-// Query returns a query builder for TeamApiKey.
-func (c *TeamApiKeyClient) Query() *TeamApiKeyQuery {
-	return &TeamApiKeyQuery{
+// Query returns a query builder for TeamAPIKey.
+func (c *TeamAPIKeyClient) Query() *TeamAPIKeyQuery {
+	return &TeamAPIKeyQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeTeamApiKey},
+		ctx:    &QueryContext{Type: TypeTeamAPIKey},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a TeamApiKey entity by its id.
-func (c *TeamApiKeyClient) Get(ctx context.Context, id string) (*TeamApiKey, error) {
+// Get returns a TeamAPIKey entity by its id.
+func (c *TeamAPIKeyClient) Get(ctx context.Context, id string) (*TeamAPIKey, error) {
 	return c.Query().Where(teamapikey.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *TeamApiKeyClient) GetX(ctx context.Context, id string) *TeamApiKey {
+func (c *TeamAPIKeyClient) GetX(ctx context.Context, id string) *TeamAPIKey {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -1074,8 +1074,8 @@ func (c *TeamApiKeyClient) GetX(ctx context.Context, id string) *TeamApiKey {
 	return obj
 }
 
-// QueryTeam queries the team edge of a TeamApiKey.
-func (c *TeamApiKeyClient) QueryTeam(tak *TeamApiKey) *TeamQuery {
+// QueryTeam queries the team edge of a TeamAPIKey.
+func (c *TeamAPIKeyClient) QueryTeam(tak *TeamAPIKey) *TeamQuery {
 	query := (&TeamClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := tak.ID
@@ -1086,7 +1086,7 @@ func (c *TeamApiKeyClient) QueryTeam(tak *TeamApiKey) *TeamQuery {
 		)
 		schemaConfig := tak.schemaConfig
 		step.To.Schema = schemaConfig.Team
-		step.Edge.Schema = schemaConfig.TeamApiKey
+		step.Edge.Schema = schemaConfig.TeamAPIKey
 		fromV = sqlgraph.Neighbors(tak.driver.Dialect(), step)
 		return fromV, nil
 	}
@@ -1094,27 +1094,27 @@ func (c *TeamApiKeyClient) QueryTeam(tak *TeamApiKey) *TeamQuery {
 }
 
 // Hooks returns the client hooks.
-func (c *TeamApiKeyClient) Hooks() []Hook {
-	return c.hooks.TeamApiKey
+func (c *TeamAPIKeyClient) Hooks() []Hook {
+	return c.hooks.TeamAPIKey
 }
 
 // Interceptors returns the client interceptors.
-func (c *TeamApiKeyClient) Interceptors() []Interceptor {
-	return c.inters.TeamApiKey
+func (c *TeamAPIKeyClient) Interceptors() []Interceptor {
+	return c.inters.TeamAPIKey
 }
 
-func (c *TeamApiKeyClient) mutate(ctx context.Context, m *TeamApiKeyMutation) (Value, error) {
+func (c *TeamAPIKeyClient) mutate(ctx context.Context, m *TeamAPIKeyMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&TeamApiKeyCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&TeamAPIKeyCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&TeamApiKeyUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&TeamAPIKeyUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&TeamApiKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&TeamAPIKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&TeamApiKeyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&TeamAPIKeyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown TeamApiKey mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown TeamAPIKey mutation op: %q", m.Op())
 	}
 }
 
@@ -1615,10 +1615,10 @@ func (c *UsersTeamsClient) mutate(ctx context.Context, m *UsersTeamsMutation) (V
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		AccessToken, Env, EnvAlias, Team, TeamApiKey, Tier, User, UsersTeams []ent.Hook
+		AccessToken, Env, EnvAlias, Team, TeamAPIKey, Tier, User, UsersTeams []ent.Hook
 	}
 	inters struct {
-		AccessToken, Env, EnvAlias, Team, TeamApiKey, Tier, User,
+		AccessToken, Env, EnvAlias, Team, TeamAPIKey, Tier, User,
 		UsersTeams []ent.Interceptor
 	}
 )

@@ -30,7 +30,7 @@ type TeamQuery struct {
 	inters          []Interceptor
 	predicates      []predicate.Team
 	withUsers       *UserQuery
-	withTeamAPIKeys *TeamApiKeyQuery
+	withTeamAPIKeys *TeamAPIKeyQuery
 	withTeamTier    *TierQuery
 	withEnvs        *EnvQuery
 	withUsersTeams  *UsersTeamsQuery
@@ -96,8 +96,8 @@ func (tq *TeamQuery) QueryUsers() *UserQuery {
 }
 
 // QueryTeamAPIKeys chains the current query on the "team_api_keys" edge.
-func (tq *TeamQuery) QueryTeamAPIKeys() *TeamApiKeyQuery {
-	query := (&TeamApiKeyClient{config: tq.config}).Query()
+func (tq *TeamQuery) QueryTeamAPIKeys() *TeamAPIKeyQuery {
+	query := (&TeamAPIKeyClient{config: tq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := tq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -112,8 +112,8 @@ func (tq *TeamQuery) QueryTeamAPIKeys() *TeamApiKeyQuery {
 			sqlgraph.Edge(sqlgraph.O2M, false, team.TeamAPIKeysTable, team.TeamAPIKeysColumn),
 		)
 		schemaConfig := tq.schemaConfig
-		step.To.Schema = schemaConfig.TeamApiKey
-		step.Edge.Schema = schemaConfig.TeamApiKey
+		step.To.Schema = schemaConfig.TeamAPIKey
+		step.Edge.Schema = schemaConfig.TeamAPIKey
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
 	}
@@ -411,8 +411,8 @@ func (tq *TeamQuery) WithUsers(opts ...func(*UserQuery)) *TeamQuery {
 
 // WithTeamAPIKeys tells the query-builder to eager-load the nodes that are connected to
 // the "team_api_keys" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TeamQuery) WithTeamAPIKeys(opts ...func(*TeamApiKeyQuery)) *TeamQuery {
-	query := (&TeamApiKeyClient{config: tq.config}).Query()
+func (tq *TeamQuery) WithTeamAPIKeys(opts ...func(*TeamAPIKeyQuery)) *TeamQuery {
+	query := (&TeamAPIKeyClient{config: tq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -568,8 +568,8 @@ func (tq *TeamQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Team, e
 	}
 	if query := tq.withTeamAPIKeys; query != nil {
 		if err := tq.loadTeamAPIKeys(ctx, query, nodes,
-			func(n *Team) { n.Edges.TeamAPIKeys = []*TeamApiKey{} },
-			func(n *Team, e *TeamApiKey) { n.Edges.TeamAPIKeys = append(n.Edges.TeamAPIKeys, e) }); err != nil {
+			func(n *Team) { n.Edges.TeamAPIKeys = []*TeamAPIKey{} },
+			func(n *Team, e *TeamAPIKey) { n.Edges.TeamAPIKeys = append(n.Edges.TeamAPIKeys, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -658,7 +658,7 @@ func (tq *TeamQuery) loadUsers(ctx context.Context, query *UserQuery, nodes []*T
 	}
 	return nil
 }
-func (tq *TeamQuery) loadTeamAPIKeys(ctx context.Context, query *TeamApiKeyQuery, nodes []*Team, init func(*Team), assign func(*Team, *TeamApiKey)) error {
+func (tq *TeamQuery) loadTeamAPIKeys(ctx context.Context, query *TeamAPIKeyQuery, nodes []*Team, init func(*Team), assign func(*Team, *TeamAPIKey)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Team)
 	for i := range nodes {
@@ -671,7 +671,7 @@ func (tq *TeamQuery) loadTeamAPIKeys(ctx context.Context, query *TeamApiKeyQuery
 	if len(query.ctx.Fields) > 0 {
 		query.ctx.AppendFieldOnce(teamapikey.FieldTeamID)
 	}
-	query.Where(predicate.TeamApiKey(func(s *sql.Selector) {
+	query.Where(predicate.TeamAPIKey(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(team.TeamAPIKeysColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
