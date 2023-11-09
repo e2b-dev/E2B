@@ -128,3 +128,7 @@ func (c *BuildCache) updateCounter(envID, buildID string, value int64) {
 		metric.WithAttributes(attribute.String("build_id", buildID)),
 	)
 }
+
+func (c *BuildCache) Delete(envID string) {
+	c.cache.Delete(envID)
+}
