@@ -54,7 +54,7 @@ export const buildCommand = new commander.Command('build')
   )
   .option(
     '-n, --name <name>',
-    'Specify name of sandbox template. You can use the name to start the sandbox in the SDK',
+    'Specify name of sandbox template. You can use the name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes and underscores.',
   )
   .alias('bd')
   .action(
@@ -87,6 +87,7 @@ export const buildCommand = new commander.Command('build')
             `Found sandbox template ${asFormattedSandboxTemplate(
               {
                 envID: config.id,
+                aliases: config.name ? [config.name] : undefined,
               },
               relativeConfigPath,
             )}`,
@@ -105,6 +106,27 @@ export const buildCommand = new commander.Command('build')
           No allowed files found in ${asLocalRelative(root)}. If you are using ${asLocal('.dockerignore')} check if it is configured correctly.
        `)
           return
+        }
+
+        if (opts.name && config?.name) {
+          console.error(
+            `You cannot specify name ${asLocal(opts.name)} because sandbox template ${asFormattedSandboxTemplate(
+              {
+                envID: config.id,
+                aliases: config.name ? [config.name] : undefined,
+              },
+              relativeConfigPath,
+            )} already has name ${asLocal(config.name)}`,
+          )
+          process.exit(1)
+        }
+
+        const name = config?.name || opts.name?.trim()
+        if (name && !/[a-z0-9-_]+/.test(name)) {
+          console.error(
+            `Name ${asLocal(name)} is not valid. Name can only contain lowercase letters, numbers, dashes and underscores.`,
+          )
+          process.exit(1)
         }
 
         console.log(
@@ -142,6 +164,10 @@ export const buildCommand = new commander.Command('build')
         )
         body.append('buildContext', blob, 'env.tar.gz.e2b')
 
+        if (name) {
+          body.append('name', name)
+        }
+
         const build = await buildTemplate(accessToken, body, envID)
 
         console.log(
@@ -158,6 +184,7 @@ export const buildCommand = new commander.Command('build')
             {
               id: build.envID,
               dockerfile: dockerfileRelativePath,
+              name: name,
             },
             true,
           )
@@ -218,7 +245,7 @@ async function waitForBuildFinish(
       case 'ready':
         console.log(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate(
-            template.data,
+            { aliases: [name], ...template.data },
           )} finished.\n
           Now you can start creating your sandboxes from this template. You can find more here: 
           ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')}, section ${asBold('Spawn and control your sandbox')}\n`,
@@ -231,7 +258,7 @@ async function waitForBuildFinish(
         )
         throw new Error(
           `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
-            template.data,
+            { aliases: [name], ...template.data },
           )} failed.\nCheck the logs above for more details or contact us ${asPrimary('(https://e2b.dev/docs/getting-help)')} to get help.\n`,
         )
     }
