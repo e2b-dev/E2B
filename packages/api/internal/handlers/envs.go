@@ -115,7 +115,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	telemetry.ReportEvent(ctx, "started creating new environment")
 
 	if alias != "" {
-		err = a.supabase.InsertEnvAlias(alias, envID)
+		err = a.supabase.ReserveEnvAlias(alias)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
 
@@ -161,6 +161,14 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 				telemetry.ReportError(buildContext, err)
 			} else {
 				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("alias", alias))
+			}
+		} else if status == api.EnvironmentBuildStatusReady && alias != "" {
+			errMsg := a.supabase.UpdateEnvAlias(alias, envID)
+			if errMsg != nil {
+				err = fmt.Errorf("error when updating alias: %w", errMsg)
+				telemetry.ReportError(buildContext, err)
+			} else {
+				telemetry.ReportEvent(buildContext, "updated alias", attribute.String("alias", alias))
 			}
 		}
 
@@ -245,8 +253,12 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	}
 
 	dockerfile := c.PostForm("dockerfile")
+	alias := utils.CleanEnvID(c.PostForm("alias"))
 
-	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
+	telemetry.SetAttributes(ctx,
+		attribute.String("build.id", buildID),
+		attribute.String("build.alias", alias),
+	)
 
 	envID, hasAccess, accessErr := a.CheckTeamAccessEnv(cleanedAliasOrEnvID, teamID, false)
 	if accessErr != nil {
@@ -263,6 +275,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	a.CreateAnalyticsUserEvent(userID, teamID, "submitted environment build request", properties.
 		Set("environment", envID).
 		Set("build_id", buildID).
+		Set("alias", alias).
 		Set("dockerfile", dockerfile),
 	)
 

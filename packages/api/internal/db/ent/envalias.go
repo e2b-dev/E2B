@@ -18,7 +18,7 @@ type EnvAlias struct {
 	// ID of the ent.
 	ID string `json:"id,omitempty"`
 	// EnvID holds the value of the "env_id" field.
-	EnvID string `json:"env_id,omitempty"`
+	EnvID *string `json:"env_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvAliasQuery when eager-loading is set.
 	Edges        EnvAliasEdges `json:"edges"`
@@ -79,7 +79,8 @@ func (ea *EnvAlias) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field env_id", values[i])
 			} else if value.Valid {
-				ea.EnvID = value.String
+				ea.EnvID = new(string)
+				*ea.EnvID = value.String
 			}
 		default:
 			ea.selectValues.Set(columns[i], values[i])
@@ -122,8 +123,10 @@ func (ea *EnvAlias) String() string {
 	var builder strings.Builder
 	builder.WriteString("EnvAlias(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", ea.ID))
-	builder.WriteString("env_id=")
-	builder.WriteString(ea.EnvID)
+	if v := ea.EnvID; v != nil {
+		builder.WriteString("env_id=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

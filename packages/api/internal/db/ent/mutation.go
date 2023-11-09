@@ -1487,7 +1487,7 @@ func (m *EnvAliasMutation) EnvID() (r string, exists bool) {
 // OldEnvID returns the old "env_id" field's value of the EnvAlias entity.
 // If the EnvAlias object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvAliasMutation) OldEnvID(ctx context.Context) (v string, err error) {
+func (m *EnvAliasMutation) OldEnvID(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldEnvID is only allowed on UpdateOne operations")
 	}
@@ -1501,9 +1501,22 @@ func (m *EnvAliasMutation) OldEnvID(ctx context.Context) (v string, err error) {
 	return oldValue.EnvID, nil
 }
 
+// ClearEnvID clears the value of the "env_id" field.
+func (m *EnvAliasMutation) ClearEnvID() {
+	m.alias_env = nil
+	m.clearedFields[envalias.FieldEnvID] = struct{}{}
+}
+
+// EnvIDCleared returns if the "env_id" field was cleared in this mutation.
+func (m *EnvAliasMutation) EnvIDCleared() bool {
+	_, ok := m.clearedFields[envalias.FieldEnvID]
+	return ok
+}
+
 // ResetEnvID resets all changes to the "env_id" field.
 func (m *EnvAliasMutation) ResetEnvID() {
 	m.alias_env = nil
+	delete(m.clearedFields, envalias.FieldEnvID)
 }
 
 // SetAliasEnvID sets the "alias_env" edge to the Env entity by id.
@@ -1519,7 +1532,7 @@ func (m *EnvAliasMutation) ClearAliasEnv() {
 
 // AliasEnvCleared reports if the "alias_env" edge to the Env entity was cleared.
 func (m *EnvAliasMutation) AliasEnvCleared() bool {
-	return m.clearedalias_env
+	return m.EnvIDCleared() || m.clearedalias_env
 }
 
 // AliasEnvID returns the "alias_env" edge ID in the mutation.
@@ -1650,7 +1663,11 @@ func (m *EnvAliasMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *EnvAliasMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(envalias.FieldEnvID) {
+		fields = append(fields, envalias.FieldEnvID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1663,6 +1680,11 @@ func (m *EnvAliasMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *EnvAliasMutation) ClearField(name string) error {
+	switch name {
+	case envalias.FieldEnvID:
+		m.ClearEnvID()
+		return nil
+	}
 	return fmt.Errorf("unknown EnvAlias nullable field %s", name)
 }
 

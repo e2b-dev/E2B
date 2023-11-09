@@ -35,9 +35,31 @@ func (eau *EnvAliasUpdate) SetEnvID(s string) *EnvAliasUpdate {
 	return eau
 }
 
+// SetNillableEnvID sets the "env_id" field if the given value is not nil.
+func (eau *EnvAliasUpdate) SetNillableEnvID(s *string) *EnvAliasUpdate {
+	if s != nil {
+		eau.SetEnvID(*s)
+	}
+	return eau
+}
+
+// ClearEnvID clears the value of the "env_id" field.
+func (eau *EnvAliasUpdate) ClearEnvID() *EnvAliasUpdate {
+	eau.mutation.ClearEnvID()
+	return eau
+}
+
 // SetAliasEnvID sets the "alias_env" edge to the Env entity by ID.
 func (eau *EnvAliasUpdate) SetAliasEnvID(id string) *EnvAliasUpdate {
 	eau.mutation.SetAliasEnvID(id)
+	return eau
+}
+
+// SetNillableAliasEnvID sets the "alias_env" edge to the Env entity by ID if the given value is not nil.
+func (eau *EnvAliasUpdate) SetNillableAliasEnvID(id *string) *EnvAliasUpdate {
+	if id != nil {
+		eau = eau.SetAliasEnvID(*id)
+	}
 	return eau
 }
 
@@ -84,18 +106,7 @@ func (eau *EnvAliasUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (eau *EnvAliasUpdate) check() error {
-	if _, ok := eau.mutation.AliasEnvID(); eau.mutation.AliasEnvCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "EnvAlias.alias_env"`)
-	}
-	return nil
-}
-
 func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := eau.check(); err != nil {
-		return n, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	if ps := eau.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -163,9 +174,31 @@ func (eauo *EnvAliasUpdateOne) SetEnvID(s string) *EnvAliasUpdateOne {
 	return eauo
 }
 
+// SetNillableEnvID sets the "env_id" field if the given value is not nil.
+func (eauo *EnvAliasUpdateOne) SetNillableEnvID(s *string) *EnvAliasUpdateOne {
+	if s != nil {
+		eauo.SetEnvID(*s)
+	}
+	return eauo
+}
+
+// ClearEnvID clears the value of the "env_id" field.
+func (eauo *EnvAliasUpdateOne) ClearEnvID() *EnvAliasUpdateOne {
+	eauo.mutation.ClearEnvID()
+	return eauo
+}
+
 // SetAliasEnvID sets the "alias_env" edge to the Env entity by ID.
 func (eauo *EnvAliasUpdateOne) SetAliasEnvID(id string) *EnvAliasUpdateOne {
 	eauo.mutation.SetAliasEnvID(id)
+	return eauo
+}
+
+// SetNillableAliasEnvID sets the "alias_env" edge to the Env entity by ID if the given value is not nil.
+func (eauo *EnvAliasUpdateOne) SetNillableAliasEnvID(id *string) *EnvAliasUpdateOne {
+	if id != nil {
+		eauo = eauo.SetAliasEnvID(*id)
+	}
 	return eauo
 }
 
@@ -225,18 +258,7 @@ func (eauo *EnvAliasUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (eauo *EnvAliasUpdateOne) check() error {
-	if _, ok := eauo.mutation.AliasEnvID(); eauo.mutation.AliasEnvCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "EnvAlias.alias_env"`)
-	}
-	return nil
-}
-
 func (eauo *EnvAliasUpdateOne) sqlSave(ctx context.Context) (_node *EnvAlias, err error) {
-	if err := eauo.check(); err != nil {
-		return _node, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	id, ok := eauo.mutation.ID()
 	if !ok {

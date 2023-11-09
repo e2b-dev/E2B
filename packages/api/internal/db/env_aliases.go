@@ -21,12 +21,30 @@ func (db *DB) DeleteEnvAlias(alias string) error {
 	return nil
 }
 
-func (db *DB) InsertEnvAlias(alias, envID string) error {
+func (db *DB) ReserveEnvAlias(alias string) error {
 	err := db.
 		Client.
 		EnvAlias.
 		Create().
 		SetID(alias).
+		SetNillableEnvID(nil).
+		Exec(db.ctx)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to reserve env alias '%s': %w", alias, err)
+
+		fmt.Println(errMsg.Error())
+
+		return errMsg
+	}
+
+	return nil
+}
+
+func (db *DB) UpdateEnvAlias(alias, envID string) error {
+	err := db.
+		Client.
+		EnvAlias.
+		UpdateOneID(alias).
 		SetEnvID(envID).
 		Exec(db.ctx)
 	if err != nil {

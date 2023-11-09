@@ -124,6 +124,16 @@ func EnvIDHasSuffix(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldHasSuffix(FieldEnvID, v))
 }
 
+// EnvIDIsNil applies the IsNil predicate on the "env_id" field.
+func EnvIDIsNil() predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldIsNull(FieldEnvID))
+}
+
+// EnvIDNotNil applies the NotNil predicate on the "env_id" field.
+func EnvIDNotNil() predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldNotNull(FieldEnvID))
+}
+
 // EnvIDEqualFold applies the EqualFold predicate on the "env_id" field.
 func EnvIDEqualFold(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldEqualFold(FieldEnvID, v))

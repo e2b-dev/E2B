@@ -49,7 +49,7 @@ var (
 	// EnvAliasesColumns holds the columns for the "env_aliases" table.
 	EnvAliasesColumns = []*schema.Column{
 		{Name: "alias", Type: field.TypeString, Unique: true},
-		{Name: "env_id", Type: field.TypeString},
+		{Name: "env_id", Type: field.TypeString, Nullable: true},
 	}
 	// EnvAliasesTable holds the schema information for the "env_aliases" table.
 	EnvAliasesTable = &schema.Table{
@@ -61,7 +61,7 @@ var (
 				Symbol:     "env_aliases_envs_env_aliases",
 				Columns:    []*schema.Column{EnvAliasesColumns[1]},
 				RefColumns: []*schema.Column{EnvsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}

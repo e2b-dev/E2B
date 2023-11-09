@@ -15,13 +15,13 @@ type EnvAlias struct {
 func (EnvAlias) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").Unique().StorageKey("alias").Immutable(),
-		field.String("env_id"),
+		field.String("env_id").Nillable().Optional(),
 	}
 }
 
 func (EnvAlias) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("alias_env", Env.Type).Ref("env_aliases").Unique().Field("env_id").Required(),
+		edge.From("alias_env", Env.Type).Ref("env_aliases").Unique().Field("env_id"),
 	}
 }
 

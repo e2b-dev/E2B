@@ -29,6 +29,14 @@ func (eac *EnvAliasCreate) SetEnvID(s string) *EnvAliasCreate {
 	return eac
 }
 
+// SetNillableEnvID sets the "env_id" field if the given value is not nil.
+func (eac *EnvAliasCreate) SetNillableEnvID(s *string) *EnvAliasCreate {
+	if s != nil {
+		eac.SetEnvID(*s)
+	}
+	return eac
+}
+
 // SetID sets the "id" field.
 func (eac *EnvAliasCreate) SetID(s string) *EnvAliasCreate {
 	eac.mutation.SetID(s)
@@ -38,6 +46,14 @@ func (eac *EnvAliasCreate) SetID(s string) *EnvAliasCreate {
 // SetAliasEnvID sets the "alias_env" edge to the Env entity by ID.
 func (eac *EnvAliasCreate) SetAliasEnvID(id string) *EnvAliasCreate {
 	eac.mutation.SetAliasEnvID(id)
+	return eac
+}
+
+// SetNillableAliasEnvID sets the "alias_env" edge to the Env entity by ID if the given value is not nil.
+func (eac *EnvAliasCreate) SetNillableAliasEnvID(id *string) *EnvAliasCreate {
+	if id != nil {
+		eac = eac.SetAliasEnvID(*id)
+	}
 	return eac
 }
 
@@ -80,12 +96,6 @@ func (eac *EnvAliasCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (eac *EnvAliasCreate) check() error {
-	if _, ok := eac.mutation.EnvID(); !ok {
-		return &ValidationError{Name: "env_id", err: errors.New(`ent: missing required field "EnvAlias.env_id"`)}
-	}
-	if _, ok := eac.mutation.AliasEnvID(); !ok {
-		return &ValidationError{Name: "alias_env", err: errors.New(`ent: missing required edge "EnvAlias.alias_env"`)}
-	}
 	return nil
 }
 
@@ -138,7 +148,7 @@ func (eac *EnvAliasCreate) createSpec() (*EnvAlias, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.EnvID = nodes[0]
+		_node.EnvID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -205,6 +215,12 @@ func (u *EnvAliasUpsert) UpdateEnvID() *EnvAliasUpsert {
 	return u
 }
 
+// ClearEnvID clears the value of the "env_id" field.
+func (u *EnvAliasUpsert) ClearEnvID() *EnvAliasUpsert {
+	u.SetNull(envalias.FieldEnvID)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -264,6 +280,13 @@ func (u *EnvAliasUpsertOne) SetEnvID(v string) *EnvAliasUpsertOne {
 func (u *EnvAliasUpsertOne) UpdateEnvID() *EnvAliasUpsertOne {
 	return u.Update(func(s *EnvAliasUpsert) {
 		s.UpdateEnvID()
+	})
+}
+
+// ClearEnvID clears the value of the "env_id" field.
+func (u *EnvAliasUpsertOne) ClearEnvID() *EnvAliasUpsertOne {
+	return u.Update(func(s *EnvAliasUpsert) {
+		s.ClearEnvID()
 	})
 }
 
@@ -492,6 +515,13 @@ func (u *EnvAliasUpsertBulk) SetEnvID(v string) *EnvAliasUpsertBulk {
 func (u *EnvAliasUpsertBulk) UpdateEnvID() *EnvAliasUpsertBulk {
 	return u.Update(func(s *EnvAliasUpsert) {
 		s.UpdateEnvID()
+	})
+}
+
+// ClearEnvID clears the value of the "env_id" field.
+func (u *EnvAliasUpsertBulk) ClearEnvID() *EnvAliasUpsertBulk {
+	return u.Update(func(s *EnvAliasUpsert) {
+		s.ClearEnvID()
 	})
 }
 
