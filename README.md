@@ -17,8 +17,6 @@
   <a href="https://twitter.com/e2b_dev">Twitter</a>
 </h4>
 
-<img width="100%" src="readme-assets/preview.png" alt="Cover image">
-
 <h4 align="center">
   <a href="https://pypi.org/project/e2b/">
     <img alt="Last 1 month downloads for the Python SDK" loading="lazy" width="200" height="20" decoding="async" data-nimg="1"
@@ -29,6 +27,8 @@
     style="color:transparent;width:auto;height:100%" src="https://img.shields.io/npm/dm/%40e2b/sdk?label=NPM%20Downloads">
   </a>
 </h4>
+
+<img width="100%" src="readme-assets/preview.png" alt="Cover image">
 
 ## What is E2B?
 
