@@ -1,5 +1,4 @@
 import * as commander from 'commander'
-import * as commonTags from 'common-tags'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as e2b from '@e2b/sdk'
@@ -52,6 +51,10 @@ export const buildCommand = new commander.Command('build')
       defaultDockerfileName,
     )} or ${asLocal(fallbackDockerfileName)} in root directory`,
   )
+  .option(
+    '-n, --name <name>',
+    'Specify name of sandbox template. You can use the name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes and underscores.',
+  )
   .alias('bd')
   .action(
     async (
@@ -59,11 +62,20 @@ export const buildCommand = new commander.Command('build')
       opts: {
         path?: string;
         dockerfile?: string;
+        name?: string;
       },
     ) => {
       try {
         const accessToken = ensureAccessToken()
         process.stdout.write('\n')
+
+        const newName = opts.name?.trim()
+        if (newName && !/[a-z0-9-_]+/.test(newName)) {
+          console.error(
+            `Name ${asLocal(newName)} is not valid. Name can only contain lowercase letters, numbers, dashes and underscores.`,
+          )
+          process.exit(1)
+        }
 
         let envID = id
         let dockerfile = opts.dockerfile
@@ -82,6 +94,7 @@ export const buildCommand = new commander.Command('build')
             `Found sandbox template ${asFormattedSandboxTemplate(
               {
                 envID: config.id,
+                aliases: config.name ? [config.name] : undefined,
               },
               relativeConfigPath,
             )}`,
@@ -90,20 +103,26 @@ export const buildCommand = new commander.Command('build')
           dockerfile = config.dockerfile
         }
 
+        if (config && id && config.id !== id) {
+          // error: you can't specify different ID than the one in config
+          console.error("You can't specify different ID than the one in config. If you want to build a new sandbox template remove the config file.")
+          process.exit(1)
+        }
+
         const filePaths = await getFiles(root, {
           respectGitignore: false,
           respectDockerignore: true,
         })
 
-        if (!filePaths.length) {
-          console.log(commonTags.stripIndent`
-          No allowed files found in ${asLocalRelative(root)}. If you are using ${asLocal('.dockerignore')} check if it is configured correctly.
-       `)
-          return
+        if (newName && config?.name && newName !== config?.name) {
+          console.log(
+            `The name of the sandbox will be changed from ${asLocal(config.name)} to ${asLocal(newName)}.`,
+          )
         }
+        const name = newName || config?.name
 
         console.log(
-          `Preparing sandbox template building (${filePaths.length} files in Docker build context).`,
+          `Preparing sandbox template building (${filePaths.length} files in Docker build context). ${!filePaths.length ? `If you are using ${asLocal('.dockerignore')} check if it is configured correctly.`:''}`,
         )
 
         const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
@@ -137,6 +156,10 @@ export const buildCommand = new commander.Command('build')
         )
         body.append('buildContext', blob, 'env.tar.gz.e2b')
 
+        if (name) {
+          body.append('alias', name)
+        }
+
         const build = await buildTemplate(accessToken, body, envID)
 
         console.log(
@@ -145,19 +168,18 @@ export const buildCommand = new commander.Command('build')
           )} `,
         )
 
-        await waitForBuildFinish(accessToken, build.envID, build.buildID)
+        await waitForBuildFinish(accessToken, build.envID, build.buildID, name)
 
-        if (!config) {
-          await saveConfig(
-            configPath,
-            {
-              id: build.envID,
-              dockerfile: dockerfileRelativePath,
-            },
-            true,
-          )
-          console.log(`Created config ${asLocalRelative(relativeConfigPath)}`)
-        }
+        await saveConfig(
+          configPath,
+          {
+            id: build.envID,
+            dockerfile: dockerfileRelativePath,
+            name: name,
+          },
+          true,
+        )
+        console.log(`Created config ${asLocalRelative(relativeConfigPath)}`)
       } catch (err: any) {
         console.error(err)
         process.exit(1)
@@ -169,10 +191,12 @@ async function waitForBuildFinish(
   accessToken: string,
   envID: string,
   buildID: string,
+  name?: string,
 ) {
   let logsOffset = 0
 
   let template: Awaited<ReturnType<typeof getTemplate>> | undefined
+  const aliases = name ? [name] : undefined
 
   process.stdout.write('\n')
   do {
@@ -213,7 +237,7 @@ async function waitForBuildFinish(
       case 'ready':
         console.log(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate(
-            template.data,
+            { aliases, ...template.data },
           )} finished.\n
           Now you can start creating your sandboxes from this template. You can find more here: 
           ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')}, section ${asBold('Spawn and control your sandbox')}\n`,
@@ -226,7 +250,7 @@ async function waitForBuildFinish(
         )
         throw new Error(
           `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
-            template.data,
+            { aliases, ...template.data },
           )} failed.\nCheck the logs above for more details or contact us ${asPrimary('(https://e2b.dev/docs/getting-help)')} to get help.\n`,
         )
     }

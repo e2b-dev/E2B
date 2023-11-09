@@ -37,8 +37,8 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: ^0.8.4
-        version: 0.8.4
+        specifier: ^0.8.5
+        version: 0.8.5
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -234,8 +234,8 @@ importers:
         specifier: ^1.0.2
         version: 1.0.2
       '@e2b/sdk':
-        specifier: ^0.8.4
-        version: 0.8.4
+        specifier: ^0.8.5
+        version: 0.8.5
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
@@ -257,6 +257,9 @@ importers:
       common-tags:
         specifier: ^1.8.2
         version: 1.8.2
+      console-table-printer:
+        specifier: ^2.11.2
+        version: 2.11.2
       ignore:
         specifier: ^5.2.4
         version: 5.2.4
@@ -721,8 +724,8 @@ packages:
     dev: true
     optional: true
 
-  /@e2b/sdk@0.8.4:
-    resolution: {integrity: sha512-JTlGIiNo6ziL/cjaMp+PoM7lkMh78sDAeQb5Yrmw3Bmt0pX/7vajLtuua3/MEdK5PuOLRZh1zrdPvHKRRGnPCg==}
+  /@e2b/sdk@0.8.5:
+    resolution: {integrity: sha512-RCOhcjrS+7K35nGzv0rH/JbIYQBkwILIVidJORBFKV6w1mbBgYryD0FWDkvzGHb+83/CBVeQ0wFI1SmcNGaPWg==}
     engines: {node: '>=18'}
     dependencies:
       normalize-path: 3.0.0
@@ -4361,6 +4364,12 @@ packages:
   /console-control-strings@1.1.0:
     resolution: {integrity: sha512-ty/fTekppD2fIwRvnZAVdeOiGd1c7YXEixbgJTNzqcxJWKQnjJ/V1bNEEE6hygpM3WjwHFUVK6HTjWSzV4a8sQ==}
     dev: true
+
+  /console-table-printer@2.11.2:
+    resolution: {integrity: sha512-uuUHie0sfPP542TKGzPFal0W1wo1beuKAqIZdaavcONx8OoqdnJRKjkinbRTOta4FaCa1RcIL+7mMJWX3pQGVg==}
+    dependencies:
+      simple-wcswidth: 1.0.1
+    dev: false
 
   /cookie@0.5.0:
     resolution: {integrity: sha512-YZ3GUyn/o8gfKJlnlX7g7xq4gyO6OSuhGPKaaGssGB2qgDUS0gPgtTvoyZLTt9Ab6dC4hfc9dV5arkvc/OCmrw==}
@@ -9592,6 +9601,10 @@ packages:
     dependencies:
       is-arrayish: 0.3.2
     dev: true
+
+  /simple-wcswidth@1.0.1:
+    resolution: {integrity: sha512-xMO/8eNREtaROt7tJvWJqHBDTMFN4eiQ5I4JRMuilwfnFcV5W9u7RUkueNkdw0jPqGMX36iCywelS5yilTuOxg==}
+    dev: false
 
   /sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}

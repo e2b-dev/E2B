@@ -14,6 +14,7 @@ const configCommentHeader = `# This is a config for E2B sandbox template
 `
 
 export const configSchema = yup.object({
+  name: yup.string(),
   id: yup.string().required(),
   dockerfile: yup.string().required(),
 })
