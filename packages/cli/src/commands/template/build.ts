@@ -104,6 +104,12 @@ export const buildCommand = new commander.Command('build')
           dockerfile = config.dockerfile
         }
 
+        if (config && id && config.id !== id) {
+          // error: you can't specify different ID than the one in config
+          console.error("You can't specify different ID than the one in config. If you want to build a new sandbox template remove the config file.")
+          process.exit(1)
+        }
+
         const filePaths = await getFiles(root, {
           respectGitignore: false,
           respectDockerignore: true,
@@ -172,18 +178,16 @@ export const buildCommand = new commander.Command('build')
 
         await waitForBuildFinish(accessToken, build.envID, build.buildID, name)
 
-        if (!config) {
-          await saveConfig(
-            configPath,
-            {
-              id: build.envID,
-              dockerfile: dockerfileRelativePath,
-              name: name,
-            },
-            true,
-          )
-          console.log(`Created config ${asLocalRelative(relativeConfigPath)}`)
-        }
+        await saveConfig(
+          configPath,
+          {
+            id: build.envID,
+            dockerfile: dockerfileRelativePath,
+            name: name,
+          },
+          true,
+        )
+        console.log(`Created config ${asLocalRelative(relativeConfigPath)}`)
       } catch (err: any) {
         console.error(err)
         process.exit(1)
