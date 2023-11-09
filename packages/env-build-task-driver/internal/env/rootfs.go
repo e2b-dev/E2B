@@ -224,7 +224,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		Image:        r.dockerTag(),
 		Entrypoint:   []string{"/bin/bash", "-c"},
 		User:         "root",
-		Cmd:          []string{r.env.ProvisionScript()},
+		Cmd:          []string{r.env.ProvisionScript(), r.env.EnvID, r.env.BuildID},
 		Tty:          false,
 		AttachStdout: true,
 		AttachStderr: true,

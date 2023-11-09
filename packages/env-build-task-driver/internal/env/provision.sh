@@ -3,6 +3,9 @@ set -euo xtrace pipefail
 
 echo "Starting provisioning script."
 
+echo "ENV_ID=$1" > /.e2b
+echo "BUILD_ID=$2" >> /.e2b
+
 # We are downloading the packages manually
 apt-get update --download-only
 DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y openssh-server chrony sudo systemd socat
