@@ -31,4 +31,5 @@ from .sandbox import (
 )
 from .templates import (
     DataAnalysis,
+    CodeInterpreter,
 )

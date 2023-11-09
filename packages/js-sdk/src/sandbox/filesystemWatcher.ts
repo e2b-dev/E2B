@@ -43,7 +43,7 @@ class FilesystemWatcher {
 
       this.handleFilesystemEvents = this.handleFilesystemEvents.bind(this)
 
-      this.rpcSubscriptionID = await this.sessConn.subscribe(
+      this.rpcSubscriptionID = await this.sessConn._subscribe(
         filesystemService,
         this.handleFilesystemEvents,
         'watchDir',
@@ -57,7 +57,7 @@ class FilesystemWatcher {
   async stop() {
     this.listeners.clear()
     if (this.rpcSubscriptionID) {
-      await this.sessConn.unsubscribe(this.rpcSubscriptionID)
+      await this.sessConn._unsubscribe(this.rpcSubscriptionID)
     }
   }
 
