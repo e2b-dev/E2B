@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/envalias"
 )
 
 func (db *DB) DeleteEnvAlias(ctx context.Context, alias string) error {
@@ -24,7 +25,25 @@ func (db *DB) DeleteEnvAlias(ctx context.Context, alias string) error {
 	return nil
 }
 
-func (db *DB) ReserveEnvAlias(ctx context.Context, alias string) error {
+func (db *DB) DeleteNilEnvAlias(ctx context.Context, alias string) error {
+	err := db.
+		Client.
+		EnvAlias.
+		DeleteOneID(alias).
+		Where(envalias.EnvIDIsNil()).
+		Exec(ctx)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to delete env alias '%s': %w", alias, err)
+
+		fmt.Println(errMsg.Error())
+
+		return errMsg
+	}
+
+	return nil
+}
+
+func (db *DB) reserveEnvAlias(ctx context.Context, alias string) error {
 	err := db.
 		Client.
 		EnvAlias.
@@ -61,38 +80,26 @@ func (db *DB) UpdateEnvAlias(ctx context.Context, alias, envID string) error {
 	return nil
 }
 
-// rollback calls to tx.Rollback and wraps the given error
-// with the rollback error if occurred.
-func rollback(tx *ent.Tx, err error) error {
-	if rerr := tx.Rollback(); rerr != nil {
-		err = fmt.Errorf("%w: %w", err, rerr)
-	}
+func (db *DB) EnsureEnvAlias(ctx context.Context, alias, envID string) error {
+	_, err := db.
+		Client.
+		EnvAlias.
+		Query().
+		Where(envalias.EnvID(envID), envalias.IsName(true)).
+		Only(ctx)
 
-	return err
-}
-
-func (db *DB) UpdateEnvAliasID(ctx context.Context, alias, envID string) error {
-	tx, err := db.Client.Tx(ctx)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to start transaction: %w", err)
+	ok := ent.IsNotFound(err)
+	if ok {
+		err = db.reserveEnvAlias(ctx, alias)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		errMsg := fmt.Errorf("failed to get env alias '%s': %w", envID, err)
 
 		fmt.Println(errMsg.Error())
 
 		return errMsg
-	}
-
-	err = tx.
-		EnvAlias.
-		Create().
-		SetID(alias).
-		SetEnvID(envID).
-		Exec(ctx)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to upsert env alias '%s' for env '%s': %w", alias, envID, err)
-
-		fmt.Println(errMsg.Error())
-
-		return rollback(tx, errMsg)
 	}
 
 	return nil

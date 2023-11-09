@@ -115,7 +115,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	telemetry.ReportEvent(ctx, "started creating new environment")
 
 	if alias != "" {
-		err = a.supabase.ReserveEnvAlias(ctx, alias)
+		err = a.supabase.EnsureEnvAlias(ctx, alias, envID)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
 
@@ -309,6 +309,20 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 	telemetry.ReportEvent(ctx, "started updating environment")
 
+	if alias != "" {
+		err = a.supabase.EnsureEnvAlias(ctx, alias, envID)
+		if err != nil {
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
+
+			err = fmt.Errorf("error when inserting alias: %w", err)
+			telemetry.ReportCriticalError(ctx, err)
+
+			return
+		} else {
+			telemetry.ReportEvent(ctx, "inserted alias", attribute.String("alias", alias))
+		}
+	}
+
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
 			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
@@ -333,6 +347,24 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			status = api.EnvironmentBuildStatusReady
 
 			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env_id", envID))
+		}
+
+		if status == api.EnvironmentBuildStatusError && alias != "" {
+			errMsg := a.supabase.DeleteNilEnvAlias(buildContext, alias)
+			if errMsg != nil {
+				err = fmt.Errorf("error when deleting alias: %w", errMsg)
+				telemetry.ReportError(buildContext, err)
+			} else {
+				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("alias", alias))
+			}
+		} else if status == api.EnvironmentBuildStatusReady && alias != "" {
+			errMsg := a.supabase.UpdateEnvAlias(buildContext, alias, envID)
+			if errMsg != nil {
+				err = fmt.Errorf("error when updating alias: %w", errMsg)
+				telemetry.ReportError(buildContext, err)
+			} else {
+				telemetry.ReportEvent(buildContext, "updated alias", attribute.String("alias", alias))
+			}
 		}
 
 		cacheErr := a.buildCache.SetDone(envID, buildID, status)

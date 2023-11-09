@@ -37,11 +37,6 @@ func NewClient(ctx context.Context) (*DB, error) {
 		User: "auth",
 	}))
 
-	if err != nil {
-		err = fmt.Errorf("failed to connect to database: %w", err)
-		return nil, err
-	}
-
 	return &DB{Client: client, ctx: ctx}, nil
 }
 

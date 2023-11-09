@@ -75,8 +75,12 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID string, ca
 		Where(env.Or(env.HasEnvAliasesWith(envalias.ID(aliasOrEnvID)), env.ID(aliasOrEnvID)), env.Or(env.TeamID(id), env.Public(true))).
 		WithEnvAliases().
 		Only(ctx)
-	if err != nil {
+
+	ok := ent.IsNotFound(err)
+	if ok {
 		return nil, ErrEnvNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}
 
 	if !canBePublic && dbEnv.TeamID != id {
