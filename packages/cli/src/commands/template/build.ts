@@ -1,5 +1,4 @@
 import * as commander from 'commander'
-import * as commonTags from 'common-tags'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as e2b from '@e2b/sdk'
@@ -115,13 +114,6 @@ export const buildCommand = new commander.Command('build')
           respectDockerignore: true,
         })
 
-        if (!filePaths.length) {
-          console.log(commonTags.stripIndent`
-          No allowed files found in ${asLocalRelative(root)}. If you are using ${asLocal('.dockerignore')} check if it is configured correctly.
-       `)
-          return
-        }
-
         if (newName && config?.name && newName !== config?.name) {
           console.log(
             `The name of the sandbox will be changed from ${asLocal(config.name)} to ${asLocal(newName)}.`,
@@ -130,7 +122,7 @@ export const buildCommand = new commander.Command('build')
         const name = newName || config?.name
 
         console.log(
-          `Preparing sandbox template building (${filePaths.length} files in Docker build context).`,
+          `Preparing sandbox template building (${filePaths.length} files in Docker build context). ${!filePaths.length ? `If you are using ${asLocal('.dockerignore')} check if it is configured correctly.`:''}`,
         )
 
         const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
