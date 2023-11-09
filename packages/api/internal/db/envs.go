@@ -135,11 +135,11 @@ func (db *DB) UpsertEnv(teamID, envID, buildID, dockerfile string) error {
 	return nil
 }
 
-func (db *DB) HasEnvAccess(envID string, teamID string, canBePublic bool) (bool, error) {
-	_, err := db.GetEnv(envID, teamID, canBePublic)
+func (db *DB) HasEnvAccess(aliasOrEnvID string, teamID string, canBePublic bool) (string, bool, error) {
+	env, err := db.GetEnv(aliasOrEnvID, teamID, canBePublic)
 	if err != nil {
-		return false, fmt.Errorf("failed to get env '%s': %w", envID, err)
+		return "", false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}
 
-	return true, nil
+	return env.EnvID, true, nil
 }

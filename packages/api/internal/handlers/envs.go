@@ -85,16 +85,22 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	}
 
 	dockerfile := c.PostForm("dockerfile")
+	alias := utils.CleanEnvID(c.PostForm("alias"))
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	a.IdentifyAnalyticsTeam(teamID)
 	a.CreateAnalyticsUserEvent(userID, teamID, "submitted environment build request", properties.
 		Set("environment", envID).
 		Set("build_id", buildID).
-		Set("dockerfile", dockerfile),
+		Set("dockerfile", dockerfile).
+		Set("alias", alias),
 	)
 
-	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
+	telemetry.SetAttributes(ctx,
+		attribute.String("build.id", buildID),
+		attribute.String("build.alias", alias),
+		attribute.String("build.dockerfile", dockerfile),
+	)
 
 	err = a.buildCache.Create(teamID, envID, buildID)
 	if err != nil {
@@ -152,9 +158,11 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
+func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
+
+	cleanedAliasOrEnvID := utils.CleanEnvID(aliasOrEnvID)
 
 	// Prepare info for rebuilding env
 	userID, teamID, tier, err := a.GetUserAndTeam(c)
@@ -170,11 +178,8 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 	telemetry.SetAttributes(ctx,
 		attribute.String("env.user_id", userID),
 		attribute.String("env.team_id", teamID),
-		attribute.String("env.id", envID),
 		attribute.String("tier", tier.ID),
 	)
-
-	fmt.Printf("tier: %+v\n", tier)
 
 	buildID, err := uuid.GenerateUUID()
 	if err != nil {
@@ -217,6 +222,18 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 
 	dockerfile := c.PostForm("dockerfile")
 
+	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
+
+	envID, hasAccess, accessErr := a.CheckTeamAccessEnv(cleanedAliasOrEnvID, teamID, false)
+	if accessErr != nil {
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The sandbox template '%s' does not exist", cleanedAliasOrEnvID))
+
+		errMsg := fmt.Errorf("error env not found: %w", accessErr)
+		telemetry.ReportError(ctx, errMsg)
+
+		return
+	}
+
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	a.IdentifyAnalyticsTeam(teamID)
 	a.CreateAnalyticsUserEvent(userID, teamID, "submitted environment build request", properties.
@@ -224,18 +241,6 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		Set("build_id", buildID).
 		Set("dockerfile", dockerfile),
 	)
-
-	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
-
-	hasAccess, accessErr := a.supabase.HasEnvAccess(envID, teamID, false)
-	if accessErr != nil {
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The sandbox template '%s' does not exist", envID))
-
-		errMsg := fmt.Errorf("error env not found: %w", accessErr)
-		telemetry.ReportError(ctx, errMsg)
-
-		return
-	}
 
 	if !hasAccess {
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
@@ -245,6 +250,8 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 
 		return
 	}
+
+	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
 
 	err = a.buildCache.Create(teamID, envID, buildID)
 	if err != nil {

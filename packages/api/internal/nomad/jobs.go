@@ -17,6 +17,7 @@ const (
 
 	taskRunningState = "running"
 	taskDeadState    = "dead"
+	taskPendingState = "pending"
 
 	defaultTaskName = "start"
 

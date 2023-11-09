@@ -194,7 +194,7 @@ func (n *NomadClient) CreateInstance(
 			if allocErr != nil {
 				cleanupErr := n.DeleteInstance(*job.ID, false)
 				if cleanupErr != nil {
-					errMsg := fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
+					errMsg := fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr.Err)
 					telemetry.ReportError(childCtx, errMsg)
 				} else {
 					telemetry.ReportEvent(childCtx, "cleaned up env instance job", attribute.String("env_id", envID), attribute.String("instance_id", instanceID))
@@ -252,8 +252,10 @@ func (n *NomadClient) CreateInstance(
 			}
 		}
 
-		if task.State != taskRunningState {
-			allocErr = fmt.Errorf("task state is not '%s'", taskRunningState)
+		// We accept pending state as well because it means that the task is starting (and the env exists because we checked the DB)
+		// This usually speeds up the start from client
+		if task.State != taskRunningState && task.State != taskPendingState {
+			allocErr = fmt.Errorf("task state is not '%s' - it is '%s'", taskRunningState, task.State)
 
 			telemetry.ReportCriticalError(childCtx, allocErr)
 

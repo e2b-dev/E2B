@@ -223,8 +223,8 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	return deleteInstance(a.nomad, a.posthog, instanceID, info.TeamID, info.StartTime, purge)
 }
 
-func (a *APIStore) CheckTeamAccessEnv(envID string, teamID string, public bool) (bool, error) {
-	return a.supabase.HasEnvAccess(envID, teamID, public)
+func (a *APIStore) CheckTeamAccessEnv(aliasOrEnvID string, teamID string, public bool) (string, bool, error) {
+	return a.supabase.HasEnvAccess(aliasOrEnvID, teamID, public)
 }
 
 type InstanceInfo = nomad.InstanceInfo

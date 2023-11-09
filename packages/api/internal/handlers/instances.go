@@ -10,14 +10,9 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
-
-var publicEnvs map[string]string = map[string]string{
-	"base":                 "rki5dems9wqfm4r03t7g",
-	"Python3-DataAnalysis": "fv7bfqp4wyo42829htzt",
-	"CloudBrowser":         "m3offcydl3x4ojazn9sz",
-}
 
 const maxInstancesPerTeam = 20
 
@@ -33,30 +28,22 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
-	envID := body.EnvID
+	cleanedAliasOrEnvID := utils.CleanEnvID(body.EnvID)
+
 	// Get team id from context, use TeamIDContextKey
 	teamID := c.Value(constants.TeamIDContextKey).(string)
 
-	// Check if envID is in publicEnvs
-	originalEnvID, ok := publicEnvs[envID]
-	if !ok {
-		hasAccess, checkErr := a.CheckTeamAccessEnv(envID, teamID, true)
-		if checkErr != nil {
-			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", checkErr))
+	envID, hasAccess, checkErr := a.CheckTeamAccessEnv(cleanedAliasOrEnvID, teamID, true)
+	if checkErr != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", checkErr))
 
-			return
-		}
+		return
+	}
 
-		if !hasAccess {
-			a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
+	if !hasAccess {
+		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
 
-			return
-		}
-	} else {
-		telemetry.SetAttributes(ctx,
-			attribute.String("instance.alias_id", envID),
-		)
-		envID = originalEnvID
+		return
 	}
 
 	telemetry.SetAttributes(ctx,
@@ -72,6 +59,7 @@ func (a *APIStore) PostInstances(
 		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
 			"You have reached the maximum number of concurrent sandboxes (%d). If you need more, "+
 				"please contact us at 'https://e2b.dev/docs/getting-help'", maxInstancesPerTeam))
+
 		return
 	}
 
