@@ -11,7 +11,7 @@ import (
 func (db *DB) GetTeamID(apiKey string) (string, error) {
 	result, err := db.
 		Client.
-		TeamApiKey.
+		TeamAPIKey.
 		Query().
 		WithTeam().
 		Where(teamapikey.ID(apiKey)).
