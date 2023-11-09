@@ -37,16 +37,6 @@ func (a *APIStore) PostInstances(
 	// Get team id from context, use TeamIDContextKey
 	teamID := c.Value(constants.TeamIDContextKey).(string)
 
-	// Check if team has reached max instances
-	if instanceCount := a.cache.CountForTeam(teamID); instanceCount >= maxInstancesPerTeam {
-		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", teamID, maxInstancesPerTeam)
-		telemetry.ReportCriticalError(ctx, errMsg)
-
-		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
-			"You have reached the maximum number of sandboxes (%d). If you need more, "+
-				"please contact us at 'https://e2b.dev/docs/getting-help'", maxInstancesPerTeam))
-		return
-	}
 	// Check if envID is in publicEnvs
 	originalEnvID, ok := publicEnvs[envID]
 	if !ok {
@@ -73,6 +63,17 @@ func (a *APIStore) PostInstances(
 		attribute.String("instance.team_id", teamID),
 		attribute.String("instance.env_id", envID),
 	)
+
+	// Check if team has reached max instances
+	if instanceCount := a.cache.CountForTeam(teamID); instanceCount >= maxInstancesPerTeam {
+		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", teamID, maxInstancesPerTeam)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
+			"You have reached the maximum number of sandboxes (%d). If you need more, "+
+				"please contact us at 'https://e2b.dev/docs/getting-help'", maxInstancesPerTeam))
+		return
+	}
 
 	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID)
 	if instanceErr != nil {
