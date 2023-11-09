@@ -114,6 +114,9 @@ type PostEnvsMultipartBody struct {
 
 // PostEnvsEnvIDMultipartBody defines parameters for PostEnvsEnvID.
 type PostEnvsEnvIDMultipartBody struct {
+	// Alias Alias of the environment
+	Alias *string `json:"alias,omitempty"`
+
 	// BuildContext Docker build context
 	BuildContext openapi_types.File `json:"buildContext"`
 
