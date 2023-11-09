@@ -3,7 +3,7 @@
 </h1>
 
 <h1 align="center">
-    Sandbox for AI Apps & Agents
+  Sandbox for AI Apps & Agents
 </h1>
 
 <h3 align="center">
@@ -17,19 +17,14 @@
   <a href="https://twitter.com/e2b_dev">Twitter</a>
 </h4>
 
+<img width="100%" src="readme-assets/preview.png" alt="Cover image">
+
 <h4 align="center">
-  <a href="https://twitter.com/e2b_dev">
-    <img src="https://img.shields.io/twitter/follow/infisical?label=Follow" alt="e2b Twitter" />
-  </a>
-  <a href="https://discord.gg/U7KEcGErtQ">
-    <img src="https://img.shields.io/badge/chat-on%20Discord-blue" alt="Discord community server" />
-  </a>
   <a href="https://pypi.org/project/e2b/">
     <img alt="Last 1 month downloads for the Python SDK" loading="lazy" width="200" height="20" decoding="async" data-nimg="1"
     style="color:transparent;width:auto;height:100%" src="https://img.shields.io/pypi/dm/e2b?label=PyPI%20Downloads">
   </a>
-
-<a href="https://www.npmjs.com/package/@e2b/sdk">
+  <a href="https://www.npmjs.com/package/@e2b/sdk">
     <img alt="Last 1 month downloads for the Python SDK" loading="lazy" width="200" height="20" decoding="async" data-nimg="1"
     style="color:transparent;width:auto;height:100%" src="https://img.shields.io/npm/dm/%40e2b/sdk?label=NPM%20Downloads">
   </a>
