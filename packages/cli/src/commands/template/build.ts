@@ -52,6 +52,10 @@ export const buildCommand = new commander.Command('build')
       defaultDockerfileName,
     )} or ${asLocal(fallbackDockerfileName)} in root directory`,
   )
+  .option(
+    '-n, --name <name>',
+    'Specify name of sandbox template. You can use the name to start the sandbox in the SDK',
+  )
   .alias('bd')
   .action(
     async (
@@ -59,6 +63,7 @@ export const buildCommand = new commander.Command('build')
       opts: {
         path?: string;
         dockerfile?: string;
+        name?: string;
       },
     ) => {
       try {

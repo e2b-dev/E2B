@@ -14,9 +14,9 @@ export const shellCommand = new commander.Command('shell')
       const apiKey = ensureAPIKey()
 
       const template: Pick<e2b.components['schemas']['Environment'], 'envID'> =
-        {
-          envID: id,
-        }
+      {
+        envID: id,
+      }
 
       await connectSandbox({ apiKey, template: template })
       // We explicitly call exit because the sandbox is keeping the program alive.
@@ -29,15 +29,16 @@ export const shellCommand = new commander.Command('shell')
   })
 
 async function connectSandbox({
-                                apiKey,
-                                template,
-                              }: {
+  apiKey,
+  template,
+}: {
   apiKey: string;
   template: Pick<e2b.components['schemas']['Environment'], 'envID'>;
 }) {
   const sandbox = await e2b.Sandbox.create({
     apiKey,
     id: template.envID,
+    logger: console,
   })
 
   if (sandbox.terminal) {

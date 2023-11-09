@@ -2,7 +2,7 @@ import * as commander from 'commander'
 import * as e2b from '@e2b/sdk'
 
 import { ensureAccessToken } from 'src/api'
-import { asHeadline, asPrimary } from '../../utils/format'
+import { asDim } from 'src/utils/format'
 
 const listTemplates = e2b.withAccessToken(
   e2b.api.path('/envs').method('get').create(),
@@ -20,7 +20,6 @@ export const listCommand = new commander.Command('list')
 
       console.log(asHeadline('Sandbox templates:'))
 
-
       const templates = templatesResponse.data
 
       if (!templates?.length) {
@@ -29,8 +28,12 @@ You can create a template by running ${asPrimary('e2b template build')} or visit
       } else {
         templates
           .sort((a, b) => a.envID.localeCompare(b.envID))
-          .forEach((template: { envID: string }) => {
-            console.log(template.envID)
+          .forEach(template => {
+            if (template.aliases?.length) {
+              console.log(`${template.aliases?.join(', ')} (${asDim(template.envID)})`)
+            } else {
+              console.log(`${template.envID}`)
+            }
           })
       }
 
