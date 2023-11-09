@@ -3,8 +3,8 @@ set -euo xtrace pipefail
 
 echo "Starting provisioning script."
 
-echo "ENV_ID=$1" > /.e2b
-echo "BUILD_ID=$2" >> /.e2b
+echo "ENV_ID={{ .EnvID }}" > /.e2b
+echo "BUILD_ID={{ .BuildID }}" >> /.e2b
 
 # We are downloading the packages manually
 apt-get update --download-only

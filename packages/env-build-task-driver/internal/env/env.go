@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
@@ -68,11 +69,7 @@ type Env struct {
 
 //go:embed provision.sh
 var provisionEnvScriptFile string
-
-// Provision script to run to set necessary things in the env.
-func (e *Env) ProvisionScript() string {
-	return provisionEnvScriptFile
-}
+var EnvInstanceTemplate = template.Must(template.New("provisioning-script").Parse(provisionEnvScriptFile))
 
 // Path to the docker context.
 func (e *Env) DockerContextPath() string {

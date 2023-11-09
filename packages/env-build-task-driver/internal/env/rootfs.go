@@ -2,14 +2,11 @@ package env
 
 import (
 	"archive/tar"
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
-	"os"
-	"os/exec"
-
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -20,6 +17,9 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"io"
+	"os"
+	"os/exec"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
@@ -220,11 +220,26 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
 
+	var scriptDef bytes.Buffer
+
+	err := EnvInstanceTemplate.Execute(&scriptDef, struct {
+		EnvID   string
+		BuildID string
+	}{EnvID: r.env.EnvID, BuildID: r.env.BuildID})
+	if err != nil {
+		errMsg := fmt.Errorf("error executing provision script %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "executed provision script template")
+
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
 		Image:        r.dockerTag(),
 		Entrypoint:   []string{"/bin/bash", "-c"},
 		User:         "root",
-		Cmd:          []string{r.env.ProvisionScript(), r.env.EnvID, r.env.BuildID},
+		Cmd:          []string{scriptDef.String()},
 		Tty:          false,
 		AttachStdout: true,
 		AttachStderr: true,
