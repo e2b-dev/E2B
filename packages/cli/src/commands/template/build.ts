@@ -165,7 +165,7 @@ export const buildCommand = new commander.Command('build')
         body.append('buildContext', blob, 'env.tar.gz.e2b')
 
         if (name) {
-          body.append('name', name)
+          body.append('alias', name)
         }
 
         const build = await buildTemplate(accessToken, body, envID)
