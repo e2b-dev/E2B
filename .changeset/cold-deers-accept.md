@@ -5,3 +5,4 @@
 ---
 
 Add alias to update
+Clean up CLI
