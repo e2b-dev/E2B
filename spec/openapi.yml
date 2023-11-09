@@ -239,6 +239,9 @@ paths:
                 - buildContext
                 - dockerfile
               properties:
+                name:
+                  description: Name of the environment
+                  type: string
                 buildContext:
                   description: Docker build context
                   type: string

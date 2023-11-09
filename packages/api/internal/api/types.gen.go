@@ -107,6 +107,9 @@ type PostEnvsMultipartBody struct {
 
 	// Dockerfile Dockerfile content
 	Dockerfile string `json:"dockerfile"`
+
+	// Name Name of the environment
+	Name *string `json:"name,omitempty"`
 }
 
 // PostEnvsEnvIDMultipartBody defines parameters for PostEnvsEnvID.
