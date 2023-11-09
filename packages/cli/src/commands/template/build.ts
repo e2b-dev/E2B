@@ -70,6 +70,14 @@ export const buildCommand = new commander.Command('build')
         const accessToken = ensureAccessToken()
         process.stdout.write('\n')
 
+        const newName = opts.name?.trim()
+        if (newName && !/[a-z0-9-_]+/.test(newName)) {
+          console.error(
+            `Name ${asLocal(newName)} is not valid. Name can only contain lowercase letters, numbers, dashes and underscores.`,
+          )
+          process.exit(1)
+        }
+
         let envID = id
         let dockerfile = opts.dockerfile
 
@@ -108,26 +116,12 @@ export const buildCommand = new commander.Command('build')
           return
         }
 
-        if (opts.name && config?.name) {
-          console.error(
-            `You cannot specify name ${asLocal(opts.name)} because sandbox template ${asFormattedSandboxTemplate(
-              {
-                envID: config.id,
-                aliases: config.name ? [config.name] : undefined,
-              },
-              relativeConfigPath,
-            )} already has name ${asLocal(config.name)}`,
+        if (newName && config?.name && newName !== config?.name) {
+          console.log(
+            `The name of the sandbox will be changed from ${asLocal(config.name)} to ${asLocal(newName)}.`,
           )
-          process.exit(1)
         }
-
-        const name = config?.name || opts.name?.trim()
-        if (name && !/[a-z0-9-_]+/.test(name)) {
-          console.error(
-            `Name ${asLocal(name)} is not valid. Name can only contain lowercase letters, numbers, dashes and underscores.`,
-          )
-          process.exit(1)
-        }
+        const name = newName || config?.name
 
         console.log(
           `Preparing sandbox template building (${filePaths.length} files in Docker build context).`,
