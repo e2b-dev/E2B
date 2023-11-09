@@ -14,9 +14,11 @@ func (a *APIStore) GetUserID(c *gin.Context) string {
 }
 
 func (a *APIStore) GetTeamID(c *gin.Context) (string, error) {
+	ctx := c.Request.Context()
+
 	userID := a.GetUserID(c)
 
-	teamID, err := a.supabase.GetDefaultTeamFromUserID(userID)
+	teamID, err := a.supabase.GetDefaultTeamFromUserID(ctx, userID)
 	if err != nil {
 		return "", fmt.Errorf("error when getting default team: %w", err)
 	}
@@ -25,9 +27,11 @@ func (a *APIStore) GetTeamID(c *gin.Context) (string, error) {
 }
 
 func (a *APIStore) GetTeam(c *gin.Context) (*ent.Team, error) {
+	ctx := c.Request.Context()
+
 	userID := a.GetUserID(c)
 
-	team, err := a.supabase.GetDefaultTeamAndTierFromUserID(userID)
+	team, err := a.supabase.GetDefaultTeamAndTierFromUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("error when getting default team: %w", err)
 	}

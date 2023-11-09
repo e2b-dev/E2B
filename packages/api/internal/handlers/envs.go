@@ -115,7 +115,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	telemetry.ReportEvent(ctx, "started creating new environment")
 
 	if alias != "" {
-		err = a.supabase.ReserveEnvAlias(alias)
+		err = a.supabase.ReserveEnvAlias(ctx, alias)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
 
@@ -155,7 +155,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		}
 
 		if status == api.EnvironmentBuildStatusError && alias != "" {
-			errMsg := a.supabase.DeleteEnvAlias(alias)
+			errMsg := a.supabase.DeleteEnvAlias(buildContext, alias)
 			if errMsg != nil {
 				err = fmt.Errorf("error when deleting alias: %w", errMsg)
 				telemetry.ReportError(buildContext, err)
@@ -163,7 +163,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("alias", alias))
 			}
 		} else if status == api.EnvironmentBuildStatusReady && alias != "" {
-			errMsg := a.supabase.UpdateEnvAlias(alias, envID)
+			errMsg := a.supabase.UpdateEnvAlias(buildContext, alias, envID)
 			if errMsg != nil {
 				err = fmt.Errorf("error when updating alias: %w", errMsg)
 				telemetry.ReportError(buildContext, err)
@@ -181,10 +181,17 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		childSpan.End()
 	}()
 
+	aliases := []string{}
+
+	if alias != "" {
+		aliases = append(aliases, alias)
+	}
+
 	result := &api.Environment{
 		EnvID:   envID,
 		BuildID: buildID,
 		Public:  false,
+		Aliases: &aliases,
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -260,7 +267,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		attribute.String("build.alias", alias),
 	)
 
-	envID, hasAccess, accessErr := a.CheckTeamAccessEnv(cleanedAliasOrEnvID, teamID, false)
+	envID, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, teamID, false)
 	if accessErr != nil {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The sandbox template '%s' does not exist", cleanedAliasOrEnvID))
 
@@ -337,10 +344,17 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		childSpan.End()
 	}()
 
+	aliases := []string{}
+
+	if alias != "" {
+		aliases = append(aliases, alias)
+	}
+
 	result := &api.Environment{
 		EnvID:   envID,
 		BuildID: buildID,
 		Public:  false,
+		Aliases: &aliases,
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -354,7 +368,7 @@ func (a *APIStore) GetEnvs(
 
 	userID := c.Value(constants.UserIDContextKey).(string)
 
-	teamID, err := a.supabase.GetDefaultTeamFromUserID(userID)
+	teamID, err := a.supabase.GetDefaultTeamFromUserID(ctx, userID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
@@ -369,7 +383,7 @@ func (a *APIStore) GetEnvs(
 		attribute.String("env.team_id", teamID),
 	)
 
-	envs, err := a.supabase.GetEnvs(teamID)
+	envs, err := a.supabase.GetEnvs(ctx, teamID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Error when getting sandbox templates")
 
@@ -393,7 +407,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 	ctx := c.Request.Context()
 
 	userID := c.Value(constants.UserIDContextKey).(string)
-	teamID, err := a.supabase.GetDefaultTeamFromUserID(userID)
+	teamID, err := a.supabase.GetDefaultTeamFromUserID(ctx, userID)
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("env.user_id", userID),
@@ -525,7 +539,7 @@ func (a *APIStore) buildEnv(
 		return err
 	}
 
-	err = a.supabase.UpsertEnv(teamID, envID, buildID, dockerfile)
+	err = a.supabase.UpsertEnv(ctx, teamID, envID, buildID, dockerfile)
 
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)

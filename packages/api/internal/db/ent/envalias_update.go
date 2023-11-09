@@ -49,6 +49,12 @@ func (eau *EnvAliasUpdate) ClearEnvID() *EnvAliasUpdate {
 	return eau
 }
 
+// SetIsName sets the "is_name" field.
+func (eau *EnvAliasUpdate) SetIsName(b bool) *EnvAliasUpdate {
+	eau.mutation.SetIsName(b)
+	return eau
+}
+
 // SetAliasEnvID sets the "alias_env" edge to the Env entity by ID.
 func (eau *EnvAliasUpdate) SetAliasEnvID(id string) *EnvAliasUpdate {
 	eau.mutation.SetAliasEnvID(id)
@@ -114,6 +120,9 @@ func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := eau.mutation.IsName(); ok {
+		_spec.SetField(envalias.FieldIsName, field.TypeBool, value)
 	}
 	if eau.mutation.AliasEnvCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -185,6 +194,12 @@ func (eauo *EnvAliasUpdateOne) SetNillableEnvID(s *string) *EnvAliasUpdateOne {
 // ClearEnvID clears the value of the "env_id" field.
 func (eauo *EnvAliasUpdateOne) ClearEnvID() *EnvAliasUpdateOne {
 	eauo.mutation.ClearEnvID()
+	return eauo
+}
+
+// SetIsName sets the "is_name" field.
+func (eauo *EnvAliasUpdateOne) SetIsName(b bool) *EnvAliasUpdateOne {
+	eauo.mutation.SetIsName(b)
 	return eauo
 }
 
@@ -283,6 +298,9 @@ func (eauo *EnvAliasUpdateOne) sqlSave(ctx context.Context) (_node *EnvAlias, er
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := eauo.mutation.IsName(); ok {
+		_spec.SetField(envalias.FieldIsName, field.TypeBool, value)
 	}
 	if eauo.mutation.AliasEnvCleared() {
 		edge := &sqlgraph.EdgeSpec{

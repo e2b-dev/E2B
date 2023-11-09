@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
@@ -11,13 +12,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func (db *DB) DeleteEnv(envID string) error {
+func (db *DB) DeleteEnv(ctx context.Context, envID string) error {
 	_, err := db.
 		Client.
 		Env.
 		Delete().
 		Where(env.ID(envID)).
-		Exec(db.ctx)
+		Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to delete env '%s': %w", envID, err)
 	}
@@ -25,7 +26,7 @@ func (db *DB) DeleteEnv(envID string) error {
 	return nil
 }
 
-func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
+func (db *DB) GetEnvs(ctx context.Context, teamID string) (result []*api.Environment, err error) {
 	id, err := uuid.Parse(teamID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse teamID: %w", err)
@@ -37,7 +38,7 @@ func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
 		Query().
 		Where(env.Or(env.TeamID(id), env.Public(true))).
 		WithEnvAliases().
-		All(db.ctx)
+		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list envs: %w", err)
 	}
@@ -61,7 +62,7 @@ func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
 
 var ErrEnvNotFound = fmt.Errorf("env not found")
 
-func (db *DB) GetEnv(aliasOrEnvID string, teamID string, canBePublic bool) (result *api.Environment, err error) {
+func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID string, canBePublic bool) (result *api.Environment, err error) {
 	id, err := uuid.Parse(teamID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse teamID: %w", err)
@@ -73,7 +74,7 @@ func (db *DB) GetEnv(aliasOrEnvID string, teamID string, canBePublic bool) (resu
 		Query().
 		Where(env.Or(env.HasEnvAliasesWith(envalias.ID(aliasOrEnvID)), env.ID(aliasOrEnvID)), env.Or(env.TeamID(id), env.Public(true))).
 		WithEnvAliases().
-		Only(db.ctx)
+		Only(ctx)
 	if err != nil {
 		return nil, ErrEnvNotFound
 	}
@@ -95,7 +96,7 @@ func (db *DB) GetEnv(aliasOrEnvID string, teamID string, canBePublic bool) (resu
 	}, nil
 }
 
-func (db *DB) UpsertEnv(teamID, envID, buildID, dockerfile string) error {
+func (db *DB) UpsertEnv(ctx context.Context, teamID, envID, buildID, dockerfile string) error {
 	teamUUID, err := uuid.Parse(teamID)
 	if err != nil {
 		return fmt.Errorf("failed to parse teamID: %w", err)
@@ -122,7 +123,7 @@ func (db *DB) UpsertEnv(teamID, envID, buildID, dockerfile string) error {
 		Update(func(e *ent.EnvUpsert) {
 			e.AddBuildCount(1)
 		}).
-		Exec(db.ctx)
+		Exec(ctx)
 
 	if err != nil {
 		errMsg := fmt.Errorf("failed to upsert env with id '%s': %w", envID, err)
@@ -135,8 +136,8 @@ func (db *DB) UpsertEnv(teamID, envID, buildID, dockerfile string) error {
 	return nil
 }
 
-func (db *DB) HasEnvAccess(aliasOrEnvID string, teamID string, canBePublic bool) (string, bool, error) {
-	env, err := db.GetEnv(aliasOrEnvID, teamID, canBePublic)
+func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID string, canBePublic bool) (string, bool, error) {
+	env, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}

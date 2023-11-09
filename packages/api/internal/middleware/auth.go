@@ -24,7 +24,7 @@ type authenticator struct {
 	headerKey          string
 	prefix             string
 	removePrefix       string
-	validationFunction func(string) (string, error)
+	validationFunction func(context.Context, string) (string, error)
 	contextKey         string
 	errorMessage       string
 }
@@ -64,7 +64,7 @@ func (a *authenticator) Authenticate(ctx context.Context, input *openapi3filter.
 	}
 
 	// If the API key is valid, we will get a ID back
-	id, err := a.validationFunction(apiKey)
+	id, err := a.validationFunction(ctx, apiKey)
 	if err != nil {
 		return fmt.Errorf("%s %w", a.errorMessage, err)
 	}
@@ -76,7 +76,7 @@ func (a *authenticator) Authenticate(ctx context.Context, input *openapi3filter.
 	return nil
 }
 
-func CreateAuthenticationFunc(teamValidationFunction func(string) (string, error), userValidationFunction func(string) (string, error)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+func CreateAuthenticationFunc(teamValidationFunction func(context.Context, string) (string, error), userValidationFunction func(context.Context, string) (string, error)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 	apiKeyValidator := authenticator{
 		securitySchemeName: "ApiKeyAuth",
 		headerKey:          "X-API-Key",

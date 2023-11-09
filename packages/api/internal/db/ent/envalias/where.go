@@ -69,6 +69,11 @@ func EnvID(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldEQ(FieldEnvID, v))
 }
 
+// IsName applies equality check predicate on the "is_name" field. It's identical to IsNameEQ.
+func IsName(v bool) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldEQ(FieldIsName, v))
+}
+
 // EnvIDEQ applies the EQ predicate on the "env_id" field.
 func EnvIDEQ(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldEQ(FieldEnvID, v))
@@ -142,6 +147,16 @@ func EnvIDEqualFold(v string) predicate.EnvAlias {
 // EnvIDContainsFold applies the ContainsFold predicate on the "env_id" field.
 func EnvIDContainsFold(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldContainsFold(FieldEnvID, v))
+}
+
+// IsNameEQ applies the EQ predicate on the "is_name" field.
+func IsNameEQ(v bool) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldEQ(FieldIsName, v))
+}
+
+// IsNameNEQ applies the NEQ predicate on the "is_name" field.
+func IsNameNEQ(v bool) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldNEQ(FieldIsName, v))
 }
 
 // HasAliasEnv applies the HasEdge predicate on the "alias_env" edge.

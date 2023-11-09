@@ -33,7 +33,7 @@ func (a *APIStore) PostInstances(
 	// Get team id from context, use TeamIDContextKey
 	teamID := c.Value(constants.TeamIDContextKey).(string)
 
-	envID, hasAccess, checkErr := a.CheckTeamAccessEnv(cleanedAliasOrEnvID, teamID, true)
+	envID, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, teamID, true)
 	if checkErr != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", checkErr))
 

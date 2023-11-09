@@ -1358,6 +1358,7 @@ type EnvAliasMutation struct {
 	op               Op
 	typ              string
 	id               *string
+	is_name          *bool
 	clearedFields    map[string]struct{}
 	alias_env        *string
 	clearedalias_env bool
@@ -1519,6 +1520,42 @@ func (m *EnvAliasMutation) ResetEnvID() {
 	delete(m.clearedFields, envalias.FieldEnvID)
 }
 
+// SetIsName sets the "is_name" field.
+func (m *EnvAliasMutation) SetIsName(b bool) {
+	m.is_name = &b
+}
+
+// IsName returns the value of the "is_name" field in the mutation.
+func (m *EnvAliasMutation) IsName() (r bool, exists bool) {
+	v := m.is_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsName returns the old "is_name" field's value of the EnvAlias entity.
+// If the EnvAlias object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvAliasMutation) OldIsName(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsName: %w", err)
+	}
+	return oldValue.IsName, nil
+}
+
+// ResetIsName resets all changes to the "is_name" field.
+func (m *EnvAliasMutation) ResetIsName() {
+	m.is_name = nil
+}
+
 // SetAliasEnvID sets the "alias_env" edge to the Env entity by id.
 func (m *EnvAliasMutation) SetAliasEnvID(id string) {
 	m.alias_env = &id
@@ -1593,9 +1630,12 @@ func (m *EnvAliasMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvAliasMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
 	if m.alias_env != nil {
 		fields = append(fields, envalias.FieldEnvID)
+	}
+	if m.is_name != nil {
+		fields = append(fields, envalias.FieldIsName)
 	}
 	return fields
 }
@@ -1607,6 +1647,8 @@ func (m *EnvAliasMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case envalias.FieldEnvID:
 		return m.EnvID()
+	case envalias.FieldIsName:
+		return m.IsName()
 	}
 	return nil, false
 }
@@ -1618,6 +1660,8 @@ func (m *EnvAliasMutation) OldField(ctx context.Context, name string) (ent.Value
 	switch name {
 	case envalias.FieldEnvID:
 		return m.OldEnvID(ctx)
+	case envalias.FieldIsName:
+		return m.OldIsName(ctx)
 	}
 	return nil, fmt.Errorf("unknown EnvAlias field %s", name)
 }
@@ -1633,6 +1677,13 @@ func (m *EnvAliasMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEnvID(v)
+		return nil
+	case envalias.FieldIsName:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsName(v)
 		return nil
 	}
 	return fmt.Errorf("unknown EnvAlias field %s", name)
@@ -1694,6 +1745,9 @@ func (m *EnvAliasMutation) ResetField(name string) error {
 	switch name {
 	case envalias.FieldEnvID:
 		m.ResetEnvID()
+		return nil
+	case envalias.FieldIsName:
+		m.ResetIsName()
 		return nil
 	}
 	return fmt.Errorf("unknown EnvAlias field %s", name)

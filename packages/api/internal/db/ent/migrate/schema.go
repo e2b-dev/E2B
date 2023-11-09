@@ -49,6 +49,7 @@ var (
 	// EnvAliasesColumns holds the columns for the "env_aliases" table.
 	EnvAliasesColumns = []*schema.Column{
 		{Name: "alias", Type: field.TypeString, Unique: true},
+		{Name: "is_name", Type: field.TypeBool},
 		{Name: "env_id", Type: field.TypeString, Nullable: true},
 	}
 	// EnvAliasesTable holds the schema information for the "env_aliases" table.
@@ -59,7 +60,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "env_aliases_envs_env_aliases",
-				Columns:    []*schema.Column{EnvAliasesColumns[1]},
+				Columns:    []*schema.Column{EnvAliasesColumns[2]},
 				RefColumns: []*schema.Column{EnvsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

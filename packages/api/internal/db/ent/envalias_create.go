@@ -37,6 +37,12 @@ func (eac *EnvAliasCreate) SetNillableEnvID(s *string) *EnvAliasCreate {
 	return eac
 }
 
+// SetIsName sets the "is_name" field.
+func (eac *EnvAliasCreate) SetIsName(b bool) *EnvAliasCreate {
+	eac.mutation.SetIsName(b)
+	return eac
+}
+
 // SetID sets the "id" field.
 func (eac *EnvAliasCreate) SetID(s string) *EnvAliasCreate {
 	eac.mutation.SetID(s)
@@ -96,6 +102,9 @@ func (eac *EnvAliasCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (eac *EnvAliasCreate) check() error {
+	if _, ok := eac.mutation.IsName(); !ok {
+		return &ValidationError{Name: "is_name", err: errors.New(`ent: missing required field "EnvAlias.is_name"`)}
+	}
 	return nil
 }
 
@@ -132,6 +141,10 @@ func (eac *EnvAliasCreate) createSpec() (*EnvAlias, *sqlgraph.CreateSpec) {
 	if id, ok := eac.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
+	}
+	if value, ok := eac.mutation.IsName(); ok {
+		_spec.SetField(envalias.FieldIsName, field.TypeBool, value)
+		_node.IsName = value
 	}
 	if nodes := eac.mutation.AliasEnvIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -221,6 +234,18 @@ func (u *EnvAliasUpsert) ClearEnvID() *EnvAliasUpsert {
 	return u
 }
 
+// SetIsName sets the "is_name" field.
+func (u *EnvAliasUpsert) SetIsName(v bool) *EnvAliasUpsert {
+	u.Set(envalias.FieldIsName, v)
+	return u
+}
+
+// UpdateIsName sets the "is_name" field to the value that was provided on create.
+func (u *EnvAliasUpsert) UpdateIsName() *EnvAliasUpsert {
+	u.SetExcluded(envalias.FieldIsName)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -287,6 +312,20 @@ func (u *EnvAliasUpsertOne) UpdateEnvID() *EnvAliasUpsertOne {
 func (u *EnvAliasUpsertOne) ClearEnvID() *EnvAliasUpsertOne {
 	return u.Update(func(s *EnvAliasUpsert) {
 		s.ClearEnvID()
+	})
+}
+
+// SetIsName sets the "is_name" field.
+func (u *EnvAliasUpsertOne) SetIsName(v bool) *EnvAliasUpsertOne {
+	return u.Update(func(s *EnvAliasUpsert) {
+		s.SetIsName(v)
+	})
+}
+
+// UpdateIsName sets the "is_name" field to the value that was provided on create.
+func (u *EnvAliasUpsertOne) UpdateIsName() *EnvAliasUpsertOne {
+	return u.Update(func(s *EnvAliasUpsert) {
+		s.UpdateIsName()
 	})
 }
 
@@ -522,6 +561,20 @@ func (u *EnvAliasUpsertBulk) UpdateEnvID() *EnvAliasUpsertBulk {
 func (u *EnvAliasUpsertBulk) ClearEnvID() *EnvAliasUpsertBulk {
 	return u.Update(func(s *EnvAliasUpsert) {
 		s.ClearEnvID()
+	})
+}
+
+// SetIsName sets the "is_name" field.
+func (u *EnvAliasUpsertBulk) SetIsName(v bool) *EnvAliasUpsertBulk {
+	return u.Update(func(s *EnvAliasUpsert) {
+		s.SetIsName(v)
+	})
+}
+
+// UpdateIsName sets the "is_name" field to the value that was provided on create.
+func (u *EnvAliasUpsertBulk) UpdateIsName() *EnvAliasUpsertBulk {
+	return u.Update(func(s *EnvAliasUpsert) {
+		s.UpdateIsName()
 	})
 }
 

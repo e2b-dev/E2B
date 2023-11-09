@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
@@ -10,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (db *DB) GetDefaultTeamFromUserID(userID string) (teamID string, err error) {
+func (db *DB) GetDefaultTeamFromUserID(ctx context.Context, userID string) (teamID string, err error) {
 	userUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse userID: %w", err)
@@ -22,7 +23,7 @@ func (db *DB) GetDefaultTeamFromUserID(userID string) (teamID string, err error)
 		Query().
 		Select(team.FieldID).
 		Where(team.IsDefaultEQ(true), team.HasUsersWith(user.ID(userUUID))).
-		Only(db.ctx)
+		Only(ctx)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get default team from user: %w", err)
 		fmt.Println(errMsg.Error())
@@ -33,7 +34,7 @@ func (db *DB) GetDefaultTeamFromUserID(userID string) (teamID string, err error)
 	return t.ID.String(), nil
 }
 
-func (db *DB) GetDefaultTeamAndTierFromUserID(userID string) (*ent.Team, error) {
+func (db *DB) GetDefaultTeamAndTierFromUserID(ctx context.Context, userID string) (*ent.Team, error) {
 	userUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse userID: %w", err)
@@ -46,7 +47,7 @@ func (db *DB) GetDefaultTeamAndTierFromUserID(userID string) (*ent.Team, error) 
 		Select(team.FieldID).
 		Where(team.IsDefaultEQ(true), team.HasUsersWith(user.ID(userUUID))).
 		WithTeamTier().
-		Only(db.ctx)
+		Only(ctx)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get default team from user: %w", err)
 		fmt.Println(errMsg.Error())

@@ -184,8 +184,8 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
 
-func (a *APIStore) GetTeamFromAPIKey(apiKey string) (string, error) {
-	teamID, err := a.supabase.GetTeamID(apiKey)
+func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (string, error) {
+	teamID, err := a.supabase.GetTeamID(ctx, apiKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to get get team from db for api key: %w", err)
 	}
@@ -197,8 +197,8 @@ func (a *APIStore) GetTeamFromAPIKey(apiKey string) (string, error) {
 	return teamID, nil
 }
 
-func (a *APIStore) GetUserFromAccessToken(accessToken string) (string, error) {
-	userID, err := a.supabase.GetUserID(accessToken)
+func (a *APIStore) GetUserFromAccessToken(ctx context.Context, accessToken string) (string, error) {
+	userID, err := a.supabase.GetUserID(ctx, accessToken)
 	if err != nil {
 		return "", fmt.Errorf("failed to get get user from db for access token: %w", err)
 	}
@@ -223,8 +223,8 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	return deleteInstance(a.nomad, a.posthog, instanceID, info.TeamID, info.StartTime, purge)
 }
 
-func (a *APIStore) CheckTeamAccessEnv(aliasOrEnvID string, teamID string, public bool) (string, bool, error) {
-	return a.supabase.HasEnvAccess(aliasOrEnvID, teamID, public)
+func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID string, public bool) (string, bool, error) {
+	return a.supabase.HasEnvAccess(ctx, aliasOrEnvID, teamID, public)
 }
 
 type InstanceInfo = nomad.InstanceInfo
