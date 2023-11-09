@@ -80,8 +80,8 @@ export interface paths {
       requestBody: {
         content: {
           "multipart/form-data": {
-            /** @description Name of the environment */
-            name?: string;
+            /** @description Alias of the environment */
+            alias?: string;
             /**
              * Format: binary
              * @description Docker build context
