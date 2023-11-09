@@ -150,7 +150,7 @@ func (n *NomadClient) CreateInstance(
 
 	select {
 	case <-ctx.Done():
-		errMsg := fmt.Errorf("error waiting for env '%s' build: %w", envID, ctx.Err())
+		errMsg := fmt.Errorf("error waiting for env '%s' instance: %w", envID, ctx.Err())
 
 		delErr := n.DeleteInstance(instanceID, false)
 		if delErr != nil {
@@ -188,12 +188,81 @@ func (n *NomadClient) CreateInstance(
 			Code:      http.StatusInternalServerError,
 		}
 	case alloc := <-sub.wait:
-		telemetry.ReportEvent(childCtx, "Finished waitng for the job start")
+		var allocErr error
 
-		telemetry.SetAttributes(
-			childCtx,
-			attribute.String("instance_id", instanceID),
-		)
+		defer func() {
+			if allocErr != nil {
+				cleanupErr := n.DeleteInstance(*job.ID, false)
+				if cleanupErr != nil {
+					errMsg := fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
+					telemetry.ReportError(childCtx, errMsg)
+				} else {
+					telemetry.ReportEvent(childCtx, "cleaned up env instance job", attribute.String("env_id", envID), attribute.String("instance_id", instanceID))
+				}
+			}
+		}()
+
+		if alloc.TaskStates == nil {
+			allocErr = fmt.Errorf("task states are nil")
+
+			telemetry.ReportCriticalError(childCtx, allocErr)
+
+			return nil, &api.APIError{
+				Err:       allocErr,
+				ClientMsg: "Cannot create a environment instance right now",
+				Code:      http.StatusInternalServerError,
+			}
+		}
+
+		if alloc.TaskStates[defaultTaskName] == nil {
+			allocErr = fmt.Errorf("task state '%s' is nil", defaultTaskName)
+
+			telemetry.ReportCriticalError(childCtx, allocErr)
+
+			return nil, &api.APIError{
+				Err:       allocErr,
+				ClientMsg: "Cannot create a environment instance right now",
+				Code:      http.StatusInternalServerError,
+			}
+		}
+
+		task := alloc.TaskStates[defaultTaskName]
+
+		var instanceErr error
+
+		if task.Failed {
+			for _, event := range task.Events {
+				if event.Type == "Terminated" {
+					instanceErr = fmt.Errorf("%s", event.Message)
+				}
+			}
+
+			if instanceErr == nil {
+				allocErr = fmt.Errorf("starting instance failed")
+			} else {
+				allocErr = fmt.Errorf("starting instance failed %w", instanceErr)
+			}
+
+			telemetry.ReportCriticalError(childCtx, allocErr)
+
+			return nil, &api.APIError{
+				Err:       allocErr,
+				ClientMsg: "Cannot create a environment instance right now",
+				Code:      http.StatusInternalServerError,
+			}
+		}
+
+		if task.State != taskRunningState {
+			allocErr = fmt.Errorf("task state is not '%s'", taskRunningState)
+
+			telemetry.ReportCriticalError(childCtx, allocErr)
+
+			return nil, &api.APIError{
+				Err:       allocErr,
+				ClientMsg: "Cannot create a environment instance right now",
+				Code:      http.StatusInternalServerError,
+			}
+		}
 
 		return &api.Instance{
 			ClientID:   strings.Clone(alloc.NodeID[:shortNodeIDLength]),
