@@ -4,10 +4,10 @@ import * as commander from 'commander'
 import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal } from 'src/terminal'
 import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
-import { getRoot } from '../../utils/filesystem'
-import { getConfigPath, loadConfig } from '../../config'
+import { getRoot } from '../utils/filesystem'
+import { getConfigPath, loadConfig } from '../config'
 import fs from 'fs'
-import { pathOption } from '../../options'
+import { pathOption } from '../options'
 import path from 'path'
 
 export const shellCommand = new commander.Command('shell')
@@ -64,9 +64,9 @@ export const shellCommand = new commander.Command('shell')
   })
 
 async function connectSandbox({
-    apiKey,
-    template,
-  }: {
+  apiKey,
+  template,
+}: {
   apiKey: string;
   template: Pick<e2b.components['schemas']['Environment'], 'envID'>;
 }) {

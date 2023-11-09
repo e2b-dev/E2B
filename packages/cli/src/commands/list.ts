@@ -3,7 +3,7 @@ import * as commander from 'commander'
 import * as e2b from '@e2b/sdk'
 
 import { ensureAccessToken } from 'src/api'
-import { listAliases } from '../../utils/format'
+import { listAliases } from '../utils/format'
 
 const listTemplates = e2b.withAccessToken(
   e2b.api.path('/envs').method('get').create(),
