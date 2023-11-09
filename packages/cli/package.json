@@ -12,7 +12,8 @@
   "bugs": "https://github.com/e2b-dev/e2b/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/e2b-dev/e2b/tree/main/packages/cli"
+    "url": "https://github.com/e2b-dev/e2b",
+    "directory": "packages/cli"
   },
   "publishConfig": {
     "access": "public"
