@@ -40,7 +40,7 @@ tools as humans do. For example:
 - Cloud browsers
 - GitHub repositories and CLIs
 - Coding tools like linters, autocomplete, "go-to defintion"
-- Running code
+- Running LLM generated code
 - Audio & video editing
 
 **The E2B sandbox can be connected to any LLM and any AI agent or app.**
