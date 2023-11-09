@@ -48,7 +48,7 @@ export class Sandbox extends SandboxConnection {
        * @returns Array of files in a directory
        */
       list: async (path, opts?: CallOpts) => {
-        return (await this.call(
+        return (await this._call(
           filesystemService,
           'list',
           [_resolvePath(path)],
@@ -63,7 +63,7 @@ export class Sandbox extends SandboxConnection {
        * @returns Content of a file
        */
       read: async (path, opts?: CallOpts) => {
-        return (await this.call(
+        return (await this._call(
           filesystemService,
           'read',
           [_resolvePath(path)],
@@ -77,7 +77,7 @@ export class Sandbox extends SandboxConnection {
        * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        */
       remove: async (path, opts?: CallOpts) => {
-        await this.call(
+        await this._call(
           filesystemService,
           'remove',
           [_resolvePath(path)],
@@ -92,7 +92,7 @@ export class Sandbox extends SandboxConnection {
        * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        */
       write: async (path, content, opts?: CallOpts) => {
-        await this.call(
+        await this._call(
           filesystemService,
           'write',
           [_resolvePath(path), content],
@@ -110,7 +110,7 @@ export class Sandbox extends SandboxConnection {
         // We need to convert the byte array to base64 string without using browser or node specific APIs.
         // This should be achieved by the node polyfills.
         const base64Content = Buffer.from(content).toString('base64')
-        await this.call(filesystemService, 'writeBase64', [
+        await this._call(filesystemService, 'writeBase64', [
           _resolvePath(path),
           base64Content,
         ])
@@ -121,7 +121,7 @@ export class Sandbox extends SandboxConnection {
        * @returns byte array representing the content of a file
        */
       readBytes: async (path: string) => {
-        const base64Content = (await this.call(
+        const base64Content = (await this._call(
           filesystemService,
           'readBase64',
           [_resolvePath(path)],
@@ -137,7 +137,7 @@ export class Sandbox extends SandboxConnection {
        * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        */
       makeDir: async (path, opts?: CallOpts) => {
-        await this.call(
+        await this._call(
           filesystemService,
           'makeDir',
           [_resolvePath(path)],
@@ -201,9 +201,9 @@ export class Sandbox extends SandboxConnection {
             onData?.(data)
           }
 
-          const [onDataSubID, onExitSubID] = await this.handleSubscriptions(
-            this.subscribe(terminalService, handleData, 'onData', terminalID),
-            this.subscribe(terminalService, triggerExit, 'onExit', terminalID),
+          const [onDataSubID, onExitSubID] = await this._handleSubscriptions(
+            this._subscribe(terminalService, handleData, 'onData', terminalID),
+            this._subscribe(terminalService, triggerExit, 'onExit', terminalID),
           )
 
           const { promise: unsubscribing, resolve: handleFinishUnsubscribing } =
@@ -211,8 +211,8 @@ export class Sandbox extends SandboxConnection {
 
           terminalExited.then(async () => {
             const results = await Promise.allSettled([
-              this.unsubscribe(onExitSubID),
-              this.unsubscribe(onDataSubID),
+              this._unsubscribe(onExitSubID),
+              this._unsubscribe(onDataSubID),
             ])
             this.logger.debug?.(`Terminal "${terminalID}" exited`)
 
@@ -226,7 +226,7 @@ export class Sandbox extends SandboxConnection {
           })
 
           try {
-            await this.call(terminalService, 'start', [
+            await this._call(terminalService, 'start', [
               terminalID,
               size.cols,
               size.rows,
@@ -329,15 +329,15 @@ export class Sandbox extends SandboxConnection {
           }
 
           const [onExitSubID, onStdoutSubID, onStderrSubID] =
-            await this.handleSubscriptions(
-              this.subscribe(processService, handleExit, 'onExit', processID),
-              this.subscribe(
+            await this._handleSubscriptions(
+              this._subscribe(processService, handleExit, 'onExit', processID),
+              this._subscribe(
                 processService,
                 handleStdout,
                 'onStdout',
                 processID,
               ),
-              this.subscribe(
+              this._subscribe(
                 processService,
                 handleStderr,
                 'onStderr',
@@ -350,9 +350,9 @@ export class Sandbox extends SandboxConnection {
 
           processExited.then(async () => {
             const results = await Promise.allSettled([
-              this.unsubscribe(onExitSubID),
-              onStdoutSubID ? this.unsubscribe(onStdoutSubID) : undefined,
-              onStderrSubID ? this.unsubscribe(onStderrSubID) : undefined,
+              this._unsubscribe(onExitSubID),
+              onStdoutSubID ? this._unsubscribe(onStdoutSubID) : undefined,
+              onStderrSubID ? this._unsubscribe(onStderrSubID) : undefined,
             ])
             this.logger.debug?.(`Process "${processID}" exited`)
 
@@ -372,7 +372,7 @@ export class Sandbox extends SandboxConnection {
           })
 
           try {
-            await this.call(processService, 'start', [
+            await this._call(processService, 'start', [
               processID,
               cmd,
               envVars,
@@ -435,9 +435,9 @@ export class Sandbox extends SandboxConnection {
         )
       : undefined
 
-    await this.handleSubscriptions(
+    await this._handleSubscriptions(
       portsHandler
-        ? this.subscribe(codeSnippetService, portsHandler, 'scanOpenedPorts')
+        ? this._subscribe(codeSnippetService, portsHandler, 'scanOpenedPorts')
         : undefined,
     )
 

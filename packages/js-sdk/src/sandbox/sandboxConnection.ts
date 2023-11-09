@@ -141,7 +141,7 @@ export class SandboxConnection {
 
       this.logger.debug?.('Unsubscribing...')
       const results = await Promise.allSettled(
-        this.subscribers.map((s) => this.unsubscribe(s.subID)),
+        this.subscribers.map((s) => this._unsubscribe(s.subID)),
       )
       results.forEach((r) => {
         if (r.status === 'rejected') {
@@ -155,6 +155,97 @@ export class SandboxConnection {
       this.rpc.ws?.close?.()
       this.logger.info?.('Disconnected from the sandbox')
     }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async _call(
+    service: Service,
+    method: string,
+    params?: any[],
+    opts?: CallOpts,
+  ) {
+    this.logger.debug?.(`Calling "${service}_${method}" with params:`, params)
+
+    // Without the async function, the `this` context is lost.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const call = async (method: string, params?: any[]) =>
+      await this.rpc.call(method, params)
+
+    return await withTimeout(call, opts?.timeout)(
+      `${service}_${method}`,
+      params,
+    )
+  }
+
+  async _handleSubscriptions<
+    T extends (ReturnType<SandboxConnection['_subscribe']> | undefined)[],
+  >(
+    ...subs: T
+  ): Promise<{
+    [P in keyof T]: Awaited<T[P]>;
+  }> {
+    const results = await Promise.allSettled(subs)
+
+    if (results.every((r) => r.status === 'fulfilled')) {
+      return results.map((r) =>
+        r.status === 'fulfilled' ? r.value : undefined,
+      ) as {
+          [P in keyof T]: Awaited<T[P]>;
+        }
+    }
+
+    await Promise.all(
+      results
+        .filter(assertFulfilled)
+        .map((r) => (r.value ? this._unsubscribe(r.value) : undefined)),
+    )
+
+    throw new Error(formatSettledErrors(results))
+  }
+
+  // eslint-disable-next-line @typescript-eslint/member-ordering
+  async _unsubscribe(subID: string) {
+    const subscription = this.subscribers.find((s) => s.subID === subID)
+    if (!subscription) return
+
+    await this._call(subscription.service, 'unsubscribe', [subscription.subID])
+
+    this.subscribers = this.subscribers.filter((s) => s !== subscription)
+    this.logger.debug?.(
+      `Unsubscribed '${subID}' from '${subscription.service}'`,
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/member-ordering
+  async _subscribe(
+    service: Service,
+    handler: SubscriptionHandler,
+    method: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...params: any[]
+  ) {
+    const subID = await this._call(service, 'subscribe', [method, ...params])
+
+    if (typeof subID !== 'string') {
+      throw new Error(
+        `Cannot subscribe to ${service}_${method}${params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
+        }. Expected response should have been a subscription ID, instead we got ${JSON.stringify(
+          subID,
+        )}`,
+      )
+    }
+
+    this.subscribers.push({
+      handler,
+      service,
+      subID,
+    })
+    this.logger.debug?.(
+      `Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
+      } with id "${subID}"`,
+    )
+
+    return subID
   }
 
   /**
@@ -298,97 +389,6 @@ export class SandboxConnection {
       return this
     }
     return await withTimeout(open, opts?.timeout)()
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async call(
-    service: Service,
-    method: string,
-    params?: any[],
-    opts?: CallOpts,
-  ) {
-    this.logger.debug?.(`Calling "${service}_${method}" with params:`, params)
-
-    // Without the async function, the `this` context is lost.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const call = async (method: string, params?: any[]) =>
-      await this.rpc.call(method, params)
-
-    return await withTimeout(call, opts?.timeout)(
-      `${service}_${method}`,
-      params,
-    )
-  }
-
-  async handleSubscriptions<
-    T extends (ReturnType<SandboxConnection['subscribe']> | undefined)[],
-  >(
-    ...subs: T
-  ): Promise<{
-    [P in keyof T]: Awaited<T[P]>;
-  }> {
-    const results = await Promise.allSettled(subs)
-
-    if (results.every((r) => r.status === 'fulfilled')) {
-      return results.map((r) =>
-        r.status === 'fulfilled' ? r.value : undefined,
-      ) as {
-          [P in keyof T]: Awaited<T[P]>;
-        }
-    }
-
-    await Promise.all(
-      results
-        .filter(assertFulfilled)
-        .map((r) => (r.value ? this.unsubscribe(r.value) : undefined)),
-    )
-
-    throw new Error(formatSettledErrors(results))
-  }
-
-  // eslint-disable-next-line @typescript-eslint/member-ordering
-  async unsubscribe(subID: string) {
-    const subscription = this.subscribers.find((s) => s.subID === subID)
-    if (!subscription) return
-
-    await this.call(subscription.service, 'unsubscribe', [subscription.subID])
-
-    this.subscribers = this.subscribers.filter((s) => s !== subscription)
-    this.logger.debug?.(
-      `Unsubscribed '${subID}' from '${subscription.service}'`,
-    )
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/member-ordering
-  async subscribe(
-    service: Service,
-    handler: SubscriptionHandler,
-    method: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...params: any[]
-  ) {
-    const subID = await this.call(service, 'subscribe', [method, ...params])
-
-    if (typeof subID !== 'string') {
-      throw new Error(
-        `Cannot subscribe to ${service}_${method}${params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
-        }. Expected response should have been a subscription ID, instead we got ${JSON.stringify(
-          subID,
-        )}`,
-      )
-    }
-
-    this.subscribers.push({
-      handler,
-      service,
-      subID,
-    })
-    this.logger.debug?.(
-      `Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
-      } with id "${subID}"`,
-    )
-
-    return subID
   }
 
   private handleNotification(data: IRpcNotification) {

@@ -133,3 +133,6 @@ class DataAnalysis(Sandbox):
         self._install_packages(
             "sudo apt-get install -y", package_names, timeout=timeout
         )
+
+
+CodeInterpreter = DataAnalysis
