@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="100" src="readme-assets/logo-circle.png" alt="e2b logo">
+  <img width="100" src="/readme-assets/logo-circle.png" alt="e2b logo">
 </p>
 
 <h1 align="center">
@@ -28,7 +28,7 @@
   </a>
 </h4>
 
-<img width="100%" src="readme-assets/preview.png" alt="Cover image">
+<img width="100%" src="/readme-assets/preview.png" alt="Cover image">
 
 ## What is E2B?
 
@@ -101,7 +101,7 @@ await sandbox.close();
 
 This repository is a monorepo containing:
 
-1. [Python SDK](packages/python-sdk)
-1. [JS SDK](packages/js-sdk)
-1. [CLI](packages/cli)
-1. [Documentation](apps/docs/)
+1. [Python SDK](/packages/python-sdk)
+1. [JS SDK](/packages/js-sdk)
+1. [CLI](/packages/cli)
+1. [Documentation](/apps/docs/)
