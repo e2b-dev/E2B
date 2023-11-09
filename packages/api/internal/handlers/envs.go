@@ -114,6 +114,20 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 	telemetry.ReportEvent(ctx, "started creating new environment")
 
+	if alias != "" {
+		err = a.supabase.InsertEnvAlias(alias, envID)
+		if err != nil {
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
+
+			err = fmt.Errorf("error when inserting alias: %w", err)
+			telemetry.ReportCriticalError(ctx, err)
+
+			return
+		} else {
+			telemetry.ReportEvent(ctx, "inserted alias", attribute.String("alias", alias))
+		}
+	}
+
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
 			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
@@ -131,13 +145,23 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		if buildErr != nil {
 			status = api.EnvironmentBuildStatusError
 
-			err = fmt.Errorf("error when building env: %w", buildErr)
+			errMsg := fmt.Errorf("error when building env: %w", buildErr)
 
-			telemetry.ReportCriticalError(buildContext, err)
+			telemetry.ReportCriticalError(buildContext, errMsg)
 		} else {
 			status = api.EnvironmentBuildStatusReady
 
 			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env_id", envID))
+		}
+
+		if status == api.EnvironmentBuildStatusError && alias != "" {
+			errMsg := a.supabase.DeleteEnvAlias(alias)
+			if errMsg != nil {
+				err = fmt.Errorf("error when deleting alias: %w", errMsg)
+				telemetry.ReportError(buildContext, err)
+			} else {
+				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("alias", alias))
+			}
 		}
 
 		cacheErr := a.buildCache.SetDone(envID, buildID, status)
@@ -282,9 +306,9 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		if buildErr != nil {
 			status = api.EnvironmentBuildStatusError
 
-			err = fmt.Errorf("error when building env: %w", buildErr)
+			errMsg := fmt.Errorf("error when building env: %w", buildErr)
 
-			telemetry.ReportCriticalError(buildContext, err)
+			telemetry.ReportCriticalError(buildContext, errMsg)
 		} else {
 			status = api.EnvironmentBuildStatusReady
 
