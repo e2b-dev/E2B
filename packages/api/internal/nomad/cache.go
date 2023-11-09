@@ -36,6 +36,11 @@ func (c *InstanceCache) Add(instance *api.Instance, teamID *string, startTime *t
 		return fmt.Errorf("instance \"%s\" already exists", instance.InstanceID)
 	}
 
+	if startTime == nil {
+		startTime = &time.Time{}
+		*startTime = time.Now()
+	}
+
 	instanceData := InstanceInfo{
 		Instance:  instance,
 		TeamID:    teamID,
@@ -104,8 +109,7 @@ func (c *InstanceCache) Exists(instanceID string) bool {
 func (c *InstanceCache) Sync(instances []*api.Instance) {
 	for _, instance := range instances {
 		if !c.Exists(instance.InstanceID) {
-			now := time.Now()
-			err := c.Add(instance, nil, &now)
+			err := c.Add(instance, nil, nil)
 			if err != nil {
 				fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
 			}
