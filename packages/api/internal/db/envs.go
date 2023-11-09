@@ -76,8 +76,8 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID string, ca
 		WithEnvAliases().
 		Only(ctx)
 
-	ok := ent.IsNotFound(err)
-	if ok {
+	notFound := ent.IsNotFound(err)
+	if notFound {
 		return nil, ErrEnvNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)

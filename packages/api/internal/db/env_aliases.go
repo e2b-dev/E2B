@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/envalias"
 )
@@ -81,7 +80,10 @@ func (db *DB) UpdateEnvAlias(ctx context.Context, alias, envID string) error {
 	_, err = tx.
 		EnvAlias.
 		Delete().
-		Where(envalias.ID(alias), envalias.EnvID(envID), envalias.IsName(true)).
+		Where(envalias.Or(
+			envalias.EnvID(envID),
+			envalias.And(envalias.EnvIDIsNil(), envalias.ID(alias)),
+		), envalias.IsName(true)).
 		Exec(ctx)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to delete env alias '%s' for env '%s': %w", alias, envID, err)
@@ -122,11 +124,11 @@ func (db *DB) EnsureEnvAlias(ctx context.Context, alias, envID string) error {
 		Client.
 		EnvAlias.
 		Query().
-		Where(envalias.EnvID(envID), envalias.IsName(true)).
+		Where(envalias.EnvID(envID), envalias.IsName(true), envalias.ID(alias)).
 		Only(ctx)
 
-	ok := ent.IsNotFound(err)
-	if ok {
+	notFound := ent.IsNotFound(err)
+	if notFound {
 		err = db.reserveEnvAlias(ctx, alias)
 		if err != nil {
 			return err
