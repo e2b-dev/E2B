@@ -62,15 +62,52 @@ func (db *DB) reserveEnvAlias(ctx context.Context, alias string) error {
 	return nil
 }
 
+// rollback calls to tx.Rollback and wraps the given error
+// with the rollback error if occurred.
+func rollback(tx *ent.Tx, err error) error {
+	if rerr := tx.Rollback(); rerr != nil {
+		err = fmt.Errorf("%w: %w", err, rerr)
+	}
+
+	return err
+}
+
 func (db *DB) UpdateEnvAlias(ctx context.Context, alias, envID string) error {
-	err := db.
-		Client.
+	tx, err := db.Client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("starting a transaction: %w", err)
+	}
+
+	_, err = tx.
 		EnvAlias.
-		UpdateOneID(alias).
+		Delete().
+		Where(envalias.ID(alias), envalias.EnvID(envID), envalias.IsName(true)).
+		Exec(ctx)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to delete env alias '%s' for env '%s': %w", alias, envID, err)
+
+		fmt.Println(errMsg.Error())
+
+		return rollback(tx, errMsg)
+	}
+
+	err = tx.
+		EnvAlias.
+		Create().
+		SetID(alias).
 		SetEnvID(envID).
 		Exec(ctx)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to upsert env alias '%s' for env '%s': %w", alias, envID, err)
+		errMsg := fmt.Errorf("failed to update env alias '%s' for env '%s': %w", alias, envID, err)
+
+		fmt.Println(errMsg.Error())
+
+		return rollback(tx, errMsg)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		errMsg := fmt.Errorf("committing transaction: %w", err)
 
 		fmt.Println(errMsg.Error())
 
