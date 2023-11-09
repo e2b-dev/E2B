@@ -1,4 +1,3 @@
-import * as chalk from 'chalk'
 import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import * as e2b from '@e2b/sdk'
@@ -19,11 +18,6 @@ export const listCommand = new commander.Command('list')
       process.stdout.write('\n')
 
       const templatesResponse = await listTemplates(accessToken, {})
-
-      console.log(
-        chalk.default.underline(chalk.default.green('Sandbox templates')),
-      )
-
       const templates = templatesResponse.data
 
       if (!templates?.length) {
@@ -32,7 +26,7 @@ export const listCommand = new commander.Command('list')
         const table = new tablePrinter.Table({
           title: 'Sandbox templates',
           columns: [
-            { name: 'envID', alignment: 'left', title: 'EnvID' },
+            { name: 'envID', alignment: 'left', title: 'Template ID' },
             { name: 'aliases', alignment: 'left', title: 'Name', color: 'blue' },
           ],
           disabledColumns: ['public', 'buildID'],
