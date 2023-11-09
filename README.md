@@ -1,9 +1,9 @@
 <h1 align="center">
-  <font size="30">
-  <b>
+  <img width="400" src="/repo-assets/logo-circle.png" alt="e2b">
+</h1>
+
+<h1 align="center">
     Sandbox for AI Apps & Agents
-  </b>
-  </font>
 </h1>
 
 <h3 align="center">
