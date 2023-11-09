@@ -17,7 +17,7 @@ type TeamApiKey struct {
 
 func (TeamApiKey) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").Unique().StorageKey("api_key"),
+		field.String("id").Unique().StorageKey("api_key").Sensitive(),
 		field.Time("created_at").Immutable().Default(time.Now).Annotations(
 			entsql.Default("CURRENT_TIMESTAMP"),
 		),
