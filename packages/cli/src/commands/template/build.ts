@@ -176,7 +176,7 @@ export const buildCommand = new commander.Command('build')
           )} `,
         )
 
-        await waitForBuildFinish(accessToken, build.envID, build.buildID)
+        await waitForBuildFinish(accessToken, build.envID, build.buildID, name)
 
         if (!config) {
           await saveConfig(
@@ -201,10 +201,12 @@ async function waitForBuildFinish(
   accessToken: string,
   envID: string,
   buildID: string,
+  name?: string,
 ) {
   let logsOffset = 0
 
   let template: Awaited<ReturnType<typeof getTemplate>> | undefined
+  const aliases = name ? [name] : undefined
 
   process.stdout.write('\n')
   do {
@@ -245,7 +247,7 @@ async function waitForBuildFinish(
       case 'ready':
         console.log(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate(
-            { aliases: [name], ...template.data },
+            { aliases, ...template.data },
           )} finished.\n
           Now you can start creating your sandboxes from this template. You can find more here: 
           ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')}, section ${asBold('Spawn and control your sandbox')}\n`,
@@ -258,7 +260,7 @@ async function waitForBuildFinish(
         )
         throw new Error(
           `\n❌ Building sandbox template ${asFormattedSandboxTemplate(
-            { aliases: [name], ...template.data },
+            { aliases, ...template.data },
           )} failed.\nCheck the logs above for more details or contact us ${asPrimary('(https://e2b.dev/docs/getting-help)')} to get help.\n`,
         )
     }
