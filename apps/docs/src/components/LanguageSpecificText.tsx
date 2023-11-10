@@ -4,7 +4,17 @@ import { Children, isValidElement } from 'react'
 import { Tab } from '@headlessui/react'
 import { CodeGroupHeader, getPanelTitle, useTabGroupProps } from '@/components/Code'
 
-export function LanguageSpecificText({ children, title }) {
+export interface Props {
+  children: JSX.Element[]
+  title: string
+  isFileName?: boolean
+}
+
+export function LanguageSpecificText({
+  children,
+  title,
+  isFileName,
+}: Props) {
   const languages =
     Children.map(children, child =>
       getPanelTitle(isValidElement(child) ? child.props : {}),
@@ -17,6 +27,7 @@ export function LanguageSpecificText({ children, title }) {
     <CodeGroupHeader
       title={title}
       selectedIndex={tabGroupProps.selectedIndex}
+      isFileName={isFileName}
     >
       {children}
     </CodeGroupHeader>
