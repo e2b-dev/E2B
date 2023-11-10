@@ -14,6 +14,8 @@ import {
   asLocal,
   asLocalRelative,
   asPrimary,
+  asPython,
+  asTypescript,
 } from 'src/utils/format'
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
@@ -122,7 +124,7 @@ export const buildCommand = new commander.Command('build')
         const name = newName || config?.name
 
         console.log(
-          `Preparing sandbox template building (${filePaths.length} files in Docker build context). ${!filePaths.length ? `If you are using ${asLocal('.dockerignore')} check if it is configured correctly.`:''}`,
+          `Preparing sandbox template building (${filePaths.length} files in Docker build context). ${!filePaths.length ? `If you are using ${asLocal('.dockerignore')} check if it is configured correctly.` : ''}`,
         )
 
         const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
@@ -241,9 +243,10 @@ async function waitForBuildFinish(
           )} finished.\n
           Now you can start creating your sandboxes from this template. You can find more here:
           ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')}, section ${asBold('Spawn and control your sandbox.')}
+
           | ${asBold('Python SDK')} |
           ==============
-          from e2b import Sandbox
+          ${asPython(`from e2b import Sandbox
 
           # Start sandbox
           sandbox = Sandbox(id="${aliases?.length ? aliases[0] : template.data.envID}")
@@ -252,12 +255,12 @@ async function waitForBuildFinish(
           # https://e2b.dev/docs/sandbox/overview
 
           # Close sandbox once done
-          sandbox.close()
-
+          sandbox.close()`)
+          }
 
           | ${asBold('JS SDK')} |
           ==========
-          import { Sandbox } from '@e2b/sdk'
+          ${asTypescript(`import { Sandbox } from '@e2b/sdk'
 
           // Start sandbox
           const sandbox = await Sandbox.create({ id: '${aliases?.length ? aliases[0] : template.data.envID}' })
@@ -266,7 +269,8 @@ async function waitForBuildFinish(
           // https://e2b.dev/docs/sandbox/overview
 
           // Close sandbox once done
-          await sandbox.close()
+          await sandbox.close()`)
+          }
           `,
         )
         break

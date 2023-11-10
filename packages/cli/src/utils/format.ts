@@ -1,5 +1,6 @@
 import * as chalk from 'chalk'
 import * as e2b from '@e2b/sdk'
+import * as highlight from 'cli-highlight'
 
 import { cwdRelative } from './filesystem'
 
@@ -53,7 +54,16 @@ export function asBuildLogs(content: string) {
 export function asHeadline(content: string) {
   return chalk.default.underline(asPrimary(asBold(content)))
 }
+
 export function listAliases(aliases: string[] | undefined) {
   if (!aliases) return undefined
   return aliases.join(' | ')
+}
+
+export function asTypescript(code: string) {
+  return highlight.default(code, { language: 'typescript', ignoreIllegals: true })
+}
+
+export function asPython(code: string) {
+  return highlight.default(code, { language: 'python', ignoreIllegals: true })
 }

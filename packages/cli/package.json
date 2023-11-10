@@ -55,6 +55,7 @@
     "async-listen": "^3.0.1",
     "boxen": "^7.1.1",
     "chalk": "^5.3.0",
+    "cli-highlight": "^2.1.11",
     "commander": "^11.1.0",
     "common-tags": "^1.8.2",
     "console-table-printer": "^2.11.2",
