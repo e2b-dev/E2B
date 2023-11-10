@@ -7,7 +7,7 @@ Once the sandbox is built, we'll show how to spawn and control it with our SDK.
 
 ## Prerequisites
 1. [Node.js](https://nodejs.org/) 18.0.0 or later
-1. [E2B CLI](https://www.npmjs.com/package/@e2b/cli)
+1. [E2B CLI](/cli/installation)
 
 ## 1. Install E2B CLI
 
@@ -81,45 +81,46 @@ Started building the sandbox template my-agent-sandbox
 # ...
 # ...
 
-Successfully built b8649b84c829
-Successfully tagged us-central1-docker.pkg.dev/e2b-prod/custom-environments/1wdqsf9le9gk21ztb4mo:b3a31d32-fc01-164f-be9c-0b4ba5ac8f3c
-
 Running postprocessing. It can take up to few minutes.
 
-Running postprocessing. It can take up to few minutes.
+Postprocessing finished.
 
 ✅ Building sandbox template my-agent-sandbox finished.
 
-          Now you can start creating your sandboxes from this template. You can find more here:
-          https://e2b.dev/docs/guide/custom-sandbox, section Spawn and control your sandbox.
+┌ Usage examples ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                                      │
+│  You can use E2B Python or JS SDK to spawn sandboxes now.                                                                                            │
+│  Find more here - https://e2b.dev/docs/guide/custom-sandbox in Spawn and control your sandbox section.                                               │
+│                                                                                                                                                      │
+│───────────────────────────────────────────────────────────────────── Python SDK ─────────────────────────────────────────────────────────────────────│
+│                                                                                                                                                      │
+│  from e2b import Sandbox                                                                                                                             │
+│                                                                                                                                                      │
+│  # Start sandbox                                                                                                                                     │
+│  sandbox = Sandbox(id="my-agent-sandbox")                                                                                                            │
+│                                                                                                                                                      │
+│  # Interact with sandbox. Learn more here:                                                                                                           │
+│  # https://e2b.dev/docs/sandbox/overview                                                                                                             │
+│                                                                                                                                                      │
+│  # Close sandbox once done                                                                                                                           │
+│  sandbox.close()                                                                                                                                     │
+│                                                                                                                                                      │
+│─────────────────────────────────────────────────────────────────────── JS SDK ───────────────────────────────────────────────────────────────────────│
+│                                                                                                                                                      │
+│  import { Sandbox } from '@e2b/sdk'                                                                                                                  │
+│                                                                                                                                                      │
+│  // Start sandbox                                                                                                                                    │
+│  const sandbox = await Sandbox.create({ id: 'my-agent-sandbox' })                                                                                    │
+│                                                                                                                                                      │
+│  // Interact with sandbox. Learn more here:                                                                                                          │
+│  // https://e2b.dev/docs/sandbox/overview                                                                                                            │
+│                                                                                                                                                      │
+│  // Close sandbox once done                                                                                                                          │
+│  await sandbox.close()                                                                                                                               │
+│                                                                                                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-          | Python SDK |
-          ==============
-          from e2b import Sandbox
-
-          # Start sandbox
-          sandbox = Sandbox(id="my-agent-sandbox")
-
-          # Interact with sandbox. Learn more here:
-          # https://e2b.dev/docs/sandbox/overview
-
-          # Close sandbox once done
-          sandbox.close()
-
-          | JS SDK |
-          ==========
-          import { Sandbox } from '@e2b/sdk'
-
-          // Start sandbox
-          const sandbox = await Sandbox.create({ id: 'my-agent-sandbox' })
-
-          // Interact with sandbox. Learn more here:
-          // https://e2b.dev/docs/sandbox/overview
-
-          // Close sandbox once done
-          await sandbox.close()
-
-Created config ./e2b.toml
+Execution time: 42.55s
 ```
 </CodeGroup>
 
@@ -136,7 +137,7 @@ name = "my-agent-sandbox"
 
 | Sandbox template name | Sandbox template ID |
 ---|---|
-|`e2b.Dockerfile`|`1wdqsf9le9gk21ztb4mo`|
+|`my-agent-sandbox`|`1wdqsf9le9gk21ztb4mo`|
 
 ### Updating your sandbox template
 If you want to update your sandbox template, you run the same command you did to build it.
