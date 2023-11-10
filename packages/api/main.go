@@ -16,11 +16,14 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/pprof"
+	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	serviceName = "orchestration-api"
+	serviceName        = "orchestration-api"
+	maxMultipartMemory = 1 << 28 // 256 MiB
+	maxUploadLimit     = 1 << 30 // 1 GiB
 )
 
 var ignoreLoggingForPaths = []string{"/health"}
@@ -80,10 +83,14 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 			Options: openapi3filter.Options{
 				AuthenticationFunc: AuthenticationFunc,
 			},
-		}))
+		}),
+		limits.RequestSizeLimiter(maxMultipartMemory),
+	)
 
 	// We now register our store above as the handler for the interface
 	api.RegisterHandlers(r, apiStore)
+
+	r.MaxMultipartMemory = maxMultipartMemory
 
 	s := &http.Server{
 		Handler: r,
