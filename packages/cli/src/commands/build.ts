@@ -57,8 +57,8 @@ export const buildCommand = new commander.Command('build')
     )} or ${asLocal(fallbackDockerfileName)} in root directory`,
   )
   .option(
-    '-n, --name <name>',
-    'Specify name of sandbox template. You can use the name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes and underscores',
+    '-n, --name <template-name>',
+    'Specify sandbox template name. You can use the template name to start the sandbox with SDK. The template name must be lowercase and contain only letters, numbers, dashes and underscores',
   )
   .alias('bd')
   .action(
@@ -121,7 +121,7 @@ export const buildCommand = new commander.Command('build')
 
         if (newName && config?.name && newName !== config?.name) {
           console.log(
-            `The name of the sandbox will be changed from ${asLocal(config.name)} to ${asLocal(newName)}.`,
+            `The sandbox template name will be changed from ${asLocal(config.name)} to ${asLocal(newName)}.`,
           )
         }
         const name = newName || config?.name

@@ -27,7 +27,7 @@ export const listCommand = new commander.Command('list')
           title: 'Sandbox templates',
           columns: [
             { name: 'envID', alignment: 'left', title: 'Template ID' },
-            { name: 'aliases', alignment: 'left', title: 'Name', color: 'blue' },
+            { name: 'aliases', alignment: 'left', title: 'Template Name', color: 'blue' },
           ],
           disabledColumns: ['public', 'buildID'],
           rows: templates.map((template) => ({ ...template, aliases: listAliases(template.aliases) })),
