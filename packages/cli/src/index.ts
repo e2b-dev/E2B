@@ -14,6 +14,7 @@ updateNotifier.default({
   updateCheckInterval: 1000 * 60 * 60 * 8, // 8 hours
 }).notify()
 
+
 program
   .version(packageJSON.version, undefined, 'Display E2B CLI version')
   .addOption(new Option('-cmd2json').hideHelp()).on('option:-cmd2json', () => {
