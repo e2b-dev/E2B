@@ -1,13 +1,13 @@
+<p align="center">
+  <img width="100" src="/readme-assets/logo-circle.png" alt="e2b logo">
+</p>
+
 <h1 align="center">
-  <font size="30">
-  <b>
-    E2B - Sandbox Runtime for LLMs
-  </b>
-  </font>
+  Sandbox for AI Apps & Agents
 </h1>
 
 <h3 align="center">
-  Sandboxed cloud environments for AI-powered apps and agentic workflows
+  Secure sandboxed cloud environments made for AI agents and AI apps
 </h3>
 
 <h4 align="center">
@@ -18,53 +18,90 @@
 </h4>
 
 <h4 align="center">
-  <a href="https://twitter.com/e2b_dev">
-    <img src="https://img.shields.io/twitter/follow/infisical?label=Follow" alt="e2b Twitter" />
-  </a>
-  <a href="https://discord.gg/U7KEcGErtQ">
-    <img src="https://img.shields.io/badge/chat-on%20Discord-blue" alt="Discord community server" />
-  </a>
   <a href="https://pypi.org/project/e2b/">
     <img alt="Last 1 month downloads for the Python SDK" loading="lazy" width="200" height="20" decoding="async" data-nimg="1"
     style="color:transparent;width:auto;height:100%" src="https://img.shields.io/pypi/dm/e2b?label=PyPI%20Downloads">
   </a>
-
-<a href="https://www.npmjs.com/package/@e2b/sdk">
+  <a href="https://www.npmjs.com/package/@e2b/sdk">
     <img alt="Last 1 month downloads for the Python SDK" loading="lazy" width="200" height="20" decoding="async" data-nimg="1"
     style="color:transparent;width:auto;height:100%" src="https://img.shields.io/npm/dm/%40e2b/sdk?label=NPM%20Downloads">
   </a>
 </h4>
 
-[E2B](https://e2b.dev) is cloud for AI agents and AI apps. With E2B, you can
-create AI playgrounds. In these AI playgrounds, you can let your AI agents and
-apps:
+<img width="100%" src="/readme-assets/preview.png" alt="Cover image">
 
-- Run any code and terminal command in a sandboxed environment
-- Install dependencies and programs
-- Use filesystem
-- Upload and download files
-- Access the internet
-- Start a web server that's accessible from the internet
-- Clone git repositories
-- Start any process (even long-running such as a database)
+## What is E2B?
 
-This just a few examples of what can be done with our agent cloud environments.
+E2B Sandbox is a secure sandboxed cloud environment made for AI agents and AI
+apps. Sandboxes allow AI agents and apps to have long running cloud secure
+environments. In these environments, large language models can use the same
+tools as humans do. For example:
 
-**Our SDK works with any AI agent (no matter what framework, you're using), and
-without the need to manage any infrastructure.**
+- Cloud browsers
+- GitHub repositories and CLIs
+- Coding tools like linters, autocomplete, "go-to defintion"
+- Running LLM generated code
+- Audio & video editing
+
+**The E2B sandbox can be connected to any LLM and any AI agent or app.**
 
 ## Getting Started & Documentation
 
-Visit [docs](https://e2b.dev/docs) to get started with the SDK.
+> Please visit [documentation](https://e2b.dev/docs) to get started.
+
+To create and control a sandbox, you use our SDK:
 
 ### Python
+
+#### Install SDK
 
 ```bash
 pip install e2b
 ```
 
+#### Start sandbox
+
+```py
+from e2b import Sandbox
+
+# Create sandbox
+sandbox = Sandbox()
+
+# Let an LLM use the sandbox here
+# Visit https://e2b.dev/docs/sandbox/overview to learn more about sandboxes.
+
+# Close sandbox once done
+sandbox.close()
+```
+
 ### JavaScript & TypeScript
+
+#### Install SDK
 
 ```bash
 npm install @e2b/sdk
 ```
+
+#### Start sandbox
+
+```js
+import { Sandbox } from "@e2b/sdk";
+
+// Create sandbox
+const sandbox = await Sandbox.create();
+
+// Let an LLM use the sandbox here
+// Visit https://e2b.dev/docs/sandbox/overview to learn more about sandboxes.
+
+// Close sandbox once done
+await sandbox.close();
+```
+
+## Repository Structure
+
+This repository is a monorepo containing:
+
+1. [Python SDK](/packages/python-sdk)
+1. [JS SDK](/packages/js-sdk)
+1. [CLI](/packages/cli)
+1. [Documentation](/apps/docs/)

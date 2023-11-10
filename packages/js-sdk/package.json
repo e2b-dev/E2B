@@ -1,6 +1,6 @@
 {
   "name": "@e2b/sdk",
-  "version": "0.8.1",
+  "version": "0.8.5",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -12,7 +12,8 @@
   "bugs": "https://github.com/e2b-dev/e2b/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/e2b-dev/e2b/tree/main/packages/js-sdk"
+    "url": "https://github.com/e2b-dev/e2b",
+    "directory": "packages/js-sdk"
   },
   "publishConfig": {
     "access": "public"

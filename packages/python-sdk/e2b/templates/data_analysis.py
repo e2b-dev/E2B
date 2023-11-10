@@ -101,7 +101,12 @@ class DataAnalysis(Sandbox):
 
         return process.output.stdout, process.output.stderr, list(artifacts)
 
-    def _install_packages(self, command: str, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT) -> None:
+    def _install_packages(
+        self,
+        command: str,
+        package_names: Union[str, List[str]],
+        timeout: Optional[float] = TIMEOUT,
+    ) -> None:
         if isinstance(package_names, list):
             package_names = " ".join(package_names)
 
@@ -116,6 +121,7 @@ class DataAnalysis(Sandbox):
             raise Exception(
                 f"Failed to install package {package_names}: {process.output.stderr}"
             )
+
     def install_python_packages(
         self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
     ) -> None:
@@ -124,4 +130,9 @@ class DataAnalysis(Sandbox):
     def install_system_packages(
         self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
     ) -> None:
-        self._install_packages("sudo apt-get install -y", package_names, timeout=timeout)
+        self._install_packages(
+            "sudo apt-get install -y", package_names, timeout=timeout
+        )
+
+
+CodeInterpreter = DataAnalysis

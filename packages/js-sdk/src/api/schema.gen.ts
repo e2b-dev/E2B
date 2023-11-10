@@ -4,65 +4,65 @@
  */
 
 export interface paths {
-  '/health': {
+  "/health": {
     /** Health check */
     get: {
       responses: {
         /** Request was successful */
         200: unknown;
-        401: components['responses']['401'];
+        401: components["responses"]["401"];
       };
     };
   };
-  '/instances': {
+  "/instances": {
     /** Create an instance from the environment */
     post: {
       responses: {
         /** The instance was created successfully */
         201: {
           content: {
-            'application/json': components['schemas']['Instance'];
+            "application/json": components["schemas"]["Instance"];
           };
         };
-        400: components['responses']['400'];
-        401: components['responses']['401'];
-        500: components['responses']['500'];
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
       requestBody: {
         content: {
-          'application/json': components['schemas']['NewInstance'];
+          "application/json": components["schemas"]["NewInstance"];
         };
       };
     };
   };
-  '/instances/{instanceID}/refreshes': {
+  "/instances/{instanceID}/refreshes": {
     /** Refresh the instance extending its time to live */
     post: {
       parameters: {
         path: {
-          instanceID: components['parameters']['instanceID'];
+          instanceID: components["parameters"]["instanceID"];
         };
       };
       responses: {
         /** Successfully refreshed the instance */
         204: never;
-        401: components['responses']['401'];
-        404: components['responses']['404'];
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
       };
     };
   };
-  '/envs': {
+  "/envs": {
     /** List all environments */
     get: {
       responses: {
         /** Successfully returned all environments */
         200: {
           content: {
-            'application/json': components['schemas']['Environment'][];
+            "application/json": components["schemas"]["Environment"][];
           };
         };
-        401: components['responses']['401'];
-        500: components['responses']['500'];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
     };
     /** Create a new environment */
@@ -71,15 +71,17 @@ export interface paths {
         /** The build has started */
         202: {
           content: {
-            'application/json': components['schemas']['Environment'];
+            "application/json": components["schemas"]["Environment"];
           };
         };
-        401: components['responses']['401'];
-        500: components['responses']['500'];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
       requestBody: {
         content: {
-          'multipart/form-data': {
+          "multipart/form-data": {
+            /** @description Alias of the environment */
+            alias?: string;
             /**
              * Format: binary
              * @description Docker build context
@@ -92,27 +94,29 @@ export interface paths {
       };
     };
   };
-  '/envs/{envID}': {
+  "/envs/{envID}": {
     /** Rebuild an environment */
     post: {
       parameters: {
         path: {
-          envID: components['parameters']['envID'];
+          envID: components["parameters"]["envID"];
         };
       };
       responses: {
         /** The build has started */
         202: {
           content: {
-            'application/json': components['schemas']['Environment'];
+            "application/json": components["schemas"]["Environment"];
           };
         };
-        401: components['responses']['401'];
-        500: components['responses']['500'];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
       requestBody: {
         content: {
-          'multipart/form-data': {
+          "multipart/form-data": {
+            /** @description Alias of the environment */
+            alias?: string;
             /**
              * Format: binary
              * @description Docker build context
@@ -120,20 +124,18 @@ export interface paths {
             buildContext: string;
             /** @description Dockerfile content */
             dockerfile: string;
-            /** @description ID of the environment */
-            envID: string;
           };
         };
       };
     };
   };
-  '/envs/{envID}/builds/{buildID}': {
+  "/envs/{envID}/builds/{buildID}": {
     /** Get environment build info */
     get: {
       parameters: {
         path: {
-          envID: components['parameters']['envID'];
-          buildID: components['parameters']['buildID'];
+          envID: components["parameters"]["envID"];
+          buildID: components["parameters"]["buildID"];
         };
         query: {
           /** Index of the starting build log that should be returned with the environment */
@@ -144,33 +146,33 @@ export interface paths {
         /** Successfully returned the environment */
         200: {
           content: {
-            'application/json': components['schemas']['EnvironmentBuild'];
+            "application/json": components["schemas"]["EnvironmentBuild"];
           };
         };
-        401: components['responses']['401'];
-        404: components['responses']['404'];
-        500: components['responses']['500'];
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
       };
     };
   };
-  '/envs/{envID}/builds/{buildID}/logs': {
+  "/envs/{envID}/builds/{buildID}/logs": {
     /** Add a build log */
     post: {
       parameters: {
         path: {
-          envID: components['parameters']['envID'];
-          buildID: components['parameters']['buildID'];
+          envID: components["parameters"]["envID"];
+          buildID: components["parameters"]["buildID"];
         };
       };
       responses: {
         /** Successfully added log */
         201: unknown;
-        401: components['responses']['401'];
-        404: components['responses']['404'];
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
       };
       requestBody: {
         content: {
-          'application/json': {
+          "application/json": {
             /** @description API secret */
             apiSecret: string;
             logs: string[];
@@ -194,6 +196,8 @@ export interface components {
       buildID: string;
       /** @description Whether the environment is public or only accessible by the team */
       public: boolean;
+      /** @description Aliases of the environment */
+      aliases?: string[];
     };
     EnvironmentBuild: {
       /**
@@ -209,7 +213,7 @@ export interface components {
        * @description Status of the environment
        * @enum {string}
        */
-      status?: 'building' | 'ready' | 'error';
+      status?: "building" | "ready" | "error";
     } & {
       finished: unknown;
     };
@@ -235,25 +239,25 @@ export interface components {
     /** Bad request */
     400: {
       content: {
-        'application/json': components['schemas']['Error'];
+        "application/json": components["schemas"]["Error"];
       };
     };
     /** Authentication error */
     401: {
       content: {
-        'application/json': components['schemas']['Error'];
+        "application/json": components["schemas"]["Error"];
       };
     };
     /** Not found */
     404: {
       content: {
-        'application/json': components['schemas']['Error'];
+        "application/json": components["schemas"]["Error"];
       };
     };
     /** Server error */
     500: {
       content: {
-        'application/json': components['schemas']['Error'];
+        "application/json": components["schemas"]["Error"];
       };
     };
   };
@@ -264,8 +268,6 @@ export interface components {
   };
 }
 
-export interface operations {
-}
+export interface operations {}
 
-export interface external {
-}
+export interface external {}

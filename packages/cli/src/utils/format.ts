@@ -1,18 +1,19 @@
 import * as chalk from 'chalk'
 import * as e2b from '@e2b/sdk'
+import * as highlight from 'cli-highlight'
 
 import { cwdRelative } from './filesystem'
 
 export function asFormattedSandboxTemplate(
-  template: Pick<e2b.components['schemas']['Environment'], 'envID'>,
+  template: Pick<e2b.components['schemas']['Environment'], 'envID' | 'aliases'>,
   configLocalPath?: string,
 ) {
-  const id = asBold(template.envID)
+  const name = asBold(listAliases(template.aliases) ?? template.envID)
   const configPath = configLocalPath
     ? asDim(' <-> ') + asLocalRelative(configLocalPath)
     : ''
 
-  return `${id}${configPath}`
+  return `${name}${configPath}`
 }
 
 export function asFormattedError(text: string | undefined, err?: any) {
@@ -52,4 +53,17 @@ export function asBuildLogs(content: string) {
 
 export function asHeadline(content: string) {
   return chalk.default.underline(asPrimary(asBold(content)))
+}
+
+export function listAliases(aliases: string[] | undefined) {
+  if (!aliases) return undefined
+  return aliases.join(' | ')
+}
+
+export function asTypescript(code: string) {
+  return highlight.default(code, { language: 'typescript', ignoreIllegals: true })
+}
+
+export function asPython(code: string) {
+  return highlight.default(code, { language: 'python', ignoreIllegals: true })
 }

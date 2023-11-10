@@ -1,25 +1,6 @@
 <h1 align="center">
-<span style="font-size:48px;"><b>E2B CLI</b></span>
+  E2B CLI
 </h1>
-
-<h4 align="center">
-  <a href="https://e2b.dev/docs">Docs</a> |
-  <a href="https://e2b.dev">Website</a> |
-  <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
-  <a href="https://twitter.com/e2b_dev">Twitter</a>
-</h4>
-
-<h4 align="center">
-  <a href="https://discord.gg/U7KEcGErtQ">
-    <img src="https://img.shields.io/badge/chat-on%20Discord-blue" alt="Discord community server" />
-  </a>
-  <a href="https://twitter.com/e2b_dev">
-    <img src="https://img.shields.io/twitter/follow/infisical?label=Follow" alt="e2b Twitter" />
-  </a>
-</h4>
-
-[E2B](https://e2b.dev) (_english2bits_) is a cloud operating system for AI
-agents.
 
 This CLI tool allows you to build and manage E2B sandbox templates from your
 terminal.

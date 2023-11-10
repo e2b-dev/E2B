@@ -1,37 +1,55 @@
 # Custom Sandbox
+<Note>
+E2B Sandbox is a secure sandboxed cloud environment made for AI agents and AI apps. Sandboxes allow AI agents and apps to have long running cloud secure environments. In these environments, large language models can use the same tools as humans do.
 
-Sandbox is a cloud environment for your AI apps.
-Read [here](/sandbox/overview) about how E2B Sandbox is made exactly for your AI apps.
+Read more [here](/sandbox/overview) about E2B Sandboxes
+</Note>
 
-To build a custom sandbox, you create the [sandbox template file](/sandbox/templates/template-file) and then build your custom sandbox with the E2B CLI.
+Custom sandboxes allows you to spawn a sandbox with a pre-defined environment by you and then control it with our SDK.
+
+You can build a custom sandbox by creating the [Sandbox Template](/sandbox/templates/template-file). Sandbox template is a Dockerfile that describes the environment of your sandbox.
+
+Once you build your custom sandbox template, you can spawn multiple isolated sandboxes from it.
+
+## How it works
+1. [Provide the sandbox template file](/sandbox/templates/template-file)
+1. [Build a sandbox template from it using our CLI](/guide/custom-sandbox#4-build-custom-sandbox)
+1. Get a template ID from the CLI:
+    ```sh
+    # ... truncated CLI output
+    ✅ Building sandbox template 3y5bvra6kgq0kaumgztu finished.
+    ```
+1. Pass the template ID to our SDK like this:
+    <CodeGroup title="Using custom sandbox with SDK" isRunnable={false}>
+      ```js {{ language: 'js' }}
+      import { Sandbox } from '@e2b/sdk'
+
+      // Create new sandbox
+      const sandbox = await Sandbox.create({
+        id: '<sandbox-template-id>', // You get sandbox ID from the CLI after you run `$ e2b build`
+      })
+
+      // Close sandbox once done
+      await sandbox.close()
+      ```
+
+      ```python {{ language: 'python' }}
+      from e2b import Sandbox
+
+      # Create new sandbox
+      sandbox = Sandbox(
+        id="<sandbox-template-id>", # You get sandbox ID from the CLI after you run `$ e2b build`
+      )
+
+      # Close sandbox once done
+      sandbox.close()
+      ```
+    </CodeGroup>
+1. Run the code and we spawn a sandbox based on the template you built in step 2
+
+Now you can do step 4/5 multiple times using the same ID, always creating a separate sandbox instance.
 
 <Note>
 Follow [our guide](/guide/custom-sandbox) on how to create a custom sandbox.
 </Note>
 
-
-<CodeGroup title="Using custom sandbox with SDK" isRunnable={false}>
-```js {{ language: 'js' }}
-import { Sandbox } from '@e2b/sdk'
-
-// Create new sandbox
-const sandbox = await Sandbox.create({
-  id: '<sandbox-id>', // You get sandbox ID from the CLI after you run `$ e2b build`
-})
-
-// Close sandbox once done
-await sandbox.close()
-```
-
-```python {{ language: 'python' }}
-from e2b import Sandbox
-
-# Create new sandbox
-sandbox = Sandbox(
-  id: "<sandbox-id>", # You get sandbox ID from the CLI after you run `$ e2b build`
-)
-
-# Close sandbox once done
-sandbox.close()
-```
-</CodeGroup>

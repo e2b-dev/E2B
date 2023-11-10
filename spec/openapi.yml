@@ -88,6 +88,11 @@ components:
         public:
           type: boolean
           description: Whether the environment is public or only accessible by the team
+        aliases:
+          type: array
+          description: Aliases of the environment
+          items:
+            type: string
     EnvironmentBuild:
       required:
         - envID
@@ -234,6 +239,9 @@ paths:
                 - buildContext
                 - dockerfile
               properties:
+                alias:
+                  description: Alias of the environment
+                  type: string
                 buildContext:
                   description: Docker build context
                   type: string
@@ -274,8 +282,10 @@ paths:
               required:
                 - buildContext
                 - dockerfile
-                - envID
               properties:
+                alias:
+                  description: Alias of the environment
+                  type: string
                 buildContext:
                   description: Docker build context
                   type: string
@@ -283,9 +293,6 @@ paths:
                 dockerfile:
                   type: string
                   description: Dockerfile content
-                envID:
-                  type: string
-                  description: ID of the environment
             encoding:
               buildContext:
                 contentType: application/octet-stream

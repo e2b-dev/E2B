@@ -4,7 +4,7 @@ export const WS_RECONNECT_INTERVAL = 600 // 600ms
 export const TIMEOUT = 60_000 // 60s
 
 export const API_DOMAIN = 'api.e2b.dev'
-export const API_HOST = process?.env?.DEBUG
+export const API_HOST = process?.env?.E2B_DEBUG
   ? 'http://localhost:3000'
   : `https://${API_DOMAIN}`
 export const SANDBOX_DOMAIN = 'e2b.dev'
