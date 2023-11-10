@@ -1,17 +1,28 @@
+import Image from 'next/image'
+import imgCustomSandbox from '@/images/custom-sandbox.png'
+
 # Template File
 
-The sandbox template file is a simple Dockerfile named `e2b.Dockerfile` that's used to build a custom sandbox. {{ className: 'lead' }}
-
-Follow [our guide](/guide/custom-sandbox) on how to create a template file to build your own custom sandbox.
+The template file is a Dockerfile named `e2b.Dockerfile`. The template file is used to define an environment for your custom sandbox. {{ className: 'lead' }}
 
 <Note>
+Follow our [guide](/guide/custom-sandbox) on how to create a custom sandbox.
+</Note>
+
+<Image
+  src={imgCustomSandbox}
+  className="rounded max-w-full"
+  alt="Graphics explaining how custom sandbox works"
+  unoptimized
+/>
+
+## `e2b.Dockerfile`
 The Dockerfile must be Debian based (e.g. Ubuntu). Only the following [Dockerfile commands](https://docs.docker.com/engine/reference/builder/) are supported:
   - `FROM`
   - `ADD`
   - `COPY`
   - `RUN`
   - `WORKDIR`
-</Note>
 
 
 ## Example
@@ -19,7 +30,7 @@ The Dockerfile must be Debian based (e.g. Ubuntu). Only the following [Dockerfil
 The following example template file defines a Ubuntu-based sandbox with installed GitHub CLI.
 
 
-<CodeGroup isRunnable={false}>
+<CodeGroup isFileName title="e2b.Dockerfile" isRunnable={false}>
 ```sh
 # You can use most of the Debian-based base images
 FROM ubuntu:22.04
