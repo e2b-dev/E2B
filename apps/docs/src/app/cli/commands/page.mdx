@@ -2,27 +2,46 @@
 
 Build your sandbox with our CLI. {{ className: 'lead' }}
 
-You can always use `--help` for more information about commands and options.
+<Note>
+You can use `--help` flag for more information about commands.
+</Note>
 
 ## `build`
 
-Build a sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` in the root directory. By default, the root directory is the current working directory. This command also creates the `e2b.toml` config.
+Builds a sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` from the root directory.
+By default, the root directory is the current working directory.
+This command also creates the `e2b.toml` config.
 
 ```bash
 e2b build
 ```
 
+<Note>
+Running `e2b build` without specifying a template with the `[id]` argument will rebuild template defined by the `e2b.toml` config.
+
+If there is no `e2b.toml` config a new template will be created.
+</Note>
+
+#### **Arguments**
+
+<Options>
+  <Option type="[id]" name="template-name-or-id">
+    Specify the template you want to rebuild. You can use the template name or ID.
+  </Option>
+</Options>
+
+
 #### **Options**
 
 <Options>
-  <Option name="name" type="-n, --name">
-    Specify the name of the sandbox template. You can use the name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes, and underscores
+  <Option type="-n, --name" name="template-name">
+    Specify the name of the sandbox template. You can use the template name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes, and underscores.
   </Option>
-  <Option name="path" type="-p, --path">
-    Change the root directory where command is executed to the `path` directory
+  <Option type="-p, --path" name="path">
+    Change the root directory where command is executed to the `path` directory.
   </Option>
-  <Option name="dockerfile" type="-d, --dockerfile">
-    Specify the path to Dockerfile. By default E2B tries to find `e2b.Dockerfile` or `Dockerfile` in the root directory
+  <Option type="-d, --dockerfile" name="dockerfile">
+    Specify the path to Dockerfile. By default E2B tries to find `e2b.Dockerfile` or `Dockerfile` in the root directory.
   </Option>
 </Options>
 
@@ -30,7 +49,8 @@ e2b build
 
 ## `init`
 
-Create basic E2B Dockerfile (`./e2b.Dockerfile`) in current directory. You can then run `e2b build` to build sandbox template from this Dockerfile
+Creates a basic Dockerfile (`./e2b.Dockerfile`) in current directory.
+You can then run `e2b build` to build sandbox template from this Dockerfile.
 
 ```bash
 e2b template init
@@ -40,7 +60,7 @@ e2b template init
 
 <Options>
   <Option name="path" type="-p, --path">
-    Change the root directory where command is executed to `path` directory
+    Change the root directory where command is executed to `path` directory.
   </Option>
 </Options>
 
@@ -48,7 +68,7 @@ e2b template init
 
 ## `list`
 
-List your sandbox templates
+List your sandbox templates.
 
 ```bash
 e2b list
@@ -58,7 +78,7 @@ e2b list
 
 ## `login`
 
-Log in to CLI. It will save your access token in `~/.e2b` file.
+Log in to the CLI. It will save your access token in `~/.e2b` file.
 
 ```bash
 e2b login
@@ -68,7 +88,7 @@ e2b login
 
 ## `logout`
 
-Log out from CLI. It will remove your access token from `~/.e2b` file.
+Log out of the CLI. It will remove your access token from `~/.e2b` file.
 
 ```bash
 e2b logout
@@ -78,17 +98,32 @@ e2b logout
 
 ## `shell`
 
-Connect terminal to sandbox. This command can be used to debug your sandbox template. It works as `docker run -it <image> bash` command.
+Spawns a sandbox and connects your terminal to the sandbox.
+This command can be used to debug your sandbox template.
+It works similar to the `docker run -it <image> bash` command.
 
 ```bash
 e2b shell
 ```
 
+<Note>
+Running `e2b shell` without specifying a template with the `[id]` argument will spawn sandbox defined by the `e2b.toml` config.
+</Note>
+
+#### **Arguments**
+
+<Options>
+  <Option type="[id]" name="template-name-or-id">
+    Specify the template you want to spawn sandbox from. You can use the template name or ID.
+  </Option>
+</Options>
+
+
 #### **Options**
 
 <Options>
   <Option name="path" type="-p, --path">
-    Change root directory where command is executed to `path` directory
+    Change the root directory where command is executed to `path` directory.
   </Option>
 </Options>
 
