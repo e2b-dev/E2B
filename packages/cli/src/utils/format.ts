@@ -1,6 +1,7 @@
 import * as chalk from 'chalk'
 import * as e2b from '@e2b/sdk'
 import * as highlight from 'cli-highlight'
+import * as boxen from 'boxen'
 
 import { cwdRelative } from './filesystem'
 
@@ -66,4 +67,53 @@ export function asTypescript(code: string) {
 
 export function asPython(code: string) {
   return highlight.default(code, { language: 'python', ignoreIllegals: true })
+}
+
+const borderStyle = {
+  topLeft: '',
+  topRight: '',
+  bottomLeft: '',
+  bottomRight: '',
+  top: '',
+  bottom: '',
+  left: '',
+  right: ''
+} as const
+
+const horizontalPadding = 2
+const verticalPadding = 1
+
+export function withDelimiter(content: string, title: string, isLast?: boolean) {
+  return boxen.default(content, {
+    borderStyle: {
+      ...borderStyle,
+      top: '─',
+    },
+    titleAlignment: 'center',
+    float: 'left',
+    title: title ? asBold(title) : undefined,
+    margin: 0,
+    height: 0,
+    fullscreen: w => [w, 0],
+    padding: {
+      bottom: isLast ? 0 : verticalPadding,
+      left: horizontalPadding,
+      right: horizontalPadding,
+      top: verticalPadding,
+    },
+  })
+}
+
+export function withMargin(content: string) {
+  return boxen.default(content, {
+    borderStyle,
+    margin: 0,
+    float: 'left',
+    padding: {
+      bottom: 0,
+      left: horizontalPadding,
+      right: horizontalPadding,
+      top: 0,
+    }
+  })
 }
