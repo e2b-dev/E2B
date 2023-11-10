@@ -2,29 +2,24 @@ import Image from 'next/image'
 import imgCustomSandbox from '@/images/custom-sandbox.png'
 
 # Custom Sandbox
+
+Custom sandboxes allow you to spawn a sandbox with an environment predefined by you and then control it with our SDK.
+
 <Note>
-E2B Sandbox is a secure sandboxed cloud environment made for AI agents and AI apps. Sandboxes allow AI agents and apps to have long running cloud secure environments. In these environments, large language models can use the same tools as humans do.
+The E2B Sandbox is a secure way to run your AI app. It is a long-running cloud environment where you can let any LLM (GPTs, Claude, local LLMs, etc) use tools exactly like you would do locally.
 
 Read more about E2B Sandboxes [here](/sandbox/overview).
 </Note>
 
-Custom sandboxes allows you to spawn a sandbox with a pre-defined environment by you and then control it with our SDK.
 
-You can build a custom sandbox by creating the [Sandbox Template](/sandbox/templates/template-file). Sandbox template is a Dockerfile that describes the environment of your sandbox.
+## How Custom Sandboxes Work
 
-Once you build your custom sandbox template, you can spawn multiple isolated sandboxes from it.
+<Note>
+Follow our [guide](/guide/custom-sandbox) on how to create a custom sandbox.
+</Note>
 
-<Image
-  src={imgCustomSandbox}
-  className="rounded max-w-full"
-  alt="Graphics explaining how custom sandbox works"
-  unoptimized
-/>
-
-
-## How it works
-1. [Provide the sandbox template file](/sandbox/templates/template-file)
-1. [Build a sandbox template from it using our CLI](/guide/custom-sandbox#4-build-custom-sandbox)
+1. You build a custom sandbox by creating the [Sandbox Template](/sandbox/templates/template-file) which is a Dockerfile describing the environment of your sandbox.
+1. Build a sandbox template from it using our CLI
 1. Get a template ID from the CLI:
     ```sh
     # ... truncated CLI output
@@ -60,9 +55,15 @@ Once you build your custom sandbox template, you can spawn multiple isolated san
     </CodeGroup>
 1. Run the code and we spawn a sandbox based on the template you built in step 2
 
-Now you can do step 4/5 multiple times using the same ID, always creating a separate sandbox instance.
+Once you build your custom sandbox template, you can spawn multiple isolated sandboxes from it. You can repeat the steps 4, 5 multiple times using the same ID, always creating a separate sandbox instance.
+
+<Image
+  src={imgCustomSandbox}
+  className="rounded max-w-full"
+  alt="Graphics explaining how custom sandbox works"
+  unoptimized
+/>
 
 <Note>
 Follow [our guide](/guide/custom-sandbox) on how to create a custom sandbox.
 </Note>
-

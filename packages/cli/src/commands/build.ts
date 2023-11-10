@@ -3,6 +3,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as e2b from '@e2b/sdk'
 import * as stripAnsi from 'strip-ansi'
+import * as boxen from 'boxen'
 
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
@@ -16,6 +17,8 @@ import {
   asPrimary,
   asPython,
   asTypescript,
+  withDelimiter,
+  withMargin,
 } from 'src/utils/format'
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
@@ -54,8 +57,8 @@ export const buildCommand = new commander.Command('build')
     )} or ${asLocal(fallbackDockerfileName)} in root directory`,
   )
   .option(
-    '-n, --name <name>',
-    'Specify name of sandbox template. You can use the name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes and underscores.',
+    '-n, --name <template-name>',
+    'Specify sandbox template name. You can use the template name to start the sandbox with SDK. The template name must be lowercase and contain only letters, numbers, dashes and underscores',
   )
   .alias('bd')
   .action(
@@ -118,7 +121,7 @@ export const buildCommand = new commander.Command('build')
 
         if (newName && config?.name && newName !== config?.name) {
           console.log(
-            `The name of the sandbox will be changed from ${asLocal(config.name)} to ${asLocal(newName)}.`,
+            `The sandbox template name will be changed from ${asLocal(config.name)} to ${asLocal(newName)}.`,
           )
         }
         const name = newName || config?.name
@@ -181,7 +184,6 @@ export const buildCommand = new commander.Command('build')
           },
           true,
         )
-        console.log(`Created config ${asLocalRelative(relativeConfigPath)}`)
       } catch (err: any) {
         console.error(err)
         process.exit(1)
@@ -236,45 +238,50 @@ async function waitForBuildFinish(
           process.stdout.write(asBuildLogs(stripAnsi.default(line))),
         )
         break
-      case 'ready':
+      case 'ready': {
+
+        const pythonExample = asPython(`from e2b import Sandbox
+
+# Start sandbox
+sandbox = Sandbox(id="${aliases?.length ? aliases[0] : template.data.envID}")
+
+# Interact with sandbox. Learn more here:
+# https://e2b.dev/docs/sandbox/overview
+
+# Close sandbox once done
+sandbox.close()`)
+
+        const typescriptExample = asTypescript(`import { Sandbox } from '@e2b/sdk'
+
+// Start sandbox
+const sandbox = await Sandbox.create({ id: '${aliases?.length ? aliases[0] : template.data.envID}' })
+
+// Interact with sandbox. Learn more here:
+// https://e2b.dev/docs/sandbox/overview
+
+// Close sandbox once done
+await sandbox.close()`)
+
+
+        const examplesMessage = `You can use E2B Python or JS SDK to spawn sandboxes now.
+Find more here - ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')} in ${asBold('Spawn and control your sandbox')} section.`
+
+        const exampleUsage = `${withMargin(examplesMessage)}\n${withDelimiter(pythonExample, 'Python SDK')}${withDelimiter(typescriptExample, 'JS SDK', true)}`
+
         console.log(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate(
-            { aliases, ...template.data },
-          )} finished.\n
-          Now you can start creating your sandboxes from this template. You can find more here:
-          ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')}, section ${asBold('Spawn and control your sandbox.')}
-
-          | ${asBold('Python SDK')} |
-          ==============
-          ${asPython(`from e2b import Sandbox
-
-          # Start sandbox
-          sandbox = Sandbox(id="${aliases?.length ? aliases[0] : template.data.envID}")
-
-          # Interact with sandbox. Learn more here:
-          # https://e2b.dev/docs/sandbox/overview
-
-          # Close sandbox once done
-          sandbox.close()`)
-          }
-
-          | ${asBold('JS SDK')} |
-          ==========
-          ${asTypescript(`import { Sandbox } from '@e2b/sdk'
-
-          // Start sandbox
-          const sandbox = await Sandbox.create({ id: '${aliases?.length ? aliases[0] : template.data.envID}' })
-
-          // Interact with sandbox. Learn more here:
-          // https://e2b.dev/docs/sandbox/overview
-
-          // Close sandbox once done
-          await sandbox.close()`)
-          }
-          `,
+            {
+              aliases, ...template.data
+            },
+          )} finished.\n${boxen.default(exampleUsage, {
+            float: 'left',
+            padding: 0,
+            margin: 1,
+            title: 'Usage examples',
+          })}`,
         )
         break
-
+      }
       case 'error':
         template.data.logs.forEach((line) =>
           process.stdout.write(asBuildLogs(stripAnsi.default(line))),

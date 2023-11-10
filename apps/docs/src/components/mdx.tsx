@@ -100,7 +100,7 @@ export function Col({
   )
 }
 
-export function Properties({ children }: { children: React.ReactNode }) {
+export function Options({ children }: { children: React.ReactNode }) {
   return (
     <div className="my-6">
       <ul
@@ -113,11 +113,11 @@ export function Properties({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function Property({
-                           name,
-                           children,
-                           type,
-                         }: {
+export function Option({
+   name,
+   children,
+   type,
+ }: {
   name: string
   children: React.ReactNode
   type?: string
@@ -127,12 +127,12 @@ export function Property({
       <dl className="m-0 flex flex-wrap items-center gap-x-3 gap-y-2">
         <dt className="sr-only">Name</dt>
         <dd>
-          <code>{name}</code>
+          <code className="text-zinc-300 dark:text-zinc-400">{name}</code>
         </dd>
         {type && (
           <>
-            <dt className="sr-only">Type</dt>
-            <dd className="font-mono text-xs text-zinc-400 dark:text-zinc-500">{type}</dd>
+            <dt className="sr-only">Flags</dt>
+            <dd className="font-mono text-xs text-zinc-600 dark:text-white"> {type}</dd>
           </>
         )}
         <dt className="sr-only">Description</dt>
