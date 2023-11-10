@@ -2,11 +2,7 @@ import Image from 'next/image'
 
 # Creating Custom Sandbox
 
-In this guide, we'll create a custom E2B sandbox.
-
-
-
-with preinstalled dependencies and files.
+In this guide, we'll create a custom E2B sandbox with preinstalled dependencies and files.
 Once the sandbox is built, we'll show how to spawn and control it with our SDK.
 
 ## Prerequisites
@@ -15,122 +11,175 @@ Once the sandbox is built, we'll show how to spawn and control it with our SDK.
 
 ## 1. Install E2B CLI
 
+<CodeGroup isTerminalCommand title="Install CLI" isRunnable={false}>
 ```bash
 npm install -g @e2b/cli@latest
 ```
+</CodeGroup>
 
 <Note>
 You need Node.js 18.0.0 or later to install the CLI.
 </Note>
 
-## 2. CLI login
+## 2. Login to CLI
 Before you create your first custom sandbox, you will need to authenticate in the CLI with your E2B account.
 Run the following command in your terminal.
+<CodeGroup isTerminalCommand title="Login to CLI" isRunnable={false}>
 ```bash
 e2b login
 ```
-
-## 3. Create sandbox template file
-To describe how your custom sandbox will look like, you create a new Dockerfile and name it `e2b.Dockerfile`.
-We use this Dockerfile as the [sandbox template file](/sandbox/templates/template-file).
+</CodeGroup>
 
 <Note>
-Run `e2b init` to create a basic `e2b.Dockerfile` in the current directory.
+You need to have an existing E2B account to login. Sign up [here](/getting-started/api-key).
 </Note>
 
-We want to have ffmpeg installed in our custom sandbox, so we'll create the `e2b.Dockerfile` with the following content.
+## 3. Create `e2b.Dockerfile`
+To describe how your custom sandbox will look like, create a new Dockerfile and name it `e2b.Dockerfile`.
+We use this Dockerfile as the [template file](/sandbox/templates/template-file).
+
+<Note>
+Run `e2b init` to create `e2b.Dockerfile` in the current directory.
+</Note>
+
+We want our custom sandbox to have the [ffmpeg](https://www.ffmpeg.org/) isntalled - ffmpeg is a tool for editing video and audio files.
+
+<CodeGroup isFileName title="e2b.Dockerfile" isRunnable={false}>
 ```bash
 # You can use most of the Debian-based base images
 FROM ubuntu:22.04
 
-# Install dependencies and customize sandbox
+# Install the ffmpeg tool/
 RUN apt update \
-	&& apt install -y sudo \
-  && sudo apt install -y ffmpeg
+    && apt install -y ffmpeg
 ```
+</CodeGroup>
 
 ## 4. Build custom sandbox
 Now it's time to create your custom sandbox based on the sandbox template file (the `e2b.Dockefile` file) you just created in the previous step.
 
 Run the following command inside the template file directory in your terminal.
+<CodeGroup isTerminalCommand title="Build sandbox template" isRunnable={false}>
 ```bash
-e2b build
+e2b build --name "my-agent-sandbox"
 ```
+</CodeGroup>
 
 <Note>
 Use the `.dockerignore` file to exclude files from the sandbox template.
 </Note>
 
 The final output should look similar to this.
-```bash
-Preparing sandbox template building (113 files in Docker build context).
-Found ./e2b.Dockerfile that will be used to build the sandbox template.
-Started building the sandbox template 3y5bvra6kgq0kaumgztu
 
-Step 1/4 : FROM ubuntu:22.04
- ---> e4c58958181a
-Step 2/4 : RUN apt update 	&& apt install sudo
- ---> Using cache
- ---> 4762cc0db1ff
-Step 3/4 : RUN type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
- ---> Using cache
- ---> 384706ddfe2f
-Step 4/4 : RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 	&& sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg 	   && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null 	 sudo apt update 	 sudo apt install gh -y
- ---> Using cache
- ---> b8649b84c829
+<CodeGroup title="Build output" isRunnable={false}>
+```bash
+Preparing sandbox template building (1 files in Docker build context).
+Found ./e2b.Dockerfile that will be used to build the sandbox template.
+Started building the sandbox template my-agent-sandbox
+
+# Truncated for visibility
+# ...
+# ...
+
 Successfully built b8649b84c829
-Successfully tagged us-central1-docker.pkg.dev/e2b-prod/custom-environments/3y5bvra6kgq0kaumgztu:b96935dc-fe87-45fb-229d-a3fba4fe160d
+Successfully tagged us-central1-docker.pkg.dev/e2b-prod/custom-environments/1wdqsf9le9gk21ztb4mo:b3a31d32-fc01-164f-be9c-0b4ba5ac8f3c
 
 Running postprocessing. It can take up to few minutes.
 
-✅ Building sandbox template 3y5bvra6kgq0kaumgztu finished.
+Running postprocessing. It can take up to few minutes.
+
+✅ Building sandbox template my-agent-sandbox finished.
+
+          Now you can start creating your sandboxes from this template. You can find more here:
+          https://e2b.dev/docs/guide/custom-sandbox, section Spawn and control your sandbox.
+
+          | Python SDK |
+          ==============
+          from e2b import Sandbox
+
+          # Start sandbox
+          sandbox = Sandbox(id="my-agent-sandbox")
+
+          # Interact with sandbox. Learn more here:
+          # https://e2b.dev/docs/sandbox/overview
+
+          # Close sandbox once done
+          sandbox.close()
+
+          | JS SDK |
+          ==========
+          import { Sandbox } from '@e2b/sdk'
+
+          // Start sandbox
+          const sandbox = await Sandbox.create({ id: 'my-agent-sandbox' })
+
+          // Interact with sandbox. Learn more here:
+          // https://e2b.dev/docs/sandbox/overview
+
+          // Close sandbox once done
+          await sandbox.close()
+
+Created config ./e2b.toml
 ```
+</CodeGroup>
 
 
 This will create the `e2b.toml` file storing the sandbox config.
+<CodeGroup isFileName title="e2b.toml" isRunnable={false}>
 ```toml
 # This is a config for E2B sandbox template
-id = "3y5bvra6kgq0kaumgztu"
+id = "1wdqsf9le9gk21ztb4mo"
 dockerfile = "e2b.Dockerfile"
+name = "my-agent-sandbox"
 ```
+</CodeGroup>
 
-**Our custom sandbox ID is `3y5bvra6kgq0kaumgztu` in this case.**
+| Sandbox template name | Sandbox template ID |
+---|---|
+|`e2b.Dockerfile`|`1wdqsf9le9gk21ztb4mo`|
 
 ### Updating your sandbox
 If you want to update your sandbox, you run the same command you did to build it.
 This will rebuild the image and update your sandbox template.
 You don't need to specify the `--dockerfile` flag again.
 
+<CodeGroup isTerminalCommand title="Update sandbox template" isRunnable={false}>
 ```bash
 e2b build
 ```
+</CodeGroup>
 
 ## 5. Spawn and control your sandbox
 
-Now you can use the [E2B SDK](/getting-started/installation) to control your new custom sandbox.
+Now you can use the [E2B SDK](/getting-started/installation) to spawn & control your new custom sandbox.
 
-Our custom sandbox ID is `3y5bvra6kgq0kaumgztu` from the previous step. We'll just pass it to the SDK.
+The sandbox template name is `my-agent-sandbox`. We'll use it as an unique identifier and pass it to the SDK as the `id` parameter.
+This way, we'll be able to spawn our custom sandbox and control it with the SDK.
 
-<CodeGroup isRunnable={false}>
+<CodeGroup title="Spawn & control your custom sandbox" isRunnable={true}>
 ```js {{ language: 'js' }}
 import { Sandbox } from '@e2b/sdk'
 
-const sandboxID = '3y5bvra6kgq0kaumgztu'
+// Spawn your custom sandbox
+const sandbox = await Sandbox.create({ id: 'my-agent-sandbox' }) // $HighlightLine
 
-const sandbox = await Sandbox.create({
-  id: sandboxID,
-})
+// Interact with sandbox. Learn more here:
+// https://e2b.dev/docs/sandbox/overview
 
+// Close sandbox once done
 await sandbox.close()
 ```
 
 ```python {{ language: 'python' }}
 from e2b import Sandbox
 
-sandbox_id = '3y5bvra6kgq0kaumgztu'
+# Spawn your custom sandbox
+sandbox = Sandbox(id="my-agent-sandbox") # $HighlightLine
 
-sandbox = Sandbox(id=sandbox_id)
+# Interact with sandbox. Learn more here:
+# https://e2b.dev/docs/sandbox/overview
 
+# Close sandbox once done
 sandbox.close()
 ```
 </CodeGroup>

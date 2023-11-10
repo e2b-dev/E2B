@@ -269,13 +269,4 @@ export const routes = [
       },
     ],
   },
-  // {
-  //   title: 'E2B CLI',
-  //   links: [
-  //     {
-  //       title: 'Overview',
-  //       href: '/cli/overview',
-  //     },
-  //   ],
-  // },
 ]

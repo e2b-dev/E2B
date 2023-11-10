@@ -4,7 +4,12 @@ import { Children, createContext, isValidElement, useContext, useEffect, useRedu
 import { Tab } from '@headlessui/react'
 import clsx from 'clsx'
 import { create } from 'zustand'
-import { LoaderIcon, PlayIcon, File } from 'lucide-react'
+import {
+  LoaderIcon,
+  PlayIcon,
+  File,
+  Terminal,
+} from 'lucide-react'
 
 import { CopyButton } from '@/components/CopyButton'
 import { useApiKey } from '@/utils/useUser'
@@ -27,7 +32,7 @@ export function getPanelTitle({
     return title
   }
   if (language && language in languageNames) {
-      return languageNames[language]
+    return languageNames[language]
   }
   return 'Code'
 }
@@ -201,7 +206,7 @@ function CodePanel({
           </pre>
         </div>
       )}
-      <CopyButton code={code}/>
+      <CopyButton code={code} />
     </div>
   )
 }
@@ -210,35 +215,62 @@ export function CodeGroupHeader({
   title,
   children,
   selectedIndex,
-  isFileName = false,
+  isFileName,
+  isTerminalCommand,
 }: {
   title: string;
   children: React.ReactNode;
   selectedIndex: number;
-  isFileName: boolean;
+  isFileName?: boolean;
+  isTerminalCommand?: boolean;
 }) {
   const hasTabs = Children.count(children) > 1
-  if (!title && !hasTabs) return null
+  if (!title && !hasTabs && !isTerminalCommand) return null
 
   return (
     <div
       className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-700 bg-zinc-800 px-4 dark:border-zinc-800 dark:bg-transparent">
       <div className="flex flex-col items-start">
         {title && (
-          <div className="pl-2 mt-3">
+          <div>
             {isFileName ? (
               <div className="flex items-center justify-start space-x-2">
                 <File
+                  className="text-brand-300"
                   size={18}
                   strokeWidth={1}
                 />
-                <h3 className="text-sm text-brand-400 font-mono">{title}</h3>
+                <h3 className="text-sm text-gray-500 font-mono">{title}</h3>
               </div>
-              ) : (
-              <h3 className="text-sm text-gray-500 text-brand-400">{title}</h3>
+            ) : isTerminalCommand ? (
+              <div className="flex items-center justify-start space-x-2">
+                <Terminal
+                  className="text-brand-300"
+                  size={18}
+                  strokeWidth={1}
+                />
+                {title && (
+                  <h3 className="text-sm text-gray-500">{title}</h3>
+                )}
+              </div>
+            ) : (
+              <h3 className="pt-2 text-sm text-gray-500 text-brand-400">{title}</h3>
             )}
           </div>
         )}
+
+        {isTerminalCommand && !title && (
+          <div className="flex items-center justify-start space-x-2">
+            <Terminal
+              className="text-brand-300"
+              size={18}
+              strokeWidth={1}
+            />
+          </div>
+        )}
+
+
+
         {hasTabs && (
           <Tab.List className="-mb-px flex gap-4 text-xs font-medium">
             {Children.map(children, (child, childIndex) => (
@@ -290,9 +322,9 @@ export function CodeGroupHeader({
 }
 
 function CodeGroupPanels({
-                           children,
-                           ...props
-                         }: React.ComponentPropsWithoutRef<typeof CodePanel>) {
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CodePanel>) {
   const hasTabs = Children.count(children) > 1
 
   /* <INTERNAL> */
@@ -427,11 +459,13 @@ function useOutputReducer() {
 export function CodeGroup({
   children,
   title,
+  isTerminalCommand,
   isFileName,
   path,
   ...props
 }: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
   title?: string;
+  isTerminalCommand?: boolean;
   isFileName?: boolean;
   path?: string; // For analytics
 }) {
@@ -449,6 +483,7 @@ export function CodeGroup({
       title={title}
       selectedIndex={tabGroupProps.selectedIndex}
       isFileName={isFileName}
+      isTerminalCommand={isTerminalCommand}
     >
       {children}
     </CodeGroupHeader>
@@ -477,9 +512,9 @@ export function CodeGroup({
 }
 
 export function Code({
-                       children,
-                       ...props
-                     }: React.ComponentPropsWithoutRef<'code'>) {
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<'code'>) {
   /* <DYNAMIC-API-REPLACEMENT> */
   // let apiKey = useApiKey()
   // if (children.replace && apiKey) children = children.replace(`{{API_KEY}}`, `${apiKey}`)
@@ -493,16 +528,16 @@ export function Code({
         '`Code` children must be a string when nested inside a `CodeGroup`.',
       )
     }
-    return <code {...props} dangerouslySetInnerHTML={{ __html: children }}/>
+    return <code {...props} dangerouslySetInnerHTML={{ __html: children }} />
   }
 
   return <code {...props}>{children}</code>
 }
 
 export function Pre({
-                      children,
-                      ...props
-                    }: React.ComponentPropsWithoutRef<typeof CodeGroup>) {
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CodeGroup>) {
   const isGrouped = useContext(CodeGroupContext)
 
   if (isGrouped) {
