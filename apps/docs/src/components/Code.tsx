@@ -254,7 +254,7 @@ export function CodeGroupHeader({
                 )}
               </div>
             ) : (
-              <h3 className="pt-2 text-sm text-gray-500 text-brand-400">{title}</h3>
+              <h3 className="pt-3 text-sm text-gray-500 text-brand-400">{title}</h3>
             )}
           </div>
         )}
