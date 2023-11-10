@@ -2,6 +2,8 @@
 
 Build your own sandbox with our CLI. {{ className: 'lead' }}
 
+You append always use `--help` for more information about commands and options.
+
 ## `build`
 
 Build sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` in root directory. By default the root directory is the current working directory. This command also creates `e2b.toml` config.
@@ -23,16 +25,6 @@ e2b build
     Specify path to Dockerfile. By default E2B tries to find `e2b.Dockerfile` or `Dockerfile` in root directory
   </Property>
 </Properties>
-
----
-
-## `help`
-
-Show help
-
-```bash
-e2b help
-```
 
 ---
 
