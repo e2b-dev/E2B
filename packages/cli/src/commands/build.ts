@@ -58,7 +58,7 @@ export const buildCommand = new commander.Command('build')
   )
   .option(
     '-n, --name <name>',
-    'Specify name of sandbox template. You can use the name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes and underscores.',
+    'Specify name of sandbox template. You can use the name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes and underscores',
   )
   .alias('bd')
   .action(
