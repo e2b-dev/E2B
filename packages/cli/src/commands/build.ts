@@ -378,7 +378,15 @@ async function buildTemplate(
     body,
   })
 
-  const data = await res.json()
+  let data: any
+
+  try {
+    data = await res.json()
+  } catch (e) {
+    throw new Error(
+      `Build API request failed: ${res.statusText}`,
+    )
+  }
 
   if (!res.ok) {
     const error:
