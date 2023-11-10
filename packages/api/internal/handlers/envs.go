@@ -84,14 +84,18 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	}
 
 	dockerfile := c.PostForm("dockerfile")
-	alias, err := utils.CleanEnvID(c.PostForm("alias"))
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid alias: %s", alias))
+	alias := c.PostForm("alias")
 
-		err = fmt.Errorf("invalid alias: %w", err)
-		telemetry.ReportCriticalError(ctx, err)
+	if alias != "" {
+		alias, err = utils.CleanEnvID(alias)
+		if err != nil {
+			a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid alias: %s", alias))
 
-		return
+			err = fmt.Errorf("invalid alias: %w", err)
+			telemetry.ReportCriticalError(ctx, err)
+
+			return
+		}
 	}
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)

@@ -22,8 +22,8 @@ import (
 
 const (
 	serviceName        = "orchestration-api"
-	maxMultipartMemory = 1 << 28 // 256 MiB
-	maxUploadLimit     = 1 << 30 // 1 GiB
+	maxMultipartMemory = 1 << 27 // 128 MiB
+	maxUploadLimit     = 1 << 28 // 256 MiB
 )
 
 var ignoreLoggingForPaths = []string{"/health"}
@@ -84,7 +84,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 				AuthenticationFunc: AuthenticationFunc,
 			},
 		}),
-		limits.RequestSizeLimiter(maxMultipartMemory),
+		limits.RequestSizeLimiter(maxUploadLimit),
 	)
 
 	// We now register our store above as the handler for the interface
