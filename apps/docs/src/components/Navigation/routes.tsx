@@ -16,7 +16,7 @@ import {
   Timer,
   Variable,
   PencilRuler,
-  File,
+  File, TerminalSquare,
 } from 'lucide-react'
 
 export const routes = [
@@ -241,6 +241,31 @@ export const routes = [
         ),
         title: 'Timeouts',
         href: '/sandbox/api/timeouts',
+      },
+    ],
+  },
+  {
+    title: 'CLI API',
+    links: [
+      {
+        icon: (
+          <Settings
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Installation',
+        href: '/cli/installation',
+      },
+      {
+        icon: (
+          <TerminalSquare
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Commands',
+        href: '/cli/commands',
       },
     ],
   },

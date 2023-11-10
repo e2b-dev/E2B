@@ -1,0 +1,117 @@
+# CLI Commands
+
+Build your own sandbox with our CLI. {{ className: 'lead' }}
+
+## init
+
+Create basic E2B Dockerfile (`./e2b.Dockerfile`) in current directory. You can then run `e2b build` to build sandbox template from this Dockerfile
+
+```bash
+e2b template init
+```
+
+### Options:
+
+<Properties>
+  <Property name="path" type="-p --path">
+    Change root directory where command is executed to `path` directory
+  </Property>
+</Properties>
+
+---
+
+## login
+
+Log in to CLI. It will save your access token in `~/.e2b` file.
+
+```bash
+e2b login
+```
+
+---
+
+## logout
+
+Log out from CLI. It will remove your accesstoken from `~/.e2b` file.
+
+```bash
+e2b logout
+```
+
+---
+
+## build
+
+Build sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` in root directory. By default the root directory is the current working directory. This command also creates `e2b.toml` config.
+
+```bash
+e2b build
+```
+
+### Options:
+
+<Properties>
+  <Property name="name" type="-n --name">
+    Specify name of sandbox template. You can use the name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes and underscores.
+  </Property>
+  <Property name="path" type="-p --path">
+    Change root directory where command is executed to `path` directory
+  </Property>
+  <Property name="dockerfile" type="-d --dockerfile">
+    Specify path to Dockerfile. By default E2B tries to find `e2b.Dockerfile` or `Dockerfile` in root directory
+  </Property>
+</Properties>
+
+---
+
+## list
+
+List your sandbox templates
+
+```bash
+e2b list
+```
+
+---
+
+## shell
+
+Connect terminal to sandbox. This command can be used to debug your sandbox template. It works as `docker run -it <image> bash` command.
+
+```bash
+e2b shell
+```
+
+### Options:
+
+<Properties>
+  <Property name="path" type="-p --path">
+    Change root directory where command is executed to `path` directory
+  </Property>
+</Properties>
+
+---
+
+## help
+
+Show help
+
+```bash
+e2b help
+```
+
+---
+
+## version
+
+Show version of the CLI
+
+```bash
+e2b version
+```
+
+## Next steps
+
+1. [Create your first sandbox template](/sandbox/templates/overview)
+1. [Check out the official guides](/guides/custom-sandbox)
+{/* 1. [Follow the "Hello World" example](/guides/) */}
