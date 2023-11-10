@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -85,7 +84,15 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	}
 
 	dockerfile := c.PostForm("dockerfile")
-	alias := utils.CleanEnvID(c.PostForm("alias"))
+	alias, err := utils.CleanEnvID(c.PostForm("alias"))
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid alias: %s", alias))
+
+		err = fmt.Errorf("invalid alias: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		return
+	}
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	a.IdentifyAnalyticsTeam(teamID)
@@ -101,6 +108,16 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		attribute.String("build.alias", alias),
 		attribute.String("build.dockerfile", dockerfile),
 	)
+
+	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, "context.tar.gz"}, "/"), fileContent)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when uploading file to cloud storage: %s", err))
+
+		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		return
+	}
 
 	err = a.buildCache.Create(teamID, envID, buildID)
 	if err != nil {
@@ -122,7 +139,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 			err = fmt.Errorf("error when inserting alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			a.buildCache.Delete(envID)
+			a.buildCache.Delete(envID, buildID)
 
 			return
 		} else {
@@ -138,7 +155,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 		var status api.EnvironmentBuildStatus
 
-		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties, nomad.BuildConfig{
+		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, properties, nomad.BuildConfig{
 			VCpuCount:  tier.Vcpu,
 			MemoryMB:   tier.RAMMB,
 			DiskSizeMB: tier.DiskMB,
@@ -203,7 +220,15 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
 
-	cleanedAliasOrEnvID := utils.CleanEnvID(aliasOrEnvID)
+	cleanedAliasOrEnvID, err := utils.CleanEnvID(aliasOrEnvID)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid env ID: %s", aliasOrEnvID))
+
+		err = fmt.Errorf("invalid env ID: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		return
+	}
 
 	// Prepare info for rebuilding env
 	userID, teamID, tier, err := a.GetUserAndTeam(c)
@@ -242,15 +267,6 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		return
 	}
 
-	defer func() {
-		closeErr := fileContent.Close()
-		if closeErr != nil {
-			errMsg := fmt.Errorf("error when closing file: %w", closeErr)
-
-			telemetry.ReportError(ctx, errMsg)
-		}
-	}()
-
 	// Check if file is a tar.gz file
 	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz.e2b") {
 		err = fmt.Errorf("build context doesn't have correct extension, the file is %s", fileHandler.Filename)
@@ -262,7 +278,15 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	}
 
 	dockerfile := c.PostForm("dockerfile")
-	alias := utils.CleanEnvID(c.PostForm("alias"))
+	alias, err := utils.CleanEnvID(c.PostForm("alias"))
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid alias: %s", alias))
+
+		err = fmt.Errorf("invalid alias: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		return
+	}
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("build.id", buildID),
@@ -299,6 +323,16 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID))
 
+	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, "context.tar.gz"}, "/"), fileContent)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when uploading file to cloud storage: %s", err))
+
+		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		return
+	}
+
 	err = a.buildCache.Create(teamID, envID, buildID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("There's already running build for %s", envID))
@@ -319,7 +353,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			err = fmt.Errorf("error when inserting alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			a.buildCache.Delete(envID)
+			a.buildCache.Delete(envID, buildID)
 
 			return
 		} else {
@@ -332,10 +366,9 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
 			"background-build-env",
 		)
-
 		var status api.EnvironmentBuildStatus
 
-		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties, nomad.BuildConfig{
+		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, properties, nomad.BuildConfig{
 			VCpuCount:  tier.Vcpu,
 			MemoryMB:   tier.RAMMB,
 			DiskSizeMB: tier.DiskMB,
@@ -536,7 +569,6 @@ func (a *APIStore) buildEnv(
 	envID,
 	buildID,
 	dockerfile string,
-	content io.Reader,
 	posthogProperties posthog.Properties,
 	vmConfig nomad.BuildConfig,
 ) (err error) {
@@ -558,14 +590,6 @@ func (a *APIStore) buildEnv(
 			Set("success", err != nil),
 		)
 	}()
-
-	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, "context.tar.gz"}, "/"), content)
-	if err != nil {
-		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
-		telemetry.ReportCriticalError(childCtx, err)
-
-		return err
-	}
 
 	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID, a.apiSecret, a.googleServiceAccountBase64, vmConfig)
 	if err != nil {

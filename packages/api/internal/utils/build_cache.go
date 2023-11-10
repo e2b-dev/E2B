@@ -129,6 +129,7 @@ func (c *BuildCache) updateCounter(envID, buildID string, value int64) {
 	)
 }
 
-func (c *BuildCache) Delete(envID string) {
+func (c *BuildCache) Delete(envID, buildID string) {
 	c.cache.Delete(envID)
+	c.updateCounter(envID, buildID, -1)
 }
