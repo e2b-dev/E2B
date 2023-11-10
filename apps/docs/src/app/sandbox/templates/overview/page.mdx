@@ -1,8 +1,11 @@
+import Image from 'next/image'
+import imgCustomSandbox from '@/images/custom-sandbox.png'
+
 # Custom Sandbox
 <Note>
 E2B Sandbox is a secure sandboxed cloud environment made for AI agents and AI apps. Sandboxes allow AI agents and apps to have long running cloud secure environments. In these environments, large language models can use the same tools as humans do.
 
-Read more [here](/sandbox/overview) about E2B Sandboxes
+Read more about E2B Sandboxes [here](/sandbox/overview).
 </Note>
 
 Custom sandboxes allows you to spawn a sandbox with a pre-defined environment by you and then control it with our SDK.
@@ -10,6 +13,14 @@ Custom sandboxes allows you to spawn a sandbox with a pre-defined environment by
 You can build a custom sandbox by creating the [Sandbox Template](/sandbox/templates/template-file). Sandbox template is a Dockerfile that describes the environment of your sandbox.
 
 Once you build your custom sandbox template, you can spawn multiple isolated sandboxes from it.
+
+<Image
+  src={imgCustomSandbox}
+  className="rounded max-w-full"
+  alt="Graphics explaining how custom sandbox works"
+  unoptimized
+/>
+
 
 ## How it works
 1. [Provide the sandbox template file](/sandbox/templates/template-file)
@@ -26,7 +37,8 @@ Once you build your custom sandbox template, you can spawn multiple isolated san
 
       // Create new sandbox
       const sandbox = await Sandbox.create({
-        id: '<sandbox-template-id>', // You get sandbox ID from the CLI after you run `$ e2b build`
+        // You get sandbox ID from the CLI after you run `$ e2b build`
+        id: '<sandbox-template-id>',  // $HighlightLine
       })
 
       // Close sandbox once done
@@ -38,7 +50,8 @@ Once you build your custom sandbox template, you can spawn multiple isolated san
 
       # Create new sandbox
       sandbox = Sandbox(
-        id="<sandbox-template-id>", # You get sandbox ID from the CLI after you run `$ e2b build`
+        # You get sandbox ID from the CLI after you run `$ e2b build`
+        id="<sandbox-template-id>", # $HighlightLine
       )
 
       # Close sandbox once done

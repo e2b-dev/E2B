@@ -4,7 +4,7 @@ import { Children, createContext, isValidElement, useContext, useEffect, useRedu
 import { Tab } from '@headlessui/react'
 import clsx from 'clsx'
 import { create } from 'zustand'
-import { LoaderIcon, PlayIcon } from 'lucide-react'
+import { LoaderIcon, PlayIcon, File } from 'lucide-react'
 
 import { CopyButton } from '@/components/CopyButton'
 import { useApiKey } from '@/utils/useUser'
@@ -17,9 +17,9 @@ import logoNode from '@/images/logos/node.svg'
 import logoPython from '@/images/logos/python.svg'
 
 export function getPanelTitle({
-                                title,
-                                language,
-                              }: {
+  title,
+  language,
+}: {
   title?: string;
   language?: string;
 }) {
@@ -33,11 +33,11 @@ export function getPanelTitle({
 }
 
 function CodePanel({
-                     children,
-                     code,
-                     lang,
-                     isRunnable = true,
-                   }: {
+  children,
+  code,
+  lang,
+  isRunnable = true,
+}: {
   children: React.ReactNode;
   code?: string;
   lang?: LangShort;
@@ -207,13 +207,15 @@ function CodePanel({
 }
 
 export function CodeGroupHeader({
-                                  title,
-                                  children,
-                                  selectedIndex,
-                                }: {
+  title,
+  children,
+  selectedIndex,
+  isFileName = false,
+}: {
   title: string;
   children: React.ReactNode;
   selectedIndex: number;
+  isFileName: boolean;
 }) {
   const hasTabs = Children.count(children) > 1
   if (!title && !hasTabs) return null
@@ -224,7 +226,17 @@ export function CodeGroupHeader({
       <div className="flex flex-col items-start">
         {title && (
           <div className="pl-2 mt-3">
-            <h3 className="font-xs font-medium text-brand-50">{title}</h3>
+            {isFileName ? (
+              <div className="flex items-center justify-start space-x-2">
+                <File
+                  size={18}
+                  strokeWidth={1}
+                />
+                <h3 className="text-sm text-brand-400 font-mono">{title}</h3>
+              </div>
+              ) : (
+              <h3 className="text-sm text-gray-500 text-brand-400">{title}</h3>
+            )}
           </div>
         )}
         {hasTabs && (
@@ -413,12 +425,14 @@ function useOutputReducer() {
 }
 
 export function CodeGroup({
-                            children,
-                            title,
-                            path,
-                            ...props
-                          }: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
+  children,
+  title,
+  isFileName,
+  path,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
   title?: string;
+  isFileName?: boolean;
   path?: string; // For analytics
 }) {
   const hasTabs = Children.count(children) > 1
@@ -431,7 +445,11 @@ export function CodeGroup({
   const tabGroupProps = useTabGroupProps(languages)
 
   const header = (
-    <CodeGroupHeader title={title} selectedIndex={tabGroupProps.selectedIndex}>
+    <CodeGroupHeader
+      title={title}
+      selectedIndex={tabGroupProps.selectedIndex}
+      isFileName={isFileName}
+    >
       {children}
     </CodeGroupHeader>
   )
