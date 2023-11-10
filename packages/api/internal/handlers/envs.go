@@ -122,7 +122,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 			err = fmt.Errorf("error when inserting alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			a.buildCache.Delete(envID)
+			a.buildCache.Delete(envID, buildID)
 
 			return
 		} else {
@@ -319,7 +319,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			err = fmt.Errorf("error when inserting alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			a.buildCache.Delete(envID)
+			a.buildCache.Delete(envID, buildID)
 
 			return
 		} else {
