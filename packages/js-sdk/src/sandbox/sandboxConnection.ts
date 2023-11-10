@@ -90,7 +90,7 @@ export class SandboxConnection {
       warn: console.warn,
       error: console.error,
     }
-    this.logger.info?.(`Sandbox "${this.templateID}" initialized`)
+    this.logger.debug?.(`Sandbox "${this.templateID}" initialized`)
   }
 
   private get templateID(): string {
@@ -153,7 +153,7 @@ export class SandboxConnection {
       this.rpc.ws?.terminate?.()
       // This is the browser WebSocket way of closing connection
       this.rpc.ws?.close?.()
-      this.logger.info?.('Disconnected from the sandbox')
+      this.logger.debug?.('Disconnected from the sandbox')
     }
   }
 
