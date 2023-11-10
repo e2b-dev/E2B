@@ -23,7 +23,6 @@ export const shellCommand = new commander.Command('shell')
       const apiKey = ensureAPIKey()
       let envID = id
 
-
       const root = getRoot(opts.path)
       const configPath = getConfigPath(root)
 
