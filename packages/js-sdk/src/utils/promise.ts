@@ -1,5 +1,6 @@
+import pTimeout from 'p-timeout'
+
 import { TIMEOUT } from '../constants'
-import { TimeoutError } from '../error'
 
 export function assertFulfilled<T>(
   item: PromiseSettledResult<T>,
@@ -44,19 +45,6 @@ export function withTimeout<T extends (...args: any[]) => any>(
     return fn
   }
 
-  let timerId: NodeJS.Timeout
-  const timer = new Promise((resolve, reject) => {
-    timerId = setTimeout(
-      () =>
-        reject(new TimeoutError(`Calling "${fn.name}" timeouted after ${timeout}ms.`)),
-      timeout,
-    )
-  })
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return ((...args: T extends (...args: infer A) => any ? A : never) => {
-    const result = Promise.race([timer, fn(...args)])
-    result.finally(() => clearTimeout(timerId))
-    return result
-  }) as T
+  return ((...args: T extends (...args: infer A) => any ? A : never) =>
+    pTimeout(fn(...args), { milliseconds: timeout })) as T
 }
