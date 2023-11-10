@@ -15,7 +15,7 @@ export function wrapper({ children }: { children: React.ReactNode }) {
     <article className="mx-auto flex h-full max-w-6xl flex-col pb-10 pt-16">
       <Prose className="flex-auto">{children}</Prose>
       <footer className="mx-auto mt-10 w-full max-w-2xl lg:max-w-5xl">
-        <Feedback variant="textSubtle"/>
+        <Feedback variant="textSubtle" />
       </footer>
     </article>
   )
@@ -67,7 +67,7 @@ export function Note({ children }: { children: React.ReactNode }) {
     <div
       className="bg-brand-50/50 my-6 flex gap-2.5 rounded-2xl border border-brand-500/20 p-4 leading-6 text-brand-900 dark:border-brand-500/30 dark:bg-brand-500/5 dark:text-brand-200 dark:[--tw-prose-links-hover:theme(colors.brand.300)] dark:[--tw-prose-links:theme(colors.white)]">
       <InfoIcon
-        className="mt-1 h-4 w-4 flex-none fill-brand-500 stroke-white dark:fill-brand-200/20 dark:stroke-brand-200"/>
+        className="mt-1 h-4 w-4 flex-none fill-brand-500 stroke-white dark:fill-brand-200/20 dark:stroke-brand-200" />
       <div className="[&>:first-child]:mt-0 [&>:last-child]:mb-0">{children}</div>
     </div>
   )
@@ -82,9 +82,9 @@ export function Row({ children }: { children: React.ReactNode }) {
 }
 
 export function Col({
-                      children,
-                      sticky = false,
-                    }: {
+  children,
+  sticky = false,
+}: {
   children: React.ReactNode
   sticky?: boolean
 }) {
@@ -114,10 +114,10 @@ export function Options({ children }: { children: React.ReactNode }) {
 }
 
 export function Option({
-   name,
-   children,
-   type,
- }: {
+  name,
+  children,
+  type,
+}: {
   name: string
   children: React.ReactNode
   type?: string
@@ -126,15 +126,15 @@ export function Option({
     <li className="m-0 px-0 py-4 first:pt-0 last:pb-0">
       <dl className="m-0 flex flex-wrap items-center gap-x-3 gap-y-2">
         <dt className="sr-only">Name</dt>
-        <dd>
-          <code className="text-zinc-300 dark:text-zinc-400">{name}</code>
-        </dd>
         {type && (
           <>
             <dt className="sr-only">Flags</dt>
             <dd className="font-mono text-xs text-zinc-600 dark:text-white"> {type}</dd>
           </>
         )}
+        {name && <dd>
+          <code className="text-zinc-300 dark:text-zinc-400">{name}</code>
+        </dd>}
         <dt className="sr-only">Description</dt>
         <dd className="w-full flex-none [&>:first-child]:mt-0 [&>:last-child]:mb-0">
           {children}
