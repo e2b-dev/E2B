@@ -88,6 +88,9 @@ export const routes = [
         ),
         title: 'Guide: Run LLM-generated code',
         href: '/guide/simple-gpt4-code-interpreter',
+        //
+        // title: 'Hello World: Simple AI Junior Developer',
+        // href: '/guide/simple-ai-junior-developer',
       },
     ],
   },
