@@ -25,22 +25,39 @@ func (a *APIStore) PostInstances(
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 
+		errMsg := fmt.Errorf("error when parsing request: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
 		return
 	}
 
-	cleanedAliasOrEnvID := utils.CleanEnvID(body.EnvID)
+	cleanedAliasOrEnvID, err := utils.CleanEnvID(body.EnvID)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid environment ID: %s", err))
+
+		errMsg := fmt.Errorf("error when cleaning env ID: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		return
+	}
 
 	// Get team id from context, use TeamIDContextKey
 	teamID := c.Value(constants.TeamIDContextKey).(string)
 
 	envID, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, teamID, true)
 	if checkErr != nil {
+		errMsg := fmt.Errorf("error when checking team access: %w", checkErr)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", checkErr))
 
 		return
 	}
 
 	if !hasAccess {
+		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", teamID, envID)
+		telemetry.ReportError(ctx, errMsg)
+
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
 
 		return
@@ -67,6 +84,7 @@ func (a *APIStore) PostInstances(
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		telemetry.ReportCriticalError(ctx, errMsg)
+
 		a.sendAPIStoreError(c, instanceErr.Code, instanceErr.ClientMsg)
 
 		return
