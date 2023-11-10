@@ -4,6 +4,7 @@ GCP_PROJECT := e2b-prod
 IMAGE := orchestration/api
 
 server := gcloud compute instances list --format='csv(name)' | grep "server"
+client := gcloud compute instances list --format='csv(name)' | grep "client"
 
 tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_client_cluster_size=$(CLIENT_CLUSTER_SIZE) \
@@ -71,3 +72,12 @@ build-all:
 update-api:
 	docker buildx install # sets up the buildx as default docker builder (otherwise the command below won't work)
 	docker build --platform linux/amd64 --tag us-central1-docker.pkg.dev/$(GCP_PROJECT)/$(IMAGE) --push -f api.Dockerfile .
+
+# Set the size of the fc-envs disk
+FC_ENVS_SIZE := 63
+
+resize-fc-envs:
+	gcloud --project=$(GCP_PROJECT) compute disks resize fc-envs --size $(FC_ENVS_SIZE)
+	gcloud compute ssh $$($(client)) -- 'sudo xfs_growfs -d /dev/sdb'
+
+	
