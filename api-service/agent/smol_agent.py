@@ -38,15 +38,20 @@ models = {
         "completion": Decimal(0.00006),
         "max_tokens": 8192,
     },
+    "gpt-4-1106-preview": {
+        "prompt": Decimal(0.00001),
+        "completion": Decimal(0.00003),
+        "max_tokens": 128000,
+    },
     "gpt-4-32k": {
         "prompt": Decimal(0.00006),
         "completion": Decimal(0.00012),
         "max_tokens": 32768,
     },
     "gpt-3.5-turbo": {
-        "prompt": Decimal(0.0000015),
+        "prompt": Decimal(0.000001),
         "completion": Decimal(0.000002),
-        "max_tokens": 4096,
+        "max_tokens": 16384,
     },
     "gpt-3.5-turbo-16k": {
         "prompt": Decimal(0.000003),
@@ -147,7 +152,7 @@ class SmolAgent(AgentBase):
             on_interaction_request,
             model,
             model_name,
-            e2b_api_key
+            e2b_api_key,
         )
 
     async def generate_file(
@@ -281,7 +286,11 @@ Begin generating the code now.
             playground = None
             tasks: List[asyncio.Task[Any]] = []
             try:
-                playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs, api_key=self.e2b_api_key)
+                playground = Playground(
+                    env_id="PPSrlH5TIvFx",
+                    get_envs=self.get_envs,
+                    api_key=self.e2b_api_key,
+                )
                 rootdir = "/repo"
 
                 async def initialize_playground():
