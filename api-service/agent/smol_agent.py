@@ -353,7 +353,21 @@ When given their intent, create a complete, exhaustive list of filepaths that th
 
 only list the filepaths you would write, and return them as a python list of strings.
 do not add any other explanation, only return a python list of strings.
-    """,
+
+Bad response:
+```python
+[
+    "index.html",
+    "css/style.css",
+]
+```
+
+Good response:
+[
+    "index.html",
+    "css/style.css",
+]
+""",
                     user_prompt,
                 )
 
