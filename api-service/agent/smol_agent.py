@@ -41,7 +41,7 @@ models = {
     "gpt-4-1106-preview": {
         "prompt": Decimal(0.00001),
         "completion": Decimal(0.00003),
-        "max_tokens": 128000,
+        "max_tokens": 8192,
     },
     "gpt-4-32k": {
         "prompt": Decimal(0.00006),
