@@ -351,10 +351,10 @@ Begin generating the code now.
 
 When given their intent, create a complete, exhaustive list of filepaths that the user would write to make the program.
 
-only list the filepaths you would write, and return them as a python list of strings.
+Only list the filepaths you would write, and return them as a python list of strings.
 do not add any other explanation, only return a python list of strings.
 
-Bad response:
+Bad response format example:
 ```python
 [
     "index.html",
@@ -362,7 +362,7 @@ Bad response:
 ]
 ```
 
-Good response:
+Good response format example:
 [
     "index.html",
     "css/style.css",
