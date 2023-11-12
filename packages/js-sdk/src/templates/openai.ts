@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+import type OpenAI from 'openai'
 import { Sandbox, SandboxOpts } from '../'
 import { RunSubmitToolOutputsParams } from 'openai/resources/beta/threads/runs/runs'
 
