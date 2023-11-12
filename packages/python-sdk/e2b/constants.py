@@ -9,7 +9,7 @@ API_HOST = (
     "http://localhost:3000" if os.getenv("E2B_DEBUG") else f"https://{API_DOMAIN}"
 )
 
-SANDBOX_DOMAIN = "e2b.dev"
+SANDBOX_DOMAIN = "e2b-api.dev"
 
 ENVD_PORT = 49982
 WS_ROUTE = "/ws"

@@ -7,7 +7,7 @@ export const API_DOMAIN = 'api.e2b.dev'
 export const API_HOST = process?.env?.E2B_DEBUG
   ? 'http://localhost:3000'
   : `https://${API_DOMAIN}`
-export const SANDBOX_DOMAIN = 'e2b.dev'
+export const SANDBOX_DOMAIN = 'e2b-api.dev'
 
 export const ENVD_PORT = 49982
 export const WS_ROUTE = '/ws'
