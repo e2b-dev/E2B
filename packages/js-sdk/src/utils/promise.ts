@@ -1,4 +1,4 @@
-import pTimeout from 'p-timeout'
+import pTimeout from './timeout'
 
 import { TIMEOUT } from '../constants'
 
