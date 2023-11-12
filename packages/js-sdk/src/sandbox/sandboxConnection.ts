@@ -68,7 +68,7 @@ export class SandboxConnection {
   private subscribers: Subscriber[] = []
 
   // let's keep opts readonly, but public - for convenience, mainly when debugging
-  constructor(readonly opts: SandboxConnectionOpts) {
+  protected constructor(readonly opts: SandboxConnectionOpts) {
     const apiKey = opts.apiKey || process?.env?.E2B_API_KEY
     if (!apiKey) {
       throw new AuthenticationError(

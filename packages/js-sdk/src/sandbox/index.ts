@@ -33,7 +33,7 @@ export class Sandbox extends SandboxConnection {
 
   private onScanPorts?: ScanOpenPortsHandler
 
-  constructor(opts?: SandboxOpts) {
+  protected constructor(opts?: SandboxOpts) {
     opts = opts || {}
     super(opts)
     this.onScanPorts = opts.onScanPorts
