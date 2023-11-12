@@ -282,14 +282,17 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	}
 
 	dockerfile := c.PostForm("dockerfile")
-	alias, err := utils.CleanEnvID(c.PostForm("alias"))
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid alias: %s", alias))
+	alias := c.PostForm("alias")
+	if alias != "" {
+		alias, err = utils.CleanEnvID(alias)
+		if err != nil {
+			a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid alias: %s", alias))
 
-		err = fmt.Errorf("invalid alias: %w", err)
-		telemetry.ReportCriticalError(ctx, err)
+			err = fmt.Errorf("invalid alias: %w", err)
+			telemetry.ReportCriticalError(ctx, err)
 
-		return
+			return
+		}
 	}
 
 	telemetry.SetAttributes(ctx,
