@@ -1,0 +1,41 @@
+name: Build and push prepared templates
+
+on:
+  push:
+    paths:
+      - 'sandboxes/**'
+      - '.github/workflows/templates.yml'
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  buildAndPublish:
+    defaults:
+      run:
+        working-directory: ./sandboxes/base
+
+    name: Build and Push Images
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        run: |
+          docker buildx build \
+            --file e2b.Dockerfile \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            --tag ${{ secrets.DOCKERHUB_USERNAME }}/base:latest .

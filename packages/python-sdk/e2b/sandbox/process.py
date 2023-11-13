@@ -371,3 +371,25 @@ class ProcessManager:
             logger.error(f"Timeout error during starting the process: {cmd}")
             trigger_exit()
             raise e
+
+    def start_and_wait(
+        self,
+        cmd: str,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Callable[[int], Any]] = None,
+        env_vars: Optional[EnvVars] = None,
+        cwd: str = "",
+        process_id: Optional[str] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> ProcessOutput:
+        return self.start(
+            cmd,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
+            on_exit=on_exit,
+            env_vars=env_vars,
+            cwd=cwd,
+            process_id=process_id,
+            timeout=timeout,
+        ).wait()

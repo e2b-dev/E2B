@@ -125,3 +125,17 @@ def test_process_default_on_stdout_stderr():
     assert proc.exit_code == 1
 
     sandbox.close()
+
+
+def test_process_start_and_wait():
+    sandbox = Sandbox()
+    code = "node -e \"console.log('hello');\""
+
+    output = sandbox.process.start_and_wait(code)
+
+    proc = sandbox.process.start(code)
+    proc.wait()
+
+    assert output.exit_code == 0
+
+    sandbox.close()
