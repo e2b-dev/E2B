@@ -31,7 +31,7 @@ class Assistant:
                 continue
 
             args = json.loads(tool_call.function.arguments)
-            output = action(self, args)
+            output = action(self._sandbox, args)
 
             outputs.append(
                 {
