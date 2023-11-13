@@ -19,6 +19,7 @@ var mmdsTokenExpiration = 60 * time.Second
 type instanceLogsWriter struct{}
 
 type opts struct {
+	TraceID    string `json:"traceID"`
 	InstanceID string `json:"instanceID"`
 	EnvID      string `json:"envID"`
 	Address    string `json:"address"`
@@ -34,6 +35,7 @@ func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 
 	parsed["instanceID"] = opts.InstanceID
 	parsed["envID"] = opts.EnvID
+	parsed["traceID"] = opts.TraceID
 
 	data, err := json.Marshal(parsed)
 
@@ -156,7 +158,7 @@ func sendLogs(logs []byte) {
 
 	err = sendInstanceLogs(client, instanceLogs, mmdsOpts.Address)
 	if err != nil {
-		fmt.Fprint(os.Stderr, "error sending instance logs: %+v", err)
+		fmt.Fprint(os.Stderr, fmt.Sprintf("error sending instance logs: %+v", err))
 
 		return
 	}
