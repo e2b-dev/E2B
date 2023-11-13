@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="100" src="/readme-assets/logo-circle.png" alt="e2b logo">
+  <img width="100" src="https://raw.githubusercontent.com/e2b-dev/E2B/main/readme-assets/logo-circle.png" alt="e2b logo">
 </p>
 
 <h1 align="center">
@@ -28,7 +28,7 @@
   </a>
 </h4>
 
-<img width="100%" src="/readme-assets/preview.png" alt="Cover image">
+<img width="100%" src="https://raw.githubusercontent.com/e2b-dev/E2B/main/readme-assets/preview.png" alt="Cover image">
 
 ## What is E2B?
 
