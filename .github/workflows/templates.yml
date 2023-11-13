@@ -33,8 +33,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          file: e2b.Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/base:latest
+        run: |
+          docker buildx build \
+            --file e2b.Dockerfile \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            --tag ${{ secrets.DOCKERHUB_USERNAME }}/base:latest .
