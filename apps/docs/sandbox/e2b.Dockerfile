@@ -1,4 +1,6 @@
-FROM e2bdev/template:base
+FROM e2bdev/base
+# FROM nikolaik/python-nodejs:python3.11-nodejs20
+# RUN DEBIAN_FRONTEND=noninteractive apt-get update
 
 RUN mkdir /code
 WORKDIR /code
