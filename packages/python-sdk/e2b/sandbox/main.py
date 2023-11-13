@@ -144,11 +144,12 @@ class Sandbox(SandboxConnection):
         return self
 
     @property
-    def actions(self) -> List[Tuple[str, "Action"]]:
+    def actions(self) -> Dict[str, "Action"]:
         """
-        Return a list of registered actions.
+        Return a dict of registered actions.
         """
-        return [(name, action) for name, action in self._actions.items()]
+
+        return self._actions.copy()
 
     def action(self, name: Union[str, None] = None):
         """

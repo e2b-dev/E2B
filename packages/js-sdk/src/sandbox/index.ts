@@ -433,12 +433,12 @@ export class Sandbox extends SandboxConnection {
   }
 
   /**
-   * Returns a list of registered actions.
+   * Returns a map of registered actions.
    * 
-   * @returns List of registered actions
+   * @returns Map of registered actions
    */
   get actions() {
-    return [...this._actions.entries()]
+    return new Map(this._actions)
   }
 
   /**
