@@ -3,6 +3,7 @@ package nomad
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"os"
 	"time"
 
@@ -21,7 +22,7 @@ const (
 
 type InstanceInfo struct {
 	Instance  *api.Instance
-	TeamID    *string
+	TeamID    *uuid.UUID
 	StartTime *time.Time
 }
 
@@ -31,7 +32,7 @@ type InstanceCache struct {
 }
 
 // Add the instance to the cache and start expiration timer.
-func (c *InstanceCache) Add(instance *api.Instance, teamID *string, startTime *time.Time) error {
+func (c *InstanceCache) Add(instance *api.Instance, teamID *uuid.UUID, startTime *time.Time) error {
 	if c.Exists(instance.InstanceID) {
 		return fmt.Errorf("instance \"%s\" already exists", instance.InstanceID)
 	}
@@ -169,7 +170,7 @@ func (c *InstanceCache) Count() int {
 	return c.cache.Len()
 }
 
-func (c *InstanceCache) CountForTeam(teamID string) (count uint) {
+func (c *InstanceCache) CountForTeam(teamID uuid.UUID) (count uint) {
 	for _, item := range c.cache.Items() {
 		currentTeamID := item.Value().TeamID
 

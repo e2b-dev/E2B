@@ -3,13 +3,14 @@ package db
 import (
 	"context"
 	"fmt"
-
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/accesstoken"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+	"github.com/google/uuid"
 )
 
-func (db *DB) GetTeamID(ctx context.Context, apiKey string) (string, error) {
+func (db *DB) GetTeamAuth(ctx context.Context, apiKey string) (*ent.Team, error) {
 	result, err := db.
 		Client.
 		TeamAPIKey.
@@ -24,19 +25,19 @@ func (db *DB) GetTeamID(ctx context.Context, apiKey string) (string, error) {
 
 		fmt.Println(errMsg.Error())
 
-		return "", errMsg
+		return nil, errMsg
 	}
 	//
 	if result.IsBlocked {
 		errMsg := fmt.Errorf("team is blocked")
 
-		return "", errMsg
+		return nil, errMsg
 	}
 	//
-	return result.ID.String(), nil
+	return result, nil
 }
 
-func (db *DB) GetUserID(ctx context.Context, token string) (string, error) {
+func (db *DB) GetUserID(ctx context.Context, token string) (*uuid.UUID, error) {
 	result, err := db.
 		Client.
 		AccessToken.
@@ -48,8 +49,8 @@ func (db *DB) GetUserID(ctx context.Context, token string) (string, error) {
 
 		fmt.Println(errMsg.Error())
 
-		return "", errMsg
+		return nil, errMsg
 	}
 
-	return result.UserID.String(), nil
+	return &result.UserID, nil
 }

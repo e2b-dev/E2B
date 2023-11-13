@@ -13,12 +13,13 @@ const (
 	placeholderProperty      = "first interaction"
 )
 
-func (a *APIStore) IdentifyAnalyticsTeam(teamID string) {
+func (a *APIStore) IdentifyAnalyticsTeam(teamID string, teamName string) {
 	err := a.posthog.Enqueue(posthog.GroupIdentify{
 		Type: teamGroup,
 		Key:  teamID,
 		Properties: posthog.NewProperties().
-			Set(placeholderProperty, true),
+			Set(placeholderProperty, true).
+			Set("name", teamName),
 	},
 	)
 	if err != nil {

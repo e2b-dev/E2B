@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -18,8 +19,8 @@ const (
 )
 
 type Build struct {
-	BuildID string
-	TeamID  string
+	BuildID uuid.UUID
+	TeamID  uuid.UUID
 	Status  api.EnvironmentBuildStatus
 	Logs    []string
 }
@@ -40,7 +41,7 @@ func NewBuildCache(counter metric.Int64UpDownCounter) *BuildCache {
 }
 
 // Get returns the build info
-func (c *BuildCache) Get(envID string, buildID string) (*Build, error) {
+func (c *BuildCache) Get(envID string, buildID uuid.UUID) (*Build, error) {
 	item := c.cache.Get(envID)
 
 	if item == nil {
@@ -57,7 +58,7 @@ func (c *BuildCache) Get(envID string, buildID string) (*Build, error) {
 }
 
 // Append appends logs to the build
-func (c *BuildCache) Append(envID, buildID string, logs []string) error {
+func (c *BuildCache) Append(envID string, buildID uuid.UUID, logs []string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -79,7 +80,7 @@ func (c *BuildCache) Append(envID, buildID string, logs []string) error {
 }
 
 // CreateIfNotExists creates a new build if it doesn't exist in the cache or the build was already finished
-func (c *BuildCache) Create(teamID, envID, buildID string) error {
+func (c *BuildCache) Create(teamID uuid.UUID, envID string, buildID uuid.UUID) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -101,7 +102,7 @@ func (c *BuildCache) Create(teamID, envID, buildID string) error {
 }
 
 // SetDone marks the build as finished
-func (c *BuildCache) SetDone(envID string, buildID string, status api.EnvironmentBuildStatus) error {
+func (c *BuildCache) SetDone(envID string, buildID uuid.UUID, status api.EnvironmentBuildStatus) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -122,14 +123,14 @@ func (c *BuildCache) SetDone(envID string, buildID string, status api.Environmen
 	return nil
 }
 
-func (c *BuildCache) updateCounter(envID, buildID string, value int64) {
+func (c *BuildCache) updateCounter(envID string, buildID uuid.UUID, value int64) {
 	c.counter.Add(context.Background(), value,
 		metric.WithAttributes(attribute.String("env_id", envID)),
-		metric.WithAttributes(attribute.String("build_id", buildID)),
+		metric.WithAttributes(attribute.String("build_id", buildID.String())),
 	)
 }
 
-func (c *BuildCache) Delete(envID, buildID string) {
+func (c *BuildCache) Delete(envID string, buildID uuid.UUID) {
 	c.cache.Delete(envID)
 	c.updateCounter(envID, buildID, -1)
 }

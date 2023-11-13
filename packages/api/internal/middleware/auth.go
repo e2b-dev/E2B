@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
+	"github.com/google/uuid"
 	"net/http"
 	"strings"
 
@@ -19,18 +21,18 @@ var (
 	ErrInvalidAuthHeader = errors.New("authorization header is malformed")
 )
 
-type authenticator struct {
+type authenticator[T any] struct {
 	securitySchemeName string
 	headerKey          string
 	prefix             string
 	removePrefix       string
-	validationFunction func(context.Context, string) (string, error)
+	validationFunction func(context.Context, string) (T, error)
 	contextKey         string
 	errorMessage       string
 }
 
 // getApiKeyFromRequest extracts an API key from the header.
-func (a *authenticator) getAPIKeyFromRequest(req *http.Request) (string, error) {
+func (a *authenticator[T]) getAPIKeyFromRequest(req *http.Request) (string, error) {
 	apiKey := req.Header.Get(a.headerKey)
 	// Check for the Authorization header.
 	if apiKey == "" {
@@ -51,7 +53,7 @@ func (a *authenticator) getAPIKeyFromRequest(req *http.Request) (string, error) 
 }
 
 // Authenticate uses the specified validator to ensure an API key is valid.
-func (a *authenticator) Authenticate(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+func (a *authenticator[T]) Authenticate(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 	// Our security scheme is named ApiKeyAuth, ensure this is the case
 	if input.SecuritySchemeName != a.securitySchemeName {
 		return fmt.Errorf("security scheme %s != '%s'", a.securitySchemeName, input.SecuritySchemeName)
@@ -63,30 +65,30 @@ func (a *authenticator) Authenticate(ctx context.Context, input *openapi3filter.
 		return fmt.Errorf("%v %w", a.errorMessage, err)
 	}
 
-	// If the API key is valid, we will get a ID back
-	id, err := a.validationFunction(ctx, apiKey)
+	// If the API key is valid, we will get a result back
+	result, err := a.validationFunction(ctx, apiKey)
 	if err != nil {
 		return fmt.Errorf("%s %w", a.errorMessage, err)
 	}
 
 	telemetry.ReportEvent(ctx, "validated "+a.securitySchemeName)
 	// Set the property on the gin context
-	middleware.GetGinContext(ctx).Set(a.contextKey, id)
+	middleware.GetGinContext(ctx).Set(a.contextKey, result)
 
 	return nil
 }
 
-func CreateAuthenticationFunc(teamValidationFunction func(context.Context, string) (string, error), userValidationFunction func(context.Context, string) (string, error)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
-	apiKeyValidator := authenticator{
+func CreateAuthenticationFunc(teamValidationFunction func(context.Context, string) (ent.Team, error), userValidationFunction func(context.Context, string) (uuid.UUID, error)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+	apiKeyValidator := authenticator[ent.Team]{
 		securitySchemeName: "ApiKeyAuth",
 		headerKey:          "X-API-Key",
 		prefix:             "e2b_",
 		removePrefix:       "",
 		validationFunction: teamValidationFunction,
-		contextKey:         constants.TeamIDContextKey,
+		contextKey:         constants.TeamContextKey,
 		errorMessage:       "invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key:",
 	}
-	accessTokenValidator := authenticator{
+	accessTokenValidator := authenticator[uuid.UUID]{
 		securitySchemeName: "AccessTokenAuth",
 		headerKey:          "Authorization",
 		prefix:             "sk_e2b_",
