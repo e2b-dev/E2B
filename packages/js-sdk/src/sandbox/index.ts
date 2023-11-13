@@ -264,7 +264,13 @@ export class Sandbox extends SandboxConnection {
 
     // Init Process handler
     this.process = {
-      start: async (opts: ProcessOpts) => {
+      /**
+       * Starts a new process.
+       * @param optsOrID Process options or Process ID
+       * @returns New process
+       */
+      start: async (optsOrID: string | ProcessOpts) => {
+        const opts = typeof optsOrID === 'string' ? { cmd: optsOrID } : optsOrID
         const start = async ({
           cmd,
           onStdout,
@@ -395,7 +401,13 @@ export class Sandbox extends SandboxConnection {
         const timeout = opts.timeout
         return await withTimeout(start, timeout)(opts)
       },
+
+      startAndWait: async (optsOrID: string | ProcessOpts) => {
+        const process = await this.process.start(optsOrID)
+        return await process.wait()
+      }
     }
+
 
     const _resolvePath = (path: string): string =>
       resolvePath(path, this.cwd, this.logger)
@@ -413,7 +425,18 @@ export class Sandbox extends SandboxConnection {
     return `${protocol}://${hostname}${FILE_ROUTE}`
   }
 
-  static async create(opts?: SandboxOpts) {
+  /**
+   * Creates a new Sandbox.
+   * @param optsOrID Sandbox options or Sandbox ID
+   * @returns New Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * ```
+   */
+  static async create(optsOrID?: string | SandboxOpts) {
+    const opts = typeof optsOrID === 'string' ? { id: optsOrID } : optsOrID
     return new Sandbox(opts)
       ._open({ timeout: opts?.timeout })
       .then(async (sandbox) => {

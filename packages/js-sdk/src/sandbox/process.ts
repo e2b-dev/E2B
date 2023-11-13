@@ -164,5 +164,6 @@ export interface ProcessOpts {
 }
 
 export interface ProcessManager {
-  readonly start: (opts: ProcessOpts) => Promise<Process>;
+  readonly start: (optsOrID: string | ProcessOpts) => Promise<Process>;
+  readonly startAndWait: (optsOrID: string | ProcessOpts) => Promise<ProcessOutput>;
 }
