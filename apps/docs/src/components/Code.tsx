@@ -14,7 +14,7 @@ import {
 import { CopyButton } from '@/components/CopyButton'
 import { useApiKey } from '@/utils/useUser'
 import { ProcessMessage } from '@e2b/sdk'
-import { useSandboxesStore } from '@/utils/useSandboxes'
+import { useSandboxStore } from '@/utils/useSandbox'
 import { useSignIn } from '@/utils/useSignIn'
 import { LangShort, languageNames, mdLangToLangShort } from '@/utils/consts'
 import { usePostHog } from 'posthog-js/react'
@@ -54,8 +54,8 @@ function CodePanel({
 
   const codeGroupContext = useContext(CodeGroupContext)
 
-  const sandboxDef = useSandboxesStore((s) => s.sandboxes[lang])
-  const initSandbox = useSandboxesStore((s) => s.initSandbox)
+  const sandboxDef = useSandboxStore((s) => s.sandbox)
+  const initSandbox = useSandboxStore((s) => s.initSandbox)
   const { outputLines, dispatch } = useOutputReducer()
   const [isRunning, setIsRunning] = useState(false)
 
@@ -93,11 +93,11 @@ function CodePanel({
     try {
       if (!sandbox) {
         if (sandboxDef?.promise) {
-          console.log(`Sandbox for "${lang}" is still opening, waiting...`)
+          console.log('Sandbox is still being created, waiting...')
           sandbox = await sandboxDef.promise
         } else {
-          console.log(`Sandbox not ready yet for "${lang}", opening...`)
-          sandbox = await initSandbox(lang, apiKey)
+          console.log('Sandbox not ready yet, creating...')
+          sandbox = await initSandbox(apiKey)
         }
       }
     } catch (err) {
