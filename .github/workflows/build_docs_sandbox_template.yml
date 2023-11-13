@@ -1,11 +1,10 @@
 name: Build E2B docs sandbox template
 
 on:
-  push:
-    paths:
-      - "apps/docs/sandbox/**"
-    branches:
-      - main
+  workflow_call:
+    secrets:
+      E2B_ACCESS_TOKEN:
+        required: true
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
