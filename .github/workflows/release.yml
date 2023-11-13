@@ -179,6 +179,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  build-docs-sandbox-template:
+    name: CLI Tests
+    needs: [ changes ]
+    if: needs.release.result == 'success' && (needs.changes.outputs.js-sdk == 'true' || needs.changes.outputs.python-sdk == 'true')
+    uses: ./.github/workflows/build_docs_sandbox_template.yml
+    secrets: inherit
+
   report-failure:
     needs: [python-tests, js-tests, cli-tests, release]
     if: failure()
