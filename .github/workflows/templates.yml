@@ -15,7 +15,7 @@ jobs:
   buildAndPublish:
     defaults:
       run:
-        working-directory: ./templates/base
+        working-directory: ./sandboxes/base
 
     name: Build and Push Images
     runs-on: ubuntu-20.04
@@ -33,9 +33,8 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
-        run: |
-          docker buildx build \
-            --file e2b.Dockerfile \
-            --platform linux/amd64,linux/arm64 \
-            --push \
-            --tag ${{ secrets.DOCKERHUB_USERNAME }}/base:latest .
+        uses: docker/build-push-action@v5
+        with:
+          file: e2b.Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/base:latest
