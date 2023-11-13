@@ -125,3 +125,15 @@ test('test default on stdout/stderr', async () => {
 
   await sandbox.close()
 }, 10000)
+
+
+
+test('test process start and wait', async () => {
+  const sandbox = await Sandbox.create(id)
+
+  const output = await sandbox.process.startAndWait('node -e "console.log(\'Hello\');"')
+
+  expect(output.exitCode).toEqual(0)
+
+  await sandbox.close()
+})
