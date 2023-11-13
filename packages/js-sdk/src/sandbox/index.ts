@@ -10,6 +10,7 @@ import { Process, ProcessManager, ProcessMessage, ProcessOpts, ProcessOutput, pr
 import { CallOpts, SandboxConnection, SandboxConnectionOpts } from './sandboxConnection'
 import { Terminal, TerminalManager, TerminalOpts, TerminalOutput, terminalService } from './terminal'
 import { resolvePath } from '../utils/filesystem'
+import { Assistant } from '../templates/openai'
 
 export type DownloadFileFormat =
   | 'base64'
@@ -26,12 +27,18 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   onExit?: () => Promise<void> | void;
 }
 
+export interface Action<T = { [key: string]: any }> {
+  (sandbox: Sandbox, args: T): string | Promise<string>
+}
+
 export class Sandbox extends SandboxConnection {
   readonly terminal: TerminalManager
   readonly filesystem: FilesystemManager
   readonly process: ProcessManager
 
-  private onScanPorts?: ScanOpenPortsHandler
+  readonly _actions: Map<string, Action<any>> = new Map()
+
+  private readonly onScanPorts?: ScanOpenPortsHandler
 
   protected constructor(opts?: SandboxOpts) {
     opts = opts || {}
@@ -407,10 +414,20 @@ export class Sandbox extends SandboxConnection {
    * The file will be uploaded to the user's home directory with the same name.
    * If a file with the same name already exists, it will be overwritten.
    */
-  public get fileURL() {
+  get fileURL() {
     const protocol = this.opts.__debug_devEnv === 'local' ? 'http' : 'https'
     const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
     return `${protocol}://${hostname}${FILE_ROUTE}`
+  }
+
+  get actions() {
+    return [...this._actions.entries()]
+  }
+
+  get openai() {
+    return {
+      assistant: new Assistant(this),
+    } as const
   }
 
   static async create(opts?: SandboxOpts) {
@@ -425,21 +442,14 @@ export class Sandbox extends SandboxConnection {
       })
   }
 
-  protected override async _open(opts: CallOpts) {
-    await super._open(opts)
+  registerAction<T = { [name: string]: any }>(name: string, action: Action<T>) {
+    this._actions.set(name, action)
 
-    const portsHandler = this.onScanPorts
-      ? (ports: { State: string; Ip: string; Port: number }[]) =>
-        this.onScanPorts?.(
-          ports.map((p) => ({ ip: p.Ip, port: p.Port, state: p.State })),
-        )
-      : undefined
+    return this
+  }
 
-    await this._handleSubscriptions(
-      portsHandler
-        ? this._subscribe(codeSnippetService, portsHandler, 'scanOpenedPorts')
-        : undefined,
-    )
+  unregisterAction(name: string) {
+    this._actions.delete(name)
 
     return this
   }
@@ -502,5 +512,24 @@ export class Sandbox extends SandboxConnection {
       default:
         return await response.arrayBuffer()
     }
+  }
+
+  protected override async _open(opts: CallOpts) {
+    await super._open(opts)
+
+    const portsHandler = this.onScanPorts
+      ? (ports: { State: string; Ip: string; Port: number }[]) =>
+        this.onScanPorts?.(
+          ports.map((p) => ({ ip: p.Ip, port: p.Port, state: p.State })),
+        )
+      : undefined
+
+    await this._handleSubscriptions(
+      portsHandler
+        ? this._subscribe(codeSnippetService, portsHandler, 'scanOpenedPorts')
+        : undefined,
+    )
+
+    return this
   }
 }
