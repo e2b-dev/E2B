@@ -16,7 +16,7 @@ class Assistant:
     def __init__(self, sandbox: "Sandbox"):
         self._sandbox = sandbox
 
-    def _run(self, run: "Run") -> List["ToolOutput"]:
+    def run(self, run: "Run") -> List["ToolOutput"]:
         if run.status != "requires_action":
             return []
 
