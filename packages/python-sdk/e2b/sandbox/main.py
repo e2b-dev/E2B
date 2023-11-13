@@ -3,7 +3,7 @@ import urllib.parse
 import requests
 
 from os import path
-from typing import Any, Callable, List, Literal, Optional, IO
+from typing import Any, Callable, Dict, List, Literal, Optional, IO, Tuple, Union
 
 from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
@@ -110,6 +110,35 @@ class Sandbox(SandboxConnection):
             on_close=self._close_services,
             timeout=timeout,
         )
+        self._actions: Dict[str, Action] = {}
+
+    def register_action(self, name: str, action: "Action"):
+        self._actions[name] = action
+
+        return self
+
+    def unregister_action(self, name: str):
+        del self._actions[name]
+
+        return self
+
+    @property
+    def actions(self) -> List[Tuple[str, "Action"]]:
+        return [(name, action) for name, action in self._actions.items()]
+
+    def action(self, name: Union[str, None] = None):
+        def _action(action: Action):
+            self.register_action(name or action.__name__, action)
+
+            return action
+
+        return _action
+
+    @property
+    def openai(self):
+        from e2b.templates.openai import OpenAI, Assistant
+
+        return OpenAI(Assistant(self))
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
@@ -190,3 +219,6 @@ class Sandbox(SandboxConnection):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
+
+
+Action = Callable[[Sandbox, Dict[str, Any]], str]
