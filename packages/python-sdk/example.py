@@ -14,6 +14,10 @@ logging.basicConfig(level=logging.ERROR)
 
 def main():
     s = Sandbox(api_key=E2B_API_KEY)
+
+
+    s.openai.assistant.
+    
     a = s.process.start("ls -la /var ")
     a.wait()
     print(a.stdout)

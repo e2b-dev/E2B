@@ -17,6 +17,13 @@ class Assistant:
         self._sandbox = sandbox
 
     def run(self, run: "Run") -> List["ToolOutput"]:
+        """
+        Call the required actions for the provided run and return their outputs.
+
+        :param run: OpenAI run object from `openai.beta.threads.runs.retrieve` or `openai.beta.threads.runs.retrieve.create` call that contains the names of the required actions and their arguments.
+
+        :return: The outputs of the required actions in the run.
+        """
         if run.status != "requires_action":
             return []
 

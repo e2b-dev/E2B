@@ -113,20 +113,50 @@ class Sandbox(SandboxConnection):
         self._actions: Dict[str, Action] = {}
 
     def register_action(self, name: str, action: "Action"):
+        """
+        Register an action.
+        An action is a function that takes a sandbox and a dictionary of arguments and returns a string.
+
+        :param name: The name of the action
+        :param action: The action to register
+
+        Example:
+
+            ```python
+            from e2b import Sandbox
+
+            s = Sandbox()
+            s.register_action("hello", lambda s, args: f"Hello {args['name']}!")
+            ```
+        """
         self._actions[name] = action
 
         return self
 
     def unregister_action(self, name: str):
+        """
+        Unregister an action.
+
+        :param name: The name of the action
+        """
         del self._actions[name]
 
         return self
 
     @property
     def actions(self) -> List[Tuple[str, "Action"]]:
+        """
+        Return a list of registered actions.
+        """
         return [(name, action) for name, action in self._actions.items()]
 
     def action(self, name: Union[str, None] = None):
+        """
+        Decorator to register an action.
+
+        :param name: The name of the action, if not provided, the name of the function will be used
+        """
+
         def _action(action: Action):
             self.register_action(name or action.__name__, action)
 
@@ -136,6 +166,19 @@ class Sandbox(SandboxConnection):
 
     @property
     def openai(self):
+        """
+        OpenAI integration that can be used to get output for the actions registered in the sandbox.
+
+        Example:
+
+            ```python
+            from e2b import Sandbox
+
+            s = Sandbox()
+            s.openai.assistant.run(run)
+            ```
+        """
+
         from e2b.templates.openai import OpenAI, Assistant
 
         return OpenAI(Assistant(self))

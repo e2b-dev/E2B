@@ -432,10 +432,20 @@ export class Sandbox extends SandboxConnection {
     return `${protocol}://${hostname}${FILE_ROUTE}`
   }
 
+  /**
+   * Returns a list of registered actions.
+   * 
+   * @returns List of registered actions
+   */
   get actions() {
     return [...this._actions.entries()]
   }
 
+  /**
+   * OpenAI integration that can be used to get output for the actions registered in the sandbox.
+   * 
+   * @returns OpenAI integration
+   */
   get openai() {
     return {
       assistant: new Assistant(this),
@@ -465,12 +475,36 @@ export class Sandbox extends SandboxConnection {
       })
   }
 
+  /**
+   * Registers a new action.
+   * @param name Action name
+   * @param action Action handler
+   * @returns Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * sandbox.registerAction('hello', (sandbox, args) => 'Hello World')
+   * ```
+   */
   registerAction<T = { [name: string]: any }>(name: string, action: Action<T>) {
     this._actions.set(name, action)
 
     return this
   }
 
+  /**
+   * Unregisters an action.
+   * @param name Action name
+   * @returns Sandbox
+   * 
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * sandbox.registerAction('hello', (sandbox, args) => 'Hello World')
+   * sandbox.unregisterAction('hello')
+   * ```
+   */
   unregisterAction(name: string) {
     this._actions.delete(name)
 
@@ -511,6 +545,18 @@ export class Sandbox extends SandboxConnection {
     return `/home/user/${filename}`
   }
 
+  /**
+   * Downloads a file from the sandbox.
+   * @param remotePath Path to a file on the sandbox
+   * @param format Format of the downloaded file
+   * @returns File content
+   * 
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * const content = await sandbox.downloadFile('/home/user/file.txt')
+   * ```
+   */
   async downloadFile(remotePath: string, format?: DownloadFileFormat) {
     remotePath = encodeURIComponent(remotePath)
 

@@ -2,9 +2,16 @@ import type { Run, RunSubmitToolOutputsParams } from 'openai/resources/beta/thre
 
 import type { Sandbox } from '../sandbox'
 
+
 export class Assistant {
   constructor(private readonly sandbox: Sandbox) { }
 
+  /**
+   * Call the required actions for the provided run and return their outputs.
+   * 
+   * @param run OpenAI run object from `openai.beta.threads.runs.retrieve` or `openai.beta.threads.runs.retrieve.create` call that contains the names of the required actions and their arguments.
+   * @returns The outputs of the required actions in the run.
+   */
   async run(run: Run): Promise<RunSubmitToolOutputsParams.ToolOutput[]> {
     if (run.status !== 'requires_action') {
       return []
