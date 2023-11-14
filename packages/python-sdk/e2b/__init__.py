@@ -22,6 +22,7 @@ from .sandbox import (
     SandboxException,
     TerminalException,
     ProcessException,
+    CurrentWorkingDirectoryDoesntExistException,
     FilesystemException,
     RpcException,
     ProcessMessage,

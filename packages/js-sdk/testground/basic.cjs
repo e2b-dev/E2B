@@ -2,7 +2,7 @@ const e2b = require('../dist')
 
 async function main() {
   const sandbox = await e2b.Sandbox.create({
-    id: 'Nodejs',
+    id: 'base',
     apiKey: process.env.E2B_API_KEY
   })
 
