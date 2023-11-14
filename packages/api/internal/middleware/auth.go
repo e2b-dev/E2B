@@ -4,16 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
-	"github.com/google/uuid"
 	"net/http"
 	"strings"
 
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
+	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/google/uuid"
+	middleware "github.com/oapi-codegen/gin-middleware"
+
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
-	"github.com/getkin/kin-openapi/openapi3filter"
-	middleware "github.com/oapi-codegen/gin-middleware"
 )
 
 var (

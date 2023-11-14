@@ -3,14 +3,15 @@ package nomad
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"os"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/e2b-dev/infra/packages/api/internal/api"
 )
 
 const (
