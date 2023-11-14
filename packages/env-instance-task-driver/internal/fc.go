@@ -247,10 +247,12 @@ func (d *Driver) initializeFC(
 			InstanceID string `json:"instanceID"`
 			EnvID      string `json:"envID"`
 			Address    string `json:"address"`
+			TraceID    string `json:"traceID"`
 		}{
 			InstanceID: slot.InstanceID,
 			EnvID:      taskConfig.EnvID,
 			Address:    taskConfig.LogsProxyAddress,
+			TraceID:    taskConfig.TraceID,
 		},
 	); err != nil {
 		m.StopVMM()
