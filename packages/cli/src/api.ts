@@ -7,7 +7,8 @@ export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
 
 const authErrorBox = boxen.default(
-  `You must be logged in to use this command. Run ${asBold('e2b login')}.`,
+  `You must be logged in to use this command. Run ${asBold('e2b login')}.
+If you are seeing this message in CI/CD you may need to set the ${asBold('E2B_ACCESS_TOKEN')} environment variable.`,
   {
     width: 70,
     float: 'center',
