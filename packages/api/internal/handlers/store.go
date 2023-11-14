@@ -10,6 +10,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/db"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 )
@@ -184,30 +186,30 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
 
-func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (string, error) {
-	teamID, err := a.supabase.GetTeamID(ctx, apiKey)
+func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (ent.Team, error) {
+	team, err := a.supabase.GetTeamAuth(ctx, apiKey)
 	if err != nil {
-		return "", fmt.Errorf("failed to get get team from db for api key: %w", err)
+		return ent.Team{}, fmt.Errorf("failed to get get team from db for api key: %w", err)
 	}
 
-	if teamID == "" {
-		return "", fmt.Errorf("failed to get a team from api key")
+	if team == nil {
+		return ent.Team{}, fmt.Errorf("failed to get a team from api key")
 	}
 
-	return teamID, nil
+	return *team, nil
 }
 
-func (a *APIStore) GetUserFromAccessToken(ctx context.Context, accessToken string) (string, error) {
+func (a *APIStore) GetUserFromAccessToken(ctx context.Context, accessToken string) (uuid.UUID, error) {
 	userID, err := a.supabase.GetUserID(ctx, accessToken)
 	if err != nil {
-		return "", fmt.Errorf("failed to get get user from db for access token: %w", err)
+		return uuid.UUID{}, fmt.Errorf("failed to get get user from db for access token: %w", err)
 	}
 
-	if userID == "" {
-		return "", fmt.Errorf("failed to get a user from access token")
+	if userID == nil {
+		return uuid.UUID{}, fmt.Errorf("failed to get a user from access token")
 	}
 
-	return userID, nil
+	return *userID, nil
 }
 
 func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
@@ -223,7 +225,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	return deleteInstance(a.nomad, a.posthog, instanceID, info.TeamID, info.StartTime, purge)
 }
 
-func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID string, public bool) (string, bool, error) {
+func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (string, bool, error) {
 	return a.supabase.HasEnvAccess(ctx, aliasOrEnvID, teamID, public)
 }
 
@@ -235,7 +237,7 @@ func getDeleteInstanceFunction(nomad *nomad.NomadClient, posthogClient posthog.C
 	}
 }
 
-func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, instanceID string, teamID *string, startTime *time.Time, purge bool) *api.APIError {
+func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, instanceID string, teamID *uuid.UUID, startTime *time.Time, purge bool) *api.APIError {
 	delErr := nomad.DeleteInstance(instanceID, purge)
 	if delErr != nil {
 		errMsg := fmt.Errorf("cannot delete instance '%s': %w", instanceID, delErr.Err)

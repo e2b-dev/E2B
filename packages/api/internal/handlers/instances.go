@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -41,10 +42,9 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
-	// Get team id from context, use TeamIDContextKey
-	teamID := c.Value(constants.TeamIDContextKey).(string)
-
-	envID, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, teamID, true)
+	// Get team from context, use TeamContextKey
+	team := c.Value(constants.TeamContextKey).(ent.Team)
+	envID, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
 		errMsg := fmt.Errorf("error when checking team access: %w", checkErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -55,7 +55,7 @@ func (a *APIStore) PostInstances(
 	}
 
 	if !hasAccess {
-		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", teamID, envID)
+		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", team.ID, envID)
 		telemetry.ReportError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
@@ -64,13 +64,13 @@ func (a *APIStore) PostInstances(
 	}
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("instance.team_id", teamID),
+		attribute.String("instance.team_id", team.ID.String()),
 		attribute.String("instance.env_id", envID),
 	)
 
 	// Check if team has reached max instances
-	if instanceCount := a.cache.CountForTeam(teamID); instanceCount >= maxInstancesPerTeam {
-		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", teamID, maxInstancesPerTeam)
+	if instanceCount := a.cache.CountForTeam(team.ID); instanceCount >= maxInstancesPerTeam {
+		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, maxInstancesPerTeam)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
@@ -92,15 +92,15 @@ func (a *APIStore) PostInstances(
 
 	telemetry.ReportEvent(ctx, "created environment instance")
 
-	a.IdentifyAnalyticsTeam(teamID)
+	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.CreateAnalyticsTeamEvent(teamID, "created_instance", properties.
+	a.CreateAnalyticsTeamEvent(team.ID.String(), "created_instance", properties.
 		Set("environment", envID).
 		Set("instance_id", instance.InstanceID).
 		Set("infra_version", "v1"))
 
 	startingTime := time.Now()
-	if cacheErr := a.cache.Add(instance, &teamID, &startingTime); cacheErr != nil {
+	if cacheErr := a.cache.Add(instance, &team.ID, &startingTime); cacheErr != nil {
 		errMsg := fmt.Errorf("error when adding instance to cache: %w", cacheErr)
 		telemetry.ReportError(ctx, errMsg)
 

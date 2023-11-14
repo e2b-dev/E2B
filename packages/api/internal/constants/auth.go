@@ -1,4 +1,4 @@
 package constants
 
-const TeamIDContextKey string = "team_id"
+const TeamContextKey string = "team"
 const UserIDContextKey string = "user_id"
