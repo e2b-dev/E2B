@@ -110,9 +110,9 @@ class Sandbox(SandboxConnection):
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,
-            on_close=self._close_services,
             timeout=timeout,
         )
+        self._on_close_child = self._close_services
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
@@ -130,41 +130,6 @@ class Sandbox(SandboxConnection):
     def _close_services(self):
         self._terminal._close()
         self._process._close()
-
-    @classmethod
-    def reconnect(
-        cls,
-        sandbox_id: str,
-        api_key: Optional[str] = None,
-        cwd: Optional[str] = None,
-        env_vars: Optional[EnvVars] = None,
-        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        timeout: Optional[float] = TIMEOUT,
-        _debug_hostname: Optional[str] = None,
-        _debug_port: Optional[int] = None,
-        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
-    ):
-        instance_id, client_id = sandbox_id.split("-")
-        return cls(
-            id="unknown",
-            api_key=api_key,
-            cwd=cwd,
-            env_vars=env_vars,
-            on_scan_ports=on_scan_ports,
-            on_stdout=on_stdout,
-            on_stderr=on_stderr,
-            timeout=timeout,
-            _sandbox=models.Instance(
-                instance_id=instance_id,
-                client_id=client_id,
-                env_id=getattr(cls, "sandbox_template_id", "unknown"),
-            ),
-            _debug_hostname=_debug_hostname,
-            _debug_port=_debug_port,
-            _debug_dev_env=_debug_dev_env,
-        )
 
     def close(self) -> None:
         """

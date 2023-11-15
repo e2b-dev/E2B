@@ -1,11 +1,11 @@
 import logging
 import time
-from typing import Optional, Callable, Any, Tuple, List, Union
+from typing import Optional, Callable, Any, Tuple, List, Union, Literal
 from e2b.sandbox.process import ProcessMessage
 
 from pydantic import BaseModel, PrivateAttr
 
-from e2b import EnvVars, Sandbox
+from e2b import EnvVars, Sandbox, OpenPort
 from e2b.constants import TIMEOUT
 
 logger = logging.getLogger(__name__)
@@ -39,6 +39,7 @@ class DataAnalysis(Sandbox):
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_artifact: Optional[Callable[[Artifact], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
+        **kwargs,
     ):
         self.on_artifact = on_artifact
         super().__init__(
@@ -50,6 +51,7 @@ class DataAnalysis(Sandbox):
             on_stdout=on_stdout,
             on_stderr=on_stderr,
             on_exit=on_exit,
+            **kwargs,
         )
 
     def run_python(

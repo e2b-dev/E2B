@@ -42,6 +42,7 @@ class Subscription(BaseModel):
 
 class SandboxConnection:
     _refresh_retries = 4
+    _on_close_child: Optional[Callable[[], Any]] = None
 
     @property
     def id(self) -> str:
@@ -72,7 +73,6 @@ class SandboxConnection:
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
-        on_close: Optional[Callable[[], Any]] = None,
         timeout: Optional[float] = TIMEOUT,
         _sandbox: Optional[models.Instance] = None,
         _debug_hostname: Optional[str] = None,
@@ -93,7 +93,6 @@ class SandboxConnection:
         self._debug_hostname = _debug_hostname
         self._debug_port = _debug_port
         self._debug_dev_env = _debug_dev_env
-        self._on_close_child = on_close
         self._sandbox = _sandbox
 
         self._is_open = False
@@ -111,6 +110,24 @@ class SandboxConnection:
     def create(cls, *args, **kwargs):
         warnings.warn("Sandbox.create() is deprecated, use Sandbox() instead")
         return cls(*args, **kwargs)
+
+    @classmethod
+    def reconnect(
+        cls,
+        sandbox_id: str,
+        *args,
+        **kwargs,
+    ):
+        instance_id, client_id = sandbox_id.split("-")
+        return cls(
+            *args,
+            _sandbox=models.Instance(
+                instance_id=instance_id,
+                client_id=client_id,
+                env_id=getattr(cls, "sandbox_template_id", "unknown"),
+            ),
+            **kwargs,
+        )
 
     def get_hostname(self, port: Optional[int] = None):
         """

@@ -4,7 +4,7 @@ from time import sleep
 
 from dotenv import load_dotenv
 
-from e2b import Sandbox
+from e2b import DataAnalysis, Sandbox
 
 load_dotenv()
 id = "Python3"
