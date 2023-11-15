@@ -106,7 +106,15 @@ export class SandboxConnection {
   }
 
 
+  /**
+   * Keep the sandbox alive for the specified duration.
+   *
+   * `keepAlive` method requires `this` context - you may need to bind it.
+   * @param duration Duration in milliseconds
+   * @returns Promise that resolves when the sandbox is kept alive
+   */
   public async keepAlive(duration: number) {
+    duration = duration / 1000
     if (!this.sandbox) {
       throw new Error('Cannot keep alive - sandbox is not initialized')
     }
