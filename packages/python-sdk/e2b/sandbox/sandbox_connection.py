@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from urllib3.exceptions import ReadTimeoutError, MaxRetryError, ConnectTimeoutError
 
 from e2b.api import E2BApiClient, exceptions, models, client
+from e2b.api.v2.client import InstancesInstanceIDRefreshesPostRequest
 from e2b.constants import (
     SANDBOX_DOMAIN,
     SANDBOX_REFRESH_PERIOD,
@@ -43,6 +44,15 @@ class SandboxConnection:
     _refresh_retries = 4
 
     @property
+    def id(self) -> str:
+        """
+        The sandbox ID.
+        """
+        if not self._sandbox:
+            raise SandboxException("Sandbox is not running.")
+        return f"{self._sandbox.instance_id}-{self._sandbox.client_id}"
+
+    @property
     def finished(self):
         """
         A future that is resolved when the sandbox exits.
@@ -64,6 +74,7 @@ class SandboxConnection:
         env_vars: Optional[EnvVars] = None,
         on_close: Optional[Callable[[], Any]] = None,
         timeout: Optional[float] = TIMEOUT,
+        _sandbox: Optional[models.Instance] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -83,8 +94,8 @@ class SandboxConnection:
         self._debug_port = _debug_port
         self._debug_dev_env = _debug_dev_env
         self._on_close_child = on_close
+        self._sandbox = _sandbox
 
-        self._sandbox: Optional[models.Instance] = None
         self._is_open = False
         self._process_cleanup: List[Callable[[], Any]] = []
         self._refreshing_task: Optional[Future] = None
@@ -92,7 +103,7 @@ class SandboxConnection:
         self._rpc: Optional[SandboxRpc] = None
         self._finished = DeferredFuture(self._process_cleanup)
 
-        logger.info(f"Sandbox for code snippet {self._id} initialized")
+        logger.info(f"Sandbox for template {self._id} initialized")
 
         self._open(timeout=timeout)
 
@@ -120,12 +131,29 @@ class SandboxConnection:
             else:
                 return self._debug_hostname
 
-        hostname = (
-            f"{self._sandbox.instance_id}-{self._sandbox.client_id}.{SANDBOX_DOMAIN}"
-        )
+        hostname = f"{self.id}.{SANDBOX_DOMAIN}"
         if port:
             return f"{port}-{hostname}"
         return hostname
+
+    def keep_alive(self, duration: int) -> None:
+        with E2BApiClient(api_key=self._api_key) as api_client:
+            api = client.InstancesApi(api_client)
+            try:
+                api.instances_instance_id_refreshes_post(
+                    self._sandbox.instance_id,
+                    InstancesInstanceIDRefreshesPostRequest(duration=duration),
+                )
+                logger.debug(
+                    f"Sandbox will be kept alive without connection for next {duration} seconds."
+                )
+            except exceptions.ApiException as e:
+                if e.status == 404:
+                    raise SandboxException(
+                        f"Sandbox {self._sandbox.instance_id} failed because it cannot be found"
+                    ) from e
+                else:
+                    raise e
 
     def close(self) -> None:
         """
@@ -158,63 +186,67 @@ class SandboxConnection:
 
         You must call this method before using the sandbox.
         """
-        if self._is_open or self._sandbox:
+        if self._is_open:
             raise SandboxException("Sandbox connect was already called")
         else:
             self._is_open = True
 
-        try:
-            with E2BApiClient(api_key=self._api_key) as api_client:
-                api = client.InstancesApi(api_client)
+        if not self._sandbox:
+            try:
+                with E2BApiClient(api_key=self._api_key) as api_client:
+                    api = client.InstancesApi(api_client)
 
-                self._sandbox = api.instances_post(
-                    models.NewInstance(envID=self._id),
-                    _request_timeout=timeout,
-                )
-                logger.info(
-                    f"Sandbox {self._sandbox.env_id} created (id:{self._sandbox.instance_id})"
-                )
-
-                executor = ThreadPoolExecutor(thread_name_prefix="e2b-refresh")
-                self._refreshing_task = executor.submit(
-                    self._refresh, self._sandbox.instance_id
-                )
-
-                self._process_cleanup.append(self._refreshing_task.cancel)
-                self._process_cleanup.append(lambda: shutdown_executor(executor))
-
-        except ReadTimeoutError as e:
-            logger.error(f"Failed to acquire sandbox")
-            self._close()
-            raise TimeoutException(
-                f"Failed to acquire sandbox: {e}",
-            ) from e
-        except MaxRetryError as e:
-            if isinstance(e.reason, ConnectTimeoutError):
+                    self._sandbox = api.instances_post(
+                        models.NewInstance(envID=self._id),
+                        _request_timeout=timeout,
+                    )
+                    logger.info(
+                        f"Sandbox {self._sandbox.env_id} created (id:{self._sandbox.instance_id})"
+                    )
+            except ReadTimeoutError as e:
+                logger.error(f"Failed to acquire sandbox")
+                self._close()
                 raise TimeoutException(
                     f"Failed to acquire sandbox: {e}",
                 ) from e
-            raise e
-        except Exception as e:
-            logger.error(f"Failed to acquire sandbox")
-            self._close()
-            raise e
+            except MaxRetryError as e:
+                if isinstance(e.reason, ConnectTimeoutError):
+                    raise TimeoutException(
+                        f"Failed to acquire sandbox: {e}",
+                    ) from e
+                raise e
+            except Exception as e:
+                logger.error(f"Failed to acquire sandbox")
+                self._close()
+                raise e
 
-        hostname = self.get_hostname(self._debug_port or ENVD_PORT)
-        protocol = "ws" if self._debug_dev_env == "local" else "wss"
-
-        sandbox_url = f"{protocol}://{hostname}{WS_ROUTE}"
-
+        self._start_refreshing()
         try:
-            self._rpc = SandboxRpc(
-                url=sandbox_url,
-                on_message=self._handle_notification,
-            )
-            self._rpc.connect(timeout=timeout)
+            self._connect_rpc(timeout)
         except Exception as e:
             print(e)
             self._close()
             raise e
+
+    def _connect_rpc(self, timeout: Optional[float] = TIMEOUT):
+        hostname = self.get_hostname(self._debug_port or ENVD_PORT)
+        protocol = "ws" if self._debug_dev_env == "local" else "wss"
+
+        sandbox_url = f"{protocol}://{hostname}{WS_ROUTE}"
+        self._rpc = SandboxRpc(
+            url=sandbox_url,
+            on_message=self._handle_notification,
+        )
+        self._rpc.connect(timeout=timeout)
+
+    def _start_refreshing(self):
+        executor = ThreadPoolExecutor(thread_name_prefix="e2b-refresh")
+        self._refreshing_task = executor.submit(
+            self._refresh, self._sandbox.instance_id
+        )
+
+        self._process_cleanup.append(self._refreshing_task.cancel)
+        self._process_cleanup.append(lambda: shutdown_executor(executor))
 
     def _call(
         self,

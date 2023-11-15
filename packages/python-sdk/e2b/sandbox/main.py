@@ -5,6 +5,7 @@ import requests
 from os import path
 from typing import Any, Callable, List, Literal, Optional, IO
 
+from e2b.api.v2.client import models
 from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
 from e2b.sandbox.env_vars import EnvVars
@@ -63,6 +64,7 @@ class Sandbox(SandboxConnection):
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
         timeout: Optional[float] = TIMEOUT,
+        _sandbox: Optional[models.Instance] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -104,6 +106,7 @@ class Sandbox(SandboxConnection):
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
+            _sandbox=_sandbox,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,
@@ -111,7 +114,7 @@ class Sandbox(SandboxConnection):
             timeout=timeout,
         )
 
-    def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
+    def _open(self,timeout: Optional[float] = TIMEOUT) -> None:
         """
         Open the sandbox.
 
@@ -127,6 +130,37 @@ class Sandbox(SandboxConnection):
     def _close_services(self):
         self._terminal._close()
         self._process._close()
+
+    @classmethod
+    def reconnect(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        cwd: Optional[str] = None,
+        env_vars: Optional[EnvVars] = None,
+        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        timeout: Optional[float] = TIMEOUT,
+        _debug_hostname: Optional[str] = None,
+        _debug_port: Optional[int] = None,
+        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+    ):
+        instance_id, client_id = sandbox_id.split("-")
+        return cls(
+            id="unknown",
+            api_key=api_key,
+            cwd=cwd,
+            env_vars=env_vars,
+            on_scan_ports=on_scan_ports,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
+            timeout=timeout,
+            _sandbox=models.Instance(instance_id=instance_id, client_id=client_id, env_id=getattr(cls, "sandbox_template_id", "unknown")),
+            _debug_hostname=_debug_hostname,
+            _debug_port=_debug_port,
+            _debug_dev_env=_debug_dev_env,
+        )
 
     def close(self) -> None:
         """
