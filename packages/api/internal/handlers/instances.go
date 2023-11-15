@@ -132,26 +132,26 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 	ctx := c.Request.Context()
 
 	var duration time.Duration
-	if c.Request.GetBody != nil {
-		body, err := parseBody[api.PostInstancesInstanceIDRefreshesJSONRequestBody](ctx, c)
-		if err != nil {
-			a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
+	body, err := parseBody[api.PostInstancesInstanceIDRefreshesJSONRequestBody](ctx, c)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 
-			errMsg := fmt.Errorf("error when parsing request: %w", err)
-			telemetry.ReportCriticalError(ctx, errMsg)
+		errMsg := fmt.Errorf("error when parsing request: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
 
-			return
-		}
-		duration = time.Duration(body.Duration) * time.Second
-	} else {
-		duration = nomad.InstanceExpiration
+		return
 	}
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("instance_id", instanceID),
 	)
 
-	err := a.cache.KeepAliveFor(instanceID, duration)
+	duration = time.Duration(body.Duration) * time.Second
+	if duration < nomad.InstanceExpiration {
+		duration = nomad.InstanceExpiration
+	}
+
+	err = a.cache.KeepAliveFor(instanceID, duration)
 	if err != nil {
 		errMsg := fmt.Errorf("error when refreshing instance: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
