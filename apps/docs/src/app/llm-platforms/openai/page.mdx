@@ -1,0 +1,44 @@
+# OpenAI
+
+E2B offers a native support for OpenAI's new [Assistants API](https://platform.openai.com/docs/assistants/overview).
+
+<Note>
+The Assistants API allows you to build AI assistants within your own applications. An Assistant has instructions and can leverage models, tools, and knowledge to respond to user queries. The Assistants API currently supports three types of tools: Code Interpreter, Retrieval, and Function calling.
+</Note>
+
+You can use E2B's sandbox as an environment for the tool execution for your AI assistant. The specific feature of OpenAI's Assistants that we'll take advantage of is the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling).
+This way you can let the AI assistant to for example download files, use custom cloud browser, use terminal, write, run, and debug code, and more.
+
+## Python Usage
+
+<Note>
+[TODO] See the repository with code here.
+</Note>
+
+### Import E2B and created the sandbox
+<CodeGroup>
+```py
+from e2b import Sandbox # $HighlightLine
+import openai
+
+sbx = Sandbox() # $HighlightLine
+```
+</CodeGroup>
+
+### Define assistant's actions
+We're using the `sandbox.action()` decorator to mark our function as an assistant action. An assistant action is a function that the AI assistant can use to complete its task.
+It can be pretty much anything you want - running code, downloading files, analyzing data, for for example running a terminal command.
+
+Our action here is simple. It takes two arguments - `path` and `content` - then it writes the `content` to a file on the `path` inside the sandbox.
+<CodeGroup>
+```py
+@sbx.action()
+def write_to_file(path, content):
+  sbx.filesystem.write(path, content)
+```
+</CodeGroup>
+
+### Let assistant perform actions
+Now inside the
+
+## JavaScript Usage
