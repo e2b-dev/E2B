@@ -46,6 +46,7 @@ export interface SandboxConnectionOpts {
 }
 
 export interface CallOpts {
+  /** Timeout for the call in milliseconds */
   timeout?: number;
 }
 
@@ -272,7 +273,7 @@ export class SandboxConnection {
    *
    * `open` method requires `this` context - you may need to bind it.
    * @param opts Call options
-   * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
+   * @param {timeout} [opts.timeout] Timeout for sandbox to open in milliseconds (default is 60 seconds)
    */
   protected async _open(opts: CallOpts) {
     const open = async () => {
