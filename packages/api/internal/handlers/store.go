@@ -213,7 +213,7 @@ func (a *APIStore) GetUserFromAccessToken(ctx context.Context, accessToken strin
 }
 
 func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
-	info, err := a.cache.Get(instanceID)
+	info, _, err := a.cache.Get(instanceID)
 	if err != nil {
 		return &api.APIError{
 			Err:       err,

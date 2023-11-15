@@ -75,15 +75,20 @@ func (c *InstanceCache) KeepAliveFor(instanceID string, duration time.Duration) 
 		return err
 	}
 
-	if (time.Since(*item.StartTime)) > maxInstanceLength {
-		c.cache.Delete(item.Instance.InstanceID)
+	if item.ExpiresAt().After(time.Now().Add(duration)) {
+		return nil
+	}
+
+	instance := item.Value()
+	if (time.Since(*instance.StartTime)) > maxInstanceLength {
+		c.cache.Delete(instanceID)
 
 		return fmt.Errorf("instance \"%s\" reached maximal allowed uptime", instanceID)
 	} else {
-		maxAllowedTTL := getMaxAllowedTTL(*item.StartTime, duration)
+		maxAllowedTTL := getMaxAllowedTTL(*instance.StartTime, duration)
 
-		instance := c.cache.Get(instanceID, ttlcache.WithTTL[string, InstanceInfo](maxAllowedTTL))
-		if instance == nil {
+		item = c.cache.Set(instanceID, instance, maxAllowedTTL)
+		if item == nil {
 			return fmt.Errorf("instance \"%s\" doesn't exist", instanceID)
 		}
 	}
@@ -91,13 +96,23 @@ func (c *InstanceCache) KeepAliveFor(instanceID string, duration time.Duration) 
 	return nil
 }
 
-// Get the instance from the cache.
-func (c *InstanceCache) Get(instanceID string) (InstanceInfo, error) {
+// Get the item from the cache.
+func (c *InstanceCache) Get(instanceID string) (*ttlcache.Item[string, InstanceInfo], error) {
 	item := c.cache.Get(instanceID, ttlcache.WithDisableTouchOnHit[string, InstanceInfo]())
 	if item != nil {
-		return item.Value(), nil
+		return item, nil
 	} else {
+		return nil, fmt.Errorf("instance \"%s\" doesn't exist", instanceID)
+	}
+}
+
+// GetInstance from the cache.
+func (c *InstanceCache) GetInstance(instanceID string) (InstanceInfo, error) {
+	item, err := c.Get(instanceID)
+	if err != nil {
 		return InstanceInfo{}, fmt.Errorf("instance \"%s\" doesn't exist", instanceID)
+	} else {
+		return item.Value(), nil
 	}
 }
 
