@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	instanceExpiration        = time.Second * 12
+	InstanceExpiration        = time.Second * 12
 	cacheSyncTime             = time.Second * 180
 	maxInstanceLength         = time.Hour * 24
 	maxInstanceLengthInterval = time.Second * 30
@@ -55,21 +55,21 @@ func (c *InstanceCache) Add(instance *api.Instance, teamID *uuid.UUID, startTime
 	return nil
 }
 
-func getMaxAllowedTTL(startTime time.Time) time.Duration {
+func getMaxAllowedTTL(startTime time.Time, duration time.Duration) time.Duration {
 	runningTime := time.Since(startTime)
 	timeLeft := maxInstanceLength - runningTime
 
 	if timeLeft <= 0 {
 		return 0
-	} else if instanceExpiration < timeLeft {
-		return instanceExpiration
+	} else if duration < timeLeft {
+		return duration
 	} else {
 		return timeLeft
 	}
 }
 
-// Refresh the instance's expiration timer.
-func (c *InstanceCache) Refresh(instanceID string) error {
+// KeepAliveFor the instance's expiration timer.
+func (c *InstanceCache) KeepAliveFor(instanceID string, duration time.Duration) error {
 	item, err := c.Get(instanceID)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (c *InstanceCache) Refresh(instanceID string) error {
 
 		return fmt.Errorf("instance \"%s\" reached maximal allowed uptime", instanceID)
 	} else {
-		maxAllowedTTL := getMaxAllowedTTL(*item.StartTime)
+		maxAllowedTTL := getMaxAllowedTTL(*item.StartTime, duration)
 
 		instance := c.cache.Get(instanceID, ttlcache.WithTTL[string, InstanceInfo](maxAllowedTTL))
 		if instance == nil {
@@ -123,7 +123,7 @@ func (c *InstanceCache) Sync(instances []*api.Instance) {
 // We are retrieving the tasks from Nomad now.
 func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*api.Instance, counter metric.Int64UpDownCounter) *InstanceCache {
 	cache := ttlcache.New(
-		ttlcache.WithTTL[string, InstanceInfo](instanceExpiration),
+		ttlcache.WithTTL[string, InstanceInfo](InstanceExpiration),
 	)
 
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, InstanceInfo]) {

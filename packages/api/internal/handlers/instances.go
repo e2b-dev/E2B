@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"net/http"
 	"time"
 
@@ -130,13 +131,26 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 ) {
 	ctx := c.Request.Context()
 
+	body, err := parseBody[api.PostInstancesInstanceIDRefreshesJSONRequestBody](ctx, c)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
+
+		errMsg := fmt.Errorf("error when parsing request: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		return
+	}
+
 	telemetry.SetAttributes(ctx,
 		attribute.String("instance_id", instanceID),
 	)
 
-	// TODO: Require auth for refreshing instance
+	duration := time.Duration(body.Duration) * time.Second
+	if duration < nomad.InstanceExpiration {
+		duration = nomad.InstanceExpiration
+	}
 
-	err := a.cache.Refresh(instanceID)
+	err = a.cache.KeepAliveFor(instanceID, duration)
 	if err != nil {
 		errMsg := fmt.Errorf("error when refreshing instance: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
