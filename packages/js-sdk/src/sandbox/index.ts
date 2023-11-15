@@ -10,6 +10,7 @@ import { Process, ProcessManager, ProcessMessage, ProcessOpts, ProcessOutput, pr
 import { CallOpts, SandboxConnection, SandboxConnectionOpts } from './sandboxConnection'
 import { Terminal, TerminalManager, TerminalOpts, TerminalOutput, terminalService } from './terminal'
 import { resolvePath } from '../utils/filesystem'
+import { CurrentWorkingDirectoryDoesntExistError } from '../error'
 
 export type DownloadFileFormat =
   | 'base64'
@@ -387,6 +388,11 @@ export class Sandbox extends SandboxConnection {
           } catch (err) {
             triggerExit()
             await unsubscribing
+            if (/error starting process '\w+': fork\/exec \/bin\/bash: no such file or directory/.test((err as Error)?.message)) {
+              throw new CurrentWorkingDirectoryDoesntExistError(
+                `Failed to start the process. You are trying set 'cwd' to a directory that does not exist.\n${(err as Error)?.message}`
+              )
+            }
             throw err
           }
 
