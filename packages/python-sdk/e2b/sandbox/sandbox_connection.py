@@ -377,7 +377,10 @@ class SandboxConnection:
                         return
                     sleep(SANDBOX_REFRESH_PERIOD)
                     try:
-                        api.instances_instance_id_refreshes_post(instance_id)
+                        api.instances_instance_id_refreshes_post(
+                            instance_id,
+                            InstancesInstanceIDRefreshesPostRequest(duration=0),
+                        )
                         logger.debug(f"Refreshed sandbox {instance_id}")
                     except exceptions.ApiException as e:
                         if e.status == 404:
