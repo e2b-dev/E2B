@@ -111,8 +111,8 @@ export class SandboxConnection {
       throw new Error('Cannot keep alive - sandbox is not initialized')
     }
     await refreshSandbox(this.apiKey, {
-            instanceID: this.sandbox?.instanceID, duration,
-          })
+      instanceID: this.sandbox?.instanceID, duration,
+    })
   }
 
 

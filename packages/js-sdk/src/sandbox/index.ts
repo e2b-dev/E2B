@@ -389,7 +389,9 @@ export class Sandbox extends SandboxConnection {
           } catch (err) {
             triggerExit()
             await unsubscribing
-            if (/error starting process '\w+': fork\/exec \/bin\/bash: no such file or directory/.test((err as Error)?.message)) {
+            if (
+              /error starting process '\w+': fork\/exec \/bin\/bash: no such file or directory/.test((err as Error)?.message)
+            ) {
               throw new CurrentWorkingDirectoryDoesntExistError(
                 `Failed to start the process. You are trying set 'cwd' to a directory that does not exist.\n${(err as Error)?.message}`
               )
@@ -414,7 +416,6 @@ export class Sandbox extends SandboxConnection {
         return await process.wait()
       }
     }
-
 
     const _resolvePath = (path: string): string =>
       resolvePath(path, this.cwd, this.logger)
@@ -465,7 +466,9 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
-  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }) {
+  static async reconnect(
+    sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }
+  ) {
     let sandboxID: string
     let opts: SandboxOpts
     if (typeof sandboxIDorOpts === 'string'){
