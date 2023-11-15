@@ -1,11 +1,11 @@
 import logging
 import time
-from typing import Optional, Callable, Any, Tuple, List, Union, Literal
+from typing import Optional, Callable, Any, Tuple, List, Union
 from e2b.sandbox.process import ProcessMessage
 
 from pydantic import BaseModel, PrivateAttr
 
-from e2b import EnvVars, Sandbox, OpenPort
+from e2b import EnvVars, Sandbox
 from e2b.constants import TIMEOUT
 
 logger = logging.getLogger(__name__)

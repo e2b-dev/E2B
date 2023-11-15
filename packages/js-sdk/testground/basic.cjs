@@ -14,16 +14,14 @@ async function main() {
   )
   const sandboxID = sandbox.id
 
-  await sandbox.keepAlive(60)
+  await sandbox.keepAlive(30)
   await sandbox.close()
-  await wait(20000)
+  await wait(15000)
 
   const sandbox2 = await e2b.Sandbox.reconnect(sandboxID)
 
   const files = await sandbox2.filesystem.read('/code/hello.txt')
-  console.log(
-    files
-  )
+  console.log(files)
 
   await sandbox2.close()
 }

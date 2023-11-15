@@ -315,7 +315,14 @@ export class SandboxConnection {
         }
       }
       this.refresh(this.sandbox.instanceID)
-      const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
+      await this.connectRpc()
+      return this
+    }
+    return await withTimeout(open, opts?.timeout)()
+  }
+
+  private async connectRpc() {
+    const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
 
       if (!hostname) {
         throw new Error('Cannot get sandbox\'s hostname')
@@ -404,11 +411,7 @@ export class SandboxConnection {
       }
 
       await openingPromise
-      return this
-    }
-    return await withTimeout(open, opts?.timeout)()
   }
-
   private handleNotification(data: IRpcNotification) {
     this.logger.debug?.('Handling notification:', data)
     this.subscribers

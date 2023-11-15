@@ -18,7 +18,7 @@ def main():
     a = s.process.start("ls -la /home/user")
     s.filesystem.write("/home/user/test.txt", "Hello World!")
     a.wait()
-    s.keep_alive(60)
+    s.keep_alive(30)
     s.close()
 
     sleep(20)
