@@ -83,6 +83,7 @@ class Sandbox(SandboxConnection):
         :param on_stdout: A default callback that is called when stdout with a newline is received from the process
         :param on_stderr: A default callback that is called when stderr with a newline is received from the process
         :param on_exit: A default callback that is called when the process exits
+        :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
         """
 
         logger.info(f"Creating sandbox {id if isinstance(id, str) else type(id)}")
