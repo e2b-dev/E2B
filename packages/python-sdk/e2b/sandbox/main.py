@@ -114,7 +114,7 @@ class Sandbox(SandboxConnection):
             timeout=timeout,
         )
 
-    def _open(self,timeout: Optional[float] = TIMEOUT) -> None:
+    def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Open the sandbox.
 
@@ -156,7 +156,11 @@ class Sandbox(SandboxConnection):
             on_stdout=on_stdout,
             on_stderr=on_stderr,
             timeout=timeout,
-            _sandbox=models.Instance(instance_id=instance_id, client_id=client_id, env_id=getattr(cls, "sandbox_template_id", "unknown")),
+            _sandbox=models.Instance(
+                instance_id=instance_id,
+                client_id=client_id,
+                env_id=getattr(cls, "sandbox_template_id", "unknown"),
+            ),
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,

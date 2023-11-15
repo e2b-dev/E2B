@@ -25,4 +25,6 @@ def main():
     s2 = Sandbox.reconnect(s.id, api_key=E2B_API_KEY)
     print(s2.filesystem.read("/home/user/test.txt"))
     s2.close()
+
+
 main()
