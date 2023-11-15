@@ -118,6 +118,7 @@ class SandboxConnection:
         *args,
         **kwargs,
     ):
+        logger.info(f"Reconnecting to sandbox {sandbox_id}")
         instance_id, client_id = sandbox_id.split("-")
         return cls(
             *args,

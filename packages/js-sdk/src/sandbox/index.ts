@@ -454,6 +454,42 @@ export class Sandbox extends SandboxConnection {
       })
   }
 
+  /**
+   * Reconnects to an existing Sandbox.
+   * @param sandboxIDorOpts Sandbox ID or Sandbox options
+   * @returns Existing Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.reconnect(sandboxID)
+   * ```
+   */
+  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }) {
+    let sandboxID
+    let opts: SandboxOpts
+    if (typeof sandboxIDorOpts === 'string'){
+      sandboxID = sandboxIDorOpts
+      opts = {}
+    } else {
+      sandboxID = sandboxIDorOpts.sandboxID
+      opts = sandboxIDorOpts
+    }
+
+    const instanceIDAndClientID = sandboxID.split("-")
+    const instanceID = instanceIDAndClientID[0]
+    const clientID = instanceIDAndClientID[1]
+    opts.__sandbox = { instanceID, clientID, envID: 'unknown' }
+    return new Sandbox(opts)
+      ._open({ timeout: opts?.timeout })
+      .then(async (sandbox) => {
+        if (opts?.cwd) {
+          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
+          await sandbox.filesystem.makeDir(opts.cwd)
+        }
+        return sandbox
+      })
+  }
+
   protected override async _open(opts: CallOpts) {
     await super._open(opts)
 

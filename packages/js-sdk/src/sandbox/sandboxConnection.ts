@@ -39,6 +39,7 @@ export interface SandboxConnectionOpts {
   cwd?: string;
   envVars?: EnvVars;
   logger?: Logger;
+  __sandbox?: components['schemas']['Instance'];
   __debug_hostname?: string;
   __debug_port?: number;
   __debug_devEnv?: 'remote' | 'local';
@@ -67,8 +68,10 @@ export class SandboxConnection {
   private readonly rpc = new RpcWebSocketClient()
   private subscribers: Subscriber[] = []
 
+
   // let's keep opts readonly, but public - for convenience, mainly when debugging
   protected constructor(readonly opts: SandboxConnectionOpts) {
+    this.sandbox = opts.__sandbox
     const apiKey = opts.apiKey || process?.env?.E2B_API_KEY
     if (!apiKey) {
       throw new AuthenticationError(
@@ -93,9 +96,25 @@ export class SandboxConnection {
     this.logger.debug?.(`Sandbox "${this.templateID}" initialized`)
   }
 
+  get id() {
+    return `${this.sandbox?.instanceID}-${this.sandbox?.clientID}`
+  }
+
   private get templateID(): string {
     return this.opts.id || 'base'
   }
+
+
+  public async keepAlive(duration: number) {
+    if (!this.sandbox) {
+      throw new Error('Cannot keep alive - sandbox is not initialized')
+    }
+    await refreshSandbox(this.apiKey, {
+            instanceID: this.sandbox?.instanceID, duration,
+          })
+  }
+
+
 
   /**
    * Get the hostname for the sandbox or for the specified sandbox's port.
@@ -257,14 +276,14 @@ export class SandboxConnection {
    */
   protected async _open(opts: CallOpts) {
     const open = async () => {
-      if (this.isOpen || !!this.sandbox) {
+      if (this.isOpen) {
         throw new Error('Sandbox connect was already called')
       } else {
         this.isOpen = true
       }
       this.logger.debug?.('Opening sandbox...')
 
-      if (!this.opts.__debug_hostname) {
+      if (!this.sandbox) {
         try {
           const res = await createSandbox(this.apiKey, {
             envID: this.templateID,
@@ -272,8 +291,6 @@ export class SandboxConnection {
 
           this.sandbox = res.data
           this.logger.debug?.(`Acquired sandbox "${this.sandbox.instanceID}"`)
-
-          this.refresh(this.sandbox.instanceID)
         } catch (e) {
           if (e instanceof createSandbox.Error) {
             const error = e.getActualType()
@@ -296,7 +313,7 @@ export class SandboxConnection {
           throw e
         }
       }
-
+      this.refresh(this.sandbox.instanceID)
       const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
 
       if (!hostname) {
@@ -417,7 +434,7 @@ export class SandboxConnection {
           this.logger.debug?.(`Refreshed sandbox "${instanceID}"`)
 
           await refreshSandbox(this.apiKey, {
-            instanceID,
+            instanceID, duration: 0,
           })
         } catch (e) {
           if (e instanceof refreshSandbox.Error) {
