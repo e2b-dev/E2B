@@ -62,7 +62,7 @@ function InfoIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-export function Note({ title, children }: { title: string, children: React.ReactNode }) {
+export function Note({ title, children }: { title?: string, children: React.ReactNode }) {
   return (
     <div
       className={clsx(`
