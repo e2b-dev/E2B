@@ -112,7 +112,7 @@ class Sandbox(SandboxConnection):
         )
         self._actions: Dict[str, Action] = {}
 
-    def add_action(self, action: "Action", name: Optional[str] = None):
+    def add_action(self, action: "Action", name: Optional[str] = None) -> "Sandbox":
         """
         Add a new action. If the name is not specified, it is automatically extracted from the function name.
         An action is a function that takes a sandbox and a dictionary of arguments and returns a string.
@@ -139,7 +139,7 @@ class Sandbox(SandboxConnection):
 
         return self
 
-    def remove_action(self, name: str):
+    def remove_action(self, name: str) -> "Sandbox":
         """
         Remove an action.
 
