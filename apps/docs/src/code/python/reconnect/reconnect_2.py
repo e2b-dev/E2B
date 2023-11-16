@@ -7,7 +7,7 @@ sandboxID = sandbox.id
 # Keep the sandbox alive for 1 hour
 sandbox.keep_alive(60 * 60)  # $HighlightLine
 
-# Close the sandbox
+# Close the sandbox. Even if we close the sandbox, it will stay alive, because we explicitly called keep_alive().
 sandbox.close()
 
 # Do something else...
