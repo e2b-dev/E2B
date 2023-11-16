@@ -21,7 +21,12 @@ from typing_extensions import Annotated
 
 from pydantic import StrictStr
 
+from typing import Optional
+
 from e2b.api.v1.client.models.instance import Instance
+from e2b.api.v1.client.models.instances_instance_id_refreshes_post_request import (
+    InstancesInstanceIDRefreshesPostRequest,
+)
 from e2b.api.v1.client.models.new_instance import NewInstance
 
 from e2b.api.v1.client.api_client import ApiClient
@@ -43,7 +48,12 @@ class InstancesApi(object):
 
     @validate_arguments
     def instances_instance_id_refreshes_post(
-        self, instance_id: StrictStr, **kwargs
+        self,
+        instance_id: StrictStr,
+        instances_instance_id_refreshes_post_request: Optional[
+            InstancesInstanceIDRefreshesPostRequest
+        ] = None,
+        **kwargs
     ) -> None:  # noqa: E501
         """instances_instance_id_refreshes_post  # noqa: E501
 
@@ -51,11 +61,13 @@ class InstancesApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.instances_instance_id_refreshes_post(instance_id, async_req=True)
+        >>> thread = api.instances_instance_id_refreshes_post(instance_id, instances_instance_id_refreshes_post_request, async_req=True)
         >>> result = thread.get()
 
         :param instance_id: (required)
         :type instance_id: str
+        :param instances_instance_id_refreshes_post_request:
+        :type instances_instance_id_refreshes_post_request: InstancesInstanceIDRefreshesPostRequest
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _request_timeout: timeout setting for this request. If one
@@ -73,12 +85,17 @@ class InstancesApi(object):
                 "Error! Please call the instances_instance_id_refreshes_post_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"
             )
         return self.instances_instance_id_refreshes_post_with_http_info(
-            instance_id, **kwargs
+            instance_id, instances_instance_id_refreshes_post_request, **kwargs
         )  # noqa: E501
 
     @validate_arguments
     def instances_instance_id_refreshes_post_with_http_info(
-        self, instance_id: StrictStr, **kwargs
+        self,
+        instance_id: StrictStr,
+        instances_instance_id_refreshes_post_request: Optional[
+            InstancesInstanceIDRefreshesPostRequest
+        ] = None,
+        **kwargs
     ) -> ApiResponse:  # noqa: E501
         """instances_instance_id_refreshes_post  # noqa: E501
 
@@ -86,11 +103,13 @@ class InstancesApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.instances_instance_id_refreshes_post_with_http_info(instance_id, async_req=True)
+        >>> thread = api.instances_instance_id_refreshes_post_with_http_info(instance_id, instances_instance_id_refreshes_post_request, async_req=True)
         >>> result = thread.get()
 
         :param instance_id: (required)
         :type instance_id: str
+        :param instances_instance_id_refreshes_post_request:
+        :type instances_instance_id_refreshes_post_request: InstancesInstanceIDRefreshesPostRequest
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _preload_content: if False, the ApiResponse.data will
@@ -118,7 +137,7 @@ class InstancesApi(object):
 
         _params = locals()
 
-        _all_params = ["instance_id"]
+        _all_params = ["instance_id", "instances_instance_id_refreshes_post_request"]
         _all_params.extend(
             [
                 "async_req",
@@ -157,10 +176,21 @@ class InstancesApi(object):
         _files = {}
         # process the body parameter
         _body_params = None
+        if _params["instances_instance_id_refreshes_post_request"] is not None:
+            _body_params = _params["instances_instance_id_refreshes_post_request"]
+
         # set the HTTP header `Accept`
         _header_params["Accept"] = self.api_client.select_header_accept(
             ["application/json"]
         )  # noqa: E501
+
+        # set the HTTP header `Content-Type`
+        _content_types_list = _params.get(
+            "_content_type",
+            self.api_client.select_header_content_type(["application/json"]),
+        )
+        if _content_types_list:
+            _header_params["Content-Type"] = _content_types_list
 
         # authentication setting
         _auth_settings = ["ApiKeyAuth"]  # noqa: E501

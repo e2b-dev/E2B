@@ -21,6 +21,7 @@ export type DownloadFileFormat =
 
 export interface SandboxOpts extends SandboxConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler;
+  /** Timeout for sandbox to start */
   timeout?: number;
   onStdout?: (out: ProcessMessage) => Promise<void> | void;
   onStderr?: (out: ProcessMessage) => Promise<void> | void;
@@ -45,7 +46,7 @@ export class Sandbox extends SandboxConnection {
        * List files in a directory.
        * @param path Path to a directory
        * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
+       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
        * @returns Array of files in a directory
        */
       list: async (path, opts?: CallOpts) => {
@@ -60,7 +61,7 @@ export class Sandbox extends SandboxConnection {
        * Reads the whole content of a file.
        * @param path Path to a file
        * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
+       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
        * @returns Content of a file
        */
       read: async (path, opts?: CallOpts) => {
@@ -75,7 +76,7 @@ export class Sandbox extends SandboxConnection {
        * Removes a file or a directory.
        * @param path Path to a file or a directory
        * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
+       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
        */
       remove: async (path, opts?: CallOpts) => {
         await this._call(
@@ -90,7 +91,7 @@ export class Sandbox extends SandboxConnection {
        * @param path Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
        * @param content Content to write to a new file
        * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
+       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
        */
       write: async (path, content, opts?: CallOpts) => {
         await this._call(
@@ -135,7 +136,7 @@ export class Sandbox extends SandboxConnection {
        * Creates a new directory and all directories along the way if needed on the specified pth.
        * @param path Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
        * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
+       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
        */
       makeDir: async (path, opts?: CallOpts) => {
         await this._call(
@@ -388,7 +389,9 @@ export class Sandbox extends SandboxConnection {
           } catch (err) {
             triggerExit()
             await unsubscribing
-            if (/error starting process '\w+': fork\/exec \/bin\/bash: no such file or directory/.test((err as Error)?.message)) {
+            if (
+              /error starting process '\w+': fork\/exec \/bin\/bash: no such file or directory/.test((err as Error)?.message)
+            ) {
               throw new CurrentWorkingDirectoryDoesntExistError(
                 `Failed to start the process. You are trying set 'cwd' to a directory that does not exist.\n${(err as Error)?.message}`
               )
@@ -413,7 +416,6 @@ export class Sandbox extends SandboxConnection {
         return await process.wait()
       }
     }
-
 
     const _resolvePath = (path: string): string =>
       resolvePath(path, this.cwd, this.logger)
@@ -443,6 +445,44 @@ export class Sandbox extends SandboxConnection {
    */
   static async create(optsOrID?: string | SandboxOpts) {
     const opts = typeof optsOrID === 'string' ? { id: optsOrID } : optsOrID
+    return new Sandbox(opts)
+      ._open({ timeout: opts?.timeout })
+      .then(async (sandbox) => {
+        if (opts?.cwd) {
+          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
+          await sandbox.filesystem.makeDir(opts.cwd)
+        }
+        return sandbox
+      })
+  }
+
+  /**
+   * Reconnects to an existing Sandbox.
+   * @param sandboxIDorOpts Sandbox ID or Sandbox options
+   * @returns Existing Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.reconnect(sandboxID)
+   * ```
+   */
+  static async reconnect(
+    sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }
+  ) {
+    let sandboxID: string
+    let opts: SandboxOpts
+    if (typeof sandboxIDorOpts === 'string'){
+      sandboxID = sandboxIDorOpts
+      opts = {}
+    } else {
+      sandboxID = sandboxIDorOpts.sandboxID
+      opts = sandboxIDorOpts
+    }
+
+    const instanceIDAndClientID = sandboxID.split("-")
+    const instanceID = instanceIDAndClientID[0]
+    const clientID = instanceIDAndClientID[1]
+    opts.__sandbox = { instanceID, clientID, envID: 'unknown' }
     return new Sandbox(opts)
       ._open({ timeout: opts?.timeout })
       .then(async (sandbox) => {

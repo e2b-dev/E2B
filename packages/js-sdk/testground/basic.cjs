@@ -1,4 +1,7 @@
 const e2b = require('../dist')
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 async function main() {
   const sandbox = await e2b.Sandbox.create({
@@ -7,35 +10,20 @@ async function main() {
   })
 
   await sandbox.filesystem.write(
-    '/code/package.json',
-    JSON.stringify({
-      dependencies: {
-        'is-odd': '3.0.1'
-      }
-    })
+    '/code/hello.txt', "My friend!"
   )
+  const sandboxID = sandbox.id
 
-  const proc = await sandbox.process.start({
-    cmd: 'npm i --silent',
-    envVars: { NPM_CONFIG_UPDATE_NOTIFIER: 'false' },
-    cwd: '/code',
-    onStdout: ({ line }) => console.log('STDOUT', line),
-    onStderr: ({ line }) => console.log('STDERR', line)
-  })
-
-  await proc.finished
-
-  // list node_modules
-  const files = await sandbox.filesystem.list('/code/node_modules')
-  console.log(
-    'installed node_modules (first 10 of them):',
-    files
-      .map(f => f.name)
-      .slice(0, 10)
-      .join(', ')
-  )
-
+  await sandbox.keepAlive(30)
   await sandbox.close()
+  await wait(15000)
+
+  const sandbox2 = await e2b.Sandbox.reconnect(sandboxID)
+
+  const files = await sandbox2.filesystem.read('/code/hello.txt')
+  console.log(files)
+
+  await sandbox2.close()
 }
 
 main().catch(console.error)

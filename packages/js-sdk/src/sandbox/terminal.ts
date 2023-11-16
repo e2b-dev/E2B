@@ -106,7 +106,7 @@ export type TerminalOpts = {
    */
   envVars?: EnvVars;
   /**
-   * Timeout in milliseconds (default is 60 seconds)
+   * Timeout for terminal start in milliseconds (default is 60 seconds)
    */
   timeout?: number;
 };
