@@ -3,7 +3,7 @@ import type { Run, RunSubmitToolOutputsParams } from 'openai/resources/beta/thre
 import type { Sandbox } from '../sandbox'
 
 
-export class Assistant {
+export class Actions {
   constructor(private readonly sandbox: Sandbox) { }
 
   /**

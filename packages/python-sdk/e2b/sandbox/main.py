@@ -112,30 +112,36 @@ class Sandbox(SandboxConnection):
         )
         self._actions: Dict[str, Action] = {}
 
-    def register_action(self, name: str, action: "Action"):
+    def add_action(self, action: "Action", name: Optional[str] = None):
         """
-        Register an action.
+        Add a new action. If the name is not specified, it is automatically extracted from the function name.
         An action is a function that takes a sandbox and a dictionary of arguments and returns a string.
 
-        :param name: The name of the action
-        :param action: The action to register
+        You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
+        :param action: The action to add
+        :param name: The name of the action, if not provided, the name of the function will be used
 
         Example:
 
             ```python
             from e2b import Sandbox
 
+            def read_file(sandbox, args):
+                with open(args["path"], "r") as f:
+                    return sandbox.filesystem.read(args.path)
+
             s = Sandbox()
-            s.register_action("hello", lambda s, args: f"Hello {args['name']}!")
+            s.add_action(read_file)
+            s.add_action(name="hello", action=lambda s, args: f"Hello {args['name']}!")
             ```
         """
         self._actions[name] = action
 
         return self
 
-    def unregister_action(self, name: str):
+    def remove_action(self, name: str):
         """
-        Unregister an action.
+        Remove an action.
 
         :param name: The name of the action
         """
@@ -146,20 +152,20 @@ class Sandbox(SandboxConnection):
     @property
     def actions(self) -> Dict[str, "Action"]:
         """
-        Return a dict of registered actions.
+        Return a dict of added actions.
         """
 
         return self._actions.copy()
 
-    def action(self, name: Union[str, None] = None):
+    def action(self, name: Optional[str] = None):
         """
-        Decorator to register an action.
+        Decorator to add an action.
 
         :param name: The name of the action, if not provided, the name of the function will be used
         """
 
         def _action(action: Action):
-            self.register_action(name or action.__name__, action)
+            self.add_action(action=action, name=name or action.__name__)
 
             return action
 
@@ -168,7 +174,7 @@ class Sandbox(SandboxConnection):
     @property
     def openai(self):
         """
-        OpenAI integration that can be used to get output for the actions registered in the sandbox.
+        OpenAI integration that can be used to get output for the actions added in the sandbox.
 
         Example:
 
@@ -176,13 +182,13 @@ class Sandbox(SandboxConnection):
             from e2b import Sandbox
 
             s = Sandbox()
-            s.openai.assistant.run(run)
+            s.openai.actions.run(run)
             ```
         """
 
-        from e2b.templates.openai import OpenAI, Assistant
+        from e2b.templates.openai import OpenAI, Actions
 
-        return OpenAI(Assistant(self))
+        return OpenAI(Actions(self))
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """

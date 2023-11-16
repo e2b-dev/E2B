@@ -10,7 +10,7 @@ import { Process, ProcessManager, ProcessMessage, ProcessOpts, ProcessOutput, pr
 import { CallOpts, SandboxConnection, SandboxConnectionOpts } from './sandboxConnection'
 import { Terminal, TerminalManager, TerminalOpts, TerminalOutput, terminalService } from './terminal'
 import { resolvePath } from '../utils/filesystem'
-import { Assistant } from '../templates/openai'
+import { Actions } from '../templates/openai'
 
 export type DownloadFileFormat =
   | 'base64'
@@ -433,22 +433,22 @@ export class Sandbox extends SandboxConnection {
   }
 
   /**
-   * Returns a map of registered actions.
+   * Returns a map of added actions.
    * 
-   * @returns Map of registered actions
+   * @returns Map of added actions
    */
   get actions() {
     return new Map(this._actions)
   }
 
   /**
-   * OpenAI integration that can be used to get output for the actions registered in the sandbox.
+   * OpenAI integration that can be used to get output for the actions added in the sandbox.
    * 
    * @returns OpenAI integration
    */
   get openai() {
     return {
-      assistant: new Assistant(this),
+      actions: new Actions(this),
     } as const
   }
 
@@ -476,36 +476,73 @@ export class Sandbox extends SandboxConnection {
   }
 
   /**
-   * Registers a new action.
-   * @param name Action name
+   * Add a new action. The name of the action is automatically extracted from the function name.
+   * 
+   * You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
+   * 
    * @param action Action handler
    * @returns Sandbox
    *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
-   * sandbox.registerAction('hello', (sandbox, args) => 'Hello World')
+   * sandbox.addAction('readFile', (sandbox, args) => sandbox.filesystem.read(args.path))
    * ```
    */
-  registerAction<T = { [name: string]: any }>(name: string, action: Action<T>) {
-    this._actions.set(name, action)
+  addAction<T = { [name: string]: any }>(action: Action<T>): this;
+  /**
+   * Add a new action with a specified name.
+   * 
+   * You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
+   * 
+   * @param name Action name
+   * @param action Action handler
+   * @returns Sandbox
+   *
+   * @example
+   * ```ts
+   * async function readFile(sandbox: Sandbox, args: any) {
+   *   return sandbox.filesystem.read(args.path)
+   * }
+   * 
+   * const sandbox = await Sandbox.create()
+   * sandbox.addAction(readFile)
+   * ```
+   */
+  addAction<T = { [name: string]: any }>(name: string, action: Action<T>): this;
+  addAction<T = { [name: string]: any }>(actionOrName: string | Action<T>, action?: Action<T>): this {
+    if (typeof actionOrName === 'string') {
+      if (!action) throw new Error('Action is required')
+      this._actions.set(actionOrName, action)
+      return this
+    } else if (typeof actionOrName === 'function') {
+      action = actionOrName
+
+      if (!action.name) {
+        throw new Error('Action name is required')
+      }
+
+      this._actions.set(action.name, action)
+    } else {
+      throw new Error('Action or action name and action is required')
+    }
 
     return this
   }
 
   /**
-   * Unregisters an action.
+   * Remove an action.
    * @param name Action name
    * @returns Sandbox
    * 
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
-   * sandbox.registerAction('hello', (sandbox, args) => 'Hello World')
-   * sandbox.unregisterAction('hello')
+   * sandbox.addAction('hello', (sandbox, args) => 'Hello World')
+   * sandbox.removeAction('hello')
    * ```
    */
-  unregisterAction(name: string) {
+  removeAction(name: string) {
     this._actions.delete(name)
 
     return this

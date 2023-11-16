@@ -1,10 +1,13 @@
 from e2b import Sandbox
 
 
-def test_register_action():
+def test_add_action():
     sandbox = Sandbox()
 
-    sandbox.register_action("test", lambda sbx, args: "test")
+    sandbox.add_action(name="test", action=lambda sbx, args: "test")
     assert len(sandbox.actions.values()) == 1
+
+    sandbox.remove_action(name="test")
+    assert len(sandbox.actions.values()) == 0
 
     sandbox.close()
