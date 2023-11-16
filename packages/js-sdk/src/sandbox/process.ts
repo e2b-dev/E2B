@@ -165,6 +165,28 @@ export interface ProcessOpts {
 }
 
 export interface ProcessManager {
-  readonly start: (optsOrID: string | ProcessOpts) => Promise<Process>;
-  readonly startAndWait: (optsOrID: string | ProcessOpts) => Promise<ProcessOutput>;
+  /**
+   * Starts a new process.
+   * @param cmd Command to execute
+   * @returns New process
+   */
+  start(cmd: string): Promise<Process>;
+  /**
+   * Starts a new process.
+   * @param opts Process options
+   * @returns New process
+   */
+  start(opts: ProcessOpts): Promise<Process>;
+  /**
+   * Starts a new process and wait until it finishes.
+   * @param cmd Command to execute
+   * @returns New process
+   */
+  startAndWait(cmd: string): Promise<ProcessOutput>;
+  /**
+   * Starts a new process and wait until it finishes.
+   * @param opts Process options
+   * @returns New process
+   */
+  startAndWait(opts: ProcessOpts): Promise<ProcessOutput>;
 }

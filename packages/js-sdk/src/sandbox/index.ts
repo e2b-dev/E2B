@@ -266,13 +266,8 @@ export class Sandbox extends SandboxConnection {
 
     // Init Process handler
     this.process = {
-      /**
-       * Starts a new process.
-       * @param optsOrID Process options or Process ID
-       * @returns New process
-       */
-      start: async (optsOrID: string | ProcessOpts) => {
-        const opts = typeof optsOrID === 'string' ? { cmd: optsOrID } : optsOrID
+      start: async (optsOrCmd: string | ProcessOpts) => {
+        const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
         const start = async ({
           cmd,
           onStdout,
@@ -410,9 +405,9 @@ export class Sandbox extends SandboxConnection {
         const timeout = opts.timeout
         return await withTimeout(start, timeout)(opts)
       },
-
-      startAndWait: async (optsOrID: string | ProcessOpts) => {
-        const process = await this.process.start(optsOrID)
+      startAndWait: async (optsOrCmd: string | ProcessOpts) => {
+        const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
+        const process = await this.process.start(opts)
         return await process.wait()
       }
     }
@@ -434,8 +429,7 @@ export class Sandbox extends SandboxConnection {
   }
 
   /**
-   * Creates a new Sandbox.
-   * @param optsOrID Sandbox options or Sandbox ID
+   * Creates a new Sandbox from the default `base` sandbox template.
    * @returns New Sandbox
    *
    * @example
@@ -443,6 +437,32 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.create()
    * ```
    */
+  static async create(): Promise<Sandbox>;
+  /**
+   * Creates a new Sandbox from the template with the specified ID.
+   * @param id Sandbox ID
+   * @returns New Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create("sandboxID")
+   * ```
+   */
+  static async create(id: string): Promise<Sandbox>;
+  /**
+   * Creates a new Sandbox from the specified options.
+   * @param opts Sandbox options
+   * @returns New Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create({
+   *   id: "sandboxID",
+   *   onStdout: console.log,
+   * })
+   * ```
+   */
+  static async create(opts: SandboxOpts): Promise<Sandbox>;
   static async create(optsOrID?: string | SandboxOpts) {
     const opts = typeof optsOrID === 'string' ? { id: optsOrID } : optsOrID
     return new Sandbox(opts)
@@ -458,7 +478,7 @@ export class Sandbox extends SandboxConnection {
 
   /**
    * Reconnects to an existing Sandbox.
-   * @param sandboxIDorOpts Sandbox ID or Sandbox options
+   * @param sandboxID Sandbox ID
    * @returns Existing Sandbox
    *
    * @example
@@ -466,12 +486,24 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
-  static async reconnect(
-    sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }
-  ) {
+  static async reconnect(sandboxID: string): Promise<Sandbox>;
+  /**
+   * Reconnects to an existing Sandbox.
+   * @param opts Sandbox options
+   * @returns Existing Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.reconnect({
+   *   sandboxID,
+   * })
+   * ```
+   */
+  static async reconnect(opts: Omit<SandboxOpts, 'id'> & { sandboxID: string }): Promise<Sandbox>;
+  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }) {
     let sandboxID: string
     let opts: SandboxOpts
-    if (typeof sandboxIDorOpts === 'string'){
+    if (typeof sandboxIDorOpts === 'string') {
       sandboxID = sandboxIDorOpts
       opts = {}
     } else {
