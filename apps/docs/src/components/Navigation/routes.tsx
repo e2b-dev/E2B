@@ -16,7 +16,7 @@ import {
   Timer,
   Variable,
   PencilRuler,
-  File, TerminalSquare,
+  File, TerminalSquare, RefreshCw,
 } from 'lucide-react'
 
 import logoOpenAI from '@/images/logos/openai.svg'
@@ -267,6 +267,16 @@ export const routes = [
         ),
         title: 'Timeouts',
         href: '/sandbox/api/timeouts',
+      },
+      {
+        icon: (
+          <RefreshCw
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Connect to running sandbox',
+        href: '/sandbox/api/reconnect',
       },
     ],
   },

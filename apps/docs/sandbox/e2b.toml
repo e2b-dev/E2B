@@ -1,0 +1,5 @@
+# This is a config for E2B sandbox template
+
+id = "8fwe9bb2ygdmk8atde2t"
+dockerfile = "e2b.Dockerfile"
+name = "docs"

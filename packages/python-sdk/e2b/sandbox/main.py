@@ -5,6 +5,7 @@ import requests
 from os import path
 from typing import Any, Callable, Dict, List, Literal, Optional, IO, Tuple, Union
 
+from e2b.api.v2.client import models
 from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
 from e2b.sandbox.env_vars import EnvVars
@@ -63,6 +64,7 @@ class Sandbox(SandboxConnection):
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
         timeout: Optional[float] = TIMEOUT,
+        _sandbox: Optional[models.Instance] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -81,6 +83,7 @@ class Sandbox(SandboxConnection):
         :param on_stdout: A default callback that is called when stdout with a newline is received from the process
         :param on_stderr: A default callback that is called when stderr with a newline is received from the process
         :param on_exit: A default callback that is called when the process exits
+        :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
         """
 
         logger.info(f"Creating sandbox {id if isinstance(id, str) else type(id)}")
@@ -104,15 +107,16 @@ class Sandbox(SandboxConnection):
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
+            _sandbox=_sandbox,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,
-            on_close=self._close_services,
             timeout=timeout,
         )
+        self._on_close_child = self._close_services
         self._actions: Dict[str, Action] = {}
 
-    def add_action(self, action: "Action", name: Optional[str] = None):
+    def add_action(self, action: "Action", name: Optional[str] = None) -> "Sandbox":
         """
         Add a new action. If the name is not specified, it is automatically extracted from the function name.
         An action is a function that takes a sandbox and a dictionary of arguments and returns a string.
@@ -139,7 +143,7 @@ class Sandbox(SandboxConnection):
 
         return self
 
-    def remove_action(self, name: str):
+    def remove_action(self, name: str) -> "Sandbox":
         """
         Remove an action.
 

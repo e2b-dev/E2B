@@ -1,0 +1,32 @@
+name: Build E2B docs sandbox template
+
+on:
+  workflow_call:
+    secrets:
+      E2B_ACCESS_TOKEN:
+        required: true
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  publish:
+    name: Build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install E2B CLI
+        run: npm install -g @e2b/cli
+
+      - name: Build template
+        run: e2b build
+        working-directory: ./apps/docs/sandbox
+        env:
+          E2B_ACCESS_TOKEN: ${{ secrets.E2B_ACCESS_TOKEN }}

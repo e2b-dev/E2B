@@ -2,6 +2,7 @@ import { Sandbox } from '../src'
 import { expect, test, vi } from 'vitest'
 
 import { id } from './setup.mjs'
+import { CurrentWorkingDirectoryDoesntExistError } from '../src/error'
 
 test('custom cwd', async () => {
   const sandbox = await Sandbox.create({
@@ -99,5 +100,11 @@ test('test_warnings', async () => {
   expect(console.warn).toHaveBeenCalledTimes(2)
   await sandbox.filesystem.write('~/hello.txt', 'Hello Vasek!')
   expect(console.warn).toHaveBeenCalledTimes(3)
+  await sandbox.close()
+})
+
+test('test_non_existing_cwd', async () => {
+  const sandbox = await Sandbox.create({ id })
+  await expect(sandbox.process.start({ cmd: 'pwd', cwd: '/this/does/not/exist' })).rejects.toThrow(CurrentWorkingDirectoryDoesntExistError)
   await sandbox.close()
 })

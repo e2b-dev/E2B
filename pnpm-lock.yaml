@@ -37,8 +37,8 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: ^0.9.0
-        version: 0.9.0
+        specifier: ^0.10.0
+        version: 0.10.0
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -234,8 +234,8 @@ importers:
         specifier: ^1.0.2
         version: 1.0.2
       '@e2b/sdk':
-        specifier: ^0.9.0
-        version: 0.9.0
+        specifier: ^0.10.0
+        version: 0.10.0
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
@@ -727,8 +727,8 @@ packages:
     dev: true
     optional: true
 
-  /@e2b/sdk@0.9.0:
-    resolution: {integrity: sha512-aoxK5Xi/MqNvSAvhziOENbiJ1vaDfTqBNJofn4pFFcc6Ddtd9filCt+B7U/KIOsckFmxGEKSpxgxzuoIZs95KA==}
+  /@e2b/sdk@0.10.0:
+    resolution: {integrity: sha512-z/FujzP2amgJ7SxHyYNj1a0/jj2IEQZDQZfkE1iAyuiuDNIafLzVlFzSjesm5uYOJF52pc0gXUq6+Yvz6vislg==}
     engines: {node: '>=18'}
     dependencies:
       normalize-path: 3.0.0
