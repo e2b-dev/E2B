@@ -10,7 +10,7 @@ import { Process, ProcessManager, ProcessMessage, ProcessOpts, ProcessOutput, pr
 import { CallOpts, SandboxConnection, SandboxConnectionOpts } from './sandboxConnection'
 import { Terminal, TerminalManager, TerminalOpts, TerminalOutput, terminalService } from './terminal'
 import { resolvePath } from '../utils/filesystem'
-import { Assistant } from '../templates/openai'
+import { Actions } from '../templates/openai'
 
 export type DownloadFileFormat =
   | 'base64'
@@ -448,7 +448,7 @@ export class Sandbox extends SandboxConnection {
    */
   get openai() {
     return {
-      assistant: new Assistant(this),
+      actions: new Actions(this),
     } as const
   }
 

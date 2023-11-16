@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from openai.types.beta.threads.run import Run
 
 
-class Assistant:
+class Actions:
     def __init__(self, sandbox: "Sandbox"):
         self._sandbox = sandbox
 
@@ -51,9 +51,9 @@ class Assistant:
 
 
 class OpenAI:
-    def __init__(self, assistant: Assistant):
-        self._assistant = assistant
+    def __init__(self, actions: Actions):
+        self._actions = actions
 
     @property
-    def assistant(self):
-        return self._assistant
+    def actions(self):
+        return self._actions

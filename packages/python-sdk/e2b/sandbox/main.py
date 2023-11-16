@@ -176,13 +176,13 @@ class Sandbox(SandboxConnection):
             from e2b import Sandbox
 
             s = Sandbox()
-            s.openai.assistant.run(run)
+            s.openai.actions.run(run)
             ```
         """
 
-        from e2b.templates.openai import OpenAI, Assistant
+        from e2b.templates.openai import OpenAI, Actions
 
-        return OpenAI(Assistant(self))
+        return OpenAI(Actions(self))
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
