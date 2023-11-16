@@ -21,6 +21,8 @@ from typing_extensions import Annotated
 
 from pydantic import StrictStr
 
+from typing import Optional
+
 from e2b.api.v1.client.models.instance import Instance
 from e2b.api.v1.client.models.instances_instance_id_refreshes_post_request import (
     InstancesInstanceIDRefreshesPostRequest,
@@ -48,7 +50,9 @@ class InstancesApi(object):
     def instances_instance_id_refreshes_post(
         self,
         instance_id: StrictStr,
-        instances_instance_id_refreshes_post_request: InstancesInstanceIDRefreshesPostRequest,
+        instances_instance_id_refreshes_post_request: Optional[
+            InstancesInstanceIDRefreshesPostRequest
+        ] = None,
         **kwargs
     ) -> None:  # noqa: E501
         """instances_instance_id_refreshes_post  # noqa: E501
@@ -62,7 +66,7 @@ class InstancesApi(object):
 
         :param instance_id: (required)
         :type instance_id: str
-        :param instances_instance_id_refreshes_post_request: (required)
+        :param instances_instance_id_refreshes_post_request:
         :type instances_instance_id_refreshes_post_request: InstancesInstanceIDRefreshesPostRequest
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
@@ -88,7 +92,9 @@ class InstancesApi(object):
     def instances_instance_id_refreshes_post_with_http_info(
         self,
         instance_id: StrictStr,
-        instances_instance_id_refreshes_post_request: InstancesInstanceIDRefreshesPostRequest,
+        instances_instance_id_refreshes_post_request: Optional[
+            InstancesInstanceIDRefreshesPostRequest
+        ] = None,
         **kwargs
     ) -> ApiResponse:  # noqa: E501
         """instances_instance_id_refreshes_post  # noqa: E501
@@ -102,7 +108,7 @@ class InstancesApi(object):
 
         :param instance_id: (required)
         :type instance_id: str
-        :param instances_instance_id_refreshes_post_request: (required)
+        :param instances_instance_id_refreshes_post_request:
         :type instances_instance_id_refreshes_post_request: InstancesInstanceIDRefreshesPostRequest
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional

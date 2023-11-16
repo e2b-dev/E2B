@@ -57,10 +57,10 @@ with e2b.api.v1.client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = e2b.api.v1.client.InstancesApi(api_client)
     instance_id = 'instance_id_example' # str | 
-    instances_instance_id_refreshes_post_request = e2b.api.v1.client.InstancesInstanceIDRefreshesPostRequest() # InstancesInstanceIDRefreshesPostRequest | 
+    instances_instance_id_refreshes_post_request = e2b.api.v1.client.InstancesInstanceIDRefreshesPostRequest() # InstancesInstanceIDRefreshesPostRequest |  (optional)
 
     try:
-        api_instance.instances_instance_id_refreshes_post(instance_id, instances_instance_id_refreshes_post_request)
+        api_instance.instances_instance_id_refreshes_post(instance_id, instances_instance_id_refreshes_post_request=instances_instance_id_refreshes_post_request)
     except ApiException as e:
         print("Exception when calling InstancesApi->instances_instance_id_refreshes_post: %s\n" % e)
 

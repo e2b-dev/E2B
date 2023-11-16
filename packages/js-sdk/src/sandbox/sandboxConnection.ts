@@ -114,7 +114,12 @@ export class SandboxConnection {
    * @returns Promise that resolves when the sandbox is kept alive
    */
   public async keepAlive(duration: number) {
-    duration = duration / 1000
+    duration = Math.round(duration / 1000)
+
+    if (duration < 0 || duration > 3600) {
+      throw new Error('Duration must be between 0 and 3600 seconds')
+    }
+
     if (!this.sandbox) {
       throw new Error('Cannot keep alive - sandbox is not initialized')
     }
