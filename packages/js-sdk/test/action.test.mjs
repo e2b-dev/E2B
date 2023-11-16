@@ -3,10 +3,10 @@ import { test, expect } from 'vitest'
 
 import { id } from './setup.mjs'
 
-test('register action', async () => {
+test('add action', async () => {
   const sandbox = await Sandbox.create({ id })
 
-  sandbox.registerAction('test', () => {
+  sandbox.addAction('test', () => {
     return 'test'
   })
 
