@@ -165,7 +165,7 @@ class Sandbox(SandboxConnection):
         """
 
         def _action(action: Action):
-            self.add_action(action=action,name=name or action.__name__)
+            self.add_action(action=action, name=name or action.__name__)
 
             return action
 
