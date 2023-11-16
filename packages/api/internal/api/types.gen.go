@@ -140,7 +140,7 @@ type PostEnvsEnvIDBuildsBuildIDLogsJSONBody struct {
 // PostInstancesInstanceIDRefreshesJSONBody defines parameters for PostInstancesInstanceIDRefreshes.
 type PostInstancesInstanceIDRefreshesJSONBody struct {
 	// Duration Duration for which the instance should be kept alive in seconds
-	Duration int `json:"duration"`
+	Duration *int `json:"duration,omitempty"`
 }
 
 // PostEnvsMultipartRequestBody defines body for PostEnvs for multipart/form-data ContentType.

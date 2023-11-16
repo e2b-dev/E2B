@@ -201,8 +201,6 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - duration
               properties:
                 duration:
                   description: Duration for which the instance should be kept alive in seconds
