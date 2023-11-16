@@ -16,7 +16,7 @@ Follow the SDK guides:
 
 ## Python
 <Note title="Source Code">
-[TODO: Fix link] See the full Python code in our [cookbook]().
+See the full Python code in our [cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main/guides/openai-assistant-py).
 </Note>
 
 ### `sandbox.add_action()`
@@ -100,9 +100,9 @@ sandbox.add_action(read_file).add_action(save_code_to_file).add_action(list_file
 </CodeGroup>
 
 ### 4. Create AI Assistant
-We'll use the OpenAI API to create a new AI Assistant. You can read the full code [[TODO: FIX LINK] here]().
+We'll use the OpenAI API to create a new AI Assistant. You can read the full code [here](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-py/openai_assistant/assistant.py).
 
-Keep a close attention to the `functions` definition inside the `[[TODO: FIX LINK] assistant.py]()` file. We're using the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling) feature to give our assistant an ability to call the sandbox actions we defined.
+Keep a close attention to the `functions` definition inside the [`assistant.py`](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-py/openai_assistant/assistant.py#L14-L67) file. We're using the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling) feature to give our assistant an ability to call the sandbox actions we defined.
 <CodeGroup isFileName title="assistant.py" isRunnable={false}>
 ```python
 from typing import List
@@ -179,13 +179,13 @@ sandbox.close()
 
 
 
-See the full code [[TODO: Fix link] here]().
+See the full code [here](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-py/openai_assistant/main.py).
 
 ---
 
 ## JavaScript
 <Note title="Source Code">
-[TODO: Fix link] See the full Python code in our [cookbook]().
+See the full JavaScript code in our [cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main/guides/openai-assistant-js).
 </Note>
 
 ### `sandbox.addAction()`
@@ -276,9 +276,9 @@ sandbox
 </CodeGroup>
 
 ### 4. Create AI Assistant
-We'll use the OpenAI API to create a new AI Assistant. You can read the full code [[TODO: FIX LINK] here]().
+We'll use the OpenAI API to create a new AI Assistant. You can read the full code [here](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-js/assistant.ts).
 
-Keep a close attention to the `functions` definition inside the `[[TODO: FIX LINK] assistant.py]()` file. We're using the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling) feature to give our assistant an ability to call the sandbox actions we defined.
+Keep a close attention to the `functions` definition inside the [`assistant.ts`](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-js/assistant.ts#L7-L67) file. We're using the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling) feature to give our assistant an ability to call the sandbox actions we defined.
 <CodeGroup isFileName title="assistant.ts" isRunnable={false}>
 ```js
 import { AssistantCreateParams } from 'openai/src/resources/beta/assistants/assistants'
@@ -332,7 +332,7 @@ When the thread is running, we get a `run` object. The `run.status` field tells 
 If the `run.status` indicates that the assistant wants to call actions, we just pass the `run` object to the `sandbox.openai.actions.run()` function.
 The E2B sandbox will automatically call the correct actions and returns correctly formatted output object (called `outputs` in the code below) that you can submit back to the assistant.
 
-<CodeGroup isFileName title="main.py" isRunnable={false}>
+<CodeGroup isFileName title="index.ts" isRunnable={false}>
 ```js
 // ... rest of the logic
 
@@ -369,6 +369,4 @@ await sandbox.close()
 ```
 </CodeGroup>
 
-
-
-See the full code [[TODO: Fix link] here]().
+See the full code [here](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-js/index.ts).
