@@ -38,7 +38,7 @@ sandbox = Sandbox() # $HighlightLine
 An assistant action is a regular Python function that takes the sandbox object as the first argument and a dictionary with function arguments as the second. The assistant will be able to call this function to complete its task when it runs.
 The action can do pretty much anything you want - running code, downloading files, analyzing data, or running a terminal command.
 
-We define three actions:
+We define three actions that the AI assistant can use:
 - `save_code_to_file`
     - Takes `code` and `filename` as arguments and saves the code to a file inside the sandbox.
 - `list_files`
@@ -91,7 +91,7 @@ Now we need to make sure the sandbox knows about our actions we defined above. W
 
 <CodeGroup isFileName title="main.py" isRunnable={false}>
 ```py
-# Import our action
+# Import our actions
 from .actions import read_file, save_code_to_file, list_files
 
 # Add action to the sandbox we created in the previous steps
@@ -210,10 +210,10 @@ const sandbox = await Sandbox.create({ // $HighlightLine
 </CodeGroup>
 
 ### 2. Define the assistant's actions
-An assistant action is a regular JavaScript function that takes the sandbox object as the first argument and an object with arguments as the second. The assistant will be able to call this function to complete its task when it runs.
-The action can do pretty much anything you want - running code, downloading files, analyzing data, for example running a terminal command.
+An assistant action is a regular JavaScript function that takes the sandbox object as the first argument and an object with function arguments as the second. The assistant will be able to call this function to complete its task when it runs.
+The action can do pretty much anything you want - running code, downloading files, analyzing data, or running a terminal command.
 
-We define three actions:
+We define three actions that the AI assistant can use:
 - `saveCodeToFile`
     - Takes `code` and `filename` as arguments and saves the code to a file inside the sandbox.
 - `listFiles`
@@ -267,7 +267,7 @@ Now we need to make sure the sandbox knows about the actions we defined above. W
 
 <CodeGroup isFileName title="index.ts" isRunnable={false}>
 ```js
-// Import our action
+// Import our actions
 import { listFiles, readFile, saveCodeToFile } from './actions'
 
 // Add action to the sandbox we created in the previous steps
@@ -321,7 +321,7 @@ export const functions: Array<
 </CodeGroup>
 
 - **The `name` field is the same name as the name of the sandbox action we created in the previous step.**
-- **The parameters `code` and `filename` are the parameters passed to the sandbox action as a part of the `args` dictionary.**
+- **The parameters `code` and `filename` are the parameters passed to the sandbox action in an object as the second argument.**
 
 
 ### 5. Let the assistant run our actions
