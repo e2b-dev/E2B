@@ -195,6 +195,20 @@ paths:
       security:
         - ApiKeyAuth: []
       tags: [instances]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - duration
+              properties:
+                duration:
+                  description: Duration for which the instance should be kept alive in seconds
+                  type: integer
+                  maximum: 3600  # 1 hour
+                  minimum: 0
       parameters:
         - $ref: "#/components/parameters/instanceID"
       responses:
