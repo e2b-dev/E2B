@@ -1,8 +1,11 @@
-import { Fetcher, OpArgType, TypedFetch } from 'openapi-typescript-fetch'
+import * as fetcher from 'openapi-typescript-fetch'
+import type { OpArgType, TypedFetch } from 'openapi-typescript-fetch'
 
 import { API_HOST } from '../constants'
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
+
+const { Fetcher } = fetcher
 
 const client = Fetcher.for<paths>()
 

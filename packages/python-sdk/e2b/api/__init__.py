@@ -38,4 +38,4 @@ class E2BApiClient(client.ApiClient):
         self.default_headers = default_headers
 
 
-__all__ = ["configuration", "client", "models"]
+__all__ = ["E2BApiClient", "configuration", "client", "models"]

@@ -16,7 +16,7 @@ import {
   Timer,
   Variable,
   PencilRuler,
-  File, TerminalSquare,
+  File, TerminalSquare, RefreshCw,
 } from 'lucide-react'
 
 export const routes = [
@@ -88,6 +88,9 @@ export const routes = [
         ),
         title: 'Guide: Run LLM-generated code',
         href: '/guide/simple-gpt4-code-interpreter',
+        //
+        // title: 'Hello World: Simple AI Junior Developer',
+        // href: '/guide/simple-ai-junior-developer',
       },
     ],
   },
@@ -241,6 +244,16 @@ export const routes = [
         ),
         title: 'Timeouts',
         href: '/sandbox/api/timeouts',
+      },
+      {
+        icon: (
+          <RefreshCw
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Connect to running sandbox',
+        href: '/sandbox/api/reconnect',
       },
     ],
   },

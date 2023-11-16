@@ -1,10 +1,10 @@
 import clsx from 'clsx'
 
 export function Prose<T extends React.ElementType = 'div'>({
-                                                             as,
-                                                             className,
-                                                             ...props
-                                                           }: Omit<React.ComponentPropsWithoutRef<T>, 'as' | 'className'> & {
+  as,
+  className,
+  ...props
+}: Omit<React.ComponentPropsWithoutRef<T>, 'as' | 'className'> & {
   as?: T
   className?: string
 }) {
@@ -12,7 +12,7 @@ export function Prose<T extends React.ElementType = 'div'>({
 
   return (
     <Component
-      className={clsx(className, 'prose dark:prose-invert')}
+      className={clsx(className, 'prose dark:prose-invert max-w-full')}
       {...props}
     />
   )

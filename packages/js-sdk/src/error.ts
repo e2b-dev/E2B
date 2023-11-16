@@ -11,3 +11,10 @@ export class AuthenticationError extends Error {
     this.name = 'AuthenticationError'
   }
 }
+
+export class CurrentWorkingDirectoryDoesntExistError extends Error {
+  constructor(message: any) {
+    super(message)
+    this.name = 'CurrentWorkingDirectoryDoesntExistError'
+  }
+}

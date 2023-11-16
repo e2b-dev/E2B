@@ -1,4 +1,5 @@
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Any,
@@ -13,7 +14,12 @@ from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
 from e2b.sandbox.env_vars import EnvVars
-from e2b.sandbox.exception import MultipleExceptions, ProcessException, RpcException
+from e2b.sandbox.exception import (
+    MultipleExceptions,
+    ProcessException,
+    RpcException,
+    CurrentWorkingDirectoryDoesntExistException,
+)
 from e2b.sandbox.out import OutStderrResponse, OutStdoutResponse
 from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.utils.future import DeferredFuture
@@ -366,8 +372,37 @@ class ProcessManager:
             )
         except RpcException as e:
             trigger_exit()
+            if re.match(
+                r"error starting process '\w+': fork/exec /bin/bash: no such file or directory",
+                e.message,
+            ):
+                raise CurrentWorkingDirectoryDoesntExistException(
+                    "Failed to start the process. You are trying set `cwd` to a directory that does not exist."
+                ) from e
             raise ProcessException(e.message) from e
         except TimeoutError as e:
             logger.error(f"Timeout error during starting the process: {cmd}")
             trigger_exit()
             raise e
+
+    def start_and_wait(
+        self,
+        cmd: str,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Callable[[int], Any]] = None,
+        env_vars: Optional[EnvVars] = None,
+        cwd: str = "",
+        process_id: Optional[str] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> ProcessOutput:
+        return self.start(
+            cmd,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
+            on_exit=on_exit,
+            env_vars=env_vars,
+            cwd=cwd,
+            process_id=process_id,
+            timeout=timeout,
+        ).wait()
