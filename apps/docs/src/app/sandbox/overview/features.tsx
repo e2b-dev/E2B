@@ -22,7 +22,7 @@ export const features = [
     </Link>
     , and more.
   </span>,
-  "Support for up to 24h long-running sessions",
+  "Support for up to 24h long-running sandbox sessions",
   <span>
     Ability to <Link href="/sandbox/api/upload">upload files</Link> to the sandbox and <Link href="/sandbox/api/download">download files </Link>from the sandbox,
   </span>,

@@ -1,5 +1,5 @@
 import pytest
-from e2b import Sandbox
+from e2b import CurrentWorkingDirectoryDoesntExistException, Sandbox
 
 
 def test_process_cwd():
@@ -80,5 +80,14 @@ def test_warnings():
 
     with pytest.warns(Warning):
         sandbox.filesystem.write("~/hello.txt", "Hello Vasek!")
+
+    sandbox.close()
+
+
+def test_doesnt_exists():
+    sandbox = Sandbox()
+
+    with pytest.raises(CurrentWorkingDirectoryDoesntExistException):
+        sandbox.process.start("ls", cwd="/this/doesnt/exist")
 
     sandbox.close()
