@@ -26,6 +26,7 @@ export class Actions {
     for (const toolCall of run.required_action.submit_tool_outputs.tool_calls) {
       const action = this.sandbox._actions.get(toolCall.function.name)
       if (!action) {
+        console.warn(`Action ${toolCall.function.name} not found`)
         continue
       }
 
