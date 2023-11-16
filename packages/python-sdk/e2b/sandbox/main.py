@@ -139,6 +139,9 @@ class Sandbox(SandboxConnection):
             s.add_action(name="hello", action=lambda s, args: f"Hello {args['name']}!")
             ```
         """
+        if not name:
+            name = action.__name__
+
         self._actions[name] = action
 
         return self
