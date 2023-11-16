@@ -1,9 +1,8 @@
 terraform {
-  required_version = ">= 1.1.9"
   required_providers {
     docker = {
       source  = "kreuzwerker/docker"
-      version = "2.16.0"
+      version = "3.0.2"
     }
     random = {
       source  = "hashicorp/random"
@@ -37,7 +36,7 @@ resource "google_secret_manager_secret" "api_secret" {
   secret_id = "api-secret"
 
   replication {
-    automatic = true
+    auto {}
   }
 }
 
@@ -51,7 +50,6 @@ resource "nomad_job" "api" {
   jobspec = file("${path.module}/api.hcl")
 
   hcl2 {
-    enabled = true
     vars = {
       gcp_zone                      = var.gcp_zone
       api_port_name                 = var.api_port.name

@@ -2,7 +2,6 @@ resource "nomad_job" "otel-collector" {
   jobspec = file("${path.module}/otel-collector.hcl")
 
   hcl2 {
-    enabled = true
     vars = {
       grafana_traces_endpoint  = var.grafana_traces_endpoint
       grafana_logs_endpoint    = var.grafana_logs_endpoint
@@ -23,7 +22,6 @@ resource "nomad_job" "logs-collector" {
   jobspec = file("${path.module}/logs-collector.hcl")
 
   hcl2 {
-    enabled = true
     vars = {
       gcp_zone = var.gcp_zone
 

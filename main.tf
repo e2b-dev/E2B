@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">=1.1.9"
+  required_version = ">=1.5.0"
   backend "gcs" {
     bucket = "e2b-terraform-state"
     prefix = "terraform/orchestration/state"
@@ -7,15 +7,19 @@ terraform {
   required_providers {
     docker = {
       source  = "kreuzwerker/docker"
-      version = "2.16.0"
+      version = "3.0.2"
     }
-    checkmate = {
-      source  = "tetratelabs/checkmate"
-      version = "1.5.0"
+    google = {
+      source  = "hashicorp/google"
+      version = "5.6.0"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "5.6.0"
     }
   }
 }
-provider "checkmate" {}
+
 provider "docker" {}
 
 provider "google-beta" {
@@ -95,26 +99,6 @@ provider "consul" {
   address = "http://${data.google_compute_global_address.orch_server_consul_ip.address}"
   token   = data.google_secret_manager_secret_version.consul_acl_token.secret_data
 }
-
-# resource "checkmate_http_health" "consul_health_check" {
-#   # This is the url of the endpoint we want to check
-#   url = "http://${data.google_compute_global_address.orch_server_consul_ip.address}/v1/health/service/api?passing=true"
-
-#   # Will perform an HTTP GET request
-#   method = "GET"
-
-#   # The overall test should not take longer than 10 seconds
-#   timeout = 600000
-
-#   # Wait 0.1 seconds between attempts
-#   interval = 100
-
-#   # Expect a status 200 OK
-#   status_code = 200
-
-#   # We want 2 successes in a row
-#   consecutive_successes = 2
-# }
 
 resource "consul_acl_policy" "agent" {
   name  = "agent"
