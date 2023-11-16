@@ -138,7 +138,7 @@ export class Process {
    *
    * @param data Data to send
    * @param opts Call options
-   * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
+   * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
    */
   async sendStdin(data: string, opts?: CallOpts): Promise<void> {
     await this.sandbox._call(
@@ -157,13 +157,36 @@ export interface ProcessOpts {
   onExit?: (code: number) => Promise<void> | void;
   envVars?: EnvVars;
   cwd?: string;
-  /** @deprecated use cwd instead */
+  /** @deprecated Use cwd instead */
   rootDir?: string;
   processID?: string;
+  /** Timeout for the process to start in milliseconds */
   timeout?: number;
 }
 
 export interface ProcessManager {
-  readonly start: (optsOrID: string | ProcessOpts) => Promise<Process>;
-  readonly startAndWait: (optsOrID: string | ProcessOpts) => Promise<ProcessOutput>;
+  /**
+   * Starts a new process.
+   * @param cmd Command to execute
+   * @returns New process
+   */
+  start(cmd: string): Promise<Process>;
+  /**
+   * Starts a new process.
+   * @param opts Process options
+   * @returns New process
+   */
+  start(opts: ProcessOpts): Promise<Process>;
+  /**
+   * Starts a new process and wait until it finishes.
+   * @param cmd Command to execute
+   * @returns New process
+   */
+  startAndWait(cmd: string): Promise<ProcessOutput>;
+  /**
+   * Starts a new process and wait until it finishes.
+   * @param opts Process options
+   * @returns New process
+   */
+  startAndWait(opts: ProcessOpts): Promise<ProcessOutput>;
 }

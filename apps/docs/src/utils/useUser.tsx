@@ -5,15 +5,20 @@ import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
-import { useSandboxesStore } from './useSandboxes'
-import { LangShort } from './consts'
+import { useSandboxStore } from './useSandbox'
+
+type Team = {
+  id: string,
+  name: string,
+  is_default: boolean
+}
 
 type UserContextType = {
   isLoading: boolean;
   session: Session | null;
   user:
     | (User & {
-    teams: any[];
+    teams: Team[];
     apiKeys: any[];
     accessToken: string;
     defaultTeamId: string;
@@ -21,6 +26,7 @@ type UserContextType = {
     | null;
   error: Error | null;
 };
+
 
 export const UserContext = createContext(undefined)
 
@@ -31,7 +37,7 @@ export const CustomUserContextProvider = (props) => {
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const mounted = useRef<boolean>(false)
-  const initSandbox = useSandboxesStore((state) => state.initSandbox)
+  const initSandbox = useSandboxStore((state) => state.initSandbox)
 
   useEffect(() => {
     mounted.current = true
@@ -86,27 +92,30 @@ export const CustomUserContextProvider = (props) => {
   useEffect(() => {
     async function getUserCustom() {
       // @ts-ignore
-      const { data: teams, teamsError } = await supabase
+      const { data: userTeams, teamsError } = await supabase
         .from('users_teams')
-        .select('*')
+        .select('teams (id, name, is_default)')
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (teamsError) Sentry.captureException(teamsError)
+      // TODO: Adjust when user can be part of multiple teams
+      // @ts-ignore
+      const teams = userTeams?.map(userTeam=> userTeam.teams as Team)
+      const defaultTeam= teams?.filter(team => team.is_default)?.[0]
 
       const { data: apiKeys, error: apiKeysError } = await supabase
         .from('team_api_keys')
         .select('*')
-        .in('team_id', teams?.map((team) => team.team_id)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+        .in('team_id', teams?.map((team) => team.id)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (apiKeysError) Sentry.captureException(apiKeysError)
 
       // as soon as we have apiKey, start initializing sandboxes, so they are ready when user want to use them
       const apiKey = apiKeys?.[0]?.api_key
       if (apiKey) {
-        // We don't care about awaiting these, we just want to start them
-        void initSandbox(LangShort.js, apiKey)
-        void initSandbox(LangShort.py, apiKey)
+        // We don't care about awaiting this, we just want to start it
+        void initSandbox(apiKey)
       }
 
-      const defaultTeamId = teams?.[0]?.team_id // TODO: Adjust when user can be part of multiple teams
+      const defaultTeamId = defaultTeam?.id // TODO: Adjust when user can be part of multiple teams
 
       const { data: accessToken, error: accessTokenError } = await supabase
         .from('access_tokens')

@@ -9,6 +9,8 @@ export enum LangShort {
   py = 'py',
 }
 
+export const docsSandboxName = 'docs'
+
 export const languageToLangShort: Record<string, LangShort> = {
   // TODO: Nicer
   'JavaScript & TypeScript': LangShort.js,

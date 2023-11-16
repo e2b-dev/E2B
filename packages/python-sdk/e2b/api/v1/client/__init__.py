@@ -39,4 +39,7 @@ from e2b.api.v1.client.models.envs_env_id_builds_build_id_logs_post_request impo
 from e2b.api.v1.client.models.envs_get200_response_inner import EnvsGet200ResponseInner
 from e2b.api.v1.client.models.error import Error
 from e2b.api.v1.client.models.instance import Instance
+from e2b.api.v1.client.models.instances_instance_id_refreshes_post_request import (
+    InstancesInstanceIDRefreshesPostRequest,
+)
 from e2b.api.v1.client.models.new_instance import NewInstance

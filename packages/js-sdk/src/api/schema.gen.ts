@@ -49,6 +49,14 @@ export interface paths {
         401: components["responses"]["401"];
         404: components["responses"]["404"];
       };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** @description Duration for which the instance should be kept alive in seconds */
+            duration: number;
+          };
+        };
+      };
     };
   };
   "/envs": {

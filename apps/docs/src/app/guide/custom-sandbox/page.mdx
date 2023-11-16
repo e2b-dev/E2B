@@ -97,7 +97,7 @@ Postprocessing finished.
 │  from e2b import Sandbox                                                                                                                             │
 │                                                                                                                                                      │
 │  # Start sandbox                                                                                                                                     │
-│  sandbox = Sandbox(id="my-agent-sandbox")                                                                                                            │
+│  sandbox = Sandbox("my-agent-sandbox")                                                                                                               │
 │                                                                                                                                                      │
 │  # Interact with sandbox. Learn more here:                                                                                                           │
 │  # https://e2b.dev/docs/sandbox/overview                                                                                                             │
@@ -110,7 +110,7 @@ Postprocessing finished.
 │  import { Sandbox } from '@e2b/sdk'                                                                                                                  │
 │                                                                                                                                                      │
 │  // Start sandbox                                                                                                                                    │
-│  const sandbox = await Sandbox.create({ id: 'my-agent-sandbox' })                                                                                    │
+│  const sandbox = await Sandbox.create('my-agent-sandbox')                                                                                            │
 │                                                                                                                                                      │
 │  // Interact with sandbox. Learn more here:                                                                                                          │
 │  // https://e2b.dev/docs/sandbox/overview                                                                                                            │

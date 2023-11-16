@@ -1,6 +1,7 @@
 from .code_snippet import OpenPort
 from .env_vars import EnvVars
 from .exception import (
+    CurrentWorkingDirectoryDoesntExistException,
     FilesystemException,
     ProcessException,
     RpcException,

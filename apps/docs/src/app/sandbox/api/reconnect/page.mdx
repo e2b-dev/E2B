@@ -1,0 +1,21 @@
+# Connect to running sandbox
+
+Disconnect and reconnect to the same sandbox {{ className: 'lead' }}
+
+## Description
+
+The sandboxes are by default kept alive only when connected to them. When you disconnect from a sandbox, it will be destroyed.
+
+If you want to keep the sandbox alive for even after disconnecting from it, you can explicitly say for how long you want to keep it alive. You can then disconnect from the sandbox and reconnect to it later. This can be useful in for example in serverless environment or chat bot application.
+
+The limit is 1 hour. If you need more, feel free to [reach out to us](/getting-help) with your use.
+
+## Keep sandbox alive
+
+The example bellow shows how to disconnect from a running sandbox and reconnect to it again.
+You will have to call `keep_alive` method on the sandbox instance to keep it alive for specified time. You can then disconnect from the sandbox and reconnect to it from anywhere.
+
+<CodeGroupAutoload
+  path="reconnect/reconnect"
+  isRunnable={false}
+/>

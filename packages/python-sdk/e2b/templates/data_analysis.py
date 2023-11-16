@@ -39,6 +39,7 @@ class DataAnalysis(Sandbox):
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_artifact: Optional[Callable[[Artifact], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
+        **kwargs,
     ):
         self.on_artifact = on_artifact
         super().__init__(
@@ -50,6 +51,7 @@ class DataAnalysis(Sandbox):
             on_stdout=on_stdout,
             on_stderr=on_stderr,
             on_exit=on_exit,
+            **kwargs,
         )
 
     def run_python(

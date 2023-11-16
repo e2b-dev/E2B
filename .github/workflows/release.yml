@@ -29,8 +29,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
@@ -50,7 +50,7 @@ jobs:
 
   changes:
     name: Repository changes
-    needs: [ is_release ]
+    needs: [is_release]
     if: needs.is_release.outputs.release == 'true'
     runs-on: ubuntu-latest
     outputs:
@@ -95,27 +95,27 @@ jobs:
 
   python-tests:
     name: Python SDK Tests
-    needs: [ changes ]
+    needs: [changes]
     if: needs.changes.outputs.python-sdk == 'true'
     uses: ./.github/workflows/python_sdk_tests.yml
     secrets: inherit
 
   js-tests:
     name: JS SDK Tests
-    needs: [ changes ]
+    needs: [changes]
     if: needs.changes.outputs.js-sdk == 'true'
     uses: ./.github/workflows/js_sdk_tests.yml
     secrets: inherit
 
   cli-tests:
     name: CLI Tests
-    needs: [ changes ]
+    needs: [changes]
     if: needs.changes.outputs.cli == 'true'
     uses: ./.github/workflows/cli_tests.yml
     secrets: inherit
 
   release:
-    needs: [ python-tests, js-tests, cli-tests ]
+    needs: [python-tests, js-tests, cli-tests]
     if: always() && !contains(needs.*.result, 'failure') && needs.is_release.outputs.release == 'true'
     name: Release
     runs-on: ubuntu-latest
@@ -179,8 +179,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  build-docs-sandbox-template:
+    name: CLI Tests
+    needs: [ changes ]
+    if: needs.release.result == 'success' && (needs.changes.outputs.js-sdk == 'true' || needs.changes.outputs.python-sdk == 'true')
+    uses: ./.github/workflows/build_docs_sandbox_template.yml
+    secrets: inherit
+
   report-failure:
-    needs: [ python-tests, js-tests, cli-tests, release ]
+    needs: [python-tests, js-tests, cli-tests, release]
     if: failure()
     name: Release Failed - Slack Notification
     runs-on: ubuntu-latest
@@ -188,7 +195,7 @@ jobs:
       - name: Release Failed - Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_COLOR: '#ff0000'
-          SLACK_MESSAGE: ':here-we-go-again: :bob-the-destroyer: We need :fix-parrot: ASAP :pray:'
+          SLACK_COLOR: "#ff0000"
+          SLACK_MESSAGE: ":here-we-go-again: :bob-the-destroyer: We need :fix-parrot: ASAP :pray:"
           SLACK_TITLE: Release Failed
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

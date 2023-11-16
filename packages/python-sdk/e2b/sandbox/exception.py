@@ -34,6 +34,10 @@ class ProcessException(SandboxException):
     pass
 
 
+class CurrentWorkingDirectoryDoesntExistException(ProcessException):
+    pass
+
+
 class TerminalException(SandboxException):
     pass
 

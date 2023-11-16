@@ -16,8 +16,11 @@ import {
   Timer,
   Variable,
   PencilRuler,
-  File, TerminalSquare,
+  File, TerminalSquare, RefreshCw,
 } from 'lucide-react'
+
+import logoOpenAI from '@/images/logos/openai.svg'
+import Image from 'next/image'
 
 export const routes = [
   {
@@ -91,6 +94,22 @@ export const routes = [
         //
         // title: 'Hello World: Simple AI Junior Developer',
         // href: '/guide/simple-ai-junior-developer',
+      },
+    ],
+  },
+  {
+    title: 'LLM Platforms',
+    links: [
+      {
+        icon: (
+          <Image
+            src={logoOpenAI}
+            alt="OpenAI logo"
+            className="h-4 w-4"
+          />
+        ),
+        title: 'OpenAI',
+        href: '/llm-platforms/openai',
       },
     ],
   },
@@ -206,6 +225,10 @@ export const routes = [
         href: '/sandbox/api/cwd',
       },
       {
+        title: 'TODO: Sandbox Action',
+        href: '/sandbox/api/action',
+      },
+      {
         icon: (
           <Link
             strokeWidth={1}
@@ -244,6 +267,16 @@ export const routes = [
         ),
         title: 'Timeouts',
         href: '/sandbox/api/timeouts',
+      },
+      {
+        icon: (
+          <RefreshCw
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Connect to running sandbox',
+        href: '/sandbox/api/reconnect',
       },
     ],
   },

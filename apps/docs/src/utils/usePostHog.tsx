@@ -40,7 +40,7 @@ export function PostHogAnalytics() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { user } = useUser()
-  const defaultTeamId = user?.teams?.[0]?.team_id
+  const defaultTeamId = user?.defaultTeamId
   useEffect(() => {
     if (pathname) {
       let url = window.origin + pathname
@@ -52,7 +52,8 @@ export function PostHogAnalytics() {
   useEffect(() => {
     if (user) {
       posthog?.identify(user.id, { email: user.email })
-      posthog?.group('team', defaultTeamId, { name: user?.teams?.[0]?.name })
+      // TODO: When we add teams, make sure to change this
+      posthog?.group('team', defaultTeamId, {name: user?.teams?.[0]?.name })
     }
   }, [user, defaultTeamId])
 
