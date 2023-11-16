@@ -1,31 +1,27 @@
 # OpenAI
 
-E2B offers a native support for OpenAI's new [Assistants API](https://platform.openai.com/docs/assistants/overview).
+E2B offers a native support for OpenAI's [Assistants API](https://platform.openai.com/docs/assistants/overview). You can use the E2B's Sandbox as an environment for your assistants's tool execution.
 
 <Note title="What's OpenAI's Assistants API?">
-The Assistants API allows you to build AI assistants within your own applications. An Assistant has instructions and can leverage models, tools, and knowledge to respond to user queries. The Assistants API currently supports three types of tools: Code Interpreter, Retrieval, and Function calling.
-</Note>
+The Assistants API allows you to build AI assistants within your own applications. An Assistant has instructions and can leverage models, tools, and knowledge to respond to user queries.
 
-You can use E2B's sandbox as an environment for the tool execution for your AI assistant. The specific feature of tge OpenAI's Assistants API that we'll take advantage of is the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling).
+The specific feature of the OpenAI's Assistants API that we'll take advantage of is the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling).
 
-This way you can let the AI assistant use the E2B sandbox to download files, use custom cloud browser, use terminal, write, run, and debug code, and more.
-
-Follow the SDK guides:
+Follow our simple guides to let the OpenAI's assistant use the E2B sandbox to download files, use a custom cloud browser, use a terminal, write, run, and debug code, and more.
 - [Python](#python)
 - [JavaScript](#java-script)
 
 ## Python
-<Note title="Source Code">
-[TODO: Fix link] See the full Python code in our [cookbook]().
-</Note>
-
-### `sandbox.add_action()`
-Use the `add_action()` method to register a Python function as an runnable action for the AI assistant and the LLM.
+In Python, we will use the `sandbox.add_action()` method to register a Python function as a runnable action for the AI assistant and the LLM.
 
 The Python function you register will always receive the `sandbox` instance as the first argument.
 This allows you to define your actions in separate files.
 
-### 1. Import E2B and create sandbox
+<Note title="Source Code">
+[TODO: Fix link] See the full Python code in our [cookbook]().
+</Note>
+
+### 1. Import E2B and create a sandbox
 <CodeGroup isFileName title="main.py" isRunnable={false}>
 ```py
 import openai
@@ -36,13 +32,13 @@ sandbox = Sandbox() # $HighlightLine
 ```
 </CodeGroup>
 
-### 2. Define assistant's actions
-An assistant action is a regular Python function that takes the sandbox object as the first argument and a dictionary with arguments as  second. The assistant will be able to call this function to complete its task when it runs.
-The action can do be pretty much anything you want - running code, downloading files, analyzing data, for example running a terminal command.
+### 2. Define the assistant's actions
+An assistant action is a regular Python function that takes the sandbox object as the first argument and a dictionary with arguments as the second. The assistant will be able to call this function to complete its task when it runs.
+The action can do pretty much anything you want - running code, downloading files, analyzing data, for example running a terminal command.
 
 We define three actions:
 - `save_code_to_file`
-    - Takes `code` and `filename` as arguments and saves the code to a file inside sandbox.
+    - Takes `code` and `filename` as arguments and saves the code to a file inside the sandbox.
 - `list_files`
     - Returns a list of files on a given `path`.
 - `read_file`
@@ -140,7 +136,7 @@ functions: List[Tool] = [
 - **The parameters `code` and `filename` are the parameters passed to the sandbox action as a part of the `args` dictionary.**
 
 
-### 5. Let assistant run our actions
+### 5. Let the assistant run our actions
 <Note title="How Assistants Work">
 Read the official [OpenAI's assistants documentation](https://platform.openai.com/docs/assistants/how-it-works).
 </Note>
@@ -149,8 +145,8 @@ Once the assistant is created, we use the OpenAI API to retrieve it, create a th
 
 When the thread is running, we get a `run` object. The `run.status` field tells us if our assistant requires to run any action.
 
-If the `run.status` indicates that the assistant wants to call actions, we just pass the `run` object to the `sandbox.openai.actions.run()` function.
-The E2B sandbox will automatically call the correct actions and returns correctly formatted output object (called `outputs` in the code below) that you can submit back to the assistant.
+If the `run.status` indicates that the assistant wants to call actions, we simply pass the `run` object to the `sandbox.openai.actions.run()` function.
+The E2B sandbox will automatically call the correct actions and return a correctly formatted output object (called `outputs` in the code below) that you can submit back to the assistant.
 
 <CodeGroup isFileName title="main.py" isRunnable={false}>
 ```python
@@ -184,17 +180,16 @@ See the full code [[TODO: Fix link] here]().
 ---
 
 ## JavaScript
-<Note title="Source Code">
-[TODO: Fix link] See the full Python code in our [cookbook]().
-</Note>
-
-### `sandbox.addAction()`
-Use the `addAction()` method to register a JavaScript function as an runnable action for the AI assistant and the LLM.
+In JavaScript, we will use the `sandbox.addAction()` method to register a JavaScript function as a runnable action for the AI assistant and the LLM.
 
 The JavaScript function you register will always receive the `sandbox` instance as the first argument.
 This allows you to define your actions in separate files.
 
-### 1. Import E2B and create sandbox
+<Note title="Source Code">
+[TODO: Fix link] See the full Python code in our [cookbook]().
+</Note>
+
+### 1. Import E2B and create a sandbox
 <CodeGroup isFileName title="index.ts" isRunnable={false}>
 ```js
 import OpenAI from 'openai'
@@ -208,13 +203,13 @@ const sandbox = await Sandbox.create({ // $HighlightLine
 ```
 </CodeGroup>
 
-### 2. Define assistant's actions
+### 2. Define the assistant's actions
 An assistant action is a regular JavaScript function that takes the sandbox object as the first argument and an object with arguments as the second. The assistant will be able to call this function to complete its task when it runs.
-The action can do be pretty much anything you want - running code, downloading files, analyzing data, for example running a terminal command.
+The action can do pretty much anything you want - running code, downloading files, analyzing data, for example running a terminal command.
 
 We define three actions:
 - `saveCodeToFile`
-    - Takes `code` and `filename` as arguments and saves the code to a file inside sandbox.
+    - Takes `code` and `filename` as arguments and saves the code to a file inside the sandbox.
 - `listFiles`
     - Returns a list of files on a given `path`.
 - `readFile`
@@ -260,8 +255,8 @@ export async function readFile(sandbox: Sandbox, { path }: { path: string }): Pr
 ```
 </CodeGroup>
 
-### 3. Add action to sandbox
-Now we need to make sure the sandbox knows about our actions we defined above. We'll use the `addAction` method.
+### 3. Add action to the sandbox
+Now we need to make sure the sandbox knows about the actions we defined above. We'll use the `addAction` method.
 <CodeGroup isFileName title="index.ts" isRunnable={false}>
 ```js
 // Import our action
@@ -320,7 +315,7 @@ export const functions: Array<
 - **The parameters `code` and `filename` are the parameters passed to the sandbox action as a part of the `args` dictionary.**
 
 
-### 5. Let assistant run our actions
+### 5. Let the assistant run our actions
 <Note title="How Assistants Work">
 Read the official [OpenAI's assistants documentation](https://platform.openai.com/docs/assistants/how-it-works).
 </Note>
@@ -330,8 +325,8 @@ Once the assistant is created, we use the OpenAI API to retrieve it, create a th
 When the thread is running, we get a `run` object. The `run.status` field tells us if our assistant requires to run any action.
 
 If the `run.status` indicates that the assistant wants to call actions, we just pass the `run` object to the `sandbox.openai.actions.run()` function.
-The E2B sandbox will automatically call the correct actions and returns correctly formatted output object (called `outputs` in the code below) that you can submit back to the assistant.
-
+The E2B sandbox will automatically call the correct actions and return correctly formatted output object (called `outputs` in the code below) that you can submit back to the assistant.
+ 
 <CodeGroup isFileName title="main.py" isRunnable={false}>
 ```js
 // ... rest of the logic
