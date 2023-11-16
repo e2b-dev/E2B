@@ -8,7 +8,7 @@ The Assistants API allows you to build AI assistants within your own application
 
 The specific feature of the OpenAI's Assistants API that we'll take advantage of is the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling).
 
-Follow our simple guides to let the OpenAI's assistant use the E2B sandbox to download files, use a custom cloud browser, use a terminal, write, run, and debug code, and more.
+Follow our guides to let the OpenAI's assistant use the E2B sandbox to download files, use a custom cloud browser, use a terminal, write, run, and debug code, and more.
 - [Python](#python)
 - [JavaScript](#java-script)
 
@@ -23,10 +23,6 @@ In Python, we will use the `sandbox.add_action()` method to register a Python fu
 The Python function you register will always receive the `sandbox` instance as the first argument.
 This allows you to define your actions in separate files.
 
-<Note title="Source Code">
-See the full Python code in our [cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main/guides/openai-assistant-py).
-</Note>
-
 ### 1. Import E2B and create a sandbox
 <CodeGroup isFileName title="main.py" isRunnable={false}>
 ```py
@@ -39,8 +35,8 @@ sandbox = Sandbox() # $HighlightLine
 </CodeGroup>
 
 ### 2. Define the assistant's actions
-An assistant action is a regular Python function that takes the sandbox object as the first argument and a dictionary with arguments as the second. The assistant will be able to call this function to complete its task when it runs.
-The action can do pretty much anything you want - running code, downloading files, analyzing data, for example running a terminal command.
+An assistant action is a regular Python function that takes the sandbox object as the first argument and a dictionary with function arguments as the second. The assistant will be able to call this function to complete its task when it runs.
+The action can do pretty much anything you want - running code, downloading files, analyzing data, or running a terminal command.
 
 We define three actions:
 - `save_code_to_file`
@@ -183,7 +179,6 @@ sandbox.close()
 </CodeGroup>
 
 
-
 See the full code [here](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-py/openai_assistant/main.py).
 
 ---
@@ -198,10 +193,6 @@ In JavaScript, we will use the `sandbox.addAction()` method to register a JavaSc
 
 The JavaScript function you register will always receive the `sandbox` instance as the first argument.
 This allows you to define your actions in separate files.
-
-<Note title="Source Code">
-See the full JavaScript code in our [cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main/guides/openai-assistant-js).
-</Note>
 
 ### 1. Import E2B and create a sandbox
 
