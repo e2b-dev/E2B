@@ -2,16 +2,16 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"net/http"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
