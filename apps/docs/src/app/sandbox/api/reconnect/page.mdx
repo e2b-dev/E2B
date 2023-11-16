@@ -1,21 +1,39 @@
 # Connect to running sandbox
 
-Disconnect and reconnect to the same sandbox {{ className: 'lead' }}
+Disconnect and reconnect later to the same sandbox while keeping it alive {{ className: 'lead' }}
 
 ## Description
 
 The sandboxes are by default kept alive only when connected to them. When you disconnect from a sandbox, it will be destroyed.
 
-If you want to keep the sandbox alive for even after disconnecting from it, you can explicitly say for how long you want to keep it alive. You can then disconnect from the sandbox and reconnect to it later. This can be useful in for example in serverless environment or chat bot application.
+If you want to keep the sandbox alive even after disconnecting from it, you can explicitly say for how long you want to keep it alive. You can then disconnect from the sandbox and reconnect to it later. This can be useful for example in a **serverless environment** or **chatbot application**.
 
-The limit is 1 hour. If you need more, feel free to [reach out to us](/getting-help) with your use.
+The duration limit to keep the sandbox alive is 1 hour. If you need more, feel free to [reach out to us](/getting-help) with your use.
 
 ## Keep sandbox alive
 
-The example bellow shows how to disconnect from a running sandbox and reconnect to it again.
-You will have to call `keep_alive` method on the sandbox instance to keep it alive for specified time. You can then disconnect from the sandbox and reconnect to it from anywhere.
+The example below shows how to disconnect from a running sandbox and reconnect to it again while keeping the sandbox alive.
 
 <CodeGroupAutoload
-  path="reconnect/reconnect"
+  path="reconnect/reconnect_1"
+  isRunnable={false}
+/>
+
+Call the `keep_alive`/`keepAlive` method on the sandbox instance to keep it alive. You can specify a red duration, as a multiple of a default time unit, which is
+- 1ms in JS
+- 1s in Python.
+
+You then disconnect from the sandbox.
+
+<CodeGroupAutoload
+  path="reconnect/reconnect_2"
+  isRunnable={false}
+/>
+
+You can then reconnect to the sandbox from anywhere.
+
+<CodeGroupAutoload
+  path="reconnect/reconnect_3"
+                   
   isRunnable={false}
 />
