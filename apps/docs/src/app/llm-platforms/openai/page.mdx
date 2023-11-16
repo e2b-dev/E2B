@@ -92,7 +92,7 @@ Now we need to make sure the sandbox knows about our actions we defined above. W
 <CodeGroup isFileName title="main.py" isRunnable={false}>
 ```py
 # Import our actions
-from .actions import read_file, save_code_to_file, list_files
+from actions import read_file, save_code_to_file, list_files
 
 # Add action to the sandbox we created in the previous steps
 sandbox.add_action(read_file).add_action(save_code_to_file).add_action(list_files)
