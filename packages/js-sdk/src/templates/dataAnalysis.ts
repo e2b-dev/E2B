@@ -27,6 +27,7 @@ export class DataAnalysis extends Sandbox {
     super({ id: DataAnalysisEnvId, ...opts })
   }
 
+  static override async create(): Promise<DataAnalysis>;
   static override async create(opts?: Omit<SandboxOpts, 'id'>) {
     return new DataAnalysis({ ...opts })
       ._open({ timeout: opts?.timeout })

@@ -1,0 +1,376 @@
+# OpenAI
+
+E2B offers a native support for OpenAI's [Assistants API](https://platform.openai.com/docs/assistants/overview). You can use the E2B's Sandbox as an environment for your assistants's tool execution.
+
+<Note title="What's OpenAI's Assistants API?">
+The Assistants API allows you to build AI assistants within your applications. An Assistant has instructions and can leverage models, tools, and knowledge to respond to user queries. The Assistants API currently supports three types of tools: Code Interpreter, Retrieval, and Function calling.
+</Note>
+
+The specific feature of the OpenAI's Assistants API that we'll take advantage of is the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling).
+
+Follow our guides to let the OpenAI's assistant use the E2B sandbox to download files, use a custom cloud browser, use a terminal, write, run, and debug code, and more.
+- [Python](#python)
+- [JavaScript](#javascript)
+
+## Python
+<Note title="Source Code">
+See the full Python code in our [cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main/guides/openai-assistant-py).
+</Note>
+
+### `sandbox.add_action()`
+In Python, we will use the `sandbox.add_action()` method to register a Python function as a runnable action for the AI assistant and the LLM.
+
+The Python function you register will always receive the `sandbox` instance as the first argument.
+This allows you to define your actions in separate files.
+
+### 1. Import E2B and create a sandbox
+<CodeGroup isFileName title="main.py" isRunnable={false}>
+```py
+import openai
+from e2b import Sandbox # $HighlightLine
+
+client = openai.Client()
+sandbox = Sandbox() # $HighlightLine
+```
+</CodeGroup>
+
+### 2. Define the assistant's actions
+An assistant action is a regular Python function that takes the sandbox object as the first argument and a dictionary with function arguments as the second. The assistant will be able to call this function to complete its task when it runs.
+The action can do pretty much anything you want - running code, downloading files, analyzing data, or running a terminal command.
+
+We define three actions that the AI assistant can use:
+- `save_code_to_file`
+    - Takes `code` and `filename` as arguments and saves the code to a file inside the sandbox.
+- `list_files`
+    - Returns a list of files on a given `path`.
+- `read_file`
+    - Reads a file on the `path` and returns the content of this file.
+
+<CodeGroup isFileName title="actions.py" isRunnable={false}>
+```py
+def save_code_to_file(sandbox: Sandbox, args: Dict[str, Any]) -> str:
+    filename = args["filename"]
+    code = args["code"]
+
+    try:
+        dir = os.path.dirname(filename)
+
+        sandbox.filesystem.make_dir(dir)
+        sandbox.filesystem.write(filename, code)
+
+        return "success"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+def list_files(sandbox: Sandbox, args: Dict[str, Any]) -> str:
+    path = args["path"]
+
+    try:
+        files = sandbox.filesystem.list(path)
+        response = "\n".join(
+            [f"dir: {file.name}" if file.is_dir else file.name for file in files]
+        )
+        return response
+    except Exception as e:
+        return f"Error: {e}"
+
+
+def read_file(sandbox: Sandbox, args: Dict[str, Any]) -> str:
+    path = args["path"]
+
+    try:
+        return sandbox.filesystem.read(path)
+    except Exception as e:
+        return f"Error: {e}"
+```
+</CodeGroup>
+
+### 3. Add action to sandbox
+Now we need to make sure the sandbox knows about actions we defined above. We'll use the `add_action` method.
+
+<CodeGroup isFileName title="main.py" isRunnable={false}>
+```py
+# Import our actions
+from actions import read_file, save_code_to_file, list_files
+
+# Add action to the sandbox we created in the previous steps
+sandbox.add_action(read_file).add_action(save_code_to_file).add_action(list_files)
+```
+</CodeGroup>
+
+### 4. Create AI Assistant
+We'll use the OpenAI API to create a new AI Assistant. You can read the full code [here](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-py/openai_assistant/assistant.py).
+
+Keep a close attention to the `functions` definition inside the [`assistant.py`](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-py/openai_assistant/assistant.py#L14-L67) file. We're using the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling) feature to give our assistant the ability to call the sandbox actions we defined.
+
+<CodeGroup isFileName title="assistant.py" isRunnable={false}>
+```python
+from typing import List
+from openai.types.beta.assistant_create_params import Tool
+
+functions: List[Tool] = [
+    {
+        "type": "function",
+        "function": {
+            "name": "save_code_to_file", # $HighlightLine
+            "description": "Save code to file",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code": { # $HighlightLine
+                        "type": "string",
+                        "description": "The code to save",
+                    },
+                    "filename": { # $HighlightLine
+                        "type": "string",
+                        "description": "The filename including the path and extension",
+                    },
+                },
+            },
+        },
+    },
+    # ... rest of the functions
+]
+
+# ... rest of the file
+```
+</CodeGroup>
+
+- **The `name` field is the same name as the name of the sandbox action we created in the previous step.**
+- **The parameters `code` and `filename` are the parameters passed to the sandbox action as a part of the `args` dictionary.**
+
+
+### 5. Let the assistant run our actions
+<Note title="How Assistants Work">
+Read the official [OpenAI's assistants documentation](https://platform.openai.com/docs/assistants/how-it-works).
+</Note>
+
+Once the assistant is created, we use the OpenAI API to retrieve it, create a thread, send messages to the thread, and finally run the thread.
+
+When the thread is running, we get a `run` object. The `run.status` field tells us if our assistant requires to run any action.
+
+If the `run.status` indicates that the assistant wants to call actions, we simply pass the `run` object to the `sandbox.openai.actions.run()` function.
+The E2B sandbox will automatically call the correct actions and return a correctly formatted output object (called `outputs` in the code below) that you can submit back to the assistant.
+
+<CodeGroup isFileName title="main.py" isRunnable={false}>
+```python
+# ... rest of the logic
+
+assistant = client.beta.assistants.retrieve("ai-developer-assistant")
+run = client.beta.threads.runs.create(thread_id=thread.id, assistant_id=assistant.id)
+
+# Start polling the run object
+while True:
+    if run.status == "requires_action": # $HighlightLine
+        outputs = sandbox.openai.actions.run(run) # $HighlightLine
+        if len(outputs) > 0: # $HighlightLine
+            client.beta.threads.runs.submit_tool_outputs( # $HighlightLine
+                thread_id=thread.id, run_id=run.id, tool_outputs=outputs # $HighlightLine
+            ) # $HighlightLine
+
+    # ... handle rest of the `run` states
+
+    run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+
+# Close the sandbox once everything is done
+sandbox.close()
+```
+</CodeGroup>
+
+
+See the full code [here](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-py/openai_assistant/main.py).
+
+---
+
+## JavaScript
+<Note title="Source Code">
+See the full JavaScript code in our [cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main/guides/openai-assistant-js).
+</Note>
+
+### `sandbox.addAction()`
+In JavaScript, we will use the `sandbox.addAction()` method to register a JavaScript function as a runnable action for the AI assistant and the LLM.
+
+The JavaScript function you register will always receive the `sandbox` instance as the first argument.
+This allows you to define your actions in separate files.
+
+### 1. Import E2B and create a sandbox
+
+<CodeGroup isFileName title="index.ts" isRunnable={false}>
+```js
+import OpenAI from 'openai'
+import { Sandbox } from '@e2b/sdk' // $HighlightLine
+
+const openai = new OpenAI()
+const sandbox = await Sandbox.create({ // $HighlightLine
+  onStdout: console.log, // $HighlightLine
+  onStderr: console.error, // $HighlightLine
+}) // $HighlightLine
+```
+</CodeGroup>
+
+### 2. Define the assistant's actions
+An assistant action is a regular JavaScript function that takes the sandbox object as the first argument and an object with function arguments as the second. The assistant will be able to call this function to complete its task when it runs.
+The action can do pretty much anything you want - running code, downloading files, analyzing data, or running a terminal command.
+
+We define three actions that the AI assistant can use:
+- `saveCodeToFile`
+    - Takes `code` and `filename` as arguments and saves the code to a file inside the sandbox.
+- `listFiles`
+    - Returns a list of files on a given `path`.
+- `readFile`
+    - Reads a file on the `path` and returns the content of this file.
+
+<CodeGroup isFileName title="actions.ts" isRunnable={false}>
+```js
+import { Sandbox } from '@e2b/sdk'
+import path from 'path'
+
+export async function saveCodeToFile(
+  sandbox: Sandbox,
+  { code, filename }: { code: string; filename: string },
+): Promise<string> {
+  try {
+    const dir = path.dirname(filename)
+
+    await sandbox.filesystem.makeDir(dir)
+    await sandbox.filesystem.write(filename, code)
+
+    return 'success'
+  } catch (e) {
+    return `Error: ${e.message}}`
+  }
+}
+
+export async function listFiles(sandbox: Sandbox, { path }: { path: string }): Promise<string> {
+  try {
+    const files = await sandbox.filesystem.list(path)
+    const response = files.map(file => (file.isDir ? `dir: ${file.name}` : file.name)).join('\n')
+    return response
+  } catch (e) {
+    return `Error: ${e.message}}`
+  }
+}
+
+export async function readFile(sandbox: Sandbox, { path }: { path: string }): Promise<string> {
+  try {
+    return await sandbox.filesystem.read(path)
+  } catch (e) {
+    return `Error: ${e.message}}`
+  }
+}
+```
+</CodeGroup>
+
+### 3. Add action to the sandbox
+Now we need to make sure the sandbox knows about the actions we defined above. We'll use the `addAction` method.
+
+<CodeGroup isFileName title="index.ts" isRunnable={false}>
+```js
+// Import our actions
+import { listFiles, readFile, saveCodeToFile } from './actions'
+
+// Add action to the sandbox we created in the previous steps
+sandbox
+  .addAction(readFile)
+  .addAction(saveCodeToFile)
+  .addAction(listFiles)
+```
+</CodeGroup>
+
+### 4. Create AI Assistant
+We'll use the OpenAI API to create a new AI Assistant. You can read the full code [here](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-js/assistant.ts).
+
+Keep a close attention to the `functions` definition inside the [`assistant.ts`](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-js/assistant.ts#L7-L67) file. We're using the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling) feature to give our assistant the ability to call the sandbox actions we defined.
+
+<CodeGroup isFileName title="assistant.ts" isRunnable={false}>
+```js
+import { AssistantCreateParams } from 'openai/src/resources/beta/assistants/assistants'
+
+export const functions: Array<
+  | AssistantCreateParams.AssistantToolsCode
+  | AssistantCreateParams.AssistantToolsRetrieval
+  | AssistantCreateParams.AssistantToolsFunction
+> = [
+    // Save code to file
+    {
+      type: 'function',
+      function: {
+        name: 'saveCodeToFile', // $HighlightLine
+        description: 'Save code to file',
+        parameters: {
+          type: 'object',
+          properties: {
+            code: { // $HighlightLine
+              type: 'string',
+              description: 'The code to save',
+            },
+            filename: { // $HighlightLine
+              type: 'string',
+              description: 'The filename including the path and extension',
+            },
+          },
+        },
+      },
+    },
+    // ... rest of the functions
+  ]
+
+// ... rest of the file
+```
+</CodeGroup>
+
+- **The `name` field is the same name as the name of the sandbox action we created in the previous step.**
+- **The parameters `code` and `filename` are the parameters passed to the sandbox action in an object as the second argument.**
+
+
+### 5. Let the assistant run our actions
+<Note title="How Assistants Work">
+Read the official [OpenAI's assistants' documentation](https://platform.openai.com/docs/assistants/how-it-works).
+</Note>
+
+Once the assistant is created, we use the OpenAI API to retrieve it, create a thread, send messages to the thread, and finally run the thread.
+
+When the thread is running, we get a `run` object. The `run.status` field tells us if our assistant requires to run any action.
+
+If the `run.status` indicates that the assistant wants to call actions, we just pass the `run` object to the `sandbox.openai.actions.run()` function.
+The E2B sandbox will automatically call the correct actions and return the correctly formatted output object (called `outputs` in the code below) that you can submit back to the assistant.
+
+<CodeGroup isFileName title="index.ts" isRunnable={false}>
+```js
+// ... rest of the logic
+
+const assistant = await openai.beta.assistants.retrieve(AI_ASSISTANT_ID)
+let run = await openai.beta.threads.runs.create(thread.id, { assistant_id: assistant.id })
+
+// Start polling the run object
+assistantLoop: while (true) {
+  await sleep(1000)
+
+  switch (run.status) {
+    case 'requires_action': { // $HighlightLine
+      const outputs = await sandbox.openai.actions.run(run) // $HighlightLine
+
+      if (outputs.length > 0) { // $HighlightLine
+        await openai.beta.threads.runs.submitToolOutputs(thread.id, run.id, { // $HighlightLine
+          tool_outputs: outputs, // $HighlightLine
+        }) // $HighlightLine
+      } // $HighlightLine
+
+      break
+    }
+    // ... handle rest of the `run` states
+    default:
+      console.error(`Unknown status: ${run.status}`)
+      break assistantLoop
+  }
+
+  run = await openai.beta.threads.runs.retrieve(thread.id, run.id)
+}
+
+// Close the sandbox once everything is done
+await sandbox.close()
+```
+</CodeGroup>
+
+See the full code [here](https://github.com/e2b-dev/e2b-cookbook/blob/main/guides/openai-assistant-js/index.ts).

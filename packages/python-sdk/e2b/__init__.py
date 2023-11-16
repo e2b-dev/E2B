@@ -18,6 +18,7 @@ from .sandbox import (
     ProcessManager,
     Process,
     OpenPort,
+    Action,
     EnvVars,
     SandboxException,
     TerminalException,

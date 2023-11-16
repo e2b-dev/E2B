@@ -10,6 +10,7 @@ import { Process, ProcessManager, ProcessMessage, ProcessOpts, ProcessOutput, pr
 import { CallOpts, SandboxConnection, SandboxConnectionOpts } from './sandboxConnection'
 import { Terminal, TerminalManager, TerminalOpts, TerminalOutput, terminalService } from './terminal'
 import { resolvePath } from '../utils/filesystem'
+import { Actions } from '../templates/openai'
 import { CurrentWorkingDirectoryDoesntExistError } from '../error'
 
 export type DownloadFileFormat =
@@ -28,12 +29,18 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   onExit?: () => Promise<void> | void;
 }
 
+export interface Action<T = { [key: string]: any }> {
+  (sandbox: Sandbox, args: T): string | Promise<string>
+}
+
 export class Sandbox extends SandboxConnection {
   readonly terminal: TerminalManager
   readonly filesystem: FilesystemManager
   readonly process: ProcessManager
 
-  private onScanPorts?: ScanOpenPortsHandler
+  readonly _actions: Map<string, Action<any>> = new Map()
+
+  private readonly onScanPorts?: ScanOpenPortsHandler
 
   protected constructor(opts?: SandboxOpts) {
     opts = opts || {}
@@ -266,13 +273,8 @@ export class Sandbox extends SandboxConnection {
 
     // Init Process handler
     this.process = {
-      /**
-       * Starts a new process.
-       * @param optsOrID Process options or Process ID
-       * @returns New process
-       */
-      start: async (optsOrID: string | ProcessOpts) => {
-        const opts = typeof optsOrID === 'string' ? { cmd: optsOrID } : optsOrID
+      start: async (optsOrCmd: string | ProcessOpts) => {
+        const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
         const start = async ({
           cmd,
           onStdout,
@@ -410,9 +412,9 @@ export class Sandbox extends SandboxConnection {
         const timeout = opts.timeout
         return await withTimeout(start, timeout)(opts)
       },
-
-      startAndWait: async (optsOrID: string | ProcessOpts) => {
-        const process = await this.process.start(optsOrID)
+      startAndWait: async (optsOrCmd: string | ProcessOpts) => {
+        const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
+        const process = await this.process.start(opts)
         return await process.wait()
       }
     }
@@ -427,15 +429,34 @@ export class Sandbox extends SandboxConnection {
    * The file will be uploaded to the user's home directory with the same name.
    * If a file with the same name already exists, it will be overwritten.
    */
-  public get fileURL() {
+  get fileURL() {
     const protocol = this.opts.__debug_devEnv === 'local' ? 'http' : 'https'
     const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
     return `${protocol}://${hostname}${FILE_ROUTE}`
   }
 
   /**
-   * Creates a new Sandbox.
-   * @param optsOrID Sandbox options or Sandbox ID
+   * Returns a map of added actions.
+   *
+   * @returns Map of added actions
+   */
+  get actions() {
+    return new Map(this._actions)
+  }
+
+  /**
+   * OpenAI integration that can be used to get output for the actions added in the sandbox.
+   *
+   * @returns OpenAI integration
+   */
+  get openai() {
+    return {
+      actions: new Actions(this),
+    } as const
+  }
+
+  /**
+   * Creates a new Sandbox from the default `base` sandbox template.
    * @returns New Sandbox
    *
    * @example
@@ -443,6 +464,32 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.create()
    * ```
    */
+  static async create(): Promise<Sandbox>;
+  /**
+   * Creates a new Sandbox from the template with the specified ID.
+   * @param id Sandbox ID
+   * @returns New Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create("sandboxID")
+   * ```
+   */
+  static async create(id: string): Promise<Sandbox>;
+  /**
+   * Creates a new Sandbox from the specified options.
+   * @param opts Sandbox options
+   * @returns New Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create({
+   *   id: "sandboxID",
+   *   onStdout: console.log,
+   * })
+   * ```
+   */
+  static async create(opts: SandboxOpts): Promise<Sandbox>;
   static async create(optsOrID?: string | SandboxOpts) {
     const opts = typeof optsOrID === 'string' ? { id: optsOrID } : optsOrID
     return new Sandbox(opts)
@@ -458,7 +505,7 @@ export class Sandbox extends SandboxConnection {
 
   /**
    * Reconnects to an existing Sandbox.
-   * @param sandboxIDorOpts Sandbox ID or Sandbox options
+   * @param sandboxID Sandbox ID
    * @returns Existing Sandbox
    *
    * @example
@@ -466,12 +513,24 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
-  static async reconnect(
-    sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }
-  ) {
+  static async reconnect(sandboxID: string): Promise<Sandbox>;
+  /**
+   * Reconnects to an existing Sandbox.
+   * @param opts Sandbox options
+   * @returns Existing Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.reconnect({
+   *   sandboxID,
+   * })
+   * ```
+   */
+  static async reconnect(opts: Omit<SandboxOpts, 'id'> & { sandboxID: string }): Promise<Sandbox>;
+  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }) {
     let sandboxID: string
     let opts: SandboxOpts
-    if (typeof sandboxIDorOpts === 'string'){
+    if (typeof sandboxIDorOpts === 'string') {
       sandboxID = sandboxIDorOpts
       opts = {}
     } else {
@@ -494,21 +553,75 @@ export class Sandbox extends SandboxConnection {
       })
   }
 
-  protected override async _open(opts: CallOpts) {
-    await super._open(opts)
+  /**
+   * Add a new action. The name of the action is automatically extracted from the function name.
+   *
+   * You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
+   *
+   * @param action Action handler
+   * @returns Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * sandbox.addAction('readFile', (sandbox, args) => sandbox.filesystem.read(args.path))
+   * ```
+   */
+  addAction<T = { [name: string]: any }>(action: Action<T>): this;
+  /**
+   * Add a new action with a specified name.
+   *
+   * You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
+   *
+   * @param name Action name
+   * @param action Action handler
+   * @returns Sandbox
+   *
+   * @example
+   * ```ts
+   * async function readFile(sandbox: Sandbox, args: any) {
+   *   return sandbox.filesystem.read(args.path)
+   * }
+   *
+   * const sandbox = await Sandbox.create()
+   * sandbox.addAction(readFile)
+   * ```
+   */
+  addAction<T = { [name: string]: any }>(name: string, action: Action<T>): this;
+  addAction<T = { [name: string]: any }>(actionOrName: string | Action<T>, action?: Action<T>): this {
+    if (typeof actionOrName === 'string') {
+      if (!action) throw new Error('Action is required')
+      this._actions.set(actionOrName, action)
+      return this
+    } else if (typeof actionOrName === 'function') {
+      action = actionOrName
 
-    const portsHandler = this.onScanPorts
-      ? (ports: { State: string; Ip: string; Port: number }[]) =>
-        this.onScanPorts?.(
-          ports.map((p) => ({ ip: p.Ip, port: p.Port, state: p.State })),
-        )
-      : undefined
+      if (!action.name) {
+        throw new Error('Action name is required')
+      }
 
-    await this._handleSubscriptions(
-      portsHandler
-        ? this._subscribe(codeSnippetService, portsHandler, 'scanOpenedPorts')
-        : undefined,
-    )
+      this._actions.set(action.name, action)
+    } else {
+      throw new Error('Action or action name and action is required')
+    }
+
+    return this
+  }
+
+  /**
+   * Remove an action.
+   * @param name Action name
+   * @returns Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * sandbox.addAction('hello', (sandbox, args) => 'Hello World')
+   * sandbox.removeAction('hello')
+   * ```
+   */
+  removeAction(name: string) {
+    this._actions.delete(name)
 
     return this
   }
@@ -547,6 +660,18 @@ export class Sandbox extends SandboxConnection {
     return `/home/user/${filename}`
   }
 
+  /**
+   * Downloads a file from the sandbox.
+   * @param remotePath Path to a file on the sandbox
+   * @param format Format of the downloaded file
+   * @returns File content
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * const content = await sandbox.downloadFile('/home/user/file.txt')
+   * ```
+   */
   async downloadFile(remotePath: string, format?: DownloadFileFormat) {
     remotePath = encodeURIComponent(remotePath)
 
@@ -571,5 +696,24 @@ export class Sandbox extends SandboxConnection {
       default:
         return await response.arrayBuffer()
     }
+  }
+
+  protected override async _open(opts: CallOpts) {
+    await super._open(opts)
+
+    const portsHandler = this.onScanPorts
+      ? (ports: { State: string; Ip: string; Port: number }[]) =>
+        this.onScanPorts?.(
+          ports.map((p) => ({ ip: p.Ip, port: p.Port, state: p.State })),
+        )
+      : undefined
+
+    await this._handleSubscriptions(
+      portsHandler
+        ? this._subscribe(codeSnippetService, portsHandler, 'scanOpenedPorts')
+        : undefined,
+    )
+
+    return this
   }
 }

@@ -62,12 +62,42 @@ function InfoIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-export function Note({ children }: { children: React.ReactNode }) {
+export function Note({ title, children }: { title?: string, children: React.ReactNode }) {
   return (
     <div
-      className="bg-brand-50/50 my-6 flex gap-2.5 rounded-2xl border border-brand-500/20 p-4 leading-6 text-brand-900 dark:border-brand-500/30 dark:bg-brand-500/5 dark:text-brand-200 dark:[--tw-prose-links-hover:theme(colors.brand.300)] dark:[--tw-prose-links:theme(colors.white)]">
-      <InfoIcon
-        className="mt-1 h-4 w-4 flex-none fill-brand-500 stroke-white dark:fill-brand-200/20 dark:stroke-brand-200" />
+      className={clsx(`
+        bg-brand-50/50
+        my-6
+        flex
+        gap-2.5
+        rounded-2xl
+        border
+        border-brand-500/20
+        p-4
+        leading-6
+        text-brand-900
+        dark:border-brand-500/30
+        dark:bg-brand-500/5
+        dark:text-brand-200
+        dark:[--tw-prose-links-hover:theme(colors.brand.300)]
+        dark:[--tw-prose-links:theme(colors.white)]
+      `,
+        title && 'flex-col items-start justify-start'
+      )}>
+      <div className="flex gap-2.5 justify-start items-start">
+        <InfoIcon className="
+          mt-1
+          h-4
+          w-4
+          flex-none
+          fill-brand-500
+          stroke-white
+          dark:fill-brand-200/20
+          dark:stroke-brand-200
+        "/>
+        {title && <span className="font-bold">{title}</span>}
+      </div>
+
       <div className="[&>:first-child]:mt-0 [&>:last-child]:mb-0">{children}</div>
     </div>
   )
