@@ -225,6 +225,10 @@ export const routes = [
         href: '/sandbox/api/cwd',
       },
       {
+        title: 'TODO: Sandbox Action',
+        href: '/sandbox/api/action',
+      },
+      {
         icon: (
           <Link
             strokeWidth={1}

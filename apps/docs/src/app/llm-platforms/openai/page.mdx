@@ -2,43 +2,183 @@
 
 E2B offers a native support for OpenAI's new [Assistants API](https://platform.openai.com/docs/assistants/overview).
 
-<Note>
+<Note title="What's OpenAI's Assistants API?">
 The Assistants API allows you to build AI assistants within your own applications. An Assistant has instructions and can leverage models, tools, and knowledge to respond to user queries. The Assistants API currently supports three types of tools: Code Interpreter, Retrieval, and Function calling.
 </Note>
 
-You can use E2B's sandbox as an environment for the tool execution for your AI assistant. The specific feature of OpenAI's Assistants that we'll take advantage of is the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling).
-This way you can let the AI assistant to for example download files, use custom cloud browser, use terminal, write, run, and debug code, and more.
+You can use E2B's sandbox as an environment for the tool execution for your AI assistant. The specific feature of tge OpenAI's Assistants API that we'll take advantage of is the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling).
 
-## Python Usage
+This way you can let the AI assistant use the E2B sandbox to download files, use custom cloud browser, use terminal, write, run, and debug code, and more.
 
-<Note>
-[TODO] See the repository with code here.
+## Python
+<Note title="Source Code">
+[TODO: Fix link] See the full Python code in our [cookbook]().
 </Note>
 
-### Import E2B and created the sandbox
-<CodeGroup>
-```py
-from e2b import Sandbox # $HighlightLine
-import openai
+### `sandbox.add_action()`
+Use the `add_action()` method to register a Python function as an runnable action for the AI assistant and the LLM.
 
+The Python function you register will always receive the `sandbox` instance as the first argument.
+This allows you to define your actions in separate files.
+
+### 1. Import E2B and create sandbox
+<CodeGroup isFileName title="main.py" isRunnable={false}>
+```py
+import openai
+from e2b import Sandbox # $HighlightLine
+
+client = openai.Client()
 sbx = Sandbox() # $HighlightLine
 ```
 </CodeGroup>
 
-### Define assistant's actions
+### 2. Define assistant's actions
 We're using the `sandbox.action()` decorator to mark our function as an assistant action. An assistant action is a function that the AI assistant can use to complete its task.
-It can be pretty much anything you want - running code, downloading files, analyzing data, for for example running a terminal command.
+It can be pretty much anything you want - running code, downloading files, analyzing data, for example running a terminal command.
 
-Our action here is simple. It takes two arguments - `path` and `content` - then it writes the `content` to a file on the `path` inside the sandbox.
-<CodeGroup>
+We define three actions:
+- `save_code_to_file`
+    - Takes `code` and `filename` as arguments and saves the code to a file inside sandbox.
+- `list_files`
+    - Returns a list of files on a given `path`.
+- `read_file`
+    - Reads a file on the `path` and returns the content of this file.
+<CodeGroup isFileName title="actions.py" isRunnable={false}>
 ```py
-@sbx.action()
-def write_to_file(path, content):
-  sbx.filesystem.write(path, content)
+def save_code_to_file(sandbox: Sandbox, args: Dict[str, Any]) -> str:
+    filename = args["filename"]
+    code = args["code"]
+
+    try:
+        dir = os.path.dirname(filename)
+
+        sandbox.filesystem.make_dir(dir)
+        sandbox.filesystem.write(filename, code)
+
+        return "success"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+def list_files(sandbox: Sandbox, args: Dict[str, Any]) -> str:
+    path = args["path"]
+
+    try:
+        files = sandbox.filesystem.list(path)
+        response = "\n".join(
+            [f"dir: {file.name}" if file.is_dir else file.name for file in files]
+        )
+        return response
+    except Exception as e:
+        return f"Error: {e}"
+
+
+def read_file(sandbox: Sandbox, args: Dict[str, Any]) -> str:
+    path = args["path"]
+
+    try:
+        return sandbox.filesystem.read(path)
+    except Exception as e:
+        return f"Error: {e}"
 ```
 </CodeGroup>
 
-### Let assistant perform actions
-Now inside the
+### 3. Add action to sandbox
+Now we need to make sure the sandbox knows about our `write_to_file` action. We'll use the `add_action` method.
+<CodeGroup isFileName title="main.py" isRunnable={false}>
+```py
+# Import our action
+from .actions import write_to_file
 
-## JavaScript Usage
+# Add action to the sandbox we created in the previous steps
+sbx.add_action(write_to_file)
+```
+</CodeGroup>
+
+### 4. Create AI Assistant
+We'll use the OpenAI API to create a new AI Assistant. You can read the full code [TODO: FIX LINK here]().
+
+Keep a close attention to the `functions` definition inside the `[TODO: FIX LINK assistant.py]()` file. We're using the [Function calling](https://platform.openai.com/docs/assistants/tools/function-calling) feature to give our assistant an ability to call the sandbox actions we defined.
+<CodeGroup isFileName title="assistant.py" isRunnable={false}>
+```python
+from typing import List
+from openai.types.beta.assistant_create_params import Tool
+
+functions: List[Tool] = [
+    {
+        "type": "function",
+        "function": {
+            "name": "save_code_to_file", # $HighlightLine
+            "description": "Save code to file",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code": { # $HighlightLine
+                        "type": "string",
+                        "description": "The code to save",
+                    },
+                    "filename": { # $HighlightLine
+                        "type": "string",
+                        "description": "The filename including the path and extension",
+                    },
+                },
+            },
+        },
+    },
+    # ... rest of the functions
+]
+
+# ... rest of the file
+```
+</CodeGroup>
+
+- **The `name` field is the same name as the name of the sandbox action we created in the previous step.**
+- **The parameters `code` and `filename` are the parameters passed to the sandbox action as a part of the `args` dictionary.**
+
+
+### 5. Let assistant run our actions
+<Note title="How Assistants Work">
+Read the official [OpenAI's assistants documentation](https://platform.openai.com/docs/assistants/how-it-works).
+</Note>
+
+Once the assistant is created, we use the OpenAI API to retrieve it, create a thread, send messages to the thread, and finally run the thread.
+
+When the thread is running, we get a `run` object. The `run.status` field tells us if our assistant requires to run an action.
+When
+
+<CodeGroup isFileName title="main.py" isRunnable={false}>
+```python
+# ... rest of the logic
+
+assistant = client.beta.assistants.retrieve("ai-developer-assistant")
+run = client.beta.threads.runs.create(thread_id=thread.id, assistant_id=assistant.id)
+
+# Start polling the run object
+while True:
+    if run.status == "requires_action": # $HighlightLine
+        outputs = sandbox.openai.assistant.run(run) # $HighlightLine
+        if len(outputs) > 0:
+            client.beta.threads.runs.submit_tool_outputs( # $HighlightLine
+                thread_id=thread.id, run_id=run.id, tool_outputs=outputs # $HighlightLine
+            ) # $HighlightLine
+
+    # ... handle rest of the `run` states
+
+    run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+
+# Close the sandbox once everything is done
+sandbox.close()
+```
+</CodeGroup>
+
+
+
+See the full code [[TODO: Fix link] here]().
+
+
+---
+
+## JavaScript
+<Note title="Source Code">
+[TODO: Fix link] See the full JS code in our [cookbook]().
+</Note>
