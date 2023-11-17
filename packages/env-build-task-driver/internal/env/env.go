@@ -31,6 +31,9 @@ type Env struct {
 	// Unique ID of the build - this is used to distinguish builds of the same env that can start simultaneously.
 	BuildID string
 
+	// Command to run when building the env.
+	StartCmd string
+
 	// Path to the directory where all envs are stored.
 	EnvsDiskPath string
 

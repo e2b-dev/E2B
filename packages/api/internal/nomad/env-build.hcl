@@ -36,6 +36,7 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
       }
 
       config {
+        StartCmd = "{{ .StartCmd }}"
         BuildID = "{{ .BuildID }}"
         EnvID = "{{ .EnvID }}"
         VCpuCount = "{{ .VCpuCount }}"

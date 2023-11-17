@@ -3,8 +3,8 @@ set -euo xtrace pipefail
 
 echo "Starting provisioning script."
 
-echo "ENV_ID={{ .EnvID }}" > /.e2b
-echo "BUILD_ID={{ .BuildID }}" >> /.e2b
+echo "ENV_ID={{ .EnvID }}" >/.e2b
+echo "BUILD_ID={{ .BuildID }}" >>/.e2b
 
 # We are downloading the packages manually
 apt-get update --download-only
@@ -101,5 +101,24 @@ echo "nameserver 8.8.8.8" >/etc/resolv.conf
 # Start systemd services
 systemctl enable envd
 systemctl enable chrony 2>&1
+
+# Add start command service if the start command is not empty.
+if [ -n "{{ .StartCmd }}" ]; then
+
+  cat <<EOF >/etc/systemd/system/start_cmd.service
+[Unit]
+Description=Start Command Service
+
+[Service]
+Type=simple
+Restart=no
+User=user
+Group=user
+ExecStart=/usr/bin/bash -l -c "{{ .StartCmd }}"
+EOF
+
+  systemctl enable start_cmd
+
+fi
 
 echo "Finished provisioning script"

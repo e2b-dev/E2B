@@ -37,10 +37,11 @@ var envBuildTemplate = template.Must(template.New(buildJobName).Funcs(template.F
 func (n *NomadClient) BuildEnvJob(
 	t trace.Tracer,
 	ctx context.Context,
-	envID string,
+	envID,
 	// build is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
-	buildID string,
-	apiSecret string,
+	buildID,
+	startCmd,
+	apiSecret,
 	googleServiceAccountBase64 string,
 	vmConfig BuildConfig,
 ) error {
@@ -68,6 +69,7 @@ func (n *NomadClient) BuildEnvJob(
 		BuildID                    string
 		EnvID                      string
 		SpanID                     string
+		StartCmd                   string
 		TraceID                    string
 		JobName                    string
 		TaskName                   string
@@ -79,6 +81,7 @@ func (n *NomadClient) BuildEnvJob(
 	}{
 		APISecret:                  apiSecret,
 		BuildID:                    buildID,
+		StartCmd:                   startCmd,
 		SpanID:                     spanID,
 		DiskSizeMB:                 vmConfig.DiskSizeMB,
 		VCpuCount:                  vmConfig.VCpuCount,

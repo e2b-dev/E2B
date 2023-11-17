@@ -86,6 +86,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 	dockerfile := c.PostForm("dockerfile")
 	alias := c.PostForm("alias")
+	startCmd := c.PostForm("startCmd")
 
 	if alias != "" {
 		alias, err = utils.CleanEnvID(alias)
@@ -112,6 +113,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		attribute.String("build.id", buildID.String()),
 		attribute.String("build.alias", alias),
 		attribute.String("build.dockerfile", dockerfile),
+		attribute.String("build.startCmd", startCmd),
 	)
 
 	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
@@ -160,11 +162,20 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 		var status api.EnvironmentBuildStatus
 
-		buildErr := a.buildEnv(buildContext, userID.String(), team.ID, envID, buildID, dockerfile, properties, nomad.BuildConfig{
-			VCpuCount:  tier.Vcpu,
-			MemoryMB:   tier.RAMMB,
-			DiskSizeMB: tier.DiskMB,
-		})
+		buildErr := a.buildEnv(
+			buildContext,
+			userID.String(),
+			team.ID,
+			envID,
+			buildID,
+			dockerfile,
+			startCmd,
+			properties,
+			nomad.BuildConfig{
+				VCpuCount:  tier.Vcpu,
+				MemoryMB:   tier.RAMMB,
+				DiskSizeMB: tier.DiskMB,
+			})
 
 		if buildErr != nil {
 			status = api.EnvironmentBuildStatusError
@@ -369,18 +380,30 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		}
 	}
 
+	startCmd := c.PostForm("startCmd")
+
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
 			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
 			"background-build-env",
 		)
+
 		var status api.EnvironmentBuildStatus
 
-		buildErr := a.buildEnv(buildContext, userID.String(), team.ID, envID, buildID, dockerfile, properties, nomad.BuildConfig{
-			VCpuCount:  tier.Vcpu,
-			MemoryMB:   tier.RAMMB,
-			DiskSizeMB: tier.DiskMB,
-		})
+		buildErr := a.buildEnv(
+			buildContext,
+			userID.String(),
+			team.ID,
+			envID,
+			buildID,
+			dockerfile,
+			startCmd,
+			properties,
+			nomad.BuildConfig{
+				VCpuCount:  tier.Vcpu,
+				MemoryMB:   tier.RAMMB,
+				DiskSizeMB: tier.DiskMB,
+			})
 
 		if buildErr != nil {
 			status = api.EnvironmentBuildStatusError
@@ -603,7 +626,8 @@ func (a *APIStore) buildEnv(
 	teamID uuid.UUID,
 	envID string,
 	buildID uuid.UUID,
-	dockerfile string,
+	dockerfile,
+	startCmd string,
 	posthogProperties posthog.Properties,
 	vmConfig nomad.BuildConfig,
 ) (err error) {
@@ -626,7 +650,16 @@ func (a *APIStore) buildEnv(
 		)
 	}()
 
-	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID.String(), a.apiSecret, a.googleServiceAccountBase64, vmConfig)
+	err = a.nomad.BuildEnvJob(
+		a.tracer,
+		childCtx,
+		envID,
+		buildID.String(),
+		startCmd,
+		a.apiSecret,
+		a.googleServiceAccountBase64,
+		vmConfig,
+	)
 	if err != nil {
 		err = fmt.Errorf("error when building env: %w", err)
 		telemetry.ReportCriticalError(childCtx, err)

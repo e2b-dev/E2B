@@ -205,7 +205,7 @@ paths:
                 duration:
                   description: Duration for which the instance should be kept alive in seconds
                   type: integer
-                  maximum: 3600  # 1 hour
+                  maximum: 3600 # 1 hour
                   minimum: 0
       parameters:
         - $ref: "#/components/parameters/instanceID"
@@ -251,6 +251,9 @@ paths:
                 - buildContext
                 - dockerfile
               properties:
+                startCmd:
+                  description: Start command to execute in the template after the build
+                  type: string
                 alias:
                   description: Alias of the environment
                   type: string
