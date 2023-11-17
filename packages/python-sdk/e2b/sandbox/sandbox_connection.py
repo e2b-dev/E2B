@@ -155,7 +155,7 @@ class SandboxConnection:
         return hostname
 
     def keep_alive(self, duration: int) -> None:
-        if not 0 <= duration < 3600:
+        if not 0 <= duration <= 3600:
             raise ValueError("Duration must be between 0 and 3600 seconds")
 
         with E2BApiClient(api_key=self._api_key) as api_client:

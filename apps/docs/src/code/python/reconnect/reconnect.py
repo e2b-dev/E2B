@@ -10,8 +10,8 @@ sandbox.filesystem.write('hello.txt', 'Hello World!')
 # Get the sandbox ID, we'll need it later
 sandboxID = sandbox.id
 
-# Keep alive the sandbox for 1 hour
-sandbox.keep_alive(60 * 60)  # $HighlightLine
+# Keep alive the sandbox for 2 minutes
+sandbox.keep_alive(2 * 60)  # $HighlightLine
 
 # Close the sandbox
 sandbox.close()
