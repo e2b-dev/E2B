@@ -21,7 +21,7 @@ update-driver:
 	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /opt/nomad/plugins/env-instance-task-driver && \
 	sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-instance-task-driver && \
-	($$(pgrep firecracker) && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found" && \
+	([[ $$(pgrep firecracker) ]] && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found" && \
 	sleep 4 && \
 	sudo supervisorctl restart nomad'
 
@@ -30,6 +30,6 @@ update-driver-locally:
 	sudo rm -rf /opt/nomad/plugins/env-instance-task-driver
 	sudo cp ./bin/debug/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver
 	sudo chmod +x /opt/nomad/plugins/env-instance-task-driver
-	($$(pgrep firecracker) && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found"
+	([[ $$(pgrep firecracker) ]] && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found"`
 	sleep 4
 	sudo supervisorctl restart nomad
