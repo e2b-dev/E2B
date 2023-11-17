@@ -16,8 +16,8 @@ run-profiler:
 	go tool pprof -http :9992 http://$(client-ip):6062/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
 
 update-driver:
-	#make build
-	#./upload.sh
+	make build
+	./upload.sh
 	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /opt/nomad/plugins/env-build-task-driver && \
 	sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-build-task-driver && \
