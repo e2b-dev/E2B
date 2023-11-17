@@ -14,9 +14,12 @@ import (
 
 // We are using a more debuggable IP address allocation for now that only covers 255 addresses.
 const (
-	IPSlotRange      = 255
+	octetSize   = 256
+	octetMax    = octetSize - 1
+	IPSlotsSize = octetSize * octetSize
+
 	HostSnapshotMask = 32
-	VMask            = 24
+	VMask            = 31
 	TapMask          = 30
 )
 
@@ -33,12 +36,23 @@ func (ips *IPSlot) VpeerName() string {
 	return "eth0"
 }
 
+func (ips *IPSlot) getOctets() (int, int) {
+	rem := ips.SlotIdx % octetMax
+	octet := (ips.SlotIdx - rem) / octetMax
+
+	return octet, rem
+}
+
 func (ips *IPSlot) VpeerIP() string {
-	return fmt.Sprintf("10.0.%d.2", ips.SlotIdx)
+	firstOctet, secondOctet := ips.getOctets()
+
+	return fmt.Sprintf("10.%d.%d.2", firstOctet, secondOctet)
 }
 
 func (ips *IPSlot) VethIP() string {
-	return fmt.Sprintf("10.0.%d.1", ips.SlotIdx)
+	firstOctet, secondOctet := ips.getOctets()
+
+	return fmt.Sprintf("10.%d.%d.1", firstOctet, secondOctet)
 }
 
 func (ips *IPSlot) VMask() int {
@@ -66,7 +80,9 @@ func (ips *IPSlot) HostSnapshotMask() int {
 }
 
 func (ips *IPSlot) HostSnapshotIP() string {
-	return fmt.Sprintf("192.168.%d.1", ips.SlotIdx)
+	firstOctet, secondOctet := ips.getOctets()
+
+	return fmt.Sprintf("192.168.%d.%d", firstOctet, secondOctet)
 }
 
 func (ips *IPSlot) NamespaceSnapshotIP() string {
@@ -117,7 +133,7 @@ func New(ctx context.Context, nodeID, instanceID, consulToken string, tracer tra
 	nodeShortID := nodeID[:8]
 
 	for {
-		for slotIdx := 0; slotIdx <= IPSlotRange; slotIdx++ {
+		for slotIdx := 0; slotIdx <= IPSlotsSize; slotIdx++ {
 			key := fmt.Sprintf("%s/%d", nodeShortID, slotIdx)
 
 			status, _, err := kv.CAS(&consul.KVPair{
