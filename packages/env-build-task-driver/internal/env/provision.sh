@@ -108,6 +108,7 @@ if [ -n "{{ .StartCmd }}" ]; then
   cat <<EOF >/etc/systemd/system/start_cmd.service
 [Unit]
 Description=Start Command Service
+After=multi-user.target
 
 [Service]
 Type=simple
