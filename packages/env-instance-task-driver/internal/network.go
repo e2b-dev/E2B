@@ -10,6 +10,7 @@ import (
 	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
@@ -27,7 +28,20 @@ func CreateNetwork(
 	hosts *txeh.Hosts,
 	tracer trace.Tracer,
 ) error {
-	childCtx, childSpan := tracer.Start(ctx, "create-network")
+	childCtx, childSpan := tracer.Start(ctx, "create-network", trace.WithAttributes(
+		attribute.Int("slotIdx", ipSlot.SlotIdx),
+		attribute.String("veth.cidr", ipSlot.VethCIDR()),
+		attribute.String("vpeer.cidr", ipSlot.VpeerCIDR()),
+		attribute.String("tap.cidr", ipSlot.TapCIDR()),
+		attribute.String("hostSnapshot.cidr", ipSlot.HostSnapshotCIDR()),
+		attribute.String("namespaceSnapshot.ip", ipSlot.NamespaceSnapshotIP()),
+		attribute.String("tap.ip", ipSlot.TapIP()),
+		attribute.String("tap.name", ipSlot.TapName()),
+		attribute.String("veth.name", ipSlot.VethName()),
+		attribute.String("vpeer.name", ipSlot.VpeerName()),
+		attribute.String("namespace.id", ipSlot.NamespaceID()),
+		attribute.String("instance.id", ipSlot.InstanceID),
+	))
 	defer childSpan.End()
 
 	// Prevent thread changes so the we can safely manipulate with namespaces
