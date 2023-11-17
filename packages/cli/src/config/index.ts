@@ -17,6 +17,7 @@ export const configSchema = yup.object({
   name: yup.string(),
   id: yup.string().required(),
   dockerfile: yup.string().required(),
+  start_cmd: yup.string(),
 })
 
 export type E2BConfig = yup.InferType<typeof configSchema>;
