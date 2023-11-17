@@ -17,16 +17,20 @@ type UserContextType = {
   isLoading: boolean;
   session: Session | null;
   user:
-    | (User & {
+  | (User & {
     teams: Team[];
     apiKeys: any[];
     accessToken: string;
     defaultTeamId: string;
+    pricingTier: {
+      id: string,
+      isPromo: boolean,
+      endsAt: string
+    }
   })
-    | null;
+  | null;
   error: Error | null;
 };
-
 
 export const UserContext = createContext(undefined)
 
@@ -99,8 +103,30 @@ export const CustomUserContextProvider = (props) => {
       if (teamsError) Sentry.captureException(teamsError)
       // TODO: Adjust when user can be part of multiple teams
       // @ts-ignore
-      const teams = userTeams?.map(userTeam=> userTeam.teams as Team)
-      const defaultTeam= teams?.filter(team => team.is_default)?.[0]
+      const teams = userTeams?.map(userTeam => userTeam.teams as Team)
+      const defaultTeam = teams?.filter(team => team.is_default)?.[0]
+
+
+      // Fetch user's pricing tier
+      const { data, error: pricingTierError } = await supabase
+        .from('teams')
+        .select('tier')
+        .eq('id', teams[0].id)
+      if (pricingTierError) Sentry.captureException(pricingTierError)
+      const pricingTier: string = data?.[0]?.tier
+      const isPromoTier = pricingTier.startsWith('promo')
+      let promoEndsAt: string | null = null
+      // Fetch promo end date
+      if (isPromoTier) {
+        console.log('pricingTier', pricingTier)
+        const { data: promoData, error: promoError } = await supabase
+          .from('tiers')
+          .select('promo_ends_at')
+          .eq('id', pricingTier)
+        if (promoError) Sentry.captureException(promoError)
+        console.log('promoData', promoData)
+        promoEndsAt = promoData?.[0]?.promo_ends_at
+      }
 
       const { data: apiKeys, error: apiKeysError } = await supabase
         .from('team_api_keys')
@@ -132,6 +158,11 @@ export const CustomUserContextProvider = (props) => {
         accessToken: accessToken?.access_token,
         defaultTeamId,
         error: teamsError || apiKeysError,
+        pricingTier: {
+          id: pricingTier,
+          isPromo: isPromoTier,
+          endsAt: promoEndsAt,
+        },
       })
       setIsLoading(false)
     }

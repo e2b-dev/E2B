@@ -8,6 +8,7 @@ import { Layout } from '@/components/Layout'
 import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'
 import { Section } from '@/components/SectionProvider'
+import { Banner } from '@/components/Banner'
 
 export const metadata: Metadata = {
   title: {
@@ -41,17 +42,18 @@ export default async function RootLayout({ children }) {
       className="h-full"
       suppressHydrationWarning
     >
-    <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
-    <Providers>
-      <div className="w-full">
-        <Layout allSections={allSections}>
-          {children}
-          <PostHogAnalytics/>
-          <Analytics/>
-        </Layout>
-      </div>
-    </Providers>
-    </body>
+      <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
+        <Providers>
+          <div className="w-full">
+            <Banner />
+            <Layout allSections={allSections}>
+              {children}
+              <PostHogAnalytics />
+              <Analytics />
+            </Layout>
+          </div>
+        </Providers>
+      </body>
     </html>
   )
 }
