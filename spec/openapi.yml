@@ -251,9 +251,6 @@ paths:
                 - buildContext
                 - dockerfile
               properties:
-                startCmd:
-                  description: Start command to execute in the template after the build
-                  type: string
                 alias:
                   description: Alias of the environment
                   type: string
@@ -264,6 +261,9 @@ paths:
                 dockerfile:
                   type: string
                   description: Dockerfile content
+                startCmd:
+                  description: Start command to execute in the template after the build
+                  type: string
             encoding:
               buildContext:
                 contentType: application/octet-stream
@@ -308,6 +308,9 @@ paths:
                 dockerfile:
                   type: string
                   description: Dockerfile content
+                startCmd:
+                  description: Start command to execute in the template after the build
+                  type: string
             encoding:
               buildContext:
                 contentType: application/octet-stream
