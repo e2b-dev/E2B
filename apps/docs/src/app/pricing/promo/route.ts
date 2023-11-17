@@ -83,3 +83,33 @@ export async function POST(request: Request) {
     message: `Applied promo code '${promoCode}' to team '${teamID}'`,
   })
 }
+
+// Get the info about promo
+export async function GET(request: Request) {
+  // Check if there's associated tier with promo code
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
+
+  const { data: tiersData, error: tiersError } = await supabase
+    .from('tiers')
+    .select('id, promo_starts_at, promo_ends_at')
+    .eq('id', id)
+
+  if (tiersError) {
+    return new Response(tiersError.message, { status: 500 })
+  }
+
+  if (tiersData.length === 0) {
+    return Response.json({
+      error: `Invalid tier ID '${id}'`,
+    })
+  }
+
+  const promo = tiersData[0]
+
+  return Response.json({
+    name: promo.id,
+    validFrom: promo.promo_starts_at,
+    validTo: promo.promo_ends_at,
+  })
+}
