@@ -40,6 +40,8 @@ type (
 		BuildID string `codec:"BuildID"`
 		EnvID   string `codec:"EnvID"`
 
+		StartCmd string `codec:"StartCmd"`
+
 		SpanID  string `codec:"SpanID"`
 		TraceID string `codec:"TraceID"`
 
@@ -90,6 +92,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		DockerContextsPath:         contextsPath,
 		DockerRegistry:             registry,
 		KernelImagePath:            kernelImagePath,
+		StartCmd:                   taskConfig.StartCmd,
 		DiskSizeMB:                 taskConfig.DiskSizeMB,
 		FirecrackerBinaryPath:      firecrackerBinaryPath,
 		EnvdPath:                   envdPath,

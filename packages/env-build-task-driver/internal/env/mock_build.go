@@ -12,7 +12,7 @@ import (
 )
 
 func MockBuild(envID, buildID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute * 3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
 
 	tracer := otel.Tracer("test")
@@ -49,6 +49,7 @@ func MockBuild(envID, buildID string) {
 		MemoryMB:              memoryMB,
 		DockerContextsPath:    contextsPath,
 		DockerRegistry:        registry,
+		StartCmd:              "",
 		KernelImagePath:       kernelImagePath,
 		DiskSizeMB:            diskSizeMB,
 		FirecrackerBinaryPath: firecrackerBinaryPath,

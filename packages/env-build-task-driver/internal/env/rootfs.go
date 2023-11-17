@@ -7,6 +7,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
+
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -17,9 +21,6 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"io"
-	"os"
-	"os/exec"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
@@ -223,9 +224,14 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	var scriptDef bytes.Buffer
 
 	err := EnvInstanceTemplate.Execute(&scriptDef, struct {
-		EnvID   string
-		BuildID string
-	}{EnvID: r.env.EnvID, BuildID: r.env.BuildID})
+		EnvID    string
+		BuildID  string
+		StartCmd string
+	}{
+		EnvID:    r.env.EnvID,
+		BuildID:  r.env.BuildID,
+		StartCmd: r.env.StartCmd,
+	})
 	if err != nil {
 		errMsg := fmt.Errorf("error executing provision script %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
