@@ -42,6 +42,12 @@ func (tc *TierCreate) SetDiskMB(i int64) *TierCreate {
 	return tc
 }
 
+// SetConcurrentInstances sets the "concurrent_instances" field.
+func (tc *TierCreate) SetConcurrentInstances(i int64) *TierCreate {
+	tc.mutation.SetConcurrentInstances(i)
+	return tc
+}
+
 // SetID sets the "id" field.
 func (tc *TierCreate) SetID(s string) *TierCreate {
 	tc.mutation.SetID(s)
@@ -106,6 +112,9 @@ func (tc *TierCreate) check() error {
 	if _, ok := tc.mutation.DiskMB(); !ok {
 		return &ValidationError{Name: "disk_mb", err: errors.New(`ent: missing required field "Tier.disk_mb"`)}
 	}
+	if _, ok := tc.mutation.ConcurrentInstances(); !ok {
+		return &ValidationError{Name: "concurrent_instances", err: errors.New(`ent: missing required field "Tier.concurrent_instances"`)}
+	}
 	return nil
 }
 
@@ -154,6 +163,10 @@ func (tc *TierCreate) createSpec() (*Tier, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.DiskMB(); ok {
 		_spec.SetField(tier.FieldDiskMB, field.TypeInt64, value)
 		_node.DiskMB = value
+	}
+	if value, ok := tc.mutation.ConcurrentInstances(); ok {
+		_spec.SetField(tier.FieldConcurrentInstances, field.TypeInt64, value)
+		_node.ConcurrentInstances = value
 	}
 	if nodes := tc.mutation.TeamsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -278,6 +291,24 @@ func (u *TierUpsert) AddDiskMB(v int64) *TierUpsert {
 	return u
 }
 
+// SetConcurrentInstances sets the "concurrent_instances" field.
+func (u *TierUpsert) SetConcurrentInstances(v int64) *TierUpsert {
+	u.Set(tier.FieldConcurrentInstances, v)
+	return u
+}
+
+// UpdateConcurrentInstances sets the "concurrent_instances" field to the value that was provided on create.
+func (u *TierUpsert) UpdateConcurrentInstances() *TierUpsert {
+	u.SetExcluded(tier.FieldConcurrentInstances)
+	return u
+}
+
+// AddConcurrentInstances adds v to the "concurrent_instances" field.
+func (u *TierUpsert) AddConcurrentInstances(v int64) *TierUpsert {
+	u.Add(tier.FieldConcurrentInstances, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -386,6 +417,27 @@ func (u *TierUpsertOne) AddDiskMB(v int64) *TierUpsertOne {
 func (u *TierUpsertOne) UpdateDiskMB() *TierUpsertOne {
 	return u.Update(func(s *TierUpsert) {
 		s.UpdateDiskMB()
+	})
+}
+
+// SetConcurrentInstances sets the "concurrent_instances" field.
+func (u *TierUpsertOne) SetConcurrentInstances(v int64) *TierUpsertOne {
+	return u.Update(func(s *TierUpsert) {
+		s.SetConcurrentInstances(v)
+	})
+}
+
+// AddConcurrentInstances adds v to the "concurrent_instances" field.
+func (u *TierUpsertOne) AddConcurrentInstances(v int64) *TierUpsertOne {
+	return u.Update(func(s *TierUpsert) {
+		s.AddConcurrentInstances(v)
+	})
+}
+
+// UpdateConcurrentInstances sets the "concurrent_instances" field to the value that was provided on create.
+func (u *TierUpsertOne) UpdateConcurrentInstances() *TierUpsertOne {
+	return u.Update(func(s *TierUpsert) {
+		s.UpdateConcurrentInstances()
 	})
 }
 
@@ -663,6 +715,27 @@ func (u *TierUpsertBulk) AddDiskMB(v int64) *TierUpsertBulk {
 func (u *TierUpsertBulk) UpdateDiskMB() *TierUpsertBulk {
 	return u.Update(func(s *TierUpsert) {
 		s.UpdateDiskMB()
+	})
+}
+
+// SetConcurrentInstances sets the "concurrent_instances" field.
+func (u *TierUpsertBulk) SetConcurrentInstances(v int64) *TierUpsertBulk {
+	return u.Update(func(s *TierUpsert) {
+		s.SetConcurrentInstances(v)
+	})
+}
+
+// AddConcurrentInstances adds v to the "concurrent_instances" field.
+func (u *TierUpsertBulk) AddConcurrentInstances(v int64) *TierUpsertBulk {
+	return u.Update(func(s *TierUpsert) {
+		s.AddConcurrentInstances(v)
+	})
+}
+
+// UpdateConcurrentInstances sets the "concurrent_instances" field to the value that was provided on create.
+func (u *TierUpsertBulk) UpdateConcurrentInstances() *TierUpsertBulk {
+	return u.Update(func(s *TierUpsert) {
+		s.UpdateConcurrentInstances()
 	})
 }
 

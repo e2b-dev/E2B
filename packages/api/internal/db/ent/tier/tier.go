@@ -18,6 +18,8 @@ const (
 	FieldRAMMB = "ram_mb"
 	// FieldDiskMB holds the string denoting the disk_mb field in the database.
 	FieldDiskMB = "disk_mb"
+	// FieldConcurrentInstances holds the string denoting the concurrent_instances field in the database.
+	FieldConcurrentInstances = "concurrent_instances"
 	// EdgeTeams holds the string denoting the teams edge name in mutations.
 	EdgeTeams = "teams"
 	// Table holds the table name of the tier in the database.
@@ -37,6 +39,7 @@ var Columns = []string{
 	FieldVcpu,
 	FieldRAMMB,
 	FieldDiskMB,
+	FieldConcurrentInstances,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -70,6 +73,11 @@ func ByRAMMB(opts ...sql.OrderTermOption) OrderOption {
 // ByDiskMB orders the results by the disk_mb field.
 func ByDiskMB(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDiskMB, opts...).ToFunc()
+}
+
+// ByConcurrentInstances orders the results by the concurrent_instances field.
+func ByConcurrentInstances(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConcurrentInstances, opts...).ToFunc()
 }
 
 // ByTeamsCount orders the results by teams count.

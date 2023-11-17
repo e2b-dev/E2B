@@ -70,7 +70,7 @@ func (a *APIStore) PostInstances(
 	)
 
 	// Check if team has reached max instances
-	if instanceCount := a.cache.CountForTeam(team.ID); instanceCount >= maxInstancesPerTeam {
+	if instanceCount := a.cache.CountForTeam(team.ID); int64(instanceCount) >= team.Edges.TeamTier.ConcurrentInstances {
 		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, maxInstancesPerTeam)
 		telemetry.ReportCriticalError(ctx, errMsg)
 

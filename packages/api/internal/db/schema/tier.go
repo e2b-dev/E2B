@@ -16,6 +16,7 @@ func (Tier) Fields() []ent.Field {
 		field.Int64("vcpu"),
 		field.Int64("ram_mb"),
 		field.Int64("disk_mb"),
+		field.Int64("concurrent_instances"),
 	}
 }
 

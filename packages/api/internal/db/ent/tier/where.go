@@ -79,6 +79,11 @@ func DiskMB(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldDiskMB, v))
 }
 
+// ConcurrentInstances applies equality check predicate on the "concurrent_instances" field. It's identical to ConcurrentInstancesEQ.
+func ConcurrentInstances(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldEQ(FieldConcurrentInstances, v))
+}
+
 // VcpuEQ applies the EQ predicate on the "vcpu" field.
 func VcpuEQ(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldVcpu, v))
@@ -197,6 +202,46 @@ func DiskMBLT(v int64) predicate.Tier {
 // DiskMBLTE applies the LTE predicate on the "disk_mb" field.
 func DiskMBLTE(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldLTE(FieldDiskMB, v))
+}
+
+// ConcurrentInstancesEQ applies the EQ predicate on the "concurrent_instances" field.
+func ConcurrentInstancesEQ(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldEQ(FieldConcurrentInstances, v))
+}
+
+// ConcurrentInstancesNEQ applies the NEQ predicate on the "concurrent_instances" field.
+func ConcurrentInstancesNEQ(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldNEQ(FieldConcurrentInstances, v))
+}
+
+// ConcurrentInstancesIn applies the In predicate on the "concurrent_instances" field.
+func ConcurrentInstancesIn(vs ...int64) predicate.Tier {
+	return predicate.Tier(sql.FieldIn(FieldConcurrentInstances, vs...))
+}
+
+// ConcurrentInstancesNotIn applies the NotIn predicate on the "concurrent_instances" field.
+func ConcurrentInstancesNotIn(vs ...int64) predicate.Tier {
+	return predicate.Tier(sql.FieldNotIn(FieldConcurrentInstances, vs...))
+}
+
+// ConcurrentInstancesGT applies the GT predicate on the "concurrent_instances" field.
+func ConcurrentInstancesGT(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldGT(FieldConcurrentInstances, v))
+}
+
+// ConcurrentInstancesGTE applies the GTE predicate on the "concurrent_instances" field.
+func ConcurrentInstancesGTE(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldGTE(FieldConcurrentInstances, v))
+}
+
+// ConcurrentInstancesLT applies the LT predicate on the "concurrent_instances" field.
+func ConcurrentInstancesLT(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldLT(FieldConcurrentInstances, v))
+}
+
+// ConcurrentInstancesLTE applies the LTE predicate on the "concurrent_instances" field.
+func ConcurrentInstancesLTE(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldLTE(FieldConcurrentInstances, v))
 }
 
 // HasTeams applies the HasEdge predicate on the "teams" edge.

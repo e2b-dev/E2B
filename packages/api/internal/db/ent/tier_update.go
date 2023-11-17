@@ -69,6 +69,19 @@ func (tu *TierUpdate) AddDiskMB(i int64) *TierUpdate {
 	return tu
 }
 
+// SetConcurrentInstances sets the "concurrent_instances" field.
+func (tu *TierUpdate) SetConcurrentInstances(i int64) *TierUpdate {
+	tu.mutation.ResetConcurrentInstances()
+	tu.mutation.SetConcurrentInstances(i)
+	return tu
+}
+
+// AddConcurrentInstances adds i to the "concurrent_instances" field.
+func (tu *TierUpdate) AddConcurrentInstances(i int64) *TierUpdate {
+	tu.mutation.AddConcurrentInstances(i)
+	return tu
+}
+
 // AddTeamIDs adds the "teams" edge to the Team entity by IDs.
 func (tu *TierUpdate) AddTeamIDs(ids ...uuid.UUID) *TierUpdate {
 	tu.mutation.AddTeamIDs(ids...)
@@ -163,6 +176,12 @@ func (tu *TierUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.AddedDiskMB(); ok {
 		_spec.AddField(tier.FieldDiskMB, field.TypeInt64, value)
+	}
+	if value, ok := tu.mutation.ConcurrentInstances(); ok {
+		_spec.SetField(tier.FieldConcurrentInstances, field.TypeInt64, value)
+	}
+	if value, ok := tu.mutation.AddedConcurrentInstances(); ok {
+		_spec.AddField(tier.FieldConcurrentInstances, field.TypeInt64, value)
 	}
 	if tu.mutation.TeamsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -270,6 +289,19 @@ func (tuo *TierUpdateOne) SetDiskMB(i int64) *TierUpdateOne {
 // AddDiskMB adds i to the "disk_mb" field.
 func (tuo *TierUpdateOne) AddDiskMB(i int64) *TierUpdateOne {
 	tuo.mutation.AddDiskMB(i)
+	return tuo
+}
+
+// SetConcurrentInstances sets the "concurrent_instances" field.
+func (tuo *TierUpdateOne) SetConcurrentInstances(i int64) *TierUpdateOne {
+	tuo.mutation.ResetConcurrentInstances()
+	tuo.mutation.SetConcurrentInstances(i)
+	return tuo
+}
+
+// AddConcurrentInstances adds i to the "concurrent_instances" field.
+func (tuo *TierUpdateOne) AddConcurrentInstances(i int64) *TierUpdateOne {
+	tuo.mutation.AddConcurrentInstances(i)
 	return tuo
 }
 
@@ -397,6 +429,12 @@ func (tuo *TierUpdateOne) sqlSave(ctx context.Context) (_node *Tier, err error) 
 	}
 	if value, ok := tuo.mutation.AddedDiskMB(); ok {
 		_spec.AddField(tier.FieldDiskMB, field.TypeInt64, value)
+	}
+	if value, ok := tuo.mutation.ConcurrentInstances(); ok {
+		_spec.SetField(tier.FieldConcurrentInstances, field.TypeInt64, value)
+	}
+	if value, ok := tuo.mutation.AddedConcurrentInstances(); ok {
+		_spec.AddField(tier.FieldConcurrentInstances, field.TypeInt64, value)
 	}
 	if tuo.mutation.TeamsCleared() {
 		edge := &sqlgraph.EdgeSpec{

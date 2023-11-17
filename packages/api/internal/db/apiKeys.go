@@ -19,6 +19,7 @@ func (db *DB) GetTeamAuth(ctx context.Context, apiKey string) (*ent.Team, error)
 		Where(teamapikey.ID(apiKey)).
 		QueryTeam().
 		Where(team.IsDefault(true)).
+		WithTeamTier().
 		Only(ctx)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get team from API key: %w", err)

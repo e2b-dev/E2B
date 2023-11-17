@@ -22,6 +22,8 @@ type Tier struct {
 	RAMMB int64 `json:"ram_mb,omitempty"`
 	// DiskMB holds the value of the "disk_mb" field.
 	DiskMB int64 `json:"disk_mb,omitempty"`
+	// ConcurrentInstances holds the value of the "concurrent_instances" field.
+	ConcurrentInstances int64 `json:"concurrent_instances,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TierQuery when eager-loading is set.
 	Edges        TierEdges `json:"edges"`
@@ -51,7 +53,7 @@ func (*Tier) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tier.FieldVcpu, tier.FieldRAMMB, tier.FieldDiskMB:
+		case tier.FieldVcpu, tier.FieldRAMMB, tier.FieldDiskMB, tier.FieldConcurrentInstances:
 			values[i] = new(sql.NullInt64)
 		case tier.FieldID:
 			values[i] = new(sql.NullString)
@@ -93,6 +95,12 @@ func (t *Tier) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field disk_mb", values[i])
 			} else if value.Valid {
 				t.DiskMB = value.Int64
+			}
+		case tier.FieldConcurrentInstances:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field concurrent_instances", values[i])
+			} else if value.Valid {
+				t.ConcurrentInstances = value.Int64
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
@@ -143,6 +151,9 @@ func (t *Tier) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("disk_mb=")
 	builder.WriteString(fmt.Sprintf("%v", t.DiskMB))
+	builder.WriteString(", ")
+	builder.WriteString("concurrent_instances=")
+	builder.WriteString(fmt.Sprintf("%v", t.ConcurrentInstances))
 	builder.WriteByte(')')
 	return builder.String()
 }

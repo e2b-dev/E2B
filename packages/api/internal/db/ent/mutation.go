@@ -3219,22 +3219,24 @@ func (m *TeamAPIKeyMutation) ResetEdge(name string) error {
 // TierMutation represents an operation that mutates the Tier nodes in the graph.
 type TierMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *string
-	vcpu          *int64
-	addvcpu       *int64
-	ram_mb        *int64
-	addram_mb     *int64
-	disk_mb       *int64
-	adddisk_mb    *int64
-	clearedFields map[string]struct{}
-	teams         map[uuid.UUID]struct{}
-	removedteams  map[uuid.UUID]struct{}
-	clearedteams  bool
-	done          bool
-	oldValue      func(context.Context) (*Tier, error)
-	predicates    []predicate.Tier
+	op                      Op
+	typ                     string
+	id                      *string
+	vcpu                    *int64
+	addvcpu                 *int64
+	ram_mb                  *int64
+	addram_mb               *int64
+	disk_mb                 *int64
+	adddisk_mb              *int64
+	concurrent_instances    *int64
+	addconcurrent_instances *int64
+	clearedFields           map[string]struct{}
+	teams                   map[uuid.UUID]struct{}
+	removedteams            map[uuid.UUID]struct{}
+	clearedteams            bool
+	done                    bool
+	oldValue                func(context.Context) (*Tier, error)
+	predicates              []predicate.Tier
 }
 
 var _ ent.Mutation = (*TierMutation)(nil)
@@ -3509,6 +3511,62 @@ func (m *TierMutation) ResetDiskMB() {
 	m.adddisk_mb = nil
 }
 
+// SetConcurrentInstances sets the "concurrent_instances" field.
+func (m *TierMutation) SetConcurrentInstances(i int64) {
+	m.concurrent_instances = &i
+	m.addconcurrent_instances = nil
+}
+
+// ConcurrentInstances returns the value of the "concurrent_instances" field in the mutation.
+func (m *TierMutation) ConcurrentInstances() (r int64, exists bool) {
+	v := m.concurrent_instances
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConcurrentInstances returns the old "concurrent_instances" field's value of the Tier entity.
+// If the Tier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TierMutation) OldConcurrentInstances(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConcurrentInstances is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConcurrentInstances requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConcurrentInstances: %w", err)
+	}
+	return oldValue.ConcurrentInstances, nil
+}
+
+// AddConcurrentInstances adds i to the "concurrent_instances" field.
+func (m *TierMutation) AddConcurrentInstances(i int64) {
+	if m.addconcurrent_instances != nil {
+		*m.addconcurrent_instances += i
+	} else {
+		m.addconcurrent_instances = &i
+	}
+}
+
+// AddedConcurrentInstances returns the value that was added to the "concurrent_instances" field in this mutation.
+func (m *TierMutation) AddedConcurrentInstances() (r int64, exists bool) {
+	v := m.addconcurrent_instances
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetConcurrentInstances resets all changes to the "concurrent_instances" field.
+func (m *TierMutation) ResetConcurrentInstances() {
+	m.concurrent_instances = nil
+	m.addconcurrent_instances = nil
+}
+
 // AddTeamIDs adds the "teams" edge to the Team entity by ids.
 func (m *TierMutation) AddTeamIDs(ids ...uuid.UUID) {
 	if m.teams == nil {
@@ -3597,7 +3655,7 @@ func (m *TierMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TierMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
 	if m.vcpu != nil {
 		fields = append(fields, tier.FieldVcpu)
 	}
@@ -3606,6 +3664,9 @@ func (m *TierMutation) Fields() []string {
 	}
 	if m.disk_mb != nil {
 		fields = append(fields, tier.FieldDiskMB)
+	}
+	if m.concurrent_instances != nil {
+		fields = append(fields, tier.FieldConcurrentInstances)
 	}
 	return fields
 }
@@ -3621,6 +3682,8 @@ func (m *TierMutation) Field(name string) (ent.Value, bool) {
 		return m.RAMMB()
 	case tier.FieldDiskMB:
 		return m.DiskMB()
+	case tier.FieldConcurrentInstances:
+		return m.ConcurrentInstances()
 	}
 	return nil, false
 }
@@ -3636,6 +3699,8 @@ func (m *TierMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldRAMMB(ctx)
 	case tier.FieldDiskMB:
 		return m.OldDiskMB(ctx)
+	case tier.FieldConcurrentInstances:
+		return m.OldConcurrentInstances(ctx)
 	}
 	return nil, fmt.Errorf("unknown Tier field %s", name)
 }
@@ -3666,6 +3731,13 @@ func (m *TierMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDiskMB(v)
 		return nil
+	case tier.FieldConcurrentInstances:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConcurrentInstances(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Tier field %s", name)
 }
@@ -3683,6 +3755,9 @@ func (m *TierMutation) AddedFields() []string {
 	if m.adddisk_mb != nil {
 		fields = append(fields, tier.FieldDiskMB)
 	}
+	if m.addconcurrent_instances != nil {
+		fields = append(fields, tier.FieldConcurrentInstances)
+	}
 	return fields
 }
 
@@ -3697,6 +3772,8 @@ func (m *TierMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedRAMMB()
 	case tier.FieldDiskMB:
 		return m.AddedDiskMB()
+	case tier.FieldConcurrentInstances:
+		return m.AddedConcurrentInstances()
 	}
 	return nil, false
 }
@@ -3726,6 +3803,13 @@ func (m *TierMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddDiskMB(v)
+		return nil
+	case tier.FieldConcurrentInstances:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConcurrentInstances(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Tier numeric field %s", name)
@@ -3762,6 +3846,9 @@ func (m *TierMutation) ResetField(name string) error {
 		return nil
 	case tier.FieldDiskMB:
 		m.ResetDiskMB()
+		return nil
+	case tier.FieldConcurrentInstances:
+		m.ResetConcurrentInstances()
 		return nil
 	}
 	return fmt.Errorf("unknown Tier field %s", name)

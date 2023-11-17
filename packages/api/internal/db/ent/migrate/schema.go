@@ -115,6 +115,7 @@ var (
 		{Name: "vcpu", Type: field.TypeInt64},
 		{Name: "ram_mb", Type: field.TypeInt64},
 		{Name: "disk_mb", Type: field.TypeInt64},
+		{Name: "concurrent_instances", Type: field.TypeInt64},
 	}
 	// TiersTable holds the schema information for the "tiers" table.
 	TiersTable = &schema.Table{
