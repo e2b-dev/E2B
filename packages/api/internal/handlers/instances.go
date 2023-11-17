@@ -16,8 +16,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-const maxInstancesPerTeam = 20
-
 func (a *APIStore) PostInstances(
 	c *gin.Context,
 ) {
@@ -70,8 +68,9 @@ func (a *APIStore) PostInstances(
 	)
 
 	// Check if team has reached max instances
-	if instanceCount := a.cache.CountForTeam(team.ID); int64(instanceCount) >= team.Edges.TeamTier.ConcurrentInstances {
-		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, maxInstancesPerTeam)
+	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
+	if instanceCount := a.cache.CountForTeam(team.ID); int64(instanceCount) >= maxInstancesPerTeam {
+		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, team)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
