@@ -147,7 +147,7 @@ variable "allowed_inbound_tags_serf" {
 variable "root_volume_disk_size_gb" {
   description = "The size, in GB, of the root disk volume on each Consul node."
   type        = number
-  default     = 80
+  default     = 200
 }
 
 variable "root_volume_disk_type" {

@@ -65,7 +65,7 @@ resource "google_compute_instance_template" "client" {
 
   instance_description = var.cluster_description
   machine_type         = var.machine_type
-  min_cpu_platform     = "Intel Haswell"
+  min_cpu_platform     = "Intel Skylake"
 
   tags                    = concat([var.cluster_tag_name], var.custom_tags)
   metadata_startup_script = var.startup_script
