@@ -60,6 +60,10 @@ export const buildCommand = new commander.Command('build')
     '-n, --name <template-name>',
     'Specify sandbox template name. You can use the template name to start the sandbox with SDK. The template name must be lowercase and contain only letters, numbers, dashes and underscores',
   )
+  .option(
+    '-c, --start-cmd <cmd>',
+    'Specify command that will be executed when the sandbox is started',
+  )
   .alias('bd')
   .action(
     async (
@@ -68,6 +72,7 @@ export const buildCommand = new commander.Command('build')
         path?: string;
         dockerfile?: string;
         name?: string;
+        startCmd?: string;
       },
     ) => {
       try {
@@ -84,6 +89,7 @@ export const buildCommand = new commander.Command('build')
 
         let envID = id
         let dockerfile = opts.dockerfile
+        let startCmd = opts.startCmd
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root)
@@ -105,7 +111,8 @@ export const buildCommand = new commander.Command('build')
             )}`,
           )
           envID = config.id
-          dockerfile = config.dockerfile
+          dockerfile = opts.dockerfile || config.dockerfile
+          startCmd = opts.startCmd || config.start_cmd
         }
 
         if (config && id && config.id !== id) {
@@ -165,6 +172,10 @@ export const buildCommand = new commander.Command('build')
           body.append('alias', name)
         }
 
+        if (startCmd) {
+          body.append('startCmd', startCmd)
+        }
+
         const build = await buildTemplate(accessToken, body, envID)
 
         console.log(
@@ -180,7 +191,8 @@ export const buildCommand = new commander.Command('build')
           {
             id: build.envID,
             dockerfile: dockerfileRelativePath,
-            name: name,
+            name,
+            start_cmd: startCmd,
           },
           true,
         )
