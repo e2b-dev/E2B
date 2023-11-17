@@ -125,6 +125,9 @@ type PostEnvsEnvIDMultipartBody struct {
 
 	// Dockerfile Dockerfile content
 	Dockerfile string `json:"dockerfile"`
+
+	// StartCmd Start command to execute in the template after the build
+	StartCmd *string `json:"startCmd,omitempty"`
 }
 
 // GetEnvsEnvIDBuildsBuildIDParams defines parameters for GetEnvsEnvIDBuildsBuildID.
