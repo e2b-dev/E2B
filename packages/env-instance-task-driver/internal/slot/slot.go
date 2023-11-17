@@ -19,7 +19,7 @@ const (
 	IPSlotsSize = octetSize * octetSize
 
 	HostSnapshotMask = 32
-	VMask            = 24
+	VMask            = 30
 	TapMask          = 30
 )
 
