@@ -11,8 +11,8 @@ require (
 	github.com/getkin/kin-openapi v0.120.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/pprof v1.4.0
+	github.com/gin-contrib/size v0.0.0-20230212012657-e14a14094dc4
 	github.com/gin-gonic/gin v1.9.1
-	github.com/hashicorp/go-uuid v1.0.3
 	github.com/hashicorp/nomad/api v0.0.0-20231031213001-c1fa145765b2
 	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/lib/pq v1.10.9
@@ -46,7 +46,6 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.5.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
-	github.com/gin-contrib/size v0.0.0-20230212012657-e14a14094dc4 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
