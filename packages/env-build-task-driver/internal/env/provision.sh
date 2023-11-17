@@ -115,6 +115,9 @@ Restart=no
 User=user
 Group=user
 ExecStart=/usr/bin/bash -l -c "{{ .StartCmd }}"
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
   systemctl enable start_cmd
