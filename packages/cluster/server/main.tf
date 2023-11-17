@@ -126,7 +126,7 @@ data "google_compute_ssl_certificate" "nomad_certificate" {
 
 module "gce_lb_http_nomad" {
   source         = "GoogleCloudPlatform/lb-http/google"
-  version        = "~> 5.1"
+  version        = "~> 9.3"
   name           = "orch-external-nomad-dashboard"
   project        = var.gcp_project_id
   address        = data.google_compute_global_address.orch_server_ip.address
@@ -209,7 +209,7 @@ data "google_compute_ssl_certificate" "consul_certificate" {
 
 module "gce_lb_http_consul" {
   source         = "GoogleCloudPlatform/lb-http/google"
-  version        = "~> 5.1"
+  version        = "~> 9.3"
   name           = "orch-external-consul-dashboard"
   project        = var.gcp_project_id
   address        = data.google_compute_global_address.orch_server_consul_ip.address

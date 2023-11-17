@@ -137,17 +137,31 @@ data "google_compute_ssl_certificate" "api_certificate" {
   name = "e2b-api"
 }
 
+# resource "google_certificate_manager_certificate" "instance_certificate" {
+#   name  = "e2b-api-cert"
+#   scope = "ALL_REGIONS"
+#   managed {
+#     domains = ["*.e2b-api.com", "e2b-api.com"]
+#   }
+# }
+
 resource "google_compute_url_map" "client_map" {
   name            = "orch-external-session-map-client"
   default_service = module.gce_lb_http.backend_services["session"].self_link
 
   host_rule {
-    hosts        = ["api.e2b.dev"]
+    hosts = [
+      "api.e2b.dev",
+      # "e2b-api.com",
+    ]
     path_matcher = "api-paths"
   }
 
   host_rule {
-    hosts        = ["*.e2b.dev"]
+    hosts = [
+      "*.e2b.dev",
+      # "*.e2b-api.com",
+    ]
     path_matcher = "session-paths"
   }
 
@@ -168,13 +182,14 @@ data "google_compute_global_address" "orch_client_api_ip" {
 
 module "gce_lb_http" {
   source  = "GoogleCloudPlatform/lb-http/google"
-  version = "~> 5.1"
+  version = "~> 9.3"
   name    = "orch-external-session"
   project = var.gcp_project_id
   address = data.google_compute_global_address.orch_client_api_ip.address
   ssl_certificates = [
     data.google_compute_ssl_certificate.session_certificate.self_link,
     data.google_compute_ssl_certificate.api_certificate.self_link,
+    # resource.google_certificate_manager_certificate.instance_certificate.id,
   ]
   create_address       = false
   use_ssl_certificates = true
@@ -302,7 +317,7 @@ data "google_compute_global_address" "orch_logs_ip" {
 
 module "gce_lb_http_logs" {
   source         = "GoogleCloudPlatform/lb-http/google"
-  version        = "~> 5.1"
+  version        = "~> 9.3"
   name           = "orch-external-logs-endpoint"
   project        = var.gcp_project_id
   address        = data.google_compute_global_address.orch_logs_ip.address
