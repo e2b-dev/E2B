@@ -7,7 +7,6 @@ const supabase = createClient(
 
 export const dynamic = 'force-dynamic' // defaults to force-static
 export async function POST(request: Request) {
-
   // Read json data from request
   const { promoCode, teamID } = await request.json()
 
@@ -22,7 +21,7 @@ export async function POST(request: Request) {
   // Check if there's associated tier with promo code
   const { data: tiersData, error: tiersError } = await supabase
     .from('tiers')
-    .select('id, promo_code, promo_valid_from, promo_valid_to')
+    .select('id, promo_code, promo_starts_at, promo_ends_at')
     .eq('promo_code', promoCode)
 
   if (tiersError) {
@@ -54,11 +53,28 @@ export async function POST(request: Request) {
   const teamTier: string = teamData[0].tier
 
   // If team tier isn't a pro tier already, apply the promo tier
-  if (teamTier.startsWith('free')) {
+  if (teamTier.startsWith('promo')) {
+    const now = new Date()
+
+    const validFrom = new Date(tiersData[0].promo_starts_at)
+    if (now < validFrom) {
+      return Response.json({
+        error: `Promo code '${promoCode}' is not valid yet`,
+      })
+    }
+
+    const validTo = new Date(tiersData[0].promo_ends_at)
+    if (now > validTo) {
+      return Response.json({
+        error: `Promo code '${promoCode}' has expired`,
+      })
+    }
+
     await supabase
       .from('teams')
       .update({ tier: tiersData[0].id })
       .eq('id', teamID)
+
   } else {
     console.log('Team doesn\'t have a free tier, not applying promo')
   }
