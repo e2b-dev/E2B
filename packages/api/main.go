@@ -25,7 +25,7 @@ const (
 	maxUploadLimit     = 1 << 28 // 256 MiB
 )
 
-var ignoreLoggingForPaths = []string{"/health", "/instances/:instanceID/refreshes"}
+var ignoreLoggingForPaths = []string{"/health"}
 
 func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *http.Server {
 	// Clear out the servers array in the swagger spec, that skips validating
