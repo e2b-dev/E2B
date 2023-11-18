@@ -3,6 +3,8 @@ package slot
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"slices"
 	"time"
 
 	consul "github.com/hashicorp/consul/api"
@@ -14,8 +16,9 @@ import (
 
 // We are using a more debuggable IP address allocation for now that only covers 255 addresses.
 const (
-	octetSize   = 256
-	octetMax    = octetSize - 1
+	octetSize = 256
+	octetMax  = octetSize - 1
+	// This is the maximum number of IP addresses that can be allocated.
 	IPSlotsSize = octetSize * octetSize
 
 	HostSnapshotMask = 32
@@ -37,8 +40,8 @@ func (ips *IPSlot) VpeerName() string {
 }
 
 func (ips *IPSlot) getOctets() (int, int) {
-	rem := ips.SlotIdx % octetMax
-	octet := (ips.SlotIdx - rem) / octetMax
+	rem := ips.SlotIdx % octetSize
+	octet := (ips.SlotIdx - rem) / octetSize
 
 	return octet, rem
 }
@@ -132,42 +135,87 @@ func New(ctx context.Context, nodeID, instanceID, consulToken string, tracer tra
 
 	nodeShortID := nodeID[:8]
 
-	for {
-		for slotIdx := 0; slotIdx <= IPSlotsSize; slotIdx++ {
+	trySlot := func(slotIdx int, key string) (*IPSlot, error) {
+		status, _, err := kv.CAS(&consul.KVPair{
+			Key:         key,
+			ModifyIndex: 0,
+			Value:       []byte(instanceID),
+		}, nil)
+		if err != nil {
+			errMsg := fmt.Errorf("failed to write to Consul KV: %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+
+			return nil, errMsg
+		}
+
+		if status {
+			return &IPSlot{
+				InstanceID:  instanceID,
+				SlotIdx:     slotIdx,
+				NodeShortID: nodeShortID,
+				KVKey:       key,
+			}, nil
+		}
+
+		return nil, nil
+	}
+
+	for randomTry := 1; randomTry <= 10; randomTry++ {
+		slotIdx := rand.Intn(IPSlotsSize)
+		key := fmt.Sprintf("%s/%d", nodeShortID, slotIdx)
+
+		maybeSlot, err := trySlot(slotIdx, key)
+		if err != nil {
+			return nil, err
+		}
+
+		if maybeSlot != nil {
+			slot = maybeSlot
+
+			break
+		}
+	}
+
+	if slot == nil {
+		// This is a fallback for the case when all slots are taken.
+		// There is no Consul lock so it's possible that multiple instances will try to acquire the same slot.
+		// In this case, only one of them will succeed and other will try with different slots.
+		reservedKeys, _, keysErr := kv.Keys(nodeShortID+"/", "", nil)
+		if keysErr != nil {
+			return nil, fmt.Errorf("failed to read Consul KV: %w", keysErr)
+		}
+
+		for slotIdx := 0; slotIdx < IPSlotsSize; slotIdx++ {
 			key := fmt.Sprintf("%s/%d", nodeShortID, slotIdx)
 
-			status, _, err := kv.CAS(&consul.KVPair{
-				Key:         key,
-				ModifyIndex: 0,
-				Value:       []byte(instanceID),
-			}, nil)
-			if err != nil {
-				errMsg := fmt.Errorf("failed to write to Consul KV: %w", err)
-				telemetry.ReportCriticalError(childCtx, errMsg)
-
-				return nil, errMsg
+			if slices.Contains(reservedKeys, key) {
+				continue
 			}
 
-			if status {
-				slot = &IPSlot{
-					InstanceID:  instanceID,
-					SlotIdx:     slotIdx,
-					NodeShortID: nodeShortID,
-					KVKey:       key,
-				}
+			maybeSlot, err := trySlot(slotIdx, key)
+			if err != nil {
+				return nil, err
+			}
+
+			if maybeSlot != nil {
+				slot = maybeSlot
 
 				break
 			}
 		}
-
-		if slot != nil {
-			break
-		}
-
-		msg := fmt.Sprintf("Failed to acquire IP slot: no empty slots found, waiting %d seconds...", slotCheckWaitTime)
-		telemetry.ReportEvent(childCtx, msg)
-		time.Sleep(slotCheckWaitTime * time.Second)
 	}
+
+	if slot == nil {
+		errMsg := fmt.Errorf("failed to acquire IP slot: no empty slots found")
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return nil, errMsg
+	}
+
+	msg := fmt.Sprintf("Failed to acquire IP slot: no empty slots found, waiting %d seconds...", slotCheckWaitTime)
+	telemetry.ReportEvent(childCtx, msg)
+	time.Sleep(slotCheckWaitTime * time.Second)
+
 	telemetry.ReportEvent(childCtx, "ip slot reserved")
 
 	telemetry.SetAttributes(
