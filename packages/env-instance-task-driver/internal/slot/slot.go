@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"slices"
-	"time"
 
 	consul "github.com/hashicorp/consul/api"
 	"go.opentelemetry.io/otel/attribute"
@@ -211,10 +210,6 @@ func New(ctx context.Context, nodeID, instanceID, consulToken string, tracer tra
 
 		return nil, errMsg
 	}
-
-	msg := fmt.Sprintf("Failed to acquire IP slot: no empty slots found, waiting %d seconds...", slotCheckWaitTime)
-	telemetry.ReportEvent(childCtx, msg)
-	time.Sleep(slotCheckWaitTime * time.Second)
 
 	telemetry.ReportEvent(childCtx, "ip slot reserved")
 
