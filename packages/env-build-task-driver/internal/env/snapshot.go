@@ -12,6 +12,7 @@ import (
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/client"
@@ -33,6 +34,9 @@ const (
 	socketWaitTimeout        = 2 * time.Second
 
 	waitTimeForFCConfig = 500 * time.Millisecond
+
+	waitTimeForFCStart  = 10 * time.Second
+	waitTimeForStartCmd = 15 * time.Second
 )
 
 type Snapshot struct {
@@ -87,6 +91,8 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 
 	client := newFirecrackerClient(socketPath)
 
+	telemetry.ReportEvent(childCtx, "created fc client")
+
 	snapshot := &Snapshot{
 		socketPath: socketPath,
 		client:     client,
@@ -103,6 +109,8 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
+	telemetry.ReportEvent(childCtx, "started fc process")
+
 	err = snapshot.configureFC(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error configuring fc %w", err)
@@ -110,9 +118,17 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
+	telemetry.ReportEvent(childCtx, "configured fc")
+
 	// Wait for all necessary things in FC to start
 	// TODO: Maybe init should signalize when it's ready?
-	time.Sleep(10 * time.Second)
+	time.Sleep(waitTimeForFCStart)
+	telemetry.ReportEvent(childCtx, "waited for fc to start", attribute.Float64("seconds", float64(waitTimeForFCStart/time.Second)))
+
+	if env.StartCmd != "" {
+		time.Sleep(waitTimeForStartCmd)
+		telemetry.ReportEvent(childCtx, "waited for start command", attribute.Float64("seconds", float64(waitTimeForStartCmd/time.Second)))
+	}
 
 	err = snapshot.pauseFC(childCtx, tracer)
 	if err != nil {
@@ -121,12 +137,16 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
+	telemetry.ReportEvent(childCtx, "paused fc")
+
 	err = snapshot.snapshotFC(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error snapshotting fc %w", err)
 
 		return nil, errMsg
 	}
+
+	telemetry.ReportEvent(childCtx, "snapshotted fc")
 
 	return snapshot, nil
 }
