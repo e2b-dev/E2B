@@ -15,7 +15,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/pprof"
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +25,7 @@ const (
 	maxUploadLimit     = 1 << 28 // 256 MiB
 )
 
-var ignoreLoggingForPaths = []string{"/health"}
+var ignoreLoggingForPaths = []string{"/health", "/instances/:instanceID/refreshes"}
 
 func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *http.Server {
 	// Clear out the servers array in the swagger spec, that skips validating
@@ -35,7 +34,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	r := gin.New()
 
-	pprof.Register(r, "debug/pprof")
+	// pprof.Register(r, "debug/pprof")
 
 	r.Use(
 		// We use custom otelgin middleware because we want to log 4xx errors in the otel

@@ -15,10 +15,9 @@ import (
 )
 
 const (
-	InstanceExpiration        = time.Second * 12
-	cacheSyncTime             = time.Second * 180
-	maxInstanceLength         = time.Hour * 24
-	maxInstanceLengthInterval = time.Second * 30
+	InstanceExpiration = time.Second * 15
+	cacheSyncTime      = time.Hour * 24
+	maxInstanceLength  = time.Hour * 24
 )
 
 type InstanceInfo struct {
