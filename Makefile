@@ -74,7 +74,7 @@ update-api:
 	docker build --platform linux/amd64 --tag us-central1-docker.pkg.dev/$(GCP_PROJECT)/$(IMAGE) --push -f api.Dockerfile .
 
 # Set the size of the fc-envs disk
-FC_ENVS_SIZE := 70
+FC_ENVS_SIZE := 100
 
 resize-fc-envs:
 	gcloud --project=$(GCP_PROJECT) compute disks resize fc-envs --size $(FC_ENVS_SIZE) --zone us-central1-a
