@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/Button'
-import { useSignIn } from '@/utils/useSignIn'
 import { useUser } from '@/utils/useUser'
 
 function sendPromoCode(promoCode: string, teamID: string) {
@@ -19,13 +18,13 @@ function Promo() {
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const { user } = useUser()
-  const signIn = useSignIn()
 
   async function applyPromoCode() {
     if (!code) return
     if (!user) {
       setError('You must be signed in to apply a promo code')
     }
+    setError('')
 
     // TODO: Actually apply the promo code
     const response = await sendPromoCode(code, user.teams[0].id)
@@ -36,10 +35,8 @@ function Promo() {
       console.error('Error applying promo code:', responseData.error)
       setError(responseData.error)
     } else {
-      // TODO: We applied the promo code, what now?
       console.log('Promo code applied successfully')
-
-      setCode('')
+      location.reload()
     }
   }
 

@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   const teamTier: string = teamData[0].tier
 
   // If team tier isn't a pro tier already, apply the promo tier
-  if (teamTier.startsWith('promo')) {
+  if (teamTier.startsWith('free_')) {
     const now = new Date()
 
     const validFrom = new Date(tiersData[0].promo_starts_at)
@@ -75,8 +75,14 @@ export async function POST(request: Request) {
       .update({ tier: tiersData[0].id })
       .eq('id', teamID)
 
-  } else {
-    console.log('Team doesn\'t have a free tier, not applying promo')
+  } else if (teamTier.startsWith('promo_')) {
+    return Response.json({
+      error: 'Team already has promo active',
+    })
+  } else if (teamTier.startsWith('pro_')) {
+    return Response.json({
+      error: 'Team already has a pro tier',
+    })
   }
 
   return Response.json({
