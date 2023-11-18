@@ -10,9 +10,10 @@ import { HeaderSeparator } from '@/components/HeaderUtils'
 import { DiscordIcon } from '@/components/icons/DiscordIcon'
 import { TwitterIcon } from '@/components/icons/TwitterIcon'
 import { useLocalStorage } from 'usehooks-ts'
-import { config } from '../../config'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
+
 import dynamic from 'next/dynamic'
+import { config } from '../../config'
 
 // No SSR to avoid hydration mismatch
 const TopLevelNavItem = dynamic(() => import('@/components/TopLevelNavItem'), {
@@ -87,17 +88,17 @@ export const Header = forwardRef(function Header({ className }, ref) {
           href="/"
           aria-label="Home"
         >
-          <Logo className="h-6"/>
+          <Logo className="h-6" />
         </Link>
       </div>
-      <Search/>
+      <Search />
       <div className="flex items-center gap-5 lg:hidden">
-        <MobileNavigation/>
+        <MobileNavigation />
         <Link
           href="/"
           aria-label="Home"
         >
-          <Logo className="h-6"/>
+          <Logo className="h-6" />
         </Link>
       </div>
       <div className="flex items-center gap-4">
@@ -110,24 +111,24 @@ export const Header = forwardRef(function Header({ className }, ref) {
               href={`https://discord.gg/${config.discord.slug}`}
               stat={discordUsers}
               statType="discordUsers"
-              icon={<DiscordIcon className="h-5 w-5 fill-current"/>}
+              icon={<DiscordIcon className="h-5 w-5 fill-current" />}
             />
             <TopLevelNavItem
               href={config.github.url}
               stat={githubStars}
               statType="githubStars"
-              icon={<GitHubIcon className="h-5 w-5 fill-current"/>}
+              icon={<GitHubIcon className="h-5 w-5 fill-current" />}
             />
             <TopLevelNavItem
               href={config.twitter.url}
-              icon={<TwitterIcon className="h-5 w-5 fill-current"/>}
+              icon={<TwitterIcon className="h-5 w-5 fill-current" />}
             />
           </ul>
         </nav>
-        <HeaderSeparator/>
-        <MobileSearch/>
+        <HeaderSeparator />
+        <MobileSearch />
         <div className="hidden min-[540px]:contents">
-          <Auth/>
+          <Auth />
         </div>
       </div>
     </motion.div>

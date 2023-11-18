@@ -54,6 +54,7 @@
     "remark-mdx": "^2.3.0",
     "shiki": "^0.11.1",
     "simple-functional-loader": "^1.2.1",
+    "swr": "^2.2.4",
     "tailwind-merge": "^1.14.0",
     "tailwindcss": "^3.3.3",
     "tailwindcss-animate": "^1.0.7",

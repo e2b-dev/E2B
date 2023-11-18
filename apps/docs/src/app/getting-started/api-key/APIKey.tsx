@@ -59,6 +59,7 @@ function SecretBlock({ name, description, secret, posthog, tip }) {
     </div>
   );
 }
+
 function APIKey() {
   const signIn = useSignIn();
   const { user } = useUser();
@@ -104,15 +105,15 @@ function APIKey() {
             tip={
               <Note>
                 <div className="flex flex-col">
-                <span>To authenticate without the browser, you can set <code>E2B_ACCESS_TOKEN</code> as an environment variable.</span>
-                <span>This can be useful for CI/CD pipelines.</span>
+                  <span>To authenticate without the browser, you can set <code>E2B_ACCESS_TOKEN</code> as an environment variable.</span>
+                  <span>This can be useful for CI/CD pipelines.</span>
                 </div>
               </Note>
             }
           />
         </div>
       ) : (
-        <div className="mt-6">
+        <div className="flex flex-col items-start justiy-start gap-4 mt-6">
           <span>You can get your API key by signing up.</span>
           <Button onClick={() => signIn()}>Sign up to get your API key</Button>
         </div>

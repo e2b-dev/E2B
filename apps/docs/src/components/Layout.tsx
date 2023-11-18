@@ -1,5 +1,6 @@
 'use client'
 
+import clsx from 'clsx'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 
@@ -7,23 +8,30 @@ import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { Navigation } from '@/components/Navigation'
 import { Section, SectionProvider } from '@/components/SectionProvider'
+import { Banner } from '@/components/Banner'
+import { useUser } from '@/utils/useUser'
 
 export function Layout({
-                         children,
-                         allSections,
-                       }: {
+  children,
+  allSections,
+}: {
   children: React.ReactNode
   allSections: Record<string, Array<Section>>
 }) {
+  const { user } = useUser()
   const pathname = usePathname()
   const relativePathname = pathname.replace(new RegExp('^/docs'), '')
+  const shouldShowBanner = user?.pricingTier.isPromo
 
   return (
     <SectionProvider sections={allSections[relativePathname] ?? []}>
       <div className="h-full lg:ml-[var(--sidebar-nav-width)]">
         <motion.header
           layoutScroll
-          className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:top-[60px] lg:z-40 lg:flex"
+          className={clsx(
+            'contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex',
+            shouldShowBanner ? 'lg:top-[110px]' : 'lg:top-[60px]',
+          )}
         >
           <div
             id="sidebar"
@@ -39,10 +47,11 @@ export function Layout({
               lg:pb-8
             "
           >
-            <Header/>
-            <Navigation className="hidden lg:my-4 lg:block"/>
+            <Header />
+            <Navigation className="hidden lg:my-4 lg:block" />
           </div>
         </motion.header>
+        {shouldShowBanner && <Banner />}
         <div
           className="
           relative
@@ -61,8 +70,9 @@ export function Layout({
         >
           <main className="
             flex-auto
-          ">{children}</main>
-          <Footer/>
+          ">
+            {children}</main>
+          <Footer />
         </div>
       </div>
     </SectionProvider>

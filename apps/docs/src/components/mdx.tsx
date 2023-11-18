@@ -12,7 +12,7 @@ export { LanguageSpecificText } from '@/components/LanguageSpecificText'
 
 export function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <article className="mx-auto flex h-full max-w-6xl flex-col pb-10 pt-16">
+    <article className="mx-auto flex h-full max-w-6xl flex-col pb-10 pt-20 md:pt-18">
       <Prose className="flex-auto">{children}</Prose>
       <footer className="mx-auto mt-10 w-full max-w-2xl lg:max-w-5xl">
         <Feedback variant="textSubtle" />

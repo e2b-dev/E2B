@@ -41,17 +41,17 @@ export default async function RootLayout({ children }) {
       className="h-full"
       suppressHydrationWarning
     >
-    <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
-    <Providers>
-      <div className="w-full">
-        <Layout allSections={allSections}>
-          {children}
-          <PostHogAnalytics/>
-          <Analytics/>
-        </Layout>
-      </div>
-    </Providers>
-    </body>
+      <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
+        <Providers>
+          <div className="w-full">
+            <Layout allSections={allSections}>
+              {children}
+              <PostHogAnalytics />
+              <Analytics />
+            </Layout>
+          </div>
+        </Providers>
+      </body>
     </html>
   )
 }
