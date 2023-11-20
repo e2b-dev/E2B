@@ -20,6 +20,9 @@ type ServerInterface interface {
 	// (POST /envs)
 	PostEnvs(c *gin.Context)
 
+	// (DELETE /envs/{envID})
+	DeleteEnvsEnvID(c *gin.Context, envID EnvID)
+
 	// (POST /envs/{envID})
 	PostEnvsEnvID(c *gin.Context, envID EnvID)
 
@@ -76,6 +79,32 @@ func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 	}
 
 	siw.Handler.PostEnvs(c)
+}
+
+// DeleteEnvsEnvID operation middleware
+func (siw *ServerInterfaceWrapper) DeleteEnvsEnvID(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "envID" -------------
+	var envID EnvID
+
+	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter envID: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(AccessTokenAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.DeleteEnvsEnvID(c, envID)
 }
 
 // PostEnvsEnvID operation middleware
@@ -266,6 +295,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 
 	router.GET(options.BaseURL+"/envs", wrapper.GetEnvs)
 	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
+	router.DELETE(options.BaseURL+"/envs/:envID", wrapper.DeleteEnvsEnvID)
 	router.POST(options.BaseURL+"/envs/:envID", wrapper.PostEnvsEnvID)
 	router.GET(options.BaseURL+"/envs/:envID/builds/:buildID", wrapper.GetEnvsEnvIDBuildsBuildID)
 	router.POST(options.BaseURL+"/envs/:envID/builds/:buildID/logs", wrapper.PostEnvsEnvIDBuildsBuildIDLogs)

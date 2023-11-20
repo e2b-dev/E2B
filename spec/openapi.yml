@@ -326,6 +326,20 @@ paths:
           $ref: "#/components/responses/401"
         500:
           $ref: "#/components/responses/500"
+    delete:
+      description: Delete an environment
+      tags: [envs]
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/envID"
+      responses:
+        204:
+          description: The environment was deleted successfully
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
 
   /envs/{envID}/builds/{buildID}:
     get:
