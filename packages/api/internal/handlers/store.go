@@ -115,6 +115,7 @@ func NewAPIStore() *APIStore {
 		fmt.Fprintf(os.Stderr, "Error initializing Cloud Storage client\n: %v\n", err)
 		panic(err)
 	}
+	fmt.Println("Initialized Cloud Storage client")
 
 	cStorage := &cloudStorage{
 		bucket:  os.Getenv("GOOGLE_CLOUD_STORAGE_BUCKET"),
@@ -127,6 +128,7 @@ func NewAPIStore() *APIStore {
 		fmt.Fprintf(os.Stderr, "Error initializing Artifact Registry client\n: %v\n", err)
 		panic(err)
 	}
+	fmt.Println("Initialized Artifact Registry client")
 
 	apiSecret := os.Getenv("API_SECRET")
 	if apiSecret == "" {
