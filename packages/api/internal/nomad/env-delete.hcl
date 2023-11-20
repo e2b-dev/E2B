@@ -21,7 +21,7 @@ job "{{ .JobName }}/{{ .EnvID }}" {
       mode = "fail"
     }
 
-    task "delete-env" {
+    task "{{ .TaskName }}" {
       driver = "docker"
 
       resources {
@@ -42,10 +42,10 @@ job "{{ .JobName }}/{{ .EnvID }}" {
         destination = "local/delete.sh"
         data = <<EOT
 #!/bin/sh
+set -euo pipefail
+
 FC_ENVS_DISK="$1"
 ENV_ID="$2"
-
-set -euo pipefail
 
 if [ -z "$FC_ENVS_DISK" ]; then
   echo "ERROR: Expected fc envs disk as the first argument"

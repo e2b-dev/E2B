@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"cloud.google.com/go/artifactregistry/apiv1beta2/artifactregistrypb"
 	"github.com/gin-gonic/gin"
@@ -67,7 +68,7 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	}
 
 	// TODO: Remove docker context
-	err = a.cloudStorage.delete(ctx, envID)
+	err = a.cloudStorage.delete(ctx, strings.Join([]string{"v1", envID}, "/"))
 	if err != nil {
 		errMsg := fmt.Errorf("error when deleting env: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)

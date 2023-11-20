@@ -26,6 +26,8 @@ const (
 	deleteJobNameWithSlash = deleteJobName + "/"
 
 	deleteFinishTimeout = time.Minute
+
+	deleteTaskName = "delete-env"
 )
 
 type BuildConfig struct {
@@ -221,10 +223,12 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 		EnvID      string
 		FCEnvsDisk string
 		JobName    string
+		TaskName   string
 	}{
 		EnvID:      envID,
 		FCEnvsDisk: envsDisk,
 		JobName:    deleteJobName,
+		TaskName:   deleteTaskName,
 	}
 
 	err := envDeleteTemplate.Execute(&jobDef, jobVars)
@@ -262,15 +266,15 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 			return allocErr
 		}
 
-		if alloc.TaskStates[defaultTaskName] == nil {
-			allocErr = fmt.Errorf("task state '%s' is nil", defaultTaskName)
+		if alloc.TaskStates[deleteTaskName] == nil {
+			allocErr = fmt.Errorf("task state '%s' is nil", deleteTaskName)
 
 			telemetry.ReportCriticalError(childCtx, allocErr)
 
 			return allocErr
 		}
 
-		task := alloc.TaskStates[defaultTaskName]
+		task := alloc.TaskStates[deleteTaskName]
 
 		var deleteErr error
 
