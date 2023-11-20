@@ -246,6 +246,8 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 	}
 
 	select {
+	case <-childCtx.Done():
+		return fmt.Errorf("error waiting for env '%s' delete", envID)
 	case <-time.After(deleteFinishTimeout):
 		return fmt.Errorf("timeout waiting for env '%s' delete", envID)
 
@@ -270,19 +272,19 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 
 		task := alloc.TaskStates[defaultTaskName]
 
-		var buildErr error
+		var deleteErr error
 
 		if task.Failed {
 			for _, event := range task.Events {
 				if event.Type == "Terminated" {
-					buildErr = fmt.Errorf("%s", event.Message)
+					deleteErr = fmt.Errorf("%s", event.Message)
 				}
 			}
 
-			if buildErr == nil {
+			if deleteErr == nil {
 				allocErr = fmt.Errorf("deleting failed")
 			} else {
-				allocErr = fmt.Errorf("deleting failed %w", buildErr)
+				allocErr = fmt.Errorf("deleting failed %w", deleteErr)
 			}
 
 			telemetry.ReportCriticalError(childCtx, allocErr)

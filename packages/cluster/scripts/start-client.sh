@@ -35,6 +35,9 @@ mkdir -p /mnt/disks/docker-contexts
 gcsfuse -o=allow_other --implicit-dirs e2b-envs-docker-context /mnt/disks/docker-contexts
 
 # Setup Nomad task drivers
+sudo rm -f /opt/nomad/plugins/env-build-task-driver
+sudo rm -f /opt/nomad/plugins/env-instance-task-driver
+
 sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver
 sudo chmod +x /opt/nomad/plugins/env-build-task-driver
 
