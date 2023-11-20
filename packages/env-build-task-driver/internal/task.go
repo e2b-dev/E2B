@@ -22,7 +22,7 @@ var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 	"BuildID": hclspec.NewAttr("BuildID", "string", true),
 	"EnvID":   hclspec.NewAttr("EnvID", "string", true),
 
-	"StartCmd": hclspec.NewAttr("StartCmd", "string", true),
+	"StartCmd": hclspec.NewAttr("StartCmd", "string", false),
 
 	"SpanID":  hclspec.NewAttr("SpanID", "string", true),
 	"TraceID": hclspec.NewAttr("TraceID", "string", true),
