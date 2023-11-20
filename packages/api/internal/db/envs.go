@@ -32,6 +32,7 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Envi
 		Env.
 		Query().
 		Where(env.Or(env.TeamID(teamID), env.Public(true))).
+		Order(ent.Desc(env.FieldCreatedAt)).
 		WithEnvAliases().
 		All(ctx)
 	if err != nil {
@@ -108,7 +109,6 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 			e.AddBuildCount(1)
 		}).
 		Exec(ctx)
-
 	if err != nil {
 		errMsg := fmt.Errorf("failed to upsert env with id '%s': %w", envID, err)
 
