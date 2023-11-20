@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"cloud.google.com/go/artifactregistry/apiv1beta2/artifactregistrypb"
 	"fmt"
 	"net/http"
 
+	"cloud.google.com/go/artifactregistry/apiv1beta2/artifactregistrypb"
 	"github.com/gin-gonic/gin"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
