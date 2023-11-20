@@ -5,16 +5,22 @@ import * as boxen from 'boxen'
 
 import { cwdRelative } from './filesystem'
 
+export const primaryColor = '#FFB766'
+
 export function asFormattedSandboxTemplate(
   template: Pick<e2b.components['schemas']['Environment'], 'envID' | 'aliases'>,
   configLocalPath?: string,
 ) {
-  const name = asBold(listAliases(template.aliases) ?? template.envID)
+  const aliases = listAliases(template.aliases)
+
+  const name = aliases ? asBold(aliases) : ''
   const configPath = configLocalPath
     ? asDim(' <-> ') + asLocalRelative(configLocalPath)
     : ''
 
-  return `${name}${configPath}`
+  const id = `${template.envID} `
+
+  return `${id}${name}${configPath}`.trim()
 }
 
 export function asFormattedError(text: string | undefined, err?: any) {
@@ -32,7 +38,7 @@ export function asBold(content: string) {
 }
 
 export function asPrimary(content: string) {
-  return chalk.default.hex('#FFB766')(content)
+  return chalk.default.hex(primaryColor)(content)
 }
 
 export function asSandboxTemplate(pathInTemplate?: string) {

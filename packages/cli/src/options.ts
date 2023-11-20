@@ -8,3 +8,13 @@ export const pathOption = new commander.Option(
     '<path>',
   )} directory`,
 )
+
+export const selectOption = new commander.Option(
+  '-s, --select',
+  'Select multiple sandbox templates from interactive list',
+)
+
+export const selectMultipleOption = new commander.Option(
+  '-s, --select',
+  'Select sandbox template from interactive list',
+)
