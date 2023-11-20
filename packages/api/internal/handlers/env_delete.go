@@ -1,16 +1,15 @@
 package handlers
 
 import (
+	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"fmt"
 	"net/http"
 	"strings"
 
-	"cloud.google.com/go/artifactregistry/apiv1beta2/artifactregistrypb"
-	"github.com/gin-gonic/gin"
-
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"github.com/gin-gonic/gin"
 )
 
 // DeleteEnvsEnvID serves to delete an env (e.g. in CLI)
@@ -67,8 +66,9 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		return
 	}
 
+	// TODO: Remove retunrs
 	// TODO: Remove docker context
-	err = a.cloudStorage.delete(ctx, strings.Join([]string{"v1", envID}, "/"))
+	err = a.cloudStorage.deleteFolder(ctx, strings.Join([]string{"v1", envID}, "/"))
 	if err != nil {
 		errMsg := fmt.Errorf("error when deleting env: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -76,13 +76,14 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		return
 	}
 	// TODO: Remove docker image
-	op, err := a.artifactRegistry.DeletePackage(ctx, &artifactregistrypb.DeletePackageRequest{Name: "us-central1-docker.pkg.dev/e2b-prod/custom-environments/" + envID})
+	op, err := a.artifactRegistry.DeletePackage(ctx, &artifactregistrypb.DeletePackageRequest{Name: "projects/e2b-prod/locations/us-central1/repositories/custom-environments/packages/" + envID})
 	if err != nil {
 		errMsg := fmt.Errorf("error when deleting env: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
 		return
 	}
+
 	err = op.Wait(ctx)
 	if err != nil {
 		errMsg := fmt.Errorf("error when deleting env: %w", err)

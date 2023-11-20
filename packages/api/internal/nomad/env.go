@@ -260,6 +260,16 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 	case alloc := <-sub.wait:
 		var allocErr error
 
+		defer func() {
+			_, _, deregisterErr := n.client.Jobs().Deregister(*job.ID, allocErr == nil, nil)
+			if deregisterErr != nil {
+				errMsg := fmt.Errorf("error in cleanup after failing to delete environment '%s': %w", envID, deregisterErr)
+				telemetry.ReportError(childCtx, errMsg)
+			} else {
+				telemetry.ReportEvent(childCtx, "cleaned up env delete job", attribute.String("env_id", envID))
+			}
+		}()
+
 		if alloc.TaskStates == nil {
 			allocErr = fmt.Errorf("task states are nil")
 
