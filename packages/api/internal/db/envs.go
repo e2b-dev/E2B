@@ -120,7 +120,7 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 	return nil
 }
 
-func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (string, bool, error) {
+func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (envID string, hasAccess bool, err error) {
 	env, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)

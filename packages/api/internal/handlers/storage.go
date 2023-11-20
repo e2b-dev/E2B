@@ -39,3 +39,8 @@ func (cs *cloudStorage) streamFileUpload(name string, content io.Reader) (*strin
 
 	return &url, nil
 }
+
+// deleteFileOrFolder deletes an object via a stream and returns the path to the file
+func (cs *cloudStorage) delete(ctx context.Context, name string) error {
+	return cs.client.Bucket(cs.bucket).Object(name).Delete(ctx)
+}

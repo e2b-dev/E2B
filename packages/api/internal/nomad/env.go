@@ -21,6 +21,11 @@ const (
 	buildJobNameWithSlash = buildJobName + "/"
 
 	buildFinishTimeout = time.Minute * 30
+
+	deleteJobName          = "env-delete"
+	deleteJobNameWithSlash = deleteJobName + "/"
+
+	deleteFinishTimeout = time.Minute
 )
 
 type BuildConfig struct {
@@ -32,7 +37,11 @@ type BuildConfig struct {
 //go:embed env-build.hcl
 var envBuildFile string
 
+//go:embed env-delete.hcl
+var envDeleteFile string
+
 var envBuildTemplate = template.Must(template.New(buildJobName).Funcs(template.FuncMap{}).Parse(envBuildFile))
+var envDeleteTemplate = template.Must(template.New(deleteJobName).Funcs(template.FuncMap{}).Parse(envDeleteFile))
 
 func (n *NomadClient) BuildEnvJob(
 	t trace.Tracer,
@@ -190,4 +199,97 @@ func (n *NomadClient) DeleteEnvBuild(jobID string, purge bool) error {
 	}
 
 	return nil
+}
+
+func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID string) error {
+	childCtx, childSpan := t.Start(ctx, "delete-env-job")
+	defer childSpan.End()
+
+	traceID := childSpan.SpanContext().TraceID().String()
+	spanID := childSpan.SpanContext().SpanID().String()
+
+	telemetry.SetAttributes(
+		childCtx,
+		attribute.String("passed_trace_id_hex", traceID),
+		attribute.String("passed_span_id_hex", spanID),
+		attribute.String("env_id", envID),
+	)
+
+	var jobDef bytes.Buffer
+
+	jobVars := struct {
+		EnvID      string
+		FCEnvsDisk string
+		JobName    string
+	}{
+		EnvID:      envID,
+		FCEnvsDisk: envsDisk,
+		JobName:    deleteJobName,
+	}
+
+	err := envDeleteTemplate.Execute(&jobDef, jobVars)
+	if err != nil {
+		return fmt.Errorf("failed to `envDeleteJobTemp.Execute()`: %w", err)
+	}
+
+	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
+	if err != nil {
+		return fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
+	}
+
+	sub := n.newSubscriber(*job.ID, taskDeadState)
+	defer sub.close()
+
+	_, _, err = n.client.Jobs().Register(job, nil)
+	if err != nil {
+		return fmt.Errorf("failed to register '%s%s' job: %w", deleteJobNameWithSlash, jobVars.EnvID, err)
+	}
+
+	select {
+	case <-time.After(deleteFinishTimeout):
+		return fmt.Errorf("timeout waiting for env '%s' delete", envID)
+
+	case alloc := <-sub.wait:
+		var allocErr error
+
+		if alloc.TaskStates == nil {
+			allocErr = fmt.Errorf("task states are nil")
+
+			telemetry.ReportCriticalError(childCtx, allocErr)
+
+			return allocErr
+		}
+
+		if alloc.TaskStates[defaultTaskName] == nil {
+			allocErr = fmt.Errorf("task state '%s' is nil", defaultTaskName)
+
+			telemetry.ReportCriticalError(childCtx, allocErr)
+
+			return allocErr
+		}
+
+		task := alloc.TaskStates[defaultTaskName]
+
+		var buildErr error
+
+		if task.Failed {
+			for _, event := range task.Events {
+				if event.Type == "Terminated" {
+					buildErr = fmt.Errorf("%s", event.Message)
+				}
+			}
+
+			if buildErr == nil {
+				allocErr = fmt.Errorf("deleting failed")
+			} else {
+				allocErr = fmt.Errorf("deleting failed %w", buildErr)
+			}
+
+			telemetry.ReportCriticalError(childCtx, allocErr)
+
+			return allocErr
+		}
+
+		return nil
+	}
 }

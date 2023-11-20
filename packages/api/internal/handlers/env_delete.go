@@ -1,13 +1,15 @@
 package handlers
 
 import (
+	"cloud.google.com/go/artifactregistry/apiv1beta2/artifactregistrypb"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"net/http"
 
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/gin-gonic/gin"
+
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 // DeleteEnvsEnvID serves to delete an env (e.g. in CLI)
@@ -36,6 +38,7 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		return
 	}
 
+	// TODO: Non failing
 	envID, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
 	if accessErr != nil {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The sandbox template '%s' does not exist", cleanedAliasOrEnvID))
@@ -55,9 +58,39 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		return
 	}
 
-	// TODO: Check no running instances?
-	// TODO: Add logic
+	err = a.nomad.DeleteEnv(a.tracer, ctx, envID)
+	if err != nil {
+		errMsg := fmt.Errorf("error when deleting env: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
 
+		return
+	}
+
+	// TODO: Remove docker context
+	err = a.cloudStorage.delete(ctx, envID)
+	if err != nil {
+		errMsg := fmt.Errorf("error when deleting env: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		return
+	}
+	// TODO: Remove docker image
+	op, err := a.artifactRegistry.DeletePackage(ctx, &artifactregistrypb.DeletePackageRequest{Name: "us-central1-docker.pkg.dev/e2b-prod/custom-environments/" + envID})
+	if err != nil {
+		errMsg := fmt.Errorf("error when deleting env: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		return
+	}
+	err = op.Wait(ctx)
+	if err != nil {
+		errMsg := fmt.Errorf("error when deleting env: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		return
+	}
+
+	// TODO: Remove from DB (cascade?)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
 	a.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "deleted environment", properties.Set("environment", envID))
