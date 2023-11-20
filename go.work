@@ -5,6 +5,7 @@ toolchain go1.21.0
 use (
 	./packages/api
 	./packages/env-build-task-driver
+	./packages/env-delete-task-driver
 	./packages/env-instance-task-driver
 	./packages/envd
 	./packages/shared
