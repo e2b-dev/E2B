@@ -29,19 +29,21 @@ type jobSubscriber struct {
 	wait        chan api.AllocationListStub
 	jobID       string
 	taskState   string
+	taskName    string
 }
 
 func (s *jobSubscriber) close() {
 	s.subscribers.Remove(s.jobID)
 }
 
-func (n *NomadClient) newSubscriber(jobID string, taskState string) *jobSubscriber {
+func (n *NomadClient) newSubscriber(jobID, taskState, taskName string) *jobSubscriber {
 	sub := &jobSubscriber{
 		jobID: jobID,
 		// We add arbitrary buffer to the channel to avoid blocking the Nomad ListenToJobs goroutine
 		wait:        make(chan api.AllocationListStub, 10),
 		taskState:   taskState,
 		subscribers: n.subscribers,
+		taskName:    taskName,
 	}
 
 	n.subscribers.Insert(jobID, sub)
@@ -103,6 +105,8 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 		return
 	}
 
+	taskName := sub.taskName
+
 	if alloc.TaskStates == nil {
 		return
 	}
@@ -115,11 +119,11 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 		}
 	}
 
-	if alloc.TaskStates[defaultTaskName] == nil {
+	if alloc.TaskStates[taskName] == nil {
 		return
 	}
 
-	switch alloc.TaskStates[defaultTaskName].State {
+	switch alloc.TaskStates[taskName].State {
 	case taskRunningState:
 		if sub.taskState != taskRunningState {
 			break

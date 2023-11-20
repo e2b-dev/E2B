@@ -42,8 +42,10 @@ var envBuildFile string
 //go:embed env-delete.hcl
 var envDeleteFile string
 
-var envBuildTemplate = template.Must(template.New(buildJobName).Funcs(template.FuncMap{}).Parse(envBuildFile))
-var envDeleteTemplate = template.Must(template.New(deleteJobName).Funcs(template.FuncMap{}).Parse(envDeleteFile))
+var (
+	envBuildTemplate  = template.Must(template.New(buildJobName).Funcs(template.FuncMap{}).Parse(envBuildFile))
+	envDeleteTemplate = template.Must(template.New(deleteJobName).Funcs(template.FuncMap{}).Parse(envDeleteFile))
+)
 
 func (n *NomadClient) BuildEnvJob(
 	t trace.Tracer,
@@ -115,7 +117,7 @@ func (n *NomadClient) BuildEnvJob(
 		return fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
 	}
 
-	sub := n.newSubscriber(*job.ID, taskDeadState)
+	sub := n.newSubscriber(*job.ID, taskDeadState, defaultTaskName)
 	defer sub.close()
 
 	_, _, err = n.client.Jobs().Register(job, nil)
@@ -241,7 +243,7 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 		return fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
 	}
 
-	sub := n.newSubscriber(*job.ID, taskDeadState)
+	sub := n.newSubscriber(*job.ID, taskDeadState, deleteTaskName)
 	defer sub.close()
 
 	_, _, err = n.client.Jobs().Register(job, nil)

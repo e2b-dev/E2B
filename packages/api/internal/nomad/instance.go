@@ -132,7 +132,7 @@ func (n *NomadClient) CreateInstance(
 		}
 	}
 
-	sub := n.newSubscriber(*job.ID, taskRunningState)
+	sub := n.newSubscriber(*job.ID, taskRunningState, defaultTaskName)
 	defer sub.close()
 
 	_, _, err = n.client.Jobs().Register(job, nil)
