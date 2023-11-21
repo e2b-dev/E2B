@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"cloud.google.com/go/artifactregistry/apiv1"
 	"cloud.google.com/go/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -31,6 +32,7 @@ type APIStore struct {
 	nomad                      *nomad.NomadClient
 	supabase                   *db.DB
 	cloudStorage               *cloudStorage
+	artifactRegistry           *artifactregistry.Client
 	buildCache                 *utils.BuildCache
 	apiSecret                  string
 	googleServiceAccountBase64 string
@@ -113,12 +115,20 @@ func NewAPIStore() *APIStore {
 		fmt.Fprintf(os.Stderr, "Error initializing Cloud Storage client\n: %v\n", err)
 		panic(err)
 	}
+	fmt.Println("Initialized Cloud Storage client")
 
 	cStorage := &cloudStorage{
 		bucket:  os.Getenv("GOOGLE_CLOUD_STORAGE_BUCKET"),
 		client:  storageClient,
 		context: ctx,
 	}
+
+	artifactRegistry, err := artifactregistry.NewClient(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing Artifact Registry client\n: %v\n", err)
+		panic(err)
+	}
+	fmt.Println("Initialized Artifact Registry client")
 
 	apiSecret := os.Getenv("API_SECRET")
 	if apiSecret == "" {
@@ -145,6 +155,7 @@ func NewAPIStore() *APIStore {
 		tracer:                     tracer,
 		posthog:                    posthogClient,
 		cloudStorage:               cStorage,
+		artifactRegistry:           artifactRegistry,
 		apiSecret:                  apiSecret,
 		buildCache:                 buildCache,
 		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
@@ -163,6 +174,11 @@ func (a *APIStore) Close() {
 	err = a.cloudStorage.client.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error closing Cloud Storage client\n: %v\n", err)
+	}
+
+	err = a.artifactRegistry.Close()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error closing Artifact Registry client\n: %v\n", err)
 	}
 }
 
@@ -225,7 +241,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	return deleteInstance(a.nomad, a.posthog, instanceID, info.TeamID, info.StartTime, purge)
 }
 
-func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (string, bool, error) {
+func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (envID string, hasAccess bool, err error) {
 	return a.supabase.HasEnvAccess(ctx, aliasOrEnvID, teamID, public)
 }
 

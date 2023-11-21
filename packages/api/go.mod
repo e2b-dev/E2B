@@ -3,6 +3,7 @@ module github.com/e2b-dev/infra/packages/api
 go 1.21
 
 require (
+	cloud.google.com/go/artifactregistry v1.14.4
 	cloud.google.com/go/storage v1.34.0
 	entgo.io/ent v0.12.4
 	github.com/dchest/uniuri v1.2.0
@@ -10,7 +11,6 @@ require (
 	github.com/e2b-dev/infra/packages/shared v0.0.0
 	github.com/getkin/kin-openapi v0.120.0
 	github.com/gin-contrib/cors v1.4.0
-	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-contrib/size v0.0.0-20230212012657-e14a14094dc4
 	github.com/gin-gonic/gin v1.9.1
 	github.com/hashicorp/nomad/api v0.0.0-20231031213001-c1fa145765b2
@@ -22,6 +22,7 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.45.0
 	go.opentelemetry.io/otel v1.19.0
 	go.opentelemetry.io/otel/trace v1.19.0
+	google.golang.org/api v0.149.0
 )
 
 require (
@@ -30,6 +31,7 @@ require (
 	cloud.google.com/go/compute v1.23.2 // indirect
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
 	cloud.google.com/go/iam v1.1.4 // indirect
+	cloud.google.com/go/longrunning v0.5.3 // indirect
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/andybalholm/brotli v1.0.6 // indirect
@@ -135,7 +137,6 @@ require (
 	golang.org/x/oauth2 v0.13.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/api v0.149.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231030173426-d783a09b4405 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231030173426-d783a09b4405 // indirect

@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
 )
 
 const streamFileUploadTimeout = 50 * time.Second
@@ -38,4 +40,23 @@ func (cs *cloudStorage) streamFileUpload(name string, content io.Reader) (*strin
 	url := fmt.Sprintf("gs://%s/%s", cs.bucket, name)
 
 	return &url, nil
+}
+
+// deleteFileOrFolder deletes an object via a stream and returns the path to the file
+func (cs *cloudStorage) deleteFolder(ctx context.Context, name string) error {
+	objects := cs.client.Bucket(cs.bucket).Objects(ctx, &storage.Query{Prefix: name})
+	for { // Iterate over all objects in the folder
+		objAttrs, err := objects.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("objects.Next: %w", err)
+		}
+
+		if err := cs.client.Bucket(cs.bucket).Object(objAttrs.Name).Delete(ctx); err != nil {
+			return fmt.Errorf("Object(%s).Delete: %w", objAttrs.Name, err)
+		}
+	}
+	return nil
 }

@@ -39,6 +39,10 @@ resource "google_storage_bucket_object" "setup_config_objects" {
   name     = each.value
   source   = "${path.module}/${each.key}"
   bucket   = var.setup_bucket
+
+  lifecycle {
+    create_before_destroy = false
+  }
 }
 
 module "server_cluster" {
