@@ -57,12 +57,12 @@ FROM ubuntu:22.04
 All commands can be called with a `--path <path-to-dir>` flag that changes the
 directory where the command will be called, without the need to call `cd`.
 
-```
+```md
 -V, --version    Display E2B CLI version
 -h, --help       display help for command
 ```
 
-```
+```md
 Usage: e2b template [options] [command]
 
 Create sandbox templates from Dockerfiles by running e2b build then use our SDKs to create sandboxes from these templates.
