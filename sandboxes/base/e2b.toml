@@ -2,3 +2,4 @@
 
 id = "rki5dems9wqfm4r03t7g"
 dockerfile = "e2b.Dockerfile"
+name = "base"

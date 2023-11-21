@@ -1,5 +1,5 @@
 from importlib.metadata import version
-from typing import Union
+from typing import Optional
 
 from e2b.constants import API_HOST
 from e2b.api.metadata import default_headers
@@ -26,8 +26,8 @@ configuration = client.Configuration(
 class E2BApiClient(client.ApiClient):
     def __init__(
         self,
-        api_key: Union[str, None] = None,
-        access_token: Union[str, None] = None,
+        api_key: Optional[str] = None,
+        access_token: Optional[str] = None,
         *args,
         **kwargs,
     ):

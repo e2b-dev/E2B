@@ -1,5 +1,5 @@
 # This is a config for E2B sandbox template
 
-id = "fv7bfqp4wyo42829htzt"
+start_cmd = "node /home/user/start_server.mjs"
 dockerfile = "e2b.Dockerfile"
-name = "python3-dataanalysis"
+id = "m3offcydl3x4ojazn9sz"

@@ -1,0 +1,5 @@
+node_modules
+chromium
+.cache
+.dockerignore
+e2b.toml

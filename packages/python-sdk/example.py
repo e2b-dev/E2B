@@ -3,7 +3,7 @@ from os import getenv
 
 from dotenv import load_dotenv
 
-from e2b import Sandbox
+from e2b.templates import CloudBrowser
 
 load_dotenv()
 id = "Python3"
@@ -13,14 +13,11 @@ logging.basicConfig(level=logging.ERROR)
 
 
 def main():
-    s = Sandbox(api_key=E2B_API_KEY)
+    s = CloudBrowser(api_key=E2B_API_KEY)
 
-    a = s.process.start("ls -la /var ")
-    a.wait()
-    print(a.stdout)
-    print(a.stderr)
+    stdout, stderr = s.go_to("https://www.reddit.com/r/programming/", timeout=60).get_content(timeout=60)
+    print(stdout, stderr)
     s.close()
-    return
 
 
 main()

@@ -20,17 +20,16 @@ export { Process, ProcessMessage, ProcessOutput } from './sandbox/process'
 export type { ProcessManager } from './sandbox/process'
 export type { EnvVars } from './sandbox/envVars'
 export { runCode, CodeRuntime } from './runCode' // Export CodeRuntime enum as value, not as type, so it can be actually used in consumer code
-import { Sandbox } from './sandbox/index'
+import { Sandbox } from './sandbox'
 // export { runCmd } from './runCmd'
 
 import { DataAnalysis } from './templates/dataAnalysis'
 export { DataAnalysis as CodeInterpreter }
 
 export { Artifact, DataAnalysis } from './templates/dataAnalysis'
+export { CloudBrowser } from './templates/cloudBrowser'
 export type { RunPythonOpts } from './templates/dataAnalysis'
 export type { Action } from './sandbox/index'
 
 export { Sandbox }
 export default Sandbox
-
-// export { Sandbox }

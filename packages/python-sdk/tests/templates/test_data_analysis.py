@@ -1,3 +1,5 @@
+import pytest
+
 from e2b.templates.data_analysis import DataAnalysis
 
 
@@ -24,8 +26,11 @@ def test_install_packages():
     s.install_python_packages(" ")
     s.install_python_packages([])
 
-    s.install_system_packages("curl")
-    s.install_system_packages(["curl"])
+    s.install_system_packages("rolldice")
+    s.install_system_packages(["rolldice"])
     s.install_system_packages("")
     s.install_system_packages([])
+
+    with pytest.raises(Exception):
+        s.install_python_packages("this_package_does_not_exist")
     s.close()

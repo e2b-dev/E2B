@@ -1,0 +1,8 @@
+{
+  "name": "cloud-browser",
+  "version": "0.0.1",
+  "dependencies": {
+    "puppeteer": "^21.5.2"
+  },
+  "scripts": {}
+}

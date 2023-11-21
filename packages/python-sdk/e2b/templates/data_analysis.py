@@ -7,6 +7,7 @@ from pydantic import BaseModel, PrivateAttr
 
 from e2b import EnvVars, Sandbox
 from e2b.constants import TIMEOUT
+from e2b.templates.template import BaseTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,8 @@ class Artifact(BaseModel):
         return self._sandbox.download_file(self.name)
 
 
-class DataAnalysis(Sandbox):
-    env_id = "Python3-DataAnalysis"
+class DataAnalysis(BaseTemplate):
+    sandbox_template_id = "Python3-DataAnalysis"
 
     def __init__(
         self,
@@ -43,7 +44,6 @@ class DataAnalysis(Sandbox):
     ):
         self.on_artifact = on_artifact
         super().__init__(
-            id=self.env_id,
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
@@ -103,38 +103,10 @@ class DataAnalysis(Sandbox):
 
         return process.output.stdout, process.output.stderr, list(artifacts)
 
-    def _install_packages(
-        self,
-        command: str,
-        package_names: Union[str, List[str]],
-        timeout: Optional[float] = TIMEOUT,
-    ) -> None:
-        if isinstance(package_names, list):
-            package_names = " ".join(package_names)
-
-        package_names = package_names.strip()
-        if not package_names:
-            return
-
-        process = self.process.start(f"{command} {package_names}", timeout=timeout)
-        process.wait()
-
-        if process.exit_code != 0:
-            raise Exception(
-                f"Failed to install package {package_names}: {process.output.stderr}"
-            )
-
     def install_python_packages(
         self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
     ) -> None:
         self._install_packages("pip install", package_names, timeout=timeout)
-
-    def install_system_packages(
-        self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
-    ) -> None:
-        self._install_packages(
-            "sudo apt-get install -y", package_names, timeout=timeout
-        )
 
 
 CodeInterpreter = DataAnalysis
