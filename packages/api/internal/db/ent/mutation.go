@@ -534,6 +534,9 @@ type EnvMutation struct {
 	build_id           *uuid.UUID
 	build_count        *int32
 	addbuild_count     *int32
+	spawn_count        *int32
+	addspawn_count     *int32
+	last_spawned_at    *time.Time
 	clearedFields      map[string]struct{}
 	team               *uuid.UUID
 	clearedteam        bool
@@ -921,6 +924,111 @@ func (m *EnvMutation) ResetBuildCount() {
 	m.addbuild_count = nil
 }
 
+// SetSpawnCount sets the "spawn_count" field.
+func (m *EnvMutation) SetSpawnCount(i int32) {
+	m.spawn_count = &i
+	m.addspawn_count = nil
+}
+
+// SpawnCount returns the value of the "spawn_count" field in the mutation.
+func (m *EnvMutation) SpawnCount() (r int32, exists bool) {
+	v := m.spawn_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSpawnCount returns the old "spawn_count" field's value of the Env entity.
+// If the Env object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvMutation) OldSpawnCount(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSpawnCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSpawnCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSpawnCount: %w", err)
+	}
+	return oldValue.SpawnCount, nil
+}
+
+// AddSpawnCount adds i to the "spawn_count" field.
+func (m *EnvMutation) AddSpawnCount(i int32) {
+	if m.addspawn_count != nil {
+		*m.addspawn_count += i
+	} else {
+		m.addspawn_count = &i
+	}
+}
+
+// AddedSpawnCount returns the value that was added to the "spawn_count" field in this mutation.
+func (m *EnvMutation) AddedSpawnCount() (r int32, exists bool) {
+	v := m.addspawn_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSpawnCount resets all changes to the "spawn_count" field.
+func (m *EnvMutation) ResetSpawnCount() {
+	m.spawn_count = nil
+	m.addspawn_count = nil
+}
+
+// SetLastSpawnedAt sets the "last_spawned_at" field.
+func (m *EnvMutation) SetLastSpawnedAt(t time.Time) {
+	m.last_spawned_at = &t
+}
+
+// LastSpawnedAt returns the value of the "last_spawned_at" field in the mutation.
+func (m *EnvMutation) LastSpawnedAt() (r time.Time, exists bool) {
+	v := m.last_spawned_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSpawnedAt returns the old "last_spawned_at" field's value of the Env entity.
+// If the Env object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvMutation) OldLastSpawnedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastSpawnedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastSpawnedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastSpawnedAt: %w", err)
+	}
+	return oldValue.LastSpawnedAt, nil
+}
+
+// ClearLastSpawnedAt clears the value of the "last_spawned_at" field.
+func (m *EnvMutation) ClearLastSpawnedAt() {
+	m.last_spawned_at = nil
+	m.clearedFields[env.FieldLastSpawnedAt] = struct{}{}
+}
+
+// LastSpawnedAtCleared returns if the "last_spawned_at" field was cleared in this mutation.
+func (m *EnvMutation) LastSpawnedAtCleared() bool {
+	_, ok := m.clearedFields[env.FieldLastSpawnedAt]
+	return ok
+}
+
+// ResetLastSpawnedAt resets all changes to the "last_spawned_at" field.
+func (m *EnvMutation) ResetLastSpawnedAt() {
+	m.last_spawned_at = nil
+	delete(m.clearedFields, env.FieldLastSpawnedAt)
+}
+
 // ClearTeam clears the "team" edge to the Team entity.
 func (m *EnvMutation) ClearTeam() {
 	m.clearedteam = true
@@ -1036,7 +1144,7 @@ func (m *EnvMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, env.FieldCreatedAt)
 	}
@@ -1057,6 +1165,12 @@ func (m *EnvMutation) Fields() []string {
 	}
 	if m.build_count != nil {
 		fields = append(fields, env.FieldBuildCount)
+	}
+	if m.spawn_count != nil {
+		fields = append(fields, env.FieldSpawnCount)
+	}
+	if m.last_spawned_at != nil {
+		fields = append(fields, env.FieldLastSpawnedAt)
 	}
 	return fields
 }
@@ -1080,6 +1194,10 @@ func (m *EnvMutation) Field(name string) (ent.Value, bool) {
 		return m.BuildID()
 	case env.FieldBuildCount:
 		return m.BuildCount()
+	case env.FieldSpawnCount:
+		return m.SpawnCount()
+	case env.FieldLastSpawnedAt:
+		return m.LastSpawnedAt()
 	}
 	return nil, false
 }
@@ -1103,6 +1221,10 @@ func (m *EnvMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldBuildID(ctx)
 	case env.FieldBuildCount:
 		return m.OldBuildCount(ctx)
+	case env.FieldSpawnCount:
+		return m.OldSpawnCount(ctx)
+	case env.FieldLastSpawnedAt:
+		return m.OldLastSpawnedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Env field %s", name)
 }
@@ -1161,6 +1283,20 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetBuildCount(v)
 		return nil
+	case env.FieldSpawnCount:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSpawnCount(v)
+		return nil
+	case env.FieldLastSpawnedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastSpawnedAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)
 }
@@ -1172,6 +1308,9 @@ func (m *EnvMutation) AddedFields() []string {
 	if m.addbuild_count != nil {
 		fields = append(fields, env.FieldBuildCount)
 	}
+	if m.addspawn_count != nil {
+		fields = append(fields, env.FieldSpawnCount)
+	}
 	return fields
 }
 
@@ -1182,6 +1321,8 @@ func (m *EnvMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case env.FieldBuildCount:
 		return m.AddedBuildCount()
+	case env.FieldSpawnCount:
+		return m.AddedSpawnCount()
 	}
 	return nil, false
 }
@@ -1198,6 +1339,13 @@ func (m *EnvMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddBuildCount(v)
 		return nil
+	case env.FieldSpawnCount:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSpawnCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Env numeric field %s", name)
 }
@@ -1205,7 +1353,11 @@ func (m *EnvMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *EnvMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(env.FieldLastSpawnedAt) {
+		fields = append(fields, env.FieldLastSpawnedAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1218,6 +1370,11 @@ func (m *EnvMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *EnvMutation) ClearField(name string) error {
+	switch name {
+	case env.FieldLastSpawnedAt:
+		m.ClearLastSpawnedAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Env nullable field %s", name)
 }
 
@@ -1245,6 +1402,12 @@ func (m *EnvMutation) ResetField(name string) error {
 		return nil
 	case env.FieldBuildCount:
 		m.ResetBuildCount()
+		return nil
+	case env.FieldSpawnCount:
+		m.ResetSpawnCount()
+		return nil
+	case env.FieldLastSpawnedAt:
+		m.ResetLastSpawnedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)

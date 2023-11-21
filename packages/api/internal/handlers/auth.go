@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"fmt"
+
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
-
-	"github.com/gin-gonic/gin"
 )
 
 func (a *APIStore) GetUserID(c *gin.Context) uuid.UUID {

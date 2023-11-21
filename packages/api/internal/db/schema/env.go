@@ -28,6 +28,8 @@ func (Env) Fields() []ent.Field {
 		field.Bool("public"),
 		field.UUID("build_id", uuid.UUID{}),
 		field.Int32("build_count").Default(1),
+		field.Int32("spawn_count").Default(0),
+		field.Time("last_spawned_at").Optional(),
 	}
 }
 

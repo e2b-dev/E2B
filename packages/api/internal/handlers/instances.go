@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
@@ -20,6 +22,7 @@ func (a *APIStore) PostInstances(
 	c *gin.Context,
 ) {
 	ctx := c.Request.Context()
+	span := trace.SpanFromContext(ctx)
 
 	body, err := parseBody[api.PostInstancesJSONRequestBody](ctx, c)
 	if err != nil {
@@ -43,6 +46,7 @@ func (a *APIStore) PostInstances(
 
 	// Get team from context, use TeamContextKey
 	team := c.Value(constants.TeamContextKey).(ent.Team)
+
 	envID, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
 		errMsg := fmt.Errorf("error when checking team access: %w", checkErr)
@@ -70,7 +74,7 @@ func (a *APIStore) PostInstances(
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
 	if instanceCount := a.cache.CountForTeam(team.ID); int64(instanceCount) >= maxInstancesPerTeam {
-		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, team)
+		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, team.Edges.TeamTier.ConcurrentInstances)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
@@ -117,6 +121,21 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
+	go func() {
+		updateContext, childSpan := a.tracer.Start(
+			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
+			"update-spawn-count-for-env",
+		)
+		defer childSpan.End()
+
+		err = a.supabase.UpdateEnvLastUsed(updateContext, envID)
+		if err != nil {
+			telemetry.ReportCriticalError(updateContext, err)
+		} else {
+			telemetry.ReportEvent(updateContext, "updated last used for env")
+		}
+	}()
+
 	telemetry.SetAttributes(ctx,
 		attribute.String("instance_id", instance.InstanceID),
 	)
@@ -131,6 +150,7 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 	ctx := c.Request.Context()
 
 	var duration time.Duration
+
 	body, err := parseBody[api.PostInstancesInstanceIDRefreshesJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))

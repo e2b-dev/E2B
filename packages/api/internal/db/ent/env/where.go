@@ -102,6 +102,16 @@ func BuildCount(v int32) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldBuildCount, v))
 }
 
+// SpawnCount applies equality check predicate on the "spawn_count" field. It's identical to SpawnCountEQ.
+func SpawnCount(v int32) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldSpawnCount, v))
+}
+
+// LastSpawnedAt applies equality check predicate on the "last_spawned_at" field. It's identical to LastSpawnedAtEQ.
+func LastSpawnedAt(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldLastSpawnedAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldCreatedAt, v))
@@ -355,6 +365,96 @@ func BuildCountLT(v int32) predicate.Env {
 // BuildCountLTE applies the LTE predicate on the "build_count" field.
 func BuildCountLTE(v int32) predicate.Env {
 	return predicate.Env(sql.FieldLTE(FieldBuildCount, v))
+}
+
+// SpawnCountEQ applies the EQ predicate on the "spawn_count" field.
+func SpawnCountEQ(v int32) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldSpawnCount, v))
+}
+
+// SpawnCountNEQ applies the NEQ predicate on the "spawn_count" field.
+func SpawnCountNEQ(v int32) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldSpawnCount, v))
+}
+
+// SpawnCountIn applies the In predicate on the "spawn_count" field.
+func SpawnCountIn(vs ...int32) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldSpawnCount, vs...))
+}
+
+// SpawnCountNotIn applies the NotIn predicate on the "spawn_count" field.
+func SpawnCountNotIn(vs ...int32) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldSpawnCount, vs...))
+}
+
+// SpawnCountGT applies the GT predicate on the "spawn_count" field.
+func SpawnCountGT(v int32) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldSpawnCount, v))
+}
+
+// SpawnCountGTE applies the GTE predicate on the "spawn_count" field.
+func SpawnCountGTE(v int32) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldSpawnCount, v))
+}
+
+// SpawnCountLT applies the LT predicate on the "spawn_count" field.
+func SpawnCountLT(v int32) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldSpawnCount, v))
+}
+
+// SpawnCountLTE applies the LTE predicate on the "spawn_count" field.
+func SpawnCountLTE(v int32) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldSpawnCount, v))
+}
+
+// LastSpawnedAtEQ applies the EQ predicate on the "last_spawned_at" field.
+func LastSpawnedAtEQ(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldLastSpawnedAt, v))
+}
+
+// LastSpawnedAtNEQ applies the NEQ predicate on the "last_spawned_at" field.
+func LastSpawnedAtNEQ(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldLastSpawnedAt, v))
+}
+
+// LastSpawnedAtIn applies the In predicate on the "last_spawned_at" field.
+func LastSpawnedAtIn(vs ...time.Time) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldLastSpawnedAt, vs...))
+}
+
+// LastSpawnedAtNotIn applies the NotIn predicate on the "last_spawned_at" field.
+func LastSpawnedAtNotIn(vs ...time.Time) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldLastSpawnedAt, vs...))
+}
+
+// LastSpawnedAtGT applies the GT predicate on the "last_spawned_at" field.
+func LastSpawnedAtGT(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldLastSpawnedAt, v))
+}
+
+// LastSpawnedAtGTE applies the GTE predicate on the "last_spawned_at" field.
+func LastSpawnedAtGTE(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldLastSpawnedAt, v))
+}
+
+// LastSpawnedAtLT applies the LT predicate on the "last_spawned_at" field.
+func LastSpawnedAtLT(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldLastSpawnedAt, v))
+}
+
+// LastSpawnedAtLTE applies the LTE predicate on the "last_spawned_at" field.
+func LastSpawnedAtLTE(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldLastSpawnedAt, v))
+}
+
+// LastSpawnedAtIsNil applies the IsNil predicate on the "last_spawned_at" field.
+func LastSpawnedAtIsNil() predicate.Env {
+	return predicate.Env(sql.FieldIsNull(FieldLastSpawnedAt))
+}
+
+// LastSpawnedAtNotNil applies the NotNil predicate on the "last_spawned_at" field.
+func LastSpawnedAtNotNil() predicate.Env {
+	return predicate.Env(sql.FieldNotNull(FieldLastSpawnedAt))
 }
 
 // HasTeam applies the HasEdge predicate on the "team" edge.

@@ -91,6 +91,47 @@ func (eu *EnvUpdate) AddBuildCount(i int32) *EnvUpdate {
 	return eu
 }
 
+// SetSpawnCount sets the "spawn_count" field.
+func (eu *EnvUpdate) SetSpawnCount(i int32) *EnvUpdate {
+	eu.mutation.ResetSpawnCount()
+	eu.mutation.SetSpawnCount(i)
+	return eu
+}
+
+// SetNillableSpawnCount sets the "spawn_count" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableSpawnCount(i *int32) *EnvUpdate {
+	if i != nil {
+		eu.SetSpawnCount(*i)
+	}
+	return eu
+}
+
+// AddSpawnCount adds i to the "spawn_count" field.
+func (eu *EnvUpdate) AddSpawnCount(i int32) *EnvUpdate {
+	eu.mutation.AddSpawnCount(i)
+	return eu
+}
+
+// SetLastSpawnedAt sets the "last_spawned_at" field.
+func (eu *EnvUpdate) SetLastSpawnedAt(t time.Time) *EnvUpdate {
+	eu.mutation.SetLastSpawnedAt(t)
+	return eu
+}
+
+// SetNillableLastSpawnedAt sets the "last_spawned_at" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableLastSpawnedAt(t *time.Time) *EnvUpdate {
+	if t != nil {
+		eu.SetLastSpawnedAt(*t)
+	}
+	return eu
+}
+
+// ClearLastSpawnedAt clears the value of the "last_spawned_at" field.
+func (eu *EnvUpdate) ClearLastSpawnedAt() *EnvUpdate {
+	eu.mutation.ClearLastSpawnedAt()
+	return eu
+}
+
 // SetTeam sets the "team" edge to the Team entity.
 func (eu *EnvUpdate) SetTeam(t *Team) *EnvUpdate {
 	return eu.SetTeamID(t.ID)
@@ -207,6 +248,18 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := eu.mutation.AddedBuildCount(); ok {
 		_spec.AddField(env.FieldBuildCount, field.TypeInt32, value)
+	}
+	if value, ok := eu.mutation.SpawnCount(); ok {
+		_spec.SetField(env.FieldSpawnCount, field.TypeInt32, value)
+	}
+	if value, ok := eu.mutation.AddedSpawnCount(); ok {
+		_spec.AddField(env.FieldSpawnCount, field.TypeInt32, value)
+	}
+	if value, ok := eu.mutation.LastSpawnedAt(); ok {
+		_spec.SetField(env.FieldLastSpawnedAt, field.TypeTime, value)
+	}
+	if eu.mutation.LastSpawnedAtCleared() {
+		_spec.ClearField(env.FieldLastSpawnedAt, field.TypeTime)
 	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -368,6 +421,47 @@ func (euo *EnvUpdateOne) AddBuildCount(i int32) *EnvUpdateOne {
 	return euo
 }
 
+// SetSpawnCount sets the "spawn_count" field.
+func (euo *EnvUpdateOne) SetSpawnCount(i int32) *EnvUpdateOne {
+	euo.mutation.ResetSpawnCount()
+	euo.mutation.SetSpawnCount(i)
+	return euo
+}
+
+// SetNillableSpawnCount sets the "spawn_count" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableSpawnCount(i *int32) *EnvUpdateOne {
+	if i != nil {
+		euo.SetSpawnCount(*i)
+	}
+	return euo
+}
+
+// AddSpawnCount adds i to the "spawn_count" field.
+func (euo *EnvUpdateOne) AddSpawnCount(i int32) *EnvUpdateOne {
+	euo.mutation.AddSpawnCount(i)
+	return euo
+}
+
+// SetLastSpawnedAt sets the "last_spawned_at" field.
+func (euo *EnvUpdateOne) SetLastSpawnedAt(t time.Time) *EnvUpdateOne {
+	euo.mutation.SetLastSpawnedAt(t)
+	return euo
+}
+
+// SetNillableLastSpawnedAt sets the "last_spawned_at" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableLastSpawnedAt(t *time.Time) *EnvUpdateOne {
+	if t != nil {
+		euo.SetLastSpawnedAt(*t)
+	}
+	return euo
+}
+
+// ClearLastSpawnedAt clears the value of the "last_spawned_at" field.
+func (euo *EnvUpdateOne) ClearLastSpawnedAt() *EnvUpdateOne {
+	euo.mutation.ClearLastSpawnedAt()
+	return euo
+}
+
 // SetTeam sets the "team" edge to the Team entity.
 func (euo *EnvUpdateOne) SetTeam(t *Team) *EnvUpdateOne {
 	return euo.SetTeamID(t.ID)
@@ -514,6 +608,18 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	}
 	if value, ok := euo.mutation.AddedBuildCount(); ok {
 		_spec.AddField(env.FieldBuildCount, field.TypeInt32, value)
+	}
+	if value, ok := euo.mutation.SpawnCount(); ok {
+		_spec.SetField(env.FieldSpawnCount, field.TypeInt32, value)
+	}
+	if value, ok := euo.mutation.AddedSpawnCount(); ok {
+		_spec.AddField(env.FieldSpawnCount, field.TypeInt32, value)
+	}
+	if value, ok := euo.mutation.LastSpawnedAt(); ok {
+		_spec.SetField(env.FieldLastSpawnedAt, field.TypeTime, value)
+	}
+	if euo.mutation.LastSpawnedAtCleared() {
+		_spec.ClearField(env.FieldLastSpawnedAt, field.TypeTime)
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{

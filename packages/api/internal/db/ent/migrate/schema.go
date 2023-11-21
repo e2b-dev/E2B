@@ -30,6 +30,8 @@ var (
 		{Name: "public", Type: field.TypeBool},
 		{Name: "build_id", Type: field.TypeUUID},
 		{Name: "build_count", Type: field.TypeInt32, Default: 1},
+		{Name: "spawn_count", Type: field.TypeInt32, Default: 0},
+		{Name: "last_spawned_at", Type: field.TypeTime, Nullable: true},
 		{Name: "team_id", Type: field.TypeUUID},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
@@ -40,7 +42,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "envs_teams_envs",
-				Columns:    []*schema.Column{EnvsColumns[7]},
+				Columns:    []*schema.Column{EnvsColumns[9]},
 				RefColumns: []*schema.Column{TeamsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

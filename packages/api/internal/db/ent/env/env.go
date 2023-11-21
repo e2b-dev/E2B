@@ -28,6 +28,10 @@ const (
 	FieldBuildID = "build_id"
 	// FieldBuildCount holds the string denoting the build_count field in the database.
 	FieldBuildCount = "build_count"
+	// FieldSpawnCount holds the string denoting the spawn_count field in the database.
+	FieldSpawnCount = "spawn_count"
+	// FieldLastSpawnedAt holds the string denoting the last_spawned_at field in the database.
+	FieldLastSpawnedAt = "last_spawned_at"
 	// EdgeTeam holds the string denoting the team edge name in mutations.
 	EdgeTeam = "team"
 	// EdgeEnvAliases holds the string denoting the env_aliases edge name in mutations.
@@ -62,6 +66,8 @@ var Columns = []string{
 	FieldPublic,
 	FieldBuildID,
 	FieldBuildCount,
+	FieldSpawnCount,
+	FieldLastSpawnedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -81,6 +87,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// DefaultBuildCount holds the default value on creation for the "build_count" field.
 	DefaultBuildCount int32
+	// DefaultSpawnCount holds the default value on creation for the "spawn_count" field.
+	DefaultSpawnCount int32
 )
 
 // OrderOption defines the ordering options for the Env queries.
@@ -124,6 +132,16 @@ func ByBuildID(opts ...sql.OrderTermOption) OrderOption {
 // ByBuildCount orders the results by the build_count field.
 func ByBuildCount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBuildCount, opts...).ToFunc()
+}
+
+// BySpawnCount orders the results by the spawn_count field.
+func BySpawnCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSpawnCount, opts...).ToFunc()
+}
+
+// ByLastSpawnedAt orders the results by the last_spawned_at field.
+func ByLastSpawnedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastSpawnedAt, opts...).ToFunc()
 }
 
 // ByTeamField orders the results by team field.

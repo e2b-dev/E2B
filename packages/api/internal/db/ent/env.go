@@ -33,6 +33,10 @@ type Env struct {
 	BuildID uuid.UUID `json:"build_id,omitempty"`
 	// BuildCount holds the value of the "build_count" field.
 	BuildCount int32 `json:"build_count,omitempty"`
+	// SpawnCount holds the value of the "spawn_count" field.
+	SpawnCount int32 `json:"spawn_count,omitempty"`
+	// LastSpawnedAt holds the value of the "last_spawned_at" field.
+	LastSpawnedAt time.Time `json:"last_spawned_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvQuery when eager-loading is set.
 	Edges        EnvEdges `json:"edges"`
@@ -79,11 +83,11 @@ func (*Env) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case env.FieldPublic:
 			values[i] = new(sql.NullBool)
-		case env.FieldBuildCount:
+		case env.FieldBuildCount, env.FieldSpawnCount:
 			values[i] = new(sql.NullInt64)
 		case env.FieldID, env.FieldDockerfile:
 			values[i] = new(sql.NullString)
-		case env.FieldCreatedAt, env.FieldUpdatedAt:
+		case env.FieldCreatedAt, env.FieldUpdatedAt, env.FieldLastSpawnedAt:
 			values[i] = new(sql.NullTime)
 		case env.FieldTeamID, env.FieldBuildID:
 			values[i] = new(uuid.UUID)
@@ -149,6 +153,18 @@ func (e *Env) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field build_count", values[i])
 			} else if value.Valid {
 				e.BuildCount = int32(value.Int64)
+			}
+		case env.FieldSpawnCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field spawn_count", values[i])
+			} else if value.Valid {
+				e.SpawnCount = int32(value.Int64)
+			}
+		case env.FieldLastSpawnedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_spawned_at", values[i])
+			} else if value.Valid {
+				e.LastSpawnedAt = value.Time
 			}
 		default:
 			e.selectValues.Set(columns[i], values[i])
@@ -216,6 +232,12 @@ func (e *Env) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("build_count=")
 	builder.WriteString(fmt.Sprintf("%v", e.BuildCount))
+	builder.WriteString(", ")
+	builder.WriteString("spawn_count=")
+	builder.WriteString(fmt.Sprintf("%v", e.SpawnCount))
+	builder.WriteString(", ")
+	builder.WriteString("last_spawned_at=")
+	builder.WriteString(e.LastSpawnedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

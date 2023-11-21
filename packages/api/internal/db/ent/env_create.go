@@ -92,6 +92,34 @@ func (ec *EnvCreate) SetNillableBuildCount(i *int32) *EnvCreate {
 	return ec
 }
 
+// SetSpawnCount sets the "spawn_count" field.
+func (ec *EnvCreate) SetSpawnCount(i int32) *EnvCreate {
+	ec.mutation.SetSpawnCount(i)
+	return ec
+}
+
+// SetNillableSpawnCount sets the "spawn_count" field if the given value is not nil.
+func (ec *EnvCreate) SetNillableSpawnCount(i *int32) *EnvCreate {
+	if i != nil {
+		ec.SetSpawnCount(*i)
+	}
+	return ec
+}
+
+// SetLastSpawnedAt sets the "last_spawned_at" field.
+func (ec *EnvCreate) SetLastSpawnedAt(t time.Time) *EnvCreate {
+	ec.mutation.SetLastSpawnedAt(t)
+	return ec
+}
+
+// SetNillableLastSpawnedAt sets the "last_spawned_at" field if the given value is not nil.
+func (ec *EnvCreate) SetNillableLastSpawnedAt(t *time.Time) *EnvCreate {
+	if t != nil {
+		ec.SetLastSpawnedAt(*t)
+	}
+	return ec
+}
+
 // SetID sets the "id" field.
 func (ec *EnvCreate) SetID(s string) *EnvCreate {
 	ec.mutation.SetID(s)
@@ -165,6 +193,10 @@ func (ec *EnvCreate) defaults() {
 		v := env.DefaultBuildCount
 		ec.mutation.SetBuildCount(v)
 	}
+	if _, ok := ec.mutation.SpawnCount(); !ok {
+		v := env.DefaultSpawnCount
+		ec.mutation.SetSpawnCount(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -189,6 +221,9 @@ func (ec *EnvCreate) check() error {
 	}
 	if _, ok := ec.mutation.BuildCount(); !ok {
 		return &ValidationError{Name: "build_count", err: errors.New(`ent: missing required field "Env.build_count"`)}
+	}
+	if _, ok := ec.mutation.SpawnCount(); !ok {
+		return &ValidationError{Name: "spawn_count", err: errors.New(`ent: missing required field "Env.spawn_count"`)}
 	}
 	if _, ok := ec.mutation.TeamID(); !ok {
 		return &ValidationError{Name: "team", err: errors.New(`ent: missing required edge "Env.team"`)}
@@ -253,6 +288,14 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 	if value, ok := ec.mutation.BuildCount(); ok {
 		_spec.SetField(env.FieldBuildCount, field.TypeInt32, value)
 		_node.BuildCount = value
+	}
+	if value, ok := ec.mutation.SpawnCount(); ok {
+		_spec.SetField(env.FieldSpawnCount, field.TypeInt32, value)
+		_node.SpawnCount = value
+	}
+	if value, ok := ec.mutation.LastSpawnedAt(); ok {
+		_spec.SetField(env.FieldLastSpawnedAt, field.TypeTime, value)
+		_node.LastSpawnedAt = value
 	}
 	if nodes := ec.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -419,6 +462,42 @@ func (u *EnvUpsert) AddBuildCount(v int32) *EnvUpsert {
 	return u
 }
 
+// SetSpawnCount sets the "spawn_count" field.
+func (u *EnvUpsert) SetSpawnCount(v int32) *EnvUpsert {
+	u.Set(env.FieldSpawnCount, v)
+	return u
+}
+
+// UpdateSpawnCount sets the "spawn_count" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateSpawnCount() *EnvUpsert {
+	u.SetExcluded(env.FieldSpawnCount)
+	return u
+}
+
+// AddSpawnCount adds v to the "spawn_count" field.
+func (u *EnvUpsert) AddSpawnCount(v int32) *EnvUpsert {
+	u.Add(env.FieldSpawnCount, v)
+	return u
+}
+
+// SetLastSpawnedAt sets the "last_spawned_at" field.
+func (u *EnvUpsert) SetLastSpawnedAt(v time.Time) *EnvUpsert {
+	u.Set(env.FieldLastSpawnedAt, v)
+	return u
+}
+
+// UpdateLastSpawnedAt sets the "last_spawned_at" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateLastSpawnedAt() *EnvUpsert {
+	u.SetExcluded(env.FieldLastSpawnedAt)
+	return u
+}
+
+// ClearLastSpawnedAt clears the value of the "last_spawned_at" field.
+func (u *EnvUpsert) ClearLastSpawnedAt() *EnvUpsert {
+	u.SetNull(env.FieldLastSpawnedAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -558,6 +637,48 @@ func (u *EnvUpsertOne) AddBuildCount(v int32) *EnvUpsertOne {
 func (u *EnvUpsertOne) UpdateBuildCount() *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdateBuildCount()
+	})
+}
+
+// SetSpawnCount sets the "spawn_count" field.
+func (u *EnvUpsertOne) SetSpawnCount(v int32) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetSpawnCount(v)
+	})
+}
+
+// AddSpawnCount adds v to the "spawn_count" field.
+func (u *EnvUpsertOne) AddSpawnCount(v int32) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddSpawnCount(v)
+	})
+}
+
+// UpdateSpawnCount sets the "spawn_count" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateSpawnCount() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateSpawnCount()
+	})
+}
+
+// SetLastSpawnedAt sets the "last_spawned_at" field.
+func (u *EnvUpsertOne) SetLastSpawnedAt(v time.Time) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetLastSpawnedAt(v)
+	})
+}
+
+// UpdateLastSpawnedAt sets the "last_spawned_at" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateLastSpawnedAt() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateLastSpawnedAt()
+	})
+}
+
+// ClearLastSpawnedAt clears the value of the "last_spawned_at" field.
+func (u *EnvUpsertOne) ClearLastSpawnedAt() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.ClearLastSpawnedAt()
 	})
 }
 
@@ -867,6 +988,48 @@ func (u *EnvUpsertBulk) AddBuildCount(v int32) *EnvUpsertBulk {
 func (u *EnvUpsertBulk) UpdateBuildCount() *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdateBuildCount()
+	})
+}
+
+// SetSpawnCount sets the "spawn_count" field.
+func (u *EnvUpsertBulk) SetSpawnCount(v int32) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetSpawnCount(v)
+	})
+}
+
+// AddSpawnCount adds v to the "spawn_count" field.
+func (u *EnvUpsertBulk) AddSpawnCount(v int32) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddSpawnCount(v)
+	})
+}
+
+// UpdateSpawnCount sets the "spawn_count" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateSpawnCount() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateSpawnCount()
+	})
+}
+
+// SetLastSpawnedAt sets the "last_spawned_at" field.
+func (u *EnvUpsertBulk) SetLastSpawnedAt(v time.Time) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetLastSpawnedAt(v)
+	})
+}
+
+// UpdateLastSpawnedAt sets the "last_spawned_at" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateLastSpawnedAt() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateLastSpawnedAt()
+	})
+}
+
+// ClearLastSpawnedAt clears the value of the "last_spawned_at" field.
+func (u *EnvUpsertBulk) ClearLastSpawnedAt() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.ClearLastSpawnedAt()
 	})
 }
 

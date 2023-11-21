@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
@@ -127,4 +128,8 @@ func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid
 	}
 
 	return env.EnvID, true, nil
+}
+
+func (db *DB) UpdateEnvLastUsed(ctx context.Context, envID string) (err error) {
+	return db.Client.Env.UpdateOneID(envID).AddSpawnCount(1).SetLastSpawnedAt(time.Now()).Exec(ctx)
 }

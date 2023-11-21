@@ -44,7 +44,7 @@ func CreateNetwork(
 	))
 	defer childSpan.End()
 
-	// Prevent thread changes so the we can safely manipulate with namespaces
+	// Prevent thread changes so we can safely manipulate with namespaces
 	telemetry.ReportEvent(childCtx, "waiting for OS thread lock")
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
