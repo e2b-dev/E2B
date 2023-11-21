@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
 	"github.com/KarpelesLab/reflink"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const (
@@ -23,28 +23,28 @@ const (
 	EnvInstancesDirName = "env-instances"
 )
 
-type InstanceFilesystem struct {
+type InstanceFiles struct {
 	BuildDirPath    string
 	EnvPath         string
 	EnvInstancePath string
 }
 
-func NewEnv(
+func NewInstanceFiles(
 	ctx context.Context,
-	slot *IPSlot,
-	envID string,
-	fcEnvsDisk string,
 	tracer trace.Tracer,
-) (*InstanceFilesystem, error) {
+	slot *IPSlot,
+	envID,
+	envsDisk string,
+) (*InstanceFiles, error) {
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
-			attribute.String("envs_disk", fcEnvsDisk),
+			attribute.String("envs_disk", envsDisk),
 		),
 	)
 	defer childSpan.End()
 
-	envPath := filepath.Join(fcEnvsDisk, envID)
+	envPath := filepath.Join(envsDisk, envID)
 	envInstancePath := filepath.Join(envPath, EnvInstancesDirName, slot.InstanceID)
 
 	err := os.MkdirAll(envInstancePath, 0o777)
@@ -85,18 +85,18 @@ func NewEnv(
 		attribute.String("env_path", envPath),
 	)
 
-	return &InstanceFilesystem{
+	return &InstanceFiles{
 		EnvInstancePath: envInstancePath,
 		BuildDirPath:    buildDirPath,
 		EnvPath:         envPath,
 	}, nil
 }
 
-func (env *InstanceFilesystem) Delete(
+func (env *InstanceFiles) Cleanup(
 	ctx context.Context,
 	tracer trace.Tracer,
 ) error {
-	childCtx, childSpan := tracer.Start(ctx, "delete-env-instance",
+	childCtx, childSpan := tracer.Start(ctx, "cleanup-env-instance",
 		trace.WithAttributes(
 			attribute.String("env_instance_path", env.EnvInstancePath),
 			attribute.String("build_dir_path", env.BuildDirPath),
@@ -109,6 +109,9 @@ func (env *InstanceFilesystem) Delete(
 	if err != nil {
 		errMsg := fmt.Errorf("error deleting env instance files %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+	} else {
+		// TODO: Check the socket?
+		telemetry.ReportEvent(childCtx, "removed all env instance files")
 	}
 
 	return nil

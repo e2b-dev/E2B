@@ -116,7 +116,7 @@ func (d *Driver) initializeFC(
 	cfg *drivers.TaskConfig,
 	taskConfig TaskConfig,
 	slot *instance.IPSlot,
-	env *instance.InstanceFilesystem,
+	fsEnv *instance.InstanceFiles,
 ) (*fc, error) {
 	childCtx, childSpan := d.tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
 		attribute.String("instance_id", slot.InstanceID),
@@ -138,8 +138,8 @@ func (d *Driver) initializeFC(
 
 	mountCmd := fmt.Sprintf(
 		"mount --bind  %s %s && ",
-		env.EnvInstancePath,
-		env.BuildDirPath,
+		fsEnv.EnvInstancePath,
+		fsEnv.BuildDirPath,
 	)
 
 	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", socketPath)
@@ -240,7 +240,7 @@ func (d *Driver) initializeFC(
 	if err := loadSnapshot(
 		childCtx,
 		socketPath,
-		env.EnvPath,
+		fsEnv.EnvPath,
 		d,
 		struct {
 			InstanceID string `json:"instanceID"`
@@ -284,8 +284,8 @@ func (d *Driver) initializeFC(
 		Pid:          strconv.Itoa(pid),
 		SocketPath:   socketPath,
 		EnvID:        taskConfig.EnvID,
-		EnvPath:      env.EnvPath,
-		BuildDirPath: env.BuildDirPath,
+		EnvPath:      fsEnv.EnvPath,
+		BuildDirPath: fsEnv.BuildDirPath,
 	}
 
 	telemetry.SetAttributes(

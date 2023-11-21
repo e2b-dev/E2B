@@ -123,12 +123,12 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 	telemetry.ReportEvent(childCtx, "created network")
 
-	fsEnv, err := instance.NewEnv(
+	fsEnv, err := instance.NewInstanceFiles(
 		childCtx,
+		d.tracer,
 		ipSlot,
 		taskConfig.EnvID,
 		cfg.Env["ENVS_DISK"],
-		d.tracer,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create env for FC %w", err)
@@ -139,7 +139,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	defer func() {
 		if err != nil {
-			envErr := fsEnv.Delete(childCtx, d.tracer)
+			envErr := fsEnv.Cleanup(childCtx, d.tracer)
 			if envErr != nil {
 				errMsg := fmt.Errorf("error deleting env after failed fc start %w", err)
 				telemetry.ReportCriticalError(childCtx, errMsg)
@@ -297,7 +297,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
-	err = h.EnvInstanceFilesystem.Delete(childCtx, d.tracer)
+	err = h.EnvInstanceFilesystem.Cleanup(childCtx, d.tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot remove env when destroying task %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

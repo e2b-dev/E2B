@@ -29,7 +29,7 @@ type taskHandle struct {
 	State                 drivers.TaskState
 	MachineInstance       *firecracker.Machine
 	Slot                  *instance.IPSlot
-	EnvInstanceFilesystem *instance.InstanceFilesystem
+	EnvInstanceFilesystem *instance.InstanceFiles
 	EnvInstance           Instance
 	ConsulToken           string
 	startedAt             time.Time
