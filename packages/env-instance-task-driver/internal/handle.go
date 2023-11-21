@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 
@@ -22,11 +21,7 @@ import (
 const processCheckInterval = 4 * time.Second
 
 type taskHandle struct {
-	MachineInstance *firecracker.Machine
-	Slot            instance.IPSlot
-	EnvInstance     instance.Instance
-	EnvFiles        instance.InstanceFiles
-	ConsulToken     string
+	Instance *instance.Instance
 
 	logger      hclog.Logger
 	taskConfig  *drivers.TaskConfig
@@ -55,15 +50,15 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 		CompletedAt: h.completedAt,
 		ExitResult:  h.exitResult,
 		DriverAttributes: map[string]string{
-			"Pid": h.EnvInstance.Pid,
+			"Pid": h.Instance.FC.Pid,
 		},
 	}
 }
 
 func (h *taskHandle) run(ctx context.Context, driver *Driver) {
-	pid, err := strconv.Atoi(h.EnvInstance.Pid)
+	pid, err := strconv.Atoi(h.Instance.FC.Pid)
 	if err != nil {
-		h.logger.Info(fmt.Sprintf("ERROR Env-instance-task-driver Could not parse pid=%s after initialization", h.EnvInstance.Pid))
+		h.logger.Info(fmt.Sprintf("ERROR Env-instance-task-driver Could not parse pid=%s after initialization", h.Instance.FC.Pid))
 		h.mu.Lock()
 		h.exitResult = &drivers.ExitResult{}
 		h.exitResult.ExitCode = 127
@@ -92,31 +87,22 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 	childCtx, childSpan := driver.tracer.Start(ctx, "shutdown")
 	defer childSpan.End()
 
-	h.EnvInstance.Cmd.Process.Signal(syscall.SIGTERM)
-	telemetry.ReportEvent(childCtx, "sent SIGTERM to FC process")
+	err := h.Instance.FC.Stop(childCtx, driver.tracer)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to stop FC: %w", err)
 
-	pid, pErr := strconv.Atoi(h.EnvInstance.Pid)
-	if pErr == nil {
-		timeout := time.After(10 * time.Second)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 
-	pidCheck:
-		for {
-			select {
-			case <-timeout:
-				h.EnvInstance.Cmd.Process.Kill()
-				break pidCheck
-			default:
-				process, err := os.FindProcess(int(pid))
-				if err != nil {
-					break pidCheck
-				}
+		h.mu.Lock()
+		h.exitResult = &drivers.ExitResult{}
+		h.exitResult.ExitCode = 1
+		h.exitResult.Signal = 0
+		h.completedAt = time.Now()
+		h.taskState = drivers.TaskStateUnknown
+		h.exitResult.Err = errMsg
+		h.mu.Unlock()
 
-				if process.Signal(syscall.Signal(0)) != nil {
-					break pidCheck
-				}
-			}
-			time.Sleep(processCheckInterval)
-		}
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "waiting for state lock")

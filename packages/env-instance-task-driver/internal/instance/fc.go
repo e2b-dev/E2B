@@ -5,9 +5,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"syscall"
+	"time"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
@@ -20,27 +23,18 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-type fc struct {
-	Machine  *firecracker.Machine
-	Instance Instance
-}
-
-type Instance struct {
-	AllocId          string
-	Pid              string
-	SnapshotRootPath string
-	SocketPath       string
-	EnvID            string
-	EnvPath          string
-	BuildDirPath     string
-	Cmd              *exec.Cmd
-}
+const fcKillCheckInternval = 4 * time.Second
 
 type MmdsMetadata struct {
 	InstanceID string `json:"instanceID"`
 	EnvID      string `json:"envID"`
 	Address    string `json:"address"`
 	TraceID    string `json:"traceID"`
+}
+
+type FC struct {
+	Pid string
+	Cmd *exec.Cmd
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -61,7 +55,7 @@ func loadSnapshot(
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "load-snapshot", trace.WithAttributes(
 		attribute.String("socket_path", socketPath),
-		attribute.String("snapshot_root_path", envPath),
+		attribute.String("env_path", envPath),
 	))
 	defer childSpan.End()
 
@@ -115,26 +109,19 @@ func loadSnapshot(
 	return nil
 }
 
-func InitializeFC(
+func startFC(
 	ctx context.Context,
 	tracer trace.Tracer,
 	allocID string,
 	slot *IPSlot,
 	fsEnv *InstanceFiles,
 	mmdsMetadata *MmdsMetadata,
-) (*fc, error) {
+) (*FC, error) {
 	childCtx, childSpan := tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
 		attribute.String("instance_id", slot.InstanceID),
 		attribute.Int("ip_slot_index", slot.SlotIdx),
 	))
 	defer childSpan.End()
-
-	socketPath, sockErr := GetSocketPath(slot.InstanceID)
-	if sockErr != nil {
-		errMsg := fmt.Errorf("error getting socket path: %w", sockErr)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-		return nil, errMsg
-	}
 
 	vmmCtx, _ := tracer.Start(
 		trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
@@ -147,7 +134,7 @@ func InitializeFC(
 		fsEnv.BuildDirPath,
 	)
 
-	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", socketPath)
+	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", fsEnv.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
 	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountCmd+inNetNSCmd+fcCmd)
@@ -216,7 +203,7 @@ func InitializeFC(
 
 	prebootFcConfig := firecracker.Config{
 		DisableValidation: true,
-		SocketPath:        socketPath,
+		SocketPath:        fsEnv.SocketPath,
 	}
 
 	m, err := firecracker.NewMachine(vmmCtx, prebootFcConfig, firecracker.WithProcessRunner(cmd))
@@ -244,7 +231,7 @@ func InitializeFC(
 	if err := loadSnapshot(
 		childCtx,
 		tracer,
-		socketPath,
+		fsEnv.SocketPath,
 		fsEnv.EnvPath,
 		mmdsMetadata,
 	); err != nil {
@@ -272,28 +259,63 @@ func InitializeFC(
 		return nil, errMsg
 	}
 
-	info := Instance{
-		Cmd:          cmd,
-		AllocId:      allocID,
-		Pid:          strconv.Itoa(pid),
-		SocketPath:   socketPath,
-		EnvID:        mmdsMetadata.EnvID,
-		EnvPath:      fsEnv.EnvPath,
-		BuildDirPath: fsEnv.BuildDirPath,
+	fc := &FC{
+		Cmd: cmd,
+		Pid: strconv.Itoa(pid),
 	}
 
 	telemetry.SetAttributes(
 		childCtx,
-		attribute.String("alloc_id", info.AllocId),
-		attribute.String("pid", info.Pid),
-		attribute.String("socket_path", info.SocketPath),
-		attribute.String("env_id", info.EnvID),
-		attribute.String("env_path", info.EnvPath),
-		attribute.String("build_dir_path", info.BuildDirPath),
-		attribute.String("cmd", info.Cmd.String()),
-		attribute.String("cmd.dir", info.Cmd.Dir),
-		attribute.String("cmd.path", info.Cmd.Path),
+		attribute.String("pid", fc.Pid),
+		attribute.String("cmd", fc.Cmd.String()),
+		attribute.String("cmd.dir", fc.Cmd.Dir),
+		attribute.String("cmd.path", fc.Cmd.Path),
 	)
 
-	return &fc{Machine: m, Instance: info}, nil
+	return fc, nil
+}
+
+func (fc *FC) Stop(ctx context.Context, tracer trace.Tracer) error {
+	childCtx, childSpan := tracer.Start(ctx, "stop-fc", trace.WithAttributes(
+		attribute.String("pid", fc.Pid),
+		attribute.String("cmd", fc.Cmd.String()),
+		attribute.String("cmd.dir", fc.Cmd.Dir),
+		attribute.String("cmd.path", fc.Cmd.Path),
+	))
+	defer childSpan.End()
+
+	err := fc.Cmd.Process.Signal(syscall.SIGTERM)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to send SIGTERM to FC process: %w", err)
+
+		telemetry.ReportCriticalError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "sent SIGTERM to FC process")
+	}
+
+	pid, pErr := strconv.Atoi(fc.Pid)
+	if pErr == nil {
+		timeout := time.After(10 * time.Second)
+
+	pidCheck:
+		for {
+			select {
+			case <-timeout:
+				fc.Cmd.Process.Kill()
+				break pidCheck
+			default:
+				process, err := os.FindProcess(int(pid))
+				if err != nil {
+					break pidCheck
+				}
+
+				if process.Signal(syscall.Signal(0)) != nil {
+					break pidCheck
+				}
+			}
+			time.Sleep(fcKillCheckInternval)
+		}
+	}
+
+	return nil
 }
