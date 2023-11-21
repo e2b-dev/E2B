@@ -107,7 +107,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	defer func() {
 		if err != nil {
-			ntErr := instance.RemoveNetwork(childCtx, ipSlot, d.hosts, taskConfig.ConsulToken, d.tracer)
+			ntErr := ipSlot.RemoveNetwork(childCtx, d.tracer, d.hosts)
 			if ntErr != nil {
 				errMsg := fmt.Errorf("error removing network namespace after failed instance start %w", ntErr)
 				telemetry.ReportError(childCtx, errMsg)
@@ -115,7 +115,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		}
 	}()
 
-	err = instance.CreateNetwork(childCtx, ipSlot, d.hosts, d.tracer)
+	err = ipSlot.CreateNetwork(childCtx, d.tracer, d.hosts)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create namespaces %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -291,7 +291,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		telemetry.ReportEvent(childCtx, "shutdown task")
 	}
 
-	err := instance.RemoveNetwork(childCtx, h.Slot, d.hosts, h.ConsulToken, d.tracer)
+	err := h.Slot.RemoveNetwork(childCtx, d.tracer, d.hosts)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot remove network when destroying task %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
