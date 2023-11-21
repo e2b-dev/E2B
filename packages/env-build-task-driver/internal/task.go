@@ -107,7 +107,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	h := &taskHandle{
 		taskConfig: cfg,
-		procState:  drivers.TaskStateRunning,
+		taskState:  drivers.TaskStateRunning,
 		startedAt:  time.Now().Round(time.Millisecond),
 		logger:     d.logger,
 		env:        &env,
