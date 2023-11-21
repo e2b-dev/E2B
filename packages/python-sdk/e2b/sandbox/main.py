@@ -5,7 +5,7 @@ import requests
 from os import path
 from typing import Any, Callable, Dict, List, Literal, Optional, IO, Tuple, Union
 
-from e2b.api.v2.client import models
+from e2b.api import models
 from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
 from e2b.sandbox.env_vars import EnvVars

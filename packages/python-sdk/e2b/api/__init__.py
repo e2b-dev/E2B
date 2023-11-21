@@ -6,6 +6,7 @@ from e2b.api.metadata import default_headers
 
 
 pydantic_version = version("pydantic")
+print(pydantic_version)
 if pydantic_version < "2.0.0":
     import e2b.api.v1.client as client
     import e2b.api.v1.client.models as models
