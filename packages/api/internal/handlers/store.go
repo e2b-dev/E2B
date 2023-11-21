@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
 	"context"
 	"fmt"
 	"log"
@@ -9,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"cloud.google.com/go/artifactregistry/apiv1"
 	"cloud.google.com/go/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

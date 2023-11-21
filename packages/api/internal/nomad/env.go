@@ -26,7 +26,7 @@ const (
 	deleteJobName          = "env-delete"
 	deleteJobNameWithSlash = deleteJobName + "/"
 
-	deleteFinishTimeout = time.Minute
+	deleteFinishTimeout = time.Second * 30
 
 	deleteTaskName = "delete-env"
 )

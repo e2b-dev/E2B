@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"google.golang.org/api/iterator"
 	"io"
 	"time"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
 )
 
 const streamFileUploadTimeout = 50 * time.Second

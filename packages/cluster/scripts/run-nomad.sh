@@ -187,11 +187,6 @@ leave_on_terminate = true
 
 plugin "env-instance-task-driver" {}
 plugin "env-build-task-driver" {}
-plugin "raw_exec" {
-  config {
-    enabled = true
-  }
-}
 
 EOF
     )
