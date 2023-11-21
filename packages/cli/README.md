@@ -65,26 +65,28 @@ directory where the command will be called, without the need to call `cd`.
 ```sh
 Usage: e2b template [options] [command]
 
-Create sandbox templates from Dockerfiles by running e2b build then use our SDKs to create
-sandboxes from these templates.
+Create sandbox templates from Dockerfiles by running e2b build then use our SDKs to create sandboxes from these templates.
 
-Visit E2B docs (https://e2b.dev/docs) to learn how to create sandbox templates
-and start sandboxes.
+Visit E2B docs (https://e2b.dev/docs) to learn how to create sandbox templates and start sandboxes.
 
 Options:
-  -h, --help               display help for command
+  -V, --version             Display E2B CLI version
+  -h, --help                display help for command
 
 Commands:
-  build|bd [options] [id]  Build sandbox template defined by ./e2b.Dockerfile or
-                           ./Dockerfile in root directory. By default the root directory is the
-                           current working directory. This command also creates e2b.toml config
+  login                     Log in to CLI
 
-  list|ls                  List sandbox templates
+  logout                    Log out of CLI
 
-  shell|sh <id>            Connect terminal to sandbox
+  build|bd [options] [id]   Build sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` in root directory. By default the root directory is the current working directory. This command also creates `e2b.toml` config
 
-  init|it [options]        Create basic E2B ./e2b.Dockerfile in root directory. You can then run
-                           e2b build to build sandbox template from this Dockerfile
+  list|ls                   List sandbox templates
 
-  help [command]           display help for command
+  shell|sh [options] [id]   Connect terminal to sandbox
+
+  init|it [options]         Create basic E2B Dockerfile (`./e2b.Dockerfile`) in root directory. You can then run e2b build to build sandbox template from this Dockerfile
+
+  delete|dl [options] [id]  Delete sanbdox template and e2b.toml config
+
+  help [command]            display help for command
 ```
