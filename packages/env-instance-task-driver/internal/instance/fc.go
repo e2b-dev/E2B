@@ -1,4 +1,4 @@
-package internal
+package instance
 
 import (
 	"bufio"
@@ -12,11 +12,9 @@ import (
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
-	"github.com/hashicorp/nomad/plugins/drivers"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/client"
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/client/operations"
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/models"
@@ -26,7 +24,7 @@ import (
 const (
 	// containerMonitorIntv is the interval at which the driver checks if the
 	// firecracker micro-vm is still running
-	containerMonitorIntv = 4 * time.Second
+	ContainerMonitorIntv = 4 * time.Second
 )
 
 type fc struct {
@@ -45,6 +43,13 @@ type Instance struct {
 	Cmd              *exec.Cmd
 }
 
+type MmdsMetadata struct {
+	InstanceID string `json:"instanceID"`
+	EnvID      string `json:"envID"`
+	Address    string `json:"address"`
+	TraceID    string `json:"traceID"`
+}
+
 func newFirecrackerClient(socketPath string) *client.Firecracker {
 	httpClient := client.NewHTTPClient(strfmt.NewFormats())
 
@@ -54,8 +59,14 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 	return httpClient
 }
 
-func loadSnapshot(ctx context.Context, socketPath, envPath string, d *Driver, metadata interface{}) error {
-	childCtx, childSpan := d.tracer.Start(ctx, "load-snapshot", trace.WithAttributes(
+func loadSnapshot(
+	ctx context.Context,
+	tracer trace.Tracer,
+	socketPath,
+	envPath string,
+	metadata interface{},
+) error {
+	childCtx, childSpan := tracer.Start(ctx, "load-snapshot", trace.WithAttributes(
 		attribute.String("socket_path", socketPath),
 		attribute.String("snapshot_root_path", envPath),
 	))
@@ -64,8 +75,8 @@ func loadSnapshot(ctx context.Context, socketPath, envPath string, d *Driver, me
 	httpClient := newFirecrackerClient(socketPath)
 	telemetry.ReportEvent(childCtx, "created FC socket client")
 
-	memfilePath := filepath.Join(envPath, instance.MemfileName)
-	snapfilePath := filepath.Join(envPath, instance.SnapfileName)
+	memfilePath := filepath.Join(envPath, MemfileName)
+	snapfilePath := filepath.Join(envPath, SnapfileName)
 
 	telemetry.SetAttributes(
 		childCtx,
@@ -111,27 +122,28 @@ func loadSnapshot(ctx context.Context, socketPath, envPath string, d *Driver, me
 	return nil
 }
 
-func (d *Driver) initializeFC(
+func InitializeFC(
 	ctx context.Context,
-	cfg *drivers.TaskConfig,
-	taskConfig TaskConfig,
-	slot *instance.IPSlot,
-	fsEnv *instance.InstanceFiles,
+	tracer trace.Tracer,
+	allocID string,
+	slot *IPSlot,
+	fsEnv *InstanceFiles,
+	mmdsMetadata *MmdsMetadata,
 ) (*fc, error) {
-	childCtx, childSpan := d.tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
+	childCtx, childSpan := tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
 		attribute.String("instance_id", slot.InstanceID),
 		attribute.Int("ip_slot_index", slot.SlotIdx),
 	))
 	defer childSpan.End()
 
-	socketPath, sockErr := instance.GetSocketPath(slot.InstanceID)
+	socketPath, sockErr := GetSocketPath(slot.InstanceID)
 	if sockErr != nil {
 		errMsg := fmt.Errorf("error getting socket path: %w", sockErr)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
 
-	vmmCtx, _ := d.tracer.Start(
+	vmmCtx, _ := tracer.Start(
 		trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
 		"fc-vmm",
 	)
@@ -236,23 +248,12 @@ func (d *Driver) initializeFC(
 	}
 	telemetry.ReportEvent(childCtx, "started FC in preboot")
 
-	// TODO: We need to change this in the envd OR move the logging to the driver
 	if err := loadSnapshot(
 		childCtx,
+		tracer,
 		socketPath,
 		fsEnv.EnvPath,
-		d,
-		struct {
-			InstanceID string `json:"instanceID"`
-			EnvID      string `json:"envID"`
-			Address    string `json:"address"`
-			TraceID    string `json:"traceID"`
-		}{
-			InstanceID: slot.InstanceID,
-			EnvID:      taskConfig.EnvID,
-			Address:    taskConfig.LogsProxyAddress,
-			TraceID:    taskConfig.TraceID,
-		},
+		mmdsMetadata,
 	); err != nil {
 		m.StopVMM()
 		errMsg := fmt.Errorf("failed to load snapshot: %w", err)
@@ -280,10 +281,10 @@ func (d *Driver) initializeFC(
 
 	info := Instance{
 		Cmd:          cmd,
-		AllocId:      cfg.AllocID,
+		AllocId:      allocID,
 		Pid:          strconv.Itoa(pid),
 		SocketPath:   socketPath,
-		EnvID:        taskConfig.EnvID,
+		EnvID:        mmdsMetadata.EnvID,
 		EnvPath:      fsEnv.EnvPath,
 		BuildDirPath: fsEnv.BuildDirPath,
 	}

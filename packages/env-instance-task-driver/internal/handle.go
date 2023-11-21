@@ -30,7 +30,7 @@ type taskHandle struct {
 	MachineInstance       *firecracker.Machine
 	Slot                  *instance.IPSlot
 	EnvInstanceFilesystem *instance.InstanceFiles
-	EnvInstance           Instance
+	EnvInstance           instance.Instance
 	ConsulToken           string
 	startedAt             time.Time
 	completedAt           time.Time
@@ -69,7 +69,7 @@ func (h *taskHandle) run(ctx context.Context, driver *Driver) {
 	}
 
 	for {
-		time.Sleep(containerMonitorIntv)
+		time.Sleep(instance.ContainerMonitorIntv)
 
 		process, err := os.FindProcess(int(pid))
 		if err != nil {
@@ -109,7 +109,7 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 					break pidCheck
 				}
 			}
-			time.Sleep(containerMonitorIntv)
+			time.Sleep(instance.ContainerMonitorIntv)
 		}
 	}
 

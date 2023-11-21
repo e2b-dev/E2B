@@ -147,12 +147,18 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		}
 	}()
 
-	fc, err := d.initializeFC(
+	fc, err := instance.InitializeFC(
 		childCtx,
-		cfg,
-		taskConfig,
+		d.tracer,
+		cfg.AllocID,
 		ipSlot,
 		fsEnv,
+		&instance.MmdsMetadata{
+			InstanceID: taskConfig.InstanceID,
+			EnvID:      taskConfig.EnvID,
+			Address:    taskConfig.LogsProxyAddress,
+			TraceID:    taskConfig.TraceID,
+		},
 	)
 	if err != nil {
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
