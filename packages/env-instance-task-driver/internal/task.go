@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/env"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
@@ -82,7 +81,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	d.logger.Info("starting firecracker task", "task_cfg", hclog.Fmt("%+v", taskConfig))
 
 	// Get slot from Consul KV
-	ipSlot, err := slot.New(
+	ipSlot, err := instance.NewSlot(
 		childCtx,
 		cfg.Env["NOMAD_NODE_ID"],
 		taskConfig.InstanceID,
@@ -108,7 +107,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	defer func() {
 		if err != nil {
-			ntErr := RemoveNetwork(childCtx, ipSlot, d.hosts, taskConfig.ConsulToken, d.tracer)
+			ntErr := instance.RemoveNetwork(childCtx, ipSlot, d.hosts, taskConfig.ConsulToken, d.tracer)
 			if ntErr != nil {
 				errMsg := fmt.Errorf("error removing network namespace after failed instance start %w", ntErr)
 				telemetry.ReportError(childCtx, errMsg)
@@ -116,7 +115,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		}
 	}()
 
-	err = CreateNetwork(childCtx, ipSlot, d.hosts, d.tracer)
+	err = instance.CreateNetwork(childCtx, ipSlot, d.hosts, d.tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create namespaces %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -124,7 +123,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 	telemetry.ReportEvent(childCtx, "created network")
 
-	fsEnv, err := env.New(
+	fsEnv, err := instance.NewEnv(
 		childCtx,
 		ipSlot,
 		taskConfig.EnvID,
@@ -292,7 +291,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		telemetry.ReportEvent(childCtx, "shutdown task")
 	}
 
-	err := RemoveNetwork(childCtx, h.Slot, d.hosts, h.ConsulToken, d.tracer)
+	err := instance.RemoveNetwork(childCtx, h.Slot, d.hosts, h.ConsulToken, d.tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot remove network when destroying task %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

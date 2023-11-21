@@ -1,4 +1,4 @@
-package env
+package instance
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/KarpelesLab/reflink"
@@ -30,9 +29,9 @@ type InstanceFilesystem struct {
 	EnvInstancePath string
 }
 
-func New(
+func NewEnv(
 	ctx context.Context,
-	slot *slot.IPSlot,
+	slot *IPSlot,
 	envID string,
 	fcEnvsDisk string,
 	tracer trace.Tracer,

@@ -1,11 +1,10 @@
-package internal
+package instance
 
 import (
 	"context"
 	"fmt"
 	"net"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/coreos/go-iptables/iptables"
@@ -24,7 +23,7 @@ func TestCreateNetwork() {
 	nodeShortID := instanceID[:8]
 	slotIdx := 200
 	key := fmt.Sprintf("%s/%d", nodeShortID, slotIdx)
-	slotTest := &slot.IPSlot{
+	slotTest := &IPSlot{
 		InstanceID:  instanceID,
 		SlotIdx:     slotIdx,
 		NodeShortID: nodeShortID,
@@ -46,7 +45,7 @@ func TestCreateNetwork() {
 	}
 }
 
-func RemoveNetworkTest(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, tracer trace.Tracer) error {
+func RemoveNetworkTest(ctx context.Context, ipSlot *IPSlot, hosts *txeh.Hosts, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "remove-network")
 	defer childSpan.End()
 

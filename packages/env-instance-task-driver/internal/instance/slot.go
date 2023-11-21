@@ -1,4 +1,4 @@
-package slot
+package instance
 
 import (
 	"context"
@@ -111,7 +111,7 @@ func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
-func New(ctx context.Context, nodeID, instanceID, consulToken string, tracer trace.Tracer) (*IPSlot, error) {
+func NewSlot(ctx context.Context, nodeID, instanceID, consulToken string, tracer trace.Tracer) (*IPSlot, error) {
 	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
 	defer childSpan.End()
 

@@ -13,8 +13,7 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/env"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -29,8 +28,8 @@ type taskHandle struct {
 	taskConfig            *drivers.TaskConfig
 	State                 drivers.TaskState
 	MachineInstance       *firecracker.Machine
-	Slot                  *slot.IPSlot
-	EnvInstanceFilesystem *env.InstanceFilesystem
+	Slot                  *instance.IPSlot
+	EnvInstanceFilesystem *instance.InstanceFilesystem
 	EnvInstance           Instance
 	ConsulToken           string
 	startedAt             time.Time

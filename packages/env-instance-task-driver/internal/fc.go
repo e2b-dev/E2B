@@ -16,8 +16,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	envSetup "github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/env"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/client"
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/client/operations"
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/models"
@@ -65,8 +64,8 @@ func loadSnapshot(ctx context.Context, socketPath, envPath string, d *Driver, me
 	httpClient := newFirecrackerClient(socketPath)
 	telemetry.ReportEvent(childCtx, "created FC socket client")
 
-	memfilePath := filepath.Join(envPath, envSetup.MemfileName)
-	snapfilePath := filepath.Join(envPath, envSetup.SnapfileName)
+	memfilePath := filepath.Join(envPath, instance.MemfileName)
+	snapfilePath := filepath.Join(envPath, instance.SnapfileName)
 
 	telemetry.SetAttributes(
 		childCtx,
@@ -116,8 +115,8 @@ func (d *Driver) initializeFC(
 	ctx context.Context,
 	cfg *drivers.TaskConfig,
 	taskConfig TaskConfig,
-	slot *slot.IPSlot,
-	env *envSetup.InstanceFilesystem,
+	slot *instance.IPSlot,
+	env *instance.InstanceFilesystem,
 ) (*fc, error) {
 	childCtx, childSpan := d.tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
 		attribute.String("instance_id", slot.InstanceID),
@@ -125,7 +124,7 @@ func (d *Driver) initializeFC(
 	))
 	defer childSpan.End()
 
-	socketPath, sockErr := envSetup.GetSocketPath(slot.InstanceID)
+	socketPath, sockErr := instance.GetSocketPath(slot.InstanceID)
 	if sockErr != nil {
 		errMsg := fmt.Errorf("error getting socket path: %w", sockErr)
 		telemetry.ReportCriticalError(childCtx, errMsg)

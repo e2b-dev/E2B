@@ -1,4 +1,4 @@
-package internal
+package instance
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -24,7 +23,7 @@ const (
 
 func CreateNetwork(
 	ctx context.Context,
-	ipSlot *slot.IPSlot,
+	ipSlot *IPSlot,
 	hosts *txeh.Hosts,
 	tracer trace.Tracer,
 ) error {
@@ -393,7 +392,7 @@ func CreateNetwork(
 	return nil
 }
 
-func RemoveNetwork(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, consulToken string, tracer trace.Tracer) error {
+func RemoveNetwork(ctx context.Context, ipSlot *IPSlot, hosts *txeh.Hosts, consulToken string, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "remove-network")
 	defer childSpan.End()
 
