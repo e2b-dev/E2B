@@ -28,7 +28,7 @@
     "update-deps": "ncu -u && pnpm i"
   },
   "devDependencies": {
-    "@types/common-tags": "^1.8.2",
+    "@types/inquirer": "^9.0.7",
     "@types/node": "^18.18.6",
     "@types/tar-fs": "^2.0.3",
     "@types/update-notifier": "6.0.5",
@@ -57,9 +57,9 @@
     "chalk": "^5.3.0",
     "cli-highlight": "^2.1.11",
     "commander": "^11.1.0",
-    "common-tags": "^1.8.2",
     "console-table-printer": "^2.11.2",
     "ignore": "^5.2.4",
+    "inquirer": "^9.2.12",
     "open": "^9.1.0",
     "strip-ansi": "^7.1.0",
     "tar-fs": "^3.0.4",

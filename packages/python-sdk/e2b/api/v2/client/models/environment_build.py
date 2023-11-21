@@ -18,23 +18,30 @@ import re  # noqa: F401
 import json
 
 
-from typing import List, Optional
-from pydantic import BaseModel, Field, StrictStr, conlist, field_validator
+from typing import Any, ClassVar, Dict, List, Optional
+from pydantic import BaseModel, StrictStr, field_validator
+from pydantic import Field
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 
 class EnvironmentBuild(BaseModel):
     """
     EnvironmentBuild
-    """
+    """  # noqa: E501
 
-    logs: conlist(StrictStr) = Field(..., description="Build logs")
+    logs: List[StrictStr] = Field(description="Build logs")
     env_id: StrictStr = Field(
-        ..., alias="envID", description="Identifier of the environment"
+        description="Identifier of the environment", alias="envID"
     )
-    build_id: StrictStr = Field(
-        ..., alias="buildID", description="Identifier of the build"
+    build_id: StrictStr = Field(description="Identifier of the build", alias="buildID")
+    status: Optional[StrictStr] = Field(
+        default=None, description="Status of the environment"
     )
-    status: Optional[StrictStr] = Field(None, description="Status of the environment")
+    __properties: ClassVar[List[str]] = ["logs", "envID", "buildID", "status"]
 
     @field_validator("status")
     def status_validate_enum(cls, value):
@@ -48,11 +55,7 @@ class EnvironmentBuild(BaseModel):
             )
         return value
 
-    """Pydantic configuration"""
-    model_config = {
-        "populate_by_name": True,
-        "validate_assignment": True,
-    }
+    model_config = {"populate_by_name": True, "validate_assignment": True}
 
     def to_str(self) -> str:
         """Returns the string representation of the model using alias"""
@@ -60,40 +63,53 @@ class EnvironmentBuild(BaseModel):
 
     def to_json(self) -> str:
         """Returns the JSON representation of the model using alias"""
+        # TODO: pydantic v2: use .model_dump_json(by_alias=True, exclude_unset=True) instead
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> EnvironmentBuild:
+    def from_json(cls, json_str: str) -> Self:
         """Create an instance of EnvironmentBuild from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
-    def to_dict(self):
-        """Returns the dictionary representation of the model using alias"""
-        _dict = self.model_dump(by_alias=True, exclude={}, exclude_none=True)
+    def to_dict(self) -> Dict[str, Any]:
+        """Return the dictionary representation of the model using alias.
+
+        This has the following differences from calling pydantic's
+        `self.model_dump(by_alias=True)`:
+
+        * `None` is only added to the output dict for nullable fields that
+          were set at model initialization. Other fields with value `None`
+          are ignored.
+        """
+        _dict = self.model_dump(
+            by_alias=True,
+            exclude={},
+            exclude_none=True,
+        )
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> EnvironmentBuild:
+    def from_dict(cls, obj: Dict) -> Self:
         """Create an instance of EnvironmentBuild from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return EnvironmentBuild.model_validate(obj)
+            return cls.model_validate(obj)
 
         # raise errors for additional fields in the input
         for _key in obj.keys():
-            if _key not in ["logs", "envID", "buildID", "status"]:
+            if _key not in cls.__properties:
                 raise ValueError(
                     "Error due to additional fields (not defined in EnvironmentBuild) in the input: "
-                    + obj
+                    + _key
                 )
 
-        _obj = EnvironmentBuild.model_validate(
+        _obj = cls.model_validate(
             {
                 "logs": obj.get("logs"),
-                "env_id": obj.get("envID"),
-                "build_id": obj.get("buildID"),
+                "envID": obj.get("envID"),
+                "buildID": obj.get("buildID"),
                 "status": obj.get("status"),
             }
         )

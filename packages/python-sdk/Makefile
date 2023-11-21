@@ -2,10 +2,8 @@
 generate-v2:
 	mv ./e2b/api/__init__.py ./e2b/api/__init__.py.bck
 	rm -rf ./e2b/api/v2
-	# Waiting for https://github.com/OpenAPITools/openapi-generator/pull/16655 to be merged
-	# Using this branch to use pydantic v2: https://github.com/fa0311/openapi-generator/tree/oshmoun-master-2
-	# After released, use npx -yes @openapitools/openapi-generator-cli generate
-	java -jar ~/Work/e2b/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate \
+	npx -yes @openapitools/openapi-generator-cli@latest version-manager set 7.1.0
+	npx -yes @openapitools/openapi-generator-cli generate \
 	-i ../../spec/openapi.yml  \
 	-g python \
 	-o ./e2b/api \
@@ -26,9 +24,10 @@ generate-v2:
 generate-v1:
 	mv ./e2b/api/__init__.py ./e2b/api/__init__.py.bck
 	rm -rf ./e2b/api/v1
-	npx -yes @openapitools/openapi-generator-cli  generate \
+	npx -yes @openapitools/openapi-generator-cli@latest version-manager set 7.1.0
+	npx -yes @openapitools/openapi-generator-cli generate \
 	-i ../../spec/openapi.yml  \
-	-g python-nextgen \
+	-g python-pydantic-v1 \
 	-o ./e2b/api \
 	--global-property apis="instances",models,supportingFiles,modelDocs=false \
 	--additional-properties=generateSourceCodeOnly=true \

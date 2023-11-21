@@ -18,31 +18,34 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, Field, StrictStr
+from typing import Any, ClassVar, Dict, List
+from pydantic import BaseModel, StrictStr
+from pydantic import Field
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 
 class Instance(BaseModel):
     """
     Instance
-    """
+    """  # noqa: E501
 
     env_id: StrictStr = Field(
-        ...,
-        alias="envID",
         description="Identifier of the environment from which is the instance created",
+        alias="envID",
     )
     instance_id: StrictStr = Field(
-        ..., alias="instanceID", description="Identifier of the instance"
+        description="Identifier of the instance", alias="instanceID"
     )
     client_id: StrictStr = Field(
-        ..., alias="clientID", description="Identifier of the client"
+        description="Identifier of the client", alias="clientID"
     )
+    __properties: ClassVar[List[str]] = ["envID", "instanceID", "clientID"]
 
-    """Pydantic configuration"""
-    model_config = {
-        "populate_by_name": True,
-        "validate_assignment": True,
-    }
+    model_config = {"populate_by_name": True, "validate_assignment": True}
 
     def to_str(self) -> str:
         """Returns the string representation of the model using alias"""
@@ -50,40 +53,53 @@ class Instance(BaseModel):
 
     def to_json(self) -> str:
         """Returns the JSON representation of the model using alias"""
+        # TODO: pydantic v2: use .model_dump_json(by_alias=True, exclude_unset=True) instead
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> Instance:
+    def from_json(cls, json_str: str) -> Self:
         """Create an instance of Instance from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
-    def to_dict(self):
-        """Returns the dictionary representation of the model using alias"""
-        _dict = self.model_dump(by_alias=True, exclude={}, exclude_none=True)
+    def to_dict(self) -> Dict[str, Any]:
+        """Return the dictionary representation of the model using alias.
+
+        This has the following differences from calling pydantic's
+        `self.model_dump(by_alias=True)`:
+
+        * `None` is only added to the output dict for nullable fields that
+          were set at model initialization. Other fields with value `None`
+          are ignored.
+        """
+        _dict = self.model_dump(
+            by_alias=True,
+            exclude={},
+            exclude_none=True,
+        )
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> Instance:
+    def from_dict(cls, obj: Dict) -> Self:
         """Create an instance of Instance from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return Instance.model_validate(obj)
+            return cls.model_validate(obj)
 
         # raise errors for additional fields in the input
         for _key in obj.keys():
-            if _key not in ["envID", "instanceID", "clientID"]:
+            if _key not in cls.__properties:
                 raise ValueError(
                     "Error due to additional fields (not defined in Instance) in the input: "
-                    + obj
+                    + _key
                 )
 
-        _obj = Instance.model_validate(
+        _obj = cls.model_validate(
             {
-                "env_id": obj.get("envID"),
-                "instance_id": obj.get("instanceID"),
-                "client_id": obj.get("clientID"),
+                "envID": obj.get("envID"),
+                "instanceID": obj.get("instanceID"),
+                "clientID": obj.get("clientID"),
             }
         )
         return _obj

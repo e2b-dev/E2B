@@ -57,12 +57,12 @@ FROM ubuntu:22.04
 All commands can be called with a `--path <path-to-dir>` flag that changes the
 directory where the command will be called, without the need to call `cd`.
 
-```sh
+```md
 -V, --version    Display E2B CLI version
 -h, --help       display help for command
 ```
 
-```sh
+```md
 Usage: e2b template [options] [command]
 
 Create sandbox templates from Dockerfiles by running e2b build then use our SDKs to create sandboxes from these templates.
@@ -70,21 +70,23 @@ Create sandbox templates from Dockerfiles by running e2b build then use our SDKs
 Visit E2B docs (https://e2b.dev/docs) to learn how to create sandbox templates and start sandboxes.
 
 Options:
-  -V, --version            Display E2B CLI version
-  -h, --help               display help for command
+  -V, --version             Display E2B CLI version
+  -h, --help                display help for command
 
 Commands:
-  login                    Log in to CLI
+  login                     Log in to CLI
 
-  logout                   Log out of CLI
+  logout                    Log out of CLI
 
-  build|bd [options] [id]  Build sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` in root directory. By default the root directory is the current working directory. This command also creates e2b.toml config
+  build|bd [options] [id]   Build sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` in root directory. By default the root directory is the current working directory. This command also creates `e2b.toml` config
 
-  list|ls                  List sandbox templates
+  list|ls                   List sandbox templates
 
-  shell|sh [options] [id]  Connect terminal to sandbox
+  shell|sh [options] [id]   Connect terminal to sandbox
 
-  init|it [options]        Create basic E2B Dockerfile (`./e2b.Dockerfile`) in root directory. You can then run e2b build to build sandbox template from this Dockerfile
+  init|it [options]         Create basic E2B Dockerfile (`./e2b.Dockerfile`) in root directory. You can then run e2b build to build sandbox template from this Dockerfile
 
-  help [command]           display help for command
+  delete|dl [options] [id]  Delete sanbdox template and e2b.toml config
+
+  help [command]            display help for command
 ```

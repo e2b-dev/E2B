@@ -18,23 +18,26 @@ import re  # noqa: F401
 import json
 
 
-from typing import List
-from pydantic import BaseModel, Field, StrictStr, conlist
+from typing import Any, ClassVar, Dict, List
+from pydantic import BaseModel, StrictStr
+from pydantic import Field
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 
 class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
     """
     EnvsEnvIDBuildsBuildIDLogsPostRequest
-    """
+    """  # noqa: E501
 
-    api_secret: StrictStr = Field(..., alias="apiSecret", description="API secret")
-    logs: conlist(StrictStr) = Field(...)
+    api_secret: StrictStr = Field(description="API secret", alias="apiSecret")
+    logs: List[StrictStr]
+    __properties: ClassVar[List[str]] = ["apiSecret", "logs"]
 
-    """Pydantic configuration"""
-    model_config = {
-        "populate_by_name": True,
-        "validate_assignment": True,
-    }
+    model_config = {"populate_by_name": True, "validate_assignment": True}
 
     def to_str(self) -> str:
         """Returns the string representation of the model using alias"""
@@ -42,36 +45,49 @@ class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
 
     def to_json(self) -> str:
         """Returns the JSON representation of the model using alias"""
+        # TODO: pydantic v2: use .model_dump_json(by_alias=True, exclude_unset=True) instead
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> EnvsEnvIDBuildsBuildIDLogsPostRequest:
+    def from_json(cls, json_str: str) -> Self:
         """Create an instance of EnvsEnvIDBuildsBuildIDLogsPostRequest from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
-    def to_dict(self):
-        """Returns the dictionary representation of the model using alias"""
-        _dict = self.model_dump(by_alias=True, exclude={}, exclude_none=True)
+    def to_dict(self) -> Dict[str, Any]:
+        """Return the dictionary representation of the model using alias.
+
+        This has the following differences from calling pydantic's
+        `self.model_dump(by_alias=True)`:
+
+        * `None` is only added to the output dict for nullable fields that
+          were set at model initialization. Other fields with value `None`
+          are ignored.
+        """
+        _dict = self.model_dump(
+            by_alias=True,
+            exclude={},
+            exclude_none=True,
+        )
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> EnvsEnvIDBuildsBuildIDLogsPostRequest:
+    def from_dict(cls, obj: Dict) -> Self:
         """Create an instance of EnvsEnvIDBuildsBuildIDLogsPostRequest from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return EnvsEnvIDBuildsBuildIDLogsPostRequest.model_validate(obj)
+            return cls.model_validate(obj)
 
         # raise errors for additional fields in the input
         for _key in obj.keys():
-            if _key not in ["apiSecret", "logs"]:
+            if _key not in cls.__properties:
                 raise ValueError(
                     "Error due to additional fields (not defined in EnvsEnvIDBuildsBuildIDLogsPostRequest) in the input: "
-                    + obj
+                    + _key
                 )
 
-        _obj = EnvsEnvIDBuildsBuildIDLogsPostRequest.model_validate(
-            {"api_secret": obj.get("apiSecret"), "logs": obj.get("logs")}
+        _obj = cls.model_validate(
+            {"apiSecret": obj.get("apiSecret"), "logs": obj.get("logs")}
         )
         return _obj

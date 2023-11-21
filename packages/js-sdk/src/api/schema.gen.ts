@@ -53,7 +53,7 @@ export interface paths {
         content: {
           "application/json": {
             /** @description Duration for which the instance should be kept alive in seconds */
-            duration: number;
+            duration?: number;
           };
         };
       };
@@ -97,6 +97,8 @@ export interface paths {
             buildContext: string;
             /** @description Dockerfile content */
             dockerfile: string;
+            /** @description Start command to execute in the template after the build */
+            startCmd?: string;
           };
         };
       };
@@ -132,8 +134,24 @@ export interface paths {
             buildContext: string;
             /** @description Dockerfile content */
             dockerfile: string;
+            /** @description Start command to execute in the template after the build */
+            startCmd?: string;
           };
         };
+      };
+    };
+    /** Delete an environment */
+    delete: {
+      parameters: {
+        path: {
+          envID: components["parameters"]["envID"];
+        };
+      };
+      responses: {
+        /** The environment was deleted successfully */
+        204: never;
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
     };
   };
