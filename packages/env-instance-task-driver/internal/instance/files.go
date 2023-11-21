@@ -24,12 +24,14 @@ const (
 )
 
 type InstanceFiles struct {
-	BuildDirPath    string
-	EnvPath         string
+	EnvPath      string
+	BuildDirPath string
+
 	EnvInstancePath string
+	SocketPath      string
 }
 
-func NewInstanceFiles(
+func newInstanceFiles(
 	ctx context.Context,
 	tracer trace.Tracer,
 	slot *IPSlot,
@@ -79,6 +81,14 @@ func NewInstanceFiles(
 		return nil, errMsg
 	}
 
+	// Create socket
+	socketPath, sockErr := getSocketPath(slot.InstanceID)
+	if sockErr != nil {
+		errMsg := fmt.Errorf("error getting socket path: %w", sockErr)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return nil, errMsg
+	}
+
 	childSpan.SetAttributes(
 		attribute.String("env_instance_path", envInstancePath),
 		attribute.String("build_dir_path", buildDirPath),
@@ -89,6 +99,7 @@ func NewInstanceFiles(
 		EnvInstancePath: envInstancePath,
 		BuildDirPath:    buildDirPath,
 		EnvPath:         envPath,
+		SocketPath:      socketPath,
 	}, nil
 }
 
@@ -112,6 +123,15 @@ func (env *InstanceFiles) Cleanup(
 	} else {
 		// TODO: Check the socket?
 		telemetry.ReportEvent(childCtx, "removed all env instance files")
+	}
+
+	// Remove socket
+	err = os.Remove(env.SocketPath)
+	if err != nil {
+		errMsg := fmt.Errorf("error deleting socket %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "removed socket")
 	}
 
 	return nil
