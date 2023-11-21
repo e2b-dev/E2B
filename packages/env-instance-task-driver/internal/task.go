@@ -169,16 +169,15 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	telemetry.ReportEvent(childCtx, "initialized FC")
 
 	h := &taskHandle{
-		ctx:                   childCtx,
-		taskConfig:            cfg,
-		State:                 drivers.TaskStateRunning,
-		startedAt:             time.Now().Round(time.Millisecond),
-		MachineInstance:       fc.Machine,
-		Slot:                  ipSlot,
-		EnvInstanceFilesystem: fsEnv,
-		EnvInstance:           fc.Instance,
-		ConsulToken:           taskConfig.ConsulToken,
-		logger:                d.logger,
+		ctx:             childCtx,
+		taskConfig:      cfg,
+		taskState:       drivers.TaskStateRunning,
+		startedAt:       time.Now().Round(time.Millisecond),
+		MachineInstance: fc.Machine,
+		Slot:            *ipSlot,
+		EnvFiles:        *fsEnv,
+		EnvInstance:     fc.Instance,
+		logger:          d.logger,
 	}
 
 	driverState := TaskState{
@@ -303,7 +302,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
-	err = h.EnvInstanceFilesystem.Cleanup(childCtx, d.tracer)
+	err = h.EnvFiles.Cleanup(childCtx, d.tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot remove env when destroying task %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

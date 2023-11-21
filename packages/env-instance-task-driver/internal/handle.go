@@ -14,27 +14,33 @@ import (
 	"github.com/hashicorp/nomad/plugins/drivers"
 
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
+
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-type taskHandle struct {
-	ctx    context.Context
-	logger hclog.Logger
-	// TODO: The mutext here causes deadlock when we are stopping tasks
-	// For now we are not using it - the relevant data will be still valid (FC running/exit).
-	// mu syncs access to all fields below
-	mu sync.RWMutex
+// Interval at which we check if the process is still running.
+const processCheckInterval = 4 * time.Second
 
-	taskConfig            *drivers.TaskConfig
-	State                 drivers.TaskState
-	MachineInstance       *firecracker.Machine
-	Slot                  *instance.IPSlot
-	EnvInstanceFilesystem *instance.InstanceFiles
-	EnvInstance           instance.Instance
-	ConsulToken           string
-	startedAt             time.Time
-	completedAt           time.Time
-	exitResult            *drivers.ExitResult
+type taskHandle struct {
+	MachineInstance *firecracker.Machine
+	Slot            instance.IPSlot
+	EnvInstance     instance.Instance
+	EnvFiles        instance.InstanceFiles
+	ConsulToken     string
+
+	logger      hclog.Logger
+	taskConfig  *drivers.TaskConfig
+	taskState   drivers.TaskState
+	exitResult  *drivers.ExitResult
+	startedAt   time.Time
+	completedAt time.Time
+
+	exited chan struct{}
+
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	mu sync.RWMutex
 }
 
 func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
@@ -44,7 +50,7 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 	return &drivers.TaskStatus{
 		ID:          h.taskConfig.ID,
 		Name:        h.taskConfig.Name,
-		State:       h.State,
+		State:       h.taskState,
 		StartedAt:   h.startedAt,
 		CompletedAt: h.completedAt,
 		ExitResult:  h.exitResult,
@@ -63,13 +69,13 @@ func (h *taskHandle) run(ctx context.Context, driver *Driver) {
 		h.exitResult.ExitCode = 127
 		h.exitResult.Signal = 0
 		h.completedAt = time.Now()
-		h.State = drivers.TaskStateExited
+		h.taskState = drivers.TaskStateExited
 		h.mu.Unlock()
 		return
 	}
 
 	for {
-		time.Sleep(instance.ContainerMonitorIntv)
+		time.Sleep(processCheckInterval)
 
 		process, err := os.FindProcess(int(pid))
 		if err != nil {
@@ -109,20 +115,20 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 					break pidCheck
 				}
 			}
-			time.Sleep(instance.ContainerMonitorIntv)
+			time.Sleep(processCheckInterval)
 		}
 	}
 
 	telemetry.ReportEvent(childCtx, "waiting for state lock")
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	telemetry.ReportEvent(childCtx, "passed state lock")
 
+	h.mu.Lock()
 	h.exitResult = &drivers.ExitResult{}
 	h.exitResult.ExitCode = 0
 	h.exitResult.Signal = 0
 	h.completedAt = time.Now()
-	h.State = drivers.TaskStateExited
+	h.taskState = drivers.TaskStateExited
+	h.mu.Unlock()
+
 	telemetry.ReportEvent(childCtx, "updated task exit info")
 
 	return nil

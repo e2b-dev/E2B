@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
@@ -19,12 +18,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/client/operations"
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-)
-
-const (
-	// containerMonitorIntv is the interval at which the driver checks if the
-	// firecracker micro-vm is still running
-	ContainerMonitorIntv = 4 * time.Second
 )
 
 type fc struct {
