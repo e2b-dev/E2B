@@ -1,12 +1,13 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/db"
+	"net/http"
+	"strings"
+
+	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
-	"net/http"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
@@ -48,17 +49,10 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 	envID, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
 	if accessErr != nil {
-		if errors.As(accessErr, &db.ErrEnvNotFound) {
-			errMsg := fmt.Errorf("error env not found: %w", accessErr)
-			telemetry.ReportError(ctx, errMsg)
+		errMsg := fmt.Errorf("error env not found: %w", accessErr)
+		telemetry.ReportError(ctx, errMsg)
 
-			c.JSON(http.StatusOK, nil)
-		} else {
-			errMsg := fmt.Errorf("error env not found: %w", accessErr)
-			telemetry.ReportError(ctx, errMsg)
-
-			a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The sandbox template '%s' does not exist", cleanedAliasOrEnvID))
-		}
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The sandbox template '%s' wasn't found", cleanedAliasOrEnvID))
 
 		return
 	}
@@ -78,48 +72,48 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 		return
 	}
-	//
-	//deleteJobErr := a.nomad.DeleteEnv(a.tracer, ctx, envID)
-	//if deleteJobErr != nil {
-	//	errMsg := fmt.Errorf("error when deleting env files from fc-envs disk: %w", deleteJobErr)
-	//	telemetry.ReportCriticalError(ctx, errMsg)
-	//} else {
-	//	telemetry.ReportEvent(ctx, "deleted env from fc-envs disk")
-	//}
-	//
-	//dockerContextDelErr := a.cloudStorage.deleteFolder(ctx, strings.Join([]string{"v1", envID}, "/"))
-	//if dockerContextDelErr != nil {
-	//	errMsg := fmt.Errorf("error when deleting env docker context from storage bucket: %w", dockerContextDelErr)
-	//	telemetry.ReportCriticalError(ctx, errMsg)
-	//} else {
-	//	telemetry.ReportEvent(ctx, "deleted env docker context form storage bucket")
-	//}
-	//
-	//op, artifactRegistryDeleteErr := a.artifactRegistry.DeletePackage(ctx, &artifactregistrypb.DeletePackageRequest{Name: "projects/e2b-prod/locations/us-central1/repositories/custom-environments/packages/" + envID})
-	//if artifactRegistryDeleteErr != nil {
-	//	errMsg := fmt.Errorf("error when deleting env image from registry: %w", artifactRegistryDeleteErr)
-	//	telemetry.ReportCriticalError(ctx, errMsg)
-	//} else {
-	//	telemetry.ReportEvent(ctx, "started deleting env image from registry")
-	//
-	//	err = op.Wait(ctx)
-	//	if err != nil {
-	//		errMsg := fmt.Errorf("error when waiting for env image deleting from registry: %w", err)
-	//		telemetry.ReportCriticalError(ctx, errMsg)
-	//	} else {
-	//		telemetry.ReportEvent(ctx, "deleted env image from registry")
-	//	}
-	//}
-	//
-	//dbErr := a.supabase.DeleteEnv(ctx, envID)
-	//if dbErr != nil {
-	//	errMsg := fmt.Errorf("error when deleting env from db: %w", dbErr)
-	//	telemetry.ReportCriticalError(ctx, errMsg)
-	//
-	//	a.sendAPIStoreError(c, http.StatusInternalServerError, "Error when deleting env")
-	//
-	//	return
-	//}
+
+	deleteJobErr := a.nomad.DeleteEnv(a.tracer, ctx, envID)
+	if deleteJobErr != nil {
+		errMsg := fmt.Errorf("error when deleting env files from fc-envs disk: %w", deleteJobErr)
+		telemetry.ReportCriticalError(ctx, errMsg)
+	} else {
+		telemetry.ReportEvent(ctx, "deleted env from fc-envs disk")
+	}
+
+	dockerContextDelErr := a.cloudStorage.deleteFolder(ctx, strings.Join([]string{"v1", envID}, "/"))
+	if dockerContextDelErr != nil {
+		errMsg := fmt.Errorf("error when deleting env docker context from storage bucket: %w", dockerContextDelErr)
+		telemetry.ReportCriticalError(ctx, errMsg)
+	} else {
+		telemetry.ReportEvent(ctx, "deleted env docker context form storage bucket")
+	}
+
+	op, artifactRegistryDeleteErr := a.artifactRegistry.DeletePackage(ctx, &artifactregistrypb.DeletePackageRequest{Name: "projects/e2b-prod/locations/us-central1/repositories/custom-environments/packages/" + envID})
+	if artifactRegistryDeleteErr != nil {
+		errMsg := fmt.Errorf("error when deleting env image from registry: %w", artifactRegistryDeleteErr)
+		telemetry.ReportCriticalError(ctx, errMsg)
+	} else {
+		telemetry.ReportEvent(ctx, "started deleting env image from registry")
+
+		err = op.Wait(ctx)
+		if err != nil {
+			errMsg := fmt.Errorf("error when waiting for env image deleting from registry: %w", err)
+			telemetry.ReportCriticalError(ctx, errMsg)
+		} else {
+			telemetry.ReportEvent(ctx, "deleted env image from registry")
+		}
+	}
+
+	dbErr := a.supabase.DeleteEnv(ctx, envID)
+	if dbErr != nil {
+		errMsg := fmt.Errorf("error when deleting env from db: %w", dbErr)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Error when deleting env")
+
+		return
+	}
 
 	telemetry.ReportEvent(ctx, "deleted env from db")
 
