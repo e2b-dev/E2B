@@ -8,10 +8,11 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const (
@@ -88,6 +89,9 @@ func (n *NomadClient) BuildEnvJob(
 		TaskName                   string
 		EnvsDisk                   string
 		GoogleServiceAccountBase64 string
+		GCPProjectID               string
+		GCPLocation                string
+		DockerRepositoryName       string
 		VCpuCount                  int64
 		MemoryMB                   int64
 		DiskSizeMB                 int64
@@ -105,6 +109,9 @@ func (n *NomadClient) BuildEnvJob(
 		JobName:                    buildJobName,
 		EnvsDisk:                   envsDisk,
 		GoogleServiceAccountBase64: googleServiceAccountBase64,
+		GCPProjectID:               constants.ProjectID,
+		GCPLocation:                constants.Location,
+		DockerRepositoryName:       constants.DockerRepositoryName,
 	}
 
 	err := envBuildTemplate.Execute(&jobDef, jobVars)

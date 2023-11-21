@@ -10,17 +10,15 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-type MyError struct {
-	Message string
-}
-
-func (e MyError) Error() string {
-	return e.Message
-}
+const (
+	// DockerImagesURL is the URL to the docker images in the artifact registry
+	DockerImagesURL = "/" + constants.ProjectID + "/locations/" + constants.Location + "/repositories/" + constants.DockerRepositoryName + "/packages/"
+)
 
 // DeleteEnvsEnvID serves to delete an env (e.g. in CLI)
 func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
@@ -89,7 +87,7 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		telemetry.ReportEvent(ctx, "deleted env docker context form storage bucket")
 	}
 
-	op, artifactRegistryDeleteErr := a.artifactRegistry.DeletePackage(ctx, &artifactregistrypb.DeletePackageRequest{Name: "projects/e2b-prod/locations/us-central1/repositories/custom-environments/packages/" + envID})
+	op, artifactRegistryDeleteErr := a.artifactRegistry.DeletePackage(ctx, &artifactregistrypb.DeletePackageRequest{Name: DockerImagesURL + envID})
 	if artifactRegistryDeleteErr != nil {
 		errMsg := fmt.Errorf("error when deleting env image from registry: %w", artifactRegistryDeleteErr)
 		telemetry.ReportCriticalError(ctx, errMsg)

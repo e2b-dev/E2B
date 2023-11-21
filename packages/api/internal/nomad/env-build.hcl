@@ -20,7 +20,7 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
 
       env {
         ENVS_DISK = "{{ .EnvsDisk }}"
-        DOCKER_REGISTRY = "us-central1-docker.pkg.dev/e2b-prod/custom-environments"
+        DOCKER_REGISTRY = "{{ .GCPLocation }}-docker.pkg.dev/{{ .GCPProjectID }}/{{ .DockerRepositoryName }}"
         DOCKER_CONTEXTS_PATH = "/mnt/disks/docker-contexts/v1"
         ENVD_PATH = "/fc-vm/envd"
         KERNEL_IMAGE_PATH = "/fc-vm/vmlinux.bin"
