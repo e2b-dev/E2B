@@ -59,12 +59,11 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Envi
 var ErrEnvNotFound = fmt.Errorf("env not found")
 
 func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (result *api.Environment, err error) {
-	// TODO: rewrite to check if the team has access manually
 	dbEnv, err := db.
 		Client.
 		Env.
 		Query().
-		Where(env.Or(env.HasEnvAliasesWith(envalias.ID(aliasOrEnvID)), env.ID(aliasOrEnvID))).
+		Where(env.Or(env.HasEnvAliasesWith(envalias.ID(aliasOrEnvID)), env.ID(aliasOrEnvID)), env.Or(env.TeamID(teamID), env.Public(true))).
 		WithEnvAliases().
 		Only(ctx)
 
@@ -75,9 +74,6 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 		return nil, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}
 
-	if canBePublic && (!dbEnv.Public || dbEnv.TeamID != teamID) {
-
-	}
 	if !canBePublic && dbEnv.TeamID != teamID {
 		return nil, fmt.Errorf("you don't have access to this env '%s'", aliasOrEnvID)
 	}
@@ -127,9 +123,6 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (envID string, hasAccess bool, err error) {
 	env, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
 	if err != nil {
-		if ent.IsNotFound(err) {
-			return "", false, ErrEnvNotFound
-		}
 		return "", false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}
 
