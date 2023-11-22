@@ -8,7 +8,7 @@ echo "BUILD_ID={{ .BuildID }}" >>/.e2b
 
 # We are downloading the packages manually
 apt-get update --download-only
-DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y openssh-server chrony sudo systemd socat host
+DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y openssh-server chrony sudo systemd socat
 
 # Set up autologin.
 mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
@@ -47,10 +47,13 @@ makestep 1 -1
 EOF
 
 mkdir -p /etc/systemd/system/chrony.service.d
+# The ExecStart= should be emptying the ExecStart= line in config.
 cat <<EOF >/etc/systemd/system/chrony.service.d/override.conf
 [Service]
 ExecStart=
 ExecStart=/usr/sbin/chronyd
+User=root
+Group=root
 EOF
 
 # Enable systemd services
