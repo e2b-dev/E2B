@@ -32,8 +32,8 @@ Follow our [guide](/guide/custom-sandbox) on how to create a custom sandbox.
 
       // Create new sandbox
       const sandbox = await Sandbox.create({
-        // You get sandbox ID from the CLI after you run `$ e2b build`
-        template: '<sandbox-template-id>',  // $HighlightLine
+        // You get sandbox template from the CLI after you run `$ e2b build`
+        template: '<sandbox-template>',  // $HighlightLine
       })
 
       // Close sandbox once done
@@ -45,8 +45,8 @@ Follow our [guide](/guide/custom-sandbox) on how to create a custom sandbox.
 
       # Create new sandbox
       sandbox = Sandbox(
-        # You get sandbox ID from the CLI after you run `$ e2b build`
-        template="<sandbox-template-id>", # $HighlightLine
+        # You get sandbox template from the CLI after you run `$ e2b build`
+        template="<sandbox-template>", # $HighlightLine
       )
 
       # Close sandbox once done
