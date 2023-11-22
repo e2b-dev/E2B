@@ -40,6 +40,8 @@ export class Sandbox extends SandboxConnection {
 
   readonly _actions: Map<string, Action<any>> = new Map()
 
+  private _startCmd?: Promise<Process>
+
   private readonly onScanPorts?: ScanOpenPortsHandler
 
   protected constructor(opts?: SandboxOpts) {
@@ -424,6 +426,17 @@ export class Sandbox extends SandboxConnection {
   }
 
   /**
+   * Get the start cmd process that is running in the sandbox so you can inspect stdout and stderr.
+   * 
+   * If you haven't build the sandbox template with the start cmd option, the stdout/stderr will be empty.
+   *
+   * @returns Start cmd process object where you can inspect stdout and stderr
+   */
+  get startCmd() {
+    return this._startCmd
+  }
+
+  /**
    * URL that can be used to download or upload file to the sandbox via a multipart/form-data POST request.
    * This is useful if you're uploading files directly from the browser.
    * The file will be uploaded to the user's home directory with the same name.
@@ -714,6 +727,12 @@ export class Sandbox extends SandboxConnection {
         : undefined,
     )
 
+    this.handleStartCmdLogs()
+
     return this
+  }
+
+  private async handleStartCmdLogs() {
+    this._startCmd = this.process.start('sudo journalctl -f -o cat _SYSTEMD_UNIT=start_cmd.service')
   }
 }

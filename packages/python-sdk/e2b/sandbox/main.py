@@ -10,7 +10,7 @@ from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.filesystem import FilesystemManager
-from e2b.sandbox.process import ProcessManager, ProcessMessage
+from e2b.sandbox.process import Process, ProcessManager, ProcessMessage
 from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.sandbox.terminal import TerminalManager
 
@@ -94,6 +94,7 @@ class Sandbox(SandboxConnection):
             sandbox=self,
             on_scan_ports=on_scan_ports,
         )
+        self._start_cmd: Union[Process, None] = None
         self._terminal = TerminalManager(sandbox=self)
         self._filesystem = FilesystemManager(sandbox=self)
         self._process = ProcessManager(
@@ -179,6 +180,16 @@ class Sandbox(SandboxConnection):
         return _action
 
     @property
+    def start_cmd(self):
+        """
+        Get the start cmd process that is running in the sandbox so you can inspect stdout and stderr.
+        If you haven't build the sandbox template with the start cmd option, the stdout/stderr will be empty.
+
+        :returns: Start cmd process object where you can inspect stdout and stderr
+        """
+        return self._start_cmd
+
+    @property
     def openai(self):
         """
         OpenAI integration that can be used to get output for the actions added in the sandbox.
@@ -197,6 +208,11 @@ class Sandbox(SandboxConnection):
 
         return OpenAI(Actions(self))
 
+    def _handle_start_cmd_logs(self):
+        self._start_cmd = self.process.start(
+            "sudo journalctl -f -o cat _SYSTEMD_UNIT=start_cmd.service"
+        )
+
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Open the sandbox.
@@ -206,6 +222,7 @@ class Sandbox(SandboxConnection):
         logger.info(f"Opening sandbox {self._id}")
         super()._open(timeout=timeout)
         self._code_snippet._subscribe()
+        self._handle_start_cmd_logs()
         logger.info(f"Sandbox {self._id} opened")
         if self.cwd:
             self.filesystem.make_dir(self.cwd)
