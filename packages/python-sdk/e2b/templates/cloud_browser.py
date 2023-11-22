@@ -1,6 +1,9 @@
+import json
 import logging
 import time
 from typing import Optional, Tuple, List, Union
+
+import pydantic
 
 from e2b.constants import TIMEOUT
 from e2b.templates.template import BaseTemplate
@@ -8,8 +11,22 @@ from e2b.templates.template import BaseTemplate
 logger = logging.getLogger(__name__)
 
 
+class Element(pydantic.BaseModel):
+    selector: str
+
+
 class CloudBrowser(BaseTemplate):
     sandbox_template_id = "cloud-browser"
+
+    @property
+    def url(self) -> str:
+        code = f"""console.log(await page.url())"""
+        stdout, stderr = self._run_puppeteer_code(code)
+        if stderr:
+            logger.error(stderr)
+            raise Exception(stderr)
+
+        return stdout
 
     def go_to(
         self,
@@ -23,11 +40,130 @@ class CloudBrowser(BaseTemplate):
 
     def get_content(
             self,
+            element: Element = None,
             timeout: Optional[float] = TIMEOUT,
     ) -> Tuple[str, str]:
-        code = """
-            const content = await page.content();
+        code = ""
+        if element:
+            code += f"""const element = await page.$('{element.selector}');"""
+
+        code += f"""
+            const content = await {'element' if element else 'page'}.content();
             console.log(content)
+        """
+        return self._run_puppeteer_code(code, timeout=timeout)
+
+    def get_element(self, selector: str, element: Element = None, timeout: Optional[float] = TIMEOUT) -> Element:
+        if element:
+            selector = f"{element.selector} {selector}"
+
+        code = f"""
+            const element = await page.$('{selector}');
+            console.log(element)
+        """
+        stdout, stderr = self._run_puppeteer_code(code, timeout=timeout)
+        if stderr:
+            logger.error(stderr)
+            raise Exception(stderr)
+
+        return Element(selector=selector)
+
+    def get_links(
+        self,
+        element: Optional[Element] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> List[dict]:
+        code = ""
+        if element:
+            code += f"""const element = await page.$('{element.selector}');"""
+
+        code += f"""
+            const pageUrls = await {'element' if element else 'page'}.evaluate(() => {{
+              const links = Array.from(document.links);
+              return links.map((link) => ({{
+                url: link.href,
+                text: link.textContent.replace(/\\s+/g, ' ').trim()
+              }}));
+            }});
+            console.log(JSON.stringify(pageUrls))
+        """
+        stdout, stderr = self._run_puppeteer_code(code, timeout=timeout)
+        if stderr:
+            logger.error(stderr)
+            raise Exception(stderr)
+
+        elements = json.loads(stdout)
+        return elements
+
+    def get_images(
+        self,
+        element: Optional[Element] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> List[dict]:
+        code = ""
+        if element:
+            code += f"""const element = await page.$('{element.selector}');"""
+
+        code += f"""
+            const pageUrls = await {'element' if element else 'page'}.evaluate(() => {{
+              const images = Array.from(document.images);
+              return images.map((link) => ({{
+                href: link.src,
+                text: link.alt
+              }}));
+            }});
+            console.log(JSON.stringify(pageUrls))
+        """
+        stdout, stderr = self._run_puppeteer_code(code, timeout=timeout)
+        if stderr:
+            logger.error(stderr)
+            raise Exception(stderr)
+
+        elements = json.loads(stdout)
+        return elements
+
+    def get_element_text(
+        self,
+        element: Element,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> Tuple[str, str]:
+        code = f"""
+            const element = await page.$('{element.selector}');
+            const text = await page.evaluate(element => element.textContent, element);
+            console.log(text)
+        """
+        return self._run_puppeteer_code(code, timeout=timeout)
+
+    def screenshot(
+        self,
+            element: Element = None,
+            timeout: Optional[float] = TIMEOUT,
+    ) -> bytes:
+        path = f"/home/user/screenshot-{time.strftime('%Y%m%d-%H%M%S')}.png"
+
+        code = ""
+        if element:
+            code += f"""const element = await page.$('{element.selector}');"""
+
+        code += f"""
+            await {'element' if element else 'page'}.screenshot({{path: '{path}'}})
+        """
+        _, stderr = self._run_puppeteer_code(code, timeout=timeout)
+        if stderr:
+            logger.error(stderr)
+            raise Exception(stderr)
+
+        screenshot = self.download_file(path, timeout=timeout)
+        self.filesystem.remove(path)
+        return screenshot
+
+    def click(
+        self,
+        element: Element,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> Tuple[str, str]:
+        code = f"""
+            await page.click('{element.selector}')
         """
         return self._run_puppeteer_code(code, timeout=timeout)
 

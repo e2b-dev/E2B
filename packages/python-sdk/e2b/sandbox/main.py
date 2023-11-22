@@ -3,7 +3,7 @@ import urllib.parse
 import requests
 
 from os import path
-from typing import Any, Callable, Dict, List, Literal, Optional, IO, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, IO
 
 from e2b.api import models
 from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE

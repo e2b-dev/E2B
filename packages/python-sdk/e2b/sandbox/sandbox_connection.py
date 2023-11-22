@@ -162,7 +162,7 @@ class SandboxConnection:
             try:
                 api.instances_instance_id_refreshes_post(
                     self._sandbox.instance_id,
-                    client.InstancesInstanceIDRefreshesPostRequest(duration=duration),
+                    models.InstancesInstanceIDRefreshesPostRequest(duration=duration),
                 )
                 logger.debug(
                     f"Sandbox will be kept alive without connection for next {duration} seconds."
@@ -381,7 +381,7 @@ class SandboxConnection:
                     try:
                         api.instances_instance_id_refreshes_post(
                             instance_id,
-                            client.InstancesInstanceIDRefreshesPostRequest(duration=0),
+                            models.InstancesInstanceIDRefreshesPostRequest(duration=0),
                         )
                         logger.debug(f"Refreshed sandbox {instance_id}")
                     except exceptions.ApiException as e:
