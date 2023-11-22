@@ -62,7 +62,7 @@ class Sandbox(SandboxConnection):
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Callable[[int], Any]] = None,
+        on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
         timeout: Optional[float] = TIMEOUT,
         _sandbox: Optional[models.Instance] = None,
         _debug_hostname: Optional[str] = None,
