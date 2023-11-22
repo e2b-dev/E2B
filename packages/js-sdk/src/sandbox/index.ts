@@ -467,15 +467,15 @@ export class Sandbox extends SandboxConnection {
   static async create(): Promise<Sandbox>;
   /**
    * Creates a new Sandbox from the template with the specified ID.
-   * @param id Sandbox ID
+   * @param template Sandbox template ID or name
    * @returns New Sandbox
    *
    * @example
    * ```ts
-   * const sandbox = await Sandbox.create("sandboxID")
+   * const sandbox = await Sandbox.create("sandboxTemplateID")
    * ```
    */
-  static async create(id: string): Promise<Sandbox>;
+  static async create(template: string): Promise<Sandbox>;
   /**
    * Creates a new Sandbox from the specified options.
    * @param opts Sandbox options
@@ -484,14 +484,14 @@ export class Sandbox extends SandboxConnection {
    * @example
    * ```ts
    * const sandbox = await Sandbox.create({
-   *   id: "sandboxID",
+   *   template: "sandboxTemplate",
    *   onStdout: console.log,
    * })
    * ```
    */
   static async create(opts: SandboxOpts): Promise<Sandbox>;
-  static async create(optsOrID?: string | SandboxOpts) {
-    const opts = typeof optsOrID === 'string' ? { id: optsOrID } : optsOrID
+  static async create(optsOrTemplate?: string | SandboxOpts) {
+    const opts = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
     return new Sandbox(opts)
       ._open({ timeout: opts?.timeout })
       .then(async (sandbox) => {
