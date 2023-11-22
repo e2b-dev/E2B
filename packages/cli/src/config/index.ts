@@ -14,17 +14,45 @@ const configCommentHeader = `# This is a config for E2B sandbox template
 
 export const configSchema = yup.object({
   name: yup.string(),
-  id: yup.string().required(),
+  template: yup.string().required(),
   dockerfile: yup.string().required(),
   start_cmd: yup.string(),
 })
 
 export type E2BConfig = yup.InferType<typeof configSchema>;
 
+interface Migration {
+  from: string;
+  to: string;
+}
+
+// List of name migrations from old config format to new one
+const migrations: Migration[] = [
+  {
+    from: 'id',
+    to: 'template',
+  },
+]
+
+function applyMigrations(config: toml.JsonMap, migrations: Migration[]) {
+  for (const migration of migrations) {
+    const from = migration.from
+    const to = migration.to
+
+    if (config[from]) {
+      config[to] = config[from]
+      delete config[from]
+    }
+  }
+}
+
 export async function loadConfig(configPath: string) {
   const tomlRaw = await fsPromise.readFile(configPath, 'utf-8')
   const config = toml.parse(tomlRaw)
-  return (await configSchema.validate(config)) as E2BConfig
+
+  const migratedConfig = applyMigrations(config, migrations)
+
+  return (await configSchema.validate(migratedConfig)) as E2BConfig
 }
 
 export async function saveConfig(
@@ -52,7 +80,7 @@ export async function saveConfig(
     throw new Error(
       `E2B sandbox template config ${asFormattedSandboxTemplate(
         {
-          envID: config.id,
+          envID: config.template,
         },
         configPath,
       )} cannot be saved: ${err.message}`,
