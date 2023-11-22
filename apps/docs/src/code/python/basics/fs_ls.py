@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox(id="base")
+sandbox = Sandbox(template="base")
 
 # List the root directory
 content = sandbox.filesystem.list("/")  # $HighlightLine

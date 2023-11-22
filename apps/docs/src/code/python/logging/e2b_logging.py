@@ -30,7 +30,7 @@ e2b_logger.addHandler(handler)  # $HighlightLine
 
 
 def main():
-    sandbox = Sandbox(id="base", api_key=E2B_API_KEY)
+    sandbox = Sandbox(template="base", api_key=E2B_API_KEY)
     sandbox.filesystem.write("test.txt", "Hello World")
     sandbox.close()
 

@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox(id="base")
+sandbox = Sandbox(template="base")
 
 # File bytes will read file's content as bytes
 # `file_bytes` as a bytearray

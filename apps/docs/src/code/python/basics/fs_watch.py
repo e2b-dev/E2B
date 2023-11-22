@@ -12,7 +12,7 @@ def create_watcher(sandbox):  # $HighlightLine
     watcher.start()  # $HighlightLine
 
 
-sandbox = Sandbox(id="base")
+sandbox = Sandbox(template="base")
 
 create_watcher(sandbox)  # $HighlightLine
 

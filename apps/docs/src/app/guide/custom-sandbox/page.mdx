@@ -161,7 +161,7 @@ This way, we'll be able to spawn our custom sandbox and control it with the SDK.
 import { Sandbox } from '@e2b/sdk'
 
 // Spawn your custom sandbox
-const sandbox = await Sandbox.create({ id: 'my-agent-sandbox' }) // $HighlightLine
+const sandbox = await Sandbox.create({ template: 'my-agent-sandbox' }) // $HighlightLine
 
 // Interact with sandbox. Learn more here:
 // https://e2b.dev/docs/sandbox/overview
@@ -174,7 +174,7 @@ await sandbox.close()
 from e2b import Sandbox
 
 # Spawn your custom sandbox
-sandbox = Sandbox(id="my-agent-sandbox") # $HighlightLine
+sandbox = Sandbox(template="my-agent-sandbox") # $HighlightLine
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview

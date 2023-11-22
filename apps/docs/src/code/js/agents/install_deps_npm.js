@@ -2,7 +2,7 @@ import { Sandbox } from '@e2b/sdk'
 
 // 1. Start the playground sandbox
 const sandbox = await Sandbox.create({
-  id: 'base', // $HighlightLine
+  template: 'base', // $HighlightLine
   apiKey: process.env.E2B_API_KEY,
 })
 

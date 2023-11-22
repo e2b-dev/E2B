@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox(id="base")
+sandbox = Sandbox(template="base")
 
 open_port = 3000
 url = sandbox.get_hostname(open_port)  # $HighlightLine
