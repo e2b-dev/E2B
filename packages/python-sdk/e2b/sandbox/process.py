@@ -331,7 +331,7 @@ class ProcessManager:
                 params = sig.parameters.values()
                 try:
                     if len(params) == 0:
-                        on_exit(*[])
+                        on_exit()
                     elif len(params) == 1:
                         on_exit(*[output.exit_code or 0])
                     else:
