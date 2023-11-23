@@ -15,8 +15,16 @@ logging.basicConfig(level=logging.ERROR)
 def main():
     s = CloudBrowser(api_key=E2B_API_KEY)
 
-    stdout, stderr = s.go_to("https://www.reddit.com/r/programming/", timeout=60).get_content(timeout=60)
-    print(stdout, stderr)
+    s.go_to("https://www.reddit.com/r/programming/", timeout=60)
+    print(s.url)
+
+    s.click(s.get_element('img'))
+
+    print(s.url)
+
+    with open('test.png', 'wb') as f:
+        f.write(s.screenshot())
+
     s.close()
 
 
