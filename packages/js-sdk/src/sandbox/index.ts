@@ -75,6 +75,8 @@ export class Sandbox extends SandboxConnection {
 
   readonly _actions: Map<string, Action<any>> = new Map()
 
+  private _startCmd?: Promise<Process>
+
   private readonly onScanPorts?: ScanOpenPortsHandler
 
   protected constructor(opts?: SandboxOpts) {
@@ -699,6 +701,14 @@ export class Sandbox extends SandboxConnection {
         : undefined,
     )
 
+    this.handleStartCmdLogs()
+
     return this
+  }
+
+  private async handleStartCmdLogs() {
+    this._startCmd = this.process.start({
+      cmd: 'sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service'
+    })
   }
 }

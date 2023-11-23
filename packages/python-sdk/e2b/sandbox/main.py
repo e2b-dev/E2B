@@ -10,7 +10,7 @@ from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.filesystem import FilesystemManager
-from e2b.sandbox.process import ProcessManager, ProcessMessage
+from e2b.sandbox.process import Process, ProcessManager, ProcessMessage
 from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.sandbox.terminal import TerminalManager
 
@@ -95,6 +95,7 @@ class Sandbox(SandboxConnection):
             sandbox=self,
             on_scan_ports=on_scan_ports,
         )
+        self._start_cmd: Union[Process, None] = None
         self._terminal = TerminalManager(sandbox=self)
         self._filesystem = FilesystemManager(sandbox=self)
         self._process = ProcessManager(
@@ -198,6 +199,11 @@ class Sandbox(SandboxConnection):
 
         return OpenAI(Actions(self))
 
+    def _handle_start_cmd_logs(self):
+        self._start_cmd = self.process.start(
+            "sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service"
+        )
+
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Open the sandbox.
@@ -207,6 +213,7 @@ class Sandbox(SandboxConnection):
         logger.info(f"Opening sandbox {self._id}")
         super()._open(timeout=timeout)
         self._code_snippet._subscribe()
+        self._handle_start_cmd_logs()
         logger.info(f"Sandbox {self._id} opened")
         if self.cwd:
             self.filesystem.make_dir(self.cwd)
