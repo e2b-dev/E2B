@@ -54,6 +54,9 @@ class FilesystemManager:
         Write content to a file as a byte array.
         This can be used when you cannot represent the data as an UTF-8 string.
 
+        A new file will be created if it doesn't exist.
+        If the file already exists, it will be overwritten.
+
         :param path: path to a file
         :param timeout: timeout for the call
         :param content: byte array representing the content to write
@@ -89,6 +92,9 @@ class FilesystemManager:
     ) -> None:
         """
         Write content to a file.
+
+        A new file will be created if it doesn't exist.
+        If the file already exists, it will be overwritten.
 
         :param path: Path to a file
         :param content: Content to write

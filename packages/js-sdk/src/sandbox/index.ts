@@ -33,6 +33,32 @@ export interface Action<T = { [key: string]: any }> {
   (sandbox: Sandbox, args: T): string | Promise<string>
 }
 
+/**
+ * E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
+ * 
+ * That means:
+ * - Access to Linux OS
+ * - Using filesystem (create, list, and delete files and dirs)
+ * - Run processes
+ * - Sandboxed - you can run any code
+ * - Access to the internet
+ *
+ * Check usage docs - https://e2b.dev/docs/sandbox/overview
+ *
+ * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants. 
+ * 
+ * Use the {@link Sandbox.create} method to create a new sandbox.
+ * 
+ * @example
+ * ```ts
+ * import { Sandbox } from '@e2b/sdk'
+ * 
+ * const sandbox = await Sandbox.create()
+ * 
+ * await sandbox.close()
+ * ```
+ * 
+ */
 export class Sandbox extends SandboxConnection {
   readonly terminal: TerminalManager
   readonly filesystem: FilesystemManager
@@ -95,6 +121,8 @@ export class Sandbox extends SandboxConnection {
       },
       /**
        * Writes content to a new file on path.
+       * 
+
        * @param path Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
        * @param content Content to write to a new file
        * @param opts Call options
@@ -112,6 +140,9 @@ export class Sandbox extends SandboxConnection {
        * Write array of bytes to a file.
        * This can be used when you cannot represent the data as an UTF-8 string.
        *
+       * A new file will be created if it doesn't exist.
+       * If the file already exists, it will be overwritten.
+       * 
        * @param path path to a file
        * @param content byte array representing the content to write
        */
