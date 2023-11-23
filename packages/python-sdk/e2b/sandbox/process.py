@@ -1,5 +1,7 @@
 import logging
 import re
+import inspect
+
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Any,
@@ -8,8 +10,8 @@ from typing import (
     Dict,
     List,
     Optional,
+    Union,
 )
-
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
@@ -213,7 +215,7 @@ class ProcessManager:
         sandbox: SandboxConnection,
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Callable[[int], Any]] = None,
+        on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
     ):
         self._sandbox = sandbox
         self._process_cleanup: List[Callable[[], Any]] = []
@@ -232,7 +234,7 @@ class ProcessManager:
         cmd: str,
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Callable[[int], Any]] = None,
+        on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
         env_vars: Optional[EnvVars] = None,
         cwd: str = "",
         rootdir: str = "",  # DEPRECATED
@@ -325,8 +327,13 @@ class ProcessManager:
             if unsub_all:
                 unsub_all()
             if on_exit:
+                sig = inspect.signature(on_exit)
+                params = sig.parameters.values()
                 try:
-                    on_exit(output.exit_code or 0)
+                    if len(params) == 0:
+                        on_exit()
+                    else:
+                        on_exit(output.exit_code or 0)
                 except TypeError as error:
                     logger.exception(f"Error in on_exit callback: {error}")
             future_exit_handler_finish(output)
