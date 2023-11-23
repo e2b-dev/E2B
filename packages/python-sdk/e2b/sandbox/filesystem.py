@@ -23,6 +23,10 @@ class FileInfo(BaseModel):
 
 
 class FilesystemManager:
+    """
+    Manager for interacting with the filesystem in the sandbox.
+    """
+
     _service_name = "filesystem"
 
     def __init__(self, sandbox: SandboxConnection):
