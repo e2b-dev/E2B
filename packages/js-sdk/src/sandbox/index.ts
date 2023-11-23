@@ -722,6 +722,8 @@ export class Sandbox extends SandboxConnection {
   }
 
   private async handleStartCmdLogs() {
-    this._startCmd = this.process.start('sudo journalctl -f -o cat _SYSTEMD_UNIT=start_cmd.service')
+    this._startCmd = this.process.start({
+      cmd: 'sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service'
+    })
   }
 }
