@@ -60,8 +60,17 @@ export interface Action<T = { [key: string]: any }> {
  * 
  */
 export class Sandbox extends SandboxConnection {
+  /**
+   * Terminal manager used to create interactive terminals.
+   */
   readonly terminal: TerminalManager
+  /**
+   * Filesystem manager used to manage files.
+   */
   readonly filesystem: FilesystemManager
+  /**
+   * Process manager used to run commands.
+   */
   readonly process: ProcessManager
 
   readonly _actions: Map<string, Action<any>> = new Map()
@@ -75,13 +84,6 @@ export class Sandbox extends SandboxConnection {
 
     // Init Filesystem handler
     this.filesystem = {
-      /**
-       * List files in a directory.
-       * @param path Path to a directory
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       * @returns Array of files in a directory
-       */
       list: async (path, opts?: CallOpts) => {
         return (await this._call(
           filesystemService,
@@ -90,13 +92,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )) as FileInfo[]
       },
-      /**
-       * Reads the whole content of a file.
-       * @param path Path to a file
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       * @returns Content of a file
-       */
       read: async (path, opts?: CallOpts) => {
         return (await this._call(
           filesystemService,
@@ -105,12 +100,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )) as string
       },
-      /**
-       * Removes a file or a directory.
-       * @param path Path to a file or a directory
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       */
       remove: async (path, opts?: CallOpts) => {
         await this._call(
           filesystemService,
@@ -119,15 +108,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )
       },
-      /**
-       * Writes content to a new file on path.
-       * 
-
-       * @param path Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
-       * @param content Content to write to a new file
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       */
       write: async (path, content, opts?: CallOpts) => {
         await this._call(
           filesystemService,
@@ -136,16 +116,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )
       },
-      /**
-       * Write array of bytes to a file.
-       * This can be used when you cannot represent the data as an UTF-8 string.
-       *
-       * A new file will be created if it doesn't exist.
-       * If the file already exists, it will be overwritten.
-       * 
-       * @param path path to a file
-       * @param content byte array representing the content to write
-       */
       writeBytes: async (path: string, content: Uint8Array) => {
         // We need to convert the byte array to base64 string without using browser or node specific APIs.
         // This should be achieved by the node polyfills.
@@ -155,11 +125,6 @@ export class Sandbox extends SandboxConnection {
           base64Content,
         ])
       },
-      /**
-       * Reads the whole content of a file as an array of bytes.
-       * @param path path to a file
-       * @returns byte array representing the content of a file
-       */
       readBytes: async (path: string) => {
         const base64Content = (await this._call(
           filesystemService,
@@ -170,12 +135,6 @@ export class Sandbox extends SandboxConnection {
         // This should be achieved by the node polyfills.
         return Buffer.from(base64Content, 'base64')
       },
-      /**
-       * Creates a new directory and all directories along the way if needed on the specified pth.
-       * @param path Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       */
       makeDir: async (path, opts?: CallOpts) => {
         await this._call(
           filesystemService,
@@ -184,11 +143,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )
       },
-      /**
-       * Watches directory for filesystem events.
-       * @param path Path to a directory that will be watched
-       * @returns New watcher
-       */
       watchDir: (path: string) => {
         this.logger.debug?.(`Watching directory "${path}"`)
         const npath = normalizePath(_resolvePath(path))

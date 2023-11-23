@@ -111,6 +111,9 @@ export type TerminalOpts = {
   timeout?: number;
 };
 
+/**
+ * Manager for starting and interacting with terminal sessions in the sandbox.
+ */
 export interface TerminalManager {
-  readonly start: (opts: TerminalOpts) => Promise<Terminal>;
+  start(opts: TerminalOpts): Promise<Terminal>;
 }
