@@ -180,16 +180,6 @@ class Sandbox(SandboxConnection):
         return _action
 
     @property
-    def start_cmd(self):
-        """
-        Get the start cmd process that is running in the sandbox so you can inspect stdout and stderr.
-        If you haven't build the sandbox template with the start cmd option, the stdout/stderr will be empty.
-
-        :returns: Start cmd process object where you can inspect stdout and stderr
-        """
-        return self._start_cmd
-
-    @property
     def openai(self):
         """
         OpenAI integration that can be used to get output for the actions added in the sandbox.

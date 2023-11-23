@@ -426,17 +426,6 @@ export class Sandbox extends SandboxConnection {
   }
 
   /**
-   * Get the start cmd process that is running in the sandbox so you can inspect stdout and stderr.
-   * 
-   * If you haven't build the sandbox template with the start cmd option, the stdout/stderr will be empty.
-   *
-   * @returns Start cmd process object where you can inspect stdout and stderr
-   */
-  get startCmd() {
-    return this._startCmd
-  }
-
-  /**
    * URL that can be used to download or upload file to the sandbox via a multipart/form-data POST request.
    * This is useful if you're uploading files directly from the browser.
    * The file will be uploaded to the user's home directory with the same name.
