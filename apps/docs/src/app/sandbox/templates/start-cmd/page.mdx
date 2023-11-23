@@ -23,7 +23,7 @@ import { Sandbox } from '@e2b/sdk'
 
 // Spawn your custom sandbox
 const sandbox = await Sandbox.create({ 
-  id: 'my-agent-sandbox',
+  template: 'my-agent-sandbox',
 })
 
 // Get the stdout and stderr from the start command
@@ -37,7 +37,7 @@ await sandbox.close()
 from e2b import Sandbox
 
 # Spawn your custom sandbox
-sandbox = Sandbox(id="my-agent-sandbox")
+sandbox = Sandbox(template="my-agent-sandbox")
 
 # Get the stdout and stderr from the start command
 stdout = sandbox.start_cmd.stdout # $HighlightLine
