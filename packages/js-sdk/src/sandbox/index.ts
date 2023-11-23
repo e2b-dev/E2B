@@ -479,15 +479,10 @@ export class Sandbox extends SandboxConnection {
   static async create(opts: SandboxOpts): Promise<Sandbox>;
   static async create(optsOrID?: string | SandboxOpts) {
     const opts = typeof optsOrID === 'string' ? { id: optsOrID } : optsOrID
-    return new Sandbox(opts)
-      ._open({ timeout: opts?.timeout })
-      .then(async (sandbox) => {
-        if (opts?.cwd) {
-          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
-          await sandbox.filesystem.makeDir(opts.cwd)
-        }
-        return sandbox
-      })
+    const sandbox = new Sandbox(opts)
+    await sandbox._open({ timeout: opts?.timeout })
+
+    return sandbox
   }
 
   /**
@@ -529,15 +524,11 @@ export class Sandbox extends SandboxConnection {
     const instanceID = instanceIDAndClientID[0]
     const clientID = instanceIDAndClientID[1]
     opts.__sandbox = { instanceID, clientID, envID: 'unknown' }
-    return new Sandbox(opts)
-      ._open({ timeout: opts?.timeout })
-      .then(async (sandbox) => {
-        if (opts?.cwd) {
-          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
-          await sandbox.filesystem.makeDir(opts.cwd)
-        }
-        return sandbox
-      })
+
+    const sandbox = new Sandbox(opts)
+    await sandbox._open({ timeout: opts?.timeout })
+
+    return sandbox
   }
 
   /**
@@ -701,6 +692,11 @@ export class Sandbox extends SandboxConnection {
         : undefined,
     )
 
+    if (this.cwd) {
+      console.log(`Custom cwd for Sandbox set: "${this.cwd}"`)
+      await this.filesystem.makeDir(this.cwd)
+    }
+
     this.handleStartCmdLogs()
 
     return this
@@ -708,7 +704,9 @@ export class Sandbox extends SandboxConnection {
 
   private async handleStartCmdLogs() {
     this._startCmd = this.process.start({
-      cmd: 'sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service'
+      cmd: 'sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service',
+      envVars: {},
+      cwd: '/',
     })
   }
 }
