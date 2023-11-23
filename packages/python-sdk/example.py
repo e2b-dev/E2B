@@ -18,7 +18,7 @@ def main():
     s.go_to("https://www.reddit.com/r/programming/", timeout=60)
     print(s.url)
 
-    s.click(s.get_element('img'))
+    s.click(s.get_element('a'))
 
     print(s.url)
 

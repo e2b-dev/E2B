@@ -130,7 +130,7 @@ class CloudBrowser(BaseTemplate):
         code = f"""
             const element = await page.$('{element.selector}');
             const text = await page.evaluate(element => element.textContent, element);
-            console.log(text)
+            console.log(text.replace(/\\s+/g, ' ').trim())
         """
         return self._run_puppeteer_code(code, timeout=timeout)
 
@@ -177,7 +177,7 @@ class CloudBrowser(BaseTemplate):
 
         self.filesystem.write(f"/home/user/{code_file_path}", self._wrap_function(code))
 
-        process = self.process.start(f"node {code_file_path}", timeout=timeout, on_stderr=print, on_stdout=print)
+        process = self.process.start(f"node {code_file_path}", timeout=timeout)
         process.wait()
 
         self.filesystem.remove(code_file_path)
@@ -185,15 +185,15 @@ class CloudBrowser(BaseTemplate):
 
     @staticmethod
     def _wrap_function(code: str):
-        return """
+        return f"""
         import puppeteer from "puppeteer";
 
-        async function main(){ 
-            const browser = await puppeteer.connect({browserWSEndpoint: process.env.WS_ENDPOINT});
+        async function main(){{ 
+            const browser = await puppeteer.connect({{browserWSEndpoint: process.env.WS_ENDPOINT}});
             const page = (await browser.pages())[0];
-            %s
+            {code}
             await browser.disconnect();
-        }
+        }}
 
         await main();
-        """ % code
+        """
