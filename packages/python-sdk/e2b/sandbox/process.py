@@ -333,7 +333,7 @@ class ProcessManager:
                     if len(params) == 0:
                         on_exit()
                     elif len(params) == 1:
-                        on_exit(*[output.exit_code or 0])
+                        on_exit(output.exit_code or 0)
                     else:
                         raise TypeError(
                             f"on_exit callback must take 0 or 1 arguments, not {len(params)}"
