@@ -1,5 +1,7 @@
 import logging
 import re
+import inspect
+
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Any,
@@ -10,7 +12,6 @@ from typing import (
     Optional,
     Union,
 )
-
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
@@ -326,8 +327,17 @@ class ProcessManager:
             if unsub_all:
                 unsub_all()
             if on_exit:
+                sig = inspect.signature(on_exit)
+                params = sig.parameters.values()
                 try:
-                    on_exit(*[output.exit_code or 0])
+                    if len(params) == 0:
+                        on_exit(*[])
+                    elif len(params) == 1:
+                        on_exit(*[output.exit_code or 0])
+                    else:
+                        raise TypeError(
+                            f"on_exit callback must take 0 or 1 arguments, not {len(params)}"
+                        )
                 except TypeError as error:
                     logger.exception(f"Error in on_exit callback: {error}")
             future_exit_handler_finish(output)
