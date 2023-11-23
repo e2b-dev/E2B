@@ -1,6 +1,7 @@
 # Start Command
 
 Custom sandboxes allow you to specify a command that will be running when the sandbox is spawned.
+
 This way you can run a command that will start your app, or run a command that will start a specific process.
 
 
@@ -21,7 +22,9 @@ You can check the logs from the start command by using the SDKs:
 import { Sandbox } from '@e2b/sdk'
 
 // Spawn your custom sandbox
-const sandbox = await Sandbox.create({ id: 'my-agent-sandbox' })
+const sandbox = await Sandbox.create({ 
+  id: 'my-agent-sandbox',
+})
 
 // Get the stdout and stderr from the start command
 const { stderr, stdout } = await sandbox.startCmd // $HighlightLine
