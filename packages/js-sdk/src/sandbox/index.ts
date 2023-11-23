@@ -26,7 +26,7 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   timeout?: number;
   onStdout?: (out: ProcessMessage) => Promise<void> | void;
   onStderr?: (out: ProcessMessage) => Promise<void> | void;
-  onExit?: () => Promise<void> | void;
+  onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
 }
 
 export interface Action<T = { [key: string]: any }> {
