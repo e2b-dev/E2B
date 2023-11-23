@@ -39,9 +39,9 @@ class CloudBrowser(BaseTemplate):
         return self
 
     def get_content(
-            self,
-            element: Element = None,
-            timeout: Optional[float] = TIMEOUT,
+        self,
+        element: Element = None,
+        timeout: Optional[float] = TIMEOUT,
     ) -> Tuple[str, str]:
         code = ""
         if element:
@@ -53,7 +53,9 @@ class CloudBrowser(BaseTemplate):
         """
         return self._run_puppeteer_code(code, timeout=timeout)
 
-    def get_element(self, selector: str, element: Element = None, timeout: Optional[float] = TIMEOUT) -> Element:
+    def get_element(
+        self, selector: str, element: Element = None, timeout: Optional[float] = TIMEOUT
+    ) -> Element:
         if element:
             selector = f"{element.selector} {selector}"
 
@@ -136,8 +138,8 @@ class CloudBrowser(BaseTemplate):
 
     def screenshot(
         self,
-            element: Element = None,
-            timeout: Optional[float] = TIMEOUT,
+        element: Element = None,
+        timeout: Optional[float] = TIMEOUT,
     ) -> bytes:
         path = f"/home/user/screenshot-{time.strftime('%Y%m%d-%H%M%S')}.png"
 
@@ -162,9 +164,7 @@ class CloudBrowser(BaseTemplate):
         element: Element,
         timeout: Optional[float] = TIMEOUT,
     ) -> Tuple[str, str]:
-        code = f"""
-            await page.click('{element.selector}')
-        """
+        code = f"""await page.click('{element.selector}')"""
         return self._run_puppeteer_code(code, timeout=timeout)
 
     def install_js_packages(
@@ -172,7 +172,9 @@ class CloudBrowser(BaseTemplate):
     ) -> None:
         self._install_packages("npm install", package_names, timeout=timeout)
 
-    def _run_puppeteer_code(self, code: str, timeout: Optional[float] = TIMEOUT) -> Tuple[str, str]:
+    def _run_puppeteer_code(
+        self, code: str, timeout: Optional[float] = TIMEOUT
+    ) -> Tuple[str, str]:
         code_file_path = f".index-{time.strftime('%Y%m%d-%H%M%S')}.mjs"
 
         self.filesystem.write(f"/home/user/{code_file_path}", self._wrap_function(code))

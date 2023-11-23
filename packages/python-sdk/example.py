@@ -18,11 +18,11 @@ def main():
     s.go_to("https://www.reddit.com/r/programming/", timeout=60)
     print(s.url)
 
-    s.click(s.get_element('a'))
+    s.click(s.get_element("a"))
 
     print(s.url)
 
-    with open('test.png', 'wb') as f:
+    with open("test.png", "wb") as f:
         f.write(s.screenshot())
 
     s.close()

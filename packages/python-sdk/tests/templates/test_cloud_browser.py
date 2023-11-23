@@ -1,5 +1,6 @@
 from e2b.templates.cloud_browser import CloudBrowser
 
+
 # TODO: rewrite
 def test_run_playwright():
     s = CloudBrowser()
