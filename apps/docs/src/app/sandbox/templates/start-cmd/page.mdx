@@ -23,11 +23,12 @@ import { Sandbox } from '@e2b/sdk'
 
 // Spawn your custom sandbox
 const sandbox = await Sandbox.create({ 
-  template: 'my-agent-sandbox',
+  id: 'my-agent-sandbox',
+  // If you specify onStderr and onStdout handlers when spawning the sandbox
+  // you will see logs from the start command.
+  onStderr: output => console.log("stderr", output.line), // $HighlightLine
+  onStdout: output => console.log("stdout", output.line), // $HighlightLine
 })
-
-// Get the stdout and stderr from the start command
-const { stderr, stdout } = await sandbox.startCmd // $HighlightLine
 
 // Close sandbox once done
 await sandbox.close()
@@ -37,11 +38,13 @@ await sandbox.close()
 from e2b import Sandbox
 
 # Spawn your custom sandbox
-sandbox = Sandbox(template="my-agent-sandbox")
-
-# Get the stdout and stderr from the start command
-stdout = sandbox.start_cmd.stdout # $HighlightLine
-stderr = sandbox.start_cmd.stderr # $HighlightLine
+sandbox = Sandbox(
+  id="my-agent-sandbox",
+  # If you specify on_stderr and on_stdout handlers when spawning the sandbox
+  # you will see logs from the start command.
+  on_stderr=lambda output: print("stderr", output.line),  # $HighlightLine
+  on_stdout=lambda output: print("stdout", output.line),  # $HighlightLine
+)
 
 # Close sandbox once done
 sandbox.close()
@@ -56,7 +59,7 @@ You can find the current start command in the `e2b.toml`:
 <CodeGroup isFileName title="e2b.toml" isRunnable={false}>
 ```toml
 # This is a config for E2B sandbox template
-template = "1wdqsf9le9gk21ztb4mo"
+id = "1wdqsf9le9gk21ztb4mo"
 dockerfile = "e2b.Dockerfile"
 name = "my-agent-sandbox"
 start_cmd = "npm start"
