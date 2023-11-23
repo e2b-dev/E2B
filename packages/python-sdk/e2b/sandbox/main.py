@@ -200,7 +200,9 @@ class Sandbox(SandboxConnection):
 
     def _handle_start_cmd_logs(self):
         self._start_cmd = self.process.start(
-            "sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service"
+            "sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service",
+            cwd="/",
+            env_vars={},
         )
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
@@ -212,10 +214,10 @@ class Sandbox(SandboxConnection):
         logger.info(f"Opening sandbox {self._id}")
         super()._open(timeout=timeout)
         self._code_snippet._subscribe()
-        self._handle_start_cmd_logs()
         logger.info(f"Sandbox {self._id} opened")
         if self.cwd:
             self.filesystem.make_dir(self.cwd)
+        self._handle_start_cmd_logs()
 
     def _close_services(self):
         self._terminal._close()

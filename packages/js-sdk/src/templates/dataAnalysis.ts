@@ -29,15 +29,10 @@ export class DataAnalysis extends Sandbox {
 
   static override async create(): Promise<DataAnalysis>;
   static override async create(opts?: Omit<SandboxOpts, 'id'>) {
-    return new DataAnalysis({ ...opts })
-      ._open({ timeout: opts?.timeout })
-      .then(async (sandbox) => {
-        if (opts?.cwd) {
-          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
-          await sandbox.filesystem.makeDir(opts.cwd)
-        }
-        return sandbox
-      })
+    const sandbox = new DataAnalysis({ ...opts })
+    await sandbox._open({ timeout: opts?.timeout })
+
+    return sandbox
   }
 
   async runPython(code: string, opts: RunPythonOpts = {}) {
