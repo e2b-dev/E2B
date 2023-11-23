@@ -164,6 +164,9 @@ export interface ProcessOpts {
   timeout?: number;
 }
 
+/**
+ * Manager for starting and interacting with processes in the sandbox.
+ */
 export interface ProcessManager {
   /**
    * Starts a new process.
