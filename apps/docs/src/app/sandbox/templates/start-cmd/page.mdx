@@ -1,19 +1,20 @@
 # Start Command
 
-Custom sandboxes allow you to specify a command that will be running when the sandbox is spawned.
+Custom sandboxes allow you to specify a command that will be running when a sandbox is spawned.
 
 This way you can run a command that will start your app, or run a command that will start a specific process.
 
 
 ## How to add a start command
 
-When you are building a sandbox template you can specify the start command by using the `-c` flag:
+When you are building a sandbox template you can specify the start command by using the [`-c`](/cli/commands#build) option:
 
 ```bash
 e2b build -c "npm start"
 ```
 
 After the sandbox template is built, when you spawn a sandbox the start command will be running if there was no error when it tried to start.
+
 You can check the logs from the start command by using the SDKs:
 
 
@@ -54,7 +55,8 @@ sandbox.close()
 
 ### Sandbox template config
 
-You can find the current start command in the `e2b.toml`:
+
+You can find the start command for the sandbox template in the `e2b.toml`:
 
 <CodeGroup isFileName title="e2b.toml" isRunnable={false}>
 ```toml
@@ -62,6 +64,6 @@ You can find the current start command in the `e2b.toml`:
 id = "1wdqsf9le9gk21ztb4mo"
 dockerfile = "e2b.Dockerfile"
 name = "my-agent-sandbox"
-start_cmd = "npm start"
+start_cmd = "npm start"  # $HighlightLine
 ```
 </CodeGroup>
