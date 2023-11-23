@@ -22,12 +22,13 @@ class Sandbox(SandboxConnection):
     E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
 
     That means:
-
     - Access to Linux OS
     - Using filesystem (create, list, and delete files and dirs)
     - Run processes
     - Sandboxed - you can run any code
     - Access to the internet
+
+    Check usage docs - https://e2b.dev/docs/sandbox/overview
 
     These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
     """
