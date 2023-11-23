@@ -14,7 +14,7 @@ from .filesystem_watcher import (
     FilesystemOperation,
     FilesystemWatcher,
 )
-from .main import Sandbox
+from .main import Sandbox, Action
 from .process import (
     Process,
     ProcessManager,

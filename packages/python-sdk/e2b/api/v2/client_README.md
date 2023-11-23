@@ -20,7 +20,6 @@ To be able to use it, you will need these dependencies in your own package that 
 * urllib3 >= 1.25.3
 * python-dateutil
 * pydantic
-* aenum
 
 ## Getting Started
 

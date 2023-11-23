@@ -1,8 +1,9 @@
 name: Periodic tests via Python SDK
 
 on:
-  schedule:
-    - cron: "17 */8 * * *"
+  workflow_dispatch: 
+  # schedule:
+  #   - cron: "17 */8 * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

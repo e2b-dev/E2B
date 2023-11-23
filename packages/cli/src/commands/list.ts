@@ -4,6 +4,7 @@ import * as e2b from '@e2b/sdk'
 
 import { ensureAccessToken } from 'src/api'
 import { listAliases } from '../utils/format'
+import { sortEnvsAliases } from 'src/utils/templateSort'
 
 const listTemplates = e2b.withAccessToken(
   e2b.api.path('/envs').method('get').create(),
@@ -17,8 +18,11 @@ export const listCommand = new commander.Command('list')
       const accessToken = ensureAccessToken()
       process.stdout.write('\n')
 
-      const templatesResponse = await listTemplates(accessToken, {})
-      const templates = templatesResponse.data
+      const templates = await listSandboxTemplates({ accessToken })
+
+      for (const template of templates) {
+        sortEnvsAliases(template.aliases)
+      }
 
       if (!templates?.length) {
         console.log('No templates found.')
@@ -27,11 +31,13 @@ export const listCommand = new commander.Command('list')
           title: 'Sandbox templates',
           columns: [
             { name: 'envID', alignment: 'left', title: 'Template ID' },
-            { name: 'aliases', alignment: 'left', title: 'Template Name', color: 'blue' },
+            { name: 'aliases', alignment: 'left', title: 'Template Name', color: 'orange' },
           ],
           disabledColumns: ['public', 'buildID'],
           rows: templates.map((template) => ({ ...template, aliases: listAliases(template.aliases) })),
-          sort: (row1, row2) => row1.envID.localeCompare(row2.envID),
+          colorMap: {
+            orange: '\x1b[38;5;216m',
+          },
         })
         table.printTable()
 
@@ -42,3 +48,10 @@ export const listCommand = new commander.Command('list')
       process.exit(1)
     }
   })
+
+export async function listSandboxTemplates({
+  accessToken,
+}: { accessToken: string }): Promise<e2b.components['schemas']['Environment'][]> {
+  const templates = await listTemplates(accessToken, {})
+  return templates.data
+}

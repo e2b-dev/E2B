@@ -4,7 +4,6 @@ import * as fsPromise from 'fs/promises'
 import * as fs from 'fs'
 import * as path from 'path'
 
-import { getFiles } from '../utils/filesystem'
 import { asFormattedSandboxTemplate, asLocalRelative } from 'src/utils/format'
 
 export const configName = 'e2b.toml'
@@ -17,6 +16,7 @@ export const configSchema = yup.object({
   name: yup.string(),
   id: yup.string().required(),
   dockerfile: yup.string().required(),
+  start_cmd: yup.string(),
 })
 
 export type E2BConfig = yup.InferType<typeof configSchema>;
@@ -42,7 +42,6 @@ export async function saveConfig(
       }
     }
 
-    // TODO: check if await should be here
     const validatedConfig: any = await configSchema.validate(config, {
       stripUnknown: true,
     })
@@ -67,24 +66,4 @@ export async function deleteConfig(configPath: string) {
 
 export function getConfigPath(root: string) {
   return path.join(root, configName)
-}
-
-export async function getNestedConfigs(rootPath: string) {
-  return getFiles(rootPath, { name: configName })
-}
-
-export async function loadConfigs(rootPath: string, nested?: boolean) {
-  const configPaths = nested
-    ? (await getNestedConfigs(rootPath)).map((c) => c.path)
-    : [getConfigPath(rootPath)]
-
-  return Promise.all(
-    configPaths.map(async (configPath) => {
-      const config = await loadConfig(configPath)
-      return {
-        ...config,
-        configPath,
-      }
-    }),
-  )
 }

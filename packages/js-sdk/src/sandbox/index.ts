@@ -10,6 +10,7 @@ import { Process, ProcessManager, ProcessMessage, ProcessOpts, ProcessOutput, pr
 import { CallOpts, SandboxConnection, SandboxConnectionOpts } from './sandboxConnection'
 import { Terminal, TerminalManager, TerminalOpts, TerminalOutput, terminalService } from './terminal'
 import { resolvePath } from '../utils/filesystem'
+import { Actions } from '../templates/openai'
 import { CurrentWorkingDirectoryDoesntExistError } from '../error'
 
 export type DownloadFileFormat =
@@ -28,12 +29,53 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   onExit?: () => Promise<void> | void;
 }
 
+export interface Action<T = { [key: string]: any }> {
+  (sandbox: Sandbox, args: T): string | Promise<string>
+}
+
+/**
+ * E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
+ * 
+ * That means:
+ * - Access to Linux OS
+ * - Using filesystem (create, list, and delete files and dirs)
+ * - Run processes
+ * - Sandboxed - you can run any code
+ * - Access to the internet
+ *
+ * Check usage docs - https://e2b.dev/docs/sandbox/overview
+ *
+ * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants. 
+ * 
+ * Use the {@link Sandbox.create} method to create a new sandbox.
+ * 
+ * @example
+ * ```ts
+ * import { Sandbox } from '@e2b/sdk'
+ * 
+ * const sandbox = await Sandbox.create()
+ * 
+ * await sandbox.close()
+ * ```
+ * 
+ */
 export class Sandbox extends SandboxConnection {
+  /**
+   * Terminal manager used to create interactive terminals.
+   */
   readonly terminal: TerminalManager
+  /**
+   * Filesystem manager used to manage files.
+   */
   readonly filesystem: FilesystemManager
+  /**
+   * Process manager used to run commands.
+   */
   readonly process: ProcessManager
 
-  private onScanPorts?: ScanOpenPortsHandler
+  readonly _actions: Map<string, Action<any>> = new Map()
+
+  private readonly onScanPorts?: ScanOpenPortsHandler
 
   protected constructor(opts?: SandboxOpts) {
     opts = opts || {}
@@ -42,13 +84,6 @@ export class Sandbox extends SandboxConnection {
 
     // Init Filesystem handler
     this.filesystem = {
-      /**
-       * List files in a directory.
-       * @param path Path to a directory
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       * @returns Array of files in a directory
-       */
       list: async (path, opts?: CallOpts) => {
         return (await this._call(
           filesystemService,
@@ -57,13 +92,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )) as FileInfo[]
       },
-      /**
-       * Reads the whole content of a file.
-       * @param path Path to a file
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       * @returns Content of a file
-       */
       read: async (path, opts?: CallOpts) => {
         return (await this._call(
           filesystemService,
@@ -72,12 +100,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )) as string
       },
-      /**
-       * Removes a file or a directory.
-       * @param path Path to a file or a directory
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       */
       remove: async (path, opts?: CallOpts) => {
         await this._call(
           filesystemService,
@@ -86,13 +108,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )
       },
-      /**
-       * Writes content to a new file on path.
-       * @param path Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
-       * @param content Content to write to a new file
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       */
       write: async (path, content, opts?: CallOpts) => {
         await this._call(
           filesystemService,
@@ -101,13 +116,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )
       },
-      /**
-       * Write array of bytes to a file.
-       * This can be used when you cannot represent the data as an UTF-8 string.
-       *
-       * @param path path to a file
-       * @param content byte array representing the content to write
-       */
       writeBytes: async (path: string, content: Uint8Array) => {
         // We need to convert the byte array to base64 string without using browser or node specific APIs.
         // This should be achieved by the node polyfills.
@@ -117,11 +125,6 @@ export class Sandbox extends SandboxConnection {
           base64Content,
         ])
       },
-      /**
-       * Reads the whole content of a file as an array of bytes.
-       * @param path path to a file
-       * @returns byte array representing the content of a file
-       */
       readBytes: async (path: string) => {
         const base64Content = (await this._call(
           filesystemService,
@@ -132,12 +135,6 @@ export class Sandbox extends SandboxConnection {
         // This should be achieved by the node polyfills.
         return Buffer.from(base64Content, 'base64')
       },
-      /**
-       * Creates a new directory and all directories along the way if needed on the specified pth.
-       * @param path Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       */
       makeDir: async (path, opts?: CallOpts) => {
         await this._call(
           filesystemService,
@@ -146,11 +143,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )
       },
-      /**
-       * Watches directory for filesystem events.
-       * @param path Path to a directory that will be watched
-       * @returns New watcher
-       */
       watchDir: (path: string) => {
         this.logger.debug?.(`Watching directory "${path}"`)
         const npath = normalizePath(_resolvePath(path))
@@ -266,13 +258,8 @@ export class Sandbox extends SandboxConnection {
 
     // Init Process handler
     this.process = {
-      /**
-       * Starts a new process.
-       * @param optsOrID Process options or Process ID
-       * @returns New process
-       */
-      start: async (optsOrID: string | ProcessOpts) => {
-        const opts = typeof optsOrID === 'string' ? { cmd: optsOrID } : optsOrID
+      start: async (optsOrCmd: string | ProcessOpts) => {
+        const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
         const start = async ({
           cmd,
           onStdout,
@@ -410,9 +397,9 @@ export class Sandbox extends SandboxConnection {
         const timeout = opts.timeout
         return await withTimeout(start, timeout)(opts)
       },
-
-      startAndWait: async (optsOrID: string | ProcessOpts) => {
-        const process = await this.process.start(optsOrID)
+      startAndWait: async (optsOrCmd: string | ProcessOpts) => {
+        const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
+        const process = await this.process.start(opts)
         return await process.wait()
       }
     }
@@ -427,15 +414,34 @@ export class Sandbox extends SandboxConnection {
    * The file will be uploaded to the user's home directory with the same name.
    * If a file with the same name already exists, it will be overwritten.
    */
-  public get fileURL() {
+  get fileURL() {
     const protocol = this.opts.__debug_devEnv === 'local' ? 'http' : 'https'
     const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
     return `${protocol}://${hostname}${FILE_ROUTE}`
   }
 
   /**
-   * Creates a new Sandbox.
-   * @param optsOrID Sandbox options or Sandbox ID
+   * Returns a map of added actions.
+   *
+   * @returns Map of added actions
+   */
+  get actions() {
+    return new Map(this._actions)
+  }
+
+  /**
+   * OpenAI integration that can be used to get output for the actions added in the sandbox.
+   *
+   * @returns OpenAI integration
+   */
+  get openai() {
+    return {
+      actions: new Actions(this),
+    } as const
+  }
+
+  /**
+   * Creates a new Sandbox from the default `base` sandbox template.
    * @returns New Sandbox
    *
    * @example
@@ -443,6 +449,32 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.create()
    * ```
    */
+  static async create(): Promise<Sandbox>;
+  /**
+   * Creates a new Sandbox from the template with the specified ID.
+   * @param id Sandbox ID
+   * @returns New Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create("sandboxID")
+   * ```
+   */
+  static async create(id: string): Promise<Sandbox>;
+  /**
+   * Creates a new Sandbox from the specified options.
+   * @param opts Sandbox options
+   * @returns New Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create({
+   *   id: "sandboxID",
+   *   onStdout: console.log,
+   * })
+   * ```
+   */
+  static async create(opts: SandboxOpts): Promise<Sandbox>;
   static async create(optsOrID?: string | SandboxOpts) {
     const opts = typeof optsOrID === 'string' ? { id: optsOrID } : optsOrID
     return new Sandbox(opts)
@@ -458,7 +490,7 @@ export class Sandbox extends SandboxConnection {
 
   /**
    * Reconnects to an existing Sandbox.
-   * @param sandboxIDorOpts Sandbox ID or Sandbox options
+   * @param sandboxID Sandbox ID
    * @returns Existing Sandbox
    *
    * @example
@@ -466,12 +498,24 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
-  static async reconnect(
-    sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }
-  ) {
+  static async reconnect(sandboxID: string): Promise<Sandbox>;
+  /**
+   * Reconnects to an existing Sandbox.
+   * @param opts Sandbox options
+   * @returns Existing Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.reconnect({
+   *   sandboxID,
+   * })
+   * ```
+   */
+  static async reconnect(opts: Omit<SandboxOpts, 'id'> & { sandboxID: string }): Promise<Sandbox>;
+  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }) {
     let sandboxID: string
     let opts: SandboxOpts
-    if (typeof sandboxIDorOpts === 'string'){
+    if (typeof sandboxIDorOpts === 'string') {
       sandboxID = sandboxIDorOpts
       opts = {}
     } else {
@@ -494,21 +538,75 @@ export class Sandbox extends SandboxConnection {
       })
   }
 
-  protected override async _open(opts: CallOpts) {
-    await super._open(opts)
+  /**
+   * Add a new action. The name of the action is automatically extracted from the function name.
+   *
+   * You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
+   *
+   * @param action Action handler
+   * @returns Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * sandbox.addAction('readFile', (sandbox, args) => sandbox.filesystem.read(args.path))
+   * ```
+   */
+  addAction<T = { [name: string]: any }>(action: Action<T>): this;
+  /**
+   * Add a new action with a specified name.
+   *
+   * You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
+   *
+   * @param name Action name
+   * @param action Action handler
+   * @returns Sandbox
+   *
+   * @example
+   * ```ts
+   * async function readFile(sandbox: Sandbox, args: any) {
+   *   return sandbox.filesystem.read(args.path)
+   * }
+   *
+   * const sandbox = await Sandbox.create()
+   * sandbox.addAction(readFile)
+   * ```
+   */
+  addAction<T = { [name: string]: any }>(name: string, action: Action<T>): this;
+  addAction<T = { [name: string]: any }>(actionOrName: string | Action<T>, action?: Action<T>): this {
+    if (typeof actionOrName === 'string') {
+      if (!action) throw new Error('Action is required')
+      this._actions.set(actionOrName, action)
+      return this
+    } else if (typeof actionOrName === 'function') {
+      action = actionOrName
 
-    const portsHandler = this.onScanPorts
-      ? (ports: { State: string; Ip: string; Port: number }[]) =>
-        this.onScanPorts?.(
-          ports.map((p) => ({ ip: p.Ip, port: p.Port, state: p.State })),
-        )
-      : undefined
+      if (!action.name) {
+        throw new Error('Action name is required')
+      }
 
-    await this._handleSubscriptions(
-      portsHandler
-        ? this._subscribe(codeSnippetService, portsHandler, 'scanOpenedPorts')
-        : undefined,
-    )
+      this._actions.set(action.name, action)
+    } else {
+      throw new Error('Action or action name and action is required')
+    }
+
+    return this
+  }
+
+  /**
+   * Remove an action.
+   * @param name Action name
+   * @returns Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * sandbox.addAction('hello', (sandbox, args) => 'Hello World')
+   * sandbox.removeAction('hello')
+   * ```
+   */
+  removeAction(name: string) {
+    this._actions.delete(name)
 
     return this
   }
@@ -547,6 +645,18 @@ export class Sandbox extends SandboxConnection {
     return `/home/user/${filename}`
   }
 
+  /**
+   * Downloads a file from the sandbox.
+   * @param remotePath Path to a file on the sandbox
+   * @param format Format of the downloaded file
+   * @returns File content
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * const content = await sandbox.downloadFile('/home/user/file.txt')
+   * ```
+   */
   async downloadFile(remotePath: string, format?: DownloadFileFormat) {
     remotePath = encodeURIComponent(remotePath)
 
@@ -571,5 +681,24 @@ export class Sandbox extends SandboxConnection {
       default:
         return await response.arrayBuffer()
     }
+  }
+
+  protected override async _open(opts: CallOpts) {
+    await super._open(opts)
+
+    const portsHandler = this.onScanPorts
+      ? (ports: { State: string; Ip: string; Port: number }[]) =>
+        this.onScanPorts?.(
+          ports.map((p) => ({ ip: p.Ip, port: p.Port, state: p.State })),
+        )
+      : undefined
+
+    await this._handleSubscriptions(
+      portsHandler
+        ? this._subscribe(codeSnippetService, portsHandler, 'scanOpenedPorts')
+        : undefined,
+    )
+
+    return this
   }
 }

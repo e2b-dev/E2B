@@ -17,22 +17,26 @@ type UserContextType = {
   isLoading: boolean;
   session: Session | null;
   user:
-    | (User & {
+  | (User & {
     teams: Team[];
     apiKeys: any[];
     accessToken: string;
     defaultTeamId: string;
+    pricingTier: {
+      id: string,
+      isPromo: boolean,
+      endsAt: string
+    }
   })
-    | null;
+  | null;
   error: Error | null;
 };
-
 
 export const UserContext = createContext(undefined)
 
 export const CustomUserContextProvider = (props) => {
   const supabase = createPagesBrowserClient()
-  const [session, setSession] = useState(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState(null)
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -91,6 +95,9 @@ export const CustomUserContextProvider = (props) => {
 
   useEffect(() => {
     async function getUserCustom() {
+      if (!session) return
+      if (!session.user.id) return
+
       // @ts-ignore
       const { data: userTeams, teamsError } = await supabase
         .from('users_teams')
@@ -99,8 +106,40 @@ export const CustomUserContextProvider = (props) => {
       if (teamsError) Sentry.captureException(teamsError)
       // TODO: Adjust when user can be part of multiple teams
       // @ts-ignore
-      const teams = userTeams?.map(userTeam=> userTeam.teams as Team)
-      const defaultTeam= teams?.filter(team => team.is_default)?.[0]
+      const teams = userTeams?.map(userTeam => userTeam.teams as Team)
+      const defaultTeam = teams?.find(team => team.is_default)
+
+      if (!defaultTeam) {
+        console.error('No default team found for user', session?.user.id)
+        return
+      }
+
+      // Fetch user's pricing tier
+      const { data, error: pricingTierError } = await supabase
+        .from('teams')
+        .select('tier')
+        .eq('id', defaultTeam.id)
+      if (pricingTierError) Sentry.captureException(pricingTierError)
+      const pricingTier: string | undefined = data?.[0]?.tier
+
+      if (!pricingTier) {
+        console.error('No pricing tier found for team', defaultTeam.id)
+        return
+      }
+
+      const isPromoTier = pricingTier.startsWith('promo')
+      let promoEndsAt: string | null = null
+      // Fetch promo end date
+      if (isPromoTier) {
+        console.log('pricingTier', pricingTier)
+        const { data: promoData, error: promoError } = await supabase
+          .from('tiers')
+          .select('promo_ends_at')
+          .eq('id', pricingTier)
+        if (promoError) Sentry.captureException(promoError)
+        console.log('promoData', promoData)
+        promoEndsAt = promoData?.[0]?.promo_ends_at
+      }
 
       const { data: apiKeys, error: apiKeysError } = await supabase
         .from('team_api_keys')
@@ -132,6 +171,11 @@ export const CustomUserContextProvider = (props) => {
         accessToken: accessToken?.access_token,
         defaultTeamId,
         error: teamsError || apiKeysError,
+        pricingTier: {
+          id: pricingTier,
+          isPromo: isPromoTier,
+          endsAt: promoEndsAt,
+        },
       })
       setIsLoading(false)
     }

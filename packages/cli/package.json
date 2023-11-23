@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "0.1.11",
+  "version": "0.1.14",
   "description": "CLI for managing e2b sandbox templates",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -28,7 +28,7 @@
     "update-deps": "ncu -u && pnpm i"
   },
   "devDependencies": {
-    "@types/common-tags": "^1.8.2",
+    "@types/inquirer": "^9.0.7",
     "@types/node": "^18.18.6",
     "@types/tar-fs": "^2.0.3",
     "@types/update-notifier": "6.0.5",
@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "@balena/dockerignore": "^1.0.2",
-    "@e2b/sdk": "^0.10.0",
+    "@e2b/sdk": "^0.11.1",
     "@iarna/toml": "^2.2.5",
     "@nodelib/fs.walk": "^2.0.0",
     "async-listen": "^3.0.1",
@@ -57,9 +57,9 @@
     "chalk": "^5.3.0",
     "cli-highlight": "^2.1.11",
     "commander": "^11.1.0",
-    "common-tags": "^1.8.2",
     "console-table-printer": "^2.11.2",
     "ignore": "^5.2.4",
+    "inquirer": "^9.2.12",
     "open": "^9.1.0",
     "strip-ansi": "^7.1.0",
     "tar-fs": "^3.0.4",

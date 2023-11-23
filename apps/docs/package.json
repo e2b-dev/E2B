@@ -13,7 +13,7 @@
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
     "@algolia/autocomplete-core": "^1.7.3",
-    "@e2b/sdk": "^0.10.0",
+    "@e2b/sdk": "^0.11.2",
     "@headlessui/react": "^1.7.15",
     "@headlessui/tailwindcss": "^0.2.0",
     "@mdx-js/loader": "^2.1.5",
@@ -54,6 +54,7 @@
     "remark-mdx": "^2.3.0",
     "shiki": "^0.11.1",
     "simple-functional-loader": "^1.2.1",
+    "swr": "^2.2.4",
     "tailwind-merge": "^1.14.0",
     "tailwindcss": "^3.3.3",
     "tailwindcss-animate": "^1.0.7",

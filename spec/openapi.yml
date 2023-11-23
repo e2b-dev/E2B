@@ -201,13 +201,11 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - duration
               properties:
                 duration:
                   description: Duration for which the instance should be kept alive in seconds
                   type: integer
-                  maximum: 3600  # 1 hour
+                  maximum: 3600 # 1 hour
                   minimum: 0
       parameters:
         - $ref: "#/components/parameters/instanceID"
@@ -263,6 +261,9 @@ paths:
                 dockerfile:
                   type: string
                   description: Dockerfile content
+                startCmd:
+                  description: Start command to execute in the template after the build
+                  type: string
             encoding:
               buildContext:
                 contentType: application/octet-stream
@@ -307,6 +308,9 @@ paths:
                 dockerfile:
                   type: string
                   description: Dockerfile content
+                startCmd:
+                  description: Start command to execute in the template after the build
+                  type: string
             encoding:
               buildContext:
                 contentType: application/octet-stream
@@ -318,6 +322,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Environment"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      description: Delete an environment
+      tags: [envs]
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/envID"
+      responses:
+        204:
+          description: The environment was deleted successfully
         401:
           $ref: "#/components/responses/401"
         500:

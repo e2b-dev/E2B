@@ -11,7 +11,6 @@ from pydantic import BaseModel
 from urllib3.exceptions import ReadTimeoutError, MaxRetryError, ConnectTimeoutError
 
 from e2b.api import E2BApiClient, exceptions, models, client
-from e2b.api.v2.client import InstancesInstanceIDRefreshesPostRequest
 from e2b.constants import (
     SANDBOX_DOMAIN,
     SANDBOX_REFRESH_PERIOD,
@@ -155,7 +154,7 @@ class SandboxConnection:
         return hostname
 
     def keep_alive(self, duration: int) -> None:
-        if not 0 <= duration < 3600:
+        if not 0 <= duration <= 3600:
             raise ValueError("Duration must be between 0 and 3600 seconds")
 
         with E2BApiClient(api_key=self._api_key) as api_client:
@@ -163,7 +162,7 @@ class SandboxConnection:
             try:
                 api.instances_instance_id_refreshes_post(
                     self._sandbox.instance_id,
-                    InstancesInstanceIDRefreshesPostRequest(duration=duration),
+                    client.InstancesInstanceIDRefreshesPostRequest(duration=duration),
                 )
                 logger.debug(
                     f"Sandbox will be kept alive without connection for next {duration} seconds."
@@ -382,7 +381,7 @@ class SandboxConnection:
                     try:
                         api.instances_instance_id_refreshes_post(
                             instance_id,
-                            InstancesInstanceIDRefreshesPostRequest(duration=0),
+                            client.InstancesInstanceIDRefreshesPostRequest(duration=0),
                         )
                         logger.debug(f"Refreshed sandbox {instance_id}")
                     except exceptions.ApiException as e:

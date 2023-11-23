@@ -3,9 +3,9 @@ import urllib.parse
 import requests
 
 from os import path
-from typing import Any, Callable, List, Literal, Optional, IO
+from typing import Any, Callable, Dict, List, Literal, Optional, IO, Tuple, Union
 
-from e2b.api.v2.client import models
+from e2b.api import models
 from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
 from e2b.sandbox.env_vars import EnvVars
@@ -22,12 +22,13 @@ class Sandbox(SandboxConnection):
     E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
 
     That means:
-
     - Access to Linux OS
     - Using filesystem (create, list, and delete files and dirs)
     - Run processes
     - Sandboxed - you can run any code
     - Access to the internet
+
+    Check usage docs - https://e2b.dev/docs/sandbox/overview
 
     These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
     """
@@ -114,6 +115,88 @@ class Sandbox(SandboxConnection):
             timeout=timeout,
         )
         self._on_close_child = self._close_services
+        self._actions: Dict[str, Action] = {}
+
+    def add_action(self, action: "Action", name: Optional[str] = None) -> "Sandbox":
+        """
+        Add a new action. If the name is not specified, it is automatically extracted from the function name.
+        An action is a function that takes a sandbox and a dictionary of arguments and returns a string.
+
+        You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
+        :param action: The action to add
+        :param name: The name of the action, if not provided, the name of the function will be used
+
+        Example:
+
+            ```python
+            from e2b import Sandbox
+
+            def read_file(sandbox, args):
+                with open(args["path"], "r") as f:
+                    return sandbox.filesystem.read(args.path)
+
+            s = Sandbox()
+            s.add_action(read_file)
+            s.add_action(name="hello", action=lambda s, args: f"Hello {args['name']}!")
+            ```
+        """
+        if not name:
+            name = action.__name__
+
+        self._actions[name] = action
+
+        return self
+
+    def remove_action(self, name: str) -> "Sandbox":
+        """
+        Remove an action.
+
+        :param name: The name of the action
+        """
+        del self._actions[name]
+
+        return self
+
+    @property
+    def actions(self) -> Dict[str, "Action"]:
+        """
+        Return a dict of added actions.
+        """
+
+        return self._actions.copy()
+
+    def action(self, name: Optional[str] = None):
+        """
+        Decorator to add an action.
+
+        :param name: The name of the action, if not provided, the name of the function will be used
+        """
+
+        def _action(action: Action):
+            self.add_action(action=action, name=name or action.__name__)
+
+            return action
+
+        return _action
+
+    @property
+    def openai(self):
+        """
+        OpenAI integration that can be used to get output for the actions added in the sandbox.
+
+        Example:
+
+            ```python
+            from e2b import Sandbox
+
+            s = Sandbox()
+            s.openai.actions.run(run)
+            ```
+        """
+
+        from e2b.templates.openai import OpenAI, Actions
+
+        return OpenAI(Actions(self))
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
@@ -194,3 +277,6 @@ class Sandbox(SandboxConnection):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
+
+
+Action = Callable[[Sandbox, Dict[str, Any]], str]

@@ -1,5 +1,6 @@
 import * as e2b from '@e2b/sdk'
 import * as commander from 'commander'
+import * as path from 'path'
 
 import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal } from 'src/terminal'
@@ -8,7 +9,6 @@ import { getRoot } from '../utils/filesystem'
 import { getConfigPath, loadConfig } from '../config'
 import fs from 'fs'
 import { pathOption } from '../options'
-import path from 'path'
 
 export const shellCommand = new commander.Command('shell')
   .description('Connect terminal to sandbox')
@@ -62,7 +62,7 @@ export const shellCommand = new commander.Command('shell')
     }
   })
 
-async function connectSandbox({
+export async function connectSandbox({
   apiKey,
   template,
 }: {
