@@ -37,9 +37,25 @@ func (utu *UsersTeamsUpdate) SetUserID(u uuid.UUID) *UsersTeamsUpdate {
 	return utu
 }
 
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (utu *UsersTeamsUpdate) SetNillableUserID(u *uuid.UUID) *UsersTeamsUpdate {
+	if u != nil {
+		utu.SetUserID(*u)
+	}
+	return utu
+}
+
 // SetTeamID sets the "team_id" field.
 func (utu *UsersTeamsUpdate) SetTeamID(u uuid.UUID) *UsersTeamsUpdate {
 	utu.mutation.SetTeamID(u)
+	return utu
+}
+
+// SetNillableTeamID sets the "team_id" field if the given value is not nil.
+func (utu *UsersTeamsUpdate) SetNillableTeamID(u *uuid.UUID) *UsersTeamsUpdate {
+	if u != nil {
+		utu.SetTeamID(*u)
+	}
 	return utu
 }
 
@@ -222,9 +238,25 @@ func (utuo *UsersTeamsUpdateOne) SetUserID(u uuid.UUID) *UsersTeamsUpdateOne {
 	return utuo
 }
 
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (utuo *UsersTeamsUpdateOne) SetNillableUserID(u *uuid.UUID) *UsersTeamsUpdateOne {
+	if u != nil {
+		utuo.SetUserID(*u)
+	}
+	return utuo
+}
+
 // SetTeamID sets the "team_id" field.
 func (utuo *UsersTeamsUpdateOne) SetTeamID(u uuid.UUID) *UsersTeamsUpdateOne {
 	utuo.mutation.SetTeamID(u)
+	return utuo
+}
+
+// SetNillableTeamID sets the "team_id" field if the given value is not nil.
+func (utuo *UsersTeamsUpdateOne) SetNillableTeamID(u *uuid.UUID) *UsersTeamsUpdateOne {
+	if u != nil {
+		utuo.SetTeamID(*u)
+	}
 	return utuo
 }
 

@@ -43,19 +43,9 @@ func (atc *AccessTokenCreate) SetID(s string) *AccessTokenCreate {
 	return atc
 }
 
-// AddUserIDs adds the "users" edge to the User entity by IDs.
-func (atc *AccessTokenCreate) AddUserIDs(ids ...uuid.UUID) *AccessTokenCreate {
-	atc.mutation.AddUserIDs(ids...)
-	return atc
-}
-
-// AddUsers adds the "users" edges to the User entity.
-func (atc *AccessTokenCreate) AddUsers(u ...*User) *AccessTokenCreate {
-	ids := make([]uuid.UUID, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
-	}
-	return atc.AddUserIDs(ids...)
+// SetUser sets the "user" edge to the User entity.
+func (atc *AccessTokenCreate) SetUser(u *User) *AccessTokenCreate {
+	return atc.SetUserID(u.ID)
 }
 
 // Mutation returns the AccessTokenMutation object of the builder.
@@ -98,6 +88,9 @@ func (atc *AccessTokenCreate) check() error {
 	if _, ok := atc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "AccessToken.created_at"`)}
 	}
+	if _, ok := atc.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "AccessToken.user"`)}
+	}
 	return nil
 }
 
@@ -135,29 +128,26 @@ func (atc *AccessTokenCreate) createSpec() (*AccessToken, *sqlgraph.CreateSpec) 
 		_node.ID = id
 		_spec.ID.Value = id
 	}
-	if value, ok := atc.mutation.UserID(); ok {
-		_spec.SetField(accesstoken.FieldUserID, field.TypeUUID, value)
-		_node.UserID = value
-	}
 	if value, ok := atc.mutation.CreatedAt(); ok {
 		_spec.SetField(accesstoken.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if nodes := atc.mutation.UsersIDs(); len(nodes) > 0 {
+	if nodes := atc.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   accesstoken.UsersTable,
-			Columns: []string{accesstoken.UsersColumn},
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   accesstoken.UserTable,
+			Columns: []string{accesstoken.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = atc.schemaConfig.User
+		edge.Schema = atc.schemaConfig.AccessToken
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

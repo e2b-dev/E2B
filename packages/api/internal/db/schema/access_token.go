@@ -24,6 +24,12 @@ func (AccessToken) Fields() []ent.Field {
 
 func (AccessToken) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("users", User.Type),
+		edge.From("user", User.Type).Ref("access_tokens").Unique().Field("user_id").Required(),
+	}
+}
+
+func (AccessToken) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		Mixin{},
 	}
 }

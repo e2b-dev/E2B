@@ -32,3 +32,9 @@ func (UsersTeams) Edges() []ent.Edge {
 			Field("team_id"),
 	}
 }
+
+func (UsersTeams) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		Mixin{},
+	}
+}

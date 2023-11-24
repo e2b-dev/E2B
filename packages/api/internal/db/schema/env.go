@@ -43,3 +43,9 @@ func (Env) Edges() []ent.Edge {
 func (Env) Annotations() []schema.Annotation {
 	return nil
 }
+
+func (Env) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		Mixin{},
+	}
+}

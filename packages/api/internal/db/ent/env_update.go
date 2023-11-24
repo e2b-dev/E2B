@@ -52,9 +52,25 @@ func (eu *EnvUpdate) SetTeamID(u uuid.UUID) *EnvUpdate {
 	return eu
 }
 
+// SetNillableTeamID sets the "team_id" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableTeamID(u *uuid.UUID) *EnvUpdate {
+	if u != nil {
+		eu.SetTeamID(*u)
+	}
+	return eu
+}
+
 // SetDockerfile sets the "dockerfile" field.
 func (eu *EnvUpdate) SetDockerfile(s string) *EnvUpdate {
 	eu.mutation.SetDockerfile(s)
+	return eu
+}
+
+// SetNillableDockerfile sets the "dockerfile" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableDockerfile(s *string) *EnvUpdate {
+	if s != nil {
+		eu.SetDockerfile(*s)
+	}
 	return eu
 }
 
@@ -64,9 +80,25 @@ func (eu *EnvUpdate) SetPublic(b bool) *EnvUpdate {
 	return eu
 }
 
+// SetNillablePublic sets the "public" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillablePublic(b *bool) *EnvUpdate {
+	if b != nil {
+		eu.SetPublic(*b)
+	}
+	return eu
+}
+
 // SetBuildID sets the "build_id" field.
 func (eu *EnvUpdate) SetBuildID(u uuid.UUID) *EnvUpdate {
 	eu.mutation.SetBuildID(u)
+	return eu
+}
+
+// SetNillableBuildID sets the "build_id" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableBuildID(u *uuid.UUID) *EnvUpdate {
+	if u != nil {
+		eu.SetBuildID(*u)
+	}
 	return eu
 }
 
@@ -382,9 +414,25 @@ func (euo *EnvUpdateOne) SetTeamID(u uuid.UUID) *EnvUpdateOne {
 	return euo
 }
 
+// SetNillableTeamID sets the "team_id" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableTeamID(u *uuid.UUID) *EnvUpdateOne {
+	if u != nil {
+		euo.SetTeamID(*u)
+	}
+	return euo
+}
+
 // SetDockerfile sets the "dockerfile" field.
 func (euo *EnvUpdateOne) SetDockerfile(s string) *EnvUpdateOne {
 	euo.mutation.SetDockerfile(s)
+	return euo
+}
+
+// SetNillableDockerfile sets the "dockerfile" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableDockerfile(s *string) *EnvUpdateOne {
+	if s != nil {
+		euo.SetDockerfile(*s)
+	}
 	return euo
 }
 
@@ -394,9 +442,25 @@ func (euo *EnvUpdateOne) SetPublic(b bool) *EnvUpdateOne {
 	return euo
 }
 
+// SetNillablePublic sets the "public" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillablePublic(b *bool) *EnvUpdateOne {
+	if b != nil {
+		euo.SetPublic(*b)
+	}
+	return euo
+}
+
 // SetBuildID sets the "build_id" field.
 func (euo *EnvUpdateOne) SetBuildID(u uuid.UUID) *EnvUpdateOne {
 	euo.mutation.SetBuildID(u)
+	return euo
+}
+
+// SetNillableBuildID sets the "build_id" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableBuildID(u *uuid.UUID) *EnvUpdateOne {
+	if u != nil {
+		euo.SetBuildID(*u)
+	}
 	return euo
 }
 

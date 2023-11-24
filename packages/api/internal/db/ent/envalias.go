@@ -29,24 +29,24 @@ type EnvAlias struct {
 
 // EnvAliasEdges holds the relations/edges for other nodes in the graph.
 type EnvAliasEdges struct {
-	// AliasEnv holds the value of the alias_env edge.
-	AliasEnv *Env `json:"alias_env,omitempty"`
+	// Env holds the value of the env edge.
+	Env *Env `json:"env,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// AliasEnvOrErr returns the AliasEnv value or an error if the edge
+// EnvOrErr returns the Env value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e EnvAliasEdges) AliasEnvOrErr() (*Env, error) {
+func (e EnvAliasEdges) EnvOrErr() (*Env, error) {
 	if e.loadedTypes[0] {
-		if e.AliasEnv == nil {
+		if e.Env == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: env.Label}
 		}
-		return e.AliasEnv, nil
+		return e.Env, nil
 	}
-	return nil, &NotLoadedError{edge: "alias_env"}
+	return nil, &NotLoadedError{edge: "env"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -105,9 +105,9 @@ func (ea *EnvAlias) Value(name string) (ent.Value, error) {
 	return ea.selectValues.Get(name)
 }
 
-// QueryAliasEnv queries the "alias_env" edge of the EnvAlias entity.
-func (ea *EnvAlias) QueryAliasEnv() *EnvQuery {
-	return NewEnvAliasClient(ea.config).QueryAliasEnv(ea)
+// QueryEnv queries the "env" edge of the EnvAlias entity.
+func (ea *EnvAlias) QueryEnv() *EnvQuery {
+	return NewEnvAliasClient(ea.config).QueryEnv(ea)
 }
 
 // Update returns a builder for updating this EnvAlias.

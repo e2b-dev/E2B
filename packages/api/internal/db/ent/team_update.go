@@ -40,9 +40,25 @@ func (tu *TeamUpdate) SetIsDefault(b bool) *TeamUpdate {
 	return tu
 }
 
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (tu *TeamUpdate) SetNillableIsDefault(b *bool) *TeamUpdate {
+	if b != nil {
+		tu.SetIsDefault(*b)
+	}
+	return tu
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (tu *TeamUpdate) SetIsBlocked(b bool) *TeamUpdate {
 	tu.mutation.SetIsBlocked(b)
+	return tu
+}
+
+// SetNillableIsBlocked sets the "is_blocked" field if the given value is not nil.
+func (tu *TeamUpdate) SetNillableIsBlocked(b *bool) *TeamUpdate {
+	if b != nil {
+		tu.SetIsBlocked(*b)
+	}
 	return tu
 }
 
@@ -52,9 +68,25 @@ func (tu *TeamUpdate) SetName(s string) *TeamUpdate {
 	return tu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tu *TeamUpdate) SetNillableName(s *string) *TeamUpdate {
+	if s != nil {
+		tu.SetName(*s)
+	}
+	return tu
+}
+
 // SetTier sets the "tier" field.
 func (tu *TeamUpdate) SetTier(s string) *TeamUpdate {
 	tu.mutation.SetTier(s)
+	return tu
+}
+
+// SetNillableTier sets the "tier" field if the given value is not nil.
+func (tu *TeamUpdate) SetNillableTier(s *string) *TeamUpdate {
+	if s != nil {
+		tu.SetTier(*s)
+	}
 	return tu
 }
 
@@ -531,9 +563,25 @@ func (tuo *TeamUpdateOne) SetIsDefault(b bool) *TeamUpdateOne {
 	return tuo
 }
 
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (tuo *TeamUpdateOne) SetNillableIsDefault(b *bool) *TeamUpdateOne {
+	if b != nil {
+		tuo.SetIsDefault(*b)
+	}
+	return tuo
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (tuo *TeamUpdateOne) SetIsBlocked(b bool) *TeamUpdateOne {
 	tuo.mutation.SetIsBlocked(b)
+	return tuo
+}
+
+// SetNillableIsBlocked sets the "is_blocked" field if the given value is not nil.
+func (tuo *TeamUpdateOne) SetNillableIsBlocked(b *bool) *TeamUpdateOne {
+	if b != nil {
+		tuo.SetIsBlocked(*b)
+	}
 	return tuo
 }
 
@@ -543,9 +591,25 @@ func (tuo *TeamUpdateOne) SetName(s string) *TeamUpdateOne {
 	return tuo
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tuo *TeamUpdateOne) SetNillableName(s *string) *TeamUpdateOne {
+	if s != nil {
+		tuo.SetName(*s)
+	}
+	return tuo
+}
+
 // SetTier sets the "tier" field.
 func (tuo *TeamUpdateOne) SetTier(s string) *TeamUpdateOne {
 	tuo.mutation.SetTier(s)
+	return tuo
+}
+
+// SetNillableTier sets the "tier" field if the given value is not nil.
+func (tuo *TeamUpdateOne) SetNillableTier(s *string) *TeamUpdateOne {
+	if s != nil {
+		tuo.SetTier(*s)
+	}
 	return tuo
 }
 

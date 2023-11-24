@@ -16,19 +16,19 @@ const (
 	FieldEnvID = "env_id"
 	// FieldIsName holds the string denoting the is_name field in the database.
 	FieldIsName = "is_name"
-	// EdgeAliasEnv holds the string denoting the alias_env edge name in mutations.
-	EdgeAliasEnv = "alias_env"
+	// EdgeEnv holds the string denoting the env edge name in mutations.
+	EdgeEnv = "env"
 	// EnvFieldID holds the string denoting the ID field of the Env.
 	EnvFieldID = "id"
 	// Table holds the table name of the envalias in the database.
 	Table = "env_aliases"
-	// AliasEnvTable is the table that holds the alias_env relation/edge.
-	AliasEnvTable = "env_aliases"
-	// AliasEnvInverseTable is the table name for the Env entity.
+	// EnvTable is the table that holds the env relation/edge.
+	EnvTable = "env_aliases"
+	// EnvInverseTable is the table name for the Env entity.
 	// It exists in this package in order to avoid circular dependency with the "env" package.
-	AliasEnvInverseTable = "envs"
-	// AliasEnvColumn is the table column denoting the alias_env relation/edge.
-	AliasEnvColumn = "env_id"
+	EnvInverseTable = "envs"
+	// EnvColumn is the table column denoting the env relation/edge.
+	EnvColumn = "env_id"
 )
 
 // Columns holds all SQL columns for envalias fields.
@@ -71,16 +71,16 @@ func ByIsName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsName, opts...).ToFunc()
 }
 
-// ByAliasEnvField orders the results by alias_env field.
-func ByAliasEnvField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByEnvField orders the results by env field.
+func ByEnvField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newAliasEnvStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborTerms(s, newEnvStep(), sql.OrderByField(field, opts...))
 	}
 }
-func newAliasEnvStep() *sqlgraph.Step {
+func newEnvStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(AliasEnvInverseTable, EnvFieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, AliasEnvTable, AliasEnvColumn),
+		sqlgraph.To(EnvInverseTable, EnvFieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, EnvTable, EnvColumn),
 	)
 }

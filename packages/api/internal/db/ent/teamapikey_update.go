@@ -36,6 +36,14 @@ func (taku *TeamAPIKeyUpdate) SetTeamID(u uuid.UUID) *TeamAPIKeyUpdate {
 	return taku
 }
 
+// SetNillableTeamID sets the "team_id" field if the given value is not nil.
+func (taku *TeamAPIKeyUpdate) SetNillableTeamID(u *uuid.UUID) *TeamAPIKeyUpdate {
+	if u != nil {
+		taku.SetTeamID(*u)
+	}
+	return taku
+}
+
 // SetTeam sets the "team" edge to the Team entity.
 func (taku *TeamAPIKeyUpdate) SetTeam(t *Team) *TeamAPIKeyUpdate {
 	return taku.SetTeamID(t.ID)
@@ -155,6 +163,14 @@ type TeamAPIKeyUpdateOne struct {
 // SetTeamID sets the "team_id" field.
 func (takuo *TeamAPIKeyUpdateOne) SetTeamID(u uuid.UUID) *TeamAPIKeyUpdateOne {
 	takuo.mutation.SetTeamID(u)
+	return takuo
+}
+
+// SetNillableTeamID sets the "team_id" field if the given value is not nil.
+func (takuo *TeamAPIKeyUpdateOne) SetNillableTeamID(u *uuid.UUID) *TeamAPIKeyUpdateOne {
+	if u != nil {
+		takuo.SetTeamID(*u)
+	}
 	return takuo
 }
 

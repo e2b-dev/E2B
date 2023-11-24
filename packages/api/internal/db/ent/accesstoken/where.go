@@ -97,26 +97,6 @@ func UserIDNotIn(vs ...uuid.UUID) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldNotIn(FieldUserID, vs...))
 }
 
-// UserIDGT applies the GT predicate on the "user_id" field.
-func UserIDGT(v uuid.UUID) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldGT(FieldUserID, v))
-}
-
-// UserIDGTE applies the GTE predicate on the "user_id" field.
-func UserIDGTE(v uuid.UUID) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldGTE(FieldUserID, v))
-}
-
-// UserIDLT applies the LT predicate on the "user_id" field.
-func UserIDLT(v uuid.UUID) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldLT(FieldUserID, v))
-}
-
-// UserIDLTE applies the LTE predicate on the "user_id" field.
-func UserIDLTE(v uuid.UUID) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldLTE(FieldUserID, v))
-}
-
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldEQ(FieldCreatedAt, v))
@@ -157,27 +137,27 @@ func CreatedAtLTE(v time.Time) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldLTE(FieldCreatedAt, v))
 }
 
-// HasUsers applies the HasEdge predicate on the "users" edge.
-func HasUsers() predicate.AccessToken {
+// HasUser applies the HasEdge predicate on the "user" edge.
+func HasUser() predicate.AccessToken {
 	return predicate.AccessToken(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, UsersTable, UsersColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 		)
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.User
-		step.Edge.Schema = schemaConfig.User
+		step.Edge.Schema = schemaConfig.AccessToken
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasUsersWith applies the HasEdge predicate on the "users" edge with a given conditions (other predicates).
-func HasUsersWith(preds ...predicate.User) predicate.AccessToken {
+// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
+func HasUserWith(preds ...predicate.User) predicate.AccessToken {
 	return predicate.AccessToken(func(s *sql.Selector) {
-		step := newUsersStep()
+		step := newUserStep()
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.User
-		step.Edge.Schema = schemaConfig.User
+		step.Edge.Schema = schemaConfig.AccessToken
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

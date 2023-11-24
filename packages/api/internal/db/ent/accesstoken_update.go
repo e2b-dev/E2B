@@ -36,19 +36,17 @@ func (atu *AccessTokenUpdate) SetUserID(u uuid.UUID) *AccessTokenUpdate {
 	return atu
 }
 
-// AddUserIDs adds the "users" edge to the User entity by IDs.
-func (atu *AccessTokenUpdate) AddUserIDs(ids ...uuid.UUID) *AccessTokenUpdate {
-	atu.mutation.AddUserIDs(ids...)
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (atu *AccessTokenUpdate) SetNillableUserID(u *uuid.UUID) *AccessTokenUpdate {
+	if u != nil {
+		atu.SetUserID(*u)
+	}
 	return atu
 }
 
-// AddUsers adds the "users" edges to the User entity.
-func (atu *AccessTokenUpdate) AddUsers(u ...*User) *AccessTokenUpdate {
-	ids := make([]uuid.UUID, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
-	}
-	return atu.AddUserIDs(ids...)
+// SetUser sets the "user" edge to the User entity.
+func (atu *AccessTokenUpdate) SetUser(u *User) *AccessTokenUpdate {
+	return atu.SetUserID(u.ID)
 }
 
 // Mutation returns the AccessTokenMutation object of the builder.
@@ -56,25 +54,10 @@ func (atu *AccessTokenUpdate) Mutation() *AccessTokenMutation {
 	return atu.mutation
 }
 
-// ClearUsers clears all "users" edges to the User entity.
-func (atu *AccessTokenUpdate) ClearUsers() *AccessTokenUpdate {
-	atu.mutation.ClearUsers()
+// ClearUser clears the "user" edge to the User entity.
+func (atu *AccessTokenUpdate) ClearUser() *AccessTokenUpdate {
+	atu.mutation.ClearUser()
 	return atu
-}
-
-// RemoveUserIDs removes the "users" edge to User entities by IDs.
-func (atu *AccessTokenUpdate) RemoveUserIDs(ids ...uuid.UUID) *AccessTokenUpdate {
-	atu.mutation.RemoveUserIDs(ids...)
-	return atu
-}
-
-// RemoveUsers removes "users" edges to User entities.
-func (atu *AccessTokenUpdate) RemoveUsers(u ...*User) *AccessTokenUpdate {
-	ids := make([]uuid.UUID, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
-	}
-	return atu.RemoveUserIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -104,7 +87,18 @@ func (atu *AccessTokenUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (atu *AccessTokenUpdate) check() error {
+	if _, ok := atu.mutation.UserID(); atu.mutation.UserCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "AccessToken.user"`)
+	}
+	return nil
+}
+
 func (atu *AccessTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := atu.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(accesstoken.Table, accesstoken.Columns, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeString))
 	if ps := atu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -113,52 +107,32 @@ func (atu *AccessTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := atu.mutation.UserID(); ok {
-		_spec.SetField(accesstoken.FieldUserID, field.TypeUUID, value)
-	}
-	if atu.mutation.UsersCleared() {
+	if atu.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   accesstoken.UsersTable,
-			Columns: []string{accesstoken.UsersColumn},
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   accesstoken.UserTable,
+			Columns: []string{accesstoken.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = atu.schemaConfig.User
+		edge.Schema = atu.schemaConfig.AccessToken
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := atu.mutation.RemovedUsersIDs(); len(nodes) > 0 && !atu.mutation.UsersCleared() {
+	if nodes := atu.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   accesstoken.UsersTable,
-			Columns: []string{accesstoken.UsersColumn},
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   accesstoken.UserTable,
+			Columns: []string{accesstoken.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = atu.schemaConfig.User
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := atu.mutation.UsersIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   accesstoken.UsersTable,
-			Columns: []string{accesstoken.UsersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		edge.Schema = atu.schemaConfig.User
+		edge.Schema = atu.schemaConfig.AccessToken
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
@@ -192,19 +166,17 @@ func (atuo *AccessTokenUpdateOne) SetUserID(u uuid.UUID) *AccessTokenUpdateOne {
 	return atuo
 }
 
-// AddUserIDs adds the "users" edge to the User entity by IDs.
-func (atuo *AccessTokenUpdateOne) AddUserIDs(ids ...uuid.UUID) *AccessTokenUpdateOne {
-	atuo.mutation.AddUserIDs(ids...)
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (atuo *AccessTokenUpdateOne) SetNillableUserID(u *uuid.UUID) *AccessTokenUpdateOne {
+	if u != nil {
+		atuo.SetUserID(*u)
+	}
 	return atuo
 }
 
-// AddUsers adds the "users" edges to the User entity.
-func (atuo *AccessTokenUpdateOne) AddUsers(u ...*User) *AccessTokenUpdateOne {
-	ids := make([]uuid.UUID, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
-	}
-	return atuo.AddUserIDs(ids...)
+// SetUser sets the "user" edge to the User entity.
+func (atuo *AccessTokenUpdateOne) SetUser(u *User) *AccessTokenUpdateOne {
+	return atuo.SetUserID(u.ID)
 }
 
 // Mutation returns the AccessTokenMutation object of the builder.
@@ -212,25 +184,10 @@ func (atuo *AccessTokenUpdateOne) Mutation() *AccessTokenMutation {
 	return atuo.mutation
 }
 
-// ClearUsers clears all "users" edges to the User entity.
-func (atuo *AccessTokenUpdateOne) ClearUsers() *AccessTokenUpdateOne {
-	atuo.mutation.ClearUsers()
+// ClearUser clears the "user" edge to the User entity.
+func (atuo *AccessTokenUpdateOne) ClearUser() *AccessTokenUpdateOne {
+	atuo.mutation.ClearUser()
 	return atuo
-}
-
-// RemoveUserIDs removes the "users" edge to User entities by IDs.
-func (atuo *AccessTokenUpdateOne) RemoveUserIDs(ids ...uuid.UUID) *AccessTokenUpdateOne {
-	atuo.mutation.RemoveUserIDs(ids...)
-	return atuo
-}
-
-// RemoveUsers removes "users" edges to User entities.
-func (atuo *AccessTokenUpdateOne) RemoveUsers(u ...*User) *AccessTokenUpdateOne {
-	ids := make([]uuid.UUID, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
-	}
-	return atuo.RemoveUserIDs(ids...)
 }
 
 // Where appends a list predicates to the AccessTokenUpdate builder.
@@ -273,7 +230,18 @@ func (atuo *AccessTokenUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (atuo *AccessTokenUpdateOne) check() error {
+	if _, ok := atuo.mutation.UserID(); atuo.mutation.UserCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "AccessToken.user"`)
+	}
+	return nil
+}
+
 func (atuo *AccessTokenUpdateOne) sqlSave(ctx context.Context) (_node *AccessToken, err error) {
+	if err := atuo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(accesstoken.Table, accesstoken.Columns, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeString))
 	id, ok := atuo.mutation.ID()
 	if !ok {
@@ -299,52 +267,32 @@ func (atuo *AccessTokenUpdateOne) sqlSave(ctx context.Context) (_node *AccessTok
 			}
 		}
 	}
-	if value, ok := atuo.mutation.UserID(); ok {
-		_spec.SetField(accesstoken.FieldUserID, field.TypeUUID, value)
-	}
-	if atuo.mutation.UsersCleared() {
+	if atuo.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   accesstoken.UsersTable,
-			Columns: []string{accesstoken.UsersColumn},
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   accesstoken.UserTable,
+			Columns: []string{accesstoken.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = atuo.schemaConfig.User
+		edge.Schema = atuo.schemaConfig.AccessToken
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := atuo.mutation.RemovedUsersIDs(); len(nodes) > 0 && !atuo.mutation.UsersCleared() {
+	if nodes := atuo.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   accesstoken.UsersTable,
-			Columns: []string{accesstoken.UsersColumn},
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   accesstoken.UserTable,
+			Columns: []string{accesstoken.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = atuo.schemaConfig.User
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := atuo.mutation.UsersIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   accesstoken.UsersTable,
-			Columns: []string{accesstoken.UsersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		edge.Schema = atuo.schemaConfig.User
+		edge.Schema = atuo.schemaConfig.AccessToken
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}

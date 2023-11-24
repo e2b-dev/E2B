@@ -22,12 +22,18 @@ func (EnvAlias) Fields() []ent.Field {
 
 func (EnvAlias) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("alias_env", Env.Type).Ref("env_aliases").Unique().Field("env_id"),
+		edge.From("env", Env.Type).Ref("env_aliases").Unique().Field("env_id"),
 	}
 }
 
 func (EnvAlias) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "env_aliases"},
+	}
+}
+
+func (EnvAlias) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		Mixin{},
 	}
 }

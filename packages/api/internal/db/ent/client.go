@@ -53,9 +53,7 @@ type Client struct {
 
 // NewClient creates a new client configured with the given options.
 func NewClient(opts ...Option) *Client {
-	cfg := config{log: log.Println, hooks: &hooks{}, inters: &inters{}}
-	cfg.options(opts...)
-	client := &Client{config: cfg}
+	client := &Client{config: newConfig(opts...)}
 	client.init()
 	return client
 }
@@ -91,6 +89,14 @@ type (
 	// Option function to configure the client.
 	Option func(*config)
 )
+
+// newConfig creates a new config for the client.
+func newConfig(opts ...Option) config {
+	cfg := config{log: log.Println, hooks: &hooks{}, inters: &inters{}}
+	cfg.schemaConfig = DefaultSchemaConfig
+	cfg.options(opts...)
+	return cfg
+}
 
 // options applies the options on the config object.
 func (c *config) options(opts ...Option) {
@@ -371,19 +377,19 @@ func (c *AccessTokenClient) GetX(ctx context.Context, id string) *AccessToken {
 	return obj
 }
 
-// QueryUsers queries the users edge of a AccessToken.
-func (c *AccessTokenClient) QueryUsers(at *AccessToken) *UserQuery {
+// QueryUser queries the user edge of a AccessToken.
+func (c *AccessTokenClient) QueryUser(at *AccessToken) *UserQuery {
 	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := at.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(accesstoken.Table, accesstoken.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, accesstoken.UsersTable, accesstoken.UsersColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, accesstoken.UserTable, accesstoken.UserColumn),
 		)
 		schemaConfig := at.schemaConfig
 		step.To.Schema = schemaConfig.User
-		step.Edge.Schema = schemaConfig.User
+		step.Edge.Schema = schemaConfig.AccessToken
 		fromV = sqlgraph.Neighbors(at.driver.Dialect(), step)
 		return fromV, nil
 	}
@@ -694,15 +700,15 @@ func (c *EnvAliasClient) GetX(ctx context.Context, id string) *EnvAlias {
 	return obj
 }
 
-// QueryAliasEnv queries the alias_env edge of a EnvAlias.
-func (c *EnvAliasClient) QueryAliasEnv(ea *EnvAlias) *EnvQuery {
+// QueryEnv queries the env edge of a EnvAlias.
+func (c *EnvAliasClient) QueryEnv(ea *EnvAlias) *EnvQuery {
 	query := (&EnvClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ea.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(envalias.Table, envalias.FieldID, id),
 			sqlgraph.To(env.Table, env.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, envalias.AliasEnvTable, envalias.AliasEnvColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, envalias.EnvTable, envalias.EnvColumn),
 		)
 		schemaConfig := ea.schemaConfig
 		step.To.Schema = schemaConfig.Env
@@ -1397,6 +1403,25 @@ func (c *UserClient) QueryTeams(u *User) *TeamQuery {
 	return query
 }
 
+// QueryAccessTokens queries the access_tokens edge of a User.
+func (c *UserClient) QueryAccessTokens(u *User) *AccessTokenQuery {
+	query := (&AccessTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(accesstoken.Table, accesstoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.AccessTokensTable, user.AccessTokensColumn),
+		)
+		schemaConfig := u.schemaConfig
+		step.To.Schema = schemaConfig.AccessToken
+		step.Edge.Schema = schemaConfig.AccessToken
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryUsersTeams queries the users_teams edge of a User.
 func (c *UserClient) QueryUsersTeams(u *User) *UsersTeamsQuery {
 	query := (&UsersTeamsClient{config: c.config}).Query()
@@ -1621,6 +1646,21 @@ type (
 		AccessToken, Env, EnvAlias, Team, TeamAPIKey, Tier, User,
 		UsersTeams []ent.Interceptor
 	}
+)
+
+var (
+	// DefaultSchemaConfig represents the default schema names for all tables as defined in ent/schema.
+	DefaultSchemaConfig = SchemaConfig{
+		AccessToken: tableSchemas[1],
+		Env:         tableSchemas[1],
+		EnvAlias:    tableSchemas[1],
+		Team:        tableSchemas[1],
+		TeamAPIKey:  tableSchemas[1],
+		Tier:        tableSchemas[1],
+		User:        tableSchemas[0],
+		UsersTeams:  tableSchemas[1],
+	}
+	tableSchemas = [...]string{"auth", "public"}
 )
 
 // SchemaConfig represents alternative schema names for all tables

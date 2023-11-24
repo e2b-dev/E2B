@@ -38,3 +38,10 @@ run:
 .PHONY: profiler
 profiler:
 	go tool pprof -http :9991 http://localhost:3000/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
+
+diff-migrations:
+	atlas migrate diff --env local
+
+# TODO: make sure nothing breaks
+#migrate:
+#	atlas migrate apply --env local --to $(SUPABASE_CONNECTION_STRING)

@@ -154,6 +154,35 @@ func HasTeamsWith(preds ...predicate.Team) predicate.User {
 	})
 }
 
+// HasAccessTokens applies the HasEdge predicate on the "access_tokens" edge.
+func HasAccessTokens() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AccessTokensTable, AccessTokensColumn),
+		)
+		schemaConfig := internal.SchemaConfigFromContext(s.Context())
+		step.To.Schema = schemaConfig.AccessToken
+		step.Edge.Schema = schemaConfig.AccessToken
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAccessTokensWith applies the HasEdge predicate on the "access_tokens" edge with a given conditions (other predicates).
+func HasAccessTokensWith(preds ...predicate.AccessToken) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newAccessTokensStep()
+		schemaConfig := internal.SchemaConfigFromContext(s.Context())
+		step.To.Schema = schemaConfig.AccessToken
+		step.Edge.Schema = schemaConfig.AccessToken
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasUsersTeams applies the HasEdge predicate on the "users_teams" edge.
 func HasUsersTeams() predicate.User {
 	return predicate.User(func(s *sql.Selector) {

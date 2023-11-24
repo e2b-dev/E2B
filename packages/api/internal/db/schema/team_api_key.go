@@ -36,3 +36,9 @@ func (TeamAPIKey) Edges() []ent.Edge {
 func (TeamAPIKey) Annotations() []schema.Annotation {
 	return nil
 }
+
+func (TeamAPIKey) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		Mixin{},
+	}
+}

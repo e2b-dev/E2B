@@ -5,7 +5,7 @@ go 1.21
 require (
 	cloud.google.com/go/artifactregistry v1.14.4
 	cloud.google.com/go/storage v1.34.0
-	entgo.io/ent v0.12.4
+	entgo.io/ent v0.12.5
 	github.com/dchest/uniuri v1.2.0
 	github.com/deepmap/oapi-codegen v1.16.2
 	github.com/e2b-dev/infra/packages/shared v0.0.0

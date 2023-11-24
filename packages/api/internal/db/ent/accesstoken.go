@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/accesstoken"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -30,20 +31,24 @@ type AccessToken struct {
 
 // AccessTokenEdges holds the relations/edges for other nodes in the graph.
 type AccessTokenEdges struct {
-	// Users holds the value of the users edge.
-	Users []*User `json:"users,omitempty"`
+	// User holds the value of the user edge.
+	User *User `json:"user,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// UsersOrErr returns the Users value or an error if the edge
-// was not loaded in eager-loading.
-func (e AccessTokenEdges) UsersOrErr() ([]*User, error) {
+// UserOrErr returns the User value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AccessTokenEdges) UserOrErr() (*User, error) {
 	if e.loadedTypes[0] {
-		return e.Users, nil
+		if e.User == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: user.Label}
+		}
+		return e.User, nil
 	}
-	return nil, &NotLoadedError{edge: "users"}
+	return nil, &NotLoadedError{edge: "user"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -103,9 +108,9 @@ func (at *AccessToken) Value(name string) (ent.Value, error) {
 	return at.selectValues.Get(name)
 }
 
-// QueryUsers queries the "users" edge of the AccessToken entity.
-func (at *AccessToken) QueryUsers() *UserQuery {
-	return NewAccessTokenClient(at.config).QueryUsers(at)
+// QueryUser queries the "user" edge of the AccessToken entity.
+func (at *AccessToken) QueryUser() *UserQuery {
+	return NewAccessTokenClient(at.config).QueryUser(at)
 }
 
 // Update returns a builder for updating this AccessToken.

@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/internal"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/predicate"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
+	"github.com/google/uuid"
 )
 
 // AccessTokenQuery is the builder for querying AccessToken entities.
@@ -24,7 +24,7 @@ type AccessTokenQuery struct {
 	order      []accesstoken.OrderOption
 	inters     []Interceptor
 	predicates []predicate.AccessToken
-	withUsers  *UserQuery
+	withUser   *UserQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,8 +61,8 @@ func (atq *AccessTokenQuery) Order(o ...accesstoken.OrderOption) *AccessTokenQue
 	return atq
 }
 
-// QueryUsers chains the current query on the "users" edge.
-func (atq *AccessTokenQuery) QueryUsers() *UserQuery {
+// QueryUser chains the current query on the "user" edge.
+func (atq *AccessTokenQuery) QueryUser() *UserQuery {
 	query := (&UserClient{config: atq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := atq.prepareQuery(ctx); err != nil {
@@ -75,11 +75,11 @@ func (atq *AccessTokenQuery) QueryUsers() *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(accesstoken.Table, accesstoken.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, accesstoken.UsersTable, accesstoken.UsersColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, accesstoken.UserTable, accesstoken.UserColumn),
 		)
 		schemaConfig := atq.schemaConfig
 		step.To.Schema = schemaConfig.User
-		step.Edge.Schema = schemaConfig.User
+		step.Edge.Schema = schemaConfig.AccessToken
 		fromU = sqlgraph.SetNeighbors(atq.driver.Dialect(), step)
 		return fromU, nil
 	}
@@ -278,21 +278,21 @@ func (atq *AccessTokenQuery) Clone() *AccessTokenQuery {
 		order:      append([]accesstoken.OrderOption{}, atq.order...),
 		inters:     append([]Interceptor{}, atq.inters...),
 		predicates: append([]predicate.AccessToken{}, atq.predicates...),
-		withUsers:  atq.withUsers.Clone(),
+		withUser:   atq.withUser.Clone(),
 		// clone intermediate query.
 		sql:  atq.sql.Clone(),
 		path: atq.path,
 	}
 }
 
-// WithUsers tells the query-builder to eager-load the nodes that are connected to
-// the "users" edge. The optional arguments are used to configure the query builder of the edge.
-func (atq *AccessTokenQuery) WithUsers(opts ...func(*UserQuery)) *AccessTokenQuery {
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (atq *AccessTokenQuery) WithUser(opts ...func(*UserQuery)) *AccessTokenQuery {
 	query := (&UserClient{config: atq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	atq.withUsers = query
+	atq.withUser = query
 	return atq
 }
 
@@ -375,7 +375,7 @@ func (atq *AccessTokenQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		nodes       = []*AccessToken{}
 		_spec       = atq.querySpec()
 		loadedTypes = [1]bool{
-			atq.withUsers != nil,
+			atq.withUser != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -398,44 +398,41 @@ func (atq *AccessTokenQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := atq.withUsers; query != nil {
-		if err := atq.loadUsers(ctx, query, nodes,
-			func(n *AccessToken) { n.Edges.Users = []*User{} },
-			func(n *AccessToken, e *User) { n.Edges.Users = append(n.Edges.Users, e) }); err != nil {
+	if query := atq.withUser; query != nil {
+		if err := atq.loadUser(ctx, query, nodes, nil,
+			func(n *AccessToken, e *User) { n.Edges.User = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (atq *AccessTokenQuery) loadUsers(ctx context.Context, query *UserQuery, nodes []*AccessToken, init func(*AccessToken), assign func(*AccessToken, *User)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*AccessToken)
+func (atq *AccessTokenQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*AccessToken, init func(*AccessToken), assign func(*AccessToken, *User)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*AccessToken)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		fk := nodes[i].UserID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
 		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.User(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(accesstoken.UsersColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.access_token_users
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "access_token_users" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "access_token_users" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
@@ -466,6 +463,9 @@ func (atq *AccessTokenQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != accesstoken.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if atq.withUser != nil {
+			_spec.Node.AddColumnOnce(accesstoken.FieldUserID)
 		}
 	}
 	if ps := atq.predicates; len(ps) > 0 {

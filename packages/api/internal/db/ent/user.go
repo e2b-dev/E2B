@@ -21,20 +21,21 @@ type User struct {
 	Email string `json:"email,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
-	Edges              UserEdges `json:"edges"`
-	access_token_users *string
-	selectValues       sql.SelectValues
+	Edges        UserEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
 	// Teams holds the value of the teams edge.
 	Teams []*Team `json:"teams,omitempty"`
+	// AccessTokens holds the value of the access_tokens edge.
+	AccessTokens []*AccessToken `json:"access_tokens,omitempty"`
 	// UsersTeams holds the value of the users_teams edge.
 	UsersTeams []*UsersTeams `json:"users_teams,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // TeamsOrErr returns the Teams value or an error if the edge
@@ -46,10 +47,19 @@ func (e UserEdges) TeamsOrErr() ([]*Team, error) {
 	return nil, &NotLoadedError{edge: "teams"}
 }
 
+// AccessTokensOrErr returns the AccessTokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) AccessTokensOrErr() ([]*AccessToken, error) {
+	if e.loadedTypes[1] {
+		return e.AccessTokens, nil
+	}
+	return nil, &NotLoadedError{edge: "access_tokens"}
+}
+
 // UsersTeamsOrErr returns the UsersTeams value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) UsersTeamsOrErr() ([]*UsersTeams, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.UsersTeams, nil
 	}
 	return nil, &NotLoadedError{edge: "users_teams"}
@@ -64,8 +74,6 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case user.FieldID:
 			values[i] = new(uuid.UUID)
-		case user.ForeignKeys[0]: // access_token_users
-			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -93,13 +101,6 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.Email = value.String
 			}
-		case user.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field access_token_users", values[i])
-			} else if value.Valid {
-				u.access_token_users = new(string)
-				*u.access_token_users = value.String
-			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
 		}
@@ -116,6 +117,11 @@ func (u *User) Value(name string) (ent.Value, error) {
 // QueryTeams queries the "teams" edge of the User entity.
 func (u *User) QueryTeams() *TeamQuery {
 	return NewUserClient(u.config).QueryTeams(u)
+}
+
+// QueryAccessTokens queries the "access_tokens" edge of the User entity.
+func (u *User) QueryAccessTokens() *AccessTokenQuery {
+	return NewUserClient(u.config).QueryAccessTokens(u)
 }
 
 // QueryUsersTeams queries the "users_teams" edge of the User entity.
