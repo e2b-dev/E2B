@@ -75,7 +75,8 @@ export class Sandbox extends SandboxConnection {
    */
   readonly process: ProcessManager
 
-  readonly _actions: Map<string, Action<this, any>> = new Map()
+  // We use any here because we cannot properly reference the type of the Sandbox subclass
+  readonly _actions = new Map<string, Action<any, any>>()
 
   private readonly onScanPorts?: ScanOpenPortsHandler
 

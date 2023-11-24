@@ -1,6 +1,5 @@
 import { Sandbox, SandboxOpts } from '../sandbox'
 
-
 export abstract class BaseTemplate extends Sandbox {
   /**
    * Creates a new Sandbox from the default `base` sandbox template.
