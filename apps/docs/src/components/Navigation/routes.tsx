@@ -161,16 +161,6 @@ export const routes = [
       },
       {
         icon: (
-          <Hammer
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Guide: Creating Custom Sandbox',
-        href: '/guide/custom-sandbox',
-      },
-      {
-        icon: (
           <PlaySquare
             strokeWidth={1}
             size={20}
@@ -188,6 +178,16 @@ export const routes = [
         ),
         title: 'Premade Sandboxes',
         href: '/sandbox/templates/premade',
+      },
+      {
+        icon: (
+          <Hammer
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Guide: Creating Custom Sandbox',
+        href: '/guide/custom-sandbox',
       },
     ]
   },
