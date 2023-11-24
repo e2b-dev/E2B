@@ -75,6 +75,7 @@ export class Sandbox extends SandboxConnection {
    */
   readonly process: ProcessManager
 
+  // We use any here because we cannot properly reference the type of the Sandbox subclass
   readonly _actions: Map<string, Action<any, any>> = new Map()
 
   private _startCmd?: Promise<Process>
