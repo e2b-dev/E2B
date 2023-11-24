@@ -154,7 +154,7 @@ export interface ProcessOpts {
   cmd: string;
   onStdout?: (out: ProcessMessage) => Promise<void> | void;
   onStderr?: (out: ProcessMessage) => Promise<void> | void;
-  onExit?: (code: number) => Promise<void> | void;
+  onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
   envVars?: EnvVars;
   cwd?: string;
   /** @deprecated Use cwd instead */
@@ -164,6 +164,9 @@ export interface ProcessOpts {
   timeout?: number;
 }
 
+/**
+ * Manager for starting and interacting with processes in the sandbox.
+ */
 export interface ProcessManager {
   /**
    * Starts a new process.

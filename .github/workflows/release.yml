@@ -180,7 +180,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-docs-sandbox-template:
-    name: CLI Tests
+    name: Build docs sandbox template
     needs: [ changes ]
     if: needs.release.result == 'success' && (needs.changes.outputs.js-sdk == 'true' || needs.changes.outputs.python-sdk == 'true')
     uses: ./.github/workflows/build_docs_sandbox_template.yml

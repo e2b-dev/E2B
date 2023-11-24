@@ -1,0 +1,69 @@
+# Start Command
+
+Custom sandboxes allow you to specify a command that will be running when a sandbox is spawned.
+
+This way you can run a command that will start your app, or run a command that will start a specific process.
+
+
+## How to add a start command
+
+When you are building a sandbox template you can specify the start command by using the [`-c`](/cli/commands#build) option:
+
+```bash
+e2b build -c "npm start"
+```
+
+After the sandbox template is built, when you spawn a sandbox the start command will be running if there was no error when it tried to start.
+
+You can check the logs from the start command by using the SDKs:
+
+
+<CodeGroup title="Check start command logs" isRunnable={false}>
+```js {{ language: 'js' }}
+import { Sandbox } from '@e2b/sdk'
+
+// Spawn your custom sandbox
+const sandbox = await Sandbox.create({ 
+  id: 'my-agent-sandbox',
+  // If you specify onStderr and onStdout handlers when spawning the sandbox
+  // you will see logs from the start command.
+  onStderr: output => console.log("stderr", output.line), // $HighlightLine
+  onStdout: output => console.log("stdout", output.line), // $HighlightLine
+})
+
+// Close sandbox once done
+await sandbox.close()
+```
+
+```python {{ language: 'python' }}
+from e2b import Sandbox
+
+# Spawn your custom sandbox
+sandbox = Sandbox(
+  id="my-agent-sandbox",
+  # If you specify on_stderr and on_stdout handlers when spawning the sandbox
+  # you will see logs from the start command.
+  on_stderr=lambda output: print("stderr", output.line),  # $HighlightLine
+  on_stdout=lambda output: print("stdout", output.line),  # $HighlightLine
+)
+
+# Close sandbox once done
+sandbox.close()
+```
+</CodeGroup>
+
+
+### Sandbox template config
+
+
+You can find the start command for the sandbox template in the `e2b.toml`:
+
+<CodeGroup isFileName title="e2b.toml" isRunnable={false}>
+```toml
+# This is a config for E2B sandbox template
+id = "1wdqsf9le9gk21ztb4mo"
+dockerfile = "e2b.Dockerfile"
+name = "my-agent-sandbox"
+start_cmd = "npm start"  # $HighlightLine
+```
+</CodeGroup>

@@ -10,7 +10,7 @@ from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.filesystem import FilesystemManager
-from e2b.sandbox.process import ProcessManager, ProcessMessage
+from e2b.sandbox.process import Process, ProcessManager, ProcessMessage
 from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.sandbox.terminal import TerminalManager
 
@@ -22,12 +22,13 @@ class Sandbox(SandboxConnection):
     E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
 
     That means:
-
     - Access to Linux OS
     - Using filesystem (create, list, and delete files and dirs)
     - Run processes
     - Sandboxed - you can run any code
     - Access to the internet
+
+    Check usage docs - https://e2b.dev/docs/sandbox/overview
 
     These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
     """
@@ -63,7 +64,7 @@ class Sandbox(SandboxConnection):
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Callable[[int], Any]] = None,
+        on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
         timeout: Optional[float] = TIMEOUT,
         _sandbox: Optional[models.Instance] = None,
         _debug_hostname: Optional[str] = None,
@@ -104,6 +105,7 @@ class Sandbox(SandboxConnection):
             sandbox=self,
             on_scan_ports=on_scan_ports,
         )
+        self._start_cmd: Union[Process, None] = None
         self._terminal = TerminalManager(sandbox=self)
         self._filesystem = FilesystemManager(sandbox=self)
         self._process = ProcessManager(
@@ -207,6 +209,13 @@ class Sandbox(SandboxConnection):
 
         return OpenAI(Actions(self))
 
+    def _handle_start_cmd_logs(self):
+        self._start_cmd = self.process.start(
+            "sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service",
+            cwd="/",
+            env_vars={},
+        )
+
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Open the sandbox.
@@ -219,6 +228,7 @@ class Sandbox(SandboxConnection):
         logger.info(f"Sandbox {self._template} opened")
         if self.cwd:
             self.filesystem.make_dir(self.cwd)
+        self._handle_start_cmd_logs()
 
     def _close_services(self):
         self._terminal._close()

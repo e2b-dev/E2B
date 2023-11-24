@@ -22,7 +22,9 @@ export async function spawnConnectedTerminal(
   console.log(introText)
 
   const terminalSession = await terminal.start({
-    onData: (data: any) => process.stdout.write(data),
+    onData: (data: any) => {
+      process.stdout.write(data)
+    },
     size: getStdoutSize(),
     onExit,
     envVars: {

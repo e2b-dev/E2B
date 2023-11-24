@@ -176,7 +176,7 @@ export const buildCommand = new commander.Command('build')
           body.append('startCmd', startCmd)
         }
 
-        const build = await buildTemplate(accessToken, body, envID)
+        const build = await buildTemplate(accessToken, body, !!config, configPath, envID)
 
         console.log(
           `Started building the sandbox template ${asFormattedSandboxTemplate(
@@ -377,6 +377,8 @@ function getDockerfile(root: string, file?: string) {
 async function buildTemplate(
   accessToken: string,
   body: FormData,
+  hasConfig: boolean,
+  configPath: string,
   envID?: string,
 ): Promise<
   Omit<
@@ -410,6 +412,13 @@ async function buildTemplate(
       throw new Error(
         `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
         }`,
+      )
+    }
+
+    if (error.code === 404) {
+      throw new Error(
+        `Sandbox template you want to build ${envID ? `(${envID})` : ''} not found: ${res.statusText}, ${error.message ?? 'no message'
+        }\n${hasConfig ? `This could be caused by ${asLocalRelative(configPath)} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(configPath)} and start building the template again.` : ''}`,
       )
     }
 

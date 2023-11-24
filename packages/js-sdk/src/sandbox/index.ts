@@ -26,19 +26,56 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   timeout?: number;
   onStdout?: (out: ProcessMessage) => Promise<void> | void;
   onStderr?: (out: ProcessMessage) => Promise<void> | void;
-  onExit?: () => Promise<void> | void;
+  onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
 }
 
 export interface Action<T = { [key: string]: any }> {
   (sandbox: Sandbox, args: T): string | Promise<string>
 }
 
+/**
+ * E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
+ * 
+ * That means:
+ * - Access to Linux OS
+ * - Using filesystem (create, list, and delete files and dirs)
+ * - Run processes
+ * - Sandboxed - you can run any code
+ * - Access to the internet
+ *
+ * Check usage docs - https://e2b.dev/docs/sandbox/overview
+ *
+ * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants. 
+ * 
+ * Use the {@link Sandbox.create} method to create a new sandbox.
+ * 
+ * @example
+ * ```ts
+ * import { Sandbox } from '@e2b/sdk'
+ * 
+ * const sandbox = await Sandbox.create()
+ * 
+ * await sandbox.close()
+ * ```
+ * 
+ */
 export class Sandbox extends SandboxConnection {
+  /**
+   * Terminal manager used to create interactive terminals.
+   */
   readonly terminal: TerminalManager
+  /**
+   * Filesystem manager used to manage files.
+   */
   readonly filesystem: FilesystemManager
+  /**
+   * Process manager used to run commands.
+   */
   readonly process: ProcessManager
 
   readonly _actions: Map<string, Action<any>> = new Map()
+
+  private _startCmd?: Promise<Process>
 
   private readonly onScanPorts?: ScanOpenPortsHandler
 
@@ -49,13 +86,6 @@ export class Sandbox extends SandboxConnection {
 
     // Init Filesystem handler
     this.filesystem = {
-      /**
-       * List files in a directory.
-       * @param path Path to a directory
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       * @returns Array of files in a directory
-       */
       list: async (path, opts?: CallOpts) => {
         return (await this._call(
           filesystemService,
@@ -64,13 +94,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )) as FileInfo[]
       },
-      /**
-       * Reads the whole content of a file.
-       * @param path Path to a file
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       * @returns Content of a file
-       */
       read: async (path, opts?: CallOpts) => {
         return (await this._call(
           filesystemService,
@@ -79,12 +102,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )) as string
       },
-      /**
-       * Removes a file or a directory.
-       * @param path Path to a file or a directory
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       */
       remove: async (path, opts?: CallOpts) => {
         await this._call(
           filesystemService,
@@ -93,13 +110,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )
       },
-      /**
-       * Writes content to a new file on path.
-       * @param path Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
-       * @param content Content to write to a new file
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       */
       write: async (path, content, opts?: CallOpts) => {
         await this._call(
           filesystemService,
@@ -108,13 +118,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )
       },
-      /**
-       * Write array of bytes to a file.
-       * This can be used when you cannot represent the data as an UTF-8 string.
-       *
-       * @param path path to a file
-       * @param content byte array representing the content to write
-       */
       writeBytes: async (path: string, content: Uint8Array) => {
         // We need to convert the byte array to base64 string without using browser or node specific APIs.
         // This should be achieved by the node polyfills.
@@ -124,11 +127,6 @@ export class Sandbox extends SandboxConnection {
           base64Content,
         ])
       },
-      /**
-       * Reads the whole content of a file as an array of bytes.
-       * @param path path to a file
-       * @returns byte array representing the content of a file
-       */
       readBytes: async (path: string) => {
         const base64Content = (await this._call(
           filesystemService,
@@ -139,12 +137,6 @@ export class Sandbox extends SandboxConnection {
         // This should be achieved by the node polyfills.
         return Buffer.from(base64Content, 'base64')
       },
-      /**
-       * Creates a new directory and all directories along the way if needed on the specified pth.
-       * @param path Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
-       * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)
-       */
       makeDir: async (path, opts?: CallOpts) => {
         await this._call(
           filesystemService,
@@ -153,11 +145,6 @@ export class Sandbox extends SandboxConnection {
           opts,
         )
       },
-      /**
-       * Watches directory for filesystem events.
-       * @param path Path to a directory that will be watched
-       * @returns New watcher
-       */
       watchDir: (path: string) => {
         this.logger.debug?.(`Watching directory "${path}"`)
         const npath = normalizePath(_resolvePath(path))
@@ -491,16 +478,11 @@ export class Sandbox extends SandboxConnection {
    */
   static async create(opts: SandboxOpts): Promise<Sandbox>;
   static async create(optsOrTemplate?: string | SandboxOpts) {
-    const opts = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
-    return new Sandbox(opts)
-      ._open({ timeout: opts?.timeout })
-      .then(async (sandbox) => {
-        if (opts?.cwd) {
-          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
-          await sandbox.filesystem.makeDir(opts.cwd)
-        }
-        return sandbox
-      })
+    const opts: SandboxOpts | undefined = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
+    const sandbox = new Sandbox(opts)
+    await sandbox._open({ timeout: opts?.timeout })
+
+    return sandbox
   }
 
   /**
@@ -542,15 +524,11 @@ export class Sandbox extends SandboxConnection {
     const instanceID = instanceIDAndClientID[0]
     const clientID = instanceIDAndClientID[1]
     opts.__sandbox = { instanceID, clientID, envID: 'unknown' }
-    return new Sandbox(opts)
-      ._open({ timeout: opts?.timeout })
-      .then(async (sandbox) => {
-        if (opts?.cwd) {
-          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
-          await sandbox.filesystem.makeDir(opts.cwd)
-        }
-        return sandbox
-      })
+
+    const sandbox = new Sandbox(opts)
+    await sandbox._open({ timeout: opts?.timeout })
+
+    return sandbox
   }
 
   /**
@@ -714,6 +692,21 @@ export class Sandbox extends SandboxConnection {
         : undefined,
     )
 
+    if (this.cwd) {
+      console.log(`Custom cwd for Sandbox set: "${this.cwd}"`)
+      await this.filesystem.makeDir(this.cwd)
+    }
+
+    this.handleStartCmdLogs()
+
     return this
+  }
+
+  private async handleStartCmdLogs() {
+    this._startCmd = this.process.start({
+      cmd: 'sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service',
+      envVars: {},
+      cwd: '/',
+    })
   }
 }
