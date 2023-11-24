@@ -2,6 +2,8 @@ import platform from 'platform'
 
 import { version } from '../../package.json'
 
+declare let window: any;
+
 export const defaultHeaders = {
   browser: (typeof window !== 'undefined' && platform.name) || 'undefined',
   lang: 'js',
