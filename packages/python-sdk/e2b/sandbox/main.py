@@ -3,7 +3,8 @@ import urllib.parse
 import requests
 
 from os import path
-from typing import Any, Callable, Dict, List, Literal, Optional, IO
+from typing import Any, Callable, Dict, List, Literal, Optional, IO, TypeVar
+from typing_extensions import Self
 
 from e2b.api import models
 from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
@@ -15,6 +16,14 @@ from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.sandbox.terminal import TerminalManager
 
 logger = logging.getLogger(__name__)
+
+
+S = TypeVar(
+    "S",
+    bound="Sandbox",
+)
+
+Action = Callable[[S, Dict[str, Any]], str]
 
 
 class Sandbox(SandboxConnection):
@@ -115,9 +124,9 @@ class Sandbox(SandboxConnection):
             timeout=timeout,
         )
         self._on_close_child = self._close_services
-        self._actions: Dict[str, Action] = {}
+        self._actions: Dict[str, Action[Self]] = {}
 
-    def add_action(self, action: "Action", name: Optional[str] = None) -> "Sandbox":
+    def add_action(self, action: Action[Self], name: Optional[str] = None) -> "Sandbox":
         """
         Add a new action. If the name is not specified, it is automatically extracted from the function name.
         An action is a function that takes a sandbox and a dictionary of arguments and returns a string.
@@ -140,6 +149,8 @@ class Sandbox(SandboxConnection):
             s.add_action(name="hello", action=lambda s, args: f"Hello {args['name']}!")
             ```
         """
+
+        action(self, {})
         if not name:
             name = action.__name__
 
@@ -158,7 +169,7 @@ class Sandbox(SandboxConnection):
         return self
 
     @property
-    def actions(self) -> Dict[str, "Action"]:
+    def actions(self) -> Dict[str, Action[Self]]:
         """
         Return a dict of added actions.
         """
@@ -172,7 +183,7 @@ class Sandbox(SandboxConnection):
         :param name: The name of the action, if not provided, the name of the function will be used
         """
 
-        def _action(action: Action):
+        def _action(action: Action[Self]):
             self.add_action(action=action, name=name or action.__name__)
 
             return action
@@ -196,7 +207,7 @@ class Sandbox(SandboxConnection):
 
         from e2b.templates.openai import OpenAI, Actions
 
-        return OpenAI(Actions(self))
+        return OpenAI[Self](Actions[Self](self))
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
@@ -277,6 +288,3 @@ class Sandbox(SandboxConnection):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
-
-
-Action = Callable[[Sandbox, Dict[str, Any]], str]
