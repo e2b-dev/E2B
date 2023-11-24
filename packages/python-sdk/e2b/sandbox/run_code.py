@@ -58,9 +58,8 @@ def run_code(
     sandbox = Sandbox(template=env_id, api_key=api_key)
     sandbox.filesystem.write(filepath, code)
 
-    proc = sandbox.process.start(cmd=f"{binary} {filepath}")
-    proc.wait()
+    output = sandbox.process.start_and_wait(cmd=f"{binary} {filepath}")
 
     sandbox.close()
 
-    return proc.output.stdout, proc.output.stderr
+    return output.stdout, output.stderr

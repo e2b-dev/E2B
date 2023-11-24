@@ -87,7 +87,7 @@ class DataAnalysis(Sandbox):
         codefile_path = f"/tmp/main-{epoch_time}.py"
         self.filesystem.write(codefile_path, code)
 
-        process = self.process.start(
+        output = self.process.start_and_wait(
             f"python {codefile_path}",
             on_stdout=on_stdout,
             on_stderr=on_stderr,
@@ -97,11 +97,10 @@ class DataAnalysis(Sandbox):
             process_id=process_id,
             timeout=timeout,
         )
-        process.wait()
 
         watcher.stop()
 
-        return process.output.stdout, process.output.stderr, list(artifacts)
+        return output.stdout, output.stderr, list(artifacts)
 
     def _install_packages(
         self,
@@ -116,12 +115,13 @@ class DataAnalysis(Sandbox):
         if not package_names:
             return
 
-        process = self.process.start(f"{command} {package_names}", timeout=timeout)
-        process.wait()
+        output = self.process.start_and_wait(
+            f"{command} {package_names}", timeout=timeout
+        )
 
-        if process.exit_code != 0:
+        if output.exit_code != 0:
             raise Exception(
-                f"Failed to install package {package_names}: {process.output.stderr}"
+                f"Failed to install package {package_names}: {output.stderr}"
             )
 
     def install_python_packages(

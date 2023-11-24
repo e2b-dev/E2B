@@ -114,7 +114,6 @@ class Sandbox(SandboxConnection):
             sandbox=self,
             on_scan_ports=on_scan_ports,
         )
-        self._start_cmd: Union[Process, None] = None
         self._terminal = TerminalManager(sandbox=self)
         self._filesystem = FilesystemManager(sandbox=self)
         self._process = ProcessManager(
@@ -221,7 +220,7 @@ class Sandbox(SandboxConnection):
         return OpenAI[Self](Actions[Self](self))
 
     def _handle_start_cmd_logs(self):
-        self._start_cmd = self.process.start(
+        self.process.start(
             "sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service",
             cwd="/",
             env_vars={},
