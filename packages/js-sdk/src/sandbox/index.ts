@@ -29,8 +29,10 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
 }
 
-export interface Action<T = { [key: string]: any }> {
-  (sandbox: Sandbox, args: T): string | Promise<string>
+export interface Action<S extends Sandbox = Sandbox, T = {
+  [key: string]: any;
+}> {
+  (sandbox: S, args: T): string | Promise<string>;
 }
 
 /**
@@ -73,7 +75,8 @@ export class Sandbox extends SandboxConnection {
    */
   readonly process: ProcessManager
 
-  readonly _actions: Map<string, Action<any>> = new Map()
+  // We use any here because we cannot properly reference the type of the Sandbox subclass
+  readonly _actions: Map<string, Action<any, any>> = new Map()
 
   private _startCmd?: Promise<Process>
 
@@ -451,7 +454,7 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.create()
    * ```
    */
-  static async create(): Promise<Sandbox>;
+  static async create<S extends Sandbox>(): Promise<S>;
   /**
    * Creates a new Sandbox from the template with the specified ID.
    * @param template Sandbox template ID or name
@@ -462,7 +465,7 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.create("sandboxTemplateID")
    * ```
    */
-  static async create(template: string): Promise<Sandbox>;
+  static async create<S extends Sandbox>(template: string): Promise<S>;
   /**
    * Creates a new Sandbox from the specified options.
    * @param opts Sandbox options
@@ -476,7 +479,7 @@ export class Sandbox extends SandboxConnection {
    * })
    * ```
    */
-  static async create(opts: SandboxOpts): Promise<Sandbox>;
+  static async create<S extends Sandbox>(opts: SandboxOpts): Promise<S>;
   static async create(optsOrTemplate?: string | SandboxOpts) {
     const opts: SandboxOpts | undefined = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
     const sandbox = new Sandbox(opts)
@@ -545,7 +548,7 @@ export class Sandbox extends SandboxConnection {
    * sandbox.addAction('readFile', (sandbox, args) => sandbox.filesystem.read(args.path))
    * ```
    */
-  addAction<T = { [name: string]: any }>(action: Action<T>): this;
+  addAction<T = { [name: string]: any }>(action: Action<this, T>): this;
   /**
    * Add a new action with a specified name.
    *
@@ -565,8 +568,8 @@ export class Sandbox extends SandboxConnection {
    * sandbox.addAction(readFile)
    * ```
    */
-  addAction<T = { [name: string]: any }>(name: string, action: Action<T>): this;
-  addAction<T = { [name: string]: any }>(actionOrName: string | Action<T>, action?: Action<T>): this {
+  addAction<T = { [name: string]: any }>(name: string, action: Action<this, T>): this;
+  addAction<T = { [name: string]: any }>(actionOrName: string | Action<this, T>, action?: Action<this, T>): this {
     if (typeof actionOrName === 'string') {
       if (!action) throw new Error('Action is required')
       this._actions.set(actionOrName, action)
