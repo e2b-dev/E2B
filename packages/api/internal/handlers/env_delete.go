@@ -50,7 +50,7 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		errMsg := fmt.Errorf("error env not found: %w", accessErr)
 		telemetry.ReportError(ctx, errMsg)
 
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The sandbox template '%s' wasn't found", cleanedAliasOrEnvID))
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("the sandbox template '%s' wasn't found", cleanedAliasOrEnvID))
 
 		return
 	}

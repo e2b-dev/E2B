@@ -127,7 +127,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 	err = a.buildCache.Create(team.ID, envID, buildID)
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("There's already running build for %s", envID))
+		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", envID))
 
 		err = fmt.Errorf("build is already running build for %s", envID)
 		telemetry.ReportCriticalError(ctx, err)
@@ -313,7 +313,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 	envID, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
 	if accessErr != nil {
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The sandbox template '%s' does not exist", cleanedAliasOrEnvID))
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("the sandbox template '%s' does not exist", cleanedAliasOrEnvID))
 
 		errMsg := fmt.Errorf("error env not found: %w", accessErr)
 		telemetry.ReportError(ctx, errMsg)
@@ -353,7 +353,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 	err = a.buildCache.Create(team.ID, envID, buildID)
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("There's already running build for %s", envID))
+		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", envID))
 
 		err = fmt.Errorf("build is already running build for %s", envID)
 		telemetry.ReportCriticalError(ctx, err)
