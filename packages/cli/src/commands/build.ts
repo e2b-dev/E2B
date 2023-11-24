@@ -47,7 +47,7 @@ export const buildCommand = new commander.Command('build')
       '[template]',
     )} to rebuild it. If you don's specify ${asBold(
       '[template]',
-    )} and there is no ${asLocal('e2b.toml')} a new sandbox will be created`,
+    )} and there is no ${asLocal('e2b.toml')} a new sandbox template will be created`,
   )
   .addOption(pathOption)
   .option(
