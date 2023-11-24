@@ -78,8 +78,6 @@ export class Sandbox extends SandboxConnection {
   // We use any here because we cannot properly reference the type of the Sandbox subclass
   readonly _actions: Map<string, Action<any, any>> = new Map()
 
-  private _startCmd?: Promise<Process>
-
   private readonly onScanPorts?: ScanOpenPortsHandler
 
   protected constructor(opts?: SandboxOpts) {
@@ -405,7 +403,8 @@ export class Sandbox extends SandboxConnection {
       startAndWait: async (optsOrCmd: string | ProcessOpts) => {
         const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
         const process = await this.process.start(opts)
-        return await process.wait()
+        const out = await process.wait()
+        return out
       }
     }
 
@@ -706,10 +705,14 @@ export class Sandbox extends SandboxConnection {
   }
 
   private async handleStartCmdLogs() {
-    this._startCmd = this.process.start({
-      cmd: 'sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service',
-      envVars: {},
-      cwd: '/',
-    })
+    try {
+      await this.process.startAndWait({
+        cmd: 'sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service',
+        envVars: {},
+        cwd: '/',
+      })
+    } catch (err) {
+      this.logger.warn?.("error waiting for the start command logs")
+    }
   }
 }

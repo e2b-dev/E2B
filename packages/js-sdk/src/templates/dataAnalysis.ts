@@ -53,17 +53,16 @@ export class DataAnalysis extends Sandbox {
     const currentEpoch = new Date().getTime()
     const codefilePath = `/tmp/main-${currentEpoch}.py`
     await this.filesystem.write(codefilePath, code)
-    const proc = await this.process.start({
+    const output = await this.process.startAndWait({
       cmd: `python ${codefilePath}`,
       ...opts,
     })
-    await proc.wait()
 
     await watcher.stop()
 
     return {
-      stdout: proc.output.stdout,
-      stderr: proc.output.stderr,
+      stdout: output.stdout,
+      stderr: output.stderr,
       artifacts: artifacts.map((artifact) => new Artifact<this>(artifact, this)),
     }
   }
@@ -86,13 +85,10 @@ export class DataAnalysis extends Sandbox {
       return
     }
 
-    const proc = await this.process.start({
-      cmd: `${command} ${packageNames}`,
-    })
-    await proc.wait()
+    const out = await this.process.startAndWait(`${command} ${packageNames}`)
 
-    if (proc.output.exitCode !== 0) {
-      throw new Error(`Failed to install package ${packageNames}: ${proc.output.stderr}`)
+    if (out.exitCode !== 0) {
+      throw new Error(`Failed to install package ${packageNames}: ${out.stderr}`)
     }
   }
 }

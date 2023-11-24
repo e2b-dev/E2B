@@ -64,10 +64,7 @@ export async function runCode(
 
   await sandbox.filesystem.write(filepath, code)
 
-  const codeProc = await sandbox.process.start({
-    cmd: `${binary} ${filepath}`,
-  })
-  const out = await codeProc.wait()
+  const out = await sandbox.process.startAndWait(`${binary} ${filepath}`)
 
   await sandbox.close()
 
