@@ -27,7 +27,7 @@ export class Actions {
       const args = JSON.parse(toolCall.function.arguments)
       const output = await this.sandbox.callAction(toolCall.function.name, args)
 
-      if (!output) {
+      if (output === undefined) {
         continue
       }
 
@@ -56,7 +56,7 @@ export class Completions {
 
       const output = await this.sandbox.callAction(toolCall.function.name, args)
 
-      if (!output) {
+      if (output === undefined) {
         continue
       }
 

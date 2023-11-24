@@ -14,6 +14,12 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from openai.types.beta.threads.run_submit_tool_outputs_params import ToolOutput
+    from openai.types.chat.chat_completion_message_tool_call import (
+        ChatCompletionMessageToolCall,
+    )
+    from openai.types.chat.chat_completion_tool_message_param import (
+        ChatCompletionToolMessageParam,
+    )
     from openai.types.beta.threads.run import Run
 
 
@@ -41,22 +47,50 @@ class Actions(Generic[S]):
         if not run.required_action:
             return []
 
-        outputs = []
+        outputs: List["ToolOutput"] = []
 
         for tool_call in run.required_action.submit_tool_outputs.tool_calls:
-            action = self._sandbox._actions.get(tool_call.function.name)
-            if not action:
-                logger.warning(f"Action {tool_call.function.name} not found.")
+            args = json.loads(tool_call.function.arguments)
+            output = self._sandbox.call_action(tool_call.function.name, args)
+
+            if output is None:
                 continue
 
+            outputs.append(
+                ToolOutput(
+                    tool_call_id=tool_call.id,
+                    output=output,
+                )
+            )
+
+        return outputs
+
+
+class Completions(Generic[S]):
+    def __init__(self, sandbox: S):
+        self._sandbox = sandbox
+
+    def run(
+        self, tool_calls: List["ChatCompletionMessageToolCall"]
+    ) -> List["ChatCompletionToolMessageParam"]:
+        if not tool_calls:
+            return []
+
+        outputs: List["ChatCompletionToolMessageParam"] = []
+
+        for tool_call in tool_calls:
             args = json.loads(tool_call.function.arguments)
-            output = action(self._sandbox, args)
+            output = self._sandbox.call_action(tool_call.function.name, args)
+
+            if output is None:
+                continue
 
             outputs.append(
-                {
-                    "tool_call_id": tool_call.id,
-                    "output": output,
-                }
+                ChatCompletionToolMessageParam(
+                    tool_call_id=tool_call.id,
+                    role="tool",
+                    content=output,
+                )
             )
 
         return outputs
@@ -68,4 +102,8 @@ class OpenAI(Generic[S]):
 
     @property
     def actions(self):
+        return self._actions
+
+    @property
+    def completions(self):
         return self._actions

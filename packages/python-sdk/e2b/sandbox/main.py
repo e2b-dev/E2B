@@ -3,7 +3,7 @@ import urllib.parse
 import requests
 
 from os import path
-from typing import Any, Callable, Dict, List, Literal, Optional, IO, TypeVar
+from typing import Any, Callable, Dict, List, Literal, Optional, IO, TypeVar, Union
 from typing_extensions import Self
 
 from e2b.api import models
@@ -288,3 +288,17 @@ class Sandbox(SandboxConnection):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
+
+    def call_action(self, name: str, args: Dict[str, Any]) -> Union[str, None]:
+        """
+        Call an action by name and return the output.
+
+        :param name: The name of the action
+        :param args: The arguments to pass to the action
+        """
+        action = self._actions.get(name)
+        if not action:
+            return None
+
+        output = action(self, args)
+        return output
