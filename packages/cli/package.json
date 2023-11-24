@@ -20,8 +20,8 @@
   },
   "sideEffects": false,
   "scripts": {
-    "prepublishOnly": "pnpm run build",
-    "build": "tsup --minify",
+    "prepublishOnly": "pnpm build",
+    "build": "tsc --noEmit --skipLibCheck && tsup --minify",
     "dev": "tsup --watch",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
     "check-deps": "knip",

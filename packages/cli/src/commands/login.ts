@@ -54,8 +54,8 @@ async function signInWithBrowser(): Promise<UserConfig> {
       const searchParams = new URL(req.url || '/', 'http://localhost')
         .searchParams
       const searchParamsObj = Object.fromEntries(
-        searchParams.entries(),
-      ) as UserConfig & {
+        searchParams.entries()
+      ) as unknown as UserConfig & {
         error?: string;
       }
       const { error } = searchParamsObj
