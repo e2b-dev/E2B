@@ -2,8 +2,6 @@ import { Sandbox, SandboxOpts } from '../sandbox'
 
 
 export abstract class BaseTemplate extends Sandbox {
-
-
   /**
    * Creates a new Sandbox from the default `base` sandbox template.
    * @returns New Sandbox
@@ -13,7 +11,7 @@ export abstract class BaseTemplate extends Sandbox {
    * const sandbox = await Sandbox.create()
    * ```
    */
-  static async create(): Promise<BaseTemplate>
+  static async create<S extends BaseTemplate>(): Promise<S>
   /**
    * Creates a new Sandbox from the specified options.
    * @param opts Sandbox options
@@ -27,9 +25,9 @@ export abstract class BaseTemplate extends Sandbox {
    * })
    * ```
    */
-  static async create(opts: Omit<SandboxOpts, 'id'>): Promise<BaseTemplate>;
+  static async create<S extends BaseTemplate>(opts: Omit<SandboxOpts, 'id'>): Promise<S>;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  static override async create(opts?: Omit<SandboxOpts, 'id'>): Promise<BaseTemplate>{
+  static override async create(opts?: Omit<SandboxOpts, 'id'>): Promise<BaseTemplate> {
     throw new Error('You have to implement the method create!')
   }
 
@@ -40,6 +38,7 @@ export abstract class BaseTemplate extends Sandbox {
   protected async _create(opts?: { timeout?: number }) {
     return this._open({ timeout: opts?.timeout })
   }
+
   protected async installPackages(command: string, packageNames: string | string[]) {
     if (Array.isArray(packageNames)) {
       packageNames = packageNames.join(' ')
