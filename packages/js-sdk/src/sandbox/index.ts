@@ -10,7 +10,7 @@ import { Process, ProcessManager, ProcessMessage, ProcessOpts, ProcessOutput, pr
 import { CallOpts, SandboxConnection, SandboxConnectionOpts } from './sandboxConnection'
 import { Terminal, TerminalManager, TerminalOpts, TerminalOutput, terminalService } from './terminal'
 import { resolvePath } from '../utils/filesystem'
-import { Actions } from '../templates/openai'
+import { Actions, Completions } from '../templates/openai'
 import { CurrentWorkingDirectoryDoesntExistError } from '../error'
 
 export type DownloadFileFormat =
@@ -440,6 +440,7 @@ export class Sandbox extends SandboxConnection {
   get openai() {
     return {
       actions: new Actions(this),
+      completions: new Completions(this),
     } as const
   }
 
@@ -683,6 +684,17 @@ export class Sandbox extends SandboxConnection {
         return await response.text()
       default:
         return await response.arrayBuffer()
+    }
+  }
+
+  async callAction<T = { [name: string]: any }>(name: string, args: T): Promise<string | undefined> {
+    const action = this._actions.get(name)
+    if (!action) {
+      console.warn(`Action ${name} not found`)
+      return undefined
+    } else {
+      const output = await action(this.sandbox, args)
+      return output
     }
   }
 

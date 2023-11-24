@@ -1,7 +1,7 @@
 import type { Run, RunSubmitToolOutputsParams } from 'openai/resources/beta/threads/runs/runs'
+import type { ChatCompletionMessageToolCall, ChatCompletionToolMessageParam } from 'openai/resources/chat/completions'
 
 import type { Sandbox } from '../sandbox'
-
 
 export class Actions {
   constructor(private readonly sandbox: Sandbox) { }
@@ -24,18 +24,46 @@ export class Actions {
     const outputs: RunSubmitToolOutputsParams.ToolOutput[] = []
 
     for (const toolCall of run.required_action.submit_tool_outputs.tool_calls) {
-      const action = this.sandbox._actions.get(toolCall.function.name)
-      if (!action) {
-        console.warn(`Action ${toolCall.function.name} not found`)
+      const args = JSON.parse(toolCall.function.arguments)
+      const output = await this.sandbox.callAction(toolCall.function.name, args)
+
+      if (!output) {
         continue
       }
-
-      const args = JSON.parse(toolCall.function.arguments)
-      const output = await action(this.sandbox, args)
 
       outputs.push({
         tool_call_id: toolCall.id,
         output,
+      })
+    }
+
+    return outputs
+  }
+}
+
+export class Completions {
+  constructor(private readonly sandbox: Sandbox) { }
+
+  async run(toolCalls: ChatCompletionMessageToolCall[]): Promise<ChatCompletionToolMessageParam[]> {
+    if (!toolCalls) {
+      return []
+    }
+
+    const outputs: ChatCompletionToolMessageParam[] = []
+
+    for (const toolCall of toolCalls) {
+      const args = JSON.parse(toolCall.function.arguments)
+
+      const output = await this.sandbox.callAction(toolCall.function.name, args)
+
+      if (!output) {
+        continue
+      }
+
+      outputs.push({
+        tool_call_id: toolCall.id,
+        role: 'tool',
+        content: output,
       })
     }
 

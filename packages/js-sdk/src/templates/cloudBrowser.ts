@@ -16,6 +16,7 @@ export class CloudBrowser extends BaseTemplate {
     await this.runPuppeteerCode(`await page.goto("${url}")`, opts)
   }
 
+
   async getContent(selector?: string, opts?: { timeout?: number }) {
     let code = selector ? `const element = await page.$('${selector}');` : ""
     code += `
