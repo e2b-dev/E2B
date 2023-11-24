@@ -104,18 +104,18 @@ export const buildCommand = new commander.Command('build')
           console.log(
             `Found sandbox template ${asFormattedSandboxTemplate(
               {
-                envID: config.template,
-                aliases: config.name ? [config.name] : undefined,
+                envID: config.template_id,
+                aliases: config.template_name ? [config.template_name] : undefined,
               },
               relativeConfigPath,
             )}`,
           )
-          envID = config.template
+          envID = config.template_id
           dockerfile = opts.dockerfile || config.dockerfile
           startCmd = opts.cmd || config.start_cmd
         }
 
-        if (config && template && config.template !== template) {
+        if (config && template && config.template_id !== template) {
           // error: you can't specify different ID than the one in config
           console.error("You can't specify different ID than the one in config. If you want to build a new sandbox template remove the config file.")
           process.exit(1)
@@ -126,12 +126,12 @@ export const buildCommand = new commander.Command('build')
           respectDockerignore: true,
         })
 
-        if (newName && config?.name && newName !== config?.name) {
+        if (newName && config?.template_name && newName !== config?.template_name) {
           console.log(
-            `The sandbox template name will be changed from ${asLocal(config.name)} to ${asLocal(newName)}.`,
+            `The sandbox template name will be changed from ${asLocal(config.template_name)} to ${asLocal(newName)}.`,
           )
         }
-        const name = newName || config?.name
+        const name = newName || config?.template_name
 
         console.log(
           `Preparing sandbox template building (${filePaths.length} files in Docker build context). ${!filePaths.length ? `If you are using ${asLocal('.dockerignore')} check if it is configured correctly.` : ''}`,
@@ -189,9 +189,9 @@ export const buildCommand = new commander.Command('build')
         await saveConfig(
           configPath,
           {
-            template: build.envID,
+            template_id: build.envID,
             dockerfile: dockerfileRelativePath,
-            name,
+            template_name: name,
             start_cmd: startCmd,
           },
           true,

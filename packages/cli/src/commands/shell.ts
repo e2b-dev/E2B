@@ -35,13 +35,13 @@ export const shellCommand = new commander.Command('shell')
         console.log(
           `Found sandbox template ${asFormattedSandboxTemplate(
             {
-              envID: config.template,
-              aliases: config.name ? [config.name] : undefined,
+              envID: config.template_id,
+              aliases: config.template_name ? [config.template_name] : undefined,
             },
             relativeConfigPath,
           )}`,
         )
-        envID = config.template
+        envID = config.template_id
       }
 
       if (!envID) {
