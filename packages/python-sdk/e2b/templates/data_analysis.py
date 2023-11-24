@@ -27,7 +27,7 @@ class Artifact(BaseModel):
 
 
 class DataAnalysis(Sandbox):
-    env_id = "Python3-DataAnalysis"
+    template = "Python3-DataAnalysis"
 
     def __init__(
         self,
@@ -43,7 +43,7 @@ class DataAnalysis(Sandbox):
     ):
         self.on_artifact = on_artifact
         super().__init__(
-            id=self.env_id,
+            template=self.template,
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,

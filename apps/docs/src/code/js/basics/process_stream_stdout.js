@@ -1,7 +1,7 @@
 import { Sandbox } from '@e2b/sdk'
 
 const sandbox = await Sandbox.create({
-  id: 'base',
+  template: 'base',
   onStdout: (output) => console.log('sandbox', output.line), // $HighlightLine
 })
 

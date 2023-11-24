@@ -12,16 +12,16 @@ import { pathOption } from '../options'
 
 export const shellCommand = new commander.Command('shell')
   .description('Connect terminal to sandbox')
-  .argument('[id]', `Connect to sandbox specified by ${asBold('[id]')}`)
+  .argument('[template]', `Connect to sandbox specified by ${asBold('[template]')}`)
   .addOption(pathOption)
   .alias('sh')
-  .action(async (id: string | undefined, opts: {
+  .action(async (template: string | undefined, opts: {
     name?: string;
     path?: string;
   }) => {
     try {
       const apiKey = ensureAPIKey()
-      let envID = id
+      let envID = template
 
       const root = getRoot(opts.path)
       const configPath = getConfigPath(root)
@@ -35,13 +35,13 @@ export const shellCommand = new commander.Command('shell')
         console.log(
           `Found sandbox template ${asFormattedSandboxTemplate(
             {
-              envID: config.id,
-              aliases: config.name ? [config.name] : undefined,
+              envID: config.template_id,
+              aliases: config.template_name ? [config.template_name] : undefined,
             },
             relativeConfigPath,
           )}`,
         )
-        envID = config.id
+        envID = config.template_id
       }
 
       if (!envID) {
@@ -50,9 +50,8 @@ export const shellCommand = new commander.Command('shell')
         )
         process.exit(1)
       }
-      const template: Pick<e2b.components['schemas']['Environment'], 'envID'> = { envID: envID }
 
-      await connectSandbox({ apiKey, template: template })
+      await connectSandbox({ apiKey, template: { envID } })
       // We explicitly call exit because the sandbox is keeping the program alive.
       // We also don't want to call sandbox.close because that would disconnect other users from the edit session.
       process.exit(0)
@@ -71,7 +70,7 @@ export async function connectSandbox({
 }) {
   const sandbox = await e2b.Sandbox.create({
     apiKey,
-    id: template.envID,
+    template: template.envID,
   })
 
   if (sandbox.terminal) {

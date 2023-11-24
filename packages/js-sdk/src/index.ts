@@ -21,7 +21,6 @@ export type { ProcessManager } from './sandbox/process'
 export type { EnvVars } from './sandbox/envVars'
 export { runCode, CodeRuntime } from './runCode' // Export CodeRuntime enum as value, not as type, so it can be actually used in consumer code
 import { Sandbox } from './sandbox/index'
-// export { runCmd } from './runCmd'
 
 import { DataAnalysis } from './templates/dataAnalysis'
 export { DataAnalysis as CodeInterpreter }
@@ -32,5 +31,3 @@ export type { Action } from './sandbox/index'
 
 export { Sandbox }
 export default Sandbox
-
-// export { Sandbox }

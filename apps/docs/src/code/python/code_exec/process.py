@@ -13,7 +13,7 @@ def main():
     # 1. Start the playground sandbox
     sandbox = Sandbox(
         # You can pass your own sandbox template id
-        id="base",
+        template="base",
         api_key=E2B_API_KEY,
     )
 

@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox(id="base", cwd="/code")  # $HighlightLine
+sandbox = Sandbox(template="base", cwd="/code")  # $HighlightLine
 sandbox_cwd = sandbox.process.start("pwd")  # $HighlightLine
 sandbox_cwd.wait()
 print(sandbox_cwd.output.stdout)

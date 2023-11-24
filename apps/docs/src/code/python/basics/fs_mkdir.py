@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox(id="base")
+sandbox = Sandbox(template="base")
 
 # Create a new directory '/dir'
 sandbox.filesystem.make_dir("/dir")  # $HighlightLine

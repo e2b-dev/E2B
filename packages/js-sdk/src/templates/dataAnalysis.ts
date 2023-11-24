@@ -20,15 +20,15 @@ export interface RunPythonOpts extends Omit<ProcessOpts, 'cmd'> {
   onArtifact?: (artifact: Artifact) => Promise<void> | void;
 }
 
-const DataAnalysisEnvId = 'Python3-DataAnalysis'
-
 export class DataAnalysis extends Sandbox {
-  constructor(opts: Omit<SandboxOpts, 'id'>) {
-    super({ id: DataAnalysisEnvId, ...opts })
+  private static template = 'Python3-DataAnalysis'
+
+  constructor(opts: Omit<SandboxOpts, 'template'>) {
+    super({ template: DataAnalysis.template, ...opts })
   }
 
   static override async create(): Promise<DataAnalysis>;
-  static override async create(opts?: Omit<SandboxOpts, 'id'>) {
+  static override async create(opts?: Omit<SandboxOpts, 'template'>) {
     const sandbox = new DataAnalysis({ ...opts })
     await sandbox._open({ timeout: opts?.timeout })
 

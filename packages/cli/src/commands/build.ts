@@ -42,12 +42,12 @@ export const buildCommand = new commander.Command('build')
     )} config`,
   )
   .argument(
-    '[id]',
+    '[template]',
     `Specify ${asBold(
-      '[id]',
-    )} of sandbox template to rebuild it. If you don's specify ${asBold(
-      '[id]',
-    )} and there is no ${asLocal('e2b.toml')} a new sandbox will be created`,
+      '[template]',
+    )} to rebuild it. If you don's specify ${asBold(
+      '[template]',
+    )} and there is no ${asLocal('e2b.toml')} a new sandbox template will be created`,
   )
   .addOption(pathOption)
   .option(
@@ -67,7 +67,7 @@ export const buildCommand = new commander.Command('build')
   .alias('bd')
   .action(
     async (
-      id: string | undefined,
+      template: string | undefined,
       opts: {
         path?: string;
         dockerfile?: string;
@@ -87,7 +87,7 @@ export const buildCommand = new commander.Command('build')
           process.exit(1)
         }
 
-        let envID = id
+        let envID = template
         let dockerfile = opts.dockerfile
         let startCmd = opts.cmd
 
@@ -104,18 +104,18 @@ export const buildCommand = new commander.Command('build')
           console.log(
             `Found sandbox template ${asFormattedSandboxTemplate(
               {
-                envID: config.id,
-                aliases: config.name ? [config.name] : undefined,
+                envID: config.template_id,
+                aliases: config.template_name ? [config.template_name] : undefined,
               },
               relativeConfigPath,
             )}`,
           )
-          envID = config.id
+          envID = config.template_id
           dockerfile = opts.dockerfile || config.dockerfile
           startCmd = opts.cmd || config.start_cmd
         }
 
-        if (config && id && config.id !== id) {
+        if (config && template && config.template_id !== template) {
           // error: you can't specify different ID than the one in config
           console.error("You can't specify different ID than the one in config. If you want to build a new sandbox template remove the config file.")
           process.exit(1)
@@ -126,12 +126,12 @@ export const buildCommand = new commander.Command('build')
           respectDockerignore: true,
         })
 
-        if (newName && config?.name && newName !== config?.name) {
+        if (newName && config?.template_name && newName !== config?.template_name) {
           console.log(
-            `The sandbox template name will be changed from ${asLocal(config.name)} to ${asLocal(newName)}.`,
+            `The sandbox template name will be changed from ${asLocal(config.template_name)} to ${asLocal(newName)}.`,
           )
         }
-        const name = newName || config?.name
+        const name = newName || config?.template_name
 
         console.log(
           `Preparing sandbox template building (${filePaths.length} files in Docker build context). ${!filePaths.length ? `If you are using ${asLocal('.dockerignore')} check if it is configured correctly.` : ''}`,
@@ -189,9 +189,9 @@ export const buildCommand = new commander.Command('build')
         await saveConfig(
           configPath,
           {
-            id: build.envID,
+            template_id: build.envID,
             dockerfile: dockerfileRelativePath,
-            name,
+            template_name: name,
             start_cmd: startCmd,
           },
           true,
@@ -255,7 +255,7 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox
 
 # Start sandbox
-sandbox = Sandbox(id="${aliases?.length ? aliases[0] : template.data.envID}")
+sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.envID}")
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview
@@ -266,7 +266,7 @@ sandbox.close()`)
         const typescriptExample = asTypescript(`import { Sandbox } from '@e2b/sdk'
 
 // Start sandbox
-const sandbox = await Sandbox.create({ id: '${aliases?.length ? aliases[0] : template.data.envID}' })
+const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.data.envID}' })
 
 // Interact with sandbox. Learn more here:
 // https://e2b.dev/docs/sandbox/overview

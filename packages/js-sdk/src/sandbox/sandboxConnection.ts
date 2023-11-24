@@ -34,6 +34,17 @@ export interface Logger {
 }
 
 export interface SandboxConnectionOpts {
+  /**
+   * Sandbox Template ID or name.
+   * 
+   * If not specified, the 'base' template will be used.
+   */
+  template?: string;
+  /**
+   * @deprecated Use `template` instead.
+   * 
+   * Sandbox Template ID or name.
+   */
   id?: string;
   apiKey?: string;
   cwd?: string;
@@ -102,9 +113,8 @@ export class SandboxConnection {
   }
 
   private get templateID(): string {
-    return this.opts.id || 'base'
+    return this.opts.template || this.opts.id || 'base'
   }
-
 
   /**
    * Keep the sandbox alive for the specified duration.
@@ -127,8 +137,6 @@ export class SandboxConnection {
       instanceID: this.sandbox?.instanceID, duration,
     })
   }
-
-
 
   /**
    * Get the hostname for the sandbox or for the specified sandbox's port.
@@ -337,93 +345,93 @@ export class SandboxConnection {
   private async connectRpc() {
     const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
 
-      if (!hostname) {
-        throw new Error('Cannot get sandbox\'s hostname')
+    if (!hostname) {
+      throw new Error('Cannot get sandbox\'s hostname')
+    }
+
+    const protocol = this.opts.__debug_devEnv === 'local' ? 'ws' : 'wss'
+    const sandboxURL = `${protocol}://${hostname}${WS_ROUTE}`
+
+    this.rpc.onError((err) => {
+      // not warn, because this is somewhat expected behaviour during initialization
+      this.logger.debug?.(
+        `Error in WebSocket of sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
+        }. Trying to reconnect...`,
+      )
+    })
+
+    let isFinished = false
+    let resolveOpening: (() => void) | undefined
+    let rejectOpening: (() => void) | undefined
+
+    const openingPromise = new Promise<void>((resolve, reject) => {
+      resolveOpening = () => {
+        if (isFinished) return
+        isFinished = true
+        resolve()
       }
+      rejectOpening = () => {
+        if (isFinished) return
+        isFinished = true
+        reject()
+      }
+    })
 
-      const protocol = this.opts.__debug_devEnv === 'local' ? 'ws' : 'wss'
-      const sandboxURL = `${protocol}://${hostname}${WS_ROUTE}`
+    this.rpc.onOpen(() => {
+      this.logger.debug?.(
+        `Connected to sandbox "${this.sandbox?.instanceID}"`,
+      )
+      resolveOpening?.()
+    })
 
-      this.rpc.onError((err) => {
-        // not warn, because this is somewhat expected behaviour during initialization
+    this.rpc.onClose(async () => {
+      this.logger.debug?.(
+        `Closing WebSocket connection to sandbox "${this.sandbox?.instanceID}"`,
+      )
+      if (this.isOpen) {
+        await wait(WS_RECONNECT_INTERVAL)
         this.logger.debug?.(
-          `Error in WebSocket of sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
-          }. Trying to reconnect...`,
+          `Reconnecting to sandbox "${this.sandbox?.instanceID}"`,
         )
-      })
-
-      let isFinished = false
-      let resolveOpening: (() => void) | undefined
-      let rejectOpening: (() => void) | undefined
-
-      const openingPromise = new Promise<void>((resolve, reject) => {
-        resolveOpening = () => {
-          if (isFinished) return
-          isFinished = true
-          resolve()
-        }
-        rejectOpening = () => {
-          if (isFinished) return
-          isFinished = true
-          reject()
-        }
-      })
-
-      this.rpc.onOpen(() => {
-        this.logger.debug?.(
-          `Connected to sandbox "${this.sandbox?.instanceID}"`,
-        )
-        resolveOpening?.()
-      })
-
-      this.rpc.onClose(async () => {
-        this.logger.debug?.(
-          `Closing WebSocket connection to sandbox "${this.sandbox?.instanceID}"`,
-        )
-        if (this.isOpen) {
-          await wait(WS_RECONNECT_INTERVAL)
+        try {
+          // When the WS connection closes the subscribers in devbookd are removed.
+          // We want to delete the subscriber handlers here so there are no orphans.
+          this.subscribers = []
+          await this.rpc.connect(sandboxURL)
           this.logger.debug?.(
-            `Reconnecting to sandbox "${this.sandbox?.instanceID}"`,
+            `Reconnected to sandbox "${this.sandbox?.instanceID}"`,
           )
-          try {
-            // When the WS connection closes the subscribers in devbookd are removed.
-            // We want to delete the subscriber handlers here so there are no orphans.
-            this.subscribers = []
-            await this.rpc.connect(sandboxURL)
-            this.logger.debug?.(
-              `Reconnected to sandbox "${this.sandbox?.instanceID}"`,
-            )
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } catch (err: any) {
-            // not warn, because this is somewhat expected behaviour during initialization
-            this.logger.debug?.(
-              `Failed reconnecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
-              }`,
-            )
-          }
-        } else {
-          rejectOpening?.()
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+          // not warn, because this is somewhat expected behaviour during initialization
+          this.logger.debug?.(
+            `Failed reconnecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
+            }`,
+          )
         }
-      })
-
-      this.rpc.onNotification.push(this.handleNotification.bind(this))
-
-      try {
-        this.logger.debug?.(
-          `Connection to sandbox "${this.sandbox?.instanceID}"`,
-        )
-        await this.rpc.connect(sandboxURL)
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        // not warn, because this is somewhat expected behaviour during initialization
-        this.logger.debug?.(
-          `Error connecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
-          }`,
-        )
+      } else {
+        rejectOpening?.()
       }
+    })
 
-      await openingPromise
+    this.rpc.onNotification.push(this.handleNotification.bind(this))
+
+    try {
+      this.logger.debug?.(
+        `Connection to sandbox "${this.sandbox?.instanceID}"`,
+      )
+      await this.rpc.connect(sandboxURL)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      // not warn, because this is somewhat expected behaviour during initialization
+      this.logger.debug?.(
+        `Error connecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
+        }`,
+      )
+    }
+
+    await openingPromise
   }
   private handleNotification(data: IRpcNotification) {
     this.logger.debug?.('Handling notification:', data)

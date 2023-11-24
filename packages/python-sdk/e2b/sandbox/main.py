@@ -56,7 +56,8 @@ class Sandbox(SandboxConnection):
 
     def __init__(
         self,
-        id: str = "base",
+        template: str = "base",
+        id: Optional[str] = None,
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
@@ -73,10 +74,12 @@ class Sandbox(SandboxConnection):
         """
         Create a new cloud sandbox.
 
-        :param id: ID of the sandbox template or the name of prepared template.
+        :param id: [Deprecated] Use `template` param instead.
+        :param template: ID of the sandbox template or the name of prepared template. If not specified a 'base' template will be used.
         Can be one of the following premade sandbox templates or a custom sandbox template ID:
         - `base` - A basic sandbox with a Linux environment
         - `Python3-DataAnalysis` - A Python3 sandbox with data analysis tools
+
 
         :param api_key: The API key to use, if not provided, the `E2B_API_KEY` environment variable is used
         :param cwd: The current working directory to use
@@ -87,7 +90,14 @@ class Sandbox(SandboxConnection):
         :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
         """
 
-        logger.info(f"Creating sandbox {id if isinstance(id, str) else type(id)}")
+        template = id or template or "base"
+
+        if id:
+            logger.warning("The id parameter is deprecated, use template instead.")
+
+        logger.info(
+            f"Creating sandbox {template if isinstance(template, str) else type(template)}"
+        )
         if cwd and cwd.startswith("~"):
             cwd = cwd.replace("~", "/home/user")
 
@@ -105,7 +115,7 @@ class Sandbox(SandboxConnection):
             on_exit=on_exit,
         )
         super().__init__(
-            id=id,
+            template=template,
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
@@ -212,10 +222,10 @@ class Sandbox(SandboxConnection):
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
-        logger.info(f"Opening sandbox {self._id}")
+        logger.info(f"Opening sandbox {self._template}")
         super()._open(timeout=timeout)
         self._code_snippet._subscribe()
-        logger.info(f"Sandbox {self._id} opened")
+        logger.info(f"Sandbox {self._template} opened")
         if self.cwd:
             self.filesystem.make_dir(self.cwd)
         self._handle_start_cmd_logs()

@@ -129,9 +129,9 @@ This will create the `e2b.toml` file storing the sandbox config.
 <CodeGroup isFileName title="e2b.toml" isRunnable={false}>
 ```toml
 # This is a config for E2B sandbox template
-id = "1wdqsf9le9gk21ztb4mo"
+template_id = "1wdqsf9le9gk21ztb4mo"
 dockerfile = "e2b.Dockerfile"
-name = "my-agent-sandbox"
+template_name = "my-agent-sandbox"
 ```
 </CodeGroup>
 
@@ -153,7 +153,7 @@ e2b build
 
 Now you can use the [E2B SDK](/getting-started/installation) to spawn & control your new custom sandbox.
 
-The sandbox template name is `my-agent-sandbox`. We'll use it as an unique identifier and pass it to the SDK as the `id` parameter.
+The sandbox template name is `my-agent-sandbox`. We'll use it as an unique identifier and pass it to the SDK as the `template` parameter.
 This way, we'll be able to spawn our custom sandbox and control it with the SDK.
 
 <CodeGroup title="Spawn & control your custom sandbox" isRunnable={true}>
@@ -161,7 +161,7 @@ This way, we'll be able to spawn our custom sandbox and control it with the SDK.
 import { Sandbox } from '@e2b/sdk'
 
 // Spawn your custom sandbox
-const sandbox = await Sandbox.create({ id: 'my-agent-sandbox' }) // $HighlightLine
+const sandbox = await Sandbox.create({ template: 'my-agent-sandbox' }) // $HighlightLine
 
 // Interact with sandbox. Learn more here:
 // https://e2b.dev/docs/sandbox/overview
@@ -174,7 +174,7 @@ await sandbox.close()
 from e2b import Sandbox
 
 # Spawn your custom sandbox
-sandbox = Sandbox(id="my-agent-sandbox") # $HighlightLine
+sandbox = Sandbox(template="my-agent-sandbox") # $HighlightLine
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview

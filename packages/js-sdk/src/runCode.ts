@@ -58,7 +58,7 @@ export async function runCode(
   }
 
   const sandbox = await Sandbox.create({
-    id: envID,
+    template: envID,
     apiKey: opts?.apiKey || process?.env?.E2B_API_KEY || '', // Sandbox.create will throw an error if the API key is not provided so no need to check here
   })
 

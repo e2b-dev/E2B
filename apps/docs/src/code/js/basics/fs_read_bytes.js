@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { Sandbox } from '@e2b/sdk'
 
-const sandbox = await Sandbox.create({id: 'base'})
+const sandbox = await Sandbox.create({ template: 'base' })
 
 // File bytes will read file's content as bytes
 // `fileBytes` as a Uint8Array

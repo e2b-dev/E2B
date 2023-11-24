@@ -1,7 +1,7 @@
 import { Sandbox } from '@e2b/sdk'
 
 const sandbox = await Sandbox.create({
-  id: 'base',
+  template: 'base',
 })
 
 // This command will fail and output to stderr because Golang isn't installed in the cloud playground

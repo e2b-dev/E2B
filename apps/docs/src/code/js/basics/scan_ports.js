@@ -21,7 +21,7 @@ function printNewPortAndURL(openPorts, sandbox) {
 }
 
 const sandbox = await Sandbox.create({
-  id: 'base',
+  template: 'base',
   onScanPorts: (openPorts) => printNewPortAndURL(openPorts, sandbox), // $HighlightLine
 })
 

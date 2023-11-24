@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox(id="base")
+sandbox = Sandbox(template="base")
 
 # Read the '/etc/hosts' file
 file_content = sandbox.filesystem.read("/etc/hosts")  # $HighlightLine

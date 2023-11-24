@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox(id="base")
+sandbox = Sandbox(template="base")
 
 file_in_bytes = sandbox.download_file("path/to/remote/file/inside/sandbox")  # $HighlightLine
 # Save file to local filesystem

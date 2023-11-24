@@ -1,7 +1,7 @@
 from e2b import Sandbox
 
 sandbox = Sandbox(
-    id="base",
+    template="base",
     cwd="/code",  # $HighlightLine
 )
 

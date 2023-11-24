@@ -1,7 +1,7 @@
 import { Sandbox } from '@e2b/sdk'
 
 const sandbox = await Sandbox.create({
-  id: 'base',
+  template: 'base',
 })
 
 const dirContent = await sandbox.filesystem.list('/') // $HighlightLine

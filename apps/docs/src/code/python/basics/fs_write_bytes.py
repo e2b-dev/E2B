@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox(id="base")
+sandbox = Sandbox(template="base")
 
 content_in_bytes = bytearray(b"Hello world")
 

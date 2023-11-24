@@ -3,7 +3,7 @@ import { Sandbox } from '@e2b/sdk'
 // 1. Start the playground sandbox
 const sandbox = await Sandbox.create({
   // You can pass your own sandbox template id
-  id: 'base',
+  template: 'base',
 })
 
 // 2. Save the JavaScript code to a file inside the playground

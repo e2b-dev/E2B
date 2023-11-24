@@ -1,6 +1,6 @@
 import { Sandbox } from '@e2b/sdk'
 
-const sandbox = await Sandbox.create({id: 'base'})
+const sandbox = await Sandbox.create({ template: 'base' })
 
 // Timeout 3s for the process to start
 const npmInit = await sandbox.process.start({
