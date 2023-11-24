@@ -3,16 +3,10 @@ import logging
 import time
 from typing import Optional, Tuple, List, Union
 
-import pydantic
-
 from e2b.constants import TIMEOUT
 from e2b.templates.template import BaseTemplate
 
 logger = logging.getLogger(__name__)
-
-
-class Element(pydantic.BaseModel):
-    selector: str
 
 
 class CloudBrowser(BaseTemplate):
@@ -40,47 +34,30 @@ class CloudBrowser(BaseTemplate):
 
     def get_content(
         self,
-        element: Element = None,
+        selector: str = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> Tuple[str, str]:
         code = ""
-        if element:
-            code += f"""const element = await page.$('{element.selector}');"""
+        if selector:
+            code += f"""const element = await page.$('{selector}');"""
 
         code += f"""
-            const content = await {'element' if element else 'page'}.content();
+            const content = await {'element' if selector else 'page'}.content();
             console.log(content)
         """
         return self._run_puppeteer_code(code, timeout=timeout)
 
-    def get_element(
-        self, selector: str, element: Element = None, timeout: Optional[float] = TIMEOUT
-    ) -> Element:
-        if element:
-            selector = f"{element.selector} {selector}"
-
-        code = f"""
-            const element = await page.$('{selector}');
-            console.log(element)
-        """
-        stdout, stderr = self._run_puppeteer_code(code, timeout=timeout)
-        if stderr:
-            logger.error(stderr)
-            raise Exception(stderr)
-
-        return Element(selector=selector)
-
     def get_links(
         self,
-        element: Optional[Element] = None,
+        selector: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> List[dict]:
         code = ""
-        if element:
-            code += f"""const element = await page.$('{element.selector}');"""
+        if selector:
+            code += f"""const element = await page.$('{selector}');"""
 
         code += f"""
-            const pageUrls = await {'element' if element else 'page'}.evaluate(() => {{
+            const pageUrls = await {'element' if selector else 'page'}.evaluate(() => {{
               const links = Array.from(document.links);
               return links.map((link) => ({{
                 url: link.href,
@@ -99,15 +76,15 @@ class CloudBrowser(BaseTemplate):
 
     def get_images(
         self,
-        element: Optional[Element] = None,
+        selector: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> List[dict]:
         code = ""
-        if element:
-            code += f"""const element = await page.$('{element.selector}');"""
+        if selector:
+            code += f"""const element = await page.$('{selector}');"""
 
         code += f"""
-            const pageUrls = await {'element' if element else 'page'}.evaluate(() => {{
+            const pageUrls = await {'element' if selector else 'page'}.evaluate(() => {{
               const images = Array.from(document.images);
               return images.map((link) => ({{
                 href: link.src,
@@ -126,11 +103,11 @@ class CloudBrowser(BaseTemplate):
 
     def get_element_text(
         self,
-        element: Element,
+        selector: str,
         timeout: Optional[float] = TIMEOUT,
     ) -> Tuple[str, str]:
         code = f"""
-            const element = await page.$('{element.selector}');
+            const element = await page.$('{selector}');
             const text = await page.evaluate(element => element.textContent, element);
             console.log(text.replace(/\\s+/g, ' ').trim())
         """
@@ -138,17 +115,17 @@ class CloudBrowser(BaseTemplate):
 
     def screenshot(
         self,
-        element: Element = None,
+        selector: str = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> bytes:
         path = f"/home/user/screenshot-{time.strftime('%Y%m%d-%H%M%S')}.png"
 
         code = ""
-        if element:
-            code += f"""const element = await page.$('{element.selector}');"""
+        if selector:
+            code += f"""const element = await page.$('{selector}');"""
 
         code += f"""
-            await {'element' if element else 'page'}.screenshot({{path: '{path}'}})
+            await {'element' if selector else 'page'}.screenshot({{path: '{path}'}})
         """
         _, stderr = self._run_puppeteer_code(code, timeout=timeout)
         if stderr:
@@ -161,10 +138,10 @@ class CloudBrowser(BaseTemplate):
 
     def click(
         self,
-        element: Element,
+        selector: str,
         timeout: Optional[float] = TIMEOUT,
     ) -> Tuple[str, str]:
-        code = f"""await page.click('{element.selector}')"""
+        code = f"""await page.click('{selector}')"""
         return self._run_puppeteer_code(code, timeout=timeout)
 
     def install_js_packages(
