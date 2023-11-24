@@ -2,7 +2,7 @@ export { default as api, withAPIKey, withAccessToken } from './api'
 export type { ClientType, components, paths } from './api'
 
 export { SANDBOX_DOMAIN, API_HOST } from './constants'
-export type { SandboxOpts } from './sandbox'
+export type { SandboxOpts, DownloadFileFormat } from './sandbox'
 export type { OpenPort } from './sandbox/codeSnippet'
 export { Terminal, TerminalOutput } from './sandbox/terminal'
 export type { TerminalManager } from './sandbox/terminal'
