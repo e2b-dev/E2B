@@ -31,7 +31,7 @@ export const deleteCommand = new commander.Command('delete')
       '[template]',
     )} to delete it. If you don's specify ${asBold(
       '[template]',
-    )} the command will try delete sandbox template defined by ${asLocal('e2b.toml')}.`,
+    )} the command will try to delete sandbox template defined by ${asLocal('e2b.toml')}.`,
   )
   .addOption(pathOption)
   .addOption(selectMultipleOption)
