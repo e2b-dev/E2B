@@ -75,7 +75,7 @@ class Sandbox(SandboxConnection):
         Create a new cloud sandbox.
 
         :param id: [Deprecated] Use `template` param instead.
-        :param template: ID of the sandbox template or the name of prepared template.
+        :param template: ID of the sandbox template or the name of prepared template. If not specified a 'base' template will be used.
         Can be one of the following premade sandbox templates or a custom sandbox template ID:
         - `base` - A basic sandbox with a Linux environment
         - `Python3-DataAnalysis` - A Python3 sandbox with data analysis tools

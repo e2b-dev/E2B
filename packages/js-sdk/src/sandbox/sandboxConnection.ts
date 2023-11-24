@@ -34,6 +34,11 @@ export interface Logger {
 }
 
 export interface SandboxConnectionOpts {
+  /**
+   * Sandbox Template ID or name.
+   * 
+   * If not specified, the 'base' template will be used.
+   */
   template?: string;
   /**
    * @deprecated Use `template` instead.
