@@ -1,23 +1,19 @@
-import { DownloadFileFormat, Sandbox, SandboxOpts } from '../sandbox'
+import { Sandbox, SandboxOpts } from '../sandbox'
 import type { ProcessOpts } from '../sandbox/process'
 import { FilesystemEvent, FilesystemOperation } from '../sandbox/filesystemWatcher'
 
-export class Artifact {
+export class Artifact<S extends DataAnalysis> {
   readonly path: string
-  readonly _sandbox: Sandbox
+  readonly _sandbox: S
 
-  constructor(path: string, sandbox: Sandbox) {
+  constructor(path: string, sandbox: S) {
     this.path = path
     this._sandbox = sandbox
   }
-
-  async download(format?: DownloadFileFormat) {
-    return this._sandbox.downloadFile(this.path, format)
-  }
 }
 
-export interface RunPythonOpts extends Omit<ProcessOpts, 'cmd'> {
-  onArtifact?: (artifact: Artifact) => Promise<void> | void;
+export interface RunPythonOpts<S extends DataAnalysis> extends Omit<ProcessOpts, 'cmd'> {
+  onArtifact?: (artifact: Artifact<S>) => Promise<void> | void;
 }
 
 export class DataAnalysis extends Sandbox {
@@ -35,12 +31,16 @@ export class DataAnalysis extends Sandbox {
     return sandbox
   }
 
-  async runPython(code: string, opts: RunPythonOpts = {}) {
+  async runPython(code: string, opts: RunPythonOpts<this> = {}): Promise<{
+    stdout: string;
+    stderr: string;
+    artifacts: Artifact<DataAnalysis>[];
+  }> {
     const artifacts: string[] = []
 
     const registerArtifacts = async (event: FilesystemEvent) => {
       if (event.operation === FilesystemOperation.Create) {
-        const artifact = new Artifact(event.path, this)
+        const artifact = new Artifact<this>(event.path, this)
         artifacts.push(event.path)
         await opts.onArtifact?.(artifact)
       }
@@ -64,7 +64,7 @@ export class DataAnalysis extends Sandbox {
     return {
       stdout: proc.output.stdout,
       stderr: proc.output.stderr,
-      artifacts: artifacts.map((artifact) => new Artifact(artifact, this)),
+      artifacts: artifacts.map((artifact) => new Artifact<this>(artifact, this)),
     }
   }
 
