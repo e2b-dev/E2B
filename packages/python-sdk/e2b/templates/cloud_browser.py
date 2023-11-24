@@ -34,7 +34,7 @@ class CloudBrowser(BaseTemplate):
 
     def get_content(
         self,
-        selector: str = None,
+        selector: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> Tuple[str, str]:
         code = ""
@@ -115,7 +115,7 @@ class CloudBrowser(BaseTemplate):
 
     def screenshot(
         self,
-        selector: str = None,
+        selector: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> bytes:
         path = f"/home/user/screenshot-{time.strftime('%Y%m%d-%H%M%S')}.png"
