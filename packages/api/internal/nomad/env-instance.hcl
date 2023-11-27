@@ -35,6 +35,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
         LogsProxyAddress = "{{ .LogsProxyAddress }}"
         SpanID = "{{ .SpanID }}"
         TraceID = "{{ .TraceID }}"
+        TeamID = "{{ .TeamID }}"
       }
     }
   }

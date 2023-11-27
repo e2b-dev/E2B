@@ -248,9 +248,11 @@ func (d *Driver) initializeFC(
 			EnvID      string `json:"envID"`
 			Address    string `json:"address"`
 			TraceID    string `json:"traceID"`
+			TeamID     string `json:"teamID"`
 		}{
 			InstanceID: slot.InstanceID,
 			EnvID:      taskConfig.EnvID,
+			TeamID:     taskConfig.TeamID,
 			Address:    taskConfig.LogsProxyAddress,
 			TraceID:    taskConfig.TraceID,
 		},

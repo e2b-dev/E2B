@@ -22,6 +22,8 @@ type (
 		InstanceID string `codec:"InstanceID"`
 		EnvID      string `codec:"EnvID"`
 
+		TeamID string `codec:"TeamID"`
+
 		TraceID string `codec:"TraceID"`
 		SpanID  string `codec:"SpanID"`
 
@@ -39,6 +41,8 @@ type (
 var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 	"InstanceID": hclspec.NewAttr("InstanceID", "string", true),
 	"EnvID":      hclspec.NewAttr("EnvID", "string", true),
+
+	"TeamID": hclspec.NewAttr("TeamID", "string", false),
 
 	"SpanID":  hclspec.NewAttr("SpanID", "string", true),
 	"TraceID": hclspec.NewAttr("TraceID", "string", true),
