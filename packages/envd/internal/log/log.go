@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/log/exporter"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
