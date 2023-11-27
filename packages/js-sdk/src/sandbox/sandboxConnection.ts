@@ -305,7 +305,7 @@ export class SandboxConnection {
       }
       this.logger.debug?.('Opening sandbox...')
 
-      if (!this.sandbox) {
+      if (!this.sandbox && !this.opts.__debug_hostname) {
         try {
           const res = await createSandbox(this.apiKey, {
             envID: this.templateID,
@@ -335,7 +335,11 @@ export class SandboxConnection {
           throw e
         }
       }
-      this.refresh(this.sandbox.instanceID)
+
+      if (this.sandbox && !this.opts.__debug_hostname) {
+        this.refresh(this.sandbox.instanceID)
+      }
+
       await this.connectRpc()
       return this
     }

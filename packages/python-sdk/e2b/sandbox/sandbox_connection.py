@@ -44,12 +44,12 @@ class SandboxConnection:
     _on_close_child: Optional[Callable[[], Any]] = None
 
     @property
-    def id(self) -> str:
+    def id(self):
         """
         The sandbox ID.
         """
         if not self._sandbox:
-            raise SandboxException("Sandbox is not running.")
+            return None
         return f"{self._sandbox.instance_id}-{self._sandbox.client_id}"
 
     @property
@@ -137,8 +137,6 @@ class SandboxConnection:
 
         :return: Hostname of the sandbox or sandbox's port
         """
-        if not self._sandbox:
-            raise SandboxException("Sandbox is not running.")
 
         if self._debug_hostname:
             if port and self._debug_dev_env == "remote":
@@ -147,10 +145,15 @@ class SandboxConnection:
                 return f"{self._debug_hostname}:{port}"
             else:
                 return self._debug_hostname
+        else:
+            if not self._sandbox:
+                raise SandboxException("Sandbox is not running.")
 
         hostname = f"{self.id}.{SANDBOX_DOMAIN}"
+
         if port:
             return f"{port}-{hostname}"
+
         return hostname
 
     def keep_alive(self, duration: int) -> None:
@@ -211,7 +214,7 @@ class SandboxConnection:
         else:
             self._is_open = True
 
-        if not self._sandbox:
+        if not self._sandbox and not self._debug_hostname:
             try:
                 with E2BApiClient(api_key=self._api_key) as api_client:
                     api = client.InstancesApi(api_client)
@@ -240,7 +243,9 @@ class SandboxConnection:
                 self._close()
                 raise e
 
-        self._start_refreshing()
+        if not self._debug_hostname:
+            self._start_refreshing()
+
         try:
             self._connect_rpc(timeout)
         except Exception as e:
