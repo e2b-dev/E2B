@@ -220,10 +220,13 @@ class Sandbox(SandboxConnection):
         return OpenAI[Self](Actions[Self](self))
 
     def _handle_start_cmd_logs(self):
+        # TODO: Handle failed reconnect to the process or non existing
         self.process.start(
-            "sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service",
             cwd="/",
             env_vars={},
+            cmd="",
+            # Reconnecting to an existing process
+            process_id="_startCmd",
         )
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:

@@ -707,12 +707,15 @@ export class Sandbox extends SandboxConnection {
   private async handleStartCmdLogs() {
     try {
       await this.process.startAndWait({
-        cmd: 'sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service',
+        // We are reconnection to a startCmd process
+        processID: '_startCmd',
+        cmd: "",
         envVars: {},
         cwd: '/',
       })
     } catch (err) {
-      this.logger.warn?.("error waiting for the start command logs")
+      // TODO: Handle non existing start cmd
+      this.logger.warn?.("error waiting for the start command logs", err)
     }
   }
 }
