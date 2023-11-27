@@ -3,6 +3,8 @@ import {
   FileCode,
 } from 'lucide-react'
 
+import { TemplateName } from './TemplateName'
+
 # Premade Sandboxes
 
 To get your started quickly, we offer two premade sandboxes.
@@ -20,10 +22,8 @@ To get your started quickly, we offer two premade sandboxes.
   />
   Template File
 </Link>
-<div className="pr-1 w-[320px] flex items-center justify-start space-x-2 border border-gray-600 rounded">
-  <span className="font-mono text-sm w-8 h-8 flex items-center justify-center border-r border-gray-600">template</span>
-  <span className="font-mono text-sm text-gray-200">base</span>
-</div>
+
+<TemplateName templateName="base"/>
 
 ### Features
 Ubuntu-based sandbox with Nodejs, Python 3, and essentials libraries like `curl`.
@@ -48,10 +48,7 @@ The base sandbox has all the features of the [Sandbox API](/sandbox/api/envs) av
   Template File
 </Link>
 
-<div className="pr-1 w-[320px] flex items-center justify-start space-x-2 border border-gray-600 rounded">
-  <span className="font-mono text-sm w-8 h-8 flex items-center justify-center border-r border-gray-600">template</span>
-  <span className="font-mono text-sm text-gray-200">Python3-CodeInterpreter</span>
-</div>
+<TemplateName templateName="code-interpreter"/>
 
 ### Features
 Ubuntu-based sandbox with Python 3 and data science Python libraries like `pandas`, `numpy`, or `matplotlib`.
