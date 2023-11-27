@@ -71,7 +71,7 @@ job "logs-collector" {
 
       config {
         network_mode = "host"
-        image        = "timberio/vector:0.33.X-alpine"
+        image        = "timberio/vector:0.34.X-alpine"
 
         ports = [
           "health",
@@ -83,12 +83,11 @@ job "logs-collector" {
         VECTOR_CONFIG          = "local/vector.toml"
         VECTOR_REQUIRE_HEALTHY = "true"
         VECTOR_LOG             = "debug"
-        RUST_BACKTRACE         = "full"
       }
 
       resources {
-        memory = 128
-        cpu    = 128
+        memory = 256
+        cpu    = 256
       }
 
       template {
@@ -105,25 +104,31 @@ data_dir = "alloc/data/vector/"
   enabled = true
   address = "0.0.0.0:${var.logs_health_port_number}"
 
-[sources.vector_logs]
+[sources.vector]
 type = "internal_logs"
 
-[transforms.modify]
+[transforms.add_source_vector]
 type = "remap"
-inputs = ["vector_logs"]
-
-source = '''
-  .timestamp = to_unix_timestamp!(to_timestamp!(.timestamp))
-'''
+inputs = ["vector"]
+source = """
+.service = "vector"
+"""
 
 [sources.envd]
-type = "http"
+type = "http_server"
 address = "0.0.0.0:${var.logs_port_number}"
 encoding = "json"
 
+[transforms.add_source_envd]
+type = "remap"
+inputs = ["envd"]
+source = """
+.service = "envd"
+"""
+
 [sinks.grafana]
 type = "loki"
-inputs = [ "envd", "modify" ]
+inputs = [ "add_source_envd", "add_source_vector" ]
 endpoint = "${var.grafana_logs_endpoint}"
 encoding.codec = "json"
 auth.strategy = "basic"
@@ -132,13 +137,7 @@ auth.password = "${var.grafana_api_key}"
 
 [sinks.grafana.labels]
 source = "logs-collector"
-service = "envd"
-
-[sinks.grafana.labels]
-source = "logs-collector"
-service = "envd"
-
-
+service = "{{ service }}"
 
         EOH
       }
