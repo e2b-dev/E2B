@@ -1,5 +1,5 @@
 # Start Command
-Start command allows you to specify a command that will be **already running** when you spawn your custom sandbox.
+The start command allows you to specify a command that will be **already running** when you spawn your custom sandbox.
 This way, you can for example have running servers or seeded databases inside the sandbox that are already fully ready when you spawn the sandbox using the SDK and with zero waiting time for your users during the runtime.
 
 The idea behind the start command feature is to lower the wait times for your users and have everything ready for your users when you spawn your sandbox.
@@ -23,9 +23,9 @@ We call this sandbox a _template sandbox_.
 
 Then, these steps happen:
 
-    1. we take the running template sandbox
-    2. (Only if you specified the start command, otherwise this step is skipped) **execute the start command and wait 15 seconds**
-    3. snapshot it and make it ready for you to spawn it with the SDK.
+    1. We take the running template sandbox.
+    2. (Only if you specified the start command, otherwise this step is skipped) **Execute the start command and wait 15 seconds**.
+    3. Snapshot the sandbox and make it ready for you to spawn it with the SDK.
 
 
 <Note title="Sandbox Snapshot">
