@@ -83,6 +83,7 @@ job "logs-collector" {
         VECTOR_CONFIG          = "local/vector.toml"
         VECTOR_REQUIRE_HEALTHY = "true"
         VECTOR_LOG             = "debug"
+        RUST_BACKTRACE         = "full"
       }
 
       resources {
@@ -104,6 +105,17 @@ data_dir = "alloc/data/vector/"
   enabled = true
   address = "0.0.0.0:${var.logs_health_port_number}"
 
+[sources.vector_logs]
+type = "internal_logs"
+
+[transforms.modify]
+type = "remap"
+inputs = ["vector_logs"]
+
+source = '''
+  .timestamp = to_unix_timestamp!(to_timestamp!(.timestamp))
+'''
+
 [sources.envd]
 type = "http"
 address = "0.0.0.0:${var.logs_port_number}"
@@ -111,7 +123,7 @@ encoding = "json"
 
 [sinks.grafana]
 type = "loki"
-inputs = [ "envd" ]
+inputs = [ "envd", "modify" ]
 endpoint = "${var.grafana_logs_endpoint}"
 encoding.codec = "json"
 auth.strategy = "basic"
@@ -121,6 +133,12 @@ auth.password = "${var.grafana_api_key}"
 [sinks.grafana.labels]
 source = "logs-collector"
 service = "envd"
+
+[sinks.grafana.labels]
+source = "logs-collector"
+service = "envd"
+
+
 
         EOH
       }
