@@ -16,7 +16,7 @@ import (
 
 const (
 	InstanceExpiration = time.Second * 15
-	cacheSyncTime      = time.Hour * 24
+	cacheSyncTime      = time.Minute * 5
 	maxInstanceLength  = time.Hour * 24
 )
 
@@ -123,12 +123,25 @@ func (c *InstanceCache) Exists(instanceID string) bool {
 }
 
 func (c *InstanceCache) Sync(instances []*api.Instance) {
+	instanceMap := make(map[string]*api.Instance)
+
+	for _, instance := range instances {
+		instanceMap[instance.InstanceID] = instance
+	}
+
 	for _, instance := range instances {
 		if !c.Exists(instance.InstanceID) {
 			err := c.Add(instance, nil, nil)
 			if err != nil {
 				fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
 			}
+		}
+	}
+
+	for _, item := range c.cache.Items() {
+		_, found := instanceMap[item.Key()]
+		if !found {
+			c.cache.Delete(item.Key())
 		}
 	}
 }
