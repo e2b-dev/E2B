@@ -82,6 +82,7 @@ job "logs-collector" {
       env {
         VECTOR_CONFIG          = "local/vector.toml"
         VECTOR_REQUIRE_HEALTHY = "true"
+        VECTOR_LOG             = "debug"
       }
 
       resources {
