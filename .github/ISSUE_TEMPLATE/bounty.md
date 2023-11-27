@@ -1,6 +1,6 @@
 # :gift: Integrate E2B into [...]
 
-To see all bounties and learn everything about the bounty program, go to the pinned issue.
+To see all bounties and learn everything about the bounty program, go [HERE](https://github.com/e2b-dev/E2B/issues/242).
 
 ## Description
 
@@ -12,7 +12,7 @@ Each integration works differently, and it's up to you to think of the necessary
 - [...]
 - [E2B Docs](https://e2b.dev/docs)
 
-### Existing integrations
+## Existing integrations
 For inspiration and to understand how the integrations may work, see:
 - [E2B Sandbox used with OpenAI Assistants API](https://e2b.dev/docs/llm-platforms/openai)
 - [Custom Data Analysis Sandbox for LangChain](https://python.langchain.com/docs/integrations/tools/e2b_data_analysis?ref=build-ai-data-analyst-with-langchain-and-e2b)
