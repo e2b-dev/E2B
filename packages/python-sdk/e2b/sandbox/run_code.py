@@ -55,12 +55,11 @@ def run_code(
             f'Invalid runtime "{runtime}". Please contact us (hello@e2b.dev) if you need support for this runtime'
         )
 
-    sandbox = Sandbox(id=env_id, api_key=api_key)
+    sandbox = Sandbox(template=env_id, api_key=api_key)
     sandbox.filesystem.write(filepath, code)
 
-    proc = sandbox.process.start(cmd=f"{binary} {filepath}")
-    proc.wait()
+    output = sandbox.process.start_and_wait(cmd=f"{binary} {filepath}")
 
     sandbox.close()
 
-    return proc.output.stdout, proc.output.stderr
+    return output.stdout, output.stderr

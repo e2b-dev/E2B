@@ -16,7 +16,7 @@ import {
   Timer,
   Variable,
   PencilRuler,
-  File, TerminalSquare, RefreshCw,
+  File, TerminalSquare, RefreshCw, PlaySquare,
 } from 'lucide-react'
 
 import logoOpenAI from '@/images/logos/openai.svg'
@@ -161,13 +161,13 @@ export const routes = [
       },
       {
         icon: (
-          <Hammer
+          <PlaySquare
             strokeWidth={1}
             size={20}
           />
         ),
-        title: 'Guide: Creating Custom Sandbox',
-        href: '/guide/custom-sandbox',
+        title: 'Start Command',
+        href: '/sandbox/templates/start-cmd',
       },
       {
         icon: (
@@ -178,6 +178,16 @@ export const routes = [
         ),
         title: 'Premade Sandboxes',
         href: '/sandbox/templates/premade',
+      },
+      {
+        icon: (
+          <Hammer
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Guide: Creating Custom Sandbox',
+        href: '/guide/custom-sandbox',
       },
     ]
   },

@@ -68,7 +68,7 @@ class SandboxConnection:
 
     def __init__(
         self,
-        id: str,
+        template: str,
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
@@ -87,7 +87,7 @@ class SandboxConnection:
 
         self.cwd = cwd
         self.env_vars = env_vars or {}
-        self._id = id
+        self._template = template
         self._api_key = api_key
         self._debug_hostname = _debug_hostname
         self._debug_port = _debug_port
@@ -101,7 +101,7 @@ class SandboxConnection:
         self._rpc: Optional[SandboxRpc] = None
         self._finished = DeferredFuture(self._process_cleanup)
 
-        logger.info(f"Sandbox for template {self._id} initialized")
+        logger.info(f"Sandbox for template {self._template} initialized")
 
         self._open(timeout=timeout)
 
@@ -217,7 +217,7 @@ class SandboxConnection:
                     api = client.InstancesApi(api_client)
 
                     self._sandbox = api.instances_post(
-                        models.NewInstance(envID=self._id),
+                        models.NewInstance(envID=self._template),
                         _request_timeout=timeout,
                     )
                     logger.info(

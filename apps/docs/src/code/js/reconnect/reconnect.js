@@ -4,7 +4,7 @@ async function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-const sandbox = await Sandbox.create({id: 'base'})
+const sandbox = await Sandbox.create({ template: 'base' })
 
 // Do something in the sandbox
 await sandbox.filesystem.write('hello.txt', 'Hello World!')

@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox(id="base")
+sandbox = Sandbox(template="base")
 
 npm_init = sandbox.process.start("npm init -y")
 npm_init.kill()  # $HighlightLine

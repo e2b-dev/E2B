@@ -17,7 +17,7 @@ e2b build
 ```
 
 <Note>
-Running `e2b build` without specifying a template with the `[id]` argument will rebuild template defined by the `e2b.toml` config.
+Running `e2b build` without specifying a template with the `[template]` argument will rebuild template defined by the `e2b.toml` config.
 
 If there is no `e2b.toml` config a new template will be created.
 </Note>
@@ -25,7 +25,7 @@ If there is no `e2b.toml` config a new template will be created.
 #### **Arguments**
 
 <Options>
-  <Option type="[id]">
+  <Option type="[template]">
     Specify the template you want to rebuild. You can use the template name or ID.
   </Option>
 </Options>
@@ -34,6 +34,9 @@ If there is no `e2b.toml` config a new template will be created.
 #### **Options**
 
 <Options>
+  <Option type="-c, --cmd" name="start-command">
+    Specify the command that should be running when a sandbox starts.
+  </Option>
   <Option type="-n, --name" name="template-name">
     Specify the name of the sandbox template. You can use the template name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes, and underscores.
   </Option>
@@ -53,7 +56,7 @@ Creates a basic Dockerfile (`./e2b.Dockerfile`) in current directory.
 You can then run `e2b build` to build sandbox template from this Dockerfile.
 
 ```bash
-e2b template init
+e2b init
 ```
 
 #### **Options**
@@ -68,7 +71,7 @@ e2b template init
 
 ## `delete`
 
-Delete the sandbox template specified by the `[id]` argument, `e2b.toml` config in the working directory, or by an interactive selection.
+Delete the sandbox template specified by the `[template]` argument, `e2b.toml` config in the working directory, or by an interactive selection.
 By default, the root directory is the current working directory.
 
 This command also deletes the `e2b.toml` config.
@@ -78,13 +81,13 @@ e2b delete
 ```
 
 <Note>
-Running `e2b delete` without specifying a template with the `[id]` argument will delete the template defined by the `e2b.toml` config.
+Running `e2b delete` without specifying a template with the `[template]` argument will delete the template defined by the `e2b.toml` config.
 </Note>
 
 #### **Arguments**
 
 <Options>
-  <Option type="[id]">
+  <Option type="[template]">
     Specify the template you want to delete. You can use the template name or ID.
   </Option>
 </Options>
@@ -130,7 +133,7 @@ e2b login
 
 Log out of the CLI. It will remove your access token from `~/.e2b` file.
 
-```bash
+```
 e2b logout
 ```
 
@@ -147,13 +150,13 @@ e2b shell
 ```
 
 <Note>
-Running `e2b shell` without specifying a template with the `[id]` argument will spawn sandbox defined by the `e2b.toml` config.
+Running `e2b shell` without specifying a template with the `[template]` argument will spawn sandbox defined by the `e2b.toml` config.
 </Note>
 
 #### **Arguments**
 
 <Options>
-  <Option type="[id]" name="template-name-or-id">
+  <Option type="[template]">
     Specify the template you want to spawn sandbox from. You can use the template name or ID.
   </Option>
 </Options>

@@ -13,7 +13,7 @@ def main():
     # 1. Start the playground sandbox
     sandbox = Sandbox(
         # Select the right runtime
-        id="base",
+        template="base",
         api_key=E2B_API_KEY,
     )
 

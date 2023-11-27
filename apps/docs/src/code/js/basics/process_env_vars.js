@@ -1,7 +1,7 @@
 import { Sandbox } from '@e2b/sdk'
 
 const sandbox = await Sandbox.create({
-  id: 'base',
+  template: 'base',
   envVars: {FOO: 'Hello'},
 })
 

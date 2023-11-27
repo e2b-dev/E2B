@@ -2,8 +2,10 @@ import json
 import logging
 
 from typing import (
+    Generic,
     List,
     TYPE_CHECKING,
+    TypeVar,
 )
 
 from e2b.sandbox.main import Sandbox
@@ -15,8 +17,14 @@ if TYPE_CHECKING:
     from openai.types.beta.threads.run import Run
 
 
-class Actions:
-    def __init__(self, sandbox: "Sandbox"):
+S = TypeVar(
+    "S",
+    bound=Sandbox,
+)
+
+
+class Actions(Generic[S]):
+    def __init__(self, sandbox: S):
         self._sandbox = sandbox
 
     def run(self, run: "Run") -> List["ToolOutput"]:
@@ -54,8 +62,8 @@ class Actions:
         return outputs
 
 
-class OpenAI:
-    def __init__(self, actions: Actions):
+class OpenAI(Generic[S]):
+    def __init__(self, actions: Actions[S]):
         self._actions = actions
 
     @property

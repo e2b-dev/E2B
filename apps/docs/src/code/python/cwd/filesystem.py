@@ -1,7 +1,7 @@
 from e2b import Sandbox
 
 sandbox = Sandbox(
-    id="base",
+    template="base",
     cwd="/home/user/code"  # $HighlightLine
 )
 sandbox.filesystem.write("hello.txt", "Welcome to E2B!")  # $HighlightLine

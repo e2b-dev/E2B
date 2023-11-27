@@ -26,33 +26,33 @@ const deleteEnv = e2b.withAccessToken(
 export const deleteCommand = new commander.Command('delete')
   .description(`Delete sanbdox template and ${asLocal(configName)} config`)
   .argument(
-    '[id]',
+    '[template]',
     `Specify ${asBold(
-      '[id]',
-    )} of sandbox template to delete it. If you don's specify ${asBold(
-      '[id]',
-    )} the command will try delete sandbox template defined by ${asLocal('e2b.toml')}.`,
+      '[template]',
+    )} to delete it. If you don's specify ${asBold(
+      '[template]',
+    )} the command will try to delete sandbox template defined by ${asLocal('e2b.toml')}.`,
   )
   .addOption(pathOption)
   .addOption(selectMultipleOption)
   .alias('dl')
   .option('-y, --yes', 'Skip manual delete confirmation')
-  .action(async (id, opts: { path?: string, yes?: boolean, select?: boolean }) => {
+  .action(async (template, opts: { path?: string, yes?: boolean, select?: boolean }) => {
     try {
       const accessToken = ensureAccessToken()
 
       const root = getRoot(opts.path)
 
-      const envs: (Pick<E2BConfig, 'id'> & { configPath?: string })[] = []
+      const envs: (Pick<E2BConfig, 'template_id'> & { configPath?: string })[] = []
 
-      if (id) {
+      if (template) {
         envs.push({
-          id,
+          template_id: template,
         })
       } else if (opts.select) {
         const allEnvs = await listSandboxTemplates({ accessToken })
         const selectedEnvs = await getPromptEnvs(allEnvs, 'Select sandbox templates to delete')
-        envs.push(...selectedEnvs.map(e => ({ id: e.envID, ...e })))
+        envs.push(...selectedEnvs.map(e => ({ template_id: e.envID, ...e })))
 
         if (!envs || envs.length === 0) {
           console.log('No sandbox templates selected')
@@ -65,7 +65,7 @@ export const deleteCommand = new commander.Command('delete')
           : undefined
 
         if (!config) {
-          console.log(`No ${asLocal(configName)} found in ${asLocalRelative(root)}. Specify sandbox template ${asBold('[id]')} or use interactive mode with ${asBold('-s')} flag.`)
+          console.log(`No ${asLocal(configName)} found in ${asLocalRelative(root)}. Specify sandbox template with ${asBold('[template]')} argument or use interactive mode with ${asBold('-s')} flag.`)
           return
         }
 
@@ -76,12 +76,12 @@ export const deleteCommand = new commander.Command('delete')
       }
 
       if (!envs || envs.length === 0) {
-        console.log(`No sandbox templates selected. Specify sandbox template  ${asBold('[id]')} or use interactive mode with  ${asBold('-s')} flag.`)
+        console.log(`No sandbox templates selected. Specify sandbox template with ${asBold('[template]')} argument or use interactive mode with  ${asBold('-s')} flag.`)
         return
       }
 
       console.log(chalk.default.red(chalk.default.underline('\nSandbox templates to delete')))
-      envs.forEach(e => console.log(asFormattedSandboxTemplate({ ...e, envID: e.id }, e.configPath)))
+      envs.forEach(e => console.log(asFormattedSandboxTemplate({ ...e, envID: e.template_id }, e.configPath)))
       process.stdout.write('\n')
 
       if (!opts.yes) {
@@ -98,8 +98,8 @@ export const deleteCommand = new commander.Command('delete')
 
       await Promise.all(
         envs.map(async e => {
-          console.log(`- Deleting sandbox template ${asFormattedSandboxTemplate({ ...e, envID: e.id }, e.configPath)}`)
-          await deleteEnv(accessToken, { envID: e.id })
+          console.log(`- Deleting sandbox template ${asFormattedSandboxTemplate({ ...e, envID: e.template_id }, e.configPath)}`)
+          await deleteEnv(accessToken, { envID: e.template_id })
           if (e.configPath) {
             await deleteConfig(e.configPath)
           }

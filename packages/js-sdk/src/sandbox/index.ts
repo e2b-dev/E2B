@@ -26,11 +26,13 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   timeout?: number;
   onStdout?: (out: ProcessMessage) => Promise<void> | void;
   onStderr?: (out: ProcessMessage) => Promise<void> | void;
-  onExit?: () => Promise<void> | void;
+  onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
 }
 
-export interface Action<T = { [key: string]: any }> {
-  (sandbox: Sandbox, args: T): string | Promise<string>
+export interface Action<S extends Sandbox = Sandbox, T = {
+  [key: string]: any;
+}> {
+  (sandbox: S, args: T): string | Promise<string>;
 }
 
 /**
@@ -73,7 +75,8 @@ export class Sandbox extends SandboxConnection {
    */
   readonly process: ProcessManager
 
-  readonly _actions: Map<string, Action<any>> = new Map()
+  // We use any here because we cannot properly reference the type of the Sandbox subclass
+  readonly _actions: Map<string, Action<any, any>> = new Map()
 
   private readonly onScanPorts?: ScanOpenPortsHandler
 
@@ -400,7 +403,8 @@ export class Sandbox extends SandboxConnection {
       startAndWait: async (optsOrCmd: string | ProcessOpts) => {
         const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
         const process = await this.process.start(opts)
-        return await process.wait()
+        const out = await process.wait()
+        return out
       }
     }
 
@@ -449,18 +453,18 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.create()
    * ```
    */
-  static async create(): Promise<Sandbox>;
+  static async create<S extends Sandbox>(): Promise<S>;
   /**
    * Creates a new Sandbox from the template with the specified ID.
-   * @param id Sandbox ID
+   * @param template Sandbox template ID or name
    * @returns New Sandbox
    *
    * @example
    * ```ts
-   * const sandbox = await Sandbox.create("sandboxID")
+   * const sandbox = await Sandbox.create("sandboxTemplateID")
    * ```
    */
-  static async create(id: string): Promise<Sandbox>;
+  static async create<S extends Sandbox>(template: string): Promise<S>;
   /**
    * Creates a new Sandbox from the specified options.
    * @param opts Sandbox options
@@ -469,23 +473,18 @@ export class Sandbox extends SandboxConnection {
    * @example
    * ```ts
    * const sandbox = await Sandbox.create({
-   *   id: "sandboxID",
+   *   template: "sandboxTemplate",
    *   onStdout: console.log,
    * })
    * ```
    */
-  static async create(opts: SandboxOpts): Promise<Sandbox>;
-  static async create(optsOrID?: string | SandboxOpts) {
-    const opts = typeof optsOrID === 'string' ? { id: optsOrID } : optsOrID
-    return new Sandbox(opts)
-      ._open({ timeout: opts?.timeout })
-      .then(async (sandbox) => {
-        if (opts?.cwd) {
-          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
-          await sandbox.filesystem.makeDir(opts.cwd)
-        }
-        return sandbox
-      })
+  static async create<S extends Sandbox>(opts: SandboxOpts): Promise<S>;
+  static async create(optsOrTemplate?: string | SandboxOpts) {
+    const opts: SandboxOpts | undefined = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
+    const sandbox = new Sandbox(opts)
+    await sandbox._open({ timeout: opts?.timeout })
+
+    return sandbox
   }
 
   /**
@@ -527,15 +526,11 @@ export class Sandbox extends SandboxConnection {
     const instanceID = instanceIDAndClientID[0]
     const clientID = instanceIDAndClientID[1]
     opts.__sandbox = { instanceID, clientID, envID: 'unknown' }
-    return new Sandbox(opts)
-      ._open({ timeout: opts?.timeout })
-      .then(async (sandbox) => {
-        if (opts?.cwd) {
-          console.log(`Custom cwd for Sandbox set: "${opts.cwd}"`)
-          await sandbox.filesystem.makeDir(opts.cwd)
-        }
-        return sandbox
-      })
+
+    const sandbox = new Sandbox(opts)
+    await sandbox._open({ timeout: opts?.timeout })
+
+    return sandbox
   }
 
   /**
@@ -552,7 +547,7 @@ export class Sandbox extends SandboxConnection {
    * sandbox.addAction('readFile', (sandbox, args) => sandbox.filesystem.read(args.path))
    * ```
    */
-  addAction<T = { [name: string]: any }>(action: Action<T>): this;
+  addAction<T = { [name: string]: any }>(action: Action<this, T>): this;
   /**
    * Add a new action with a specified name.
    *
@@ -572,8 +567,8 @@ export class Sandbox extends SandboxConnection {
    * sandbox.addAction(readFile)
    * ```
    */
-  addAction<T = { [name: string]: any }>(name: string, action: Action<T>): this;
-  addAction<T = { [name: string]: any }>(actionOrName: string | Action<T>, action?: Action<T>): this {
+  addAction<T = { [name: string]: any }>(name: string, action: Action<this, T>): this;
+  addAction<T = { [name: string]: any }>(actionOrName: string | Action<this, T>, action?: Action<this, T>): this {
     if (typeof actionOrName === 'string') {
       if (!action) throw new Error('Action is required')
       this._actions.set(actionOrName, action)
@@ -699,6 +694,25 @@ export class Sandbox extends SandboxConnection {
         : undefined,
     )
 
+    if (this.cwd) {
+      console.log(`Custom cwd for Sandbox set: "${this.cwd}"`)
+      await this.filesystem.makeDir(this.cwd)
+    }
+
+    this.handleStartCmdLogs()
+
     return this
+  }
+
+  private async handleStartCmdLogs() {
+    try {
+      await this.process.startAndWait({
+        cmd: 'sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service',
+        envVars: {},
+        cwd: '/',
+      })
+    } catch (err) {
+      this.logger.warn?.("error waiting for the start command logs")
+    }
   }
 }

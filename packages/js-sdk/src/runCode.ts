@@ -58,16 +58,13 @@ export async function runCode(
   }
 
   const sandbox = await Sandbox.create({
-    id: envID,
+    template: envID,
     apiKey: opts?.apiKey || process?.env?.E2B_API_KEY || '', // Sandbox.create will throw an error if the API key is not provided so no need to check here
   })
 
   await sandbox.filesystem.write(filepath, code)
 
-  const codeProc = await sandbox.process.start({
-    cmd: `${binary} ${filepath}`,
-  })
-  const out = await codeProc.wait()
+  const out = await sandbox.process.startAndWait(`${binary} ${filepath}`)
 
   await sandbox.close()
 

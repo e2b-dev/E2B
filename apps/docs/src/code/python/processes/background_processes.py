@@ -11,7 +11,7 @@ def print_stdout(output):
 
 
 def main():
-    sandbox = Sandbox(id="base", api_key=E2B_API_KEY)
+    sandbox = Sandbox(template="base", api_key=E2B_API_KEY)
 
     # Start a server process in the background
     # We are not using `background_server.wait()` - that would wait for the process to finish running

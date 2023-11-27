@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e2b"
-version = "0.13.1"
+version = "0.13.5"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
@@ -20,12 +20,12 @@ aenum = ">=3.1.11"
 websockets = "^11.0.3"
 jsonrpcclient = "^4.0.3"
 requests = "^2.31.0"
+typing-extensions = "^4.8.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
 pytest = "^7.4.0"
 pytest-xdist = "^3.3.1"
-psycopg2 = "^2.9.7"
 python-dotenv = "^1.0.0"
 pytest-dotenv = "^0.5.2"
 openai = "^1.2.3"

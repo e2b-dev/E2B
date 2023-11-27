@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox(id="base")
+sandbox = Sandbox(template="base")
 
 # Timeout 3s for the write operation
 sandbox.filesystem.write("test.txt", "Hello World", timeout=3)  # $HighlightLine
