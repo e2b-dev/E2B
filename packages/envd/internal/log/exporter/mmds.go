@@ -1,4 +1,4 @@
-package log
+package exporter
 
 import (
 	"bytes"
@@ -6,17 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 )
 
 const (
-	mmdsDefaultAddress = "169.254.169.254"
+	mmdsDefaultAddress  = "169.254.169.254"
+	mmdsTokenExpiration = 60 * time.Second
 )
-
-var mmdsTokenExpiration = 60 * time.Second
-
-type instanceLogsWriter struct{}
 
 type opts struct {
 	TraceID    string `json:"traceID"`
@@ -26,7 +22,7 @@ type opts struct {
 	TeamID     string `json:"teamID"`
 }
 
-func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
+func (opts *opts) addOptsToJSON(jsonLogs []byte) ([]byte, error) {
 	parsed := make(map[string]interface{})
 
 	err := json.Unmarshal(jsonLogs, &parsed)
@@ -44,7 +40,7 @@ func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 	return data, err
 }
 
-func getMMDSToken(client http.Client) (string, error) {
+func (w *HTTPLogsExporter) getMMDSToken() (string, error) {
 	request, err := http.NewRequest("PUT", "http://"+mmdsDefaultAddress+"/latest/api/token", new(bytes.Buffer))
 	if err != nil {
 		return "", err
@@ -52,7 +48,7 @@ func getMMDSToken(client http.Client) (string, error) {
 
 	request.Header["X-metadata-token-ttl-seconds"] = []string{fmt.Sprint(mmdsTokenExpiration.Seconds())}
 
-	response, err := client.Do(request)
+	response, err := w.client.Do(request)
 	if err != nil {
 		return "", err
 	}
@@ -72,7 +68,7 @@ func getMMDSToken(client http.Client) (string, error) {
 	return token, nil
 }
 
-func getMMDSOpts(client http.Client, token string) (*opts, error) {
+func (w *HTTPLogsExporter) getMMDSOpts(token string) (*opts, error) {
 	request, err := http.NewRequest("GET", "http://"+mmdsDefaultAddress, new(bytes.Buffer))
 	if err != nil {
 		return nil, err
@@ -81,7 +77,7 @@ func getMMDSOpts(client http.Client, token string) (*opts, error) {
 	request.Header["X-metadata-token"] = []string{token}
 	request.Header["Accept"] = []string{"application/json"}
 
-	response, err := client.Do(request)
+	response, err := w.client.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -113,64 +109,4 @@ func getMMDSOpts(client http.Client, token string) (*opts, error) {
 	}
 
 	return &opts, nil
-}
-
-func sendInstanceLogs(client http.Client, logs []byte, address string) error {
-	request, err := http.NewRequest("POST", address, bytes.NewBuffer(logs))
-	if err != nil {
-		return err
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-
-	response, err := client.Do(request)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	return nil
-}
-
-func sendLogs(logs []byte) {
-	client := http.Client{
-		Timeout: 2 * time.Second,
-	}
-
-	mmdsToken, err := getMMDSToken(client)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error getting mmds token: %v\n", err)
-
-		return
-	}
-
-	mmdsOpts, err := getMMDSOpts(client, mmdsToken)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error getting instance logging options from mmds (token %s): %v\n", mmdsToken, err)
-
-		return
-	}
-
-	instanceLogs, err := addOptsToJSON(logs, mmdsOpts)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error adding instance logging options (%+v) to JSON (%+v) with logs : %v\n", mmdsOpts, logs, err)
-
-		return
-	}
-
-	err = sendInstanceLogs(client, instanceLogs, mmdsOpts.Address)
-	if err != nil {
-		fmt.Fprint(os.Stderr, fmt.Sprintf("error sending instance logs: %+v", err))
-
-		return
-	}
-}
-
-func (w *instanceLogsWriter) Write(logs []byte) (int, error) {
-	cpy := make([]byte, len(logs))
-	copy(cpy, logs)
-
-	go sendLogs(logs)
-
-	return len(logs), nil
 }

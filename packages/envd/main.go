@@ -38,7 +38,7 @@ var (
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
-	logger.Info("Client connected")
+	logger.Debug("WS connection started")
 	wsHandler.ServeHTTP(w, r)
 }
 
