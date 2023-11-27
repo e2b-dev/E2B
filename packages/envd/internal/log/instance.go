@@ -23,6 +23,7 @@ type opts struct {
 	InstanceID string `json:"instanceID"`
 	EnvID      string `json:"envID"`
 	Address    string `json:"address"`
+	TeamID     string `json:"teamID"`
 }
 
 func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
@@ -36,6 +37,7 @@ func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 	parsed["instanceID"] = opts.InstanceID
 	parsed["envID"] = opts.EnvID
 	parsed["traceID"] = opts.TraceID
+	parsed["teamID"] = opts.TeamID
 
 	data, err := json.Marshal(parsed)
 
@@ -165,6 +167,9 @@ func sendLogs(logs []byte) {
 }
 
 func (w *instanceLogsWriter) Write(logs []byte) (int, error) {
+	cpy := make([]byte, len(logs))
+	copy(cpy, logs)
+
 	go sendLogs(logs)
 
 	return len(logs), nil
