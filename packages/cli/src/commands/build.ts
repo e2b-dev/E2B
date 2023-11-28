@@ -17,8 +17,8 @@ import {
   asPrimary,
   asPython,
   asTypescript,
+  borderStyle,
   withDelimiter,
-  withMargin,
 } from 'src/utils/format'
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
@@ -278,18 +278,37 @@ await sandbox.close()`)
         const examplesMessage = `You can use E2B Python or JS SDK to spawn sandboxes now.
 Find more here - ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')} in ${asBold('Spawn and control your sandbox')} section.`
 
-        const exampleUsage = `${withMargin(examplesMessage)}\n${withDelimiter(pythonExample, 'Python SDK')}${withDelimiter(typescriptExample, 'JS SDK', true)}`
+        const exampleHeader = boxen.default(examplesMessage, {
+          padding: {
+            bottom: 1,
+            top: 1,
+            left: 2,
+            right: 2,
+          },
+          margin: {
+            top: 1,
+            bottom: 1,
+            left: 0,
+            right: 0,
+          },
+          fullscreen(width) {
+            return [width, 0]
+          },
+          float: 'left',
+        })
+
+        const exampleUsage = `${withDelimiter(pythonExample, 'Python SDK')}${withDelimiter(typescriptExample, 'JS SDK', true)}`
 
         console.log(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate(
             {
-              aliases, ...template.data
+              aliases, ...template.data,
             },
-          )} finished.\n${boxen.default(exampleUsage, {
+          )} finished.\n${exampleHeader}${boxen.default(exampleUsage, {
             float: 'left',
+            borderStyle,
             padding: 0,
             margin: 1,
-            title: 'Usage examples',
           })}`,
         )
         break

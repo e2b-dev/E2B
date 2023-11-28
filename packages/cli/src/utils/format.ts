@@ -75,7 +75,7 @@ export function asPython(code: string) {
   return highlight.default(code, { language: 'python', ignoreIllegals: true })
 }
 
-const borderStyle = {
+export const borderStyle = {
   topLeft: '',
   topRight: '',
   bottomLeft: '',
@@ -94,6 +94,7 @@ export function withDelimiter(content: string, title: string, isLast?: boolean) 
     borderStyle: {
       ...borderStyle,
       top: '─',
+      bottom: isLast ? '─' : '',
     },
     titleAlignment: 'center',
     float: 'left',
@@ -102,7 +103,7 @@ export function withDelimiter(content: string, title: string, isLast?: boolean) 
     height: 0,
     fullscreen: w => [w, 0],
     padding: {
-      bottom: isLast ? 0 : verticalPadding,
+      bottom: isLast ? verticalPadding : verticalPadding,
       left: horizontalPadding,
       right: horizontalPadding,
       top: verticalPadding,
