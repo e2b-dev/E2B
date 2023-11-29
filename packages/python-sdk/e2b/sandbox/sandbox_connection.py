@@ -16,7 +16,8 @@ from e2b.constants import (
     SANDBOX_REFRESH_PERIOD,
     TIMEOUT,
     ENVD_PORT,
-    WS_ROUTE, SECURE,
+    WS_ROUTE,
+    SECURE,
 )
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.exception import (
