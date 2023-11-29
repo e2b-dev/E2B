@@ -41,6 +41,7 @@ provider "docker" {
     password = data.google_client_config.default.access_token
   }
 }
+
 data "google_secret_manager_secret_version" "cloudflare_api_token" {
   secret = "${var.prefix}cloudflare-api-token"
 }
