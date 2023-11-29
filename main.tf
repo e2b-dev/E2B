@@ -111,16 +111,16 @@ module "fc_envs_disk" {
   prefix = var.prefix
 }
 
-#module "github-tf" {
-#  source = "./github-tf"
-#
-#  gcp_project_id = var.gcp_project_id
-#
-#  github_organization = var.github_organization
-#  github_repository   = var.github_repository
-#
-#  prefix = var.prefix
-#}
+module "github-tf" {
+  source = "./github-tf"
+
+  gcp_project_id = var.gcp_project_id
+
+  github_organization = var.github_organization
+  github_repository   = var.github_repository
+
+  prefix = var.prefix
+}
 
 
 
