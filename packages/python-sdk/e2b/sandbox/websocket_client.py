@@ -7,7 +7,7 @@ from queue import Queue
 from threading import Event
 from typing import Any, Callable, List, Optional
 
-from websockets import WebSocketClientProtocol, connect
+from websockets.legacy.client import WebSocketClientProtocol, connect
 from websockets.exceptions import ConnectionClosed
 from websockets.typing import Data
 
@@ -63,10 +63,21 @@ class WebSocket:
 
     async def _connect(self):
         logger.debug(f"WebSocket connecting to {self.url}")
-        websocket_connector = connect(self.url, max_size=None, max_queue=None)
+
+        ws_logger = logger.getChild("websockets.client")
+        ws_logger.setLevel(logging.ERROR)
+
+        websocket_connector = connect(
+            self.url,
+            max_size=None,
+            max_queue=None,
+            logger=ws_logger,
+        )
+
         websocket_connector.BACKOFF_MIN = 1
         websocket_connector.BACKOFF_FACTOR = 1
-        websocket_connector.BACKOFF_INITIAL = 0.4
+        websocket_connector.BACKOFF_INITIAL = 0.3  # type: ignore
+
         async for websocket in websocket_connector:
             try:
                 self._ws = websocket
