@@ -2,31 +2,7 @@ variable "gcp_zone" {
   type = string
 }
 
-variable "grafana_logs_username" {
-  type = string
-}
-
-variable "grafana_traces_username" {
-  type = string
-}
-
-variable "grafana_metrics_username" {
-  type = string
-}
-
-variable "grafana_traces_endpoint" {
-  type = string
-}
-
-variable "grafana_metrics_endpoint" {
-  type = string
-}
-
-variable "grafana_logs_endpoint" {
-  type = string
-}
-
-variable "grafana_api_key" {
+variable "prefix" {
   type = string
 }
 

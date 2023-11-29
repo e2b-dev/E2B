@@ -63,12 +63,28 @@ resource "docker_image" "api_image" {
   pull_triggers = [data.docker_registry_image.api_image.sha256_digest]
 }
 
-data "google_secret_manager_secret_version" "supabase_connection_string" {
-  secret = "${var.prefix}supabase-connection-string"
+resource "google_secret_manager_secret" "postgres_connection_string" {
+  secret_id = "${var.prefix}postgres-connection-string"
+
+  replication {
+    auto {}
+  }
+}
+
+data "google_secret_manager_secret_version" "postgres_connection_string" {
+  secret = google_secret_manager_secret.postgres_connection_string.name
+}
+
+resource "google_secret_manager_secret" "posthog_api_key" {
+  secret_id = "${var.prefix}posthog-api-key"
+
+  replication {
+    auto {}
+  }
 }
 
 data "google_secret_manager_secret_version" "posthog_api_key" {
-  secret = "${var.prefix}posthog-api-key"
+  secret = google_secret_manager_secret.posthog_api_key.name
 }
 
 resource "random_password" "api_secret" {
@@ -99,7 +115,7 @@ resource "nomad_job" "api" {
       api_port_name                 = var.api_port.name
       api_port_number               = var.api_port.port
       image_name                    = docker_image.api_image.repo_digest
-      supabase_connection_string    = data.google_secret_manager_secret_version.supabase_connection_string.secret_data
+      postgres_connection_string    = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
       posthog_api_key               = data.google_secret_manager_secret_version.posthog_api_key.secret_data
       logs_proxy_address            = var.logs_proxy_address
       nomad_address                 = "http://localhost:4646"

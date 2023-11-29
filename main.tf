@@ -42,8 +42,16 @@ provider "docker" {
   }
 }
 
+resource "google_secret_manager_secret" "cloudflare_api_token" {
+  secret_id = "${var.prefix}cloudflare-api-token"
+
+  replication {
+    auto {}
+  }
+}
+
 data "google_secret_manager_secret_version" "cloudflare_api_token" {
-  secret = "${var.prefix}cloudflare-api-token"
+  secret = google_secret_manager_secret.cloudflare_api_token.name
 }
 
 provider "cloudflare" {
@@ -62,13 +70,28 @@ provider "google" {
   zone    = var.gcp_zone
 }
 
-data "google_secret_manager_secret_version" "consul_acl_token" {
-  secret = "${var.prefix}consul-secret-id"
+resource "google_secret_manager_secret" "consul_acl_token" {
+  secret_id = "${var.prefix}consul-secret-id"
+
+  replication {
+    auto {}
+  }
 }
 
+data "google_secret_manager_secret_version" "consul_acl_token" {
+  secret = google_secret_manager_secret.consul_acl_token.name
+}
+
+resource "google_secret_manager_secret" "nomad_acl_token" {
+  secret_id = "${var.prefix}nomad-secret-id"
+
+  replication {
+    auto {}
+  }
+}
 
 data "google_secret_manager_secret_version" "nomad_acl_token" {
-  secret = "${var.prefix}nomad-secret-id"
+  secret = google_secret_manager_secret.nomad_acl_token.name
 }
 
 provider "nomad" {
@@ -167,35 +190,6 @@ resource "consul_acl_token_policy_attachment" "attachment" {
   policy   = consul_acl_policy.agent.name
 }
 
-data "google_secret_manager_secret_version" "grafana_api_key" {
-  secret = "${var.prefix}grafana-api-key"
-}
-
-data "google_secret_manager_secret_version" "grafana_traces_endpoint" {
-  secret = "${var.prefix}grafana-traces-endpoint"
-}
-
-data "google_secret_manager_secret_version" "grafana_logs_endpoint" {
-  secret = "${var.prefix}grafana-logs-endpoint"
-}
-
-data "google_secret_manager_secret_version" "grafana_metrics_endpoint" {
-  secret = "${var.prefix}grafana-metrics-endpoint"
-}
-
-data "google_secret_manager_secret_version" "grafana_traces_username" {
-  secret = "${var.prefix}grafana-traces-username"
-}
-
-data "google_secret_manager_secret_version" "grafana_logs_username" {
-  secret = "${var.prefix}grafana-logs-username"
-}
-
-data "google_secret_manager_secret_version" "grafana_metrics_username" {
-  secret = "${var.prefix}grafana-metrics-username"
-}
-
-
 module "telemetry" {
   source = "./packages/telemetry"
 
@@ -203,16 +197,7 @@ module "telemetry" {
   logs_proxy_port        = var.logs_proxy_port
 
   gcp_zone = var.gcp_zone
-
-  grafana_traces_endpoint  = data.google_secret_manager_secret_version.grafana_traces_endpoint.secret_data
-  grafana_logs_endpoint    = data.google_secret_manager_secret_version.grafana_logs_endpoint.secret_data
-  grafana_metrics_endpoint = data.google_secret_manager_secret_version.grafana_metrics_endpoint.secret_data
-
-  grafana_traces_username  = data.google_secret_manager_secret_version.grafana_traces_username.secret_data
-  grafana_logs_username    = data.google_secret_manager_secret_version.grafana_logs_username.secret_data
-  grafana_metrics_username = data.google_secret_manager_secret_version.grafana_metrics_username.secret_data
-
-  grafana_api_key = data.google_secret_manager_secret_version.grafana_api_key.secret_data
+  prefix = var.prefix
 }
 
 module "session_proxy" {

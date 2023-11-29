@@ -38,7 +38,7 @@ variable "logs_proxy_address" {
   default = ""
 }
 
-variable "supabase_connection_string" {
+variable "postgres_connection_string" {
   type    = string
   default = ""
 }
@@ -123,7 +123,7 @@ job "orchestration-api" {
         NOMAD_ADDRESS                 = var.nomad_address
         NOMAD_TOKEN                   = var.nomad_token
         CONSUL_TOKEN                  = var.consul_token
-        SUPABASE_CONNECTION_STRING    = var.supabase_connection_string
+        SUPABASE_CONNECTION_STRING    = var.postgres_connection_string
         POSTHOG_API_KEY               = var.posthog_api_key
         ENVIRONMENT                   = var.environment
         GOOGLE_CLOUD_STORAGE_BUCKET   = var.docker_contexts_bucket_name

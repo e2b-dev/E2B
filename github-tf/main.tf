@@ -15,14 +15,22 @@ terraform {
   }
 }
 
-data "google_secret_manager_secret_version" "github-token-google-secret" {
-  secret = "${var.prefix}github-repo-token"
+resource "google_secret_manager_secret" "github_token" {
+  secret_id = "${var.prefix}github-repo-token"
+
+  replication {
+    auto {}
+  }
+}
+
+data "google_secret_manager_secret_version" "github_token" {
+  secret = google_secret_manager_secret.github_token.name
 }
 
 
 provider "github" {
   owner = var.github_organization
-  token = data.google_secret_manager_secret_version.github-token-google-secret.secret_data
+  token = data.google_secret_manager_secret_version.github_token.secret_data
 }
 
 
