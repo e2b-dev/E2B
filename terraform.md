@@ -28,4 +28,3 @@ Check if you can use config for terraform state management
 - Missing trigger in db
 - If replacing server instance - you have to restart nomad service in client node
 - Improve variable descriptions and format in terraform
-- Add kernel bucket object upload
