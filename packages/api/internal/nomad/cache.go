@@ -125,12 +125,12 @@ func (c *InstanceCache) Exists(instanceID string) bool {
 	return item != nil
 }
 
-func (c *InstanceCache) Sync(instances []*api.Instance) {
-	instanceMap := make(map[string]*api.Instance)
+func (c *InstanceCache) Sync(instances []*InstanceInfo) {
+	instanceMap := make(map[string]*InstanceInfo)
 
 	// Use map for faster lookup
 	for _, instance := range instances {
-		instanceMap[instance.InstanceID] = instance
+		instanceMap[instance.Instance.InstanceID] = instance
 	}
 
 	// Delete instances that are not in Nomad anymore
@@ -143,8 +143,8 @@ func (c *InstanceCache) Sync(instances []*api.Instance) {
 
 	// Add instances that are not in the cache with the default TTL
 	for _, instance := range instances {
-		if !c.Exists(instance.InstanceID) {
-			err := c.Add(instance, nil, nil)
+		if !c.Exists(instance.Instance.InstanceID) {
+			err := c.Add(instance.Instance, instance.TeamID, nil)
 			if err != nil {
 				fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
 			}
@@ -154,7 +154,7 @@ func (c *InstanceCache) Sync(instances []*api.Instance) {
 
 // We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now.
-func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*api.Instance, counter metric.Int64UpDownCounter) *InstanceCache {
+func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*InstanceInfo, counter metric.Int64UpDownCounter) *InstanceCache {
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, InstanceInfo](InstanceExpiration),
 	)
@@ -180,7 +180,7 @@ func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.AP
 	}
 
 	for _, instance := range initialInstances {
-		err := instanceCache.Add(instance, nil, nil)
+		err := instanceCache.Add(instance.Instance, instance.TeamID, nil)
 		if err != nil {
 			fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
 		}

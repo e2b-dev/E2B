@@ -2,6 +2,12 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
+  meta {
+    {{ .EnvIDKey }} = "{{ .EnvID }}"
+    {{ .InstanceIDKey }} = "{{ .InstanceID }}"
+    {{ .TeamIDKey }} = "{{ .TeamID }}"
+  }
+
   priority = 40
 
   group "instance" {

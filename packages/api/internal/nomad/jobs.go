@@ -19,6 +19,8 @@ const (
 	taskDeadState    = "dead"
 	taskPendingState = "pending"
 
+	jobRunningStatus = "running"
+
 	defaultTaskName = "start"
 
 	jobCheckInterval = 100 * time.Millisecond
