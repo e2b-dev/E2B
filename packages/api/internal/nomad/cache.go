@@ -49,7 +49,10 @@ func (c *InstanceCache) Add(instance *api.Instance, teamID *uuid.UUID, startTime
 	}
 
 	c.cache.Set(instance.InstanceID, instanceData, ttlcache.DefaultTTL)
-	c.counter.Add(context.Background(), 1, metric.WithAttributes(attribute.String("instance_id", instance.InstanceID)))
+	c.counter.Add(context.Background(), 1, metric.WithAttributes(
+		attribute.String("instance_id", instance.InstanceID),
+		attribute.String("env_id", instance.EnvID),
+	))
 
 	return nil
 }
@@ -162,7 +165,12 @@ func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.AP
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error deleting instance (%v)\n: %v\n", er, err.Err)
 			}
-			counter.Add(ctx, -1, metric.WithAttributes(attribute.String("instance_id", i.Value().Instance.InstanceID)))
+			counter.Add(
+				ctx,
+				-1,
+				metric.WithAttributes(attribute.String("instance_id", i.Value().Instance.InstanceID)),
+				metric.WithAttributes(attribute.String("env_id", i.Value().Instance.EnvID)),
+			)
 		}
 	})
 
