@@ -216,6 +216,9 @@ plugin "docker" {
     volumes {
       enabled = true
     }
+    auth {
+      config = "/root/.docker/config.json"
+    }
   }
 }
 

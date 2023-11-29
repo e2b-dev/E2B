@@ -7,6 +7,8 @@ on:
         required: true
       workload_identity_provider:
         required: true
+      gcp_project_id:
+        required: true
 
 jobs:
   publish:
@@ -41,5 +43,5 @@ jobs:
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
           path: "./packages/env-instance-task-driver/bin/env-instance-task-driver"
-          destination: "e2b-fc-env-pipeline"
+          destination: "${{ secrets.gcp_project }}-fc-env-pipeline"
           gzip: false

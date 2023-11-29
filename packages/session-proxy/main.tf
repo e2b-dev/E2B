@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    nomad = {
+      source  = "hashicorp/nomad"
+      version = "~> 2.0.0"
+    }
+  }
+}
+
 resource "nomad_job" "session_proxy" {
   jobspec = file("${path.module}/session-proxy.hcl")
 

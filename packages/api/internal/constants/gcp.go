@@ -1,12 +1,14 @@
 package constants
 
-const (
-	// ProjectID is the GCP project ID
-	ProjectID = "e2b-prod"
+import "os"
 
-	// Location is the GCP location
-	Location = "us-central1"
+var (
+	// ProjectID is the GCP project ID
+	ProjectID = os.Getenv("GCP_PROJECT_ID")
+
+	// Region is the GCP region
+	Region = os.Getenv("GCP_REGION")
 
 	// DockerRepositoryName is the name of the artifact registry where the docker images of the built users' dockerfiles are stored
-	DockerRepositoryName = "custom-environments"
+	DockerRepositoryName = os.Getenv("GCP_DOCKER_REPOSITORY_NAME")
 )

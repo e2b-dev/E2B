@@ -15,9 +15,9 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-const (
+var (
 	// DockerImagesURL is the URL to the docker images in the artifact registry
-	DockerImagesURL = "/" + constants.ProjectID + "/locations/" + constants.Location + "/repositories/" + constants.DockerRepositoryName + "/packages/"
+	DockerImagesURL = "/" + constants.ProjectID + "/locations/" + constants.Region + "/repositories/" + constants.DockerRepositoryName + "/packages/"
 )
 
 // DeleteEnvsEnvID serves to delete an env (e.g. in CLI)

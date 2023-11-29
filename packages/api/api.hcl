@@ -53,7 +53,7 @@ variable "environment" {
   default = ""
 }
 
-variable "bucket_name" {
+variable "docker_contexts_bucket_name" {
   type    = string
   default = ""
 }
@@ -64,6 +64,21 @@ variable "api_secret" {
 }
 
 variable "google_service_account_secret" {
+  type    = string
+  default = ""
+}
+
+variable "gcp_docker_repository_name" {
+  type    = string
+  default = ""
+}
+
+variable "gcp_project_id" {
+  type    = string
+  default = ""
+}
+
+variable "gcp_region" {
   type    = string
   default = ""
 }
@@ -111,9 +126,12 @@ job "orchestration-api" {
         SUPABASE_CONNECTION_STRING    = var.supabase_connection_string
         POSTHOG_API_KEY               = var.posthog_api_key
         ENVIRONMENT                   = var.environment
-        GOOGLE_CLOUD_STORAGE_BUCKET   = var.bucket_name
+        GOOGLE_CLOUD_STORAGE_BUCKET   = var.docker_contexts_bucket_name
         API_SECRET                    = var.api_secret
         GOOGLE_SERVICE_ACCOUNT_BASE64 = var.google_service_account_secret
+        GCP_DOCKER_REPOSITORY_NAME    = var.gcp_docker_repository_name
+        GCP_PROJECT_ID                = var.gcp_project_id
+        GCP_REGION                    = var.gcp_region
       }
 
       config {

@@ -12,18 +12,22 @@ exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&
 
 # --- Mount the persistent disk with Firecracker environments.
 # See https://cloud.google.com/compute/docs/disks/add-persistent-disk#create_disk
-# TODO: Parametrize
-disk_name="fc-envs"
 
-mount_path="/mnt/disks/$disk_name"
+mount_path="/mnt/disks/${DISK_DEVICE_NAME}"
 
-mkdir -p $mount_path
-mount /dev/disk/by-id/google-$disk_name $mount_path
-chmod a+w $mount_path
+mkdir -p "$mount_path"
+
+# Format the disk if it is not already formatted.
+if [[ $(lsblk -no FSTYPE "/dev/disk/by-id/google-${DISK_DEVICE_NAME}") != "xfs" ]]; then
+  mkfs.xfs "/dev/disk/by-id/google-${DISK_DEVICE_NAME}"
+fi
+
+mount "/dev/disk/by-id/google-${DISK_DEVICE_NAME}" "$mount_path"
+chmod a+w "$mount_path"
 
 # Mount env buckets
 mkdir -p /mnt/disks/envs-pipeline
-gcsfuse -o=allow_other --implicit-dirs e2b-fc-env-pipeline /mnt/disks/envs-pipeline
+gcsfuse -o=allow_other --implicit-dirs "${FC_ENV_PIPELINE_BUCKET_NAME}" /mnt/disks/envs-pipeline
 
 # Copy the kernel
 env_pipeline_local_dir="/fc-vm"
@@ -32,7 +36,7 @@ sudo cp /mnt/disks/envs-pipeline/envd $env_pipeline_local_dir/envd
 sudo chmod +x $env_pipeline_local_dir/envd
 
 mkdir -p /mnt/disks/docker-contexts
-gcsfuse -o=allow_other --implicit-dirs e2b-envs-docker-context /mnt/disks/docker-contexts
+gcsfuse -o=allow_other --implicit-dirs "${DOCKER_CONTEXTS_BUCKET_NAME}" /mnt/disks/docker-contexts
 
 # Setup Nomad task drivers
 sudo rm -f /opt/nomad/plugins/env-build-task-driver
@@ -46,11 +50,25 @@ sudo chmod +x /opt/nomad/plugins/env-instance-task-driver
 
 # These variables are passed in via Terraform template interpolation
 
-gsutil cp gs://${scripts_bucket}/run-consul.sh /opt/consul/bin/run-consul.sh
-gsutil cp gs://${scripts_bucket}/run-nomad.sh /opt/nomad/bin/run-nomad.sh
+gsutil cp "gs://${SCRIPTS_BUCKET}/run-consul.sh" /opt/consul/bin/run-consul.sh
+gsutil cp "gs://${SCRIPTS_BUCKET}/run-nomad.sh" /opt/nomad/bin/run-nomad.sh
 
 chmod +x /opt/consul/bin/run-consul.sh /opt/nomad/bin/run-nomad.sh
 
+mkdir /root/.docker
+touch /root/.docker/config.json
+cat <<EOF >/root/.docker/config.json
+{
+    "auths": {
+        "${GCP_REGION}-docker.pkg.dev": {
+            "username": "oauth2accesstoken",
+            "password": "$(gcloud auth print-access-token)",
+            "server_address": "https://${GCP_REGION}-docker.pkg.dev"
+        }
+    }
+}
+EOF
+
 # These variables are passed in via Terraform template interpolation
-/opt/consul/bin/run-consul.sh --client --cluster-tag-name "${cluster_tag_name}" &
+/opt/consul/bin/run-consul.sh --client --cluster-tag-name "${CLUSTER_TAG_NAME}" &
 /opt/nomad/bin/run-nomad.sh --client &

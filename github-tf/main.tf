@@ -2,43 +2,21 @@ terraform {
   required_providers {
     github = {
       source  = "integrations/github"
-      version = "~> 5.0"
+      version = "5.42.0"
+    }
+    google = {
+      source  = "hashicorp/google"
+      version = "5.6.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.5.1"
     }
   }
 }
 
-variable "gcp_project_id" {
-  description = "The project to deploy the cluster in"
-  type        = string
-}
-
-variable "gcp_region" {
-  type = string
-}
-
-variable "gcp_zone" {
-  description = "All GCP resources will be launched in this Zone."
-  type        = string
-}
-
-variable "github_organization" {
-  description = "The name of the github organization"
-  type        = string
-}
-
-variable "github_repository" {
-  description = "The name of the repository"
-  type        = string
-}
-
-provider "google" {
-  project = var.gcp_project_id
-  region  = var.gcp_region
-  zone    = var.gcp_zone
-}
-
 data "google_secret_manager_secret_version" "github-token-google-secret" {
-  secret = "github-repo-token"
+  secret = "${var.prefix}github-repo-token"
 }
 
 
@@ -49,7 +27,7 @@ provider "github" {
 
 
 resource "google_service_account" "github-action-service-account" {
-  account_id   = "github-action-${var.gcp_project_id}-api"
+  account_id   = "${var.prefix}github-action-${var.gcp_project_id}-api"
   display_name = "Service account for deploying API via Github Actions"
 }
 
@@ -63,18 +41,16 @@ resource "random_string" "action_wip_random" {
 }
 
 resource "google_iam_workload_identity_pool" "github-actions-wip" {
-  provider                  = google-beta
-  workload_identity_pool_id = "github-actions-${var.gcp_project_id}-api-${random_string.action_wip_random.result}"
+  workload_identity_pool_id = "${var.prefix}github-actions-${var.gcp_project_id}-api-${random_string.action_wip_random.result}"
   display_name              = "GitHub Actions for ${var.github_repository} repo"
   description               = "OIDC identity pool for deploying ${var.github_repository} via GitHub Actions"
 }
 
 
 resource "google_iam_workload_identity_pool_provider" "gha-identity-pool-provider" {
-  provider                           = google-beta
   workload_identity_pool_id          = google_iam_workload_identity_pool.github-actions-wip.workload_identity_pool_id
-  workload_identity_pool_provider_id = "gh-provider"
-  display_name                       = "GHA identity pool provider"
+  workload_identity_pool_provider_id = "${var.prefix}gh-provider"
+  display_name                       = "E2B Github Action identity pool provider"
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
     "attribute.repository" = "assertion.repository"
@@ -117,19 +93,19 @@ resource "google_project_iam_member" "service-account-roles" {
 
 resource "github_actions_secret" "wif-token-secret" {
   repository      = var.github_repository
-  secret_name     = "WORKLOAD_IDENTITY_PROVIDER"
+  secret_name     = "E2B_WORKLOAD_IDENTITY_PROVIDER"
   plaintext_value = "projects/${data.google_project.gcp_project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github-actions-wip.workload_identity_pool_id}/providers/${google_iam_workload_identity_pool_provider.gha-identity-pool-provider.workload_identity_pool_provider_id}"
 
 }
 
 resource "github_actions_secret" "service-account-email-secret" {
   repository      = var.github_repository
-  secret_name     = "SERVICE_ACCOUNT_EMAIL"
+  secret_name     = "E2B_SERVICE_ACCOUNT_EMAIL"
   plaintext_value = google_service_account.github-action-service-account.email
 }
 
 resource "github_actions_secret" "project-id-secret" {
   repository      = var.github_repository
-  secret_name     = "GCE_PROJECT"
+  secret_name     = "E2B_GCP_PROJECT"
   plaintext_value = var.gcp_project_id
 }

@@ -1,7 +1,8 @@
 client := gcloud compute instances list --format='csv(name)' | grep "client"
+GCP_PROJECT ?= $$(gcloud config get-value project)
 
 upload:
-	./upload.sh
+	./upload.sh $(GCP_PROJECT)
 
 build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/ .
@@ -17,7 +18,7 @@ run-profiler:
 
 update-driver:
 	make build
-	./upload.sh
+	make upload
 	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /opt/nomad/plugins/env-build-task-driver && \
 	sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-build-task-driver && \
@@ -36,3 +37,7 @@ update-driver-locally:
 
 test:
 	sudo go run -race -gcflags=all="-N -l" main.go -env zu6biammj4nr19vmspq5 -build 07ed806d-239d-b4cd-6189-4621769edc34
+
+build-and-upload:
+	make build
+	make upload

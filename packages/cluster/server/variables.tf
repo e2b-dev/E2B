@@ -37,28 +37,10 @@ variable "service_account_email" {
   type        = string
 }
 
-
-# ---------------------------------------------------------------------------------------------------------------------
-# OPTIONAL PARAMETERS
-# These parameters have reasonable defaults.
-# ---------------------------------------------------------------------------------------------------------------------
-
-variable "network_project_id" {
-  description = "The name of the GCP Project where the network is located. Useful when using networks shared between projects. If empty, var.gcp_project_id will be used."
-  type        = string
-  default     = null
-}
-
 variable "service_account_scopes" {
   description = "A list of service account scopes that will be added to the Compute Instance Template in addition to the scopes automatically added by this module."
   type        = list(string)
   default     = []
-}
-
-variable "storage_access_scope" {
-  description = "Used to set the access permissions for Google Cloud Storage. As of September 2018, this must be one of ['', 'storage-ro', 'storage-rw', 'storage-full']"
-  type        = string
-  default     = "storage-ro"
 }
 
 variable "instance_group_target_pools" {
@@ -90,28 +72,10 @@ variable "custom_tags" {
   default     = []
 }
 
-variable "allowed_inbound_cidr_blocks_http_api" {
-  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow API connections to server."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_tags_http_api" {
-  description = "A list of tags from which the Compute Instances will allow API connections to server."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_cidr_blocks_dns" {
-  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow TCP DNS and UDP DNS connections to server."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_tags_dns" {
-  description = "A list of tags from which the Compute Instances will allow TCP DNS and UDP DNS connections to server."
-  type        = list(string)
-  default     = []
+variable "labels" {
+  description = "The labels to attach to resources created by this module"
+  type        = map(string)
+  default     = {}
 }
 
 # Update Policy
@@ -152,10 +116,6 @@ variable "instance_group_update_policy_max_unavailable_percent" {
   default     = null
 }
 
-variable "instance_group_update_policy_min_ready_sec" {
-  description = "Minimum number of seconds to wait for after a newly created instance becomes available. This value must be between 0-3600."
-  type        = number
-}
 
 # Metadata
 
@@ -171,103 +131,6 @@ variable "custom_metadata" {
   default     = {}
 }
 
-# Firewall Ports
-
-variable "server_rpc_port" {
-  description = "The port used by servers to handle incoming requests from other agents."
-  type        = number
-  default     = 8300
-}
-
-variable "cli_rpc_port" {
-  description = "The port used by all agents to handle RPC from the CLI."
-  type        = number
-  default     = 8400
-}
-
-variable "serf_lan_port" {
-  description = "The port used to handle gossip in the LAN. Required by all agents."
-  type        = number
-  default     = 8301
-}
-
-variable "serf_wan_port" {
-  description = "The port used by servers to gossip over the WAN to other servers."
-  type        = number
-  default     = 8302
-}
-
-variable "http_api_port" {
-  description = "The port used by clients to talk to the HTTP API"
-  type        = number
-  default     = 8500
-}
-
-variable "dns_port" {
-  description = "The port used to resolve DNS queries."
-  type        = number
-  default     = 8600
-}
-
-
-
-# Firewall Ports
-
-variable "nomad_http_port" {
-  description = "The port used by Nomad to handle incoming HTPT (API) requests."
-  type        = number
-  default     = 4646
-}
-
-variable "nomad_rpc_port" {
-  description = "The port used by Nomad to handle incoming RPC requests."
-  type        = number
-  default     = 4647
-}
-
-variable "nomad_serf_port" {
-  description = "The port used by Nomad to handle incoming serf requests."
-  type        = number
-  default     = 4648
-}
-
-variable "allowed_inbound_cidr_blocks_http" {
-  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow connections to Nomad on the port specified by var.http_port."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_tags_http" {
-  description = "A list of tags from which the Compute Instances will allow connections to Nomad on the port specified by var.http_port."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_cidr_blocks_rpc" {
-  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow connections to Nomad on the port specified by var.rpc_port."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_tags_rpc" {
-  description = "A list of tags from which the Compute Instances will allow connections to Nomad on the port specified by var.rpc_port."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_cidr_blocks_serf" {
-  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow connections to Nomad on the port specified by var.serf_port."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_tags_serf" {
-  description = "A list of tags from which the Compute Instances will allow connections to Nomad on the port specified by var.serf_port."
-  type        = list(string)
-  default     = []
-}
-
-
 # Disk Settings
 
 variable "root_volume_disk_size_gb" {
@@ -282,6 +145,3 @@ variable "root_volume_disk_type" {
   default     = "pd-ssd"
 }
 
-variable "gcp_project_id" {
-  type = string
-}

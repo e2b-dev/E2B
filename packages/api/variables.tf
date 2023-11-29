@@ -1,8 +1,14 @@
-variable "gcp_zone" {
+variable "prefix" {
   type = string
 }
 
-variable "nomad_address" {
+variable "gcp_project_id" {
+  type = string
+}
+variable "gcp_region" {
+  type = string
+}
+variable "gcp_zone" {
   type = string
 }
 
@@ -14,21 +20,12 @@ variable "nomad_token" {
   type = string
 }
 
-variable "bucket_name" {
-  type = string
-}
-
 variable "api_port" {
   type = object({
     name        = string
     port        = number
     health_path = string
   })
-}
-
-variable "image_name" {
-  type    = string
-  default = "us-central1-docker.pkg.dev/e2b-prod/orchestration/api"
 }
 
 variable "logs_proxy_address" {
@@ -41,4 +38,18 @@ variable "environment" {
 
 variable "google_service_account_secret" {
   type = string
+}
+
+variable "docker_contexts_bucket_name" {
+  type = string
+}
+
+variable "google_service_account_email" {
+  type = string
+}
+
+variable "labels" {
+  description = "The labels to attach to resources created by this module"
+  type        = map(string)
+  default     = {}
 }

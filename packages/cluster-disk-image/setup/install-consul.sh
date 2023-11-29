@@ -122,7 +122,6 @@ function install_binary {
 
   local -r bin_dir="$install_path/bin"
   local -r consul_dest_path="$bin_dir/consul"
-  local -r run_consul_dest_path="$bin_dir/run-consul.sh"
 
   unzip -d /tmp "$DOWNLOAD_PACKAGE_PATH"
 
@@ -138,11 +137,6 @@ function install_binary {
     log_info "Adding symlink to $consul_dest_path in $symlink_path"
     sudo ln -s "$consul_dest_path" "$symlink_path"
   fi
-
-  log_info "Copying Consul run script to $run_consul_dest_path"
-  sudo cp "$SCRIPT_DIR/setup/run-consul.sh" "$run_consul_dest_path"
-  sudo chown "$username:$username" "$run_consul_dest_path"
-  sudo chmod a+x "$run_consul_dest_path"
 }
 
 function install_tls_certificates {

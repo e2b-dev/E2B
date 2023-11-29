@@ -20,3 +20,7 @@ variable "client_proxy_port" {
     port = number
   })
 }
+
+variable "domain_name" {
+  type = string
+}
