@@ -10,7 +10,7 @@ variable "gcp_zone" {
 
 variable "fc_envs_disk_size" {
   type        = string
-  description = "The name of the disk for storing built fc envs"
+  description = "The size of the disk for storing built fc envs"
 }
 
 variable "prefix" {

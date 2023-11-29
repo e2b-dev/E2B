@@ -125,7 +125,7 @@ variable "github_repository" {
 
 variable "fc_envs_disk_size" {
   type        = number
-  description = "The size, in GB, of the root disk volume on each Consul node."
+  description = "The size of the disk for storing built fc envs"
   default     = 50
 }
 

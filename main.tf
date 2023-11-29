@@ -122,8 +122,6 @@ module "github-tf" {
   prefix = var.prefix
 }
 
-
-
 module "cluster" {
   source = "./packages/cluster"
 
