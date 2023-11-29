@@ -2,7 +2,7 @@
 
 GCP_PROJECT ?= $$(gcloud config get-value project)
 GCP_REGION ?= "us-central1"
-DOMAIN_NAME ?= "e2b-staging.com"
+DOMAIN_NAME ?= "e2b.dev"
 
 IMAGE := e2b-orchestration/api
 
