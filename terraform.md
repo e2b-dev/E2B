@@ -8,19 +8,18 @@ Check if you can use config for terraform state management
    - [Compute Engine API](https://console.cloud.google.com/apis/library/compute.googleapis.com)
    - [Artifact Registry API](https://console.cloud.google.com/apis/library/artifactregistry.googleapis.com)
 4. You will need domain, if you use cloudflare - you can use terraform to set DNS and get certificate
-5. Create all secrets 
-   - posthog (only empty secret required) - posthog-api-key
-   - supabase (#TODO: rename)
+5. Create empty values in following secrets:
+   - postgres (required)
+   - cloudflare if you want to use cloudflare (optional)
    - nomad - nomad-secret-id (empty for now)
    - consul - consul-secret-id (empty for now)
+   - posthog (if you don't want to use posthog, create) - posthog-api-key
    - grafana (if you want traces / logging)
-   - cloudflare
-
-1. build cluster disk image (./packages/cluster-disk-image)
-1. Run build all
-1. After first terraform apply -run make bootstrap-consul and nomad and paste the secrets to gcp
-1. Restart client VM
-
+6. build cluster disk image (./packages/cluster-disk-image)
+7. Run `make apply`
+8. Run `make build-and-upload-all`
+9. Run `make bootstrap-consul` and `make bootstrap-nomad` and paste the secrets to GCP
+10. Run `make apply`
 
 
 # TODOs:
