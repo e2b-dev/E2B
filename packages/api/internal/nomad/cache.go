@@ -42,6 +42,10 @@ func (c *InstanceCache) Add(instance InstanceInfo) error {
 		instance.StartTime = &now
 	}
 
+	if instance.TeamID == nil || instance.Instance.InstanceID == "" || instance.Instance.ClientID == "" || instance.Instance.EnvID == "" {
+		return fmt.Errorf("instance %+v (%+v) is missing team ID, instance ID, client ID, or env ID ", instance, instance.Instance)
+	}
+
 	c.cache.Set(instance.Instance.InstanceID, instance, ttlcache.DefaultTTL)
 	c.UpdateCounter(instance, 1)
 
@@ -213,8 +217,6 @@ func (c *InstanceCache) CountForTeam(teamID uuid.UUID) (count uint) {
 }
 
 func (c *InstanceCache) UpdateCounter(instance InstanceInfo, value int64) {
-	fmt.Printf("Updating counter (%d) for instance %+v with %+v\n", value, instance, instance.Instance)
-
 	c.counter.Add(context.Background(), value, metric.WithAttributes(
 		attribute.String("instance_id", instance.Instance.InstanceID),
 		attribute.String("env_id", instance.Instance.EnvID),
