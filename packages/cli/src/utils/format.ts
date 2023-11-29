@@ -99,28 +99,18 @@ export function withDelimiter(content: string, title: string, isLast?: boolean) 
     titleAlignment: 'center',
     float: 'left',
     title: title ? asBold(title) : undefined,
-    margin: 0,
-    height: 0,
+    margin: {
+      top: 0,
+      bottom: 0,
+      left: 1,
+      right: 0,
+    },
     fullscreen: w => [w, 0],
     padding: {
-      bottom: isLast ? verticalPadding : verticalPadding,
+      bottom: isLast ? verticalPadding : 0,
       left: horizontalPadding,
       right: horizontalPadding,
       top: verticalPadding,
     },
-  })
-}
-
-export function withMargin(content: string) {
-  return boxen.default(content, {
-    borderStyle,
-    margin: 0,
-    float: 'left',
-    padding: {
-      bottom: 0,
-      left: horizontalPadding,
-      right: horizontalPadding,
-      top: 0,
-    }
   })
 }

@@ -17,7 +17,6 @@ import {
   asPrimary,
   asPython,
   asTypescript,
-  borderStyle,
   withDelimiter,
 } from 'src/utils/format'
 import { pathOption } from 'src/options'
@@ -297,19 +296,14 @@ Find more here - ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')} in ${
           float: 'left',
         })
 
-        const exampleUsage = `${withDelimiter(pythonExample, 'Python SDK')}${withDelimiter(typescriptExample, 'JS SDK', true)}`
+        const exampleUsage = `${withDelimiter(pythonExample, 'Python SDK')}\n${withDelimiter(typescriptExample, 'JS SDK', true)}`
 
         console.log(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate(
             {
               aliases, ...template.data,
             },
-          )} finished.\n${exampleHeader}${boxen.default(exampleUsage, {
-            float: 'left',
-            borderStyle,
-            padding: 0,
-            margin: 1,
-          })}`,
+          )} finished.\n${exampleHeader}\n${exampleUsage}\n`,
         )
         break
       }
