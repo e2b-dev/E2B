@@ -56,9 +56,9 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	}
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("env.user_id", userID.String()),
-		attribute.String("env.team_id", team.ID.String()),
-		attribute.String("team_name", team.Name),
+		attribute.String("user.id", userID.String()),
+		attribute.String("env.team.id", team.ID.String()),
+		attribute.String("env.team.name", team.Name),
 		attribute.String("env.id", envID),
 	)
 

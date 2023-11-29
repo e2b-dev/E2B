@@ -215,9 +215,9 @@ func New(ctx context.Context, nodeID, instanceID, consulToken string, tracer tra
 
 	telemetry.SetAttributes(
 		childCtx,
-		attribute.String("kv_key", slot.KVKey),
-		attribute.String("node_short_id", slot.NodeShortID),
-		attribute.String("instance_id", slot.InstanceID),
+		attribute.String("instance.slot.kv.key", slot.KVKey),
+		attribute.String("instance.slot.node.short_id", slot.NodeShortID),
+		attribute.String("instance.id", slot.InstanceID),
 	)
 
 	return slot, nil
@@ -226,9 +226,9 @@ func New(ctx context.Context, nodeID, instanceID, consulToken string, tracer tra
 func (ips *IPSlot) Release(ctx context.Context, consulToken string, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot",
 		trace.WithAttributes(
-			attribute.String("kv_key", ips.KVKey),
-			attribute.String("node_short_id", ips.NodeShortID),
-			attribute.String("instance_id", ips.InstanceID),
+			attribute.String("instance.slot.kv.key", ips.KVKey),
+			attribute.String("instance.slot.node.short_id", ips.NodeShortID),
+			attribute.String("instance.id", ips.InstanceID),
 		),
 	)
 	defer childSpan.End()

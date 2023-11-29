@@ -55,7 +55,7 @@ type (
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
 	ctx, span := d.tracer.Start(d.ctx, "start-task-validation", trace.WithAttributes(
-		attribute.String("alloc_id", cfg.AllocID),
+		attribute.String("alloc.id", cfg.AllocID),
 	))
 	defer span.End()
 

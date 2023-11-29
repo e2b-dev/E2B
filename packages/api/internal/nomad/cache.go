@@ -50,8 +50,8 @@ func (c *InstanceCache) Add(instance *api.Instance, teamID *uuid.UUID, startTime
 
 	c.cache.Set(instance.InstanceID, instanceData, ttlcache.DefaultTTL)
 	c.counter.Add(context.Background(), 1, metric.WithAttributes(
-		attribute.String("instance_id", instance.InstanceID),
-		attribute.String("env_id", instance.EnvID),
+		attribute.String("instance.id", instance.InstanceID),
+		attribute.String("env.id", instance.EnvID),
 	))
 
 	return nil
@@ -168,8 +168,8 @@ func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.AP
 			counter.Add(
 				ctx,
 				-1,
-				metric.WithAttributes(attribute.String("instance_id", i.Value().Instance.InstanceID)),
-				metric.WithAttributes(attribute.String("env_id", i.Value().Instance.EnvID)),
+				metric.WithAttributes(attribute.String("instance.id", i.Value().Instance.InstanceID)),
+				metric.WithAttributes(attribute.String("env.id", i.Value().Instance.EnvID)),
 			)
 		}
 	})

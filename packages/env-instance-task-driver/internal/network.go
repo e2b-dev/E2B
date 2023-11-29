@@ -29,17 +29,17 @@ func CreateNetwork(
 	tracer trace.Tracer,
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "create-network", trace.WithAttributes(
-		attribute.Int("slotIdx", ipSlot.SlotIdx),
-		attribute.String("veth.cidr", ipSlot.VethCIDR()),
-		attribute.String("vpeer.cidr", ipSlot.VpeerCIDR()),
-		attribute.String("tap.cidr", ipSlot.TapCIDR()),
-		attribute.String("hostSnapshot.cidr", ipSlot.HostSnapshotCIDR()),
-		attribute.String("namespaceSnapshot.ip", ipSlot.NamespaceSnapshotIP()),
-		attribute.String("tap.ip", ipSlot.TapIP()),
-		attribute.String("tap.name", ipSlot.TapName()),
-		attribute.String("veth.name", ipSlot.VethName()),
-		attribute.String("vpeer.name", ipSlot.VpeerName()),
-		attribute.String("namespace.id", ipSlot.NamespaceID()),
+		attribute.Int("istance.slot.index", ipSlot.SlotIdx),
+		attribute.String("instance.slot.veth.cidr", ipSlot.VethCIDR()),
+		attribute.String("instance.slot.vpeer.cidr", ipSlot.VpeerCIDR()),
+		attribute.String("instance.slot.tap.cidr", ipSlot.TapCIDR()),
+		attribute.String("instance.slot.host_snapshot.cidr", ipSlot.HostSnapshotCIDR()),
+		attribute.String("instance.slot.namespaces_snapshot.ip", ipSlot.NamespaceSnapshotIP()),
+		attribute.String("instance.slot.tap.ip", ipSlot.TapIP()),
+		attribute.String("instance.slot.tap.name", ipSlot.TapName()),
+		attribute.String("instance.slot.veth.name", ipSlot.VethName()),
+		attribute.String("instance.slot.vpeer.name", ipSlot.VpeerName()),
+		attribute.String("instance.slot.namespace.id", ipSlot.NamespaceID()),
 		attribute.String("instance.id", ipSlot.InstanceID),
 	))
 	defer childSpan.End()

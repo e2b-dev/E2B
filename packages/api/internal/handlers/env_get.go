@@ -31,8 +31,8 @@ func (a *APIStore) GetEnvs(
 	}
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("env.user_id", userID.String()),
-		attribute.String("env.team_id", team.ID.String()),
+		attribute.String("user.id", userID.String()),
+		attribute.String("team.id", team.ID.String()),
 	)
 
 	envs, err := a.supabase.GetEnvs(ctx, team.ID)

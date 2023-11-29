@@ -21,8 +21,8 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 	team, err := a.supabase.GetDefaultTeamFromUserID(ctx, userID)
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("env.user_id", userID.String()),
-		attribute.String("env.team_id", team.ID.String()),
+		attribute.String("user.id", userID.String()),
+		attribute.String("env.team.id", team.ID.String()),
 	)
 
 	if err != nil {

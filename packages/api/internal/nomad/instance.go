@@ -71,7 +71,7 @@ func (n *NomadClient) CreateInstance(
 ) (*api.Instance, *api.APIError) {
 	childCtx, childSpan := t.Start(ctx, "create-instance",
 		trace.WithAttributes(
-			attribute.String("env_id", envID),
+			attribute.String("env.id", envID),
 		),
 	)
 	defer childSpan.End()
@@ -200,7 +200,7 @@ func (n *NomadClient) CreateInstance(
 					errMsg := fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr.Err)
 					telemetry.ReportError(childCtx, errMsg)
 				} else {
-					telemetry.ReportEvent(childCtx, "cleaned up env instance job", attribute.String("env_id", envID), attribute.String("instance_id", instanceID))
+					telemetry.ReportEvent(childCtx, "cleaned up env instance job", attribute.String("env.id", envID), attribute.String("instance.id", instanceID))
 				}
 			}
 		}()

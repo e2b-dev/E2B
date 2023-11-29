@@ -67,8 +67,8 @@ func (a *APIStore) PostInstances(
 	}
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("instance.team_id", team.ID.String()),
-		attribute.String("instance.env_id", envID),
+		attribute.String("env.team.id", team.ID.String()),
+		attribute.String("env.id", envID),
 	)
 
 	// Check if team has reached max instances
@@ -137,7 +137,7 @@ func (a *APIStore) PostInstances(
 	}()
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("instance_id", instance.InstanceID),
+		attribute.String("instance.id", instance.InstanceID),
 	)
 
 	c.JSON(http.StatusCreated, &instance)
@@ -162,7 +162,7 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 	}
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("instance_id", instanceID),
+		attribute.String("instance.id", instanceID),
 	)
 
 	if body.Duration == nil {

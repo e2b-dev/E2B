@@ -54,7 +54,7 @@ var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
 	ctx, span := d.tracer.Start(d.ctx, "start-env-instance-task-validation", trace.WithAttributes(
-		attribute.String("alloc_id", cfg.AllocID),
+		attribute.String("alloc.id", cfg.AllocID),
 	))
 	defer span.End()
 
@@ -77,10 +77,10 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	defer childSpan.End()
 
 	childSpan.SetAttributes(
-		attribute.String("alloc_id", cfg.AllocID),
-		attribute.String("env_id", taskConfig.EnvID),
-		attribute.String("instance_id", taskConfig.InstanceID),
-		attribute.String("client_id", cfg.Env["NOMAD_NODE_ID"]),
+		attribute.String("alloc.id", cfg.AllocID),
+		attribute.String("env.id", taskConfig.EnvID),
+		attribute.String("instance.id", taskConfig.InstanceID),
+		attribute.String("client.id", cfg.Env["NOMAD_NODE_ID"]),
 	)
 
 	d.logger.Info("starting firecracker task", "task_cfg", hclog.Fmt("%+v", taskConfig))
@@ -205,7 +205,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.ExitResult, error) {
 	validationCtx, validationSpan := d.tracer.Start(ctx, "wait-env-instance-task-validation", trace.WithAttributes(
-		attribute.String("task_id", taskID),
+		attribute.String("task.id", taskID),
 	))
 	defer validationSpan.End()
 
@@ -217,7 +217,7 @@ func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.E
 
 	childCtx, childSpan := d.tracer.Start(d.ctx, "wait-env-instance-task",
 		trace.WithAttributes(
-			attribute.String("task_id", taskID),
+			attribute.String("task.id", taskID),
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(validationCtx, attribute.String("link", "validation")),
@@ -234,7 +234,7 @@ func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.E
 
 func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) error {
 	ctx, span := d.tracer.Start(d.ctx, "stop-env-instance-task-validation", trace.WithAttributes(
-		attribute.String("task_id", taskID),
+		attribute.String("task.id", taskID),
 	))
 	defer span.End()
 
@@ -246,7 +246,7 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 
 	childCtx, childSpan := d.tracer.Start(d.ctx, "stop-env-instance-task",
 		trace.WithAttributes(
-			attribute.String("task_id", taskID),
+			attribute.String("task.id", taskID),
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
@@ -267,7 +267,7 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 
 func (d *Driver) DestroyTask(taskID string, force bool) error {
 	ctx, span := d.tracer.Start(d.ctx, "destroy-env-instance-task-validation", trace.WithAttributes(
-		attribute.String("task_id", taskID),
+		attribute.String("task.id", taskID),
 	))
 	defer span.End()
 
@@ -279,7 +279,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 
 	childCtx, childSpan := d.tracer.Start(d.ctx, "destroy-env-instance-task",
 		trace.WithAttributes(
-			attribute.String("task_id", taskID),
+			attribute.String("task.id", taskID),
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(ctx, attribute.String("link", "validation")),

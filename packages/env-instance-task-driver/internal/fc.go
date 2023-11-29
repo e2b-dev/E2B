@@ -57,8 +57,8 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 
 func loadSnapshot(ctx context.Context, socketPath, envPath string, d *Driver, metadata interface{}) error {
 	childCtx, childSpan := d.tracer.Start(ctx, "load-snapshot", trace.WithAttributes(
-		attribute.String("socket_path", socketPath),
-		attribute.String("snapshot_root_path", envPath),
+		attribute.String("instance.socket.path", socketPath),
+		attribute.String("instance.snapshot.root_path", envPath),
 	))
 	defer childSpan.End()
 
@@ -70,8 +70,8 @@ func loadSnapshot(ctx context.Context, socketPath, envPath string, d *Driver, me
 
 	telemetry.SetAttributes(
 		childCtx,
-		attribute.String("memfile_path", memfilePath),
-		attribute.String("snapfile_path", snapfilePath),
+		attribute.String("instance.memfile.path", memfilePath),
+		attribute.String("instance.snapfile.path", snapfilePath),
 	)
 
 	backendType := models.MemoryBackendBackendTypeFile
@@ -120,8 +120,8 @@ func (d *Driver) initializeFC(
 	env *envSetup.InstanceFilesystem,
 ) (*fc, error) {
 	childCtx, childSpan := d.tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
-		attribute.String("instance_id", slot.InstanceID),
-		attribute.Int("ip_slot_index", slot.SlotIdx),
+		attribute.String("instance.id", slot.InstanceID),
+		attribute.Int("instance.slot.index", slot.SlotIdx),
 	))
 	defer childSpan.End()
 
@@ -293,15 +293,15 @@ func (d *Driver) initializeFC(
 
 	telemetry.SetAttributes(
 		childCtx,
-		attribute.String("alloc_id", info.AllocId),
-		attribute.String("pid", info.Pid),
-		attribute.String("socket_path", info.SocketPath),
-		attribute.String("env_id", info.EnvID),
-		attribute.String("env_path", info.EnvPath),
-		attribute.String("build_dir_path", info.BuildDirPath),
-		attribute.String("cmd", info.Cmd.String()),
-		attribute.String("cmd.dir", info.Cmd.Dir),
-		attribute.String("cmd.path", info.Cmd.Path),
+		attribute.String("alloc.id", info.AllocId),
+		attribute.String("instance.pid", info.Pid),
+		attribute.String("instance.socket.path", info.SocketPath),
+		attribute.String("instance.env.id", info.EnvID),
+		attribute.String("instance.env.path", info.EnvPath),
+		attribute.String("instance.build_dir.path", info.BuildDirPath),
+		attribute.String("instance.cmd", info.Cmd.String()),
+		attribute.String("instance.cmd.dir", info.Cmd.Dir),
+		attribute.String("instance.cmd.path", info.Cmd.Path),
 	)
 
 	return &fc{Machine: m, Instance: info}, nil
