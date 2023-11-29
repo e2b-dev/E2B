@@ -125,8 +125,8 @@ func (c *BuildCache) SetDone(envID string, buildID uuid.UUID, status api.Environ
 
 func (c *BuildCache) updateCounter(envID string, buildID uuid.UUID, value int64) {
 	c.counter.Add(context.Background(), value,
-		metric.WithAttributes(attribute.String("env.id", envID)),
-		metric.WithAttributes(attribute.String("build.id", buildID.String())),
+		metric.WithAttributes(attribute.String("env_id", envID)),
+		metric.WithAttributes(attribute.String("build_id", buildID.String())),
 	)
 }
 

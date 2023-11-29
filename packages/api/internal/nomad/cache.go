@@ -32,27 +32,18 @@ type InstanceCache struct {
 }
 
 // Add the instance to the cache and start expiration timer.
-func (c *InstanceCache) Add(instance *api.Instance, teamID *uuid.UUID, startTime *time.Time) error {
-	if c.Exists(instance.InstanceID) {
-		return fmt.Errorf("instance \"%s\" already exists", instance.InstanceID)
+func (c *InstanceCache) Add(instance InstanceInfo) error {
+	if c.Exists(instance.Instance.InstanceID) {
+		return fmt.Errorf("instance \"%s\" already exists", instance.Instance.InstanceID)
 	}
 
-	if startTime == nil {
-		startTime = &time.Time{}
-		*startTime = time.Now()
+	if instance.StartTime == nil {
+		now := time.Now()
+		instance.StartTime = &now
 	}
 
-	instanceData := InstanceInfo{
-		Instance:  instance,
-		TeamID:    teamID,
-		StartTime: startTime,
-	}
-
-	c.cache.Set(instance.InstanceID, instanceData, ttlcache.DefaultTTL)
-	c.counter.Add(context.Background(), 1, metric.WithAttributes(
-		attribute.String("instance.id", instance.InstanceID),
-		attribute.String("env.id", instance.EnvID),
-	))
+	c.cache.Set(instance.Instance.InstanceID, instance, ttlcache.DefaultTTL)
+	c.UpdateCounter(instance, 1)
 
 	return nil
 }
@@ -144,7 +135,7 @@ func (c *InstanceCache) Sync(instances []*InstanceInfo) {
 	// Add instances that are not in the cache with the default TTL
 	for _, instance := range instances {
 		if !c.Exists(instance.Instance.InstanceID) {
-			err := c.Add(instance.Instance, instance.TeamID, nil)
+			err := c.Add(*instance)
 			if err != nil {
 				fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
 			}
@@ -159,28 +150,24 @@ func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.AP
 		ttlcache.WithTTL[string, InstanceInfo](InstanceExpiration),
 	)
 
+	instanceCache := &InstanceCache{
+		cache:   cache,
+		counter: counter,
+	}
+
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, InstanceInfo]) {
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
 			err := deleteInstance(i.Value(), true)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error deleting instance (%v)\n: %v\n", er, err.Err)
 			}
-			counter.Add(
-				ctx,
-				-1,
-				metric.WithAttributes(attribute.String("instance.id", i.Value().Instance.InstanceID)),
-				metric.WithAttributes(attribute.String("env.id", i.Value().Instance.EnvID)),
-			)
+
+			instanceCache.UpdateCounter(i.Value(), -1)
 		}
 	})
 
-	instanceCache := &InstanceCache{
-		cache:   cache,
-		counter: counter,
-	}
-
 	for _, instance := range initialInstances {
-		err := instanceCache.Add(instance.Instance, instance.TeamID, nil)
+		err := instanceCache.Add(*instance)
 		if err != nil {
 			fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
 		}
@@ -223,4 +210,12 @@ func (c *InstanceCache) CountForTeam(teamID uuid.UUID) (count uint) {
 	}
 
 	return count
+}
+
+func (c *InstanceCache) UpdateCounter(instance InstanceInfo, value int64) {
+	c.counter.Add(context.Background(), value, metric.WithAttributes(
+		attribute.String("instance_id", instance.Instance.InstanceID),
+		attribute.String("env_id", instance.Instance.EnvID),
+		attribute.String("team_id", instance.TeamID.String()),
+	))
 }

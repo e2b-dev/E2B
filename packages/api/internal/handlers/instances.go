@@ -103,8 +103,10 @@ func (a *APIStore) PostInstances(
 		Set("instance_id", instance.InstanceID).
 		Set("infra_version", "v1"))
 
-	startingTime := time.Now()
-	if cacheErr := a.cache.Add(instance, &team.ID, &startingTime); cacheErr != nil {
+	if cacheErr := a.cache.Add(InstanceInfo{
+		Instance: instance,
+		TeamID:   &team.ID,
+	}); cacheErr != nil {
 		errMsg := fmt.Errorf("error when adding instance to cache: %w", cacheErr)
 		telemetry.ReportError(ctx, errMsg)
 
