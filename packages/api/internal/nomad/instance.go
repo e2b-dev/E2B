@@ -66,7 +66,8 @@ func (n *NomadClient) GetInstances() ([]*api.Instance, *api.APIError) {
 func (n *NomadClient) CreateInstance(
 	t trace.Tracer,
 	ctx context.Context,
-	envID string,
+	envID,
+	teamID string,
 ) (*api.Instance, *api.APIError) {
 	childCtx, childSpan := t.Start(ctx, "create-instance",
 		trace.WithAttributes(
@@ -98,8 +99,10 @@ func (n *NomadClient) CreateInstance(
 		TaskName         string
 		JobName          string
 		EnvsDisk         string
+		TeamID           string
 	}{
 		SpanID:           spanID,
+		TeamID:           teamID,
 		TraceID:          traceID,
 		LogsProxyAddress: logsProxyAddress,
 		ConsulToken:      consulToken,

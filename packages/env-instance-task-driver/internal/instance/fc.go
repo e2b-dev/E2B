@@ -30,6 +30,7 @@ type MmdsMetadata struct {
 	EnvID      string `json:"envID"`
 	Address    string `json:"address"`
 	TraceID    string `json:"traceID"`
+	TeamID     string `json:"teamID"`
 }
 
 type FC struct {

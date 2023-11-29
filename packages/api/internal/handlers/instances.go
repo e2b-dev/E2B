@@ -84,7 +84,7 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
-	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID)
+	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID, team.ID.String())
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		telemetry.ReportCriticalError(ctx, errMsg)

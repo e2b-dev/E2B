@@ -6,6 +6,8 @@ import (
 	"path"
 	"time"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/log/exporter"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -17,11 +19,6 @@ func NewLogger(logDir string, debug, mmds bool) (*zap.SugaredLogger, error) {
 
 	outputPaths := fmt.Sprintf("\"%s\"", path.Join(logDir, "envd.log"))
 	errorOutputPaths := fmt.Sprintf("\"%s\"", path.Join(logDir, "envd.err"))
-
-	if debug {
-		outputPaths += ", \"stdout\""
-		errorOutputPaths += ", \"stderr\""
-	}
 
 	rawJSON := []byte(fmt.Sprintf(`{
 	  "level": "debug",
@@ -53,20 +50,16 @@ func NewLogger(logDir string, debug, mmds bool) (*zap.SugaredLogger, error) {
 		return nil, fmt.Errorf("error building logger: %w", err)
 	}
 
-	if !mmds || debug {
-		return l.Sugar(), nil
-	}
-
 	// mmds is enabled, create a logger that sends logs with info from the FC's MMDS
 	var combinedLogger *zap.Logger
 
-	level := zap.InfoLevel
+	level := zap.DebugLevel
 
 	core := zapcore.NewTee(
 		l.Core(),
 		zapcore.NewCore(
 			zapcore.NewJSONEncoder(cfg.EncoderConfig),
-			zapcore.AddSync(&instanceLogsWriter{}),
+			zapcore.AddSync(exporter.NewHTTPLogsExporter(debug)),
 			level,
 		),
 	)

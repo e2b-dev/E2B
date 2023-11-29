@@ -16,7 +16,7 @@ import (
 
 const (
 	InstanceExpiration = time.Second * 15
-	cacheSyncTime      = time.Hour * 24
+	cacheSyncTime      = time.Minute * 3
 	maxInstanceLength  = time.Hour * 24
 )
 
@@ -123,6 +123,22 @@ func (c *InstanceCache) Exists(instanceID string) bool {
 }
 
 func (c *InstanceCache) Sync(instances []*api.Instance) {
+	instanceMap := make(map[string]*api.Instance)
+
+	// Use map for faster lookup
+	for _, instance := range instances {
+		instanceMap[instance.InstanceID] = instance
+	}
+
+	// Delete instances that are not in Nomad anymore
+	for _, item := range c.cache.Items() {
+		_, found := instanceMap[item.Key()]
+		if !found {
+			c.cache.Delete(item.Key())
+		}
+	}
+
+	// Add instances that are not in the cache with the default TTL
 	for _, instance := range instances {
 		if !c.Exists(instance.InstanceID) {
 			err := c.Add(instance, nil, nil)

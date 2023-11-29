@@ -25,20 +25,25 @@ import (
 // There isn't an explicit documentation, I'm using source code of tests as a reference:
 // https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
 
+const (
+	Version                = "dev"
+	defaultServerPort uint = 49982
+
+	startCmdID = "_startCmd"
+)
+
 var (
 	logger    *zap.SugaredLogger
 	wsHandler http.Handler
 
-	debug       bool
-	serverPort  uint
-	versionFlag bool
-
-	Version                = "dev"
-	defaultServerPort uint = 49982
+	debug        bool
+	serverPort   uint
+	versionFlag  bool
+	startCmdFlag string
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
-	logger.Info("Client connected")
+	logger.Debug("WS connection started")
 	wsHandler.ServeHTTP(w, r)
 }
 
@@ -83,6 +88,13 @@ func parseFlags() {
 		"port",
 		defaultServerPort,
 		"a port on which the daemon should run",
+	)
+
+	flag.StringVar(
+		&startCmdFlag,
+		"cmd",
+		"",
+		"a command to run on the daemon start",
 	)
 
 	flag.Parse()
@@ -143,6 +155,20 @@ func main() {
 	processService := process.NewService(logger.Named("processSvc"), envConfig)
 	if err := rpcServer.RegisterName("process", processService); err != nil {
 		logger.Panicw("failed to register process service", "error", err)
+	}
+
+	// Start the command passed via the -cmd flag.
+	if startCmdFlag != "" {
+		_, err := processService.Start(startCmdID, startCmdFlag, nil, "/")
+		// TODO: Do we need to cache the process logs if they are not retrieved?
+		// TODO: Should we cache all process logs always?
+		if err != nil {
+			logger.Errorf(
+				"failed to start the command passed via the -cmd flag",
+				"cmd", startCmdFlag,
+				"err", err,
+			)
+		}
 	}
 
 	terminalService := terminal.NewService(logger.Named("terminalSvc"), envConfig)

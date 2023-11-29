@@ -33,7 +33,7 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Envi
 		Env.
 		Query().
 		Where(env.Or(env.TeamID(teamID), env.Public(true))).
-		Order(ent.Desc(env.FieldCreatedAt)).
+		Order(ent.Asc(env.FieldCreatedAt)).
 		WithEnvAliases().
 		All(ctx)
 	if err != nil {

@@ -73,7 +73,7 @@ echo "if [ -f ~/.bashrc ]; then source ~/.bashrc; fi; if [ -f ~/.profile ]; then
 
 # Set up SSH.
 mkdir -p /etc/ssh
-cat <<EOF >>/etc/ssh/ssh_config
+cat <<EOF >>/etc/ssh/sshd_config
 PermitRootLogin yes
 PermitEmptyPasswords yes
 PasswordAuthentication yes

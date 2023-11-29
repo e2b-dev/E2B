@@ -29,6 +29,7 @@ type InstanceConfig struct {
 	InstanceID       string
 	LogsProxyAddress string
 	TraceID          string
+	TeamID           string
 }
 
 func NewInstance(
@@ -129,6 +130,7 @@ func NewInstance(
 			EnvID:      config.EnvID,
 			Address:    config.LogsProxyAddress,
 			TraceID:    config.TraceID,
+			TeamID:     config.TeamID,
 		},
 	)
 	if err != nil {

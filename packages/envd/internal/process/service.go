@@ -72,6 +72,12 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 					"error", err,
 				)
 			}
+
+			s.logger.Debugw("Stdout message",
+				"processID", process.ID,
+				"message", line,
+			)
+
 		case output.OutTypeStderr:
 			o = output.NewStderrMessage(line)
 
@@ -81,6 +87,11 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 					"error", err,
 				)
 			}
+
+			s.logger.Debugw("Stderr message",
+				"processID", process.ID,
+				"message", line,
+			)
 		}
 	}
 
@@ -249,6 +260,11 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 					"error", err,
 				)
 			}
+
+			s.logger.Debugw("Process exited",
+				"processID", newProc.ID,
+				"cmd", newProc.cmd,
+			)
 		}()
 
 		s.logger.Debugw("Started new process", "processID", newProc.ID)
