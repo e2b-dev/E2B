@@ -6,14 +6,6 @@ terraform {
       source  = "hashicorp/google"
       version = "5.6.0"
     }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = "5.6.0"
-    }
-    cloudflare = {
-      source  = "cloudflare/cloudflare"
-      version = "~> 4.0"
-    }
   }
 }
 
@@ -23,15 +15,18 @@ resource "google_project_iam_member" "network_viewer" {
   role    = "roles/compute.networkViewer"
 }
 
-resource "google_storage_bucket_object" "run_consul_object" {
-  name   = "run-consul.sh"
-  source = "${path.module}/scripts/run-consul.sh"
-  bucket = var.cluster_setup_bucket_name
+variable "setup_files" {
+  type = map(string)
+  default = {
+    "scripts/run-nomad.sh"  = "run-nomad.sh",
+    "scripts/run-consul.sh" = "run-consul.sh"
+  }
 }
 
-resource "google_storage_bucket_object" "run_nomad_object" {
-  name   = "run-nomad.sh"
-  source = "${path.module}/scripts/run-nomad.sh"
+resource "google_storage_bucket_object" "setup_config_objects" {
+  for_each = var.setup_files
+  name     = each.value
+  source   = "${path.module}/${each.key}"
   bucket = var.cluster_setup_bucket_name
 }
 
@@ -56,7 +51,7 @@ module "server_cluster" {
 
   labels = var.labels
 
-  depends_on = [google_storage_bucket_object.run_consul_object, google_storage_bucket_object.run_nomad_object]
+  depends_on = [google_storage_bucket_object.setup_config_objects]
 }
 
 module "client_cluster" {
@@ -93,7 +88,7 @@ module "client_cluster" {
   fc_envs_disk_name        = var.fc_envs_disk_name
   fc_envs_disk_device_name = var.fc_envs_disk_device_name
 
-  depends_on = [google_storage_bucket_object.run_consul_object, google_storage_bucket_object.run_nomad_object]
+  depends_on = [google_storage_bucket_object.setup_config_objects]
 }
 
 module "network" {
