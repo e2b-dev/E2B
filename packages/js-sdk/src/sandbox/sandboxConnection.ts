@@ -1,7 +1,7 @@
 import { IRpcNotification, RpcWebSocketClient } from 'rpc-websocket-client'
 
 import api, { components, withAPIKey } from '../api'
-import { ENVD_PORT, SANDBOX_DOMAIN, SANDBOX_REFRESH_PERIOD, WS_RECONNECT_INTERVAL, WS_ROUTE } from '../constants'
+import { ENVD_PORT, SANDBOX_DOMAIN, SANDBOX_REFRESH_PERIOD, SECURE, WS_RECONNECT_INTERVAL, WS_ROUTE } from '../constants'
 import { AuthenticationError } from '../error'
 import { assertFulfilled, formatSettledErrors, withTimeout } from '../utils/promise'
 import wait from '../utils/wait'
@@ -36,13 +36,13 @@ export interface Logger {
 export interface SandboxConnectionOpts {
   /**
    * Sandbox Template ID or name.
-   * 
+   *
    * If not specified, the 'base' template will be used.
    */
   template?: string;
   /**
    * @deprecated Use `template` instead.
-   * 
+   *
    * Sandbox Template ID or name.
    */
   id?: string;
@@ -159,7 +159,7 @@ export class SandboxConnection {
     }
 
     if (!this.sandbox) {
-      return undefined
+      throw new Error('Cannot get sandbox\'s hostname - sandbox is not initialized')
     }
 
     const hostname = `${this.sandbox.instanceID}-${this.sandbox.clientID}.${SANDBOX_DOMAIN}`
@@ -168,6 +168,20 @@ export class SandboxConnection {
     } else {
       return hostname
     }
+  }
+
+  /**
+   * Get the hostname for the sandbox or for the specified sandbox's port.
+   *
+   * `getHostname` method requires `this` context - you may need to bind it.
+   *
+   * @param port Specify if you want to connect to a specific port of the sandbox
+   * @returns Hostname of the sandbox or sandbox's port
+   */
+  getSandboxURL(port?: number) {
+    const protocol = SECURE ? 'https' : 'http'
+    const hostname = this.getHostname(port)
+    return `${protocol}://${hostname}`
   }
 
   /**
@@ -347,14 +361,8 @@ export class SandboxConnection {
   }
 
   private async connectRpc() {
-    const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
-
-    if (!hostname) {
-      throw new Error('Cannot get sandbox\'s hostname')
-    }
-
-    const protocol = this.opts.__debug_devEnv === 'local' ? 'ws' : 'wss'
-    const sandboxURL = `${protocol}://${hostname}${WS_ROUTE}`
+    const sandboxURL = this.getSandboxURL(this.opts.__debug_port || ENVD_PORT)
+    const wsURL = `${sandboxURL}${WS_ROUTE}`
 
     this.rpc.onError((err) => {
       // not warn, because this is somewhat expected behaviour during initialization
@@ -388,43 +396,43 @@ export class SandboxConnection {
       resolveOpening?.()
     })
 
-    this.rpc.onClose(async () => {
-      this.logger.debug?.(
-        `Closing WebSocket connection to sandbox "${this.sandbox?.instanceID}"`,
-      )
-      if (this.isOpen) {
-        await wait(WS_RECONNECT_INTERVAL)
+      this.rpc.onClose(async () => {
         this.logger.debug?.(
-          `Reconnecting to sandbox "${this.sandbox?.instanceID}"`,
+          `Closing WebSocket connection to sandbox "${this.sandbox?.instanceID}"`,
         )
-        try {
-          // When the WS connection closes the subscribers in devbookd are removed.
-          // We want to delete the subscriber handlers here so there are no orphans.
-          this.subscribers = []
-          await this.rpc.connect(sandboxURL)
+        if (this.isOpen) {
+          await wait(WS_RECONNECT_INTERVAL)
           this.logger.debug?.(
-            `Reconnected to sandbox "${this.sandbox?.instanceID}"`,
+            `Reconnecting to sandbox "${this.sandbox?.instanceID}"`,
           )
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-          // not warn, because this is somewhat expected behaviour during initialization
-          this.logger.debug?.(
-            `Failed reconnecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
-            }`,
-          )
+          try {
+            // When the WS connection closes the subscribers in devbookd are removed.
+            // We want to delete the subscriber handlers here so there are no orphans.
+            this.subscribers = []
+            await this.rpc.connect(wsURL)
+            this.logger.debug?.(
+              `Reconnected to sandbox "${this.sandbox?.instanceID}"`,
+            )
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch (err: any) {
+            // not warn, because this is somewhat expected behaviour during initialization
+            this.logger.debug?.(
+              `Failed reconnecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
+              }`,
+            )
+          }
+        } else {
+          rejectOpening?.()
         }
-      } else {
-        rejectOpening?.()
-      }
-    })
+      })
 
     this.rpc.onNotification.push(this.handleNotification.bind(this))
 
-    try {
-      this.logger.debug?.(
-        `Connection to sandbox "${this.sandbox?.instanceID}"`,
-      )
-      await this.rpc.connect(sandboxURL)
+      try {
+        this.logger.debug?.(
+          `Connection to sandbox "${this.sandbox?.instanceID}"`,
+        )
+        await this.rpc.connect(wsURL)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {

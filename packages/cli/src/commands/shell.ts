@@ -78,7 +78,7 @@ export async function connectSandbox({
       sandbox.terminal,
       `Terminal connected to sandbox ${asFormattedSandboxTemplate(
         template,
-      )}\nwith sandbox URL ${asBold(`https://${sandbox.getHostname()}`)}`,
+      )}\nwith sandbox URL ${asBold(sandbox.getSandboxURL())}}`,
       `Disconnecting terminal from sandbox ${asFormattedSandboxTemplate(
         template,
       )}`,

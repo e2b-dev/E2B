@@ -16,7 +16,7 @@ from e2b.constants import (
     SANDBOX_REFRESH_PERIOD,
     TIMEOUT,
     ENVD_PORT,
-    WS_ROUTE,
+    WS_ROUTE, SECURE,
 )
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.exception import (
@@ -129,7 +129,7 @@ class SandboxConnection:
             **kwargs,
         )
 
-    def get_hostname(self, port: Optional[int] = None):
+    def get_hostname(self, port: Optional[int] = None) -> str:
         """
         Get the hostname for the sandbox or for the specified sandbox's port.
 
@@ -155,6 +155,18 @@ class SandboxConnection:
             return f"{port}-{hostname}"
 
         return hostname
+
+    def get_sandbox_url(self, port: Optional[int] = None) -> str:
+        """
+        Get the url for the sandbox or for the specified sandbox's port.
+
+        :param port: Specify if you want to connect to a specific port of the sandbox
+
+        :return: Hostname of the sandbox or sandbox's port
+        """
+        hostname = self.get_hostname(port)
+        protocol = "https" if SECURE else "http"
+        return f"{protocol}://{hostname}"
 
     def keep_alive(self, duration: int) -> None:
         if not 0 <= duration <= 3600:
@@ -250,16 +262,16 @@ class SandboxConnection:
             self._connect_rpc(timeout)
         except Exception as e:
             print(e)
+            print(self.id)
+            sleep(10000)
             self._close()
             raise e
 
     def _connect_rpc(self, timeout: Optional[float] = TIMEOUT):
-        hostname = self.get_hostname(self._debug_port or ENVD_PORT)
-        protocol = "ws" if self._debug_dev_env == "local" else "wss"
-
-        sandbox_url = f"{protocol}://{hostname}{WS_ROUTE}"
+        sandbox_url = self.get_sandbox_url(self._debug_port or ENVD_PORT)
+        ws_url = f"{sandbox_url}{WS_ROUTE}"
         self._rpc = SandboxRpc(
-            url=sandbox_url,
+            url=ws_url,
             on_message=self._handle_notification,
         )
         self._rpc.connect(timeout=timeout)
