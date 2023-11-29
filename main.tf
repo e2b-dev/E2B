@@ -1,7 +1,7 @@
 terraform {
   required_version = ">= 1.5.0, < 1.6.0"
   backend "gcs" {
-    bucket = "e2b-terraform-state"
+    bucket = "e2b-dev-terraform-state"
     prefix = "terraform/orchestration/state"
   }
   required_providers {
@@ -51,11 +51,11 @@ resource "google_secret_manager_secret" "cloudflare_api_token" {
 }
 
 data "google_secret_manager_secret_version" "cloudflare_api_token" {
-  secret = google_secret_manager_secret.cloudflare_api_token.name
+  secret     = "${var.prefix}cloudflare-api-token"
 }
 
 provider "cloudflare" {
-  api_token = data.google_secret_manager_secret_version.cloudflare_api_token.secret_data
+  api_token = var.cloudflare_api_token != "empty" ? var.cloudflare_api_token : data.google_secret_manager_secret_version.cloudflare_api_token.secret_data
 }
 
 provider "google-beta" {
@@ -135,16 +135,18 @@ module "fc_envs_disk" {
   prefix = var.prefix
 }
 
-module "github-tf" {
-  source = "./github-tf"
-
-  gcp_project_id = var.gcp_project_id
-
-  github_organization = var.github_organization
-  github_repository   = var.github_repository
-
-  prefix = var.prefix
-}
+#module "github-tf" {
+#  source = "./github-tf"
+#
+#  gcp_project_id = var.gcp_project_id
+#  gcp_region     = var.gcp_region
+#  gcp_zone       = var.gcp_zone
+#
+#  github_organization = var.github_organization
+#  github_repository   = var.github_repository
+#
+#  prefix = var.prefix
+#}
 
 module "cluster" {
   source = "./packages/cluster"
@@ -190,15 +192,15 @@ resource "consul_acl_token_policy_attachment" "attachment" {
   policy   = consul_acl_policy.agent.name
 }
 
-module "telemetry" {
-  source = "./packages/telemetry"
-
-  logs_health_proxy_port = var.logs_health_proxy_port
-  logs_proxy_port        = var.logs_proxy_port
-
-  gcp_zone = var.gcp_zone
-  prefix = var.prefix
-}
+#module "telemetry" {
+#  source = "./packages/telemetry"
+#
+#  logs_health_proxy_port = var.logs_health_proxy_port
+#  logs_proxy_port        = var.logs_proxy_port
+#
+#  gcp_zone = var.gcp_zone
+#  prefix   = var.prefix
+#}
 
 module "session_proxy" {
   source = "./packages/session-proxy"

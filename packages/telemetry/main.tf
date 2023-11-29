@@ -128,7 +128,7 @@ resource "nomad_job" "logs-collector" {
       logs_health_path        = var.logs_health_proxy_port.health_path
       logs_port_name          = var.logs_proxy_port.name
 
-      grafana_api_key = data.google_secret_manager_secret_version.grafana_api_key.secret_data
+      grafana_api_key       = data.google_secret_manager_secret_version.grafana_api_key.secret_data
       grafana_logs_endpoint = data.google_secret_manager_secret_version.grafana_logs_endpoint.secret_data
       grafana_logs_username = data.google_secret_manager_secret_version.grafana_logs_username.secret_data
     }

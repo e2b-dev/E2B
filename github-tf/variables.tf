@@ -3,6 +3,17 @@ variable "gcp_project_id" {
   type        = string
 }
 
+variable "gcp_region" {
+  description = "The region e2b resources will run in"
+  type        = string
+}
+
+variable "gcp_zone" {
+  description = "The zone e2b resources will run in"
+  type        = string
+}
+
+
 variable "github_organization" {
   description = "The name of the github organization"
   type        = string

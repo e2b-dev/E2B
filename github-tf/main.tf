@@ -117,3 +117,15 @@ resource "github_actions_secret" "project-id-secret" {
   secret_name     = "E2B_GCP_PROJECT"
   plaintext_value = var.gcp_project_id
 }
+
+resource "github_actions_secret" "gcp_region" {
+  repository      = var.github_repository
+  secret_name     = "E2B_GCP_REGION"
+  plaintext_value = var.gcp_region
+}
+
+resource "github_actions_secret" "gcp_zone" {
+  repository      = var.github_repository
+  secret_name     = "E2B_GCP_ZONE"
+  plaintext_value = var.gcp_zone
+}

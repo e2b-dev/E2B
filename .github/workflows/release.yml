@@ -163,6 +163,8 @@ jobs:
       client_cluster_size: ${{ secrets.CLIENT_CLUSTER_SIZE }}
       server_machine_type: ${{ secrets.SERVER_MACHINE_TYPE }}
       server_cluster_size: ${{ secrets.SERVER_CLUSTER_SIZE }}
+      gcp_region: ${{ secrets.E2B_GCP_REGION }}
+      gcp_zone: ${{ secrets.E2B_GCP_ZONE }}
 
   # The last successful release is used for determining which changed and what should be deployed in this release.
   release:

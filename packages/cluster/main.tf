@@ -27,7 +27,7 @@ resource "google_storage_bucket_object" "setup_config_objects" {
   for_each = var.setup_files
   name     = each.value
   source   = "${path.module}/${each.key}"
-  bucket = var.cluster_setup_bucket_name
+  bucket   = var.cluster_setup_bucket_name
 }
 
 module "server_cluster" {

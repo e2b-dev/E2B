@@ -4,14 +4,12 @@ variable "gcp_project_id" {
 }
 
 variable "gcp_region" {
-  type    = string
-  default = "us-central1"
+  type = string
 }
 
 variable "gcp_zone" {
   description = "All GCP resources will be launched in this Zone."
   type        = string
-  default     = "us-central1-a"
 }
 
 variable "server_cluster_size" {
@@ -147,4 +145,9 @@ variable "labels" {
     "app"       = "e2b"
     "terraform" = "true"
   }
+}
+
+variable "cloudflare_api_token" {
+  description = "The Cloudflare API token to use for DNS management"
+  type        = string
 }

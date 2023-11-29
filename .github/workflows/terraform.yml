@@ -15,6 +15,10 @@ on:
         required: true
       client_machine_type:
         required: true
+      gcp_region:
+        required: true
+      gcp_zone:
+        required: true
 
 env:
   TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
@@ -53,3 +57,5 @@ jobs:
           CLIENT_CLUSTER_SIZE: ${{ secrets.client_cluster_size }}
           SERVER_MACHINE_TYPE: ${{ secrets.server_machine_type }}
           SERVER_CLUSTER_SIZE: ${{ secrets.server_cluster_size }}
+          GCP_REGION: ${{ secrets.gcp_region }}
+          GCP_ZONE: ${{ secrets.gcp_zone }}

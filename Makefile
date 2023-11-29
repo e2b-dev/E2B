@@ -1,9 +1,7 @@
 -include .env
 
 GCP_PROJECT ?= $$(gcloud config get-value project)
-GCP_REGION ?= "us-central1"
-DOMAIN_NAME ?= "e2b.dev"
-
+CLOUDFLARE_API_TOKEN ?= empty
 IMAGE := e2b-orchestration/api
 
 server := gcloud compute instances list --project=${GCP_PROJECT} --format='csv(name)' | grep "server"
@@ -15,7 +13,9 @@ tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_server_cluster_size=$(SERVER_CLUSTER_SIZE) \
 	TF_VAR_gcp_project_id=${GCP_PROJECT} \
 	TF_VAR_gcp_region=$(GCP_REGION) \
-	TF_VAR_domain_name=$(DOMAIN_NAME)
+	TF_VAR_gcp_zone=$(GCP_ZONE) \
+	TF_VAR_domain_name=$(DOMAIN_NAME) \
+	TF_VAR_cloudflare_api_token=$(CLOUDFLARE_API_TOKEN)
 
 
 DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | uniq | grep -v -e "fc_envs_disk" -e "buckets" | awk '{print "-target=" $$0 ""}' | xargs)
