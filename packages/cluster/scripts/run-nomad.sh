@@ -217,7 +217,7 @@ plugin "docker" {
       enabled = true
     }
     auth {
-      config = "/root/.docker/config.json"
+      config = "/root/docker/config.json"
     }
   }
 }

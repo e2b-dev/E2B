@@ -79,6 +79,7 @@ module "client_cluster" {
   fc_envs_disk_name        = var.fc_envs_disk_name
   fc_envs_disk_device_name = var.fc_envs_disk_device_name
 
+  labels = var.labels
   depends_on = [google_storage_bucket_object.setup_config_objects]
 }
 
@@ -102,5 +103,6 @@ module "network" {
 
   cluster_tag_name = var.cluster_tag_name
 
+  labels = var.labels
   prefix = var.prefix
 }

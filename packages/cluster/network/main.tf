@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "4.19.0"
+    }
+  }
+}
+
 data "google_secret_manager_secret_version" "cloudflare_api_token" {
   secret = "${var.prefix}cloudflare-api-token"
 }

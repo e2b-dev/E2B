@@ -128,7 +128,6 @@ variable "fc_env_pipeline_bucket_name" {
 variable "labels" {
   description = "The labels to attach to resources created by this module"
   type        = map(string)
-  default     = {}
 }
 
 variable "fc_envs_disk_device_name" {

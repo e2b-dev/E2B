@@ -1,7 +1,7 @@
 terraform {
   required_version = ">= 1.5.0, < 1.6.0"
   backend "gcs" {
-    bucket = "e2b-terraform-state"
+    bucket = "e2b-dev-terraform-state"
     prefix = "terraform/orchestration/state"
   }
   required_providers {
@@ -66,6 +66,7 @@ provider "google" {
 module "init" {
   source = "./packages/init"
 
+  labels = var.labels
   prefix = var.prefix
 }
 
@@ -139,6 +140,7 @@ module "api" {
   gcp_region     = var.gcp_region
 
   google_service_account_email = module.init.service_account_email
+  orchestration_repository_name = module.init.orchestration_repository_name
 
   labels = var.labels
   prefix = var.prefix
@@ -163,8 +165,8 @@ module "nomad" {
   api_docker_image_digest       = module.api.api_docker_image_digest
   api_secret                    = module.api.api_secret
   custom_envs_repository_name   = module.api.custom_envs_repository_name
-  postgres_connection_string    = module.api.postgres_connection_string
-  posthog_api_key               = module.api.posthog_api_key
+  postgres_connection_string_secret_name    = module.api.postgres_connection_string_secret_name
+  posthog_api_key_secret_name               = module.api.posthog_api_key_secret_name
 
   # Proxies
   client_cluster_size = var.client_cluster_size

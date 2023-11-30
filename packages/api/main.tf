@@ -32,20 +32,8 @@ resource "google_artifact_registry_repository_iam_member" "custom_environments_r
   member     = "serviceAccount:${var.google_service_account_email}"
 }
 
-resource "google_artifact_registry_repository" "orchestration_repository" {
-  format        = "DOCKER"
-  repository_id = "e2b-orchestration"
-  labels        = var.labels
-}
-
-resource "google_artifact_registry_repository_iam_member" "orchestration_repository_member" {
-  repository = google_artifact_registry_repository.orchestration_repository.name
-  role       = "roles/artifactregistry.reader"
-  member     = "serviceAccount:${var.google_service_account_email}"
-}
-
 data "docker_registry_image" "api_image" {
-  name = "${var.gcp_region}-docker.pkg.dev/${var.gcp_project_id}/${google_artifact_registry_repository.orchestration_repository.name}/api:latest"
+  name = "${var.gcp_region}-docker.pkg.dev/${var.gcp_project_id}/${var.orchestration_repository_name}/api:latest"
 }
 
 resource "docker_image" "api_image" {
@@ -61,20 +49,12 @@ resource "google_secret_manager_secret" "postgres_connection_string" {
   }
 }
 
-data "google_secret_manager_secret_version" "postgres_connection_string" {
-  secret = google_secret_manager_secret.postgres_connection_string.name
-}
-
 resource "google_secret_manager_secret" "posthog_api_key" {
   secret_id = "${var.prefix}posthog-api-key"
 
   replication {
     auto {}
   }
-}
-
-data "google_secret_manager_secret_version" "posthog_api_key" {
-  secret = google_secret_manager_secret.posthog_api_key.name
 }
 
 resource "random_password" "api_secret" {

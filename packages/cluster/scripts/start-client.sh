@@ -55,9 +55,9 @@ gsutil cp "gs://${SCRIPTS_BUCKET}/run-nomad.sh" /opt/nomad/bin/run-nomad.sh
 
 chmod +x /opt/consul/bin/run-consul.sh /opt/nomad/bin/run-nomad.sh
 
-mkdir /root/.docker
-touch /root/.docker/config.json
-cat <<EOF >/root/.docker/config.json
+mkdir /root/docker
+touch /root/docker/config.json
+cat <<EOF >/root/docker/config.json
 {
     "auths": {
         "${GCP_REGION}-docker.pkg.dev": {

@@ -1,3 +1,13 @@
+terraform {
+  required_providers {
+    github = {
+      source  = "integrations/github"
+      version = "5.42.0"
+    }
+  }
+}
+
+
 resource "google_secret_manager_secret" "github_token" {
   secret_id = "${var.prefix}github-repo-token"
 

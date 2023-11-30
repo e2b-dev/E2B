@@ -37,3 +37,7 @@ output "grafana_traces_endpoint_secret_name" {
 output "grafana_metrics_endpoint_secret_name" {
     value = google_secret_manager_secret.grafana_metrics_endpoint.name
 }
+
+output "orchestration_repository_name" {
+    value = google_artifact_registry_repository.orchestration_repository.name
+}

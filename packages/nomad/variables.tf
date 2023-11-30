@@ -54,11 +54,11 @@ variable "google_service_account_secret" {
   type = string
 }
 
-variable "posthog_api_key" {
+variable "posthog_api_key_secret_name" {
   type = string
 }
 
-variable "postgres_connection_string" {
+variable "postgres_connection_string_secret_name" {
   type = string
 }
 

@@ -84,3 +84,16 @@ resource "google_secret_manager_secret" "grafana_metrics_username" {
     auto {}
   }
 }
+
+
+resource "google_artifact_registry_repository" "orchestration_repository" {
+  format        = "DOCKER"
+  repository_id = "e2b-orchestration"
+  labels        = var.labels
+}
+
+resource "google_artifact_registry_repository_iam_member" "orchestration_repository_member" {
+  repository = google_artifact_registry_repository.orchestration_repository.name
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.infra_instances_service_account.email}"
+}

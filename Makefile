@@ -18,8 +18,8 @@ tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_cloudflare_api_token=$(CLOUDFLARE_API_TOKEN)
 
 
-WITHOUT_JOBS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | uniq | grep -v -e "nomad" | awk '{print "-target=" $$0 ""}' | xargs)
-DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | uniq | grep -v -e "fc_envs_disk" -e "buckets" | awk '{print "-target=" $$0 ""}' | xargs)
+WITHOUT_JOBS := $(shell cat main.tf | grep "^module" | awk '{print $$2}' | grep -v -e "nomad" | awk '{print "-target=module." $$0 ""}' | xargs)
+DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | grep -v -e "fc_envs_disk" -e "buckets" | uniq | awk '{print "-target=" $$0 ""}' | xargs)
 
 
 # Login for Packer and Docker (uses gcloud user creds)
@@ -35,13 +35,12 @@ login-gcloud:
 init:
 	terraform init -input=false
 	$(MAKE) -C packages/cluster-disk-image init
-	$(tf_vars) terraform apply -target=module.init -auto-approve -input=false
+	$(tf_vars) terraform apply -target=module.init -target=module.bucket -auto-approve -input=false -compact-warnings
 
 .PHONY: plan
 plan:
 	terraform fmt -recursive
-	$(tf_vars) \
-	terraform plan -compact-warnings -detailed-exitcode
+	$(tf_vars) terraform plan -compact-warnings -detailed-exitcode
 
 .PHONY: apply
 apply:
