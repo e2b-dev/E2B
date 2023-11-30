@@ -51,7 +51,7 @@ resource "google_secret_manager_secret" "cloudflare_api_token" {
 }
 
 data "google_secret_manager_secret_version" "cloudflare_api_token" {
-  secret     = "${var.prefix}cloudflare-api-token"
+  secret = "${var.prefix}cloudflare-api-token"
 }
 
 provider "cloudflare" {
@@ -192,15 +192,15 @@ resource "consul_acl_token_policy_attachment" "attachment" {
   policy   = consul_acl_policy.agent.name
 }
 
-#module "telemetry" {
-#  source = "./packages/telemetry"
-#
-#  logs_health_proxy_port = var.logs_health_proxy_port
-#  logs_proxy_port        = var.logs_proxy_port
-#
-#  gcp_zone = var.gcp_zone
-#  prefix   = var.prefix
-#}
+module "telemetry" {
+  source = "./packages/telemetry"
+
+  logs_health_proxy_port = var.logs_health_proxy_port
+  logs_proxy_port        = var.logs_proxy_port
+
+  gcp_zone = var.gcp_zone
+  prefix   = var.prefix
+}
 
 module "session_proxy" {
   source = "./packages/session-proxy"
