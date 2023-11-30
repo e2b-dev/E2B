@@ -44,18 +44,8 @@ resource "google_artifact_registry_repository_iam_member" "orchestration_reposit
   member     = "serviceAccount:${var.google_service_account_email}"
 }
 
-resource "docker_image" "docker_image_api" {
-  name = "${var.gcp_region}-docker.pkg.dev/${var.gcp_project_id}/${google_artifact_registry_repository.orchestration_repository.name}/api"
-  build {
-    context    = "."
-    dockerfile = "api.Dockerfile"
-
-  }
-  platform = "linux/amd64/v4"
-}
-
 data "docker_registry_image" "api_image" {
-  name = "${var.gcp_region}-docker.pkg.dev/${var.gcp_project_id}/${google_artifact_registry_repository.orchestration_repository.name}/api"
+  name = "${var.gcp_region}-docker.pkg.dev/${var.gcp_project_id}/${google_artifact_registry_repository.orchestration_repository.name}/api:latest"
 }
 
 resource "docker_image" "api_image" {
