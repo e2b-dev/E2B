@@ -10,7 +10,6 @@
 /packages/api/bin
 /packages/api/README.md
 /packages/api/.gitignore
-/packages/api/api.hcl
 /packages/api/Dockerfile
 /packages/api/main.tf
 /packages/api/variables.tf

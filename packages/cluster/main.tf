@@ -1,14 +1,5 @@
 # Server cluster instances are not currently automatically updated when you create a new
 # orchestrator image with Packer.
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "5.6.0"
-    }
-  }
-}
-
 resource "google_project_iam_member" "network_viewer" {
   project = var.gcp_project_id
   member  = "serviceAccount:${var.google_service_account_email}"

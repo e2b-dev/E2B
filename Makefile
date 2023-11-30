@@ -18,6 +18,7 @@ tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_cloudflare_api_token=$(CLOUDFLARE_API_TOKEN)
 
 
+WITHOUT_JOBS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | uniq | grep -v -e "nomad" | awk '{print "-target=" $$0 ""}' | xargs)
 DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | uniq | grep -v -e "fc_envs_disk" -e "buckets" | awk '{print "-target=" $$0 ""}' | xargs)
 
 
@@ -34,6 +35,7 @@ login-gcloud:
 init:
 	terraform init -input=false
 	$(MAKE) -C packages/cluster-disk-image init
+	$(tf_vars) terraform apply -target=module.init -auto-approve -input=false
 
 .PHONY: plan
 plan:
@@ -49,6 +51,16 @@ apply:
 	-input=false \
 	-compact-warnings \
 	-parallelism=20
+
+.PHONY: apply-without-jobs
+apply-without-jobs:
+	$(tf_vars) \
+	terraform apply \
+	-auto-approve \
+	-input=false \
+	-compact-warnings \
+	-parallelism=20 \
+  	$(WITHOUT_JOBS)
 
 .PHONY: destroy
 destroy:
@@ -97,4 +109,3 @@ FC_ENVS_SIZE := 200
 resize-fc-envs:
 	gcloud --project=$(GCP_PROJECT) compute disks resize fc-envs --size $(FC_ENVS_SIZE) --zone us-central1-a
 	gcloud compute ssh $$($(client)) -- 'sudo xfs_growfs -d /dev/sdb'
-

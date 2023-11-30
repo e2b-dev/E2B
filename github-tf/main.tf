@@ -1,20 +1,3 @@
-terraform {
-  required_providers {
-    github = {
-      source  = "integrations/github"
-      version = "5.42.0"
-    }
-    google = {
-      source  = "hashicorp/google"
-      version = "5.6.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "3.5.1"
-    }
-  }
-}
-
 resource "google_secret_manager_secret" "github_token" {
   secret_id = "${var.prefix}github-repo-token"
 

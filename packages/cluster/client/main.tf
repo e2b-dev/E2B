@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "5.6.0"
-    }
-  }
-}
-
 resource "google_compute_instance_group_manager" "client_cluster" {
   name = "${var.cluster_name}-ig"
 

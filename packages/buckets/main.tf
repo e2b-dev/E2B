@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "5.6.0"
-    }
-  }
-}
-
 resource "google_storage_bucket" "envs_docker_context" {
   name     = "${var.gcp_project_id}-envs-docker-context"
   location = var.gcp_region

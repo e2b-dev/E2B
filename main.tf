@@ -29,6 +29,14 @@ terraform {
       source  = "hashicorp/consul"
       version = "2.20.0"
     }
+    github = {
+      source  = "integrations/github"
+      version = "5.42.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.5.1"
+    }
   }
 }
 
@@ -40,22 +48,6 @@ provider "docker" {
     username = "oauth2accesstoken"
     password = data.google_client_config.default.access_token
   }
-}
-
-resource "google_secret_manager_secret" "cloudflare_api_token" {
-  secret_id = "${var.prefix}cloudflare-api-token"
-
-  replication {
-    auto {}
-  }
-}
-
-data "google_secret_manager_secret_version" "cloudflare_api_token" {
-  secret = "${var.prefix}cloudflare-api-token"
-}
-
-provider "cloudflare" {
-  api_token = var.cloudflare_api_token != "empty" ? var.cloudflare_api_token : data.google_secret_manager_secret_version.cloudflare_api_token.secret_data
 }
 
 provider "google-beta" {
@@ -70,55 +62,17 @@ provider "google" {
   zone    = var.gcp_zone
 }
 
-resource "google_secret_manager_secret" "consul_acl_token" {
-  secret_id = "${var.prefix}consul-secret-id"
 
-  replication {
-    auto {}
-  }
+module "init" {
+  source = "./packages/init"
+
+  prefix = var.prefix
 }
-
-data "google_secret_manager_secret_version" "consul_acl_token" {
-  secret = google_secret_manager_secret.consul_acl_token.name
-}
-
-resource "google_secret_manager_secret" "nomad_acl_token" {
-  secret_id = "${var.prefix}nomad-secret-id"
-
-  replication {
-    auto {}
-  }
-}
-
-data "google_secret_manager_secret_version" "nomad_acl_token" {
-  secret = google_secret_manager_secret.nomad_acl_token.name
-}
-
-provider "nomad" {
-  address   = "http://nomad.${var.domain_name}"
-  secret_id = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
-}
-
-
-provider "consul" {
-  address = "http://consul.${var.domain_name}"
-  token   = data.google_secret_manager_secret_version.consul_acl_token.secret_data
-}
-
-resource "google_service_account" "infra_instances_service_account" {
-  account_id   = "${var.prefix}infra-instances"
-  display_name = "Infra Instances Service Account"
-}
-
-resource "google_service_account_key" "google_service_key" {
-  service_account_id = google_service_account.infra_instances_service_account.name
-}
-
 
 module "buckets" {
   source = "./packages/buckets"
 
-  gcp_service_account_email = google_service_account.infra_instances_service_account.email
+  gcp_service_account_email = module.init.service_account_email
   gcp_project_id            = var.gcp_project_id
   gcp_region                = var.gcp_region
 
@@ -166,7 +120,7 @@ module "cluster" {
   client_proxy_health_port     = var.client_proxy_health_port
   client_proxy_port            = var.client_proxy_port
   api_port                     = var.api_port
-  google_service_account_email = google_service_account.infra_instances_service_account.email
+  google_service_account_email = module.init.service_account_email
   domain_name                  = var.domain_name
 
   fc_envs_disk_name           = module.fc_envs_disk.disk_name
@@ -178,68 +132,60 @@ module "cluster" {
   prefix = var.prefix
 }
 
-resource "consul_acl_policy" "agent" {
-  name  = "agent"
-  rules = <<-RULE
-    key_prefix "" {
-      policy = "deny"
-    }
-    RULE
-}
-
-resource "consul_acl_token_policy_attachment" "attachment" {
-  token_id = "00000000-0000-0000-0000-000000000002"
-  policy   = consul_acl_policy.agent.name
-}
-
-module "telemetry" {
-  source = "./packages/telemetry"
-
-  logs_health_proxy_port = var.logs_health_proxy_port
-  logs_proxy_port        = var.logs_proxy_port
-
-  gcp_zone = var.gcp_zone
-  prefix   = var.prefix
-}
-
-module "session_proxy" {
-  source = "./packages/session-proxy"
-
-  client_cluster_size        = var.client_cluster_size
-  gcp_zone                   = var.gcp_zone
-  session_proxy_service_name = var.session_proxy_service_name
-
-  session_proxy_port = var.session_proxy_port
-}
-
-module "client_proxy" {
-  source = "./packages/client-proxy"
-
-  gcp_zone                   = var.gcp_zone
-  session_proxy_service_name = var.session_proxy_service_name
-
-  client_proxy_port        = var.client_proxy_port
-  client_proxy_health_port = var.client_proxy_health_port
-
-  domain_name = var.domain_name
-}
-
 module "api" {
   source = "./packages/api"
 
   gcp_project_id = var.gcp_project_id
   gcp_region     = var.gcp_region
-  gcp_zone       = var.gcp_zone
 
-  logs_proxy_address            = "http://${module.cluster.logs_proxy_ip}"
-  nomad_token                   = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
-  consul_token                  = data.google_secret_manager_secret_version.consul_acl_token.secret_data
-  api_port                      = var.api_port
-  environment                   = var.environment
-  docker_contexts_bucket_name   = module.buckets.envs_docker_context_bucket_name
-  google_service_account_email  = google_service_account.infra_instances_service_account.email
-  google_service_account_secret = google_service_account_key.google_service_key.private_key
+  google_service_account_email = module.init.service_account_email
 
   labels = var.labels
   prefix = var.prefix
+}
+
+module "nomad" {
+  source = "./packages/nomad"
+
+  gcp_project_id = var.gcp_project_id
+  gcp_region     = var.gcp_region
+  gcp_zone       = var.gcp_zone
+
+  consul_acl_token_secret_name = module.init.consul_acl_token_secret_name
+  nomad_acl_token_secret_name  = module.init.nomad_acl_token_secret_name
+
+  # API
+  logs_proxy_address            = "http://${module.cluster.logs_proxy_ip}"
+  api_port                      = var.api_port
+  environment                   = var.environment
+  docker_contexts_bucket_name   = module.buckets.envs_docker_context_bucket_name
+  google_service_account_secret = module.api.google_service_account_key
+  api_docker_image_digest       = module.api.api_docker_image_digest
+  api_secret                    = module.api.api_secret
+  custom_envs_repository_name   = module.api.custom_envs_repository_name
+  postgres_connection_string    = module.api.postgres_connection_string
+  posthog_api_key               = module.api.posthog_api_key
+
+  # Proxies
+  client_cluster_size = var.client_cluster_size
+
+  session_proxy_service_name = var.session_proxy_service_name
+  session_proxy_port         = var.session_proxy_port
+
+  client_proxy_port        = var.client_proxy_port
+  client_proxy_health_port = var.client_proxy_health_port
+
+  domain_name = var.domain_name
+
+  # Telemetry
+  logs_health_proxy_port = var.logs_health_proxy_port
+  logs_proxy_port        = var.logs_proxy_port
+
+  grafana_api_key_secret_name          = module.init.grafana_api_key_secret_name
+  grafana_logs_endpoint_secret_name    = module.init.grafana_logs_endpoint_secret_name
+  grafana_logs_username_secret_name    = module.init.grafana_logs_username_secret_name
+  grafana_metrics_endpoint_secret_name = module.init.grafana_metrics_endpoint_secret_name
+  grafana_metrics_username_secret_name = module.init.grafana_metrics_username_secret_name
+  grafana_traces_endpoint_secret_name  = module.init.grafana_traces_endpoint_secret_name
+  grafana_traces_username_secret_name  = module.init.grafana_traces_username_secret_name
 }

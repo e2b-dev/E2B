@@ -12,13 +12,13 @@ terraform {
       source  = "hashicorp/random"
       version = "3.5.1"
     }
-    nomad = {
-      source  = "hashicorp/nomad"
-      version = "2.0.0"
-    }
   }
 }
 
+
+resource "google_service_account_key" "google_service_key" {
+  service_account_id = var.google_service_account_email
+}
 
 resource "google_artifact_registry_repository" "custom_environments_repository" {
   format        = "DOCKER"
@@ -96,28 +96,3 @@ resource "google_secret_manager_secret_version" "api_secret_value" {
   secret_data = random_password.api_secret.result
 }
 
-resource "nomad_job" "api" {
-  jobspec = file("${path.module}/api.hcl")
-
-  hcl2 {
-    vars = {
-      gcp_zone                      = var.gcp_zone
-      api_port_name                 = var.api_port.name
-      api_port_number               = var.api_port.port
-      image_name                    = docker_image.api_image.repo_digest
-      postgres_connection_string    = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
-      posthog_api_key               = data.google_secret_manager_secret_version.posthog_api_key.secret_data
-      logs_proxy_address            = var.logs_proxy_address
-      nomad_address                 = "http://localhost:4646"
-      nomad_token                   = var.nomad_token
-      consul_token                  = var.consul_token
-      environment                   = var.environment
-      docker_contexts_bucket_name   = var.docker_contexts_bucket_name
-      api_secret                    = random_password.api_secret.result
-      google_service_account_secret = var.google_service_account_secret
-      gcp_project_id                = var.gcp_project_id
-      gcp_region                    = var.gcp_region
-      gcp_docker_repository_name    = google_artifact_registry_repository.custom_environments_repository.name
-    }
-  }
-}
