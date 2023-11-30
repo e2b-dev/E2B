@@ -89,12 +89,25 @@ export const routes = [
             size={20}
           />
         ),
-        title: 'Guide: Run LLM-generated code',
+        title: 'Guide: Custom Code Interpreter',
         href: '/guide/simple-gpt4-code-interpreter',
         //
         // title: 'Hello World: Simple AI Junior Developer',
         // href: '/guide/simple-ai-junior-developer',
       },
+      // {
+      //   icon: (
+      //     <Hammer
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: 'Guide: Run LLM-generated code',
+      //   href: '/guide/simple-gpt4-code-interpreter',
+      //   //
+      //   // title: 'Hello World: Simple AI Junior Developer',
+      //   // href: '/guide/simple-ai-junior-developer',
+      // },
     ],
   },
   {
