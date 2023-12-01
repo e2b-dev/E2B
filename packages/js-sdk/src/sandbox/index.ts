@@ -494,7 +494,13 @@ export class Sandbox extends SandboxConnection {
    *
    * @example
    * ```ts
-   * const sandbox = await Sandbox.reconnect(sandboxID)
+   * const sandbox = await Sandbox.create()
+   * const sandboxID = sandbox.id
+   * 
+   * await sandbox.keepAlive(300 * 1000)
+   * await sandbox.close()
+   * 
+   * const reconnectedSandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
   static async reconnect(sandboxID: string): Promise<Sandbox>;
@@ -505,13 +511,19 @@ export class Sandbox extends SandboxConnection {
    *
    * @example
    * ```ts
-   * const sandbox = await Sandbox.reconnect({
+   * const sandbox = await Sandbox.create()
+   * const sandboxID = sandbox.id
+   * 
+   * await sandbox.keepAlive(300 * 1000)
+   * await sandbox.close()
+   * 
+   * const reconnectedSandbox = await Sandbox.reconnect({
    *   sandboxID,
    * })
    * ```
    */
-  static async reconnect(opts: Omit<SandboxOpts, 'id'> & { sandboxID: string }): Promise<Sandbox>;
-  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id'> & { sandboxID: string }) {
+  static async reconnect(opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<Sandbox>;
+  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }) {
     let sandboxID: string
     let opts: SandboxOpts
     if (typeof sandboxIDorOpts === 'string') {

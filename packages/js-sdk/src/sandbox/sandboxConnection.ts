@@ -69,7 +69,17 @@ const refreshSandbox = withAPIKey(
 )
 
 export class SandboxConnection {
+  /**
+   * Default working directory used in the sandbox.
+   * 
+   * You can change the working directory by setting the `cwd` property.
+   **/
   cwd: string | undefined
+  /**
+   * Default environment variables used in the sandbox.
+   * 
+   * You can change the environment variables by setting the `envVars` property.
+   **/
   envVars: EnvVars
 
   protected readonly logger: Logger
@@ -79,7 +89,6 @@ export class SandboxConnection {
   private readonly apiKey: string
   private readonly rpc = new RpcWebSocketClient()
   private subscribers: Subscriber[] = []
-
 
   // let's keep opts readonly, but public - for convenience, mainly when debugging
   protected constructor(readonly opts: SandboxConnectionOpts) {
@@ -108,6 +117,11 @@ export class SandboxConnection {
     this.logger.debug?.(`Sandbox "${this.templateID}" initialized`)
   }
 
+  /**
+   * ID of the sandbox.
+   * 
+   * You can use this ID to reconnect to the sandbox later.
+   */
   get id() {
     return `${this.sandbox?.instanceID}-${this.sandbox?.clientID}`
   }
@@ -120,7 +134,7 @@ export class SandboxConnection {
    * Keep the sandbox alive for the specified duration.
    *
    * `keepAlive` method requires `this` context - you may need to bind it.
-   * @param duration Duration in milliseconds
+   * @param duration Duration in milliseconds. Must be between 0 and 3600000 milliseconds
    * @returns Promise that resolves when the sandbox is kept alive
    */
   public async keepAlive(duration: number) {
