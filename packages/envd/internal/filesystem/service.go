@@ -79,8 +79,8 @@ func (s *Service) dirWatcherLoop() {
 
 // Subscription
 func (s *Service) WatchDir(ctx context.Context, dirpath string) (*rpc.Subscription, error) {
-	s.logger.Infow(
-		"Subscribe to WatchDir",
+	s.logger.Debugw(
+		"Subscribing to WatchDir",
 		"path", dirpath,
 	)
 
@@ -116,6 +116,12 @@ func (s *Service) WatchDir(ctx context.Context, dirpath string) (*rpc.Subscripti
 
 		return nil, fmt.Errorf("error adding path to dwatcher: %w", addErr)
 	}
+
+	s.logger.Debugw(
+		"Subscribed to WatchDir",
+		"path", dirpath,
+		"subID", sub.Subscription.ID,
+	)
 
 	return sub.Subscription, nil
 }
