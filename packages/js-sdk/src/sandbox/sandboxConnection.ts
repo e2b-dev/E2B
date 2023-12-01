@@ -180,7 +180,7 @@ export class SandboxConnection {
    * @returns Hostname of the sandbox or sandbox's port
    */
   getSandboxURL(port?: number, protocol: string = 'http' ) {
-    protocol += SECURE ? 's' : ''
+    protocol = SECURE ? `${protocol}s` : protocol
     const hostname = this.getHostname(port)
     return `${protocol}://${hostname}`
   }
