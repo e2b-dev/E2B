@@ -522,8 +522,8 @@ export class Sandbox extends SandboxConnection {
    * })
    * ```
    */
-  static async reconnect(opts: Omit<SandboxOpts, 'id' | 'apiKey'> & { sandboxID: string }): Promise<Sandbox>;
-  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'apiKey'> & { sandboxID: string }) {
+  static async reconnect(opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<Sandbox>;
+  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }) {
     let sandboxID: string
     let opts: SandboxOpts
     if (typeof sandboxIDorOpts === 'string') {
