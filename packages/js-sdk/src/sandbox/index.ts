@@ -724,7 +724,7 @@ export class Sandbox extends SandboxConnection {
         cwd: '/',
       })
     } catch (err) {
-      this.logger.warn?.("error waiting for the start command logs")
+      this.logger.debug?.("start command not started", err)
     }
   }
 }
