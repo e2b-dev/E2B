@@ -160,7 +160,6 @@ class Sandbox(SandboxConnection):
             ```
         """
 
-        action(self, {})
         if not name:
             name = action.__name__
 
