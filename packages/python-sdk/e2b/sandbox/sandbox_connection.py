@@ -47,6 +47,8 @@ class SandboxConnection:
     def id(self):
         """
         The sandbox ID.
+
+        You can use this ID to reconnect to the sandbox later.
         """
         if not self._sandbox:
             return None
@@ -86,7 +88,17 @@ class SandboxConnection:
             )
 
         self.cwd = cwd
+        """
+        The current working directory to use in the sandbox.
+
+        You can change the current working directory by setting the `cwd` property.
+        """
         self.env_vars = env_vars or {}
+        """
+        The current environment variables to use in the sandbox.
+
+        You can change the environment variables by setting the `env_vars` property.
+        """
         self._template = template
         self._api_key = api_key
         self._debug_hostname = _debug_hostname
@@ -117,6 +129,29 @@ class SandboxConnection:
         *args,
         **kwargs,
     ):
+        """
+        Reconnects to a previously created sandbox.
+
+        :param sandbox_id: ID of the sandbox to reconnect to
+        :param cwd: The current working directory to use
+        :param on_scan_ports: A callback to handle opened ports
+        :param on_stdout: A default callback that is called when stdout with a newline is received from the process
+        :param on_stderr: A default callback that is called when stderr with a newline is received from the process
+        :param on_exit: A default callback that is called when the process exits
+        :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
+
+        ```py
+        sandbox = Sandbox()
+        id = sandbox.id
+        sandbox.keep_alive(300)
+        sandbox.close()
+
+        # Reconnect to the sandbox
+        reconnected_sandbox = Sandbox.reconnect(id)
+        ```
+
+        """
+
         logger.info(f"Reconnecting to sandbox {sandbox_id}")
         instance_id, client_id = sandbox_id.split("-")
         return cls(
@@ -157,6 +192,11 @@ class SandboxConnection:
         return hostname
 
     def keep_alive(self, duration: int) -> None:
+        """
+        Keep the sandbox alive for the specified duration.
+
+        :param duration: Duration in seconds. Must be between 0 and 3600 seconds.
+        """
         if not 0 <= duration <= 3600:
             raise ValueError("Duration must be between 0 and 3600 seconds")
 
