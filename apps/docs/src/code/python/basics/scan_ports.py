@@ -17,7 +17,7 @@ def print_new_port_and_url(open_ports, sandbox):
         if port not in printed_ports:
             printed_ports.append(port)
 
-            port_url = sandbox.get_sandbox_url(port.port)
+            port_url = sandbox.get_hostname_with_protocol(port.port)
             print(port, port_url)
 
 

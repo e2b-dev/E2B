@@ -2,7 +2,7 @@ import { Sandbox } from '@e2b/sdk'
 
 const sandbox = await Sandbox.create({ template: 'base' })
 
-const url = sandbox.getHostname() // $HighlightLine
-console.log('https://' + url)
+const url = sandbox.getHostnameWithProtocol() // $HighlightLine
+console.log(url)
 
 await sandbox.close()

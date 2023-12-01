@@ -15,7 +15,7 @@ function printNewPortAndURL(openPorts, sandbox) {
   openPorts.forEach((port) => {
     if (!printedPorts.includes(port.port)) {
       printedPorts.push(port.port)
-      console.log(port, sandbox.getSandboxURL(port.port))
+      console.log(port, sandbox.getHostnameWithProtocol(port.port))
     }
   })
 }

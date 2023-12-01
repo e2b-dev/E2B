@@ -157,9 +157,9 @@ class SandboxConnection:
 
         return hostname
 
-    def get_sandbox_url(self, port: Optional[int] = None, protocol: str = "http") -> str:
+    def get_hostname_with_protocol(self, port: Optional[int] = None, protocol: str = "http") -> str:
         """
-        Get the url for the sandbox or for the specified sandbox's port.
+        Get the hostname with the specified protocol for the sandbox or for the specified sandbox's port.
 
         :param port: Specify if you want to connect to a specific port of the sandbox
         :param protocol: Specify if you want to connect to a specific protocol of the sandbox
@@ -268,7 +268,7 @@ class SandboxConnection:
             raise e
 
     def _connect_rpc(self, timeout: Optional[float] = TIMEOUT):
-        sandbox_url = self.get_sandbox_url(self._debug_port or ENVD_PORT, protocol="ws")
+        sandbox_url = self.get_hostname_with_protocol(self._debug_port or ENVD_PORT, protocol="ws")
         ws_url = f"{sandbox_url}{WS_ROUTE}"
         print(ws_url)
         self._rpc = SandboxRpc(
