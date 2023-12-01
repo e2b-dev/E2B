@@ -89,15 +89,15 @@ class SandboxConnection:
 
         self.cwd = cwd
         """
-        The current working directory to use in the sandbox.
+        Default working directory used in the sandbox.
 
-        You can change the current working directory by setting the `cwd` property.
+        You can change the working directory by setting the `cwd` property.
         """
         self.env_vars = env_vars or {}
         """
-        The current environment variables to use in the sandbox.
+        Default environment variables used in the sandbox.
 
-        You can change the environment variables by setting the `env_vars` property.
+        You can change the environment variables by setting the `envVars` property.
         """
         self._template = template
         self._api_key = api_key

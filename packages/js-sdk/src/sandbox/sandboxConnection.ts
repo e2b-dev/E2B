@@ -70,13 +70,13 @@ const refreshSandbox = withAPIKey(
 
 export class SandboxConnection {
   /**
-   * Current working directory of the sandbox.
+   * Default working directory used in the sandbox.
    * 
-   * You can change the current working directory by setting the `cwd` property.
+   * You can change the working directory by setting the `cwd` property.
    **/
   cwd: string | undefined
   /**
-   * Environment variables of the sandbox.
+   * Default environment variables used in the sandbox.
    * 
    * You can change the environment variables by setting the `envVars` property.
    **/
