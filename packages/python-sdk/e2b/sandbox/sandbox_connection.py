@@ -264,8 +264,6 @@ class SandboxConnection:
             self._connect_rpc(timeout)
         except Exception as e:
             print(e)
-            print(self.id)
-            sleep(10000)
             self._close()
             raise e
 
