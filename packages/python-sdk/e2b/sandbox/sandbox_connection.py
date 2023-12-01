@@ -97,7 +97,7 @@ class SandboxConnection:
         """
         Default environment variables used in the sandbox.
 
-        You can change the environment variables by setting the `envVars` property.
+        You can change the environment variables by setting the `env_vars` property.
         """
         self._template = template
         self._api_key = api_key
