@@ -5,25 +5,17 @@ function wait(ms) {
 
 async function main() {
   const sandbox = await e2b.Sandbox.create({
-    id: 'base',
+    id: 'idnrwvs3vrde6hknozc0',
     apiKey: process.env.E2B_API_KEY
   })
 
   await sandbox.filesystem.write(
     '/code/hello.txt', "My friend!"
   )
-  const sandboxID = sandbox.id
-
-  await sandbox.keepAlive(30)
-  await sandbox.close()
-  await wait(15000)
-
-  const sandbox2 = await e2b.Sandbox.reconnect(sandboxID)
-
-  const files = await sandbox2.filesystem.read('/code/hello.txt')
+  const files = await sandbox.filesystem.read('/code/hello.txt')
   console.log(files)
 
-  await sandbox2.close()
+  await sandbox.close()
 }
 
 main().catch(console.error)

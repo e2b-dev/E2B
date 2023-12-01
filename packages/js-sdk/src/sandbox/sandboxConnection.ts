@@ -176,10 +176,11 @@ export class SandboxConnection {
    * `getHostname` method requires `this` context - you may need to bind it.
    *
    * @param port Specify if you want to connect to a specific port of the sandbox
+   * @param protocol Specify if you want to connect to a specific protocol of the sandbox
    * @returns Hostname of the sandbox or sandbox's port
    */
-  getSandboxURL(port?: number) {
-    const protocol = SECURE ? 'https' : 'http'
+  getSandboxURL(port?: number, protocol: string = 'http' ) {
+    protocol += SECURE ? 's' : ''
     const hostname = this.getHostname(port)
     return `${protocol}://${hostname}`
   }
@@ -361,7 +362,7 @@ export class SandboxConnection {
   }
 
   private async connectRpc() {
-    const sandboxURL = this.getSandboxURL(this.opts.__debug_port || ENVD_PORT)
+    const sandboxURL = this.getSandboxURL(this.opts.__debug_port || ENVD_PORT, 'ws')
     const wsURL = `${sandboxURL}${WS_ROUTE}`
 
     this.rpc.onError((err) => {
@@ -432,6 +433,7 @@ export class SandboxConnection {
         this.logger.debug?.(
           `Connection to sandbox "${this.sandbox?.instanceID}"`,
         )
+        console.log('wsURL', wsURL)
         await this.rpc.connect(wsURL)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
