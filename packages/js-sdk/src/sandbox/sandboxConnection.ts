@@ -176,13 +176,12 @@ export class SandboxConnection {
    * `getHostname` method requires `this` context - you may need to bind it.
    *
    * @param port Specify if you want to connect to a specific port of the sandbox
-   * @param protocol Specify if you want to connect to a specific protocol of the sandbox
+   * @param protocol Specify if you want to connect to a specific protocol of the sandbox. Do not include the `s` in `https` or `wss`.
    * @returns Hostname of the sandbox or sandbox's port
    */
   getSandboxURL(port?: number, protocol: string = 'http' ) {
     protocol = SECURE ? `${protocol}s` : protocol
-    const hostname = this.getHostname(port)
-    return `${protocol}://${hostname}`
+    return `${protocol}://${this.getHostname(port)}`
   }
 
   /**
