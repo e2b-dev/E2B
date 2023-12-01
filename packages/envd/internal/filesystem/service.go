@@ -209,6 +209,7 @@ func (s *Service) ReadBase64(path string) (string, error) {
 func (s *Service) Write(path string, content string) error {
 	s.logger.Infow("Write file",
 		"path", path,
+		"content", content,
 	)
 
 	if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
@@ -229,6 +230,7 @@ func (s *Service) Write(path string, content string) error {
 func (s *Service) WriteBase64(path string, content string) error {
 	s.logger.Infow("Decode bytes from base64 and write them to file",
 		"path", path,
+		"content", content,
 	)
 
 	bytes, err := base64.StdEncoding.DecodeString(content)
