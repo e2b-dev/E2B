@@ -96,13 +96,6 @@ resource "cloudflare_record" "dns_auth" {
   ttl     = 3600
 }
 
-resource "cloudflare_record" "a_top_level" {
-  zone_id = data.cloudflare_zone.domain.id
-  name    = data.cloudflare_zone.domain.name
-  value   = google_compute_global_address.orch_server_ip.address
-  type    = "A"
-}
-
 resource "cloudflare_record" "a_star" {
   zone_id = data.cloudflare_zone.domain.id
   name    = "*"
