@@ -139,7 +139,7 @@ module "api" {
   gcp_project_id = var.gcp_project_id
   gcp_region     = var.gcp_region
 
-  google_service_account_email = module.init.service_account_email
+  google_service_account_email  = module.init.service_account_email
   orchestration_repository_name = module.init.orchestration_repository_name
 
   labels = var.labels
@@ -157,16 +157,16 @@ module "nomad" {
   nomad_acl_token_secret_name  = module.init.nomad_acl_token_secret_name
 
   # API
-  logs_proxy_address            = "http://${module.cluster.logs_proxy_ip}"
-  api_port                      = var.api_port
-  environment                   = var.environment
-  docker_contexts_bucket_name   = module.buckets.envs_docker_context_bucket_name
-  google_service_account_secret = module.api.google_service_account_key
-  api_docker_image_digest       = module.api.api_docker_image_digest
-  api_secret                    = module.api.api_secret
-  custom_envs_repository_name   = module.api.custom_envs_repository_name
-  postgres_connection_string_secret_name    = module.api.postgres_connection_string_secret_name
-  posthog_api_key_secret_name               = module.api.posthog_api_key_secret_name
+  logs_proxy_address                     = "http://${module.cluster.logs_proxy_ip}"
+  api_port                               = var.api_port
+  environment                            = var.environment
+  docker_contexts_bucket_name            = module.buckets.envs_docker_context_bucket_name
+  google_service_account_secret          = module.api.google_service_account_key
+  api_docker_image_digest                = module.api.api_docker_image_digest
+  api_secret                             = module.api.api_secret
+  custom_envs_repository_name            = module.api.custom_envs_repository_name
+  postgres_connection_string_secret_name = module.api.postgres_connection_string_secret_name
+  posthog_api_key_secret_name            = module.api.posthog_api_key_secret_name
 
   # Proxies
   client_cluster_size = var.client_cluster_size

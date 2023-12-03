@@ -15,7 +15,8 @@ tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_gcp_region=$(GCP_REGION) \
 	TF_VAR_gcp_zone=$(GCP_ZONE) \
 	TF_VAR_domain_name=$(DOMAIN_NAME) \
-	TF_VAR_cloudflare_api_token=$(CLOUDFLARE_API_TOKEN)
+	TF_VAR_cloudflare_api_token=$(CLOUDFLARE_API_TOKEN) \
+	TF_VAR_prefix=$(PREFIX)
 
 
 WITHOUT_JOBS := $(shell cat main.tf | grep "^module" | awk '{print $$2}' | grep -v -e "nomad" | awk '{print "-target=module." $$0 ""}' | xargs)
@@ -35,7 +36,7 @@ login-gcloud:
 init:
 	terraform init -input=false
 	$(MAKE) -C packages/cluster-disk-image init
-	$(tf_vars) terraform apply -target=module.init -target=module.bucket -auto-approve -input=false -compact-warnings
+	$(tf_vars) terraform apply -target=module.init -target=module.buckets -auto-approve -input=false -compact-warnings
 
 .PHONY: plan
 plan:

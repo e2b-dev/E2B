@@ -7,5 +7,6 @@ resource "google_compute_disk" "fc_envs" {
   labels      = var.labels
   lifecycle {
     prevent_destroy = true
+    ignore_changes  = [description, size]
   }
 }

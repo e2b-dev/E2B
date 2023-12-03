@@ -21,7 +21,7 @@ Check if you can use config for terraform state management
     - If you don't want to use, fill in random strings for following:
       - posthog (if you don't want to use posthog, fill in random string)
       - grafana (if you want traces / logging)
-13. Ryb `make apply`
+13. Run `make apply`
 
 
 ## TODOs:

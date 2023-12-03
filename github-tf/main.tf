@@ -74,7 +74,7 @@ resource "google_service_account_iam_member" "gha-service-account-wif-tokencreat
 
 resource "google_project_iam_member" "service-account-roles" {
   for_each = toset([
-    "roles/artifactregistry.writer",
+    "roles/artifactregistry.admin",
     "roles/compute.instanceAdmin",
     "roles/compute.instanceAdmin.v1",
     "roles/containerregistry.ServiceAgent",

@@ -158,7 +158,7 @@ resource "google_certificate_manager_certificate_map_entry" "subdomains_map_entr
 
 resource "google_compute_url_map" "orch_map" {
   name            = "${var.prefix}orch-map"
-  default_service = google_compute_backend_service.default["session"].self_link
+  default_service = google_compute_backend_service.default["nomad"].self_link
 
   host_rule {
     hosts = [
@@ -180,14 +180,6 @@ resource "google_compute_url_map" "orch_map" {
     ]
     path_matcher = "consul-paths"
   }
-
-  host_rule {
-    hosts = [
-      "api.${var.domain_name}",
-    ]
-    path_matcher = "api-paths"
-  }
-
 
   host_rule {
     hosts = [

@@ -79,7 +79,7 @@ module "client_cluster" {
   fc_envs_disk_name        = var.fc_envs_disk_name
   fc_envs_disk_device_name = var.fc_envs_disk_device_name
 
-  labels = var.labels
+  labels     = var.labels
   depends_on = [google_storage_bucket_object.setup_config_objects]
 }
 
