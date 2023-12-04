@@ -19,7 +19,7 @@ export class CloudBrowser extends BaseTemplate {
   async getContent(selector?: string, opts?: { timeout?: number }) {
     let code = selector ? `const element = await page.$('${selector}');` : ""
     code += `
-            const content = await $ {element ? 'element': 'page'}.content();console.log(content)`
+            const content = await ${selector ? 'element' : 'page'}.content();console.log(content)`
     return this.runPuppeteerCode(code, opts)
   }
 
@@ -125,7 +125,7 @@ export class CloudBrowser extends BaseTemplate {
     return `
         import puppeteer from "puppeteer";
 
-        async function main(){{ 
+        async function main(){{
             const browser = await puppeteer.connect({{browserWSEndpoint: process.env.WS_ENDPOINT}});
             const page = (await browser.pages())[0];
             ${code}
