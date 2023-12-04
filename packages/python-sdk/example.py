@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.ERROR)
 def main():
     s = Sandbox(api_key=E2B_API_KEY)
 
-    a = s.process.start("ls -la /var ")
+    a = s.process.start("ls -la /var")
     a.wait()
     print(a.stdout)
     print(a.stderr)

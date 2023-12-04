@@ -3,11 +3,12 @@ export const WS_RECONNECT_INTERVAL = 600 // 600ms
 
 export const TIMEOUT = 60_000 // 60s
 
-export const API_DOMAIN = 'api.e2b.dev'
-export const API_HOST = process?.env?.E2B_DEBUG
-  ? 'http://localhost:3000'
-  : `https://${API_DOMAIN}`
-export const SANDBOX_DOMAIN = 'e2b.dev'
+const DEBUG = process?.env?.E2B_DEBUG
+const DOMAIN = process?.env?.E2B_DOMAIN || 'e2b.dev'
+export const SECURE = DEBUG ? false : (process?.env?.E2B_SECURE || 'true').toLowerCase() === 'true'
+export const API_DOMAIN = DEBUG ? 'localhost:3000' : `api.${DOMAIN}`
+export const API_HOST = `${SECURE ? 'https' : 'http'}://${API_DOMAIN}`
+export const SANDBOX_DOMAIN = DEBUG ? 'localhost:3000' : DOMAIN
 
 export const ENVD_PORT = 49982
 export const WS_ROUTE = '/ws'

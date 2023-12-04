@@ -1,7 +1,7 @@
 import { IRpcNotification, RpcWebSocketClient } from 'rpc-websocket-client'
 
 import api, { components, withAPIKey } from '../api'
-import { ENVD_PORT, SANDBOX_DOMAIN, SANDBOX_REFRESH_PERIOD, WS_RECONNECT_INTERVAL, WS_ROUTE } from '../constants'
+import { ENVD_PORT, SANDBOX_DOMAIN, SANDBOX_REFRESH_PERIOD, SECURE, WS_RECONNECT_INTERVAL, WS_ROUTE } from '../constants'
 import { AuthenticationError } from '../error'
 import { assertFulfilled, formatSettledErrors, withTimeout } from '../utils/promise'
 import wait from '../utils/wait'
@@ -36,13 +36,13 @@ export interface Logger {
 export interface SandboxConnectionOpts {
   /**
    * Sandbox Template ID or name.
-   * 
+   *
    * If not specified, the 'base' template will be used.
    */
   template?: string;
   /**
    * @deprecated Use `template` instead.
-   * 
+   *
    * Sandbox Template ID or name.
    */
   id?: string;
@@ -173,7 +173,7 @@ export class SandboxConnection {
     }
 
     if (!this.sandbox) {
-      return undefined
+      throw new Error('Cannot get sandbox\'s hostname - sandbox is not initialized')
     }
 
     const hostname = `${this.sandbox.instanceID}-${this.sandbox.clientID}.${SANDBOX_DOMAIN}`
@@ -182,6 +182,15 @@ export class SandboxConnection {
     } else {
       return hostname
     }
+  }
+
+  /**
+   * The function decides whether to use the secure or insecure protocol.
+   * @param baseProtocol Specify the specific protocol you want to use. Do not include the `s` in `https` or `wss`.
+   * @returns Protocol for the connection to the sandbox
+   */
+  getProtocol(baseProtocol: string = 'http') {
+    return SECURE ? `${baseProtocol}s` : baseProtocol
   }
 
   /**
@@ -362,12 +371,7 @@ export class SandboxConnection {
 
   private async connectRpc() {
     const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
-
-    if (!hostname) {
-      throw new Error('Cannot get sandbox\'s hostname')
-    }
-
-    const protocol = this.opts.__debug_devEnv === 'local' ? 'ws' : 'wss'
+    const protocol = this.getProtocol('ws')
     const sandboxURL = `${protocol}://${hostname}${WS_ROUTE}`
 
     this.rpc.onError((err) => {

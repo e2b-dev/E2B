@@ -17,6 +17,7 @@ from e2b.constants import (
     TIMEOUT,
     ENVD_PORT,
     WS_ROUTE,
+    SECURE,
 )
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.exception import (
@@ -164,7 +165,7 @@ class SandboxConnection:
             **kwargs,
         )
 
-    def get_hostname(self, port: Optional[int] = None):
+    def get_hostname(self, port: Optional[int] = None) -> str:
         """
         Get the hostname for the sandbox or for the specified sandbox's port.
 
@@ -190,6 +191,17 @@ class SandboxConnection:
             return f"{port}-{hostname}"
 
         return hostname
+
+    @staticmethod
+    def get_protocol(base_protocol: str = "http") -> str:
+        """
+        The function decides whether to use the secure or insecure protocol.
+
+        :param base_protocol: Specify the specific protocol you want to use. Do not include the `s` in `https` or `wss`.
+
+        :return: Protocol for the connection to the sandbox
+        """
+        return f"{base_protocol}s" if SECURE else base_protocol
 
     def keep_alive(self, duration: int) -> None:
         """
@@ -295,8 +307,7 @@ class SandboxConnection:
 
     def _connect_rpc(self, timeout: Optional[float] = TIMEOUT):
         hostname = self.get_hostname(self._debug_port or ENVD_PORT)
-        protocol = "ws" if self._debug_dev_env == "local" else "wss"
-
+        protocol = self.get_protocol("ws")
         sandbox_url = f"{protocol}://{hostname}{WS_ROUTE}"
         self._rpc = SandboxRpc(
             url=sandbox_url,

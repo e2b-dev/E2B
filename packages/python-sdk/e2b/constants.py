@@ -4,12 +4,21 @@ SANDBOX_REFRESH_PERIOD = 5  # seconds
 
 TIMEOUT = 60
 
-API_DOMAIN = "api.e2b.dev"
-API_HOST = (
-    "http://localhost:3000" if os.getenv("E2B_DEBUG") else f"https://{API_DOMAIN}"
-)
+DOMAIN = os.getenv("E2B_DOMAIN") or "e2b.dev"
+SECURE = os.getenv("E2B_SECURE", "TRUE").upper() == "TRUE"
+DEBUG = os.getenv("E2B_DEBUG") or False
+API_DOMAIN = f"api.{DOMAIN}"
 
-SANDBOX_DOMAIN = "e2b.dev"
+if DEBUG:
+    DOMAIN = "localhost:3000"
+    API_DOMAIN = "localhost:3000"
+    SECURE = False
+
+PROTOCOL = "https" if SECURE else "http"
+API_HOST = f"{PROTOCOL}://{API_DOMAIN}"
+
+
+SANDBOX_DOMAIN = DOMAIN
 
 ENVD_PORT = 49982
 WS_ROUTE = "/ws"
