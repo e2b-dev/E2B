@@ -356,8 +356,9 @@ export class SandboxConnection {
   }
 
   private async connectRpc() {
-    const sandboxURL = `${this.getProtocol('ws')}://${this.getHostname(this.opts.__debug_port || ENVD_PORT)}`
-    const wsURL = `${sandboxURL}${WS_ROUTE}`
+    const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
+    const protocol = this.getProtocol('ws')
+    const sandboxURL = `${protocol}://${hostname}${WS_ROUTE}`
 
     this.rpc.onError((err) => {
       // not warn, because this is somewhat expected behaviour during initialization
@@ -404,7 +405,7 @@ export class SandboxConnection {
           // When the WS connection closes the subscribers in devbookd are removed.
           // We want to delete the subscriber handlers here so there are no orphans.
           this.subscribers = []
-          await this.rpc.connect(wsURL)
+          await this.rpc.connect(sandboxURL)
           this.logger.debug?.(
             `Reconnected to sandbox "${this.sandbox?.instanceID}"`,
           )
@@ -427,7 +428,7 @@ export class SandboxConnection {
       this.logger.debug?.(
         `Connection to sandbox "${this.sandbox?.instanceID}"`,
       )
-      await this.rpc.connect(wsURL)
+      await this.rpc.connect(sandboxURL)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {

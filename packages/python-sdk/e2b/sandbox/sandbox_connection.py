@@ -266,10 +266,11 @@ class SandboxConnection:
             raise e
 
     def _connect_rpc(self, timeout: Optional[float] = TIMEOUT):
-        sandbox_url = f"{self.get_protocol('ws')}://{self.get_hostname(self._debug_port or ENVD_PORT)}"
-        ws_url = f"{sandbox_url}{WS_ROUTE}"
+        hostname = self.get_hostname(self._debug_port or ENVD_PORT)
+        protocol = self.get_protocol("ws")
+        sandbox_url = f"{protocol}://{hostname}{WS_ROUTE}"
         self._rpc = SandboxRpc(
-            url=ws_url,
+            url=sandbox_url,
             on_message=self._handle_notification,
         )
         self._rpc.connect(timeout=timeout)

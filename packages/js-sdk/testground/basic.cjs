@@ -5,7 +5,7 @@ function wait(ms) {
 
 async function main() {
   const sandbox = await e2b.Sandbox.create({
-    id: 'idnrwvs3vrde6hknozc0',
+    id: 'base',
     apiKey: process.env.E2B_API_KEY
   })
 

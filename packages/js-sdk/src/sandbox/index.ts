@@ -419,8 +419,9 @@ export class Sandbox extends SandboxConnection {
    * If a file with the same name already exists, it will be overwritten.
    */
   get fileURL() {
-    const sandboxURL = `${this.getProtocol()}://${this.getHostname(this.opts.__debug_port || ENVD_PORT)}`
-    return `${sandboxURL}${FILE_ROUTE}`
+    const protocol = this.getProtocol()
+    const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
+    return `${protocol}://${hostname}${FILE_ROUTE}`
   }
 
   /**
