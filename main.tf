@@ -1,7 +1,7 @@
 terraform {
   required_version = ">= 1.5.0, < 1.6.0"
   backend "gcs" {
-    bucket = "e2b-dev-terraform-state"
+    bucket = "e2b-terraform-state"
     prefix = "terraform/orchestration/state"
   }
   required_providers {
@@ -90,18 +90,18 @@ module "fc_envs_disk" {
   prefix = var.prefix
 }
 
-#module "github-tf" {
-#  source = "./github-tf"
-#
-#  gcp_project_id = var.gcp_project_id
-#  gcp_region     = var.gcp_region
-#  gcp_zone       = var.gcp_zone
-#
-#  github_organization = var.github_organization
-#  github_repository   = var.github_repository
-#
-#  prefix = var.prefix
-#}
+module "github-tf" {
+  source = "./github-tf"
+
+  gcp_project_id = var.gcp_project_id
+  gcp_region     = var.gcp_region
+  gcp_zone       = var.gcp_zone
+
+  github_organization = var.github_organization
+  github_repository   = var.github_repository
+
+  prefix = var.prefix
+}
 
 module "cluster" {
   source = "./packages/cluster"
