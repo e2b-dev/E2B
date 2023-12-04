@@ -3,7 +3,8 @@ FROM python:3.11.6
 # Inspired by https://github.com/nodejs/docker-node/blob/main/20/bookworm/Dockerfile
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
   build-essential curl git util-linux \
-  libbluetooth-dev tk-dev uuid-dev; \
+  libbluetooth-dev tk-dev uuid-dev \
+  gh; \
   rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid 1000 node \
