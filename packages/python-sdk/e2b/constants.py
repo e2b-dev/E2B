@@ -10,8 +10,8 @@ DEBUG = os.getenv("E2B_DEBUG") or False
 API_DOMAIN = f"api.{DOMAIN}"
 
 if DEBUG:
-    DOMAIN = "localhost"
-    API_DOMAIN = "localhost"
+    DOMAIN = "localhost:3000"
+    API_DOMAIN = "localhost:3000"
     SECURE = False
 
 PROTOCOL = "https" if SECURE else "http"
