@@ -257,7 +257,7 @@ class Sandbox(SandboxConnection):
         The file will be uploaded to the user's home directory with the same name.
         If a file with the same name already exists, it will be overwritten.
         """
-        sandbox_url = self.get_hostname_with_protocol(self._debug_port or ENVD_PORT)
+        sandbox_url = self.get_protocol(self._debug_port or ENVD_PORT)
         return f"{sandbox_url}{FILE_ROUTE}"
 
     def upload_file(self, file: IO, timeout: Optional[float] = TIMEOUT) -> str:

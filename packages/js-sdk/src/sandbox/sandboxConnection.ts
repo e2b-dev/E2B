@@ -171,17 +171,12 @@ export class SandboxConnection {
   }
 
   /**
-   * Get the hostname with the specified protocol for the sandbox or for the specified sandbox's port.
-   *
-   * `getHostname` method requires `this` context - you may need to bind it.
-   *
-   * @param port Specify if you want to connect to a specific port of the sandbox
-   * @param protocol Specify if you want to connect to a specific protocol of the sandbox. Do not include the `s` in `https` or `wss`.
-   * @returns Hostname of the sandbox or sandbox's port
+   * The function decides whether to use the secure or insecure protocol.
+   * @param baseProtocol Specify the specific protocol you want to use. Do not include the `s` in `https` or `wss`.
+   * @returns Protocol for the connection to the sandbox
    */
-  getHostnameWithProtocol(port?: number, protocol: string = 'http') {
-    protocol = SECURE ? `${protocol}s` : protocol
-    return `${protocol}://${this.getHostname(port)}`
+  getProtocol(baseProtocol: string = 'http') {
+    return SECURE ? `${baseProtocol}s` : baseProtocol
   }
 
   /**
@@ -361,7 +356,7 @@ export class SandboxConnection {
   }
 
   private async connectRpc() {
-    const sandboxURL = this.getHostnameWithProtocol(this.opts.__debug_port || ENVD_PORT, 'ws')
+    const sandboxURL = `${this.getProtocol('ws')}://${this.getHostname(this.opts.__debug_port || ENVD_PORT)}`
     const wsURL = `${sandboxURL}${WS_ROUTE}`
 
     this.rpc.onError((err) => {
