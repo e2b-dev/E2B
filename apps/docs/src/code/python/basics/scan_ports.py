@@ -17,7 +17,8 @@ def print_new_port_and_url(open_ports, sandbox):
         if port not in printed_ports:
             printed_ports.append(port)
 
-            port_url = sandbox.get_protocol(port.port)
+            host = sandbox.get_hostname(port.port)
+            port_url = f"https://{host}"
             print(port, port_url)
 
 
