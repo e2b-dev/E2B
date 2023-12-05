@@ -29,8 +29,8 @@ func (Team) Fields() []ent.Field {
 
 func (Team) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("users", User.Type).Through("users_teams", UsersTeams.Type),
-		edge.To("team_api_keys", TeamAPIKey.Type),
+		edge.To("users", User.Type).Through("users_teams", UsersTeams.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("team_api_keys", TeamAPIKey.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.From("team_tier", Tier.Type).Ref("teams").Unique().Field("tier").Required(),
 		edge.To("envs", Env.Type),
 	}

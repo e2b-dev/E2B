@@ -29,6 +29,6 @@ func (User) Annotations() []schema.Annotation {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("teams", Team.Type).Through("users_teams", UsersTeams.Type).Ref("users"),
-		edge.To("access_tokens", AccessToken.Type),
+		edge.To("access_tokens", AccessToken.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

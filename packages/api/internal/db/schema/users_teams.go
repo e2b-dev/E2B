@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -25,11 +26,11 @@ func (UsersTeams) Edges() []ent.Edge {
 		edge.To("users", User.Type).
 			Required().
 			Unique().
-			Field("user_id"),
+			Field("user_id").Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("teams", Team.Type).
 			Required().
 			Unique().
-			Field("team_id"),
+			Field("team_id").Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 
