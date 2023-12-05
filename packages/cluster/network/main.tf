@@ -72,11 +72,6 @@ locals {
 
 # ======== IP ADDRESSES ====================
 
-resource "google_compute_global_address" "orch_server_ip" {
-  name = "${var.prefix}server-ip"
-}
-
-
 resource "google_compute_global_address" "orch_logs_ip" {
   name = "${var.prefix}logs-ip"
 }
@@ -99,7 +94,7 @@ resource "cloudflare_record" "dns_auth" {
 resource "cloudflare_record" "a_star" {
   zone_id = data.cloudflare_zone.domain.id
   name    = "*"
-  value   = google_compute_global_address.orch_server_ip.address
+  value   = google_compute_global_forwarding_rule.https.ip_address
   type    = "A"
 }
 
@@ -222,20 +217,10 @@ resource "google_compute_target_https_proxy" "default" {
   certificate_map = "//certificatemanager.googleapis.com/${google_certificate_manager_certificate_map.certificate_map.id}"
 }
 
-resource "google_compute_global_forwarding_rule" "http" {
-  provider   = google-beta
-  name       = "${var.prefix}forwarding-rule-http"
-  target     = google_compute_target_http_proxy.default.self_link
-  load_balancing_scheme = "EXTERNAL_MANAGED"
-
-  port_range = "80"
-  labels     = var.labels
-}
-
 resource "google_compute_global_forwarding_rule" "https" {
-  provider   = google-beta
-  name       = "${var.prefix}forwarding-rule-https"
-  target     = google_compute_target_https_proxy.default.self_link
+  provider              = google-beta
+  name                  = "${var.prefix}forwarding-rule-https"
+  target                = google_compute_target_https_proxy.default.self_link
   load_balancing_scheme = "EXTERNAL_MANAGED"
 
   port_range = "443"
@@ -257,7 +242,7 @@ resource "google_compute_backend_service" "default" {
   compression_mode                = "DISABLED"
 
   load_balancing_scheme = "EXTERNAL_MANAGED"
-  health_checks = [google_compute_health_check.default[each.key].self_link]
+  health_checks         = [google_compute_health_check.default[each.key].self_link]
 
 
   dynamic "backend" {
