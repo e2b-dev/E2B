@@ -301,7 +301,7 @@ class SandboxConnection:
         try:
             self._connect_rpc(timeout)
         except Exception as e:
-            print(e)
+            logger.error(e)
             self._close()
             raise e
 
