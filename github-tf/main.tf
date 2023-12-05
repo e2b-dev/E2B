@@ -28,7 +28,7 @@ provider "github" {
 
 
 resource "google_service_account" "github_action_service_account" {
-  account_id   = "${var.prefix}github-action-${var.gcp_project_id}-api"
+  account_id   = "${var.prefix}github-actions"
   display_name = "Service account for deploying API via Github Actions"
 }
 
@@ -51,7 +51,7 @@ resource "google_iam_workload_identity_pool" "github_actions_wip" {
 resource "google_iam_workload_identity_pool_provider" "gha_identity_pool_provider" {
   workload_identity_pool_id          = google_iam_workload_identity_pool.github_actions_wip.workload_identity_pool_id
   workload_identity_pool_provider_id = "${var.prefix}gh-provider"
-  display_name                       = "E2B Github Action identity pool provider"
+  display_name                       = "E2B GHA identity pool provider"
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
     "attribute.repository" = "assertion.repository"
