@@ -211,12 +211,12 @@ resource "google_compute_url_map" "orch_map" {
 
 ### IPv4 block ###
 resource "google_compute_target_http_proxy" "default" {
-  name    = "${var.prefix}load-balancer-http-proxy"
+  name    = "${var.prefix}http-proxy"
   url_map = google_compute_url_map.orch_map.self_link
 }
 
 resource "google_compute_target_https_proxy" "default" {
-  name    = "${var.prefix}load-balancer-https-proxy"
+  name    = "${var.prefix}https-proxy"
   url_map = google_compute_url_map.orch_map.self_link
 
   certificate_map = "//certificatemanager.googleapis.com/${google_certificate_manager_certificate_map.certificate_map.id}"
@@ -224,9 +224,9 @@ resource "google_compute_target_https_proxy" "default" {
 
 resource "google_compute_global_forwarding_rule" "http" {
   provider   = google-beta
-  name       = "${var.prefix}load-balancer-http"
+  name       = "${var.prefix}forwarding-rule-http"
   target     = google_compute_target_http_proxy.default.self_link
-  ip_address = google_compute_global_address.orch_server_ip.address
+  load_balancing_scheme = "EXTERNAL_MANAGED"
 
   port_range = "80"
   labels     = var.labels
@@ -234,9 +234,10 @@ resource "google_compute_global_forwarding_rule" "http" {
 
 resource "google_compute_global_forwarding_rule" "https" {
   provider   = google-beta
-  name       = "${var.prefix}load-balancer-https"
+  name       = "${var.prefix}forwarding-rule-https"
   target     = google_compute_target_https_proxy.default.self_link
-  ip_address = google_compute_global_address.orch_server_ip.address
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+
   port_range = "443"
   labels     = var.labels
 }
@@ -246,7 +247,7 @@ resource "google_compute_backend_service" "default" {
   provider = google-beta
   for_each = local.backends
 
-  name = "${var.prefix}load-balancer-backend-${each.key}"
+  name = "${var.prefix}backend-${each.key}"
 
   port_name = lookup(each.value, "port_name", "http")
   protocol  = lookup(each.value, "protocol", "HTTP")
@@ -255,6 +256,7 @@ resource "google_compute_backend_service" "default" {
   connection_draining_timeout_sec = 1
   compression_mode                = "DISABLED"
 
+  load_balancing_scheme = "EXTERNAL_MANAGED"
   health_checks = [google_compute_health_check.default[each.key].self_link]
 
 
@@ -274,7 +276,7 @@ resource "google_compute_backend_service" "default" {
 resource "google_compute_health_check" "default" {
   provider = google-beta
   for_each = local.health_checked_backends
-  name     = "${var.prefix}load-balancer-hc-${each.key}"
+  name     = "${var.prefix}hc-${each.key}"
 
   check_interval_sec  = lookup(each.value["health_check"], "check_interval_sec", 5)
   timeout_sec         = lookup(each.value["health_check"], "timeout_sec", 5)
