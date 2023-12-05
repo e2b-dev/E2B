@@ -1,4 +1,5 @@
-import {Sandbox} from '@e2b/sdk'
+import { Sandbox } from '@e2b/sdk'
+import 'dotenv/config'
 
 async function main(){
     const sandbox = await Sandbox.create({ id: 'e2etesting'})
