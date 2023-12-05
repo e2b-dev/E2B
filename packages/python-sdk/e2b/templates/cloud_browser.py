@@ -38,14 +38,12 @@ class CloudBrowser(BaseTemplate):
         selector: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> Tuple[str, str]:
-        code = ""
         if selector:
-            code += f"""const element = await page.$('{selector}');"""
+            code = f"const content = await page.evaluate(() = > document.querySelector('{selector}').outerHTML)\n"
+        else:
+            code = f"const content = await page.content()\n"
+        code += "console.log(content)"
 
-        code += f"""
-            const content = await {'element' if selector else 'page'}.content();
-            console.log(content)
-        """
         return self._run_puppeteer_code(code, timeout=timeout)
 
     def get_links(
