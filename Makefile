@@ -62,6 +62,15 @@ apply-without-jobs:
 	-parallelism=20 \
   	$(WITHOUT_JOBS)
 
+.PHONY: plan-without-jobs
+plan-without-jobs:
+	$(tf_vars) \
+	terraform plan \
+	-input=false \
+	-compact-warnings \
+	-parallelism=20 \
+  	$(WITHOUT_JOBS)
+
 .PHONY: destroy
 destroy:
 	$(tf_vars) \

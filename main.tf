@@ -90,7 +90,7 @@ module "fc_envs_disk" {
   prefix = var.prefix
 }
 
-module "github-tf" {
+module "github_tf" {
   source = "./github-tf"
 
   gcp_project_id = var.gcp_project_id
