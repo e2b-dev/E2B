@@ -20,11 +20,16 @@
     "declaration": true,
   },
   "include": [
-    "src"
+    "src",
   ],
   "exclude": [
+    "api-extractor.json",
+    "api-ref-report",
+    "api-ref-docs",
     "dist",
     "node_modules",
-    "tsup.config.js"
+    "tsup.config.js",
+    "tsconfig.js",
+    "tsconfig.apiref.json"
   ]
 }

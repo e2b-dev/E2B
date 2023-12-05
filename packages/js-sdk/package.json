@@ -25,6 +25,7 @@
   "scripts": {
     "prepublishOnly": "pnpm build",
     "build": "tsc --noEmit && tsup",
+    "generate-api-ref": "api-extractor run --local --verbose && api-documenter markdown -i api-ref-report -o api-ref-docs",
     "dev": "tsup --watch",
     "measure": "node test/performance.mjs",
     "run": "node test/run.mjs",
@@ -38,6 +39,9 @@
     "openai": "^4.17.4"
   },
   "devDependencies": {
+    "@microsoft/api-documenter": "^7.23.13",
+    "@microsoft/api-extractor": "^7.38.4",
+    "@microsoft/tsdoc": "^0.14.2",
     "@types/node": "^18.18.6",
     "@types/normalize-path": "^3.0.0",
     "@types/path-browserify": "^1.0.1",
