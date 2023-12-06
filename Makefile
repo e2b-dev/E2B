@@ -1,4 +1,8 @@
--include .env
+CURRENT_ENV := $(shell cat .last_used_env)
+-include .env.${CURRENT_ENV}
+
+
+PRINT = @echo -e "\e[1;34mBuilding $<\e[0m"
 
 GCP_PROJECT ?= $$(gcloud config get-value project)
 CLOUDFLARE_API_TOKEN ?= empty
@@ -18,10 +22,14 @@ tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_cloudflare_api_token=$(CLOUDFLARE_API_TOKEN) \
 	TF_VAR_prefix=$(PREFIX)
 
+ifeq ($(EXCLUDE_GITHUB),1)
+	ALL_MODULES := $(shell cat main.tf | grep "^module" | awk '{print $$2}' | grep -v -e "github_tf")
+else
+	ALL_MODULES := $(shell cat main.tf | grep "^module" | awk '{print $$2}')
+endif
 
-WITHOUT_JOBS := $(shell cat main.tf | grep "^module" | awk '{print $$2}' | grep -v -e "nomad" | awk '{print "-target=module." $$0 ""}' | xargs)
-DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | grep -v -e "fc_envs_disk" -e "buckets" | uniq | awk '{print "-target=" $$0 ""}' | xargs)
-
+WITHOUT_JOBS := $(shell echo $(ALL_MODULES) | tr ' ' '\n' | grep -v -e "nomad" | awk '{print "-target=module." $$0 ""}' | xargs)
+ALL_MODULES_ARGS := $(shell echo $(ALL_MODULES) | tr ' ' '\n' | awk '{print "-target=module." $$0 ""}' | xargs)
 
 # Login for Packer and Docker (uses gcloud user creds)
 # Login for Terraform (uses application default creds)
@@ -34,36 +42,31 @@ login-gcloud:
 
 .PHONY: init
 init:
+	@ printf "Initializing Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
 	terraform init -input=false
 	$(MAKE) -C packages/cluster-disk-image init
 	$(tf_vars) terraform apply -target=module.init -target=module.buckets -auto-approve -input=false -compact-warnings
 
 .PHONY: plan
 plan:
+	@ printf "Planning Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
 	terraform fmt -recursive
-	$(tf_vars) terraform plan -compact-warnings -detailed-exitcode
+	$(tf_vars) terraform plan -compact-warnings -detailed-exitcode $(ALL_MODULES_ARGS)
 
 .PHONY: apply
 apply:
-	$(tf_vars) \
-	terraform apply \
-	-auto-approve \
-	-input=false \
-	-compact-warnings \
-	-parallelism=20
-
-.PHONY: apply-without-jobs
-apply-without-jobs:
+	@ printf "Applying Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
 	$(tf_vars) \
 	terraform apply \
 	-auto-approve \
 	-input=false \
 	-compact-warnings \
 	-parallelism=20 \
-  	$(WITHOUT_JOBS)
+	$(ALL_MODULES_ARGS)
 
 .PHONY: plan-without-jobs
 plan-without-jobs:
+	@ printf "Planning Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
 	$(tf_vars) \
 	terraform plan \
 	-input=false \
@@ -71,8 +74,21 @@ plan-without-jobs:
 	-parallelism=20 \
   	$(WITHOUT_JOBS)
 
+.PHONY: apply-without-jobs
+apply-without-jobs:
+	@ printf "Applying Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
+	$(tf_vars) \
+	terraform apply \
+	-auto-approve \
+	-input=false \
+	-compact-warnings \
+	-parallelism=20 \
+  	$(WITHOUT_JOBS)
+
 .PHONY: destroy
 destroy:
+	@ printf "Destroying Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
+	DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | grep -v -e "fc_envs_disk" -e "buckets" | uniq | awk '{print "-target=" $$0 ""}' | xargs)
 	$(tf_vars) \
 	terraform destroy \
 	-input=false \
@@ -95,12 +111,14 @@ bootstrap-nomad:
 	gcloud compute ssh $$($(server)) -- \
 	'nomad acl bootstrap'
 
+.PHONY: build-all
 build-all:
 	$(MAKE) -C packages/envd build
 	$(MAKE) -C packages/api build
 	$(MAKE) -C packages/env-instance-task-driver build
 	$(MAKE) -C packages/env-build-task-driver build
 
+.PHONY: build-and-upload-all
 build-and-upload-all:
 	GCP_PROJECT=${GCP_PROJECT} $(MAKE) -C packages/envd build-and-upload
 	GCP_PROJECT=${GCP_PROJECT} make update-api
@@ -115,6 +133,15 @@ update-api:
 # Set the size of the fc-envs disk
 FC_ENVS_SIZE := 200
 
+.PHONE: resize-fc-envs
 resize-fc-envs:
 	gcloud --project=$(GCP_PROJECT) compute disks resize fc-envs --size $(FC_ENVS_SIZE) --zone us-central1-a
 	gcloud compute ssh $$($(client)) -- 'sudo xfs_growfs -d /dev/sdb'
+
+.PHONY: switch-env
+switch-env:
+	@ touch .last_used_env
+	@ printf "Switching from `tput setaf 1``tput bold`$(CURRENT_ENV)`tput sgr0` to `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
+	@ echo $(ENV) > .last_used_env
+	@ . .env.${ENV}
+	terraform init -input=false -reconfigure -backend-config="bucket=${TERRAFORM_STATE_BUCKET}"

@@ -1,8 +1,7 @@
 terraform {
   required_version = ">= 1.5.0, < 1.6.0"
   backend "gcs" {
-    bucket = "e2b-terraform-state"
-    prefix = "terraform/orchestration/new-state"
+    prefix = "terraform/orchestration/state"
   }
   required_providers {
     docker = {
