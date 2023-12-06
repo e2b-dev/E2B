@@ -47,9 +47,9 @@ func (a *APIStore) GetEnvs(
 
 	telemetry.ReportEvent(ctx, "listed environments")
 
-	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "listed environments", properties)
+	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "listed environments", properties)
 
 	c.JSON(http.StatusOK, envs)
 }
