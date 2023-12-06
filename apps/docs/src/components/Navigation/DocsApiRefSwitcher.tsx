@@ -15,7 +15,7 @@ function DocsApiRefSwitcher() {
 
   return (
     <div className="
-        w-[calc(var(--sidebar-nav-width)-8px)]
+        w-[var(--sidebar-nav-width)]
         lg:px-6
         lg:py-4
         flex
@@ -25,6 +25,8 @@ function DocsApiRefSwitcher() {
         backdrop-blur
         bg-red-500/0.2
         z-10
+        border-b
+        border-white/7.5
       ">
       <Link
         href="/docs"

@@ -30,7 +30,7 @@ export function Layout({
           layoutScroll
           className={clsx(
             'contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex',
-            shouldShowBanner ? 'lg:top-[110px]' : 'lg:top-[60px]',
+            shouldShowBanner ? 'lg:top-[110px]' : 'lg:top-[58px]',
           )}
         >
           <div
