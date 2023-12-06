@@ -12,9 +12,9 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -45,7 +45,7 @@ func (a *APIStore) PostInstances(
 	}
 
 	// Get team from context, use TeamContextKey
-	team := c.Value(constants.TeamContextKey).(ent.Team)
+	team := c.Value(constants.TeamContextKey).(models.Team)
 
 	envID, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
