@@ -25,3 +25,9 @@ func (Tier) Edges() []ent.Edge {
 		edge.To("teams", Team.Type),
 	}
 }
+
+func (Tier) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		Mixin{},
+	}
+}

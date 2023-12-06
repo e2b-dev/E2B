@@ -16,8 +16,12 @@ const (
 	FieldEmail = "email"
 	// EdgeTeams holds the string denoting the teams edge name in mutations.
 	EdgeTeams = "teams"
+	// EdgeAccessTokens holds the string denoting the access_tokens edge name in mutations.
+	EdgeAccessTokens = "access_tokens"
 	// EdgeUsersTeams holds the string denoting the users_teams edge name in mutations.
 	EdgeUsersTeams = "users_teams"
+	// AccessTokenFieldID holds the string denoting the ID field of the AccessToken.
+	AccessTokenFieldID = "access_token"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// TeamsTable is the table that holds the teams relation/edge. The primary key declared below.
@@ -25,6 +29,13 @@ const (
 	// TeamsInverseTable is the table name for the Team entity.
 	// It exists in this package in order to avoid circular dependency with the "team" package.
 	TeamsInverseTable = "teams"
+	// AccessTokensTable is the table that holds the access_tokens relation/edge.
+	AccessTokensTable = "access_tokens"
+	// AccessTokensInverseTable is the table name for the AccessToken entity.
+	// It exists in this package in order to avoid circular dependency with the "accesstoken" package.
+	AccessTokensInverseTable = "access_tokens"
+	// AccessTokensColumn is the table column denoting the access_tokens relation/edge.
+	AccessTokensColumn = "user_id"
 	// UsersTeamsTable is the table that holds the users_teams relation/edge.
 	UsersTeamsTable = "users_teams"
 	// UsersTeamsInverseTable is the table name for the UsersTeams entity.
@@ -40,12 +51,6 @@ var Columns = []string{
 	FieldEmail,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "users"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"access_token_users",
-}
-
 var (
 	// TeamsPrimaryKey and TeamsColumn2 are the table columns denoting the
 	// primary key for the teams relation (M2M).
@@ -56,11 +61,6 @@ var (
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -94,6 +94,20 @@ func ByTeams(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByAccessTokensCount orders the results by access_tokens count.
+func ByAccessTokensCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAccessTokensStep(), opts...)
+	}
+}
+
+// ByAccessTokens orders the results by access_tokens terms.
+func ByAccessTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAccessTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUsersTeamsCount orders the results by users_teams count.
 func ByUsersTeamsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -112,6 +126,13 @@ func newTeamsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TeamsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, true, TeamsTable, TeamsPrimaryKey...),
+	)
+}
+func newAccessTokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AccessTokensInverseTable, AccessTokenFieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AccessTokensTable, AccessTokensColumn),
 	)
 }
 func newUsersTeamsStep() *sqlgraph.Step {

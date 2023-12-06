@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/accesstoken"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/usersteams"
@@ -50,6 +51,21 @@ func (uc *UserCreate) AddTeams(t ...*Team) *UserCreate {
 		ids[i] = t[i].ID
 	}
 	return uc.AddTeamIDs(ids...)
+}
+
+// AddAccessTokenIDs adds the "access_tokens" edge to the AccessToken entity by IDs.
+func (uc *UserCreate) AddAccessTokenIDs(ids ...string) *UserCreate {
+	uc.mutation.AddAccessTokenIDs(ids...)
+	return uc
+}
+
+// AddAccessTokens adds the "access_tokens" edges to the AccessToken entity.
+func (uc *UserCreate) AddAccessTokens(a ...*AccessToken) *UserCreate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uc.AddAccessTokenIDs(ids...)
 }
 
 // AddUsersTeamIDs adds the "users_teams" edge to the UsersTeams entity by IDs.
@@ -157,6 +173,23 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			},
 		}
 		edge.Schema = uc.schemaConfig.UsersTeams
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.AccessTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.AccessTokensTable,
+			Columns: []string{user.AccessTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeString),
+			},
+		}
+		edge.Schema = uc.schemaConfig.AccessToken
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}

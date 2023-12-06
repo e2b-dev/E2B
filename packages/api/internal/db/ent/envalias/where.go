@@ -159,12 +159,12 @@ func IsNameNEQ(v bool) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldNEQ(FieldIsName, v))
 }
 
-// HasAliasEnv applies the HasEdge predicate on the "alias_env" edge.
-func HasAliasEnv() predicate.EnvAlias {
+// HasEnv applies the HasEdge predicate on the "env" edge.
+func HasEnv() predicate.EnvAlias {
 	return predicate.EnvAlias(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, AliasEnvTable, AliasEnvColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, EnvTable, EnvColumn),
 		)
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.Env
@@ -173,10 +173,10 @@ func HasAliasEnv() predicate.EnvAlias {
 	})
 }
 
-// HasAliasEnvWith applies the HasEdge predicate on the "alias_env" edge with a given conditions (other predicates).
-func HasAliasEnvWith(preds ...predicate.Env) predicate.EnvAlias {
+// HasEnvWith applies the HasEdge predicate on the "env" edge with a given conditions (other predicates).
+func HasEnvWith(preds ...predicate.Env) predicate.EnvAlias {
 	return predicate.EnvAlias(func(s *sql.Selector) {
-		step := newAliasEnvStep()
+		step := newEnvStep()
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.Env
 		step.Edge.Schema = schemaConfig.EnvAlias

@@ -37,6 +37,14 @@ func (tu *TierUpdate) SetVcpu(i int64) *TierUpdate {
 	return tu
 }
 
+// SetNillableVcpu sets the "vcpu" field if the given value is not nil.
+func (tu *TierUpdate) SetNillableVcpu(i *int64) *TierUpdate {
+	if i != nil {
+		tu.SetVcpu(*i)
+	}
+	return tu
+}
+
 // AddVcpu adds i to the "vcpu" field.
 func (tu *TierUpdate) AddVcpu(i int64) *TierUpdate {
 	tu.mutation.AddVcpu(i)
@@ -47,6 +55,14 @@ func (tu *TierUpdate) AddVcpu(i int64) *TierUpdate {
 func (tu *TierUpdate) SetRAMMB(i int64) *TierUpdate {
 	tu.mutation.ResetRAMMB()
 	tu.mutation.SetRAMMB(i)
+	return tu
+}
+
+// SetNillableRAMMB sets the "ram_mb" field if the given value is not nil.
+func (tu *TierUpdate) SetNillableRAMMB(i *int64) *TierUpdate {
+	if i != nil {
+		tu.SetRAMMB(*i)
+	}
 	return tu
 }
 
@@ -63,6 +79,14 @@ func (tu *TierUpdate) SetDiskMB(i int64) *TierUpdate {
 	return tu
 }
 
+// SetNillableDiskMB sets the "disk_mb" field if the given value is not nil.
+func (tu *TierUpdate) SetNillableDiskMB(i *int64) *TierUpdate {
+	if i != nil {
+		tu.SetDiskMB(*i)
+	}
+	return tu
+}
+
 // AddDiskMB adds i to the "disk_mb" field.
 func (tu *TierUpdate) AddDiskMB(i int64) *TierUpdate {
 	tu.mutation.AddDiskMB(i)
@@ -73,6 +97,14 @@ func (tu *TierUpdate) AddDiskMB(i int64) *TierUpdate {
 func (tu *TierUpdate) SetConcurrentInstances(i int64) *TierUpdate {
 	tu.mutation.ResetConcurrentInstances()
 	tu.mutation.SetConcurrentInstances(i)
+	return tu
+}
+
+// SetNillableConcurrentInstances sets the "concurrent_instances" field if the given value is not nil.
+func (tu *TierUpdate) SetNillableConcurrentInstances(i *int64) *TierUpdate {
+	if i != nil {
+		tu.SetConcurrentInstances(*i)
+	}
 	return tu
 }
 
@@ -260,6 +292,14 @@ func (tuo *TierUpdateOne) SetVcpu(i int64) *TierUpdateOne {
 	return tuo
 }
 
+// SetNillableVcpu sets the "vcpu" field if the given value is not nil.
+func (tuo *TierUpdateOne) SetNillableVcpu(i *int64) *TierUpdateOne {
+	if i != nil {
+		tuo.SetVcpu(*i)
+	}
+	return tuo
+}
+
 // AddVcpu adds i to the "vcpu" field.
 func (tuo *TierUpdateOne) AddVcpu(i int64) *TierUpdateOne {
 	tuo.mutation.AddVcpu(i)
@@ -270,6 +310,14 @@ func (tuo *TierUpdateOne) AddVcpu(i int64) *TierUpdateOne {
 func (tuo *TierUpdateOne) SetRAMMB(i int64) *TierUpdateOne {
 	tuo.mutation.ResetRAMMB()
 	tuo.mutation.SetRAMMB(i)
+	return tuo
+}
+
+// SetNillableRAMMB sets the "ram_mb" field if the given value is not nil.
+func (tuo *TierUpdateOne) SetNillableRAMMB(i *int64) *TierUpdateOne {
+	if i != nil {
+		tuo.SetRAMMB(*i)
+	}
 	return tuo
 }
 
@@ -286,6 +334,14 @@ func (tuo *TierUpdateOne) SetDiskMB(i int64) *TierUpdateOne {
 	return tuo
 }
 
+// SetNillableDiskMB sets the "disk_mb" field if the given value is not nil.
+func (tuo *TierUpdateOne) SetNillableDiskMB(i *int64) *TierUpdateOne {
+	if i != nil {
+		tuo.SetDiskMB(*i)
+	}
+	return tuo
+}
+
 // AddDiskMB adds i to the "disk_mb" field.
 func (tuo *TierUpdateOne) AddDiskMB(i int64) *TierUpdateOne {
 	tuo.mutation.AddDiskMB(i)
@@ -296,6 +352,14 @@ func (tuo *TierUpdateOne) AddDiskMB(i int64) *TierUpdateOne {
 func (tuo *TierUpdateOne) SetConcurrentInstances(i int64) *TierUpdateOne {
 	tuo.mutation.ResetConcurrentInstances()
 	tuo.mutation.SetConcurrentInstances(i)
+	return tuo
+}
+
+// SetNillableConcurrentInstances sets the "concurrent_instances" field if the given value is not nil.
+func (tuo *TierUpdateOne) SetNillableConcurrentInstances(i *int64) *TierUpdateOne {
+	if i != nil {
+		tuo.SetConcurrentInstances(*i)
+	}
 	return tuo
 }
 

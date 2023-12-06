@@ -19,11 +19,11 @@ import (
 // EnvAliasQuery is the builder for querying EnvAlias entities.
 type EnvAliasQuery struct {
 	config
-	ctx          *QueryContext
-	order        []envalias.OrderOption
-	inters       []Interceptor
-	predicates   []predicate.EnvAlias
-	withAliasEnv *EnvQuery
+	ctx        *QueryContext
+	order      []envalias.OrderOption
+	inters     []Interceptor
+	predicates []predicate.EnvAlias
+	withEnv    *EnvQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -60,8 +60,8 @@ func (eaq *EnvAliasQuery) Order(o ...envalias.OrderOption) *EnvAliasQuery {
 	return eaq
 }
 
-// QueryAliasEnv chains the current query on the "alias_env" edge.
-func (eaq *EnvAliasQuery) QueryAliasEnv() *EnvQuery {
+// QueryEnv chains the current query on the "env" edge.
+func (eaq *EnvAliasQuery) QueryEnv() *EnvQuery {
 	query := (&EnvClient{config: eaq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := eaq.prepareQuery(ctx); err != nil {
@@ -74,7 +74,7 @@ func (eaq *EnvAliasQuery) QueryAliasEnv() *EnvQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(envalias.Table, envalias.FieldID, selector),
 			sqlgraph.To(env.Table, env.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, envalias.AliasEnvTable, envalias.AliasEnvColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, envalias.EnvTable, envalias.EnvColumn),
 		)
 		schemaConfig := eaq.schemaConfig
 		step.To.Schema = schemaConfig.Env
@@ -272,26 +272,26 @@ func (eaq *EnvAliasQuery) Clone() *EnvAliasQuery {
 		return nil
 	}
 	return &EnvAliasQuery{
-		config:       eaq.config,
-		ctx:          eaq.ctx.Clone(),
-		order:        append([]envalias.OrderOption{}, eaq.order...),
-		inters:       append([]Interceptor{}, eaq.inters...),
-		predicates:   append([]predicate.EnvAlias{}, eaq.predicates...),
-		withAliasEnv: eaq.withAliasEnv.Clone(),
+		config:     eaq.config,
+		ctx:        eaq.ctx.Clone(),
+		order:      append([]envalias.OrderOption{}, eaq.order...),
+		inters:     append([]Interceptor{}, eaq.inters...),
+		predicates: append([]predicate.EnvAlias{}, eaq.predicates...),
+		withEnv:    eaq.withEnv.Clone(),
 		// clone intermediate query.
 		sql:  eaq.sql.Clone(),
 		path: eaq.path,
 	}
 }
 
-// WithAliasEnv tells the query-builder to eager-load the nodes that are connected to
-// the "alias_env" edge. The optional arguments are used to configure the query builder of the edge.
-func (eaq *EnvAliasQuery) WithAliasEnv(opts ...func(*EnvQuery)) *EnvAliasQuery {
+// WithEnv tells the query-builder to eager-load the nodes that are connected to
+// the "env" edge. The optional arguments are used to configure the query builder of the edge.
+func (eaq *EnvAliasQuery) WithEnv(opts ...func(*EnvQuery)) *EnvAliasQuery {
 	query := (&EnvClient{config: eaq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	eaq.withAliasEnv = query
+	eaq.withEnv = query
 	return eaq
 }
 
@@ -374,7 +374,7 @@ func (eaq *EnvAliasQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*En
 		nodes       = []*EnvAlias{}
 		_spec       = eaq.querySpec()
 		loadedTypes = [1]bool{
-			eaq.withAliasEnv != nil,
+			eaq.withEnv != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -397,16 +397,16 @@ func (eaq *EnvAliasQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*En
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := eaq.withAliasEnv; query != nil {
-		if err := eaq.loadAliasEnv(ctx, query, nodes, nil,
-			func(n *EnvAlias, e *Env) { n.Edges.AliasEnv = e }); err != nil {
+	if query := eaq.withEnv; query != nil {
+		if err := eaq.loadEnv(ctx, query, nodes, nil,
+			func(n *EnvAlias, e *Env) { n.Edges.Env = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (eaq *EnvAliasQuery) loadAliasEnv(ctx context.Context, query *EnvQuery, nodes []*EnvAlias, init func(*EnvAlias), assign func(*EnvAlias, *Env)) error {
+func (eaq *EnvAliasQuery) loadEnv(ctx context.Context, query *EnvQuery, nodes []*EnvAlias, init func(*EnvAlias), assign func(*EnvAlias, *Env)) error {
 	ids := make([]string, 0, len(nodes))
 	nodeids := make(map[string][]*EnvAlias)
 	for i := range nodes {
@@ -466,7 +466,7 @@ func (eaq *EnvAliasQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if eaq.withAliasEnv != nil {
+		if eaq.withEnv != nil {
 			_spec.Node.AddColumnOnce(envalias.FieldEnvID)
 		}
 	}

@@ -57,23 +57,9 @@ func (eac *EnvAliasCreate) SetID(s string) *EnvAliasCreate {
 	return eac
 }
 
-// SetAliasEnvID sets the "alias_env" edge to the Env entity by ID.
-func (eac *EnvAliasCreate) SetAliasEnvID(id string) *EnvAliasCreate {
-	eac.mutation.SetAliasEnvID(id)
-	return eac
-}
-
-// SetNillableAliasEnvID sets the "alias_env" edge to the Env entity by ID if the given value is not nil.
-func (eac *EnvAliasCreate) SetNillableAliasEnvID(id *string) *EnvAliasCreate {
-	if id != nil {
-		eac = eac.SetAliasEnvID(*id)
-	}
-	return eac
-}
-
-// SetAliasEnv sets the "alias_env" edge to the Env entity.
-func (eac *EnvAliasCreate) SetAliasEnv(e *Env) *EnvAliasCreate {
-	return eac.SetAliasEnvID(e.ID)
+// SetEnv sets the "env" edge to the Env entity.
+func (eac *EnvAliasCreate) SetEnv(e *Env) *EnvAliasCreate {
+	return eac.SetEnvID(e.ID)
 }
 
 // Mutation returns the EnvAliasMutation object of the builder.
@@ -163,12 +149,12 @@ func (eac *EnvAliasCreate) createSpec() (*EnvAlias, *sqlgraph.CreateSpec) {
 		_spec.SetField(envalias.FieldIsName, field.TypeBool, value)
 		_node.IsName = value
 	}
-	if nodes := eac.mutation.AliasEnvIDs(); len(nodes) > 0 {
+	if nodes := eac.mutation.EnvIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   envalias.AliasEnvTable,
-			Columns: []string{envalias.AliasEnvColumn},
+			Table:   envalias.EnvTable,
+			Columns: []string{envalias.EnvColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(env.FieldID, field.TypeString),

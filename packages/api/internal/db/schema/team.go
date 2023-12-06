@@ -16,7 +16,7 @@ type Team struct {
 
 func (Team) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).Immutable().Unique(),
+		field.UUID("id", uuid.UUID{}).Immutable().Unique().Annotations(entsql.Default("gen_random_uuid()")),
 		field.Time("created_at").Immutable().Default(time.Now).Annotations(
 			entsql.Default("CURRENT_TIMESTAMP"),
 		),
@@ -29,9 +29,15 @@ func (Team) Fields() []ent.Field {
 
 func (Team) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("users", User.Type).Through("users_teams", UsersTeams.Type),
-		edge.To("team_api_keys", TeamAPIKey.Type),
+		edge.To("users", User.Type).Through("users_teams", UsersTeams.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("team_api_keys", TeamAPIKey.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.From("team_tier", Tier.Type).Ref("teams").Unique().Field("tier").Required(),
 		edge.To("envs", Env.Type),
+	}
+}
+
+func (Team) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		Mixin{},
 	}
 }

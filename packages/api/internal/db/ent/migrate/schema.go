@@ -12,14 +12,22 @@ var (
 	// AccessTokensColumns holds the columns for the "access_tokens" table.
 	AccessTokensColumns = []*schema.Column{
 		{Name: "access_token", Type: field.TypeString, Unique: true},
-		{Name: "user_id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// AccessTokensTable holds the schema information for the "access_tokens" table.
 	AccessTokensTable = &schema.Table{
 		Name:       "access_tokens",
 		Columns:    AccessTokensColumns,
 		PrimaryKey: []*schema.Column{AccessTokensColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "access_tokens_users_access_tokens",
+				Columns:    []*schema.Column{AccessTokensColumns[2]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
 	}
 	// EnvsColumns holds the columns for the "envs" table.
 	EnvsColumns = []*schema.Column{
@@ -64,13 +72,13 @@ var (
 				Symbol:     "env_aliases_envs_env_aliases",
 				Columns:    []*schema.Column{EnvAliasesColumns[2]},
 				RefColumns: []*schema.Column{EnvsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
 	// TeamsColumns holds the columns for the "teams" table.
 	TeamsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "is_default", Type: field.TypeBool},
 		{Name: "is_blocked", Type: field.TypeBool},
@@ -107,7 +115,7 @@ var (
 				Symbol:     "team_api_keys_teams_team_api_keys",
 				Columns:    []*schema.Column{TeamAPIKeysColumns[2]},
 				RefColumns: []*schema.Column{TeamsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -127,23 +135,14 @@ var (
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true, Default: "gen_random_uuid()"},
 		{Name: "email", Type: field.TypeString},
-		{Name: "access_token_users", Type: field.TypeString, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "users_access_tokens_users",
-				Columns:    []*schema.Column{UsersColumns[2]},
-				RefColumns: []*schema.Column{AccessTokensColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
 	}
 	// UsersTeamsColumns holds the columns for the "users_teams" table.
 	UsersTeamsColumns = []*schema.Column{
@@ -161,13 +160,13 @@ var (
 				Symbol:     "users_teams_users_users",
 				Columns:    []*schema.Column{UsersTeamsColumns[1]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "users_teams_teams_teams",
 				Columns:    []*schema.Column{UsersTeamsColumns[2]},
 				RefColumns: []*schema.Column{TeamsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -192,14 +191,21 @@ var (
 )
 
 func init() {
+	AccessTokensTable.ForeignKeys[0].RefTable = UsersTable
+	AccessTokensTable.Annotation = &entsql.Annotation{}
 	EnvsTable.ForeignKeys[0].RefTable = TeamsTable
+	EnvsTable.Annotation = &entsql.Annotation{}
 	EnvAliasesTable.ForeignKeys[0].RefTable = EnvsTable
 	EnvAliasesTable.Annotation = &entsql.Annotation{
 		Table: "env_aliases",
 	}
 	TeamsTable.ForeignKeys[0].RefTable = TiersTable
+	TeamsTable.Annotation = &entsql.Annotation{}
 	TeamAPIKeysTable.ForeignKeys[0].RefTable = TeamsTable
-	UsersTable.ForeignKeys[0].RefTable = AccessTokensTable
+	TeamAPIKeysTable.Annotation = &entsql.Annotation{}
+	TiersTable.Annotation = &entsql.Annotation{}
+	UsersTable.Annotation = &entsql.Annotation{}
 	UsersTeamsTable.ForeignKeys[0].RefTable = UsersTable
 	UsersTeamsTable.ForeignKeys[1].RefTable = TeamsTable
+	UsersTeamsTable.Annotation = &entsql.Annotation{}
 }

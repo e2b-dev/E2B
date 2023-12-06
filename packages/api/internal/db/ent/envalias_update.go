@@ -63,23 +63,9 @@ func (eau *EnvAliasUpdate) SetNillableIsName(b *bool) *EnvAliasUpdate {
 	return eau
 }
 
-// SetAliasEnvID sets the "alias_env" edge to the Env entity by ID.
-func (eau *EnvAliasUpdate) SetAliasEnvID(id string) *EnvAliasUpdate {
-	eau.mutation.SetAliasEnvID(id)
-	return eau
-}
-
-// SetNillableAliasEnvID sets the "alias_env" edge to the Env entity by ID if the given value is not nil.
-func (eau *EnvAliasUpdate) SetNillableAliasEnvID(id *string) *EnvAliasUpdate {
-	if id != nil {
-		eau = eau.SetAliasEnvID(*id)
-	}
-	return eau
-}
-
-// SetAliasEnv sets the "alias_env" edge to the Env entity.
-func (eau *EnvAliasUpdate) SetAliasEnv(e *Env) *EnvAliasUpdate {
-	return eau.SetAliasEnvID(e.ID)
+// SetEnv sets the "env" edge to the Env entity.
+func (eau *EnvAliasUpdate) SetEnv(e *Env) *EnvAliasUpdate {
+	return eau.SetEnvID(e.ID)
 }
 
 // Mutation returns the EnvAliasMutation object of the builder.
@@ -87,9 +73,9 @@ func (eau *EnvAliasUpdate) Mutation() *EnvAliasMutation {
 	return eau.mutation
 }
 
-// ClearAliasEnv clears the "alias_env" edge to the Env entity.
-func (eau *EnvAliasUpdate) ClearAliasEnv() *EnvAliasUpdate {
-	eau.mutation.ClearAliasEnv()
+// ClearEnv clears the "env" edge to the Env entity.
+func (eau *EnvAliasUpdate) ClearEnv() *EnvAliasUpdate {
+	eau.mutation.ClearEnv()
 	return eau
 }
 
@@ -132,12 +118,12 @@ func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := eau.mutation.IsName(); ok {
 		_spec.SetField(envalias.FieldIsName, field.TypeBool, value)
 	}
-	if eau.mutation.AliasEnvCleared() {
+	if eau.mutation.EnvCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   envalias.AliasEnvTable,
-			Columns: []string{envalias.AliasEnvColumn},
+			Table:   envalias.EnvTable,
+			Columns: []string{envalias.EnvColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(env.FieldID, field.TypeString),
@@ -146,12 +132,12 @@ func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		edge.Schema = eau.schemaConfig.EnvAlias
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := eau.mutation.AliasEnvIDs(); len(nodes) > 0 {
+	if nodes := eau.mutation.EnvIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   envalias.AliasEnvTable,
-			Columns: []string{envalias.AliasEnvColumn},
+			Table:   envalias.EnvTable,
+			Columns: []string{envalias.EnvColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(env.FieldID, field.TypeString),
@@ -219,23 +205,9 @@ func (eauo *EnvAliasUpdateOne) SetNillableIsName(b *bool) *EnvAliasUpdateOne {
 	return eauo
 }
 
-// SetAliasEnvID sets the "alias_env" edge to the Env entity by ID.
-func (eauo *EnvAliasUpdateOne) SetAliasEnvID(id string) *EnvAliasUpdateOne {
-	eauo.mutation.SetAliasEnvID(id)
-	return eauo
-}
-
-// SetNillableAliasEnvID sets the "alias_env" edge to the Env entity by ID if the given value is not nil.
-func (eauo *EnvAliasUpdateOne) SetNillableAliasEnvID(id *string) *EnvAliasUpdateOne {
-	if id != nil {
-		eauo = eauo.SetAliasEnvID(*id)
-	}
-	return eauo
-}
-
-// SetAliasEnv sets the "alias_env" edge to the Env entity.
-func (eauo *EnvAliasUpdateOne) SetAliasEnv(e *Env) *EnvAliasUpdateOne {
-	return eauo.SetAliasEnvID(e.ID)
+// SetEnv sets the "env" edge to the Env entity.
+func (eauo *EnvAliasUpdateOne) SetEnv(e *Env) *EnvAliasUpdateOne {
+	return eauo.SetEnvID(e.ID)
 }
 
 // Mutation returns the EnvAliasMutation object of the builder.
@@ -243,9 +215,9 @@ func (eauo *EnvAliasUpdateOne) Mutation() *EnvAliasMutation {
 	return eauo.mutation
 }
 
-// ClearAliasEnv clears the "alias_env" edge to the Env entity.
-func (eauo *EnvAliasUpdateOne) ClearAliasEnv() *EnvAliasUpdateOne {
-	eauo.mutation.ClearAliasEnv()
+// ClearEnv clears the "env" edge to the Env entity.
+func (eauo *EnvAliasUpdateOne) ClearEnv() *EnvAliasUpdateOne {
+	eauo.mutation.ClearEnv()
 	return eauo
 }
 
@@ -318,12 +290,12 @@ func (eauo *EnvAliasUpdateOne) sqlSave(ctx context.Context) (_node *EnvAlias, er
 	if value, ok := eauo.mutation.IsName(); ok {
 		_spec.SetField(envalias.FieldIsName, field.TypeBool, value)
 	}
-	if eauo.mutation.AliasEnvCleared() {
+	if eauo.mutation.EnvCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   envalias.AliasEnvTable,
-			Columns: []string{envalias.AliasEnvColumn},
+			Table:   envalias.EnvTable,
+			Columns: []string{envalias.EnvColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(env.FieldID, field.TypeString),
@@ -332,12 +304,12 @@ func (eauo *EnvAliasUpdateOne) sqlSave(ctx context.Context) (_node *EnvAlias, er
 		edge.Schema = eauo.schemaConfig.EnvAlias
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := eauo.mutation.AliasEnvIDs(); len(nodes) > 0 {
+	if nodes := eauo.mutation.EnvIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   envalias.AliasEnvTable,
-			Columns: []string{envalias.AliasEnvColumn},
+			Table:   envalias.EnvTable,
+			Columns: []string{envalias.EnvColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(env.FieldID, field.TypeString),

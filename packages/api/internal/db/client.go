@@ -33,9 +33,7 @@ func NewClient(ctx context.Context) (*DB, error) {
 	db := drv.DB()
 	db.SetMaxOpenConns(20)
 
-	client := ent.NewClient(ent.Driver(drv), ent.AlternateSchema(ent.SchemaConfig{
-		User: "auth",
-	}))
+	client := ent.NewClient(ent.Driver(drv))
 
 	return &DB{Client: client, ctx: ctx}, nil
 }
