@@ -42,6 +42,5 @@ profiler:
 diff-migrations:
 	atlas migrate diff --env local
 
-# TODO: make sure nothing breaks
-#migrate:
-#	atlas migrate apply --env local --to $(SUPABASE_CONNECTION_STRING)
+migrate:
+	atlas migrate apply --env local --url $(POSTGRES_CONNECTION_STRING)
