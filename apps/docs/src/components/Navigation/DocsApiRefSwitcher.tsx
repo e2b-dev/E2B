@@ -25,8 +25,8 @@ function DocsApiRefSwitcher() {
         backdrop-blur
         bg-red-500/0.2
         z-10
-        border-b
-        border-white/7.5
+        lg:border-b
+        lg:border-white/7.5
       ">
       <Link
         href="/docs"
