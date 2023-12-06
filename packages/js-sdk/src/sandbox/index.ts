@@ -37,7 +37,7 @@ export interface Action<S extends Sandbox = Sandbox, T = {
 
 /**
  * E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
- * 
+ *
  * That means:
  * - Access to Linux OS
  * - Using filesystem (create, list, and delete files and dirs)
@@ -47,19 +47,19 @@ export interface Action<S extends Sandbox = Sandbox, T = {
  *
  * Check usage docs - https://e2b.dev/docs/sandbox/overview
  *
- * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants. 
- * 
+ * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
+ *
  * Use the {@link Sandbox.create} method to create a new sandbox.
- * 
+ *
  * @example
  * ```ts
  * import { Sandbox } from '@e2b/sdk'
- * 
+ *
  * const sandbox = await Sandbox.create()
- * 
+ *
  * await sandbox.close()
  * ```
- * 
+ *
  */
 export class Sandbox extends SandboxConnection {
   /**
@@ -456,7 +456,7 @@ export class Sandbox extends SandboxConnection {
   static async create<S extends Sandbox>(): Promise<S>;
   /**
    * Creates a new Sandbox from the template with the specified ID.
-   * @param template Sandbox template ID or name
+   * @param template - Sandbox template ID or name
    * @returns New Sandbox
    *
    * @example
@@ -467,7 +467,7 @@ export class Sandbox extends SandboxConnection {
   static async create<S extends Sandbox>(template: string): Promise<S>;
   /**
    * Creates a new Sandbox from the specified options.
-   * @param opts Sandbox options
+   * @param opts - Sandbox options
    * @returns New Sandbox
    *
    * @example
@@ -489,34 +489,34 @@ export class Sandbox extends SandboxConnection {
 
   /**
    * Reconnects to an existing Sandbox.
-   * @param sandboxID Sandbox ID
+   * @param sandboxID - Sandbox ID
    * @returns Existing Sandbox
    *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
    * const sandboxID = sandbox.id
-   * 
+   *
    * await sandbox.keepAlive(300 * 1000)
    * await sandbox.close()
-   * 
+   *
    * const reconnectedSandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
   static async reconnect(sandboxID: string): Promise<Sandbox>;
   /**
    * Reconnects to an existing Sandbox.
-   * @param opts Sandbox options
+   * @param opts - Sandbox options
    * @returns Existing Sandbox
    *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
    * const sandboxID = sandbox.id
-   * 
+   *
    * await sandbox.keepAlive(300 * 1000)
    * await sandbox.close()
-   * 
+   *
    * const reconnectedSandbox = await Sandbox.reconnect({
    *   sandboxID,
    * })
@@ -550,7 +550,7 @@ export class Sandbox extends SandboxConnection {
    *
    * You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
    *
-   * @param action Action handler
+   * @param action - Action handler
    * @returns Sandbox
    *
    * @example
@@ -565,8 +565,8 @@ export class Sandbox extends SandboxConnection {
    *
    * You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
    *
-   * @param name Action name
-   * @param action Action handler
+   * @param name - Action name
+   * @param action - Action handler
    * @returns Sandbox
    *
    * @example
@@ -602,7 +602,7 @@ export class Sandbox extends SandboxConnection {
 
   /**
    * Remove an action.
-   * @param name Action name
+   * @param name - Action name
    * @returns Sandbox
    *
    * @example
@@ -654,8 +654,8 @@ export class Sandbox extends SandboxConnection {
 
   /**
    * Downloads a file from the sandbox.
-   * @param remotePath Path to a file on the sandbox
-   * @param format Format of the downloaded file
+   * @param remotePath - Path to a file on the sandbox
+   * @param format - Format of the downloaded file
    * @returns File content
    *
    * @example

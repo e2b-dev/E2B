@@ -13,13 +13,13 @@ export enum CodeRuntime {
  * without any need to manage lifecycle of the sandbox.
  * `runCode` automatically loads the E2B API key from the `E2B_API_KEY` environment variable.
  *
- * @param runtime The runtime to use when running the code. Can be one of the following:
+ * @param runtime - The runtime to use when running the code. Can be one of the following:
  * - "Node16"
  * - "Python3"
  *
  * **Let us know if you need support for other runtimes.**
- * @param code The code to run
- * @param opts Optional parameters to pass
+ * @param code - The code to run
+ * @param opts - Optional parameters to pass
  * @returns
  */
 export async function runCode(

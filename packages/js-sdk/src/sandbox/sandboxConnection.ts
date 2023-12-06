@@ -71,13 +71,13 @@ const refreshSandbox = withAPIKey(
 export class SandboxConnection {
   /**
    * Default working directory used in the sandbox.
-   * 
+   *
    * You can change the working directory by setting the `cwd` property.
    **/
   cwd: string | undefined
   /**
    * Default environment variables used in the sandbox.
-   * 
+   *
    * You can change the environment variables by setting the `envVars` property.
    **/
   envVars: EnvVars
@@ -119,7 +119,7 @@ export class SandboxConnection {
 
   /**
    * ID of the sandbox.
-   * 
+   *
    * You can use this ID to reconnect to the sandbox later.
    */
   get id() {
@@ -134,7 +134,7 @@ export class SandboxConnection {
    * Keep the sandbox alive for the specified duration.
    *
    * `keepAlive` method requires `this` context - you may need to bind it.
-   * @param duration Duration in milliseconds. Must be between 0 and 3600000 milliseconds
+   * @param duration - Duration in milliseconds. Must be between 0 and 3600000 milliseconds
    * @returns Promise that resolves when the sandbox is kept alive
    */
   public async keepAlive(duration: number) {
@@ -157,7 +157,7 @@ export class SandboxConnection {
    *
    * `getHostname` method requires `this` context - you may need to bind it.
    *
-   * @param port Specify if you want to connect to a specific port of the sandbox
+   * @param port - Specify if you want to connect to a specific port of the sandbox
    * @returns Hostname of the sandbox or sandbox's port
    */
   getHostname(port?: number) {
@@ -186,7 +186,7 @@ export class SandboxConnection {
 
   /**
    * The function decides whether to use the secure or insecure protocol.
-   * @param baseProtocol Specify the specific protocol you want to use. Do not include the `s` in `https` or `wss`.
+   * @param baseProtocol - Specify the specific protocol you want to use. Do not include the `s` in `https` or `wss`.
    * @returns Protocol for the connection to the sandbox
    */
   getProtocol(baseProtocol: string = 'http') {
@@ -316,8 +316,8 @@ export class SandboxConnection {
    * Open a connection to a new sandbox
    *
    * `open` method requires `this` context - you may need to bind it.
-   * @param opts Call options
-   * @param {timeout} [opts.timeout] Timeout for sandbox to open in milliseconds (default is 60 seconds)
+   * @param opts - all options
+   * @param {timeout} [opts.timeout] - Timeout for sandbox to open in milliseconds (default is 60 seconds)
    */
   protected async _open(opts: CallOpts) {
     const open = async () => {

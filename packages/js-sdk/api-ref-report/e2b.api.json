@@ -125,6 +125,11 @@
         {
           "tagName": "@preapproved",
           "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@description",
+          "syntaxKind": "block",
+          "allowMultiple": true
         }
       ],
       "supportForTags": {
@@ -155,7 +160,8 @@
         "@virtual": true,
         "@betaDocumentation": true,
         "@internalRemarks": true,
-        "@preapproved": true
+        "@preapproved": true,
+        "@description": true
       },
       "reportUnsupportedHtmlElements": false
     }
@@ -1605,7 +1611,7 @@
             {
               "kind": "MethodSignature",
               "canonicalReference": "@e2b/sdk!FilesystemManager#list:member(1)",
-              "docComment": "/**\n * List files in a directory.\n *\n * @param path - Path to a directory\n *\n * @param opts - Call options\n *\n * @param  - {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)\n *\n * @returns Array of files in a directory\n */\n",
+              "docComment": "/**\n * List files in a directory.\n *\n * @param path - Path to a directory\n *\n * @param opts - Call options\n *\n * @param  - {timeout} [opts.timeout] - Timeout for call in milliseconds (default is 60 seconds)\n *\n * @returns Array of files in a directory\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -1681,7 +1687,7 @@
             {
               "kind": "MethodSignature",
               "canonicalReference": "@e2b/sdk!FilesystemManager#makeDir:member(1)",
-              "docComment": "/**\n * Creates a new directory and all directories along the way if needed on the specified pth.\n *\n * @param path - Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.\n *\n * @param opts - Call options\n *\n * @param  - {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)\n */\n",
+              "docComment": "/**\n * Creates a new directory and all directories along the way if needed on the specified pth.\n *\n * @param path - Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.\n *\n * @param opts - Call options\n *\n * @param  - {timeout} [opts.timeout] - Timeout for call in milliseconds (default is 60 seconds)\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -1748,7 +1754,7 @@
             {
               "kind": "MethodSignature",
               "canonicalReference": "@e2b/sdk!FilesystemManager#read:member(1)",
-              "docComment": "/**\n * Reads the whole content of a file.\n *\n * @param path - Path to a file\n *\n * @param opts - Call options\n *\n * @param  - {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)\n *\n * @returns Content of a file\n */\n",
+              "docComment": "/**\n * Reads the whole content of a file.\n *\n * @param path - Path to a file\n *\n * @param opts - Call options\n *\n * @param  - {timeout} [opts.timeout] - Timeout for call in milliseconds (default is 60 seconds)\n *\n * @returns Content of a file\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -1874,7 +1880,7 @@
             {
               "kind": "MethodSignature",
               "canonicalReference": "@e2b/sdk!FilesystemManager#remove:member(1)",
-              "docComment": "/**\n * Removes a file or a directory.\n *\n * @param path - Path to a file or a directory\n *\n * @param opts - Call options\n *\n * @param  - {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)\n */\n",
+              "docComment": "/**\n * Removes a file or a directory.\n *\n * @param path - Path to a file or a directory\n *\n * @param opts - Call options\n *\n * @param  - {timeout} [opts.timeout] - Timeout for call in milliseconds (default is 60 seconds)\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -1987,7 +1993,7 @@
             {
               "kind": "MethodSignature",
               "canonicalReference": "@e2b/sdk!FilesystemManager#write:member(1)",
-              "docComment": "/**\n * Writes content to a new file on path.\n *\n * @param path - Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'\n *\n * @param content - Content to write to a new file\n *\n * @param opts - Call options\n *\n * @param  - {timeout} [opts.timeout] Timeout for call in milliseconds (default is 60 seconds)\n */\n",
+              "docComment": "/**\n * Writes content to a new file on path.\n *\n * @param path - Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'\n *\n * @param content - Content to write to a new file\n *\n * @param opts - Call options\n *\n * @param  - {timeout} [opts.timeout] - Timeout for call in milliseconds (default is 60 seconds)\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",

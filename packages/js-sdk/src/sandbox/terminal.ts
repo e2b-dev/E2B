@@ -71,8 +71,8 @@ export class Terminal {
   /**
    * Resizes the terminal tty.
    *
-   * @param cols Number of columns
-   * @param rows Number of rows
+   * @param cols - Number of columns
+   * @param rows - Number of rows
    */
   async resize({ cols, rows }: { cols: number; rows: number }): Promise<void> {
     await this.sandbox._call(terminalService, 'resize', [
