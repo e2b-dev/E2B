@@ -19,9 +19,9 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/db"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 )
 
 type APIStore struct {
@@ -207,14 +207,14 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
 
-func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (ent.Team, error) {
+func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (models.Team, error) {
 	team, err := a.supabase.GetTeamAuth(ctx, apiKey)
 	if err != nil {
-		return ent.Team{}, fmt.Errorf("failed to get get team from db for api key: %w", err)
+		return models.Team{}, fmt.Errorf("failed to get get team from db for api key: %w", err)
 	}
 
 	if team == nil {
-		return ent.Team{}, fmt.Errorf("failed to get a team from api key")
+		return models.Team{}, fmt.Errorf("failed to get a team from api key")
 	}
 
 	return *team, nil

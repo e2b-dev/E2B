@@ -3,14 +3,16 @@ package db
 import (
 	"context"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent/accesstoken"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+
 	"github.com/google/uuid"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/accesstoken"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/team"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/teamapikey"
 )
 
-func (db *DB) GetTeamAuth(ctx context.Context, apiKey string) (*ent.Team, error) {
+func (db *DB) GetTeamAuth(ctx context.Context, apiKey string) (*models.Team, error) {
 	result, err := db.
 		Client.
 		TeamAPIKey.

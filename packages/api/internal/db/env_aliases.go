@@ -3,8 +3,9 @@ package db
 import (
 	"context"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent/envalias"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
 )
 
 func (db *DB) DeleteEnvAlias(ctx context.Context, alias string) error {
@@ -63,7 +64,7 @@ func (db *DB) reserveEnvAlias(ctx context.Context, alias string) error {
 
 // rollback calls to tx.Rollback and wraps the given error
 // with the rollback error if occurred.
-func rollback(tx *ent.Tx, err error) error {
+func rollback(tx *models.Tx, err error) error {
 	if rerr := tx.Rollback(); rerr != nil {
 		err = fmt.Errorf("%w: %w", err, rerr)
 	}
@@ -127,7 +128,7 @@ func (db *DB) EnsureEnvAlias(ctx context.Context, alias, envID string) error {
 		Where(envalias.EnvID(envID), envalias.IsName(true), envalias.ID(alias)).
 		Only(ctx)
 
-	notFound := ent.IsNotFound(err)
+	notFound := models.IsNotFound(err)
 	if notFound {
 		err = db.reserveEnvAlias(ctx, alias)
 		if err != nil {
