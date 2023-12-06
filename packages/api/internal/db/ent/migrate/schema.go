@@ -25,7 +25,7 @@ var (
 				Symbol:     "access_tokens_users_access_tokens",
 				Columns:    []*schema.Column{AccessTokensColumns[2]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -72,7 +72,7 @@ var (
 				Symbol:     "env_aliases_envs_env_aliases",
 				Columns:    []*schema.Column{EnvAliasesColumns[2]},
 				RefColumns: []*schema.Column{EnvsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -115,7 +115,7 @@ var (
 				Symbol:     "team_api_keys_teams_team_api_keys",
 				Columns:    []*schema.Column{TeamAPIKeysColumns[2]},
 				RefColumns: []*schema.Column{TeamsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -160,13 +160,13 @@ var (
 				Symbol:     "users_teams_users_users",
 				Columns:    []*schema.Column{UsersTeamsColumns[1]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "users_teams_teams_teams",
 				Columns:    []*schema.Column{UsersTeamsColumns[2]},
 				RefColumns: []*schema.Column{TeamsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
