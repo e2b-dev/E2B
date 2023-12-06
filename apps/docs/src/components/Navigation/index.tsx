@@ -13,7 +13,8 @@ import { remToPx } from '@/lib/remToPx'
 import { Auth } from '@/components/Auth'
 import { Feedback } from '@/components/Feedback'
 
-import { routes } from './routes'
+import { docsRoutes } from './docsRoutes'
+import { apiRefRoutes } from './apiRefRoutes'
 import DocsApiRefSwitcher from './DocsApiRefSwitcher'
 
 interface NavGroup {
@@ -263,6 +264,9 @@ function NavigationGroup({ group, className }) {
 
 
 export function Navigation(props) {
+  const pathname = usePathname()
+  const isApiRefActive = pathname.startsWith('/docs/reference');
+
   return (
     <nav {...props}>
       <DocsApiRefSwitcher />
@@ -275,16 +279,27 @@ export function Navigation(props) {
           lg:px-6
           lg:pb-8
         ">
-        {/* <TopLevelNavItem href="/">API</TopLevelNavItem>
-        <TopLevelNavItem href="#">Documentation</TopLevelNavItem>
-        <TopLevelNavItem href="#">Support</TopLevelNavItem> */}
-        {routes.map((group, groupIndex) => (
-          <NavigationGroup
-            key={group.title}
-            group={group}
-            className={groupIndex === 0 && 'md:mt-0'}
-          />
-        ))}
+        {!isApiRefActive ? (
+          <>
+            {docsRoutes.map((group, groupIndex) => (
+              <NavigationGroup
+                key={group.title}
+                group={group}
+                className={groupIndex === 0 && 'md:mt-0'}
+              />
+            ))}
+          </>
+        ) : (
+          <>
+            {apiRefRoutes.map((group, groupIndex) => (
+              <NavigationGroup
+                key={group.title}
+                group={group}
+                className={groupIndex === 0 && 'md:mt-0'}
+              />
+            ))}
+          </>
+        )}
         <li className="z-10 mt-6">
           <Feedback className="w-full" />
         </li>

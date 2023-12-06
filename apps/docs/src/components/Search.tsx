@@ -11,7 +11,7 @@ import {
 } from '@algolia/autocomplete-core'
 import clsx from 'clsx'
 
-import { routes } from '@/components/Navigation/routes'
+import { docsRoutes } from '@/components/Navigation/docsRoutes'
 import { type Result } from '@/mdx/search.mjs'
 import { DialogAnimated } from '@/components/DialogAnimated'
 
@@ -152,7 +152,7 @@ function LoadingIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
           y2="15"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="currentColor"/>
+          <stop stopColor="currentColor" />
           <stop
             offset="1"
             stopColor="currentColor"
@@ -176,12 +176,12 @@ function HighlightQuery({ text, query }: { text: string; query: string }) {
 }
 
 function SearchResult({
-                        result,
-                        resultIndex,
-                        autocomplete,
-                        collection,
-                        query,
-                      }: {
+  result,
+  resultIndex,
+  autocomplete,
+  collection,
+  query,
+}: {
   result: Result
   resultIndex: number
   autocomplete: Autocomplete
@@ -190,7 +190,7 @@ function SearchResult({
 }) {
   const id = useId()
 
-  const sectionTitle = routes.find(section =>
+  const sectionTitle = docsRoutes.find(section =>
     section.links.find(link => link.href === result.url.split('#')[0]),
   )?.title
   const hierarchy = [sectionTitle, result.pageTitle].filter(
@@ -249,10 +249,10 @@ function SearchResult({
 }
 
 function SearchResults({
-                         autocomplete,
-                         query,
-                         collection,
-                       }: {
+  autocomplete,
+  query,
+  collection,
+}: {
   autocomplete: Autocomplete
   query: string
   collection: AutocompleteCollection<Result>
@@ -260,7 +260,7 @@ function SearchResults({
   if (collection.items.length === 0) {
     return (
       <div className="p-6 text-center">
-        <NoResultsIcon className="mx-auto h-5 w-5 stroke-zinc-900 dark:stroke-zinc-600"/>
+        <NoResultsIcon className="mx-auto h-5 w-5 stroke-zinc-900 dark:stroke-zinc-600" />
         <p className="mt-2 text-xs text-zinc-700 dark:text-zinc-400">
           Nothing found for{' '}
           <strong className="break-words font-semibold text-zinc-900 dark:text-white">
@@ -300,7 +300,7 @@ const SearchInput = forwardRef<
 
   return (
     <div className="group relative flex h-12">
-      <SearchIcon className="pointer-events-none absolute left-3 top-0 h-full w-5 stroke-zinc-500"/>
+      <SearchIcon className="pointer-events-none absolute left-3 top-0 h-full w-5 stroke-zinc-500" />
       <input
         ref={inputRef}
         className={clsx(
@@ -329,7 +329,7 @@ const SearchInput = forwardRef<
       {autocompleteState.status === 'stalled' && (
         <div className="absolute inset-y-0 right-3 flex items-center">
           <LoadingIcon
-            className="h-5 w-5 animate-spin stroke-zinc-200 text-zinc-900 dark:stroke-zinc-800 dark:text-brand-400"/>
+            className="h-5 w-5 animate-spin stroke-zinc-200 text-zinc-900 dark:stroke-zinc-800 dark:text-brand-400" />
         </div>
       )}
     </div>
@@ -337,10 +337,10 @@ const SearchInput = forwardRef<
 })
 
 function SearchDialog({
-                        open,
-                        setOpen,
-                        className,
-                      }: {
+  open,
+  setOpen,
+  className,
+}: {
   open: boolean
   setOpen: (open: boolean) => void
   className?: string
@@ -440,7 +440,7 @@ function useSearchProps() {
       setOpen: useCallback(
         (open: boolean) => {
           const { width = 0, height = 0 } =
-          buttonRef.current?.getBoundingClientRect() ?? {}
+            buttonRef.current?.getBoundingClientRect() ?? {}
           if (!open || (width !== 0 && height !== 0)) {
             setOpen(open)
           }
@@ -466,7 +466,7 @@ export function Search() {
         className="hidden h-8 w-full items-center gap-2 whitespace-nowrap rounded-full bg-white pl-2 pr-3 text-sm text-zinc-500 ring-1 ring-zinc-900/10 transition hover:ring-zinc-900/20 ui-not-focus-visible:outline-none dark:bg-white/5 dark:text-zinc-400 dark:ring-inset dark:ring-white/10 dark:hover:ring-white/20 lg:flex"
         {...buttonProps}
       >
-        <SearchIcon className="h-5 w-5 stroke-current"/>
+        <SearchIcon className="h-5 w-5 stroke-current" />
         Find something...
         <kbd className="ml-auto text-2xs text-zinc-400 dark:text-zinc-500">
           <kbd className="font-sans">{modifierKey}</kbd>
@@ -494,7 +494,7 @@ export function MobileSearch() {
         aria-label="Find something..."
         {...buttonProps}
       >
-        <SearchIcon className="h-5 w-5 stroke-zinc-900 dark:stroke-white"/>
+        <SearchIcon className="h-5 w-5 stroke-zinc-900 dark:stroke-white" />
       </button>
       <Suspense fallback={null}>
         <SearchDialog

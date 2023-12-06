@@ -22,7 +22,7 @@ import {
 import logoOpenAI from '@/images/logos/openai.svg'
 import Image from 'next/image'
 
-export const routes = [
+export const docsRoutes = [
   {
     title: 'Overview',
     links: [

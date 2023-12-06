@@ -9,9 +9,9 @@ import {
 
 function DocsApiRefSwitcher() {
   const pathname = usePathname()
+  console.log('PATHNAME', pathname)
   // TODO: We'll start handling routes differently soon (everything is prefixed with /docs at the moment)
-  const isDocsActive = !pathname.startsWith('/api');
-  const isApiActive = pathname.startsWith('/api');
+  const isApiRefActive = pathname.startsWith('/docs/reference');
 
   return (
     <div className="
@@ -29,13 +29,13 @@ function DocsApiRefSwitcher() {
         lg:border-white/7.5
       ">
       <Link
-        href="/docs"
+        href="/"
         className="group"
       >
         <div className="flex items-center gap-1">
           <Book
             className={clsx(
-              isDocsActive ? 'text-brand-300' : 'text-zinc-400',
+              !isApiRefActive ? 'text-brand-300' : 'text-zinc-400',
               'group-hover:text-brand-300',
               'transition-all',
             )}
@@ -43,7 +43,8 @@ function DocsApiRefSwitcher() {
           />
           <span
             className={clsx(
-              isDocsActive ? 'text-brand-300' : 'text-zinc-400',
+              !isApiRefActive ? 'text-brand-300' : 'text-zinc-400',
+              'group-hover:text-brand-300',
               'font-medium',
               'transition-all',
             )}>
@@ -54,11 +55,11 @@ function DocsApiRefSwitcher() {
 
       <Link
         className="group"
-        href="/api"
+        href="/reference"
       >
         <div className="flex items-center gap-1.5">
           <div className={clsx(
-            isApiActive ? 'bg-brand-700' : 'bg-zinc-700',
+            isApiRefActive ? 'bg-brand-700' : 'bg-zinc-700',
             'group-hover:bg-brand-700',
             'flex',
             'items-center',
@@ -71,7 +72,7 @@ function DocsApiRefSwitcher() {
             <span className="font-bold font-mono text-white-100 text-[11px] relative top-px">API</span>
           </div>
           <span className={clsx(
-            isApiActive ? 'text-brand-300' : 'text-zinc-400',
+            isApiRefActive ? 'text-brand-300' : 'text-zinc-400',
             'group-hover:text-brand-300',
             'transition-all',
             'font-medium',
