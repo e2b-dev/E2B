@@ -43,12 +43,10 @@ export function Layout({
               lg:block
               lg:w-[var(--sidebar-nav-width)]
               lg:overflow-y-auto
-              lg:px-6
-              lg:pb-8
             "
           >
             <Header />
-            <Navigation className="hidden lg:my-4 lg:block" />
+            <Navigation className="hidden lg:block" />
           </div>
         </motion.header>
         {shouldShowBanner && <Banner />}

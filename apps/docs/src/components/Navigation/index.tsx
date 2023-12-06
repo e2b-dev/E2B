@@ -12,7 +12,9 @@ import { Tag } from '@/components/Tag'
 import { remToPx } from '@/lib/remToPx'
 import { Auth } from '@/components/Auth'
 import { Feedback } from '@/components/Feedback'
+
 import { routes } from './routes'
+import DocsApiRefSwitcher from './DocsApiRefSwitcher'
 
 interface NavGroup {
   title: string
@@ -29,9 +31,9 @@ function useInitialValue<T>(value: T, condition = true) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function TopLevelNavItem({
-                           href,
-                           children,
-                         }: {
+  href,
+  children,
+}: {
   href: string
   children: React.ReactNode
 }) {
@@ -48,15 +50,15 @@ function TopLevelNavItem({
 }
 
 function NavLink({
-                   className,
-                   href,
-                   children,
-                   tag,
-                   icon,
-                   active = false,
-                   isAnchorLink = false,
-                   isFontMono = false,
-                 }: {
+  className,
+  href,
+  children,
+  tag,
+  icon,
+  active = false,
+  isAnchorLink = false,
+  isFontMono = false,
+}: {
   className?: string
   href: string
   children: React.ReactNode
@@ -263,7 +265,16 @@ function NavigationGroup({ group, className }) {
 export function Navigation(props) {
   return (
     <nav {...props}>
-      <ul role="list">
+      <DocsApiRefSwitcher />
+      <ul
+        role="list"
+        className="
+          relative
+          top-8
+          lg:top-16
+          lg:px-6
+          lg:pb-8
+        ">
         {/* <TopLevelNavItem href="/">API</TopLevelNavItem>
         <TopLevelNavItem href="#">Documentation</TopLevelNavItem>
         <TopLevelNavItem href="#">Support</TopLevelNavItem> */}
@@ -275,7 +286,7 @@ export function Navigation(props) {
           />
         ))}
         <li className="z-10 mt-6">
-          <Feedback className="w-full"/>
+          <Feedback className="w-full" />
         </li>
         <li
           /* -1.5rem to stretch outside the padding of the parent list */
@@ -285,7 +296,7 @@ export function Navigation(props) {
             min-[540px]:hidden
           "
         >
-          <Auth/>
+          <Auth />
         </li>
       </ul>
     </nav>
