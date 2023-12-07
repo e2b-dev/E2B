@@ -1144,45 +1144,6 @@ export class MarkdownDocumenter {
     return new DocTableCell({ configuration }, section.nodes);
   }
 
-  // Disable breadcrumbs
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private _writeBreadcrumb(output: DocSection, apiItem: ApiItem): void {
-    //   const configuration: TSDocConfiguration = this._tsdocConfiguration;
-
-    //   output.appendNodeInParagraph(
-    //     new DocLinkTag({
-    //       configuration,
-    //       tagName: '@link',
-    //       linkText: 'Home',
-    //       urlDestination: this._getLinkFilenameForApiItem(this._apiModel)
-    //     })
-    //   );
-
-    //   for (const hierarchyItem of apiItem.getHierarchy()) {
-    //     switch (hierarchyItem.kind) {
-    //       case ApiItemKind.Model:
-    //       case ApiItemKind.EntryPoint:
-    //         // We don't show the model as part of the breadcrumb because it is the root-level container.
-    //         // We don't show the entry point because today API Extractor doesn't support multiple entry points;
-    //         // this may change in the future.
-    //         break;
-    //       default:
-    //         output.appendNodesInParagraph([
-    //           new DocPlainText({
-    //             configuration,
-    //             text: ' > '
-    //           }),
-    //           new DocLinkTag({
-    //             configuration,
-    //             tagName: '@link',
-    //             linkText: hierarchyItem.displayName,
-    //             urlDestination: this._getLinkFilenameForApiItem(hierarchyItem)
-    //           })
-    //         ]);
-    //     }
-    //   }
-  }
-
   private _writeAlphaWarning(output: DocSection): void {
     const configuration: TSDocConfiguration = this._tsdocConfiguration;
     const betaWarning: string =
