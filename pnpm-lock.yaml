@@ -328,6 +328,25 @@ importers:
         specifier: ^3.62.0
         version: 3.62.0
 
+  packages/js-docgen:
+    dependencies:
+      '@microsoft/api-documenter':
+        specifier: ^7.23.14
+        version: 7.23.14
+      '@microsoft/api-extractor-model':
+        specifier: ^7.28.3
+        version: 7.28.3
+      '@microsoft/tsdoc':
+        specifier: ^0.14.2
+        version: 0.14.2
+      '@rushstack/node-core-library':
+        specifier: ^3.62.0
+        version: 3.62.0
+    devDependencies:
+      typescript:
+        specifier: ^5.3.3
+        version: 5.3.3
+
   packages/js-sdk:
     dependencies:
       normalize-path:
@@ -7018,7 +7037,7 @@ packages:
       pretty-ms: 8.0.0
       strip-json-comments: 5.0.1
       summary: 2.1.0
-      typescript: 5.2.2
+      typescript: 5.3.3
       zod: 3.22.2
       zod-validation-error: 1.5.0(zod@3.22.2)
     dev: true
@@ -7045,7 +7064,7 @@ packages:
       pretty-ms: 8.0.0
       strip-json-comments: 5.0.1
       summary: 2.1.0
-      typescript: 5.3.2
+      typescript: 5.3.3
       zod: 3.22.4
       zod-validation-error: 1.5.0(zod@3.22.4)
     transitivePeerDependencies:

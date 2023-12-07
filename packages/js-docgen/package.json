@@ -2,7 +2,7 @@
   "name": "docgen",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/generate.js",
   "type": "module",
   "license": "AGPL-version-3.0",
   "private": false,
@@ -31,5 +31,8 @@
     "@microsoft/api-extractor-model": "^7.28.3",
     "@microsoft/tsdoc": "^0.14.2",
     "@rushstack/node-core-library": "^3.62.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
   }
 }

@@ -191,7 +191,7 @@
      * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: "<projectFolder>/temp/<unscopedPackageName>.api.json"
      */
-    "apiJsonFilePath": "docs/<unscopedPackageName>.api.json"
+    "apiJsonFilePath": "api-extractor/<unscopedPackageName>.api.json"
     /**
      * Whether "forgotten exports" should be included in the doc model file. Forgotten exports are declarations
      * flagged with `ae-forgotten-export` warnings. See https://api-extractor.com/pages/messages/ae-forgotten-export/ to
