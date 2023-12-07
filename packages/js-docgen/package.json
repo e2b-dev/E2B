@@ -1,0 +1,35 @@
+{
+  "name": "docgen",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "license": "AGPL-version-3.0",
+  "private": false,
+  "engines": {
+    "node": ">= 14.0.0",
+    "npm": ">= 6.0.0"
+  },
+  "homepage": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": "",
+  "keywords": [],
+  "author": {
+    "name": "",
+    "email": "",
+    "url": ""
+  },
+  "contributors": [],
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@microsoft/api-documenter": "^7.23.14",
+    "@microsoft/api-extractor-model": "^7.28.3",
+    "@microsoft/tsdoc": "^0.14.2",
+    "@rushstack/node-core-library": "^3.62.0"
+  }
+}

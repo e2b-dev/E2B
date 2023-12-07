@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "target": "es6",
+    "lib": [
+      "dom",
+      "ESNext"
+    ],
+    "sourceMap": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+  },
+  "include": [
+    "src",
+  ],
+  "exclude": [
+    "api-extractor.json",
+    "api-ref-report",
+    "api-ref-docs",
+    "dist",
+    "node_modules",
+    "tsup.config.js",
+    "tsconfig.js",
+    "tsconfig.apiref.json"
+  ]
+}

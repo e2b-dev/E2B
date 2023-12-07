@@ -1,6 +1,10 @@
 vale-styles
 .vercel
 
+# Docs
+temp
+etc
+
 # Logs
 logs
 *.log
