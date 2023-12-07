@@ -16,9 +16,9 @@ runPython(code: string, opts?: RunPythonOpts<this>): Promise<{
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  code | string |  |
-|  opts | [RunPythonOpts](./sdk.runpythonopts.md)<!-- -->&lt;this&gt; | _(Optional)_ |
+|  opts | [RunPythonOpts](./sdk.runpythonopts.md)&lt;this&gt; | _(Optional)_ |
 
 **Returns:**
 
-Promise&lt;&#123; stdout: string; stderr: string; artifacts: [Artifact](./sdk.artifact.md)<!-- -->&lt;[DataAnalysis](./sdk.dataanalysis.md)<!-- -->&gt;\[\]; &#125;&gt;
+Promise&lt;&#123; stdout: string; stderr: string; artifacts: [Artifact](./sdk.artifact.md)&lt;[DataAnalysis](./sdk.dataanalysis.md)&gt;\[\]; &#125;&gt;
 

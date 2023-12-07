@@ -10,5 +10,5 @@ wait(): Promise<TerminalOutput>;
 ```
 **Returns:**
 
-Promise&lt;[TerminalOutput](./sdk.terminaloutput.md)<!-- -->&gt;
+Promise&lt;[TerminalOutput](./sdk.terminaloutput.md)&gt;
 

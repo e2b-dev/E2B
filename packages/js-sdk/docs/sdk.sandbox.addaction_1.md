@@ -18,7 +18,7 @@ addAction<T = {
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  name | string | Action name |
-|  action | [Action](./sdk.action.md)<!-- -->&lt;this, T&gt; | Action handler |
+|  action | [Action](./sdk.action.md)&lt;this, T&gt; | Action handler |
 
 **Returns:**
 

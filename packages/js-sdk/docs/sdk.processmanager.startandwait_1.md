@@ -17,7 +17,7 @@ startAndWait(opts: ProcessOpts): Promise<ProcessOutput>;
 
 **Returns:**
 
-Promise&lt;[ProcessOutput](./sdk.processoutput.md)<!-- -->&gt;
+Promise&lt;[ProcessOutput](./sdk.processoutput.md)&gt;
 
 New process
 

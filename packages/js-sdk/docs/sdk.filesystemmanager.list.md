@@ -18,7 +18,7 @@ list(path: string, opts?: CallOpts): Promise<FileInfo[]>;
 
 **Returns:**
 
-Promise&lt;[FileInfo](./sdk.fileinfo.md)<!-- -->\[\]&gt;
+Promise&lt;[FileInfo](./sdk.fileinfo.md)\[\]&gt;
 
 Array of files in a directory
 

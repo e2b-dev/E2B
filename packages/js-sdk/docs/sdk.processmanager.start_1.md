@@ -17,7 +17,7 @@ start(opts: ProcessOpts): Promise<Process>;
 
 **Returns:**
 
-Promise&lt;[Process](./sdk.process.md)<!-- -->&gt;
+Promise&lt;[Process](./sdk.process.md)&gt;
 
 New process
 

@@ -19,7 +19,7 @@ declare class Process
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [finished](./sdk.process.finished.md) | <code>readonly</code> | Promise&lt;[ProcessOutput](./sdk.processoutput.md)<!-- -->&gt; |  |
+|  [finished](./sdk.process.finished.md) | <code>readonly</code> | Promise&lt;[ProcessOutput](./sdk.processoutput.md)&gt; |  |
 |  [output](./sdk.process.output.md) | <code>readonly</code> | [ProcessOutput](./sdk.processoutput.md) |  |
 |  [processID](./sdk.process.processid.md) | <code>readonly</code> | string |  |
 

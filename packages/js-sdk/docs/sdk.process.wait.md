@@ -10,5 +10,5 @@ wait(): Promise<ProcessOutput>;
 ```
 **Returns:**
 
-Promise&lt;[ProcessOutput](./sdk.processoutput.md)<!-- -->&gt;
+Promise&lt;[ProcessOutput](./sdk.processoutput.md)&gt;
 

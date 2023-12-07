@@ -17,7 +17,7 @@ static reconnect(sandboxID: string): Promise<Sandbox>;
 
 **Returns:**
 
-Promise&lt;[Sandbox](./sdk.sandbox.md)<!-- -->&gt;
+Promise&lt;[Sandbox](./sdk.sandbox.md)&gt;
 
 Existing Sandbox
 

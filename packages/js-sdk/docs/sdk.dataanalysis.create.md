@@ -8,5 +8,5 @@ static create(): Promise<DataAnalysis>;
 ```
 **Returns:**
 
-Promise&lt;[DataAnalysis](./sdk.dataanalysis.md)<!-- -->&gt;
+Promise&lt;[DataAnalysis](./sdk.dataanalysis.md)&gt;
 

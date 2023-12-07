@@ -12,5 +12,5 @@ interface RunPythonOpts<S extends DataAnalysis> extends Omit<ProcessOpts, 'cmd'>
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [onArtifact?](./sdk.runpythonopts.onartifact.md) |  | (artifact: [Artifact](./sdk.artifact.md)<!-- -->&lt;S&gt;) =&gt; Promise&lt;void&gt; \| void | _(Optional)_ |
+|  [onArtifact?](./sdk.runpythonopts.onartifact.md) |  | (artifact: [Artifact](./sdk.artifact.md)&lt;S&gt;) =&gt; Promise&lt;void&gt; \| void | _(Optional)_ |
 

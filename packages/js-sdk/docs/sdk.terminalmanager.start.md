@@ -15,5 +15,5 @@ start(opts: TerminalOpts): Promise<Terminal>;
 
 **Returns:**
 
-Promise&lt;[Terminal](./sdk.terminal.md)<!-- -->&gt;
+Promise&lt;[Terminal](./sdk.terminal.md)&gt;
 

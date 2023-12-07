@@ -15,11 +15,11 @@ static reconnect(opts: Omit<SandboxOpts, 'id' | 'template'> & {
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  opts | Omit&lt;[SandboxOpts](./sdk.sandboxopts.md)<!-- -->, 'id' \| 'template'&gt; &amp; &#123; sandboxID: string; &#125; | Sandbox options |
+|  opts | Omit&lt;[SandboxOpts](./sdk.sandboxopts.md), 'id' \| 'template'&gt; &amp; &#123; sandboxID: string; &#125; | Sandbox options |
 
 **Returns:**
 
-Promise&lt;[Sandbox](./sdk.sandbox.md)<!-- -->&gt;
+Promise&lt;[Sandbox](./sdk.sandbox.md)&gt;
 
 Existing Sandbox
 

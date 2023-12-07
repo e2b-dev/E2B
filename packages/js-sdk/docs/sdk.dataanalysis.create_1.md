@@ -11,9 +11,9 @@ static create(opts: Omit<SandboxOpts, 'template'>): Promise<DataAnalysis>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  opts | Omit&lt;[SandboxOpts](./sdk.sandboxopts.md)<!-- -->, 'template'&gt; |  |
+|  opts | Omit&lt;[SandboxOpts](./sdk.sandboxopts.md), 'template'&gt; |  |
 
 **Returns:**
 
-Promise&lt;[DataAnalysis](./sdk.dataanalysis.md)<!-- -->&gt;
+Promise&lt;[DataAnalysis](./sdk.dataanalysis.md)&gt;
 

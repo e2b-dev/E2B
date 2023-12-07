@@ -39,8 +39,8 @@ await sandbox.close()
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [\_actions](./sdk.sandbox._actions.md) | <code>readonly</code> | Map&lt;string, [Action](./sdk.action.md)<!-- -->&lt;any, any&gt;&gt; |  |
-|  [actions](./sdk.sandbox.actions.md) | <code>readonly</code> | Map&lt;string, [Action](./sdk.action.md)<!-- -->&lt;any, any&gt;&gt; | Returns a map of added actions. |
+|  [\_actions](./sdk.sandbox._actions.md) | <code>readonly</code> | Map&lt;string, [Action](./sdk.action.md)&lt;any, any&gt;&gt; |  |
+|  [actions](./sdk.sandbox.actions.md) | <code>readonly</code> | Map&lt;string, [Action](./sdk.action.md)&lt;any, any&gt;&gt; | Returns a map of added actions. |
 |  [filesystem](./sdk.sandbox.filesystem.md) | <code>readonly</code> | [FilesystemManager](./sdk.filesystemmanager.md) | Filesystem manager used to manage files. |
 |  [fileURL](./sdk.sandbox.fileurl.md) | <code>readonly</code> | string | URL that can be used to download or upload file to the sandbox via a multipart/form-data POST request. This is useful if you're uploading files directly from the browser. The file will be uploaded to the user's home directory with the same name. If a file with the same name already exists, it will be overwritten. |
 |  [openai](./sdk.sandbox.openai.md) | <code>readonly</code> | &#123; readonly actions: Actions; &#125; | OpenAI integration that can be used to get output for the actions added in the sandbox. |

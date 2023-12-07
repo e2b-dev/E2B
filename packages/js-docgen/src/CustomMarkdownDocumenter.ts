@@ -71,6 +71,16 @@ export interface IMarkdownDocumenterOptions {
   outputFolder: string;
 }
 
+export interface DocsLink {
+  title: string
+  href: string
+}
+
+export interface FileTransform {
+  source: string
+  target: string
+}
+
 export class CustomMarkdownEmitter extends ApiFormatterMarkdownEmitter {
   protected override getEscapedText(text: string): string {
     const textWithBackslashes: string = text
@@ -109,6 +119,9 @@ export class MarkdownDocumenter {
   private readonly _outputFolder: string;
   private readonly _pluginLoader: PluginLoader;
 
+  private _docsLinks: DocsLink[] = []
+  private _fileTransforms: FileTransform[] = []
+
   public constructor(options: IMarkdownDocumenterOptions) {
     this._apiModel = options.apiModel;
     this._documenterConfig = options.documenterConfig;
@@ -119,7 +132,10 @@ export class MarkdownDocumenter {
     this._pluginLoader = new PluginLoader();
   }
 
-  public generateFiles(): void {
+  public generateFiles(): { docsLinks: DocsLink[], fileTransforms: FileTransform[] } {
+    this._docsLinks = []
+    this._fileTransforms = []
+
     if (this._documenterConfig) {
       this._pluginLoader.load(this._documenterConfig, () => {
         return new MarkdownDocumenterFeatureContext({
@@ -134,13 +150,17 @@ export class MarkdownDocumenter {
       });
     }
 
-    console.log();
     this._deleteOldOutputFiles();
 
     this._writeApiItemPage(this._apiModel);
 
     if (this._pluginLoader.markdownDocumenterFeature) {
       this._pluginLoader.markdownDocumenterFeature.onFinished({});
+    }
+
+    return {
+      docsLinks: this._docsLinks,
+      fileTransforms: this._fileTransforms
     }
   }
 
@@ -343,6 +363,21 @@ export class MarkdownDocumenter {
       this._pluginLoader.markdownDocumenterFeature.onBeforeWritePage(eventArgs);
       pageContent = eventArgs.pageContent;
     }
+
+    // TODO: Add to the routes array
+    this._docsLinks.push({
+      // title: apiItem.displayName,
+      title: this._getLabelForApiItem(apiItem),
+      href: this._getHrefForApiItem(apiItem),
+    });
+
+    this._fileTransforms.push({
+      source: filename,
+      target: this._getHrefForApiItem(apiItem),
+    })
+
+    // Remove comments
+    pageContent = pageContent.replace(/<!-- -->/g, '');
 
     FileSystem.writeFile(filename, pageContent, {
       convertLineEndings: this._documenterConfig ? this._documenterConfig.newlineKind : NewlineKind.CrLf
@@ -1218,6 +1253,41 @@ export class MarkdownDocumenter {
     }
 
     return result.items;
+  }
+
+  private _getLabelForApiItem(apiItem: ApiItem): string {
+    if (apiItem.kind === ApiItemKind.Package) {
+      return 'API';
+    }
+
+    let baseName = '';
+    for (const hierarchyItem of apiItem.getHierarchy()) {
+      // For overloaded methods, add a suffix such as "MyClass.myMethod_2".
+      let qualifiedName: string = hierarchyItem.displayName;
+      if (ApiParameterListMixin.isBaseClassOf(hierarchyItem)) {
+        if (hierarchyItem.overloadIndex > 1) {
+          // Subtract one for compatibility with earlier releases of API Documenter.
+          qualifiedName += `_${hierarchyItem.overloadIndex - 1}`;
+        }
+      }
+
+      switch (hierarchyItem.kind) {
+        case ApiItemKind.Model:
+        case ApiItemKind.EntryPoint:
+        case ApiItemKind.EnumMember:
+        case ApiItemKind.Package:
+          break;
+        default:
+          baseName += qualifiedName + '.';
+      }
+    }
+    return baseName.slice(0, baseName.length - 1);
+  }
+
+  private _getHrefForApiItem(apiItem: ApiItem): string {
+    const baseroute = '/reference'
+    const name = this._getLabelForApiItem(apiItem);
+    return `${baseroute}/${name}/page.mdx`
   }
 
   private _getFilenameForApiItem(apiItem: ApiItem): string {

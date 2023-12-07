@@ -16,6 +16,6 @@ constructor(terminalID: string, sandbox: SandboxConnection, triggerExit: () => v
 |  terminalID | string |  |
 |  sandbox | SandboxConnection |  |
 |  triggerExit | () =&gt; void |  |
-|  finished | Promise&lt;[TerminalOutput](./sdk.terminaloutput.md)<!-- -->&gt; |  |
+|  finished | Promise&lt;[TerminalOutput](./sdk.terminaloutput.md)&gt; |  |
 |  output | [TerminalOutput](./sdk.terminaloutput.md) |  |
 

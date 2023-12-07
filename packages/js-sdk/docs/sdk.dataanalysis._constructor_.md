@@ -13,5 +13,5 @@ constructor(opts: Omit<SandboxOpts, 'template'>);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  opts | Omit&lt;[SandboxOpts](./sdk.sandboxopts.md)<!-- -->, 'template'&gt; |  |
+|  opts | Omit&lt;[SandboxOpts](./sdk.sandboxopts.md), 'template'&gt; |  |
 

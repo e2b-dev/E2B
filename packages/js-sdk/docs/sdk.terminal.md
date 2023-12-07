@@ -20,7 +20,7 @@ declare class Terminal
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
 |  [data](./sdk.terminal.data.md) | <code>readonly</code> | string |  |
-|  [finished](./sdk.terminal.finished.md) | <code>readonly</code> | Promise&lt;[TerminalOutput](./sdk.terminaloutput.md)<!-- -->&gt; |  |
+|  [finished](./sdk.terminal.finished.md) | <code>readonly</code> | Promise&lt;[TerminalOutput](./sdk.terminaloutput.md)&gt; |  |
 |  [output](./sdk.terminal.output.md) | <code>readonly</code> | [TerminalOutput](./sdk.terminaloutput.md) |  |
 |  [terminalID](./sdk.terminal.terminalid.md) | <code>readonly</code> | string |  |
 

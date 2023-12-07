@@ -16,6 +16,6 @@ constructor(processID: string, sandbox: SandboxConnection, triggerExit: () => vo
 |  processID | string |  |
 |  sandbox | SandboxConnection |  |
 |  triggerExit | () =&gt; void |  |
-|  finished | Promise&lt;[ProcessOutput](./sdk.processoutput.md)<!-- -->&gt; |  |
+|  finished | Promise&lt;[ProcessOutput](./sdk.processoutput.md)&gt; |  |
 |  output | [ProcessOutput](./sdk.processoutput.md) |  |
 

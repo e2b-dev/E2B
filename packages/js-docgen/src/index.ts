@@ -49,7 +49,10 @@ export function generate(jsonPath: string, outputDir: string): void {
     documenterConfig: undefined,
     outputFolder: outputDir,
   });
-  markdownDocumenter.generateFiles();
+  const { docsLinks, fileTransforms } = markdownDocumenter.generateFiles();
+  console.log(docsLinks)
+  console.log('===============')
+  console.log(fileTransforms)
 }
 
 generate(`${process.cwd()}/../js-sdk/api-extractor/sdk.api.json`, `${process.cwd()}/../js-sdk/docs`)
