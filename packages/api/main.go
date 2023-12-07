@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -9,6 +10,9 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
+	metricsMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware/otel/metrics"
+	tracingMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware/otel/tracing"
+
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
@@ -17,6 +21,7 @@ import (
 	"github.com/gin-contrib/cors"
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -36,8 +41,38 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	r.Use(
 		// We use custom otelgin middleware because we want to log 4xx errors in the otel
-		customMiddleware.ExcludeRoutes(customMiddleware.Otel(serviceName), "/health"),
-		customMiddleware.ExcludeRoutes(gin.LoggerWithWriter(gin.DefaultWriter), "/health", "/instances/:instanceID/refreshes"),
+		customMiddleware.ExcludeRoutes(tracingMiddleware.Middleware(serviceName), "/health"),
+		customMiddleware.ExcludeRoutes(metricsMiddleware.Middleware(
+			serviceName,
+			metricsMiddleware.WithAttributes(func(serverName, route string, request *http.Request) []attribute.KeyValue {
+				if route == "/instances" {
+					body, err := request.GetBody()
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "error getting request body: %v\n", err)
+
+						return metricsMiddleware.DefaultAttributes(serverName, route, request)
+					}
+
+					defer body.Close()
+
+					var instance api.NewInstance
+					err = json.NewDecoder(body).Decode(&instance)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "error decoding request body: %v\n", err)
+
+						return metricsMiddleware.DefaultAttributes(serverName, route, request)
+					}
+
+					return append(
+						metricsMiddleware.DefaultAttributes(serverName, route, request),
+						attribute.String("env_id", instance.EnvID),
+					)
+				}
+
+				return metricsMiddleware.DefaultAttributes(serverName, route, request)
+			}),
+		), "/health", "/instances/:instanceID/refreshes"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health", "/instances/:instanceID/refreshes"),
 		gin.Recovery(),
 	)
 
