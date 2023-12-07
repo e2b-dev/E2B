@@ -24,7 +24,7 @@
   },
   "contributors": [],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc --noEmit && tsup"
   },
   "dependencies": {
     "@microsoft/api-documenter": "^7.23.14",
@@ -33,6 +33,7 @@
     "@rushstack/node-core-library": "^3.62.0"
   },
   "devDependencies": {
+    "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   }
 }

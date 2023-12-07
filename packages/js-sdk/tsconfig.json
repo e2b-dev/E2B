@@ -24,12 +24,11 @@
   ],
   "exclude": [
     "api-extractor.json",
-    "api-ref-report",
-    "api-ref-docs",
+    "api-extractor",
+    "docs",
     "dist",
     "node_modules",
     "tsup.config.js",
     "tsconfig.js",
-    "tsconfig.apiref.json"
   ]
 }

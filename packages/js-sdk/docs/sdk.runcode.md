@@ -1,0 +1,29 @@
+
+## runCode() function
+
+Run code in a sandboxed cloud playground. `runCode` wraps the `Sandbox` class and provides a simple interface for running code in a sandboxed environment without any need to manage lifecycle of the sandbox. `runCode` automatically loads the E2B API key from the `E2B_API_KEY` environment variable.
+
+**Signature:**
+
+```typescript
+declare function runCode(runtime: CodeRuntime, code: string, opts?: {
+    apiKey?: string;
+}): Promise<{
+    stdout: string;
+    stderr: string;
+}>;
+```
+
+## Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  runtime | [CodeRuntime](./sdk.coderuntime.md) | <p>The runtime to use when running the code. Can be one of the following: - "Node16" - "Python3"</p><p>\*\*Let us know if you need support for other runtimes.\*\*</p> |
+|  code | string | The code to run |
+|  opts | &#123; apiKey?: string; &#125; | _(Optional)_ Optional parameters to pass |
+
+**Returns:**
+
+Promise&lt;&#123; stdout: string; stderr: string; &#125;&gt;
+
+

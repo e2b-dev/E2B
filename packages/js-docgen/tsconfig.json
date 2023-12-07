@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "outDir": "dist",
+    "target": "es6",
+    "lib": [
+      "ESNext"
+    ],
     "sourceMap": true,
-    "declaration": false,
-    "declarationMap": false,
-    "composite": false,
-    "target": "ES2022",
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -14,10 +13,10 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    // "moduleResolution": "node",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "moduleResolution": "Bundler",
+    "declaration": true,
   },
   "include": [
     "src",
@@ -25,6 +24,7 @@
   "exclude": [
     "dist",
     "node_modules",
+    "tsup.config.js",
     "tsconfig.js",
   ]
 }
