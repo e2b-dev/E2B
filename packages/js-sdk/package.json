@@ -25,7 +25,7 @@
   "scripts": {
     "prepublishOnly": "pnpm build",
     "build": "tsc --noEmit && tsup",
-    "generate-api-ref": "api-extractor run --local --verbose && api-documenter markdown -i api-ref-report -o api-ref-docs",
+    "build:docs": "api-extractor run --local --verbose",
     "dev": "tsup --watch",
     "measure": "node test/performance.mjs",
     "run": "node test/run.mjs",

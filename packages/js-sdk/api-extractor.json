@@ -126,7 +126,7 @@
     /**
      * (REQUIRED) Whether to generate an API report.
      */
-    "enabled": true,
+    "enabled": true
     /**
      * The filename for the API report files.  It will be combined with "reportFolder" or "reportTempFolder" to produce
      * a full file path.
@@ -136,7 +136,7 @@
      * SUPPORTED TOKENS: <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: "<unscopedPackageName>.api.md"
      */
-    "reportFileName": "e2b.api.md",
+    // "reportFileName": "<unscopedPackageName>.api.md",
     /**
      * Specifies the folder where the API report file is written.  The file name portion is determined by
      * the "reportFileName" setting.
@@ -150,7 +150,7 @@
      * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: "<projectFolder>/temp/"
      */
-    "reportFolder": "api-ref-report"
+    // "reportFolder": "<projectFolder>/temp/"
     /**
      * Specifies the folder where the temporary report file is written.  The file name portion is determined by
      * the "reportFileName" setting.
@@ -191,7 +191,7 @@
      * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: "<projectFolder>/temp/<unscopedPackageName>.api.json"
      */
-    "apiJsonFilePath": "api-ref-report/e2b.api.json"
+    "apiJsonFilePath": "docs/<unscopedPackageName>.api.json"
     /**
      * Whether "forgotten exports" should be included in the doc model file. Forgotten exports are declarations
      * flagged with `ae-forgotten-export` warnings. See https://api-extractor.com/pages/messages/ae-forgotten-export/ to
@@ -223,7 +223,7 @@
     /**
      * (REQUIRED) Whether to generate the .d.ts rollup file.
      */
-    "enabled": true
+    "enabled": false
     /**
      * Specifies the output path for a .d.ts rollup file to be generated without any trimming.
      * This file will include all declarations that are exported by the main entry point.
@@ -290,7 +290,7 @@
      *
      * DEFAULT VALUE: true
      */
-    // "enabled": true,
+    "enabled": true,
     /**
      * Specifies where the TSDoc metadata file should be written.
      *
