@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -46,17 +48,20 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 			serviceName,
 			metricsMiddleware.WithAttributes(func(serverName, route string, request *http.Request) []attribute.KeyValue {
 				if route == "/instances" {
-					body, err := request.GetBody()
+					bodyCopy := new(bytes.Buffer)
+					// Read the body
+					_, err := io.Copy(bodyCopy, request.Body)
 					if err != nil {
-						fmt.Fprintf(os.Stderr, "error getting request body: %v\n", err)
-
-						return metricsMiddleware.DefaultAttributes(serverName, route, request)
+						errMsg := fmt.Errorf("error reading body: %w", err)
+						panic(errMsg)
 					}
 
-					defer body.Close()
+					bodyData := bodyCopy.Bytes()
+					// Pass the body back through the request
+					request.Body = io.NopCloser(bytes.NewReader(bodyData))
 
 					var instance api.NewInstance
-					err = json.NewDecoder(body).Decode(&instance)
+					err = json.NewDecoder(io.NopCloser(bytes.NewReader(bodyData))).Decode(&instance)
 					if err != nil {
 						fmt.Fprintf(os.Stderr, "error decoding request body: %v\n", err)
 
