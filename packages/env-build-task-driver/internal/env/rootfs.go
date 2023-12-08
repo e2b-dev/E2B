@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
@@ -231,7 +232,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}{
 		EnvID:    r.env.EnvID,
 		BuildID:  r.env.BuildID,
-		StartCmd: r.env.StartCmd,
+		StartCmd: strings.ReplaceAll(r.env.StartCmd, "\"", "\\\""),
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("error executing provision script %w", err)
