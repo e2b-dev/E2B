@@ -1,5 +1,6 @@
 import { EnvVars } from './envVars'
 import { CallOpts, SandboxConnection } from './sandboxConnection'
+import { withTimeout } from '../utils/promise'
 
 export const processService = 'process'
 
@@ -128,9 +129,11 @@ export class Process {
 
   /**
    * Waits for the process to finish.
+   *
+   * @param timeout Timeout for the process to finish in milliseconds
    */
-  async wait(): Promise<ProcessOutput> {
-    return this.finished
+  async wait(timeout?: number): Promise<ProcessOutput> {
+    return await withTimeout(() => this.finished, timeout)()
   }
 
   /**

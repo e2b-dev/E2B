@@ -165,11 +165,13 @@ class Process:
         """
         return self._process_id
 
-    def wait(self):
+    def wait(self, timeout: Optional[float] = None) -> ProcessOutput:
         """
         Wait for the process to exit.
+
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out. If set to None, the method will continue to wait until it completes, regardless of time
         """
-        return self._finished.result()
+        return self._finished.result(timeout)
 
     def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
