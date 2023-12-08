@@ -100,6 +100,10 @@ variable "google_service_account_email" {
   type = string
 }
 
+variable "google_service_account_key" {
+  type = string
+}
+
 variable "fc_envs_disk_name" {
   type        = string
   description = "The name of the disk that will be created to store the envs"

@@ -61,8 +61,8 @@ cat <<EOF >/root/docker/config.json
 {
     "auths": {
         "${GCP_REGION}-docker.pkg.dev": {
-            "username": "oauth2accesstoken",
-            "password": "$(gcloud auth print-access-token)",
+            "username": "_json_key_base64",
+            "password": "${GOOGLE_SERVICE_ACCOUNT_KEY}",
             "server_address": "https://${GCP_REGION}-docker.pkg.dev"
         }
     }

@@ -88,7 +88,7 @@ resource "nomad_job" "api" {
       environment                   = var.environment
       docker_contexts_bucket_name   = var.docker_contexts_bucket_name
       api_secret                    = var.api_secret
-      google_service_account_secret = var.google_service_account_secret
+      google_service_account_secret = var.google_service_account_key
       gcp_project_id                = var.gcp_project_id
       gcp_region                    = var.gcp_region
       gcp_docker_repository_name    = var.custom_envs_repository_name

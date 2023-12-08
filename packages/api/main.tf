@@ -15,11 +15,6 @@ terraform {
   }
 }
 
-
-resource "google_service_account_key" "google_service_key" {
-  service_account_id = var.google_service_account_email
-}
-
 resource "google_artifact_registry_repository" "custom_environments_repository" {
   format        = "DOCKER"
   repository_id = "${var.prefix}custom-environments"

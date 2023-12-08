@@ -105,8 +105,9 @@ module "github_tf" {
 module "cluster" {
   source = "./packages/cluster"
 
-  gcp_project_id = var.gcp_project_id
-  gcp_region     = var.gcp_region
+  gcp_project_id             = var.gcp_project_id
+  gcp_region                 = var.gcp_region
+  google_service_account_key = module.init.google_service_account_key
 
   server_cluster_size = var.server_cluster_size
   client_cluster_size = var.client_cluster_size
@@ -160,7 +161,7 @@ module "nomad" {
   api_port                               = var.api_port
   environment                            = var.environment
   docker_contexts_bucket_name            = module.buckets.envs_docker_context_bucket_name
-  google_service_account_secret          = module.api.google_service_account_key
+  google_service_account_key             = module.init.google_service_account_key
   api_docker_image_digest                = module.api.api_docker_image_digest
   api_secret                             = module.api.api_secret
   custom_envs_repository_name            = module.api.custom_envs_repository_name

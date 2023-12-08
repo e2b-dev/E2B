@@ -55,6 +55,7 @@ module "client_cluster" {
     DOCKER_CONTEXTS_BUCKET_NAME = var.docker_contexts_bucket_name
     DISK_DEVICE_NAME            = var.fc_envs_disk_device_name
     GCP_REGION                  = var.gcp_region
+    GOOGLE_SERVICE_ACCOUNT_KEY  = var.google_service_account_key
   })
 
   cluster_name     = "${var.prefix}${var.client_cluster_name}"

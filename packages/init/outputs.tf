@@ -2,6 +2,10 @@ output "service_account_email" {
   value = google_service_account.infra_instances_service_account.email
 }
 
+output "google_service_account_key" {
+  value = google_service_account_key.google_service_key.private_key
+}
+
 output "consul_acl_token_secret_name" {
   value = google_secret_manager_secret.consul_acl_token.name
 }
