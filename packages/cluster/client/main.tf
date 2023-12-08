@@ -50,9 +50,6 @@ resource "google_compute_instance_group_manager" "client_cluster" {
   depends_on = [
     google_compute_instance_template.client,
   ]
-  lifecycle {
-    ignore_changes = [version]
-  }
 }
 
 data "google_compute_image" "source_image" {
