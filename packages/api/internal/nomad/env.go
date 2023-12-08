@@ -5,6 +5,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"strings"
 	"text/template"
 	"time"
 
@@ -98,7 +99,7 @@ func (n *NomadClient) BuildEnvJob(
 	}{
 		APISecret:                  apiSecret,
 		BuildID:                    buildID,
-		StartCmd:                   startCmd,
+		StartCmd:                   strings.ReplaceAll(startCmd, "\"", "\\\""),
 		SpanID:                     spanID,
 		DiskSizeMB:                 vmConfig.DiskSizeMB,
 		VCpuCount:                  vmConfig.VCpuCount,
