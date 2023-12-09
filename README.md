@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">
-  Sandbox for AI Apps & Agents
+  Cloud Runtime for AI Agents
 </h1>
 
 <h3 align="center">
