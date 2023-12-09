@@ -52,15 +52,15 @@ func Middleware(service string, options ...Option) gin.HandlerFunc {
 
 			recorder.AddRequests(ctx, 1, resAttributes)
 
-			if cfg.recordSize {
-				requestSize := computeApproximateRequestSize(ginCtx.Request)
-				recorder.ObserveHTTPRequestSize(ctx, requestSize, resAttributes)
-				recorder.ObserveHTTPResponseSize(ctx, int64(ginCtx.Writer.Size()), resAttributes)
-			}
+			// if cfg.recordSize {
+			// 	requestSize := computeApproximateRequestSize(ginCtx.Request)
+			// 	recorder.ObserveHTTPRequestSize(ctx, requestSize, resAttributes)
+			// 	recorder.ObserveHTTPResponseSize(ctx, int64(ginCtx.Writer.Size()), resAttributes)
+			// }
 
-			if cfg.recordDuration {
-				recorder.ObserveHTTPRequestDuration(ctx, time.Since(start), resAttributes)
-			}
+			recorder.ObserveHTTPRequestDuration(ctx, time.Since(start), resAttributes)
+			// if cfg.recordDuration {
+			// }
 		}()
 
 		ginCtx.Next()

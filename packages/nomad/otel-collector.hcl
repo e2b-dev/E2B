@@ -31,7 +31,7 @@ variable "grafana_metrics_endpoint" {
 }
 
 variables {
-  otel_image = "otel/opentelemetry-collector-contrib:0.88.0"
+  otel_image = "otel/opentelemetry-collector-contrib:0.90.1"
 }
 
 job "otel-collector" {
