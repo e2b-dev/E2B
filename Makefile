@@ -1,4 +1,4 @@
-CURRENT_ENV := $(shell cat .last_used_env)
+CURRENT_ENV := $(shell cat .last_used_env || echo "not-set")
 -include .env.${CURRENT_ENV}
 
 
@@ -20,7 +20,8 @@ tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_gcp_zone=$(GCP_ZONE) \
 	TF_VAR_domain_name=$(DOMAIN_NAME) \
 	TF_VAR_cloudflare_api_token=$(CLOUDFLARE_API_TOKEN) \
-	TF_VAR_prefix=$(PREFIX)
+	TF_VAR_prefix=$(PREFIX) \
+	TF_VAR_terraform_state_bucket=$(TERRAFORM_STATE_BUCKET) \
 
 ifeq ($(EXCLUDE_GITHUB),1)
 	ALL_MODULES := $(shell cat main.tf | grep "^module" | awk '{print $$2}' | grep -v -e "github_tf")
@@ -43,7 +44,7 @@ login-gcloud:
 .PHONY: init
 init:
 	@ printf "Initializing Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
-	terraform init -input=false
+	terraform init -input=false -backend-config="bucket=${TERRAFORM_STATE_BUCKET}"
 	$(MAKE) -C packages/cluster-disk-image init
 	$(tf_vars) terraform apply -target=module.init -target=module.buckets -auto-approve -input=false -compact-warnings
 

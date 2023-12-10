@@ -169,6 +169,10 @@ jobs:
       server_cluster_size: ${{ secrets.SERVER_CLUSTER_SIZE }}
       gcp_region: ${{ secrets.E2B_GCP_REGION }}
       gcp_zone: ${{ secrets.E2B_GCP_ZONE }}
+      gcp_project: ${{ secrets.E2B_GCP_PROJECT }}
+      domain_name: ${{ secrets.E2B_DOMAIN_NAME }}
+      terraform_prefix: ${{ secrets.E2B_TERRAFORM_PREFIX }}
+      terraform_state_bucket: ${{ secrets.E2B_TERRAFORM_STATE_BUCKET }}
 
   # The last successful release is used for determining which changed and what should be deployed in this release.
   release:

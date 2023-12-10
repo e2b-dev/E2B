@@ -99,6 +99,9 @@ module "github_tf" {
   github_organization = var.github_organization
   github_repository   = var.github_repository
 
+  domain_name            = var.domain_name
+  terraform_state_bucket = var.terraform_state_bucket
+
   prefix = var.prefix
 }
 
