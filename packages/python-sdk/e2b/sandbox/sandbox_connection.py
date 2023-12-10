@@ -45,14 +45,14 @@ class SandboxConnection:
     _on_close_child: Optional[Callable[[], Any]] = None
 
     @property
-    def id(self):
+    def id(self) -> str:
         """
         The sandbox ID.
 
         You can use this ID to reconnect to the sandbox later.
         """
         if not self._sandbox:
-            return None
+            raise SandboxException("Sandbox is not running.")
         return f"{self._sandbox.instance_id}-{self._sandbox.client_id}"
 
     @property
