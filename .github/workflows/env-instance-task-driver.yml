@@ -7,7 +7,7 @@ on:
         required: true
       workload_identity_provider:
         required: true
-      gcp_project_id:
+      gcp_project:
         required: true
 
 jobs:
