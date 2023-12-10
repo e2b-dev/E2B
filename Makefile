@@ -1,4 +1,4 @@
-CURRENT_ENV := $(shell cat .last_used_env)
+CURRENT_ENV := $(shell cat .last_used_env || echo "not-set")
 -include .env.${CURRENT_ENV}
 
 
@@ -44,7 +44,7 @@ login-gcloud:
 .PHONY: init
 init:
 	@ printf "Initializing Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
-	terraform init -input=false
+	terraform init -input=false -backend-config="bucket=${TERRAFORM_STATE_BUCKET}"
 	$(MAKE) -C packages/cluster-disk-image init
 	$(tf_vars) terraform apply -target=module.init -target=module.buckets -auto-approve -input=false -compact-warnings
 
