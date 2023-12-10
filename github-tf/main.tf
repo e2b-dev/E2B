@@ -122,3 +122,21 @@ resource "github_actions_secret" "gcp_zone" {
   secret_name     = "E2B_GCP_ZONE"
   plaintext_value = var.gcp_zone
 }
+
+resource "github_actions_secret" "terraform_prefix" {
+  repository      = var.github_repository
+  secret_name     = "E2B_TERRAFORM_PREFIX"
+  plaintext_value = var.prefix
+}
+
+resource "github_actions_secret" "terraform_state_bucket" {
+  repository      = var.github_repository
+  secret_name     = "E2B_TERRAFORM_STATE_BUCKET"
+  plaintext_value = var.terraform_state_bucket
+}
+
+resource "github_actions_secret" "domain_name" {
+  repository      = var.github_repository
+  secret_name     = "E2B_DOMAIN_NAME"
+  plaintext_value = var.domain_name
+}

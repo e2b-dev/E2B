@@ -20,7 +20,8 @@ tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_gcp_zone=$(GCP_ZONE) \
 	TF_VAR_domain_name=$(DOMAIN_NAME) \
 	TF_VAR_cloudflare_api_token=$(CLOUDFLARE_API_TOKEN) \
-	TF_VAR_prefix=$(PREFIX)
+	TF_VAR_prefix=$(PREFIX) \
+	TF_VAR_terraform_state_bucket=$(TERRAFORM_STATE_BUCKET) \
 
 ifeq ($(EXCLUDE_GITHUB),1)
 	ALL_MODULES := $(shell cat main.tf | grep "^module" | awk '{print $$2}' | grep -v -e "github_tf")

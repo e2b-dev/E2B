@@ -28,3 +28,12 @@ variable "prefix" {
   description = "The prefix to use for all resources in this module"
   type        = string
 }
+
+variable "terraform_state_bucket" {
+  description = "The name of the bucket to store terraform state in"
+  type        = string
+}
+
+variable "domain_name" {
+  type = string
+}

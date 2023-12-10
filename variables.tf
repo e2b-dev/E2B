@@ -146,3 +146,8 @@ variable "labels" {
     "terraform" = "true"
   }
 }
+
+variable "terraform_state_bucket" {
+  description = "The name of the bucket to store terraform state in"
+  type        = string
+}
