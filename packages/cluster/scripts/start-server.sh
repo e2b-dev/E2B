@@ -9,10 +9,10 @@ set -e
 # Inspired by https://alestic.com/2010/12/ec2-user-data-output/
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
-gsutil cp gs://${scripts_bucket}/run-consul.sh /opt/consul/bin/run-consul.sh
-gsutil cp gs://${scripts_bucket}/run-nomad.sh /opt/nomad/bin/run-nomad.sh
+gsutil cp gs://${SCRIPTS_BUCKET}/run-consul.sh /opt/consul/bin/run-consul.sh
+gsutil cp gs://${SCRIPTS_BUCKET}/run-nomad.sh /opt/nomad/bin/run-nomad.sh
 
 chmod +x /opt/consul/bin/run-consul.sh /opt/nomad/bin/run-nomad.sh
 
-/opt/consul/bin/run-consul.sh --server --cluster-tag-name "${cluster_tag_name}" &
-/opt/nomad/bin/run-nomad.sh --server --num-servers "${num_servers}"
+/opt/consul/bin/run-consul.sh --server --cluster-tag-name "${CLUSTER_TAG_NAME}" &
+/opt/nomad/bin/run-nomad.sh --server --num-servers "${NUM_SERVERS}"

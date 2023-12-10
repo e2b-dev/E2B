@@ -48,5 +48,5 @@ jobs:
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
           path: "./packages/env-build-task-driver/bin/env-build-task-driver"
-          destination: "e2b-fc-env-pipeline"
+          destination: "${{ secrets.gcp_project }}-fc-env-pipeline"
           gzip: false

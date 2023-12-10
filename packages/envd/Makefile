@@ -1,10 +1,11 @@
 client := gcloud compute instances list --format='csv(name)' | grep "client"
+GCP_PROJECT ?= $$(gcloud config get-value project)
 
 upload:
-	./upload.sh
+	./upload.sh $(GCP_PROJECT)
 
 upload-local:
-	./upload-local.sh
+	./upload-local.sh $(GCP_PROJECT)
 
 build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/envd .
@@ -74,11 +75,15 @@ run-env:
 
 update-envd:
 	make build
-	./upload-local.sh
+	make upload-local
 	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /fc-vm/envd && \
 	sudo cp /mnt/disks/envs-pipeline/envd /fc-vm/envd'
 
 update-envd-locally:
 	make build
-	./upload-local.sh
+	make upload-local
 	cp /mnt/disks/envs-pipeline/envd /fc-vm/envd
+
+build-and-upload:
+	make build
+	make upload-local

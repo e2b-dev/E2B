@@ -1,11 +1,9 @@
 variable "gcp_project_id" {
   type    = string
-  default = "e2b-prod"
 }
 
 variable "gcp_zone" {
   type    = string
-  default = "us-central1-c"
 }
 
 variable "consul_version" {

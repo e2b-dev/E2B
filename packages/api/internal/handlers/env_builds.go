@@ -100,8 +100,8 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	}
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
-	a.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "submitted environment build request", properties.
+	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
+	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "submitted environment build request", properties.
 		Set("environment", envID).
 		Set("build_id", buildID).
 		Set("dockerfile", dockerfile).
@@ -322,8 +322,8 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	}
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
-	a.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "submitted environment build request", properties.
+	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
+	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "submitted environment build request", properties.
 		Set("environment", envID).
 		Set("build_id", buildID).
 		Set("alias", alias).
@@ -481,7 +481,7 @@ func (a *APIStore) buildEnv(
 	startTime := time.Now()
 
 	defer func() {
-		a.CreateAnalyticsUserEvent(userID, teamID.String(), "built environment", posthogProperties.
+		CreateAnalyticsUserEvent(a.posthog, userID, teamID.String(), "built environment", posthogProperties.
 			Set("environment", envID).
 			Set("build_id", buildID).
 			Set("duration", time.Since(startTime).String()).

@@ -90,7 +90,7 @@ func (n *NomadClient) BuildEnvJob(
 		EnvsDisk                   string
 		GoogleServiceAccountBase64 string
 		GCPProjectID               string
-		GCPLocation                string
+		GCPRegion                  string
 		DockerRepositoryName       string
 		VCpuCount                  int64
 		MemoryMB                   int64
@@ -110,7 +110,7 @@ func (n *NomadClient) BuildEnvJob(
 		EnvsDisk:                   envsDisk,
 		GoogleServiceAccountBase64: googleServiceAccountBase64,
 		GCPProjectID:               constants.ProjectID,
-		GCPLocation:                constants.Location,
+		GCPRegion:                  constants.Region,
 		DockerRepositoryName:       constants.DockerRepositoryName,
 	}
 

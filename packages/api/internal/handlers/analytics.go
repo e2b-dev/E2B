@@ -11,10 +11,13 @@ const (
 	teamGroup                = "team"
 	placeholderTeamGroupUser = "backend"
 	placeholderProperty      = "first interaction"
+
+	infraVersionKey = "infra_version"
+	infraVersion    = "v1"
 )
 
-func (a *APIStore) IdentifyAnalyticsTeam(teamID string, teamName string) {
-	err := a.posthog.Enqueue(posthog.GroupIdentify{
+func IdentifyAnalyticsTeam(client posthog.Client, teamID string, teamName string) {
+	err := client.Enqueue(posthog.GroupIdentify{
 		Type: teamGroup,
 		Key:  teamID,
 		Properties: posthog.NewProperties().
@@ -27,11 +30,11 @@ func (a *APIStore) IdentifyAnalyticsTeam(teamID string, teamName string) {
 	}
 }
 
-func (a *APIStore) CreateAnalyticsTeamEvent(teamID, event string, properties posthog.Properties) {
-	err := a.posthog.Enqueue(posthog.Capture{
+func CreateAnalyticsTeamEvent(client posthog.Client, teamID, event string, properties posthog.Properties) {
+	err := client.Enqueue(posthog.Capture{
 		DistinctId: placeholderTeamGroupUser,
 		Event:      event,
-		Properties: properties,
+		Properties: properties.Set(infraVersionKey, infraVersion),
 		Groups: posthog.NewGroups().
 			Set("team", teamID),
 	})
@@ -40,11 +43,11 @@ func (a *APIStore) CreateAnalyticsTeamEvent(teamID, event string, properties pos
 	}
 }
 
-func (a *APIStore) CreateAnalyticsUserEvent(userID string, teamID string, event string, properties posthog.Properties) {
-	err := a.posthog.Enqueue(posthog.Capture{
+func CreateAnalyticsUserEvent(client posthog.Client, userID string, teamID string, event string, properties posthog.Properties) {
+	err := client.Enqueue(posthog.Capture{
 		DistinctId: userID,
 		Event:      event,
-		Properties: properties,
+		Properties: properties.Set(infraVersionKey, infraVersion),
 		Groups: posthog.NewGroups().
 			Set("team", teamID),
 	})

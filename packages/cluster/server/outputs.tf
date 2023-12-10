@@ -26,6 +26,6 @@ output "instance_template_metadata_fingerprint" {
   value = google_compute_instance_template.server.metadata_fingerprint
 }
 
-output "server_proxy_ip" {
-  value = module.gce_lb_http_nomad.external_ip
+output "instance_group" {
+  value = google_compute_instance_group_manager.server_cluster.instance_group
 }

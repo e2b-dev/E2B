@@ -76,9 +76,9 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 
 	telemetry.ReportEvent(ctx, "got environment build")
 
-	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "got environment detail", properties.Set("environment", envID))
+	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "got environment detail", properties.Set("environment", envID))
 
 	c.JSON(http.StatusOK, result)
 }

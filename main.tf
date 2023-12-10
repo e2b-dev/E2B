@@ -1,7 +1,6 @@
 terraform {
   required_version = ">= 1.5.0, < 1.6.0"
   backend "gcs" {
-    bucket = "e2b-terraform-state"
     prefix = "terraform/orchestration/state"
   }
   required_providers {
@@ -17,10 +16,38 @@ terraform {
       source  = "hashicorp/google-beta"
       version = "5.6.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "4.19.0"
+    }
+    nomad = {
+      source  = "hashicorp/nomad"
+      version = "2.0.0"
+    }
+    consul = {
+      source  = "hashicorp/consul"
+      version = "2.20.0"
+    }
+    github = {
+      source  = "integrations/github"
+      version = "5.42.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.5.1"
+    }
   }
 }
 
-provider "docker" {}
+data "google_client_config" "default" {}
+
+provider "docker" {
+  registry_auth {
+    address  = "${var.gcp_region}-docker.pkg.dev"
+    username = "oauth2accesstoken"
+    password = data.google_client_config.default.access_token
+  }
+}
 
 provider "google-beta" {
   project = var.gcp_project_id
@@ -34,12 +61,35 @@ provider "google" {
   zone    = var.gcp_zone
 }
 
-resource "google_service_account" "infra_instances_service_account" {
-  account_id   = "infra-instances-1"
-  display_name = "Infra Instances Service Account"
+
+module "init" {
+  source = "./packages/init"
+
+  labels = var.labels
+  prefix = var.prefix
 }
 
-module "github-tf" {
+module "buckets" {
+  source = "./packages/buckets"
+
+  gcp_service_account_email = module.init.service_account_email
+  gcp_project_id            = var.gcp_project_id
+  gcp_region                = var.gcp_region
+
+  labels = var.labels
+}
+
+module "fc_envs_disk" {
+  source = "./packages/fc-envs-disk"
+
+  gcp_zone          = var.gcp_zone
+  fc_envs_disk_size = var.fc_envs_disk_size
+
+  labels = var.labels
+  prefix = var.prefix
+}
+
+module "github_tf" {
   source = "./github-tf"
 
   gcp_project_id = var.gcp_project_id
@@ -49,12 +99,15 @@ module "github-tf" {
   github_organization = var.github_organization
   github_repository   = var.github_repository
 
+  prefix = var.prefix
 }
 
 module "cluster" {
   source = "./packages/cluster"
 
-  gcp_project_id = var.gcp_project_id
+  gcp_project_id             = var.gcp_project_id
+  gcp_region                 = var.gcp_region
+  google_service_account_key = module.init.google_service_account_key
 
   server_cluster_size = var.server_cluster_size
   client_cluster_size = var.client_cluster_size
@@ -62,173 +115,79 @@ module "cluster" {
   server_machine_type = var.server_machine_type
   client_machine_type = var.client_machine_type
 
-  session_proxy_service_name = var.session_proxy_service_name
-
   logs_health_proxy_port = var.logs_health_proxy_port
   logs_proxy_port        = var.logs_proxy_port
 
-  session_proxy_port           = var.session_proxy_port
   client_proxy_health_port     = var.client_proxy_health_port
   client_proxy_port            = var.client_proxy_port
   api_port                     = var.api_port
-  google_service_account_email = google_service_account.infra_instances_service_account.email
+  google_service_account_email = module.init.service_account_email
+  domain_name                  = var.domain_name
+
+  fc_envs_disk_name           = module.fc_envs_disk.disk_name
+  docker_contexts_bucket_name = module.buckets.envs_docker_context_bucket_name
+  cluster_setup_bucket_name   = module.buckets.cluster_setup_bucket_name
+  fc_env_pipeline_bucket_name = module.buckets.fc_env_pipeline_bucket_name
+
+  labels = var.labels
+  prefix = var.prefix
 }
-
-data "google_compute_global_address" "orch_server_consul_ip" {
-  name = "orch-server-consul-ip"
-}
-
-data "google_secret_manager_secret_version" "consul_acl_token" {
-  secret = "consul-secret-id"
-}
-
-data "google_compute_global_address" "orch_server_ip" {
-  name = "orch-server-nomad-ip"
-}
-
-data "google_secret_manager_secret_version" "nomad_acl_token" {
-  secret = "nomad-secret-id"
-}
-
-provider "nomad" {
-  address   = "http://${data.google_compute_global_address.orch_server_ip.address}"
-  secret_id = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
-}
-
-provider "consul" {
-  address = "http://${data.google_compute_global_address.orch_server_consul_ip.address}"
-  token   = data.google_secret_manager_secret_version.consul_acl_token.secret_data
-}
-
-resource "consul_acl_policy" "agent" {
-  name  = "agent"
-  rules = <<-RULE
-    key_prefix "" {
-      policy = "deny"
-    }
-    RULE
-  # depends_on = [checkmate_http_health.consul_health_check]
-}
-
-resource "consul_acl_token_policy_attachment" "attachment" {
-  token_id = "00000000-0000-0000-0000-000000000002"
-  policy   = consul_acl_policy.agent.name
-}
-
-data "google_secret_manager_secret_version" "grafana_api_key" {
-  secret = "grafana-api-key"
-}
-
-data "google_secret_manager_secret_version" "grafana_traces_endpoint" {
-  secret = "grafana-traces-endpoint"
-}
-
-data "google_secret_manager_secret_version" "grafana_logs_endpoint" {
-  secret = "grafana-logs-endpoint"
-}
-
-data "google_secret_manager_secret_version" "grafana_metrics_endpoint" {
-  secret = "grafana-metrics-endpoint"
-}
-
-data "google_secret_manager_secret_version" "grafana_traces_username" {
-  secret = "grafana-traces-username"
-}
-
-data "google_secret_manager_secret_version" "grafana_logs_username" {
-  secret = "grafana-logs-username"
-}
-
-data "google_secret_manager_secret_version" "grafana_metrics_username" {
-  secret = "grafana-metrics-username"
-}
-
-# resource "checkmate_http_health" "nomad_health_check" {
-#   # This is the url of the endpoint we want to check
-#   url = "http://${data.google_compute_global_address.orch_server_consul_ip.address}/v1/health/service/api?passing=true"
-
-#   # Will perform an HTTP GET request
-#   method = "GET"
-
-#   # The overall test should not take longer than 10 seconds
-#   timeout = 600000
-
-#   # Wait 0.1 seconds between attempts
-#   interval = 100
-
-#   # Expect a status 200 OK
-#   status_code = 200
-
-#   # We want 2 successes in a row
-#   consecutive_successes = 2
-# }
-
-module "telemetry" {
-  source = "./packages/telemetry"
-
-  logs_health_proxy_port = var.logs_health_proxy_port
-  logs_proxy_port        = var.logs_proxy_port
-
-  gcp_zone = var.gcp_zone
-
-  grafana_traces_endpoint  = data.google_secret_manager_secret_version.grafana_traces_endpoint.secret_data
-  grafana_logs_endpoint    = data.google_secret_manager_secret_version.grafana_logs_endpoint.secret_data
-  grafana_metrics_endpoint = data.google_secret_manager_secret_version.grafana_metrics_endpoint.secret_data
-
-  grafana_traces_username  = data.google_secret_manager_secret_version.grafana_traces_username.secret_data
-  grafana_logs_username    = data.google_secret_manager_secret_version.grafana_logs_username.secret_data
-  grafana_metrics_username = data.google_secret_manager_secret_version.grafana_metrics_username.secret_data
-
-  grafana_api_key = data.google_secret_manager_secret_version.grafana_api_key.secret_data
-
-  # depends_on = [checkmate_http_health.nomad_health_check]
-}
-
-module "session_proxy" {
-  source = "./packages/session-proxy"
-
-  client_cluster_size        = var.client_cluster_size
-  gcp_zone                   = var.gcp_zone
-  session_proxy_service_name = var.session_proxy_service_name
-
-  session_proxy_port = var.session_proxy_port
-
-  # depends_on = [checkmate_http_health.nomad_health_check]
-}
-
-module "client_proxy" {
-  source = "./packages/client-proxy"
-
-  gcp_zone                   = var.gcp_zone
-  session_proxy_service_name = var.session_proxy_service_name
-
-  client_proxy_port        = var.client_proxy_port
-  client_proxy_health_port = var.client_proxy_health_port
-}
-
-data "google_storage_bucket" "e2b-envs-docker-context" {
-  name = "e2b-envs-docker-context"
-}
-
-
-resource "google_service_account_key" "google_service_key" {
-  service_account_id = google_service_account.infra_instances_service_account.name
-}
-
 
 module "api" {
   source = "./packages/api"
 
-  gcp_zone = var.gcp_zone
+  gcp_project_id = var.gcp_project_id
+  gcp_region     = var.gcp_region
 
-  logs_proxy_address            = "http://${module.cluster.logs_proxy_ip}"
-  nomad_address                 = "http://${module.cluster.server_proxy_ip}"
-  nomad_token                   = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
-  consul_token                  = data.google_secret_manager_secret_version.consul_acl_token.secret_data
-  api_port                      = var.api_port
-  environment                   = var.environment
-  bucket_name                   = data.google_storage_bucket.e2b-envs-docker-context.name
-  google_service_account_secret = google_service_account_key.google_service_key.private_key
+  google_service_account_email  = module.init.service_account_email
+  orchestration_repository_name = module.init.orchestration_repository_name
 
-  # depends_on = [checkmate_http_health.nomad_health_check]
+  labels = var.labels
+  prefix = var.prefix
+}
+
+module "nomad" {
+  source = "./packages/nomad"
+
+  gcp_project_id = var.gcp_project_id
+  gcp_region     = var.gcp_region
+  gcp_zone       = var.gcp_zone
+
+  consul_acl_token_secret_name = module.init.consul_acl_token_secret_name
+  nomad_acl_token_secret_name  = module.init.nomad_acl_token_secret_name
+
+  # API
+  logs_proxy_address                     = "http://${module.cluster.logs_proxy_ip}"
+  api_port                               = var.api_port
+  environment                            = var.environment
+  docker_contexts_bucket_name            = module.buckets.envs_docker_context_bucket_name
+  google_service_account_key             = module.init.google_service_account_key
+  api_docker_image_digest                = module.api.api_docker_image_digest
+  api_secret                             = module.api.api_secret
+  custom_envs_repository_name            = module.api.custom_envs_repository_name
+  postgres_connection_string_secret_name = module.api.postgres_connection_string_secret_name
+  posthog_api_key_secret_name            = module.api.posthog_api_key_secret_name
+
+  # Proxies
+  client_cluster_size = var.client_cluster_size
+
+  session_proxy_service_name = var.session_proxy_service_name
+  session_proxy_port         = var.session_proxy_port
+
+  client_proxy_port        = var.client_proxy_port
+  client_proxy_health_port = var.client_proxy_health_port
+
+  domain_name = var.domain_name
+
+  # Telemetry
+  logs_health_proxy_port = var.logs_health_proxy_port
+  logs_proxy_port        = var.logs_proxy_port
+
+  grafana_api_key_secret_name          = module.init.grafana_api_key_secret_name
+  grafana_logs_endpoint_secret_name    = module.init.grafana_logs_endpoint_secret_name
+  grafana_logs_username_secret_name    = module.init.grafana_logs_username_secret_name
+  grafana_metrics_endpoint_secret_name = module.init.grafana_metrics_endpoint_secret_name
+  grafana_metrics_username_secret_name = module.init.grafana_metrics_username_secret_name
+  grafana_traces_endpoint_secret_name  = module.init.grafana_traces_endpoint_secret_name
+  grafana_traces_username_secret_name  = module.init.grafana_traces_username_secret_name
 }

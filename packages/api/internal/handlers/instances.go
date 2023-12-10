@@ -96,12 +96,13 @@ func (a *APIStore) PostInstances(
 
 	telemetry.ReportEvent(ctx, "created environment instance")
 
-	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.CreateAnalyticsTeamEvent(team.ID.String(), "created_instance", properties.
-		Set("environment", envID).
-		Set("instance_id", instance.InstanceID).
-		Set("infra_version", "v1"))
+	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "created_instance",
+		properties.
+			Set("environment", envID).
+			Set("instance_id", instance.InstanceID),
+	)
 
 	if cacheErr := a.cache.Add(InstanceInfo{
 		Instance: instance,

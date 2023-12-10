@@ -83,8 +83,8 @@ jobs:
       needs.changes.outputs.env-instance-task-driver == 'true'
     uses: ./.github/workflows/env-instance-task-driver.yml
     secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
 
   env-build-task-driver:
     name: Env build task driver
@@ -95,8 +95,8 @@ jobs:
       needs.changes.outputs.env-build-task-driver == 'true'
     uses: ./.github/workflows/env-build-task-driver.yml
     secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
 
   cluster-disk-image:
     name: Cluster disk image
@@ -107,8 +107,8 @@ jobs:
       needs.changes.outputs.cluster-disk-image == 'true'
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
 
   envd:
     name: Env Daemon
@@ -119,10 +119,9 @@ jobs:
       needs.changes.outputs.envd == 'true'
     uses: ./.github/workflows/envd.yml
     secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
       version: ${{ needs.changes.outputs.get-version }}
-
   api:
     name: API image
     needs: changes
@@ -132,9 +131,9 @@ jobs:
       needs.changes.outputs.api == 'true'
     uses: ./.github/workflows/api.yml
     secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
-      gce_project: ${{ secrets.GCE_PROJECT }}
+      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
+      gcp_project: ${{ secrets.E2B_GCP_PROJECT }}
 
   terraform:
     name: Terraform
@@ -158,12 +157,14 @@ jobs:
       (needs.api.result == 'success' || needs.api.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
     secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
       client_machine_type: ${{ secrets.CLIENT_MACHINE_TYPE }}
       client_cluster_size: ${{ secrets.CLIENT_CLUSTER_SIZE }}
       server_machine_type: ${{ secrets.SERVER_MACHINE_TYPE }}
       server_cluster_size: ${{ secrets.SERVER_CLUSTER_SIZE }}
+      gcp_region: ${{ secrets.E2B_GCP_REGION }}
+      gcp_zone: ${{ secrets.E2B_GCP_ZONE }}
 
   # The last successful release is used for determining which changed and what should be deployed in this release.
   release:

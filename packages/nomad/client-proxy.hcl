@@ -26,6 +26,14 @@ variable "session_proxy_service_name" {
   type = string
 }
 
+variable "domain_name" {
+  type = string
+}
+
+locals {
+  domain_name_escaped = replace(var.domain_name, ".", "\\.")
+}
+
 job "client-proxy" {
   datacenters = [var.gcp_zone]
 
@@ -92,7 +100,7 @@ server {
 [[ range service "session-proxy" ]]
 server {
   listen 3002;
-  server_name ~^(.+)-[[ index .ServiceMeta "Client" | sprig_substr 0 8 ]]\.e2b\.dev$;
+  server_name ~^(.+)-[[ index .ServiceMeta "Client" | sprig_substr 0 8 ]]\.${local.domain_name_escaped}$;
 
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
