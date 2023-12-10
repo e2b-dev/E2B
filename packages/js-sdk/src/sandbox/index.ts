@@ -503,7 +503,7 @@ export class Sandbox extends SandboxConnection {
    * const reconnectedSandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
-  static async reconnect(sandboxID: string): Promise<Sandbox>;
+  static async reconnect<S extends Sandbox>(sandboxID: string): Promise<S>;
   /**
    * Reconnects to an existing Sandbox.
    * @param opts Sandbox options
@@ -522,8 +522,8 @@ export class Sandbox extends SandboxConnection {
    * })
    * ```
    */
-  static async reconnect(opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<Sandbox>;
-  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }) {
+  static async reconnect<S extends Sandbox>(opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<S>;
+  static async reconnect<S extends Sandbox>(sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<S> {
     let sandboxID: string
     let opts: SandboxOpts
     if (typeof sandboxIDorOpts === 'string') {
@@ -539,7 +539,7 @@ export class Sandbox extends SandboxConnection {
     const clientID = instanceIDAndClientID[1]
     opts.__sandbox = { instanceID, clientID, envID: 'unknown' }
 
-    const sandbox = new Sandbox(opts)
+    const sandbox = new this(opts) as S
     await sandbox._open({ timeout: opts?.timeout })
 
     return sandbox
