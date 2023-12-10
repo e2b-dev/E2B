@@ -98,6 +98,7 @@ jobs:
     secrets:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
+      gcp_project: ${{ secrets.E2B_GCP_PROJECT }}
 
   cluster-disk-image:
     name: Cluster disk image
