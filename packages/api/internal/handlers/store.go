@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"cloud.google.com/go/artifactregistry/apiv1"
+	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
 	"cloud.google.com/go/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -19,9 +19,9 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/db"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 )
 
 type APIStore struct {
@@ -78,7 +78,7 @@ func NewAPIStore() *APIStore {
 		panic(fmt.Sprintf("Error initializing Posthog client\n: %s", posthogErr))
 	}
 
-	var initialInstances []*api.Instance
+	var initialInstances []*InstanceInfo
 
 	if os.Getenv("ENVIRONMENT") == "prod" {
 		instances, instancesErr := nomadClient.GetInstances()
@@ -90,6 +90,7 @@ func NewAPIStore() *APIStore {
 	} else {
 		fmt.Println("Skipping loading instances from Nomad, running locally")
 	}
+
 	meter := otel.GetMeterProvider().Meter("nomad")
 
 	instancesCounter, err := meter.Int64UpDownCounter(
@@ -102,6 +103,7 @@ func NewAPIStore() *APIStore {
 	if err != nil {
 		panic(err)
 	}
+
 	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances, instancesCounter)
 
 	if os.Getenv("ENVIRONMENT") == "prod" {
@@ -115,6 +117,7 @@ func NewAPIStore() *APIStore {
 		fmt.Fprintf(os.Stderr, "Error initializing Cloud Storage client\n: %v\n", err)
 		panic(err)
 	}
+
 	fmt.Println("Initialized Cloud Storage client")
 
 	cStorage := &cloudStorage{
@@ -128,6 +131,7 @@ func NewAPIStore() *APIStore {
 		fmt.Fprintf(os.Stderr, "Error initializing Artifact Registry client\n: %v\n", err)
 		panic(err)
 	}
+
 	fmt.Println("Initialized Artifact Registry client")
 
 	apiSecret := os.Getenv("API_SECRET")
@@ -145,6 +149,7 @@ func NewAPIStore() *APIStore {
 	if err != nil {
 		panic(err)
 	}
+
 	buildCache := utils.NewBuildCache(buildCounter)
 
 	return &APIStore{
@@ -202,14 +207,14 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
 
-func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (ent.Team, error) {
+func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (models.Team, error) {
 	team, err := a.supabase.GetTeamAuth(ctx, apiKey)
 	if err != nil {
-		return ent.Team{}, fmt.Errorf("failed to get get team from db for api key: %w", err)
+		return models.Team{}, fmt.Errorf("failed to get get team from db for api key: %w", err)
 	}
 
 	if team == nil {
-		return ent.Team{}, fmt.Errorf("failed to get a team from api key")
+		return models.Team{}, fmt.Errorf("failed to get a team from api key")
 	}
 
 	return *team, nil
@@ -238,7 +243,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 		}
 	}
 
-	return deleteInstance(a.nomad, a.posthog, instanceID, info.TeamID, info.StartTime, purge)
+	return deleteInstance(a.nomad, a.posthog, info, purge)
 }
 
 func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (envID string, hasAccess bool, err error) {
@@ -249,14 +254,19 @@ type InstanceInfo = nomad.InstanceInfo
 
 func getDeleteInstanceFunction(nomad *nomad.NomadClient, posthogClient posthog.Client) func(info nomad.InstanceInfo, purge bool) *api.APIError {
 	return func(info InstanceInfo, purge bool) *api.APIError {
-		return deleteInstance(nomad, posthogClient, info.Instance.InstanceID, info.TeamID, info.StartTime, purge)
+		return deleteInstance(nomad, posthogClient, info, purge)
 	}
 }
 
-func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, instanceID string, teamID *uuid.UUID, startTime *time.Time, purge bool) *api.APIError {
-	delErr := nomad.DeleteInstance(instanceID, purge)
+func deleteInstance(
+	nomad *nomad.NomadClient,
+	posthogClient posthog.Client,
+	info InstanceInfo,
+	purge bool,
+) *api.APIError {
+	delErr := nomad.DeleteInstance(info.Instance.InstanceID, purge)
 	if delErr != nil {
-		errMsg := fmt.Errorf("cannot delete instance '%s': %w", instanceID, delErr.Err)
+		errMsg := fmt.Errorf("cannot delete instance '%s': %w", info.Instance.InstanceID, delErr.Err)
 
 		return &api.APIError{
 			Err:       errMsg,
@@ -265,18 +275,15 @@ func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, inst
 		}
 	}
 
-	if teamID != nil && startTime != nil {
-		err := posthogClient.Enqueue(posthog.Capture{
-			DistinctId: "backend",
-			Event:      "closed_instance",
-			Properties: posthog.NewProperties().
-				Set("instance_id", instanceID).Set("duration", time.Since(*startTime).Seconds()),
-			Groups: posthog.NewGroups().
-				Set("team", teamID),
-		})
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error sending Posthog event: %v\n", err)
-		}
+	if info.TeamID != nil && info.StartTime != nil {
+		CreateAnalyticsTeamEvent(
+			posthogClient,
+			info.StartTime.String(),
+			"closed_instance", posthog.NewProperties().
+				Set("instance_id", info.Instance.InstanceID).
+				Set("environment", info.Instance.EnvID).
+				Set("duration", time.Since(*info.StartTime).Seconds()),
+		)
 	}
 
 	return nil

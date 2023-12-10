@@ -32,24 +32,22 @@ type InstanceCache struct {
 }
 
 // Add the instance to the cache and start expiration timer.
-func (c *InstanceCache) Add(instance *api.Instance, teamID *uuid.UUID, startTime *time.Time) error {
-	if c.Exists(instance.InstanceID) {
-		return fmt.Errorf("instance \"%s\" already exists", instance.InstanceID)
+func (c *InstanceCache) Add(instance InstanceInfo) error {
+	if c.Exists(instance.Instance.InstanceID) {
+		return fmt.Errorf("instance \"%s\" already exists", instance.Instance.InstanceID)
 	}
 
-	if startTime == nil {
-		startTime = &time.Time{}
-		*startTime = time.Now()
+	if instance.StartTime == nil {
+		now := time.Now()
+		instance.StartTime = &now
 	}
 
-	instanceData := InstanceInfo{
-		Instance:  instance,
-		TeamID:    teamID,
-		StartTime: startTime,
+	if instance.TeamID == nil || instance.Instance.InstanceID == "" || instance.Instance.ClientID == "" || instance.Instance.EnvID == "" {
+		return fmt.Errorf("instance %+v (%+v) is missing team ID, instance ID, client ID, or env ID ", instance, instance.Instance)
 	}
 
-	c.cache.Set(instance.InstanceID, instanceData, ttlcache.DefaultTTL)
-	c.counter.Add(context.Background(), 1, metric.WithAttributes(attribute.String("instance_id", instance.InstanceID)))
+	c.cache.Set(instance.Instance.InstanceID, instance, ttlcache.DefaultTTL)
+	c.UpdateCounter(instance, 1)
 
 	return nil
 }
@@ -122,12 +120,12 @@ func (c *InstanceCache) Exists(instanceID string) bool {
 	return item != nil
 }
 
-func (c *InstanceCache) Sync(instances []*api.Instance) {
-	instanceMap := make(map[string]*api.Instance)
+func (c *InstanceCache) Sync(instances []*InstanceInfo) {
+	instanceMap := make(map[string]*InstanceInfo)
 
 	// Use map for faster lookup
 	for _, instance := range instances {
-		instanceMap[instance.InstanceID] = instance
+		instanceMap[instance.Instance.InstanceID] = instance
 	}
 
 	// Delete instances that are not in Nomad anymore
@@ -140,8 +138,8 @@ func (c *InstanceCache) Sync(instances []*api.Instance) {
 
 	// Add instances that are not in the cache with the default TTL
 	for _, instance := range instances {
-		if !c.Exists(instance.InstanceID) {
-			err := c.Add(instance, nil, nil)
+		if !c.Exists(instance.Instance.InstanceID) {
+			err := c.Add(*instance)
 			if err != nil {
 				fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
 			}
@@ -151,10 +149,15 @@ func (c *InstanceCache) Sync(instances []*api.Instance) {
 
 // We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now.
-func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*api.Instance, counter metric.Int64UpDownCounter) *InstanceCache {
+func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*InstanceInfo, counter metric.Int64UpDownCounter) *InstanceCache {
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, InstanceInfo](InstanceExpiration),
 	)
+
+	instanceCache := &InstanceCache{
+		cache:   cache,
+		counter: counter,
+	}
 
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, InstanceInfo]) {
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
@@ -162,17 +165,13 @@ func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.AP
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error deleting instance (%v)\n: %v\n", er, err.Err)
 			}
-			counter.Add(ctx, -1, metric.WithAttributes(attribute.String("instance_id", i.Value().Instance.InstanceID)))
+
+			instanceCache.UpdateCounter(i.Value(), -1)
 		}
 	})
 
-	instanceCache := &InstanceCache{
-		cache:   cache,
-		counter: counter,
-	}
-
 	for _, instance := range initialInstances {
-		err := instanceCache.Add(instance, nil, nil)
+		err := instanceCache.Add(*instance)
 		if err != nil {
 			fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
 		}
@@ -215,4 +214,12 @@ func (c *InstanceCache) CountForTeam(teamID uuid.UUID) (count uint) {
 	}
 
 	return count
+}
+
+func (c *InstanceCache) UpdateCounter(instance InstanceInfo, value int64) {
+	c.counter.Add(context.Background(), value, metric.WithAttributes(
+		attribute.String("instance_id", instance.Instance.InstanceID),
+		attribute.String("env_id", instance.Instance.EnvID),
+		attribute.String("team_id", instance.TeamID.String()),
+	))
 }

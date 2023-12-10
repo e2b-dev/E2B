@@ -7,14 +7,14 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 )
 
 func (a *APIStore) GetUserID(c *gin.Context) uuid.UUID {
 	return c.Value(constants.UserIDContextKey).(uuid.UUID)
 }
 
-func (a *APIStore) GetTeam(c *gin.Context) (*ent.Team, error) {
+func (a *APIStore) GetTeam(c *gin.Context) (*models.Team, error) {
 	ctx := c.Request.Context()
 
 	userID := a.GetUserID(c)
@@ -27,7 +27,7 @@ func (a *APIStore) GetTeam(c *gin.Context) (*ent.Team, error) {
 	return team, nil
 }
 
-func (a *APIStore) GetUserAndTeam(c *gin.Context) (userID uuid.UUID, team *ent.Team, tier *ent.Tier, err error) {
+func (a *APIStore) GetUserAndTeam(c *gin.Context) (userID uuid.UUID, team *models.Team, tier *models.Tier, err error) {
 	team, err = a.GetTeam(c)
 
 	return a.GetUserID(c), team, team.Edges.TeamTier, err

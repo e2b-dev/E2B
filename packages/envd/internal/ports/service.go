@@ -58,7 +58,7 @@ func (s *Service) notifyScanOpenedPorts(ports []netstat.Process) {
 
 // Subscription
 func (s *Service) ScanOpenedPorts(ctx context.Context) (*rpc.Subscription, error) {
-	s.logger.Info("Subscribe to scanning open ports")
+	s.logger.Debug("Subscribing to scanning open ports")
 
 	sub, _, err := s.scanOpenedPortsSubs.Create(ctx, "")
 	if err != nil {
@@ -69,6 +69,10 @@ func (s *Service) ScanOpenedPorts(ctx context.Context) (*rpc.Subscription, error
 
 		return nil, fmt.Errorf("error creating a scan opened ports subscription from context: %w", err)
 	}
+
+	s.logger.Debugw("Subscribed to scanning open ports",
+		"subID", sub.Subscription.ID,
+	)
 
 	return sub.Subscription, nil
 }

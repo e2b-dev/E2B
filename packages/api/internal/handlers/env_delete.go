@@ -15,10 +15,8 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-const (
-	// DockerImagesURL is the URL to the docker images in the artifact registry
-	DockerImagesURL = "/" + constants.ProjectID + "/locations/" + constants.Location + "/repositories/" + constants.DockerRepositoryName + "/packages/"
-)
+// DockerImagesURL is the URL to the docker images in the artifact registry
+var DockerImagesURL = "/" + constants.ProjectID + "/locations/" + constants.Region + "/repositories/" + constants.DockerRepositoryName + "/packages/"
 
 // DeleteEnvsEnvID serves to delete an env (e.g. in CLI)
 func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
@@ -56,9 +54,9 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	}
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("env.user_id", userID.String()),
-		attribute.String("env.team_id", team.ID.String()),
-		attribute.String("team_name", team.Name),
+		attribute.String("user.id", userID.String()),
+		attribute.String("env.team.id", team.ID.String()),
+		attribute.String("env.team.name", team.Name),
 		attribute.String("env.id", envID),
 	)
 
@@ -116,8 +114,8 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	telemetry.ReportEvent(ctx, "deleted env from db")
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
-	a.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "deleted environment", properties.Set("environment", envID))
+	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
+	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "deleted environment", properties.Set("environment", envID))
 
 	c.JSON(http.StatusOK, nil)
 }

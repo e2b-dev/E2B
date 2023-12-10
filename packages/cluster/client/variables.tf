@@ -72,6 +72,11 @@ variable "custom_tags" {
   default     = []
 }
 
+variable "labels" {
+  description = "The labels to attach to resources created by this module"
+  type        = map(string)
+}
+
 # Metadata
 
 variable "metadata_key_name_for_cluster_size" {
@@ -84,62 +89,6 @@ variable "custom_metadata" {
   description = "A map of metadata key value pairs to assign to the Compute Instance metadata."
   type        = map(string)
   default     = {}
-}
-
-# Firewall Ports
-
-variable "http_port" {
-  description = "The port used by Nomad to handle incoming HTPT (API) requests."
-  type        = number
-  default     = 4646
-}
-
-variable "rpc_port" {
-  description = "The port used by Nomad to handle incoming RPC requests."
-  type        = number
-  default     = 4647
-}
-
-variable "serf_port" {
-  description = "The port used by Nomad to handle incoming serf requests."
-  type        = number
-  default     = 4648
-}
-
-variable "allowed_inbound_cidr_blocks_http" {
-  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow connections to Nomad on the port specified by var.http_port."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_tags_http" {
-  description = "A list of tags from which the Compute Instances will allow connections to Nomad on the port specified by var.http_port."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_cidr_blocks_rpc" {
-  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow connections to Nomad on the port specified by var.rpc_port."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_tags_rpc" {
-  description = "A list of tags from which the Compute Instances will allow connections to Nomad on the port specified by var.rpc_port."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_cidr_blocks_serf" {
-  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow connections to Nomad on the port specified by var.serf_port."
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_inbound_tags_serf" {
-  description = "A list of tags from which the Compute Instances will allow connections to Nomad on the port specified by var.serf_port."
-  type        = list(string)
-  default     = []
 }
 
 # Disk Settings
@@ -194,15 +143,6 @@ variable "instance_group_update_policy_max_unavailable_percent" {
   default     = null
 }
 
-variable "instance_group_update_policy_min_ready_sec" {
-  description = "Minimum number of seconds to wait for after a newly created instance becomes available. This value must be between 0-3600."
-  type        = number
-}
-
-variable "gcp_project_id" {
-  type = string
-}
-
 variable "client_proxy_health_port" {
   type = object({
     name = string
@@ -239,4 +179,14 @@ variable "logs_health_proxy_port" {
     port        = number
     health_path = string
   })
+}
+
+variable "fc_envs_disk_name" {
+  type        = string
+  description = "The name of the disk for storing built fc envs"
+}
+
+variable "fc_envs_disk_device_name" {
+  type        = string
+  description = "The name of the device for storing built fc envs"
 }

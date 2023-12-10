@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
-
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	_ "github.com/lib/pq"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 )
 
 type DB struct {
-	Client *ent.Client
+	Client *models.Client
 	ctx    context.Context
 }
 
@@ -33,9 +33,7 @@ func NewClient(ctx context.Context) (*DB, error) {
 	db := drv.DB()
 	db.SetMaxOpenConns(20)
 
-	client := ent.NewClient(ent.Driver(drv), ent.AlternateSchema(ent.SchemaConfig{
-		User: "auth",
-	}))
+	client := models.NewClient(models.Driver(drv))
 
 	return &DB{Client: client, ctx: ctx}, nil
 }

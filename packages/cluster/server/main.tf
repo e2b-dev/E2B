@@ -2,8 +2,6 @@ resource "google_compute_instance_group_manager" "server_cluster" {
   name               = "${var.cluster_name}-ig"
   base_instance_name = var.cluster_name
 
-  provider = google-beta
-
   version {
     instance_template = google_compute_instance_template.server.id
   }
@@ -27,7 +25,6 @@ resource "google_compute_instance_group_manager" "server_cluster" {
     max_surge_percent       = var.instance_group_update_policy_max_surge_percent
     max_unavailable_fixed   = var.instance_group_update_policy_max_unavailable_fixed
     max_unavailable_percent = var.instance_group_update_policy_max_unavailable_percent
-    min_ready_sec           = var.instance_group_update_policy_min_ready_sec
   }
 
   target_pools = var.instance_group_target_pools
@@ -60,10 +57,12 @@ resource "google_compute_instance_template" "server" {
   metadata_startup_script = var.startup_script
   metadata = merge(
     {
-      "${var.metadata_key_name_for_cluster_size}" = var.cluster_size,
+      (var.metadata_key_name_for_cluster_size) = var.cluster_size,
     },
     var.custom_metadata,
   )
+
+  labels = var.labels
 
   scheduling {
     on_host_maintenance = "MIGRATE"
@@ -111,173 +110,5 @@ resource "google_compute_instance_template" "server" {
       disk,
     ]
     create_before_destroy = true
-  }
-}
-
-# LOAD BALANCERS
-
-data "google_compute_global_address" "orch_server_ip" {
-  name = "orch-server-nomad-ip"
-}
-
-data "google_compute_ssl_certificate" "nomad_certificate" {
-  name = "e2b-nomad-api"
-}
-
-module "gce_lb_http_nomad" {
-  source         = "GoogleCloudPlatform/lb-http/google"
-  version        = "~> 9.3"
-  name           = "orch-external-nomad-dashboard"
-  project        = var.gcp_project_id
-  address        = data.google_compute_global_address.orch_server_ip.address
-  create_address = false
-  target_tags = [
-    var.cluster_tag_name,
-  ]
-  ssl_certificates = [
-    data.google_compute_ssl_certificate.nomad_certificate.self_link,
-  ]
-  use_ssl_certificates = true
-  ssl                  = true
-
-
-  firewall_networks = [var.network_name]
-
-  backends = {
-    default = {
-      description                     = null
-      protocol                        = "HTTP"
-      port                            = 80
-      port_name                       = "nomad"
-      timeout_sec                     = 10
-      connection_draining_timeout_sec = 1
-      enable_cdn                      = false
-      security_policy                 = null
-      session_affinity                = null
-      affinity_cookie_ttl_sec         = null
-      custom_request_headers          = null
-      custom_response_headers         = null
-
-      health_check = {
-        check_interval_sec  = null
-        timeout_sec         = null
-        healthy_threshold   = null
-        unhealthy_threshold = null
-        request_path        = "/v1/status/peers"
-        port                = 4646
-        host                = null
-        logging             = false
-      }
-
-      log_config = {
-        enable      = false
-        sample_rate = 0.0
-      }
-
-      groups = [
-        {
-          group                        = google_compute_instance_group_manager.server_cluster.instance_group
-          balancing_mode               = null
-          capacity_scaler              = null
-          description                  = null
-          max_connections              = null
-          max_connections_per_instance = null
-          max_connections_per_endpoint = null
-          max_rate                     = null
-          max_rate_per_instance        = null
-          max_rate_per_endpoint        = null
-          max_utilization              = null
-        },
-      ]
-
-      iap_config = {
-        enable               = false
-        oauth2_client_id     = ""
-        oauth2_client_secret = ""
-      }
-    }
-  }
-}
-
-data "google_compute_global_address" "orch_server_consul_ip" {
-  name = "orch-server-consul-ip"
-}
-
-data "google_compute_ssl_certificate" "consul_certificate" {
-  name = "e2b-consul-api"
-}
-
-module "gce_lb_http_consul" {
-  source         = "GoogleCloudPlatform/lb-http/google"
-  version        = "~> 9.3"
-  name           = "orch-external-consul-dashboard"
-  project        = var.gcp_project_id
-  address        = data.google_compute_global_address.orch_server_consul_ip.address
-  create_address = false
-  target_tags = [
-    var.cluster_tag_name,
-  ]
-
-  ssl_certificates = [
-    data.google_compute_ssl_certificate.consul_certificate.self_link,
-  ]
-  use_ssl_certificates = true
-  ssl                  = true
-
-  firewall_networks = [var.network_name]
-
-  backends = {
-    default = {
-      description                     = null
-      protocol                        = "HTTP"
-      port                            = 80
-      port_name                       = "consul"
-      timeout_sec                     = 10
-      connection_draining_timeout_sec = 1
-      enable_cdn                      = false
-      security_policy                 = null
-      session_affinity                = null
-      affinity_cookie_ttl_sec         = null
-      custom_request_headers          = null
-      custom_response_headers         = null
-
-      health_check = {
-        check_interval_sec  = null
-        timeout_sec         = null
-        healthy_threshold   = null
-        unhealthy_threshold = null
-        request_path        = "/v1/status/peers"
-        port                = 8500
-        host                = null
-        logging             = false
-      }
-
-      log_config = {
-        enable      = false
-        sample_rate = 0.0
-      }
-
-      groups = [
-        {
-          group                        = google_compute_instance_group_manager.server_cluster.instance_group
-          balancing_mode               = null
-          capacity_scaler              = null
-          description                  = null
-          max_connections              = null
-          max_connections_per_instance = null
-          max_connections_per_endpoint = null
-          max_rate                     = null
-          max_rate_per_instance        = null
-          max_rate_per_endpoint        = null
-          max_utilization              = null
-        },
-      ]
-
-      iap_config = {
-        enable               = false
-        oauth2_client_id     = ""
-        oauth2_client_secret = ""
-      }
-    }
   }
 }

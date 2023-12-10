@@ -79,8 +79,8 @@ func (s *Service) dirWatcherLoop() {
 
 // Subscription
 func (s *Service) WatchDir(ctx context.Context, dirpath string) (*rpc.Subscription, error) {
-	s.logger.Infow(
-		"Subscribe to WatchDir",
+	s.logger.Debugw(
+		"Subscribing to WatchDir",
 		"path", dirpath,
 	)
 
@@ -116,6 +116,12 @@ func (s *Service) WatchDir(ctx context.Context, dirpath string) (*rpc.Subscripti
 
 		return nil, fmt.Errorf("error adding path to dwatcher: %w", addErr)
 	}
+
+	s.logger.Debugw(
+		"Subscribed to WatchDir",
+		"path", dirpath,
+		"subID", sub.Subscription.ID,
+	)
 
 	return sub.Subscription, nil
 }
@@ -209,6 +215,7 @@ func (s *Service) ReadBase64(path string) (string, error) {
 func (s *Service) Write(path string, content string) error {
 	s.logger.Infow("Write file",
 		"path", path,
+		"content", content,
 	)
 
 	if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
@@ -229,6 +236,7 @@ func (s *Service) Write(path string, content string) error {
 func (s *Service) WriteBase64(path string, content string) error {
 	s.logger.Infow("Decode bytes from base64 and write them to file",
 		"path", path,
+		"content", content,
 	)
 
 	bytes, err := base64.StdEncoding.DecodeString(content)

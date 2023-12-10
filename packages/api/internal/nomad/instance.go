@@ -14,6 +14,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"github.com/google/uuid"
 
 	nomadAPI "github.com/hashicorp/nomad/api"
 	"go.opentelemetry.io/otel/attribute"
@@ -26,6 +27,10 @@ const (
 	instanceIDPrefix         = "i"
 
 	instanceStartTimeout = time.Second * 20
+
+	envIDMetaKey      = "ENV_ID"
+	instanceIDMetaKey = "INSTANCE_ID"
+	teamIDMetaKey     = "TEAM_ID"
 )
 
 var (
@@ -37,12 +42,16 @@ var (
 var envInstanceFile string
 var envInstanceTemplate = template.Must(template.New(instanceJobName).Parse(envInstanceFile))
 
-func (n *NomadClient) GetInstances() ([]*api.Instance, *api.APIError) {
-	allocations, _, err := n.client.Allocations().List(&nomadAPI.QueryOptions{
-		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", instanceJobNameWithSlash, defaultTaskName, taskRunningState),
+func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
+	jobs, _, err := n.client.Jobs().ListOptions(&nomadAPI.JobListOptions{
+		Fields: &nomadAPI.JobListFields{
+			Meta: true,
+		},
+	}, &nomadAPI.QueryOptions{
+		Filter: fmt.Sprintf("ID contains \"%s\" and Status == \"%s\"", instanceJobNameWithSlash, jobRunningStatus),
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("failed to retrieve allocations from Nomad %w", err)
+		errMsg := fmt.Errorf("failed to get jobs from Nomad %w", err)
 
 		return nil, &api.APIError{
 			Err:       errMsg,
@@ -51,12 +60,54 @@ func (n *NomadClient) GetInstances() ([]*api.Instance, *api.APIError) {
 		}
 	}
 
-	instances := []*api.Instance{}
+	allocations, _, err := n.client.Allocations().List(&nomadAPI.QueryOptions{
+		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", instanceJobNameWithSlash, defaultTaskName, taskRunningState),
+	})
+	if err != nil {
+		errMsg := fmt.Errorf("failed to get allocations from Nomad %w", err)
+
+		return nil, &api.APIError{
+			Err:       errMsg,
+			ClientMsg: "Cannot retrieve instances right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
+
+	nodeMap := make(map[string]string, len(allocations))
 	for _, alloc := range allocations {
-		instances = append(instances, &api.Instance{
-			ClientID:   alloc.NodeID[:shortNodeIDLength],
-			InstanceID: alloc.JobID[len(instanceJobNameWithSlash):],
-			// TODO: Add envID from the job meta
+		nodeMap[alloc.JobID] = alloc.NodeID[:shortNodeIDLength]
+	}
+
+	instances := make([]*InstanceInfo, 0, len(jobs))
+
+	for _, job := range jobs {
+		instanceID := job.Meta[instanceIDMetaKey]
+		envID := job.Meta[envIDMetaKey]
+		teamID := job.Meta[teamIDMetaKey]
+
+		var teamUUID *uuid.UUID
+
+		if teamID != "" {
+			parsedTeamID, parseErr := uuid.Parse(teamID)
+			if parseErr != nil {
+				fmt.Fprintf(os.Stderr, "failed to parse team ID '%s' for job '%s': %v\n", teamID, job.ID, parseErr)
+			} else {
+				teamUUID = &parsedTeamID
+			}
+		}
+
+		clientID, ok := nodeMap[job.ID]
+		if !ok {
+			fmt.Fprintf(os.Stderr, "failed to get client ID for job '%s'\n", job.ID)
+		}
+
+		instances = append(instances, &InstanceInfo{
+			Instance: &api.Instance{
+				InstanceID: instanceID,
+				EnvID:      envID,
+				ClientID:   clientID,
+			},
+			TeamID: teamUUID,
 		})
 	}
 
@@ -71,7 +122,7 @@ func (n *NomadClient) CreateInstance(
 ) (*api.Instance, *api.APIError) {
 	childCtx, childSpan := t.Start(ctx, "create-instance",
 		trace.WithAttributes(
-			attribute.String("env_id", envID),
+			attribute.String("env.id", envID),
 		),
 	)
 	defer childSpan.End()
@@ -100,7 +151,13 @@ func (n *NomadClient) CreateInstance(
 		JobName          string
 		EnvsDisk         string
 		TeamID           string
+		EnvIDKey         string
+		InstanceIDKey    string
+		TeamIDKey        string
 	}{
+		TeamIDKey:        teamIDMetaKey,
+		EnvIDKey:         envIDMetaKey,
+		InstanceIDKey:    instanceIDMetaKey,
 		SpanID:           spanID,
 		TeamID:           teamID,
 		TraceID:          traceID,
@@ -200,7 +257,7 @@ func (n *NomadClient) CreateInstance(
 					errMsg := fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr.Err)
 					telemetry.ReportError(childCtx, errMsg)
 				} else {
-					telemetry.ReportEvent(childCtx, "cleaned up env instance job", attribute.String("env_id", envID), attribute.String("instance_id", instanceID))
+					telemetry.ReportEvent(childCtx, "cleaned up env instance job", attribute.String("env.id", envID), attribute.String("instance.id", instanceID))
 				}
 			}
 		}()

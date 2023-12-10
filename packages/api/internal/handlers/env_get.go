@@ -31,8 +31,8 @@ func (a *APIStore) GetEnvs(
 	}
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("env.user_id", userID.String()),
-		attribute.String("env.team_id", team.ID.String()),
+		attribute.String("user.id", userID.String()),
+		attribute.String("team.id", team.ID.String()),
 	)
 
 	envs, err := a.supabase.GetEnvs(ctx, team.ID)
@@ -47,9 +47,9 @@ func (a *APIStore) GetEnvs(
 
 	telemetry.ReportEvent(ctx, "listed environments")
 
-	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "listed environments", properties)
+	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "listed environments", properties)
 
 	c.JSON(http.StatusOK, envs)
 }

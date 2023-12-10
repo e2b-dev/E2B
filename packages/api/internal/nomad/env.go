@@ -69,11 +69,11 @@ func (n *NomadClient) BuildEnvJob(
 		childCtx,
 		attribute.String("passed_trace_id_hex", traceID),
 		attribute.String("passed_span_id_hex", spanID),
-		attribute.String("env_id", envID),
-		attribute.String("build_id", buildID),
-		attribute.Int64("disk_size_mb", vmConfig.DiskSizeMB),
-		attribute.Int64("vcpu_count", vmConfig.VCpuCount),
-		attribute.Int64("memory_mb", vmConfig.MemoryMB),
+		attribute.String("env.id", envID),
+		attribute.String("build.id", buildID),
+		attribute.Int64("build.disk_size_mb", vmConfig.DiskSizeMB),
+		attribute.Int64("build.vcpu_count", vmConfig.VCpuCount),
+		attribute.Int64("build.memory_mb", vmConfig.MemoryMB),
 	)
 
 	var jobDef bytes.Buffer
@@ -90,7 +90,7 @@ func (n *NomadClient) BuildEnvJob(
 		EnvsDisk                   string
 		GoogleServiceAccountBase64 string
 		GCPProjectID               string
-		GCPLocation                string
+		GCPRegion                  string
 		DockerRepositoryName       string
 		VCpuCount                  int64
 		MemoryMB                   int64
@@ -110,7 +110,7 @@ func (n *NomadClient) BuildEnvJob(
 		EnvsDisk:                   envsDisk,
 		GoogleServiceAccountBase64: googleServiceAccountBase64,
 		GCPProjectID:               constants.ProjectID,
-		GCPLocation:                constants.Location,
+		GCPRegion:                  constants.Region,
 		DockerRepositoryName:       constants.DockerRepositoryName,
 	}
 
@@ -157,7 +157,7 @@ func (n *NomadClient) BuildEnvJob(
 				errMsg := fmt.Errorf("error in cleanup after failing to build environment '%s': %w", envID, cleanupErr)
 				telemetry.ReportError(childCtx, errMsg)
 			} else {
-				telemetry.ReportEvent(childCtx, "cleaned up env build job", attribute.String("env_id", envID))
+				telemetry.ReportEvent(childCtx, "cleaned up env build job", attribute.String("env.id", envID))
 			}
 		}()
 
@@ -223,7 +223,7 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 		childCtx,
 		attribute.String("passed_trace_id_hex", traceID),
 		attribute.String("passed_span_id_hex", spanID),
-		attribute.String("env_id", envID),
+		attribute.String("env.id", envID),
 	)
 
 	var jobDef bytes.Buffer
@@ -273,7 +273,7 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 				errMsg := fmt.Errorf("error in cleanup after failing to delete environment '%s': %w", envID, deregisterErr)
 				telemetry.ReportError(childCtx, errMsg)
 			} else {
-				telemetry.ReportEvent(childCtx, "cleaned up env delete job", attribute.String("env_id", envID))
+				telemetry.ReportEvent(childCtx, "cleaned up env delete job", attribute.String("env.id", envID))
 			}
 		}()
 

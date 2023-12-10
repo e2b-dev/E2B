@@ -40,7 +40,7 @@ func newInstanceFiles(
 ) (*InstanceFiles, error) {
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
-			attribute.String("env_id", envID),
+			attribute.String("env.id", envID),
 			attribute.String("envs_disk", envsDisk),
 		),
 	)
@@ -90,9 +90,9 @@ func newInstanceFiles(
 	}
 
 	childSpan.SetAttributes(
-		attribute.String("env_instance_path", envInstancePath),
-		attribute.String("build_dir_path", buildDirPath),
-		attribute.String("env_path", envPath),
+		attribute.String("instance.env_instance_path", envInstancePath),
+		attribute.String("instance.build.dir_path", buildDirPath),
+		attribute.String("instance.env_path", envPath),
 	)
 
 	return &InstanceFiles{
@@ -109,9 +109,9 @@ func (env *InstanceFiles) Cleanup(
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "cleanup-env-instance",
 		trace.WithAttributes(
-			attribute.String("env_instance_path", env.EnvInstancePath),
-			attribute.String("build_dir_path", env.BuildDirPath),
-			attribute.String("env_path", env.EnvPath),
+			attribute.String("instance.env_instance_path", env.EnvInstancePath),
+			attribute.String("instance.build_dir_path", env.BuildDirPath),
+			attribute.String("instance.env_path", env.EnvPath),
 		),
 	)
 	defer childSpan.End()

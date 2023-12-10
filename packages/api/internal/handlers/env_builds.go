@@ -37,11 +37,11 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	envID := utils.GenerateID()
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("env.user_id", userID.String()),
-		attribute.String("env.team_id", team.ID.String()),
-		attribute.String("team_name", team.Name),
+		attribute.String("user.id", userID.String()),
+		attribute.String("env.team.id", team.ID.String()),
+		attribute.String("env.team.name", team.Name),
 		attribute.String("env.id", envID),
-		attribute.String("tier", tier.ID),
+		attribute.String("env.team.tier", tier.ID),
 	)
 
 	buildID, err := uuid.NewRandom()
@@ -100,8 +100,8 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	}
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
-	a.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "submitted environment build request", properties.
+	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
+	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "submitted environment build request", properties.
 		Set("environment", envID).
 		Set("build_id", buildID).
 		Set("dockerfile", dockerfile).
@@ -110,9 +110,9 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("build.id", buildID.String()),
-		attribute.String("build.alias", alias),
+		attribute.String("env.alias", alias),
 		attribute.String("build.dockerfile", dockerfile),
-		attribute.String("build.startCmd", startCmd),
+		attribute.String("build.start_cmd", startCmd),
 	)
 
 	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
@@ -149,7 +149,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 			return
 		} else {
-			telemetry.ReportEvent(ctx, "inserted alias", attribute.String("alias", alias))
+			telemetry.ReportEvent(ctx, "inserted alias", attribute.String("env.alias", alias))
 		}
 	}
 
@@ -185,7 +185,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		} else {
 			status = api.EnvironmentBuildStatusReady
 
-			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env_id", envID))
+			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", envID))
 		}
 
 		if status == api.EnvironmentBuildStatusError && alias != "" {
@@ -194,7 +194,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 				err = fmt.Errorf("error when deleting alias: %w", errMsg)
 				telemetry.ReportError(buildContext, err)
 			} else {
-				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("alias", alias))
+				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("env.alias", alias))
 			}
 		} else if status == api.EnvironmentBuildStatusReady && alias != "" {
 			errMsg := a.supabase.UpdateEnvAlias(buildContext, alias, envID)
@@ -202,7 +202,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 				err = fmt.Errorf("error when updating alias: %w", errMsg)
 				telemetry.ReportError(buildContext, err)
 			} else {
-				telemetry.ReportEvent(buildContext, "updated alias", attribute.String("alias", alias))
+				telemetry.ReportEvent(buildContext, "updated alias", attribute.String("env.alias", alias))
 			}
 		}
 
@@ -257,9 +257,9 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	}
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("env.user_id", userID.String()),
-		attribute.String("env.team_id", team.ID.String()),
-		attribute.String("tier", tier.ID),
+		attribute.String("user.id", userID.String()),
+		attribute.String("env.team.id", team.ID.String()),
+		attribute.String("env.team.tier", tier.ID),
 	)
 
 	buildID, err := uuid.NewRandom()
@@ -308,7 +308,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("build.id", buildID.String()),
-		attribute.String("build.alias", alias),
+		attribute.String("env.alias", alias),
 	)
 
 	envID, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
@@ -322,8 +322,8 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	}
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
-	a.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "submitted environment build request", properties.
+	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
+	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "submitted environment build request", properties.
 		Set("environment", envID).
 		Set("build_id", buildID).
 		Set("alias", alias).
@@ -375,7 +375,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 			return
 		} else {
-			telemetry.ReportEvent(ctx, "inserted alias", attribute.String("alias", alias))
+			telemetry.ReportEvent(ctx, "inserted alias", attribute.String("env.alias", alias))
 		}
 	}
 
@@ -413,7 +413,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		} else {
 			status = api.EnvironmentBuildStatusReady
 
-			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env_id", envID))
+			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", envID))
 		}
 
 		if status == api.EnvironmentBuildStatusError && alias != "" {
@@ -422,7 +422,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 				err = fmt.Errorf("error when deleting alias: %w", errMsg)
 				telemetry.ReportError(buildContext, err)
 			} else {
-				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("alias", alias))
+				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("env.alias", alias))
 			}
 		} else if status == api.EnvironmentBuildStatusReady && alias != "" {
 			errMsg := a.supabase.UpdateEnvAlias(buildContext, alias, envID)
@@ -430,7 +430,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 				err = fmt.Errorf("error when updating alias: %w", errMsg)
 				telemetry.ReportError(buildContext, err)
 			} else {
-				telemetry.ReportEvent(buildContext, "updated alias", attribute.String("alias", alias))
+				telemetry.ReportEvent(buildContext, "updated alias", attribute.String("env.alias", alias))
 			}
 		}
 
@@ -472,8 +472,8 @@ func (a *APIStore) buildEnv(
 ) (err error) {
 	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
 		trace.WithAttributes(
-			attribute.String("env_id", envID),
-			attribute.String("build_id", buildID.String()),
+			attribute.String("env.id", envID),
+			attribute.String("build.id", buildID.String()),
 		),
 	)
 	defer childSpan.End()
@@ -481,7 +481,7 @@ func (a *APIStore) buildEnv(
 	startTime := time.Now()
 
 	defer func() {
-		a.CreateAnalyticsUserEvent(userID, teamID.String(), "built environment", posthogProperties.
+		CreateAnalyticsUserEvent(a.posthog, userID, teamID.String(), "built environment", posthogProperties.
 			Set("environment", envID).
 			Set("build_id", buildID).
 			Set("duration", time.Since(startTime).String()).

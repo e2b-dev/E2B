@@ -55,8 +55,8 @@ func loadSnapshot(
 	metadata interface{},
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "load-snapshot", trace.WithAttributes(
-		attribute.String("socket_path", socketPath),
-		attribute.String("env_path", envPath),
+		attribute.String("instance.socket.path", socketPath),
+		attribute.String("instance.snapshot.root_path", envPath),
 	))
 	defer childSpan.End()
 
@@ -68,8 +68,8 @@ func loadSnapshot(
 
 	telemetry.SetAttributes(
 		childCtx,
-		attribute.String("memfile_path", memfilePath),
-		attribute.String("snapfile_path", snapfilePath),
+		attribute.String("instance.memfile.path", memfilePath),
+		attribute.String("instance.snapfile.path", snapfilePath),
 	)
 
 	backendType := models.MemoryBackendBackendTypeFile
@@ -119,8 +119,8 @@ func startFC(
 	mmdsMetadata *MmdsMetadata,
 ) (*FC, error) {
 	childCtx, childSpan := tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
-		attribute.String("instance_id", slot.InstanceID),
-		attribute.Int("ip_slot_index", slot.SlotIdx),
+		attribute.String("instance.id", slot.InstanceID),
+		attribute.Int("instance.slot.index", slot.SlotIdx),
 	))
 	defer childSpan.End()
 
@@ -267,10 +267,16 @@ func startFC(
 
 	telemetry.SetAttributes(
 		childCtx,
-		attribute.String("pid", fc.Pid),
-		attribute.String("cmd", fc.Cmd.String()),
-		attribute.String("cmd.dir", fc.Cmd.Dir),
-		attribute.String("cmd.path", fc.Cmd.Path),
+
+		attribute.String("alloc.id", allocID),
+		attribute.String("instance.pid", fc.Pid),
+		attribute.String("instance.socket.path", fsEnv.SocketPath),
+		attribute.String("instance.env.id", mmdsMetadata.EnvID),
+		attribute.String("instance.env.path", fsEnv.EnvPath),
+		attribute.String("instance.build_dir.path", fsEnv.BuildDirPath),
+		attribute.String("instance.cmd", fc.Cmd.String()),
+		attribute.String("instance.cmd.dir", fc.Cmd.Dir),
+		attribute.String("instance.cmd.path", fc.Cmd.Path),
 	)
 
 	return fc, nil
@@ -278,10 +284,10 @@ func startFC(
 
 func (fc *FC) Stop(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "stop-fc", trace.WithAttributes(
-		attribute.String("pid", fc.Pid),
-		attribute.String("cmd", fc.Cmd.String()),
-		attribute.String("cmd.dir", fc.Cmd.Dir),
-		attribute.String("cmd.path", fc.Cmd.Path),
+		attribute.String("instance.pid", fc.Pid),
+		attribute.String("instance.cmd", fc.Cmd.String()),
+		attribute.String("instance.cmd.dir", fc.Cmd.Dir),
+		attribute.String("instance.cmd.path", fc.Cmd.Path),
 	))
 	defer childSpan.End()
 

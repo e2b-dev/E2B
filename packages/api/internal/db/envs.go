@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent/envalias"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
 
 	"github.com/google/uuid"
 )
@@ -33,7 +33,7 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Envi
 		Env.
 		Query().
 		Where(env.Or(env.TeamID(teamID), env.Public(true))).
-		Order(ent.Asc(env.FieldCreatedAt)).
+		Order(models.Asc(env.FieldCreatedAt)).
 		WithEnvAliases().
 		All(ctx)
 	if err != nil {
@@ -68,7 +68,7 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 		WithEnvAliases().
 		Only(ctx)
 
-	notFound := ent.IsNotFound(err)
+	notFound := models.IsNotFound(err)
 	if notFound {
 		return nil, ErrEnvNotFound
 	} else if err != nil {
@@ -106,7 +106,7 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 		UpdateBuildID().
 		UpdateDockerfile().
 		UpdateUpdatedAt().
-		Update(func(e *ent.EnvUpsert) {
+		Update(func(e *models.EnvUpsert) {
 			e.AddBuildCount(1)
 		}).
 		Exec(ctx)
@@ -122,12 +122,12 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 }
 
 func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (envID string, hasAccess bool, err error) {
-	env, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
+	envDB, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}
 
-	return env.EnvID, true, nil
+	return envDB.EnvID, true, nil
 }
 
 func (db *DB) UpdateEnvLastUsed(ctx context.Context, envID string) (err error) {

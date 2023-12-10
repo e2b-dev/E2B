@@ -1,4 +1,6 @@
 .terraform
 .idea
 .DS_Store
-.env
+.env*
+!.env.template
+.last_used_env

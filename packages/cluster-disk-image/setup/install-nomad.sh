@@ -138,7 +138,6 @@ function install_binaries {
   local readonly download_path="/tmp/nomad_${version}_linux_amd64.zip"
   local readonly bin_dir="$path/bin"
   local readonly nomad_dest_path="$bin_dir/nomad"
-  local readonly run_nomad_dest_path="$bin_dir/run-nomad.sh"
 
   log_info "Downloading Nomad $version from $url to $download_path"
   curl -o "$download_path" "$url"
@@ -156,11 +155,6 @@ function install_binaries {
     log_info "Adding symlink to $nomad_dest_path in $symlink_path"
     sudo ln -s "$nomad_dest_path" "$symlink_path"
   fi
-
-  log_info "Copying Nomad run script to $run_nomad_dest_path"
-  sudo cp "$SCRIPT_DIR/setup/run-nomad.sh" "$run_nomad_dest_path"
-  sudo chown "$username:$username" "$run_nomad_dest_path"
-  sudo chmod a+x "$run_nomad_dest_path"
 }
 
 function install {

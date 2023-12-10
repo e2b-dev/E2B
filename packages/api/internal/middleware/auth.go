@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/google/uuid"
 	middleware "github.com/oapi-codegen/gin-middleware"
@@ -78,8 +78,8 @@ func (a *authenticator[T]) Authenticate(ctx context.Context, input *openapi3filt
 	return nil
 }
 
-func CreateAuthenticationFunc(teamValidationFunction func(context.Context, string) (ent.Team, error), userValidationFunction func(context.Context, string) (uuid.UUID, error)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
-	apiKeyValidator := authenticator[ent.Team]{
+func CreateAuthenticationFunc(teamValidationFunction func(context.Context, string) (models.Team, error), userValidationFunction func(context.Context, string) (uuid.UUID, error)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+	apiKeyValidator := authenticator[models.Team]{
 		securitySchemeName: "ApiKeyAuth",
 		headerKey:          "X-API-Key",
 		prefix:             "e2b_",

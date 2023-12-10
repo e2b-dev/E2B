@@ -12,9 +12,9 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -45,7 +45,7 @@ func (a *APIStore) PostInstances(
 	}
 
 	// Get team from context, use TeamContextKey
-	team := c.Value(constants.TeamContextKey).(ent.Team)
+	team := c.Value(constants.TeamContextKey).(models.Team)
 
 	envID, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
@@ -67,8 +67,8 @@ func (a *APIStore) PostInstances(
 	}
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("instance.team_id", team.ID.String()),
-		attribute.String("instance.env_id", envID),
+		attribute.String("env.team.id", team.ID.String()),
+		attribute.String("env.id", envID),
 	)
 
 	// Check if team has reached max instances
@@ -96,15 +96,18 @@ func (a *APIStore) PostInstances(
 
 	telemetry.ReportEvent(ctx, "created environment instance")
 
-	a.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.CreateAnalyticsTeamEvent(team.ID.String(), "created_instance", properties.
-		Set("environment", envID).
-		Set("instance_id", instance.InstanceID).
-		Set("infra_version", "v1"))
+	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "created_instance",
+		properties.
+			Set("environment", envID).
+			Set("instance_id", instance.InstanceID),
+	)
 
-	startingTime := time.Now()
-	if cacheErr := a.cache.Add(instance, &team.ID, &startingTime); cacheErr != nil {
+	if cacheErr := a.cache.Add(InstanceInfo{
+		Instance: instance,
+		TeamID:   &team.ID,
+	}); cacheErr != nil {
 		errMsg := fmt.Errorf("error when adding instance to cache: %w", cacheErr)
 		telemetry.ReportError(ctx, errMsg)
 
@@ -137,7 +140,7 @@ func (a *APIStore) PostInstances(
 	}()
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("instance_id", instance.InstanceID),
+		attribute.String("instance.id", instance.InstanceID),
 	)
 
 	c.JSON(http.StatusCreated, &instance)
@@ -162,7 +165,7 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 	}
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("instance_id", instanceID),
+		attribute.String("instance.id", instanceID),
 	)
 
 	if body.Duration == nil {

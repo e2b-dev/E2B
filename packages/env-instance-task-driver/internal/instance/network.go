@@ -27,17 +27,17 @@ func (ips *IPSlot) CreateNetwork(
 	hosts *txeh.Hosts,
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "create-network", trace.WithAttributes(
-		attribute.Int("slotIdx", ips.SlotIdx),
-		attribute.String("veth.cidr", ips.VethCIDR()),
-		attribute.String("vpeer.cidr", ips.VpeerCIDR()),
-		attribute.String("tap.cidr", ips.TapCIDR()),
-		attribute.String("hostSnapshot.cidr", ips.HostSnapshotCIDR()),
-		attribute.String("namespaceSnapshot.ip", ips.NamespaceSnapshotIP()),
-		attribute.String("tap.ip", ips.TapIP()),
-		attribute.String("tap.name", ips.TapName()),
-		attribute.String("veth.name", ips.VethName()),
-		attribute.String("vpeer.name", ips.VpeerName()),
-		attribute.String("namespace.id", ips.NamespaceID()),
+		attribute.Int("instance.slot.index", ips.SlotIdx),
+		attribute.String("instance.slot.veth.cidr", ips.VethCIDR()),
+		attribute.String("instance.slot.vpeer.cidr", ips.VpeerCIDR()),
+		attribute.String("instance.slot.tap.cidr", ips.TapCIDR()),
+		attribute.String("instance.slot.host_snapshot.cidr", ips.HostSnapshotCIDR()),
+		attribute.String("instance.slot.namespaces_snapshot.ip", ips.NamespaceSnapshotIP()),
+		attribute.String("instance.slot.tap.ip", ips.TapIP()),
+		attribute.String("instance.slot.tap.name", ips.TapName()),
+		attribute.String("instance.slot.veth.name", ips.VethName()),
+		attribute.String("instance.slot.vpeer.name", ips.VpeerName()),
+		attribute.String("instance.slot.namespace.id", ips.NamespaceID()),
 		attribute.String("instance.id", ips.InstanceID),
 	))
 	defer childSpan.End()

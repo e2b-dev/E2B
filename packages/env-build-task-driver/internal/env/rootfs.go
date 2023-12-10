@@ -144,7 +144,7 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	}
 
 	r.env.BuildLogsWriter.Write([]byte("\nRunning postprocessing. It can take up to few minutes.\n\n"))
-	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("tag", r.dockerTag()))
+	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("docker.image.tag", r.dockerTag()))
 
 	return nil
 }
@@ -462,7 +462,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		telemetry.ReportCriticalError(
 			childCtx,
 			errMsg,
-			attribute.Int("exitCode", inspection.State.ExitCode),
+			attribute.Int("exit_code", inspection.State.ExitCode),
 			attribute.String("error", inspection.State.Error),
 			attribute.Bool("oom", inspection.State.OOMKilled),
 		)

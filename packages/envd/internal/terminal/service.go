@@ -221,7 +221,7 @@ func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		}
 	}()
 
-	s.logger.Infow("Subscribed to terminal data",
+	s.logger.Debugw("Subscribed to terminal data",
 		"terminalID", id,
 		"subID", sub.Subscription.ID,
 	)
@@ -251,7 +251,7 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		}
 	}()
 
-	s.logger.Infow("Subscribed to terminal exit",
+	s.logger.Debugw("Subscribed to terminal exit",
 		"terminalID", id,
 		"subID", sub.Subscription.ID,
 	)

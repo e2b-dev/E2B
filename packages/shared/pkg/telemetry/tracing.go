@@ -78,8 +78,8 @@ func GetContextFromRemote(ctx context.Context, tracer trace.Tracer, name, spanID
 		ReportError(
 			ctx,
 			traceIDErr,
-			attribute.String("trace_id", traceID),
-			attribute.Int("trace_id.length", len(traceID)),
+			attribute.String("trace.id", traceID),
+			attribute.Int("trace.id.length", len(traceID)),
 		)
 	}
 
@@ -88,8 +88,8 @@ func GetContextFromRemote(ctx context.Context, tracer trace.Tracer, name, spanID
 		ReportError(
 			ctx,
 			spanIDErr,
-			attribute.String("span_id", spanID),
-			attribute.Int("span_id.length", len(spanID)),
+			attribute.String("span.id", spanID),
+			attribute.Int("span.id.length", len(spanID)),
 		)
 	}
 

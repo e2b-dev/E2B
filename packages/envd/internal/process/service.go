@@ -338,7 +338,7 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		}
 	}()
 
-	s.logger.Infow("Subscribed to process exit", "processID", id, "subID", sub.Subscription.ID)
+	s.logger.Debugw("Subscribed to process exit", "processID", id, "subID", sub.Subscription.ID)
 
 	return sub.Subscription, nil
 }
@@ -367,7 +367,7 @@ func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error
 		}
 	}()
 
-	s.logger.Infow("Subscribing to process stdout",
+	s.logger.Debugw("Subscribed to process stdout",
 		"processID", id,
 		"subID", sub.Subscription.ID,
 	)
@@ -377,7 +377,7 @@ func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error
 
 // Subscription
 func (s *Service) OnStderr(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Debugw("Subscribe to process stderr",
+	s.logger.Debugw("Subscribing to process stderr",
 		"processID", id,
 	)
 
@@ -399,7 +399,7 @@ func (s *Service) OnStderr(ctx context.Context, id ID) (*rpc.Subscription, error
 		}
 	}()
 
-	s.logger.Infow("Subscribe to process stderr",
+	s.logger.Debugw("Subscribed to process stderr",
 		"processID", id,
 		"subID", sub.Subscription.ID,
 	)

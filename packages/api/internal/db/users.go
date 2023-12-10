@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/team"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/user"
 
 	"github.com/google/uuid"
 )
 
-func (db *DB) GetDefaultTeamFromUserID(ctx context.Context, userID uuid.UUID) (t *ent.Team, err error) {
+func (db *DB) GetDefaultTeamFromUserID(ctx context.Context, userID uuid.UUID) (t *models.Team, err error) {
 	t, err = db.
 		Client.
 		Team.
@@ -29,7 +29,7 @@ func (db *DB) GetDefaultTeamFromUserID(ctx context.Context, userID uuid.UUID) (t
 	return t, nil
 }
 
-func (db *DB) GetDefaultTeamAndTierFromUserID(ctx context.Context, userID uuid.UUID) (*ent.Team, error) {
+func (db *DB) GetDefaultTeamAndTierFromUserID(ctx context.Context, userID uuid.UUID) (*models.Team, error) {
 	t, err := db.
 		Client.
 		Team.
@@ -48,7 +48,7 @@ func (db *DB) GetDefaultTeamAndTierFromUserID(ctx context.Context, userID uuid.U
 	return t, nil
 }
 
-func (db *DB) GetTeam(ctx context.Context, teamID uuid.UUID) (*ent.Team, error) {
+func (db *DB) GetTeam(ctx context.Context, teamID uuid.UUID) (*models.Team, error) {
 	t, err := db.
 		Client.
 		Team.
