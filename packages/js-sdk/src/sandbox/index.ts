@@ -20,9 +20,6 @@ export type DownloadFileFormat =
   | 'arraybuffer'
   | 'text';
 
-
-type ConstructorType = new (...args: any[]) => any;
-
 export interface SandboxOpts extends SandboxConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler;
   /** Timeout for sandbox to start */
@@ -62,7 +59,6 @@ export interface Action<S extends Sandbox = Sandbox, T = {
  * 
  * await sandbox.close()
  * ```
- * 
  */
 export class Sandbox extends SandboxConnection {
   /**
@@ -83,7 +79,15 @@ export class Sandbox extends SandboxConnection {
 
   private readonly onScanPorts?: ScanOpenPortsHandler
 
-  protected constructor(opts?: SandboxOpts) {
+  /**
+   * Use `Sandbox.create()` instead.
+   * 
+   * @hidden
+   * @hide
+   * @internal
+   * @access protected
+   */
+  constructor(opts?: SandboxOpts) {
     opts = opts || {}
     super(opts)
     this.onScanPorts = opts.onScanPorts
@@ -455,8 +459,9 @@ export class Sandbox extends SandboxConnection {
    * ```ts
    * const sandbox = await Sandbox.create()
    * ```
+   * @constructs Sandbox
    */
-  static async create<S extends ConstructorType>(this: S): Promise<InstanceType<S>>;
+  static async create<S extends typeof Sandbox>(this: S): Promise<InstanceType<S>>;
   /**
    * Creates a new Sandbox from the template with the specified ID.
    * @param template Sandbox template ID or name
@@ -467,7 +472,7 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.create("sandboxTemplateID")
    * ```
    */
-  static async create<S extends ConstructorType>(this: S, template: string): Promise<InstanceType<S>>;
+  static async create<S extends typeof Sandbox>(this: S, template: string): Promise<InstanceType<S>>;
   /**
    * Creates a new Sandbox from the specified options.
    * @param opts Sandbox options
@@ -481,7 +486,7 @@ export class Sandbox extends SandboxConnection {
    * })
    * ```
    */
-  static async create<S extends ConstructorType>(this: S, opts: SandboxOpts): Promise<InstanceType<S>>;
+  static async create<S extends typeof Sandbox>(this: S, opts: SandboxOpts): Promise<InstanceType<S>>;
   static async create(optsOrTemplate?: string | SandboxOpts) {
     const opts: SandboxOpts | undefined = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
     const sandbox = new Sandbox(opts)
@@ -506,7 +511,7 @@ export class Sandbox extends SandboxConnection {
    * const reconnectedSandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
-  static async reconnect<S extends ConstructorType>(this: S, sandboxID: string): Promise<InstanceType<S>>;
+  static async reconnect<S extends typeof Sandbox>(this: S, sandboxID: string): Promise<InstanceType<S>>;
   /**
    * Reconnects to an existing Sandbox.
    * @param opts Sandbox options
@@ -525,8 +530,8 @@ export class Sandbox extends SandboxConnection {
    * })
    * ```
    */
-  static async reconnect<S extends ConstructorType>(this: S, opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>>;
-  static async reconnect<S extends ConstructorType>(this: S, sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>> {
+  static async reconnect<S extends typeof Sandbox>(this: S, opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>>;
+  static async reconnect<S extends typeof Sandbox>(this: S, sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>> {
     let sandboxID: string
     let opts: SandboxOpts
     if (typeof sandboxIDorOpts === 'string') {
@@ -542,7 +547,7 @@ export class Sandbox extends SandboxConnection {
     const clientID = instanceIDAndClientID[1]
     opts.__sandbox = { instanceID, clientID, envID: 'unknown' }
 
-    const sandbox = new this(opts)
+    const sandbox = new this(opts) as InstanceType<S>
     await sandbox._open({ timeout: opts?.timeout })
 
     return sandbox
@@ -731,3 +736,5 @@ export class Sandbox extends SandboxConnection {
     }
   }
 }
+
+const a = new Sandbox()

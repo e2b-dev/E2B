@@ -19,6 +19,14 @@ export interface RunPythonOpts<S extends DataAnalysis> extends Omit<ProcessOpts,
 export class DataAnalysis extends Sandbox {
   private static template = 'Python3-DataAnalysis'
 
+  /**
+   * Use `DataAnalysis.create()` instead.
+   * 
+   * @hidden
+   * @hide
+   * @internal
+   * @access protected
+   */
   constructor(opts: Omit<SandboxOpts, 'template'>) {
     super({ template: DataAnalysis.template, ...opts })
   }
@@ -102,3 +110,5 @@ export class DataAnalysis extends Sandbox {
     }
   }
 }
+
+const a = new DataAnalysis({ timeout: 1000 })
