@@ -1,6 +1,6 @@
 {
   "name": "@e2b/sdk",
-  "version": "0.11.11",
+  "version": "0.11.12",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev",
   "license": "MIT",
