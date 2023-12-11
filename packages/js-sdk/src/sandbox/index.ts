@@ -20,6 +20,9 @@ export type DownloadFileFormat =
   | 'arraybuffer'
   | 'text';
 
+
+type ConstructorType = new (...args: any[]) => any;
+
 export interface SandboxOpts extends SandboxConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler;
   /** Timeout for sandbox to start */
@@ -453,7 +456,7 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.create()
    * ```
    */
-  static async create<S extends Sandbox>(): Promise<S>;
+  static async create<S extends ConstructorType>(this: S): Promise<InstanceType<S>>;
   /**
    * Creates a new Sandbox from the template with the specified ID.
    * @param template Sandbox template ID or name
@@ -464,7 +467,7 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.create("sandboxTemplateID")
    * ```
    */
-  static async create<S extends Sandbox>(template: string): Promise<S>;
+  static async create<S extends ConstructorType>(this: S, template: string): Promise<InstanceType<S>>;
   /**
    * Creates a new Sandbox from the specified options.
    * @param opts Sandbox options
@@ -478,7 +481,7 @@ export class Sandbox extends SandboxConnection {
    * })
    * ```
    */
-  static async create<S extends Sandbox>(opts: SandboxOpts): Promise<S>;
+  static async create<S extends ConstructorType>(this: S, opts: SandboxOpts): Promise<InstanceType<S>>;
   static async create(optsOrTemplate?: string | SandboxOpts) {
     const opts: SandboxOpts | undefined = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
     const sandbox = new Sandbox(opts)
@@ -503,7 +506,7 @@ export class Sandbox extends SandboxConnection {
    * const reconnectedSandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
-  static async reconnect<S extends Sandbox>(sandboxID: string): Promise<S>;
+  static async reconnect<S extends ConstructorType>(this: S, sandboxID: string): Promise<InstanceType<S>>;
   /**
    * Reconnects to an existing Sandbox.
    * @param opts Sandbox options
@@ -522,8 +525,8 @@ export class Sandbox extends SandboxConnection {
    * })
    * ```
    */
-  static async reconnect<S extends Sandbox>(opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<S>;
-  static async reconnect<S extends Sandbox>(sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<S> {
+  static async reconnect<S extends ConstructorType>(this: S, opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>>;
+  static async reconnect<S extends ConstructorType>(this: S, sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>> {
     let sandboxID: string
     let opts: SandboxOpts
     if (typeof sandboxIDorOpts === 'string') {
@@ -539,7 +542,7 @@ export class Sandbox extends SandboxConnection {
     const clientID = instanceIDAndClientID[1]
     opts.__sandbox = { instanceID, clientID, envID: 'unknown' }
 
-    const sandbox = new this(opts) as S
+    const sandbox = new this(opts)
     await sandbox._open({ timeout: opts?.timeout })
 
     return sandbox

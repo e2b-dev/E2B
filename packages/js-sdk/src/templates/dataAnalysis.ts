@@ -24,26 +24,6 @@ export class DataAnalysis extends Sandbox {
   }
 
   /**
-   * Reconnects to an existing Sandbox.
-   * @param sandboxID Sandbox ID
-   * @returns Sandbox
-   */
-  static async reconnect<S extends DataAnalysis>(sandboxID: string): Promise<S>;
-  /**
-   * Reconnects to an existing Sandbox with the specified options.
-   * @param opts Sandbox options
-   * @returns Sandbox
-   */
-  static async reconnect<S extends DataAnalysis>(opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<S>;
-  static async reconnect(sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }) {
-    if (typeof sandboxIDorOpts === 'string') {
-      sandboxIDorOpts = { sandboxID: sandboxIDorOpts }
-    }
-
-    return super.reconnect(sandboxIDorOpts)
-  }
-
-  /**
    * Creates a new Sandbox from the template.
    * @returns New Sandbox
    */
