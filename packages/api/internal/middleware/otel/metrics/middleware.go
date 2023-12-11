@@ -35,10 +35,10 @@ func Middleware(service string, options ...Option) gin.HandlerFunc {
 		start := time.Now()
 		reqAttributes := cfg.attributes(service, route, ginCtx.Request)
 
-		if cfg.recordInFlight {
-			recorder.AddInflightRequests(ctx, 1, reqAttributes)
-			defer recorder.AddInflightRequests(ctx, -1, reqAttributes)
-		}
+		// if cfg.recordInFlight {
+		// 	recorder.AddInflightRequests(ctx, 1, reqAttributes)
+		// 	defer recorder.AddInflightRequests(ctx, -1, reqAttributes)
+		// }
 
 		defer func() {
 			resAttributes := append(reqAttributes[0:0], reqAttributes...)
@@ -50,7 +50,7 @@ func Middleware(service string, options ...Option) gin.HandlerFunc {
 				resAttributes = append(resAttributes, semconv.HTTPAttributesFromHTTPStatusCode(ginCtx.Writer.Status())...)
 			}
 
-			recorder.AddRequests(ctx, 1, resAttributes)
+			// recorder.AddRequests(ctx, 1, resAttributes)
 
 			// if cfg.recordSize {
 			// 	requestSize := computeApproximateRequestSize(ginCtx.Request)
