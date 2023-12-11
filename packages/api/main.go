@@ -24,6 +24,7 @@ import (
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -47,6 +48,11 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 		customMiddleware.ExcludeRoutes(metricsMiddleware.Middleware(
 			serviceName,
 			metricsMiddleware.WithAttributes(func(serverName, route string, request *http.Request) []attribute.KeyValue {
+				span := trace.SpanFromContext(request.Context())
+				traceID := span.SpanContext().TraceID()
+
+				fmt.Println("trace >>>>>>>>>>>>>.", traceID)
+
 				if route == "/instances" {
 					bodyCopy := new(bytes.Buffer)
 					// Read the body
@@ -71,10 +77,14 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 					return append(
 						metricsMiddleware.DefaultAttributes(serverName, route, request),
 						attribute.String("env_id", instance.EnvID),
+						attribute.String("traceID", traceID.String()),
 					)
 				}
 
-				return metricsMiddleware.DefaultAttributes(serverName, route, request)
+				return append(
+					metricsMiddleware.DefaultAttributes(serverName, route, request),
+					attribute.String("traceID", traceID.String()),
+				)
 			}),
 		), "/health", "/instances/:instanceID/refreshes"),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/health", "/instances/:instanceID/refreshes"),
