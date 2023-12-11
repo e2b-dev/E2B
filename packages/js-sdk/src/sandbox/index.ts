@@ -736,5 +736,3 @@ export class Sandbox extends SandboxConnection {
     }
   }
 }
-
-const a = new Sandbox()

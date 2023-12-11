@@ -110,5 +110,3 @@ export class DataAnalysis extends Sandbox {
     }
   }
 }
-
-const a = new DataAnalysis({ timeout: 1000 })
