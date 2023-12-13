@@ -31,6 +31,7 @@ class DataAnalysis(Sandbox):
 
     def __init__(
         self,
+        template: Optional[str],
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
@@ -43,7 +44,7 @@ class DataAnalysis(Sandbox):
     ):
         self.on_artifact = on_artifact
         super().__init__(
-            template=self.template,
+            template=template or self.template,
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
