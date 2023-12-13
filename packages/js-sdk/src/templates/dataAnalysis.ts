@@ -27,8 +27,8 @@ export class DataAnalysis extends Sandbox {
    * @internal
    * @access protected
    */
-  constructor(opts: Omit<SandboxOpts, 'template'>) {
-    super({ template: DataAnalysis.template, ...opts })
+  constructor(opts: SandboxOpts) {
+    super({ template: opts.template || DataAnalysis.template, ...opts })
   }
 
   /**
@@ -41,8 +41,8 @@ export class DataAnalysis extends Sandbox {
    * @param opts Sandbox options
    * @returns New Sandbox
    */
-  static override async create(opts: Omit<SandboxOpts, 'template'>): Promise<DataAnalysis>;
-  static override async create(opts?: Omit<SandboxOpts, 'template'>) {
+  static override async create(opts: SandboxOpts): Promise<DataAnalysis>;
+  static override async create(opts?: SandboxOpts) {
     const sandbox = new DataAnalysis({ ...opts ? opts : {} })
     await sandbox._open({ timeout: opts?.timeout })
 
