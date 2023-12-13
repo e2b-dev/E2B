@@ -31,7 +31,7 @@ class DataAnalysis(Sandbox):
 
     def __init__(
         self,
-        template: Optional[str],
+        template: Optional[str] = None,
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
