@@ -37,8 +37,8 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: ^0.11.13
-        version: 0.11.13(openai@4.17.4)
+        specifier: ^0.11.14
+        version: 0.11.14(openai@4.17.4)
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -223,7 +223,7 @@ importers:
         version: 20.10.4
       '@types/react':
         specifier: latest
-        version: 18.2.43
+        version: 18.2.45
       '@types/react-dom':
         specifier: latest
         version: 18.2.17
@@ -730,8 +730,8 @@ packages:
     dev: true
     optional: true
 
-  /@e2b/sdk@0.11.13(openai@4.17.4):
-    resolution: {integrity: sha512-+WtTlWU7r/Xu5L1BLFM5JdQWLjy1Mc+gAfMl61Wz5V2B/8Ht6iyNBnn51ZVW6EXP0Xe5ggi1AF1svOFmF8ozTQ==}
+  /@e2b/sdk@0.11.14(openai@4.17.4):
+    resolution: {integrity: sha512-9VOyJqmp1EdZaleT4Rb01GZIx7qT8vYftjwcrq+zSZr1mdS4Rc+fkIUZJleBRU8zA0FpJHubTwo281iY5CdT+Q==}
     engines: {node: '>=18'}
     peerDependencies:
       openai: ^4.17.4
@@ -2924,7 +2924,7 @@ packages:
   /@types/react-dom@18.2.17:
     resolution: {integrity: sha512-rvrT/M7Df5eykWFxn6MYt5Pem/Dbyc1N8Y0S9Mrkw2WFCRiqUgw9P7ul2NpwsXCSM1DVdENzdG9J5SreqfAIWg==}
     dependencies:
-      '@types/react': 18.2.43
+      '@types/react': 18.2.45
     dev: true
 
   /@types/react-dom@18.2.7:
@@ -2963,8 +2963,8 @@ packages:
       csstype: 3.1.2
     dev: false
 
-  /@types/react@18.2.43:
-    resolution: {integrity: sha512-nvOV01ZdBdd/KW6FahSbcNplt2jCJfyWdTos61RYHV+FVv5L/g9AOX1bmbVcWcLFL8+KHQfh1zVIQrud6ihyQA==}
+  /@types/react@18.2.45:
+    resolution: {integrity: sha512-TtAxCNrlrBp8GoeEp1npd5g+d/OejJHFxS3OWmrPBMFaVQMSN0OFySozJio5BHxTuTeug00AVXVAjfDSfk+lUg==}
     dependencies:
       '@types/prop-types': 15.7.6
       '@types/scheduler': 0.16.3
