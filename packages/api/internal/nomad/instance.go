@@ -61,7 +61,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 	}
 
 	allocations, _, err := n.client.Allocations().List(&nomadAPI.QueryOptions{
-		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", instanceJobNameWithSlash, defaultTaskName, taskRunningState),
+		Filter: fmt.Sprintf("JobID contains \"%s\"", instanceJobNameWithSlash),
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get allocations from Nomad %w", err)
