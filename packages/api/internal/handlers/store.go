@@ -278,7 +278,7 @@ func deleteInstance(
 	if info.TeamID != nil && info.StartTime != nil {
 		CreateAnalyticsTeamEvent(
 			posthogClient,
-			info.StartTime.String(),
+			info.TeamID.String(),
 			"closed_instance", posthog.NewProperties().
 				Set("instance_id", info.Instance.InstanceID).
 				Set("environment", info.Instance.EnvID).
