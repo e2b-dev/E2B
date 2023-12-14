@@ -68,5 +68,10 @@
   "go.lintOnSave": "package",
   "go.survey.prompt": false,
   "go.useCodeSnippetsOnFunctionSuggestWithoutType": true,
-  "go.useCodeSnippetsOnFunctionSuggest": true
+  "go.useCodeSnippetsOnFunctionSuggest": true,
+  "[go][go.mod]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  }
 }

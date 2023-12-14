@@ -32,11 +32,8 @@ type InstanceCache struct {
 }
 
 // Add the instance to the cache and start expiration timer.
+// If the instance already exists we do nothing - it was loaded from Nomad.
 func (c *InstanceCache) Add(instance InstanceInfo) error {
-	if c.Exists(instance.Instance.InstanceID) {
-		return fmt.Errorf("instance \"%s\" already exists", instance.Instance.InstanceID)
-	}
-
 	if instance.StartTime == nil {
 		now := time.Now()
 		instance.StartTime = &now
