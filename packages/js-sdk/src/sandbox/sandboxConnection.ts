@@ -442,21 +442,25 @@ export class SandboxConnection {
       )
     })
 
-    this.rpc.onNotification.push(this.handleNotification.bind(this))
+    this.rpc.onNotification.push(this.handleNotification.bind(this));
 
-    try {
-      this.logger.debug?.(
-        `Connecting to sandbox "${this.sandbox?.instanceID}"`,
-      )
-      await this.rpc.connect(sandboxURL)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      // not warn, because this is somewhat expected behaviour during initialization
-      this.logger.debug?.(
-        `Error connecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
-        }`,
-      )
-    }
+    // We invoke the rpc.connect method in a separate promise because when using edge
+    // the rpc.connect does not throw or end on error.
+    (async () => {
+      try {
+        this.logger.debug?.(
+          `Connecting to sandbox "${this.sandbox?.instanceID}"`,
+        )
+        await this.rpc.connect(sandboxURL)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        // not warn, because this is somewhat expected behaviour during initialization
+        this.logger.debug?.(
+          `Error connecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
+          }`,
+        )
+      }
+    })()
 
     await openingPromise
   }
