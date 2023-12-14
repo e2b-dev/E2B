@@ -1,4 +1,4 @@
-import { IRpcNotification, RpcWebSocketClient } from 'rpc-websocket-client'
+import { IRpcNotification, RpcWebSocketClient } from './rpc'
 
 import api, { components, withAPIKey } from '../api'
 import { ENVD_PORT, SANDBOX_DOMAIN, SANDBOX_REFRESH_PERIOD, SECURE, WS_RECONNECT_INTERVAL, WS_ROUTE } from '../constants'
@@ -366,21 +366,19 @@ export class SandboxConnection {
       await this.connectRpc()
       return this
     }
-    return await withTimeout(open, opts?.timeout)()
+
+    try {
+      return await withTimeout(open, opts?.timeout)()
+    } catch (err) {
+      await this.close()
+      throw err
+    }
   }
 
   private async connectRpc() {
     const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
     const protocol = this.getProtocol('ws')
     const sandboxURL = `${protocol}://${hostname}${WS_ROUTE}`
-
-    this.rpc.onError((err) => {
-      // not warn, because this is somewhat expected behaviour during initialization
-      this.logger.debug?.(
-        `Error in WebSocket of sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
-        }. Trying to reconnect...`,
-      )
-    })
 
     let isFinished = false
     let resolveOpening: (() => void) | undefined
@@ -406,10 +404,12 @@ export class SandboxConnection {
       resolveOpening?.()
     })
 
-    this.rpc.onClose(async () => {
+    this.rpc.onError(async (err) => {
       this.logger.debug?.(
-        `Closing WebSocket connection to sandbox "${this.sandbox?.instanceID}"`,
+        `Error in WebSocket of sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
+        }. Trying to reconnect...`,
       )
+
       if (this.isOpen) {
         await wait(WS_RECONNECT_INTERVAL)
         this.logger.debug?.(
@@ -436,14 +436,19 @@ export class SandboxConnection {
       }
     })
 
+    this.rpc.onClose(async () => {
+      this.logger.debug?.(
+        `WebSocket connection to sandbox "${this.sandbox?.instanceID}" closed`,
+      )
+    })
+
     this.rpc.onNotification.push(this.handleNotification.bind(this))
 
     try {
       this.logger.debug?.(
-        `Connection to sandbox "${this.sandbox?.instanceID}"`,
+        `Connecting to sandbox "${this.sandbox?.instanceID}"`,
       )
       await this.rpc.connect(sandboxURL)
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       // not warn, because this is somewhat expected behaviour during initialization
@@ -455,6 +460,7 @@ export class SandboxConnection {
 
     await openingPromise
   }
+
   private handleNotification(data: IRpcNotification) {
     this.logger.debug?.('Handling notification:', data)
     this.subscribers
