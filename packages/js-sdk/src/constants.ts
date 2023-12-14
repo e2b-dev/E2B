@@ -1,5 +1,5 @@
 export const SANDBOX_REFRESH_PERIOD = 5_000 // 5s
-export const WS_RECONNECT_INTERVAL = 600 // 600ms
+export const WS_RECONNECT_INTERVAL = 150 // 150ms
 
 export const TIMEOUT = 60_000 // 60s
 

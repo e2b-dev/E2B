@@ -719,7 +719,9 @@ export class Sandbox extends SandboxConnection {
       await this.filesystem.makeDir(this.cwd)
     }
 
-    this.handleStartCmdLogs()
+    if ((this.opts as SandboxOpts).onStdout || (this.opts as SandboxOpts).onStderr) {
+      this.handleStartCmdLogs()
+    }
 
     return this
   }
