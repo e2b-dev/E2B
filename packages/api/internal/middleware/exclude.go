@@ -1,27 +1,46 @@
 package middleware
 
 import (
+	"strings"
+
 	"github.com/gin-gonic/gin"
 )
 
 func ExcludeRoutes(middleware gin.HandlerFunc, notlogged ...string) gin.HandlerFunc {
-	var skip map[string]struct{}
-
-	if length := len(notlogged); length > 0 {
-		skip = make(map[string]struct{}, length)
-
-		for _, path := range notlogged {
-			skip[path] = struct{}{}
-		}
-	}
-
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
 
-		if _, ok := skip[path]; !ok {
+		if !shouldSkip(path, notlogged) {
 			middleware(c)
 		} else {
 			c.Next()
 		}
 	}
+}
+
+func shouldSkip(path string, patterns []string) bool {
+	for _, pattern := range patterns {
+		if matchPattern(path, pattern) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func matchPattern(path, pattern string) bool {
+	pathSegments := strings.Split(path, "/")
+	patternSegments := strings.Split(pattern, "/")
+
+	if len(pathSegments) != len(patternSegments) {
+		return false
+	}
+
+	for i := range pathSegments {
+		if patternSegments[i] != pathSegments[i] && !strings.HasPrefix(patternSegments[i], ":") {
+			return false
+		}
+	}
+
+	return true
 }

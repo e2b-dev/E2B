@@ -25,8 +25,6 @@ const (
 	maxUploadLimit     = 1 << 28 // 256 MiB
 )
 
-var ignoreLoggingForPaths = []string{"/health"}
-
 func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *http.Server {
 	// Clear out the servers array in the swagger spec, that skips validating
 	// that server names match. We don't know how this thing will be run.
@@ -38,8 +36,8 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	r.Use(
 		// We use custom otelgin middleware because we want to log 4xx errors in the otel
-		customMiddleware.ExcludeRoutes(customMiddleware.Otel(serviceName), ignoreLoggingForPaths...),
-		gin.LoggerWithWriter(gin.DefaultWriter, ignoreLoggingForPaths...),
+		customMiddleware.ExcludeRoutes(customMiddleware.Otel(serviceName), "/health"),
+		customMiddleware.ExcludeRoutes(gin.LoggerWithWriter(gin.DefaultWriter), "/health", "/instances/:instanceID/refreshes"),
 		gin.Recovery(),
 	)
 

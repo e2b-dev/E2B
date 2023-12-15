@@ -164,10 +164,6 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 		return
 	}
 
-	telemetry.SetAttributes(ctx,
-		attribute.String("instance.id", instanceID),
-	)
-
 	if body.Duration == nil {
 		duration = nomad.InstanceExpiration
 	} else {
@@ -186,8 +182,6 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 
 		return
 	}
-
-	telemetry.ReportEvent(ctx, "refreshed instance")
 
 	c.Status(http.StatusNoContent)
 }
