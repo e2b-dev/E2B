@@ -28,12 +28,12 @@ type APIStore struct {
 	Ctx                        context.Context
 	posthog                    posthog.Client
 	tracer                     trace.Tracer
-	cache                      *nomad.InstanceCache
+	instanceCache              *nomad.InstanceCache
+	buildCache                 *nomad.BuildCache
 	nomad                      *nomad.NomadClient
 	supabase                   *db.DB
 	cloudStorage               *cloudStorage
 	artifactRegistry           *artifactregistry.Client
-	buildCache                 *utils.BuildCache
 	apiSecret                  string
 	googleServiceAccountBase64 string
 }
@@ -104,10 +104,10 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
-	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances, instancesCounter)
+	instanceCache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances, instancesCounter)
 
 	if os.Getenv("ENVIRONMENT") == "prod" {
-		go cache.KeepInSync(nomadClient)
+		go instanceCache.KeepInSync(nomadClient)
 	} else {
 		fmt.Println("Skipping syncing intances with Nomad, running locally")
 	}
@@ -150,13 +150,13 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
-	buildCache := utils.NewBuildCache(buildCounter)
+	buildCache := nomad.NewBuildCache(buildCounter)
 
 	return &APIStore{
 		Ctx:                        ctx,
 		nomad:                      nomadClient,
 		supabase:                   supabaseClient,
-		cache:                      cache,
+		instanceCache:              instanceCache,
 		tracer:                     tracer,
 		posthog:                    posthogClient,
 		cloudStorage:               cStorage,
@@ -234,7 +234,7 @@ func (a *APIStore) GetUserFromAccessToken(ctx context.Context, accessToken strin
 }
 
 func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
-	info, err := a.cache.GetInstance(instanceID)
+	info, err := a.instanceCache.GetInstance(instanceID)
 	if err != nil {
 		return &api.APIError{
 			Err:       err,

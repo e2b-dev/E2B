@@ -73,7 +73,7 @@ func (a *APIStore) PostInstances(
 
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
-	if instanceCount := a.cache.CountForTeam(team.ID); int64(instanceCount) >= maxInstancesPerTeam {
+	if instanceCount := a.instanceCache.CountForTeam(team.ID); int64(instanceCount) >= maxInstancesPerTeam {
 		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, team.Edges.TeamTier.ConcurrentInstances)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
@@ -104,7 +104,7 @@ func (a *APIStore) PostInstances(
 			Set("instance_id", instance.InstanceID),
 	)
 
-	if cacheErr := a.cache.Add(InstanceInfo{
+	if cacheErr := a.instanceCache.Add(InstanceInfo{
 		Instance: instance,
 		TeamID:   &team.ID,
 	}); cacheErr != nil {
@@ -178,7 +178,7 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 		duration = nomad.InstanceExpiration
 	}
 
-	err = a.cache.KeepAliveFor(instanceID, duration)
+	err = a.instanceCache.KeepAliveFor(instanceID, duration)
 	if err != nil {
 		errMsg := fmt.Errorf("error when refreshing instance: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)

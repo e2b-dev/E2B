@@ -125,7 +125,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		return
 	}
 
-	err = a.buildCache.Create(team.ID, envID, buildID)
+	err = a.buildCache.Create(envID, buildID, team.ID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", envID))
 
@@ -351,7 +351,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		return
 	}
 
-	err = a.buildCache.Create(team.ID, envID, buildID)
+	err = a.buildCache.Create(envID, buildID, team.ID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", envID))
 

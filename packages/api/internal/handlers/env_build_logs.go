@@ -57,7 +57,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 		return
 	}
 
-	if team.ID != dockerBuild.TeamID {
+	if team.ID != dockerBuild.GetTeamID() {
 		msg := fmt.Errorf("user doesn't have access to env '%s'", envID)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
@@ -67,11 +67,14 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 		return
 	}
 
+	status := dockerBuild.GetStatus()
+	logs := dockerBuild.GetLogs()
+
 	result := api.EnvironmentBuild{
-		Logs:    dockerBuild.Logs[*params.LogsOffset:],
+		Logs:    logs[*params.LogsOffset:],
 		EnvID:   envID,
 		BuildID: buildID,
-		Status:  &dockerBuild.Status,
+		Status:  &status,
 	}
 
 	telemetry.ReportEvent(ctx, "got environment build")
@@ -126,7 +129,7 @@ func (a *APIStore) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvI
 		return
 	}
 
-	telemetry.ReportEvent(ctx, "got docker build log")
+	telemetry.ReportEvent(ctx, "added docker build log")
 
 	c.JSON(http.StatusCreated, nil)
 }
