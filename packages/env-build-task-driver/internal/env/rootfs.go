@@ -131,6 +131,7 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 		InputStream:  dockerContextFile,
 		OutputStream: writer,
 		Name:         r.dockerTag(),
+		Pull:         true,
 	})
 
 	if err != nil {
