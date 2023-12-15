@@ -18,6 +18,27 @@ func ExcludeRoutes(middleware gin.HandlerFunc, notlogged ...string) gin.HandlerF
 	}
 }
 
+func IncludeRoutes(middleware gin.HandlerFunc, included ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+
+		if shouldInclude(path, included) {
+			middleware(c)
+		} else {
+			c.Next()
+		}
+	}
+}
+
+func shouldInclude(path string, patterns []string) bool {
+	for _, pattern := range patterns {
+		if matchPattern(path, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
 func shouldSkip(path string, patterns []string) bool {
 	for _, pattern := range patterns {
 		if matchPattern(path, pattern) {

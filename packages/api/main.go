@@ -45,13 +45,14 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	r.Use(
 		// We use custom otelgin middleware because we want to log 4xx errors in the otel
 		customMiddleware.ExcludeRoutes(tracingMiddleware.Middleware(serviceName), "/health"),
-		customMiddleware.ExcludeRoutes(metricsMiddleware.Middleware(
+		customMiddleware.IncludeRoutes(metricsMiddleware.Middleware(
 			serviceName,
+			metricsMiddleware.WithGroupedStatusDisabled(),
+			metricsMiddleware.WithRecordInFlightDisabled(),
+			metricsMiddleware.WithRecordSizeDisabled(),
 			metricsMiddleware.WithAttributes(func(serverName, route string, request *http.Request) []attribute.KeyValue {
 				span := trace.SpanFromContext(request.Context())
 				traceID := span.SpanContext().TraceID()
-
-				fmt.Println("trace >>>>>>>>>>>>>.", traceID)
 
 				if route == "/instances" {
 					bodyCopy := new(bytes.Buffer)
@@ -86,7 +87,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 					attribute.String("traceID", traceID.String()),
 				)
 			}),
-		), "/health", "/instances/:instanceID/refreshes"),
+		), "/instances"),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/health", "/instances/:instanceID/refreshes"),
 		gin.Recovery(),
 	)

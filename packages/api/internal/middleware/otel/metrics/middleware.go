@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 )
 
@@ -16,10 +17,12 @@ func Middleware(service string, options ...Option) gin.HandlerFunc {
 	for _, option := range options {
 		option.apply(cfg)
 	}
+
 	recorder := cfg.recorder
 	if recorder == nil {
-		recorder = GetRecorder("")
+		recorder = GetRecorder(service)
 	}
+
 	return func(ginCtx *gin.Context) {
 		ctx := ginCtx.Request.Context()
 
@@ -27,18 +30,20 @@ func Middleware(service string, options ...Option) gin.HandlerFunc {
 		if len(route) <= 0 {
 			route = "nonconfigured"
 		}
+
 		if !cfg.shouldRecord(service, route, ginCtx.Request) {
 			ginCtx.Next()
+
 			return
 		}
 
 		start := time.Now()
 		reqAttributes := cfg.attributes(service, route, ginCtx.Request)
 
-		// if cfg.recordInFlight {
-		// 	recorder.AddInflightRequests(ctx, 1, reqAttributes)
-		// 	defer recorder.AddInflightRequests(ctx, -1, reqAttributes)
-		// }
+		if cfg.recordInFlight {
+			recorder.AddInflightRequests(ctx, 1, reqAttributes)
+			defer recorder.AddInflightRequests(ctx, -1, reqAttributes)
+		}
 
 		defer func() {
 			resAttributes := append(reqAttributes[0:0], reqAttributes...)
@@ -50,17 +55,19 @@ func Middleware(service string, options ...Option) gin.HandlerFunc {
 				resAttributes = append(resAttributes, semconv.HTTPAttributesFromHTTPStatusCode(ginCtx.Writer.Status())...)
 			}
 
-			// recorder.AddRequests(ctx, 1, resAttributes)
+			duration := time.Since(start)
 
-			// if cfg.recordSize {
-			// 	requestSize := computeApproximateRequestSize(ginCtx.Request)
-			// 	recorder.ObserveHTTPRequestSize(ctx, requestSize, resAttributes)
-			// 	recorder.ObserveHTTPResponseSize(ctx, int64(ginCtx.Writer.Size()), resAttributes)
-			// }
+			recorder.AddRequests(ctx, 1, append(resAttributes, attribute.Int64("duration_ms", int64(duration/time.Millisecond))))
 
-			recorder.ObserveHTTPRequestDuration(ctx, time.Since(start), resAttributes)
-			// if cfg.recordDuration {
-			// }
+			if cfg.recordSize {
+				requestSize := computeApproximateRequestSize(ginCtx.Request)
+				recorder.ObserveHTTPRequestSize(ctx, requestSize, resAttributes)
+				recorder.ObserveHTTPResponseSize(ctx, int64(ginCtx.Writer.Size()), resAttributes)
+			}
+
+			if cfg.recordDuration {
+				recorder.ObserveHTTPRequestDuration(ctx, duration, resAttributes)
+			}
 		}()
 
 		ginCtx.Next()
@@ -75,12 +82,14 @@ func computeApproximateRequestSize(r *http.Request) int64 {
 
 	s += len(r.Method)
 	s += len(r.Proto)
+
 	for name, values := range r.Header {
 		s += len(name)
 		for _, value := range values {
 			s += len(value)
 		}
 	}
+
 	s += len(r.Host)
 
 	// N.B. r.Form and r.MultipartForm are assumed to be included in r.URL.
@@ -88,5 +97,6 @@ func computeApproximateRequestSize(r *http.Request) int64 {
 	if r.ContentLength != -1 {
 		s += int(r.ContentLength)
 	}
+
 	return int64(s)
 }
