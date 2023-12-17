@@ -36,8 +36,8 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	r.Use(
 		// We use custom otelgin middleware because we want to log 4xx errors in the otel
-		customMiddleware.ExcludeRoutes(customMiddleware.Otel(serviceName), "/health"),
 		customMiddleware.ExcludeRoutes(gin.LoggerWithWriter(gin.DefaultWriter), "/health", "/instances/:instanceID/refreshes"),
+		customMiddleware.ExcludeRoutes(customMiddleware.Otel(serviceName), "/health"),
 		gin.Recovery(),
 	)
 
