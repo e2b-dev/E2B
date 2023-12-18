@@ -140,7 +140,7 @@ func (c *BuildCache) Create(envID string, buildID uuid.UUID, teamID uuid.UUID) e
 		return fmt.Errorf("build for %s already exists in cache", envID)
 	}
 
-	c.updateCounter(envID, buildID, 1)
+	c.updateCounter(envID, buildID, teamID, 1)
 
 	return nil
 }
@@ -153,19 +153,20 @@ func (c *BuildCache) SetDone(envID string, buildID uuid.UUID, status api.Environ
 	}
 
 	item.setStatus(status)
-	c.updateCounter(envID, buildID, -1)
+	c.updateCounter(envID, buildID, item.teamID, -1)
 
 	return nil
 }
 
-func (c *BuildCache) updateCounter(envID string, buildID uuid.UUID, value int64) {
+func (c *BuildCache) updateCounter(envID string, buildID, teamID uuid.UUID, value int64) {
 	c.counter.Add(context.Background(), value,
 		metric.WithAttributes(attribute.String("env_id", envID)),
 		metric.WithAttributes(attribute.String("build_id", buildID.String())),
+		metric.WithAttributes(attribute.String("team_id", teamID.String())),
 	)
 }
 
-func (c *BuildCache) Delete(envID string, buildID uuid.UUID) {
+func (c *BuildCache) Delete(envID string, buildID, teamID uuid.UUID) {
 	c.cache.Delete(envID)
-	c.updateCounter(envID, buildID, -1)
+	c.updateCounter(envID, buildID, teamID, -1)
 }
