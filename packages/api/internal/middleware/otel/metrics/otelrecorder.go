@@ -38,10 +38,21 @@ func GetRecorder(metricsPrefix string) Recorder {
 	)
 
 	totalDuration, _ := meter.Int64Histogram(
-		metricName("http.server.request_duration"),
+		metricName("http.server.test.request_duration_test_1"),
 		metric.WithDescription("Time Taken by request"),
 		metric.WithUnit("ms"),
-		metric.WithExplicitBucketBoundaries(math.Inf(-1), math.Inf(1)),
+		metric.WithExplicitBucketBoundaries(
+			0,
+			64,
+			128,
+			256,
+			512,
+			1024,
+			2048,
+			4096,
+			8192,
+			math.Inf(1),
+		),
 	)
 
 	activeRequestsCounter, _ := meter.Int64UpDownCounter(
