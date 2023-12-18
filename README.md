@@ -3,11 +3,13 @@
 </p>
 
 <h1 align="center">
-  Cloud Runtime for AI Agents
+  Cloud Runtime for AI Agents 
+  &#x1F680; 
 </h1>
 
 <h3 align="center">
-  Secure sandboxed cloud environments made for AI agents and AI apps
+  Secure sandboxed cloud environments made for AI agents and AI apps 
+  &#x1F3D7;&#xFE0F; 
 </h3>
 
 <h4 align="center">
@@ -43,7 +45,7 @@ tools as humans do. For example:
 - Running LLM generated code
 - Audio & video editing
 
-**The E2B sandbox can be connected to any LLM and any AI agent or app.**
+**The E2B sandbox can be connected to any LLM and any AI agent or app.** 
 
 ## Getting Started & Documentation
 
@@ -96,6 +98,9 @@ const sandbox = await Sandbox.create();
 // Close sandbox once done
 await sandbox.close();
 ```
+
+> "Remember to always have fun, even when you're trapped in a sandbox!
+> Being a developer is no joke, but sometimes it feels like the code is laughing at you!"
 
 ## Repository Structure
 
