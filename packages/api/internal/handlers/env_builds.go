@@ -145,7 +145,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 			err = fmt.Errorf("error when inserting alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			a.buildCache.Delete(envID, buildID)
+			a.buildCache.Delete(envID, buildID, team.ID)
 
 			return
 		} else {
@@ -371,7 +371,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			err = fmt.Errorf("error when inserting alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			a.buildCache.Delete(envID, buildID)
+			a.buildCache.Delete(envID, buildID, team.ID)
 
 			return
 		} else {
@@ -474,6 +474,7 @@ func (a *APIStore) buildEnv(
 		trace.WithAttributes(
 			attribute.String("env.id", envID),
 			attribute.String("build.id", buildID.String()),
+			attribute.String("env.team.id", teamID.String()),
 		),
 	)
 	defer childSpan.End()
