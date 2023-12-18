@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 
@@ -23,8 +20,6 @@ import (
 	"github.com/gin-contrib/cors"
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -50,45 +45,8 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 			metricsMiddleware.WithGroupedStatusDisabled(),
 			metricsMiddleware.WithRecordInFlightDisabled(),
 			metricsMiddleware.WithRecordSizeDisabled(),
-			metricsMiddleware.WithAttributes(func(serverName, route string, request *http.Request) []attribute.KeyValue {
-				span := trace.SpanFromContext(request.Context())
-				traceID := span.SpanContext().TraceID()
-
-				if route == "/instances" {
-					bodyCopy := new(bytes.Buffer)
-					// Read the body
-					_, err := io.Copy(bodyCopy, request.Body)
-					if err != nil {
-						errMsg := fmt.Errorf("error reading body: %w", err)
-						panic(errMsg)
-					}
-
-					bodyData := bodyCopy.Bytes()
-					// Pass the body back through the request
-					request.Body = io.NopCloser(bytes.NewReader(bodyData))
-
-					var instance api.NewInstance
-					err = json.NewDecoder(io.NopCloser(bytes.NewReader(bodyData))).Decode(&instance)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "error decoding request body: %v\n", err)
-
-						return metricsMiddleware.DefaultAttributes(serverName, route, request)
-					}
-
-					return append(
-						metricsMiddleware.DefaultAttributes(serverName, route, request),
-						attribute.String("env_id", instance.EnvID),
-						attribute.String("traceID", traceID.String()),
-					)
-				}
-
-				return append(
-					metricsMiddleware.DefaultAttributes(serverName, route, request),
-					attribute.String("traceID", traceID.String()),
-				)
-			}),
 		), "/instances"),
-		customMiddleware.ExcludeRoutes(gin.LoggerWithWriter(gin.DefaultWriter), "/health", "/instances/:instanceID/refreshes"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health", "/instances/"),
 		gin.Recovery(),
 	)
 

@@ -15,7 +15,7 @@ import (
 // middlewares.
 type otelRecorder struct {
 	attemptsCounter       metric.Int64UpDownCounter
-	totalDuration         metric.Int64Histogram
+	totalDuration         metric.Float64Histogram
 	activeRequestsCounter metric.Int64UpDownCounter
 	requestSize           metric.Int64Histogram
 	responseSize          metric.Int64Histogram
@@ -37,20 +37,19 @@ func GetRecorder(metricsPrefix string) Recorder {
 		metric.WithUnit("Count"),
 	)
 
-	totalDuration, _ := meter.Int64Histogram(
-		metricName("http.server.test.request_duration_test_1"),
+	totalDuration, _ := meter.Float64Histogram(
+		metricName("http.server.test.request_duration_3"),
 		metric.WithDescription("Time Taken by request"),
-		metric.WithUnit("ms"),
+		metric.WithUnit("s"),
 		metric.WithExplicitBucketBoundaries(
 			0,
-			64,
-			128,
-			256,
-			512,
-			1024,
-			2048,
-			4096,
-			8192,
+			0.064,
+			0.128,
+			0.256,
+			0.512,
+			1.024,
+			2.048,
+			4.096,
 			math.Inf(1),
 		),
 	)
@@ -89,7 +88,7 @@ func (r *otelRecorder) AddRequests(ctx context.Context, quantity int64, attribut
 
 // ObserveHTTPRequestDuration measures the duration of an HTTP request.
 func (r *otelRecorder) ObserveHTTPRequestDuration(ctx context.Context, duration time.Duration, attributes []attribute.KeyValue) {
-	r.totalDuration.Record(ctx, int64(duration/time.Millisecond), metric.WithAttributes(attributes...))
+	r.totalDuration.Record(ctx, float64(duration/time.Second), metric.WithAttributes(attributes...))
 }
 
 // // ObserveHTTPRequestSize measures the size of an HTTP request in bytes.

@@ -24,6 +24,8 @@ func (a *APIStore) PostInstances(
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
 
+	c.Set("traceID", span.SpanContext().TraceID().String())
+
 	body, err := parseBody[api.PostInstancesJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
@@ -66,6 +68,9 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
+	c.Set("envID", envID)
+	c.Set("teamID", team.ID.String())
+
 	telemetry.SetAttributes(ctx,
 		attribute.String("env.team.id", team.ID.String()),
 		attribute.String("env.id", envID),
@@ -93,6 +98,8 @@ func (a *APIStore) PostInstances(
 
 		return
 	}
+
+	c.Set("instanceID", instance.InstanceID)
 
 	telemetry.ReportEvent(ctx, "created environment instance")
 

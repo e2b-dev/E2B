@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -46,7 +47,36 @@ func Middleware(service string, options ...Option) gin.HandlerFunc {
 		}
 
 		defer func() {
-			resAttributes := append(reqAttributes[0:0], reqAttributes...)
+			resAttributes := append(
+				reqAttributes[0:0],
+				reqAttributes...,
+			)
+
+			envID, ok := ginCtx.Value("envID").(string)
+			if ok {
+				fmt.Println("envID: ", envID)
+				resAttributes = append(resAttributes, attribute.String("env_id", envID))
+			}
+
+			teamID, ok := ginCtx.Value("teamID").(string)
+			if ok {
+				fmt.Println("teamID: ", teamID)
+				resAttributes = append(resAttributes, attribute.String("team_id", teamID))
+			}
+
+			instanceID, ok := ginCtx.Value("instanceID").(string)
+			if ok {
+				fmt.Println("instanceID: ", instanceID)
+				resAttributes = append(resAttributes, attribute.String("instance_id", instanceID))
+			}
+
+			traceID, ok := ginCtx.Value("traceID").(string)
+			if ok {
+				fmt.Println("traceID: ", traceID)
+				resAttributes = append(resAttributes, attribute.String("traceID", traceID))
+			}
+
+			fmt.Printf("attrs: %v\n", resAttributes)
 
 			if cfg.groupedStatus {
 				code := int(ginCtx.Writer.Status()/100) * 100
