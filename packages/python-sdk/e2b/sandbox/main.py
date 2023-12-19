@@ -119,6 +119,8 @@ class Sandbox(SandboxConnection):
         self._on_stdout = on_stdout
         self._on_stderr = on_stderr
 
+        default_env_vars = {"PYTHONUNBUFFERED": "1"}
+
         self._terminal = TerminalManager(sandbox=self)
         self._filesystem = FilesystemManager(sandbox=self)
         self._process = ProcessManager(
@@ -131,7 +133,10 @@ class Sandbox(SandboxConnection):
             template=template,
             api_key=api_key,
             cwd=cwd,
-            env_vars=env_vars,
+            env_vars={
+                **default_env_vars,
+                **(env_vars or {}),
+            },
             _sandbox=_sandbox,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
