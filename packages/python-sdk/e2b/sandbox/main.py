@@ -1,6 +1,7 @@
 import logging
 import urllib.parse
 import requests
+import threading
 
 from os import path
 from typing import Any, Callable, Dict, List, Literal, Optional, IO, TypeVar, Union
@@ -223,11 +224,15 @@ class Sandbox(SandboxConnection):
         return OpenAI[Self](Actions[Self](self))
 
     def _handle_start_cmd_logs(self):
-        self.process.start(
-            "sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service",
-            cwd="/",
-            env_vars={},
-        )
+        def run_in_thread():
+            self.process.start(
+                "sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service",
+                cwd="/",
+                env_vars={},
+            )
+
+        thread = threading.Thread(target=run_in_thread)
+        thread.start()
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
