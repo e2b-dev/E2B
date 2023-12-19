@@ -101,12 +101,16 @@ export class SandboxConnection {
     }
     this.apiKey = apiKey
 
+
     this.cwd = opts.cwd
     if (this.cwd && this.cwd.startsWith('~')) {
       this.cwd = this.cwd.replace('~', '/home/user')
     }
 
-    this.envVars = opts.envVars || {}
+    const defaultEnvVars = { PYTHONUNBUFFERED: "1" }
+
+    this.envVars = { ...defaultEnvVars, ...opts.envVars || {} }
+
     this.logger = opts.logger ?? {
       // by default, we log to the console
       // we don't log debug messages by default
