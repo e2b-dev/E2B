@@ -123,8 +123,8 @@ func (a *APIStore) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvI
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when saving docker build logs: %s", err))
 
-		err = fmt.Errorf("error when saving docker build logs: %w", err)
-		telemetry.ReportError(ctx, err)
+		errMsg := fmt.Errorf("error when saving docker build logs: %w", err)
+		telemetry.ReportError(ctx, errMsg)
 
 		return
 	}

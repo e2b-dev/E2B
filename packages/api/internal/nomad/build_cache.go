@@ -72,6 +72,8 @@ func (b *BuildInfo) setStatus(status api.EnvironmentBuildStatus) {
 type BuildCache struct {
 	cache   *ttlcache.Cache[string, *BuildInfo]
 	counter metric.Int64UpDownCounter
+
+	mu sync.Mutex
 }
 
 func NewBuildCache(counter metric.Int64UpDownCounter) *BuildCache {
@@ -122,6 +124,14 @@ func (c *BuildCache) Append(envID string, buildID uuid.UUID, logs []string) erro
 
 // Create creates a new build if it doesn't exist in the cache or the build was already finished
 func (c *BuildCache) Create(envID string, buildID uuid.UUID, teamID uuid.UUID) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	item := c.cache.Get(envID)
+	if item != nil && item.Value().GetStatus() == api.EnvironmentBuildStatusBuilding {
+		return fmt.Errorf("build for %s already exists in cache", envID)
+	}
+
 	info := BuildInfo{
 		buildID: buildID,
 		teamID:  teamID,
@@ -130,15 +140,7 @@ func (c *BuildCache) Create(envID string, buildID uuid.UUID, teamID uuid.UUID) e
 		logs: []string{},
 	}
 
-	cacheInfo, ok := c.cache.GetOrSet(
-		envID,
-		&info,
-		ttlcache.WithTTL[string, *BuildInfo](buildInfoExpiration),
-	)
-
-	if ok && cacheInfo.Value().GetStatus() == api.EnvironmentBuildStatusBuilding {
-		return fmt.Errorf("build for %s already exists in cache", envID)
-	}
+	c.cache.Set(envID, &info, buildInfoExpiration)
 
 	c.updateCounter(envID, buildID, teamID, 1)
 
