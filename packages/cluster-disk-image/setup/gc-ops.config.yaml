@@ -7,4 +7,4 @@ metrics:
   receivers:
     hostmetrics:
       type: hostmetrics
-      collection_interval: 30s
+      collection_interval: 300s
