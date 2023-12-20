@@ -9,7 +9,6 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
-	metricsMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware/otel/metrics"
 	tracingMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware/otel/tracing"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -40,13 +39,8 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	r.Use(
 		// We use custom otelgin middleware because we want to log 4xx errors in the otel
 		customMiddleware.ExcludeRoutes(tracingMiddleware.Middleware(serviceName), "/health"),
-		customMiddleware.IncludeRoutes(metricsMiddleware.Middleware(
-			serviceName,
-			metricsMiddleware.WithGroupedStatusDisabled(),
-			metricsMiddleware.WithRecordInFlightDisabled(),
-			metricsMiddleware.WithRecordSizeDisabled(),
-		), "/instances"),
-		gin.LoggerWithWriter(gin.DefaultWriter, "/health", "/instances/"),
+		// customMiddleware.IncludeRoutes(metricsMiddleware.Middleware(serviceName), "/instances"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
 		gin.Recovery(),
 	)
 

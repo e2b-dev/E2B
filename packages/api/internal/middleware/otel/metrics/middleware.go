@@ -41,11 +41,6 @@ func Middleware(service string, options ...Option) gin.HandlerFunc {
 		start := time.Now()
 		reqAttributes := cfg.attributes(service, route, ginCtx.Request)
 
-		if cfg.recordInFlight {
-			recorder.AddInflightRequests(ctx, 1, reqAttributes)
-			defer recorder.AddInflightRequests(ctx, -1, reqAttributes)
-		}
-
 		defer func() {
 			resAttributes := append(
 				reqAttributes[0:0],
@@ -70,14 +65,6 @@ func Middleware(service string, options ...Option) gin.HandlerFunc {
 				resAttributes = append(resAttributes, attribute.String("instance_id", instanceID))
 			}
 
-			traceID, ok := ginCtx.Value("traceID").(string)
-			if ok {
-				fmt.Println("traceID: ", traceID)
-				resAttributes = append(resAttributes, attribute.String("traceID", traceID))
-			}
-
-			fmt.Printf("attrs: %v\n", resAttributes)
-
 			if cfg.groupedStatus {
 				code := int(ginCtx.Writer.Status()/100) * 100
 				resAttributes = append(resAttributes, semconv.HTTPStatusCodeKey.Int(code))
@@ -86,18 +73,7 @@ func Middleware(service string, options ...Option) gin.HandlerFunc {
 			}
 
 			duration := time.Since(start)
-
-			recorder.AddRequests(ctx, 1, append(resAttributes, attribute.Int64("duration_ms", int64(duration/time.Millisecond))))
-
-			if cfg.recordSize {
-				requestSize := computeApproximateRequestSize(ginCtx.Request)
-				recorder.ObserveHTTPRequestSize(ctx, requestSize, resAttributes)
-				recorder.ObserveHTTPResponseSize(ctx, int64(ginCtx.Writer.Size()), resAttributes)
-			}
-
-			if cfg.recordDuration {
-				recorder.ObserveHTTPRequestDuration(ctx, duration, resAttributes)
-			}
+			recorder.ObserveHTTPRequestDuration(ctx, duration, resAttributes)
 		}()
 
 		ginCtx.Next()
