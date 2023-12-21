@@ -42,6 +42,8 @@ var (
 		{Name: "last_spawned_at", Type: field.TypeTime, Nullable: true},
 		{Name: "vcpu", Type: field.TypeInt64},
 		{Name: "ram_mb", Type: field.TypeInt64},
+		{Name: "free_disk_size_mb", Type: field.TypeInt64},
+		{Name: "total_disk_size_mb", Type: field.TypeInt64},
 		{Name: "team_id", Type: field.TypeUUID},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
@@ -52,7 +54,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "envs_teams_envs",
-				Columns:    []*schema.Column{EnvsColumns[11]},
+				Columns:    []*schema.Column{EnvsColumns[13]},
 				RefColumns: []*schema.Column{TeamsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

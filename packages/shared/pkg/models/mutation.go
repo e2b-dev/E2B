@@ -485,32 +485,36 @@ func (m *AccessTokenMutation) ResetEdge(name string) error {
 // EnvMutation represents an operation that mutates the Env nodes in the graph.
 type EnvMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *string
-	created_at         *time.Time
-	updated_at         *time.Time
-	dockerfile         *string
-	public             *bool
-	build_id           *uuid.UUID
-	build_count        *int32
-	addbuild_count     *int32
-	spawn_count        *int32
-	addspawn_count     *int32
-	last_spawned_at    *time.Time
-	vcpu               *int64
-	addvcpu            *int64
-	ram_mb             *int64
-	addram_mb          *int64
-	clearedFields      map[string]struct{}
-	team               *uuid.UUID
-	clearedteam        bool
-	env_aliases        map[string]struct{}
-	removedenv_aliases map[string]struct{}
-	clearedenv_aliases bool
-	done               bool
-	oldValue           func(context.Context) (*Env, error)
-	predicates         []predicate.Env
+	op                    Op
+	typ                   string
+	id                    *string
+	created_at            *time.Time
+	updated_at            *time.Time
+	dockerfile            *string
+	public                *bool
+	build_id              *uuid.UUID
+	build_count           *int32
+	addbuild_count        *int32
+	spawn_count           *int32
+	addspawn_count        *int32
+	last_spawned_at       *time.Time
+	vcpu                  *int64
+	addvcpu               *int64
+	ram_mb                *int64
+	addram_mb             *int64
+	free_disk_size_mb     *int64
+	addfree_disk_size_mb  *int64
+	total_disk_size_mb    *int64
+	addtotal_disk_size_mb *int64
+	clearedFields         map[string]struct{}
+	team                  *uuid.UUID
+	clearedteam           bool
+	env_aliases           map[string]struct{}
+	removedenv_aliases    map[string]struct{}
+	clearedenv_aliases    bool
+	done                  bool
+	oldValue              func(context.Context) (*Env, error)
+	predicates            []predicate.Env
 }
 
 var _ ent.Mutation = (*EnvMutation)(nil)
@@ -1106,6 +1110,118 @@ func (m *EnvMutation) ResetRAMMB() {
 	m.addram_mb = nil
 }
 
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (m *EnvMutation) SetFreeDiskSizeMB(i int64) {
+	m.free_disk_size_mb = &i
+	m.addfree_disk_size_mb = nil
+}
+
+// FreeDiskSizeMB returns the value of the "free_disk_size_mb" field in the mutation.
+func (m *EnvMutation) FreeDiskSizeMB() (r int64, exists bool) {
+	v := m.free_disk_size_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFreeDiskSizeMB returns the old "free_disk_size_mb" field's value of the Env entity.
+// If the Env object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvMutation) OldFreeDiskSizeMB(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFreeDiskSizeMB is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFreeDiskSizeMB requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFreeDiskSizeMB: %w", err)
+	}
+	return oldValue.FreeDiskSizeMB, nil
+}
+
+// AddFreeDiskSizeMB adds i to the "free_disk_size_mb" field.
+func (m *EnvMutation) AddFreeDiskSizeMB(i int64) {
+	if m.addfree_disk_size_mb != nil {
+		*m.addfree_disk_size_mb += i
+	} else {
+		m.addfree_disk_size_mb = &i
+	}
+}
+
+// AddedFreeDiskSizeMB returns the value that was added to the "free_disk_size_mb" field in this mutation.
+func (m *EnvMutation) AddedFreeDiskSizeMB() (r int64, exists bool) {
+	v := m.addfree_disk_size_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFreeDiskSizeMB resets all changes to the "free_disk_size_mb" field.
+func (m *EnvMutation) ResetFreeDiskSizeMB() {
+	m.free_disk_size_mb = nil
+	m.addfree_disk_size_mb = nil
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (m *EnvMutation) SetTotalDiskSizeMB(i int64) {
+	m.total_disk_size_mb = &i
+	m.addtotal_disk_size_mb = nil
+}
+
+// TotalDiskSizeMB returns the value of the "total_disk_size_mb" field in the mutation.
+func (m *EnvMutation) TotalDiskSizeMB() (r int64, exists bool) {
+	v := m.total_disk_size_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalDiskSizeMB returns the old "total_disk_size_mb" field's value of the Env entity.
+// If the Env object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvMutation) OldTotalDiskSizeMB(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalDiskSizeMB is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalDiskSizeMB requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalDiskSizeMB: %w", err)
+	}
+	return oldValue.TotalDiskSizeMB, nil
+}
+
+// AddTotalDiskSizeMB adds i to the "total_disk_size_mb" field.
+func (m *EnvMutation) AddTotalDiskSizeMB(i int64) {
+	if m.addtotal_disk_size_mb != nil {
+		*m.addtotal_disk_size_mb += i
+	} else {
+		m.addtotal_disk_size_mb = &i
+	}
+}
+
+// AddedTotalDiskSizeMB returns the value that was added to the "total_disk_size_mb" field in this mutation.
+func (m *EnvMutation) AddedTotalDiskSizeMB() (r int64, exists bool) {
+	v := m.addtotal_disk_size_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalDiskSizeMB resets all changes to the "total_disk_size_mb" field.
+func (m *EnvMutation) ResetTotalDiskSizeMB() {
+	m.total_disk_size_mb = nil
+	m.addtotal_disk_size_mb = nil
+}
+
 // ClearTeam clears the "team" edge to the Team entity.
 func (m *EnvMutation) ClearTeam() {
 	m.clearedteam = true
@@ -1221,7 +1337,7 @@ func (m *EnvMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, env.FieldCreatedAt)
 	}
@@ -1255,6 +1371,12 @@ func (m *EnvMutation) Fields() []string {
 	if m.ram_mb != nil {
 		fields = append(fields, env.FieldRAMMB)
 	}
+	if m.free_disk_size_mb != nil {
+		fields = append(fields, env.FieldFreeDiskSizeMB)
+	}
+	if m.total_disk_size_mb != nil {
+		fields = append(fields, env.FieldTotalDiskSizeMB)
+	}
 	return fields
 }
 
@@ -1285,6 +1407,10 @@ func (m *EnvMutation) Field(name string) (ent.Value, bool) {
 		return m.Vcpu()
 	case env.FieldRAMMB:
 		return m.RAMMB()
+	case env.FieldFreeDiskSizeMB:
+		return m.FreeDiskSizeMB()
+	case env.FieldTotalDiskSizeMB:
+		return m.TotalDiskSizeMB()
 	}
 	return nil, false
 }
@@ -1316,6 +1442,10 @@ func (m *EnvMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldVcpu(ctx)
 	case env.FieldRAMMB:
 		return m.OldRAMMB(ctx)
+	case env.FieldFreeDiskSizeMB:
+		return m.OldFreeDiskSizeMB(ctx)
+	case env.FieldTotalDiskSizeMB:
+		return m.OldTotalDiskSizeMB(ctx)
 	}
 	return nil, fmt.Errorf("unknown Env field %s", name)
 }
@@ -1402,6 +1532,20 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRAMMB(v)
 		return nil
+	case env.FieldFreeDiskSizeMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFreeDiskSizeMB(v)
+		return nil
+	case env.FieldTotalDiskSizeMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalDiskSizeMB(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)
 }
@@ -1422,6 +1566,12 @@ func (m *EnvMutation) AddedFields() []string {
 	if m.addram_mb != nil {
 		fields = append(fields, env.FieldRAMMB)
 	}
+	if m.addfree_disk_size_mb != nil {
+		fields = append(fields, env.FieldFreeDiskSizeMB)
+	}
+	if m.addtotal_disk_size_mb != nil {
+		fields = append(fields, env.FieldTotalDiskSizeMB)
+	}
 	return fields
 }
 
@@ -1438,6 +1588,10 @@ func (m *EnvMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedVcpu()
 	case env.FieldRAMMB:
 		return m.AddedRAMMB()
+	case env.FieldFreeDiskSizeMB:
+		return m.AddedFreeDiskSizeMB()
+	case env.FieldTotalDiskSizeMB:
+		return m.AddedTotalDiskSizeMB()
 	}
 	return nil, false
 }
@@ -1474,6 +1628,20 @@ func (m *EnvMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRAMMB(v)
+		return nil
+	case env.FieldFreeDiskSizeMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFreeDiskSizeMB(v)
+		return nil
+	case env.FieldTotalDiskSizeMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalDiskSizeMB(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Env numeric field %s", name)
@@ -1543,6 +1711,12 @@ func (m *EnvMutation) ResetField(name string) error {
 		return nil
 	case env.FieldRAMMB:
 		m.ResetRAMMB()
+		return nil
+	case env.FieldFreeDiskSizeMB:
+		m.ResetFreeDiskSizeMB()
+		return nil
+	case env.FieldTotalDiskSizeMB:
+		m.ResetTotalDiskSizeMB()
 		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)

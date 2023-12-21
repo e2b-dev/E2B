@@ -14,6 +14,7 @@ import (
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const (
@@ -145,6 +146,17 @@ func (c *InstanceCache) Sync(instances []*InstanceInfo) {
 			}
 		}
 	}
+
+	// Send running instances event to analytics
+	instanceIds := make([]string, len(instances))
+	for i, instance := range instances {
+		instanceIds[i] = instance.Instance.InstanceID
+	}
+
+	_, err := c.analytics.RunningInstances(context.Background(), &analyticscollector.RunningInstancesEvent{InstanceIds: instanceIds, Timestamp: timestamppb.Now()})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error sending running instances event to analytics\n: %v\n", err)
+	}
 }
 
 // We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync
@@ -160,6 +172,19 @@ func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, del
 		analytics: analytics,
 	}
 
+	cache.OnInsertion(func(ctx context.Context, i *ttlcache.Item[string, InstanceInfo]) {
+		instanceInfo := i.Value()
+		_, err := analytics.InstanceStarted(ctx, &analyticscollector.InstanceStartedEvent{
+			InstanceId:    instanceInfo.Instance.InstanceID,
+			EnvironmentId: instanceInfo.Instance.EnvID,
+			TeamId:        instanceInfo.TeamID.String(),
+			Timestamp:     timestamppb.Now(),
+		})
+		if err != nil {
+			errMsg := fmt.Errorf("error when sending analytics event: %w", err)
+			telemetry.ReportCriticalError(ctx, errMsg)
+		}
+	})
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, InstanceInfo]) {
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
 			err := deleteInstance(i.Value(), true)
@@ -193,16 +218,6 @@ func (c *InstanceCache) KeepInSync(client *NomadClient) {
 			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %v\n", err.Err)
 		} else {
 			c.Sync(activeInstances)
-
-			instanceIds := make([]string, len(activeInstances))
-			for i, instance := range activeInstances {
-				instanceIds[i] = instance.Instance.InstanceID
-			}
-
-			_, err := c.analytics.RunningInstances(context.Background(), &analyticscollector.RunningInstancesEvent{InstanceIds: instanceIds, Timestamp: timestamppb.Now()})
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error sending running instances event to analytics\n: %v\n", err)
-			}
 		}
 	}
 }

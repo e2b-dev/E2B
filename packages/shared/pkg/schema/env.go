@@ -32,6 +32,8 @@ func (Env) Fields() []ent.Field {
 		field.Time("last_spawned_at").Optional(),
 		field.Int64("vcpu"),
 		field.Int64("ram_mb"),
+		field.Int64("free_disk_size_mb"),
+		field.Int64("total_disk_size_mb"),
 	}
 }
 

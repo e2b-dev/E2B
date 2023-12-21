@@ -207,6 +207,48 @@ func (eu *EnvUpdate) AddRAMMB(i int64) *EnvUpdate {
 	return eu
 }
 
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (eu *EnvUpdate) SetFreeDiskSizeMB(i int64) *EnvUpdate {
+	eu.mutation.ResetFreeDiskSizeMB()
+	eu.mutation.SetFreeDiskSizeMB(i)
+	return eu
+}
+
+// SetNillableFreeDiskSizeMB sets the "free_disk_size_mb" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableFreeDiskSizeMB(i *int64) *EnvUpdate {
+	if i != nil {
+		eu.SetFreeDiskSizeMB(*i)
+	}
+	return eu
+}
+
+// AddFreeDiskSizeMB adds i to the "free_disk_size_mb" field.
+func (eu *EnvUpdate) AddFreeDiskSizeMB(i int64) *EnvUpdate {
+	eu.mutation.AddFreeDiskSizeMB(i)
+	return eu
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (eu *EnvUpdate) SetTotalDiskSizeMB(i int64) *EnvUpdate {
+	eu.mutation.ResetTotalDiskSizeMB()
+	eu.mutation.SetTotalDiskSizeMB(i)
+	return eu
+}
+
+// SetNillableTotalDiskSizeMB sets the "total_disk_size_mb" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableTotalDiskSizeMB(i *int64) *EnvUpdate {
+	if i != nil {
+		eu.SetTotalDiskSizeMB(*i)
+	}
+	return eu
+}
+
+// AddTotalDiskSizeMB adds i to the "total_disk_size_mb" field.
+func (eu *EnvUpdate) AddTotalDiskSizeMB(i int64) *EnvUpdate {
+	eu.mutation.AddTotalDiskSizeMB(i)
+	return eu
+}
+
 // SetTeam sets the "team" edge to the Team entity.
 func (eu *EnvUpdate) SetTeam(t *Team) *EnvUpdate {
 	return eu.SetTeamID(t.ID)
@@ -353,6 +395,18 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := eu.mutation.AddedRAMMB(); ok {
 		_spec.AddField(env.FieldRAMMB, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.FreeDiskSizeMB(); ok {
+		_spec.SetField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.AddedFreeDiskSizeMB(); ok {
+		_spec.AddField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.TotalDiskSizeMB(); ok {
+		_spec.SetField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.AddedTotalDiskSizeMB(); ok {
+		_spec.AddField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
 	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -631,6 +685,48 @@ func (euo *EnvUpdateOne) AddRAMMB(i int64) *EnvUpdateOne {
 	return euo
 }
 
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (euo *EnvUpdateOne) SetFreeDiskSizeMB(i int64) *EnvUpdateOne {
+	euo.mutation.ResetFreeDiskSizeMB()
+	euo.mutation.SetFreeDiskSizeMB(i)
+	return euo
+}
+
+// SetNillableFreeDiskSizeMB sets the "free_disk_size_mb" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableFreeDiskSizeMB(i *int64) *EnvUpdateOne {
+	if i != nil {
+		euo.SetFreeDiskSizeMB(*i)
+	}
+	return euo
+}
+
+// AddFreeDiskSizeMB adds i to the "free_disk_size_mb" field.
+func (euo *EnvUpdateOne) AddFreeDiskSizeMB(i int64) *EnvUpdateOne {
+	euo.mutation.AddFreeDiskSizeMB(i)
+	return euo
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (euo *EnvUpdateOne) SetTotalDiskSizeMB(i int64) *EnvUpdateOne {
+	euo.mutation.ResetTotalDiskSizeMB()
+	euo.mutation.SetTotalDiskSizeMB(i)
+	return euo
+}
+
+// SetNillableTotalDiskSizeMB sets the "total_disk_size_mb" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableTotalDiskSizeMB(i *int64) *EnvUpdateOne {
+	if i != nil {
+		euo.SetTotalDiskSizeMB(*i)
+	}
+	return euo
+}
+
+// AddTotalDiskSizeMB adds i to the "total_disk_size_mb" field.
+func (euo *EnvUpdateOne) AddTotalDiskSizeMB(i int64) *EnvUpdateOne {
+	euo.mutation.AddTotalDiskSizeMB(i)
+	return euo
+}
+
 // SetTeam sets the "team" edge to the Team entity.
 func (euo *EnvUpdateOne) SetTeam(t *Team) *EnvUpdateOne {
 	return euo.SetTeamID(t.ID)
@@ -807,6 +903,18 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	}
 	if value, ok := euo.mutation.AddedRAMMB(); ok {
 		_spec.AddField(env.FieldRAMMB, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.FreeDiskSizeMB(); ok {
+		_spec.SetField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.AddedFreeDiskSizeMB(); ok {
+		_spec.AddField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.TotalDiskSizeMB(); ok {
+		_spec.SetField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.AddedTotalDiskSizeMB(); ok {
+		_spec.AddField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{

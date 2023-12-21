@@ -132,6 +132,18 @@ func (ec *EnvCreate) SetRAMMB(i int64) *EnvCreate {
 	return ec
 }
 
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (ec *EnvCreate) SetFreeDiskSizeMB(i int64) *EnvCreate {
+	ec.mutation.SetFreeDiskSizeMB(i)
+	return ec
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (ec *EnvCreate) SetTotalDiskSizeMB(i int64) *EnvCreate {
+	ec.mutation.SetTotalDiskSizeMB(i)
+	return ec
+}
+
 // SetID sets the "id" field.
 func (ec *EnvCreate) SetID(s string) *EnvCreate {
 	ec.mutation.SetID(s)
@@ -243,6 +255,12 @@ func (ec *EnvCreate) check() error {
 	if _, ok := ec.mutation.RAMMB(); !ok {
 		return &ValidationError{Name: "ram_mb", err: errors.New(`models: missing required field "Env.ram_mb"`)}
 	}
+	if _, ok := ec.mutation.FreeDiskSizeMB(); !ok {
+		return &ValidationError{Name: "free_disk_size_mb", err: errors.New(`models: missing required field "Env.free_disk_size_mb"`)}
+	}
+	if _, ok := ec.mutation.TotalDiskSizeMB(); !ok {
+		return &ValidationError{Name: "total_disk_size_mb", err: errors.New(`models: missing required field "Env.total_disk_size_mb"`)}
+	}
 	if _, ok := ec.mutation.TeamID(); !ok {
 		return &ValidationError{Name: "team", err: errors.New(`models: missing required edge "Env.team"`)}
 	}
@@ -322,6 +340,14 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 	if value, ok := ec.mutation.RAMMB(); ok {
 		_spec.SetField(env.FieldRAMMB, field.TypeInt64, value)
 		_node.RAMMB = value
+	}
+	if value, ok := ec.mutation.FreeDiskSizeMB(); ok {
+		_spec.SetField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
+		_node.FreeDiskSizeMB = value
+	}
+	if value, ok := ec.mutation.TotalDiskSizeMB(); ok {
+		_spec.SetField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
+		_node.TotalDiskSizeMB = value
 	}
 	if nodes := ec.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -560,6 +586,42 @@ func (u *EnvUpsert) AddRAMMB(v int64) *EnvUpsert {
 	return u
 }
 
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (u *EnvUpsert) SetFreeDiskSizeMB(v int64) *EnvUpsert {
+	u.Set(env.FieldFreeDiskSizeMB, v)
+	return u
+}
+
+// UpdateFreeDiskSizeMB sets the "free_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateFreeDiskSizeMB() *EnvUpsert {
+	u.SetExcluded(env.FieldFreeDiskSizeMB)
+	return u
+}
+
+// AddFreeDiskSizeMB adds v to the "free_disk_size_mb" field.
+func (u *EnvUpsert) AddFreeDiskSizeMB(v int64) *EnvUpsert {
+	u.Add(env.FieldFreeDiskSizeMB, v)
+	return u
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (u *EnvUpsert) SetTotalDiskSizeMB(v int64) *EnvUpsert {
+	u.Set(env.FieldTotalDiskSizeMB, v)
+	return u
+}
+
+// UpdateTotalDiskSizeMB sets the "total_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateTotalDiskSizeMB() *EnvUpsert {
+	u.SetExcluded(env.FieldTotalDiskSizeMB)
+	return u
+}
+
+// AddTotalDiskSizeMB adds v to the "total_disk_size_mb" field.
+func (u *EnvUpsert) AddTotalDiskSizeMB(v int64) *EnvUpsert {
+	u.Add(env.FieldTotalDiskSizeMB, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -783,6 +845,48 @@ func (u *EnvUpsertOne) AddRAMMB(v int64) *EnvUpsertOne {
 func (u *EnvUpsertOne) UpdateRAMMB() *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdateRAMMB()
+	})
+}
+
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (u *EnvUpsertOne) SetFreeDiskSizeMB(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetFreeDiskSizeMB(v)
+	})
+}
+
+// AddFreeDiskSizeMB adds v to the "free_disk_size_mb" field.
+func (u *EnvUpsertOne) AddFreeDiskSizeMB(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddFreeDiskSizeMB(v)
+	})
+}
+
+// UpdateFreeDiskSizeMB sets the "free_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateFreeDiskSizeMB() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateFreeDiskSizeMB()
+	})
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (u *EnvUpsertOne) SetTotalDiskSizeMB(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetTotalDiskSizeMB(v)
+	})
+}
+
+// AddTotalDiskSizeMB adds v to the "total_disk_size_mb" field.
+func (u *EnvUpsertOne) AddTotalDiskSizeMB(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddTotalDiskSizeMB(v)
+	})
+}
+
+// UpdateTotalDiskSizeMB sets the "total_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateTotalDiskSizeMB() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateTotalDiskSizeMB()
 	})
 }
 
@@ -1176,6 +1280,48 @@ func (u *EnvUpsertBulk) AddRAMMB(v int64) *EnvUpsertBulk {
 func (u *EnvUpsertBulk) UpdateRAMMB() *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdateRAMMB()
+	})
+}
+
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (u *EnvUpsertBulk) SetFreeDiskSizeMB(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetFreeDiskSizeMB(v)
+	})
+}
+
+// AddFreeDiskSizeMB adds v to the "free_disk_size_mb" field.
+func (u *EnvUpsertBulk) AddFreeDiskSizeMB(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddFreeDiskSizeMB(v)
+	})
+}
+
+// UpdateFreeDiskSizeMB sets the "free_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateFreeDiskSizeMB() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateFreeDiskSizeMB()
+	})
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (u *EnvUpsertBulk) SetTotalDiskSizeMB(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetTotalDiskSizeMB(v)
+	})
+}
+
+// AddTotalDiskSizeMB adds v to the "total_disk_size_mb" field.
+func (u *EnvUpsertBulk) AddTotalDiskSizeMB(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddTotalDiskSizeMB(v)
+	})
+}
+
+// UpdateTotalDiskSizeMB sets the "total_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateTotalDiskSizeMB() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateTotalDiskSizeMB()
 	})
 }
 

@@ -1,5 +1,5 @@
 -- Add base tier
-INSERT INTO public.tiers (id, vcpu, ram_mb, disk_mb, concurrent_instances) VALUES ('base', 1, 256, 500, 5);
+INSERT INTO public.tiers (id, name, vcpu, ram_mb, disk_mb, concurrent_instances) VALUES ('base', 'Base tier', 1, 256, 500, 5);
 
 --
 CREATE OR REPLACE FUNCTION public.generate_default_team() RETURNS TRIGGER

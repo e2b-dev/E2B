@@ -122,6 +122,16 @@ func RAMMB(v int64) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldRAMMB, v))
 }
 
+// FreeDiskSizeMB applies equality check predicate on the "free_disk_size_mb" field. It's identical to FreeDiskSizeMBEQ.
+func FreeDiskSizeMB(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldFreeDiskSizeMB, v))
+}
+
+// TotalDiskSizeMB applies equality check predicate on the "total_disk_size_mb" field. It's identical to TotalDiskSizeMBEQ.
+func TotalDiskSizeMB(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldTotalDiskSizeMB, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldCreatedAt, v))
@@ -545,6 +555,86 @@ func RAMMBLT(v int64) predicate.Env {
 // RAMMBLTE applies the LTE predicate on the "ram_mb" field.
 func RAMMBLTE(v int64) predicate.Env {
 	return predicate.Env(sql.FieldLTE(FieldRAMMB, v))
+}
+
+// FreeDiskSizeMBEQ applies the EQ predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldFreeDiskSizeMB, v))
+}
+
+// FreeDiskSizeMBNEQ applies the NEQ predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBNEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldFreeDiskSizeMB, v))
+}
+
+// FreeDiskSizeMBIn applies the In predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldFreeDiskSizeMB, vs...))
+}
+
+// FreeDiskSizeMBNotIn applies the NotIn predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBNotIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldFreeDiskSizeMB, vs...))
+}
+
+// FreeDiskSizeMBGT applies the GT predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBGT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldFreeDiskSizeMB, v))
+}
+
+// FreeDiskSizeMBGTE applies the GTE predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBGTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldFreeDiskSizeMB, v))
+}
+
+// FreeDiskSizeMBLT applies the LT predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBLT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldFreeDiskSizeMB, v))
+}
+
+// FreeDiskSizeMBLTE applies the LTE predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBLTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldFreeDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBEQ applies the EQ predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldTotalDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBNEQ applies the NEQ predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBNEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldTotalDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBIn applies the In predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldTotalDiskSizeMB, vs...))
+}
+
+// TotalDiskSizeMBNotIn applies the NotIn predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBNotIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldTotalDiskSizeMB, vs...))
+}
+
+// TotalDiskSizeMBGT applies the GT predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBGT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldTotalDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBGTE applies the GTE predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBGTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldTotalDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBLT applies the LT predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBLT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldTotalDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBLTE applies the LTE predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBLTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldTotalDiskSizeMB, v))
 }
 
 // HasTeam applies the HasEdge predicate on the "team" edge.

@@ -36,6 +36,10 @@ const (
 	FieldVcpu = "vcpu"
 	// FieldRAMMB holds the string denoting the ram_mb field in the database.
 	FieldRAMMB = "ram_mb"
+	// FieldFreeDiskSizeMB holds the string denoting the free_disk_size_mb field in the database.
+	FieldFreeDiskSizeMB = "free_disk_size_mb"
+	// FieldTotalDiskSizeMB holds the string denoting the total_disk_size_mb field in the database.
+	FieldTotalDiskSizeMB = "total_disk_size_mb"
 	// EdgeTeam holds the string denoting the team edge name in mutations.
 	EdgeTeam = "team"
 	// EdgeEnvAliases holds the string denoting the env_aliases edge name in mutations.
@@ -74,6 +78,8 @@ var Columns = []string{
 	FieldLastSpawnedAt,
 	FieldVcpu,
 	FieldRAMMB,
+	FieldFreeDiskSizeMB,
+	FieldTotalDiskSizeMB,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -158,6 +164,16 @@ func ByVcpu(opts ...sql.OrderTermOption) OrderOption {
 // ByRAMMB orders the results by the ram_mb field.
 func ByRAMMB(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRAMMB, opts...).ToFunc()
+}
+
+// ByFreeDiskSizeMB orders the results by the free_disk_size_mb field.
+func ByFreeDiskSizeMB(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFreeDiskSizeMB, opts...).ToFunc()
+}
+
+// ByTotalDiskSizeMB orders the results by the total_disk_size_mb field.
+func ByTotalDiskSizeMB(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotalDiskSizeMB, opts...).ToFunc()
 }
 
 // ByTeamField orders the results by team field.
