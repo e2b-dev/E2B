@@ -1,5 +1,5 @@
-CURRENT_ENV := $(shell cat .last_used_env || echo "not-set")
--include .env.${CURRENT_ENV}
+ENV := $(shell cat .last_used_env || echo "not-set")
+-include .env.${ENV}
 
 
 PRINT = @echo -e "\e[1;34mBuilding $<\e[0m"
@@ -42,20 +42,20 @@ login-gcloud:
 
 .PHONY: init
 init:
-	@ printf "Initializing Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
+	@ printf "Initializing Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
 	terraform init -input=false -backend-config="bucket=${TERRAFORM_STATE_BUCKET}"
 	$(MAKE) -C packages/cluster-disk-image init
 	$(tf_vars) terraform apply -target=module.init -target=module.buckets -auto-approve -input=false -compact-warnings
 
 .PHONY: plan
 plan:
-	@ printf "Planning Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
+	@ printf "Planning Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
 	terraform fmt -recursive
 	$(tf_vars) terraform plan -compact-warnings -detailed-exitcode $(ALL_MODULES_ARGS)
 
 .PHONY: apply
 apply:
-	@ printf "Applying Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
+	@ printf "Applying Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
 	$(tf_vars) \
 	terraform apply \
 	-auto-approve \
@@ -66,7 +66,7 @@ apply:
 
 .PHONY: plan-without-jobs
 plan-without-jobs:
-	@ printf "Planning Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
+	@ printf "Planning Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
 	$(tf_vars) \
 	terraform plan \
 	-input=false \
@@ -76,7 +76,7 @@ plan-without-jobs:
 
 .PHONY: apply-without-jobs
 apply-without-jobs:
-	@ printf "Applying Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
+	@ printf "Applying Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
 	$(tf_vars) \
 	terraform apply \
 	-auto-approve \
@@ -87,7 +87,7 @@ apply-without-jobs:
 
 .PHONY: destroy
 destroy:
-	@ printf "Destroying Terraform for env: `tput setaf 2``tput bold`$(CURRENT_ENV)`tput sgr0`\n\n"
+	@ printf "Destroying Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
 	DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | grep -v -e "fc_envs_disk" -e "buckets" | uniq | awk '{print "-target=" $$0 ""}' | xargs)
 	$(tf_vars) \
 	terraform destroy \
@@ -141,7 +141,7 @@ resize-fc-envs:
 .PHONY: switch-env
 switch-env:
 	@ touch .last_used_env
-	@ printf "Switching from `tput setaf 1``tput bold`$(CURRENT_ENV)`tput sgr0` to `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
+	@ printf "Switching from `tput setaf 1``tput bold`$(shell cat .last_used_env)`tput sgr0` to `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
 	@ echo $(ENV) > .last_used_env
 	@ . .env.${ENV}
 	terraform init -input=false -reconfigure -backend-config="bucket=${TERRAFORM_STATE_BUCKET}"
