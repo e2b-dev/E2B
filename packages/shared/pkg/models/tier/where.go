@@ -64,6 +64,11 @@ func IDContainsFold(id string) predicate.Tier {
 	return predicate.Tier(sql.FieldContainsFold(FieldID, id))
 }
 
+// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
+func Name(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldEQ(FieldName, v))
+}
+
 // Vcpu applies equality check predicate on the "vcpu" field. It's identical to VcpuEQ.
 func Vcpu(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldVcpu, v))
@@ -82,6 +87,71 @@ func DiskMB(v int64) predicate.Tier {
 // ConcurrentInstances applies equality check predicate on the "concurrent_instances" field. It's identical to ConcurrentInstancesEQ.
 func ConcurrentInstances(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldConcurrentInstances, v))
+}
+
+// NameEQ applies the EQ predicate on the "name" field.
+func NameEQ(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldEQ(FieldName, v))
+}
+
+// NameNEQ applies the NEQ predicate on the "name" field.
+func NameNEQ(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldNEQ(FieldName, v))
+}
+
+// NameIn applies the In predicate on the "name" field.
+func NameIn(vs ...string) predicate.Tier {
+	return predicate.Tier(sql.FieldIn(FieldName, vs...))
+}
+
+// NameNotIn applies the NotIn predicate on the "name" field.
+func NameNotIn(vs ...string) predicate.Tier {
+	return predicate.Tier(sql.FieldNotIn(FieldName, vs...))
+}
+
+// NameGT applies the GT predicate on the "name" field.
+func NameGT(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldGT(FieldName, v))
+}
+
+// NameGTE applies the GTE predicate on the "name" field.
+func NameGTE(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldGTE(FieldName, v))
+}
+
+// NameLT applies the LT predicate on the "name" field.
+func NameLT(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldLT(FieldName, v))
+}
+
+// NameLTE applies the LTE predicate on the "name" field.
+func NameLTE(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldLTE(FieldName, v))
+}
+
+// NameContains applies the Contains predicate on the "name" field.
+func NameContains(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldContains(FieldName, v))
+}
+
+// NameHasPrefix applies the HasPrefix predicate on the "name" field.
+func NameHasPrefix(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldHasPrefix(FieldName, v))
+}
+
+// NameHasSuffix applies the HasSuffix predicate on the "name" field.
+func NameHasSuffix(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldHasSuffix(FieldName, v))
+}
+
+// NameEqualFold applies the EqualFold predicate on the "name" field.
+func NameEqualFold(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldEqualFold(FieldName, v))
+}
+
+// NameContainsFold applies the ContainsFold predicate on the "name" field.
+func NameContainsFold(v string) predicate.Tier {
+	return predicate.Tier(sql.FieldContainsFold(FieldName, v))
 }
 
 // VcpuEQ applies the EQ predicate on the "vcpu" field.

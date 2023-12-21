@@ -27,6 +27,7 @@ type UsersTeamsQuery struct {
 	predicates []predicate.UsersTeams
 	withUsers  *UserQuery
 	withTeams  *TeamQuery
+	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -429,6 +430,9 @@ func (utq *UsersTeamsQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	}
 	_spec.Node.Schema = utq.schemaConfig.UsersTeams
 	ctx = internal.NewSchemaConfigContext(ctx, utq.schemaConfig)
+	if len(utq.modifiers) > 0 {
+		_spec.Modifiers = utq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -516,6 +520,9 @@ func (utq *UsersTeamsQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := utq.querySpec()
 	_spec.Node.Schema = utq.schemaConfig.UsersTeams
 	ctx = internal.NewSchemaConfigContext(ctx, utq.schemaConfig)
+	if len(utq.modifiers) > 0 {
+		_spec.Modifiers = utq.modifiers
+	}
 	_spec.Node.Columns = utq.ctx.Fields
 	if len(utq.ctx.Fields) > 0 {
 		_spec.Unique = utq.ctx.Unique != nil && *utq.ctx.Unique
@@ -587,6 +594,9 @@ func (utq *UsersTeamsQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	t1.Schema(utq.schemaConfig.UsersTeams)
 	ctx = internal.NewSchemaConfigContext(ctx, utq.schemaConfig)
 	selector.WithContext(ctx)
+	for _, m := range utq.modifiers {
+		m(selector)
+	}
 	for _, p := range utq.predicates {
 		p(selector)
 	}
@@ -602,6 +612,12 @@ func (utq *UsersTeamsQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (utq *UsersTeamsQuery) Modify(modifiers ...func(s *sql.Selector)) *UsersTeamsSelect {
+	utq.modifiers = append(utq.modifiers, modifiers...)
+	return utq.Select()
 }
 
 // UsersTeamsGroupBy is the group-by builder for UsersTeams entities.
@@ -692,4 +708,10 @@ func (uts *UsersTeamsSelect) sqlScan(ctx context.Context, root *UsersTeamsQuery,
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (uts *UsersTeamsSelect) Modify(modifiers ...func(s *sql.Selector)) *UsersTeamsSelect {
+	uts.modifiers = append(uts.modifiers, modifiers...)
+	return uts
 }

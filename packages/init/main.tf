@@ -89,6 +89,13 @@ resource "google_secret_manager_secret" "grafana_metrics_username" {
   }
 }
 
+resource "google_secret_manager_secret" "analytics_collector_host" {
+  secret_id = "${var.prefix}analytics-collector-host"
+
+  replication {
+    auto {}
+  }
+}
 
 resource "google_artifact_registry_repository" "orchestration_repository" {
   format        = "DOCKER"

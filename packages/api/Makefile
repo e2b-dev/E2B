@@ -1,4 +1,6 @@
--include .env
+ENV := $(shell cat ../../.last_used_env || echo "not-set")
+-include ../../.env.${ENV}
+
 
 openapi := ../../spec/openapi.yml
 codegen := go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
@@ -26,7 +28,7 @@ run:
 	NOMAD_ADDRESS=https://nomad.e2b.dev \
 	NOMAD_TOKEN=$(NOMAD_TOKEN) \
 	CONSUL_TOKEN=$(CONSUL_TOKEN) \
-	SUPABASE_CONNECTION_STRING=$(SUPABASE_CONNECTION_STRING) \
+	POSTGRES_CONNECTION_STRING=$(POSTGRES_CONNECTION_STRING) \
 	GOOGLE_CLOUD_STORAGE_BUCKET=$(GOOGLE_CLOUD_STORAGE_BUCKET) \
 	GOTRACEBACK=crash \
 	GODEBUG=madvdontneed=1 \

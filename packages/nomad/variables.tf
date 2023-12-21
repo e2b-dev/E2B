@@ -140,3 +140,7 @@ variable "grafana_traces_endpoint_secret_name" {
 variable "grafana_metrics_endpoint_secret_name" {
   type = string
 }
+
+variable "analytics_collector_host_secret_name" {
+  type = string
+}

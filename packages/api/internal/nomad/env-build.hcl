@@ -28,6 +28,7 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
         CONTEXT_FILE_NAME = "context.tar.gz"
         API_SECRET = "{{ .APISecret }}"
         GOOGLE_SERVICE_ACCOUNT_BASE64 = "{{ .GoogleServiceAccountBase64 }}"
+        NOMAD_TOKEN = "{{ .NomadToken }}"
       }
 
       resources {

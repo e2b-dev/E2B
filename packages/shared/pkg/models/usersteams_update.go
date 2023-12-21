@@ -21,8 +21,9 @@ import (
 // UsersTeamsUpdate is the builder for updating UsersTeams entities.
 type UsersTeamsUpdate struct {
 	config
-	hooks    []Hook
-	mutation *UsersTeamsMutation
+	hooks     []Hook
+	mutation  *UsersTeamsMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the UsersTeamsUpdate builder.
@@ -136,6 +137,12 @@ func (utu *UsersTeamsUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (utu *UsersTeamsUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *UsersTeamsUpdate {
+	utu.modifiers = append(utu.modifiers, modifiers...)
+	return utu
+}
+
 func (utu *UsersTeamsUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := utu.check(); err != nil {
 		return n, err
@@ -212,6 +219,7 @@ func (utu *UsersTeamsUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	_spec.Node.Schema = utu.schemaConfig.UsersTeams
 	ctx = internal.NewSchemaConfigContext(ctx, utu.schemaConfig)
+	_spec.AddModifiers(utu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, utu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{usersteams.Label}
@@ -227,9 +235,10 @@ func (utu *UsersTeamsUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // UsersTeamsUpdateOne is the builder for updating a single UsersTeams entity.
 type UsersTeamsUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *UsersTeamsMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *UsersTeamsMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUserID sets the "user_id" field.
@@ -350,6 +359,12 @@ func (utuo *UsersTeamsUpdateOne) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (utuo *UsersTeamsUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *UsersTeamsUpdateOne {
+	utuo.modifiers = append(utuo.modifiers, modifiers...)
+	return utuo
+}
+
 func (utuo *UsersTeamsUpdateOne) sqlSave(ctx context.Context) (_node *UsersTeams, err error) {
 	if err := utuo.check(); err != nil {
 		return _node, err
@@ -443,6 +458,7 @@ func (utuo *UsersTeamsUpdateOne) sqlSave(ctx context.Context) (_node *UsersTeams
 	}
 	_spec.Node.Schema = utuo.schemaConfig.UsersTeams
 	ctx = internal.NewSchemaConfigContext(ctx, utuo.schemaConfig)
+	_spec.AddModifiers(utuo.modifiers...)
 	_node = &UsersTeams{config: utuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

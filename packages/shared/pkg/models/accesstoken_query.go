@@ -25,6 +25,7 @@ type AccessTokenQuery struct {
 	inters     []Interceptor
 	predicates []predicate.AccessToken
 	withUser   *UserQuery
+	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -389,6 +390,9 @@ func (atq *AccessTokenQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	}
 	_spec.Node.Schema = atq.schemaConfig.AccessToken
 	ctx = internal.NewSchemaConfigContext(ctx, atq.schemaConfig)
+	if len(atq.modifiers) > 0 {
+		_spec.Modifiers = atq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -441,6 +445,9 @@ func (atq *AccessTokenQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := atq.querySpec()
 	_spec.Node.Schema = atq.schemaConfig.AccessToken
 	ctx = internal.NewSchemaConfigContext(ctx, atq.schemaConfig)
+	if len(atq.modifiers) > 0 {
+		_spec.Modifiers = atq.modifiers
+	}
 	_spec.Node.Columns = atq.ctx.Fields
 	if len(atq.ctx.Fields) > 0 {
 		_spec.Unique = atq.ctx.Unique != nil && *atq.ctx.Unique
@@ -509,6 +516,9 @@ func (atq *AccessTokenQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	t1.Schema(atq.schemaConfig.AccessToken)
 	ctx = internal.NewSchemaConfigContext(ctx, atq.schemaConfig)
 	selector.WithContext(ctx)
+	for _, m := range atq.modifiers {
+		m(selector)
+	}
 	for _, p := range atq.predicates {
 		p(selector)
 	}
@@ -524,6 +534,12 @@ func (atq *AccessTokenQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (atq *AccessTokenQuery) Modify(modifiers ...func(s *sql.Selector)) *AccessTokenSelect {
+	atq.modifiers = append(atq.modifiers, modifiers...)
+	return atq.Select()
 }
 
 // AccessTokenGroupBy is the group-by builder for AccessToken entities.
@@ -614,4 +630,10 @@ func (ats *AccessTokenSelect) sqlScan(ctx context.Context, root *AccessTokenQuer
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (ats *AccessTokenSelect) Modify(modifiers ...func(s *sql.Selector)) *AccessTokenSelect {
+	ats.modifiers = append(ats.modifiers, modifiers...)
+	return ats
 }

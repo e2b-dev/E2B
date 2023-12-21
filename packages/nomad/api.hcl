@@ -83,6 +83,11 @@ variable "gcp_region" {
   default = ""
 }
 
+variable "analytics_collector_host" {
+  type    = string
+  default = ""
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -123,7 +128,7 @@ job "orchestration-api" {
         NOMAD_ADDRESS                 = var.nomad_address
         NOMAD_TOKEN                   = var.nomad_token
         CONSUL_TOKEN                  = var.consul_token
-        SUPABASE_CONNECTION_STRING    = var.postgres_connection_string
+        POSTGRES_CONNECTION_STRING    = var.postgres_connection_string
         POSTHOG_API_KEY               = var.posthog_api_key
         ENVIRONMENT                   = var.environment
         GOOGLE_CLOUD_STORAGE_BUCKET   = var.docker_contexts_bucket_name
@@ -132,6 +137,7 @@ job "orchestration-api" {
         GCP_DOCKER_REPOSITORY_NAME    = var.gcp_docker_repository_name
         GCP_PROJECT_ID                = var.gcp_project_id
         GCP_REGION                    = var.gcp_region
+        ANALYTICS_COLLECTOR_HOST      = var.analytics_collector_host
       }
 
       config {

@@ -25,6 +25,7 @@ type TierQuery struct {
 	inters     []Interceptor
 	predicates []predicate.Tier
 	withTeams  *TeamQuery
+	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -302,12 +303,12 @@ func (tq *TierQuery) WithTeams(opts ...func(*TeamQuery)) *TierQuery {
 // Example:
 //
 //	var v []struct {
-//		Vcpu int64 `json:"vcpu,omitempty"`
+//		Name string `json:"name,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Tier.Query().
-//		GroupBy(tier.FieldVcpu).
+//		GroupBy(tier.FieldName).
 //		Aggregate(models.Count()).
 //		Scan(ctx, &v)
 func (tq *TierQuery) GroupBy(field string, fields ...string) *TierGroupBy {
@@ -325,11 +326,11 @@ func (tq *TierQuery) GroupBy(field string, fields ...string) *TierGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Vcpu int64 `json:"vcpu,omitempty"`
+//		Name string `json:"name,omitempty"`
 //	}
 //
 //	client.Tier.Query().
-//		Select(tier.FieldVcpu).
+//		Select(tier.FieldName).
 //		Scan(ctx, &v)
 func (tq *TierQuery) Select(fields ...string) *TierSelect {
 	tq.ctx.Fields = append(tq.ctx.Fields, fields...)
@@ -389,6 +390,9 @@ func (tq *TierQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tier, e
 	}
 	_spec.Node.Schema = tq.schemaConfig.Tier
 	ctx = internal.NewSchemaConfigContext(ctx, tq.schemaConfig)
+	if len(tq.modifiers) > 0 {
+		_spec.Modifiers = tq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -443,6 +447,9 @@ func (tq *TierQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := tq.querySpec()
 	_spec.Node.Schema = tq.schemaConfig.Tier
 	ctx = internal.NewSchemaConfigContext(ctx, tq.schemaConfig)
+	if len(tq.modifiers) > 0 {
+		_spec.Modifiers = tq.modifiers
+	}
 	_spec.Node.Columns = tq.ctx.Fields
 	if len(tq.ctx.Fields) > 0 {
 		_spec.Unique = tq.ctx.Unique != nil && *tq.ctx.Unique
@@ -508,6 +515,9 @@ func (tq *TierQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	t1.Schema(tq.schemaConfig.Tier)
 	ctx = internal.NewSchemaConfigContext(ctx, tq.schemaConfig)
 	selector.WithContext(ctx)
+	for _, m := range tq.modifiers {
+		m(selector)
+	}
 	for _, p := range tq.predicates {
 		p(selector)
 	}
@@ -523,6 +533,12 @@ func (tq *TierQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (tq *TierQuery) Modify(modifiers ...func(s *sql.Selector)) *TierSelect {
+	tq.modifiers = append(tq.modifiers, modifiers...)
+	return tq.Select()
 }
 
 // TierGroupBy is the group-by builder for Tier entities.
@@ -613,4 +629,10 @@ func (ts *TierSelect) sqlScan(ctx context.Context, root *TierQuery, v any) error
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (ts *TierSelect) Modify(modifiers ...func(s *sql.Selector)) *TierSelect {
+	ts.modifiers = append(ts.modifiers, modifiers...)
+	return ts
 }

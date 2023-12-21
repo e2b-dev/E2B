@@ -1,5 +1,7 @@
-client := gcloud compute instances list --format='csv(name)' | grep "client"
-GCP_PROJECT ?= $$(gcloud config get-value project)
+ENV := $(shell cat ../../.last_used_env || echo "not-set")
+-include ../../.env.${ENV}
+
+client := gcloud compute instances list --format='csv(name)' --project $(GCP_PROJECT) | grep "client"
 
 upload:
 	./upload.sh $(GCP_PROJECT)
@@ -19,7 +21,7 @@ run-profiler:
 update-driver:
 	make build
 	make upload
-	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /opt/nomad/plugins/env-build-task-driver && \
+	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT) -- 'sudo rm -rf /opt/nomad/plugins/env-build-task-driver && \
 	sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-build-task-driver && \
 	([[ $$(pgrep firecracker) ]] && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found" && \

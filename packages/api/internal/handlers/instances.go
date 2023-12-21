@@ -6,16 +6,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
-
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (a *APIStore) PostInstances(

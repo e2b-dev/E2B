@@ -17,7 +17,7 @@ type DB struct {
 	ctx    context.Context
 }
 
-var databaseURL = os.Getenv("SUPABASE_CONNECTION_STRING")
+var databaseURL = os.Getenv("POSTGRES_CONNECTION_STRING")
 
 func NewClient(ctx context.Context) (*DB, error) {
 	if databaseURL == "" {

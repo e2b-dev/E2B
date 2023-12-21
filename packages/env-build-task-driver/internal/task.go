@@ -82,6 +82,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	contextFileName := cfg.Env["CONTEXT_FILE_NAME"]
 	apiSecret := cfg.Env["API_SECRET"]
 	googleServiceAccountBase64 := cfg.Env["GOOGLE_SERVICE_ACCOUNT_BASE64"]
+	nomadToken := cfg.Env["NOMAD_TOKEN"]
 
 	writer := env.NewWriter(taskConfig.EnvID, taskConfig.BuildID, apiSecret)
 
@@ -101,6 +102,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		ContextFileName:            contextFileName,
 		BuildLogsWriter:            writer,
 		GoogleServiceAccountBase64: googleServiceAccountBase64,
+		NomadToken:                 nomadToken,
 	}
 
 	cancellableBuildContext, cancel := context.WithCancel(d.ctx)

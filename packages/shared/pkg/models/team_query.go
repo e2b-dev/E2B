@@ -34,6 +34,7 @@ type TeamQuery struct {
 	withTeamTier    *TierQuery
 	withEnvs        *EnvQuery
 	withUsersTeams  *UsersTeamsQuery
+	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -550,6 +551,9 @@ func (tq *TeamQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Team, e
 	}
 	_spec.Node.Schema = tq.schemaConfig.Team
 	ctx = internal.NewSchemaConfigContext(ctx, tq.schemaConfig)
+	if len(tq.modifiers) > 0 {
+		_spec.Modifiers = tq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -782,6 +786,9 @@ func (tq *TeamQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := tq.querySpec()
 	_spec.Node.Schema = tq.schemaConfig.Team
 	ctx = internal.NewSchemaConfigContext(ctx, tq.schemaConfig)
+	if len(tq.modifiers) > 0 {
+		_spec.Modifiers = tq.modifiers
+	}
 	_spec.Node.Columns = tq.ctx.Fields
 	if len(tq.ctx.Fields) > 0 {
 		_spec.Unique = tq.ctx.Unique != nil && *tq.ctx.Unique
@@ -850,6 +857,9 @@ func (tq *TeamQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	t1.Schema(tq.schemaConfig.Team)
 	ctx = internal.NewSchemaConfigContext(ctx, tq.schemaConfig)
 	selector.WithContext(ctx)
+	for _, m := range tq.modifiers {
+		m(selector)
+	}
 	for _, p := range tq.predicates {
 		p(selector)
 	}
@@ -865,6 +875,12 @@ func (tq *TeamQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (tq *TeamQuery) Modify(modifiers ...func(s *sql.Selector)) *TeamSelect {
+	tq.modifiers = append(tq.modifiers, modifiers...)
+	return tq.Select()
 }
 
 // TeamGroupBy is the group-by builder for Team entities.
@@ -955,4 +971,10 @@ func (ts *TeamSelect) sqlScan(ctx context.Context, root *TeamQuery, v any) error
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (ts *TeamSelect) Modify(modifiers ...func(s *sql.Selector)) *TeamSelect {
+	ts.modifiers = append(ts.modifiers, modifiers...)
+	return ts
 }
