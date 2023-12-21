@@ -507,7 +507,7 @@ func (a *APIStore) buildEnv(
 		return err
 	}
 
-	err = a.supabase.UpsertEnv(ctx, teamID, envID, buildID, dockerfile)
+	err = a.supabase.UpsertEnv(ctx, teamID, envID, buildID, dockerfile, vmConfig.VCpuCount, vmConfig.MemoryMB)
 
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)

@@ -10,7 +10,9 @@ import (
 	"github.com/jellydator/ttlcache/v3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 )
 
@@ -27,8 +29,9 @@ type InstanceInfo struct {
 }
 
 type InstanceCache struct {
-	cache   *ttlcache.Cache[string, InstanceInfo]
-	counter metric.Int64UpDownCounter
+	cache     *ttlcache.Cache[string, InstanceInfo]
+	counter   metric.Int64UpDownCounter
+	analytics analyticscollector.AnalyticsCollectorClient
 }
 
 // Add the instance to the cache and start expiration timer.
@@ -146,14 +149,15 @@ func (c *InstanceCache) Sync(instances []*InstanceInfo) {
 
 // We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now.
-func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*InstanceInfo, counter metric.Int64UpDownCounter) *InstanceCache {
+func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*InstanceInfo, counter metric.Int64UpDownCounter) *InstanceCache {
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, InstanceInfo](InstanceExpiration),
 	)
 
 	instanceCache := &InstanceCache{
-		cache:   cache,
-		counter: counter,
+		cache:     cache,
+		counter:   counter,
+		analytics: analytics,
 	}
 
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, InstanceInfo]) {
@@ -189,6 +193,16 @@ func (c *InstanceCache) KeepInSync(client *NomadClient) {
 			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %v\n", err.Err)
 		} else {
 			c.Sync(activeInstances)
+
+			instanceIds := make([]string, len(activeInstances))
+			for i, instance := range activeInstances {
+				instanceIds[i] = instance.Instance.InstanceID
+			}
+
+			_, err := c.analytics.RunningInstances(context.Background(), &analyticscollector.RunningInstancesEvent{InstanceIds: instanceIds, Timestamp: timestamppb.Now()})
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error sending running instances event to analytics\n: %v\n", err)
+			}
 		}
 	}
 }

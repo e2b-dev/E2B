@@ -1,5 +1,5 @@
-GCP_PROJECT ?= $$(gcloud config get-value project)
-GCP_ZONE ?= us-central1-c
+CURRENT_ENV := $(shell cat ../../.last_used_env || echo "not-set")
+-include ../../.env.${CURRENT_ENV}
 
 init:
 	packer init -upgrade .

@@ -44,6 +44,10 @@ data "google_secret_manager_secret_version" "grafana_metrics_username" {
   secret = var.grafana_metrics_username_secret_name
 }
 
+data "google_secret_manager_secret_version" "analytics_collector_host" {
+  secret = var.analytics_collector_host_secret_name
+}
+
 provider "nomad" {
   address   = "https://nomad.${var.domain_name}"
   secret_id = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
@@ -92,6 +96,7 @@ resource "nomad_job" "api" {
       gcp_project_id                = var.gcp_project_id
       gcp_region                    = var.gcp_region
       gcp_docker_repository_name    = var.custom_envs_repository_name
+      analytics_collector_host      = data.google_secret_manager_secret_version.analytics_collector_host.secret_data
     }
   }
 }

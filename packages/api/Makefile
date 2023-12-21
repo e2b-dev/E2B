@@ -1,4 +1,6 @@
--include .env
+CURRENT_ENV := $(shell cat ../../.last_used_env || echo "not-set")
+-include ../../.env.${CURRENT_ENV}
+
 
 openapi := ../../spec/openapi.yml
 codegen := go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest

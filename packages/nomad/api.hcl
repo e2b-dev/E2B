@@ -83,6 +83,11 @@ variable "gcp_region" {
   default = ""
 }
 
+variable "analytics_collector_host" {
+  type    = string
+  default = ""
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -132,6 +137,7 @@ job "orchestration-api" {
         GCP_DOCKER_REPOSITORY_NAME    = var.gcp_docker_repository_name
         GCP_PROJECT_ID                = var.gcp_project_id
         GCP_REGION                    = var.gcp_region
+        ANALYTICS_COLLECTOR_HOST      = var.analytics_collector_host
       }
 
       config {

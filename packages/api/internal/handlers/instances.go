@@ -9,7 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
@@ -100,6 +102,17 @@ func (a *APIStore) PostInstances(
 	}
 
 	c.Set("instanceID", instance.InstanceID)
+
+	_, err = a.analytics.Client.InstanceStarted(ctx, &analyticscollector.InstanceStartedEvent{
+		InstanceId:    instance.InstanceID,
+		EnvironmentId: envID,
+		TeamId:        team.ID.String(),
+		Timestamp:     timestamppb.Now(),
+	})
+	if err != nil {
+		errMsg := fmt.Errorf("error when sending analytics event: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+	}
 
 	telemetry.ReportEvent(ctx, "created environment instance")
 

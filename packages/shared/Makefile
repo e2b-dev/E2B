@@ -1,4 +1,5 @@
--include .env
+CURRENT_ENV := $(shell cat ../../.last_used_env || echo "not-set")
+-include ../../.env.${CURRENT_ENV}
 
 .PHONY: generate-fc
 generate-fc:

@@ -25,6 +25,7 @@ type TeamAPIKeyQuery struct {
 	inters     []Interceptor
 	predicates []predicate.TeamAPIKey
 	withTeam   *TeamQuery
+	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -389,6 +390,9 @@ func (takq *TeamAPIKeyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	}
 	_spec.Node.Schema = takq.schemaConfig.TeamAPIKey
 	ctx = internal.NewSchemaConfigContext(ctx, takq.schemaConfig)
+	if len(takq.modifiers) > 0 {
+		_spec.Modifiers = takq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -441,6 +445,9 @@ func (takq *TeamAPIKeyQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := takq.querySpec()
 	_spec.Node.Schema = takq.schemaConfig.TeamAPIKey
 	ctx = internal.NewSchemaConfigContext(ctx, takq.schemaConfig)
+	if len(takq.modifiers) > 0 {
+		_spec.Modifiers = takq.modifiers
+	}
 	_spec.Node.Columns = takq.ctx.Fields
 	if len(takq.ctx.Fields) > 0 {
 		_spec.Unique = takq.ctx.Unique != nil && *takq.ctx.Unique
@@ -509,6 +516,9 @@ func (takq *TeamAPIKeyQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	t1.Schema(takq.schemaConfig.TeamAPIKey)
 	ctx = internal.NewSchemaConfigContext(ctx, takq.schemaConfig)
 	selector.WithContext(ctx)
+	for _, m := range takq.modifiers {
+		m(selector)
+	}
 	for _, p := range takq.predicates {
 		p(selector)
 	}
@@ -524,6 +534,12 @@ func (takq *TeamAPIKeyQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (takq *TeamAPIKeyQuery) Modify(modifiers ...func(s *sql.Selector)) *TeamAPIKeySelect {
+	takq.modifiers = append(takq.modifiers, modifiers...)
+	return takq.Select()
 }
 
 // TeamAPIKeyGroupBy is the group-by builder for TeamAPIKey entities.
@@ -614,4 +630,10 @@ func (taks *TeamAPIKeySelect) sqlScan(ctx context.Context, root *TeamAPIKeyQuery
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (taks *TeamAPIKeySelect) Modify(modifiers ...func(s *sql.Selector)) *TeamAPIKeySelect {
+	taks.modifiers = append(taks.modifiers, modifiers...)
+	return taks
 }

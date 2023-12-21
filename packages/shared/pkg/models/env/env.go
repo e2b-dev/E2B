@@ -32,6 +32,10 @@ const (
 	FieldSpawnCount = "spawn_count"
 	// FieldLastSpawnedAt holds the string denoting the last_spawned_at field in the database.
 	FieldLastSpawnedAt = "last_spawned_at"
+	// FieldVcpu holds the string denoting the vcpu field in the database.
+	FieldVcpu = "vcpu"
+	// FieldRAMMB holds the string denoting the ram_mb field in the database.
+	FieldRAMMB = "ram_mb"
 	// EdgeTeam holds the string denoting the team edge name in mutations.
 	EdgeTeam = "team"
 	// EdgeEnvAliases holds the string denoting the env_aliases edge name in mutations.
@@ -68,6 +72,8 @@ var Columns = []string{
 	FieldBuildCount,
 	FieldSpawnCount,
 	FieldLastSpawnedAt,
+	FieldVcpu,
+	FieldRAMMB,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -142,6 +148,16 @@ func BySpawnCount(opts ...sql.OrderTermOption) OrderOption {
 // ByLastSpawnedAt orders the results by the last_spawned_at field.
 func ByLastSpawnedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSpawnedAt, opts...).ToFunc()
+}
+
+// ByVcpu orders the results by the vcpu field.
+func ByVcpu(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVcpu, opts...).ToFunc()
+}
+
+// ByRAMMB orders the results by the ram_mb field.
+func ByRAMMB(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRAMMB, opts...).ToFunc()
 }
 
 // ByTeamField orders the results by team field.

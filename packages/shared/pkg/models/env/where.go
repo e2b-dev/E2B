@@ -112,6 +112,16 @@ func LastSpawnedAt(v time.Time) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldLastSpawnedAt, v))
 }
 
+// Vcpu applies equality check predicate on the "vcpu" field. It's identical to VcpuEQ.
+func Vcpu(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldVcpu, v))
+}
+
+// RAMMB applies equality check predicate on the "ram_mb" field. It's identical to RAMMBEQ.
+func RAMMB(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldRAMMB, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldCreatedAt, v))
@@ -455,6 +465,86 @@ func LastSpawnedAtIsNil() predicate.Env {
 // LastSpawnedAtNotNil applies the NotNil predicate on the "last_spawned_at" field.
 func LastSpawnedAtNotNil() predicate.Env {
 	return predicate.Env(sql.FieldNotNull(FieldLastSpawnedAt))
+}
+
+// VcpuEQ applies the EQ predicate on the "vcpu" field.
+func VcpuEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldVcpu, v))
+}
+
+// VcpuNEQ applies the NEQ predicate on the "vcpu" field.
+func VcpuNEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldVcpu, v))
+}
+
+// VcpuIn applies the In predicate on the "vcpu" field.
+func VcpuIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldVcpu, vs...))
+}
+
+// VcpuNotIn applies the NotIn predicate on the "vcpu" field.
+func VcpuNotIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldVcpu, vs...))
+}
+
+// VcpuGT applies the GT predicate on the "vcpu" field.
+func VcpuGT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldVcpu, v))
+}
+
+// VcpuGTE applies the GTE predicate on the "vcpu" field.
+func VcpuGTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldVcpu, v))
+}
+
+// VcpuLT applies the LT predicate on the "vcpu" field.
+func VcpuLT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldVcpu, v))
+}
+
+// VcpuLTE applies the LTE predicate on the "vcpu" field.
+func VcpuLTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldVcpu, v))
+}
+
+// RAMMBEQ applies the EQ predicate on the "ram_mb" field.
+func RAMMBEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldRAMMB, v))
+}
+
+// RAMMBNEQ applies the NEQ predicate on the "ram_mb" field.
+func RAMMBNEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldRAMMB, v))
+}
+
+// RAMMBIn applies the In predicate on the "ram_mb" field.
+func RAMMBIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldRAMMB, vs...))
+}
+
+// RAMMBNotIn applies the NotIn predicate on the "ram_mb" field.
+func RAMMBNotIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldRAMMB, vs...))
+}
+
+// RAMMBGT applies the GT predicate on the "ram_mb" field.
+func RAMMBGT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldRAMMB, v))
+}
+
+// RAMMBGTE applies the GTE predicate on the "ram_mb" field.
+func RAMMBGTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldRAMMB, v))
+}
+
+// RAMMBLT applies the LT predicate on the "ram_mb" field.
+func RAMMBLT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldRAMMB, v))
+}
+
+// RAMMBLTE applies the LTE predicate on the "ram_mb" field.
+func RAMMBLTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldRAMMB, v))
 }
 
 // HasTeam applies the HasEdge predicate on the "team" edge.

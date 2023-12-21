@@ -498,6 +498,10 @@ type EnvMutation struct {
 	spawn_count        *int32
 	addspawn_count     *int32
 	last_spawned_at    *time.Time
+	vcpu               *int64
+	addvcpu            *int64
+	ram_mb             *int64
+	addram_mb          *int64
 	clearedFields      map[string]struct{}
 	team               *uuid.UUID
 	clearedteam        bool
@@ -990,6 +994,118 @@ func (m *EnvMutation) ResetLastSpawnedAt() {
 	delete(m.clearedFields, env.FieldLastSpawnedAt)
 }
 
+// SetVcpu sets the "vcpu" field.
+func (m *EnvMutation) SetVcpu(i int64) {
+	m.vcpu = &i
+	m.addvcpu = nil
+}
+
+// Vcpu returns the value of the "vcpu" field in the mutation.
+func (m *EnvMutation) Vcpu() (r int64, exists bool) {
+	v := m.vcpu
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVcpu returns the old "vcpu" field's value of the Env entity.
+// If the Env object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvMutation) OldVcpu(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVcpu is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVcpu requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVcpu: %w", err)
+	}
+	return oldValue.Vcpu, nil
+}
+
+// AddVcpu adds i to the "vcpu" field.
+func (m *EnvMutation) AddVcpu(i int64) {
+	if m.addvcpu != nil {
+		*m.addvcpu += i
+	} else {
+		m.addvcpu = &i
+	}
+}
+
+// AddedVcpu returns the value that was added to the "vcpu" field in this mutation.
+func (m *EnvMutation) AddedVcpu() (r int64, exists bool) {
+	v := m.addvcpu
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVcpu resets all changes to the "vcpu" field.
+func (m *EnvMutation) ResetVcpu() {
+	m.vcpu = nil
+	m.addvcpu = nil
+}
+
+// SetRAMMB sets the "ram_mb" field.
+func (m *EnvMutation) SetRAMMB(i int64) {
+	m.ram_mb = &i
+	m.addram_mb = nil
+}
+
+// RAMMB returns the value of the "ram_mb" field in the mutation.
+func (m *EnvMutation) RAMMB() (r int64, exists bool) {
+	v := m.ram_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRAMMB returns the old "ram_mb" field's value of the Env entity.
+// If the Env object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvMutation) OldRAMMB(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRAMMB is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRAMMB requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRAMMB: %w", err)
+	}
+	return oldValue.RAMMB, nil
+}
+
+// AddRAMMB adds i to the "ram_mb" field.
+func (m *EnvMutation) AddRAMMB(i int64) {
+	if m.addram_mb != nil {
+		*m.addram_mb += i
+	} else {
+		m.addram_mb = &i
+	}
+}
+
+// AddedRAMMB returns the value that was added to the "ram_mb" field in this mutation.
+func (m *EnvMutation) AddedRAMMB() (r int64, exists bool) {
+	v := m.addram_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRAMMB resets all changes to the "ram_mb" field.
+func (m *EnvMutation) ResetRAMMB() {
+	m.ram_mb = nil
+	m.addram_mb = nil
+}
+
 // ClearTeam clears the "team" edge to the Team entity.
 func (m *EnvMutation) ClearTeam() {
 	m.clearedteam = true
@@ -1105,7 +1221,7 @@ func (m *EnvMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, env.FieldCreatedAt)
 	}
@@ -1133,6 +1249,12 @@ func (m *EnvMutation) Fields() []string {
 	if m.last_spawned_at != nil {
 		fields = append(fields, env.FieldLastSpawnedAt)
 	}
+	if m.vcpu != nil {
+		fields = append(fields, env.FieldVcpu)
+	}
+	if m.ram_mb != nil {
+		fields = append(fields, env.FieldRAMMB)
+	}
 	return fields
 }
 
@@ -1159,6 +1281,10 @@ func (m *EnvMutation) Field(name string) (ent.Value, bool) {
 		return m.SpawnCount()
 	case env.FieldLastSpawnedAt:
 		return m.LastSpawnedAt()
+	case env.FieldVcpu:
+		return m.Vcpu()
+	case env.FieldRAMMB:
+		return m.RAMMB()
 	}
 	return nil, false
 }
@@ -1186,6 +1312,10 @@ func (m *EnvMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldSpawnCount(ctx)
 	case env.FieldLastSpawnedAt:
 		return m.OldLastSpawnedAt(ctx)
+	case env.FieldVcpu:
+		return m.OldVcpu(ctx)
+	case env.FieldRAMMB:
+		return m.OldRAMMB(ctx)
 	}
 	return nil, fmt.Errorf("unknown Env field %s", name)
 }
@@ -1258,6 +1388,20 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastSpawnedAt(v)
 		return nil
+	case env.FieldVcpu:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVcpu(v)
+		return nil
+	case env.FieldRAMMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRAMMB(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)
 }
@@ -1272,6 +1416,12 @@ func (m *EnvMutation) AddedFields() []string {
 	if m.addspawn_count != nil {
 		fields = append(fields, env.FieldSpawnCount)
 	}
+	if m.addvcpu != nil {
+		fields = append(fields, env.FieldVcpu)
+	}
+	if m.addram_mb != nil {
+		fields = append(fields, env.FieldRAMMB)
+	}
 	return fields
 }
 
@@ -1284,6 +1434,10 @@ func (m *EnvMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedBuildCount()
 	case env.FieldSpawnCount:
 		return m.AddedSpawnCount()
+	case env.FieldVcpu:
+		return m.AddedVcpu()
+	case env.FieldRAMMB:
+		return m.AddedRAMMB()
 	}
 	return nil, false
 }
@@ -1306,6 +1460,20 @@ func (m *EnvMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSpawnCount(v)
+		return nil
+	case env.FieldVcpu:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVcpu(v)
+		return nil
+	case env.FieldRAMMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRAMMB(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Env numeric field %s", name)
@@ -1369,6 +1537,12 @@ func (m *EnvMutation) ResetField(name string) error {
 		return nil
 	case env.FieldLastSpawnedAt:
 		m.ResetLastSpawnedAt()
+		return nil
+	case env.FieldVcpu:
+		m.ResetVcpu()
+		return nil
+	case env.FieldRAMMB:
+		m.ResetRAMMB()
 		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)
@@ -3333,6 +3507,7 @@ type TierMutation struct {
 	op                      Op
 	typ                     string
 	id                      *string
+	name                    *string
 	vcpu                    *int64
 	addvcpu                 *int64
 	ram_mb                  *int64
@@ -3452,6 +3627,42 @@ func (m *TierMutation) IDs(ctx context.Context) ([]string, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetName sets the "name" field.
+func (m *TierMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *TierMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Tier entity.
+// If the Tier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TierMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *TierMutation) ResetName() {
+	m.name = nil
 }
 
 // SetVcpu sets the "vcpu" field.
@@ -3766,7 +3977,10 @@ func (m *TierMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TierMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
+	if m.name != nil {
+		fields = append(fields, tier.FieldName)
+	}
 	if m.vcpu != nil {
 		fields = append(fields, tier.FieldVcpu)
 	}
@@ -3787,6 +4001,8 @@ func (m *TierMutation) Fields() []string {
 // schema.
 func (m *TierMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case tier.FieldName:
+		return m.Name()
 	case tier.FieldVcpu:
 		return m.Vcpu()
 	case tier.FieldRAMMB:
@@ -3804,6 +4020,8 @@ func (m *TierMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *TierMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case tier.FieldName:
+		return m.OldName(ctx)
 	case tier.FieldVcpu:
 		return m.OldVcpu(ctx)
 	case tier.FieldRAMMB:
@@ -3821,6 +4039,13 @@ func (m *TierMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *TierMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case tier.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
 	case tier.FieldVcpu:
 		v, ok := value.(int64)
 		if !ok {
@@ -3949,6 +4174,9 @@ func (m *TierMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *TierMutation) ResetField(name string) error {
 	switch name {
+	case tier.FieldName:
+		m.ResetName()
+		return nil
 	case tier.FieldVcpu:
 		m.ResetVcpu()
 		return nil

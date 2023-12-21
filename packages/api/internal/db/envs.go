@@ -92,7 +92,7 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 	}, nil
 }
 
-func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, buildID uuid.UUID, dockerfile string) error {
+func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, buildID uuid.UUID, dockerfile string, vCPU, ramMB int64) error {
 	err := db.
 		Client.
 		Env.
@@ -102,10 +102,14 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 		SetTeamID(teamID).
 		SetDockerfile(dockerfile).
 		SetPublic(false).
+		SetRAMMB(ramMB).
+		SetVcpu(vCPU).
 		OnConflictColumns(env.FieldID).
 		UpdateBuildID().
 		UpdateDockerfile().
 		UpdateUpdatedAt().
+		UpdateVcpu().
+		UpdateRAMMB().
 		Update(func(e *models.EnvUpsert) {
 			e.AddBuildCount(1)
 		}).

@@ -1,5 +1,7 @@
-client := gcloud compute instances list --format='csv(name)' | grep "client"
-GCP_PROJECT ?= $$(gcloud config get-value project)
+CURRENT_ENV := $(shell cat ../../.last_used_env || echo "not-set")
+-include ../../.env.${CURRENT_ENV}
+
+client := gcloud compute instances list --format='csv(name)' --project $(GCP_PROJECT) | grep "client"
 
 upload:
 	./upload.sh $(GCP_PROJECT)

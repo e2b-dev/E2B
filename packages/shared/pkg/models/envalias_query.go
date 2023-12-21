@@ -24,6 +24,7 @@ type EnvAliasQuery struct {
 	inters     []Interceptor
 	predicates []predicate.EnvAlias
 	withEnv    *EnvQuery
+	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -388,6 +389,9 @@ func (eaq *EnvAliasQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*En
 	}
 	_spec.Node.Schema = eaq.schemaConfig.EnvAlias
 	ctx = internal.NewSchemaConfigContext(ctx, eaq.schemaConfig)
+	if len(eaq.modifiers) > 0 {
+		_spec.Modifiers = eaq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -443,6 +447,9 @@ func (eaq *EnvAliasQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := eaq.querySpec()
 	_spec.Node.Schema = eaq.schemaConfig.EnvAlias
 	ctx = internal.NewSchemaConfigContext(ctx, eaq.schemaConfig)
+	if len(eaq.modifiers) > 0 {
+		_spec.Modifiers = eaq.modifiers
+	}
 	_spec.Node.Columns = eaq.ctx.Fields
 	if len(eaq.ctx.Fields) > 0 {
 		_spec.Unique = eaq.ctx.Unique != nil && *eaq.ctx.Unique
@@ -511,6 +518,9 @@ func (eaq *EnvAliasQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	t1.Schema(eaq.schemaConfig.EnvAlias)
 	ctx = internal.NewSchemaConfigContext(ctx, eaq.schemaConfig)
 	selector.WithContext(ctx)
+	for _, m := range eaq.modifiers {
+		m(selector)
+	}
 	for _, p := range eaq.predicates {
 		p(selector)
 	}
@@ -526,6 +536,12 @@ func (eaq *EnvAliasQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (eaq *EnvAliasQuery) Modify(modifiers ...func(s *sql.Selector)) *EnvAliasSelect {
+	eaq.modifiers = append(eaq.modifiers, modifiers...)
+	return eaq.Select()
 }
 
 // EnvAliasGroupBy is the group-by builder for EnvAlias entities.
@@ -616,4 +632,10 @@ func (eas *EnvAliasSelect) sqlScan(ctx context.Context, root *EnvAliasQuery, v a
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (eas *EnvAliasSelect) Modify(modifiers ...func(s *sql.Selector)) *EnvAliasSelect {
+	eas.modifiers = append(eas.modifiers, modifiers...)
+	return eas
 }

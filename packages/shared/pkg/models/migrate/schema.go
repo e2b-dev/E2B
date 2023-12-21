@@ -40,6 +40,8 @@ var (
 		{Name: "build_count", Type: field.TypeInt32, Default: 1},
 		{Name: "spawn_count", Type: field.TypeInt32, Default: 0},
 		{Name: "last_spawned_at", Type: field.TypeTime, Nullable: true},
+		{Name: "vcpu", Type: field.TypeInt64},
+		{Name: "ram_mb", Type: field.TypeInt64},
 		{Name: "team_id", Type: field.TypeUUID},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
@@ -50,7 +52,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "envs_teams_envs",
-				Columns:    []*schema.Column{EnvsColumns[9]},
+				Columns:    []*schema.Column{EnvsColumns[11]},
 				RefColumns: []*schema.Column{TeamsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -81,7 +83,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Unique: true, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "is_default", Type: field.TypeBool},
-		{Name: "is_blocked", Type: field.TypeBool},
+		{Name: "is_blocked", Type: field.TypeBool, Default: "false"},
 		{Name: "name", Type: field.TypeString},
 		{Name: "tier", Type: field.TypeString},
 	}
@@ -122,6 +124,7 @@ var (
 	// TiersColumns holds the columns for the "tiers" table.
 	TiersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true},
+		{Name: "name", Type: field.TypeString},
 		{Name: "vcpu", Type: field.TypeInt64},
 		{Name: "ram_mb", Type: field.TypeInt64},
 		{Name: "disk_mb", Type: field.TypeInt64},
