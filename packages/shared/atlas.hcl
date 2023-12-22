@@ -13,4 +13,10 @@ env "local" {
     // See: https://entgo.io/docs/migrate/#migration-directory
     dir = "file://migrations"
   }
+
+  diff  {
+  	skip  {
+  		drop_func = true
+  	}
+  }
 }

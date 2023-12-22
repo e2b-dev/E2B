@@ -1,7 +1,7 @@
 -- Add new schema named "auth"
 CREATE SCHEMA IF NOT EXISTS "auth";
 -- Create "tiers" table
-CREATE TABLE "public"."tiers" ("id" character varying NOT NULL, "vcpu" bigint NOT NULL, "ram_mb" bigint NOT NULL, "disk_mb" bigint NOT NULL, "concurrent_instances" bigint NOT NULL, PRIMARY KEY ("id"));
+CREATE TABLE "public"."tiers" ("id" character varying NOT NULL, "name" character varying NOT NULL, "vcpu" bigint NOT NULL, "ram_mb" bigint NOT NULL, "disk_mb" bigint NOT NULL, "concurrent_instances" bigint NOT NULL, PRIMARY KEY ("id"));
 -- Create "teams" table
 CREATE TABLE "public"."teams" ("id" uuid DEFAULT gen_random_uuid() , "created_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP, "is_default" boolean NOT NULL, "is_blocked" boolean NOT NULL DEFAULT FALSE, "name" character varying NOT NULL, "tier" character varying NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "teams_tiers_teams" FOREIGN KEY ("tier") REFERENCES "public"."tiers" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION);
 -- Create "envs" table
