@@ -5,7 +5,7 @@ init:
 	packer init -upgrade .
 
 build:
-	packer build -var "gcp_project_id=$(GCP_PROJECT)" -var "gcp_zone=$(GCP_ZONE)"  .
+	packer build -var "gcp_project_id=$(GCP_PROJECT_ID)" -var "gcp_zone=$(GCP_ZONE)"  .
 
 format:
 	packer fmt .
