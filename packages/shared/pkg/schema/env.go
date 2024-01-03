@@ -30,6 +30,10 @@ func (Env) Fields() []ent.Field {
 		field.Int32("build_count").Default(1),
 		field.Int32("spawn_count").Default(0),
 		field.Time("last_spawned_at").Optional(),
+		field.Int64("vcpu"),
+		field.Int64("ram_mb"),
+		field.Int64("free_disk_size_mb"),
+		field.Int64("total_disk_size_mb"),
 	}
 }
 

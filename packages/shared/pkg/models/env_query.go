@@ -28,6 +28,7 @@ type EnvQuery struct {
 	predicates     []predicate.Env
 	withTeam       *TeamQuery
 	withEnvAliases *EnvAliasQuery
+	modifiers      []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -430,6 +431,9 @@ func (eq *EnvQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Env, err
 	}
 	_spec.Node.Schema = eq.schemaConfig.Env
 	ctx = internal.NewSchemaConfigContext(ctx, eq.schemaConfig)
+	if len(eq.modifiers) > 0 {
+		_spec.Modifiers = eq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -522,6 +526,9 @@ func (eq *EnvQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := eq.querySpec()
 	_spec.Node.Schema = eq.schemaConfig.Env
 	ctx = internal.NewSchemaConfigContext(ctx, eq.schemaConfig)
+	if len(eq.modifiers) > 0 {
+		_spec.Modifiers = eq.modifiers
+	}
 	_spec.Node.Columns = eq.ctx.Fields
 	if len(eq.ctx.Fields) > 0 {
 		_spec.Unique = eq.ctx.Unique != nil && *eq.ctx.Unique
@@ -590,6 +597,9 @@ func (eq *EnvQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	t1.Schema(eq.schemaConfig.Env)
 	ctx = internal.NewSchemaConfigContext(ctx, eq.schemaConfig)
 	selector.WithContext(ctx)
+	for _, m := range eq.modifiers {
+		m(selector)
+	}
 	for _, p := range eq.predicates {
 		p(selector)
 	}
@@ -605,6 +615,12 @@ func (eq *EnvQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (eq *EnvQuery) Modify(modifiers ...func(s *sql.Selector)) *EnvSelect {
+	eq.modifiers = append(eq.modifiers, modifiers...)
+	return eq.Select()
 }
 
 // EnvGroupBy is the group-by builder for Env entities.
@@ -695,4 +711,10 @@ func (es *EnvSelect) sqlScan(ctx context.Context, root *EnvQuery, v any) error {
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (es *EnvSelect) Modify(modifiers ...func(s *sql.Selector)) *EnvSelect {
+	es.modifiers = append(es.modifiers, modifiers...)
+	return es
 }

@@ -16,7 +16,7 @@ import (
 )
 
 // DockerImagesURL is the URL to the docker images in the artifact registry
-var DockerImagesURL = "/" + constants.ProjectID + "/locations/" + constants.Region + "/repositories/" + constants.DockerRepositoryName + "/packages/"
+var DockerImagesURL = "projects/" + constants.ProjectID + "/locations/" + constants.Region + "/repositories/" + constants.DockerRepositoryName + "/packages/"
 
 // DeleteEnvsEnvID serves to delete an env (e.g. in CLI)
 func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {

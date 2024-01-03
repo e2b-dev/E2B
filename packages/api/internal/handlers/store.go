@@ -16,7 +16,9 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/db"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
@@ -26,6 +28,7 @@ import (
 
 type APIStore struct {
 	Ctx                        context.Context
+	analytics                  *analyticscollector.Analytics
 	posthog                    posthog.Client
 	tracer                     trace.Tracer
 	instanceCache              *nomad.InstanceCache
@@ -104,7 +107,16 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
-	instanceCache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances, instancesCounter)
+	analytics, err := analyticscollector.NewAnalytics()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing Analytics client\n: %v\n", err)
+	}
+
+	fmt.Println("Initialized Analytics client")
+
+	instanceCache := nomad.NewInstanceCache(analytics.Client, getDeleteInstanceFunction(ctx, nomadClient, analytics, posthogClient), initialInstances, instancesCounter)
+
+	fmt.Println("Initialized instance cache")
 
 	if os.Getenv("ENVIRONMENT") == "prod" {
 		go instanceCache.KeepInSync(nomadClient)
@@ -158,6 +170,7 @@ func NewAPIStore() *APIStore {
 		supabase:                   supabaseClient,
 		instanceCache:              instanceCache,
 		tracer:                     tracer,
+		analytics:                  analytics,
 		posthog:                    posthogClient,
 		cloudStorage:               cStorage,
 		artifactRegistry:           artifactRegistry,
@@ -171,7 +184,12 @@ func (a *APIStore) Close() {
 	a.nomad.Close()
 	a.supabase.Close()
 
-	err := a.posthog.Close()
+	err := a.analytics.Close()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error closing Analytics\n: %v\n", err)
+	}
+
+	err = a.posthog.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error closing Posthog client\n: %v\n", err)
 	}
@@ -243,7 +261,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 		}
 	}
 
-	return deleteInstance(a.nomad, a.posthog, info, purge)
+	return deleteInstance(a.Ctx, a.nomad, a.analytics, a.posthog, info, purge)
 }
 
 func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (envID string, hasAccess bool, err error) {
@@ -252,18 +270,22 @@ func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, 
 
 type InstanceInfo = nomad.InstanceInfo
 
-func getDeleteInstanceFunction(nomad *nomad.NomadClient, posthogClient posthog.Client) func(info nomad.InstanceInfo, purge bool) *api.APIError {
+func getDeleteInstanceFunction(ctx context.Context, nomad *nomad.NomadClient, analytics *analyticscollector.Analytics, posthogClient posthog.Client) func(info nomad.InstanceInfo, purge bool) *api.APIError {
 	return func(info InstanceInfo, purge bool) *api.APIError {
-		return deleteInstance(nomad, posthogClient, info, purge)
+		return deleteInstance(ctx, nomad, analytics, posthogClient, info, purge)
 	}
 }
 
 func deleteInstance(
+	ctx context.Context,
 	nomad *nomad.NomadClient,
+	analytics *analyticscollector.Analytics,
 	posthogClient posthog.Client,
 	info InstanceInfo,
 	purge bool,
 ) *api.APIError {
+	duration := time.Since(*info.StartTime).Seconds()
+
 	delErr := nomad.DeleteInstance(info.Instance.InstanceID, purge)
 	if delErr != nil {
 		errMsg := fmt.Errorf("cannot delete instance '%s': %w", info.Instance.InstanceID, delErr.Err)
@@ -276,13 +298,24 @@ func deleteInstance(
 	}
 
 	if info.TeamID != nil && info.StartTime != nil {
+		_, err := analytics.Client.InstanceStopped(ctx, &analyticscollector.InstanceStoppedEvent{
+			TeamId:        info.TeamID.String(),
+			EnvironmentId: "envID",
+			InstanceId:    info.Instance.InstanceID,
+			Timestamp:     timestamppb.Now(),
+			Duration:      float32(duration),
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error sending Analytics event: %v\n", err)
+		}
+
 		CreateAnalyticsTeamEvent(
 			posthogClient,
 			info.TeamID.String(),
 			"closed_instance", posthog.NewProperties().
 				Set("instance_id", info.Instance.InstanceID).
 				Set("environment", info.Instance.EnvID).
-				Set("duration", time.Since(*info.StartTime).Seconds()),
+				Set("duration", duration),
 		)
 	}
 

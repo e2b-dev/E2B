@@ -120,6 +120,30 @@ func (ec *EnvCreate) SetNillableLastSpawnedAt(t *time.Time) *EnvCreate {
 	return ec
 }
 
+// SetVcpu sets the "vcpu" field.
+func (ec *EnvCreate) SetVcpu(i int64) *EnvCreate {
+	ec.mutation.SetVcpu(i)
+	return ec
+}
+
+// SetRAMMB sets the "ram_mb" field.
+func (ec *EnvCreate) SetRAMMB(i int64) *EnvCreate {
+	ec.mutation.SetRAMMB(i)
+	return ec
+}
+
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (ec *EnvCreate) SetFreeDiskSizeMB(i int64) *EnvCreate {
+	ec.mutation.SetFreeDiskSizeMB(i)
+	return ec
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (ec *EnvCreate) SetTotalDiskSizeMB(i int64) *EnvCreate {
+	ec.mutation.SetTotalDiskSizeMB(i)
+	return ec
+}
+
 // SetID sets the "id" field.
 func (ec *EnvCreate) SetID(s string) *EnvCreate {
 	ec.mutation.SetID(s)
@@ -225,6 +249,18 @@ func (ec *EnvCreate) check() error {
 	if _, ok := ec.mutation.SpawnCount(); !ok {
 		return &ValidationError{Name: "spawn_count", err: errors.New(`models: missing required field "Env.spawn_count"`)}
 	}
+	if _, ok := ec.mutation.Vcpu(); !ok {
+		return &ValidationError{Name: "vcpu", err: errors.New(`models: missing required field "Env.vcpu"`)}
+	}
+	if _, ok := ec.mutation.RAMMB(); !ok {
+		return &ValidationError{Name: "ram_mb", err: errors.New(`models: missing required field "Env.ram_mb"`)}
+	}
+	if _, ok := ec.mutation.FreeDiskSizeMB(); !ok {
+		return &ValidationError{Name: "free_disk_size_mb", err: errors.New(`models: missing required field "Env.free_disk_size_mb"`)}
+	}
+	if _, ok := ec.mutation.TotalDiskSizeMB(); !ok {
+		return &ValidationError{Name: "total_disk_size_mb", err: errors.New(`models: missing required field "Env.total_disk_size_mb"`)}
+	}
 	if _, ok := ec.mutation.TeamID(); !ok {
 		return &ValidationError{Name: "team", err: errors.New(`models: missing required edge "Env.team"`)}
 	}
@@ -296,6 +332,22 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 	if value, ok := ec.mutation.LastSpawnedAt(); ok {
 		_spec.SetField(env.FieldLastSpawnedAt, field.TypeTime, value)
 		_node.LastSpawnedAt = value
+	}
+	if value, ok := ec.mutation.Vcpu(); ok {
+		_spec.SetField(env.FieldVcpu, field.TypeInt64, value)
+		_node.Vcpu = value
+	}
+	if value, ok := ec.mutation.RAMMB(); ok {
+		_spec.SetField(env.FieldRAMMB, field.TypeInt64, value)
+		_node.RAMMB = value
+	}
+	if value, ok := ec.mutation.FreeDiskSizeMB(); ok {
+		_spec.SetField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
+		_node.FreeDiskSizeMB = value
+	}
+	if value, ok := ec.mutation.TotalDiskSizeMB(); ok {
+		_spec.SetField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
+		_node.TotalDiskSizeMB = value
 	}
 	if nodes := ec.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -498,6 +550,78 @@ func (u *EnvUpsert) ClearLastSpawnedAt() *EnvUpsert {
 	return u
 }
 
+// SetVcpu sets the "vcpu" field.
+func (u *EnvUpsert) SetVcpu(v int64) *EnvUpsert {
+	u.Set(env.FieldVcpu, v)
+	return u
+}
+
+// UpdateVcpu sets the "vcpu" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateVcpu() *EnvUpsert {
+	u.SetExcluded(env.FieldVcpu)
+	return u
+}
+
+// AddVcpu adds v to the "vcpu" field.
+func (u *EnvUpsert) AddVcpu(v int64) *EnvUpsert {
+	u.Add(env.FieldVcpu, v)
+	return u
+}
+
+// SetRAMMB sets the "ram_mb" field.
+func (u *EnvUpsert) SetRAMMB(v int64) *EnvUpsert {
+	u.Set(env.FieldRAMMB, v)
+	return u
+}
+
+// UpdateRAMMB sets the "ram_mb" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateRAMMB() *EnvUpsert {
+	u.SetExcluded(env.FieldRAMMB)
+	return u
+}
+
+// AddRAMMB adds v to the "ram_mb" field.
+func (u *EnvUpsert) AddRAMMB(v int64) *EnvUpsert {
+	u.Add(env.FieldRAMMB, v)
+	return u
+}
+
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (u *EnvUpsert) SetFreeDiskSizeMB(v int64) *EnvUpsert {
+	u.Set(env.FieldFreeDiskSizeMB, v)
+	return u
+}
+
+// UpdateFreeDiskSizeMB sets the "free_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateFreeDiskSizeMB() *EnvUpsert {
+	u.SetExcluded(env.FieldFreeDiskSizeMB)
+	return u
+}
+
+// AddFreeDiskSizeMB adds v to the "free_disk_size_mb" field.
+func (u *EnvUpsert) AddFreeDiskSizeMB(v int64) *EnvUpsert {
+	u.Add(env.FieldFreeDiskSizeMB, v)
+	return u
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (u *EnvUpsert) SetTotalDiskSizeMB(v int64) *EnvUpsert {
+	u.Set(env.FieldTotalDiskSizeMB, v)
+	return u
+}
+
+// UpdateTotalDiskSizeMB sets the "total_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateTotalDiskSizeMB() *EnvUpsert {
+	u.SetExcluded(env.FieldTotalDiskSizeMB)
+	return u
+}
+
+// AddTotalDiskSizeMB adds v to the "total_disk_size_mb" field.
+func (u *EnvUpsert) AddTotalDiskSizeMB(v int64) *EnvUpsert {
+	u.Add(env.FieldTotalDiskSizeMB, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -679,6 +803,90 @@ func (u *EnvUpsertOne) UpdateLastSpawnedAt() *EnvUpsertOne {
 func (u *EnvUpsertOne) ClearLastSpawnedAt() *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.ClearLastSpawnedAt()
+	})
+}
+
+// SetVcpu sets the "vcpu" field.
+func (u *EnvUpsertOne) SetVcpu(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetVcpu(v)
+	})
+}
+
+// AddVcpu adds v to the "vcpu" field.
+func (u *EnvUpsertOne) AddVcpu(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddVcpu(v)
+	})
+}
+
+// UpdateVcpu sets the "vcpu" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateVcpu() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateVcpu()
+	})
+}
+
+// SetRAMMB sets the "ram_mb" field.
+func (u *EnvUpsertOne) SetRAMMB(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetRAMMB(v)
+	})
+}
+
+// AddRAMMB adds v to the "ram_mb" field.
+func (u *EnvUpsertOne) AddRAMMB(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddRAMMB(v)
+	})
+}
+
+// UpdateRAMMB sets the "ram_mb" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateRAMMB() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateRAMMB()
+	})
+}
+
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (u *EnvUpsertOne) SetFreeDiskSizeMB(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetFreeDiskSizeMB(v)
+	})
+}
+
+// AddFreeDiskSizeMB adds v to the "free_disk_size_mb" field.
+func (u *EnvUpsertOne) AddFreeDiskSizeMB(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddFreeDiskSizeMB(v)
+	})
+}
+
+// UpdateFreeDiskSizeMB sets the "free_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateFreeDiskSizeMB() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateFreeDiskSizeMB()
+	})
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (u *EnvUpsertOne) SetTotalDiskSizeMB(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetTotalDiskSizeMB(v)
+	})
+}
+
+// AddTotalDiskSizeMB adds v to the "total_disk_size_mb" field.
+func (u *EnvUpsertOne) AddTotalDiskSizeMB(v int64) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddTotalDiskSizeMB(v)
+	})
+}
+
+// UpdateTotalDiskSizeMB sets the "total_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateTotalDiskSizeMB() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateTotalDiskSizeMB()
 	})
 }
 
@@ -1030,6 +1238,90 @@ func (u *EnvUpsertBulk) UpdateLastSpawnedAt() *EnvUpsertBulk {
 func (u *EnvUpsertBulk) ClearLastSpawnedAt() *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.ClearLastSpawnedAt()
+	})
+}
+
+// SetVcpu sets the "vcpu" field.
+func (u *EnvUpsertBulk) SetVcpu(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetVcpu(v)
+	})
+}
+
+// AddVcpu adds v to the "vcpu" field.
+func (u *EnvUpsertBulk) AddVcpu(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddVcpu(v)
+	})
+}
+
+// UpdateVcpu sets the "vcpu" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateVcpu() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateVcpu()
+	})
+}
+
+// SetRAMMB sets the "ram_mb" field.
+func (u *EnvUpsertBulk) SetRAMMB(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetRAMMB(v)
+	})
+}
+
+// AddRAMMB adds v to the "ram_mb" field.
+func (u *EnvUpsertBulk) AddRAMMB(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddRAMMB(v)
+	})
+}
+
+// UpdateRAMMB sets the "ram_mb" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateRAMMB() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateRAMMB()
+	})
+}
+
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (u *EnvUpsertBulk) SetFreeDiskSizeMB(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetFreeDiskSizeMB(v)
+	})
+}
+
+// AddFreeDiskSizeMB adds v to the "free_disk_size_mb" field.
+func (u *EnvUpsertBulk) AddFreeDiskSizeMB(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddFreeDiskSizeMB(v)
+	})
+}
+
+// UpdateFreeDiskSizeMB sets the "free_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateFreeDiskSizeMB() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateFreeDiskSizeMB()
+	})
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (u *EnvUpsertBulk) SetTotalDiskSizeMB(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetTotalDiskSizeMB(v)
+	})
+}
+
+// AddTotalDiskSizeMB adds v to the "total_disk_size_mb" field.
+func (u *EnvUpsertBulk) AddTotalDiskSizeMB(v int64) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddTotalDiskSizeMB(v)
+	})
+}
+
+// UpdateTotalDiskSizeMB sets the "total_disk_size_mb" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateTotalDiskSizeMB() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateTotalDiskSizeMB()
 	})
 }
 

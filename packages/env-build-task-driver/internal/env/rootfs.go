@@ -19,6 +19,7 @@ import (
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/hashicorp/nomad/api"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -39,6 +40,7 @@ const (
 type Rootfs struct {
 	client       *client.Client
 	legacyClient *docker.Client
+	nomadClient  *api.Client
 
 	env *Env
 }
@@ -62,13 +64,25 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	childCtx, childSpan := tracer.Start(ctx, "new-rootfs")
 	defer childSpan.End()
 
+	config := api.DefaultConfig()
+	config.SecretID = env.NomadToken
+	nomadClient, err := api.NewClient(config)
+
+	if err != nil {
+		errMsg := fmt.Errorf("error creating nomad client %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return nil, errMsg
+	}
+
 	rootfs := &Rootfs{
 		client:       docker,
 		legacyClient: legacyDocker,
+		nomadClient:  nomadClient,
 		env:          env,
 	}
 
-	err := rootfs.buildDockerImage(childCtx, tracer)
+	err = rootfs.buildDockerImage(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image %w", err)
 
@@ -560,6 +574,18 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	// In bytes
 	rootfsSize := rootfsStats.Size() + r.env.DiskSizeMB<<toMBShift
+
+	variable := &api.Variable{
+		Path:  "env-build/disk-size-mb/" + r.env.EnvID,
+		Items: api.VariableItems{r.env.BuildID: fmt.Sprintf("%d", rootfsSize>>toMBShift)},
+	}
+	_, _, err = r.nomadClient.Variables().Create(variable, nil)
+	if err != nil {
+		errMsg := fmt.Errorf("error creating nomad variable %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
 
 	err = rootfsFile.Truncate(rootfsSize)
 	if err != nil {

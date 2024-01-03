@@ -70,4 +70,3 @@ resource "google_secret_manager_secret_version" "api_secret_value" {
 
   secret_data = random_password.api_secret.result
 }
-

@@ -37,6 +37,14 @@ type Env struct {
 	SpawnCount int32 `json:"spawn_count,omitempty"`
 	// LastSpawnedAt holds the value of the "last_spawned_at" field.
 	LastSpawnedAt time.Time `json:"last_spawned_at,omitempty"`
+	// Vcpu holds the value of the "vcpu" field.
+	Vcpu int64 `json:"vcpu,omitempty"`
+	// RAMMB holds the value of the "ram_mb" field.
+	RAMMB int64 `json:"ram_mb,omitempty"`
+	// FreeDiskSizeMB holds the value of the "free_disk_size_mb" field.
+	FreeDiskSizeMB int64 `json:"free_disk_size_mb,omitempty"`
+	// TotalDiskSizeMB holds the value of the "total_disk_size_mb" field.
+	TotalDiskSizeMB int64 `json:"total_disk_size_mb,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvQuery when eager-loading is set.
 	Edges        EnvEdges `json:"edges"`
@@ -83,7 +91,7 @@ func (*Env) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case env.FieldPublic:
 			values[i] = new(sql.NullBool)
-		case env.FieldBuildCount, env.FieldSpawnCount:
+		case env.FieldBuildCount, env.FieldSpawnCount, env.FieldVcpu, env.FieldRAMMB, env.FieldFreeDiskSizeMB, env.FieldTotalDiskSizeMB:
 			values[i] = new(sql.NullInt64)
 		case env.FieldID, env.FieldDockerfile:
 			values[i] = new(sql.NullString)
@@ -166,6 +174,30 @@ func (e *Env) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				e.LastSpawnedAt = value.Time
 			}
+		case env.FieldVcpu:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field vcpu", values[i])
+			} else if value.Valid {
+				e.Vcpu = value.Int64
+			}
+		case env.FieldRAMMB:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field ram_mb", values[i])
+			} else if value.Valid {
+				e.RAMMB = value.Int64
+			}
+		case env.FieldFreeDiskSizeMB:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field free_disk_size_mb", values[i])
+			} else if value.Valid {
+				e.FreeDiskSizeMB = value.Int64
+			}
+		case env.FieldTotalDiskSizeMB:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field total_disk_size_mb", values[i])
+			} else if value.Valid {
+				e.TotalDiskSizeMB = value.Int64
+			}
 		default:
 			e.selectValues.Set(columns[i], values[i])
 		}
@@ -238,6 +270,18 @@ func (e *Env) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("last_spawned_at=")
 	builder.WriteString(e.LastSpawnedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("vcpu=")
+	builder.WriteString(fmt.Sprintf("%v", e.Vcpu))
+	builder.WriteString(", ")
+	builder.WriteString("ram_mb=")
+	builder.WriteString(fmt.Sprintf("%v", e.RAMMB))
+	builder.WriteString(", ")
+	builder.WriteString("free_disk_size_mb=")
+	builder.WriteString(fmt.Sprintf("%v", e.FreeDiskSizeMB))
+	builder.WriteString(", ")
+	builder.WriteString("total_disk_size_mb=")
+	builder.WriteString(fmt.Sprintf("%v", e.TotalDiskSizeMB))
 	builder.WriteByte(')')
 	return builder.String()
 }

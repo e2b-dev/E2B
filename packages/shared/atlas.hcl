@@ -2,7 +2,7 @@
 env "local" {
   // Declare where the schema definition resides.
   // Also supported: ["file://multi.hcl", "file://schema.hcl"].
-  src = "ent://internal/db/schema/"
+  src = "ent://pkg/schema/"
 
   // Define the URL of the Dev Database for this environment
   // See: https://atlasgo.io/concepts/dev-database
@@ -12,5 +12,11 @@ env "local" {
     // Define the path to the migration directory.
     // See: https://entgo.io/docs/migrate/#migration-directory
     dir = "file://migrations"
+  }
+
+  diff  {
+  	skip  {
+  		drop_func = true
+  	}
   }
 }

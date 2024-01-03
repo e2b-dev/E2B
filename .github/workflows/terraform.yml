@@ -19,7 +19,7 @@ on:
         required: true
       gcp_zone:
         required: true
-      gcp_project:
+      gcp_project_id:
         required: true
       domain_name:
         required: true
@@ -64,7 +64,7 @@ jobs:
           SERVER_CLUSTER_SIZE: ${{ secrets.server_cluster_size }}
           GCP_REGION: ${{ secrets.gcp_region }}
           GCP_ZONE: ${{ secrets.gcp_zone }}
-          GCP_PROJECT: ${{ secrets.gcp_project }}
+          GCP_PROJECT_ID: ${{ secrets.gcp_project_id }}
           EXCLUDE_GITHUB: 0
           TERRAFORM_STATE_BUCKET: ${{ secrets.terraform_state_bucket }}
           PREFIX: ${{ secrets.terraform_prefix }}
@@ -80,7 +80,7 @@ jobs:
           SERVER_CLUSTER_SIZE: ${{ secrets.server_cluster_size }}
           GCP_REGION: ${{ secrets.gcp_region }}
           GCP_ZONE: ${{ secrets.gcp_zone }}
-          GCP_PROJECT: ${{ secrets.gcp_project }}
+          GCP_PROJECT_ID: ${{ secrets.gcp_project_id }}
           EXCLUDE_GITHUB: 0
           TERRAFORM_STATE_BUCKET: ${{ secrets.terraform_state_bucket }}
           PREFIX: ${{ secrets.terraform_prefix }}

@@ -9,7 +9,7 @@ on:
         required: true
       version:
         required: true
-      gcp_project:
+      gcp_project_id:
         required: true
 
 jobs:
@@ -47,5 +47,5 @@ jobs:
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
           path: "./packages/envd/dist/envd_linux_amd64_v1/envd"
-          destination: "${{ secrets.gcp_project }}-fc-env-pipeline"
+          destination: "${{ secrets.gcp_project_id }}-fc-env-pipeline"
           gzip: false

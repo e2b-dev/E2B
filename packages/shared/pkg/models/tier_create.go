@@ -24,6 +24,12 @@ type TierCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetName sets the "name" field.
+func (tc *TierCreate) SetName(s string) *TierCreate {
+	tc.mutation.SetName(s)
+	return tc
+}
+
 // SetVcpu sets the "vcpu" field.
 func (tc *TierCreate) SetVcpu(i int64) *TierCreate {
 	tc.mutation.SetVcpu(i)
@@ -103,6 +109,9 @@ func (tc *TierCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (tc *TierCreate) check() error {
+	if _, ok := tc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`models: missing required field "Tier.name"`)}
+	}
 	if _, ok := tc.mutation.Vcpu(); !ok {
 		return &ValidationError{Name: "vcpu", err: errors.New(`models: missing required field "Tier.vcpu"`)}
 	}
@@ -152,6 +161,10 @@ func (tc *TierCreate) createSpec() (*Tier, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = id
 	}
+	if value, ok := tc.mutation.Name(); ok {
+		_spec.SetField(tier.FieldName, field.TypeString, value)
+		_node.Name = value
+	}
 	if value, ok := tc.mutation.Vcpu(); ok {
 		_spec.SetField(tier.FieldVcpu, field.TypeInt64, value)
 		_node.Vcpu = value
@@ -192,7 +205,7 @@ func (tc *TierCreate) createSpec() (*Tier, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Tier.Create().
-//		SetVcpu(v).
+//		SetName(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -201,7 +214,7 @@ func (tc *TierCreate) createSpec() (*Tier, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.TierUpsert) {
-//			SetVcpu(v+v).
+//			SetName(v+v).
 //		}).
 //		Exec(ctx)
 func (tc *TierCreate) OnConflict(opts ...sql.ConflictOption) *TierUpsertOne {
@@ -236,6 +249,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetName sets the "name" field.
+func (u *TierUpsert) SetName(v string) *TierUpsert {
+	u.Set(tier.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *TierUpsert) UpdateName() *TierUpsert {
+	u.SetExcluded(tier.FieldName)
+	return u
+}
 
 // SetVcpu sets the "vcpu" field.
 func (u *TierUpsert) SetVcpu(v int64) *TierUpsert {
@@ -355,6 +380,20 @@ func (u *TierUpsertOne) Update(set func(*TierUpsert)) *TierUpsertOne {
 		set(&TierUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetName sets the "name" field.
+func (u *TierUpsertOne) SetName(v string) *TierUpsertOne {
+	return u.Update(func(s *TierUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *TierUpsertOne) UpdateName() *TierUpsertOne {
+	return u.Update(func(s *TierUpsert) {
+		s.UpdateName()
+	})
 }
 
 // SetVcpu sets the "vcpu" field.
@@ -576,7 +615,7 @@ func (tcb *TierCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.TierUpsert) {
-//			SetVcpu(v+v).
+//			SetName(v+v).
 //		}).
 //		Exec(ctx)
 func (tcb *TierCreateBulk) OnConflict(opts ...sql.ConflictOption) *TierUpsertBulk {
@@ -653,6 +692,20 @@ func (u *TierUpsertBulk) Update(set func(*TierUpsert)) *TierUpsertBulk {
 		set(&TierUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetName sets the "name" field.
+func (u *TierUpsertBulk) SetName(v string) *TierUpsertBulk {
+	return u.Update(func(s *TierUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *TierUpsertBulk) UpdateName() *TierUpsertBulk {
+	return u.Update(func(s *TierUpsert) {
+		s.UpdateName()
+	})
 }
 
 // SetVcpu sets the "vcpu" field.

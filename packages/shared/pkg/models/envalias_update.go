@@ -19,8 +19,9 @@ import (
 // EnvAliasUpdate is the builder for updating EnvAlias entities.
 type EnvAliasUpdate struct {
 	config
-	hooks    []Hook
-	mutation *EnvAliasMutation
+	hooks     []Hook
+	mutation  *EnvAliasMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the EnvAliasUpdate builder.
@@ -106,6 +107,12 @@ func (eau *EnvAliasUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (eau *EnvAliasUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *EnvAliasUpdate {
+	eau.modifiers = append(eau.modifiers, modifiers...)
+	return eau
+}
+
 func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := sqlgraph.NewUpdateSpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	if ps := eau.mutation.predicates; len(ps) > 0 {
@@ -151,6 +158,7 @@ func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	_spec.Node.Schema = eau.schemaConfig.EnvAlias
 	ctx = internal.NewSchemaConfigContext(ctx, eau.schemaConfig)
+	_spec.AddModifiers(eau.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, eau.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{envalias.Label}
@@ -166,9 +174,10 @@ func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // EnvAliasUpdateOne is the builder for updating a single EnvAlias entity.
 type EnvAliasUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *EnvAliasMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *EnvAliasMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetEnvID sets the "env_id" field.
@@ -261,6 +270,12 @@ func (eauo *EnvAliasUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (eauo *EnvAliasUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *EnvAliasUpdateOne {
+	eauo.modifiers = append(eauo.modifiers, modifiers...)
+	return eauo
+}
+
 func (eauo *EnvAliasUpdateOne) sqlSave(ctx context.Context) (_node *EnvAlias, err error) {
 	_spec := sqlgraph.NewUpdateSpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	id, ok := eauo.mutation.ID()
@@ -323,6 +338,7 @@ func (eauo *EnvAliasUpdateOne) sqlSave(ctx context.Context) (_node *EnvAlias, er
 	}
 	_spec.Node.Schema = eauo.schemaConfig.EnvAlias
 	ctx = internal.NewSchemaConfigContext(ctx, eauo.schemaConfig)
+	_spec.AddModifiers(eauo.modifiers...)
 	_node = &EnvAlias{config: eauo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

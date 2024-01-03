@@ -107,7 +107,7 @@ resource "github_actions_secret" "service_account_email_secret" {
 
 resource "github_actions_secret" "project_id_secret" {
   repository      = var.github_repository
-  secret_name     = "E2B_GCP_PROJECT"
+  secret_name     = "E2B_GCP_PROJECT_ID"
   plaintext_value = var.gcp_project_id
 }
 

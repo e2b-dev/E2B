@@ -20,8 +20,9 @@ import (
 // TeamAPIKeyUpdate is the builder for updating TeamAPIKey entities.
 type TeamAPIKeyUpdate struct {
 	config
-	hooks    []Hook
-	mutation *TeamAPIKeyMutation
+	hooks     []Hook
+	mutation  *TeamAPIKeyMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the TeamAPIKeyUpdate builder.
@@ -95,6 +96,12 @@ func (taku *TeamAPIKeyUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (taku *TeamAPIKeyUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *TeamAPIKeyUpdate {
+	taku.modifiers = append(taku.modifiers, modifiers...)
+	return taku
+}
+
 func (taku *TeamAPIKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := taku.check(); err != nil {
 		return n, err
@@ -140,6 +147,7 @@ func (taku *TeamAPIKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	_spec.Node.Schema = taku.schemaConfig.TeamAPIKey
 	ctx = internal.NewSchemaConfigContext(ctx, taku.schemaConfig)
+	_spec.AddModifiers(taku.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, taku.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{teamapikey.Label}
@@ -155,9 +163,10 @@ func (taku *TeamAPIKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // TeamAPIKeyUpdateOne is the builder for updating a single TeamAPIKey entity.
 type TeamAPIKeyUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *TeamAPIKeyMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *TeamAPIKeyMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetTeamID sets the "team_id" field.
@@ -238,6 +247,12 @@ func (takuo *TeamAPIKeyUpdateOne) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (takuo *TeamAPIKeyUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *TeamAPIKeyUpdateOne {
+	takuo.modifiers = append(takuo.modifiers, modifiers...)
+	return takuo
+}
+
 func (takuo *TeamAPIKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamAPIKey, err error) {
 	if err := takuo.check(); err != nil {
 		return _node, err
@@ -300,6 +315,7 @@ func (takuo *TeamAPIKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamAPIKe
 	}
 	_spec.Node.Schema = takuo.schemaConfig.TeamAPIKey
 	ctx = internal.NewSchemaConfigContext(ctx, takuo.schemaConfig)
+	_spec.AddModifiers(takuo.modifiers...)
 	_node = &TeamAPIKey{config: takuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

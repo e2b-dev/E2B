@@ -1,8 +1,10 @@
-client := gcloud compute instances list --format='csv(name)' | grep "client"
-GCP_PROJECT ?= $$(gcloud config get-value project)
+ENV := $(shell cat ../../.last_used_env || echo "not-set")
+-include ../../.env.${ENV}
+
+client := gcloud compute instances list --format='csv(name)' --project $(GCP_PROJECT_ID) | grep "client"
 
 upload:
-	./upload.sh $(GCP_PROJECT)
+	./upload.sh $(GCP_PROJECT_ID)
 
 build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/ .
@@ -19,7 +21,7 @@ run-profiler:
 update-driver:
 	make build
 	make upload
-	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /opt/nomad/plugins/env-instance-task-driver && \
+	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) -- 'sudo rm -rf /opt/nomad/plugins/env-instance-task-driver && \
 	sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-instance-task-driver && \
 	([[ $$(pgrep firecracker) ]] && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found" && \
@@ -31,7 +33,7 @@ update-driver-locally:
 	sudo rm -rf /opt/nomad/plugins/env-instance-task-driver
 	sudo cp ./bin/debug/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver
 	sudo chmod +x /opt/nomad/plugins/env-instance-task-driver
-	([[ $$(pgrep firecracker) ]] && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found"`
+	([[ $$(pgrep firecracker) ]] && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found"
 	sleep 4
 	sudo supervisorctl restart nomad
 

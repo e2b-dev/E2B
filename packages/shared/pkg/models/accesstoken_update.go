@@ -20,8 +20,9 @@ import (
 // AccessTokenUpdate is the builder for updating AccessToken entities.
 type AccessTokenUpdate struct {
 	config
-	hooks    []Hook
-	mutation *AccessTokenMutation
+	hooks     []Hook
+	mutation  *AccessTokenMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the AccessTokenUpdate builder.
@@ -95,6 +96,12 @@ func (atu *AccessTokenUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (atu *AccessTokenUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *AccessTokenUpdate {
+	atu.modifiers = append(atu.modifiers, modifiers...)
+	return atu
+}
+
 func (atu *AccessTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := atu.check(); err != nil {
 		return n, err
@@ -140,6 +147,7 @@ func (atu *AccessTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	_spec.Node.Schema = atu.schemaConfig.AccessToken
 	ctx = internal.NewSchemaConfigContext(ctx, atu.schemaConfig)
+	_spec.AddModifiers(atu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, atu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{accesstoken.Label}
@@ -155,9 +163,10 @@ func (atu *AccessTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // AccessTokenUpdateOne is the builder for updating a single AccessToken entity.
 type AccessTokenUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *AccessTokenMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *AccessTokenMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUserID sets the "user_id" field.
@@ -238,6 +247,12 @@ func (atuo *AccessTokenUpdateOne) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (atuo *AccessTokenUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *AccessTokenUpdateOne {
+	atuo.modifiers = append(atuo.modifiers, modifiers...)
+	return atuo
+}
+
 func (atuo *AccessTokenUpdateOne) sqlSave(ctx context.Context) (_node *AccessToken, err error) {
 	if err := atuo.check(); err != nil {
 		return _node, err
@@ -300,6 +315,7 @@ func (atuo *AccessTokenUpdateOne) sqlSave(ctx context.Context) (_node *AccessTok
 	}
 	_spec.Node.Schema = atuo.schemaConfig.AccessToken
 	ctx = internal.NewSchemaConfigContext(ctx, atuo.schemaConfig)
+	_spec.AddModifiers(atuo.modifiers...)
 	_node = &AccessToken{config: atuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
