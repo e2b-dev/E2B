@@ -67,6 +67,12 @@ func (tc *TeamCreate) SetTier(s string) *TeamCreate {
 	return tc
 }
 
+// SetEmail sets the "email" field.
+func (tc *TeamCreate) SetEmail(s string) *TeamCreate {
+	tc.mutation.SetEmail(s)
+	return tc
+}
+
 // SetID sets the "id" field.
 func (tc *TeamCreate) SetID(u uuid.UUID) *TeamCreate {
 	tc.mutation.SetID(u)
@@ -202,6 +208,9 @@ func (tc *TeamCreate) check() error {
 	if _, ok := tc.mutation.Tier(); !ok {
 		return &ValidationError{Name: "tier", err: errors.New(`models: missing required field "Team.tier"`)}
 	}
+	if _, ok := tc.mutation.Email(); !ok {
+		return &ValidationError{Name: "email", err: errors.New(`models: missing required field "Team.email"`)}
+	}
 	if _, ok := tc.mutation.TeamTierID(); !ok {
 		return &ValidationError{Name: "team_tier", err: errors.New(`models: missing required edge "Team.team_tier"`)}
 	}
@@ -257,6 +266,10 @@ func (tc *TeamCreate) createSpec() (*Team, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.Name(); ok {
 		_spec.SetField(team.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := tc.mutation.Email(); ok {
+		_spec.SetField(team.FieldEmail, field.TypeString, value)
+		_node.Email = value
 	}
 	if nodes := tc.mutation.UsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -444,6 +457,18 @@ func (u *TeamUpsert) UpdateTier() *TeamUpsert {
 	return u
 }
 
+// SetEmail sets the "email" field.
+func (u *TeamUpsert) SetEmail(v string) *TeamUpsert {
+	u.Set(team.FieldEmail, v)
+	return u
+}
+
+// UpdateEmail sets the "email" field to the value that was provided on create.
+func (u *TeamUpsert) UpdateEmail() *TeamUpsert {
+	u.SetExcluded(team.FieldEmail)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -548,6 +573,20 @@ func (u *TeamUpsertOne) SetTier(v string) *TeamUpsertOne {
 func (u *TeamUpsertOne) UpdateTier() *TeamUpsertOne {
 	return u.Update(func(s *TeamUpsert) {
 		s.UpdateTier()
+	})
+}
+
+// SetEmail sets the "email" field.
+func (u *TeamUpsertOne) SetEmail(v string) *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetEmail(v)
+	})
+}
+
+// UpdateEmail sets the "email" field to the value that was provided on create.
+func (u *TeamUpsertOne) UpdateEmail() *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateEmail()
 	})
 }
 
@@ -822,6 +861,20 @@ func (u *TeamUpsertBulk) SetTier(v string) *TeamUpsertBulk {
 func (u *TeamUpsertBulk) UpdateTier() *TeamUpsertBulk {
 	return u.Update(func(s *TeamUpsert) {
 		s.UpdateTier()
+	})
+}
+
+// SetEmail sets the "email" field.
+func (u *TeamUpsertBulk) SetEmail(v string) *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetEmail(v)
+	})
+}
+
+// UpdateEmail sets the "email" field to the value that was provided on create.
+func (u *TeamUpsertBulk) UpdateEmail() *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateEmail()
 	})
 }
 

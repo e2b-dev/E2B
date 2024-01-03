@@ -91,6 +91,20 @@ func (tu *TeamUpdate) SetNillableTier(s *string) *TeamUpdate {
 	return tu
 }
 
+// SetEmail sets the "email" field.
+func (tu *TeamUpdate) SetEmail(s string) *TeamUpdate {
+	tu.mutation.SetEmail(s)
+	return tu
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (tu *TeamUpdate) SetNillableEmail(s *string) *TeamUpdate {
+	if s != nil {
+		tu.SetEmail(*s)
+	}
+	return tu
+}
+
 // AddUserIDs adds the "users" edge to the User entity by IDs.
 func (tu *TeamUpdate) AddUserIDs(ids ...uuid.UUID) *TeamUpdate {
 	tu.mutation.AddUserIDs(ids...)
@@ -318,6 +332,9 @@ func (tu *TeamUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.Name(); ok {
 		_spec.SetField(team.FieldName, field.TypeString, value)
+	}
+	if value, ok := tu.mutation.Email(); ok {
+		_spec.SetField(team.FieldEmail, field.TypeString, value)
 	}
 	if tu.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -622,6 +639,20 @@ func (tuo *TeamUpdateOne) SetNillableTier(s *string) *TeamUpdateOne {
 	return tuo
 }
 
+// SetEmail sets the "email" field.
+func (tuo *TeamUpdateOne) SetEmail(s string) *TeamUpdateOne {
+	tuo.mutation.SetEmail(s)
+	return tuo
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (tuo *TeamUpdateOne) SetNillableEmail(s *string) *TeamUpdateOne {
+	if s != nil {
+		tuo.SetEmail(*s)
+	}
+	return tuo
+}
+
 // AddUserIDs adds the "users" edge to the User entity by IDs.
 func (tuo *TeamUpdateOne) AddUserIDs(ids ...uuid.UUID) *TeamUpdateOne {
 	tuo.mutation.AddUserIDs(ids...)
@@ -879,6 +910,9 @@ func (tuo *TeamUpdateOne) sqlSave(ctx context.Context) (_node *Team, err error) 
 	}
 	if value, ok := tuo.mutation.Name(); ok {
 		_spec.SetField(team.FieldName, field.TypeString, value)
+	}
+	if value, ok := tuo.mutation.Email(); ok {
+		_spec.SetField(team.FieldEmail, field.TypeString, value)
 	}
 	if tuo.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{

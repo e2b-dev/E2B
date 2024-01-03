@@ -87,6 +87,7 @@ var (
 		{Name: "is_default", Type: field.TypeBool},
 		{Name: "is_blocked", Type: field.TypeBool, Default: "false"},
 		{Name: "name", Type: field.TypeString},
+		{Name: "email", Type: field.TypeString},
 		{Name: "tier", Type: field.TypeString},
 	}
 	// TeamsTable holds the schema information for the "teams" table.
@@ -97,7 +98,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "teams_tiers_teams",
-				Columns:    []*schema.Column{TeamsColumns[5]},
+				Columns:    []*schema.Column{TeamsColumns[6]},
 				RefColumns: []*schema.Column{TiersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

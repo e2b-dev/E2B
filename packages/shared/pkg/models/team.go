@@ -29,6 +29,8 @@ type Team struct {
 	Name string `json:"name,omitempty"`
 	// Tier holds the value of the "tier" field.
 	Tier string `json:"tier,omitempty"`
+	// Email holds the value of the "email" field.
+	Email string `json:"email,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TeamQuery when eager-loading is set.
 	Edges        TeamEdges `json:"edges"`
@@ -108,7 +110,7 @@ func (*Team) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case team.FieldIsDefault, team.FieldIsBlocked:
 			values[i] = new(sql.NullBool)
-		case team.FieldName, team.FieldTier:
+		case team.FieldName, team.FieldTier, team.FieldEmail:
 			values[i] = new(sql.NullString)
 		case team.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -164,6 +166,12 @@ func (t *Team) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field tier", values[i])
 			} else if value.Valid {
 				t.Tier = value.String
+			}
+		case team.FieldEmail:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field email", values[i])
+			} else if value.Valid {
+				t.Email = value.String
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
@@ -240,6 +248,9 @@ func (t *Team) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("tier=")
 	builder.WriteString(t.Tier)
+	builder.WriteString(", ")
+	builder.WriteString("email=")
+	builder.WriteString(t.Email)
 	builder.WriteByte(')')
 	return builder.String()
 }

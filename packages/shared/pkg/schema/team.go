@@ -24,6 +24,7 @@ func (Team) Fields() []ent.Field {
 		field.Bool("is_blocked").Annotations(entsql.Default("false")),
 		field.String("name"),
 		field.String("tier"),
+		field.String("email"),
 	}
 }
 

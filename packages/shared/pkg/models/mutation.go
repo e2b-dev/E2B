@@ -2296,6 +2296,7 @@ type TeamMutation struct {
 	is_default           *bool
 	is_blocked           *bool
 	name                 *string
+	email                *string
 	clearedFields        map[string]struct{}
 	users                map[uuid.UUID]struct{}
 	removedusers         map[uuid.UUID]struct{}
@@ -2600,6 +2601,42 @@ func (m *TeamMutation) ResetTier() {
 	m.team_tier = nil
 }
 
+// SetEmail sets the "email" field.
+func (m *TeamMutation) SetEmail(s string) {
+	m.email = &s
+}
+
+// Email returns the value of the "email" field in the mutation.
+func (m *TeamMutation) Email() (r string, exists bool) {
+	v := m.email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmail returns the old "email" field's value of the Team entity.
+// If the Team object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TeamMutation) OldEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmail: %w", err)
+	}
+	return oldValue.Email, nil
+}
+
+// ResetEmail resets all changes to the "email" field.
+func (m *TeamMutation) ResetEmail() {
+	m.email = nil
+}
+
 // AddUserIDs adds the "users" edge to the User entity by ids.
 func (m *TeamMutation) AddUserIDs(ids ...uuid.UUID) {
 	if m.users == nil {
@@ -2890,7 +2927,7 @@ func (m *TeamMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TeamMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, team.FieldCreatedAt)
 	}
@@ -2905,6 +2942,9 @@ func (m *TeamMutation) Fields() []string {
 	}
 	if m.team_tier != nil {
 		fields = append(fields, team.FieldTier)
+	}
+	if m.email != nil {
+		fields = append(fields, team.FieldEmail)
 	}
 	return fields
 }
@@ -2924,6 +2964,8 @@ func (m *TeamMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case team.FieldTier:
 		return m.Tier()
+	case team.FieldEmail:
+		return m.Email()
 	}
 	return nil, false
 }
@@ -2943,6 +2985,8 @@ func (m *TeamMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case team.FieldTier:
 		return m.OldTier(ctx)
+	case team.FieldEmail:
+		return m.OldEmail(ctx)
 	}
 	return nil, fmt.Errorf("unknown Team field %s", name)
 }
@@ -2986,6 +3030,13 @@ func (m *TeamMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTier(v)
+		return nil
+	case team.FieldEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmail(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Team field %s", name)
@@ -3050,6 +3101,9 @@ func (m *TeamMutation) ResetField(name string) error {
 		return nil
 	case team.FieldTier:
 		m.ResetTier()
+		return nil
+	case team.FieldEmail:
+		m.ResetEmail()
 		return nil
 	}
 	return fmt.Errorf("unknown Team field %s", name)
