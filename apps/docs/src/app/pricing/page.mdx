@@ -6,28 +6,34 @@ import ManageBilling from './ManageBilling'
 
 <ManageBilling />
 
-## New users
-New users get $100 credits for usage, after that, you will be charged for the resources you use.
+We charge you based on your real sandbox usage. All new users get free $100 worth of usage in credits.
 
 ## Resource pricing
 - vCPU: $0.000014 per second (~$0.05 per hour)
 - GB RAM: $0.0000045 per second (~$0.018 per hour)
 
-## Tier pricing
-### Hobby tier (free)
-- 2 vCPU {{ className: 'lead' }}
-- 512 MB RAM {{ className: 'lead' }}
-- 1 GB free disk storage {{ className: 'lead' }}
-- 24 hours max sandbox session length {{ className: 'lead' }}
-- Up to 20 concurrently running sandboxes {{ className: 'lead' }}
+## Hobby tier (usage costs)
+- $100 of usage in credits
+- Community support
+- 24 hours max sandbox session length
+- Up to 20 concurrently running sandboxes
+- Hobby sandbox machine specs:
+  - 2 vCPU
+  - 512 MB RAM
+  - 1 GB free disk storage
 
-### Pro tier ($150 per month)
-
-- 4 vCPU {{ className: 'lead' }}
-- 4 GB RAM {{ className: 'lead' }}
-- 5 GB free disk storage {{ className: 'lead' }}
-- 24 hours max sandbox session length {{ className: 'lead' }}
-- Up to 100 concurrently running sandboxes {{ className: 'lead' }}
+## Pro tier ($150 per month + usage costs)
+{/* <Promo/> */}
+- $100 of usage in credits
+- Dedicated Slack channel with live Pro support from our team
+- Prioritized features
+- Option to customize your sandbox machine based on custom needs
+- 24 hours max sandbox session length
+- Up to 100 concurrently running sandboxes
+- Pro sandbox machine specs:
+  - 4 vCPU
+  - 4 GB RAM
+  - 5 GB free disk storage
 
 <SwitchTearButton tierID={'premium'} />
 
