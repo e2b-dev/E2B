@@ -1,23 +1,34 @@
 import Promo from './Promo'
+import SwitchTearButton from './SwitchTearButton'
+import ManageBilling from './ManageBilling'
 
 # Pricing
 
-## Hobby tier (free)
+<ManageBilling />
+
+## New users
+New users get $100 credits for usage, after that, you will be charged for the resources you use.
+
+## Resource pricing
+- vCPU: $0.000014 per second (~$0.05 per hour)
+- GB RAM: $0.0000045 per second (~$0.018 per hour)
+
+## Tier pricing
+### Hobby tier (free)
 - 2 vCPU {{ className: 'lead' }}
 - 512 MB RAM {{ className: 'lead' }}
 - 1 GB free disk storage {{ className: 'lead' }}
 - 24 hours max sandbox session length {{ className: 'lead' }}
 - Up to 20 concurrently running sandboxes {{ className: 'lead' }}
 
-## Pro tier (paid)
+### Pro tier ($150 per month)
 
 - 4 vCPU {{ className: 'lead' }}
 - 4 GB RAM {{ className: 'lead' }}
 - 5 GB free disk storage {{ className: 'lead' }}
 - 24 hours max sandbox session length {{ className: 'lead' }}
-- Number of concurrently running sandboxes to suit your needs {{ className: 'lead' }}
-<Note>
-Please [reach out](/getting-help) if you're interested in the Pro tier.
-</Note>
+- Up to 100 concurrently running sandboxes {{ className: 'lead' }}
+
+<SwitchTearButton tierID={'premium'} />
 
 If you need more resources, please [reach out to us](/getting-help) with your use case.

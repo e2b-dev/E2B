@@ -10,6 +10,7 @@ import { useSandboxStore } from './useSandbox'
 type Team = {
   id: string,
   name: string,
+  tier: string,
   is_default: boolean
 }
 
@@ -101,7 +102,7 @@ export const CustomUserContextProvider = (props) => {
       // @ts-ignore
       const { data: userTeams, teamsError } = await supabase
         .from('users_teams')
-        .select('teams (id, name, is_default)')
+        .select('teams (id, name, is_default, tier)')
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (teamsError) Sentry.captureException(teamsError)
       // TODO: Adjust when user can be part of multiple teams
@@ -114,19 +115,7 @@ export const CustomUserContextProvider = (props) => {
         return
       }
 
-      // Fetch user's pricing tier
-      const { data, error: pricingTierError } = await supabase
-        .from('teams')
-        .select('tier')
-        .eq('id', defaultTeam.id)
-      if (pricingTierError) Sentry.captureException(pricingTierError)
-      const pricingTier: string | undefined = data?.[0]?.tier
-
-      if (!pricingTier) {
-        console.error('No pricing tier found for team', defaultTeam.id)
-        return
-      }
-
+      const pricingTier = defaultTeam.tier
       const isPromoTier = pricingTier.startsWith('promo')
       let promoEndsAt: string | null = null
       // Fetch promo end date
