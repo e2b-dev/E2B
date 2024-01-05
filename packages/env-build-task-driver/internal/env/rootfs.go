@@ -34,7 +34,7 @@ const (
 	envdRootfsPath = "/usr/bin/envd"
 	toMBShift      = 20
 	// Max size of the rootfs file in MB.
-	maxRootfsSize = 5000 << toMBShift
+	maxRootfsSize = 10000 << toMBShift
 )
 
 type Rootfs struct {
@@ -533,6 +533,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	// We need to use another program to make the filesystem writable.
 	err = tar2ext4.ConvertTarToExt4(pr, rootfsFile, tar2ext4.MaximumDiskSize(maxRootfsSize))
 	if err != nil {
+		if strings.Contains(err.Error(), "disk exceeded maximum size") {
+			r.env.BuildLogsWriter.Write([]byte(fmt.Sprintf("Build failed - exceeded maximum size %v MB.\n", maxRootfsSize>>toMBShift)))
+		}
+
 		errMsg := fmt.Errorf("error converting tar to ext4 %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
