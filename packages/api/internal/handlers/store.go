@@ -300,7 +300,7 @@ func deleteInstance(
 	if info.TeamID != nil && info.StartTime != nil {
 		_, err := analytics.Client.InstanceStopped(ctx, &analyticscollector.InstanceStoppedEvent{
 			TeamId:        info.TeamID.String(),
-			EnvironmentId: "envID",
+			EnvironmentId: info.Instance.EnvID,
 			InstanceId:    info.Instance.InstanceID,
 			Timestamp:     timestamppb.Now(),
 			Duration:      float32(duration),
