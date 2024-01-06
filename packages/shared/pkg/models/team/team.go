@@ -18,8 +18,12 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldIsDefault holds the string denoting the is_default field in the database.
 	FieldIsDefault = "is_default"
+	// FieldIsBanned holds the string denoting the is_banned field in the database.
+	FieldIsBanned = "is_banned"
 	// FieldIsBlocked holds the string denoting the is_blocked field in the database.
 	FieldIsBlocked = "is_blocked"
+	// FieldBlockedReason holds the string denoting the blocked_reason field in the database.
+	FieldBlockedReason = "blocked_reason"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldTier holds the string denoting the tier field in the database.
@@ -80,7 +84,9 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldIsDefault,
+	FieldIsBanned,
 	FieldIsBlocked,
+	FieldBlockedReason,
 	FieldName,
 	FieldTier,
 	FieldEmail,
@@ -125,9 +131,19 @@ func ByIsDefault(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsDefault, opts...).ToFunc()
 }
 
+// ByIsBanned orders the results by the is_banned field.
+func ByIsBanned(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsBanned, opts...).ToFunc()
+}
+
 // ByIsBlocked orders the results by the is_blocked field.
 func ByIsBlocked(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsBlocked, opts...).ToFunc()
+}
+
+// ByBlockedReason orders the results by the blocked_reason field.
+func ByBlockedReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBlockedReason, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.

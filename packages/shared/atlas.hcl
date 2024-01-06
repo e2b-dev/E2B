@@ -17,6 +17,7 @@ env "local" {
   diff  {
   	skip  {
   		drop_func = true
+        drop_trigger = true
   	}
   }
 }

@@ -2294,7 +2294,9 @@ type TeamMutation struct {
 	id                   *uuid.UUID
 	created_at           *time.Time
 	is_default           *bool
+	is_banned            *bool
 	is_blocked           *bool
+	blocked_reason       *string
 	name                 *string
 	email                *string
 	clearedFields        map[string]struct{}
@@ -2493,6 +2495,42 @@ func (m *TeamMutation) ResetIsDefault() {
 	m.is_default = nil
 }
 
+// SetIsBanned sets the "is_banned" field.
+func (m *TeamMutation) SetIsBanned(b bool) {
+	m.is_banned = &b
+}
+
+// IsBanned returns the value of the "is_banned" field in the mutation.
+func (m *TeamMutation) IsBanned() (r bool, exists bool) {
+	v := m.is_banned
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsBanned returns the old "is_banned" field's value of the Team entity.
+// If the Team object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TeamMutation) OldIsBanned(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsBanned is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsBanned requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsBanned: %w", err)
+	}
+	return oldValue.IsBanned, nil
+}
+
+// ResetIsBanned resets all changes to the "is_banned" field.
+func (m *TeamMutation) ResetIsBanned() {
+	m.is_banned = nil
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (m *TeamMutation) SetIsBlocked(b bool) {
 	m.is_blocked = &b
@@ -2527,6 +2565,55 @@ func (m *TeamMutation) OldIsBlocked(ctx context.Context) (v bool, err error) {
 // ResetIsBlocked resets all changes to the "is_blocked" field.
 func (m *TeamMutation) ResetIsBlocked() {
 	m.is_blocked = nil
+}
+
+// SetBlockedReason sets the "blocked_reason" field.
+func (m *TeamMutation) SetBlockedReason(s string) {
+	m.blocked_reason = &s
+}
+
+// BlockedReason returns the value of the "blocked_reason" field in the mutation.
+func (m *TeamMutation) BlockedReason() (r string, exists bool) {
+	v := m.blocked_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBlockedReason returns the old "blocked_reason" field's value of the Team entity.
+// If the Team object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TeamMutation) OldBlockedReason(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBlockedReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBlockedReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBlockedReason: %w", err)
+	}
+	return oldValue.BlockedReason, nil
+}
+
+// ClearBlockedReason clears the value of the "blocked_reason" field.
+func (m *TeamMutation) ClearBlockedReason() {
+	m.blocked_reason = nil
+	m.clearedFields[team.FieldBlockedReason] = struct{}{}
+}
+
+// BlockedReasonCleared returns if the "blocked_reason" field was cleared in this mutation.
+func (m *TeamMutation) BlockedReasonCleared() bool {
+	_, ok := m.clearedFields[team.FieldBlockedReason]
+	return ok
+}
+
+// ResetBlockedReason resets all changes to the "blocked_reason" field.
+func (m *TeamMutation) ResetBlockedReason() {
+	m.blocked_reason = nil
+	delete(m.clearedFields, team.FieldBlockedReason)
 }
 
 // SetName sets the "name" field.
@@ -2927,15 +3014,21 @@ func (m *TeamMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TeamMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, team.FieldCreatedAt)
 	}
 	if m.is_default != nil {
 		fields = append(fields, team.FieldIsDefault)
 	}
+	if m.is_banned != nil {
+		fields = append(fields, team.FieldIsBanned)
+	}
 	if m.is_blocked != nil {
 		fields = append(fields, team.FieldIsBlocked)
+	}
+	if m.blocked_reason != nil {
+		fields = append(fields, team.FieldBlockedReason)
 	}
 	if m.name != nil {
 		fields = append(fields, team.FieldName)
@@ -2958,8 +3051,12 @@ func (m *TeamMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case team.FieldIsDefault:
 		return m.IsDefault()
+	case team.FieldIsBanned:
+		return m.IsBanned()
 	case team.FieldIsBlocked:
 		return m.IsBlocked()
+	case team.FieldBlockedReason:
+		return m.BlockedReason()
 	case team.FieldName:
 		return m.Name()
 	case team.FieldTier:
@@ -2979,8 +3076,12 @@ func (m *TeamMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedAt(ctx)
 	case team.FieldIsDefault:
 		return m.OldIsDefault(ctx)
+	case team.FieldIsBanned:
+		return m.OldIsBanned(ctx)
 	case team.FieldIsBlocked:
 		return m.OldIsBlocked(ctx)
+	case team.FieldBlockedReason:
+		return m.OldBlockedReason(ctx)
 	case team.FieldName:
 		return m.OldName(ctx)
 	case team.FieldTier:
@@ -3010,12 +3111,26 @@ func (m *TeamMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIsDefault(v)
 		return nil
+	case team.FieldIsBanned:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsBanned(v)
+		return nil
 	case team.FieldIsBlocked:
 		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIsBlocked(v)
+		return nil
+	case team.FieldBlockedReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBlockedReason(v)
 		return nil
 	case team.FieldName:
 		v, ok := value.(string)
@@ -3067,7 +3182,11 @@ func (m *TeamMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *TeamMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(team.FieldBlockedReason) {
+		fields = append(fields, team.FieldBlockedReason)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -3080,6 +3199,11 @@ func (m *TeamMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *TeamMutation) ClearField(name string) error {
+	switch name {
+	case team.FieldBlockedReason:
+		m.ClearBlockedReason()
+		return nil
+	}
 	return fmt.Errorf("unknown Team nullable field %s", name)
 }
 
@@ -3093,8 +3217,14 @@ func (m *TeamMutation) ResetField(name string) error {
 	case team.FieldIsDefault:
 		m.ResetIsDefault()
 		return nil
+	case team.FieldIsBanned:
+		m.ResetIsBanned()
+		return nil
 	case team.FieldIsBlocked:
 		m.ResetIsBlocked()
+		return nil
+	case team.FieldBlockedReason:
+		m.ResetBlockedReason()
 		return nil
 	case team.FieldName:
 		m.ResetName()
