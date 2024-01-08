@@ -67,6 +67,11 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+var (
+	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	EmailValidator func(string) error
+)
+
 // OrderOption defines the ordering options for the User queries.
 type OrderOption func(*sql.Selector)
 

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -17,7 +18,7 @@ type TeamAPIKey struct {
 
 func (TeamAPIKey) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").Unique().StorageKey("api_key").Sensitive(),
+		field.String("id").Unique().StorageKey("api_key").Sensitive().SchemaType(map[string]string{dialect.Postgres: "character varying(44)"}),
 		field.Time("created_at").Immutable().Default(time.Now).Annotations(
 			entsql.Default("CURRENT_TIMESTAMP"),
 		),

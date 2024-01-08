@@ -495,8 +495,8 @@ type EnvMutation struct {
 	build_id              *uuid.UUID
 	build_count           *int32
 	addbuild_count        *int32
-	spawn_count           *int32
-	addspawn_count        *int32
+	spawn_count           *int64
+	addspawn_count        *int64
 	last_spawned_at       *time.Time
 	vcpu                  *int64
 	addvcpu               *int64
@@ -894,13 +894,13 @@ func (m *EnvMutation) ResetBuildCount() {
 }
 
 // SetSpawnCount sets the "spawn_count" field.
-func (m *EnvMutation) SetSpawnCount(i int32) {
+func (m *EnvMutation) SetSpawnCount(i int64) {
 	m.spawn_count = &i
 	m.addspawn_count = nil
 }
 
 // SpawnCount returns the value of the "spawn_count" field in the mutation.
-func (m *EnvMutation) SpawnCount() (r int32, exists bool) {
+func (m *EnvMutation) SpawnCount() (r int64, exists bool) {
 	v := m.spawn_count
 	if v == nil {
 		return
@@ -911,7 +911,7 @@ func (m *EnvMutation) SpawnCount() (r int32, exists bool) {
 // OldSpawnCount returns the old "spawn_count" field's value of the Env entity.
 // If the Env object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldSpawnCount(ctx context.Context) (v int32, err error) {
+func (m *EnvMutation) OldSpawnCount(ctx context.Context) (v int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSpawnCount is only allowed on UpdateOne operations")
 	}
@@ -926,7 +926,7 @@ func (m *EnvMutation) OldSpawnCount(ctx context.Context) (v int32, err error) {
 }
 
 // AddSpawnCount adds i to the "spawn_count" field.
-func (m *EnvMutation) AddSpawnCount(i int32) {
+func (m *EnvMutation) AddSpawnCount(i int64) {
 	if m.addspawn_count != nil {
 		*m.addspawn_count += i
 	} else {
@@ -935,7 +935,7 @@ func (m *EnvMutation) AddSpawnCount(i int32) {
 }
 
 // AddedSpawnCount returns the value that was added to the "spawn_count" field in this mutation.
-func (m *EnvMutation) AddedSpawnCount() (r int32, exists bool) {
+func (m *EnvMutation) AddedSpawnCount() (r int64, exists bool) {
 	v := m.addspawn_count
 	if v == nil {
 		return
@@ -1505,7 +1505,7 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 		m.SetBuildCount(v)
 		return nil
 	case env.FieldSpawnCount:
-		v, ok := value.(int32)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -1609,7 +1609,7 @@ func (m *EnvMutation) AddField(name string, value ent.Value) error {
 		m.AddBuildCount(v)
 		return nil
 	case env.FieldSpawnCount:
-		v, ok := value.(int32)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

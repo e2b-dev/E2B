@@ -100,7 +100,7 @@ var (
 	// DefaultBuildCount holds the default value on creation for the "build_count" field.
 	DefaultBuildCount int32
 	// DefaultSpawnCount holds the default value on creation for the "spawn_count" field.
-	DefaultSpawnCount int32
+	DefaultSpawnCount int64
 )
 
 // OrderOption defines the ordering options for the Env queries.

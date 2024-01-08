@@ -103,7 +103,7 @@ func BuildCount(v int32) predicate.Env {
 }
 
 // SpawnCount applies equality check predicate on the "spawn_count" field. It's identical to SpawnCountEQ.
-func SpawnCount(v int32) predicate.Env {
+func SpawnCount(v int64) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldSpawnCount, v))
 }
 
@@ -388,42 +388,42 @@ func BuildCountLTE(v int32) predicate.Env {
 }
 
 // SpawnCountEQ applies the EQ predicate on the "spawn_count" field.
-func SpawnCountEQ(v int32) predicate.Env {
+func SpawnCountEQ(v int64) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldSpawnCount, v))
 }
 
 // SpawnCountNEQ applies the NEQ predicate on the "spawn_count" field.
-func SpawnCountNEQ(v int32) predicate.Env {
+func SpawnCountNEQ(v int64) predicate.Env {
 	return predicate.Env(sql.FieldNEQ(FieldSpawnCount, v))
 }
 
 // SpawnCountIn applies the In predicate on the "spawn_count" field.
-func SpawnCountIn(vs ...int32) predicate.Env {
+func SpawnCountIn(vs ...int64) predicate.Env {
 	return predicate.Env(sql.FieldIn(FieldSpawnCount, vs...))
 }
 
 // SpawnCountNotIn applies the NotIn predicate on the "spawn_count" field.
-func SpawnCountNotIn(vs ...int32) predicate.Env {
+func SpawnCountNotIn(vs ...int64) predicate.Env {
 	return predicate.Env(sql.FieldNotIn(FieldSpawnCount, vs...))
 }
 
 // SpawnCountGT applies the GT predicate on the "spawn_count" field.
-func SpawnCountGT(v int32) predicate.Env {
+func SpawnCountGT(v int64) predicate.Env {
 	return predicate.Env(sql.FieldGT(FieldSpawnCount, v))
 }
 
 // SpawnCountGTE applies the GTE predicate on the "spawn_count" field.
-func SpawnCountGTE(v int32) predicate.Env {
+func SpawnCountGTE(v int64) predicate.Env {
 	return predicate.Env(sql.FieldGTE(FieldSpawnCount, v))
 }
 
 // SpawnCountLT applies the LT predicate on the "spawn_count" field.
-func SpawnCountLT(v int32) predicate.Env {
+func SpawnCountLT(v int64) predicate.Env {
 	return predicate.Env(sql.FieldLT(FieldSpawnCount, v))
 }
 
 // SpawnCountLTE applies the LTE predicate on the "spawn_count" field.
-func SpawnCountLTE(v int32) predicate.Env {
+func SpawnCountLTE(v int64) predicate.Env {
 	return predicate.Env(sql.FieldLTE(FieldSpawnCount, v))
 }
 

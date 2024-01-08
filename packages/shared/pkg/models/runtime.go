@@ -9,6 +9,7 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/team"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/teamapikey"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/user"
 	"github.com/e2b-dev/infra/packages/shared/pkg/schema"
 )
 
@@ -33,7 +34,7 @@ func init() {
 	// envDescSpawnCount is the schema descriptor for spawn_count field.
 	envDescSpawnCount := envFields[8].Descriptor()
 	// env.DefaultSpawnCount holds the default value on creation for the spawn_count field.
-	env.DefaultSpawnCount = envDescSpawnCount.Default.(int32)
+	env.DefaultSpawnCount = envDescSpawnCount.Default.(int64)
 	envaliasFields := schema.EnvAlias{}.Fields()
 	_ = envaliasFields
 	// envaliasDescIsName is the schema descriptor for is_name field.
@@ -46,10 +47,20 @@ func init() {
 	teamDescCreatedAt := teamFields[1].Descriptor()
 	// team.DefaultCreatedAt holds the default value on creation for the created_at field.
 	team.DefaultCreatedAt = teamDescCreatedAt.Default.(func() time.Time)
+	// teamDescEmail is the schema descriptor for email field.
+	teamDescEmail := teamFields[8].Descriptor()
+	// team.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	team.EmailValidator = teamDescEmail.Validators[0].(func(string) error)
 	teamapikeyFields := schema.TeamAPIKey{}.Fields()
 	_ = teamapikeyFields
 	// teamapikeyDescCreatedAt is the schema descriptor for created_at field.
 	teamapikeyDescCreatedAt := teamapikeyFields[1].Descriptor()
 	// teamapikey.DefaultCreatedAt holds the default value on creation for the created_at field.
 	teamapikey.DefaultCreatedAt = teamapikeyDescCreatedAt.Default.(func() time.Time)
+	userFields := schema.User{}.Fields()
+	_ = userFields
+	// userDescEmail is the schema descriptor for email field.
+	userDescEmail := userFields[1].Descriptor()
+	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	user.EmailValidator = userDescEmail.Validators[0].(func(string) error)
 }

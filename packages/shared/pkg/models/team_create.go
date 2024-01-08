@@ -234,6 +234,11 @@ func (tc *TeamCreate) check() error {
 	if _, ok := tc.mutation.Email(); !ok {
 		return &ValidationError{Name: "email", err: errors.New(`models: missing required field "Team.email"`)}
 	}
+	if v, ok := tc.mutation.Email(); ok {
+		if err := team.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`models: validator failed for field "Team.email": %w`, err)}
+		}
+	}
 	if _, ok := tc.mutation.TeamTierID(); !ok {
 		return &ValidationError{Name: "team_tier", err: errors.New(`models: missing required edge "Team.team_tier"`)}
 	}

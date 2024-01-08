@@ -24,7 +24,7 @@ type Tier struct {
 	RAMMB int64 `json:"ram_mb,omitempty"`
 	// DiskMB holds the value of the "disk_mb" field.
 	DiskMB int64 `json:"disk_mb,omitempty"`
-	// ConcurrentInstances holds the value of the "concurrent_instances" field.
+	// The number of instances the team can run concurrently
 	ConcurrentInstances int64 `json:"concurrent_instances,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TierQuery when eager-loading is set.

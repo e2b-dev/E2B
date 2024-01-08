@@ -125,14 +125,14 @@ func (eu *EnvUpdate) AddBuildCount(i int32) *EnvUpdate {
 }
 
 // SetSpawnCount sets the "spawn_count" field.
-func (eu *EnvUpdate) SetSpawnCount(i int32) *EnvUpdate {
+func (eu *EnvUpdate) SetSpawnCount(i int64) *EnvUpdate {
 	eu.mutation.ResetSpawnCount()
 	eu.mutation.SetSpawnCount(i)
 	return eu
 }
 
 // SetNillableSpawnCount sets the "spawn_count" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableSpawnCount(i *int32) *EnvUpdate {
+func (eu *EnvUpdate) SetNillableSpawnCount(i *int64) *EnvUpdate {
 	if i != nil {
 		eu.SetSpawnCount(*i)
 	}
@@ -140,7 +140,7 @@ func (eu *EnvUpdate) SetNillableSpawnCount(i *int32) *EnvUpdate {
 }
 
 // AddSpawnCount adds i to the "spawn_count" field.
-func (eu *EnvUpdate) AddSpawnCount(i int32) *EnvUpdate {
+func (eu *EnvUpdate) AddSpawnCount(i int64) *EnvUpdate {
 	eu.mutation.AddSpawnCount(i)
 	return eu
 }
@@ -373,10 +373,10 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.AddField(env.FieldBuildCount, field.TypeInt32, value)
 	}
 	if value, ok := eu.mutation.SpawnCount(); ok {
-		_spec.SetField(env.FieldSpawnCount, field.TypeInt32, value)
+		_spec.SetField(env.FieldSpawnCount, field.TypeInt64, value)
 	}
 	if value, ok := eu.mutation.AddedSpawnCount(); ok {
-		_spec.AddField(env.FieldSpawnCount, field.TypeInt32, value)
+		_spec.AddField(env.FieldSpawnCount, field.TypeInt64, value)
 	}
 	if value, ok := eu.mutation.LastSpawnedAt(); ok {
 		_spec.SetField(env.FieldLastSpawnedAt, field.TypeTime, value)
@@ -603,14 +603,14 @@ func (euo *EnvUpdateOne) AddBuildCount(i int32) *EnvUpdateOne {
 }
 
 // SetSpawnCount sets the "spawn_count" field.
-func (euo *EnvUpdateOne) SetSpawnCount(i int32) *EnvUpdateOne {
+func (euo *EnvUpdateOne) SetSpawnCount(i int64) *EnvUpdateOne {
 	euo.mutation.ResetSpawnCount()
 	euo.mutation.SetSpawnCount(i)
 	return euo
 }
 
 // SetNillableSpawnCount sets the "spawn_count" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableSpawnCount(i *int32) *EnvUpdateOne {
+func (euo *EnvUpdateOne) SetNillableSpawnCount(i *int64) *EnvUpdateOne {
 	if i != nil {
 		euo.SetSpawnCount(*i)
 	}
@@ -618,7 +618,7 @@ func (euo *EnvUpdateOne) SetNillableSpawnCount(i *int32) *EnvUpdateOne {
 }
 
 // AddSpawnCount adds i to the "spawn_count" field.
-func (euo *EnvUpdateOne) AddSpawnCount(i int32) *EnvUpdateOne {
+func (euo *EnvUpdateOne) AddSpawnCount(i int64) *EnvUpdateOne {
 	euo.mutation.AddSpawnCount(i)
 	return euo
 }
@@ -881,10 +881,10 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 		_spec.AddField(env.FieldBuildCount, field.TypeInt32, value)
 	}
 	if value, ok := euo.mutation.SpawnCount(); ok {
-		_spec.SetField(env.FieldSpawnCount, field.TypeInt32, value)
+		_spec.SetField(env.FieldSpawnCount, field.TypeInt64, value)
 	}
 	if value, ok := euo.mutation.AddedSpawnCount(); ok {
-		_spec.AddField(env.FieldSpawnCount, field.TypeInt32, value)
+		_spec.AddField(env.FieldSpawnCount, field.TypeInt64, value)
 	}
 	if value, ok := euo.mutation.LastSpawnedAt(); ok {
 		_spec.SetField(env.FieldLastSpawnedAt, field.TypeTime, value)

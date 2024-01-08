@@ -334,6 +334,11 @@ func (tu *TeamUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (tu *TeamUpdate) check() error {
+	if v, ok := tu.mutation.Email(); ok {
+		if err := team.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`models: validator failed for field "Team.email": %w`, err)}
+		}
+	}
 	if _, ok := tu.mutation.TeamTierID(); tu.mutation.TeamTierCleared() && !ok {
 		return errors.New(`models: clearing a required unique edge "Team.team_tier"`)
 	}
@@ -938,6 +943,11 @@ func (tuo *TeamUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (tuo *TeamUpdateOne) check() error {
+	if v, ok := tuo.mutation.Email(); ok {
+		if err := team.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`models: validator failed for field "Team.email": %w`, err)}
+		}
+	}
 	if _, ok := tuo.mutation.TeamTierID(); tuo.mutation.TeamTierCleared() && !ok {
 		return errors.New(`models: clearing a required unique edge "Team.team_tier"`)
 	}

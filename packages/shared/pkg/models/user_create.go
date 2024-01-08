@@ -120,6 +120,11 @@ func (uc *UserCreate) check() error {
 	if _, ok := uc.mutation.Email(); !ok {
 		return &ValidationError{Name: "email", err: errors.New(`models: missing required field "User.email"`)}
 	}
+	if v, ok := uc.mutation.Email(); ok {
+		if err := user.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`models: validator failed for field "User.email": %w`, err)}
+		}
+	}
 	return nil
 }
 

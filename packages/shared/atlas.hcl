@@ -18,6 +18,7 @@ env "local" {
   	skip  {
   		drop_func = true
         drop_trigger = true
+        drop_schema = true
   	}
   }
 }

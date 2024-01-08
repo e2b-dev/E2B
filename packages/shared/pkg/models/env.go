@@ -33,9 +33,9 @@ type Env struct {
 	BuildID uuid.UUID `json:"build_id,omitempty"`
 	// BuildCount holds the value of the "build_count" field.
 	BuildCount int32 `json:"build_count,omitempty"`
-	// SpawnCount holds the value of the "spawn_count" field.
-	SpawnCount int32 `json:"spawn_count,omitempty"`
-	// LastSpawnedAt holds the value of the "last_spawned_at" field.
+	// Number of times the env was spawned
+	SpawnCount int64 `json:"spawn_count,omitempty"`
+	// Timestamp of the last time the env was spawned
 	LastSpawnedAt time.Time `json:"last_spawned_at,omitempty"`
 	// Vcpu holds the value of the "vcpu" field.
 	Vcpu int64 `json:"vcpu,omitempty"`
@@ -166,7 +166,7 @@ func (e *Env) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field spawn_count", values[i])
 			} else if value.Valid {
-				e.SpawnCount = int32(value.Int64)
+				e.SpawnCount = value.Int64
 			}
 		case env.FieldLastSpawnedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {

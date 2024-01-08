@@ -93,13 +93,13 @@ func (ec *EnvCreate) SetNillableBuildCount(i *int32) *EnvCreate {
 }
 
 // SetSpawnCount sets the "spawn_count" field.
-func (ec *EnvCreate) SetSpawnCount(i int32) *EnvCreate {
+func (ec *EnvCreate) SetSpawnCount(i int64) *EnvCreate {
 	ec.mutation.SetSpawnCount(i)
 	return ec
 }
 
 // SetNillableSpawnCount sets the "spawn_count" field if the given value is not nil.
-func (ec *EnvCreate) SetNillableSpawnCount(i *int32) *EnvCreate {
+func (ec *EnvCreate) SetNillableSpawnCount(i *int64) *EnvCreate {
 	if i != nil {
 		ec.SetSpawnCount(*i)
 	}
@@ -326,7 +326,7 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 		_node.BuildCount = value
 	}
 	if value, ok := ec.mutation.SpawnCount(); ok {
-		_spec.SetField(env.FieldSpawnCount, field.TypeInt32, value)
+		_spec.SetField(env.FieldSpawnCount, field.TypeInt64, value)
 		_node.SpawnCount = value
 	}
 	if value, ok := ec.mutation.LastSpawnedAt(); ok {
@@ -515,7 +515,7 @@ func (u *EnvUpsert) AddBuildCount(v int32) *EnvUpsert {
 }
 
 // SetSpawnCount sets the "spawn_count" field.
-func (u *EnvUpsert) SetSpawnCount(v int32) *EnvUpsert {
+func (u *EnvUpsert) SetSpawnCount(v int64) *EnvUpsert {
 	u.Set(env.FieldSpawnCount, v)
 	return u
 }
@@ -527,7 +527,7 @@ func (u *EnvUpsert) UpdateSpawnCount() *EnvUpsert {
 }
 
 // AddSpawnCount adds v to the "spawn_count" field.
-func (u *EnvUpsert) AddSpawnCount(v int32) *EnvUpsert {
+func (u *EnvUpsert) AddSpawnCount(v int64) *EnvUpsert {
 	u.Add(env.FieldSpawnCount, v)
 	return u
 }
@@ -765,14 +765,14 @@ func (u *EnvUpsertOne) UpdateBuildCount() *EnvUpsertOne {
 }
 
 // SetSpawnCount sets the "spawn_count" field.
-func (u *EnvUpsertOne) SetSpawnCount(v int32) *EnvUpsertOne {
+func (u *EnvUpsertOne) SetSpawnCount(v int64) *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.SetSpawnCount(v)
 	})
 }
 
 // AddSpawnCount adds v to the "spawn_count" field.
-func (u *EnvUpsertOne) AddSpawnCount(v int32) *EnvUpsertOne {
+func (u *EnvUpsertOne) AddSpawnCount(v int64) *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.AddSpawnCount(v)
 	})
@@ -1200,14 +1200,14 @@ func (u *EnvUpsertBulk) UpdateBuildCount() *EnvUpsertBulk {
 }
 
 // SetSpawnCount sets the "spawn_count" field.
-func (u *EnvUpsertBulk) SetSpawnCount(v int32) *EnvUpsertBulk {
+func (u *EnvUpsertBulk) SetSpawnCount(v int64) *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.SetSpawnCount(v)
 	})
 }
 
 // AddSpawnCount adds v to the "spawn_count" field.
-func (u *EnvUpsertBulk) AddSpawnCount(v int32) *EnvUpsertBulk {
+func (u *EnvUpsertBulk) AddSpawnCount(v int64) *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.AddSpawnCount(v)
 	})

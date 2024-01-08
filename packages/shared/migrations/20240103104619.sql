@@ -1,5 +1,5 @@
 -- Modify "teams" table
-ALTER TABLE "public"."teams" ADD COLUMN "email" character varying NULL;
+ALTER TABLE "public"."teams" ADD COLUMN "email" character varying(255) NULL;
 
 
 CREATE OR REPLACE FUNCTION public.generate_default_team() RETURNS TRIGGER
