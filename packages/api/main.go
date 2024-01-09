@@ -10,6 +10,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
 	tracingMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware/otel/tracing"
+	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
@@ -118,8 +119,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	env := os.Getenv("ENVIRONMENT")
-	if env == "prod" {
+	if env.IsProduction() {
 		shutdown := telemetry.InitOTLPExporter(serviceName, swagger.Info.Version)
 		defer shutdown()
 	}

@@ -3,6 +3,8 @@ package analyticscollector
 import (
 	"context"
 	"os"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 )
 
 var apiKey = os.Getenv("ANALYTICS_COLLECTOR_API_TOKEN")
@@ -14,5 +16,5 @@ func (a *gRPCApiKey) GetRequestMetadata(_ context.Context, _ ...string) (map[str
 }
 
 func (a *gRPCApiKey) RequireTransportSecurity() bool {
-	return true
+	return env.IsProduction()
 }
