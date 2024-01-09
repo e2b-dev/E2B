@@ -38,7 +38,7 @@ func getConnection() (ClientConnInterface, error) {
 	}
 
 	if strings.HasPrefix(host, "localhost") {
-		conn, err := grpc.Dial(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.Dial(host, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithPerRPCCredentials(&gRPCApiKey{}))
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
@@ -58,7 +58,7 @@ func getConnection() (ClientConnInterface, error) {
 		MinVersion: tls.VersionTLS13,
 	})
 
-	conn, err := grpc.Dial(host+":443", grpc.WithAuthority(host), grpc.WithTransportCredentials(cred))
+	conn, err := grpc.Dial(host+":443", grpc.WithAuthority(host), grpc.WithTransportCredentials(cred), grpc.WithPerRPCCredentials(&gRPCApiKey{}))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial: %w", err)

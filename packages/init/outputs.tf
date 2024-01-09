@@ -46,6 +46,10 @@ output "analytics_collector_host_secret_name" {
   value = google_secret_manager_secret.analytics_collector_host.name
 }
 
+output "analytics_collector_api_token_secret_name" {
+  value = google_secret_manager_secret.analytics_collector_api_token.name
+}
+
 output "orchestration_repository_name" {
   value = google_artifact_registry_repository.orchestration_repository.name
 }
