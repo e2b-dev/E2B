@@ -26,6 +26,11 @@ const (
 	metricExportPeriod        = 15 * time.Second
 )
 
+type client struct {
+	tracerProvider *sdktrace.TracerProvider
+	meterProvider  *metric.MeterProvider
+}
+
 // InitOTLPExporter initializes an OTLP exporter, and configures the corresponding trace providers.
 func InitOTLPExporter(serviceName, serviceVersion string) func() {
 	attributes := []attribute.KeyValue{
@@ -54,65 +59,88 @@ func InitOTLPExporter(serviceName, serviceVersion string) func() {
 	dialCtx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
-	conn, err := grpc.DialContext(dialCtx,
-		otelCollectorGRPCEndpoint,
-		// Note the use of insecure transport here. TLS is recommended in production.
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-	)
-	if err != nil {
-		panic(fmt.Errorf("failed to create gRPC connection to collector: %w", err))
-	}
+	var otelClient client
 
-	// Set up a trace exporter
-	traceExporter, err := otlptracegrpc.New(
-		ctx,
-		otlptracegrpc.WithGRPCConn(conn),
-		otlptracegrpc.WithCompressor(gzip.Name),
-	)
-	if err != nil {
-		panic(fmt.Errorf("failed to create trace exporter: %w", err))
-	}
+	go func() {
+		// Set up a connection to the collector.
+		var conn *grpc.ClientConn
 
-	// Register the trace exporter with a TracerProvider, using a batch
-	// span processor to aggregate spans before export.
-	bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
-	tracerProvider := sdktrace.NewTracerProvider(
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithResource(res),
-		sdktrace.WithSpanProcessor(bsp),
-	)
+		backoff := time.Second
 
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	otel.SetTracerProvider(tracerProvider)
+		for {
+			conn, err = grpc.DialContext(dialCtx,
+				otelCollectorGRPCEndpoint,
+				// Note the use of insecure transport here. TLS is recommended in production.
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+				grpc.WithBlock(),
+			)
+			if err == nil {
+				break
+			} else {
+				log.Printf("Failed to connect to collector: %v", err)
+				time.Sleep(backoff)
+				backoff *= 2
+			}
+		}
 
-	metricExporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(conn))
-	if err != nil {
-		panic(fmt.Errorf("failed to create metric exporter: %w", err))
-	}
+		// Set up a trace exporter
+		traceExporter, traceErr := otlptracegrpc.New(
+			ctx,
+			otlptracegrpc.WithGRPCConn(conn),
+			otlptracegrpc.WithCompressor(gzip.Name),
+		)
+		if traceErr != nil {
+			panic(fmt.Errorf("failed to create trace exporter: %w", err))
+		}
 
-	meterProvider := metric.NewMeterProvider(
-		metric.WithResource(res),
-		metric.WithReader(
-			metric.NewPeriodicReader(
-				metricExporter,
-				metric.WithInterval(metricExportPeriod),
+		// Register the trace exporter with a TracerProvider, using a batch
+		// span processor to aggregate spans before export.
+		bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
+		tracerProvider := sdktrace.NewTracerProvider(
+			sdktrace.WithSampler(sdktrace.AlwaysSample()),
+			sdktrace.WithResource(res),
+			sdktrace.WithSpanProcessor(bsp),
+		)
+
+		otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+		otel.SetTracerProvider(tracerProvider)
+
+		metricExporter, metricErr := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(conn))
+		if metricErr != nil {
+			panic(fmt.Errorf("failed to create metric exporter: %w", err))
+		}
+
+		meterProvider := metric.NewMeterProvider(
+			metric.WithResource(res),
+			metric.WithReader(
+				metric.NewPeriodicReader(
+					metricExporter,
+					metric.WithInterval(metricExportPeriod),
+				),
 			),
-		),
-	)
+		)
 
-	otel.SetMeterProvider(meterProvider)
+		otel.SetMeterProvider(meterProvider)
+	}()
 
 	// Shutdown will flush any remaining spans and shut down the exporter.
 	return func() {
-		traceErr := tracerProvider.Shutdown(context.Background())
-		if traceErr != nil {
-			log.Println("failed to shutdown traces provider: %w", traceErr)
-		}
+		otelClient.close()
+	}
+}
 
-		metricErr := meterProvider.Shutdown(context.Background())
-		if metricErr != nil {
-			log.Println("failed to shutdown OTLP metrics provider: %w", metricErr)
+func (c *client) close() {
+	ctx := context.Background()
+
+	if c.tracerProvider != nil {
+		if err := c.tracerProvider.Shutdown(ctx); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if c.meterProvider != nil {
+		if err := c.meterProvider.Shutdown(ctx); err != nil {
+			log.Fatal(err)
 		}
 	}
 }
