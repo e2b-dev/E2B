@@ -56,30 +56,31 @@ func InitOTLPExporter(serviceName, serviceVersion string) func() {
 		panic(fmt.Errorf("failed to create resource: %w", err))
 	}
 
-	dialCtx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-
 	var otelClient client
 
 	go func() {
 		// Set up a connection to the collector.
 		var conn *grpc.ClientConn
 
-		backoff := time.Second
+		retryInterval := time.Second
 
 		for {
+			dialCtx, cancel := context.WithTimeout(ctx, time.Second)
+
 			conn, err = grpc.DialContext(dialCtx,
 				otelCollectorGRPCEndpoint,
 				// Note the use of insecure transport here. TLS is recommended in production.
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
 				grpc.WithBlock(),
 			)
+
+			cancel()
+
 			if err == nil {
 				break
 			} else {
 				log.Printf("Failed to connect to collector: %v", err)
-				time.Sleep(backoff)
-				backoff *= 2
+				time.Sleep(retryInterval)
 			}
 		}
 
