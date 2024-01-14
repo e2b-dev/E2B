@@ -82,7 +82,7 @@ func (a *APIStore) PostInstances(
 		telemetry.ReportCriticalError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
-			"You have reached the maximum number of concurrent sandboxes (%d). If you need more, "+
+			"You have reached the maximum number of concurrent E2B sandboxes (%d). If you need more, "+
 				"please contact us at 'https://e2b.dev/docs/getting-help'", maxInstancesPerTeam))
 
 		return
