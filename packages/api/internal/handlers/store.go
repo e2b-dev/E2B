@@ -10,6 +10,7 @@ import (
 
 	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
 	"cloud.google.com/go/storage"
+	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/posthog/posthog-go"
@@ -83,7 +84,7 @@ func NewAPIStore() *APIStore {
 
 	var initialInstances []*InstanceInfo
 
-	if os.Getenv("ENVIRONMENT") == "prod" {
+	if env.IsProduction() {
 		instances, instancesErr := nomadClient.GetInstances()
 		if instancesErr != nil {
 			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %v\n", instancesErr.Err)
@@ -118,7 +119,7 @@ func NewAPIStore() *APIStore {
 
 	fmt.Println("Initialized instance cache")
 
-	if os.Getenv("ENVIRONMENT") == "prod" {
+	if env.IsProduction() {
 		go instanceCache.KeepInSync(nomadClient)
 	} else {
 		fmt.Println("Skipping syncing intances with Nomad, running locally")

@@ -34,7 +34,7 @@ const (
 	envdRootfsPath = "/usr/bin/envd"
 	toMBShift      = 20
 	// Max size of the rootfs file in MB.
-	maxRootfsSize = 10000 << toMBShift
+	maxRootfsSize = 15000 << toMBShift
 )
 
 type Rootfs struct {

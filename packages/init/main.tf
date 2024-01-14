@@ -97,6 +97,14 @@ resource "google_secret_manager_secret" "analytics_collector_host" {
   }
 }
 
+resource "google_secret_manager_secret" "analytics_collector_api_token" {
+  secret_id = "${var.prefix}analytics-collector-api-token"
+
+  replication {
+    auto {}
+  }
+}
+
 resource "google_artifact_registry_repository" "orchestration_repository" {
   format        = "DOCKER"
   repository_id = "e2b-orchestration"
