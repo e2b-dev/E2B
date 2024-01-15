@@ -36,6 +36,8 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
   const modifiedHtmlBody = htmlBody
     .replaceAll('href="https://e2b-landing-page.framer.website', 'href="https://e2b.dev')
+    // add one more condition that replaces this version "https://e2b-blog.framer.website/ with "https://e2b.dev/blog too
+    .replaceAll('href="https://e2b-blog.framer.website/', 'href="https://e2b.dev/blog')
     .replaceAll(
       'href="https://e2b-blog.framer.website',
       // The default url on framer does not have /blog in the path but the custom domain does,
