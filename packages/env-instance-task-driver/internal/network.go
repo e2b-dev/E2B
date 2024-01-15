@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	// TODO: We need to automatically find the default gateway because this is very specific to GCP and the specific deployment
 	hostDefaultGateway = "ens4"
 	loNS               = "lo"
 )
