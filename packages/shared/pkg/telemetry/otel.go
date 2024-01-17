@@ -62,7 +62,7 @@ func InitOTLPExporter(serviceName, serviceVersion string) func() {
 		// Set up a connection to the collector.
 		var conn *grpc.ClientConn
 
-		retryInterval := time.Second
+		retryInterval := 5 * time.Second
 
 		for {
 			dialCtx, cancel := context.WithTimeout(ctx, time.Second)
@@ -76,11 +76,11 @@ func InitOTLPExporter(serviceName, serviceVersion string) func() {
 
 			cancel()
 
-			if err == nil {
-				break
-			} else {
+			if err != nil {
 				log.Printf("Failed to connect to collector: %v", err)
 				time.Sleep(retryInterval)
+			} else {
+				break
 			}
 		}
 
