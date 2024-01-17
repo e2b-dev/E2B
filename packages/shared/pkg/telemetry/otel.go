@@ -76,11 +76,12 @@ func InitOTLPExporter(serviceName, serviceVersion string) func() {
 
 			cancel()
 
-			if err == nil {
-				break
-			} else {
+			if err != nil {
 				log.Printf("Failed to connect to collector: %v", err)
 				time.Sleep(retryInterval)
+				retryInterval *= 2
+			} else {
+				break
 			}
 		}
 
