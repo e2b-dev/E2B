@@ -19,6 +19,7 @@ import (
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/google/uuid"
 	"github.com/hashicorp/nomad/api"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
@@ -140,6 +141,14 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	}
 
 	err = r.legacyClient.BuildImage(docker.BuildImageOptions{
+		Ulimits: []docker.ULimit{
+			{
+				Name: "nofile",
+				Soft: 1024,
+			},
+		},
+		Memory:       r.env.MemoryMB << toMBShift,
+		CPUShares:    r.env.VCpuCount * 1024,
 		Context:      buildCtx,
 		Dockerfile:   dockerfileName,
 		InputStream:  dockerContextFile,
@@ -257,6 +266,33 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "executed provision script template")
 
+	if err != nil {
+		errMsg := fmt.Errorf("error generating network name %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	network, err := r.client.NetworkCreate(childCtx, uuid.New().String(), types.NetworkCreate{})
+	if err != nil {
+		errMsg := fmt.Errorf("error creating network %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	defer func() {
+		err = r.client.NetworkRemove(childCtx, network.ID)
+		if err != nil {
+			errMsg := fmt.Errorf("error removing network %w", err)
+			telemetry.ReportError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "removed network")
+		}
+	}()
+
+	telemetry.ReportEvent(childCtx, "created network")
+
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
 		Image:        r.dockerTag(),
 		Entrypoint:   []string{"/bin/bash", "-c"},
@@ -265,7 +301,17 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		Tty:          false,
 		AttachStdout: true,
 		AttachStderr: true,
-	}, nil, nil, &v1.Platform{}, "")
+	}, &container.HostConfig{
+		SecurityOpt: []string{"no-new-privileges"},
+		CapAdd:      []string{"CHOWN", "DAC_OVERRIDE", "FSETID", "FOWNER", "SETGID", "SETUID", "NET_RAW", "SYS_CHROOT"},
+		CapDrop:     []string{"ALL"},
+		NetworkMode: container.NetworkMode(network.ID),
+		Resources: container.Resources{
+			Memory:     r.env.MemoryMB << toMBShift,
+			CPUShares:  r.env.VCpuCount * 1024,
+			MemorySwap: r.env.MemoryMB << toMBShift,
+		},
+	}, nil, &v1.Platform{}, "")
 	if err != nil {
 		errMsg := fmt.Errorf("error creating container %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
