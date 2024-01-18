@@ -159,12 +159,6 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer, netw
 	}
 
 	err = r.legacyClient.BuildImage(docker.BuildImageOptions{
-		Ulimits: []docker.ULimit{
-			{
-				Name: "nofile",
-				Soft: 1024,
-			},
-		},
 		NetworkMode:  networkName,
 		Memory:       r.env.MemoryMB << toMBShift,
 		CPUPeriod:    100000,
