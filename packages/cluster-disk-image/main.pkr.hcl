@@ -40,6 +40,11 @@ build {
     destination = "/tmp"
   }
 
+  provisioner "file" {
+    source      = "${path.root}/setup/docker-daemon.json"
+    destination = "/etc/docker/daemon.json"
+  }
+
   # Install Docker
   provisioner "shell" {
     inline = [
