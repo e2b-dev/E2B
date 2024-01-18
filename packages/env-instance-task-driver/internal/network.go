@@ -17,11 +17,37 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-const (
-	// TODO: We need to automatically find the default gateway because this is very specific to GCP and the specific deployment
-	hostDefaultGateway = "ens4"
-	loNS               = "lo"
-)
+const loNS = "lo"
+
+var hostDefaultGateway = Must(getDefaultGateway())
+
+func Must[T any](obj T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+
+	return obj
+}
+
+func getDefaultGateway() (string, error) {
+	routes, err := netlink.RouteList(nil, netlink.FAMILY_ALL)
+	if err != nil {
+		return "", fmt.Errorf("error fetching routes: %w", err)
+	}
+
+	for _, route := range routes {
+		if route.Dst == nil && route.Gw != nil {
+			link, err := netlink.LinkByIndex(route.LinkIndex)
+			if err != nil {
+				return "", fmt.Errorf("error fetching interface for default gateway: %w", err)
+			}
+
+			return link.Attrs().Name, nil
+		}
+	}
+
+	return "", fmt.Errorf("cannot find default gateway")
+}
 
 func CreateNetwork(
 	ctx context.Context,
