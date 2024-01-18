@@ -149,6 +149,27 @@ components:
           type: string
           description: Error
 
+    RunningInstance:
+      required:
+        - envID
+        - instanceID
+        - clientID
+        - started_at
+      properties:
+        envID:
+          type: string
+          description: Identifier of the environment from which is the instance created
+        instanceID:
+          type: string
+          description: Identifier of the instance
+        clientID:
+          type: string
+          description: Identifier of the client
+        started_at:
+          type: string
+          format: date-time
+          description: Time when the instance was started
+
 tags:
   - name: instances
   - name: envs
@@ -401,3 +422,23 @@ paths:
           $ref: "#/components/responses/401"
         404:
           $ref: "#/components/responses/404"
+
+  /observability/instances:
+    get:
+      description: List all running instances
+      tags: [observability]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          description: Successfully returned all running instances
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunningInstance"
+        401:
+          $ref: "#/components/responses/401"
+        400:
+          $ref: "#/components/responses/400"
+        500:
+          $ref: "#/components/responses/500"

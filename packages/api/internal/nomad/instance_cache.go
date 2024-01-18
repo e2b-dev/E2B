@@ -249,3 +249,15 @@ func (c *InstanceCache) UpdateCounter(instance InstanceInfo, value int64) {
 		attribute.String("team_id", instance.TeamID.String()),
 	))
 }
+
+func (c *InstanceCache) GetInstances(teamID *uuid.UUID) (instances []InstanceInfo) {
+	for _, item := range c.cache.Items() {
+		currentTeamID := item.Value().TeamID
+
+		if teamID == nil || *currentTeamID == *teamID {
+			instances = append(instances, item.Value())
+		}
+	}
+
+	return instances
+}

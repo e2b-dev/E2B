@@ -40,6 +40,9 @@ type ServerInterface interface {
 
 	// (POST /instances/{instanceID}/refreshes)
 	PostInstancesInstanceIDRefreshes(c *gin.Context, instanceID InstanceID)
+
+	// (GET /observability/instances)
+	GetObservabilityInstances(c *gin.Context)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -266,6 +269,21 @@ func (siw *ServerInterfaceWrapper) PostInstancesInstanceIDRefreshes(c *gin.Conte
 	siw.Handler.PostInstancesInstanceIDRefreshes(c, instanceID)
 }
 
+// GetObservabilityInstances operation middleware
+func (siw *ServerInterfaceWrapper) GetObservabilityInstances(c *gin.Context) {
+
+	c.Set(ApiKeyAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetObservabilityInstances(c)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -302,4 +320,5 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
 	router.POST(options.BaseURL+"/instances", wrapper.PostInstances)
 	router.POST(options.BaseURL+"/instances/:instanceID/refreshes", wrapper.PostInstancesInstanceIDRefreshes)
+	router.GET(options.BaseURL+"/observability/instances", wrapper.GetObservabilityInstances)
 }
