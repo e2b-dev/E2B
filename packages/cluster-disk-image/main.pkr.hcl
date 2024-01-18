@@ -41,13 +41,15 @@ build {
   }
 
   provisioner "file" {
-    source      = "${path.root}/setup/docker-daemon.json"
-    destination = "/etc/docker/daemon.json"
+    source      = "${path.root}/setup/daemon.json"
+    destination = "/tmp/daemon.json"
   }
 
   # Install Docker
   provisioner "shell" {
     inline = [
+      "sudo mkdir -p /etc/docker",
+      "sudo mv /tmp/daemon.json /etc/docker/daemon.json",
       "sudo curl -fsSL https://get.docker.com -o get-docker.sh",
       "sudo sh get-docker.sh",
     ]
