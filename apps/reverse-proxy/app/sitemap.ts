@@ -11,14 +11,14 @@ type ChangeFrequency =
   | 'yearly'
   | 'never'
 
-type FramerWebsite = {
+type Site = {
   sitemapUrl: string
   lastModified?: string | Date
   changeFrequency?: ChangeFrequency
   priority?: number
 }
 
-const framerWebsites: FramerWebsite[] = [
+const sites: Site[] = [
   {
     sitemapUrl: 'https://e2b-landing-page.framer.website/sitemap.xml',
     priority: 1.0,
@@ -30,13 +30,16 @@ const framerWebsites: FramerWebsite[] = [
     changeFrequency: 'daily',
   },
   {
+    sitemapUrl: 'https://e2b.dev/docs/sitemap.xml',
+    priority: 0.5,
+    changeFrequency: 'weekly',
+  },
+  {
     sitemapUrl: 'https://e2b-changelog.framer.website/sitemap.xml',
     priority: 0.2,
     changeFrequency: 'weekly',
   },
 ]
-
-const otherApps = ['https://e2b.dev/docs/sitemap.xml']
 
 type SitemapData = {
   loc: string
@@ -65,11 +68,9 @@ async function getXmlData(url: string): Promise<Sitemap> {
   return parser.parse(text) as Sitemap
 }
 async function getSitemap(
-  url: string,
-  priority?: number,
-  changeFrequency?: ChangeFrequency
+  site: Site,
 ): Promise<MetadataRoute.Sitemap> {
-  const data = await getXmlData(url)
+  const data = await getXmlData(site.sitemapUrl)
 
   if (!data) {
     return []
@@ -78,17 +79,17 @@ async function getSitemap(
   if (Array.isArray(data.urlset.url)) {
     return data.urlset.url.map((line) => {
       return {
-        url: replaceUrls(line.loc, line.loc, "<loc>", "<"),
-        priority: line?.priority || priority,
-        changeFrequency: line?.changefreq || changeFrequency,
+        url: replaceUrls(line.loc, line.loc),
+        priority: line?.priority || site.priority,
+        changeFrequency: line?.changefreq || site.changeFrequency,
       }
     })
   } else {
     return [
       {
-        url: data.urlset.url.loc,
-        priority: data.urlset.url?.priority || priority,
-        changeFrequency: data.urlset.url?.changefreq || changeFrequency,
+        url: replaceUrls(data.urlset.url.loc, data.urlset.url.loc),
+        priority: data.urlset.url?.priority || site.priority,
+        changeFrequency: data.urlset.url?.changefreq || site.changeFrequency,
       },
     ]
   }
@@ -97,17 +98,8 @@ async function getSitemap(
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let mergedSitemap: MetadataRoute.Sitemap = []
 
-  for (const nativeUrl of otherApps) {
-    const urls = await getSitemap(nativeUrl)
-    mergedSitemap = mergedSitemap.concat(...urls)
-  }
-
-  for (const framerWebsite of framerWebsites) {
-    const urls = await getSitemap(
-      framerWebsite.sitemapUrl,
-      framerWebsite.priority,
-      framerWebsite.changeFrequency
-    )
+  for (const site of sites) {
+    const urls = await getSitemap(site)
     mergedSitemap = mergedSitemap.concat(...urls)
   }
 
