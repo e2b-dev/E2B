@@ -37,7 +37,9 @@ export default async function RootLayout({ children }) {
     ]),
   )) as Array<[string, Array<Section>]>
   const allSections = Object.fromEntries(allSectionsEntries)
-  const canonicalUrl = (`https://e2b.dev` + (pathname === "/" ? "": pathname)).split("?")[0]
+  const pathnameWithoutQuery = pathname.split('?')[0]
+  const pathWithoutTrailingSlash = pathnameWithoutQuery.endsWith('/')
+  const canonicalUrl = 'https://e2b.dev' + pathWithoutTrailingSlash
 
   return (
     <html
