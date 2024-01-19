@@ -33,43 +33,24 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   const htmlBody = await res.text()
 
-  // // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
-  // const modifiedHtmlBody = htmlBody
-  //   .replaceAll('href="https://e2b-landing-page.framer.website', 'href="https://e2b.dev')
-  //   .replaceAll(
-  //     'href="https://e2b-blog.framer.website',
-  //     // The default url on framer does not have /blog in the path but the custom domain does,
-  //     // so we need to handle this explicitly.
-  //     url.pathname === '/' ? 'href="https://e2b.dev/blog' : 'href="https://e2b.dev',
-  //   )
-  //   .replaceAll(
-  //     'href="https://e2b-changelog.framer.website',
-  //     // The default url on framer does not have /changelog in the path but the custom domain does,
-  //     // so we need to handle this explicitly.
-  //     url.pathname === '/' ? 'href="https://e2b.dev/changelog' : 'href="https://e2b.dev',
-  //   )
-
-    const modifiedHtmlBody = htmlBody
+  // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
+  const modifiedHtmlBody = htmlBody.replaceAll(
+      /href="https:\/\/e2b-[^"]*"/g,
+      match => match.replace(/\/"$/, '"'),
+    )
     .replaceAll('href="https://e2b-landing-page.framer.website', 'href="https://e2b.dev')
     .replaceAll(
-    'href="https://e2b-blog.framer.website',
-    url.pathname === '/' ? 'href="https://e2b.dev/blog' : 'href="https://e2b.dev',
-    )
-    .replaceAll(
-    'href="https://e2b-changelog.framer.website',
-    url.pathname === '/' ? 'href="https://e2b.dev/changelog' : 'href="https://e2b.dev',
-    )
-    .replaceAll(
-    'href="https://e2b-blog.framer.website',
-    'href="https://e2b.dev/blog',
+      'href="https://e2b-blog.framer.website',
+      // The default url on framer does not have /blog in the path but the custom domain does,
+      // so we need to handle this explicitly.
+      url.pathname === '/' ? 'href="https://e2b.dev/blog' : 'href="https://e2b.dev',
     )
     .replaceAll(
       'href="https://e2b-changelog.framer.website',
-      'href="https://e2b.dev/changelog',
-      )
-
-    console.log(modifiedHtmlBody)
-
+      // The default url on framer does not have /changelog in the path but the custom domain does,
+      // so we need to handle this explicitly.
+      url.pathname === '/' ? 'href="https://e2b.dev/changelog' : 'href="https://e2b.dev',
+    )
 
 
   return new NextResponse(modifiedHtmlBody, {
@@ -84,28 +65,3 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 export const config = {
   matcher: ['/', '/blog/:path*', '/changelog/:path*'],
 }
-
-
-
-
-// const htmlBody = '<link rel="canonical" href="https://e2b.dev/blog/">'
-
-// // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
-//   const modifiedHtmlBody = htmlBody
-//     .replaceAll('href="https://e2b-landing-page.framer.website', 'href="https://e2b.dev')
-//     // add one more condition that replaces this version "https://e2b-blog.framer.website/ with "https://e2b.dev/blog too
-//     .replaceAll('href="https://e2b-blog.framer.website/', 'href="https://e2b.dev/blog')
-//     .replaceAll(
-//       'href="https://e2b-blog.framer.website',
-//       // The default url on framer does not have /blog in the path but the custom domain does,
-//       // so we need to handle this explicitly.
-//       '/' === '/' ? 'href="https://e2b.dev/blog' : 'href="https://e2b.dev',
-//     )
-//     .replaceAll(
-//       'href="https://e2b-changelog.framer.website',
-//       // The default url on framer does not have /changelog in the path but the custom domain does,
-//       // so we need to handle this explicitly.
-//       '/' === '/' ? 'href="https://e2b.dev/changelog' : 'href="https://e2b.dev',
-//     )
-
-// console.log(modifiedHtmlBody)
