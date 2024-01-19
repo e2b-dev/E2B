@@ -43,7 +43,7 @@ export default async function RootLayout({ children }) {
       suppressHydrationWarning
     >
       <head>
-        <Canonical/>
+        <Canonical />
       </head>
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
