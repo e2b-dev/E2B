@@ -60,11 +60,11 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     url.pathname === '/' ? 'href="https://e2b.dev/changelog' : 'href="https://e2b.dev',
     )
     .replaceAll(
-    'href="https://e2b-blog.framer.website/"',
+    'href="https://e2b-blog.framer.website',
     'href="https://e2b.dev/blog',
     )
     .replaceAll(
-      'href="https://e2b-changelog.framer.website/"',
+      'href="https://e2b-changelog.framer.website',
       'href="https://e2b.dev/changelog',
       )
 
