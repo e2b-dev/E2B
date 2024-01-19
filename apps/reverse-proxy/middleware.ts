@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { replaceUrls } from '@/utils/replaceUrls'
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   if (req.method !== 'GET') return NextResponse.next()
@@ -34,30 +35,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   const htmlBody = await res.text()
 
   // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
-  const modifiedHtmlBody = htmlBody.replaceAll(
-      /href="https:\/\/e2b-[^"]*"/g,
-      match => match.replace(/\/"$/, '"'),
-    )
-    .replaceAll(
-      'href="https://e2b-landing-page.framer.website',
-      'href="https://e2b.dev'
-    )
-    .replaceAll(
-      'href="https://e2b-blog.framer.website',
-      // The default url on framer does not have /blog in the path but the custom domain does,
-      // so we need to handle this explicitly.
-      url.pathname === '/'
-        ? 'href="https://e2b.dev/blog'
-        : 'href="https://e2b.dev'
-    )
-    .replaceAll(
-      'href="https://e2b-changelog.framer.website',
-      // The default url on framer does not have /changelog in the path but the custom domain does,
-      // so we need to handle this explicitly.
-      url.pathname === '/'
-        ? 'href="https://e2b.dev/changelog'
-        : 'href="https://e2b.dev'
-    )
+  const modifiedHtmlBody = replaceUrls(htmlBody, url.pathname, 'href="', '"')
 
   return new NextResponse(modifiedHtmlBody, {
     status: res.status,

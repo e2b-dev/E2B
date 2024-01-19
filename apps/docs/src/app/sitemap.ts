@@ -7,7 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const mdxFilePaths = getAllMdxFilePaths(appDirectory)
   const priority = 0.5
 
-  const sitemap = mdxFilePaths
+  return mdxFilePaths
     .map((filePath) => {
       const pathname = path
         .relative(appDirectory, filePath)
@@ -24,8 +24,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       }
     })
     .filter(Boolean)
-
-  return sitemap
 }
 
 function getAllMdxFilePaths(directory: string): string[] {

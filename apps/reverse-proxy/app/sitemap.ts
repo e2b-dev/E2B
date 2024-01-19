@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { XMLParser } from 'fast-xml-parser'
+import { replaceUrls } from '@/utils/replaceUrls'
 
 type ChangeFrequency =
   | 'always'
@@ -77,7 +78,7 @@ async function getSitemap(
   if (Array.isArray(data.urlset.url)) {
     return data.urlset.url.map((line) => {
       return {
-        url: line.loc,
+        url: replaceUrls(line.loc, line.loc, "<loc>", "<"),
         priority: line?.priority || priority,
         changeFrequency: line?.changefreq || changeFrequency,
       }
