@@ -8,6 +8,7 @@ import { Layout } from '@/components/Layout'
 import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'
 import { Section } from '@/components/SectionProvider'
+import Canonical from '@/components/Navigation/canonical'
 
 export const metadata: Metadata = {
   title: {
@@ -41,6 +42,9 @@ export default async function RootLayout({ children }) {
       className="h-full"
       suppressHydrationWarning
     >
+      <head>
+        <Canonical />
+      </head>
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
           <div className="w-full">
