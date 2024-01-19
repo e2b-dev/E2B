@@ -22,13 +22,19 @@
         "./*"
       ]
     },
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "middleware.ts"
+    "middleware.ts",
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
