@@ -47,5 +47,5 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
 // We should probably filter all /, /blog and /changelog paths here and decide what to do with them in the middleware body.
 export const config = {
-  matcher: ['/', '/blog/:path*', '/changelog/:path*', '/sitemap.xml'],
+  matcher: ['/', '/blog/:path*', '/changelog/:path*'],
 }
