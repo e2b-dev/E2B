@@ -1,9 +1,9 @@
 export function replaceUrls(text: string, urlPathName: string, prefix?: string, lastChar: string = ''): string {
-  const pattern = lastChar ? `${prefix}https://e2b-[^${lastChar}]*${lastChar}` : `${prefix}https://e2b-.*[^/]$`
+  const pattern = lastChar ? `(?<url>${prefix}https://e2b-[^${lastChar}]*)/${lastChar}` : `(?<url>${prefix}https://e2b-.*)/`
 
   return text.replaceAll(
       new RegExp(pattern, 'g'),
-      match => match.replace(new RegExp(`/${lastChar}$`), lastChar),
+    (_, url) => url + lastChar,
     )
     .replaceAll(
       `${prefix}https://e2b-landing-page.framer.website`,
