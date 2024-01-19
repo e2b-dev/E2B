@@ -78,16 +78,18 @@ async function getSitemap(
 
   if (Array.isArray(data.urlset.url)) {
     return data.urlset.url.map((line) => {
+      const url = new URL(line.loc)
       return {
-        url: replaceUrls(line.loc, line.loc),
+        url: replaceUrls(line.loc, url.pathname),
         priority: line?.priority || site.priority,
         changeFrequency: line?.changefreq || site.changeFrequency,
       }
     })
   } else {
+    const url = new URL(data.urlset.url.loc)
     return [
       {
-        url: replaceUrls(data.urlset.url.loc, data.urlset.url.loc),
+        url: replaceUrls(data.urlset.url.loc, url.pathname),
         priority: data.urlset.url?.priority || site.priority,
         changeFrequency: data.urlset.url?.changefreq || site.changeFrequency,
       },
