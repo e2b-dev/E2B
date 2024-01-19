@@ -25,12 +25,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })
     .filter(Boolean)
 
-  sitemap.unshift({
-    url: 'https://e2b.dev',
-    lastModified: new Date(),
-    priority: 1,
-  })
-
   return sitemap
 }
 

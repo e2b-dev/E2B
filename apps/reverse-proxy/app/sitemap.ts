@@ -54,6 +54,11 @@ async function getXmlData(url: string): Promise<Sitemap> {
   const parser = new XMLParser()
 
   const response = await fetch(url)
+
+  if (!response.ok) {
+    return { urlset: { url: [] }}
+  }
+
   const text = await response.text()
 
   return parser.parse(text) as Sitemap
@@ -64,6 +69,10 @@ async function getSitemap(
   changeFrequency?: ChangeFrequency
 ): Promise<MetadataRoute.Sitemap> {
   const data = await getXmlData(url)
+
+  if (!data) {
+    return []
+  }
 
   if (Array.isArray(data.urlset.url)) {
     return data.urlset.url.map((line) => {
