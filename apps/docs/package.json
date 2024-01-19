@@ -27,7 +27,7 @@
     "@supabase/supabase-js": "^2.32.0",
     "@tailwindcss/typography": "0.5.9",
     "@types/node": "20.6.3",
-    "@types/react": "18.2.22",
+    "@types/react": "18.2.48",
     "@types/react-dom": "18.2.7",
     "@types/react-highlight-words": "^0.16.4",
     "@vercel/analytics": "^1.0.2",
