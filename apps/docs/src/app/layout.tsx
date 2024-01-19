@@ -8,7 +8,7 @@ import { Layout } from '@/components/Layout'
 import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'
 import { Section } from '@/components/SectionProvider'
-import { usePathname } from 'next/navigation'
+import Canonical from '@/components/Navigation/canonical'
 
 export const metadata: Metadata = {
   title: {
@@ -27,8 +27,6 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }) {
-  const pathname = usePathname()
-
   const pages = await glob('**/*.mdx', { cwd: 'src/app' })
   const allSectionsEntries = (await Promise.all(
     pages.map(async filename => [
@@ -37,9 +35,6 @@ export default async function RootLayout({ children }) {
     ]),
   )) as Array<[string, Array<Section>]>
   const allSections = Object.fromEntries(allSectionsEntries)
-  const pathnameWithoutQuery = pathname.split('?')[0]
-  const pathWithoutTrailingSlash = pathnameWithoutQuery.endsWith('/')
-  const canonicalUrl = 'https://e2b.dev' + pathWithoutTrailingSlash
 
   return (
     <html
@@ -48,7 +43,7 @@ export default async function RootLayout({ children }) {
       suppressHydrationWarning
     >
       <head>
-          <link rel="canonical" href={canonicalUrl} />
+        <Canonical/>
       </head>
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
