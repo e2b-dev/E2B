@@ -19,7 +19,6 @@ import (
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/google/uuid"
 	"github.com/hashicorp/nomad/api"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
@@ -83,7 +82,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		env:          env,
 	}
 
-	network, err := rootfs.client.NetworkCreate(childCtx, uuid.New().String(), types.NetworkCreate{})
+	network, err := rootfs.client.NetworkCreate(childCtx, env.BuildID, types.NetworkCreate{})
 	if err != nil {
 		errMsg := fmt.Errorf("error creating network %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
