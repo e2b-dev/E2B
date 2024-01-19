@@ -1,13 +1,13 @@
-import { MetadataRoute } from 'next'
+import { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
- return {
-   rules: {
-     userAgent: '*',
-     
-     allow: '/',
-   },
+  return {
+    rules: {
+      userAgent: "*",
 
-   sitemap: 'https://e2b.dev/sitemap.xml',
- }
+      allow: "/",
+    },
+
+    sitemap: "https://e2b.dev/sitemap.xml",
+  };
 }
