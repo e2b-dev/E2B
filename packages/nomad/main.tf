@@ -55,19 +55,50 @@ data "google_secret_manager_secret_version" "analytics_collector_api_token" {
 provider "nomad" {
   address   = "https://nomad.${var.domain_name}"
   secret_id = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
-}
 
+  # headers {
+  #   name  = "X-Consul-Token"
+  #   value = data.google_secret_manager_secret_version.consul_acl_token.secret_data
+  # }
+
+  # consul_token = data.google_secret_manager_secret_version.consul_acl_token.secret_data
+}
 
 provider "consul" {
   address = "https://consul.${var.domain_name}"
   token   = data.google_secret_manager_secret_version.consul_acl_token.secret_data
 }
 
-
 resource "consul_acl_policy" "agent" {
   name  = "agent"
   rules = <<-RULE
+    acl = "deny"
+    agent_prefix "" {
+      policy = "deny"
+    }
+    event_prefix "" {
+      policy = "deny"
+    }
+    identity_prefix "" {
+      policy = "deny"
+    }
     key_prefix "" {
+      policy = "deny"
+    }
+    keyring = "deny"
+    mesh = "deny"
+    node_prefix "" {
+      policy = "deny"
+    }
+    operator = "deny"
+    peering = "deny"
+    query_prefix "" {
+      policy = "deny"
+    }
+    service_prefix "" {
+      policy = "deny"
+    }
+    session_prefix "" {
       policy = "deny"
     }
     RULE
