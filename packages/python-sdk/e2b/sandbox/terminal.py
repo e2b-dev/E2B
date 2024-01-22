@@ -1,5 +1,5 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor
+import threading
 from typing import Any, Callable, List, Optional
 
 from pydantic import BaseModel
@@ -7,10 +7,9 @@ from pydantic import BaseModel
 from e2b.constants import TIMEOUT
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.exception import MultipleExceptions, RpcException, TerminalException
-from e2b.sandbox.sandbox_connection import SandboxConnection
+from e2b.sandbox.sandbox_connection import SandboxConnection, SubscriptionArgs
 from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
-from e2b.utils.threads import shutdown_executor
 
 logger = logging.getLogger(__file__)
 
@@ -188,11 +187,17 @@ class TerminalManager:
 
         try:
             unsub_all = self._sandbox._handle_subscriptions(
-                self._sandbox._subscribe(
-                    self._service_name, handle_data, "onData", terminal_id
+                SubscriptionArgs(
+                    service=self._service_name,
+                    handler=handle_data,
+                    method="onData",
+                    params=[terminal_id],
                 ),
-                self._sandbox._subscribe(
-                    self._service_name, future_exit, "onExit", terminal_id
+                SubscriptionArgs(
+                    service=self._service_name,
+                    handler=future_exit,
+                    method="onExit",
+                    params=[terminal_id],
                 ),
             )
         except (RpcException, MultipleExceptions) as e:
@@ -220,11 +225,7 @@ class TerminalManager:
                 on_exit()
             future_exit_handler_finish(output)
 
-        executor = ThreadPoolExecutor(thread_name_prefix="e2b-terminal-exit-handler")
-        exit_task = executor.submit(exit_handler)
-
-        self._process_cleanup.append(exit_task.cancel)
-        self._process_cleanup.append(lambda: shutdown_executor(executor))
+        threading.Thread(name="e2b-terminal-exit-handler", daemon=True, target=exit_handler).start()
 
         def trigger_exit():
             future_exit(None)

@@ -1,7 +1,7 @@
 import asyncio
 from asyncio import AbstractEventLoop
 
-from concurrent.futures import Future
+from concurrent.futures import Future, CancelledError
 from typing import Any, Awaitable, Callable, Generic, List, Optional, TypeVar
 
 T = TypeVar("T")
@@ -19,7 +19,11 @@ class DeferredFuture(Generic[T]):
             self._future.set_result(result)
 
     def result(self, timeout: Optional[float] = None) -> T:
-        return self._future.result(timeout=timeout)
+        try:
+            return self._future.result(timeout=timeout)
+        # The thread was interrupted while waiting, it's okay to release the thread
+        except CancelledError:
+            pass
 
     def done(self) -> bool:
         return self._future.done()

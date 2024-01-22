@@ -1,8 +1,8 @@
 import logging
 import re
 import inspect
+import threading
 
-from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Any,
     Callable,
@@ -23,10 +23,9 @@ from e2b.sandbox.exception import (
     CurrentWorkingDirectoryDoesntExistException,
 )
 from e2b.sandbox.out import OutStderrResponse, OutStdoutResponse
-from e2b.sandbox.sandbox_connection import SandboxConnection
+from e2b.sandbox.sandbox_connection import SandboxConnection, SubscriptionArgs
 from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
-from e2b.utils.threads import shutdown_executor
 
 logger = logging.getLogger(__name__)
 
@@ -296,17 +295,28 @@ class ProcessManager:
                     logger.exception(f"Error in on_stdout callback: {error}")
 
         try:
-            unsub_all = self._sandbox._handle_subscriptions(
-                self._sandbox._subscribe(
-                    self._service_name, handle_exit, "onExit", process_id
+            subscription_args = [
+                SubscriptionArgs(
+                    service=self._service_name,
+                    handler=handle_exit,
+                    method="onExit",
+                    params=[process_id],
                 ),
-                self._sandbox._subscribe(
-                    self._service_name, handle_stdout, "onStdout", process_id
+                SubscriptionArgs(
+                    service=self._service_name,
+                    handler=handle_stdout,
+                    method="onStdout",
+                    params=[process_id],
                 ),
-                self._sandbox._subscribe(
-                    self._service_name, handle_stderr, "onStderr", process_id
+                SubscriptionArgs(
+                    service=self._service_name,
+                    handler=handle_stderr,
+                    method="onStderr",
+                    params=[process_id],
                 ),
-            )
+            ]
+            unsub_all = self._sandbox._handle_subscriptions(*subscription_args)
+
         except (RpcException, MultipleExceptions) as e:
             future_exit.cancel()
 
@@ -340,11 +350,7 @@ class ProcessManager:
                     logger.exception(f"Error in on_exit callback: {error}")
             future_exit_handler_finish(output)
 
-        executor = ThreadPoolExecutor(thread_name_prefix="e2b-process-exit-handler")
-        exit_task = executor.submit(exit_handler)
-
-        self._process_cleanup.append(exit_task.cancel)
-        self._process_cleanup.append(lambda: shutdown_executor(executor))
+        threading.Thread(name="e2b-process-exit-handler", daemon=True, target=exit_handler).start()
 
         def trigger_exit():
             logger.info(f"Exiting the process (id: {process_id})")
