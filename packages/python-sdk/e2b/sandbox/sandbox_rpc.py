@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import threading
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from queue import Queue
@@ -21,7 +22,6 @@ from e2b.utils.future import DeferredFuture, run_async_func_in_loop
 from e2b.utils.threads import shutdown_executor
 
 logger = logging.getLogger(__name__)
-STOP_SIGN = object()
 
 
 class Notification(BaseModel):
@@ -63,13 +63,11 @@ class SandboxRpc(BaseModel):
     _queue_in: Queue = PrivateAttr(default_factory=Queue)
     _queue_out: Queue = PrivateAttr(default_factory=Queue)
     _process_cleanup: List[Callable[[], Any]] = PrivateAttr(default_factory=list)
+    _websocket_task: Optional[threading.Thread] = PrivateAttr(default=None)
 
     def process_messages(self):
         while True:
             data = self._queue_out.get()
-            if data == STOP_SIGN:
-                logger.debug("WebSocket received sign to stop.")
-                break
             logger.debug(f"WebSocket received message: {data}".strip())
             self._receive_message(data)
             self._queue_out.task_done()
@@ -80,14 +78,11 @@ class SandboxRpc(BaseModel):
         stopped = Event()
         self._process_cleanup.append(stopped.set)
 
-        messages_executor = ThreadPoolExecutor(
-            thread_name_prefix="e2b-process-messages"
-        )
-        task = messages_executor.submit(self.process_messages)
-        self._process_cleanup.append(lambda: self._queue_out.put(STOP_SIGN))
-        self._process_cleanup.append(task.cancel)
-        self._process_cleanup.append(lambda: shutdown_executor(messages_executor))
+        threading.Thread(
+            target=self.process_messages, daemon=True, name="e2b-process-messages"
+        ).start()
 
+        # Keep the websocket running as non daemon thread, so it can close websocket properly
         executor = ThreadPoolExecutor(thread_name_prefix="e2b-websocket")
         loop = asyncio.new_event_loop()
         websocket_task = executor.submit(
