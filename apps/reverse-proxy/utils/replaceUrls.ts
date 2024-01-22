@@ -1,5 +1,5 @@
 export function replaceUrls(text: string, urlPathName: string, prefix: string = '', lastChar: string = ''): string {
-  const pattern = lastChar ? `(?<url>${prefix}https://e2b-[^${lastChar}]*)/${lastChar}$` : `(?<url>${prefix}https://e2b-.*)/?\b`
+  const pattern = lastChar ? `(?<url>${prefix}https://e2b-[^${lastChar}]*)/${lastChar}$` : `(?<url>${prefix}https://e2b-.*)/$`
 
   return text.replaceAll(
       new RegExp(pattern, 'g'),
