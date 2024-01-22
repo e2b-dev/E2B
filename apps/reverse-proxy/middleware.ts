@@ -39,7 +39,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   const htmlBody = await res.text()
 
   // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
-  const modifiedHtmlBody = replaceUrls(htmlBody, url.pathname, 'href="', '"')
+  const modifiedHtmlBody = replaceUrls(htmlBody, url.pathname, 'href="', '">')
 
   return new NextResponse(modifiedHtmlBody, {
     status: res.status,

@@ -1,9 +1,9 @@
-export function replaceUrls(text: string, urlPathName: string, prefix: string = '', lastChar: string = ''): string {
-  const pattern = lastChar ? `(?<url>${prefix}https://e2b-[^${lastChar}]*)/${lastChar}$` : `(?<url>${prefix}https://e2b-.*)/$`
+export function replaceUrls(text: string, urlPathName: string, prefix: string = '', suffix: string = ''): string {
+  const pattern = suffix ? `(?<url>${prefix}https://e2b-[^${suffix}]*)/${suffix}` : `(?<url>${prefix}https://e2b-.*)/$`
 
   return text.replaceAll(
       new RegExp(pattern, 'g'),
-    (_, url) => url + lastChar,
+    (_, url) => url + suffix,
     )
     .replaceAll(
       `${prefix}https://e2b-landing-page.framer.website`,
