@@ -1,8 +1,8 @@
 import functools
 import logging
+import threading
 import traceback
 import warnings
-from concurrent.futures import ThreadPoolExecutor, Future
 from os import getenv
 from time import sleep
 from typing import Any, Callable, List, Literal, Optional, Union
@@ -29,7 +29,7 @@ from e2b.sandbox.exception import (
 from e2b.sandbox.sandbox_rpc import Notification, SandboxRpc
 from e2b.utils.future import DeferredFuture
 from e2b.utils.str import camel_case_to_snake_case
-from e2b.utils.threads import shutdown_executor
+
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +109,6 @@ class SandboxConnection:
 
         self._is_open = False
         self._process_cleanup: List[Callable[[], Any]] = []
-        self._refreshing_task: Optional[Future] = None
         self._subscribers = {}
         self._rpc: Optional[SandboxRpc] = None
         self._finished = DeferredFuture(self._process_cleanup)
@@ -316,13 +315,12 @@ class SandboxConnection:
         self._rpc.connect(timeout=timeout)
 
     def _start_refreshing(self):
-        executor = ThreadPoolExecutor(thread_name_prefix="e2b-refresh")
-        self._refreshing_task = executor.submit(
-            self._refresh, self._sandbox.instance_id
-        )
-
-        self._process_cleanup.append(self._refreshing_task.cancel)
-        self._process_cleanup.append(lambda: shutdown_executor(executor))
+        threading.Thread(
+            target=self._refresh,
+            args=(self._sandbox.instance_id,),
+            daemon=True,
+            name="e2b-sandbox-refresh",
+        ).start()
 
     def _call(
         self,
