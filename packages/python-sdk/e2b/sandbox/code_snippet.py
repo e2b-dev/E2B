@@ -2,7 +2,7 @@ from typing import Any, Callable, ClassVar, List, Optional
 from pydantic import BaseModel
 
 from e2b.sandbox.exception import MultipleExceptions, RpcException, SandboxException
-from e2b.sandbox.sandbox_connection import SandboxConnection
+from e2b.sandbox.sandbox_connection import SandboxConnection, SubscriptionArgs
 
 
 class OpenPort(BaseModel):
@@ -25,26 +25,25 @@ class CodeSnippetManager(BaseModel):
     on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None
 
     def _subscribe(self):
+        def on_scan_ports(ports: List[dict]):
+            ports = [
+                OpenPort(
+                    ip=port["Ip"],
+                    port=port["Port"],
+                    state=port["State"],
+                )
+                for port in ports
+            ]
+            if self.on_scan_ports:
+                self.on_scan_ports(ports)
+
         try:
             self.sandbox._handle_subscriptions(
-                self.sandbox._subscribe(
-                    self.service_name,
-                    lambda ports: self.on_scan_ports(
-                        [
-                            OpenPort(
-                                ip=port["Ip"],
-                                port=port["Port"],
-                                state=port["State"],
-                            )
-                            for port in ports
-                        ]
-                    )
-                    if self.on_scan_ports
-                    else None,
-                    "scanOpenedPorts",
+                SubscriptionArgs(
+                    service=self.service_name,
+                    handler=on_scan_ports,
+                    method="scanOpenedPorts",
                 )
-                if self.on_scan_ports
-                else None,
             )
         except RpcException as e:
             raise SandboxException(e.message) from e

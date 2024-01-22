@@ -207,20 +207,12 @@ export class SandboxConnection {
       this.logger.debug?.(`Closing sandbox "${this.sandbox?.instanceID}"`)
       this.isOpen = false
 
-      this.logger.debug?.('Unsubscribing...')
-      const results = await Promise.allSettled(
-        this.subscribers.map((s) => this._unsubscribe(s.subID)),
-      )
-      results.forEach((r) => {
-        if (r.status === 'rejected') {
-          this.logger.warn?.(`Failed to unsubscribe: "${r.reason}"`)
-        }
-      })
-
       // This is `ws` way of closing connection
       this.rpc.ws?.terminate?.()
       // This is the browser WebSocket way of closing connection
       this.rpc.ws?.close?.()
+      this.subscribers = []
+
       this.logger.debug?.('Disconnected from the sandbox')
     }
   }

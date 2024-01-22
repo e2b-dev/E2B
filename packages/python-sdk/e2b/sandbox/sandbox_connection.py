@@ -1,8 +1,9 @@
-import functools
+import concurrent
 import logging
 import threading
 import traceback
 import warnings
+from concurrent.futures import ThreadPoolExecutor, CancelledError
 from os import getenv
 from time import sleep
 from typing import Any, Callable, List, Literal, Optional, Union
@@ -24,7 +25,7 @@ from e2b.sandbox.exception import (
     AuthenticationException,
     MultipleExceptions,
     SandboxException,
-    TimeoutException,
+    TimeoutException, SandboxNotOpenException,
 )
 from e2b.sandbox.sandbox_rpc import Notification, SandboxRpc
 from e2b.utils.future import DeferredFuture
@@ -38,6 +39,13 @@ class Subscription(BaseModel):
     service: str
     id: str
     handler: Callable[[Any], None]
+
+
+class SubscriptionArgs(BaseModel):
+    service: str
+    handler: Callable[[Any], None]
+    method: str
+    params: List[Any] = []
 
 
 class SandboxConnection:
@@ -248,8 +256,6 @@ class SandboxConnection:
         if self._on_close_child:
             self._on_close_child()
 
-        self._subscribers.clear()
-
         for cleanup in self._process_cleanup:
             cleanup()
         self._process_cleanup.clear()
@@ -333,7 +339,7 @@ class SandboxConnection:
             params = []
 
         if not self.is_open:
-            raise SandboxException("Sandbox is not open")
+            raise SandboxNotOpenException("Sandbox is not open")
 
         if not self._rpc:
             raise SandboxException("Sandbox is not connected")
@@ -342,34 +348,58 @@ class SandboxConnection:
 
     def _handle_subscriptions(
         self,
-        *subs: Optional[Callable[[], None]],
+        *subscription_args: SubscriptionArgs,
     ):
-        results: List[Union[Callable, None, Exception]] = [sub for sub in subs if sub]
+        results: List[Union[Callable, None, Exception]] = []
+        with ThreadPoolExecutor(thread_name_prefix="process-subscribe") as executor:
+            futures = []
+            for args in subscription_args:
+                future = executor.submit(
+                    self._subscribe,
+                    args.service,
+                    args.handler,
+                    args.method,
+                    *args.params,
+                )
+                futures.append(future)
 
-        exceptions = [e for e in results if isinstance(e, Exception)]
+            for future in concurrent.futures.as_completed(futures):
+                results.append(future.result())
+
+        results = [sub for sub in results if sub]
+        process_exceptions = [e for e in results if isinstance(e, Exception)]
 
         def unsub_all():
-            return lambda: functools.reduce(
-                lambda _, f: f(),
-                [unsub for unsub in results if not isinstance(unsub, Exception)],
-            )
+            def unsub_func():
+                for unsub in results:
+                    if not isinstance(unsub, Exception):
+                        try:
+                            unsub()
+                        except (CancelledError, SandboxNotOpenException, KeyError):
+                            pass
 
-        if len(exceptions) > 0:
+            threading.Thread(
+                name="process-unsubscribe",
+                daemon=True,
+                target=unsub_func,
+            ).start()
+
+        if len(process_exceptions) > 0:
             unsub_all()
 
-            if len(exceptions) == 1:
-                raise exceptions[0]
+            if len(process_exceptions) == 1:
+                raise process_exceptions[0]
 
             error_message = "\n"
 
-            for i, s in enumerate(exceptions):
+            for i, s in enumerate(process_exceptions):
                 tb = s.__traceback__  # Get the traceback object
                 stack_trace = "\n".join(traceback.extract_tb(tb).format())
                 error_message += f'\n[{i}]: {type(s).__name__}("{s}"):\n{stack_trace}\n'
 
             raise MultipleExceptions(
                 message=error_message,
-                exceptions=exceptions,
+                exceptions=process_exceptions,
             )
 
         return unsub_all

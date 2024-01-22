@@ -214,16 +214,17 @@ export class Sandbox extends SandboxConnection {
             createDeferredPromise<TerminalOutput>()
 
           terminalExited.then(async () => {
-            const results = await Promise.allSettled([
+            Promise.allSettled([
               this._unsubscribe(onExitSubID),
               this._unsubscribe(onDataSubID),
-            ])
-            this.logger.debug?.(`Terminal "${terminalID}" exited`)
+            ]).then((results) => {
+              const errMsg = formatSettledErrors(results)
+              if (errMsg) {
+                this.logger.debug?.(errMsg)
+              }
+            })
 
-            const errMsg = formatSettledErrors(results)
-            if (errMsg) {
-              this.logger.error?.(errMsg)
-            }
+            this.logger.debug?.(`Terminal "${terminalID}" exited`)
 
             onExit?.()
             handleFinishUnsubscribing(output)
@@ -354,17 +355,18 @@ export class Sandbox extends SandboxConnection {
             createDeferredPromise<ProcessOutput>()
 
           processExited.then(async () => {
-            const results = await Promise.allSettled([
+            Promise.allSettled([
               this._unsubscribe(onExitSubID),
               onStdoutSubID ? this._unsubscribe(onStdoutSubID) : undefined,
               onStderrSubID ? this._unsubscribe(onStderrSubID) : undefined,
-            ])
-            this.logger.debug?.(`Process "${processID}" exited`)
+            ]).then((results) => {
+              const errMsg = formatSettledErrors(results)
+              if (errMsg) {
+                this.logger.debug?.(errMsg)
+              }
+            })
 
-            const errMsg = formatSettledErrors(results)
-            if (errMsg) {
-              this.logger.error?.(errMsg)
-            }
+            this.logger.debug?.(`Process "${processID}" exited`)
 
             if (onExit) {
               onExit(output.exitCode || 0)
