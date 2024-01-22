@@ -143,7 +143,6 @@ class Sandbox(SandboxConnection):
             _debug_dev_env=_debug_dev_env,
             timeout=timeout,
         )
-        self._on_close_child = self._close_services
         self._actions: Dict[str, Action[Self]] = {}
 
     def add_action(self, action: Action[Self], name: Optional[str] = None) -> "Sandbox":
@@ -255,17 +254,6 @@ class Sandbox(SandboxConnection):
 
         if self._on_stderr or self._on_stdout:
             self._handle_start_cmd_logs()
-
-    def _close_services(self):
-        self._terminal._close()
-        self._process._close()
-
-    def close(self) -> None:
-        """
-        Close the sandbox.
-        """
-        super().close()
-        self._close()
 
     def file_url(self) -> str:
         """

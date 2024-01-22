@@ -5,6 +5,10 @@ class SandboxException(Exception):
     pass
 
 
+class SandboxNotOpenException(Exception):
+    pass
+
+
 class RpcException(SandboxException):
     def __init__(
         self,

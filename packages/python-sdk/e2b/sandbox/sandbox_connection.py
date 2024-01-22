@@ -25,7 +25,7 @@ from e2b.sandbox.exception import (
     AuthenticationException,
     MultipleExceptions,
     SandboxException,
-    TimeoutException,
+    TimeoutException, SandboxNotOpenException,
 )
 from e2b.sandbox.sandbox_rpc import Notification, SandboxRpc
 from e2b.utils.future import DeferredFuture
@@ -256,8 +256,6 @@ class SandboxConnection:
         if self._on_close_child:
             self._on_close_child()
 
-        self._subscribers.clear()
-
         for cleanup in self._process_cleanup:
             cleanup()
         self._process_cleanup.clear()
@@ -341,7 +339,7 @@ class SandboxConnection:
             params = []
 
         if not self.is_open:
-            raise SandboxException("Sandbox is not open")
+            raise SandboxNotOpenException("Sandbox is not open")
 
         if not self._rpc:
             raise SandboxException("Sandbox is not connected")
@@ -377,7 +375,7 @@ class SandboxConnection:
                     if not isinstance(unsub, Exception):
                         try:
                             unsub()
-                        except (CancelledError, KeyError) as e:
+                        except (CancelledError, SandboxNotOpenException, KeyError):
                             pass
 
             threading.Thread(

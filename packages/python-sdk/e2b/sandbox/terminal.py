@@ -1,6 +1,7 @@
 import logging
 import threading
-from typing import Any, Callable, List, Optional
+from concurrent.futures import Future
+from typing import Any, Callable, Optional
 
 from pydantic import BaseModel
 
@@ -8,7 +9,6 @@ from e2b.constants import TIMEOUT
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.exception import MultipleExceptions, RpcException, TerminalException
 from e2b.sandbox.sandbox_connection import SandboxConnection, SubscriptionArgs
-from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
 
 logger = logging.getLogger(__file__)
@@ -65,7 +65,7 @@ class Terminal:
         terminal_id: str,
         sandbox: SandboxConnection,
         trigger_exit: Callable[[], Any],
-        finished: DeferredFuture[TerminalOutput],
+        finished: Future[TerminalOutput],
         output: TerminalOutput,
     ):
         self._terminal_id = terminal_id
@@ -136,13 +136,6 @@ class TerminalManager:
 
     def __init__(self, sandbox: SandboxConnection):
         self._sandbox = sandbox
-        self._process_cleanup: List[Callable[[], Any]] = []
-
-    def _close(self):
-        for cleanup in self._process_cleanup:
-            cleanup()
-
-        self._process_cleanup.clear()
 
     def start(
         self,
@@ -174,7 +167,7 @@ class TerminalManager:
         """
         env_vars = self._sandbox.env_vars.update(env_vars or {})
 
-        future_exit = DeferredFuture(self._process_cleanup)
+        future_exit = Future()
         terminal_id = terminal_id or create_id(12)
 
         unsub_all: Optional[Callable[[], Any]] = None
@@ -211,9 +204,7 @@ class TerminalManager:
                 ) from e
 
         # TODO: Handle exit handler finish for exits (the same for processes)
-        future_exit_handler_finish = DeferredFuture[TerminalOutput](
-            self._process_cleanup
-        )
+        future_exit_handler_finish = Future[TerminalOutput](        )
 
         def exit_handler():
             future_exit.result()
@@ -223,12 +214,12 @@ class TerminalManager:
 
             if on_exit:
                 on_exit()
-            future_exit_handler_finish(output)
+            future_exit_handler_finish.set_result(output)
 
         threading.Thread(name="e2b-terminal-exit-handler", daemon=True, target=exit_handler).start()
 
         def trigger_exit():
-            future_exit(None)
+            future_exit.set_result(None)
             future_exit_handler_finish.result()
 
         try:
