@@ -37,8 +37,8 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: ^0.11.17
-        version: 0.11.17(openai@4.17.4)
+        specifier: ^0.11.18
+        version: 0.11.18(openai@4.17.4)
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -746,8 +746,8 @@ packages:
     dev: true
     optional: true
 
-  /@e2b/sdk@0.11.17(openai@4.17.4):
-    resolution: {integrity: sha512-IbRLWzbrNWCKBS/XTUXTCuhSc8Jznwep69jfqz9eUQ4ocHHgGAw2uWLgkfvNpuhYbGkB52ZuvUKmWJ7egv9P2Q==}
+  /@e2b/sdk@0.11.18(openai@4.17.4):
+    resolution: {integrity: sha512-J/+P89e4ui4Ucoqlt9/+ruzXFztZEwmI8sNCAcKz+nrLHb4T2FCOJzUnuLiPHg/8ztlStLTRFE00riGNl1mnhg==}
     engines: {node: '>=18'}
     peerDependencies:
       openai: ^4.17.4

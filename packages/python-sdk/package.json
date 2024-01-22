@@ -1,7 +1,7 @@
 {
   "name": "@e2b/python-sdk",
   "private": true,
-  "version": "0.13.16",
+  "version": "0.13.17",
   "scripts": {
     "test": "poetry run pytest -n 1 --verbose -x",
     "postVersion": "poetry version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
