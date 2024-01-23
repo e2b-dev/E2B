@@ -208,7 +208,7 @@ export class RpcWebSocketClient {
           // stop waiting for response
           delete this.idAwaiter[data.id];
           reject(
-            `Awaiting response to "${method}" with id: ${data.id} timed out.`
+            new Error(`Awaiting response to "${method}" with id: ${data.id} timed out.`)
           );
         }, this.config.responseTimeout);
       }
@@ -221,7 +221,7 @@ export class RpcWebSocketClient {
         delete this.idAwaiter[data.id];
 
         if (this.isRpcError(responseData)) {
-          reject(responseData);
+          reject(new Error(`RPC Error (${responseData.code}): ${responseData.message}`));
           return;
         }
 
@@ -267,7 +267,7 @@ export class RpcWebSocketClient {
 
   /**
    * Allows modifying configuration.
-   * @param {RpcWebSocketConfig} options
+   * @param {IRpcWebSocketConfig} options
    * @memberof RpcWebSocketClient
    */
   public configure(options: IRpcWebSocketConfig) {
@@ -311,7 +311,7 @@ export class RpcWebSocketClient {
         for (const handler of this.onCloseHandlers) {
           handler(e);
         }
-        reject(e);
+        reject(new Error(`WebSocket closed with code: ${e.code} and reason: ${e.reason}`));
       };
     });
   }
