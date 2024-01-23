@@ -5,21 +5,21 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/gin-contrib/cors"
+	limits "github.com/gin-contrib/size"
+	"github.com/gin-gonic/gin"
+	middleware "github.com/oapi-codegen/gin-middleware"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
 	tracingMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware/otel/tracing"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
-
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
-	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3filter"
-	"github.com/gin-contrib/cors"
-	limits "github.com/gin-contrib/size"
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -79,13 +79,14 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
-	r.Use(middleware.OapiRequestValidatorWithOptions(swagger,
-		&middleware.Options{
-			Options: openapi3filter.Options{
-				AuthenticationFunc: AuthenticationFunc,
-			},
-		}),
+	r.Use(
 		limits.RequestSizeLimiter(maxUploadLimit),
+		middleware.OapiRequestValidatorWithOptions(swagger,
+			&middleware.Options{
+				Options: openapi3filter.Options{
+					AuthenticationFunc: AuthenticationFunc,
+				},
+			}),
 	)
 
 	// We now register our store above as the handler for the interface
