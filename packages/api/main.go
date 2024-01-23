@@ -23,9 +23,11 @@ import (
 )
 
 const (
-	serviceName        = "orchestration-api"
-	maxMultipartMemory = 1 << 27 // 128 MiB
-	maxUploadLimit     = 1 << 28 // 256 MiB
+	serviceName          = "orchestration-api"
+	maxMultipartMemory   = 1 << 27 // 128 MiB
+	maxUploadLimit       = 1 << 28 // 256 MiB
+	maxReadHeaderTimeout = 60 * time.Second
+	defaultPort          = 80
 )
 
 func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *http.Server {
@@ -38,7 +40,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	// pprof.Register(r, "debug/pprof")
 
 	r.Use(
-		// We use custom otelgin middleware because we want to log 4xx errors in the otel
+		// We use custom otel gin middleware because we want to log 4xx errors in the otel
 		customMiddleware.ExcludeRoutes(tracingMiddleware.Middleware(serviceName), "/health"),
 		// customMiddleware.IncludeRoutes(metricsMiddleware.Middleware(serviceName), "/instances"),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
@@ -95,8 +97,9 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	r.MaxMultipartMemory = maxMultipartMemory
 
 	s := &http.Server{
-		Handler: r,
-		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
+		Handler:           r,
+		Addr:              fmt.Sprintf("0.0.0.0:%d", port),
+		ReadHeaderTimeout: maxReadHeaderTimeout,
 	}
 
 	return s
@@ -105,7 +108,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 func main() {
 	fmt.Println("Initializing...")
 
-	port := flag.Int("port", 80, "Port for test HTTP server")
+	port := flag.Int("port", defaultPort, "Port for test HTTP server")
 	flag.Parse()
 
 	debug := flag.String("true", "false", "is debug")
