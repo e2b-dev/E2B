@@ -25,7 +25,8 @@ from e2b.sandbox.exception import (
     AuthenticationException,
     MultipleExceptions,
     SandboxException,
-    TimeoutException, SandboxNotOpenException,
+    TimeoutException,
+    SandboxNotOpenException,
 )
 from e2b.sandbox.sandbox_rpc import Notification, SandboxRpc
 from e2b.utils.future import DeferredFuture
@@ -93,7 +94,9 @@ class SandboxConnection:
 
         if api_key is None:
             raise AuthenticationException(
-                "API key is required, please visit https://e2b.dev/docs to get your API key",
+                "API key is required, please visit https://e2b.dev/docs to get your API key. "
+                "You can either set the environment variable `E2B_API_KEY` "
+                'or you can pass it directly to the sandbox like Sandbox(api_key="e2b_...")',
             )
 
         self.cwd = cwd

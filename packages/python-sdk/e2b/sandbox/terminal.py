@@ -204,7 +204,7 @@ class TerminalManager:
                 ) from e
 
         # TODO: Handle exit handler finish for exits (the same for processes)
-        future_exit_handler_finish = Future[TerminalOutput](        )
+        future_exit_handler_finish = Future[TerminalOutput]()
 
         def exit_handler():
             future_exit.result()
@@ -216,7 +216,9 @@ class TerminalManager:
                 on_exit()
             future_exit_handler_finish.set_result(output)
 
-        threading.Thread(name="e2b-terminal-exit-handler", daemon=True, target=exit_handler).start()
+        threading.Thread(
+            name="e2b-terminal-exit-handler", daemon=True, target=exit_handler
+        ).start()
 
         def trigger_exit():
             future_exit.set_result(None)
