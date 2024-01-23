@@ -6,7 +6,7 @@ import * as path from 'path'
 
 import { asFormattedSandboxTemplate, asLocalRelative } from 'src/utils/format'
 
-export const maxContentSize = 256 * 1024 * 1024 // 256Mi
+export const maxContentSize = 256 * 1024 * 1024 // 256MiB
 export const configName = 'e2b.toml'
 
 function getConfigHeader(config: E2BConfig) {

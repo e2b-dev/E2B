@@ -1,5 +1,6 @@
 import * as tar from 'tar-fs'
 import * as path from 'path'
+import { asLocal } from '../utils/format'
 
 export interface FilePath {
   path: string
@@ -16,6 +17,7 @@ export async function createBlobFromFiles(
   root: string,
   filePaths: FilePath[],
   rewrites: FileRewrite[],
+  maxSizeBytes: number = 1024 * 1024 * 1024, // 1 GiB
 ) {
   const absoluteRewrites = rewrites.map(({ oldPath, newPath }) => ({
     oldPath: path.join(path.sep, oldPath),
@@ -24,6 +26,7 @@ export async function createBlobFromFiles(
 
   const blob = await new Promise<Blob>((resolve, reject) => {
     const chunks: BlobPart[] = []
+    let size =  0
 
     const pack = tar.pack(root, {
       entries: filePaths
@@ -41,6 +44,19 @@ export async function createBlobFromFiles(
     })
 
     pack.on('data', (chunk: BlobPart) => {
+      if (typeof chunk === 'object') {
+        if (chunk instanceof ArrayBuffer || ArrayBuffer.isView(chunk)) {
+          size += chunk.byteLength;
+        } else {
+          size += chunk.size;
+        }
+      } else {
+        size += String(chunk).length;
+      }
+
+      if (size > maxSizeBytes) {
+        reject(new Error(`Content size is too big. The maximum size is ${asLocal(`${maxSizeBytes / 1024 / 1024} MiB.`)}\n\nCheck if you are not including unnecessary files in the build context (e.g. node_modules)`));
+      }
       chunks.push(chunk)
     })
 

@@ -165,6 +165,7 @@ export const buildCommand = new commander.Command('build')
               },
             ]
             : [],
+          maxContentSize,
         )
         body.append('buildContext', blob, 'env.tar.gz.e2b')
 
