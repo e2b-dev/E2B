@@ -76,7 +76,7 @@ class WebSocket:
 
         websocket_connector.BACKOFF_MIN = 1
         websocket_connector.BACKOFF_FACTOR = 1
-        websocket_connector.BACKOFF_INITIAL = 0.3  # type: ignore
+        websocket_connector.BACKOFF_INITIAL = 0.2  # type: ignore
 
         async for websocket in websocket_connector:
             try:
