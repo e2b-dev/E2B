@@ -339,7 +339,9 @@ class ProcessManager:
                     logger.exception(f"Error in on_exit callback: {error}")
             future_exit_handler_finish.set_result(output)
 
-        threading.Thread(name="e2b-process-exit-handler", daemon=True, target=exit_handler).start()
+        threading.Thread(
+            name="e2b-process-exit-handler", daemon=True, target=exit_handler
+        ).start()
 
         def trigger_exit():
             logger.info(f"Exiting the process (id: {process_id})")
