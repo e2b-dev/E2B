@@ -22,7 +22,8 @@ import {
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
 import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
-import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
+import { configName, getConfigPath, loadConfig, maxContentSize, saveConfig } from 'src/config'
+import { estimateContentLength } from '../utils/form'
 
 const templateCheckInterval = 1_000 // 1 sec
 
@@ -173,6 +174,15 @@ export const buildCommand = new commander.Command('build')
 
         if (startCmd) {
           body.append('startCmd', startCmd)
+        }
+
+        const estimatedSize = estimateContentLength(body)
+        if (estimatedSize > maxContentSize) {
+          console.error(
+            `The sandbox template build context is too large ${asLocal(`${Math.round(estimatedSize / 1024 / 1024 * 100) /100} MiB`)}. The maximum size is ${asLocal(
+              `${maxContentSize / 1024 / 1024} MiB.`)}\n\nCheck if you are not including unnecessary files in the build context (e.g. node_modules)`,
+          )
+          process.exit(1)
         }
 
         const build = await buildTemplate(accessToken, body, !!config, configPath, envID)
