@@ -47,6 +47,7 @@ data "google_secret_manager_secret_version" "analytics_collector_api_token" {
 provider "nomad" {
   address      = "https://nomad.${var.domain_name}"
   secret_id    = var.nomad_acl_token_secret
+  consul_token = var.consul_acl_token_secret
 }
 
 provider "consul" {
