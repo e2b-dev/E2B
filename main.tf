@@ -132,6 +132,10 @@ module "cluster" {
   cluster_setup_bucket_name   = module.buckets.cluster_setup_bucket_name
   fc_env_pipeline_bucket_name = module.buckets.fc_env_pipeline_bucket_name
 
+
+  consul_acl_token_secret = module.init.consul_acl_token_secret
+  nomad_acl_token_secret  = module.init.nomad_acl_token_secret
+
   labels = var.labels
   prefix = var.prefix
 }
@@ -156,8 +160,8 @@ module "nomad" {
   gcp_region     = var.gcp_region
   gcp_zone       = var.gcp_zone
 
-  consul_acl_token_secret_name = module.init.consul_acl_token_secret_name
-  nomad_acl_token_secret_name  = module.init.nomad_acl_token_secret_name
+  consul_acl_token_secret = module.init.consul_acl_token_secret
+  nomad_acl_token_secret  = module.init.nomad_acl_token_secret
 
   # API
   logs_proxy_address                        = "http://${module.cluster.logs_proxy_ip}"

@@ -2,11 +2,11 @@ variable "gcp_zone" {
   type = string
 }
 
-variable "consul_acl_token_secret_name" {
+variable "consul_acl_token_secret" {
   type = string
 }
 
-variable "nomad_acl_token_secret_name" {
+variable "nomad_acl_token_secret" {
   type = string
 }
 

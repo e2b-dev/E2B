@@ -42,6 +42,7 @@ function print_usage {
   echo
   echo -e "  --server\t\tIf set, run in server mode. Optional. Exactly one of --server or --client must be set."
   echo -e "  --client\t\tIf set, run in client mode. Optional. Exactly one of --server or --client must be set."
+  echo -e "  --consul-token\t\tThe Consul ACL token to use."
   echo -e "  --cluster-tag-name\tAutomatically form a cluster with Instances that have the same value for this Compute Instance tag name. Optional."
   echo -e "  --datacenter\t\tThe name of the datacenter Consul is running in. Optional. If not specified, will default to GCP region name."
   echo -e "  --config-dir\t\tThe path to the Consul config folder. Optional. Default is the absolute path of '../config', relative to this script."
@@ -253,7 +254,7 @@ EOF
   },
   "acl": {
     "enabled": true,
-    "default_policy": "allow",
+    "default_policy": "deny",
     "enable_token_persistence": true
   },
   "telemetry": {
@@ -356,6 +357,14 @@ function start_consul {
   sudo systemctl restart consul.service
 }
 
+function bootstrap {
+  local readonly consul_token="$1"
+  log_info "Bootstrapping Consul"
+  echo "${consul_token}" > /tmp/consul.token
+  consul acl bootstrap /tmp/consul.token
+  rm /tmp/consul.token
+}
+
 # Based on: http://unix.stackexchange.com/a/7732/215969
 function get_owner_of_path {
   local -r path="$1"
@@ -414,6 +423,11 @@ function run {
       ;;
     --client)
       client="true"
+      ;;
+    --consul-token)
+      assert_not_empty "$key" "$2"
+      consul_token="$2"
+      shift
       ;;
     --config-dir)
       assert_not_empty "$key" "$2"
@@ -613,6 +627,10 @@ function run {
 
   generate_systemd_config "$SYSTEMD_CONFIG_PATH" "$config_dir" "$data_dir" "$systemd_stdout" "$systemd_stderr" "$bin_dir" "$user" "${environment[@]}"
   start_consul
+
+  if [[ "$server" == "true" ]]; then
+    bootstrap "$consul_token"
+  fi
 }
 
 run "$@"
