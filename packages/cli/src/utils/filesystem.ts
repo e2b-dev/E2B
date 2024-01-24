@@ -16,6 +16,7 @@ const walk = util.promisify(fsWalk.walk)
  * @param opts.name - If specified, only a file with this name will be returned.
  * @param opts.respectGitignore - If true, files that are ignored by .gitignore will be excluded.
  * @param opts.respectDockerignore - If true, files that are ignored by .dockerignore will be excluded.
+ * @param opts.overrideIgnoreFor - If specified, files that should be ignored will be still included if they match this list.
  */
 export async function getFiles(
   rootPath: string,
@@ -24,6 +25,7 @@ export async function getFiles(
     name?: string;
     respectGitignore?: boolean;
     respectDockerignore?: boolean;
+    overrideIgnoreFor?: string[];
   },
 ) {
   let gitignore: gitIgnore.Ignore | undefined
@@ -63,7 +65,7 @@ export async function getFiles(
     stats: true,
   })
 
-  return await Promise.all(
+  const files = await Promise.all(
     entries.map(async (e) => {
       return {
         path: e.path as string,
@@ -72,6 +74,21 @@ export async function getFiles(
       }
     }),
   )
+
+  if (opts?.overrideIgnoreFor) {
+    for (const override of opts.overrideIgnoreFor) {
+      const overridePath = path.join(rootPath, override)
+      if (files.map(file => file.path).indexOf(overridePath) === -1 && fs.existsSync(overridePath)) {
+        files.push({
+          path: overridePath,
+          rootPath: path.join('/', override),
+          name: path.basename(overridePath),
+        })
+      }
+    }
+  }
+
+  return files
 }
 
 export function getRoot(templatePath?: string) {
