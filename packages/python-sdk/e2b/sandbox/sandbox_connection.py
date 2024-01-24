@@ -203,15 +203,16 @@ class SandboxConnection:
         return hostname
 
     @staticmethod
-    def get_protocol(base_protocol: str = "http") -> str:
+    def get_protocol(base_protocol: str = "http", secure: bool = SECURE) -> str:
         """
         The function decides whether to use the secure or insecure protocol.
 
         :param base_protocol: Specify the specific protocol you want to use. Do not include the `s` in `https` or `wss`.
+        :param secure: Specify whether you want to use the secure protocol or not.
 
         :return: Protocol for the connection to the sandbox
         """
-        return f"{base_protocol}s" if SECURE else base_protocol
+        return f"{base_protocol}s" if secure else base_protocol
 
     def keep_alive(self, duration: int) -> None:
         """
@@ -315,8 +316,9 @@ class SandboxConnection:
 
     def _connect_rpc(self, timeout: Optional[float] = TIMEOUT):
         hostname = self.get_hostname(self._debug_port or ENVD_PORT)
-        protocol = self.get_protocol("ws")
+        protocol = self.get_protocol("ws", self._debug_dev_env != "local")
         sandbox_url = f"{protocol}://{hostname}{WS_ROUTE}"
+
         self._rpc = SandboxRpc(
             url=sandbox_url,
             on_message=self._handle_notification,

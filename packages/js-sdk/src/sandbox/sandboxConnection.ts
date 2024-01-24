@@ -193,10 +193,11 @@ export class SandboxConnection {
   /**
    * The function decides whether to use the secure or insecure protocol.
    * @param baseProtocol Specify the specific protocol you want to use. Do not include the `s` in `https` or `wss`.
+   * @param secure Specify if you want to use the secure protocol
    * @returns Protocol for the connection to the sandbox
    */
-  getProtocol(baseProtocol: string = 'http') {
-    return SECURE ? `${baseProtocol}s` : baseProtocol
+  getProtocol(baseProtocol: string = 'http', secure: boolean = SECURE) {
+    return secure ? `${baseProtocol}s` : baseProtocol
   }
 
   /**
@@ -375,7 +376,7 @@ export class SandboxConnection {
 
   private async connectRpc() {
     const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
-    const protocol = this.getProtocol('ws')
+    const protocol = this.getProtocol('ws', this.opts.__debug_devEnv !== 'local')
     const sandboxURL = `${protocol}://${hostname}${WS_ROUTE}`
 
     let isFinished = false

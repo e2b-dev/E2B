@@ -263,7 +263,7 @@ class Sandbox(SandboxConnection):
         If a file with the same name already exists, it will be overwritten.
         """
         hostname = self.get_hostname(self._debug_port or ENVD_PORT)
-        protocol = self.get_protocol()
+        protocol = self.get_protocol(secure=self._debug_dev_env != "local")
 
         file_url = f"{protocol}://{hostname}{FILE_ROUTE}"
 
