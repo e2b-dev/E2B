@@ -143,4 +143,3 @@ variable "root_volume_disk_type" {
   type        = string
   default     = "pd-ssd"
 }
-

@@ -6,12 +6,12 @@ output "google_service_account_key" {
   value = google_service_account_key.google_service_key.private_key
 }
 
-output "consul_acl_token_secret_name" {
-  value = google_secret_manager_secret.consul_acl_token.name
+output "consul_acl_token_secret" {
+  value = google_secret_manager_secret_version.consul_acl_token.secret_data
 }
 
-output "nomad_acl_token_secret_name" {
-  value = google_secret_manager_secret.nomad_acl_token.name
+output "nomad_acl_token_secret" {
+  value = google_secret_manager_secret_version.nomad_acl_token.secret_data
 }
 
 output "grafana_api_key_secret_name" {

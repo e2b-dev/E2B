@@ -24,6 +24,13 @@ resource "google_secret_manager_secret" "consul_acl_token" {
   }
 }
 
+resource "random_uuid" "consul_acl_token" {}
+
+resource "google_secret_manager_secret_version" "consul_acl_token" {
+  secret      = google_secret_manager_secret.consul_acl_token.name
+  secret_data = random_uuid.consul_acl_token.result
+}
+
 resource "google_secret_manager_secret" "nomad_acl_token" {
   secret_id = "${var.prefix}nomad-secret-id"
 
@@ -32,6 +39,12 @@ resource "google_secret_manager_secret" "nomad_acl_token" {
   }
 }
 
+resource "random_uuid" "nomad_acl_token" {}
+
+resource "google_secret_manager_secret_version" "nomad_acl_token" {
+  secret      = google_secret_manager_secret.nomad_acl_token.name
+  secret_data = random_uuid.nomad_acl_token.result
+}
 
 resource "google_secret_manager_secret" "grafana_api_key" {
   secret_id = "${var.prefix}grafana-api-key"

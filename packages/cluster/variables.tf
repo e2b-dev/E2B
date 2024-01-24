@@ -128,13 +128,20 @@ variable "fc_env_pipeline_bucket_name" {
   description = "The name of the bucket to store the files for firecracker environment pipeline"
 }
 
+variable "consul_acl_token_secret" {
+  type = string
+}
 
-variable "labels" {
-  description = "The labels to attach to resources created by this module"
-  type        = map(string)
+variable "nomad_acl_token_secret" {
+  type = string
 }
 
 variable "fc_envs_disk_device_name" {
   type    = string
   default = "fc-envs"
+}
+
+variable "labels" {
+  description = "The labels to attach to resources created by this module"
+  type        = map(string)
 }
