@@ -124,6 +124,7 @@ export const buildCommand = new commander.Command('build')
         const filePaths = await getFiles(root, {
           respectGitignore: false,
           respectDockerignore: true,
+          overrideIgnoreFor: [dockerfile || defaultDockerfileName],
         })
 
         if (newName && config?.template_name && newName !== config?.template_name) {
