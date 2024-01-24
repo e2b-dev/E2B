@@ -251,7 +251,7 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 	defer childSpan.End()
 
 	ip := fmt.Sprintf("%s::%s:%s:instance:eth0:off:8.8.8.8", fcAddr, fcTapAddress, fcMaskLong)
-	kernelArgs := fmt.Sprintf("console=ttyS0 ip=%s reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on", ip)
+	kernelArgs := fmt.Sprintf("quiet loglevel=1 ip=%s reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on", ip)
 	kernelImagePath := s.env.KernelImagePath
 	bootSourceConfig := operations.PutGuestBootSourceParams{
 		Context: childCtx,
