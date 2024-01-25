@@ -16,7 +16,7 @@ from pydantic import BaseModel, PrivateAttr, ConfigDict
 from websockets.typing import Data
 
 from e2b.constants import TIMEOUT
-from e2b.sandbox.exception import RpcException, TimeoutException
+from e2b.sandbox.exception import RpcException, TimeoutException, SandboxException
 from e2b.sandbox.websocket_client import WebSocket
 from e2b.utils.future import DeferredFuture, run_async_func_in_loop
 from e2b.utils.threads import shutdown_executor
@@ -72,8 +72,7 @@ class SandboxRpc(BaseModel):
             self._receive_message(data)
             self._queue_out.task_done()
 
-    def connect(self, timeout: Optional[float] = None):
-        timeout = timeout or TIMEOUT
+    def connect(self, timeout: Optional[float] = TIMEOUT):
         started = Event()
         stopped = Event()
         self._process_cleanup.append(stopped.set)
@@ -82,9 +81,10 @@ class SandboxRpc(BaseModel):
             target=self.process_messages, daemon=True, name="e2b-process-messages"
         ).start()
 
-        # Keep the websocket running as non daemon thread, so it can close websocket properly
         executor = ThreadPoolExecutor(thread_name_prefix="e2b-websocket")
         loop = asyncio.new_event_loop()
+
+        # Keep the websocket running as non daemon thread, so it can close websocket properly
         websocket_task = executor.submit(
             run_async_func_in_loop,
             loop,
@@ -96,19 +96,24 @@ class SandboxRpc(BaseModel):
                 stopped=stopped,
             ).run(),
         )
+
         self._process_cleanup.append(websocket_task.cancel)
         self._process_cleanup.append(lambda: shutdown_executor(executor))
 
         logger.info("WebSocket waiting to start")
 
-        signaled = started.wait(timeout=timeout)
-        if not signaled:
-            logger.error("WebSocket failed to start")
+        try:
+            signaled = started.wait(timeout=timeout)
+            if not signaled:
+                logger.error("WebSocket failed to start")
+                raise TimeoutException("WebSocket failed to start")
+        except BaseException as e:
+            self.close()
+
             if loop.is_running():
                 loop.stop()
 
-            self.close()
-            raise TimeoutException("WebSocket failed to start")
+            raise SandboxException(f"WebSocket failed to start: {e}") from e
 
         logger.info("WebSocket started")
 

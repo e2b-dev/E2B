@@ -101,7 +101,8 @@ class WebSocket:
                 break
             except ConnectionClosed:
                 logger.warning("WebSocket disconnected, it will try to reconnect")
-                continue
+                if self.stopped.is_set():
+                    break
 
     async def close(self):
         for cancel in self._process_cleanup:
