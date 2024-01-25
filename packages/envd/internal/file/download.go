@@ -45,19 +45,32 @@ func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request)
 		}
 	}()
 
-	fileHeader := make([]byte, FileHeaderByteSize)
-
-	_, err = file.Read(fileHeader)
+	fileStat, err := file.Stat()
 	if err != nil {
-		logger.Error("Error reading file header:", err)
+		logger.Error("Error getting file stat:", err)
 		http.Error(w, fmt.Sprintf("Error reading file: %s", err.Error()), http.StatusInternalServerError)
 
 		return
 	}
 
-	fileContentType := http.DetectContentType(fileHeader)
+	var fileHeader []byte
 
-	fileStat, _ := file.Stat()
+	// Check if the file is empty
+	if fileStat.Size() == 0 {
+		logger.Debug("File is empty")
+	} else {
+		fileHeader = make([]byte, FileHeaderByteSize)
+
+		_, err = file.Read(fileHeader)
+		if err != nil {
+			logger.Error("Error reading file header:", err)
+			http.Error(w, fmt.Sprintf("Error reading file: %s", err.Error()), http.StatusInternalServerError)
+
+			return
+		}
+	}
+
+	fileContentType := http.DetectContentType(fileHeader)
 	fileSize := strconv.FormatInt(fileStat.Size(), 10)
 
 	w.Header().Set("Content-Disposition", "attachment; filename="+filepath.Base(filePath))
@@ -80,7 +93,5 @@ func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	logger.Info("File download complete",
-		"path", filePath,
-	)
+	logger.Info("File download completed, path: ", filePath)
 }

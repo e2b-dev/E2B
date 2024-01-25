@@ -5,27 +5,29 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/gin-contrib/cors"
+	limits "github.com/gin-contrib/size"
+	"github.com/gin-gonic/gin"
+	middleware "github.com/oapi-codegen/gin-middleware"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
 	tracingMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware/otel/tracing"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
-
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
-	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3filter"
-	"github.com/gin-contrib/cors"
-	limits "github.com/gin-contrib/size"
-	"github.com/gin-gonic/gin"
 )
 
 const (
-	serviceName        = "orchestration-api"
-	maxMultipartMemory = 1 << 27 // 128 MiB
-	maxUploadLimit     = 1 << 28 // 256 MiB
+	serviceName          = "orchestration-api"
+	maxMultipartMemory   = 1 << 27 // 128 MiB
+	maxUploadLimit       = 1 << 28 // 256 MiB
+	maxReadHeaderTimeout = 60 * time.Second
+	defaultPort          = 80
 )
 
 func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *http.Server {
@@ -38,7 +40,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	// pprof.Register(r, "debug/pprof")
 
 	r.Use(
-		// We use custom otelgin middleware because we want to log 4xx errors in the otel
+		// We use custom otel gin middleware because we want to log 4xx errors in the otel
 		customMiddleware.ExcludeRoutes(tracingMiddleware.Middleware(serviceName), "/health"),
 		// customMiddleware.IncludeRoutes(metricsMiddleware.Middleware(serviceName), "/instances"),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
@@ -79,13 +81,14 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
-	r.Use(middleware.OapiRequestValidatorWithOptions(swagger,
-		&middleware.Options{
-			Options: openapi3filter.Options{
-				AuthenticationFunc: AuthenticationFunc,
-			},
-		}),
+	r.Use(
 		limits.RequestSizeLimiter(maxUploadLimit),
+		middleware.OapiRequestValidatorWithOptions(swagger,
+			&middleware.Options{
+				Options: openapi3filter.Options{
+					AuthenticationFunc: AuthenticationFunc,
+				},
+			}),
 	)
 
 	// We now register our store above as the handler for the interface
@@ -94,8 +97,9 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	r.MaxMultipartMemory = maxMultipartMemory
 
 	s := &http.Server{
-		Handler: r,
-		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
+		Handler:           r,
+		Addr:              fmt.Sprintf("0.0.0.0:%d", port),
+		ReadHeaderTimeout: maxReadHeaderTimeout,
 	}
 
 	return s
@@ -104,7 +108,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 func main() {
 	fmt.Println("Initializing...")
 
-	port := flag.Int("port", 80, "Port for test HTTP server")
+	port := flag.Int("port", defaultPort, "Port for test HTTP server")
 	flag.Parse()
 
 	debug := flag.String("true", "false", "is debug")
