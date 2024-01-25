@@ -25,5 +25,5 @@ variable "firecracker_version" {
 variable "kernel_version" {
   type = string
   description = "Kernel version"
-  default = "5.10.186"
+  default = "6.1.68"
 }
