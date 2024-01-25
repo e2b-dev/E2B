@@ -272,6 +272,7 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 	telemetry.ReportEvent(childCtx, "set fc boot source config")
 
 	rootfs := "rootfs"
+	ioEngine := "Async"
 	isRootDevice := true
 	isReadOnly := false
 	pathOnHost := s.env.tmpRootfsPath()
@@ -283,6 +284,7 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 			PathOnHost:   &pathOnHost,
 			IsRootDevice: &isRootDevice,
 			IsReadOnly:   &isReadOnly,
+			IoEngine:     &ioEngine,
 		},
 	}
 
