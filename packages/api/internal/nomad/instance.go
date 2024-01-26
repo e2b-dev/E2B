@@ -32,7 +32,7 @@ const (
 	envIDMetaKey      = "ENV_ID"
 	instanceIDMetaKey = "INSTANCE_ID"
 	teamIDMetaKey     = "TEAM_ID"
-	metaKey           = "META"
+	metadataKey       = "METADATA"
 )
 
 var (
@@ -86,9 +86,9 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		instanceID := job.Meta[instanceIDMetaKey]
 		envID := job.Meta[envIDMetaKey]
 		teamID := job.Meta[teamIDMetaKey]
-		metadataRaw := job.Meta[metaKey]
-		metadata := make(map[string]string)
+		metadataRaw := job.Meta[metadataKey]
 
+		var metadata map[string]string
 		err = json.Unmarshal([]byte(metadataRaw), &metadata)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to unmarshal metadata for job '%s': %v\n", job.ID, err)
@@ -127,7 +127,8 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 func (n *NomadClient) CreateInstance(
 	t trace.Tracer,
 	ctx context.Context,
-	envID, teamID string,
+	envID,
+	teamID string,
 	metadata map[string]string,
 ) (*api.Instance, *api.APIError) {
 	childCtx, childSpan := t.Start(ctx, "create-instance",
@@ -181,7 +182,7 @@ func (n *NomadClient) CreateInstance(
 		TeamIDKey:        teamIDMetaKey,
 		EnvIDKey:         envIDMetaKey,
 		InstanceIDKey:    instanceIDMetaKey,
-		MetadataKey:      metaKey,
+		MetadataKey:      metadataKey,
 		SpanID:           spanID,
 		TeamID:           teamID,
 		TraceID:          traceID,

@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-	"github.com/gin-gonic/gin"
 )
 
 func (a *APIStore) GetInstances(c *gin.Context) {
@@ -13,13 +14,13 @@ func (a *APIStore) GetInstances(c *gin.Context) {
 
 	team := c.Value(constants.TeamContextKey).(models.Team)
 
-	telemetry.ReportEvent(ctx, "get observability instances")
+	telemetry.ReportEvent(ctx, "list running instances")
 
 	instanceInfo := a.instanceCache.GetInstances(&team.ID)
 
 	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "got instances observability", properties)
+	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "listed running instances", properties)
 
 	var instances []api.RunningInstance
 
@@ -34,6 +35,7 @@ func (a *APIStore) GetInstances(c *gin.Context) {
 			InstanceID: info.Instance.InstanceID,
 			StartedAt:  *info.StartTime,
 		}
+
 		if info.Metadata != nil {
 			meta := api.InstanceMetadata(info.Metadata)
 			instance.Metadata = &meta
