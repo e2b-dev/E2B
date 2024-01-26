@@ -120,7 +120,7 @@ func getConsulKV(ctx context.Context, consulToken string) (*consul.KV, error) {
 	consulClient, err := consul.NewClient(config)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to initialize Consul client: %w", err)
-		telemetry.ReportCriticalError(context.Background(), errMsg)
+		telemetry.ReportCriticalError(ctx, errMsg)
 
 		return nil, errMsg
 	}
