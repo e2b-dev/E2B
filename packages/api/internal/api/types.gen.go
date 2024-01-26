@@ -98,7 +98,7 @@ type RunningInstance struct {
 	Metadata   *InstanceMetadata `json:"metadata,omitempty"`
 
 	// StartedAt Time when the instance was started
-	StartedAt time.Time `json:"started_at"`
+	StartedAt time.Time `json:"startedAt"`
 }
 
 // BuildID defines model for buildID.

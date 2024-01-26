@@ -162,7 +162,7 @@ components:
         - envID
         - instanceID
         - clientID
-        - started_at
+        - startedAt
       properties:
         envID:
           type: string
@@ -173,7 +173,7 @@ components:
         clientID:
           type: string
           description: Identifier of the client
-        started_at:
+        startedAt:
           type: string
           format: date-time
           description: Time when the instance was started
