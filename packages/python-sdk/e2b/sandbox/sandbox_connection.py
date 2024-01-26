@@ -29,6 +29,7 @@ from e2b.sandbox.exception import (
     SandboxNotOpenException,
 )
 from e2b.sandbox.sandbox_rpc import Notification, SandboxRpc
+from e2b.utils.api_key import get_api_key
 from e2b.utils.future import DeferredFuture
 from e2b.utils.str import camel_case_to_snake_case
 
@@ -90,14 +91,7 @@ class SandboxConnection:
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
-        api_key = api_key or getenv("E2B_API_KEY")
-
-        if api_key is None:
-            raise AuthenticationException(
-                "API key is required, please visit https://e2b.dev/docs to get your API key. "
-                "You can either set the environment variable `E2B_API_KEY` "
-                'or you can pass it directly to the sandbox like Sandbox(api_key="e2b_...")',
-            )
+        api_key = get_api_key(api_key)
 
         self.cwd = cwd
         """
@@ -496,3 +490,14 @@ class SandboxConnection:
                 logger.info("No sandbox to stop refreshing. Sandbox was not created")
 
             self._close()
+
+    @staticmethod
+    def list(api_key: Optional[str] = None) -> List[models.RunningInstance]:
+        """
+        List all running sandboxes.
+
+        :param api_key: API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
+        """
+        api_key = get_api_key(api_key)
+        with E2BApiClient(api_key=api_key) as api_client:
+            return client.InstancesApi(api_client).instances_get()
