@@ -287,7 +287,7 @@ export interface components {
        * Format: date-time
        * @description Time when the instance was started
        */
-      started_at: string;
+      startedAt: string;
       metadata?: components["schemas"]["InstanceMetadata"];
     };
   };

@@ -38,9 +38,11 @@ class RunningInstance(BaseModel):
     client_id: StrictStr = Field(
         ..., alias="clientID", description="Identifier of the client"
     )
-    started_at: datetime = Field(..., description="Time when the instance was started")
+    started_at: datetime = Field(
+        ..., alias="startedAt", description="Time when the instance was started"
+    )
     metadata: Optional[Dict[str, StrictStr]] = None
-    __properties = ["envID", "instanceID", "clientID", "started_at", "metadata"]
+    __properties = ["envID", "instanceID", "clientID", "startedAt", "metadata"]
 
     class Config:
         """Pydantic configuration"""
@@ -88,7 +90,7 @@ class RunningInstance(BaseModel):
                 "env_id": obj.get("envID"),
                 "instance_id": obj.get("instanceID"),
                 "client_id": obj.get("clientID"),
-                "started_at": obj.get("started_at"),
+                "started_at": obj.get("startedAt"),
                 "metadata": obj.get("metadata"),
             }
         )

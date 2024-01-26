@@ -43,13 +43,15 @@ class RunningInstance(BaseModel):
     client_id: StrictStr = Field(
         description="Identifier of the client", alias="clientID"
     )
-    started_at: datetime = Field(description="Time when the instance was started")
+    started_at: datetime = Field(
+        description="Time when the instance was started", alias="startedAt"
+    )
     metadata: Optional[Dict[str, StrictStr]] = None
     __properties: ClassVar[List[str]] = [
         "envID",
         "instanceID",
         "clientID",
-        "started_at",
+        "startedAt",
         "metadata",
     ]
 
@@ -108,7 +110,7 @@ class RunningInstance(BaseModel):
                 "envID": obj.get("envID"),
                 "instanceID": obj.get("instanceID"),
                 "clientID": obj.get("clientID"),
-                "started_at": obj.get("started_at"),
+                "startedAt": obj.get("startedAt"),
                 "metadata": obj.get("metadata"),
             }
         )
