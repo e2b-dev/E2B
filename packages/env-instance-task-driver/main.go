@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 	_ "net/http/pprof"
 
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
 
@@ -33,5 +35,12 @@ func main() {
 		http.ListenAndServe(":6062", nil)
 	}()
 
-	configurePlugin()
+	envID := flag.String("env", "", "env id")
+	instanceID := flag.String("instance", "", "instance id")
+	if *envID != "" && *instanceID != "" {
+		// Start of mock build for testing
+		instance.MockInstance(*envID, *instanceID)
+	} else {
+		configurePlugin()
+	}
 }
