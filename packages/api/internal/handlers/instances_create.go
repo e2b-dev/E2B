@@ -86,7 +86,10 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
-	metadata := map[string]string(*body.Metadata)
+	var metadata map[string]string
+	if body.Metadata != nil {
+		metadata = *body.Metadata
+	}
 
 	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID, team.ID.String(), metadata)
 	if instanceErr != nil {
