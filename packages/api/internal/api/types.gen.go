@@ -4,6 +4,8 @@
 package api
 
 import (
+	"time"
+
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -73,10 +75,30 @@ type Instance struct {
 	InstanceID string `json:"instanceID"`
 }
 
+// InstanceMetadata defines model for InstanceMetadata.
+type InstanceMetadata map[string]string
+
 // NewInstance defines model for NewInstance.
 type NewInstance struct {
 	// EnvID Identifier of the required environment
+	EnvID    string            `json:"envID"`
+	Metadata *InstanceMetadata `json:"metadata,omitempty"`
+}
+
+// RunningInstance defines model for RunningInstance.
+type RunningInstance struct {
+	// ClientID Identifier of the client
+	ClientID string `json:"clientID"`
+
+	// EnvID Identifier of the environment from which is the instance created
 	EnvID string `json:"envID"`
+
+	// InstanceID Identifier of the instance
+	InstanceID string            `json:"instanceID"`
+	Metadata   *InstanceMetadata `json:"metadata,omitempty"`
+
+	// StartedAt Time when the instance was started
+	StartedAt time.Time `json:"startedAt"`
 }
 
 // BuildID defines model for buildID.
