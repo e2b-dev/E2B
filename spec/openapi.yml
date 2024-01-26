@@ -65,6 +65,11 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
+    InstanceMetadata:
+      additionalProperties:
+        type: string
+        description: Metadata of the instance
+
     NewInstance:
       required:
         - envID
@@ -72,6 +77,8 @@ components:
         envID:
           type: string
           description: Identifier of the required environment
+        metadata:
+          $ref: "#/components/schemas/InstanceMetadata"
 
     Environment:
       required:
@@ -93,6 +100,7 @@ components:
           description: Aliases of the environment
           items:
             type: string
+
     EnvironmentBuild:
       required:
         - envID
@@ -169,6 +177,8 @@ components:
           type: string
           format: date-time
           description: Time when the instance was started
+        metadata:
+          $ref: "#/components/schemas/InstanceMetadata"
 
 tags:
   - name: instances
@@ -185,6 +195,27 @@ paths:
           $ref: "#/components/responses/401"
 
   /instances:
+    get:
+      description: List all running instances
+      tags: [instances]
+      security:
+        - ApiKeyAuth: [ ]
+      responses:
+        200:
+          description: Successfully returned all running instances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/RunningInstance"
+        401:
+          $ref: "#/components/responses/401"
+        400:
+          $ref: "#/components/responses/400"
+        500:
+          $ref: "#/components/responses/500"
     post:
       description: Create an instance from the environment
       tags: [instances]
@@ -422,23 +453,3 @@ paths:
           $ref: "#/components/responses/401"
         404:
           $ref: "#/components/responses/404"
-
-  /observability/instances:
-    get:
-      description: List all running instances
-      tags: [observability]
-      security:
-        - ApiKeyAuth: []
-      responses:
-        200:
-          description: Successfully returned all running instances
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RunningInstance"
-        401:
-          $ref: "#/components/responses/401"
-        400:
-          $ref: "#/components/responses/400"
-        500:
-          $ref: "#/components/responses/500"

@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (a *APIStore) GetObservabilityInstances(c *gin.Context) {
+func (a *APIStore) GetInstances(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	team := c.Value(constants.TeamContextKey).(models.Team)
@@ -28,12 +28,18 @@ func (a *APIStore) GetObservabilityInstances(c *gin.Context) {
 			continue
 		}
 
-		instances = append(instances, api.RunningInstance{
+		instance := api.RunningInstance{
 			ClientID:   info.Instance.ClientID,
 			EnvID:      info.Instance.EnvID,
 			InstanceID: info.Instance.InstanceID,
 			StartedAt:  *info.StartTime,
-		})
+		}
+		if info.Metadata != nil {
+			meta := api.InstanceMetadata(info.Metadata)
+			instance.Metadata = &meta
+		}
+
+		instances = append(instances, instance)
 	}
 
 	c.JSON(200, instances)

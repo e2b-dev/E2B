@@ -75,10 +75,14 @@ type Instance struct {
 	InstanceID string `json:"instanceID"`
 }
 
+// InstanceMetadata defines model for InstanceMetadata.
+type InstanceMetadata map[string]string
+
 // NewInstance defines model for NewInstance.
 type NewInstance struct {
 	// EnvID Identifier of the required environment
-	EnvID string `json:"envID"`
+	EnvID    string            `json:"envID"`
+	Metadata *InstanceMetadata `json:"metadata,omitempty"`
 }
 
 // RunningInstance defines model for RunningInstance.
@@ -90,7 +94,8 @@ type RunningInstance struct {
 	EnvID string `json:"envID"`
 
 	// InstanceID Identifier of the instance
-	InstanceID string `json:"instanceID"`
+	InstanceID string            `json:"instanceID"`
+	Metadata   *InstanceMetadata `json:"metadata,omitempty"`
 
 	// StartedAt Time when the instance was started
 	StartedAt time.Time `json:"started_at"`

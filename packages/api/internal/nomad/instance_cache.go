@@ -26,6 +26,7 @@ const (
 type InstanceInfo struct {
 	Instance  *api.Instance
 	TeamID    *uuid.UUID
+	Metadata  map[string]string
 	StartTime *time.Time
 }
 
