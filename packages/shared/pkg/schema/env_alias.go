@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -14,8 +15,8 @@ type EnvAlias struct {
 
 func (EnvAlias) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").Unique().StorageKey("alias").Immutable(),
-		field.String("env_id").Nillable().Optional(),
+		field.String("id").Unique().StorageKey("alias").Immutable().SchemaType(map[string]string{dialect.Postgres: "text"}),
+		field.String("env_id").Nillable().Optional().SchemaType(map[string]string{dialect.Postgres: "text"}),
 		field.Bool("is_name").Default(true),
 	}
 }

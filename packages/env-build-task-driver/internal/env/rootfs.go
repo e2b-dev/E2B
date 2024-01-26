@@ -19,6 +19,7 @@ import (
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/hashicorp/nomad/api"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -33,12 +34,13 @@ const (
 	envdRootfsPath = "/usr/bin/envd"
 	toMBShift      = 20
 	// Max size of the rootfs file in MB.
-	maxRootfsSize = 5000 << toMBShift
+	maxRootfsSize = 15000 << toMBShift
 )
 
 type Rootfs struct {
 	client       *client.Client
 	legacyClient *docker.Client
+	nomadClient  *api.Client
 
 	env *Env
 }
@@ -62,13 +64,43 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	childCtx, childSpan := tracer.Start(ctx, "new-rootfs")
 	defer childSpan.End()
 
+	config := api.DefaultConfig()
+	config.SecretID = env.NomadToken
+	nomadClient, err := api.NewClient(config)
+
+	if err != nil {
+		errMsg := fmt.Errorf("error creating nomad client %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return nil, errMsg
+	}
+
 	rootfs := &Rootfs{
 		client:       docker,
 		legacyClient: legacyDocker,
+		nomadClient:  nomadClient,
 		env:          env,
 	}
 
-	err := rootfs.buildDockerImage(childCtx, tracer)
+	network, err := rootfs.client.NetworkCreate(childCtx, env.BuildID, types.NetworkCreate{})
+	if err != nil {
+		errMsg := fmt.Errorf("error creating network %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return nil, errMsg
+	}
+
+	defer func() {
+		err = rootfs.client.NetworkRemove(childCtx, network.ID)
+		if err != nil {
+			errMsg := fmt.Errorf("error removing network %w", err)
+			telemetry.ReportError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "removed network")
+		}
+	}()
+
+	err = rootfs.buildDockerImage(childCtx, tracer, network.ID)
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image %w", err)
 
@@ -77,7 +109,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		return nil, errMsg
 	}
 
-	err = rootfs.createRootfsFile(childCtx, tracer)
+	err = rootfs.createRootfsFile(childCtx, tracer, network.ID)
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs file %w", err)
 
@@ -89,7 +121,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	return rootfs, nil
 }
 
-func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) error {
+func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer, networkName string) error {
 	childCtx, childSpan := tracer.Start(ctx, "build-docker-image")
 	defer childSpan.End()
 
@@ -126,11 +158,16 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	}
 
 	err = r.legacyClient.BuildImage(docker.BuildImageOptions{
+		NetworkMode:  networkName,
+		Memory:       r.env.MemoryMB << toMBShift,
+		CPUPeriod:    100000,
+		CPUQuota:     r.env.VCpuCount * 100000,
 		Context:      buildCtx,
 		Dockerfile:   dockerfileName,
 		InputStream:  dockerContextFile,
 		OutputStream: writer,
 		Name:         r.dockerTag(),
+		Pull:         true,
 	})
 
 	if err != nil {
@@ -218,7 +255,7 @@ func (r *Rootfs) dockerTag() string {
 	return r.env.DockerRegistry + "/" + r.env.EnvID + ":" + r.env.BuildID
 }
 
-func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) error {
+func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, networkName string) error {
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
 
@@ -242,6 +279,17 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "executed provision script template")
 
+	if err != nil {
+		errMsg := fmt.Errorf("error generating network name %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "created network")
+
+	pidsLimit := int64(200)
+
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
 		Image:        r.dockerTag(),
 		Entrypoint:   []string{"/bin/bash", "-c"},
@@ -250,7 +298,19 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		Tty:          false,
 		AttachStdout: true,
 		AttachStderr: true,
-	}, nil, nil, &v1.Platform{}, "")
+	}, &container.HostConfig{
+		SecurityOpt: []string{"no-new-privileges"},
+		CapAdd:      []string{"CHOWN", "DAC_OVERRIDE", "FSETID", "FOWNER", "SETGID", "SETUID", "NET_RAW", "SYS_CHROOT"},
+		CapDrop:     []string{"ALL"},
+		NetworkMode: container.NetworkMode(networkName),
+		Resources: container.Resources{
+			Memory:     r.env.MemoryMB << toMBShift,
+			CPUPeriod:  100000,
+			CPUQuota:   r.env.VCpuCount * 100000,
+			MemorySwap: r.env.MemoryMB << toMBShift,
+			PidsLimit:  &pidsLimit,
+		},
+	}, nil, &v1.Platform{}, "")
 	if err != nil {
 		errMsg := fmt.Errorf("error creating container %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -518,6 +578,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	// We need to use another program to make the filesystem writable.
 	err = tar2ext4.ConvertTarToExt4(pr, rootfsFile, tar2ext4.MaximumDiskSize(maxRootfsSize))
 	if err != nil {
+		if strings.Contains(err.Error(), "disk exceeded maximum size") {
+			r.env.BuildLogsWriter.Write([]byte(fmt.Sprintf("Build failed - exceeded maximum size %v MB.\n", maxRootfsSize>>toMBShift)))
+		}
+
 		errMsg := fmt.Errorf("error converting tar to ext4 %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
@@ -559,6 +623,18 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	// In bytes
 	rootfsSize := rootfsStats.Size() + r.env.DiskSizeMB<<toMBShift
+
+	variable := &api.Variable{
+		Path:  "env-build/disk-size-mb/" + r.env.EnvID,
+		Items: api.VariableItems{r.env.BuildID: fmt.Sprintf("%d", rootfsSize>>toMBShift)},
+	}
+	_, _, err = r.nomadClient.Variables().Create(variable, nil)
+	if err != nil {
+		errMsg := fmt.Errorf("error creating nomad variable %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
 
 	err = rootfsFile.Truncate(rootfsSize)
 	if err != nil {

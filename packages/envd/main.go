@@ -194,9 +194,7 @@ func main() {
 		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(router),
 	}
 
-	logger.Debug("Starting server",
-		"port", serverPort,
-	)
+	logger.Debug("Starting server - port: ", serverPort)
 
 	if err := server.ListenAndServe(); err != nil {
 		logger.Panicw("Failed to start the server", "error", err)

@@ -10,13 +10,16 @@ import (
 
 	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
 	"cloud.google.com/go/storage"
+	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/db"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
@@ -26,14 +29,15 @@ import (
 
 type APIStore struct {
 	Ctx                        context.Context
+	analytics                  *analyticscollector.Analytics
 	posthog                    posthog.Client
 	tracer                     trace.Tracer
-	cache                      *nomad.InstanceCache
+	instanceCache              *nomad.InstanceCache
+	buildCache                 *nomad.BuildCache
 	nomad                      *nomad.NomadClient
 	supabase                   *db.DB
 	cloudStorage               *cloudStorage
 	artifactRegistry           *artifactregistry.Client
-	buildCache                 *utils.BuildCache
 	apiSecret                  string
 	googleServiceAccountBase64 string
 }
@@ -80,7 +84,7 @@ func NewAPIStore() *APIStore {
 
 	var initialInstances []*InstanceInfo
 
-	if os.Getenv("ENVIRONMENT") == "prod" {
+	if env.IsProduction() {
 		instances, instancesErr := nomadClient.GetInstances()
 		if instancesErr != nil {
 			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %v\n", instancesErr.Err)
@@ -104,10 +108,19 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
-	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances, instancesCounter)
+	analytics, err := analyticscollector.NewAnalytics()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing Analytics client\n: %v\n", err)
+	}
 
-	if os.Getenv("ENVIRONMENT") == "prod" {
-		go cache.KeepInSync(nomadClient)
+	fmt.Println("Initialized Analytics client")
+
+	instanceCache := nomad.NewInstanceCache(analytics.Client, getDeleteInstanceFunction(ctx, nomadClient, analytics, posthogClient), initialInstances, instancesCounter)
+
+	fmt.Println("Initialized instance cache")
+
+	if env.IsProduction() {
+		go instanceCache.KeepInSync(nomadClient)
 	} else {
 		fmt.Println("Skipping syncing intances with Nomad, running locally")
 	}
@@ -150,14 +163,15 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
-	buildCache := utils.NewBuildCache(buildCounter)
+	buildCache := nomad.NewBuildCache(buildCounter)
 
 	return &APIStore{
 		Ctx:                        ctx,
 		nomad:                      nomadClient,
 		supabase:                   supabaseClient,
-		cache:                      cache,
+		instanceCache:              instanceCache,
 		tracer:                     tracer,
+		analytics:                  analytics,
 		posthog:                    posthogClient,
 		cloudStorage:               cStorage,
 		artifactRegistry:           artifactRegistry,
@@ -171,7 +185,12 @@ func (a *APIStore) Close() {
 	a.nomad.Close()
 	a.supabase.Close()
 
-	err := a.posthog.Close()
+	err := a.analytics.Close()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error closing Analytics\n: %v\n", err)
+	}
+
+	err = a.posthog.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error closing Posthog client\n: %v\n", err)
 	}
@@ -234,7 +253,7 @@ func (a *APIStore) GetUserFromAccessToken(ctx context.Context, accessToken strin
 }
 
 func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
-	info, err := a.cache.GetInstance(instanceID)
+	info, err := a.instanceCache.GetInstance(instanceID)
 	if err != nil {
 		return &api.APIError{
 			Err:       err,
@@ -243,7 +262,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 		}
 	}
 
-	return deleteInstance(a.nomad, a.posthog, info, purge)
+	return deleteInstance(a.Ctx, a.nomad, a.analytics, a.posthog, info, purge)
 }
 
 func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (envID string, hasAccess bool, err error) {
@@ -252,18 +271,22 @@ func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, 
 
 type InstanceInfo = nomad.InstanceInfo
 
-func getDeleteInstanceFunction(nomad *nomad.NomadClient, posthogClient posthog.Client) func(info nomad.InstanceInfo, purge bool) *api.APIError {
+func getDeleteInstanceFunction(ctx context.Context, nomad *nomad.NomadClient, analytics *analyticscollector.Analytics, posthogClient posthog.Client) func(info nomad.InstanceInfo, purge bool) *api.APIError {
 	return func(info InstanceInfo, purge bool) *api.APIError {
-		return deleteInstance(nomad, posthogClient, info, purge)
+		return deleteInstance(ctx, nomad, analytics, posthogClient, info, purge)
 	}
 }
 
 func deleteInstance(
+	ctx context.Context,
 	nomad *nomad.NomadClient,
+	analytics *analyticscollector.Analytics,
 	posthogClient posthog.Client,
 	info InstanceInfo,
 	purge bool,
 ) *api.APIError {
+	duration := time.Since(*info.StartTime).Seconds()
+
 	delErr := nomad.DeleteInstance(info.Instance.InstanceID, purge)
 	if delErr != nil {
 		errMsg := fmt.Errorf("cannot delete instance '%s': %w", info.Instance.InstanceID, delErr.Err)
@@ -276,13 +299,24 @@ func deleteInstance(
 	}
 
 	if info.TeamID != nil && info.StartTime != nil {
+		_, err := analytics.Client.InstanceStopped(ctx, &analyticscollector.InstanceStoppedEvent{
+			TeamId:        info.TeamID.String(),
+			EnvironmentId: info.Instance.EnvID,
+			InstanceId:    info.Instance.InstanceID,
+			Timestamp:     timestamppb.Now(),
+			Duration:      float32(duration),
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error sending Analytics event: %v\n", err)
+		}
+
 		CreateAnalyticsTeamEvent(
 			posthogClient,
-			info.StartTime.String(),
+			info.TeamID.String(),
 			"closed_instance", posthog.NewProperties().
 				Set("instance_id", info.Instance.InstanceID).
 				Set("environment", info.Instance.EnvID).
-				Set("duration", time.Since(*info.StartTime).Seconds()),
+				Set("duration", duration),
 		)
 	}
 

@@ -23,6 +23,8 @@ function print_usage {
   echo -e "  --server\t\tIf set, run in server mode. Optional. At least one of --server or --client must be set."
   echo -e "  --client\t\tIf set, run in client mode. Optional. At least one of --server or --client must be set."
   echo -e "  --num-servers\t\tThe minimum number of servers to expect in the Nomad cluster. Required if --server is true."
+  echo -e "  --consul-token\t\tThe ACL token that Consul uses."
+  echo -e "  --nomad-token\t\tThe Nomad ACL token to use."
   echo -e "  --config-dir\t\tThe path to the Nomad config folder. Optional. Default is the absolute path of '../config', relative to this script."
   echo -e "  --data-dir\t\tThe path to the Nomad data folder. Optional. Default is the absolute path of '../data', relative to this script."
   echo -e "  --bin-dir\t\tThe path to the folder with Nomad binary. Optional. Default is the absolute path of the parent folder of this script."
@@ -147,6 +149,7 @@ function generate_nomad_config {
   local readonly num_servers="$3"
   local readonly config_dir="$4"
   local readonly user="$5"
+  local readonly consul_token="$6"
   local readonly config_path="$config_dir/$NOMAD_CONFIG_FILE"
 
   local instance_name=""
@@ -241,6 +244,8 @@ limits {
 
 consul {
   address = "127.0.0.1:8500"
+  allow_unauthenticated = false
+  token = "$consul_token"
 }
 EOF
   chown "$user:$user" "$config_path"
@@ -280,6 +285,22 @@ function start_nomad {
   supervisorctl update
 }
 
+function bootstrap {
+  log_info "Waiting for Nomad to start"
+  while test -z "$(curl -s http://127.0.0.1:4646/v1/agent/health)"
+  do
+    log_info "Nomad not yet started. Waiting for 1 second."
+    sleep 1
+  done
+  log_info "Nomad server started."
+
+  local readonly nomad_token="$1"
+  log_info "Bootstrapping Nomad"
+  echo "$nomad_token" > "/tmp/nomad.token"
+  nomad acl bootstrap /tmp/nomad.token
+  rm "/tmp/nomad.token"
+}
+
 # Based on: http://unix.stackexchange.com/a/7732/215969
 function get_owner_of_path {
   local readonly path="$1"
@@ -311,6 +332,16 @@ function run {
       ;;
     --num-servers)
       num_servers="$2"
+      shift
+      ;;
+    --nomad-token)
+      assert_not_empty "$key" "$2"
+      nomad_token="$2"
+      shift
+      ;;
+    --consul-token)
+      assert_not_empty "$key" "$2"
+      consul_token="$2"
       shift
       ;;
     --config-dir)
@@ -411,11 +442,15 @@ function run {
   if [[ "$skip_nomad_config" == "true" ]]; then
     log_info "The --skip-nomad-config flag is set, so will not generate a default Nomad config file."
   else
-    generate_nomad_config "$server" "$client" "$num_servers" "$config_dir" "$user"
+    generate_nomad_config "$server" "$client" "$num_servers" "$config_dir" "$user" "$consul_token"
   fi
 
   generate_supervisor_config "$SUPERVISOR_CONFIG_PATH" "$config_dir" "$data_dir" "$bin_dir" "$log_dir" "$user" "$use_sudo"
   start_nomad
+
+  if [[ "$server" == "true" ]]; then
+    bootstrap "$nomad_token"
+  fi
 }
 
 run "$@"

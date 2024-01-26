@@ -1,3 +1,5 @@
+# Terraform deployment
+
 Check if you can use config for terraform state management
 
 1. Create `.env` from `.env.template` and fill in the values
@@ -23,8 +25,8 @@ Check if you can use config for terraform state management
       - grafana (if you want traces / logging)
 13. Run `make apply`
 
+## TODOs
 
-## TODOs:
 - Missing trigger in db
 - If replacing server instance - you have to restart nomad service in client node
 - Improve variable descriptions and format in terraform

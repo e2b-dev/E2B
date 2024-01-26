@@ -85,7 +85,7 @@ jobs:
     secrets:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
-      gcp_project: ${{ secrets.E2B_GCP_PROJECT}}
+      gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID}}
 
   env-build-task-driver:
     name: Env build task driver
@@ -98,7 +98,7 @@ jobs:
     secrets:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
-      gcp_project: ${{ secrets.E2B_GCP_PROJECT }}
+      gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
 
   cluster-disk-image:
     name: Cluster disk image
@@ -123,7 +123,7 @@ jobs:
     secrets:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
-      gcp_project: ${{ secrets.E2B_GCP_PROJECT }}
+      gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
       version: ${{ needs.changes.outputs.get-version }}
 
   api:
@@ -137,7 +137,7 @@ jobs:
     secrets:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
-      gcp_project: ${{ secrets.E2B_GCP_PROJECT }}
+      gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
 
   terraform:
     name: Terraform
@@ -169,7 +169,7 @@ jobs:
       server_cluster_size: ${{ secrets.SERVER_CLUSTER_SIZE }}
       gcp_region: ${{ secrets.E2B_GCP_REGION }}
       gcp_zone: ${{ secrets.E2B_GCP_ZONE }}
-      gcp_project: ${{ secrets.E2B_GCP_PROJECT }}
+      gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
       domain_name: ${{ secrets.E2B_DOMAIN_NAME }}
       terraform_prefix: ${{ secrets.E2B_TERRAFORM_PREFIX }}
       terraform_state_bucket: ${{ secrets.E2B_TERRAFORM_STATE_BUCKET }}

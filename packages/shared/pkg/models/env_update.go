@@ -22,8 +22,9 @@ import (
 // EnvUpdate is the builder for updating Env entities.
 type EnvUpdate struct {
 	config
-	hooks    []Hook
-	mutation *EnvMutation
+	hooks     []Hook
+	mutation  *EnvMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the EnvUpdate builder.
@@ -124,14 +125,14 @@ func (eu *EnvUpdate) AddBuildCount(i int32) *EnvUpdate {
 }
 
 // SetSpawnCount sets the "spawn_count" field.
-func (eu *EnvUpdate) SetSpawnCount(i int32) *EnvUpdate {
+func (eu *EnvUpdate) SetSpawnCount(i int64) *EnvUpdate {
 	eu.mutation.ResetSpawnCount()
 	eu.mutation.SetSpawnCount(i)
 	return eu
 }
 
 // SetNillableSpawnCount sets the "spawn_count" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableSpawnCount(i *int32) *EnvUpdate {
+func (eu *EnvUpdate) SetNillableSpawnCount(i *int64) *EnvUpdate {
 	if i != nil {
 		eu.SetSpawnCount(*i)
 	}
@@ -139,7 +140,7 @@ func (eu *EnvUpdate) SetNillableSpawnCount(i *int32) *EnvUpdate {
 }
 
 // AddSpawnCount adds i to the "spawn_count" field.
-func (eu *EnvUpdate) AddSpawnCount(i int32) *EnvUpdate {
+func (eu *EnvUpdate) AddSpawnCount(i int64) *EnvUpdate {
 	eu.mutation.AddSpawnCount(i)
 	return eu
 }
@@ -161,6 +162,90 @@ func (eu *EnvUpdate) SetNillableLastSpawnedAt(t *time.Time) *EnvUpdate {
 // ClearLastSpawnedAt clears the value of the "last_spawned_at" field.
 func (eu *EnvUpdate) ClearLastSpawnedAt() *EnvUpdate {
 	eu.mutation.ClearLastSpawnedAt()
+	return eu
+}
+
+// SetVcpu sets the "vcpu" field.
+func (eu *EnvUpdate) SetVcpu(i int64) *EnvUpdate {
+	eu.mutation.ResetVcpu()
+	eu.mutation.SetVcpu(i)
+	return eu
+}
+
+// SetNillableVcpu sets the "vcpu" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableVcpu(i *int64) *EnvUpdate {
+	if i != nil {
+		eu.SetVcpu(*i)
+	}
+	return eu
+}
+
+// AddVcpu adds i to the "vcpu" field.
+func (eu *EnvUpdate) AddVcpu(i int64) *EnvUpdate {
+	eu.mutation.AddVcpu(i)
+	return eu
+}
+
+// SetRAMMB sets the "ram_mb" field.
+func (eu *EnvUpdate) SetRAMMB(i int64) *EnvUpdate {
+	eu.mutation.ResetRAMMB()
+	eu.mutation.SetRAMMB(i)
+	return eu
+}
+
+// SetNillableRAMMB sets the "ram_mb" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableRAMMB(i *int64) *EnvUpdate {
+	if i != nil {
+		eu.SetRAMMB(*i)
+	}
+	return eu
+}
+
+// AddRAMMB adds i to the "ram_mb" field.
+func (eu *EnvUpdate) AddRAMMB(i int64) *EnvUpdate {
+	eu.mutation.AddRAMMB(i)
+	return eu
+}
+
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (eu *EnvUpdate) SetFreeDiskSizeMB(i int64) *EnvUpdate {
+	eu.mutation.ResetFreeDiskSizeMB()
+	eu.mutation.SetFreeDiskSizeMB(i)
+	return eu
+}
+
+// SetNillableFreeDiskSizeMB sets the "free_disk_size_mb" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableFreeDiskSizeMB(i *int64) *EnvUpdate {
+	if i != nil {
+		eu.SetFreeDiskSizeMB(*i)
+	}
+	return eu
+}
+
+// AddFreeDiskSizeMB adds i to the "free_disk_size_mb" field.
+func (eu *EnvUpdate) AddFreeDiskSizeMB(i int64) *EnvUpdate {
+	eu.mutation.AddFreeDiskSizeMB(i)
+	return eu
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (eu *EnvUpdate) SetTotalDiskSizeMB(i int64) *EnvUpdate {
+	eu.mutation.ResetTotalDiskSizeMB()
+	eu.mutation.SetTotalDiskSizeMB(i)
+	return eu
+}
+
+// SetNillableTotalDiskSizeMB sets the "total_disk_size_mb" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableTotalDiskSizeMB(i *int64) *EnvUpdate {
+	if i != nil {
+		eu.SetTotalDiskSizeMB(*i)
+	}
+	return eu
+}
+
+// AddTotalDiskSizeMB adds i to the "total_disk_size_mb" field.
+func (eu *EnvUpdate) AddTotalDiskSizeMB(i int64) *EnvUpdate {
+	eu.mutation.AddTotalDiskSizeMB(i)
 	return eu
 }
 
@@ -251,6 +336,12 @@ func (eu *EnvUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (eu *EnvUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *EnvUpdate {
+	eu.modifiers = append(eu.modifiers, modifiers...)
+	return eu
+}
+
 func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := eu.check(); err != nil {
 		return n, err
@@ -282,16 +373,40 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.AddField(env.FieldBuildCount, field.TypeInt32, value)
 	}
 	if value, ok := eu.mutation.SpawnCount(); ok {
-		_spec.SetField(env.FieldSpawnCount, field.TypeInt32, value)
+		_spec.SetField(env.FieldSpawnCount, field.TypeInt64, value)
 	}
 	if value, ok := eu.mutation.AddedSpawnCount(); ok {
-		_spec.AddField(env.FieldSpawnCount, field.TypeInt32, value)
+		_spec.AddField(env.FieldSpawnCount, field.TypeInt64, value)
 	}
 	if value, ok := eu.mutation.LastSpawnedAt(); ok {
 		_spec.SetField(env.FieldLastSpawnedAt, field.TypeTime, value)
 	}
 	if eu.mutation.LastSpawnedAtCleared() {
 		_spec.ClearField(env.FieldLastSpawnedAt, field.TypeTime)
+	}
+	if value, ok := eu.mutation.Vcpu(); ok {
+		_spec.SetField(env.FieldVcpu, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.AddedVcpu(); ok {
+		_spec.AddField(env.FieldVcpu, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.RAMMB(); ok {
+		_spec.SetField(env.FieldRAMMB, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.AddedRAMMB(); ok {
+		_spec.AddField(env.FieldRAMMB, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.FreeDiskSizeMB(); ok {
+		_spec.SetField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.AddedFreeDiskSizeMB(); ok {
+		_spec.AddField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.TotalDiskSizeMB(); ok {
+		_spec.SetField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.AddedTotalDiskSizeMB(); ok {
+		_spec.AddField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
 	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -374,6 +489,7 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	_spec.Node.Schema = eu.schemaConfig.Env
 	ctx = internal.NewSchemaConfigContext(ctx, eu.schemaConfig)
+	_spec.AddModifiers(eu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, eu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{env.Label}
@@ -389,9 +505,10 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // EnvUpdateOne is the builder for updating a single Env entity.
 type EnvUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *EnvMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *EnvMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -486,14 +603,14 @@ func (euo *EnvUpdateOne) AddBuildCount(i int32) *EnvUpdateOne {
 }
 
 // SetSpawnCount sets the "spawn_count" field.
-func (euo *EnvUpdateOne) SetSpawnCount(i int32) *EnvUpdateOne {
+func (euo *EnvUpdateOne) SetSpawnCount(i int64) *EnvUpdateOne {
 	euo.mutation.ResetSpawnCount()
 	euo.mutation.SetSpawnCount(i)
 	return euo
 }
 
 // SetNillableSpawnCount sets the "spawn_count" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableSpawnCount(i *int32) *EnvUpdateOne {
+func (euo *EnvUpdateOne) SetNillableSpawnCount(i *int64) *EnvUpdateOne {
 	if i != nil {
 		euo.SetSpawnCount(*i)
 	}
@@ -501,7 +618,7 @@ func (euo *EnvUpdateOne) SetNillableSpawnCount(i *int32) *EnvUpdateOne {
 }
 
 // AddSpawnCount adds i to the "spawn_count" field.
-func (euo *EnvUpdateOne) AddSpawnCount(i int32) *EnvUpdateOne {
+func (euo *EnvUpdateOne) AddSpawnCount(i int64) *EnvUpdateOne {
 	euo.mutation.AddSpawnCount(i)
 	return euo
 }
@@ -523,6 +640,90 @@ func (euo *EnvUpdateOne) SetNillableLastSpawnedAt(t *time.Time) *EnvUpdateOne {
 // ClearLastSpawnedAt clears the value of the "last_spawned_at" field.
 func (euo *EnvUpdateOne) ClearLastSpawnedAt() *EnvUpdateOne {
 	euo.mutation.ClearLastSpawnedAt()
+	return euo
+}
+
+// SetVcpu sets the "vcpu" field.
+func (euo *EnvUpdateOne) SetVcpu(i int64) *EnvUpdateOne {
+	euo.mutation.ResetVcpu()
+	euo.mutation.SetVcpu(i)
+	return euo
+}
+
+// SetNillableVcpu sets the "vcpu" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableVcpu(i *int64) *EnvUpdateOne {
+	if i != nil {
+		euo.SetVcpu(*i)
+	}
+	return euo
+}
+
+// AddVcpu adds i to the "vcpu" field.
+func (euo *EnvUpdateOne) AddVcpu(i int64) *EnvUpdateOne {
+	euo.mutation.AddVcpu(i)
+	return euo
+}
+
+// SetRAMMB sets the "ram_mb" field.
+func (euo *EnvUpdateOne) SetRAMMB(i int64) *EnvUpdateOne {
+	euo.mutation.ResetRAMMB()
+	euo.mutation.SetRAMMB(i)
+	return euo
+}
+
+// SetNillableRAMMB sets the "ram_mb" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableRAMMB(i *int64) *EnvUpdateOne {
+	if i != nil {
+		euo.SetRAMMB(*i)
+	}
+	return euo
+}
+
+// AddRAMMB adds i to the "ram_mb" field.
+func (euo *EnvUpdateOne) AddRAMMB(i int64) *EnvUpdateOne {
+	euo.mutation.AddRAMMB(i)
+	return euo
+}
+
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (euo *EnvUpdateOne) SetFreeDiskSizeMB(i int64) *EnvUpdateOne {
+	euo.mutation.ResetFreeDiskSizeMB()
+	euo.mutation.SetFreeDiskSizeMB(i)
+	return euo
+}
+
+// SetNillableFreeDiskSizeMB sets the "free_disk_size_mb" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableFreeDiskSizeMB(i *int64) *EnvUpdateOne {
+	if i != nil {
+		euo.SetFreeDiskSizeMB(*i)
+	}
+	return euo
+}
+
+// AddFreeDiskSizeMB adds i to the "free_disk_size_mb" field.
+func (euo *EnvUpdateOne) AddFreeDiskSizeMB(i int64) *EnvUpdateOne {
+	euo.mutation.AddFreeDiskSizeMB(i)
+	return euo
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (euo *EnvUpdateOne) SetTotalDiskSizeMB(i int64) *EnvUpdateOne {
+	euo.mutation.ResetTotalDiskSizeMB()
+	euo.mutation.SetTotalDiskSizeMB(i)
+	return euo
+}
+
+// SetNillableTotalDiskSizeMB sets the "total_disk_size_mb" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableTotalDiskSizeMB(i *int64) *EnvUpdateOne {
+	if i != nil {
+		euo.SetTotalDiskSizeMB(*i)
+	}
+	return euo
+}
+
+// AddTotalDiskSizeMB adds i to the "total_disk_size_mb" field.
+func (euo *EnvUpdateOne) AddTotalDiskSizeMB(i int64) *EnvUpdateOne {
+	euo.mutation.AddTotalDiskSizeMB(i)
 	return euo
 }
 
@@ -626,6 +827,12 @@ func (euo *EnvUpdateOne) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (euo *EnvUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *EnvUpdateOne {
+	euo.modifiers = append(euo.modifiers, modifiers...)
+	return euo
+}
+
 func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	if err := euo.check(); err != nil {
 		return _node, err
@@ -674,16 +881,40 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 		_spec.AddField(env.FieldBuildCount, field.TypeInt32, value)
 	}
 	if value, ok := euo.mutation.SpawnCount(); ok {
-		_spec.SetField(env.FieldSpawnCount, field.TypeInt32, value)
+		_spec.SetField(env.FieldSpawnCount, field.TypeInt64, value)
 	}
 	if value, ok := euo.mutation.AddedSpawnCount(); ok {
-		_spec.AddField(env.FieldSpawnCount, field.TypeInt32, value)
+		_spec.AddField(env.FieldSpawnCount, field.TypeInt64, value)
 	}
 	if value, ok := euo.mutation.LastSpawnedAt(); ok {
 		_spec.SetField(env.FieldLastSpawnedAt, field.TypeTime, value)
 	}
 	if euo.mutation.LastSpawnedAtCleared() {
 		_spec.ClearField(env.FieldLastSpawnedAt, field.TypeTime)
+	}
+	if value, ok := euo.mutation.Vcpu(); ok {
+		_spec.SetField(env.FieldVcpu, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.AddedVcpu(); ok {
+		_spec.AddField(env.FieldVcpu, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.RAMMB(); ok {
+		_spec.SetField(env.FieldRAMMB, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.AddedRAMMB(); ok {
+		_spec.AddField(env.FieldRAMMB, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.FreeDiskSizeMB(); ok {
+		_spec.SetField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.AddedFreeDiskSizeMB(); ok {
+		_spec.AddField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.TotalDiskSizeMB(); ok {
+		_spec.SetField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.AddedTotalDiskSizeMB(); ok {
+		_spec.AddField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -766,6 +997,7 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	}
 	_spec.Node.Schema = euo.schemaConfig.Env
 	ctx = internal.NewSchemaConfigContext(ctx, euo.schemaConfig)
+	_spec.AddModifiers(euo.modifiers...)
 	_node = &Env{config: euo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

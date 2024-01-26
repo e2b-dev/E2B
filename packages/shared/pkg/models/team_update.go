@@ -24,8 +24,9 @@ import (
 // TeamUpdate is the builder for updating Team entities.
 type TeamUpdate struct {
 	config
-	hooks    []Hook
-	mutation *TeamMutation
+	hooks     []Hook
+	mutation  *TeamMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the TeamUpdate builder.
@@ -48,6 +49,20 @@ func (tu *TeamUpdate) SetNillableIsDefault(b *bool) *TeamUpdate {
 	return tu
 }
 
+// SetIsBanned sets the "is_banned" field.
+func (tu *TeamUpdate) SetIsBanned(b bool) *TeamUpdate {
+	tu.mutation.SetIsBanned(b)
+	return tu
+}
+
+// SetNillableIsBanned sets the "is_banned" field if the given value is not nil.
+func (tu *TeamUpdate) SetNillableIsBanned(b *bool) *TeamUpdate {
+	if b != nil {
+		tu.SetIsBanned(*b)
+	}
+	return tu
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (tu *TeamUpdate) SetIsBlocked(b bool) *TeamUpdate {
 	tu.mutation.SetIsBlocked(b)
@@ -59,6 +74,26 @@ func (tu *TeamUpdate) SetNillableIsBlocked(b *bool) *TeamUpdate {
 	if b != nil {
 		tu.SetIsBlocked(*b)
 	}
+	return tu
+}
+
+// SetBlockedReason sets the "blocked_reason" field.
+func (tu *TeamUpdate) SetBlockedReason(s string) *TeamUpdate {
+	tu.mutation.SetBlockedReason(s)
+	return tu
+}
+
+// SetNillableBlockedReason sets the "blocked_reason" field if the given value is not nil.
+func (tu *TeamUpdate) SetNillableBlockedReason(s *string) *TeamUpdate {
+	if s != nil {
+		tu.SetBlockedReason(*s)
+	}
+	return tu
+}
+
+// ClearBlockedReason clears the value of the "blocked_reason" field.
+func (tu *TeamUpdate) ClearBlockedReason() *TeamUpdate {
+	tu.mutation.ClearBlockedReason()
 	return tu
 }
 
@@ -86,6 +121,20 @@ func (tu *TeamUpdate) SetTier(s string) *TeamUpdate {
 func (tu *TeamUpdate) SetNillableTier(s *string) *TeamUpdate {
 	if s != nil {
 		tu.SetTier(*s)
+	}
+	return tu
+}
+
+// SetEmail sets the "email" field.
+func (tu *TeamUpdate) SetEmail(s string) *TeamUpdate {
+	tu.mutation.SetEmail(s)
+	return tu
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (tu *TeamUpdate) SetNillableEmail(s *string) *TeamUpdate {
+	if s != nil {
+		tu.SetEmail(*s)
 	}
 	return tu
 }
@@ -285,10 +334,21 @@ func (tu *TeamUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (tu *TeamUpdate) check() error {
+	if v, ok := tu.mutation.Email(); ok {
+		if err := team.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`models: validator failed for field "Team.email": %w`, err)}
+		}
+	}
 	if _, ok := tu.mutation.TeamTierID(); tu.mutation.TeamTierCleared() && !ok {
 		return errors.New(`models: clearing a required unique edge "Team.team_tier"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (tu *TeamUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *TeamUpdate {
+	tu.modifiers = append(tu.modifiers, modifiers...)
+	return tu
 }
 
 func (tu *TeamUpdate) sqlSave(ctx context.Context) (n int, err error) {
@@ -306,11 +366,23 @@ func (tu *TeamUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.IsDefault(); ok {
 		_spec.SetField(team.FieldIsDefault, field.TypeBool, value)
 	}
+	if value, ok := tu.mutation.IsBanned(); ok {
+		_spec.SetField(team.FieldIsBanned, field.TypeBool, value)
+	}
 	if value, ok := tu.mutation.IsBlocked(); ok {
 		_spec.SetField(team.FieldIsBlocked, field.TypeBool, value)
 	}
+	if value, ok := tu.mutation.BlockedReason(); ok {
+		_spec.SetField(team.FieldBlockedReason, field.TypeString, value)
+	}
+	if tu.mutation.BlockedReasonCleared() {
+		_spec.ClearField(team.FieldBlockedReason, field.TypeString)
+	}
 	if value, ok := tu.mutation.Name(); ok {
 		_spec.SetField(team.FieldName, field.TypeString, value)
+	}
+	if value, ok := tu.mutation.Email(); ok {
+		_spec.SetField(team.FieldEmail, field.TypeString, value)
 	}
 	if tu.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -537,6 +609,7 @@ func (tu *TeamUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	_spec.Node.Schema = tu.schemaConfig.Team
 	ctx = internal.NewSchemaConfigContext(ctx, tu.schemaConfig)
+	_spec.AddModifiers(tu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{team.Label}
@@ -552,9 +625,10 @@ func (tu *TeamUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // TeamUpdateOne is the builder for updating a single Team entity.
 type TeamUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *TeamMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *TeamMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetIsDefault sets the "is_default" field.
@@ -571,6 +645,20 @@ func (tuo *TeamUpdateOne) SetNillableIsDefault(b *bool) *TeamUpdateOne {
 	return tuo
 }
 
+// SetIsBanned sets the "is_banned" field.
+func (tuo *TeamUpdateOne) SetIsBanned(b bool) *TeamUpdateOne {
+	tuo.mutation.SetIsBanned(b)
+	return tuo
+}
+
+// SetNillableIsBanned sets the "is_banned" field if the given value is not nil.
+func (tuo *TeamUpdateOne) SetNillableIsBanned(b *bool) *TeamUpdateOne {
+	if b != nil {
+		tuo.SetIsBanned(*b)
+	}
+	return tuo
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (tuo *TeamUpdateOne) SetIsBlocked(b bool) *TeamUpdateOne {
 	tuo.mutation.SetIsBlocked(b)
@@ -582,6 +670,26 @@ func (tuo *TeamUpdateOne) SetNillableIsBlocked(b *bool) *TeamUpdateOne {
 	if b != nil {
 		tuo.SetIsBlocked(*b)
 	}
+	return tuo
+}
+
+// SetBlockedReason sets the "blocked_reason" field.
+func (tuo *TeamUpdateOne) SetBlockedReason(s string) *TeamUpdateOne {
+	tuo.mutation.SetBlockedReason(s)
+	return tuo
+}
+
+// SetNillableBlockedReason sets the "blocked_reason" field if the given value is not nil.
+func (tuo *TeamUpdateOne) SetNillableBlockedReason(s *string) *TeamUpdateOne {
+	if s != nil {
+		tuo.SetBlockedReason(*s)
+	}
+	return tuo
+}
+
+// ClearBlockedReason clears the value of the "blocked_reason" field.
+func (tuo *TeamUpdateOne) ClearBlockedReason() *TeamUpdateOne {
+	tuo.mutation.ClearBlockedReason()
 	return tuo
 }
 
@@ -609,6 +717,20 @@ func (tuo *TeamUpdateOne) SetTier(s string) *TeamUpdateOne {
 func (tuo *TeamUpdateOne) SetNillableTier(s *string) *TeamUpdateOne {
 	if s != nil {
 		tuo.SetTier(*s)
+	}
+	return tuo
+}
+
+// SetEmail sets the "email" field.
+func (tuo *TeamUpdateOne) SetEmail(s string) *TeamUpdateOne {
+	tuo.mutation.SetEmail(s)
+	return tuo
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (tuo *TeamUpdateOne) SetNillableEmail(s *string) *TeamUpdateOne {
+	if s != nil {
+		tuo.SetEmail(*s)
 	}
 	return tuo
 }
@@ -821,10 +943,21 @@ func (tuo *TeamUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (tuo *TeamUpdateOne) check() error {
+	if v, ok := tuo.mutation.Email(); ok {
+		if err := team.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`models: validator failed for field "Team.email": %w`, err)}
+		}
+	}
 	if _, ok := tuo.mutation.TeamTierID(); tuo.mutation.TeamTierCleared() && !ok {
 		return errors.New(`models: clearing a required unique edge "Team.team_tier"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (tuo *TeamUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *TeamUpdateOne {
+	tuo.modifiers = append(tuo.modifiers, modifiers...)
+	return tuo
 }
 
 func (tuo *TeamUpdateOne) sqlSave(ctx context.Context) (_node *Team, err error) {
@@ -859,11 +992,23 @@ func (tuo *TeamUpdateOne) sqlSave(ctx context.Context) (_node *Team, err error) 
 	if value, ok := tuo.mutation.IsDefault(); ok {
 		_spec.SetField(team.FieldIsDefault, field.TypeBool, value)
 	}
+	if value, ok := tuo.mutation.IsBanned(); ok {
+		_spec.SetField(team.FieldIsBanned, field.TypeBool, value)
+	}
 	if value, ok := tuo.mutation.IsBlocked(); ok {
 		_spec.SetField(team.FieldIsBlocked, field.TypeBool, value)
 	}
+	if value, ok := tuo.mutation.BlockedReason(); ok {
+		_spec.SetField(team.FieldBlockedReason, field.TypeString, value)
+	}
+	if tuo.mutation.BlockedReasonCleared() {
+		_spec.ClearField(team.FieldBlockedReason, field.TypeString)
+	}
 	if value, ok := tuo.mutation.Name(); ok {
 		_spec.SetField(team.FieldName, field.TypeString, value)
+	}
+	if value, ok := tuo.mutation.Email(); ok {
+		_spec.SetField(team.FieldEmail, field.TypeString, value)
 	}
 	if tuo.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1090,6 +1235,7 @@ func (tuo *TeamUpdateOne) sqlSave(ctx context.Context) (_node *Team, err error) 
 	}
 	_spec.Node.Schema = tuo.schemaConfig.Team
 	ctx = internal.NewSchemaConfigContext(ctx, tuo.schemaConfig)
+	_spec.AddModifiers(tuo.modifiers...)
 	_node = &Team{config: tuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

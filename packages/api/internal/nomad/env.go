@@ -5,6 +5,8 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -58,7 +60,7 @@ func (n *NomadClient) BuildEnvJob(
 	apiSecret,
 	googleServiceAccountBase64 string,
 	vmConfig BuildConfig,
-) error {
+) (int64, error) {
 	childCtx, childSpan := t.Start(ctx, "build-env-job")
 	defer childSpan.End()
 
@@ -95,10 +97,11 @@ func (n *NomadClient) BuildEnvJob(
 		VCpuCount                  int64
 		MemoryMB                   int64
 		DiskSizeMB                 int64
+		NomadToken                 string
 	}{
 		APISecret:                  apiSecret,
 		BuildID:                    buildID,
-		StartCmd:                   startCmd,
+		StartCmd:                   strings.ReplaceAll(startCmd, "\"", "\\\""),
 		SpanID:                     spanID,
 		DiskSizeMB:                 vmConfig.DiskSizeMB,
 		VCpuCount:                  vmConfig.VCpuCount,
@@ -112,16 +115,17 @@ func (n *NomadClient) BuildEnvJob(
 		GCPProjectID:               constants.ProjectID,
 		GCPRegion:                  constants.Region,
 		DockerRepositoryName:       constants.DockerRepositoryName,
+		NomadToken:                 nomadToken,
 	}
 
 	err := envBuildTemplate.Execute(&jobDef, jobVars)
 	if err != nil {
-		return fmt.Errorf("failed to `envBuildJobTemp.Execute()`: %w", err)
+		return 0, fmt.Errorf("failed to `envBuildJobTemp.Execute()`: %w", err)
 	}
 
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
-		return fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
+		return 0, fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
 	}
 
 	sub := n.newSubscriber(*job.ID, taskDeadState, defaultTaskName)
@@ -129,24 +133,24 @@ func (n *NomadClient) BuildEnvJob(
 
 	_, _, err = n.client.Jobs().Register(job, nil)
 	if err != nil {
-		return fmt.Errorf("failed to register '%s%s' job: %w", buildJobNameWithSlash, jobVars.EnvID, err)
+		return 0, fmt.Errorf("failed to register '%s%s' job: %w", buildJobNameWithSlash, jobVars.EnvID, err)
 	}
 
 	select {
 	case <-childCtx.Done():
 		cleanupErr := n.DeleteEnvBuild(*job.ID, false)
 		if cleanupErr != nil {
-			return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
+			return 0, fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
 		}
 
-		return fmt.Errorf("error waiting for env '%s' build", envID)
+		return 0, fmt.Errorf("error waiting for env '%s' build", envID)
 	case <-time.After(buildFinishTimeout):
 		cleanupErr := n.DeleteEnvBuild(*job.ID, false)
 		if cleanupErr != nil {
-			return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
+			return 0, fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
 		}
 
-		return fmt.Errorf("timeout waiting for env '%s' build", envID)
+		return 0, fmt.Errorf("timeout waiting for env '%s' build", envID)
 
 	case alloc := <-sub.wait:
 		var allocErr error
@@ -166,7 +170,7 @@ func (n *NomadClient) BuildEnvJob(
 
 			telemetry.ReportCriticalError(childCtx, allocErr)
 
-			return allocErr
+			return 0, allocErr
 		}
 
 		if alloc.TaskStates[defaultTaskName] == nil {
@@ -174,7 +178,7 @@ func (n *NomadClient) BuildEnvJob(
 
 			telemetry.ReportCriticalError(childCtx, allocErr)
 
-			return allocErr
+			return 0, allocErr
 		}
 
 		task := alloc.TaskStates[defaultTaskName]
@@ -196,10 +200,30 @@ func (n *NomadClient) BuildEnvJob(
 
 			telemetry.ReportCriticalError(childCtx, allocErr)
 
-			return allocErr
+			return 0, allocErr
 		}
 
-		return nil
+		variable, _, err := n.client.Variables().GetVariableItems("env-build/disk-size-mb/"+envID, nil)
+		if err != nil {
+			return 0, fmt.Errorf("cannot get disk size variable: %w", err)
+		}
+
+		if size, ok := variable[buildID]; ok {
+			sizeParsed, err := strconv.ParseInt(size, 10, 64)
+			if err != nil {
+				return 0, fmt.Errorf("cannot parse disk size variable: %w", err)
+			}
+
+			return sizeParsed, nil
+		}
+
+		_, err = n.client.Variables().Delete("env-build/disk-size-mb/"+envID, nil)
+		if err != nil {
+			telemetry.ReportError(childCtx, fmt.Errorf("cannot delete disk size variable: %w", err))
+			fmt.Printf("cannot delete disk size variable: %v", err)
+		}
+
+		return 0, fmt.Errorf("didn't find disk size for the build: %w", err)
 	}
 }
 

@@ -32,6 +32,14 @@ const (
 	FieldSpawnCount = "spawn_count"
 	// FieldLastSpawnedAt holds the string denoting the last_spawned_at field in the database.
 	FieldLastSpawnedAt = "last_spawned_at"
+	// FieldVcpu holds the string denoting the vcpu field in the database.
+	FieldVcpu = "vcpu"
+	// FieldRAMMB holds the string denoting the ram_mb field in the database.
+	FieldRAMMB = "ram_mb"
+	// FieldFreeDiskSizeMB holds the string denoting the free_disk_size_mb field in the database.
+	FieldFreeDiskSizeMB = "free_disk_size_mb"
+	// FieldTotalDiskSizeMB holds the string denoting the total_disk_size_mb field in the database.
+	FieldTotalDiskSizeMB = "total_disk_size_mb"
 	// EdgeTeam holds the string denoting the team edge name in mutations.
 	EdgeTeam = "team"
 	// EdgeEnvAliases holds the string denoting the env_aliases edge name in mutations.
@@ -68,6 +76,10 @@ var Columns = []string{
 	FieldBuildCount,
 	FieldSpawnCount,
 	FieldLastSpawnedAt,
+	FieldVcpu,
+	FieldRAMMB,
+	FieldFreeDiskSizeMB,
+	FieldTotalDiskSizeMB,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -88,7 +100,7 @@ var (
 	// DefaultBuildCount holds the default value on creation for the "build_count" field.
 	DefaultBuildCount int32
 	// DefaultSpawnCount holds the default value on creation for the "spawn_count" field.
-	DefaultSpawnCount int32
+	DefaultSpawnCount int64
 )
 
 // OrderOption defines the ordering options for the Env queries.
@@ -142,6 +154,26 @@ func BySpawnCount(opts ...sql.OrderTermOption) OrderOption {
 // ByLastSpawnedAt orders the results by the last_spawned_at field.
 func ByLastSpawnedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSpawnedAt, opts...).ToFunc()
+}
+
+// ByVcpu orders the results by the vcpu field.
+func ByVcpu(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVcpu, opts...).ToFunc()
+}
+
+// ByRAMMB orders the results by the ram_mb field.
+func ByRAMMB(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRAMMB, opts...).ToFunc()
+}
+
+// ByFreeDiskSizeMB orders the results by the free_disk_size_mb field.
+func ByFreeDiskSizeMB(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFreeDiskSizeMB, opts...).ToFunc()
+}
+
+// ByTotalDiskSizeMB orders the results by the total_disk_size_mb field.
+func ByTotalDiskSizeMB(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotalDiskSizeMB, opts...).ToFunc()
 }
 
 // ByTeamField orders the results by team field.

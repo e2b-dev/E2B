@@ -19,7 +19,5 @@ func parseBody[B any](ctx context.Context, c *gin.Context) (body B, err error) {
 		return body, bodyErr
 	}
 
-	telemetry.ReportEvent(ctx, "parsed request")
-
 	return body, nil
 }

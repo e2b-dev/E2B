@@ -23,12 +23,18 @@ type Team struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// IsDefault holds the value of the "is_default" field.
 	IsDefault bool `json:"is_default,omitempty"`
+	// IsBanned holds the value of the "is_banned" field.
+	IsBanned bool `json:"is_banned,omitempty"`
 	// IsBlocked holds the value of the "is_blocked" field.
 	IsBlocked bool `json:"is_blocked,omitempty"`
+	// BlockedReason holds the value of the "blocked_reason" field.
+	BlockedReason *string `json:"blocked_reason,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Tier holds the value of the "tier" field.
 	Tier string `json:"tier,omitempty"`
+	// Email holds the value of the "email" field.
+	Email string `json:"email,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TeamQuery when eager-loading is set.
 	Edges        TeamEdges `json:"edges"`
@@ -106,9 +112,9 @@ func (*Team) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case team.FieldIsDefault, team.FieldIsBlocked:
+		case team.FieldIsDefault, team.FieldIsBanned, team.FieldIsBlocked:
 			values[i] = new(sql.NullBool)
-		case team.FieldName, team.FieldTier:
+		case team.FieldBlockedReason, team.FieldName, team.FieldTier, team.FieldEmail:
 			values[i] = new(sql.NullString)
 		case team.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -147,11 +153,24 @@ func (t *Team) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.IsDefault = value.Bool
 			}
+		case team.FieldIsBanned:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_banned", values[i])
+			} else if value.Valid {
+				t.IsBanned = value.Bool
+			}
 		case team.FieldIsBlocked:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field is_blocked", values[i])
 			} else if value.Valid {
 				t.IsBlocked = value.Bool
+			}
+		case team.FieldBlockedReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field blocked_reason", values[i])
+			} else if value.Valid {
+				t.BlockedReason = new(string)
+				*t.BlockedReason = value.String
 			}
 		case team.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -164,6 +183,12 @@ func (t *Team) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field tier", values[i])
 			} else if value.Valid {
 				t.Tier = value.String
+			}
+		case team.FieldEmail:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field email", values[i])
+			} else if value.Valid {
+				t.Email = value.String
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
@@ -232,14 +257,25 @@ func (t *Team) String() string {
 	builder.WriteString("is_default=")
 	builder.WriteString(fmt.Sprintf("%v", t.IsDefault))
 	builder.WriteString(", ")
+	builder.WriteString("is_banned=")
+	builder.WriteString(fmt.Sprintf("%v", t.IsBanned))
+	builder.WriteString(", ")
 	builder.WriteString("is_blocked=")
 	builder.WriteString(fmt.Sprintf("%v", t.IsBlocked))
+	builder.WriteString(", ")
+	if v := t.BlockedReason; v != nil {
+		builder.WriteString("blocked_reason=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(t.Name)
 	builder.WriteString(", ")
 	builder.WriteString("tier=")
 	builder.WriteString(t.Tier)
+	builder.WriteString(", ")
+	builder.WriteString("email=")
+	builder.WriteString(t.Email)
 	builder.WriteByte(')')
 	return builder.String()
 }

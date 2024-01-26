@@ -1,20 +1,157 @@
 -- Add new schema named "auth"
 CREATE SCHEMA IF NOT EXISTS "auth";
+CREATE SCHEMA IF NOT EXISTS "extensions";
 -- Create "tiers" table
-CREATE TABLE "public"."tiers" ("id" character varying NOT NULL, "vcpu" bigint NOT NULL, "ram_mb" bigint NOT NULL, "disk_mb" bigint NOT NULL, "concurrent_instances" bigint NOT NULL, PRIMARY KEY ("id"));
+CREATE TABLE "public"."tiers"
+(
+    "id"                   text   NOT NULL,
+    "name"                 text   NOT NULL,
+    "vcpu"                 bigint NOT NULL default '2'::bigint,
+    "ram_mb"               bigint NOT NULL DEFAULT '512'::bigint,
+    "disk_mb"              bigint NOT NULL DEFAULT '512'::bigint,
+    "concurrent_instances" bigint NOT NULL,
+    PRIMARY KEY ("id"),
+    constraint tiers_concurrent_sessions_check check ((concurrent_instances > 0)),
+    constraint tiers_disk_mb_check check ((disk_mb > 0)),
+    constraint tiers_ram_mb_check check ((ram_mb > 0)),
+    constraint tiers_vcpu_check check ((vcpu > 0))
+);
+ALTER TABLE "public"."tiers" ENABLE ROW LEVEL SECURITY;
+
+
+COMMENT ON COLUMN public.tiers.concurrent_instances
+    IS 'The number of instances the team can run concurrently';
+
 -- Create "teams" table
-CREATE TABLE "public"."teams" ("id" uuid DEFAULT gen_random_uuid() , "created_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP, "is_default" boolean NOT NULL, "is_blocked" boolean NOT NULL, "name" character varying NOT NULL, "tier" character varying NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "teams_tiers_teams" FOREIGN KEY ("tier") REFERENCES "public"."tiers" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION);
+CREATE TABLE "public"."teams"
+(
+    "id"         uuid                 DEFAULT gen_random_uuid(),
+    "created_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "is_default" boolean     NOT NULL,
+    "is_blocked" boolean     NOT NULL DEFAULT FALSE,
+    "name"       text        NOT NULL,
+    "tier"       text        NOT NULL,
+    PRIMARY KEY ("id"),
+    CONSTRAINT "teams_tiers_teams" FOREIGN KEY ("tier") REFERENCES "public"."tiers" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+ALTER TABLE "public"."teams" ENABLE ROW LEVEL SECURITY;
+
 -- Create "envs" table
-CREATE TABLE "public"."envs" ("id" character varying NOT NULL, "created_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" timestamptz NOT NULL, "dockerfile" character varying NOT NULL, "public" boolean NOT NULL, "build_id" uuid NOT NULL, "build_count" integer NOT NULL DEFAULT 1, "spawn_count" integer NOT NULL DEFAULT 0, "last_spawned_at" timestamptz NULL, "team_id" uuid NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "envs_teams_envs" FOREIGN KEY ("team_id") REFERENCES "public"."teams" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION);
+CREATE TABLE "public"."envs"
+(
+    "id"              text        NOT NULL,
+    "created_at"      timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at"      timestamptz NOT NULL,
+    "dockerfile"      text        NOT NULL,
+    "public"          boolean     NOT NULL DEFAULT FALSE,
+    "build_id"        uuid        NOT NULL,
+    "build_count"     integer     NOT NULL DEFAULT 1,
+    "spawn_count"     bigint      NOT NULL DEFAULT '0'::bigint,
+    "last_spawned_at" timestamptz NULL,
+    "team_id"         uuid        NOT NULL,
+    PRIMARY KEY ("id"),
+    CONSTRAINT "envs_teams_envs" FOREIGN KEY ("team_id") REFERENCES "public"."teams" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+ALTER TABLE "public"."envs" ENABLE ROW LEVEL SECURITY;
+
+COMMENT ON COLUMN public.envs.last_spawned_at
+    IS 'Timestamp of the last time the env was spawned';
+COMMENT ON COLUMN public.envs.spawn_count
+    IS 'Number of times the env was spawned';
+
 -- Create "env_aliases" table
-CREATE TABLE "public"."env_aliases" ("alias" character varying NOT NULL, "is_name" boolean NOT NULL DEFAULT true, "env_id" character varying NULL, PRIMARY KEY ("alias"), CONSTRAINT "env_aliases_envs_env_aliases" FOREIGN KEY ("env_id") REFERENCES "public"."envs" ("id") ON UPDATE NO ACTION ON DELETE CASCADE);
+CREATE TABLE "public"."env_aliases"
+(
+    "alias"   text    NOT NULL,
+    "is_name" boolean NOT NULL DEFAULT true,
+    "env_id"  text    NULL,
+    PRIMARY KEY ("alias"),
+    CONSTRAINT "env_aliases_envs_env_aliases" FOREIGN KEY ("env_id") REFERENCES "public"."envs" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+ALTER TABLE "public"."env_aliases" ENABLE ROW LEVEL SECURITY;
+
 -- Create "team_api_keys" table
-CREATE TABLE "public"."team_api_keys" ("api_key" character varying NOT NULL, "created_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP, "team_id" uuid NOT NULL, PRIMARY KEY ("api_key"), CONSTRAINT "team_api_keys_teams_team_api_keys" FOREIGN KEY ("team_id") REFERENCES "public"."teams" ("id") ON UPDATE NO ACTION ON DELETE CASCADE);
+CREATE TABLE "public"."team_api_keys"
+(
+    "api_key"    character varying(44) NOT NULL,
+    "created_at" timestamptz           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "team_id"    uuid                  NOT NULL,
+    PRIMARY KEY ("api_key"),
+    CONSTRAINT "team_api_keys_teams_team_api_keys" FOREIGN KEY ("team_id") REFERENCES "public"."teams" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+ALTER TABLE "public"."team_api_keys" ENABLE ROW LEVEL SECURITY;
+
 -- Create "users" table
-CREATE TABLE IF NOT EXISTS "auth"."users" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "email" character varying NOT NULL, PRIMARY KEY ("id"));
+CREATE TABLE IF NOT EXISTS "auth"."users"
+(
+    "id"    uuid                   NOT NULL DEFAULT gen_random_uuid(),
+    "email" character varying(255) NOT NULL,
+    PRIMARY KEY ("id")
+);
+
 -- Create "access_tokens" table
-CREATE TABLE "public"."access_tokens" ("access_token" character varying NOT NULL, "user_id" uuid NOT NULL, "created_at" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY ("access_token"), CONSTRAINT "access_tokens_users_access_tokens" FOREIGN KEY ("user_id") REFERENCES "auth"."users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE );
+CREATE TABLE "public"."access_tokens"
+(
+    "access_token" text        NOT NULL,
+    "user_id"      uuid        NOT NULL,
+    "created_at"   timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("access_token"),
+    CONSTRAINT "access_tokens_users_access_tokens" FOREIGN KEY ("user_id") REFERENCES "auth"."users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+ALTER TABLE "public"."access_tokens" ENABLE ROW LEVEL SECURITY;
+
 -- Create "users_teams" table
-CREATE TABLE "public"."users_teams" ("id" bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY, "user_id" uuid NOT NULL, "team_id" uuid NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "users_teams_teams_teams" FOREIGN KEY ("team_id") REFERENCES "public"."teams" ("id") ON UPDATE NO ACTION ON DELETE CASCADE, CONSTRAINT "users_teams_users_users" FOREIGN KEY ("user_id") REFERENCES "auth"."users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE);
+CREATE TABLE "public"."users_teams"
+(
+    "id"      bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+    "user_id" uuid   NOT NULL,
+    "team_id" uuid   NOT NULL,
+    PRIMARY KEY ("id"),
+    CONSTRAINT "users_teams_teams_teams" FOREIGN KEY ("team_id") REFERENCES "public"."teams" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+    CONSTRAINT "users_teams_users_users" FOREIGN KEY ("user_id") REFERENCES "auth"."users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+ALTER TABLE "public"."users_teams" ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies
+DO $$
+BEGIN
+    BEGIN
+        CREATE POLICY "Allow selection for users that are in the team"
+            ON "public"."teams"
+            AS PERMISSIVE
+            FOR SELECT
+            TO public
+            USING ((auth.uid() IN ( SELECT users_teams.user_id
+                                    FROM users_teams
+                                    WHERE (users_teams.team_id = teams.id))));
+
+        CREATE POLICY "Enable select for users in relevant team"
+            ON "public"."users_teams"
+            AS PERMISSIVE
+            FOR SELECT
+            TO authenticated
+            USING ((auth.uid() = user_id));
+
+        CREATE POLICY "Enable select for users based on user_id"
+            ON public.access_tokens
+            AS PERMISSIVE
+            FOR SELECT
+            TO authenticated
+            USING ((auth.uid() = user_id));
+
+
+        CREATE POLICY "Allow selection for users that are in the team"
+            ON "public"."team_api_keys"
+            AS PERMISSIVE
+            FOR SELECT
+            TO public
+            USING ((auth.uid() IN ( SELECT users_teams.user_id
+                                    FROM users_teams
+                                    WHERE (users_teams.team_id = team_api_keys.team_id))));
+    EXCEPTION WHEN undefined_function
+        THEN RAISE NOTICE 'Policy were not created, probably because the function auth.uid() does not exist.';
+    END;
+END $$;
+
 -- Create index "usersteams_team_id_user_id" to table: "users_teams"
 CREATE UNIQUE INDEX "usersteams_team_id_user_id" ON "public"."users_teams" ("team_id", "user_id");

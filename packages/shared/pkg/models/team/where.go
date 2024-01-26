@@ -67,9 +67,19 @@ func IsDefault(v bool) predicate.Team {
 	return predicate.Team(sql.FieldEQ(FieldIsDefault, v))
 }
 
+// IsBanned applies equality check predicate on the "is_banned" field. It's identical to IsBannedEQ.
+func IsBanned(v bool) predicate.Team {
+	return predicate.Team(sql.FieldEQ(FieldIsBanned, v))
+}
+
 // IsBlocked applies equality check predicate on the "is_blocked" field. It's identical to IsBlockedEQ.
 func IsBlocked(v bool) predicate.Team {
 	return predicate.Team(sql.FieldEQ(FieldIsBlocked, v))
+}
+
+// BlockedReason applies equality check predicate on the "blocked_reason" field. It's identical to BlockedReasonEQ.
+func BlockedReason(v string) predicate.Team {
+	return predicate.Team(sql.FieldEQ(FieldBlockedReason, v))
 }
 
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
@@ -80,6 +90,11 @@ func Name(v string) predicate.Team {
 // Tier applies equality check predicate on the "tier" field. It's identical to TierEQ.
 func Tier(v string) predicate.Team {
 	return predicate.Team(sql.FieldEQ(FieldTier, v))
+}
+
+// Email applies equality check predicate on the "email" field. It's identical to EmailEQ.
+func Email(v string) predicate.Team {
+	return predicate.Team(sql.FieldEQ(FieldEmail, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -132,6 +147,16 @@ func IsDefaultNEQ(v bool) predicate.Team {
 	return predicate.Team(sql.FieldNEQ(FieldIsDefault, v))
 }
 
+// IsBannedEQ applies the EQ predicate on the "is_banned" field.
+func IsBannedEQ(v bool) predicate.Team {
+	return predicate.Team(sql.FieldEQ(FieldIsBanned, v))
+}
+
+// IsBannedNEQ applies the NEQ predicate on the "is_banned" field.
+func IsBannedNEQ(v bool) predicate.Team {
+	return predicate.Team(sql.FieldNEQ(FieldIsBanned, v))
+}
+
 // IsBlockedEQ applies the EQ predicate on the "is_blocked" field.
 func IsBlockedEQ(v bool) predicate.Team {
 	return predicate.Team(sql.FieldEQ(FieldIsBlocked, v))
@@ -140,6 +165,81 @@ func IsBlockedEQ(v bool) predicate.Team {
 // IsBlockedNEQ applies the NEQ predicate on the "is_blocked" field.
 func IsBlockedNEQ(v bool) predicate.Team {
 	return predicate.Team(sql.FieldNEQ(FieldIsBlocked, v))
+}
+
+// BlockedReasonEQ applies the EQ predicate on the "blocked_reason" field.
+func BlockedReasonEQ(v string) predicate.Team {
+	return predicate.Team(sql.FieldEQ(FieldBlockedReason, v))
+}
+
+// BlockedReasonNEQ applies the NEQ predicate on the "blocked_reason" field.
+func BlockedReasonNEQ(v string) predicate.Team {
+	return predicate.Team(sql.FieldNEQ(FieldBlockedReason, v))
+}
+
+// BlockedReasonIn applies the In predicate on the "blocked_reason" field.
+func BlockedReasonIn(vs ...string) predicate.Team {
+	return predicate.Team(sql.FieldIn(FieldBlockedReason, vs...))
+}
+
+// BlockedReasonNotIn applies the NotIn predicate on the "blocked_reason" field.
+func BlockedReasonNotIn(vs ...string) predicate.Team {
+	return predicate.Team(sql.FieldNotIn(FieldBlockedReason, vs...))
+}
+
+// BlockedReasonGT applies the GT predicate on the "blocked_reason" field.
+func BlockedReasonGT(v string) predicate.Team {
+	return predicate.Team(sql.FieldGT(FieldBlockedReason, v))
+}
+
+// BlockedReasonGTE applies the GTE predicate on the "blocked_reason" field.
+func BlockedReasonGTE(v string) predicate.Team {
+	return predicate.Team(sql.FieldGTE(FieldBlockedReason, v))
+}
+
+// BlockedReasonLT applies the LT predicate on the "blocked_reason" field.
+func BlockedReasonLT(v string) predicate.Team {
+	return predicate.Team(sql.FieldLT(FieldBlockedReason, v))
+}
+
+// BlockedReasonLTE applies the LTE predicate on the "blocked_reason" field.
+func BlockedReasonLTE(v string) predicate.Team {
+	return predicate.Team(sql.FieldLTE(FieldBlockedReason, v))
+}
+
+// BlockedReasonContains applies the Contains predicate on the "blocked_reason" field.
+func BlockedReasonContains(v string) predicate.Team {
+	return predicate.Team(sql.FieldContains(FieldBlockedReason, v))
+}
+
+// BlockedReasonHasPrefix applies the HasPrefix predicate on the "blocked_reason" field.
+func BlockedReasonHasPrefix(v string) predicate.Team {
+	return predicate.Team(sql.FieldHasPrefix(FieldBlockedReason, v))
+}
+
+// BlockedReasonHasSuffix applies the HasSuffix predicate on the "blocked_reason" field.
+func BlockedReasonHasSuffix(v string) predicate.Team {
+	return predicate.Team(sql.FieldHasSuffix(FieldBlockedReason, v))
+}
+
+// BlockedReasonIsNil applies the IsNil predicate on the "blocked_reason" field.
+func BlockedReasonIsNil() predicate.Team {
+	return predicate.Team(sql.FieldIsNull(FieldBlockedReason))
+}
+
+// BlockedReasonNotNil applies the NotNil predicate on the "blocked_reason" field.
+func BlockedReasonNotNil() predicate.Team {
+	return predicate.Team(sql.FieldNotNull(FieldBlockedReason))
+}
+
+// BlockedReasonEqualFold applies the EqualFold predicate on the "blocked_reason" field.
+func BlockedReasonEqualFold(v string) predicate.Team {
+	return predicate.Team(sql.FieldEqualFold(FieldBlockedReason, v))
+}
+
+// BlockedReasonContainsFold applies the ContainsFold predicate on the "blocked_reason" field.
+func BlockedReasonContainsFold(v string) predicate.Team {
+	return predicate.Team(sql.FieldContainsFold(FieldBlockedReason, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -270,6 +370,71 @@ func TierEqualFold(v string) predicate.Team {
 // TierContainsFold applies the ContainsFold predicate on the "tier" field.
 func TierContainsFold(v string) predicate.Team {
 	return predicate.Team(sql.FieldContainsFold(FieldTier, v))
+}
+
+// EmailEQ applies the EQ predicate on the "email" field.
+func EmailEQ(v string) predicate.Team {
+	return predicate.Team(sql.FieldEQ(FieldEmail, v))
+}
+
+// EmailNEQ applies the NEQ predicate on the "email" field.
+func EmailNEQ(v string) predicate.Team {
+	return predicate.Team(sql.FieldNEQ(FieldEmail, v))
+}
+
+// EmailIn applies the In predicate on the "email" field.
+func EmailIn(vs ...string) predicate.Team {
+	return predicate.Team(sql.FieldIn(FieldEmail, vs...))
+}
+
+// EmailNotIn applies the NotIn predicate on the "email" field.
+func EmailNotIn(vs ...string) predicate.Team {
+	return predicate.Team(sql.FieldNotIn(FieldEmail, vs...))
+}
+
+// EmailGT applies the GT predicate on the "email" field.
+func EmailGT(v string) predicate.Team {
+	return predicate.Team(sql.FieldGT(FieldEmail, v))
+}
+
+// EmailGTE applies the GTE predicate on the "email" field.
+func EmailGTE(v string) predicate.Team {
+	return predicate.Team(sql.FieldGTE(FieldEmail, v))
+}
+
+// EmailLT applies the LT predicate on the "email" field.
+func EmailLT(v string) predicate.Team {
+	return predicate.Team(sql.FieldLT(FieldEmail, v))
+}
+
+// EmailLTE applies the LTE predicate on the "email" field.
+func EmailLTE(v string) predicate.Team {
+	return predicate.Team(sql.FieldLTE(FieldEmail, v))
+}
+
+// EmailContains applies the Contains predicate on the "email" field.
+func EmailContains(v string) predicate.Team {
+	return predicate.Team(sql.FieldContains(FieldEmail, v))
+}
+
+// EmailHasPrefix applies the HasPrefix predicate on the "email" field.
+func EmailHasPrefix(v string) predicate.Team {
+	return predicate.Team(sql.FieldHasPrefix(FieldEmail, v))
+}
+
+// EmailHasSuffix applies the HasSuffix predicate on the "email" field.
+func EmailHasSuffix(v string) predicate.Team {
+	return predicate.Team(sql.FieldHasSuffix(FieldEmail, v))
+}
+
+// EmailEqualFold applies the EqualFold predicate on the "email" field.
+func EmailEqualFold(v string) predicate.Team {
+	return predicate.Team(sql.FieldEqualFold(FieldEmail, v))
+}
+
+// EmailContainsFold applies the ContainsFold predicate on the "email" field.
+func EmailContainsFold(v string) predicate.Team {
+	return predicate.Team(sql.FieldContainsFold(FieldEmail, v))
 }
 
 // HasUsers applies the HasEdge predicate on the "users" edge.

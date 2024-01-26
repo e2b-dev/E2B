@@ -6,12 +6,12 @@ output "google_service_account_key" {
   value = google_service_account_key.google_service_key.private_key
 }
 
-output "consul_acl_token_secret_name" {
-  value = google_secret_manager_secret.consul_acl_token.name
+output "consul_acl_token_secret" {
+  value = google_secret_manager_secret_version.consul_acl_token.secret_data
 }
 
-output "nomad_acl_token_secret_name" {
-  value = google_secret_manager_secret.nomad_acl_token.name
+output "nomad_acl_token_secret" {
+  value = google_secret_manager_secret_version.nomad_acl_token.secret_data
 }
 
 output "grafana_api_key_secret_name" {
@@ -40,6 +40,14 @@ output "grafana_traces_endpoint_secret_name" {
 
 output "grafana_metrics_endpoint_secret_name" {
   value = google_secret_manager_secret.grafana_metrics_endpoint.name
+}
+
+output "analytics_collector_host_secret_name" {
+  value = google_secret_manager_secret.analytics_collector_host.name
+}
+
+output "analytics_collector_api_token_secret_name" {
+  value = google_secret_manager_secret.analytics_collector_api_token.name
 }
 
 output "orchestration_repository_name" {

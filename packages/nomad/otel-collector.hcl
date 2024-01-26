@@ -31,7 +31,7 @@ variable "grafana_metrics_endpoint" {
 }
 
 variables {
-  otel_image = "otel/opentelemetry-collector-contrib:0.88.0"
+  otel_image = "otel/opentelemetry-collector-contrib:0.90.1"
 }
 
 job "otel-collector" {
@@ -86,6 +86,7 @@ job "otel-collector" {
 
         args = [
           "--config=local/config/otel-collector-config.yaml",
+          "--feature-gates=pkg.translator.prometheus.NormalizeName",
         ]
 
         ports = [
@@ -147,6 +148,8 @@ extensions:
   health_check:
 
 exporters:
+  debug:
+    verbosity: detailed
   otlp/grafana_cloud_traces:
     endpoint: "${var.grafana_traces_endpoint}"
     auth:

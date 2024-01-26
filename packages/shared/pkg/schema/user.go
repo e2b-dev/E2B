@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -16,7 +17,7 @@ type User struct{ ent.Schema }
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Immutable().Unique().Annotations(entsql.Default("gen_random_uuid()")),
-		field.String("email"),
+		field.String("email").MaxLen(255).SchemaType(map[string]string{dialect.Postgres: "character varying(255)"}),
 	}
 }
 

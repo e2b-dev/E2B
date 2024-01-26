@@ -1,11 +1,3 @@
-data "google_secret_manager_secret_version" "nomad_acl_token" {
-  secret = var.nomad_acl_token_secret_name
-}
-
-data "google_secret_manager_secret_version" "consul_acl_token" {
-  secret = var.consul_acl_token_secret_name
-}
-
 # API
 data "google_secret_manager_secret_version" "postgres_connection_string" {
   secret = var.postgres_connection_string_secret_name
@@ -44,30 +36,23 @@ data "google_secret_manager_secret_version" "grafana_metrics_username" {
   secret = var.grafana_metrics_username_secret_name
 }
 
-provider "nomad" {
-  address   = "https://nomad.${var.domain_name}"
-  secret_id = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
+data "google_secret_manager_secret_version" "analytics_collector_host" {
+  secret = var.analytics_collector_host_secret_name
 }
 
+data "google_secret_manager_secret_version" "analytics_collector_api_token" {
+  secret = var.analytics_collector_api_token_secret_name
+}
+
+provider "nomad" {
+  address      = "https://nomad.${var.domain_name}"
+  secret_id    = var.nomad_acl_token_secret
+  consul_token = var.consul_acl_token_secret
+}
 
 provider "consul" {
   address = "https://consul.${var.domain_name}"
-  token   = data.google_secret_manager_secret_version.consul_acl_token.secret_data
-}
-
-
-resource "consul_acl_policy" "agent" {
-  name  = "agent"
-  rules = <<-RULE
-    key_prefix "" {
-      policy = "deny"
-    }
-    RULE
-}
-
-resource "consul_acl_token_policy_attachment" "attachment" {
-  token_id = "00000000-0000-0000-0000-000000000002"
-  policy   = consul_acl_policy.agent.name
+  token   = var.consul_acl_token_secret
 }
 
 resource "nomad_job" "api" {
@@ -83,8 +68,8 @@ resource "nomad_job" "api" {
       posthog_api_key               = data.google_secret_manager_secret_version.posthog_api_key.secret_data
       logs_proxy_address            = var.logs_proxy_address
       nomad_address                 = "http://localhost:4646"
-      nomad_token                   = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
-      consul_token                  = data.google_secret_manager_secret_version.consul_acl_token.secret_data
+      nomad_token                   = var.nomad_acl_token_secret
+      consul_token                  = var.consul_acl_token_secret
       environment                   = var.environment
       docker_contexts_bucket_name   = var.docker_contexts_bucket_name
       api_secret                    = var.api_secret
@@ -92,6 +77,8 @@ resource "nomad_job" "api" {
       gcp_project_id                = var.gcp_project_id
       gcp_region                    = var.gcp_region
       gcp_docker_repository_name    = var.custom_envs_repository_name
+      analytics_collector_host      = data.google_secret_manager_secret_version.analytics_collector_host.secret_data
+      analytics_collector_api_token = data.google_secret_manager_secret_version.analytics_collector_api_token.secret_data
     }
   }
 }

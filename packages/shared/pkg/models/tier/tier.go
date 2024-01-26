@@ -12,6 +12,8 @@ const (
 	Label = "tier"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
 	// FieldVcpu holds the string denoting the vcpu field in the database.
 	FieldVcpu = "vcpu"
 	// FieldRAMMB holds the string denoting the ram_mb field in the database.
@@ -36,6 +38,7 @@ const (
 // Columns holds all SQL columns for tier fields.
 var Columns = []string{
 	FieldID,
+	FieldName,
 	FieldVcpu,
 	FieldRAMMB,
 	FieldDiskMB,
@@ -58,6 +61,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
 // ByVcpu orders the results by the vcpu field.

@@ -35,6 +35,9 @@ type ServerInterface interface {
 	// (GET /health)
 	GetHealth(c *gin.Context)
 
+	// (GET /instances)
+	GetInstances(c *gin.Context)
+
 	// (POST /instances)
 	PostInstances(c *gin.Context)
 
@@ -225,6 +228,21 @@ func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
 	siw.Handler.GetHealth(c)
 }
 
+// GetInstances operation middleware
+func (siw *ServerInterfaceWrapper) GetInstances(c *gin.Context) {
+
+	c.Set(ApiKeyAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetInstances(c)
+}
+
 // PostInstances operation middleware
 func (siw *ServerInterfaceWrapper) PostInstances(c *gin.Context) {
 
@@ -300,6 +318,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.GET(options.BaseURL+"/envs/:envID/builds/:buildID", wrapper.GetEnvsEnvIDBuildsBuildID)
 	router.POST(options.BaseURL+"/envs/:envID/builds/:buildID/logs", wrapper.PostEnvsEnvIDBuildsBuildIDLogs)
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
+	router.GET(options.BaseURL+"/instances", wrapper.GetInstances)
 	router.POST(options.BaseURL+"/instances", wrapper.PostInstances)
 	router.POST(options.BaseURL+"/instances/:instanceID/refreshes", wrapper.PostInstancesInstanceIDRefreshes)
 }

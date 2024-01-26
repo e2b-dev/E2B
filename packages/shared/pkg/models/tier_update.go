@@ -20,13 +20,28 @@ import (
 // TierUpdate is the builder for updating Tier entities.
 type TierUpdate struct {
 	config
-	hooks    []Hook
-	mutation *TierMutation
+	hooks     []Hook
+	mutation  *TierMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the TierUpdate builder.
 func (tu *TierUpdate) Where(ps ...predicate.Tier) *TierUpdate {
 	tu.mutation.Where(ps...)
+	return tu
+}
+
+// SetName sets the "name" field.
+func (tu *TierUpdate) SetName(s string) *TierUpdate {
+	tu.mutation.SetName(s)
+	return tu
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tu *TierUpdate) SetNillableName(s *string) *TierUpdate {
+	if s != nil {
+		tu.SetName(*s)
+	}
 	return tu
 }
 
@@ -182,6 +197,12 @@ func (tu *TierUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (tu *TierUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *TierUpdate {
+	tu.modifiers = append(tu.modifiers, modifiers...)
+	return tu
+}
+
 func (tu *TierUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := sqlgraph.NewUpdateSpec(tier.Table, tier.Columns, sqlgraph.NewFieldSpec(tier.FieldID, field.TypeString))
 	if ps := tu.mutation.predicates; len(ps) > 0 {
@@ -190,6 +211,9 @@ func (tu *TierUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := tu.mutation.Name(); ok {
+		_spec.SetField(tier.FieldName, field.TypeString, value)
 	}
 	if value, ok := tu.mutation.Vcpu(); ok {
 		_spec.SetField(tier.FieldVcpu, field.TypeInt64, value)
@@ -265,6 +289,7 @@ func (tu *TierUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	_spec.Node.Schema = tu.schemaConfig.Tier
 	ctx = internal.NewSchemaConfigContext(ctx, tu.schemaConfig)
+	_spec.AddModifiers(tu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tier.Label}
@@ -280,9 +305,24 @@ func (tu *TierUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // TierUpdateOne is the builder for updating a single Tier entity.
 type TierUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *TierMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *TierMutation
+	modifiers []func(*sql.UpdateBuilder)
+}
+
+// SetName sets the "name" field.
+func (tuo *TierUpdateOne) SetName(s string) *TierUpdateOne {
+	tuo.mutation.SetName(s)
+	return tuo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tuo *TierUpdateOne) SetNillableName(s *string) *TierUpdateOne {
+	if s != nil {
+		tuo.SetName(*s)
+	}
+	return tuo
 }
 
 // SetVcpu sets the "vcpu" field.
@@ -450,6 +490,12 @@ func (tuo *TierUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (tuo *TierUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *TierUpdateOne {
+	tuo.modifiers = append(tuo.modifiers, modifiers...)
+	return tuo
+}
+
 func (tuo *TierUpdateOne) sqlSave(ctx context.Context) (_node *Tier, err error) {
 	_spec := sqlgraph.NewUpdateSpec(tier.Table, tier.Columns, sqlgraph.NewFieldSpec(tier.FieldID, field.TypeString))
 	id, ok := tuo.mutation.ID()
@@ -475,6 +521,9 @@ func (tuo *TierUpdateOne) sqlSave(ctx context.Context) (_node *Tier, err error) 
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := tuo.mutation.Name(); ok {
+		_spec.SetField(tier.FieldName, field.TypeString, value)
 	}
 	if value, ok := tuo.mutation.Vcpu(); ok {
 		_spec.SetField(tier.FieldVcpu, field.TypeInt64, value)
@@ -550,6 +599,7 @@ func (tuo *TierUpdateOne) sqlSave(ctx context.Context) (_node *Tier, err error) 
 	}
 	_spec.Node.Schema = tuo.schemaConfig.Tier
 	ctx = internal.NewSchemaConfigContext(ctx, tuo.schemaConfig)
+	_spec.AddModifiers(tuo.modifiers...)
 	_node = &Tier{config: tuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

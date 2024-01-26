@@ -2,11 +2,11 @@ variable "gcp_zone" {
   type = string
 }
 
-variable "consul_acl_token_secret_name" {
+variable "consul_acl_token_secret" {
   type = string
 }
 
-variable "nomad_acl_token_secret_name" {
+variable "nomad_acl_token_secret" {
   type = string
 }
 
@@ -138,5 +138,13 @@ variable "grafana_traces_endpoint_secret_name" {
 }
 
 variable "grafana_metrics_endpoint_secret_name" {
+  type = string
+}
+
+variable "analytics_collector_host_secret_name" {
+  type = string
+}
+
+variable "analytics_collector_api_token_secret_name" {
   type = string
 }

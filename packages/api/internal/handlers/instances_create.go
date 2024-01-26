@@ -4,18 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
-
-	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (a *APIStore) PostInstances(
@@ -23,6 +20,8 @@ func (a *APIStore) PostInstances(
 ) {
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
+
+	c.Set("traceID", span.SpanContext().TraceID().String())
 
 	body, err := parseBody[api.PostInstancesJSONRequestBody](ctx, c)
 	if err != nil {
@@ -66,6 +65,9 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
+	c.Set("envID", envID)
+	c.Set("teamID", team.ID.String())
+
 	telemetry.SetAttributes(ctx,
 		attribute.String("env.team.id", team.ID.String()),
 		attribute.String("env.id", envID),
@@ -73,18 +75,23 @@ func (a *APIStore) PostInstances(
 
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
-	if instanceCount := a.cache.CountForTeam(team.ID); int64(instanceCount) >= maxInstancesPerTeam {
+	if instanceCount := a.instanceCache.CountForTeam(team.ID); int64(instanceCount) >= maxInstancesPerTeam {
 		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, team.Edges.TeamTier.ConcurrentInstances)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
-			"You have reached the maximum number of concurrent sandboxes (%d). If you need more, "+
+			"You have reached the maximum number of concurrent E2B sandboxes (%d). If you need more, "+
 				"please contact us at 'https://e2b.dev/docs/getting-help'", maxInstancesPerTeam))
 
 		return
 	}
 
-	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID, team.ID.String())
+	var metadata map[string]string
+	if body.Metadata != nil {
+		metadata = *body.Metadata
+	}
+
+	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID, team.ID.String(), metadata)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -93,6 +100,8 @@ func (a *APIStore) PostInstances(
 
 		return
 	}
+
+	c.Set("instanceID", instance.InstanceID)
 
 	telemetry.ReportEvent(ctx, "created environment instance")
 
@@ -104,9 +113,10 @@ func (a *APIStore) PostInstances(
 			Set("instance_id", instance.InstanceID),
 	)
 
-	if cacheErr := a.cache.Add(InstanceInfo{
+	if cacheErr := a.instanceCache.Add(InstanceInfo{
 		Instance: instance,
 		TeamID:   &team.ID,
+		Metadata: metadata,
 	}); cacheErr != nil {
 		errMsg := fmt.Errorf("error when adding instance to cache: %w", cacheErr)
 		telemetry.ReportError(ctx, errMsg)
@@ -144,50 +154,4 @@ func (a *APIStore) PostInstances(
 	)
 
 	c.JSON(http.StatusCreated, &instance)
-}
-
-func (a *APIStore) PostInstancesInstanceIDRefreshes(
-	c *gin.Context,
-	instanceID string,
-) {
-	ctx := c.Request.Context()
-
-	var duration time.Duration
-
-	body, err := parseBody[api.PostInstancesInstanceIDRefreshesJSONRequestBody](ctx, c)
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
-
-		errMsg := fmt.Errorf("error when parsing request: %w", err)
-		telemetry.ReportCriticalError(ctx, errMsg)
-
-		return
-	}
-
-	telemetry.SetAttributes(ctx,
-		attribute.String("instance.id", instanceID),
-	)
-
-	if body.Duration == nil {
-		duration = nomad.InstanceExpiration
-	} else {
-		duration = time.Duration(*body.Duration) * time.Second
-	}
-
-	if duration < nomad.InstanceExpiration {
-		duration = nomad.InstanceExpiration
-	}
-
-	err = a.cache.KeepAliveFor(instanceID, duration)
-	if err != nil {
-		errMsg := fmt.Errorf("error when refreshing instance: %w", err)
-		telemetry.ReportCriticalError(ctx, errMsg)
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error refreshing sandbox - sandbox '%s' was not found", instanceID))
-
-		return
-	}
-
-	telemetry.ReportEvent(ctx, "refreshed instance")
-
-	c.Status(http.StatusNoContent)
 }

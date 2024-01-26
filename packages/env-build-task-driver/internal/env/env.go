@@ -68,6 +68,9 @@ type Env struct {
 
 	// Google service account JSON secret base64 encoded.
 	GoogleServiceAccountBase64 string
+
+	// Nomad token
+	NomadToken string
 }
 
 //go:embed provision.sh

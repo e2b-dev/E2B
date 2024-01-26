@@ -49,9 +49,29 @@ func (tc *TeamCreate) SetIsDefault(b bool) *TeamCreate {
 	return tc
 }
 
+// SetIsBanned sets the "is_banned" field.
+func (tc *TeamCreate) SetIsBanned(b bool) *TeamCreate {
+	tc.mutation.SetIsBanned(b)
+	return tc
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (tc *TeamCreate) SetIsBlocked(b bool) *TeamCreate {
 	tc.mutation.SetIsBlocked(b)
+	return tc
+}
+
+// SetBlockedReason sets the "blocked_reason" field.
+func (tc *TeamCreate) SetBlockedReason(s string) *TeamCreate {
+	tc.mutation.SetBlockedReason(s)
+	return tc
+}
+
+// SetNillableBlockedReason sets the "blocked_reason" field if the given value is not nil.
+func (tc *TeamCreate) SetNillableBlockedReason(s *string) *TeamCreate {
+	if s != nil {
+		tc.SetBlockedReason(*s)
+	}
 	return tc
 }
 
@@ -64,6 +84,12 @@ func (tc *TeamCreate) SetName(s string) *TeamCreate {
 // SetTier sets the "tier" field.
 func (tc *TeamCreate) SetTier(s string) *TeamCreate {
 	tc.mutation.SetTier(s)
+	return tc
+}
+
+// SetEmail sets the "email" field.
+func (tc *TeamCreate) SetEmail(s string) *TeamCreate {
+	tc.mutation.SetEmail(s)
 	return tc
 }
 
@@ -193,6 +219,9 @@ func (tc *TeamCreate) check() error {
 	if _, ok := tc.mutation.IsDefault(); !ok {
 		return &ValidationError{Name: "is_default", err: errors.New(`models: missing required field "Team.is_default"`)}
 	}
+	if _, ok := tc.mutation.IsBanned(); !ok {
+		return &ValidationError{Name: "is_banned", err: errors.New(`models: missing required field "Team.is_banned"`)}
+	}
 	if _, ok := tc.mutation.IsBlocked(); !ok {
 		return &ValidationError{Name: "is_blocked", err: errors.New(`models: missing required field "Team.is_blocked"`)}
 	}
@@ -201,6 +230,14 @@ func (tc *TeamCreate) check() error {
 	}
 	if _, ok := tc.mutation.Tier(); !ok {
 		return &ValidationError{Name: "tier", err: errors.New(`models: missing required field "Team.tier"`)}
+	}
+	if _, ok := tc.mutation.Email(); !ok {
+		return &ValidationError{Name: "email", err: errors.New(`models: missing required field "Team.email"`)}
+	}
+	if v, ok := tc.mutation.Email(); ok {
+		if err := team.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`models: validator failed for field "Team.email": %w`, err)}
+		}
 	}
 	if _, ok := tc.mutation.TeamTierID(); !ok {
 		return &ValidationError{Name: "team_tier", err: errors.New(`models: missing required edge "Team.team_tier"`)}
@@ -250,13 +287,25 @@ func (tc *TeamCreate) createSpec() (*Team, *sqlgraph.CreateSpec) {
 		_spec.SetField(team.FieldIsDefault, field.TypeBool, value)
 		_node.IsDefault = value
 	}
+	if value, ok := tc.mutation.IsBanned(); ok {
+		_spec.SetField(team.FieldIsBanned, field.TypeBool, value)
+		_node.IsBanned = value
+	}
 	if value, ok := tc.mutation.IsBlocked(); ok {
 		_spec.SetField(team.FieldIsBlocked, field.TypeBool, value)
 		_node.IsBlocked = value
 	}
+	if value, ok := tc.mutation.BlockedReason(); ok {
+		_spec.SetField(team.FieldBlockedReason, field.TypeString, value)
+		_node.BlockedReason = &value
+	}
 	if value, ok := tc.mutation.Name(); ok {
 		_spec.SetField(team.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := tc.mutation.Email(); ok {
+		_spec.SetField(team.FieldEmail, field.TypeString, value)
+		_node.Email = value
 	}
 	if nodes := tc.mutation.UsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -408,6 +457,18 @@ func (u *TeamUpsert) UpdateIsDefault() *TeamUpsert {
 	return u
 }
 
+// SetIsBanned sets the "is_banned" field.
+func (u *TeamUpsert) SetIsBanned(v bool) *TeamUpsert {
+	u.Set(team.FieldIsBanned, v)
+	return u
+}
+
+// UpdateIsBanned sets the "is_banned" field to the value that was provided on create.
+func (u *TeamUpsert) UpdateIsBanned() *TeamUpsert {
+	u.SetExcluded(team.FieldIsBanned)
+	return u
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (u *TeamUpsert) SetIsBlocked(v bool) *TeamUpsert {
 	u.Set(team.FieldIsBlocked, v)
@@ -417,6 +478,24 @@ func (u *TeamUpsert) SetIsBlocked(v bool) *TeamUpsert {
 // UpdateIsBlocked sets the "is_blocked" field to the value that was provided on create.
 func (u *TeamUpsert) UpdateIsBlocked() *TeamUpsert {
 	u.SetExcluded(team.FieldIsBlocked)
+	return u
+}
+
+// SetBlockedReason sets the "blocked_reason" field.
+func (u *TeamUpsert) SetBlockedReason(v string) *TeamUpsert {
+	u.Set(team.FieldBlockedReason, v)
+	return u
+}
+
+// UpdateBlockedReason sets the "blocked_reason" field to the value that was provided on create.
+func (u *TeamUpsert) UpdateBlockedReason() *TeamUpsert {
+	u.SetExcluded(team.FieldBlockedReason)
+	return u
+}
+
+// ClearBlockedReason clears the value of the "blocked_reason" field.
+func (u *TeamUpsert) ClearBlockedReason() *TeamUpsert {
+	u.SetNull(team.FieldBlockedReason)
 	return u
 }
 
@@ -441,6 +520,18 @@ func (u *TeamUpsert) SetTier(v string) *TeamUpsert {
 // UpdateTier sets the "tier" field to the value that was provided on create.
 func (u *TeamUpsert) UpdateTier() *TeamUpsert {
 	u.SetExcluded(team.FieldTier)
+	return u
+}
+
+// SetEmail sets the "email" field.
+func (u *TeamUpsert) SetEmail(v string) *TeamUpsert {
+	u.Set(team.FieldEmail, v)
+	return u
+}
+
+// UpdateEmail sets the "email" field to the value that was provided on create.
+func (u *TeamUpsert) UpdateEmail() *TeamUpsert {
+	u.SetExcluded(team.FieldEmail)
 	return u
 }
 
@@ -509,6 +600,20 @@ func (u *TeamUpsertOne) UpdateIsDefault() *TeamUpsertOne {
 	})
 }
 
+// SetIsBanned sets the "is_banned" field.
+func (u *TeamUpsertOne) SetIsBanned(v bool) *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetIsBanned(v)
+	})
+}
+
+// UpdateIsBanned sets the "is_banned" field to the value that was provided on create.
+func (u *TeamUpsertOne) UpdateIsBanned() *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateIsBanned()
+	})
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (u *TeamUpsertOne) SetIsBlocked(v bool) *TeamUpsertOne {
 	return u.Update(func(s *TeamUpsert) {
@@ -520,6 +625,27 @@ func (u *TeamUpsertOne) SetIsBlocked(v bool) *TeamUpsertOne {
 func (u *TeamUpsertOne) UpdateIsBlocked() *TeamUpsertOne {
 	return u.Update(func(s *TeamUpsert) {
 		s.UpdateIsBlocked()
+	})
+}
+
+// SetBlockedReason sets the "blocked_reason" field.
+func (u *TeamUpsertOne) SetBlockedReason(v string) *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetBlockedReason(v)
+	})
+}
+
+// UpdateBlockedReason sets the "blocked_reason" field to the value that was provided on create.
+func (u *TeamUpsertOne) UpdateBlockedReason() *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateBlockedReason()
+	})
+}
+
+// ClearBlockedReason clears the value of the "blocked_reason" field.
+func (u *TeamUpsertOne) ClearBlockedReason() *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.ClearBlockedReason()
 	})
 }
 
@@ -548,6 +674,20 @@ func (u *TeamUpsertOne) SetTier(v string) *TeamUpsertOne {
 func (u *TeamUpsertOne) UpdateTier() *TeamUpsertOne {
 	return u.Update(func(s *TeamUpsert) {
 		s.UpdateTier()
+	})
+}
+
+// SetEmail sets the "email" field.
+func (u *TeamUpsertOne) SetEmail(v string) *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetEmail(v)
+	})
+}
+
+// UpdateEmail sets the "email" field to the value that was provided on create.
+func (u *TeamUpsertOne) UpdateEmail() *TeamUpsertOne {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateEmail()
 	})
 }
 
@@ -783,6 +923,20 @@ func (u *TeamUpsertBulk) UpdateIsDefault() *TeamUpsertBulk {
 	})
 }
 
+// SetIsBanned sets the "is_banned" field.
+func (u *TeamUpsertBulk) SetIsBanned(v bool) *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetIsBanned(v)
+	})
+}
+
+// UpdateIsBanned sets the "is_banned" field to the value that was provided on create.
+func (u *TeamUpsertBulk) UpdateIsBanned() *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateIsBanned()
+	})
+}
+
 // SetIsBlocked sets the "is_blocked" field.
 func (u *TeamUpsertBulk) SetIsBlocked(v bool) *TeamUpsertBulk {
 	return u.Update(func(s *TeamUpsert) {
@@ -794,6 +948,27 @@ func (u *TeamUpsertBulk) SetIsBlocked(v bool) *TeamUpsertBulk {
 func (u *TeamUpsertBulk) UpdateIsBlocked() *TeamUpsertBulk {
 	return u.Update(func(s *TeamUpsert) {
 		s.UpdateIsBlocked()
+	})
+}
+
+// SetBlockedReason sets the "blocked_reason" field.
+func (u *TeamUpsertBulk) SetBlockedReason(v string) *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetBlockedReason(v)
+	})
+}
+
+// UpdateBlockedReason sets the "blocked_reason" field to the value that was provided on create.
+func (u *TeamUpsertBulk) UpdateBlockedReason() *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateBlockedReason()
+	})
+}
+
+// ClearBlockedReason clears the value of the "blocked_reason" field.
+func (u *TeamUpsertBulk) ClearBlockedReason() *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.ClearBlockedReason()
 	})
 }
 
@@ -822,6 +997,20 @@ func (u *TeamUpsertBulk) SetTier(v string) *TeamUpsertBulk {
 func (u *TeamUpsertBulk) UpdateTier() *TeamUpsertBulk {
 	return u.Update(func(s *TeamUpsert) {
 		s.UpdateTier()
+	})
+}
+
+// SetEmail sets the "email" field.
+func (u *TeamUpsertBulk) SetEmail(v string) *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.SetEmail(v)
+	})
+}
+
+// UpdateEmail sets the "email" field to the value that was provided on create.
+func (u *TeamUpsertBulk) UpdateEmail() *TeamUpsertBulk {
+	return u.Update(func(s *TeamUpsert) {
+		s.UpdateEmail()
 	})
 }
 

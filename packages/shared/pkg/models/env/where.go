@@ -103,13 +103,33 @@ func BuildCount(v int32) predicate.Env {
 }
 
 // SpawnCount applies equality check predicate on the "spawn_count" field. It's identical to SpawnCountEQ.
-func SpawnCount(v int32) predicate.Env {
+func SpawnCount(v int64) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldSpawnCount, v))
 }
 
 // LastSpawnedAt applies equality check predicate on the "last_spawned_at" field. It's identical to LastSpawnedAtEQ.
 func LastSpawnedAt(v time.Time) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldLastSpawnedAt, v))
+}
+
+// Vcpu applies equality check predicate on the "vcpu" field. It's identical to VcpuEQ.
+func Vcpu(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldVcpu, v))
+}
+
+// RAMMB applies equality check predicate on the "ram_mb" field. It's identical to RAMMBEQ.
+func RAMMB(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldRAMMB, v))
+}
+
+// FreeDiskSizeMB applies equality check predicate on the "free_disk_size_mb" field. It's identical to FreeDiskSizeMBEQ.
+func FreeDiskSizeMB(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldFreeDiskSizeMB, v))
+}
+
+// TotalDiskSizeMB applies equality check predicate on the "total_disk_size_mb" field. It's identical to TotalDiskSizeMBEQ.
+func TotalDiskSizeMB(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldTotalDiskSizeMB, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -368,42 +388,42 @@ func BuildCountLTE(v int32) predicate.Env {
 }
 
 // SpawnCountEQ applies the EQ predicate on the "spawn_count" field.
-func SpawnCountEQ(v int32) predicate.Env {
+func SpawnCountEQ(v int64) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldSpawnCount, v))
 }
 
 // SpawnCountNEQ applies the NEQ predicate on the "spawn_count" field.
-func SpawnCountNEQ(v int32) predicate.Env {
+func SpawnCountNEQ(v int64) predicate.Env {
 	return predicate.Env(sql.FieldNEQ(FieldSpawnCount, v))
 }
 
 // SpawnCountIn applies the In predicate on the "spawn_count" field.
-func SpawnCountIn(vs ...int32) predicate.Env {
+func SpawnCountIn(vs ...int64) predicate.Env {
 	return predicate.Env(sql.FieldIn(FieldSpawnCount, vs...))
 }
 
 // SpawnCountNotIn applies the NotIn predicate on the "spawn_count" field.
-func SpawnCountNotIn(vs ...int32) predicate.Env {
+func SpawnCountNotIn(vs ...int64) predicate.Env {
 	return predicate.Env(sql.FieldNotIn(FieldSpawnCount, vs...))
 }
 
 // SpawnCountGT applies the GT predicate on the "spawn_count" field.
-func SpawnCountGT(v int32) predicate.Env {
+func SpawnCountGT(v int64) predicate.Env {
 	return predicate.Env(sql.FieldGT(FieldSpawnCount, v))
 }
 
 // SpawnCountGTE applies the GTE predicate on the "spawn_count" field.
-func SpawnCountGTE(v int32) predicate.Env {
+func SpawnCountGTE(v int64) predicate.Env {
 	return predicate.Env(sql.FieldGTE(FieldSpawnCount, v))
 }
 
 // SpawnCountLT applies the LT predicate on the "spawn_count" field.
-func SpawnCountLT(v int32) predicate.Env {
+func SpawnCountLT(v int64) predicate.Env {
 	return predicate.Env(sql.FieldLT(FieldSpawnCount, v))
 }
 
 // SpawnCountLTE applies the LTE predicate on the "spawn_count" field.
-func SpawnCountLTE(v int32) predicate.Env {
+func SpawnCountLTE(v int64) predicate.Env {
 	return predicate.Env(sql.FieldLTE(FieldSpawnCount, v))
 }
 
@@ -455,6 +475,166 @@ func LastSpawnedAtIsNil() predicate.Env {
 // LastSpawnedAtNotNil applies the NotNil predicate on the "last_spawned_at" field.
 func LastSpawnedAtNotNil() predicate.Env {
 	return predicate.Env(sql.FieldNotNull(FieldLastSpawnedAt))
+}
+
+// VcpuEQ applies the EQ predicate on the "vcpu" field.
+func VcpuEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldVcpu, v))
+}
+
+// VcpuNEQ applies the NEQ predicate on the "vcpu" field.
+func VcpuNEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldVcpu, v))
+}
+
+// VcpuIn applies the In predicate on the "vcpu" field.
+func VcpuIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldVcpu, vs...))
+}
+
+// VcpuNotIn applies the NotIn predicate on the "vcpu" field.
+func VcpuNotIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldVcpu, vs...))
+}
+
+// VcpuGT applies the GT predicate on the "vcpu" field.
+func VcpuGT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldVcpu, v))
+}
+
+// VcpuGTE applies the GTE predicate on the "vcpu" field.
+func VcpuGTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldVcpu, v))
+}
+
+// VcpuLT applies the LT predicate on the "vcpu" field.
+func VcpuLT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldVcpu, v))
+}
+
+// VcpuLTE applies the LTE predicate on the "vcpu" field.
+func VcpuLTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldVcpu, v))
+}
+
+// RAMMBEQ applies the EQ predicate on the "ram_mb" field.
+func RAMMBEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldRAMMB, v))
+}
+
+// RAMMBNEQ applies the NEQ predicate on the "ram_mb" field.
+func RAMMBNEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldRAMMB, v))
+}
+
+// RAMMBIn applies the In predicate on the "ram_mb" field.
+func RAMMBIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldRAMMB, vs...))
+}
+
+// RAMMBNotIn applies the NotIn predicate on the "ram_mb" field.
+func RAMMBNotIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldRAMMB, vs...))
+}
+
+// RAMMBGT applies the GT predicate on the "ram_mb" field.
+func RAMMBGT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldRAMMB, v))
+}
+
+// RAMMBGTE applies the GTE predicate on the "ram_mb" field.
+func RAMMBGTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldRAMMB, v))
+}
+
+// RAMMBLT applies the LT predicate on the "ram_mb" field.
+func RAMMBLT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldRAMMB, v))
+}
+
+// RAMMBLTE applies the LTE predicate on the "ram_mb" field.
+func RAMMBLTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldRAMMB, v))
+}
+
+// FreeDiskSizeMBEQ applies the EQ predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldFreeDiskSizeMB, v))
+}
+
+// FreeDiskSizeMBNEQ applies the NEQ predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBNEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldFreeDiskSizeMB, v))
+}
+
+// FreeDiskSizeMBIn applies the In predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldFreeDiskSizeMB, vs...))
+}
+
+// FreeDiskSizeMBNotIn applies the NotIn predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBNotIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldFreeDiskSizeMB, vs...))
+}
+
+// FreeDiskSizeMBGT applies the GT predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBGT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldFreeDiskSizeMB, v))
+}
+
+// FreeDiskSizeMBGTE applies the GTE predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBGTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldFreeDiskSizeMB, v))
+}
+
+// FreeDiskSizeMBLT applies the LT predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBLT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldFreeDiskSizeMB, v))
+}
+
+// FreeDiskSizeMBLTE applies the LTE predicate on the "free_disk_size_mb" field.
+func FreeDiskSizeMBLTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldFreeDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBEQ applies the EQ predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldTotalDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBNEQ applies the NEQ predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBNEQ(v int64) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldTotalDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBIn applies the In predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldTotalDiskSizeMB, vs...))
+}
+
+// TotalDiskSizeMBNotIn applies the NotIn predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBNotIn(vs ...int64) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldTotalDiskSizeMB, vs...))
+}
+
+// TotalDiskSizeMBGT applies the GT predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBGT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldTotalDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBGTE applies the GTE predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBGTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldTotalDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBLT applies the LT predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBLT(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldTotalDiskSizeMB, v))
+}
+
+// TotalDiskSizeMBLTE applies the LTE predicate on the "total_disk_size_mb" field.
+func TotalDiskSizeMBLTE(v int64) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldTotalDiskSizeMB, v))
 }
 
 // HasTeam applies the HasEdge predicate on the "team" edge.

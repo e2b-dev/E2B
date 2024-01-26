@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -31,6 +32,7 @@ const (
 	envIDMetaKey      = "ENV_ID"
 	instanceIDMetaKey = "INSTANCE_ID"
 	teamIDMetaKey     = "TEAM_ID"
+	metadataKey       = "METADATA"
 )
 
 var (
@@ -61,7 +63,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 	}
 
 	allocations, _, err := n.client.Allocations().List(&nomadAPI.QueryOptions{
-		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", instanceJobNameWithSlash, defaultTaskName, taskRunningState),
+		Filter: fmt.Sprintf("JobID contains \"%s\"", instanceJobNameWithSlash),
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get allocations from Nomad %w", err)
@@ -84,6 +86,13 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		instanceID := job.Meta[instanceIDMetaKey]
 		envID := job.Meta[envIDMetaKey]
 		teamID := job.Meta[teamIDMetaKey]
+		metadataRaw := job.Meta[metadataKey]
+
+		var metadata map[string]string
+		err = json.Unmarshal([]byte(metadataRaw), &metadata)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to unmarshal metadata for job '%s': %v\n", job.ID, err)
+		}
 
 		var teamUUID *uuid.UUID
 
@@ -107,7 +116,8 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 				EnvID:      envID,
 				ClientID:   clientID,
 			},
-			TeamID: teamUUID,
+			TeamID:   teamUUID,
+			Metadata: metadata,
 		})
 	}
 
@@ -119,6 +129,7 @@ func (n *NomadClient) CreateInstance(
 	ctx context.Context,
 	envID,
 	teamID string,
+	metadata map[string]string,
 ) (*api.Instance, *api.APIError) {
 	childCtx, childSpan := t.Start(ctx, "create-instance",
 		trace.WithAttributes(
@@ -131,6 +142,17 @@ func (n *NomadClient) CreateInstance(
 
 	traceID := childSpan.SpanContext().TraceID().String()
 	spanID := childSpan.SpanContext().SpanID().String()
+
+	metadataSerialized, err := json.Marshal(metadata)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to marshal metadata: %w", err)
+
+		return nil, &api.APIError{
+			Err:       errMsg,
+			ClientMsg: "Cannot create a environment instance right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
 
 	telemetry.SetAttributes(
 		childCtx,
@@ -154,10 +176,13 @@ func (n *NomadClient) CreateInstance(
 		EnvIDKey         string
 		InstanceIDKey    string
 		TeamIDKey        string
+		MetadataKey      string
+		Metadata         string
 	}{
 		TeamIDKey:        teamIDMetaKey,
 		EnvIDKey:         envIDMetaKey,
 		InstanceIDKey:    instanceIDMetaKey,
+		MetadataKey:      metadataKey,
 		SpanID:           spanID,
 		TeamID:           teamID,
 		TraceID:          traceID,
@@ -168,9 +193,10 @@ func (n *NomadClient) CreateInstance(
 		TaskName:         defaultTaskName,
 		JobName:          instanceJobName,
 		EnvsDisk:         envsDisk,
+		Metadata:         strings.ReplaceAll(string(metadataSerialized), "\"", "\\\""),
 	}
 
-	err := envInstanceTemplate.Execute(&jobDef, jobVars)
+	err = envInstanceTemplate.Execute(&jobDef, jobVars)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to `envInstanceJobTemp.Execute()`: %w", err)
 

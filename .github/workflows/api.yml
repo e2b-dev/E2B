@@ -7,11 +7,11 @@ on:
         required: true
       workload_identity_provider:
         required: true
-      gcp_project:
+      gcp_project_id:
         required: true
 
 env:
-  IMAGE_TAG:  us-central1-docker.pkg.dev/${{ secrets.gcp_project }}/e2b-orchestration/api:latest
+  IMAGE_TAG:  us-central1-docker.pkg.dev/${{ secrets.gcp_project_id }}/e2b-orchestration/api:latest
 
 jobs:
   publish:

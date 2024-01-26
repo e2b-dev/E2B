@@ -16,13 +16,15 @@ type Tier struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID string `json:"id,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
 	// Vcpu holds the value of the "vcpu" field.
 	Vcpu int64 `json:"vcpu,omitempty"`
 	// RAMMB holds the value of the "ram_mb" field.
 	RAMMB int64 `json:"ram_mb,omitempty"`
 	// DiskMB holds the value of the "disk_mb" field.
 	DiskMB int64 `json:"disk_mb,omitempty"`
-	// ConcurrentInstances holds the value of the "concurrent_instances" field.
+	// The number of instances the team can run concurrently
 	ConcurrentInstances int64 `json:"concurrent_instances,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TierQuery when eager-loading is set.
@@ -55,7 +57,7 @@ func (*Tier) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tier.FieldVcpu, tier.FieldRAMMB, tier.FieldDiskMB, tier.FieldConcurrentInstances:
 			values[i] = new(sql.NullInt64)
-		case tier.FieldID:
+		case tier.FieldID, tier.FieldName:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -77,6 +79,12 @@ func (t *Tier) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value.Valid {
 				t.ID = value.String
+			}
+		case tier.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				t.Name = value.String
 			}
 		case tier.FieldVcpu:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -143,6 +151,9 @@ func (t *Tier) String() string {
 	var builder strings.Builder
 	builder.WriteString("Tier(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
+	builder.WriteString("name=")
+	builder.WriteString(t.Name)
+	builder.WriteString(", ")
 	builder.WriteString("vcpu=")
 	builder.WriteString(fmt.Sprintf("%v", t.Vcpu))
 	builder.WriteString(", ")

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -21,9 +22,12 @@ func (Team) Fields() []ent.Field {
 			entsql.Default("CURRENT_TIMESTAMP"),
 		),
 		field.Bool("is_default"),
-		field.Bool("is_blocked"),
-		field.String("name"),
-		field.String("tier"),
+		field.Bool("is_banned").Annotations(entsql.Default("false")),
+		field.Bool("is_blocked").Annotations(entsql.Default("false")),
+		field.String("blocked_reason").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "text"}),
+		field.String("name").SchemaType(map[string]string{dialect.Postgres: "text"}),
+		field.String("tier").SchemaType(map[string]string{dialect.Postgres: "text"}),
+		field.String("email").MaxLen(255).SchemaType(map[string]string{dialect.Postgres: "character varying(255)"}),
 	}
 }
 

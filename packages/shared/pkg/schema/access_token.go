@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -14,7 +15,7 @@ type AccessToken struct {
 
 func (AccessToken) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").Unique().StorageKey("access_token").Immutable(),
+		field.String("id").Unique().StorageKey("access_token").Immutable().SchemaType(map[string]string{dialect.Postgres: "text"}),
 		field.UUID("user_id", uuid.UUID{}),
 		field.Time("created_at").Immutable().Annotations(
 			entsql.Default("CURRENT_TIMESTAMP"),

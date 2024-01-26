@@ -31,8 +31,14 @@ func (db *DB) GetTeamAuth(ctx context.Context, apiKey string) (*models.Team, err
 		return nil, errMsg
 	}
 	//
+	if result.IsBanned {
+		errMsg := fmt.Errorf("team is banned")
+
+		return nil, errMsg
+	}
+	//
 	if result.IsBlocked {
-		errMsg := fmt.Errorf("team is blocked")
+		errMsg := fmt.Errorf("team was blocked - %s", *result.BlockedReason)
 
 		return nil, errMsg
 	}

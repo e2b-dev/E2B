@@ -125,7 +125,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		return
 	}
 
-	err = a.buildCache.Create(team.ID, envID, buildID)
+	err = a.buildCache.Create(envID, buildID, team.ID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", envID))
 
@@ -145,7 +145,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 			err = fmt.Errorf("error when inserting alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			a.buildCache.Delete(envID, buildID)
+			a.buildCache.Delete(envID, buildID, team.ID)
 
 			return
 		} else {
@@ -351,7 +351,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		return
 	}
 
-	err = a.buildCache.Create(team.ID, envID, buildID)
+	err = a.buildCache.Create(envID, buildID, team.ID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", envID))
 
@@ -371,7 +371,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			err = fmt.Errorf("error when inserting alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			a.buildCache.Delete(envID, buildID)
+			a.buildCache.Delete(envID, buildID, team.ID)
 
 			return
 		} else {
@@ -474,6 +474,7 @@ func (a *APIStore) buildEnv(
 		trace.WithAttributes(
 			attribute.String("env.id", envID),
 			attribute.String("build.id", buildID.String()),
+			attribute.String("env.team.id", teamID.String()),
 		),
 	)
 	defer childSpan.End()
@@ -489,7 +490,7 @@ func (a *APIStore) buildEnv(
 		)
 	}()
 
-	err = a.nomad.BuildEnvJob(
+	diskSize, err := a.nomad.BuildEnvJob(
 		a.tracer,
 		childCtx,
 		envID,
@@ -506,7 +507,7 @@ func (a *APIStore) buildEnv(
 		return err
 	}
 
-	err = a.supabase.UpsertEnv(ctx, teamID, envID, buildID, dockerfile)
+	err = a.supabase.UpsertEnv(ctx, teamID, envID, buildID, dockerfile, vmConfig.VCpuCount, vmConfig.MemoryMB, vmConfig.DiskSizeMB, diskSize)
 
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)

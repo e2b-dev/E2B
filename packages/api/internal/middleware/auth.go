@@ -7,13 +7,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/google/uuid"
 	middleware "github.com/oapi-codegen/gin-middleware"
 
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 )
 
 var (
@@ -71,7 +70,6 @@ func (a *authenticator[T]) Authenticate(ctx context.Context, input *openapi3filt
 		return fmt.Errorf("%s %w", a.errorMessage, err)
 	}
 
-	telemetry.ReportEvent(ctx, "validated "+a.securitySchemeName)
 	// Set the property on the gin context
 	middleware.GetGinContext(ctx).Set(a.contextKey, result)
 

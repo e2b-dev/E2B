@@ -10,8 +10,11 @@ import (
 	"github.com/jellydator/ttlcache/v3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const (
@@ -23,20 +26,19 @@ const (
 type InstanceInfo struct {
 	Instance  *api.Instance
 	TeamID    *uuid.UUID
+	Metadata  map[string]string
 	StartTime *time.Time
 }
 
 type InstanceCache struct {
-	cache   *ttlcache.Cache[string, InstanceInfo]
-	counter metric.Int64UpDownCounter
+	cache     *ttlcache.Cache[string, InstanceInfo]
+	counter   metric.Int64UpDownCounter
+	analytics analyticscollector.AnalyticsCollectorClient
 }
 
 // Add the instance to the cache and start expiration timer.
+// If the instance already exists we do nothing - it was loaded from Nomad.
 func (c *InstanceCache) Add(instance InstanceInfo) error {
-	if c.Exists(instance.Instance.InstanceID) {
-		return fmt.Errorf("instance \"%s\" already exists", instance.Instance.InstanceID)
-	}
-
 	if instance.StartTime == nil {
 		now := time.Now()
 		instance.StartTime = &now
@@ -145,20 +147,45 @@ func (c *InstanceCache) Sync(instances []*InstanceInfo) {
 			}
 		}
 	}
+
+	// Send running instances event to analytics
+	instanceIds := make([]string, len(instances))
+	for i, instance := range instances {
+		instanceIds[i] = instance.Instance.InstanceID
+	}
+
+	_, err := c.analytics.RunningInstances(context.Background(), &analyticscollector.RunningInstancesEvent{InstanceIds: instanceIds, Timestamp: timestamppb.Now()})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error sending running instances event to analytics\n: %v\n", err)
+	}
 }
 
 // We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now.
-func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*InstanceInfo, counter metric.Int64UpDownCounter) *InstanceCache {
+func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*InstanceInfo, counter metric.Int64UpDownCounter) *InstanceCache {
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, InstanceInfo](InstanceExpiration),
 	)
 
 	instanceCache := &InstanceCache{
-		cache:   cache,
-		counter: counter,
+		cache:     cache,
+		counter:   counter,
+		analytics: analytics,
 	}
 
+	cache.OnInsertion(func(ctx context.Context, i *ttlcache.Item[string, InstanceInfo]) {
+		instanceInfo := i.Value()
+		_, err := analytics.InstanceStarted(ctx, &analyticscollector.InstanceStartedEvent{
+			InstanceId:    instanceInfo.Instance.InstanceID,
+			EnvironmentId: instanceInfo.Instance.EnvID,
+			TeamId:        instanceInfo.TeamID.String(),
+			Timestamp:     timestamppb.Now(),
+		})
+		if err != nil {
+			errMsg := fmt.Errorf("error when sending analytics event: %w", err)
+			telemetry.ReportCriticalError(ctx, errMsg)
+		}
+	})
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, InstanceInfo]) {
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
 			err := deleteInstance(i.Value(), true)
@@ -222,4 +249,16 @@ func (c *InstanceCache) UpdateCounter(instance InstanceInfo, value int64) {
 		attribute.String("env_id", instance.Instance.EnvID),
 		attribute.String("team_id", instance.TeamID.String()),
 	))
+}
+
+func (c *InstanceCache) GetInstances(teamID *uuid.UUID) (instances []InstanceInfo) {
+	for _, item := range c.cache.Items() {
+		currentTeamID := item.Value().TeamID
+
+		if teamID == nil || *currentTeamID == *teamID {
+			instances = append(instances, item.Value())
+		}
+	}
+
+	return instances
 }

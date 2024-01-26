@@ -6,6 +6,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
     {{ .EnvIDKey }} = "{{ .EnvID }}"
     {{ .InstanceIDKey }} = "{{ .InstanceID }}"
     {{ .TeamIDKey }} = "{{ .TeamID }}"
+    {{ .MetadataKey }} = "{{ .Metadata }}"
   }
 
   priority = 40

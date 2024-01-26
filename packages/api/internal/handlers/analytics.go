@@ -34,7 +34,7 @@ func CreateAnalyticsTeamEvent(client posthog.Client, teamID, event string, prope
 	err := client.Enqueue(posthog.Capture{
 		DistinctId: placeholderTeamGroupUser,
 		Event:      event,
-		Properties: properties.Set(infraVersionKey, infraVersion),
+		Properties: properties.Set(infraVersionKey, infraVersion), 
 		Groups: posthog.NewGroups().
 			Set("team", teamID),
 	})
