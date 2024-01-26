@@ -65,6 +65,11 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
+    InstanceMetadata:
+      additionalProperties:
+        type: string
+        description: Metadata of the instance
+
     NewInstance:
       required:
         - envID
@@ -72,6 +77,8 @@ components:
         envID:
           type: string
           description: Identifier of the required environment
+        metadata:
+          $ref: "#/components/schemas/InstanceMetadata"
 
     Environment:
       required:
@@ -93,6 +100,7 @@ components:
           description: Aliases of the environment
           items:
             type: string
+
     EnvironmentBuild:
       required:
         - envID
@@ -149,6 +157,29 @@ components:
           type: string
           description: Error
 
+    RunningInstance:
+      required:
+        - envID
+        - instanceID
+        - clientID
+        - started_at
+      properties:
+        envID:
+          type: string
+          description: Identifier of the environment from which is the instance created
+        instanceID:
+          type: string
+          description: Identifier of the instance
+        clientID:
+          type: string
+          description: Identifier of the client
+        started_at:
+          type: string
+          format: date-time
+          description: Time when the instance was started
+        metadata:
+          $ref: "#/components/schemas/InstanceMetadata"
+
 tags:
   - name: instances
   - name: envs
@@ -164,6 +195,27 @@ paths:
           $ref: "#/components/responses/401"
 
   /instances:
+    get:
+      description: List all running instances
+      tags: [instances]
+      security:
+        - ApiKeyAuth: [ ]
+      responses:
+        200:
+          description: Successfully returned all running instances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/RunningInstance"
+        401:
+          $ref: "#/components/responses/401"
+        400:
+          $ref: "#/components/responses/400"
+        500:
+          $ref: "#/components/responses/500"
     post:
       description: Create an instance from the environment
       tags: [instances]

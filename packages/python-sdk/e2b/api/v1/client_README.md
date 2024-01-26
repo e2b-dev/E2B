@@ -56,13 +56,13 @@ configuration.api_key['ApiKeyAuth'] = os.environ["API_KEY"]
 with e2b.api.v1.client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = e2b.api.v1.client.InstancesApi(api_client)
-    instance_id = 'instance_id_example' # str | 
-    instances_instance_id_refreshes_post_request = e2b.api.v1.client.InstancesInstanceIDRefreshesPostRequest() # InstancesInstanceIDRefreshesPostRequest |  (optional)
 
     try:
-        api_instance.instances_instance_id_refreshes_post(instance_id, instances_instance_id_refreshes_post_request=instances_instance_id_refreshes_post_request)
+        api_response = api_instance.instances_get()
+        print("The response of InstancesApi->instances_get:\n")
+        pprint(api_response)
     except ApiException as e:
-        print("Exception when calling InstancesApi->instances_instance_id_refreshes_post: %s\n" % e)
+        print("Exception when calling InstancesApi->instances_get: %s\n" % e)
 
 ```
 
@@ -72,6 +72,7 @@ All URIs are relative to *https://api.e2b.dev*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*InstancesApi* | [**instances_get**](e2b/api/v1/client/docs/InstancesApi.md#instances_get) | **GET** /instances | 
 *InstancesApi* | [**instances_instance_id_refreshes_post**](e2b/api/v1/client/docs/InstancesApi.md#instances_instance_id_refreshes_post) | **POST** /instances/{instanceID}/refreshes | 
 *InstancesApi* | [**instances_post**](e2b/api/v1/client/docs/InstancesApi.md#instances_post) | **POST** /instances | 
 
@@ -85,6 +86,7 @@ Class | Method | HTTP request | Description
  - [Instance](e2b/api/v1/client/docs/Instance.md)
  - [InstancesInstanceIDRefreshesPostRequest](e2b/api/v1/client/docs/InstancesInstanceIDRefreshesPostRequest.md)
  - [NewInstance](e2b/api/v1/client/docs/NewInstance.md)
+ - [RunningInstance](e2b/api/v1/client/docs/RunningInstance.md)
 
 
 <a id="documentation-for-authorization"></a>
