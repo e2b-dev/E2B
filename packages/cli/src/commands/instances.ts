@@ -25,9 +25,10 @@ export const instancesCommand = new commander.Command('instances')
             { name: 'instanceID', alignment: 'left', title: 'Sandbox ID' },
             { name: 'envID', alignment: 'left', title: 'Template ID' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
+            { name: 'metadata', alignment: 'left', title: 'Metadata'},
           ],
           disabledColumns: ['clientID'],
-          rows: sandboxes.map((sandbox) => ({ ...sandbox, startedAt: new Date(sandbox.startedAt).toLocaleString() })),
+          rows: sandboxes.map((sandbox) => ({ ...sandbox, startedAt: new Date(sandbox.startedAt).toLocaleString(), metadata: JSON.stringify(sandbox.metadata) })),
           colorMap: {
             orange: '\x1b[38;5;216m',
           },
