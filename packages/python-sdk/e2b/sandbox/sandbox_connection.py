@@ -48,6 +48,12 @@ class SubscriptionArgs(BaseModel):
     params: List[Any] = []
 
 
+class RunningSandboxes(BaseModel):
+    sandbox_id: str
+    template_id: str
+    metadata: Dict[str, str]
+
+
 class SandboxConnection:
     _refresh_retries = 4
     _on_close_child: Optional[Callable[[], Any]] = None
@@ -453,7 +459,7 @@ class SandboxConnection:
             self._close()
 
     @staticmethod
-    def list(api_key: Optional[str] = None) -> List[models.RunningInstance]:
+    def list(api_key: Optional[str] = None) -> List[RunningSandboxes]:
         """
         List all running sandboxes.
 
@@ -461,4 +467,13 @@ class SandboxConnection:
         """
         api_key = get_api_key(api_key)
         with E2BApiClient(api_key=api_key) as api_client:
-            return client.InstancesApi(api_client).instances_get()
+            running_sandboxes = client.InstancesApi(api_client).instances_get()
+
+        return [
+            RunningSandboxes(
+                sandbox_id=s.instance_id,
+                template_id=s.env_id,
+                metadata=s.metadata or {},
+            )
+            for s in running_sandboxes
+        ]

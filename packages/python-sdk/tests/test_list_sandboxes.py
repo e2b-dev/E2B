@@ -8,12 +8,16 @@ def test_list_running_sandboxes():
 
     running_sandboxes = list(
         filter(
-            lambda s: s.metadata and s.metadata.get("n", "").startswith("py"),
+            lambda s: s.metadata.get("n", "").startswith("py"),
             Sandbox.list(),
         )
     )
     assert len(running_sandboxes) == 3
-    assert set(map(lambda x: x.metadata["n"], running_sandboxes)) == {"py0", "py1", "py2"}
+    assert set(map(lambda x: x.metadata["n"], running_sandboxes)) == {
+        "py0",
+        "py1",
+        "py2",
+    }
 
     for sandbox in sandboxes:
         sandbox.close()

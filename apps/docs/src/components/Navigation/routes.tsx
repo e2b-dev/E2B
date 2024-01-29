@@ -1,9 +1,11 @@
 import {
   Boxes,
+  Braces,
   ChevronRightSquare,
   Cpu,
   DollarSign,
   FileDown,
+  File,
   FileUp,
   Folder,
   FolderTree,
@@ -11,12 +13,14 @@ import {
   HeartHandshake,
   KeyRound,
   Link,
+  PencilRuler,
+  PlaySquare,
+  RefreshCw,
   Settings,
   ShieldQuestion,
+  TerminalSquare,
   Timer,
   Variable,
-  PencilRuler,
-  File, TerminalSquare, RefreshCw, PlaySquare,
 } from 'lucide-react'
 
 import logoOpenAI from '@/images/logos/openai.svg'
@@ -296,6 +300,16 @@ export const routes = [
         ),
         title: 'Connect to running sandbox',
         href: '/sandbox/api/reconnect',
+      },
+      {
+        icon: (
+          <Braces
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Sandbox metadata',
+        href: '/sandbox/api/metadata',
       },
     ],
   },
