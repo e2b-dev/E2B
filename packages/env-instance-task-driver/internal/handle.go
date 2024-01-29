@@ -9,33 +9,33 @@ import (
 	"syscall"
 	"time"
 
-	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/env"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
+
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-type taskHandle struct {
-	ctx    context.Context
-	logger hclog.Logger
-	// TODO: The mutext here causes deadlock when we are stopping tasks
-	// For now we are not using it - the relevant data will be still valid (FC running/exit).
-	// mu syncs access to all fields below
-	mu sync.RWMutex
+// Interval at which we check if the process is still running.
+const processCheckInterval = 4 * time.Second
 
-	taskConfig            *drivers.TaskConfig
-	State                 drivers.TaskState
-	MachineInstance       *firecracker.Machine
-	Slot                  *slot.IPSlot
-	EnvInstanceFilesystem *env.InstanceFilesystem
-	EnvInstance           Instance
-	ConsulToken           string
-	startedAt             time.Time
-	completedAt           time.Time
-	exitResult            *drivers.ExitResult
+type taskHandle struct {
+	Instance *instance.Instance
+
+	logger      hclog.Logger
+	taskConfig  *drivers.TaskConfig
+	taskState   drivers.TaskState
+	exitResult  *drivers.ExitResult
+	startedAt   time.Time
+	completedAt time.Time
+
+	exited chan struct{}
+
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	mu sync.RWMutex
 }
 
 func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
@@ -45,32 +45,32 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 	return &drivers.TaskStatus{
 		ID:          h.taskConfig.ID,
 		Name:        h.taskConfig.Name,
-		State:       h.State,
+		State:       h.taskState,
 		StartedAt:   h.startedAt,
 		CompletedAt: h.completedAt,
 		ExitResult:  h.exitResult,
 		DriverAttributes: map[string]string{
-			"Pid": h.EnvInstance.Pid,
+			"Pid": h.Instance.FC.Pid,
 		},
 	}
 }
 
 func (h *taskHandle) run(ctx context.Context, driver *Driver) {
-	pid, err := strconv.Atoi(h.EnvInstance.Pid)
+	pid, err := strconv.Atoi(h.Instance.FC.Pid)
 	if err != nil {
-		h.logger.Info(fmt.Sprintf("ERROR Env-instance-task-driver Could not parse pid=%s after initialization", h.EnvInstance.Pid))
+		h.logger.Info(fmt.Sprintf("ERROR Env-instance-task-driver Could not parse pid=%s after initialization", h.Instance.FC.Pid))
 		h.mu.Lock()
 		h.exitResult = &drivers.ExitResult{}
 		h.exitResult.ExitCode = 127
 		h.exitResult.Signal = 0
 		h.completedAt = time.Now()
-		h.State = drivers.TaskStateExited
+		h.taskState = drivers.TaskStateExited
 		h.mu.Unlock()
 		return
 	}
 
 	for {
-		time.Sleep(containerMonitorIntv)
+		time.Sleep(processCheckInterval)
 
 		process, err := os.FindProcess(int(pid))
 		if err != nil {
@@ -87,43 +87,34 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 	childCtx, childSpan := driver.tracer.Start(ctx, "shutdown")
 	defer childSpan.End()
 
-	h.EnvInstance.Cmd.Process.Signal(syscall.SIGTERM)
-	telemetry.ReportEvent(childCtx, "sent SIGTERM to FC process")
+	err := h.Instance.FC.Stop(childCtx, driver.tracer)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to stop FC: %w", err)
 
-	pid, pErr := strconv.Atoi(h.EnvInstance.Pid)
-	if pErr == nil {
-		timeout := time.After(10 * time.Second)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 
-	pidCheck:
-		for {
-			select {
-			case <-timeout:
-				h.EnvInstance.Cmd.Process.Kill()
-				break pidCheck
-			default:
-				process, err := os.FindProcess(int(pid))
-				if err != nil {
-					break pidCheck
-				}
+		h.mu.Lock()
+		h.exitResult = &drivers.ExitResult{}
+		h.exitResult.ExitCode = 1
+		h.exitResult.Signal = 0
+		h.completedAt = time.Now()
+		h.taskState = drivers.TaskStateUnknown
+		h.exitResult.Err = errMsg
+		h.mu.Unlock()
 
-				if process.Signal(syscall.Signal(0)) != nil {
-					break pidCheck
-				}
-			}
-			time.Sleep(containerMonitorIntv)
-		}
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "waiting for state lock")
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	telemetry.ReportEvent(childCtx, "passed state lock")
 
+	h.mu.Lock()
 	h.exitResult = &drivers.ExitResult{}
 	h.exitResult.ExitCode = 0
 	h.exitResult.Signal = 0
 	h.completedAt = time.Now()
-	h.State = drivers.TaskStateExited
+	h.taskState = drivers.TaskStateExited
+	h.mu.Unlock()
+
 	telemetry.ReportEvent(childCtx, "updated task exit info")
 
 	return nil

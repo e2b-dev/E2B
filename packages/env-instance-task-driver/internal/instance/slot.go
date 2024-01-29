@@ -1,4 +1,4 @@
-package slot
+package instance
 
 import (
 	"context"
@@ -26,6 +26,8 @@ const (
 )
 
 type IPSlot struct {
+	ConsulToken string
+
 	InstanceID  string
 	NodeShortID string
 	KVKey       string
@@ -111,24 +113,33 @@ func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
-func New(ctx context.Context, nodeID, instanceID, consulToken string, tracer trace.Tracer) (*IPSlot, error) {
-	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
-	defer childSpan.End()
-
+func getConsulKV(ctx context.Context, consulToken string) (*consul.KV, error) {
 	config := consul.DefaultConfig()
 	config.Token = consulToken
 
 	consulClient, err := consul.NewClient(config)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to initialize Consul client: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
+		telemetry.ReportCriticalError(ctx, errMsg)
 
 		return nil, errMsg
 	}
 
-	telemetry.ReportEvent(childCtx, "initialized Consul client")
-
 	kv := consulClient.KV()
+
+	telemetry.ReportEvent(ctx, "initialized Consul client")
+
+	return kv, nil
+}
+
+func NewSlot(ctx context.Context, tracer trace.Tracer, nodeID, instanceID, consulToken string) (*IPSlot, error) {
+	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
+	defer childSpan.End()
+
+	kv, err := getConsulKV(childCtx, consulToken)
+	if err != nil {
+		return nil, err
+	}
 
 	var slot *IPSlot
 
@@ -153,6 +164,7 @@ func New(ctx context.Context, nodeID, instanceID, consulToken string, tracer tra
 				SlotIdx:     slotIdx,
 				NodeShortID: nodeShortID,
 				KVKey:       key,
+				ConsulToken: consulToken,
 			}, nil
 		}
 
@@ -223,7 +235,7 @@ func New(ctx context.Context, nodeID, instanceID, consulToken string, tracer tra
 	return slot, nil
 }
 
-func (ips *IPSlot) Release(ctx context.Context, consulToken string, tracer trace.Tracer) error {
+func (ips *IPSlot) Release(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot",
 		trace.WithAttributes(
 			attribute.String("instance.slot.kv.key", ips.KVKey),
@@ -233,20 +245,10 @@ func (ips *IPSlot) Release(ctx context.Context, consulToken string, tracer trace
 	)
 	defer childSpan.End()
 
-	config := consul.DefaultConfig()
-	config.Token = consulToken
-
-	consulClient, err := consul.NewClient(config)
+	kv, err := getConsulKV(childCtx, ips.ConsulToken)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to initialize Consul client: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
+		return err
 	}
-
-	telemetry.ReportEvent(childCtx, "initialized Consul client")
-
-	kv := consulClient.KV()
 
 	pair, _, err := kv.Get(ips.KVKey, nil)
 	if err != nil {

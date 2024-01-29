@@ -19,7 +19,7 @@ import (
 type taskHandle struct {
 	logger      hclog.Logger
 	taskConfig  *drivers.TaskConfig
-	procState   drivers.TaskState
+	taskState   drivers.TaskState
 	exitResult  *drivers.ExitResult
 	startedAt   time.Time
 	completedAt time.Time
@@ -41,7 +41,7 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 	return &drivers.TaskStatus{
 		ID:               h.taskConfig.ID,
 		Name:             h.taskConfig.Name,
-		State:            h.procState,
+		State:            h.taskState,
 		StartedAt:        h.startedAt,
 		CompletedAt:      h.completedAt,
 		ExitResult:       h.exitResult,
@@ -53,7 +53,7 @@ func (h *taskHandle) IsRunning() bool {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	return h.procState == drivers.TaskStateRunning
+	return h.taskState == drivers.TaskStateRunning
 }
 
 func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *client.Client, legacyDocker *docker.Client) {
@@ -72,7 +72,7 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 			Err:      err,
 			ExitCode: 1,
 		}
-		h.procState = drivers.TaskStateExited
+		h.taskState = drivers.TaskStateExited
 		h.completedAt = time.Now()
 
 		h.mu.Unlock()
@@ -85,7 +85,7 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 		}
 
 		h.completedAt = time.Now()
-		h.procState = drivers.TaskStateExited
+		h.taskState = drivers.TaskStateExited
 
 		h.mu.Unlock()
 	}

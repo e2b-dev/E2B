@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/env"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const taskHandleVersion = 1
@@ -73,6 +73,8 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		return nil, nil, errMsg
 	}
 
+	d.logger.Info("starting task", "task_cfg", hclog.Fmt("%+v", taskConfig))
+
 	childCtx, childSpan := telemetry.GetContextFromRemote(d.ctx, d.tracer, "start-task", taskConfig.SpanID, taskConfig.TraceID)
 	defer childSpan.End()
 
@@ -82,102 +84,38 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		attribute.String("instance.id", taskConfig.InstanceID),
 		attribute.String("client.id", cfg.Env["NOMAD_NODE_ID"]),
 	)
-
-	d.logger.Info("starting firecracker task", "task_cfg", hclog.Fmt("%+v", taskConfig))
-
-	// Get slot from Consul KV
-	ipSlot, err := slot.New(
+	instance, err := instance.NewInstance(
 		childCtx,
-		cfg.Env["NOMAD_NODE_ID"],
-		taskConfig.InstanceID,
-		taskConfig.ConsulToken,
 		d.tracer,
+		&instance.InstanceConfig{
+			EnvID:            taskConfig.EnvID,
+			AllocID:          cfg.AllocID,
+			InstanceID:       taskConfig.InstanceID,
+			TraceID:          taskConfig.TraceID,
+			TeamID:           taskConfig.TeamID,
+			ConsulToken:      taskConfig.ConsulToken,
+			LogsProxyAddress: taskConfig.LogsProxyAddress,
+			NodeID:           cfg.Env["NOMAD_NODE_ID"],
+			EnvsDisk:         cfg.Env["ENVS_DISK"],
+		},
+		d.hosts,
 	)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to get IP slot: %w", err)
+		errMsg := fmt.Errorf("failed to create instance: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		d.logger.Info("Error starting instance", "driver_cfg", hclog.Fmt("%+v", errMsg))
+
 		return nil, nil, errMsg
 	}
-	telemetry.ReportEvent(childCtx, "reserved ip slot")
-
-	defer func() {
-		if err != nil {
-			slotErr := ipSlot.Release(childCtx, taskConfig.ConsulToken, d.tracer)
-			if slotErr != nil {
-				errMsg := fmt.Errorf("error removing network namespace after failed instance start %w", slotErr)
-				telemetry.ReportError(childCtx, errMsg)
-			}
-		}
-	}()
-
-	defer func() {
-		if err != nil {
-			ntErr := RemoveNetwork(childCtx, ipSlot, d.hosts, taskConfig.ConsulToken, d.tracer)
-			if ntErr != nil {
-				errMsg := fmt.Errorf("error removing network namespace after failed instance start %w", ntErr)
-				telemetry.ReportError(childCtx, errMsg)
-			}
-		}
-	}()
-
-	err = CreateNetwork(childCtx, ipSlot, d.hosts, d.tracer)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to create namespaces %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-		return nil, nil, errMsg
-	}
-	telemetry.ReportEvent(childCtx, "created network")
-
-	fsEnv, err := env.New(
-		childCtx,
-		ipSlot,
-		taskConfig.EnvID,
-		cfg.Env["ENVS_DISK"],
-		d.tracer,
-	)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to create env for FC %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-		return nil, nil, errMsg
-	}
-	telemetry.ReportEvent(childCtx, "created env for FC")
-
-	defer func() {
-		if err != nil {
-			envErr := fsEnv.Delete(childCtx, d.tracer)
-			if envErr != nil {
-				errMsg := fmt.Errorf("error deleting env after failed fc start %w", err)
-				telemetry.ReportCriticalError(childCtx, errMsg)
-			}
-		}
-	}()
-
-	fc, err := d.initializeFC(
-		childCtx,
-		cfg,
-		taskConfig,
-		ipSlot,
-		fsEnv,
-	)
-	if err != nil {
-		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
-		errMsg := fmt.Errorf("task with ID %q failed: %q", cfg.ID, err.Error())
-		telemetry.ReportCriticalError(childCtx, errMsg)
-		return nil, nil, errMsg
-	}
-	telemetry.ReportEvent(childCtx, "initialized FC")
 
 	h := &taskHandle{
-		ctx:                   childCtx,
-		taskConfig:            cfg,
-		State:                 drivers.TaskStateRunning,
-		startedAt:             time.Now().Round(time.Millisecond),
-		MachineInstance:       fc.Machine,
-		Slot:                  ipSlot,
-		EnvInstanceFilesystem: fsEnv,
-		EnvInstance:           fc.Instance,
-		ConsulToken:           taskConfig.ConsulToken,
-		logger:                d.logger,
+		ctx:        childCtx,
+		taskConfig: cfg,
+		taskState:  drivers.TaskStateRunning,
+		startedAt:  time.Now().Round(time.Millisecond),
+		logger:     d.logger,
+		Instance:   instance,
 	}
 
 	driverState := TaskState{
@@ -188,17 +126,34 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
-	if err = handle.SetDriverState(&driverState); err != nil {
-		fc.Machine.StopVMM()
-		d.logger.Error("failed to start task, error setting driver state", "error", err)
+	if err := handle.SetDriverState(&driverState); err != nil {
+		stopErr := instance.FC.Stop(childCtx, d.tracer)
+		if stopErr != nil {
+			errMsg := fmt.Errorf("error stopping machine after error: %w", stopErr)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+
+		instance.CleanupAfterFCStop(childCtx, d.tracer, d.hosts)
+
 		errMsg := fmt.Errorf("failed to set driver state: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		d.logger.Error("failed to start task, error setting driver state", "error", err)
+
 		return nil, nil, errMsg
 	}
 
 	d.tasks.Set(cfg.ID, h)
 
-	go h.run(childCtx, d)
+	go func() {
+		instanceContext, instanceSpan := d.tracer.Start(
+			trace.ContextWithSpanContext(d.ctx, childSpan.SpanContext()),
+			"background-running-instance",
+		)
+		defer instanceSpan.End()
+
+		h.run(instanceContext, d)
+	}()
 
 	return handle, nil, nil
 }
@@ -296,23 +251,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		telemetry.ReportEvent(childCtx, "shutdown task")
 	}
 
-	err := RemoveNetwork(childCtx, h.Slot, d.hosts, h.ConsulToken, d.tracer)
-	if err != nil {
-		errMsg := fmt.Errorf("cannot remove network when destroying task %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-	}
-
-	err = h.EnvInstanceFilesystem.Delete(childCtx, d.tracer)
-	if err != nil {
-		errMsg := fmt.Errorf("cannot remove env when destroying task %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-	}
-
-	err = h.Slot.Release(childCtx, h.ConsulToken, d.tracer)
-	if err != nil {
-		errMsg := fmt.Errorf("cannot release ip slot when destroying task %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-	}
+	h.Instance.CleanupAfterFCStop(childCtx, d.tracer, d.hosts)
 
 	d.tasks.Delete(taskID)
 	telemetry.ReportEvent(childCtx, "task deleted")
@@ -355,6 +294,7 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
 	defer close(ch)
 
+	// TODO: Use context for waiting for task
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 

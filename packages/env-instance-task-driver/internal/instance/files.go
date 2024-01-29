@@ -1,4 +1,4 @@
-package env
+package instance
 
 import (
 	"context"
@@ -6,12 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
 	"github.com/KarpelesLab/reflink"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const (
@@ -24,28 +23,30 @@ const (
 	EnvInstancesDirName = "env-instances"
 )
 
-type InstanceFilesystem struct {
-	BuildDirPath    string
-	EnvPath         string
+type InstanceFiles struct {
+	EnvPath      string
+	BuildDirPath string
+
 	EnvInstancePath string
+	SocketPath      string
 }
 
-func New(
+func newInstanceFiles(
 	ctx context.Context,
-	slot *slot.IPSlot,
-	envID string,
-	fcEnvsDisk string,
 	tracer trace.Tracer,
-) (*InstanceFilesystem, error) {
+	slot *IPSlot,
+	envID,
+	envsDisk string,
+) (*InstanceFiles, error) {
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
 			attribute.String("env.id", envID),
-			attribute.String("envs_disk", fcEnvsDisk),
+			attribute.String("envs_disk", envsDisk),
 		),
 	)
 	defer childSpan.End()
 
-	envPath := filepath.Join(fcEnvsDisk, envID)
+	envPath := filepath.Join(envsDisk, envID)
 	envInstancePath := filepath.Join(envPath, EnvInstancesDirName, slot.InstanceID)
 
 	err := os.MkdirAll(envInstancePath, 0o777)
@@ -58,7 +59,7 @@ func New(
 
 	data, err := os.ReadFile(buildIDPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed reading build id for the code snippet %s: %w", envID, err)
+		return nil, fmt.Errorf("failed reading build id for the env %s: %w", envID, err)
 	}
 
 	buildID := string(data)
@@ -80,24 +81,33 @@ func New(
 		return nil, errMsg
 	}
 
+	// Create socket
+	socketPath, sockErr := getSocketPath(slot.InstanceID)
+	if sockErr != nil {
+		errMsg := fmt.Errorf("error getting socket path: %w", sockErr)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return nil, errMsg
+	}
+
 	childSpan.SetAttributes(
 		attribute.String("instance.env_instance_path", envInstancePath),
 		attribute.String("instance.build.dir_path", buildDirPath),
 		attribute.String("instance.env_path", envPath),
 	)
 
-	return &InstanceFilesystem{
+	return &InstanceFiles{
 		EnvInstancePath: envInstancePath,
 		BuildDirPath:    buildDirPath,
 		EnvPath:         envPath,
+		SocketPath:      socketPath,
 	}, nil
 }
 
-func (env *InstanceFilesystem) Delete(
+func (env *InstanceFiles) Cleanup(
 	ctx context.Context,
 	tracer trace.Tracer,
 ) error {
-	childCtx, childSpan := tracer.Start(ctx, "delete-env-instance",
+	childCtx, childSpan := tracer.Start(ctx, "cleanup-env-instance",
 		trace.WithAttributes(
 			attribute.String("instance.env_instance_path", env.EnvInstancePath),
 			attribute.String("instance.build_dir_path", env.BuildDirPath),
@@ -110,6 +120,18 @@ func (env *InstanceFilesystem) Delete(
 	if err != nil {
 		errMsg := fmt.Errorf("error deleting env instance files %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+	} else {
+		// TODO: Check the socket?
+		telemetry.ReportEvent(childCtx, "removed all env instance files")
+	}
+
+	// Remove socket
+	err = os.Remove(env.SocketPath)
+	if err != nil {
+		errMsg := fmt.Errorf("error deleting socket %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "removed socket")
 	}
 
 	return nil

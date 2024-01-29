@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 	_ "net/http/pprof"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/hashicorp/nomad/plugins"
 
 	driver "github.com/e2b-dev/infra/packages/env-instance-task-driver/internal"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -33,5 +35,15 @@ func main() {
 		http.ListenAndServe(":6062", nil)
 	}()
 
-	configurePlugin()
+	envID := flag.String("env", "", "env id")
+	instanceID := flag.String("instance", "", "instance id")
+
+	flag.Parse()
+
+	if *envID != "" && *instanceID != "" {
+		// Start of mock build for testing
+		instance.MockInstance(*envID, *instanceID)
+	} else {
+		configurePlugin()
+	}
 }

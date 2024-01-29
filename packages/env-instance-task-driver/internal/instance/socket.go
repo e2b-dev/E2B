@@ -1,4 +1,4 @@
-package env
+package instance
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func GetSocketPath(instanceID string) (string, error) {
+func getSocketPath(instanceID string) (string, error) {
 	filename := strings.Join([]string{
 		"firecracker-",
 		instanceID,

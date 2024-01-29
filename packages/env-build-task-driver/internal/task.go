@@ -65,12 +65,15 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	var taskConfig TaskConfig
 	if err := cfg.DecodeDriverConfig(&taskConfig); err != nil {
-		return nil, nil, fmt.Errorf("failed to decode driver config: %w", err)
+		errMsg := fmt.Errorf("failed to decode driver config: %w", err)
+
+		telemetry.ReportCriticalError(ctx, errMsg)
+		return nil, nil, errMsg
 	}
 
 	d.logger.Info("starting task", "task_cfg", hclog.Fmt("%+v", taskConfig))
 
-	_, childSpan := telemetry.GetContextFromRemote(ctx, d.tracer, "start-task", taskConfig.SpanID, taskConfig.TraceID)
+	childCtx, childSpan := telemetry.GetContextFromRemote(ctx, d.tracer, "start-task", taskConfig.SpanID, taskConfig.TraceID)
 	defer childSpan.End()
 
 	contextsPath := cfg.Env["DOCKER_CONTEXTS_PATH"]
@@ -83,6 +86,22 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	apiSecret := cfg.Env["API_SECRET"]
 	googleServiceAccountBase64 := cfg.Env["GOOGLE_SERVICE_ACCOUNT_BASE64"]
 	nomadToken := cfg.Env["NOMAD_TOKEN"]
+
+	telemetry.SetAttributes(childCtx,
+		attribute.String("build_id", taskConfig.BuildID),
+		attribute.String("env_id", taskConfig.EnvID),
+		attribute.String("start_cmd", taskConfig.StartCmd),
+		attribute.Int64("vcpu_count", taskConfig.VCpuCount),
+		attribute.Int64("memory_mb", taskConfig.MemoryMB),
+		attribute.Int64("disk_size_mb", taskConfig.DiskSizeMB),
+		attribute.String("contexts_path", contextsPath),
+		attribute.String("registry", registry),
+		attribute.String("envs_disk", envsDisk),
+		attribute.String("kernel_image_path", kernelImagePath),
+		attribute.String("envd_path", envdPath),
+		attribute.String("firecracker_binary_path", firecrackerBinaryPath),
+		attribute.String("context_file_name", contextFileName),
+	)
 
 	writer := env.NewWriter(taskConfig.EnvID, taskConfig.BuildID, apiSecret)
 
@@ -109,7 +128,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	h := &taskHandle{
 		taskConfig: cfg,
-		procState:  drivers.TaskStateRunning,
+		taskState:  drivers.TaskStateRunning,
 		startedAt:  time.Now().Round(time.Millisecond),
 		logger:     d.logger,
 		env:        &env,
@@ -127,7 +146,11 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle.Config = cfg
 
 	if err := handle.SetDriverState(&driverState); err != nil {
-		return nil, nil, fmt.Errorf("failed to set driver state: %w", err)
+		d.logger.Error("failed to start task, error setting driver state", "error", err)
+		errMsg := fmt.Errorf("failed to set driver state: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return nil, nil, errMsg
 	}
 
 	d.tasks.Set(cfg.ID, h)
