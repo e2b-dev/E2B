@@ -33,6 +33,10 @@ export interface Logger {
   error?: (message: string, ...args: unknown[]) => void;
 }
 
+export interface SandboxMetadata {
+  [key: string]: string;
+}
+
 export interface SandboxConnectionOpts {
   /**
    * Sandbox Template ID or name.
@@ -49,6 +53,7 @@ export interface SandboxConnectionOpts {
   apiKey?: string;
   cwd?: string;
   envVars?: EnvVars;
+  metadata?: SandboxMetadata;
   logger?: Logger;
   __sandbox?: components['schemas']['Instance'];
   __debug_hostname?: string;
@@ -354,6 +359,7 @@ export class SandboxConnection {
         try {
           const res = await createSandbox(this.apiKey, {
             envID: this.templateID,
+            metadata: this.opts.metadata,
           })
 
           this.sandbox = res.data
