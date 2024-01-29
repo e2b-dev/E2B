@@ -59,7 +59,7 @@ func newInstanceFiles(
 
 	data, err := os.ReadFile(buildIDPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed reading build id for the code snippet %s: %w", envID, err)
+		return nil, fmt.Errorf("failed reading build id for the env %s: %w", envID, err)
 	}
 
 	buildID := string(data)

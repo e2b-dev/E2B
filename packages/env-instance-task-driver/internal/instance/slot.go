@@ -164,6 +164,7 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, nodeID, instanceID, consu
 				SlotIdx:     slotIdx,
 				NodeShortID: nodeShortID,
 				KVKey:       key,
+				ConsulToken: consulToken,
 			}, nil
 		}
 

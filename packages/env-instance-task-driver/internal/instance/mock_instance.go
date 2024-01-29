@@ -23,7 +23,7 @@ func MockInstance(envID, instanceID string) {
 		panic("Failed to initialize etc hosts handler")
 	}
 
-	_, err = NewInstance(
+	instance, err := NewInstance(
 		ctx,
 		tracer,
 		&InstanceConfig{
@@ -43,4 +43,6 @@ func MockInstance(envID, instanceID string) {
 	if err != nil {
 		panic(err)
 	}
+
+	instance.CleanupAfterFCStop(ctx, tracer, hosts)
 }
