@@ -13,8 +13,31 @@
       "description": "Env ID",
       "default": "k3g50e4hhl513xjd2tpb"
     },
+    {
+      "id": "instanceID",
+      "type": "promptString",
+      "description": "Instance ID",
+      "default": "instance0test"
+    }
   ],
   "configurations": [
+    {
+      "name": "Debug env-instance-task-driver",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "buildFlags": "-race -gcflags=all=\"-N -l\"",
+      "program": "${workspaceFolder}/packages/env-instance-task-driver/main.go",
+      "args": [
+        "-env",
+        "${input:envID}",
+        "-instance",
+        "${input:instanceID}"
+      ],
+      "console": "integratedTerminal",
+      "asRoot": true,
+      "envFile": "${workspaceFolder}/.env.staging",
+    },
     {
       "name": "Debug env-build-task-driver",
       "type": "go",
@@ -29,7 +52,7 @@
         "${input:buildID}"
       ],
       "console": "integratedTerminal",
-      "asRoot": true,
+      "asRoot": true
     },
     {
       "name": "Debug api",
