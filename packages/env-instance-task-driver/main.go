@@ -5,11 +5,11 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
 
 	driver "github.com/e2b-dev/infra/packages/env-instance-task-driver/internal"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -37,6 +37,9 @@ func main() {
 
 	envID := flag.String("env", "", "env id")
 	instanceID := flag.String("instance", "", "instance id")
+
+	flag.Parse()
+
 	if *envID != "" && *instanceID != "" {
 		// Start of mock build for testing
 		instance.MockInstance(*envID, *instanceID)
