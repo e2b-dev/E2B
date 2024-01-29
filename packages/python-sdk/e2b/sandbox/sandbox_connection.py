@@ -4,9 +4,8 @@ import threading
 import traceback
 import warnings
 from concurrent.futures import ThreadPoolExecutor, CancelledError
-from os import getenv
 from time import sleep
-from typing import Any, Callable, List, Literal, Optional, Union
+from typing import Any, Callable, List, Literal, Optional, Union, Dict
 
 from pydantic import BaseModel
 from urllib3.exceptions import ReadTimeoutError, MaxRetryError, ConnectTimeoutError
@@ -22,7 +21,6 @@ from e2b.constants import (
 )
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.exception import (
-    AuthenticationException,
     MultipleExceptions,
     SandboxException,
     TimeoutException,
@@ -85,6 +83,7 @@ class SandboxConnection:
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
+        metadata: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = TIMEOUT,
         _sandbox: Optional[models.Instance] = None,
         _debug_hostname: Optional[str] = None,
@@ -120,54 +119,12 @@ class SandboxConnection:
 
         logger.info(f"Sandbox for template {self._template} initialized")
 
-        self._open(timeout=timeout)
+        self._open(metadata=metadata, timeout=timeout)
 
     @classmethod
     def create(cls, *args, **kwargs):
         warnings.warn("Sandbox.create() is deprecated, use Sandbox() instead")
         return cls(*args, **kwargs)
-
-    @classmethod
-    def reconnect(
-        cls,
-        sandbox_id: str,
-        *args,
-        **kwargs,
-    ):
-        """
-        Reconnects to a previously created sandbox.
-
-        :param sandbox_id: ID of the sandbox to reconnect to
-        :param cwd: The current working directory to use
-        :param on_scan_ports: A callback to handle opened ports
-        :param on_stdout: A default callback that is called when stdout with a newline is received from the process
-        :param on_stderr: A default callback that is called when stderr with a newline is received from the process
-        :param on_exit: A default callback that is called when the process exits
-        :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
-
-        ```py
-        sandbox = Sandbox()
-        id = sandbox.id
-        sandbox.keep_alive(300)
-        sandbox.close()
-
-        # Reconnect to the sandbox
-        reconnected_sandbox = Sandbox.reconnect(id)
-        ```
-
-        """
-
-        logger.info(f"Reconnecting to sandbox {sandbox_id}")
-        instance_id, client_id = sandbox_id.split("-")
-        return cls(
-            *args,
-            _sandbox=models.Instance(
-                instance_id=instance_id,
-                client_id=client_id,
-                env_id=getattr(cls, "sandbox_template_id", "unknown"),
-            ),
-            **kwargs,
-        )
 
     def get_hostname(self, port: Optional[int] = None) -> str:
         """
@@ -258,7 +215,11 @@ class SandboxConnection:
             cleanup()
         self._process_cleanup.clear()
 
-    def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
+    def _open(
+        self,
+        metadata: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> None:
         """
         Open a connection to a new sandbox.
 
@@ -275,7 +236,7 @@ class SandboxConnection:
                     api = client.InstancesApi(api_client)
 
                     self._sandbox = api.instances_post(
-                        models.NewInstance(envID=self._template),
+                        models.NewInstance(envID=self._template, metadata=metadata),
                         _request_timeout=timeout,
                     )
                     logger.info(

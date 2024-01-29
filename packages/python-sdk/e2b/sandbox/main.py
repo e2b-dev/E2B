@@ -12,7 +12,7 @@ from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.filesystem import FilesystemManager
-from e2b.sandbox.process import Process, ProcessManager, ProcessMessage
+from e2b.sandbox.process import ProcessManager, ProcessMessage
 from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.sandbox.terminal import TerminalManager
 
@@ -75,6 +75,7 @@ class Sandbox(SandboxConnection):
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
+        metadata: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = TIMEOUT,
         _sandbox: Optional[models.Instance] = None,
         _debug_hostname: Optional[str] = None,
@@ -93,10 +94,12 @@ class Sandbox(SandboxConnection):
 
         :param api_key: The API key to use, if not provided, the `E2B_API_KEY` environment variable is used
         :param cwd: The current working directory to use
+        :param env_vars: A dictionary of environment variables to be used for all processes
         :param on_scan_ports: A callback to handle opened ports
         :param on_stdout: A default callback that is called when stdout with a newline is received from the process
         :param on_stderr: A default callback that is called when stderr with a newline is received from the process
         :param on_exit: A default callback that is called when the process exits
+        :param metadata: A dictionary of metadata to be used for the sandbox
         :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
         """
 
@@ -137,6 +140,7 @@ class Sandbox(SandboxConnection):
                 **default_env_vars,
                 **(env_vars or {}),
             },
+            metadata=metadata,
             _sandbox=_sandbox,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
@@ -238,14 +242,73 @@ class Sandbox(SandboxConnection):
         thread = threading.Thread(target=run_in_thread)
         thread.start()
 
-    def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
+    @classmethod
+    def reconnect(
+        cls,
+        sandbox_id: str,
+        cwd: Optional[str] = None,
+        env_vars: Optional[EnvVars] = None,
+        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
+        timeout: Optional[float] = TIMEOUT,
+        **kwargs,
+    ):
+        """
+        Reconnects to a previously created sandbox.
+
+        :param sandbox_id: ID of the sandbox to reconnect to
+        :param cwd: The current working directory to use
+        :param env_vars: A dictionary of environment variables to be used for all processes
+        :param on_scan_ports: A callback to handle opened ports
+        :param on_stdout: A default callback that is called when stdout with a newline is received from the process
+        :param on_stderr: A default callback that is called when stderr with a newline is received from the process
+        :param on_exit: A default callback that is called when the process exits
+        :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
+
+        ```py
+        sandbox = Sandbox()
+        id = sandbox.id
+        sandbox.keep_alive(300)
+        sandbox.close()
+
+        # Reconnect to the sandbox
+        reconnected_sandbox = Sandbox.reconnect(id)
+        ```
+
+        """
+
+        logger.info(f"Reconnecting to sandbox {sandbox_id}")
+        instance_id, client_id = sandbox_id.split("-")
+        return cls(
+            cwd=cwd,
+            env_vars=env_vars,
+            on_scan_ports=on_scan_ports,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
+            on_exit=on_exit,
+            timeout=timeout,
+            _sandbox=models.Instance(
+                instance_id=instance_id,
+                client_id=client_id,
+                env_id=getattr(cls, "sandbox_template_id", "unknown"),
+            ),
+            **kwargs,
+        )
+
+    def _open(
+        self,
+        metadata: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> None:
         """
         Open the sandbox.
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         logger.info(f"Opening sandbox {self._template}")
-        super()._open(timeout=timeout)
+        super()._open(metadata=metadata, timeout=timeout)
         self._code_snippet._subscribe()
         logger.info(f"Sandbox {self._template} opened")
 
