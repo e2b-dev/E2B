@@ -17,21 +17,32 @@ import pprint
 import re  # noqa: F401
 import json
 
-
+from datetime import datetime
 from typing import Dict, Optional
 from pydantic import BaseModel, Field, StrictStr
 
 
-class NewInstance(BaseModel):
+class RunningInstance(BaseModel):
     """
-    NewInstance
+    RunningInstance
     """
 
     env_id: StrictStr = Field(
-        ..., alias="envID", description="Identifier of the required environment"
+        ...,
+        alias="envID",
+        description="Identifier of the environment from which is the instance created",
+    )
+    instance_id: StrictStr = Field(
+        ..., alias="instanceID", description="Identifier of the instance"
+    )
+    client_id: StrictStr = Field(
+        ..., alias="clientID", description="Identifier of the client"
+    )
+    started_at: datetime = Field(
+        ..., alias="startedAt", description="Time when the instance was started"
     )
     metadata: Optional[Dict[str, StrictStr]] = None
-    __properties = ["envID", "metadata"]
+    __properties = ["envID", "instanceID", "clientID", "startedAt", "metadata"]
 
     class Config:
         """Pydantic configuration"""
@@ -48,8 +59,8 @@ class NewInstance(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> NewInstance:
-        """Create an instance of NewInstance from a JSON string"""
+    def from_json(cls, json_str: str) -> RunningInstance:
+        """Create an instance of RunningInstance from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self):
@@ -58,23 +69,29 @@ class NewInstance(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> NewInstance:
-        """Create an instance of NewInstance from a dict"""
+    def from_dict(cls, obj: dict) -> RunningInstance:
+        """Create an instance of RunningInstance from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return NewInstance.parse_obj(obj)
+            return RunningInstance.parse_obj(obj)
 
         # raise errors for additional fields in the input
         for _key in obj.keys():
             if _key not in cls.__properties:
                 raise ValueError(
-                    "Error due to additional fields (not defined in NewInstance) in the input: "
+                    "Error due to additional fields (not defined in RunningInstance) in the input: "
                     + obj
                 )
 
-        _obj = NewInstance.parse_obj(
-            {"env_id": obj.get("envID"), "metadata": obj.get("metadata")}
+        _obj = RunningInstance.parse_obj(
+            {
+                "env_id": obj.get("envID"),
+                "instance_id": obj.get("instanceID"),
+                "client_id": obj.get("clientID"),
+                "started_at": obj.get("startedAt"),
+                "metadata": obj.get("metadata"),
+            }
         )
         return _obj

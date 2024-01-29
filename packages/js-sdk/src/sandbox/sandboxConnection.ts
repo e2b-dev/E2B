@@ -2,7 +2,6 @@ import { IRpcNotification, RpcWebSocketClient } from './rpc'
 
 import api, { components, withAPIKey } from '../api'
 import { ENVD_PORT, SANDBOX_DOMAIN, SANDBOX_REFRESH_PERIOD, SECURE, WS_RECONNECT_INTERVAL, WS_ROUTE } from '../constants'
-import { AuthenticationError } from '../error'
 import { assertFulfilled, formatSettledErrors, withTimeout } from '../utils/promise'
 import wait from '../utils/wait'
 import { codeSnippetService } from './codeSnippet'
@@ -10,6 +9,7 @@ import { filesystemService } from './filesystem'
 import { processService } from './process'
 import { terminalService } from './terminal'
 import { EnvVars } from './envVars'
+import { getApiKey } from '../utils/apiKey'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SubscriptionHandler = (result: any) => void;
@@ -33,6 +33,10 @@ export interface Logger {
   error?: (message: string, ...args: unknown[]) => void;
 }
 
+export interface SandboxMetadata {
+  [key: string]: string;
+}
+
 export interface SandboxConnectionOpts {
   /**
    * Sandbox Template ID or name.
@@ -49,6 +53,7 @@ export interface SandboxConnectionOpts {
   apiKey?: string;
   cwd?: string;
   envVars?: EnvVars;
+  metadata?: SandboxMetadata;
   logger?: Logger;
   __sandbox?: components['schemas']['Instance'];
   __debug_hostname?: string;
@@ -61,6 +66,10 @@ export interface CallOpts {
   timeout?: number;
 }
 
+
+const listSandboxes = withAPIKey(
+  api.path('/instances').method('get').create(),
+)
 const createSandbox = withAPIKey(
   api.path('/instances').method('post').create(),
 )
@@ -93,15 +102,7 @@ export class SandboxConnection {
   // let's keep opts readonly, but public - for convenience, mainly when debugging
   protected constructor(readonly opts: SandboxConnectionOpts) {
     this.sandbox = opts.__sandbox
-    const apiKey = opts.apiKey || process?.env?.E2B_API_KEY
-    if (!apiKey) {
-      throw new AuthenticationError(
-        'API key is required, please visit https://e2b.dev/docs to get your API key. ' +
-        'You can either set the environment variable `E2B_API_KEY` ' +
-        "or you can pass it directly to the sandbox like Sandbox.create({apiKey: 'e2b_...'})",
-      )
-    }
-    this.apiKey = apiKey
+    this.apiKey = getApiKey(opts.apiKey)
 
 
     this.cwd = opts.cwd
@@ -130,6 +131,33 @@ export class SandboxConnection {
    */
   get id() {
     return `${this.sandbox?.instanceID}-${this.sandbox?.clientID}`
+  }
+
+  /**
+   * List all running sandboxes
+   * @param apiKey API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
+   */
+  static async list(apiKey?: string) {
+    apiKey = getApiKey(apiKey)
+    try {
+      const res = await listSandboxes(apiKey, {})
+      return res.data
+    } catch (e) {
+      if (e instanceof listSandboxes.Error) {
+        const error = e.getActualType()
+        if (error.status === 401) {
+          throw new Error(
+            `Error listing sandboxes - (${error.status}) unauthenticated: ${error.data.message}`,
+          )
+        }
+        if (error.status === 500) {
+          throw new Error(
+            `Error listing sandboxes - (${error.status}) server error: ${error.data.message}`,
+          )
+        }
+      }
+      throw e
+    }
   }
 
   private get templateID(): string {
@@ -331,6 +359,7 @@ export class SandboxConnection {
         try {
           const res = await createSandbox(this.apiKey, {
             envID: this.templateID,
+            metadata: this.opts.metadata,
           })
 
           this.sandbox = res.data

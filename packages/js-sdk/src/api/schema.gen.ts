@@ -15,6 +15,20 @@ export interface paths {
     };
   };
   "/instances": {
+    /** List all running instances */
+    get: {
+      responses: {
+        /** Successfully returned all running instances */
+        200: {
+          content: {
+            "application/json": components["schemas"]["RunningInstance"][];
+          };
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
     /** Create an instance from the environment */
     post: {
       responses: {
@@ -211,9 +225,11 @@ export interface paths {
 
 export interface components {
   schemas: {
+    InstanceMetadata: { [key: string]: string };
     NewInstance: {
       /** @description Identifier of the required environment */
       envID: string;
+      metadata?: components["schemas"]["InstanceMetadata"];
     };
     Environment: {
       /** @description Identifier of the environment */
@@ -259,6 +275,20 @@ export interface components {
       code: number;
       /** @description Error */
       message: string;
+    };
+    RunningInstance: {
+      /** @description Identifier of the environment from which is the instance created */
+      envID: string;
+      /** @description Identifier of the instance */
+      instanceID: string;
+      /** @description Identifier of the client */
+      clientID: string;
+      /**
+       * Format: date-time
+       * @description Time when the instance was started
+       */
+      startedAt: string;
+      metadata?: components["schemas"]["InstanceMetadata"];
     };
   };
   responses: {

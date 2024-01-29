@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-
+from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Optional
 from pydantic import BaseModel, StrictStr
 from pydantic import Field
@@ -28,16 +28,32 @@ except ImportError:
     from typing_extensions import Self
 
 
-class NewInstance(BaseModel):
+class RunningInstance(BaseModel):
     """
-    NewInstance
+    RunningInstance
     """  # noqa: E501
 
     env_id: StrictStr = Field(
-        description="Identifier of the required environment", alias="envID"
+        description="Identifier of the environment from which is the instance created",
+        alias="envID",
+    )
+    instance_id: StrictStr = Field(
+        description="Identifier of the instance", alias="instanceID"
+    )
+    client_id: StrictStr = Field(
+        description="Identifier of the client", alias="clientID"
+    )
+    started_at: datetime = Field(
+        description="Time when the instance was started", alias="startedAt"
     )
     metadata: Optional[Dict[str, StrictStr]] = None
-    __properties: ClassVar[List[str]] = ["envID", "metadata"]
+    __properties: ClassVar[List[str]] = [
+        "envID",
+        "instanceID",
+        "clientID",
+        "startedAt",
+        "metadata",
+    ]
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
@@ -52,7 +68,7 @@ class NewInstance(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Self:
-        """Create an instance of NewInstance from a JSON string"""
+        """Create an instance of RunningInstance from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -74,7 +90,7 @@ class NewInstance(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Dict) -> Self:
-        """Create an instance of NewInstance from a dict"""
+        """Create an instance of RunningInstance from a dict"""
         if obj is None:
             return None
 
@@ -85,11 +101,17 @@ class NewInstance(BaseModel):
         for _key in obj.keys():
             if _key not in cls.__properties:
                 raise ValueError(
-                    "Error due to additional fields (not defined in NewInstance) in the input: "
+                    "Error due to additional fields (not defined in RunningInstance) in the input: "
                     + _key
                 )
 
         _obj = cls.model_validate(
-            {"envID": obj.get("envID"), "metadata": obj.get("metadata")}
+            {
+                "envID": obj.get("envID"),
+                "instanceID": obj.get("instanceID"),
+                "clientID": obj.get("clientID"),
+                "startedAt": obj.get("startedAt"),
+                "metadata": obj.get("metadata"),
+            }
         )
         return _obj

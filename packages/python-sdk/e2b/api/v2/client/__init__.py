@@ -42,3 +42,4 @@ from e2b.api.v2.client.models.instances_instance_id_refreshes_post_request impor
     InstancesInstanceIDRefreshesPostRequest,
 )
 from e2b.api.v2.client.models.new_instance import NewInstance
+from e2b.api.v2.client.models.running_instance import RunningInstance
