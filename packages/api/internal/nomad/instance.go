@@ -201,7 +201,7 @@ func (n *NomadClient) CreateInstance(
 		LogsProxyAddress: logsProxyAddress,
 		ConsulToken:      consulToken,
 		EnvID:            envID,
-		Alias:            alias,
+		Alias:            strings.ReplaceAll(alias, "\"", "\\\""),
 		InstanceID:       instanceID,
 		TaskName:         defaultTaskName,
 		JobName:          instanceJobName,
