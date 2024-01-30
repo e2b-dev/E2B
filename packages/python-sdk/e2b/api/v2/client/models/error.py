@@ -35,6 +35,7 @@ class Error(BaseModel):
 
     code: StrictInt = Field(description="Error code")
     message: StrictStr = Field(description="Error")
+    additional_properties: Dict[str, Any] = {}
     __properties: ClassVar[List[str]] = ["code", "message"]
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
@@ -62,12 +63,20 @@ class Error(BaseModel):
         * `None` is only added to the output dict for nullable fields that
           were set at model initialization. Other fields with value `None`
           are ignored.
+        * Fields in `self.additional_properties` are added to the output dict.
         """
         _dict = self.model_dump(
             by_alias=True,
-            exclude={},
+            exclude={
+                "additional_properties",
+            },
             exclude_none=True,
         )
+        # puts key-value pairs in additional_properties in the top level
+        if self.additional_properties is not None:
+            for _key, _value in self.additional_properties.items():
+                _dict[_key] = _value
+
         return _dict
 
     @classmethod
@@ -79,15 +88,12 @@ class Error(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        # raise errors for additional fields in the input
-        for _key in obj.keys():
-            if _key not in cls.__properties:
-                raise ValueError(
-                    "Error due to additional fields (not defined in Error) in the input: "
-                    + _key
-                )
-
         _obj = cls.model_validate(
             {"code": obj.get("code"), "message": obj.get("message")}
         )
+        # store additional fields in additional_properties
+        for _key in obj.keys():
+            if _key not in cls.__properties:
+                _obj.additional_properties[_key] = obj.get(_key)
+
         return _obj

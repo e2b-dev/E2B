@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 
-from typing import Optional
+from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field, conint
 
 
@@ -31,6 +31,7 @@ class InstancesInstanceIDRefreshesPostRequest(BaseModel):
         None,
         description="Duration for which the instance should be kept alive in seconds",
     )
+    additional_properties: Dict[str, Any] = {}
     __properties = ["duration"]
 
     class Config:
@@ -54,7 +55,14 @@ class InstancesInstanceIDRefreshesPostRequest(BaseModel):
 
     def to_dict(self):
         """Returns the dictionary representation of the model using alias"""
-        _dict = self.dict(by_alias=True, exclude={}, exclude_none=True)
+        _dict = self.dict(
+            by_alias=True, exclude={"additional_properties"}, exclude_none=True
+        )
+        # puts key-value pairs in additional_properties in the top level
+        if self.additional_properties is not None:
+            for _key, _value in self.additional_properties.items():
+                _dict[_key] = _value
+
         return _dict
 
     @classmethod
@@ -66,15 +74,12 @@ class InstancesInstanceIDRefreshesPostRequest(BaseModel):
         if not isinstance(obj, dict):
             return InstancesInstanceIDRefreshesPostRequest.parse_obj(obj)
 
-        # raise errors for additional fields in the input
-        for _key in obj.keys():
-            if _key not in cls.__properties:
-                raise ValueError(
-                    "Error due to additional fields (not defined in InstancesInstanceIDRefreshesPostRequest) in the input: "
-                    + obj
-                )
-
         _obj = InstancesInstanceIDRefreshesPostRequest.parse_obj(
             {"duration": obj.get("duration")}
         )
+        # store additional fields in additional_properties
+        for _key in obj.keys():
+            if _key not in cls.__properties:
+                _obj.additional_properties[_key] = obj.get(_key)
+
         return _obj

@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 
-from typing import List
+from typing import Any, Dict, List
 from pydantic import BaseModel, Field, StrictStr, conlist
 
 
@@ -29,6 +29,7 @@ class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
 
     api_secret: StrictStr = Field(..., alias="apiSecret", description="API secret")
     logs: conlist(StrictStr) = Field(...)
+    additional_properties: Dict[str, Any] = {}
     __properties = ["apiSecret", "logs"]
 
     class Config:
@@ -52,7 +53,14 @@ class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
 
     def to_dict(self):
         """Returns the dictionary representation of the model using alias"""
-        _dict = self.dict(by_alias=True, exclude={}, exclude_none=True)
+        _dict = self.dict(
+            by_alias=True, exclude={"additional_properties"}, exclude_none=True
+        )
+        # puts key-value pairs in additional_properties in the top level
+        if self.additional_properties is not None:
+            for _key, _value in self.additional_properties.items():
+                _dict[_key] = _value
+
         return _dict
 
     @classmethod
@@ -64,15 +72,12 @@ class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
         if not isinstance(obj, dict):
             return EnvsEnvIDBuildsBuildIDLogsPostRequest.parse_obj(obj)
 
-        # raise errors for additional fields in the input
-        for _key in obj.keys():
-            if _key not in cls.__properties:
-                raise ValueError(
-                    "Error due to additional fields (not defined in EnvsEnvIDBuildsBuildIDLogsPostRequest) in the input: "
-                    + obj
-                )
-
         _obj = EnvsEnvIDBuildsBuildIDLogsPostRequest.parse_obj(
             {"api_secret": obj.get("apiSecret"), "logs": obj.get("logs")}
         )
+        # store additional fields in additional_properties
+        for _key in obj.keys():
+            if _key not in cls.__properties:
+                _obj.additional_properties[_key] = obj.get(_key)
+
         return _obj

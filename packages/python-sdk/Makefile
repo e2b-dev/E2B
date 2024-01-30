@@ -9,7 +9,7 @@ generate-v2:
 	-o ./e2b/api \
 	--global-property apis="instances",models,supportingFiles,modelDocs=false \
 	--additional-properties=generateSourceCodeOnly=true \
-	--additional-properties=disallowAdditionalPropertiesIfNotPresent=true \
+	--additional-properties=disallowAdditionalPropertiesIfNotPresent=false \
 	--additional-properties=usePydanticV2=true \
 	--additional-properties=packageName=e2b.api.v2.client
 	mv ./e2b/api/e2b/api/* ./e2b/api/
@@ -31,7 +31,7 @@ generate-v1:
 	-o ./e2b/api \
 	--global-property apis="instances",models,supportingFiles,modelDocs=false \
 	--additional-properties=generateSourceCodeOnly=true \
-	--additional-properties=disallowAdditionalPropertiesIfNotPresent=true \
+	--additional-properties=disallowAdditionalPropertiesIfNotPresent=false \
 	--additional-properties=packageName=e2b.api.v1.client
 	mv ./e2b/api/e2b/api/* ./e2b/api/
 	rm -r ./e2b/api/e2b

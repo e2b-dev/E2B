@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, StrictBool, StrictStr, conlist
 
 
@@ -42,6 +42,7 @@ class Environment(BaseModel):
     aliases: Optional[conlist(StrictStr)] = Field(
         None, description="Aliases of the environment"
     )
+    additional_properties: Dict[str, Any] = {}
     __properties = ["envID", "buildID", "public", "aliases"]
 
     class Config:
@@ -65,7 +66,14 @@ class Environment(BaseModel):
 
     def to_dict(self):
         """Returns the dictionary representation of the model using alias"""
-        _dict = self.dict(by_alias=True, exclude={}, exclude_none=True)
+        _dict = self.dict(
+            by_alias=True, exclude={"additional_properties"}, exclude_none=True
+        )
+        # puts key-value pairs in additional_properties in the top level
+        if self.additional_properties is not None:
+            for _key, _value in self.additional_properties.items():
+                _dict[_key] = _value
+
         return _dict
 
     @classmethod
@@ -77,14 +85,6 @@ class Environment(BaseModel):
         if not isinstance(obj, dict):
             return Environment.parse_obj(obj)
 
-        # raise errors for additional fields in the input
-        for _key in obj.keys():
-            if _key not in cls.__properties:
-                raise ValueError(
-                    "Error due to additional fields (not defined in Environment) in the input: "
-                    + obj
-                )
-
         _obj = Environment.parse_obj(
             {
                 "env_id": obj.get("envID"),
@@ -93,4 +93,9 @@ class Environment(BaseModel):
                 "aliases": obj.get("aliases"),
             }
         )
+        # store additional fields in additional_properties
+        for _key in obj.keys():
+            if _key not in cls.__properties:
+                _obj.additional_properties[_key] = obj.get(_key)
+
         return _obj

@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, StrictStr, conlist, validator
 
 
@@ -35,6 +35,7 @@ class EnvironmentBuild(BaseModel):
         ..., alias="buildID", description="Identifier of the build"
     )
     status: Optional[StrictStr] = Field(None, description="Status of the environment")
+    additional_properties: Dict[str, Any] = {}
     __properties = ["logs", "envID", "buildID", "status"]
 
     @validator("status")
@@ -70,7 +71,14 @@ class EnvironmentBuild(BaseModel):
 
     def to_dict(self):
         """Returns the dictionary representation of the model using alias"""
-        _dict = self.dict(by_alias=True, exclude={}, exclude_none=True)
+        _dict = self.dict(
+            by_alias=True, exclude={"additional_properties"}, exclude_none=True
+        )
+        # puts key-value pairs in additional_properties in the top level
+        if self.additional_properties is not None:
+            for _key, _value in self.additional_properties.items():
+                _dict[_key] = _value
+
         return _dict
 
     @classmethod
@@ -82,14 +90,6 @@ class EnvironmentBuild(BaseModel):
         if not isinstance(obj, dict):
             return EnvironmentBuild.parse_obj(obj)
 
-        # raise errors for additional fields in the input
-        for _key in obj.keys():
-            if _key not in cls.__properties:
-                raise ValueError(
-                    "Error due to additional fields (not defined in EnvironmentBuild) in the input: "
-                    + obj
-                )
-
         _obj = EnvironmentBuild.parse_obj(
             {
                 "logs": obj.get("logs"),
@@ -98,4 +98,9 @@ class EnvironmentBuild(BaseModel):
                 "status": obj.get("status"),
             }
         )
+        # store additional fields in additional_properties
+        for _key in obj.keys():
+            if _key not in cls.__properties:
+                _obj.additional_properties[_key] = obj.get(_key)
+
         return _obj

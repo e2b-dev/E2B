@@ -18,6 +18,7 @@ import re  # noqa: F401
 import json
 
 
+from typing import Any, Dict
 from pydantic import BaseModel, Field, StrictInt, StrictStr
 
 
@@ -28,6 +29,7 @@ class Error(BaseModel):
 
     code: StrictInt = Field(..., description="Error code")
     message: StrictStr = Field(..., description="Error")
+    additional_properties: Dict[str, Any] = {}
     __properties = ["code", "message"]
 
     class Config:
@@ -51,7 +53,14 @@ class Error(BaseModel):
 
     def to_dict(self):
         """Returns the dictionary representation of the model using alias"""
-        _dict = self.dict(by_alias=True, exclude={}, exclude_none=True)
+        _dict = self.dict(
+            by_alias=True, exclude={"additional_properties"}, exclude_none=True
+        )
+        # puts key-value pairs in additional_properties in the top level
+        if self.additional_properties is not None:
+            for _key, _value in self.additional_properties.items():
+                _dict[_key] = _value
+
         return _dict
 
     @classmethod
@@ -63,13 +72,10 @@ class Error(BaseModel):
         if not isinstance(obj, dict):
             return Error.parse_obj(obj)
 
-        # raise errors for additional fields in the input
+        _obj = Error.parse_obj({"code": obj.get("code"), "message": obj.get("message")})
+        # store additional fields in additional_properties
         for _key in obj.keys():
             if _key not in cls.__properties:
-                raise ValueError(
-                    "Error due to additional fields (not defined in Error) in the input: "
-                    + obj
-                )
+                _obj.additional_properties[_key] = obj.get(_key)
 
-        _obj = Error.parse_obj({"code": obj.get("code"), "message": obj.get("message")})
         return _obj

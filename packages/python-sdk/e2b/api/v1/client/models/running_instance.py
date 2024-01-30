@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field, StrictStr
 
 
@@ -32,7 +32,6 @@ class RunningInstance(BaseModel):
         alias="envID",
         description="Identifier of the environment from which is the instance created",
     )
-    alias: Optional[StrictStr] = Field(None, description="Alias of the environment")
     instance_id: StrictStr = Field(
         ..., alias="instanceID", description="Identifier of the instance"
     )
@@ -43,7 +42,8 @@ class RunningInstance(BaseModel):
         ..., alias="startedAt", description="Time when the instance was started"
     )
     metadata: Optional[Dict[str, StrictStr]] = None
-    __properties = ["envID", "alias", "instanceID", "clientID", "startedAt", "metadata"]
+    additional_properties: Dict[str, Any] = {}
+    __properties = ["envID", "instanceID", "clientID", "startedAt", "metadata"]
 
     class Config:
         """Pydantic configuration"""
@@ -66,7 +66,14 @@ class RunningInstance(BaseModel):
 
     def to_dict(self):
         """Returns the dictionary representation of the model using alias"""
-        _dict = self.dict(by_alias=True, exclude={}, exclude_none=True)
+        _dict = self.dict(
+            by_alias=True, exclude={"additional_properties"}, exclude_none=True
+        )
+        # puts key-value pairs in additional_properties in the top level
+        if self.additional_properties is not None:
+            for _key, _value in self.additional_properties.items():
+                _dict[_key] = _value
+
         return _dict
 
     @classmethod
@@ -78,22 +85,18 @@ class RunningInstance(BaseModel):
         if not isinstance(obj, dict):
             return RunningInstance.parse_obj(obj)
 
-        # raise errors for additional fields in the input
-        for _key in obj.keys():
-            if _key not in cls.__properties:
-                raise ValueError(
-                    "Error due to additional fields (not defined in RunningInstance) in the input: "
-                    + obj
-                )
-
         _obj = RunningInstance.parse_obj(
             {
                 "env_id": obj.get("envID"),
-                "alias": obj.get("alias"),
                 "instance_id": obj.get("instanceID"),
                 "client_id": obj.get("clientID"),
                 "started_at": obj.get("startedAt"),
                 "metadata": obj.get("metadata"),
             }
         )
+        # store additional fields in additional_properties
+        for _key in obj.keys():
+            if _key not in cls.__properties:
+                _obj.additional_properties[_key] = obj.get(_key)
+
         return _obj

@@ -38,6 +38,7 @@ class InstancesInstanceIDRefreshesPostRequest(BaseModel):
         default=None,
         description="Duration for which the instance should be kept alive in seconds",
     )
+    additional_properties: Dict[str, Any] = {}
     __properties: ClassVar[List[str]] = ["duration"]
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
@@ -65,12 +66,20 @@ class InstancesInstanceIDRefreshesPostRequest(BaseModel):
         * `None` is only added to the output dict for nullable fields that
           were set at model initialization. Other fields with value `None`
           are ignored.
+        * Fields in `self.additional_properties` are added to the output dict.
         """
         _dict = self.model_dump(
             by_alias=True,
-            exclude={},
+            exclude={
+                "additional_properties",
+            },
             exclude_none=True,
         )
+        # puts key-value pairs in additional_properties in the top level
+        if self.additional_properties is not None:
+            for _key, _value in self.additional_properties.items():
+                _dict[_key] = _value
+
         return _dict
 
     @classmethod
@@ -82,13 +91,10 @@ class InstancesInstanceIDRefreshesPostRequest(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        # raise errors for additional fields in the input
+        _obj = cls.model_validate({"duration": obj.get("duration")})
+        # store additional fields in additional_properties
         for _key in obj.keys():
             if _key not in cls.__properties:
-                raise ValueError(
-                    "Error due to additional fields (not defined in InstancesInstanceIDRefreshesPostRequest) in the input: "
-                    + _key
-                )
+                _obj.additional_properties[_key] = obj.get(_key)
 
-        _obj = cls.model_validate({"duration": obj.get("duration")})
         return _obj
