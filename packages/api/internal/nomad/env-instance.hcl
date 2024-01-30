@@ -4,6 +4,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
 
   meta {
     {{ .EnvIDKey }} = "{{ .EnvID }}"
+    {{ .AliasKey }} = "{{ .Alias }}"
     {{ .InstanceIDKey }} = "{{ .InstanceID }}"
     {{ .TeamIDKey }} = "{{ .TeamID }}"
     {{ .MetadataKey }} = "{{ .Metadata }}"

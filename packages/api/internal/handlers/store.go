@@ -265,7 +265,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	return deleteInstance(a.Ctx, a.nomad, a.analytics, a.posthog, info, purge)
 }
 
-func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (envID string, hasAccess bool, err error) {
+func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Environment, hasAccess bool, err error) {
 	return a.supabase.HasEnvAccess(ctx, aliasOrEnvID, teamID, public)
 }
 

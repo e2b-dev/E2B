@@ -311,7 +311,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		attribute.String("env.alias", alias),
 	)
 
-	envID, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
+	env, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
 	if accessErr != nil {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("the sandbox template '%s' does not exist", cleanedAliasOrEnvID))
 
@@ -324,7 +324,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
 	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "submitted environment build request", properties.
-		Set("environment", envID).
+		Set("environment", env.EnvID).
 		Set("build_id", buildID).
 		Set("alias", alias).
 		Set("dockerfile", dockerfile),
@@ -333,7 +333,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	if !hasAccess {
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
 
-		errMsg := fmt.Errorf("user doesn't have access to env '%s'", envID)
+		errMsg := fmt.Errorf("user doesn't have access to env '%s'", env.EnvID)
 		telemetry.ReportError(ctx, errMsg)
 
 		return
@@ -341,7 +341,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID.String()))
 
-	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
+	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", env.EnvID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when uploading file to cloud storage: %s", err))
 
@@ -351,11 +351,11 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		return
 	}
 
-	err = a.buildCache.Create(envID, buildID, team.ID)
+	err = a.buildCache.Create(env.EnvID, buildID, team.ID)
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", envID))
+		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", env.EnvID))
 
-		err = fmt.Errorf("build is already running build for %s", envID)
+		err = fmt.Errorf("build is already running build for %s", env.EnvID)
 		telemetry.ReportCriticalError(ctx, err)
 
 		return
@@ -364,14 +364,14 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	telemetry.ReportEvent(ctx, "started updating environment")
 
 	if alias != "" {
-		err = a.supabase.EnsureEnvAlias(ctx, alias, envID)
+		err = a.supabase.EnsureEnvAlias(ctx, alias, env.EnvID)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
 
 			err = fmt.Errorf("error when inserting alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			a.buildCache.Delete(envID, buildID, team.ID)
+			a.buildCache.Delete(env.EnvID, buildID, team.ID)
 
 			return
 		} else {
@@ -393,7 +393,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			buildContext,
 			userID.String(),
 			team.ID,
-			envID,
+			env.EnvID,
 			buildID,
 			dockerfile,
 			startCmd,
@@ -413,7 +413,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		} else {
 			status = api.EnvironmentBuildStatusReady
 
-			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", envID))
+			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", env.EnvID))
 		}
 
 		if status == api.EnvironmentBuildStatusError && alias != "" {
@@ -425,7 +425,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("env.alias", alias))
 			}
 		} else if status == api.EnvironmentBuildStatusReady && alias != "" {
-			errMsg := a.supabase.UpdateEnvAlias(buildContext, alias, envID)
+			errMsg := a.supabase.UpdateEnvAlias(buildContext, alias, env.EnvID)
 			if errMsg != nil {
 				err = fmt.Errorf("error when updating alias: %w", errMsg)
 				telemetry.ReportError(buildContext, err)
@@ -434,7 +434,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			}
 		}
 
-		cacheErr := a.buildCache.SetDone(envID, buildID, status)
+		cacheErr := a.buildCache.SetDone(env.EnvID, buildID, status)
 		if cacheErr != nil {
 			errMsg := fmt.Errorf("error when setting build done in logs: %w", cacheErr)
 			telemetry.ReportCriticalError(buildContext, errMsg)
@@ -450,7 +450,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 	}
 
 	result := &api.Environment{
-		EnvID:   envID,
+		EnvID:   env.EnvID,
 		BuildID: buildID.String(),
 		Public:  false,
 		Aliases: &aliases,
