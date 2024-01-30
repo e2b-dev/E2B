@@ -46,7 +46,7 @@ func (a *APIStore) PostInstances(
 	// Get team from context, use TeamContextKey
 	team := c.Value(constants.TeamContextKey).(models.Team)
 
-	envID, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
+	env, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
 		errMsg := fmt.Errorf("error when checking team access: %w", checkErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -57,7 +57,7 @@ func (a *APIStore) PostInstances(
 	}
 
 	if !hasAccess {
-		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", team.ID, envID)
+		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", team.ID, env.EnvID)
 		telemetry.ReportError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
@@ -65,12 +65,18 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
-	c.Set("envID", envID)
+	var alias string
+	if env.Aliases != nil && len(*env.Aliases) > 0 {
+		alias = (*env.Aliases)[0]
+	}
+
+	c.Set("envID", env.EnvID)
 	c.Set("teamID", team.ID.String())
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("env.team.id", team.ID.String()),
-		attribute.String("env.id", envID),
+		attribute.String("env.id", env.EnvID),
+		attribute.String("env.alias", alias),
 	)
 
 	// Check if team has reached max instances
@@ -91,7 +97,7 @@ func (a *APIStore) PostInstances(
 		metadata = *body.Metadata
 	}
 
-	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID, team.ID.String(), metadata)
+	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, env.EnvID, alias, team.ID.String(), metadata)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -109,8 +115,9 @@ func (a *APIStore) PostInstances(
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "created_instance",
 		properties.
-			Set("environment", envID).
-			Set("instance_id", instance.InstanceID),
+			Set("environment", env.EnvID).
+			Set("instance_id", instance.InstanceID).
+			Set("alias", alias),
 	)
 
 	if cacheErr := a.instanceCache.Add(InstanceInfo{
@@ -141,7 +148,7 @@ func (a *APIStore) PostInstances(
 		)
 		defer childSpan.End()
 
-		err = a.supabase.UpdateEnvLastUsed(updateContext, envID)
+		err = a.supabase.UpdateEnvLastUsed(updateContext, env.EnvID)
 		if err != nil {
 			telemetry.ReportCriticalError(updateContext, err)
 		} else {

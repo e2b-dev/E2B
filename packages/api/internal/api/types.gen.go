@@ -65,6 +65,9 @@ type Error struct {
 
 // Instance defines model for Instance.
 type Instance struct {
+	// Alias Alias of the environment
+	Alias *string `json:"alias,omitempty"`
+
 	// ClientID Identifier of the client
 	ClientID string `json:"clientID"`
 
@@ -87,6 +90,9 @@ type NewInstance struct {
 
 // RunningInstance defines model for RunningInstance.
 type RunningInstance struct {
+	// Alias Alias of the environment
+	Alias *string `json:"alias,omitempty"`
+
 	// ClientID Identifier of the client
 	ClientID string `json:"clientID"`
 

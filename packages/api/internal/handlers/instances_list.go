@@ -32,6 +32,7 @@ func (a *APIStore) GetInstances(c *gin.Context) {
 		instance := api.RunningInstance{
 			ClientID:   info.Instance.ClientID,
 			EnvID:      info.Instance.EnvID,
+			Alias:      info.Instance.Alias,
 			InstanceID: info.Instance.InstanceID,
 			StartedAt:  *info.StartTime,
 		}

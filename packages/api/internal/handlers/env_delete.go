@@ -43,7 +43,7 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		return
 	}
 
-	envID, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
+	env, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
 	if accessErr != nil {
 		errMsg := fmt.Errorf("error env not found: %w", accessErr)
 		telemetry.ReportError(ctx, errMsg)
@@ -57,19 +57,19 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		attribute.String("user.id", userID.String()),
 		attribute.String("env.team.id", team.ID.String()),
 		attribute.String("env.team.name", team.Name),
-		attribute.String("env.id", envID),
+		attribute.String("env.id", env.EnvID),
 	)
 
 	if !hasAccess {
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
 
-		errMsg := fmt.Errorf("user doesn't have access to env '%s'", envID)
+		errMsg := fmt.Errorf("user doesn't have access to env '%s'", env.EnvID)
 		telemetry.ReportError(ctx, errMsg)
 
 		return
 	}
 
-	deleteJobErr := a.nomad.DeleteEnv(a.tracer, ctx, envID)
+	deleteJobErr := a.nomad.DeleteEnv(a.tracer, ctx, env.EnvID)
 	if deleteJobErr != nil {
 		errMsg := fmt.Errorf("error when deleting env files from fc-envs disk: %w", deleteJobErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -77,7 +77,7 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		telemetry.ReportEvent(ctx, "deleted env from fc-envs disk")
 	}
 
-	dockerContextDelErr := a.cloudStorage.deleteFolder(ctx, strings.Join([]string{"v1", envID}, "/"))
+	dockerContextDelErr := a.cloudStorage.deleteFolder(ctx, strings.Join([]string{"v1", env.EnvID}, "/"))
 	if dockerContextDelErr != nil {
 		errMsg := fmt.Errorf("error when deleting env docker context from storage bucket: %w", dockerContextDelErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -85,7 +85,7 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		telemetry.ReportEvent(ctx, "deleted env docker context form storage bucket")
 	}
 
-	op, artifactRegistryDeleteErr := a.artifactRegistry.DeletePackage(ctx, &artifactregistrypb.DeletePackageRequest{Name: DockerImagesURL + envID})
+	op, artifactRegistryDeleteErr := a.artifactRegistry.DeletePackage(ctx, &artifactregistrypb.DeletePackageRequest{Name: DockerImagesURL + env.EnvID})
 	if artifactRegistryDeleteErr != nil {
 		errMsg := fmt.Errorf("error when deleting env image from registry: %w", artifactRegistryDeleteErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -101,7 +101,7 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		}
 	}
 
-	dbErr := a.supabase.DeleteEnv(ctx, envID)
+	dbErr := a.supabase.DeleteEnv(ctx, env.EnvID)
 	if dbErr != nil {
 		errMsg := fmt.Errorf("error when deleting env from db: %w", dbErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -115,7 +115,7 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
-	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "deleted environment", properties.Set("environment", envID))
+	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "deleted environment", properties.Set("environment", env.EnvID))
 
 	c.JSON(http.StatusOK, nil)
 }

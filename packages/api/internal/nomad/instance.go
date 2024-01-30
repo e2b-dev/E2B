@@ -30,6 +30,7 @@ const (
 	instanceStartTimeout = time.Second * 20
 
 	envIDMetaKey      = "ENV_ID"
+	aliasMetaKey      = "ALIAS"
 	instanceIDMetaKey = "INSTANCE_ID"
 	teamIDMetaKey     = "TEAM_ID"
 	metadataKey       = "METADATA"
@@ -85,6 +86,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 	for _, job := range jobs {
 		instanceID := job.Meta[instanceIDMetaKey]
 		envID := job.Meta[envIDMetaKey]
+		aliasRaw := job.Meta[aliasMetaKey]
 		teamID := job.Meta[teamIDMetaKey]
 		metadataRaw := job.Meta[metadataKey]
 
@@ -95,6 +97,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		}
 
 		var teamUUID *uuid.UUID
+		var alias *string
 
 		if teamID != "" {
 			parsedTeamID, parseErr := uuid.Parse(teamID)
@@ -103,6 +106,10 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 			} else {
 				teamUUID = &parsedTeamID
 			}
+		}
+
+		if aliasRaw != "" {
+			alias = &aliasRaw
 		}
 
 		clientID, ok := nodeMap[job.ID]
@@ -114,6 +121,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 			Instance: &api.Instance{
 				InstanceID: instanceID,
 				EnvID:      envID,
+				Alias:      alias,
 				ClientID:   clientID,
 			},
 			TeamID:   teamUUID,
@@ -128,6 +136,7 @@ func (n *NomadClient) CreateInstance(
 	t trace.Tracer,
 	ctx context.Context,
 	envID,
+	alias,
 	teamID string,
 	metadata map[string]string,
 ) (*api.Instance, *api.APIError) {
@@ -167,6 +176,7 @@ func (n *NomadClient) CreateInstance(
 		ConsulToken      string
 		TraceID          string
 		EnvID            string
+		Alias            string
 		InstanceID       string
 		LogsProxyAddress string
 		TaskName         string
@@ -174,6 +184,7 @@ func (n *NomadClient) CreateInstance(
 		EnvsDisk         string
 		TeamID           string
 		EnvIDKey         string
+		AliasKey         string
 		InstanceIDKey    string
 		TeamIDKey        string
 		MetadataKey      string
@@ -181,6 +192,7 @@ func (n *NomadClient) CreateInstance(
 	}{
 		TeamIDKey:        teamIDMetaKey,
 		EnvIDKey:         envIDMetaKey,
+		AliasKey:         aliasMetaKey,
 		InstanceIDKey:    instanceIDMetaKey,
 		MetadataKey:      metadataKey,
 		SpanID:           spanID,
@@ -189,6 +201,7 @@ func (n *NomadClient) CreateInstance(
 		LogsProxyAddress: logsProxyAddress,
 		ConsulToken:      consulToken,
 		EnvID:            envID,
+		Alias:            strings.ReplaceAll(alias, "\"", "\\\""),
 		InstanceID:       instanceID,
 		TaskName:         defaultTaskName,
 		JobName:          instanceJobName,
@@ -356,6 +369,7 @@ func (n *NomadClient) CreateInstance(
 			ClientID:   strings.Clone(alloc.NodeID[:shortNodeIDLength]),
 			InstanceID: instanceID,
 			EnvID:      envID,
+			Alias:      &alias,
 		}, nil
 	}
 }

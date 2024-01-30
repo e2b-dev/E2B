@@ -65,7 +65,9 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 		Env.
 		Query().
 		Where(env.Or(env.HasEnvAliasesWith(envalias.ID(aliasOrEnvID)), env.ID(aliasOrEnvID)), env.Or(env.TeamID(teamID), env.Public(true))).
-		WithEnvAliases().
+		WithEnvAliases(func(query *models.EnvAliasQuery) {
+			query.Order(models.Asc(envalias.FieldID)) // TODO: remove once we have only 1 alias per env
+		}).
 		Only(ctx)
 
 	notFound := models.IsNotFound(err)
@@ -129,13 +131,13 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 	return nil
 }
 
-func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (envID string, hasAccess bool, err error) {
+func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *api.Environment, hasAccess bool, err error) {
 	envDB, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
+		return nil, false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}
 
-	return envDB.EnvID, true, nil
+	return envDB, true, nil
 }
 
 func (db *DB) UpdateEnvLastUsed(ctx context.Context, envID string) (err error) {
