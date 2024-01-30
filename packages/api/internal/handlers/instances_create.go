@@ -66,7 +66,7 @@ func (a *APIStore) PostInstances(
 	}
 
 	var alias string
-	if env.Aliases != nil {
+	if env.Aliases != nil && len(*env.Aliases) > 0 {
 		alias = (*env.Aliases)[0]
 	}
 
