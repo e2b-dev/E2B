@@ -8,9 +8,9 @@ const listRunningSandboxes = e2b.withAPIKey(
   e2b.api.path('/instances').method('get').create(),
 )
 
-export const instancesCommand = new commander.Command('instances')
-  .description('List all sandboxes')
-  .alias('ins')
+export const runningSandboxesCommand = new commander.Command('sandboxes')
+  .description('List all running sandboxes')
+  .alias('sndbx')
   .action(async () => {
     try {
       const apiKey = ensureAPIKey()
@@ -24,6 +24,7 @@ export const instancesCommand = new commander.Command('instances')
           columns: [
             { name: 'instanceID', alignment: 'left', title: 'Sandbox ID' },
             { name: 'envID', alignment: 'left', title: 'Template ID' },
+            { name: 'alias', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
             { name: 'metadata', alignment: 'left', title: 'Metadata'},
           ],

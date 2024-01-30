@@ -32,6 +32,7 @@ class RunningInstance(BaseModel):
         alias="envID",
         description="Identifier of the environment from which is the instance created",
     )
+    alias: Optional[StrictStr] = Field(None, description="Alias of the environment")
     instance_id: StrictStr = Field(
         ..., alias="instanceID", description="Identifier of the instance"
     )
@@ -42,7 +43,7 @@ class RunningInstance(BaseModel):
         ..., alias="startedAt", description="Time when the instance was started"
     )
     metadata: Optional[Dict[str, StrictStr]] = None
-    __properties = ["envID", "instanceID", "clientID", "startedAt", "metadata"]
+    __properties = ["envID", "alias", "instanceID", "clientID", "startedAt", "metadata"]
 
     class Config:
         """Pydantic configuration"""
@@ -88,6 +89,7 @@ class RunningInstance(BaseModel):
         _obj = RunningInstance.parse_obj(
             {
                 "env_id": obj.get("envID"),
+                "alias": obj.get("alias"),
                 "instance_id": obj.get("instanceID"),
                 "client_id": obj.get("clientID"),
                 "started_at": obj.get("startedAt"),

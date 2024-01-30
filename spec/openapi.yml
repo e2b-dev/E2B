@@ -140,6 +140,9 @@ components:
         instanceID:
           type: string
           description: Identifier of the instance
+        alias:
+          type: string
+          description: Alias of the environment
         clientID:
           type: string
           description: Identifier of the client
@@ -167,6 +170,9 @@ components:
         envID:
           type: string
           description: Identifier of the environment from which is the instance created
+        alias:
+          type: string
+          description: Alias of the environment
         instanceID:
           type: string
           description: Identifier of the instance

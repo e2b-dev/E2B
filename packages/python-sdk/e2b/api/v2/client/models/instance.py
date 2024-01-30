@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 
-from typing import Any, ClassVar, Dict, List
+from typing import Any, ClassVar, Dict, List, Optional
 from pydantic import BaseModel, StrictStr
 from pydantic import Field
 
@@ -40,10 +40,13 @@ class Instance(BaseModel):
     instance_id: StrictStr = Field(
         description="Identifier of the instance", alias="instanceID"
     )
+    alias: Optional[StrictStr] = Field(
+        default=None, description="Alias of the environment"
+    )
     client_id: StrictStr = Field(
         description="Identifier of the client", alias="clientID"
     )
-    __properties: ClassVar[List[str]] = ["envID", "instanceID", "clientID"]
+    __properties: ClassVar[List[str]] = ["envID", "instanceID", "alias", "clientID"]
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
@@ -99,6 +102,7 @@ class Instance(BaseModel):
             {
                 "envID": obj.get("envID"),
                 "instanceID": obj.get("instanceID"),
+                "alias": obj.get("alias"),
                 "clientID": obj.get("clientID"),
             }
         )

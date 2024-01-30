@@ -18,6 +18,7 @@ import re  # noqa: F401
 import json
 
 
+from typing import Optional
 from pydantic import BaseModel, Field, StrictStr
 
 
@@ -34,10 +35,11 @@ class Instance(BaseModel):
     instance_id: StrictStr = Field(
         ..., alias="instanceID", description="Identifier of the instance"
     )
+    alias: Optional[StrictStr] = Field(None, description="Alias of the environment")
     client_id: StrictStr = Field(
         ..., alias="clientID", description="Identifier of the client"
     )
-    __properties = ["envID", "instanceID", "clientID"]
+    __properties = ["envID", "instanceID", "alias", "clientID"]
 
     class Config:
         """Pydantic configuration"""
@@ -84,6 +86,7 @@ class Instance(BaseModel):
             {
                 "env_id": obj.get("envID"),
                 "instance_id": obj.get("instanceID"),
+                "alias": obj.get("alias"),
                 "client_id": obj.get("clientID"),
             }
         )

@@ -264,6 +264,8 @@ export interface components {
       envID: string;
       /** @description Identifier of the instance */
       instanceID: string;
+      /** @description Alias of the environment */
+      alias?: string;
       /** @description Identifier of the client */
       clientID: string;
     };
@@ -279,6 +281,8 @@ export interface components {
     RunningInstance: {
       /** @description Identifier of the environment from which is the instance created */
       envID: string;
+      /** @description Alias of the environment */
+      alias?: string;
       /** @description Identifier of the instance */
       instanceID: string;
       /** @description Identifier of the client */

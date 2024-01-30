@@ -8,7 +8,7 @@ import { listCommand } from './list'
 import { shellCommand } from './shell'
 import { initCommand } from './init'
 import { deleteCommand } from './delete'
-import { instancesCommand } from './instances'
+import { runningSandboxesCommand } from './sandboxes'
 
 export const program = new commander.Command()
   .description(`Create sandbox templates from Dockerfiles by running ${asPrimary('e2b build')} then use our SDKs to create sandboxes from these templates.
@@ -22,4 +22,4 @@ Visit ${asPrimary('E2B docs (https://e2b.dev/docs)')} to learn how to create san
   .addCommand(shellCommand)
   .addCommand(initCommand)
   .addCommand(deleteCommand)
-  .addCommand(instancesCommand)
+  .addCommand(runningSandboxesCommand)

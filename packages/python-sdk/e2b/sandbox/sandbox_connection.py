@@ -48,9 +48,10 @@ class SubscriptionArgs(BaseModel):
     params: List[Any] = []
 
 
-class RunningSandboxes(BaseModel):
+class RunningSandbox(BaseModel):
     sandbox_id: str
     template_id: str
+    alias: Optional[str]
     metadata: Dict[str, str]
 
 
@@ -459,7 +460,7 @@ class SandboxConnection:
             self._close()
 
     @staticmethod
-    def list(api_key: Optional[str] = None) -> List[RunningSandboxes]:
+    def list(api_key: Optional[str] = None) -> List[RunningSandbox]:
         """
         List all running sandboxes.
 
@@ -470,9 +471,10 @@ class SandboxConnection:
             running_sandboxes = client.InstancesApi(api_client).instances_get()
 
         return [
-            RunningSandboxes(
+            RunningSandbox(
                 sandbox_id=s.instance_id,
                 template_id=s.env_id,
+                alias=s.alias,
                 metadata=s.metadata or {},
             )
             for s in running_sandboxes

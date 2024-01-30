@@ -37,6 +37,9 @@ class RunningInstance(BaseModel):
         description="Identifier of the environment from which is the instance created",
         alias="envID",
     )
+    alias: Optional[StrictStr] = Field(
+        default=None, description="Alias of the environment"
+    )
     instance_id: StrictStr = Field(
         description="Identifier of the instance", alias="instanceID"
     )
@@ -49,6 +52,7 @@ class RunningInstance(BaseModel):
     metadata: Optional[Dict[str, StrictStr]] = None
     __properties: ClassVar[List[str]] = [
         "envID",
+        "alias",
         "instanceID",
         "clientID",
         "startedAt",
@@ -108,6 +112,7 @@ class RunningInstance(BaseModel):
         _obj = cls.model_validate(
             {
                 "envID": obj.get("envID"),
+                "alias": obj.get("alias"),
                 "instanceID": obj.get("instanceID"),
                 "clientID": obj.get("clientID"),
                 "startedAt": obj.get("startedAt"),
