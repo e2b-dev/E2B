@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "description": "CLI for managing e2b sandbox templates",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "@balena/dockerignore": "^1.0.2",
-    "@e2b/sdk": "^0.11.19",
+    "@e2b/sdk": "^0.11.20",
     "@iarna/toml": "^2.2.5",
     "@nodelib/fs.walk": "^2.0.0",
     "async-listen": "^3.0.1",
