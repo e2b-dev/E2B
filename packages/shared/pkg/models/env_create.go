@@ -150,6 +150,14 @@ func (ec *EnvCreate) SetKernelVersion(s string) *EnvCreate {
 	return ec
 }
 
+// SetNillableKernelVersion sets the "kernel_version" field if the given value is not nil.
+func (ec *EnvCreate) SetNillableKernelVersion(s *string) *EnvCreate {
+	if s != nil {
+		ec.SetKernelVersion(*s)
+	}
+	return ec
+}
+
 // SetID sets the "id" field.
 func (ec *EnvCreate) SetID(s string) *EnvCreate {
 	ec.mutation.SetID(s)
@@ -226,6 +234,10 @@ func (ec *EnvCreate) defaults() {
 	if _, ok := ec.mutation.SpawnCount(); !ok {
 		v := env.DefaultSpawnCount
 		ec.mutation.SetSpawnCount(v)
+	}
+	if _, ok := ec.mutation.KernelVersion(); !ok {
+		v := env.DefaultKernelVersion
+		ec.mutation.SetKernelVersion(v)
 	}
 }
 

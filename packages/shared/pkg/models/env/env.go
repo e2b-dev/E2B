@@ -104,6 +104,8 @@ var (
 	DefaultBuildCount int32
 	// DefaultSpawnCount holds the default value on creation for the "spawn_count" field.
 	DefaultSpawnCount int64
+	// DefaultKernelVersion holds the default value on creation for the "kernel_version" field.
+	DefaultKernelVersion string
 )
 
 // OrderOption defines the ordering options for the Env queries.

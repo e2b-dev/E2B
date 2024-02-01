@@ -44,7 +44,7 @@ var (
 		{Name: "ram_mb", Type: field.TypeInt64},
 		{Name: "free_disk_size_mb", Type: field.TypeInt64},
 		{Name: "total_disk_size_mb", Type: field.TypeInt64},
-		{Name: "kernel_version", Type: field.TypeString},
+		{Name: "kernel_version", Type: field.TypeString, Default: "vmlinux-5.10.186"},
 		{Name: "team_id", Type: field.TypeUUID},
 	}
 	// EnvsTable holds the schema information for the "envs" table.

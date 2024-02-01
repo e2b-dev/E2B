@@ -35,6 +35,10 @@ func init() {
 	envDescSpawnCount := envFields[8].Descriptor()
 	// env.DefaultSpawnCount holds the default value on creation for the spawn_count field.
 	env.DefaultSpawnCount = envDescSpawnCount.Default.(int64)
+	// envDescKernelVersion is the schema descriptor for kernel_version field.
+	envDescKernelVersion := envFields[14].Descriptor()
+	// env.DefaultKernelVersion holds the default value on creation for the kernel_version field.
+	env.DefaultKernelVersion = envDescKernelVersion.Default.(string)
 	envaliasFields := schema.EnvAlias{}.Fields()
 	_ = envaliasFields
 	// envaliasDescIsName is the schema descriptor for is_name field.
