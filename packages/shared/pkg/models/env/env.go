@@ -40,6 +40,8 @@ const (
 	FieldFreeDiskSizeMB = "free_disk_size_mb"
 	// FieldTotalDiskSizeMB holds the string denoting the total_disk_size_mb field in the database.
 	FieldTotalDiskSizeMB = "total_disk_size_mb"
+	// FieldKernelVersion holds the string denoting the kernel_version field in the database.
+	FieldKernelVersion = "kernel_version"
 	// EdgeTeam holds the string denoting the team edge name in mutations.
 	EdgeTeam = "team"
 	// EdgeEnvAliases holds the string denoting the env_aliases edge name in mutations.
@@ -80,6 +82,7 @@ var Columns = []string{
 	FieldRAMMB,
 	FieldFreeDiskSizeMB,
 	FieldTotalDiskSizeMB,
+	FieldKernelVersion,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -174,6 +177,11 @@ func ByFreeDiskSizeMB(opts ...sql.OrderTermOption) OrderOption {
 // ByTotalDiskSizeMB orders the results by the total_disk_size_mb field.
 func ByTotalDiskSizeMB(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTotalDiskSizeMB, opts...).ToFunc()
+}
+
+// ByKernelVersion orders the results by the kernel_version field.
+func ByKernelVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKernelVersion, opts...).ToFunc()
 }
 
 // ByTeamField orders the results by team field.

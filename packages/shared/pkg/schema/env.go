@@ -35,6 +35,7 @@ func (Env) Fields() []ent.Field {
 		field.Int64("ram_mb"),
 		field.Int64("free_disk_size_mb"),
 		field.Int64("total_disk_size_mb"),
+		field.String("kernel_version"),
 	}
 }
 
@@ -47,6 +48,7 @@ func (Env) Edges() []ent.Edge {
 
 func (Env) Annotations() []schema.Annotation {
 	withComments := true
+
 	return []schema.Annotation{
 		entsql.Annotation{WithComments: &withComments},
 	}

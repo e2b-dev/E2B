@@ -144,6 +144,12 @@ func (ec *EnvCreate) SetTotalDiskSizeMB(i int64) *EnvCreate {
 	return ec
 }
 
+// SetKernelVersion sets the "kernel_version" field.
+func (ec *EnvCreate) SetKernelVersion(s string) *EnvCreate {
+	ec.mutation.SetKernelVersion(s)
+	return ec
+}
+
 // SetID sets the "id" field.
 func (ec *EnvCreate) SetID(s string) *EnvCreate {
 	ec.mutation.SetID(s)
@@ -261,6 +267,9 @@ func (ec *EnvCreate) check() error {
 	if _, ok := ec.mutation.TotalDiskSizeMB(); !ok {
 		return &ValidationError{Name: "total_disk_size_mb", err: errors.New(`models: missing required field "Env.total_disk_size_mb"`)}
 	}
+	if _, ok := ec.mutation.KernelVersion(); !ok {
+		return &ValidationError{Name: "kernel_version", err: errors.New(`models: missing required field "Env.kernel_version"`)}
+	}
 	if _, ok := ec.mutation.TeamID(); !ok {
 		return &ValidationError{Name: "team", err: errors.New(`models: missing required edge "Env.team"`)}
 	}
@@ -348,6 +357,10 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 	if value, ok := ec.mutation.TotalDiskSizeMB(); ok {
 		_spec.SetField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
 		_node.TotalDiskSizeMB = value
+	}
+	if value, ok := ec.mutation.KernelVersion(); ok {
+		_spec.SetField(env.FieldKernelVersion, field.TypeString, value)
+		_node.KernelVersion = value
 	}
 	if nodes := ec.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -622,6 +635,18 @@ func (u *EnvUpsert) AddTotalDiskSizeMB(v int64) *EnvUpsert {
 	return u
 }
 
+// SetKernelVersion sets the "kernel_version" field.
+func (u *EnvUpsert) SetKernelVersion(v string) *EnvUpsert {
+	u.Set(env.FieldKernelVersion, v)
+	return u
+}
+
+// UpdateKernelVersion sets the "kernel_version" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateKernelVersion() *EnvUpsert {
+	u.SetExcluded(env.FieldKernelVersion)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -887,6 +912,20 @@ func (u *EnvUpsertOne) AddTotalDiskSizeMB(v int64) *EnvUpsertOne {
 func (u *EnvUpsertOne) UpdateTotalDiskSizeMB() *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdateTotalDiskSizeMB()
+	})
+}
+
+// SetKernelVersion sets the "kernel_version" field.
+func (u *EnvUpsertOne) SetKernelVersion(v string) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetKernelVersion(v)
+	})
+}
+
+// UpdateKernelVersion sets the "kernel_version" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateKernelVersion() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateKernelVersion()
 	})
 }
 
@@ -1322,6 +1361,20 @@ func (u *EnvUpsertBulk) AddTotalDiskSizeMB(v int64) *EnvUpsertBulk {
 func (u *EnvUpsertBulk) UpdateTotalDiskSizeMB() *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdateTotalDiskSizeMB()
+	})
+}
+
+// SetKernelVersion sets the "kernel_version" field.
+func (u *EnvUpsertBulk) SetKernelVersion(v string) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetKernelVersion(v)
+	})
+}
+
+// UpdateKernelVersion sets the "kernel_version" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateKernelVersion() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateKernelVersion()
 	})
 }
 

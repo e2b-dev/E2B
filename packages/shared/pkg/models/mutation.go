@@ -506,6 +506,7 @@ type EnvMutation struct {
 	addfree_disk_size_mb  *int64
 	total_disk_size_mb    *int64
 	addtotal_disk_size_mb *int64
+	kernel_version        *string
 	clearedFields         map[string]struct{}
 	team                  *uuid.UUID
 	clearedteam           bool
@@ -1222,6 +1223,42 @@ func (m *EnvMutation) ResetTotalDiskSizeMB() {
 	m.addtotal_disk_size_mb = nil
 }
 
+// SetKernelVersion sets the "kernel_version" field.
+func (m *EnvMutation) SetKernelVersion(s string) {
+	m.kernel_version = &s
+}
+
+// KernelVersion returns the value of the "kernel_version" field in the mutation.
+func (m *EnvMutation) KernelVersion() (r string, exists bool) {
+	v := m.kernel_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKernelVersion returns the old "kernel_version" field's value of the Env entity.
+// If the Env object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvMutation) OldKernelVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKernelVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKernelVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKernelVersion: %w", err)
+	}
+	return oldValue.KernelVersion, nil
+}
+
+// ResetKernelVersion resets all changes to the "kernel_version" field.
+func (m *EnvMutation) ResetKernelVersion() {
+	m.kernel_version = nil
+}
+
 // ClearTeam clears the "team" edge to the Team entity.
 func (m *EnvMutation) ClearTeam() {
 	m.clearedteam = true
@@ -1337,7 +1374,7 @@ func (m *EnvMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, env.FieldCreatedAt)
 	}
@@ -1377,6 +1414,9 @@ func (m *EnvMutation) Fields() []string {
 	if m.total_disk_size_mb != nil {
 		fields = append(fields, env.FieldTotalDiskSizeMB)
 	}
+	if m.kernel_version != nil {
+		fields = append(fields, env.FieldKernelVersion)
+	}
 	return fields
 }
 
@@ -1411,6 +1451,8 @@ func (m *EnvMutation) Field(name string) (ent.Value, bool) {
 		return m.FreeDiskSizeMB()
 	case env.FieldTotalDiskSizeMB:
 		return m.TotalDiskSizeMB()
+	case env.FieldKernelVersion:
+		return m.KernelVersion()
 	}
 	return nil, false
 }
@@ -1446,6 +1488,8 @@ func (m *EnvMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldFreeDiskSizeMB(ctx)
 	case env.FieldTotalDiskSizeMB:
 		return m.OldTotalDiskSizeMB(ctx)
+	case env.FieldKernelVersion:
+		return m.OldKernelVersion(ctx)
 	}
 	return nil, fmt.Errorf("unknown Env field %s", name)
 }
@@ -1545,6 +1589,13 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTotalDiskSizeMB(v)
+		return nil
+	case env.FieldKernelVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKernelVersion(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)
@@ -1717,6 +1768,9 @@ func (m *EnvMutation) ResetField(name string) error {
 		return nil
 	case env.FieldTotalDiskSizeMB:
 		m.ResetTotalDiskSizeMB()
+		return nil
+	case env.FieldKernelVersion:
+		m.ResetKernelVersion()
 		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)
