@@ -22,6 +22,8 @@ type (
 		InstanceID string `codec:"InstanceID"`
 		EnvID      string `codec:"EnvID"`
 
+		KernelVersion string `codec:"KernelVersion"`
+
 		TeamID string `codec:"TeamID"`
 
 		TraceID string `codec:"TraceID"`
@@ -41,6 +43,8 @@ type (
 var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 	"InstanceID": hclspec.NewAttr("InstanceID", "string", true),
 	"EnvID":      hclspec.NewAttr("EnvID", "string", true),
+
+	"KernelVersion": hclspec.NewAttr("KernelVersion", "string", true),
 
 	"TeamID": hclspec.NewAttr("TeamID", "string", false),
 
@@ -81,6 +85,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	childSpan.SetAttributes(
 		attribute.String("alloc.id", cfg.AllocID),
 		attribute.String("env.id", taskConfig.EnvID),
+		attribute.String("env.kernel.version", taskConfig.KernelVersion),
 		attribute.String("instance.id", taskConfig.InstanceID),
 		attribute.String("client.id", cfg.Env["NOMAD_NODE_ID"]),
 	)
@@ -95,8 +100,12 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 			TeamID:           taskConfig.TeamID,
 			ConsulToken:      taskConfig.ConsulToken,
 			LogsProxyAddress: taskConfig.LogsProxyAddress,
+			KernelVersion:    taskConfig.KernelVersion,
 			NodeID:           cfg.Env["NOMAD_NODE_ID"],
 			EnvsDisk:         cfg.Env["ENVS_DISK"],
+			KernelsDir:       cfg.Env["KERNELS_DIR"],
+			KernelMountDir:   cfg.Env["KERNEL_MOUNT_DIR"],
+			KernelName:       cfg.Env["KERNEL_NAME"],
 		},
 		d.hosts,
 	)
