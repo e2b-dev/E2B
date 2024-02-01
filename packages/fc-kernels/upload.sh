@@ -17,8 +17,7 @@ if [ -f "kernel_versions.txt" ]; then
     curl "https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/${version}/x86_64/vmlinux-${version}" -o "downloads/${version}/vmlinux.bin"
 
     # Upload kernel to GCP bucket
-    gsutil -h "Cache-Control:no-cache, max-age=0" cp -n -r "downloads/${version}" gs://e2b-test-bucket-2
-    # gsutil -h "Cache-Control:no-cache, max-age=0" cp "vmlinux-${version}" "gs://${GCP_PROJECT_ID}-/vmlinux-${version}"
+    gsutil -h "Cache-Control:no-cache, max-age=0" cp -n -r "downloads/${version}" "gs://${GCP_PROJECT_ID}-fc-kernels"
 
     rm -rf "downloads/${version}"
   done <"kernel_versions.txt"
