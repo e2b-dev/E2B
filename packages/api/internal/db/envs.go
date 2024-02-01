@@ -59,7 +59,7 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Temp
 
 var ErrEnvNotFound = fmt.Errorf("env not found")
 
-func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (result *api.Template, err error) {
+func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (result *api.Template, kernelVersion string, err error) {
 	dbEnv, err := db.
 		Client.
 		Env.
@@ -72,13 +72,13 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 
 	notFound := models.IsNotFound(err)
 	if notFound {
-		return nil, ErrEnvNotFound
+		return nil, "", ErrEnvNotFound
 	} else if err != nil {
-		return nil, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
+		return nil, "", fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}
 
 	if !canBePublic && dbEnv.TeamID != teamID {
-		return nil, fmt.Errorf("you don't have access to this env '%s'", aliasOrEnvID)
+		return nil, "", fmt.Errorf("you don't have access to this env '%s'", aliasOrEnvID)
 	}
 
 	aliases := make([]string, len(dbEnv.Edges.EnvAliases))
@@ -91,10 +91,21 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 		BuildID:    dbEnv.BuildID.String(),
 		Public:     dbEnv.Public,
 		Aliases:    &aliases,
-	}, nil
+	}, dbEnv.KernelVersion, nil
 }
 
-func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, buildID uuid.UUID, dockerfile string, vCPU, ramMB, freeDiskSizeMB, totalDiskSizeMB int64) error {
+func (db *DB) UpsertEnv(
+	ctx context.Context,
+	teamID uuid.UUID,
+	envID string,
+	buildID uuid.UUID,
+	dockerfile string,
+	vCPU,
+	ramMB,
+	freeDiskSizeMB,
+	totalDiskSizeMB int64,
+	kernelVersion string,
+) error {
 	err := db.
 		Client.
 		Env.
@@ -106,6 +117,7 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 		SetPublic(false).
 		SetRAMMB(ramMB).
 		SetVcpu(vCPU).
+		SetKernelVersion(kernelVersion).
 		SetFreeDiskSizeMB(freeDiskSizeMB).
 		SetTotalDiskSizeMB(totalDiskSizeMB).
 		OnConflictColumns(env.FieldID).
@@ -114,6 +126,7 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 		UpdateUpdatedAt().
 		UpdateVcpu().
 		UpdateRAMMB().
+		UpdateKernelVersion().
 		UpdateFreeDiskSizeMB().
 		UpdateTotalDiskSizeMB().
 		Update(func(e *models.EnvUpsert) {
@@ -131,13 +144,13 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 	return nil
 }
 
-func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *api.Template, hasAccess bool, err error) {
-	envDB, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
+func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *api.Template, kernelVersion string, hasAccess bool, err error) {
+	envDB, kernelVersion, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
+		return nil, "", false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}
 
-	return envDB, true, nil
+	return envDB, kernelVersion, true, nil
 }
 
 func (db *DB) UpdateEnvLastUsed(ctx context.Context, envID string) (err error) {

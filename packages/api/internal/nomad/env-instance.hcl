@@ -29,6 +29,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
       env {
         NOMAD_NODE_ID = "${node.unique.id}"
         ENVS_DISK = "{{ .EnvsDisk }}"
+        KERNELS_DIR_PATH= "/fc-vm/kernels"
       }
 
       resources {
@@ -39,6 +40,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
       config {
         EnvID = "{{ .EnvID }}"
         InstanceID   = "{{ .InstanceID }}"
+        KernelVersion   = "{{ .KernelVersion }}"
         ConsulToken   = "{{ .ConsulToken }}"
         LogsProxyAddress = "{{ .LogsProxyAddress }}"
         SpanID = "{{ .SpanID }}"

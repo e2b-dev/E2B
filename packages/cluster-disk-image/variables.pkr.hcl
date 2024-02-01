@@ -21,9 +21,3 @@ variable "firecracker_version" {
   description = "Firecracker version must be prefixed with 'v'"
   default     = "v1.5.0"
 }
-
-variable "kernel_version" {
-  type = string
-  description = "Kernel version"
-  default = "6.1.68"
-}

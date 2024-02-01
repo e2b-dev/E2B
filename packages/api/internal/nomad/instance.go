@@ -139,6 +139,7 @@ func (n *NomadClient) CreateSandbox(
 	alias,
 	teamID string,
 	metadata map[string]string,
+	kernelVersion string,
 ) (*api.Sandbox, *api.APIError) {
 	childCtx, childSpan := t.Start(ctx, "create-instance",
 		trace.WithAttributes(
@@ -179,6 +180,7 @@ func (n *NomadClient) CreateSandbox(
 		Alias            string
 		InstanceID       string
 		LogsProxyAddress string
+		KernelVersion    string
 		TaskName         string
 		JobName          string
 		EnvsDisk         string
@@ -195,6 +197,7 @@ func (n *NomadClient) CreateSandbox(
 		AliasKey:         aliasMetaKey,
 		InstanceIDKey:    instanceIDMetaKey,
 		MetadataKey:      metadataKey,
+		KernelVersion:    kernelVersion,
 		SpanID:           spanID,
 		TeamID:           teamID,
 		TraceID:          traceID,
