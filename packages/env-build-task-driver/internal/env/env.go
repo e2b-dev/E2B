@@ -43,9 +43,6 @@ type Env struct {
 	// Docker registry where the docker images are uploaded for archivation/caching.
 	DockerRegistry string
 
-	// Path to where the kernel image is stored.
-	KernelImagePath string
-
 	// Path to the firecracker binary.
 	FirecrackerBinaryPath string
 
@@ -71,11 +68,36 @@ type Env struct {
 
 	// Real size of the rootfs after building the env.
 	RootfsSize int64
+
+	// Nomad token
+	NomadToken string
+
+	// Path to the directory where the dir with kernel is mounted.
+	KernelMountDir string
+
+	// Directory with the kernels.
+	KernelsDir string
+
+	// Name of the kernel file.
+	KernelName string
+
+	// Version of the kernel.
+	KernelVersion string
 }
 
 //go:embed provision.sh
 var provisionEnvScriptFile string
 var EnvInstanceTemplate = template.Must(template.New("provisioning-script").Parse(provisionEnvScriptFile))
+
+// Path to the directory where the kernel is stored.
+func (e *Env) KernelDirPath() string {
+	return filepath.Join(e.KernelsDir, e.KernelVersion)
+}
+
+// Path to the directory where the kernel can be accessed inside when the dirs are mounted.
+func (e *Env) KernelMountedPath() string {
+	return filepath.Join(e.KernelMountDir, e.KernelName)
+}
 
 // Path to the docker context.
 func (e *Env) DockerContextPath() string {

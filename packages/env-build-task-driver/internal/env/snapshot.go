@@ -102,7 +102,15 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 
 	defer snapshot.cleanupFC(childCtx, tracer)
 
-	err := snapshot.startFCProcess(childCtx, tracer, env.FirecrackerBinaryPath, network.namespaceID)
+	err := snapshot.startFCProcess(
+		childCtx,
+		tracer,
+		env.FirecrackerBinaryPath,
+		network.namespaceID,
+		env.KernelMountedPath(),
+		env.KernelMountDir,
+		env.KernelDirPath(),
+	)
 	if err != nil {
 		errMsg := fmt.Errorf("error starting fc process %w", err)
 
@@ -151,11 +159,28 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 	return snapshot, nil
 }
 
-func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBinaryPath, networkNamespaceID string) error {
+func (s *Snapshot) startFCProcess(
+	ctx context.Context,
+	tracer trace.Tracer,
+	fcBinaryPath,
+	networkNamespaceID,
+	kernelMountedPath,
+	kernelMountDir,
+	kernelDirPath string,
+) error {
 	childCtx, childSpan := tracer.Start(ctx, "start-fc-process")
 	defer childSpan.End()
 
-	s.fc = exec.CommandContext(childCtx, "ip", "netns", "exec", networkNamespaceID, fcBinaryPath, "--api-sock", s.socketPath)
+	kernelMountCmd := fmt.Sprintf(
+		"mount --bind %s %s && ",
+		kernelDirPath,
+		kernelMountDir,
+	)
+
+	inNetNSCmd := fmt.Sprintf("ip", "netns", "exec", networkNamespaceID)
+	fcCmd := fmt.Sprintf(fcBinaryPath, "--api-sock", s.socketPath)
+
+	s.fc = exec.CommandContext(childCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", kernelMountCmd+inNetNSCmd+fcCmd)
 
 	fcVMStdoutWriter := telemetry.NewEventWriter(childCtx, "stdout")
 	fcVMStderrWriter := telemetry.NewEventWriter(childCtx, "stderr")
@@ -252,7 +277,7 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 
 	ip := fmt.Sprintf("%s::%s:%s:instance:eth0:off:8.8.8.8", fcAddr, fcTapAddress, fcMaskLong)
 	kernelArgs := fmt.Sprintf("quiet loglevel=1 ip=%s reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on", ip)
-	kernelImagePath := s.env.KernelImagePath
+	kernelImagePath := s.env.KernelMountedPath()
 	bootSourceConfig := operations.PutGuestBootSourceParams{
 		Context: childCtx,
 		Body: &models.BootSource{

@@ -22,6 +22,8 @@ var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 	"BuildID": hclspec.NewAttr("BuildID", "string", true),
 	"EnvID":   hclspec.NewAttr("EnvID", "string", true),
 
+	"KernelVersion": hclspec.NewAttr("KernelVersion", "string", true),
+
 	"StartCmd": hclspec.NewAttr("StartCmd", "string", false),
 
 	"SpanID":  hclspec.NewAttr("SpanID", "string", true),
@@ -41,6 +43,8 @@ type (
 	TaskConfig struct {
 		BuildID string `codec:"BuildID"`
 		EnvID   string `codec:"EnvID"`
+
+		KernelVersion string `codec:"KernelVersion"`
 
 		StartCmd string `codec:"StartCmd"`
 
@@ -79,13 +83,15 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	contextsPath := cfg.Env["DOCKER_CONTEXTS_PATH"]
 	registry := cfg.Env["DOCKER_REGISTRY"]
 	envsDisk := cfg.Env["ENVS_DISK"]
-	kernelImagePath := cfg.Env["KERNEL_IMAGE_PATH"]
 	envdPath := cfg.Env["ENVD_PATH"]
 	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
 	contextFileName := cfg.Env["CONTEXT_FILE_NAME"]
 	apiSecret := cfg.Env["API_SECRET"]
 	googleServiceAccountBase64 := cfg.Env["GOOGLE_SERVICE_ACCOUNT_BASE64"]
 	nomadToken := cfg.Env["NOMAD_TOKEN"]
+	kernelsDir := cfg.Env["KERNELS_DIR"]
+	kernelMountDir := cfg.Env["KERNEL_MOUNT_DIR"]
+	kernelName := cfg.Env["KERNEL_NAME"]
 
 	telemetry.SetAttributes(childCtx,
 		attribute.String("build_id", taskConfig.BuildID),
@@ -97,10 +103,10 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		attribute.String("contexts_path", contextsPath),
 		attribute.String("registry", registry),
 		attribute.String("envs_disk", envsDisk),
-		attribute.String("kernel_image_path", kernelImagePath),
 		attribute.String("envd_path", envdPath),
 		attribute.String("firecracker_binary_path", firecrackerBinaryPath),
 		attribute.String("context_file_name", contextFileName),
+		attribute.String("kernel_version", taskConfig.KernelVersion),
 	)
 
 	writer := env.NewWriter(taskConfig.EnvID, taskConfig.BuildID, apiSecret)
@@ -113,7 +119,10 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		MemoryMB:                   taskConfig.MemoryMB,
 		DockerContextsPath:         contextsPath,
 		DockerRegistry:             registry,
-		KernelImagePath:            kernelImagePath,
+		KernelVersion:              taskConfig.KernelVersion,
+		KernelsDir:                 kernelsDir,
+		KernelMountDir:         kernelMountDir,
+		KernelName:                 kernelName,
 		StartCmd:                   taskConfig.StartCmd,
 		DiskSizeMB:                 taskConfig.DiskSizeMB,
 		FirecrackerBinaryPath:      firecrackerBinaryPath,
