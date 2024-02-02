@@ -460,7 +460,7 @@ paths:
   /templates/{templateID}/builds/{buildID}:
     get:
       description: Get template build info
-      tags: [envs]
+      tags: [templates]
       security:
         - AccessTokenAuth: []
       parameters:

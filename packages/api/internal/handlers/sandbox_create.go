@@ -28,7 +28,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context) *api.Sandbox {
 
 	c.Set("traceID", span.SpanContext().TraceID().String())
 
-	body, err := parseBody[api.PostInstancesJSONRequestBody](ctx, c)
+	body, err := parseBody[api.PostSandboxesJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 
@@ -38,7 +38,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context) *api.Sandbox {
 		return nil
 	}
 
-	cleanedAliasOrEnvID, err := utils.CleanEnvID(body.EnvID)
+	cleanedAliasOrEnvID, err := utils.CleanEnvID(body.TemplateID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid environment ID: %s", err))
 

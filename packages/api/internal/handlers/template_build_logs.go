@@ -97,7 +97,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c *gin.Con
 func (a *APIStore) PostTemplatesTemplateIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvID, buildID string) {
 	ctx := c.Request.Context()
 
-	body, err := parseBody[api.PostEnvsEnvIDBuildsBuildIDLogsJSONRequestBody](ctx, c)
+	body, err := parseBody[api.PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing body: %s", err))
 
