@@ -43,7 +43,7 @@ func MockBuild(envID, buildID string) {
 		KernelsDir:            "/fc-kernels",
 		KernelMountDir:        "/fc-vm",
 		KernelName:            "vmlinux.bin",
-		KernelVersion:         "5.10.186",
+		KernelVersion:         "vmlinux-5.10.186",
 		DiskSizeMB:            512,
 		FirecrackerBinaryPath: "/usr/bin/firecracker",
 		EnvdPath:              "/fc-vm/envd",

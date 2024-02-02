@@ -177,10 +177,10 @@ func (s *Snapshot) startFCProcess(
 		kernelMountDir,
 	)
 
-	inNetNSCmd := fmt.Sprintf("ip", "netns", "exec", networkNamespaceID)
-	fcCmd := fmt.Sprintf(fcBinaryPath, "--api-sock", s.socketPath)
+	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", networkNamespaceID)
+	fcCmd := fmt.Sprintf("%s --api-sock %s", fcBinaryPath, s.socketPath)
 
-	s.fc = exec.CommandContext(childCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", kernelMountCmd+inNetNSCmd+fcCmd)
+	s.fc = exec.CommandContext(childCtx, "unshare", "-pm", "--kill-child", "--", "bash", "-c", kernelMountCmd+inNetNSCmd+fcCmd)
 
 	fcVMStdoutWriter := telemetry.NewEventWriter(childCtx, "stdout")
 	fcVMStderrWriter := telemetry.NewEventWriter(childCtx, "stderr")
