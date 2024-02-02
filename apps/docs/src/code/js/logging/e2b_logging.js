@@ -1,4 +1,4 @@
-import { Sandbox } from '@e2b/sdk'
+import { Sandbox } from 'e2b'
 
 const logger = {
   debug: console.debug, // log debug messages, in default logger this is noop

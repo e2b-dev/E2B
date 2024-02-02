@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { Sandbox } from '@e2b/sdk'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({ template: 'base' })
 

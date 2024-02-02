@@ -1,4 +1,4 @@
-import * as e2b from '@e2b/sdk'
+import * as e2b from 'e2b'
 
 import { createDeferredPromise } from './utils/promise'
 

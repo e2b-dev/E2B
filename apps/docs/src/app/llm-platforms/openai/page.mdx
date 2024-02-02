@@ -199,7 +199,7 @@ This allows you to define your actions in separate files.
 <CodeGroup isFileName title="index.ts" isRunnable={false}>
 ```js
 import OpenAI from 'openai'
-import { Sandbox } from '@e2b/sdk' // $HighlightLine
+import { Sandbox } from 'e2b' // $HighlightLine
 
 const openai = new OpenAI()
 const sandbox = await Sandbox.create({ // $HighlightLine
@@ -223,7 +223,7 @@ We define three actions that the AI assistant can use:
 
 <CodeGroup isFileName title="actions.ts" isRunnable={false}>
 ```js
-import { Sandbox } from '@e2b/sdk'
+import { Sandbox } from 'e2b'
 import path from 'path'
 
 export async function saveCodeToFile(

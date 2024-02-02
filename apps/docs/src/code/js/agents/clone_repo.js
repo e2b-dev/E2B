@@ -1,4 +1,4 @@
-import { Sandbox } from '@e2b/sdk'
+import { Sandbox } from 'e2b'
 
 // 1. Start the playground sandbox
 const sandbox = await Sandbox.create({

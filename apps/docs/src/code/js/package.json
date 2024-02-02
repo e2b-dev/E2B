@@ -12,6 +12,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@e2b/sdk": "^0.3.0"
+    "e2b": "^0.3.0"
   }
 }

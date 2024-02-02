@@ -1,6 +1,6 @@
 import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
-import * as e2b from '@e2b/sdk'
+import * as e2b from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 
