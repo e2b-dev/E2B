@@ -265,7 +265,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	return deleteInstance(a.Ctx, a.nomad, a.analytics, a.posthog, info, purge)
 }
 
-func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Environment, hasAccess bool, err error) {
+func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, hasAccess bool, err error) {
 	return a.supabase.HasEnvAccess(ctx, aliasOrEnvID, teamID, public)
 }
 
@@ -287,9 +287,9 @@ func deleteInstance(
 ) *api.APIError {
 	duration := time.Since(*info.StartTime).Seconds()
 
-	delErr := nomad.DeleteInstance(info.Instance.InstanceID, purge)
+	delErr := nomad.DeleteInstance(info.Instance.SandboxID, purge)
 	if delErr != nil {
-		errMsg := fmt.Errorf("cannot delete instance '%s': %w", info.Instance.InstanceID, delErr.Err)
+		errMsg := fmt.Errorf("cannot delete instance '%s': %w", info.Instance.SandboxID, delErr.Err)
 
 		return &api.APIError{
 			Err:       errMsg,
@@ -301,8 +301,8 @@ func deleteInstance(
 	if info.TeamID != nil && info.StartTime != nil {
 		_, err := analytics.Client.InstanceStopped(ctx, &analyticscollector.InstanceStoppedEvent{
 			TeamId:        info.TeamID.String(),
-			EnvironmentId: info.Instance.EnvID,
-			InstanceId:    info.Instance.InstanceID,
+			EnvironmentId: info.Instance.TemplateID,
+			InstanceId:    info.Instance.SandboxID,
 			Timestamp:     timestamppb.Now(),
 			Duration:      float32(duration),
 		})
@@ -314,8 +314,8 @@ func deleteInstance(
 			posthogClient,
 			info.TeamID.String(),
 			"closed_instance", posthog.NewProperties().
-				Set("instance_id", info.Instance.InstanceID).
-				Set("environment", info.Instance.EnvID).
+				Set("instance_id", info.Instance.SandboxID).
+				Set("environment", info.Instance.TemplateID).
 				Set("duration", duration),
 		)
 	}

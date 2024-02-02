@@ -118,9 +118,9 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		}
 
 		instances = append(instances, &InstanceInfo{
-			Instance: &api.Instance{
-				InstanceID: instanceID,
-				EnvID:      envID,
+			Instance: &api.Sandbox{
+				SandboxID:  instanceID,
+				TemplateID: envID,
 				Alias:      alias,
 				ClientID:   clientID,
 			},
@@ -132,14 +132,14 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 	return instances, nil
 }
 
-func (n *NomadClient) CreateInstance(
+func (n *NomadClient) CreateSandbox(
 	t trace.Tracer,
 	ctx context.Context,
 	envID,
 	alias,
 	teamID string,
 	metadata map[string]string,
-) (*api.Instance, *api.APIError) {
+) (*api.Sandbox, *api.APIError) {
 	childCtx, childSpan := t.Start(ctx, "create-instance",
 		trace.WithAttributes(
 			attribute.String("env.id", envID),
@@ -365,10 +365,10 @@ func (n *NomadClient) CreateInstance(
 			}
 		}
 
-		return &api.Instance{
+		return &api.Sandbox{
 			ClientID:   strings.Clone(alloc.NodeID[:shortNodeIDLength]),
-			InstanceID: instanceID,
-			EnvID:      envID,
+			SandboxID:  instanceID,
+			TemplateID: envID,
 			Alias:      &alias,
 		}, nil
 	}

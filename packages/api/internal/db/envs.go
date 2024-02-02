@@ -27,7 +27,7 @@ func (db *DB) DeleteEnv(ctx context.Context, envID string) error {
 	return nil
 }
 
-func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Environment, err error) {
+func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Template, err error) {
 	envs, err := db.
 		Client.
 		Env.
@@ -46,11 +46,11 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Envi
 			aliases[i] = alias.ID
 		}
 
-		result = append(result, &api.Environment{
-			EnvID:   item.ID,
-			BuildID: item.BuildID.String(),
-			Public:  item.Public,
-			Aliases: &aliases,
+		result = append(result, &api.Template{
+			TemplateID: item.ID,
+			BuildID:    item.BuildID.String(),
+			Public:     item.Public,
+			Aliases:    &aliases,
 		})
 	}
 
@@ -59,7 +59,7 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Envi
 
 var ErrEnvNotFound = fmt.Errorf("env not found")
 
-func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (result *api.Environment, err error) {
+func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (result *api.Template, err error) {
 	dbEnv, err := db.
 		Client.
 		Env.
@@ -86,11 +86,11 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 		aliases[i] = alias.ID
 	}
 
-	return &api.Environment{
-		EnvID:   dbEnv.ID,
-		BuildID: dbEnv.BuildID.String(),
-		Public:  dbEnv.Public,
-		Aliases: &aliases,
+	return &api.Template{
+		TemplateID: dbEnv.ID,
+		BuildID:    dbEnv.BuildID.String(),
+		Public:     dbEnv.Public,
+		Aliases:    &aliases,
 	}, nil
 }
 
@@ -131,7 +131,7 @@ func (db *DB) UpsertEnv(ctx context.Context, teamID uuid.UUID, envID string, bui
 	return nil
 }
 
-func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *api.Environment, hasAccess bool, err error) {
+func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *api.Template, hasAccess bool, err error) {
 	envDB, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)

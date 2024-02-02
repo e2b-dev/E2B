@@ -15,15 +15,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func (a *APIStore) PostInstances(
-	c *gin.Context,
-) {
+func (a *APIStore) PostSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
-	span := trace.SpanFromContext(ctx)
 
-	c.Set("traceID", span.SpanContext().TraceID().String())
-
-	body, err := parseBody[api.PostInstancesJSONRequestBody](ctx, c)
+	body, err := parseBody[api.PostSandboxesJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 
@@ -33,14 +28,25 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
-	cleanedAliasOrEnvID, err := utils.CleanEnvID(body.EnvID)
+	sandbox := a.PostSandboxesWithoutResponse(c, ctx, body.TemplateID, (*map[string]string)(body.Metadata))
+	if sandbox != nil {
+		c.JSON(http.StatusCreated, &sandbox)
+	}
+}
+
+func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Context, templateID string, sandboxMetadata *map[string]string) *api.Sandbox {
+	span := trace.SpanFromContext(ctx)
+
+	c.Set("traceID", span.SpanContext().TraceID().String())
+
+	cleanedAliasOrEnvID, err := utils.CleanEnvID(templateID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid environment ID: %s", err))
 
 		errMsg := fmt.Errorf("error when cleaning env ID: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
-		return
+		return nil
 	}
 
 	// Get team from context, use TeamContextKey
@@ -53,16 +59,16 @@ func (a *APIStore) PostInstances(
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", checkErr))
 
-		return
+		return nil
 	}
 
 	if !hasAccess {
-		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", team.ID, env.EnvID)
+		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", team.ID, env.TemplateID)
 		telemetry.ReportError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
 
-		return
+		return nil
 	}
 
 	var alias string
@@ -70,12 +76,12 @@ func (a *APIStore) PostInstances(
 		alias = (*env.Aliases)[0]
 	}
 
-	c.Set("envID", env.EnvID)
+	c.Set("envID", env.TemplateID)
 	c.Set("teamID", team.ID.String())
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("env.team.id", team.ID.String()),
-		attribute.String("env.id", env.EnvID),
+		attribute.String("env.id", env.TemplateID),
 		attribute.String("env.alias", alias),
 	)
 
@@ -89,25 +95,25 @@ func (a *APIStore) PostInstances(
 			"You have reached the maximum number of concurrent E2B sandboxes (%d). If you need more, "+
 				"please contact us at 'https://e2b.dev/docs/getting-help'", maxInstancesPerTeam))
 
-		return
+		return nil
 	}
 
 	var metadata map[string]string
-	if body.Metadata != nil {
-		metadata = *body.Metadata
+	if sandboxMetadata != nil {
+		metadata = *sandboxMetadata
 	}
 
-	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, env.EnvID, alias, team.ID.String(), metadata)
+	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, env.TemplateID, alias, team.ID.String(), metadata)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, instanceErr.Code, instanceErr.ClientMsg)
 
-		return
+		return nil
 	}
 
-	c.Set("instanceID", instance.InstanceID)
+	c.Set("instanceID", sandbox.SandboxID)
 
 	telemetry.ReportEvent(ctx, "created environment instance")
 
@@ -115,20 +121,20 @@ func (a *APIStore) PostInstances(
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "created_instance",
 		properties.
-			Set("environment", env.EnvID).
-			Set("instance_id", instance.InstanceID).
+			Set("environment", env.TemplateID).
+			Set("instance_id", sandbox.SandboxID).
 			Set("alias", alias),
 	)
 
 	if cacheErr := a.instanceCache.Add(InstanceInfo{
-		Instance: instance,
+		Instance: sandbox,
 		TeamID:   &team.ID,
 		Metadata: metadata,
 	}); cacheErr != nil {
 		errMsg := fmt.Errorf("error when adding instance to cache: %w", cacheErr)
 		telemetry.ReportError(ctx, errMsg)
 
-		delErr := a.DeleteInstance(instance.InstanceID, true)
+		delErr := a.DeleteInstance(sandbox.SandboxID, true)
 		if delErr != nil {
 			delErrMsg := fmt.Errorf("couldn't delete instance that couldn't be added to cache: %w", delErr.Err)
 			telemetry.ReportError(ctx, delErrMsg)
@@ -138,7 +144,7 @@ func (a *APIStore) PostInstances(
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a sandbox right now")
 
-		return
+		return nil
 	}
 
 	go func() {
@@ -148,7 +154,7 @@ func (a *APIStore) PostInstances(
 		)
 		defer childSpan.End()
 
-		err = a.supabase.UpdateEnvLastUsed(updateContext, env.EnvID)
+		err = a.supabase.UpdateEnvLastUsed(updateContext, env.TemplateID)
 		if err != nil {
 			telemetry.ReportCriticalError(updateContext, err)
 		} else {
@@ -157,8 +163,8 @@ func (a *APIStore) PostInstances(
 	}()
 
 	telemetry.SetAttributes(ctx,
-		attribute.String("instance.id", instance.InstanceID),
+		attribute.String("instance.id", sandbox.SandboxID),
 	)
 
-	c.JSON(http.StatusCreated, &instance)
+	return sandbox
 }

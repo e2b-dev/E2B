@@ -24,7 +24,7 @@ const (
 )
 
 type InstanceInfo struct {
-	Instance  *api.Instance
+	Instance  *api.Sandbox
 	TeamID    *uuid.UUID
 	Metadata  map[string]string
 	StartTime *time.Time
@@ -44,11 +44,11 @@ func (c *InstanceCache) Add(instance InstanceInfo) error {
 		instance.StartTime = &now
 	}
 
-	if instance.TeamID == nil || instance.Instance.InstanceID == "" || instance.Instance.ClientID == "" || instance.Instance.EnvID == "" {
+	if instance.TeamID == nil || instance.Instance.SandboxID == "" || instance.Instance.ClientID == "" || instance.Instance.TemplateID == "" {
 		return fmt.Errorf("instance %+v (%+v) is missing team ID, instance ID, client ID, or env ID ", instance, instance.Instance)
 	}
 
-	c.cache.Set(instance.Instance.InstanceID, instance, ttlcache.DefaultTTL)
+	c.cache.Set(instance.Instance.SandboxID, instance, ttlcache.DefaultTTL)
 	c.UpdateCounter(instance, 1)
 
 	return nil
@@ -127,7 +127,7 @@ func (c *InstanceCache) Sync(instances []*InstanceInfo) {
 
 	// Use map for faster lookup
 	for _, instance := range instances {
-		instanceMap[instance.Instance.InstanceID] = instance
+		instanceMap[instance.Instance.SandboxID] = instance
 	}
 
 	// Delete instances that are not in Nomad anymore
@@ -140,7 +140,7 @@ func (c *InstanceCache) Sync(instances []*InstanceInfo) {
 
 	// Add instances that are not in the cache with the default TTL
 	for _, instance := range instances {
-		if !c.Exists(instance.Instance.InstanceID) {
+		if !c.Exists(instance.Instance.SandboxID) {
 			err := c.Add(*instance)
 			if err != nil {
 				fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
@@ -151,7 +151,7 @@ func (c *InstanceCache) Sync(instances []*InstanceInfo) {
 	// Send running instances event to analytics
 	instanceIds := make([]string, len(instances))
 	for i, instance := range instances {
-		instanceIds[i] = instance.Instance.InstanceID
+		instanceIds[i] = instance.Instance.SandboxID
 	}
 
 	_, err := c.analytics.RunningInstances(context.Background(), &analyticscollector.RunningInstancesEvent{InstanceIds: instanceIds, Timestamp: timestamppb.Now()})
@@ -176,8 +176,8 @@ func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, del
 	cache.OnInsertion(func(ctx context.Context, i *ttlcache.Item[string, InstanceInfo]) {
 		instanceInfo := i.Value()
 		_, err := analytics.InstanceStarted(ctx, &analyticscollector.InstanceStartedEvent{
-			InstanceId:    instanceInfo.Instance.InstanceID,
-			EnvironmentId: instanceInfo.Instance.EnvID,
+			InstanceId:    instanceInfo.Instance.SandboxID,
+			EnvironmentId: instanceInfo.Instance.TemplateID,
 			TeamId:        instanceInfo.TeamID.String(),
 			Timestamp:     timestamppb.Now(),
 		})
@@ -245,8 +245,8 @@ func (c *InstanceCache) CountForTeam(teamID uuid.UUID) (count uint) {
 
 func (c *InstanceCache) UpdateCounter(instance InstanceInfo, value int64) {
 	c.counter.Add(context.Background(), value, metric.WithAttributes(
-		attribute.String("instance_id", instance.Instance.InstanceID),
-		attribute.String("env_id", instance.Instance.EnvID),
+		attribute.String("instance_id", instance.Instance.SandboxID),
+		attribute.String("env_id", instance.Instance.TemplateID),
 		attribute.String("team_id", instance.TeamID.String()),
 	))
 }

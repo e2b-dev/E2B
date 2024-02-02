@@ -11,15 +11,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (a *APIStore) PostInstancesInstanceIDRefreshes(
+func (a *APIStore) PostSandboxesSandboxIDRefreshes(
 	c *gin.Context,
-	instanceID string,
+	sandboxID string,
 ) {
 	ctx := c.Request.Context()
 
 	var duration time.Duration
 
-	body, err := parseBody[api.PostInstancesInstanceIDRefreshesJSONRequestBody](ctx, c)
+	body, err := parseBody[api.PostSandboxesSandboxIDRefreshesJSONBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 
@@ -39,11 +39,11 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 		duration = nomad.InstanceExpiration
 	}
 
-	err = a.instanceCache.KeepAliveFor(instanceID, duration)
+	err = a.instanceCache.KeepAliveFor(sandboxID, duration)
 	if err != nil {
 		errMsg := fmt.Errorf("error when refreshing instance: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error refreshing sandbox - sandbox '%s' was not found", instanceID))
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error refreshing sandbox - sandbox '%s' was not found", sandboxID))
 
 		return
 	}

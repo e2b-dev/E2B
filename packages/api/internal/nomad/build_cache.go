@@ -21,7 +21,7 @@ const (
 type BuildInfo struct {
 	buildID uuid.UUID
 	teamID  uuid.UUID
-	status  api.EnvironmentBuildStatus
+	status  api.TemplateBuildStatus
 	logs    []string
 
 	mu sync.RWMutex
@@ -34,7 +34,7 @@ func (b *BuildInfo) GetLogs() []string {
 	return b.logs
 }
 
-func (b *BuildInfo) GetStatus() api.EnvironmentBuildStatus {
+func (b *BuildInfo) GetStatus() api.TemplateBuildStatus {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
@@ -62,7 +62,7 @@ func (b *BuildInfo) addLogs(logs []string) {
 	b.logs = append(b.logs, logs...)
 }
 
-func (b *BuildInfo) setStatus(status api.EnvironmentBuildStatus) {
+func (b *BuildInfo) setStatus(status api.TemplateBuildStatus) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -128,14 +128,14 @@ func (c *BuildCache) Create(envID string, buildID uuid.UUID, teamID uuid.UUID) e
 	defer c.mu.Unlock()
 
 	item := c.cache.Get(envID)
-	if item != nil && item.Value().GetStatus() == api.EnvironmentBuildStatusBuilding {
+	if item != nil && item.Value().GetStatus() == api.TemplateBuildStatusBuilding {
 		return fmt.Errorf("build for %s already exists in cache", envID)
 	}
 
 	info := BuildInfo{
 		buildID: buildID,
 		teamID:  teamID,
-		status:  api.EnvironmentBuildStatusBuilding,
+		status:  api.TemplateBuildStatusBuilding,
 		// We need to explicitly set the logs to an empty slice for the json serialization to work in CLI
 		logs: []string{},
 	}
@@ -148,7 +148,7 @@ func (c *BuildCache) Create(envID string, buildID uuid.UUID, teamID uuid.UUID) e
 }
 
 // SetDone marks the build as finished
-func (c *BuildCache) SetDone(envID string, buildID uuid.UUID, status api.EnvironmentBuildStatus) error {
+func (c *BuildCache) SetDone(envID string, buildID uuid.UUID, status api.TemplateBuildStatus) error {
 	item, err := c.Get(envID, buildID)
 	if err != nil {
 		return fmt.Errorf("build %s not found in cache: %w", buildID, err)

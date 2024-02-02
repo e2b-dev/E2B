@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
@@ -12,10 +13,15 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-// GetEnvs serves to list envs (e.g. in CLI)
-func (a *APIStore) GetEnvs(
-	c *gin.Context,
-) {
+// GetTemplates serves to list templates (e.g. in CLI)
+func (a *APIStore) GetTemplates(c *gin.Context) {
+	templates := a.GetTemplatesWithoutResponse(c)
+
+	if templates != nil {
+		c.JSON(http.StatusOK, templates)
+	}
+}
+func (a *APIStore) GetTemplatesWithoutResponse(c *gin.Context) []*api.Template {
 	ctx := c.Request.Context()
 
 	userID := c.Value(constants.UserIDContextKey).(uuid.UUID)
@@ -27,7 +33,7 @@ func (a *APIStore) GetEnvs(
 		err = fmt.Errorf("error when getting default team: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 
-		return
+		return nil
 	}
 
 	telemetry.SetAttributes(ctx,
@@ -42,7 +48,7 @@ func (a *APIStore) GetEnvs(
 		err = fmt.Errorf("error when getting envs: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 
-		return
+		return nil
 	}
 
 	telemetry.ReportEvent(ctx, "listed environments")
@@ -51,5 +57,5 @@ func (a *APIStore) GetEnvs(
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "listed environments", properties)
 
-	c.JSON(http.StatusOK, envs)
+	return envs
 }

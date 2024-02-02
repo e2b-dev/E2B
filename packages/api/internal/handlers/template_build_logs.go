@@ -13,8 +13,15 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-// GetEnvsEnvIDBuildsBuildID serves to get an env build status (e.g. to CLI)
-func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, buildID api.BuildID, params api.GetEnvsEnvIDBuildsBuildIDParams) {
+// GetTemplatesTemplateIDBuildsBuildID serves to get an template build status (e.g. to CLI)
+func (a *APIStore) GetTemplatesTemplateIDBuildsBuildID(c *gin.Context, templateID api.TemplateID, buildID api.BuildID, params api.GetTemplatesTemplateIDBuildsBuildIDParams) {
+	result := a.GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c, templateID, buildID, params)
+	if result != nil {
+		c.JSON(http.StatusOK, &result)
+	}
+}
+
+func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c *gin.Context, templateID api.TemplateID, buildID api.BuildID, params api.GetTemplatesTemplateIDBuildsBuildIDParams) *api.TemplateBuild {
 	ctx := c.Request.Context()
 
 	userID := c.Value(constants.UserIDContextKey).(uuid.UUID)
@@ -32,7 +39,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 
 		telemetry.ReportCriticalError(ctx, errMsg)
 
-		return
+		return nil
 	}
 
 	buildUUID, err := uuid.Parse(buildID)
@@ -43,54 +50,54 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 
 		telemetry.ReportError(ctx, errMsg)
 
-		return
+		return nil
 	}
 
-	dockerBuild, err := a.buildCache.Get(envID, buildUUID)
+	dockerBuild, err := a.buildCache.Get(templateID, buildUUID)
 	if err != nil {
-		msg := fmt.Errorf("error finding cache for env %s and build %s", envID, buildID)
+		msg := fmt.Errorf("error finding cache for env %s and build %s", templateID, buildID)
 
 		a.sendAPIStoreError(c, http.StatusNotFound, "Build not found")
 
 		telemetry.ReportError(ctx, msg)
 
-		return
+		return nil
 	}
 
 	if team.ID != dockerBuild.GetTeamID() {
-		msg := fmt.Errorf("user doesn't have access to env '%s'", envID)
+		msg := fmt.Errorf("user doesn't have access to env '%s'", templateID)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
 
 		telemetry.ReportError(ctx, msg)
 
-		return
+		return nil
 	}
 
 	status := dockerBuild.GetStatus()
 	logs := dockerBuild.GetLogs()
 
-	result := api.EnvironmentBuild{
-		Logs:    logs[*params.LogsOffset:],
-		EnvID:   envID,
-		BuildID: buildID,
-		Status:  &status,
+	result := api.TemplateBuild{
+		Logs:       logs[*params.LogsOffset:],
+		TemplateID: templateID,
+		BuildID:    buildID,
+		Status:     &status,
 	}
 
 	telemetry.ReportEvent(ctx, "got environment build")
 
 	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "got environment detail", properties.Set("environment", envID))
+	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "got environment detail", properties.Set("environment", templateID))
 
-	c.JSON(http.StatusOK, result)
+	return &result
 }
 
-// PostEnvsEnvIDBuildsBuildIDLogs serves to add logs from the Build Driver
-func (a *APIStore) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvID, buildID string) {
+// PostTemplatesTemplateIDBuildsBuildIDLogs serves to add logs from the Build Driver
+func (a *APIStore) PostTemplatesTemplateIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvID, buildID string) {
 	ctx := c.Request.Context()
 
-	body, err := parseBody[api.PostEnvsEnvIDBuildsBuildIDLogsJSONRequestBody](ctx, c)
+	body, err := parseBody[api.PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing body: %s", err))
 
