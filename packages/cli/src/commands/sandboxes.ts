@@ -29,7 +29,7 @@ export const runningSandboxesCommand = new commander.Command('sandboxes')
             { name: 'metadata', alignment: 'left', title: 'Metadata'},
           ],
           disabledColumns: ['clientID'],
-          rows: sandboxes.map((sandbox) => ({ ...sandbox, startedAt: new Date(sandbox.startedAt).toLocaleString(), metadata: JSON.stringify(sandbox.metadata) })),
+          rows: sandboxes.map((sandbox) => ({ ...sandbox, sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,startedAt: new Date(sandbox.startedAt).toLocaleString(), metadata: JSON.stringify(sandbox.metadata) })),
           colorMap: {
             orange: '\x1b[38;5;216m',
           },
