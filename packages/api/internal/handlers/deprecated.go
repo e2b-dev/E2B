@@ -10,8 +10,7 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-// GetEnvs serves to list envs (e.g. in
-// CLI)
+// GetEnvs serves to list envs (e.g. in CLI)
 func (a *APIStore) GetEnvs(c *gin.Context) {
 	templates := a.GetTemplatesWithoutResponse(c)
 	if templates != nil {
