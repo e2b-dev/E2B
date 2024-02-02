@@ -10,20 +10,21 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-// GetEnvs serves to list envs (e.g. in CLI)
+// GetEnvs serves to list envs (e.g. in
+// CLI)
 func (a *APIStore) GetEnvs(c *gin.Context) {
 	templates := a.GetTemplatesWithoutResponse(c)
 	if templates != nil {
-		var envs []*api.Environment
+		envs := make([]api.Environment, len(templates))
 
-		for _, template := range templates {
-			env := &api.Environment{
+		for index, template := range templates {
+			env := api.Environment{
 				EnvID:   template.TemplateID,
 				BuildID: template.BuildID,
 				Public:  template.Public,
 				Aliases: template.Aliases,
 			}
-			envs = append(envs, env)
+			envs[index] = env
 		}
 
 		c.JSON(http.StatusOK, envs)
