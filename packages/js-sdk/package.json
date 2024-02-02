@@ -32,7 +32,8 @@
     "test:coverage": "vitest run --coverage",
     "generate": "openapi-typescript ../../spec/openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",
     "check-deps": "knip",
-    "update-deps": "ncu -u && pnpm i"
+    "update-deps": "ncu -u && pnpm i",
+    "postPublish": "npm pkg set 'name'='@e2b/sdk' && pnpm publish --no-git-checks && npm pkg set 'name'='e2b'"
   },
   "peerDependencies": {
     "openai": "^4.17.4"
