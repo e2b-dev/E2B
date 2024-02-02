@@ -240,7 +240,7 @@ func (a *APIStore) PostTemplatesTemplateID(c *gin.Context, aliasOrTemplateID api
 	template := a.PostTemplatesTemplateIDWithoutResponse(c, aliasOrTemplateID)
 
 	if template != nil {
-		c.JSON(http.StatusOK, template)
+		c.JSON(http.StatusOK, &template)
 	}
 }
 
