@@ -62,7 +62,7 @@ export interface SandboxConnectionOpts {
   envVars?: EnvVars;
   metadata?: SandboxMetadata;
   logger?: Logger;
-  __sandbox?: components['schemas']['Instance'];
+  __sandbox?: components['schemas']['Sandbox'];
   __debug_hostname?: string;
   __debug_port?: number;
   __debug_devEnv?: 'remote' | 'local';
@@ -75,13 +75,13 @@ export interface CallOpts {
 
 
 const listSandboxes = withAPIKey(
-  api.path('/instances').method('get').create(),
+  api.path('/sandboxes').method('get').create(),
 )
 const createSandbox = withAPIKey(
-  api.path('/instances').method('post').create(),
+  api.path('/sandboxes').method('post').create(),
 )
 const refreshSandbox = withAPIKey(
-  api.path('/instances/{instanceID}/refreshes').method('post').create(),
+  api.path('/sandboxes/{sandboxID}/refreshes').method('post').create(),
 )
 
 export class SandboxConnection {
@@ -99,7 +99,7 @@ export class SandboxConnection {
   envVars: EnvVars
 
   protected readonly logger: Logger
-  protected sandbox?: components['schemas']['Instance']
+  protected sandbox?: components['schemas']['Sandbox']
   protected isOpen = false
 
   private readonly apiKey: string
@@ -137,7 +137,11 @@ export class SandboxConnection {
    * You can use this ID to reconnect to the sandbox later.
    */
   get id() {
-    return `${this.sandbox?.instanceID}-${this.sandbox?.clientID}`
+    return `${this.sandbox?.sandboxID}-${this.sandbox?.clientID}`
+  }
+
+  private get templateID(): string {
+    return this.opts.template || this.opts.id || 'base'
   }
 
   /**
@@ -147,8 +151,7 @@ export class SandboxConnection {
   static async list(apiKey?: string): Promise<RunningSandbox[]> {
     apiKey = getApiKey(apiKey)
     try {
-      const res = await listSandboxes(apiKey, {})
-      return res.data.map((instance) => ({ sandboxID: instance.instanceID, alias: instance.alias, templateID: instance.envID, metadata: instance.metadata }))
+      return (await listSandboxes(apiKey, {})).data
     } catch (e) {
       if (e instanceof listSandboxes.Error) {
         const error = e.getActualType()
@@ -165,10 +168,6 @@ export class SandboxConnection {
       }
       throw e
     }
-  }
-
-  private get templateID(): string {
-    return this.opts.template || this.opts.id || 'base'
   }
 
   /**
@@ -189,7 +188,7 @@ export class SandboxConnection {
       throw new Error('Cannot keep alive - sandbox is not initialized')
     }
     await refreshSandbox(this.apiKey, {
-      instanceID: this.sandbox?.instanceID, duration,
+      sandboxID: this.sandbox?.sandboxID, duration,
     })
   }
 
@@ -217,7 +216,7 @@ export class SandboxConnection {
       throw new Error('Cannot get sandbox\'s hostname - sandbox is not initialized')
     }
 
-    const hostname = `${this.sandbox.instanceID}-${this.sandbox.clientID}.${SANDBOX_DOMAIN}`
+    const hostname = `${this.id}.${SANDBOX_DOMAIN}`
     if (port) {
       return `${port}-${hostname}`
     } else {
@@ -242,7 +241,7 @@ export class SandboxConnection {
    */
   async close() {
     if (this.isOpen) {
-      this.logger.debug?.(`Closing sandbox "${this.sandbox?.instanceID}"`)
+      this.logger.debug?.(`Closing sandbox "${this.id}"`)
       this.isOpen = false
 
       // This is `ws` way of closing connection
@@ -365,12 +364,12 @@ export class SandboxConnection {
       if (!this.sandbox && !this.opts.__debug_hostname) {
         try {
           const res = await createSandbox(this.apiKey, {
-            envID: this.templateID,
+            templateID: this.templateID,
             metadata: this.opts.metadata,
           })
 
           this.sandbox = res.data
-          this.logger.debug?.(`Acquired sandbox "${this.sandbox.instanceID}"`)
+          this.logger.debug?.(`Acquired sandbox "${this.id}"`)
         } catch (e) {
           if (e instanceof createSandbox.Error) {
             const error = e.getActualType()
@@ -395,7 +394,7 @@ export class SandboxConnection {
       }
 
       if (this.sandbox && !this.opts.__debug_hostname) {
-        this.refresh(this.sandbox.instanceID)
+        this.refresh(this.sandbox.sandboxID)
       }
 
       await this.connectRpc()
@@ -434,21 +433,21 @@ export class SandboxConnection {
 
     this.rpc.onOpen(() => {
       this.logger.debug?.(
-        `Connected to sandbox "${this.sandbox?.instanceID}"`,
+        `Connected to sandbox "${this.id}"`,
       )
       resolveOpening?.()
     })
 
     this.rpc.onError(async (err) => {
       this.logger.debug?.(
-        `Error in WebSocket of sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
+        `Error in WebSocket of sandbox "${this.id}": ${err.message ?? err.code ?? err.toString()
         }. Trying to reconnect...`,
       )
 
       if (this.isOpen) {
         await wait(WS_RECONNECT_INTERVAL)
         this.logger.debug?.(
-          `Reconnecting to sandbox "${this.sandbox?.instanceID}"`,
+          `Reconnecting to sandbox "${this.id}"`,
         )
         try {
           // When the WS connection closes the subscribers in devbookd are removed.
@@ -456,13 +455,13 @@ export class SandboxConnection {
           this.subscribers = []
           await this.rpc.connect(sandboxURL)
           this.logger.debug?.(
-            `Reconnected to sandbox "${this.sandbox?.instanceID}"`,
+            `Reconnected to sandbox "${this.id}"`,
           )
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
           // not warn, because this is somewhat expected behaviour during initialization
           this.logger.debug?.(
-            `Failed reconnecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
+            `Failed reconnecting to sandbox "${this.id}": ${err.message ?? err.code ?? err.toString()
             }`,
           )
         }
@@ -473,7 +472,7 @@ export class SandboxConnection {
 
     this.rpc.onClose(async () => {
       this.logger.debug?.(
-        `WebSocket connection to sandbox "${this.sandbox?.instanceID}" closed`,
+        `WebSocket connection to sandbox "${this.id}" closed`,
       )
     })
 
@@ -484,14 +483,14 @@ export class SandboxConnection {
     (async () => {
       try {
         this.logger.debug?.(
-          `Connecting to sandbox "${this.sandbox?.instanceID}"`,
+          `Connecting to sandbox "${this.id}"`,
         )
         await this.rpc.connect(sandboxURL)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         // not warn, because this is somewhat expected behaviour during initialization
         this.logger.debug?.(
-          `Error connecting to sandbox "${this.sandbox?.instanceID}": ${err.message ?? err.code ?? err.toString()
+          `Error connecting to sandbox "${this.id}": ${err.message ?? err.code ?? err.toString()
           }`,
         )
       }
@@ -507,15 +506,15 @@ export class SandboxConnection {
       .forEach((s) => s.handler(data.params?.result))
   }
 
-  private async refresh(instanceID: string) {
-    this.logger.debug?.(`Started refreshing sandbox "${instanceID}"`)
+  private async refresh(sandboxID: string) {
+    this.logger.debug?.(`Started refreshing sandbox "${sandboxID}"`)
 
     try {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         if (!this.isOpen) {
           this.logger.debug?.(
-            `Cannot refresh sandbox ${this.sandbox?.instanceID} - it was closed`,
+            `Cannot refresh sandbox ${this.id} - it was closed`,
           )
           return
         }
@@ -523,10 +522,10 @@ export class SandboxConnection {
         await wait(SANDBOX_REFRESH_PERIOD)
 
         try {
-          this.logger.debug?.(`Refreshed sandbox "${instanceID}"`)
+          this.logger.debug?.(`Refreshed sandbox "${sandboxID}"`)
 
           await refreshSandbox(this.apiKey, {
-            instanceID, duration: 0,
+            sandboxID, duration: 0,
           })
         } catch (e) {
           if (e instanceof refreshSandbox.Error) {
@@ -538,13 +537,13 @@ export class SandboxConnection {
               return
             }
             this.logger.warn?.(
-              `Refreshing sandbox "${instanceID}" failed - (${error.status})`,
+              `Refreshing sandbox "${sandboxID}" failed - (${error.status})`,
             )
           }
         }
       }
     } finally {
-      this.logger.debug?.(`Stopped refreshing sandbox "${instanceID}"`)
+      this.logger.debug?.(`Stopped refreshing sandbox "${sandboxID}"`)
       await this.close()
     }
   }

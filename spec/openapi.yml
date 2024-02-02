@@ -18,8 +18,8 @@ components:
       bearerFormat: access_token
 
   parameters:
-    envID:
-      name: envID
+    templateID:
+      name: templateID
       in: path
       required: true
       schema:
@@ -30,12 +30,26 @@ components:
       required: true
       schema:
         type: string
+    sandboxID:
+      name: sandboxID
+      in: path
+      required: true
+      schema:
+        type: string
+#  ------ Deprecated --------
+    envID:
+      name: envID
+      in: path
+      required: true
+      schema:
+        type: string
     instanceID:
       name: instanceID
       in: path
       required: true
       schema:
         type: string
+#  ----------------------
 
   responses:
     400:
@@ -65,21 +79,127 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
-    InstanceMetadata:
+    SandboxMetadata:
       additionalProperties:
         type: string
-        description: Metadata of the instance
+        description: Metadata of the sandbox
 
-    NewInstance:
+    Sandbox:
       required:
-        - envID
+        - templateID
+        - sandboxID
+        - clientID
       properties:
-        envID:
+        templateID:
           type: string
-          description: Identifier of the required environment
-        metadata:
-          $ref: "#/components/schemas/InstanceMetadata"
+          description: Identifier of the template from which is the sandbox created
+        sandboxID:
+          type: string
+          description: Identifier of the sandbox
+        alias:
+          type: string
+          description: Alias of the template
+        clientID:
+          type: string
+          description: Identifier of the client
 
+    RunningSandboxes:
+      required:
+        - templateID
+        - sandboxID
+        - clientID
+        - startedAt
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template from which is the sandbox created
+        alias:
+          type: string
+          description: Alias of the template
+        sandboxID:
+          type: string
+          description: Identifier of the sandbox
+        clientID:
+          type: string
+          description: Identifier of the client
+        startedAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox was started
+        metadata:
+          $ref: "#/components/schemas/SandboxMetadata"
+
+    NewSandbox:
+      required:
+        - templateID
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the required template
+        metadata:
+          $ref: "#/components/schemas/SandboxMetadata"
+
+    Template:
+      required:
+        - templateID
+        - buildID
+        - public
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template
+        buildID:
+          type: string
+          description: Identifier of the last successful build for given template
+        public:
+          type: boolean
+          description: Whether the template is public or only accessible by the team
+        aliases:
+          type: array
+          description: Aliases of the template
+          items:
+            type: string
+
+    TemplateBuild:
+      required:
+        - templateID
+        - buildID
+        - finished
+        - logs
+      properties:
+        logs:
+          default: []
+          description: Build logs
+          type: array
+          items:
+            type: string
+        templateID:
+          type: string
+          description: Identifier of the template
+        buildID:
+          type: string
+          description: Identifier of the build
+        status:
+          type: string
+          description: Status of the template
+          enum:
+            - building
+            - ready
+            - error
+
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error
+#  ------ Deprecated --------
     Environment:
       required:
         - envID
@@ -128,6 +248,21 @@ components:
             - ready
             - error
 
+    InstanceMetadata:
+      additionalProperties:
+        type: string
+        description: Metadata of the instance
+
+    NewInstance:
+      required:
+        - envID
+      properties:
+        envID:
+          type: string
+          description: Identifier of the required environment
+        metadata:
+          $ref: "#/components/schemas/InstanceMetadata"
+
     Instance:
       required:
         - envID
@@ -140,25 +275,9 @@ components:
         instanceID:
           type: string
           description: Identifier of the instance
-        alias:
-          type: string
-          description: Alias of the environment
         clientID:
           type: string
           description: Identifier of the client
-
-    Error:
-      required:
-        - code
-        - message
-      properties:
-        code:
-          type: integer
-          format: int32
-          description: Error code
-        message:
-          type: string
-          description: Error
 
     RunningInstance:
       required:
@@ -170,9 +289,6 @@ components:
         envID:
           type: string
           description: Identifier of the environment from which is the instance created
-        alias:
-          type: string
-          description: Alias of the environment
         instanceID:
           type: string
           description: Identifier of the instance
@@ -185,10 +301,15 @@ components:
           description: Time when the instance was started
         metadata:
           $ref: "#/components/schemas/InstanceMetadata"
+#  ---------------------
 
 tags:
+  - name: templates
+  - name: sandboxes
+#  ------ Deprecated --------
   - name: instances
   - name: envs
+# ---------------------------
 
 paths:
   /health:
@@ -200,22 +321,22 @@ paths:
         401:
           $ref: "#/components/responses/401"
 
-  /instances:
+  /sandboxes:
     get:
-      description: List all running instances
-      tags: [instances]
+      description: List all running sandboxes
+      tags: [sandboxes]
       security:
         - ApiKeyAuth: [ ]
       responses:
         200:
-          description: Successfully returned all running instances
+          description: Successfully returned all running sandboxes
           content:
             application/json:
               schema:
                 type: array
                 items:
                   allOf:
-                    - $ref: "#/components/schemas/RunningInstance"
+                    - $ref: "#/components/schemas/RunningSandboxes"
         401:
           $ref: "#/components/responses/401"
         400:
@@ -223,8 +344,8 @@ paths:
         500:
           $ref: "#/components/responses/500"
     post:
-      description: Create an instance from the environment
-      tags: [instances]
+      description: Create a sandbox from the template
+      tags: [sandboxes]
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -232,14 +353,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NewInstance"
+              $ref: "#/components/schemas/NewSandbox"
       responses:
         201:
-          description: The instance was created successfully
+          description: The sandbox was created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Instance"
+                $ref: "#/components/schemas/Sandbox"
         401:
           $ref: "#/components/responses/401"
         400:
@@ -247,12 +368,12 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
-  /instances/{instanceID}/refreshes:
+  /sandboxes/{sandboxID}/refreshes:
     post:
-      description: Refresh the instance extending its time to live
+      description: Refresh the sandbox extending its time to live
       security:
         - ApiKeyAuth: []
-      tags: [instances]
+      tags: [sandboxes]
       requestBody:
         required: false
         content:
@@ -261,19 +382,207 @@ paths:
               type: object
               properties:
                 duration:
-                  description: Duration for which the instance should be kept alive in seconds
+                  description: Duration for which the sandbox should be kept alive in seconds
                   type: integer
                   maximum: 3600 # 1 hour
                   minimum: 0
       parameters:
-        - $ref: "#/components/parameters/instanceID"
+        - $ref: "#/components/parameters/sandboxID"
       responses:
         204:
-          description: Successfully refreshed the instance
+          description: Successfully refreshed the sandbox
         401:
           $ref: "#/components/responses/401"
         404:
           $ref: "#/components/responses/404"
+
+  /templates:
+    get:
+      description: List all templates
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+      responses:
+        200:
+          description: Successfully returned all templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Template"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+    post:
+      description: Create a new template
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - buildContext
+                - dockerfile
+              properties:
+                alias:
+                  description: Alias of the template
+                  type: string
+                buildContext:
+                  description: Docker build context
+                  type: string
+                  format: binary
+                dockerfile:
+                  type: string
+                  description: Dockerfile content
+                startCmd:
+                  description: Start command to execute in the template after the build
+                  type: string
+            encoding:
+              buildContext:
+                contentType: application/octet-stream
+
+      responses:
+        202:
+          description: The build has started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+
+  /templates/{templateID}:
+    post:
+      description: Rebuild an template
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - buildContext
+                - dockerfile
+              properties:
+                alias:
+                  description: Alias of the template
+                  type: string
+                buildContext:
+                  description: Docker build context
+                  type: string
+                  format: binary
+                dockerfile:
+                  type: string
+                  description: Dockerfile content
+                startCmd:
+                  description: Start command to execute in the template after the build
+                  type: string
+            encoding:
+              buildContext:
+                contentType: application/octet-stream
+
+      responses:
+        202:
+          description: The build has started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      description: Delete a template
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+      responses:
+        204:
+          description: The template was deleted successfully
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+
+  /templates/{templateID}/builds/{buildID}:
+    get:
+      description: Get template build info
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/buildID"
+        - in: query
+          name: logsOffset
+          schema:
+            default: 0
+            type: integer
+          description: Index of the starting build log that should be returned with the template
+      responses:
+        200:
+          description: Successfully returned the template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateBuild"
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+
+  /templates/{templateID}/builds/{buildID}/logs:
+    post:
+      description: Add a build log
+      tags: [templates]
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/buildID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - apiSecret
+                - logs
+              properties:
+                apiSecret:
+                  description: API secret
+                  type: string
+                logs:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        201:
+          description: Successfully added log
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+
+  #  ------ Deprecated --------
   /envs:
     get:
       description: List all environments
@@ -459,3 +768,79 @@ paths:
           $ref: "#/components/responses/401"
         404:
           $ref: "#/components/responses/404"
+
+  /instances:
+    get:
+      description: List all running instances
+      tags: [instances]
+      security:
+        - ApiKeyAuth: [ ]
+      responses:
+        200:
+          description: Successfully returned all running instances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/RunningInstance"
+        401:
+          $ref: "#/components/responses/401"
+        400:
+          $ref: "#/components/responses/400"
+        500:
+          $ref: "#/components/responses/500"
+    post:
+      description: Create an instance from the environment
+      tags: [instances]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewInstance"
+      responses:
+        201:
+          description: The instance was created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
+        401:
+          $ref: "#/components/responses/401"
+        400:
+          $ref: "#/components/responses/400"
+        500:
+          $ref: "#/components/responses/500"
+
+  /instances/{instanceID}/refreshes:
+    post:
+      description: Refresh the instance extending its time to live
+      security:
+        - ApiKeyAuth: []
+      tags: [instances]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                duration:
+                  description: Duration for which the instance should be kept alive in seconds
+                  type: integer
+                  maximum: 3600 # 1 hour
+                  minimum: 0
+      parameters:
+        - $ref: "#/components/parameters/instanceID"
+      responses:
+        204:
+          description: Successfully refreshed the instance
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+#  ---------------------

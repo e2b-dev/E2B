@@ -18,19 +18,37 @@ import re  # noqa: F401
 import json
 
 
-from typing import Any, Dict, List
-from pydantic import BaseModel, Field, StrictStr, conlist
+from typing import Any, Dict, List, Optional
+from pydantic import BaseModel, Field, StrictStr, conlist, validator
 
 
-class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
+class TemplateBuild(BaseModel):
     """
-    EnvsEnvIDBuildsBuildIDLogsPostRequest
+    TemplateBuild
     """
 
-    api_secret: StrictStr = Field(..., alias="apiSecret", description="API secret")
-    logs: conlist(StrictStr) = Field(...)
+    logs: conlist(StrictStr) = Field(..., description="Build logs")
+    template_id: StrictStr = Field(
+        ..., alias="templateID", description="Identifier of the template"
+    )
+    build_id: StrictStr = Field(
+        ..., alias="buildID", description="Identifier of the build"
+    )
+    status: Optional[StrictStr] = Field(None, description="Status of the template")
     additional_properties: Dict[str, Any] = {}
-    __properties = ["apiSecret", "logs"]
+    __properties = ["logs", "templateID", "buildID", "status"]
+
+    @validator("status")
+    def status_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in ("building", "ready", "error"):
+            raise ValueError(
+                "must be one of enum values ('building', 'ready', 'error')"
+            )
+        return value
 
     class Config:
         """Pydantic configuration"""
@@ -47,8 +65,8 @@ class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> EnvsEnvIDBuildsBuildIDLogsPostRequest:
-        """Create an instance of EnvsEnvIDBuildsBuildIDLogsPostRequest from a JSON string"""
+    def from_json(cls, json_str: str) -> TemplateBuild:
+        """Create an instance of TemplateBuild from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self):
@@ -64,16 +82,21 @@ class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> EnvsEnvIDBuildsBuildIDLogsPostRequest:
-        """Create an instance of EnvsEnvIDBuildsBuildIDLogsPostRequest from a dict"""
+    def from_dict(cls, obj: dict) -> TemplateBuild:
+        """Create an instance of TemplateBuild from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return EnvsEnvIDBuildsBuildIDLogsPostRequest.parse_obj(obj)
+            return TemplateBuild.parse_obj(obj)
 
-        _obj = EnvsEnvIDBuildsBuildIDLogsPostRequest.parse_obj(
-            {"api_secret": obj.get("apiSecret"), "logs": obj.get("logs")}
+        _obj = TemplateBuild.parse_obj(
+            {
+                "logs": obj.get("logs"),
+                "template_id": obj.get("templateID"),
+                "build_id": obj.get("buildID"),
+                "status": obj.get("status"),
+            }
         )
         # store additional fields in additional_properties
         for _key in obj.keys():

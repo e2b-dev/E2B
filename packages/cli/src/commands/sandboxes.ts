@@ -5,7 +5,7 @@ import * as e2b from '@e2b/sdk'
 import { ensureAPIKey } from 'src/api'
 
 const listRunningSandboxes = e2b.withAPIKey(
-  e2b.api.path('/instances').method('get').create(),
+  e2b.api.path('/sandboxes').method('get').create(),
 )
 
 export const runningSandboxesCommand = new commander.Command('sandboxes')
@@ -22,8 +22,8 @@ export const runningSandboxesCommand = new commander.Command('sandboxes')
         const table = new tablePrinter.Table({
           title: 'Running sandboxes',
           columns: [
-            { name: 'instanceID', alignment: 'left', title: 'Sandbox ID' },
-            { name: 'envID', alignment: 'left', title: 'Template ID' },
+            { name: 'sandboxID', alignment: 'left', title: 'Sandbox ID' },
+            { name: 'templateID', alignment: 'left', title: 'Template ID' },
             { name: 'alias', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
             { name: 'metadata', alignment: 'left', title: 'Metadata'},
@@ -46,7 +46,7 @@ export const runningSandboxesCommand = new commander.Command('sandboxes')
 
 export async function listSandboxes({
   apiKey,
-}: { apiKey: string }): Promise<e2b.components['schemas']['RunningInstance'][]> {
+}: { apiKey: string }): Promise<e2b.components['schemas']['RunningSandboxes'][]> {
   const response = await listRunningSandboxes(apiKey, {})
   return response.data
 }
