@@ -337,7 +337,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
 	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "submitted environment build request", properties.
-		Set("environment", env.EnvID).
+		Set("environment", env.TemplateID).
 		Set("build_id", buildID).
 		Set("alias", alias).
 		Set("dockerfile", dockerfile),
@@ -346,7 +346,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 	if !hasAccess {
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
 
-		errMsg := fmt.Errorf("user doesn't have access to env '%s'", env.EnvID)
+		errMsg := fmt.Errorf("user doesn't have access to env '%s'", env.TemplateID)
 		telemetry.ReportError(ctx, errMsg)
 
 		return nil
@@ -354,7 +354,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 
 	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID.String()))
 
-	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", env.EnvID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
+	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", env.TemplateID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when uploading file to cloud storage: %s", err))
 
@@ -364,11 +364,11 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 		return nil
 	}
 
-	err = a.buildCache.Create(env.EnvID, buildID, team.ID)
+	err = a.buildCache.Create(env.TemplateID, buildID, team.ID)
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", env.EnvID))
+		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", env.TemplateID))
 
-		err = fmt.Errorf("build is already running build for %s", env.EnvID)
+		err = fmt.Errorf("build is already running build for %s", env.TemplateID)
 		telemetry.ReportCriticalError(ctx, err)
 
 		return nil
@@ -377,14 +377,14 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 	telemetry.ReportEvent(ctx, "started updating environment")
 
 	if alias != "" {
-		err = a.supabase.EnsureEnvAlias(ctx, alias, env.EnvID)
+		err = a.supabase.EnsureEnvAlias(ctx, alias, env.TemplateID)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
 
 			err = fmt.Errorf("error when inserting alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			a.buildCache.Delete(env.EnvID, buildID, team.ID)
+			a.buildCache.Delete(env.TemplateID, buildID, team.ID)
 
 			return nil
 		} else {
@@ -406,7 +406,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 			buildContext,
 			userID.String(),
 			team.ID,
-			env.EnvID,
+			env.TemplateID,
 			buildID,
 			dockerfile,
 			startCmd,
@@ -426,7 +426,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 		} else {
 			status = api.TemplateBuildStatusReady
 
-			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", env.EnvID))
+			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", env.TemplateID))
 		}
 
 		if status == api.TemplateBuildStatusError && alias != "" {
@@ -438,7 +438,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("env.alias", alias))
 			}
 		} else if status == api.TemplateBuildStatusReady && alias != "" {
-			errMsg := a.supabase.UpdateEnvAlias(buildContext, alias, env.EnvID)
+			errMsg := a.supabase.UpdateEnvAlias(buildContext, alias, env.TemplateID)
 			if errMsg != nil {
 				err = fmt.Errorf("error when updating alias: %w", errMsg)
 				telemetry.ReportError(buildContext, err)
@@ -447,7 +447,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 			}
 		}
 
-		cacheErr := a.buildCache.SetDone(env.EnvID, buildID, status)
+		cacheErr := a.buildCache.SetDone(env.TemplateID, buildID, status)
 		if cacheErr != nil {
 			errMsg := fmt.Errorf("error when setting build done in logs: %w", cacheErr)
 			telemetry.ReportCriticalError(buildContext, errMsg)
@@ -463,7 +463,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 	}
 
 	return &api.Template{
-		TemplateID: env.EnvID,
+		TemplateID: env.TemplateID,
 		BuildID:    buildID.String(),
 		Public:     false,
 		Aliases:    &aliases,

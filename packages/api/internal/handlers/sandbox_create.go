@@ -63,7 +63,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 	}
 
 	if !hasAccess {
-		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", team.ID, env.EnvID)
+		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", team.ID, env.TemplateID)
 		telemetry.ReportError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
@@ -76,12 +76,12 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		alias = (*env.Aliases)[0]
 	}
 
-	c.Set("envID", env.EnvID)
+	c.Set("envID", env.TemplateID)
 	c.Set("teamID", team.ID.String())
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("env.team.id", team.ID.String()),
-		attribute.String("env.id", env.EnvID),
+		attribute.String("env.id", env.TemplateID),
 		attribute.String("env.alias", alias),
 	)
 
@@ -103,7 +103,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		metadata = *sandboxMetadata
 	}
 
-	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, env.EnvID, alias, team.ID.String(), metadata)
+	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, env.TemplateID, alias, team.ID.String(), metadata)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -121,7 +121,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "created_instance",
 		properties.
-			Set("environment", env.EnvID).
+			Set("environment", env.TemplateID).
 			Set("instance_id", sandbox.SandboxID).
 			Set("alias", alias),
 	)
@@ -154,7 +154,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		)
 		defer childSpan.End()
 
-		err = a.supabase.UpdateEnvLastUsed(updateContext, env.EnvID)
+		err = a.supabase.UpdateEnvLastUsed(updateContext, env.TemplateID)
 		if err != nil {
 			telemetry.ReportCriticalError(updateContext, err)
 		} else {
