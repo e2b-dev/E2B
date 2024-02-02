@@ -36,6 +36,7 @@ sudo cp /mnt/disks/envs-pipeline/envd $env_pipeline_local_dir/envd
 sudo chmod +x $env_pipeline_local_dir/envd
 
 # Copy kernels
+mkdir -p /mnt/disks/fc-kernels
 gcsfuse -o=allow_other --implicit-dirs "${FC_KERNELS_BUCKET_NAME}" /mnt/disks/fc-kernels
 kernels_dir="/fc-kernels"
 mkdir -p $kernels_dir
