@@ -534,20 +534,20 @@ export class Sandbox extends SandboxConnection {
    */
   static async reconnect<S extends typeof Sandbox>(this: S, opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>>;
   static async reconnect<S extends typeof Sandbox>(this: S, sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>> {
-    let sandboxID: string
+    let id: string
     let opts: SandboxOpts
     if (typeof sandboxIDorOpts === 'string') {
-      sandboxID = sandboxIDorOpts
+      id = sandboxIDorOpts
       opts = {}
     } else {
-      sandboxID = sandboxIDorOpts.sandboxID
+      id = sandboxIDorOpts.sandboxID
       opts = sandboxIDorOpts
     }
 
-    const instanceIDAndClientID = sandboxID.split("-")
-    const instanceID = instanceIDAndClientID[0]
-    const clientID = instanceIDAndClientID[1]
-    opts.__sandbox = { instanceID, clientID, envID: 'unknown' }
+    const sandboxIDAndClientID = id.split("-")
+    const sandboxID = sandboxIDAndClientID[0]
+    const clientID = sandboxIDAndClientID[1]
+    opts.__sandbox = { sandboxID, clientID, templateID: 'unknown' }
 
     const sandbox = new this(opts) as InstanceType<S>
     await sandbox._open({ timeout: opts?.timeout })

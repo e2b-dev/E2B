@@ -18,9 +18,10 @@ import re  # noqa: F401
 import json
 
 
-from typing import Any, ClassVar, Dict, List
-from pydantic import BaseModel, StrictStr
+from typing import Any, ClassVar, Dict, List, Optional
+from pydantic import BaseModel
 from pydantic import Field
+from typing_extensions import Annotated
 
 try:
     from typing import Self
@@ -28,15 +29,17 @@ except ImportError:
     from typing_extensions import Self
 
 
-class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
+class SandboxesSandboxIDRefreshesPostRequest(BaseModel):
     """
-    EnvsEnvIDBuildsBuildIDLogsPostRequest
+    SandboxesSandboxIDRefreshesPostRequest
     """  # noqa: E501
 
-    api_secret: StrictStr = Field(description="API secret", alias="apiSecret")
-    logs: List[StrictStr]
+    duration: Optional[Annotated[int, Field(le=3600, strict=True, ge=0)]] = Field(
+        default=None,
+        description="Duration for which the sandbox should be kept alive in seconds",
+    )
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["apiSecret", "logs"]
+    __properties: ClassVar[List[str]] = ["duration"]
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
@@ -51,7 +54,7 @@ class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Self:
-        """Create an instance of EnvsEnvIDBuildsBuildIDLogsPostRequest from a JSON string"""
+        """Create an instance of SandboxesSandboxIDRefreshesPostRequest from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -81,16 +84,14 @@ class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Dict) -> Self:
-        """Create an instance of EnvsEnvIDBuildsBuildIDLogsPostRequest from a dict"""
+        """Create an instance of SandboxesSandboxIDRefreshesPostRequest from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate(
-            {"apiSecret": obj.get("apiSecret"), "logs": obj.get("logs")}
-        )
+        _obj = cls.model_validate({"duration": obj.get("duration")})
         # store additional fields in additional_properties
         for _key in obj.keys():
             if _key not in cls.__properties:

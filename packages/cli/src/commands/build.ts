@@ -28,7 +28,7 @@ import { estimateContentLength } from '../utils/form'
 const templateCheckInterval = 1_000 // 1 sec
 
 const getTemplate = e2b.withAccessToken(
-  e2b.api.path('/envs/{envID}/builds/{buildID}').method('get').create(),
+  e2b.api.path('/templates/{templateID}/builds/{buildID}').method('get').create(),
 )
 
 export const buildCommand = new commander.Command('build')
@@ -67,7 +67,7 @@ export const buildCommand = new commander.Command('build')
   .alias('bd')
   .action(
     async (
-      template: string | undefined,
+      templateID: string | undefined,
       opts: {
         path?: string;
         dockerfile?: string;
@@ -87,7 +87,6 @@ export const buildCommand = new commander.Command('build')
           process.exit(1)
         }
 
-        let envID = template
         let dockerfile = opts.dockerfile
         let startCmd = opts.cmd
 
@@ -104,18 +103,18 @@ export const buildCommand = new commander.Command('build')
           console.log(
             `Found sandbox template ${asFormattedSandboxTemplate(
               {
-                envID: config.template_id,
+                templateID: config.template_id,
                 aliases: config.template_name ? [config.template_name] : undefined,
               },
               relativeConfigPath,
             )}`,
           )
-          envID = config.template_id
+          templateID = config.template_id
           dockerfile = opts.dockerfile || config.dockerfile
           startCmd = opts.cmd || config.start_cmd
         }
 
-        if (config && template && config.template_id !== template) {
+        if (config && templateID && config.template_id !== templateID) {
           // error: you can't specify different ID than the one in config
           console.error("You can't specify different ID than the one in config. If you want to build a new sandbox template remove the config file.")
           process.exit(1)
@@ -187,7 +186,7 @@ export const buildCommand = new commander.Command('build')
           process.exit(1)
         }
 
-        const build = await buildTemplate(accessToken, body, !!config, configPath, envID)
+        const build = await buildTemplate(accessToken, body, !!config, configPath, templateID)
 
         console.log(
           `Started building the sandbox template ${asFormattedSandboxTemplate(
@@ -195,12 +194,12 @@ export const buildCommand = new commander.Command('build')
           )} `,
         )
 
-        await waitForBuildFinish(accessToken, build.envID, build.buildID, name)
+        await waitForBuildFinish(accessToken, build.templateID, build.buildID, name)
 
         await saveConfig(
           configPath,
           {
-            template_id: build.envID,
+            template_id: build.templateID,
             dockerfile: dockerfileRelativePath,
             template_name: name,
             start_cmd: startCmd,
@@ -216,7 +215,7 @@ export const buildCommand = new commander.Command('build')
 
 async function waitForBuildFinish(
   accessToken: string,
-  envID: string,
+  templateID: string,
   buildID: string,
   name?: string,
 ) {
@@ -230,7 +229,7 @@ async function waitForBuildFinish(
     await wait(templateCheckInterval)
 
     try {
-      template = await getTemplate(accessToken, { envID, logsOffset, buildID })
+      template = await getTemplate(accessToken, { templateID, logsOffset, buildID })
     } catch (e) {
       if (e instanceof getTemplate.Error) {
         const error = e.getActualType()
@@ -266,7 +265,7 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox
 
 # Start sandbox
-sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.envID}")
+sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.templateID}")
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview
@@ -277,7 +276,7 @@ sandbox.close()`)
         const typescriptExample = asTypescript(`import { Sandbox } from '@e2b/sdk'
 
 // Start sandbox
-const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.data.envID}' })
+const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.data.templateID}' })
 
 // Interact with sandbox. Learn more here:
 // https://e2b.dev/docs/sandbox/overview
@@ -404,14 +403,14 @@ async function buildTemplate(
   body: FormData,
   hasConfig: boolean,
   configPath: string,
-  envID?: string,
+  templateID?: string,
 ): Promise<
   Omit<
-    e2b.paths['/envs']['post']['responses']['202']['content']['application/json'],
+    e2b.paths['/templates']['post']['responses']['202']['content']['application/json'],
     'logs'
   >
 > {
-  const res = await fetch(e2b.API_HOST + (envID ? `/envs/${envID}` : '/envs'), {
+  const res = await fetch(e2b.API_HOST + (templateID ? `/templates/${templateID}` : '/templates'), {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body,
@@ -429,8 +428,8 @@ async function buildTemplate(
 
   if (!res.ok) {
     const error:
-      | e2b.paths['/envs']['post']['responses']['401']['content']['application/json']
-      | e2b.paths['/envs']['post']['responses']['500']['content']['application/json'] =
+      | e2b.paths['/templates']['post']['responses']['401']['content']['application/json']
+      | e2b.paths['/templates']['post']['responses']['500']['content']['application/json'] =
       data as any
 
     if (error.code === 401) {
@@ -442,7 +441,7 @@ async function buildTemplate(
 
     if (error.code === 404) {
       throw new Error(
-        `Sandbox template you want to build ${envID ? `(${envID})` : ''} not found: ${res.statusText}, ${error.message ?? 'no message'
+        `Sandbox template you want to build ${templateID ? `(${templateID})` : ''} not found: ${res.statusText}, ${error.message ?? 'no message'
         }\n${hasConfig ? `This could be caused by ${asLocalRelative(configPath)} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(configPath)} and start building the template again.` : ''}`,
       )
     }

@@ -68,7 +68,7 @@ class SandboxConnection:
         """
         if not self._sandbox:
             raise SandboxException("Sandbox is not running.")
-        return f"{self._sandbox.instance_id}-{self._sandbox.client_id}"
+        return f"{self._sandbox.sandbox_id}-{self._sandbox.client_id}"
 
     @property
     def finished(self):
@@ -92,7 +92,7 @@ class SandboxConnection:
         env_vars: Optional[EnvVars] = None,
         metadata: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = TIMEOUT,
-        _sandbox: Optional[models.Instance] = None,
+        _sandbox: Optional[models.Sandbox] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -182,11 +182,11 @@ class SandboxConnection:
             raise ValueError("Duration must be between 0 and 3600 seconds")
 
         with E2BApiClient(api_key=self._api_key) as api_client:
-            api = client.InstancesApi(api_client)
+            api = client.SandboxesApi(api_client)
             try:
-                api.instances_instance_id_refreshes_post(
-                    self._sandbox.instance_id,
-                    client.InstancesInstanceIDRefreshesPostRequest(duration=duration),
+                api.sandboxes_sandbox_id_refreshes_post(
+                    self._sandbox.sandbox_id,
+                    client.SandboxesSandboxIDRefreshesPostRequest(duration=duration),
                 )
                 logger.debug(
                     f"Sandbox will be kept alive without connection for next {duration} seconds."
@@ -194,7 +194,7 @@ class SandboxConnection:
             except exceptions.ApiException as e:
                 if e.status == 404:
                     raise SandboxException(
-                        f"Sandbox {self._sandbox.instance_id} failed because it cannot be found"
+                        f"Sandbox {self.id} failed because it cannot be found"
                     ) from e
                 else:
                     raise e
@@ -208,9 +208,7 @@ class SandboxConnection:
 
     def _close(self):
         if self._is_open and self._sandbox:
-            logger.info(
-                f"Closing sandbox {self._sandbox.env_id} (id: {self._sandbox.instance_id})"
-            )
+            logger.info(f"Closing sandbox {self._sandbox.template_id} (id: {self.id})")
             self._is_open = False
             if self._rpc:
                 self._rpc.close()
@@ -240,14 +238,14 @@ class SandboxConnection:
         if not self._sandbox and not self._debug_hostname:
             try:
                 with E2BApiClient(api_key=self._api_key) as api_client:
-                    api = client.InstancesApi(api_client)
+                    api = client.SandboxesApi(api_client)
 
-                    self._sandbox = api.instances_post(
-                        models.NewInstance(envID=self._template, metadata=metadata),
+                    self._sandbox = api.sandboxes_post(
+                        models.NewSandbox(templateID=self._template, metadata=metadata),
                         _request_timeout=timeout,
                     )
                     logger.info(
-                        f"Sandbox {self._sandbox.env_id} created (id:{self._sandbox.instance_id})"
+                        f"Sandbox {self._sandbox.template_id} created (id:{self.id})"
                     )
             except ReadTimeoutError as e:
                 logger.error(f"Failed to acquire sandbox")
@@ -290,7 +288,7 @@ class SandboxConnection:
     def _start_refreshing(self):
         threading.Thread(
             target=self._refresh,
-            args=(self._sandbox.instance_id,),
+            args=(self._sandbox.sandbox_id,),
             daemon=True,
             name="e2b-sandbox-refresh",
         ).start()
@@ -408,74 +406,65 @@ class SandboxConnection:
             if id == data.params["subscription"]:
                 sub.handler(data.params["result"])
 
-    def _refresh(self, instance_id: str):
+    def _refresh(self, sandbox_id: str):
         if not self._sandbox:
             logger.info("No sandbox to refresh. Sandbox was not created")
             return
 
         try:
             logger.info(
-                f"Started refreshing sandbox {self._sandbox.env_id} (id: {instance_id})"
+                f"Started refreshing sandbox {self._sandbox.template_id} (id: {self.id})"
             )
 
             current_retry = 0
 
             with E2BApiClient(api_key=self._api_key) as api_client:
-                api = client.InstancesApi(api_client)
+                api = client.SandboxesApi(api_client)
                 while True:
                     if not self._is_open:
                         logger.debug(
-                            f"Cannot refresh sandbox - it was closed. {self._sandbox.instance_id}"
+                            f"Cannot refresh sandbox - it was closed. {self.id}"
                         )
                         return
                     sleep(SANDBOX_REFRESH_PERIOD)
                     try:
-                        api.instances_instance_id_refreshes_post(
-                            instance_id,
-                            client.InstancesInstanceIDRefreshesPostRequest(duration=0),
+                        api.sandboxes_sandbox_id_refreshes_post(
+                            sandbox_id,
+                            client.SandboxesSandboxIDRefreshesPostRequest(duration=0),
                         )
-                        logger.debug(f"Refreshed sandbox {instance_id}")
+                        logger.debug(f"Refreshed sandbox {self.id}")
                     except exceptions.ApiException as e:
                         if e.status == 404:
                             raise SandboxException(
-                                f"Sandbox {instance_id} failed because it cannot be found"
+                                f"Sandbox {self.id} failed because it cannot be found"
                             ) from e
                         else:
                             if current_retry < self._refresh_retries:
                                 logger.error(
-                                    f"Refreshing sandbox {instance_id} failed. Retrying..."
+                                    f"Refreshing sandbox {self.id} failed. Retrying..."
                                 )
                                 current_retry += 1
                             else:
                                 logger.error(
-                                    f"Refreshing sandbox {instance_id} failed. Max retries exceeded"
+                                    f"Refreshing sandbox {self.id} failed. Max retries exceeded"
                                 )
                                 raise e
         finally:
             if self._sandbox:
-                logger.info(f"Stopped refreshing sandbox (id: {instance_id})")
+                logger.info(f"Stopped refreshing sandbox (id: {self.id})")
             else:
                 logger.info("No sandbox to stop refreshing. Sandbox was not created")
 
             self._close()
 
     @staticmethod
-    def list(api_key: Optional[str] = None) -> List[RunningSandbox]:
+    def list(api_key: Optional[str] = None) -> List[models.RunningSandboxes]:
         """
         List all running sandboxes.
 
-        :param api_key: API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
+        :param api_key: API key to use for authentication.
+        If not provided, the `E2B_API_KEY` environment variable will be used.
         """
         api_key = get_api_key(api_key)
         with E2BApiClient(api_key=api_key) as api_client:
-            running_sandboxes = client.InstancesApi(api_client).instances_get()
-
-        return [
-            RunningSandbox(
-                sandbox_id=s.instance_id,
-                template_id=s.env_id,
-                alias=s.alias,
-                metadata=s.metadata or {},
-            )
-            for s in running_sandboxes
-        ]
+            return client.SandboxesApi(api_client).sandboxes_get()

@@ -8,7 +8,7 @@ import { cwdRelative } from './filesystem'
 export const primaryColor = '#FFB766'
 
 export function asFormattedSandboxTemplate(
-  template: Pick<e2b.components['schemas']['Environment'], 'envID' | 'aliases'>,
+  template: Pick<e2b.components['schemas']['Template'], 'templateID' | 'aliases'>,
   configLocalPath?: string,
 ) {
   const aliases = listAliases(template.aliases)
@@ -18,7 +18,7 @@ export function asFormattedSandboxTemplate(
     ? asDim(' <-> ') + asLocalRelative(configLocalPath)
     : ''
 
-  const id = `${template.envID} `
+  const id = `${template.templateID} `
 
   return `${id}${name}${configPath}`.trim()
 }

@@ -77,7 +77,7 @@ class Sandbox(SandboxConnection):
         on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
         metadata: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = TIMEOUT,
-        _sandbox: Optional[models.Instance] = None,
+        _sandbox: Optional[models.Sandbox] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -280,7 +280,7 @@ class Sandbox(SandboxConnection):
         """
 
         logger.info(f"Reconnecting to sandbox {sandbox_id}")
-        instance_id, client_id = sandbox_id.split("-")
+        sandbox_id, client_id = sandbox_id.split("-")
         return cls(
             cwd=cwd,
             env_vars=env_vars,
@@ -289,10 +289,10 @@ class Sandbox(SandboxConnection):
             on_stderr=on_stderr,
             on_exit=on_exit,
             timeout=timeout,
-            _sandbox=models.Instance(
-                instance_id=instance_id,
+            _sandbox=models.Sandbox(
+                sandbox_id=sandbox_id,
                 client_id=client_id,
-                env_id=getattr(cls, "sandbox_template_id", "unknown"),
+                template_id=getattr(cls, "sandbox_template_id", "unknown"),
             ),
             **kwargs,
         )
