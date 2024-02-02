@@ -7,7 +7,7 @@ generate-v2:
 	-i ../../spec/openapi.yml  \
 	-g python \
 	-o ./e2b/api \
-	--global-property apis="instances",models,supportingFiles,modelDocs=false \
+	--global-property apis="sandboxes",models,supportingFiles,modelDocs=false \
 	--additional-properties=generateSourceCodeOnly=true \
 	--additional-properties=disallowAdditionalPropertiesIfNotPresent=false \
 	--additional-properties=usePydanticV2=true \
@@ -29,7 +29,7 @@ generate-v1:
 	-i ../../spec/openapi.yml  \
 	-g python-pydantic-v1 \
 	-o ./e2b/api \
-	--global-property apis="instances",models,supportingFiles,modelDocs=false \
+	--global-property apis="sandboxes",models,supportingFiles,modelDocs=false \
 	--additional-properties=generateSourceCodeOnly=true \
 	--additional-properties=disallowAdditionalPropertiesIfNotPresent=false \
 	--additional-properties=packageName=e2b.api.v1.client

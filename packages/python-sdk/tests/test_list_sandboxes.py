@@ -8,7 +8,7 @@ def test_list_running_sandboxes():
 
     running_sandboxes = list(
         filter(
-            lambda s: s.metadata.get("n", "").startswith("py"),
+            lambda s: s.metadata and s.metadata.get("n", "").startswith("py"),
             Sandbox.list(),
         )
     )

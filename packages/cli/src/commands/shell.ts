@@ -21,7 +21,7 @@ export const shellCommand = new commander.Command('shell')
   }) => {
     try {
       const apiKey = ensureAPIKey()
-      let envID = template
+      let templateID = template
 
       const root = getRoot(opts.path)
       const configPath = getConfigPath(root)
@@ -31,27 +31,27 @@ export const shellCommand = new commander.Command('shell')
         : undefined
       const relativeConfigPath = path.relative(root, configPath)
 
-      if (!envID && config) {
+      if (!templateID && config) {
         console.log(
           `Found sandbox template ${asFormattedSandboxTemplate(
             {
-              envID: config.template_id,
+              templateID: config.template_id,
               aliases: config.template_name ? [config.template_name] : undefined,
             },
             relativeConfigPath,
           )}`,
         )
-        envID = config.template_id
+        templateID = config.template_id
       }
 
-      if (!envID) {
+      if (!templateID) {
         console.error(
           `You need to specify sandbox template ID or path to sandbox template config`,
         )
         process.exit(1)
       }
 
-      await connectSandbox({ apiKey, template: { envID } })
+      await connectSandbox({ apiKey, template: { templateID } })
       // We explicitly call exit because the sandbox is keeping the program alive.
       // We also don't want to call sandbox.close because that would disconnect other users from the edit session.
       process.exit(0)
@@ -66,11 +66,11 @@ export async function connectSandbox({
   template,
 }: {
   apiKey: string;
-  template: Pick<e2b.components['schemas']['Environment'], 'envID'>;
+  template: Pick<e2b.components['schemas']['Template'], 'templateID'>;
 }) {
   const sandbox = await e2b.Sandbox.create({
     apiKey,
-    template: template.envID,
+    template: template.templateID,
   })
 
   if (sandbox.terminal) {

@@ -98,7 +98,7 @@ export async function saveConfig(
     throw new Error(
       `E2B sandbox template config ${asFormattedSandboxTemplate(
         {
-          envID: config.template_id,
+          templateID: config.template_id,
         },
         configPath,
       )} cannot be saved: ${err.message}`,

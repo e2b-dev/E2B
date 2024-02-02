@@ -35,19 +35,19 @@ def run_code(
         api_key = getenv("E2B_API_KEY")
 
     if runtime == "Node16":
-        env_id = "base"
+        template_id = "base"
         binary = "node"
         filepath = "/index.js"
     elif runtime == "Python3":
-        env_id = "base"
+        template_id = "base"
         binary = "python3"
         filepath = "/index.py"
     elif runtime == "Python3-DataAnalysis":
-        env_id = "Python3-DataAnalysis"
+        template_id = "Python3-DataAnalysis"
         binary = "python3"
         filepath = "/index.py"
     elif runtime == "Bash":
-        env_id = "base"
+        template_id = "base"
         binary = "bash"
         filepath = "/main.sh"
     else:
@@ -55,7 +55,7 @@ def run_code(
             f'Invalid runtime "{runtime}". Please contact us (hello@e2b.dev) if you need support for this runtime'
         )
 
-    sandbox = Sandbox(template=env_id, api_key=api_key)
+    sandbox = Sandbox(template=template_id, api_key=api_key)
     sandbox.filesystem.write(filepath, code)
 
     output = sandbox.process.start_and_wait(cmd=f"{binary} {filepath}")

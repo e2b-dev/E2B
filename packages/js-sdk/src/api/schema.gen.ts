@@ -14,14 +14,14 @@ export interface paths {
       };
     };
   };
-  "/instances": {
-    /** List all running instances */
+  "/sandboxes": {
+    /** List all running sandboxes */
     get: {
       responses: {
-        /** Successfully returned all running instances */
+        /** Successfully returned all running sandboxes */
         200: {
           content: {
-            "application/json": components["schemas"]["RunningInstance"][];
+            "application/json": components["schemas"]["RunningSandboxes"][];
           };
         };
         400: components["responses"]["400"];
@@ -29,13 +29,13 @@ export interface paths {
         500: components["responses"]["500"];
       };
     };
-    /** Create an instance from the environment */
+    /** Create a sandbox from the template */
     post: {
       responses: {
-        /** The instance was created successfully */
+        /** The sandbox was created successfully */
         201: {
           content: {
-            "application/json": components["schemas"]["Instance"];
+            "application/json": components["schemas"]["Sandbox"];
           };
         };
         400: components["responses"]["400"];
@@ -44,21 +44,21 @@ export interface paths {
       };
       requestBody: {
         content: {
-          "application/json": components["schemas"]["NewInstance"];
+          "application/json": components["schemas"]["NewSandbox"];
         };
       };
     };
   };
-  "/instances/{instanceID}/refreshes": {
-    /** Refresh the instance extending its time to live */
+  "/sandboxes/{sandboxID}/refreshes": {
+    /** Refresh the sandbox extending its time to live */
     post: {
       parameters: {
         path: {
-          instanceID: components["parameters"]["instanceID"];
+          sandboxID: components["parameters"]["sandboxID"];
         };
       };
       responses: {
-        /** Successfully refreshed the instance */
+        /** Successfully refreshed the sandbox */
         204: never;
         401: components["responses"]["401"];
         404: components["responses"]["404"];
@@ -66,8 +66,156 @@ export interface paths {
       requestBody: {
         content: {
           "application/json": {
-            /** @description Duration for which the instance should be kept alive in seconds */
+            /** @description Duration for which the sandbox should be kept alive in seconds */
             duration?: number;
+          };
+        };
+      };
+    };
+  };
+  "/templates": {
+    /** List all templates */
+    get: {
+      responses: {
+        /** Successfully returned all templates */
+        200: {
+          content: {
+            "application/json": components["schemas"]["Template"][];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+    /** Create a new template */
+    post: {
+      responses: {
+        /** The build has started */
+        202: {
+          content: {
+            "application/json": components["schemas"]["Template"];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+      requestBody: {
+        content: {
+          "multipart/form-data": {
+            /** @description Alias of the template */
+            alias?: string;
+            /**
+             * Format: binary
+             * @description Docker build context
+             */
+            buildContext: string;
+            /** @description Dockerfile content */
+            dockerfile: string;
+            /** @description Start command to execute in the template after the build */
+            startCmd?: string;
+          };
+        };
+      };
+    };
+  };
+  "/templates/{templateID}": {
+    /** Rebuild an template */
+    post: {
+      parameters: {
+        path: {
+          templateID: components["parameters"]["templateID"];
+        };
+      };
+      responses: {
+        /** The build has started */
+        202: {
+          content: {
+            "application/json": components["schemas"]["Template"];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+      requestBody: {
+        content: {
+          "multipart/form-data": {
+            /** @description Alias of the template */
+            alias?: string;
+            /**
+             * Format: binary
+             * @description Docker build context
+             */
+            buildContext: string;
+            /** @description Dockerfile content */
+            dockerfile: string;
+            /** @description Start command to execute in the template after the build */
+            startCmd?: string;
+          };
+        };
+      };
+    };
+    /** Delete a template */
+    delete: {
+      parameters: {
+        path: {
+          templateID: components["parameters"]["templateID"];
+        };
+      };
+      responses: {
+        /** The template was deleted successfully */
+        204: never;
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/templates/{templateID}/builds/{buildID}": {
+    /** Get template build info */
+    get: {
+      parameters: {
+        path: {
+          templateID: components["parameters"]["templateID"];
+          buildID: components["parameters"]["buildID"];
+        };
+        query: {
+          /** Index of the starting build log that should be returned with the template */
+          logsOffset?: number;
+        };
+      };
+      responses: {
+        /** Successfully returned the template */
+        200: {
+          content: {
+            "application/json": components["schemas"]["TemplateBuild"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/templates/{templateID}/builds/{buildID}/logs": {
+    /** Add a build log */
+    post: {
+      parameters: {
+        path: {
+          templateID: components["parameters"]["templateID"];
+          buildID: components["parameters"]["buildID"];
+        };
+      };
+      responses: {
+        /** Successfully added log */
+        201: unknown;
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** @description API secret */
+            apiSecret: string;
+            logs: string[];
           };
         };
       };
@@ -221,15 +369,137 @@ export interface paths {
       };
     };
   };
+  "/instances": {
+    /** List all running instances */
+    get: {
+      responses: {
+        /** Successfully returned all running instances */
+        200: {
+          content: {
+            "application/json": components["schemas"]["RunningInstance"][];
+          };
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+    /** Create an instance from the environment */
+    post: {
+      responses: {
+        /** The instance was created successfully */
+        201: {
+          content: {
+            "application/json": components["schemas"]["Instance"];
+          };
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["NewInstance"];
+        };
+      };
+    };
+  };
+  "/instances/{instanceID}/refreshes": {
+    /** Refresh the instance extending its time to live */
+    post: {
+      parameters: {
+        path: {
+          instanceID: components["parameters"]["instanceID"];
+        };
+      };
+      responses: {
+        /** Successfully refreshed the instance */
+        204: never;
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** @description Duration for which the instance should be kept alive in seconds */
+            duration?: number;
+          };
+        };
+      };
+    };
+  };
 }
 
 export interface components {
   schemas: {
-    InstanceMetadata: { [key: string]: string };
-    NewInstance: {
-      /** @description Identifier of the required environment */
-      envID: string;
-      metadata?: components["schemas"]["InstanceMetadata"];
+    SandboxMetadata: { [key: string]: string };
+    Sandbox: {
+      /** @description Identifier of the template from which is the sandbox created */
+      templateID: string;
+      /** @description Identifier of the sandbox */
+      sandboxID: string;
+      /** @description Alias of the template */
+      alias?: string;
+      /** @description Identifier of the client */
+      clientID: string;
+    };
+    RunningSandboxes: {
+      /** @description Identifier of the template from which is the sandbox created */
+      templateID: string;
+      /** @description Alias of the template */
+      alias?: string;
+      /** @description Identifier of the sandbox */
+      sandboxID: string;
+      /** @description Identifier of the client */
+      clientID: string;
+      /**
+       * Format: date-time
+       * @description Time when the sandbox was started
+       */
+      startedAt: string;
+      metadata?: components["schemas"]["SandboxMetadata"];
+    };
+    NewSandbox: {
+      /** @description Identifier of the required template */
+      templateID: string;
+      metadata?: components["schemas"]["SandboxMetadata"];
+    };
+    Template: {
+      /** @description Identifier of the template */
+      templateID: string;
+      /** @description Identifier of the last successful build for given template */
+      buildID: string;
+      /** @description Whether the template is public or only accessible by the team */
+      public: boolean;
+      /** @description Aliases of the template */
+      aliases?: string[];
+    };
+    TemplateBuild: {
+      /**
+       * @description Build logs
+       * @default []
+       */
+      logs: string[];
+      /** @description Identifier of the template */
+      templateID: string;
+      /** @description Identifier of the build */
+      buildID: string;
+      /**
+       * @description Status of the template
+       * @enum {string}
+       */
+      status?: "building" | "ready" | "error";
+    } & {
+      finished: unknown;
+    };
+    Error: {
+      /**
+       * Format: int32
+       * @description Error code
+       */
+      code: number;
+      /** @description Error */
+      message: string;
     };
     Environment: {
       /** @description Identifier of the environment */
@@ -259,30 +529,23 @@ export interface components {
     } & {
       finished: unknown;
     };
+    InstanceMetadata: { [key: string]: string };
+    NewInstance: {
+      /** @description Identifier of the required environment */
+      envID: string;
+      metadata?: components["schemas"]["InstanceMetadata"];
+    };
     Instance: {
       /** @description Identifier of the environment from which is the instance created */
       envID: string;
       /** @description Identifier of the instance */
       instanceID: string;
-      /** @description Alias of the environment */
-      alias?: string;
       /** @description Identifier of the client */
       clientID: string;
-    };
-    Error: {
-      /**
-       * Format: int32
-       * @description Error code
-       */
-      code: number;
-      /** @description Error */
-      message: string;
     };
     RunningInstance: {
       /** @description Identifier of the environment from which is the instance created */
       envID: string;
-      /** @description Alias of the environment */
-      alias?: string;
       /** @description Identifier of the instance */
       instanceID: string;
       /** @description Identifier of the client */
@@ -322,8 +585,10 @@ export interface components {
     };
   };
   parameters: {
-    envID: string;
+    templateID: string;
     buildID: string;
+    sandboxID: string;
+    envID: string;
     instanceID: string;
   };
 }

@@ -54,14 +54,14 @@ configuration.api_key['ApiKeyAuth'] = os.environ["API_KEY"]
 # Enter a context with an instance of the API client
 with e2b.api.v2.client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = e2b.api.v2.client.InstancesApi(api_client)
+    api_instance = e2b.api.v2.client.SandboxesApi(api_client)
 
     try:
-        api_response = api_instance.instances_get()
-        print("The response of InstancesApi->instances_get:\n")
+        api_response = api_instance.sandboxes_get()
+        print("The response of SandboxesApi->sandboxes_get:\n")
         pprint(api_response)
     except ApiException as e:
-        print("Exception when calling InstancesApi->instances_get: %s\n" % e)
+        print("Exception when calling SandboxesApi->sandboxes_get: %s\n" % e)
 
 ```
 
@@ -71,21 +71,27 @@ All URIs are relative to *https://api.e2b.dev*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*InstancesApi* | [**instances_get**](e2b/api/v2/client/docs/InstancesApi.md#instances_get) | **GET** /instances | 
-*InstancesApi* | [**instances_instance_id_refreshes_post**](e2b/api/v2/client/docs/InstancesApi.md#instances_instance_id_refreshes_post) | **POST** /instances/{instanceID}/refreshes | 
-*InstancesApi* | [**instances_post**](e2b/api/v2/client/docs/InstancesApi.md#instances_post) | **POST** /instances | 
+*SandboxesApi* | [**sandboxes_get**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_get) | **GET** /sandboxes | 
+*SandboxesApi* | [**sandboxes_post**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_post) | **POST** /sandboxes | 
+*SandboxesApi* | [**sandboxes_sandbox_id_refreshes_post**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_sandbox_id_refreshes_post) | **POST** /sandboxes/{sandboxID}/refreshes | 
 
 
 ## Documentation For Models
 
  - [Environment](e2b/api/v2/client/docs/Environment.md)
  - [EnvironmentBuild](e2b/api/v2/client/docs/EnvironmentBuild.md)
- - [EnvsEnvIDBuildsBuildIDLogsPostRequest](e2b/api/v2/client/docs/EnvsEnvIDBuildsBuildIDLogsPostRequest.md)
  - [Error](e2b/api/v2/client/docs/Error.md)
  - [Instance](e2b/api/v2/client/docs/Instance.md)
  - [InstancesInstanceIDRefreshesPostRequest](e2b/api/v2/client/docs/InstancesInstanceIDRefreshesPostRequest.md)
  - [NewInstance](e2b/api/v2/client/docs/NewInstance.md)
+ - [NewSandbox](e2b/api/v2/client/docs/NewSandbox.md)
  - [RunningInstance](e2b/api/v2/client/docs/RunningInstance.md)
+ - [RunningSandboxes](e2b/api/v2/client/docs/RunningSandboxes.md)
+ - [Sandbox](e2b/api/v2/client/docs/Sandbox.md)
+ - [SandboxesSandboxIDRefreshesPostRequest](e2b/api/v2/client/docs/SandboxesSandboxIDRefreshesPostRequest.md)
+ - [Template](e2b/api/v2/client/docs/Template.md)
+ - [TemplateBuild](e2b/api/v2/client/docs/TemplateBuild.md)
+ - [TemplatesTemplateIDBuildsBuildIDLogsPostRequest](e2b/api/v2/client/docs/TemplatesTemplateIDBuildsBuildIDLogsPostRequest.md)
 
 
 <a id="documentation-for-authorization"></a>
