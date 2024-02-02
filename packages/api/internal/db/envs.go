@@ -27,7 +27,7 @@ func (db *DB) DeleteEnv(ctx context.Context, envID string) error {
 	return nil
 }
 
-func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Environment, err error) {
+func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Template, err error) {
 	envs, err := db.
 		Client.
 		Env.
@@ -46,11 +46,11 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Envi
 			aliases[i] = alias.ID
 		}
 
-		result = append(result, &api.Environment{
-			EnvID:   item.ID,
-			BuildID: item.BuildID.String(),
-			Public:  item.Public,
-			Aliases: &aliases,
+		result = append(result, &api.Template{
+			TemplateID: item.ID,
+			BuildID:    item.BuildID.String(),
+			Public:     item.Public,
+			Aliases:    &aliases,
 		})
 	}
 

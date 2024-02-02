@@ -19,7 +19,14 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-func (a *APIStore) PostEnvs(c *gin.Context) {
+func (a *APIStore) PostTemplates(c *gin.Context) {
+	template := a.PostTemplatesWithoutResponse(c)
+	if template != nil {
+		c.JSON(http.StatusCreated, &template)
+	}
+}
+
+func (a *APIStore) PostTemplatesWithoutResponse(c *gin.Context) *api.Template {
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
 
@@ -31,7 +38,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		err = fmt.Errorf("error when getting default team: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 
-		return
+		return nil
 	}
 
 	envID := utils.GenerateID()
@@ -51,7 +58,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Failed to generate build id")
 
-		return
+		return nil
 	}
 
 	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
@@ -61,7 +68,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Failed to parse form data")
 
-		return
+		return nil
 	}
 
 	defer func() {
@@ -80,7 +87,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz.e2b file")
 
-		return
+		return nil
 	}
 
 	dockerfile := c.PostForm("dockerfile")
@@ -95,7 +102,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 			err = fmt.Errorf("invalid alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			return
+			return nil
 		}
 	}
 
@@ -122,7 +129,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 
-		return
+		return nil
 	}
 
 	err = a.buildCache.Create(envID, buildID, team.ID)
@@ -132,7 +139,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		err = fmt.Errorf("build is already running build for %s", envID)
 		telemetry.ReportCriticalError(ctx, err)
 
-		return
+		return nil
 	}
 
 	telemetry.ReportEvent(ctx, "started creating new environment")
@@ -147,7 +154,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 			a.buildCache.Delete(envID, buildID, team.ID)
 
-			return
+			return nil
 		} else {
 			telemetry.ReportEvent(ctx, "inserted alias", attribute.String("env.alias", alias))
 		}
@@ -159,7 +166,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 			"background-build-env",
 		)
 
-		var status api.EnvironmentBuildStatus
+		var status api.TemplateBuildStatus
 
 		buildErr := a.buildEnv(
 			buildContext,
@@ -177,18 +184,18 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 			})
 
 		if buildErr != nil {
-			status = api.EnvironmentBuildStatusError
+			status = api.TemplateBuildStatusError
 
 			errMsg := fmt.Errorf("error when building env: %w", buildErr)
 
 			telemetry.ReportCriticalError(buildContext, errMsg)
 		} else {
-			status = api.EnvironmentBuildStatusReady
+			status = api.TemplateBuildStatusReady
 
 			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", envID))
 		}
 
-		if status == api.EnvironmentBuildStatusError && alias != "" {
+		if status == api.TemplateBuildStatusError && alias != "" {
 			errMsg := a.supabase.DeleteEnvAlias(buildContext, alias)
 			if errMsg != nil {
 				err = fmt.Errorf("error when deleting alias: %w", errMsg)
@@ -196,7 +203,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 			} else {
 				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("env.alias", alias))
 			}
-		} else if status == api.EnvironmentBuildStatusReady && alias != "" {
+		} else if status == api.TemplateBuildStatusReady && alias != "" {
 			errMsg := a.supabase.UpdateEnvAlias(buildContext, alias, envID)
 			if errMsg != nil {
 				err = fmt.Errorf("error when updating alias: %w", errMsg)
@@ -221,28 +228,34 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		aliases = append(aliases, alias)
 	}
 
-	result := &api.Environment{
-		EnvID:   envID,
-		BuildID: buildID.String(),
-		Public:  false,
-		Aliases: &aliases,
+	return &api.Template{
+		TemplateID: envID,
+		BuildID:    buildID.String(),
+		Public:     false,
+		Aliases:    &aliases,
 	}
-
-	c.JSON(http.StatusOK, result)
 }
 
-func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
+func (a *APIStore) PostTemplatesTemplateID(c *gin.Context, aliasOrTemplateID api.TemplateID) {
+	template := a.PostTemplatesTemplateIDWithoutResponse(c, aliasOrTemplateID)
+
+	if template != nil {
+		c.JSON(http.StatusOK, template)
+	}
+}
+
+func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasOrTemplateID api.TemplateID) *api.Template {
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
 
-	cleanedAliasOrEnvID, err := utils.CleanEnvID(aliasOrEnvID)
+	cleanedAliasOrEnvID, err := utils.CleanEnvID(aliasOrTemplateID)
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid env ID: %s", aliasOrEnvID))
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid env ID: %s", aliasOrTemplateID))
 
 		err = fmt.Errorf("invalid env ID: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 
-		return
+		return nil
 	}
 
 	// Prepare info for rebuilding env
@@ -253,7 +266,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		err = fmt.Errorf("error when getting default team: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 
-		return
+		return nil
 	}
 
 	telemetry.SetAttributes(ctx,
@@ -269,7 +282,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Failed to generate build id")
 
-		return
+		return nil
 	}
 
 	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
@@ -279,7 +292,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Failed to parse form data")
 
-		return
+		return nil
 	}
 
 	// Check if file is a tar.gz file
@@ -289,7 +302,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz.e2b file")
 
-		return
+		return nil
 	}
 
 	dockerfile := c.PostForm("dockerfile")
@@ -302,7 +315,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			err = fmt.Errorf("invalid alias: %w", err)
 			telemetry.ReportCriticalError(ctx, err)
 
-			return
+			return nil
 		}
 	}
 
@@ -318,7 +331,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		errMsg := fmt.Errorf("error env not found: %w", accessErr)
 		telemetry.ReportError(ctx, errMsg)
 
-		return
+		return nil
 	}
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
@@ -336,7 +349,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		errMsg := fmt.Errorf("user doesn't have access to env '%s'", env.EnvID)
 		telemetry.ReportError(ctx, errMsg)
 
-		return
+		return nil
 	}
 
 	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID.String()))
@@ -348,7 +361,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 
-		return
+		return nil
 	}
 
 	err = a.buildCache.Create(env.EnvID, buildID, team.ID)
@@ -358,7 +371,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		err = fmt.Errorf("build is already running build for %s", env.EnvID)
 		telemetry.ReportCriticalError(ctx, err)
 
-		return
+		return nil
 	}
 
 	telemetry.ReportEvent(ctx, "started updating environment")
@@ -373,7 +386,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 
 			a.buildCache.Delete(env.EnvID, buildID, team.ID)
 
-			return
+			return nil
 		} else {
 			telemetry.ReportEvent(ctx, "inserted alias", attribute.String("env.alias", alias))
 		}
@@ -387,7 +400,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			"background-build-env",
 		)
 
-		var status api.EnvironmentBuildStatus
+		var status api.TemplateBuildStatus
 
 		buildErr := a.buildEnv(
 			buildContext,
@@ -405,18 +418,18 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			})
 
 		if buildErr != nil {
-			status = api.EnvironmentBuildStatusError
+			status = api.TemplateBuildStatusError
 
 			errMsg := fmt.Errorf("error when building env: %w", buildErr)
 
 			telemetry.ReportCriticalError(buildContext, errMsg)
 		} else {
-			status = api.EnvironmentBuildStatusReady
+			status = api.TemplateBuildStatusReady
 
 			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", env.EnvID))
 		}
 
-		if status == api.EnvironmentBuildStatusError && alias != "" {
+		if status == api.TemplateBuildStatusError && alias != "" {
 			errMsg := a.supabase.DeleteNilEnvAlias(buildContext, alias)
 			if errMsg != nil {
 				err = fmt.Errorf("error when deleting alias: %w", errMsg)
@@ -424,7 +437,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 			} else {
 				telemetry.ReportEvent(buildContext, "deleted alias", attribute.String("env.alias", alias))
 			}
-		} else if status == api.EnvironmentBuildStatusReady && alias != "" {
+		} else if status == api.TemplateBuildStatusReady && alias != "" {
 			errMsg := a.supabase.UpdateEnvAlias(buildContext, alias, env.EnvID)
 			if errMsg != nil {
 				err = fmt.Errorf("error when updating alias: %w", errMsg)
@@ -449,14 +462,12 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 		aliases = append(aliases, alias)
 	}
 
-	result := &api.Environment{
-		EnvID:   env.EnvID,
-		BuildID: buildID.String(),
-		Public:  false,
-		Aliases: &aliases,
+	return &api.Template{
+		TemplateID: env.EnvID,
+		BuildID:    buildID.String(),
+		Public:     false,
+		Aliases:    &aliases,
 	}
-
-	c.JSON(http.StatusOK, result)
 }
 
 func (a *APIStore) buildEnv(

@@ -18,13 +18,13 @@ import (
 // DockerImagesURL is the URL to the docker images in the artifact registry
 var DockerImagesURL = "projects/" + constants.ProjectID + "/locations/" + constants.Region + "/repositories/" + constants.DockerRepositoryName + "/packages/"
 
-// DeleteEnvsEnvID serves to delete an env (e.g. in CLI)
-func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
+// DeleteTemplatesTemplateID serves to delete an env (e.g. in CLI)
+func (a *APIStore) DeleteTemplatesTemplateID(c *gin.Context, aliasOrTemplateID api.TemplateID) {
 	ctx := c.Request.Context()
 
-	cleanedAliasOrEnvID, err := utils.CleanEnvID(aliasOrEnvID)
+	cleanedAliasOrEnvID, err := utils.CleanEnvID(aliasOrTemplateID)
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid env ID: %s", aliasOrEnvID))
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid env ID: %s", aliasOrTemplateID))
 
 		err = fmt.Errorf("invalid env ID: %w", err)
 		telemetry.ReportCriticalError(ctx, err)

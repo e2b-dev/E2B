@@ -9,7 +9,12 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-func (a *APIStore) GetInstances(c *gin.Context) {
+func (a *APIStore) GetSandboxes(c *gin.Context) {
+	sandboxes := a.GetSandboxesWithoutResponse(c)
+	c.JSON(200, sandboxes)
+}
+
+func (a *APIStore) GetSandboxesWithoutResponse(c *gin.Context) (sandboxes []api.RunningSandboxes) {
 	ctx := c.Request.Context()
 
 	team := c.Value(constants.TeamContextKey).(models.Team)
@@ -22,28 +27,26 @@ func (a *APIStore) GetInstances(c *gin.Context) {
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "listed running instances", properties)
 
-	var instances []api.RunningInstance
-
 	for _, info := range instanceInfo {
 		if *info.TeamID != team.ID {
 			continue
 		}
 
-		instance := api.RunningInstance{
+		instance := api.RunningSandboxes{
 			ClientID:   info.Instance.ClientID,
-			EnvID:      info.Instance.EnvID,
+			TemplateID: info.Instance.TemplateID,
 			Alias:      info.Instance.Alias,
-			InstanceID: info.Instance.InstanceID,
+			SandboxID:  info.Instance.SandboxID,
 			StartedAt:  *info.StartTime,
 		}
 
 		if info.Metadata != nil {
-			meta := api.InstanceMetadata(info.Metadata)
+			meta := api.SandboxMetadata(info.Metadata)
 			instance.Metadata = &meta
 		}
 
-		instances = append(instances, instance)
+		sandboxes = append(sandboxes, instance)
 	}
 
-	c.JSON(200, instances)
+	return sandboxes
 }

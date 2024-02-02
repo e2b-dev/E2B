@@ -21,6 +21,13 @@ const (
 	EnvironmentBuildStatusReady    EnvironmentBuildStatus = "ready"
 )
 
+// Defines values for TemplateBuildStatus.
+const (
+	TemplateBuildStatusBuilding TemplateBuildStatus = "building"
+	TemplateBuildStatusError    TemplateBuildStatus = "error"
+	TemplateBuildStatusReady    TemplateBuildStatus = "ready"
+)
+
 // Environment defines model for Environment.
 type Environment struct {
 	// Aliases Aliases of the environment
@@ -65,9 +72,6 @@ type Error struct {
 
 // Instance defines model for Instance.
 type Instance struct {
-	// Alias Alias of the environment
-	Alias *string `json:"alias,omitempty"`
-
 	// ClientID Identifier of the client
 	ClientID string `json:"clientID"`
 
@@ -88,11 +92,16 @@ type NewInstance struct {
 	Metadata *InstanceMetadata `json:"metadata,omitempty"`
 }
 
+// NewSandbox defines model for NewSandbox.
+type NewSandbox struct {
+	Metadata *SandboxMetadata `json:"metadata,omitempty"`
+
+	// TemplateID Identifier of the required template
+	TemplateID string `json:"templateID"`
+}
+
 // RunningInstance defines model for RunningInstance.
 type RunningInstance struct {
-	// Alias Alias of the environment
-	Alias *string `json:"alias,omitempty"`
-
 	// ClientID Identifier of the client
 	ClientID string `json:"clientID"`
 
@@ -107,6 +116,76 @@ type RunningInstance struct {
 	StartedAt time.Time `json:"startedAt"`
 }
 
+// RunningSandboxes defines model for RunningSandboxes.
+type RunningSandboxes struct {
+	// Alias Alias of the template
+	Alias *string `json:"alias,omitempty"`
+
+	// ClientID Identifier of the client
+	ClientID string           `json:"clientID"`
+	Metadata *SandboxMetadata `json:"metadata,omitempty"`
+
+	// SandboxID Identifier of the sandbox
+	SandboxID string `json:"sandboxID"`
+
+	// StartedAt Time when the sandbox was started
+	StartedAt time.Time `json:"startedAt"`
+
+	// TemplateID Identifier of the template from which is the sandbox created
+	TemplateID string `json:"templateID"`
+}
+
+// Sandbox defines model for Sandbox.
+type Sandbox struct {
+	// Alias Alias of the template
+	Alias *string `json:"alias,omitempty"`
+
+	// ClientID Identifier of the client
+	ClientID string `json:"clientID"`
+
+	// SandboxID Identifier of the sandbox
+	SandboxID string `json:"sandboxID"`
+
+	// TemplateID Identifier of the template from which is the sandbox created
+	TemplateID string `json:"templateID"`
+}
+
+// SandboxMetadata defines model for SandboxMetadata.
+type SandboxMetadata map[string]string
+
+// Template defines model for Template.
+type Template struct {
+	// Aliases Aliases of the template
+	Aliases *[]string `json:"aliases,omitempty"`
+
+	// BuildID Identifier of the last successful build for given template
+	BuildID string `json:"buildID"`
+
+	// Public Whether the template is public or only accessible by the team
+	Public bool `json:"public"`
+
+	// TemplateID Identifier of the template
+	TemplateID string `json:"templateID"`
+}
+
+// TemplateBuild defines model for TemplateBuild.
+type TemplateBuild struct {
+	// BuildID Identifier of the build
+	BuildID string `json:"buildID"`
+
+	// Logs Build logs
+	Logs []string `json:"logs"`
+
+	// Status Status of the template
+	Status *TemplateBuildStatus `json:"status,omitempty"`
+
+	// TemplateID Identifier of the template
+	TemplateID string `json:"templateID"`
+}
+
+// TemplateBuildStatus Status of the template
+type TemplateBuildStatus string
+
 // BuildID defines model for buildID.
 type BuildID = string
 
@@ -115,6 +194,12 @@ type EnvID = string
 
 // InstanceID defines model for instanceID.
 type InstanceID = string
+
+// SandboxID defines model for sandboxID.
+type SandboxID = string
+
+// TemplateID defines model for templateID.
+type TemplateID = string
 
 // N400 defines model for 400.
 type N400 = Error
@@ -177,6 +262,40 @@ type PostInstancesInstanceIDRefreshesJSONBody struct {
 	Duration *int `json:"duration,omitempty"`
 }
 
+// PostSandboxesSandboxIDRefreshesJSONBody defines parameters for PostSandboxesSandboxIDRefreshes.
+type PostSandboxesSandboxIDRefreshesJSONBody struct {
+	// Duration Duration for which the sandbox should be kept alive in seconds
+	Duration *int `json:"duration,omitempty"`
+}
+
+// PostTemplatesTemplateIDMultipartBody defines parameters for PostTemplatesTemplateID.
+type PostTemplatesTemplateIDMultipartBody struct {
+	// Alias Alias of the template
+	Alias *string `json:"alias,omitempty"`
+
+	// BuildContext Docker build context
+	BuildContext openapi_types.File `json:"buildContext"`
+
+	// Dockerfile Dockerfile content
+	Dockerfile string `json:"dockerfile"`
+
+	// StartCmd Start command to execute in the template after the build
+	StartCmd *string `json:"startCmd,omitempty"`
+}
+
+// GetTemplatesTemplateIDBuildsBuildIDParams defines parameters for GetTemplatesTemplateIDBuildsBuildID.
+type GetTemplatesTemplateIDBuildsBuildIDParams struct {
+	// LogsOffset Index of the starting build log that should be returned with the template
+	LogsOffset *int `form:"logsOffset,omitempty" json:"logsOffset,omitempty"`
+}
+
+// PostTemplatesTemplateIDBuildsBuildIDLogsJSONBody defines parameters for PostTemplatesTemplateIDBuildsBuildIDLogs.
+type PostTemplatesTemplateIDBuildsBuildIDLogsJSONBody struct {
+	// ApiSecret API secret
+	ApiSecret string   `json:"apiSecret"`
+	Logs      []string `json:"logs"`
+}
+
 // PostEnvsMultipartRequestBody defines body for PostEnvs for multipart/form-data ContentType.
 type PostEnvsMultipartRequestBody PostEnvsMultipartBody
 
@@ -191,3 +310,15 @@ type PostInstancesJSONRequestBody = NewInstance
 
 // PostInstancesInstanceIDRefreshesJSONRequestBody defines body for PostInstancesInstanceIDRefreshes for application/json ContentType.
 type PostInstancesInstanceIDRefreshesJSONRequestBody PostInstancesInstanceIDRefreshesJSONBody
+
+// PostSandboxesJSONRequestBody defines body for PostSandboxes for application/json ContentType.
+type PostSandboxesJSONRequestBody = NewSandbox
+
+// PostSandboxesSandboxIDRefreshesJSONRequestBody defines body for PostSandboxesSandboxIDRefreshes for application/json ContentType.
+type PostSandboxesSandboxIDRefreshesJSONRequestBody PostSandboxesSandboxIDRefreshesJSONBody
+
+// PostTemplatesTemplateIDMultipartRequestBody defines body for PostTemplatesTemplateID for multipart/form-data ContentType.
+type PostTemplatesTemplateIDMultipartRequestBody PostTemplatesTemplateIDMultipartBody
+
+// PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody defines body for PostTemplatesTemplateIDBuildsBuildIDLogs for application/json ContentType.
+type PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody PostTemplatesTemplateIDBuildsBuildIDLogsJSONBody
