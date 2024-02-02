@@ -121,7 +121,6 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		ContextFileName:            contextFileName,
 		BuildLogsWriter:            writer,
 		GoogleServiceAccountBase64: googleServiceAccountBase64,
-		NomadToken:                 nomadToken,
 	}
 
 	cancellableBuildContext, cancel := context.WithCancel(d.ctx)
@@ -165,7 +164,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		)
 		defer childBuildSpan.End()
 
-		h.run(buildContext, d.tracer, d.docker, d.legacyDockerClient)
+		h.run(buildContext, d.tracer, d.docker, d.legacyDockerClient, nomadToken)
 
 		err := writer.Close()
 		if err != nil {

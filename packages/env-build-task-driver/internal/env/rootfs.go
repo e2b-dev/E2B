@@ -19,7 +19,6 @@ import (
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/hashicorp/nomad/api"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -32,15 +31,14 @@ const (
 	dockerfileName = "Dockerfile"
 	// Path to the envd in the FC VM.
 	envdRootfsPath = "/usr/bin/envd"
-	toMBShift      = 20
+	ToMBShift      = 20
 	// Max size of the rootfs file in MB.
-	maxRootfsSize = 15000 << toMBShift
+	maxRootfsSize = 15000 << ToMBShift
 )
 
 type Rootfs struct {
 	client       *client.Client
 	legacyClient *docker.Client
-	nomadClient  *api.Client
 
 	env *Env
 }
@@ -64,21 +62,9 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	childCtx, childSpan := tracer.Start(ctx, "new-rootfs")
 	defer childSpan.End()
 
-	config := api.DefaultConfig()
-	config.SecretID = env.NomadToken
-	nomadClient, err := api.NewClient(config)
-
-	if err != nil {
-		errMsg := fmt.Errorf("error creating nomad client %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return nil, errMsg
-	}
-
 	rootfs := &Rootfs{
 		client:       docker,
 		legacyClient: legacyDocker,
-		nomadClient:  nomadClient,
 		env:          env,
 	}
 
@@ -159,7 +145,7 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer, netw
 
 	err = r.legacyClient.BuildImage(docker.BuildImageOptions{
 		NetworkMode:  networkName,
-		Memory:       r.env.MemoryMB << toMBShift,
+		Memory:       r.env.MemoryMB << ToMBShift,
 		CPUPeriod:    100000,
 		CPUQuota:     r.env.VCpuCount * 100000,
 		Context:      buildCtx,
@@ -304,10 +290,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		CapDrop:     []string{"ALL"},
 		NetworkMode: container.NetworkMode(networkName),
 		Resources: container.Resources{
-			Memory:     r.env.MemoryMB << toMBShift,
+			Memory:     r.env.MemoryMB << ToMBShift,
 			CPUPeriod:  100000,
 			CPUQuota:   r.env.VCpuCount * 100000,
-			MemorySwap: r.env.MemoryMB << toMBShift,
+			MemorySwap: r.env.MemoryMB << ToMBShift,
 			PidsLimit:  &pidsLimit,
 		},
 	}, nil, &v1.Platform{}, "")
@@ -372,8 +358,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 			}
 		}()
 	}()
-
-	telemetry.ReportEvent(childCtx, "created container")
 
 	filesToTar := []fileToTar{
 		{
@@ -579,7 +563,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 	err = tar2ext4.ConvertTarToExt4(pr, rootfsFile, tar2ext4.MaximumDiskSize(maxRootfsSize))
 	if err != nil {
 		if strings.Contains(err.Error(), "disk exceeded maximum size") {
-			r.env.BuildLogsWriter.Write([]byte(fmt.Sprintf("Build failed - exceeded maximum size %v MB.\n", maxRootfsSize>>toMBShift)))
+			r.env.BuildLogsWriter.Write([]byte(fmt.Sprintf("Build failed - exceeded maximum size %v MB.\n", maxRootfsSize>>ToMBShift)))
 		}
 
 		errMsg := fmt.Errorf("error converting tar to ext4 %w", err)
@@ -622,19 +606,9 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 	telemetry.ReportEvent(childCtx, "statted rootfs file")
 
 	// In bytes
-	rootfsSize := rootfsStats.Size() + r.env.DiskSizeMB<<toMBShift
+	rootfsSize := rootfsStats.Size() + r.env.DiskSizeMB<<ToMBShift
 
-	variable := &api.Variable{
-		Path:  "env-build/disk-size-mb/" + r.env.EnvID,
-		Items: api.VariableItems{r.env.BuildID: fmt.Sprintf("%d", rootfsSize>>toMBShift)},
-	}
-	_, _, err = r.nomadClient.Variables().Create(variable, nil)
-	if err != nil {
-		errMsg := fmt.Errorf("error creating nomad variable %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
+	r.env.RootfsSize = rootfsSize
 
 	err = rootfsFile.Truncate(rootfsSize)
 	if err != nil {

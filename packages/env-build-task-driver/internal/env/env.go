@@ -69,8 +69,8 @@ type Env struct {
 	// Google service account JSON secret base64 encoded.
 	GoogleServiceAccountBase64 string
 
-	// Nomad token
-	NomadToken string
+	// Real size of the rootfs after building the env.
+	RootfsSize int64
 }
 
 //go:embed provision.sh
