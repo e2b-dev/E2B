@@ -13,11 +13,11 @@ if [ -f "kernel_versions.txt" ]; then
   while IFS= read -r version; do
     # Download kernel
     echo "Downloading kernel ${version}..."
-    mkdir -p "downloads/${version}"
+    mkdir -p "downloads/vmlinux-${version}"
     curl "https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/${version}/x86_64/vmlinux-${version}" -o "downloads/vmlinux-${version}/vmlinux.bin"
 
     # Upload kernel to GCP bucket
-    gsutil -h "Cache-Control:no-cache, max-age=0" cp -n -r "downloads/${version}" "gs://${GCP_PROJECT_ID}-fc-kernels"
+    gsutil -h "Cache-Control:no-cache, max-age=0" cp -n -r "downloads/vmlinux-${version}" "gs://${GCP_PROJECT_ID}-fc-kernels"
 
     rm -rf "downloads/${version}"
   done <"kernel_versions.txt"
