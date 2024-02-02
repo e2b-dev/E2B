@@ -76,8 +76,6 @@ func (h *taskHandle) handleResult(err error) {
 	h.taskState = drivers.TaskStateExited
 
 	close(h.exited)
-
-	h.mu.Unlock()
 }
 
 func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *client.Client, legacyDocker *docker.Client, nomadToken string) {
@@ -88,7 +86,7 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("error during building env '%s' with build id '%s': %s", h.env.EnvID, h.env.BuildID, err.Error()))
 		telemetry.ReportCriticalError(childCtx, err)
-		
+
 		h.handleResult(err)
 
 		return
