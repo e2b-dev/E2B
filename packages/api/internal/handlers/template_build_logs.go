@@ -17,7 +17,7 @@ import (
 func (a *APIStore) GetTemplatesTemplateIDBuildsBuildID(c *gin.Context, templateID api.TemplateID, buildID api.BuildID, params api.GetTemplatesTemplateIDBuildsBuildIDParams) {
 	result := a.GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c, templateID, buildID, params)
 	if result != nil {
-		c.JSON(http.StatusOK, *result)
+		c.JSON(http.StatusOK, &result)
 	}
 }
 
