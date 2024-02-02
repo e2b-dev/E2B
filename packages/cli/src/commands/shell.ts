@@ -1,4 +1,4 @@
-import * as e2b from '@e2b/sdk'
+import * as e2b from 'e2b'
 import * as commander from 'commander'
 import * as path from 'path'
 

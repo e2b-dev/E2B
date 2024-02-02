@@ -1,5 +1,5 @@
 import * as chalk from 'chalk'
-import * as e2b from '@e2b/sdk'
+import * as e2b from 'e2b'
 import * as highlight from 'cli-highlight'
 import * as boxen from 'boxen'
 

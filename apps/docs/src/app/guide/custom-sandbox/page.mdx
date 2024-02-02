@@ -107,7 +107,7 @@ Postprocessing finished.
 │                                                                                                                                                      │
 │─────────────────────────────────────────────────────────────────────── JS SDK ───────────────────────────────────────────────────────────────────────│
 │                                                                                                                                                      │
-│  import { Sandbox } from '@e2b/sdk'                                                                                                                  │
+│  import { Sandbox } from 'e2b'                                                                                                                  │
 │                                                                                                                                                      │
 │  // Start sandbox                                                                                                                                    │
 │  const sandbox = await Sandbox.create('my-agent-sandbox')                                                                                            │
@@ -158,7 +158,7 @@ This way, we'll be able to spawn our custom sandbox and control it with the SDK.
 
 <CodeGroup title="Spawn & control your custom sandbox" isRunnable={true}>
 ```js {{ language: 'js' }}
-import { Sandbox } from '@e2b/sdk'
+import { Sandbox } from 'e2b'
 
 // Spawn your custom sandbox
 const sandbox = await Sandbox.create({ template: 'my-agent-sandbox' }) // $HighlightLine

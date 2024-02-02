@@ -1,4 +1,4 @@
-import { Sandbox } from '@e2b/sdk'
+import { Sandbox } from 'e2b'
 
 // Timeout 3s for the sandbox to open
 const sandbox = await Sandbox.create({

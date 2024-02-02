@@ -13,7 +13,7 @@ import {
 
 import { CopyButton } from '@/components/CopyButton'
 import { useApiKey } from '@/utils/useUser'
-import { ProcessMessage } from '@e2b/sdk'
+import { ProcessMessage } from 'e2b'
 import { useSandboxStore } from '@/utils/useSandbox'
 import { useSignIn } from '@/utils/useSignIn'
 import { LangShort, languageNames, mdLangToLangShort } from '@/utils/consts'

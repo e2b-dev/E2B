@@ -13,7 +13,6 @@
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
     "@algolia/autocomplete-core": "^1.7.3",
-    "@e2b/sdk": "^0.11.20",
     "@headlessui/react": "^1.7.15",
     "@headlessui/tailwindcss": "^0.2.0",
     "@mdx-js/loader": "^2.1.5",
@@ -35,6 +34,7 @@
     "autoprefixer": "^10.4.7",
     "class-variance-authority": "^0.7.0",
     "clsx": "^1.2.1",
+    "e2b": "^0.11.20",
     "fast-glob": "^3.3.0",
     "flexsearch": "^0.7.31",
     "framer-motion": "7.8.1",

@@ -62,7 +62,7 @@ You can use all the regular [Sandbox API](/sandbox/api/envs) inside the Code Int
 - **Create sandbox**
 <CodeGroup isRunnable={false}>
 ```js {{ language: 'js' }}
-import { CodeInterpreter } from '@e2b/sdk'
+import { CodeInterpreter } from 'e2b'
 const sandbox = await CodeInterpreter.create()
 
 // Close sandbox once you're done
@@ -81,7 +81,7 @@ sandbox.close()
 - **Run Python code**
 <CodeGroup isRunnable={false}>
 ```js {{ language: 'js' }}
-import { CodeInterpreter } from '@e2b/sdk'
+import { CodeInterpreter } from 'e2b'
 
 // 1. Create sandbox
 const sandbox = await CodeInterpreter.create()
@@ -127,7 +127,7 @@ sandbox.close()
 Installs Python packages using `pip`.
 <CodeGroup isRunnable={false}>
 ```js {{ language: 'js' }}
-import { CodeInterpreter } from '@e2b/sdk'
+import { CodeInterpreter } from 'e2b'
 
 // 1. Create sandbox
 const sandbox = await CodeInterpreter.create()
@@ -157,7 +157,7 @@ sandbox.close()
 Installs system packages using `apt-get`.
 <CodeGroup isRunnable={false}>
 ```js {{ language: 'js' }}
-import { CodeInterpreter } from '@e2b/sdk'
+import { CodeInterpreter } from 'e2b'
 
 // 1. Create sandbox
 const sandbox = await CodeInterpreter.create()

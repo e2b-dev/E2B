@@ -1,7 +1,7 @@
 import * as commander from 'commander'
 import * as fs from 'fs'
 import * as path from 'path'
-import * as e2b from '@e2b/sdk'
+import * as e2b from 'e2b'
 import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
 
@@ -274,7 +274,7 @@ sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.envID
 # Close sandbox once done
 sandbox.close()`)
 
-        const typescriptExample = asTypescript(`import { Sandbox } from '@e2b/sdk'
+        const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
 
 // Start sandbox
 const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.data.envID}' })

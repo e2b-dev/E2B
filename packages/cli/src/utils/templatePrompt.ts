@@ -1,4 +1,4 @@
-import * as e2b from '@e2b/sdk'
+import * as e2b from 'e2b'
 import * as chalk from 'chalk'
 
 import { asFormattedSandboxTemplate } from 'src/utils/format'

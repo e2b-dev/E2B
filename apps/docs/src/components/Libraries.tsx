@@ -6,7 +6,7 @@ import logoPython from '@/images/logos/python.svg'
 
 const libraries = [
   {
-    href: 'https://www.npmjs.com/package/@e2b/sdk',
+    href: 'https://www.npmjs.com/package/e2b',
     name: 'JavaScript & Typescript',
     description:
       'Usable both in Node.js and in the browser. Requires at least Node.js 18.0.',

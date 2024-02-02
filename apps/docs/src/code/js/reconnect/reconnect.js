@@ -1,4 +1,4 @@
-import { Sandbox } from '@e2b/sdk'
+import { Sandbox } from 'e2b'
 
 async function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))

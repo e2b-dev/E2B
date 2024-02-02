@@ -1,6 +1,6 @@
 import * as commander from 'commander'
 import * as chalk from 'chalk'
-import * as e2b from '@e2b/sdk'
+import * as e2b from 'e2b'
 import * as fs from 'fs'
 
 import { ensureAccessToken } from 'src/api'

@@ -1,4 +1,4 @@
-import { Sandbox } from '@e2b/sdk'
+import { Sandbox } from 'e2b'
 import { create } from 'zustand'
 import { docsSandboxName } from '@/utils/consts'
 
@@ -13,7 +13,7 @@ function log(message?: any, ...optionalParams: any[]) {
 // }
 
 // const preps = {
-//   js: 'npm init es6 -y && npm install @e2b/sdk',
+//   js: 'npm init es6 -y && npm install e2b',
 //   py: 'pip install e2b',
 // }
 
