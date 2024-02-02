@@ -13,11 +13,11 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     url.hostname = 'e2b-landing-page.framer.website'
   }
 
-  if (url.pathname.startsWith('/terms') || url.pathname.startsWith('/terms/')) {
+  if (url.pathname.startsWith('/terms')) {
     url.hostname = 'e2b-landing-page.framer.website'
   }
 
-  if (url.pathname.startsWith('/privacy') || url.pathname.startsWith('/privacy/')) {
+  if (url.pathname.startsWith('/privacy')) {
     url.hostname = 'e2b-landing-page.framer.website'
   }
 
