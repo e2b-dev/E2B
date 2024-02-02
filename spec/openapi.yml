@@ -396,6 +396,70 @@ paths:
         404:
           $ref: "#/components/responses/404"
 
+  /templates:
+    get:
+      description: List all templates
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+      responses:
+        200:
+          description: Successfully returned all templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Template"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+    post:
+      description: Create a new template
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - buildContext
+                - dockerfile
+              properties:
+                alias:
+                  description: Alias of the template
+                  type: string
+                buildContext:
+                  description: Docker build context
+                  type: string
+                  format: binary
+                dockerfile:
+                  type: string
+                  description: Dockerfile content
+                startCmd:
+                  description: Start command to execute in the template after the build
+                  type: string
+            encoding:
+              buildContext:
+                contentType: application/octet-stream
+
+      responses:
+        202:
+          description: The build has started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+
   /templates/{templateID}:
     post:
       description: Rebuild an template

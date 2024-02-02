@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
@@ -11,7 +13,7 @@ import (
 
 func (a *APIStore) GetSandboxes(c *gin.Context) {
 	sandboxes := a.GetSandboxesWithoutResponse(c)
-	c.JSON(200, sandboxes)
+	c.JSON(http.StatusOK, sandboxes)
 }
 
 func (a *APIStore) GetSandboxesWithoutResponse(c *gin.Context) (sandboxes []api.RunningSandboxes) {

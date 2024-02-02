@@ -268,6 +268,21 @@ type PostSandboxesSandboxIDRefreshesJSONBody struct {
 	Duration *int `json:"duration,omitempty"`
 }
 
+// PostTemplatesMultipartBody defines parameters for PostTemplates.
+type PostTemplatesMultipartBody struct {
+	// Alias Alias of the template
+	Alias *string `json:"alias,omitempty"`
+
+	// BuildContext Docker build context
+	BuildContext openapi_types.File `json:"buildContext"`
+
+	// Dockerfile Dockerfile content
+	Dockerfile string `json:"dockerfile"`
+
+	// StartCmd Start command to execute in the template after the build
+	StartCmd *string `json:"startCmd,omitempty"`
+}
+
 // PostTemplatesTemplateIDMultipartBody defines parameters for PostTemplatesTemplateID.
 type PostTemplatesTemplateIDMultipartBody struct {
 	// Alias Alias of the template
@@ -316,6 +331,9 @@ type PostSandboxesJSONRequestBody = NewSandbox
 
 // PostSandboxesSandboxIDRefreshesJSONRequestBody defines body for PostSandboxesSandboxIDRefreshes for application/json ContentType.
 type PostSandboxesSandboxIDRefreshesJSONRequestBody PostSandboxesSandboxIDRefreshesJSONBody
+
+// PostTemplatesMultipartRequestBody defines body for PostTemplates for multipart/form-data ContentType.
+type PostTemplatesMultipartRequestBody PostTemplatesMultipartBody
 
 // PostTemplatesTemplateIDMultipartRequestBody defines body for PostTemplatesTemplateID for multipart/form-data ContentType.
 type PostTemplatesTemplateIDMultipartRequestBody PostTemplatesTemplateIDMultipartBody

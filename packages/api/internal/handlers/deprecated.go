@@ -1,16 +1,17 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/gin-gonic/gin"
+
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 // GetEnvs serves to list envs (e.g. in CLI)
-func (a *APIStore) GetEnvs(
-	c *gin.Context,
-) {
+func (a *APIStore) GetEnvs(c *gin.Context) {
 	templates := a.GetTemplatesWithoutResponse(c)
 	if templates != nil {
 		var envs []*api.Environment
@@ -86,10 +87,20 @@ func (a *APIStore) DeleteEnvsEnvID(c *gin.Context, aliasOrEnvID api.EnvID) {
 }
 
 // PostInstances serves to create an instance
-func (a *APIStore) PostInstances(
-	c *gin.Context,
-) {
-	sandbox := a.PostSandboxesWithoutResponse(c)
+func (a *APIStore) PostInstances(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	body, err := parseBody[api.PostInstancesJSONRequestBody](ctx, c)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
+
+		errMsg := fmt.Errorf("error when parsing request: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		return
+	}
+
+	sandbox := a.PostSandboxesWithoutResponse(c, ctx, body.EnvID, (*map[string]string)(body.Metadata))
 	if sandbox != nil {
 		instance := api.Instance{
 			InstanceID: sandbox.SandboxID,
@@ -103,7 +114,7 @@ func (a *APIStore) PostInstances(
 func (a *APIStore) GetInstances(c *gin.Context) {
 	sandboxes := a.GetSandboxesWithoutResponse(c)
 
-	instances := make([]api.RunningInstance, 0, len(sandboxes))
+	instances := make([]api.RunningInstance, len(sandboxes))
 
 	for index, sandbox := range sandboxes {
 		instance := api.RunningInstance{

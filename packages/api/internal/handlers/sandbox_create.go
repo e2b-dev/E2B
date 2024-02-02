@@ -16,17 +16,7 @@ import (
 )
 
 func (a *APIStore) PostSandboxes(c *gin.Context) {
-	sandbox := a.PostSandboxesWithoutResponse(c)
-	if sandbox != nil {
-		c.JSON(http.StatusCreated, &sandbox)
-	}
-}
-
-func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context) *api.Sandbox {
 	ctx := c.Request.Context()
-	span := trace.SpanFromContext(ctx)
-
-	c.Set("traceID", span.SpanContext().TraceID().String())
 
 	body, err := parseBody[api.PostSandboxesJSONRequestBody](ctx, c)
 	if err != nil {
@@ -35,10 +25,21 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context) *api.Sandbox {
 		errMsg := fmt.Errorf("error when parsing request: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
-		return nil
+		return
 	}
 
-	cleanedAliasOrEnvID, err := utils.CleanEnvID(body.TemplateID)
+	sandbox := a.PostSandboxesWithoutResponse(c, ctx, body.TemplateID, (*map[string]string)(body.Metadata))
+	if sandbox != nil {
+		c.JSON(http.StatusCreated, &sandbox)
+	}
+}
+
+func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Context, templateID string, sandboxMetadata *map[string]string) *api.Sandbox {
+	span := trace.SpanFromContext(ctx)
+
+	c.Set("traceID", span.SpanContext().TraceID().String())
+
+	cleanedAliasOrEnvID, err := utils.CleanEnvID(templateID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid environment ID: %s", err))
 
@@ -98,8 +99,8 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context) *api.Sandbox {
 	}
 
 	var metadata map[string]string
-	if body.Metadata != nil {
-		metadata = *body.Metadata
+	if sandboxMetadata != nil {
+		metadata = *sandboxMetadata
 	}
 
 	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, env.EnvID, alias, team.ID.String(), metadata)
