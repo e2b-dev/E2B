@@ -33,7 +33,7 @@
     "generate": "openapi-typescript ../../spec/openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
-    "postPublish": "npm pkg set 'name'='@e2b/sdk' && pnpm publish --no-git-checks && npm pkg set 'name'='e2b' && (pnpm deprecate @e2b/sdk@$(npm pkg get version | tr -d \\\") \"The package '@e2b/sdk' has been renamed to 'e2b'. Please uninstall the old one and install the new 'npm uninstall @e2b/sdk && npm install e2b'.\" || exit 0)"
+    "postPublish": "./scripts/post-publish.sh"
   },
   "peerDependencies": {
     "openai": "^4.17.4"
