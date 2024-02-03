@@ -172,6 +172,16 @@ Running `e2b shell` without specifying a template with the `[template]` argument
 
 ---
 
+## `sandboxes`
+
+List your spawned sandboxes that are running right now.
+
+```bash
+e2b sandboxes
+```
+
+---
+
 ## `connect`
 
 Connects your terminal to a running sandbox that you spawned via the E2B SDK.
@@ -183,7 +193,7 @@ e2b connect <sandboxID>
 ```
 
 <Note>
-You can use `e2b list` to get a list of running sandboxes and their IDs that can be used with `e2b connect <sandboxID>` command.
+You can use `e2b sandboxes` to get a list of running sandboxes and their IDs that can be used with `e2b connect <sandboxID>` command.
 </Note>
 
 #### **Arguments**
