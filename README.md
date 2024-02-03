@@ -79,13 +79,13 @@ sandbox.close()
 #### Install SDK
 
 ```bash
-npm install @e2b/sdk
+npm install e2b
 ```
 
 #### Start sandbox
 
 ```js
-import { Sandbox } from "@e2b/sdk";
+import { Sandbox } from "e2b";
 
 // Create sandbox
 const sandbox = await Sandbox.create();
