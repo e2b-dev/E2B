@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set -euo pipefail
 
 npm pkg set 'name'='@e2b/sdk'
