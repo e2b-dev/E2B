@@ -100,8 +100,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       e2b:
-        specifier: ^0.11.20
-        version: 0.11.20(openai@4.17.4)
+        specifier: ^0.12.0
+        version: 0.12.0(openai@4.17.4)
       fast-glob:
         specifier: ^3.3.0
         version: 3.3.1
@@ -264,8 +264,8 @@ importers:
         specifier: ^2.11.2
         version: 2.11.2
       e2b:
-        specifier: ^0.11.20
-        version: 0.11.20(openai@4.17.4)
+        specifier: ^0.12.0
+        version: 0.12.0(openai@4.17.4)
       ignore:
         specifier: ^5.2.4
         version: 5.2.4
@@ -2875,7 +2875,6 @@ packages:
     resolution: {integrity: sha512-gKb0enTmRCzXSSUJDq6/sPcqrfCv2mkkG6Jt/clpn5eiCbKTY+SgZUxo+p8ZKMof5dCp9vHQUAB7wOUTod22wQ==}
     dependencies:
       undici-types: 5.26.5
-    dev: true
 
   /@types/node@20.6.3:
     resolution: {integrity: sha512-HksnYH4Ljr4VQgEy2lTStbCKv/P590tmPe5HqOnv9Gprffgv5WXAY+Y5Gqniu0GGqeTCUdBnzC3QSrzPkBkAMA==}
@@ -4742,8 +4741,8 @@ packages:
     resolution: {integrity: sha512-1A8za6ws41LQgv9HrE/66jyC5yuSjQ3L/KOpFtoBilsAK2iA2wuS5rTt1OCzIvtS2V7nVmedsUU+DGRcjBmOYA==}
     dev: false
 
-  /e2b@0.11.20(openai@4.17.4):
-    resolution: {integrity: sha512-xsxK0Ezk2rbHlioLoJqBIq7OmBScgSDL07EWuA61vGmNJNGe5c/urMIMOnYD/TV0O0rYj2KaxkJank0Fb2swUg==}
+  /e2b@0.12.0(openai@4.17.4):
+    resolution: {integrity: sha512-sW28xH8lWxOf7ngqSn9DMsgubw4S2YC+H+TNbBgeYtoDLyMtLNr0UTz6rZ8yBRGYOclQYczcrLKzqrMmuXw5iA==}
     engines: {node: '>=18'}
     peerDependencies:
       openai: ^4.17.4
@@ -6705,7 +6704,7 @@ packages:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
     dependencies:
-      '@types/node': 18.18.6
+      '@types/node': 20.11.16
       merge-stream: 2.0.0
       supports-color: 8.1.1
     dev: false
@@ -10696,7 +10695,6 @@ packages:
 
   /undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
-    dev: true
 
   /undici@5.26.4:
     resolution: {integrity: sha512-OG+QOf0fTLtazL9P9X7yqWxQ+Z0395Wk6DSkyTxtaq3wQEjIroVe7Y4asCX/vcCxYpNGMnwz8F0qbRYUoaQVMw==}

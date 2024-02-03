@@ -57,7 +57,7 @@
     "cli-highlight": "^2.1.11",
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
-    "e2b": "^0.11.20",
+    "e2b": "^0.12.0",
     "ignore": "^5.2.4",
     "inquirer": "^9.2.12",
     "open": "^9.1.0",
