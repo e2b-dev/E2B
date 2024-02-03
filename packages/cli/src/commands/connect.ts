@@ -7,8 +7,8 @@ import { ensureAPIKey } from '../api'
 
 export const connectCommand = new commander.Command('connect')
   .description('Connect terminal to already running sandbox')
-  .argument('[sandboxID]', `Connect to sandbox with ${asBold('[sandboxID]')}`)
-  .alias('c')
+  .argument('<sandboxID>', `Connect to sandbox with ${asBold('<sandboxID>')}`)
+  .alias('cn')
   .action(async (sandboxID: string) => {
     try {
       const apiKey = ensureAPIKey()
@@ -31,8 +31,8 @@ export const connectCommand = new commander.Command('connect')
   })
 
 
-async function connectToSandbox({ apiKey, sandboxID} : { apiKey: string, sandboxID: string }) {
-  const sandbox = await e2b.Sandbox.reconnect({sandboxID, apiKey})
+async function connectToSandbox({ apiKey, sandboxID }: { apiKey: string, sandboxID: string }) {
+  const sandbox = await e2b.Sandbox.reconnect({ sandboxID, apiKey })
 
   if (sandbox.terminal) {
     const { exited } = await spawnConnectedTerminal(

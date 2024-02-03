@@ -10,7 +10,7 @@ const listRunningSandboxes = e2b.withAPIKey(
 
 export const runningSandboxesCommand = new commander.Command('sandboxes')
   .description('List all running sandboxes')
-  .alias('sndbx')
+  .alias('sb')
   .action(async () => {
     try {
       const apiKey = ensureAPIKey()
