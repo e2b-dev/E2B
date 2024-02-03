@@ -1,3 +1,5 @@
+set -euo pipefail
+
 npm pkg set 'name'='@e2b/sdk'
 npm publish --no-git-checks
 npm pkg set 'name'='e2b'
