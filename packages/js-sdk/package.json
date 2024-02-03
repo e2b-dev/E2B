@@ -33,7 +33,7 @@
     "generate": "openapi-typescript ../../spec/openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
-    "postPublish": "./scripts/post-publish.sh"
+    "postPublish": "./scripts/post-publish.sh || true"
   },
   "peerDependencies": {
     "openai": "^4.17.4"
