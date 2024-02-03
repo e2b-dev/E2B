@@ -170,6 +170,30 @@ Running `e2b shell` without specifying a template with the `[template]` argument
   </Option>
 </Options>
 
+---
+
+## `connect`
+
+Connects your terminal to a running sandbox that you spawned via the E2B SDK.
+This command is useful if you need to debug a running sandbox.
+It works similar to the `docker exec -it <container> bash` command.
+
+```bash
+e2b connect <sandboxID>
+```
+
+<Note>
+You can use `e2b list` to get a list of running sandboxes and their IDs that can be used with `e2b connect <sandboxID>` command.
+</Note>
+
+#### **Arguments**
+
+<Options>
+  <Option type="<sandboxID>">
+    Specify the ID of a running sandbox you want to connect to.
+  </Option>
+</Options>
+
 ### Next steps
 
 1. [Create your first sandbox template](/sandbox/templates/overview)
