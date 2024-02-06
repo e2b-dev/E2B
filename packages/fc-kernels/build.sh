@@ -3,10 +3,10 @@
 set -euo pipefail
 
 function build_version {
-  local version="$1"
+  local version=$1
   stringarray=($version)
   kernel_version=${stringarray[1]}
-  git checkout "$version"
+  git checkout "v${kernel_version}"
 
   cp configs/"${kernel_version}.config" linux/.config
 
