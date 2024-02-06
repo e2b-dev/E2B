@@ -1,0 +1,31 @@
+name: FC Kernels
+
+on:
+  push
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Repository changes
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Service Account
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
+
+      - name: Build kernels
+        working-directory: ./packages/fc-kernels
+        run: make build
+
+      - name: Upload kernels
+        working-directory: ./packages/fc-kernels
+        run: make upload $project_id
+        env:
+          project_id: ${{ secrets.gcp_project_id }}
