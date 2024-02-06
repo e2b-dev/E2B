@@ -60,6 +60,10 @@ export interface SandboxConnectionOpts {
   apiKey?: string;
   cwd?: string;
   envVars?: EnvVars;
+  /**
+   * A dictionary of strings that is stored alongside the running sandbox.
+   * You can see this metadata when you list running sandboxes.
+   */
   metadata?: SandboxMetadata;
   logger?: Logger;
   __sandbox?: components['schemas']['Sandbox'];
