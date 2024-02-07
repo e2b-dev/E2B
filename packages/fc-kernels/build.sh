@@ -22,6 +22,7 @@ function build_version {
 
 
 git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git linux
+git fetch --tags
 
 grep -v '^ *#' < kernel_versions.txt | while IFS= read -r version
 do
