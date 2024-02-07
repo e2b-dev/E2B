@@ -29,7 +29,10 @@ jobs:
           cache-dependency-path: tests/package-lock.json
 
       - name: Install dependencies
-        run: npm install -g @e2b/cli
+        working-directory: tests
+        run: |
+          npm install
+          npm install -g @e2b/cli
 
       - name: Test build
         working-directory: tests
@@ -37,3 +40,12 @@ jobs:
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_ACCESS_TOKEN: ${{ secrets.E2B_ACCESS_TOKEN }}
+
+      - name: Release Failed - Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        if: failure()
+        env:
+          SLACK_COLOR: "#ff0000"
+          SLACK_MESSAGE: ":here-we-go-again: :bob-the-destroyer: We need :fix-parrot: ASAP :pray:"
+          SLACK_TITLE:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
