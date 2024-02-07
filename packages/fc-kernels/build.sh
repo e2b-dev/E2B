@@ -12,7 +12,8 @@ function build_version {
   cp ../configs/"${kernel_version}.config" .config
 
   echo "Checking out repo for kernel at version: $kernel_version"
-  git checkout "v${kernel_version}"
+  git fetch --depth 1 origin "v${kernel_version}"
+  git checkout FETCH_HEAD
 
   echo "Building kernel version: $kernel_version"
   make vmlinux -j "$(nproc)"
