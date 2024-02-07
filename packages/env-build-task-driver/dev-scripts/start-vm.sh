@@ -8,7 +8,7 @@ FC_IP="169.254.0.21"
 TAP_IP="169.254.0.22"
 FC_MAC="02:FC:00:00:00:05"
 
-KERNEL_BOOT_ARGS="console=ttyS0 ip=${FC_IP}::${TAP_IP}:${MASK_LONG}::eth0:off reboot=k panic=1 pci=off i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on"
+KERNEL_BOOT_ARGS="console=ttyS0 ip=${FC_IP}::${TAP_IP}:${MASK_LONG}::eth0:off reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on"
 
 ip link del "$TAP_DEV" 2> /dev/null || true
 ip tuntap add dev "$TAP_DEV" mode tap
