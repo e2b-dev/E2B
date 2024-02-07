@@ -5,16 +5,16 @@ import * as path from 'path'
 import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal } from 'src/terminal'
 import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
-import { getRoot } from '../utils/filesystem'
-import { getConfigPath, loadConfig } from '../config'
+import { getRoot } from '../../utils/filesystem'
+import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
-import { pathOption } from '../options'
+import { pathOption } from '../../options'
 
-export const shellCommand = new commander.Command('shell')
-  .description('Connect terminal to sandbox')
-  .argument('[template]', `Connect to sandbox specified by ${asBold('[template]')}`)
+export const spawnCommand = new commander.Command('spawn')
+  .description('Spawn sandbox and connect terminal to it')
+  .argument('[template]', `Spawn and connect to sandbox specified by ${asBold('[template]')}`)
   .addOption(pathOption)
-  .alias('sh')
+  .alias('sp')
   .action(async (template: string | undefined, opts: {
     name?: string;
     path?: string;
