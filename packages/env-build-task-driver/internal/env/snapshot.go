@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
+	"github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -276,7 +276,8 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 	defer childSpan.End()
 
 	ip := fmt.Sprintf("%s::%s:%s:instance:eth0:off:8.8.8.8", fcAddr, fcTapAddress, fcMaskLong)
-	kernelArgs := fmt.Sprintf("quiet loglevel=1 ip=%s reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on", ip)
+	// TODO: nomodules alternative - we need fuse
+	kernelArgs := fmt.Sprintf("quiet loglevel=1 ip=%s reboot=k panic=1 pci=off i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on", ip)
 	kernelImagePath := s.env.KernelMountedPath()
 	bootSourceConfig := operations.PutGuestBootSourceParams{
 		Context: childCtx,
