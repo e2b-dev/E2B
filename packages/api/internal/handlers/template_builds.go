@@ -19,7 +19,7 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-const defaultKernelVersion = "vmlinux-5.10.186"
+const defaultKernelVersion = "vmlinux-5.10-fuse"
 
 func (a *APIStore) PostTemplates(c *gin.Context) {
 	template := a.PostTemplatesWithoutResponse(c)
