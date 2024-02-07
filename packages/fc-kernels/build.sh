@@ -6,11 +6,11 @@ function build_version {
   local version=$1
   stringarray=($version)
   kernel_version=${stringarray[1]}
-  git checkout "v${kernel_version}"
 
   cp configs/"${kernel_version}.config" linux/.config
 
   cd linux
+  git checkout "v${kernel_version}"
 
   make vmlinux -j "$(nproc)"
 
