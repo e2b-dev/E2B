@@ -23,7 +23,7 @@ import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
 import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
 import { configName, getConfigPath, loadConfig, maxContentSize, saveConfig } from 'src/config'
-import { estimateContentLength } from '../utils/form'
+import { estimateContentLength } from '../../utils/form'
 
 const templateCheckInterval = 1_000 // 1 sec
 
