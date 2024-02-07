@@ -36,7 +36,7 @@ jobs:
 
       - name: Test build
         working-directory: tests
-        run: ./test.sh
+        run: make test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_ACCESS_TOKEN: ${{ secrets.E2B_ACCESS_TOKEN }}
@@ -47,5 +47,5 @@ jobs:
         env:
           SLACK_COLOR: "#ff0000"
           SLACK_MESSAGE: ":here-we-go-again: :bob-the-destroyer: We need :fix-parrot: ASAP :pray:"
-          SLACK_TITLE:
+          SLACK_TITLE: "Health check failed"
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
