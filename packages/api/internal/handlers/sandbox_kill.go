@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,9 +18,14 @@ func (a *APIStore) DeleteSandboxesSandboxID(
 ) {
 	ctx := c.Request.Context()
 
-	// TODO: Check if the sandbox was created by the team that is trying to kill it
+	teamID := c.Value(constants.TeamContextKey).(models.Team).ID
 
-	_, err := a.instanceCache.Get(sandboxID)
+	telemetry.SetAttributes(ctx,
+		attribute.String("instance.id", sandboxID),
+		attribute.String("team.id", teamID.String()),
+	)
+
+	item, err := a.instanceCache.Get(sandboxID)
 	if err != nil {
 		errMsg := fmt.Errorf("error when getting sandbox: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -27,14 +35,16 @@ func (a *APIStore) DeleteSandboxesSandboxID(
 		return
 	}
 
-	deleteErr := a.nomad.DeleteInstance(sandboxID, true)
-	if deleteErr != nil {
-		errMsg := fmt.Errorf("error when killing sandbox: %s", deleteErr.ClientMsg)
-		a.sendAPIStoreError(c, deleteErr.Code, fmt.Sprintf("Error killing sandbox - sandbox '%s' was not found", sandboxID))
+	if *item.Value().TeamID != teamID {
+		errMsg := fmt.Errorf("sandbox '%s' does not belong to team '%s'", sandboxID, teamID.String())
 		telemetry.ReportCriticalError(ctx, errMsg)
+
+		a.sendAPIStoreError(c, http.StatusUnauthorized, fmt.Sprintf("Error killing sandbox - sandbox '%s' does not belong to your team", sandboxID))
 
 		return
 	}
+
+	a.instanceCache.Kill(sandboxID)
 
 	c.Status(http.StatusNoContent)
 }

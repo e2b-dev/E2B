@@ -381,6 +381,8 @@ paths:
           description: The sandbox was killed successfully
         404:
           $ref: "#/components/responses/404"
+        401:
+          $ref: "#/components/responses/401"
         500:
           $ref: "#/components/responses/500"
 
