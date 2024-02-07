@@ -23,10 +23,9 @@ function build_version {
   cp vmlinux "../builds/vmlinux-${kernel_version}/vmlinux.bin"
 }
 
-
+echo "Cloning the linux kernel repository"
 git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git linux
 cd linux
-git fetch --tags
 
 grep -v '^ *#' < ../kernel_versions.txt | while IFS= read -r version
 do
