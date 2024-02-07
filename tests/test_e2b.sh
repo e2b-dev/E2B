@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-NAME="testing-$(date +"%Y-%m-%dT%H:%M:%S%z")"
+NAME="testing-$(date +"%Y-%m-%dT%H:%M:%S")"
 
 e2b build --name "${NAME}"
 e2b list | grep "${NAME}"
