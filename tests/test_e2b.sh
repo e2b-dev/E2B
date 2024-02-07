@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-NAME="testing-$(date +"%Y-%m-%dT%H-%M")"
+NAME="testing-$(date +"%Y-%m-%d_%H-%M")"
 
 echo "Creating a new template: ${NAME}"
 e2b build --name "${NAME}"
