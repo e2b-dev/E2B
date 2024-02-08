@@ -78,7 +78,6 @@ export interface CallOpts {
   timeout?: number;
 }
 
-
 const listSandboxes = withAPIKey(
   api.path('/sandboxes').method('get').create(),
 )
@@ -163,7 +162,7 @@ export class SandboxConnection {
       return res.data.map(sandbox => ({
         sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,
         templateID: sandbox.templateID,
-        alias: sandbox.alias,
+        ...sandbox.alias && { alias: sandbox.alias },
         ...sandbox.metadata && { metadata: sandbox.metadata },
         startedAt: new Date(sandbox.startedAt),
       }))
