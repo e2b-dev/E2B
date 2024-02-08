@@ -188,7 +188,7 @@ class TerminalManager:
                 ),
                 SubscriptionArgs(
                     service=self._service_name,
-                    handler=future_exit,
+                    handler=lambda result: future_exit.set_result(result),
                     method="onExit",
                     params=[terminal_id],
                 ),
