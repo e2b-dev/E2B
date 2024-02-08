@@ -16,7 +16,7 @@ func (a *APIStore) GetSandboxes(c *gin.Context) {
 	c.JSON(http.StatusOK, sandboxes)
 }
 
-func (a *APIStore) GetSandboxesWithoutResponse(c *gin.Context) (sandboxes []api.RunningSandboxes) {
+func (a *APIStore) GetSandboxesWithoutResponse(c *gin.Context) []api.RunningSandboxes {
 	ctx := c.Request.Context()
 
 	team := c.Value(constants.TeamContextKey).(models.Team)
@@ -28,6 +28,8 @@ func (a *APIStore) GetSandboxesWithoutResponse(c *gin.Context) (sandboxes []api.
 	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "listed running instances", properties)
+
+	sandboxes := make([]api.RunningSandboxes, 0)
 
 	for _, info := range instanceInfo {
 		if *info.TeamID != team.ID {
