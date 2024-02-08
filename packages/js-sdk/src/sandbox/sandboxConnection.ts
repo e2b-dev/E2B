@@ -42,6 +42,7 @@ export interface RunningSandbox {
   templateID: string;
   alias?: string;
   metadata?: SandboxMetadata;
+  startedAt: Date;
 }
 
 export interface SandboxConnectionOpts {
@@ -150,12 +151,23 @@ export class SandboxConnection {
 
   /**
    * List all running sandboxes
+   * 
    * @param apiKey API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
    */
   static async list(apiKey?: string): Promise<RunningSandbox[]> {
     apiKey = getApiKey(apiKey)
+
     try {
-      return (await listSandboxes(apiKey, {})).data
+      const res = await listSandboxes(apiKey, {})
+
+      return res.data.map(sandbox => ({
+        sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,
+        templateID: sandbox.templateID,
+        alias: sandbox.alias,
+        ...sandbox.metadata && { metadata: sandbox.metadata },
+        startedAt: new Date(sandbox.startedAt),
+      }))
+
     } catch (e) {
       if (e instanceof listSandboxes.Error) {
         const error = e.getActualType()
