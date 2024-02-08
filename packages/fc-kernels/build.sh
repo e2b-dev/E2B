@@ -18,10 +18,6 @@ function build_version {
   echo "Building kernel version: $kernel_version"
   make vmlinux -j "$(nproc)"
 
-# TODO: not sure about this
-  echo "Installing kernel modules"
-  make modules_install -j "$(nproc)"
-
   echo "Copying finished build to builds directory"
   mkdir -p "../builds/vmlinux-${kernel_version}"
   cp vmlinux "../builds/vmlinux-${kernel_version}/vmlinux.bin"
