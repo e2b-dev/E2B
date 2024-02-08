@@ -2,7 +2,7 @@ name: Health check
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '13 * * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
