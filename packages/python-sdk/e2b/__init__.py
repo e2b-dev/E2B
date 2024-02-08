@@ -22,7 +22,6 @@ sandbox.close()
 ```
 """
 
-
 from .api import (
     E2BApiClient,
     client,
@@ -55,6 +54,7 @@ from .sandbox import (
     ProcessOutput,
     TerminalOutput,
     run_code,
+    RunningSandbox,
 )
 from .templates import (
     DataAnalysis,

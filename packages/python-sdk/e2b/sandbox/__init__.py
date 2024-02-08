@@ -27,3 +27,4 @@ from .terminal import (
     TerminalManager,
     TerminalOutput,
 )
+from .sandbox_connection import RunningSandbox

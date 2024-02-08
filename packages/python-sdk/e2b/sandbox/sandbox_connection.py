@@ -3,12 +3,14 @@ import logging
 import threading
 import traceback
 import warnings
+
 from concurrent.futures import ThreadPoolExecutor, CancelledError
 from time import sleep
 from typing import Any, Callable, List, Literal, Optional, Union, Dict
-
+from datetime import datetime
 from pydantic import BaseModel
 from urllib3.exceptions import ReadTimeoutError, MaxRetryError, ConnectTimeoutError
+
 
 from e2b.api import E2BApiClient, exceptions, models, client
 from e2b.constants import (
@@ -52,7 +54,8 @@ class RunningSandbox(BaseModel):
     sandbox_id: str
     template_id: str
     alias: Optional[str]
-    metadata: Dict[str, str]
+    metadata: Dict[str, str] | None
+    started_at: datetime
 
 
 class SandboxConnection:
@@ -458,7 +461,7 @@ class SandboxConnection:
             self._close()
 
     @staticmethod
-    def list(api_key: Optional[str] = None) -> List[models.RunningSandboxes]:
+    def list(api_key: Optional[str] = None) -> List[RunningSandbox]:
         """
         List all running sandboxes.
 
@@ -466,5 +469,15 @@ class SandboxConnection:
         If not provided, the `E2B_API_KEY` environment variable will be used.
         """
         api_key = get_api_key(api_key)
+
         with E2BApiClient(api_key=api_key) as api_client:
-            return client.SandboxesApi(api_client).sandboxes_get()
+            return [
+                RunningSandbox(
+                    metadata=sandbox.metadata,
+                    sandbox_id=f"{sandbox.sandbox_id}-{sandbox.client_id}",
+                    template_id=sandbox.template_id,
+                    alias=sandbox.alias,
+                    started_at=sandbox.started_at,
+                )
+                for sandbox in client.SandboxesApi(api_client).sandboxes_get()
+            ]

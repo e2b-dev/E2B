@@ -27,7 +27,7 @@ export { DataAnalysis as CodeInterpreter }
 
 export { Artifact, DataAnalysis } from './templates/dataAnalysis'
 export type { RunPythonOpts } from './templates/dataAnalysis'
-export type { SandboxMetadata } from './sandbox/sandboxConnection'
+export type { SandboxMetadata, RunningSandbox } from './sandbox/sandboxConnection'
 export type { Action } from './sandbox/index'
 
 export { Sandbox }
