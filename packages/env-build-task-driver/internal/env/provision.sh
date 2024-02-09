@@ -31,7 +31,7 @@ User=root
 Group=root
 Environment=GOTRACEBACK=all
 LimitCORE=infinity
-ExecStart=/usr/bin/bash -l -c "/usr/bin/envd"
+ExecStart=/bin/bash -l -c "/usr/bin/envd"
 OOMPolicy=continue
 OOMScoreAdjust=-999
 
@@ -119,7 +119,7 @@ Type=simple
 Restart=no
 User=user
 Group=user
-ExecStart=/usr/bin/bash -l -c "{{ .StartCmd }}"
+ExecStart=/bin/bash -l -c "{{ .StartCmd }}"
 
 [Install]
 WantedBy=multi-user.target
