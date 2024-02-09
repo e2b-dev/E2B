@@ -121,7 +121,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		DockerRegistry:             registry,
 		KernelVersion:              taskConfig.KernelVersion,
 		KernelsDir:                 kernelsDir,
-		KernelMountDir:         kernelMountDir,
+		KernelMountDir:             kernelMountDir,
 		KernelName:                 kernelName,
 		StartCmd:                   taskConfig.StartCmd,
 		DiskSizeMB:                 taskConfig.DiskSizeMB,

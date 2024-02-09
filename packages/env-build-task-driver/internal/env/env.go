@@ -69,9 +69,6 @@ type Env struct {
 	// Real size of the rootfs after building the env.
 	RootfsSize int64
 
-	// Nomad token
-	NomadToken string
-
 	// Path to the directory where the dir with kernel is mounted.
 	KernelMountDir string
 

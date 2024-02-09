@@ -55,6 +55,7 @@ func (n *NomadClient) BuildEnvJob(
 	t trace.Tracer,
 	ctx context.Context,
 	envID,
+	envKernelVersion,
 	// build is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
 	buildID,
 	startCmd,
@@ -72,11 +73,11 @@ func (n *NomadClient) BuildEnvJob(
 		childCtx,
 		attribute.String("passed_trace_id_hex", traceID),
 		attribute.String("passed_span_id_hex", spanID),
-		attribute.Int64("env.kernel.version", vmConfig.DiskSizeMB),
+		attribute.String("env.kernel.version", envKernelVersion),
 		attribute.String("env.id", envID),
 		attribute.String("build.id", buildID),
 		attribute.Int64("build.disk_size_mb", vmConfig.DiskSizeMB),
-		attribute.Int64("build.kernel.version", vmConfig.DiskSizeMB),
+		attribute.String("build.kernel.version", vmConfig.KernelVersion),
 		attribute.Int64("build.vcpu_count", vmConfig.VCpuCount),
 		attribute.Int64("build.memory_mb", vmConfig.MemoryMB),
 	)

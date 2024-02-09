@@ -178,6 +178,7 @@ func (a *APIStore) PostTemplatesWithoutResponse(c *gin.Context) *api.Template {
 			buildID,
 			dockerfile,
 			startCmd,
+			defaultKernelVersion,
 			properties,
 			nomad.BuildConfig{
 				VCpuCount:     tier.Vcpu,
@@ -327,7 +328,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 		attribute.String("env.alias", alias),
 	)
 
-	env, _, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
+	env, envKernelVersion, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
 	if accessErr != nil {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("the sandbox template '%s' does not exist", cleanedAliasOrEnvID))
 
@@ -413,6 +414,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 			buildID,
 			dockerfile,
 			startCmd,
+			envKernelVersion,
 			properties,
 			nomad.BuildConfig{
 				VCpuCount:     tier.Vcpu,
@@ -482,6 +484,7 @@ func (a *APIStore) buildEnv(
 	buildID uuid.UUID,
 	dockerfile,
 	startCmd string,
+	envKernelVersion string,
 	posthogProperties posthog.Properties,
 	vmConfig nomad.BuildConfig,
 ) (err error) {
@@ -509,6 +512,7 @@ func (a *APIStore) buildEnv(
 		a.tracer,
 		childCtx,
 		envID,
+		envKernelVersion,
 		buildID.String(),
 		startCmd,
 		a.apiSecret,
