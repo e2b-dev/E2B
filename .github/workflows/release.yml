@@ -148,7 +148,8 @@ jobs:
     needs: changes
     if: |
       always() &&
-      needs.changes.outputs.version == 'true'
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.fc-kernels == 'true'
     uses: ./.github/workflows/fc-kernels.yml
     secrets:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
