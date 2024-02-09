@@ -1,7 +1,14 @@
 name: FC Kernels
 
 on:
-  push
+  workflow_call:
+    secrets:
+      service_account_email:
+        required: true
+      workload_identity_provider:
+        required: true
+      gcp_project_id:
+        required: true
 
 jobs:
   publish:
@@ -11,11 +18,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-#      - name: Setup Service Account
-#        uses: google-github-actions/auth@v1
-#        with:
-#          workload_identity_provider: ${{ secrets.workload_identity_provider }}
-#          service_account: ${{ secrets.service_account_email }}
+      - name: Setup Service Account
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
 
       - name: Build kernels
         working-directory: ./packages/fc-kernels
