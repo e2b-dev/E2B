@@ -20,7 +20,7 @@ import {
   ShieldQuestion,
   TerminalSquare,
   Timer,
-  Variable,
+  Variable, HardDrive,
 } from 'lucide-react'
 
 import logoOpenAI from '@/images/logos/openai.svg'
@@ -205,6 +205,16 @@ export const routes = [
         ),
         title: 'Guide: Creating Custom Sandbox',
         href: '/guide/custom-sandbox',
+      },
+      {
+        icon: (
+          <HardDrive
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Connecting buckets to persist data',
+        href: '/guide/connect-bucket',
       },
     ]
   },
