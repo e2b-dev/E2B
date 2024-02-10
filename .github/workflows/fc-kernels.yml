@@ -28,9 +28,9 @@ jobs:
         working-directory: ./packages/fc-kernels
         run: make build
 
-      - name: Upload prebuilt kernels
-        working-directory: ./packages/fc-kernels
-        run: make upload
-        env:
-          GCP_PROJECT_ID: ${{ secrets.gcp_project_id }}
-
+      - name: Upload kernels
+        uses: "google-github-actions/upload-cloud-storage@v1"
+        with:
+          path: "./packages/fc-kernels/builds"
+          destination: "${{ secrets.gcp_project_id }}-fc-kernels"
+          gzip: false
