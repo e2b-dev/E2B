@@ -288,7 +288,8 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		SecurityOpt: []string{"no-new-privileges"},
 		CapAdd:      []string{"CHOWN", "DAC_OVERRIDE", "FSETID", "FOWNER", "SETGID", "SETUID", "NET_RAW", "SYS_CHROOT"},
 		CapDrop:     []string{"ALL"},
-		NetworkMode: container.NetworkMode(networkName),
+		// TODO: Network mode is causing problems with /etc/hosts - we want to find a way to fix this and enable network mode again
+		// NetworkMode: container.NetworkMode(networkName),
 		Resources: container.Resources{
 			Memory:     r.env.MemoryMB << ToMBShift,
 			CPUPeriod:  100000,
