@@ -101,6 +101,7 @@ module "github_tf" {
 
   domain_name            = var.domain_name
   terraform_state_bucket = var.terraform_state_bucket
+  kernel_bucket          = module.buckets.fc_kernels_bucket_name
 
   prefix = var.prefix
 }

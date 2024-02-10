@@ -34,6 +34,11 @@ variable "terraform_state_bucket" {
   type        = string
 }
 
+variable "kernel_bucket" {
+  description = "The name of the bucket to store built kernels"
+  type        = string
+}
+
 variable "domain_name" {
   type = string
 }
