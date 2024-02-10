@@ -10,3 +10,7 @@ output "fc_env_pipeline_bucket_name" {
   description = "The name of the bucket to store the files for firecracker environment pipeline"
   value       = google_storage_bucket.fc_env_pipeline_bucket.name
 }
+
+output "fc_kernels_bucket_name" {
+  value = google_storage_bucket.fc_kernels_bucket.name
+}

@@ -30,6 +30,10 @@ type InstanceConfig struct {
 	LogsProxyAddress string
 	TraceID          string
 	TeamID           string
+	KernelVersion    string
+	KernelMountDir   string
+	KernelsDir       string
+	KernelName       string
 }
 
 func NewInstance(
@@ -97,6 +101,10 @@ func NewInstance(
 		ips,
 		config.EnvID,
 		config.EnvsDisk,
+		config.KernelVersion,
+		config.KernelsDir,
+		config.KernelMountDir,
+		config.KernelName,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create env for FC %w", err)

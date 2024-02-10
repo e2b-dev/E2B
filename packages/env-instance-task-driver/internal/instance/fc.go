@@ -129,16 +129,22 @@ func startFC(
 		"fc-vmm",
 	)
 
-	mountCmd := fmt.Sprintf(
-		"mount --bind  %s %s && ",
+	rootfsMountCmd := fmt.Sprintf(
+		"mount --bind %s %s && ",
 		fsEnv.EnvInstancePath,
 		fsEnv.BuildDirPath,
+	)
+
+	kernelMountCmd := fmt.Sprintf(
+		"mount --bind %s %s && ",
+		fsEnv.KernelDirPath,
+		fsEnv.KernelMountDirPath,
 	)
 
 	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", fsEnv.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
-	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountCmd+inNetNSCmd+fcCmd)
+	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", rootfsMountCmd+kernelMountCmd+inNetNSCmd+fcCmd)
 
 	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
 	cmdStderrReader, cmdStderrWriter := io.Pipe()

@@ -45,6 +45,8 @@ type Env struct {
 	FreeDiskSizeMB int64 `json:"free_disk_size_mb,omitempty"`
 	// TotalDiskSizeMB holds the value of the "total_disk_size_mb" field.
 	TotalDiskSizeMB int64 `json:"total_disk_size_mb,omitempty"`
+	// KernelVersion holds the value of the "kernel_version" field.
+	KernelVersion string `json:"kernel_version,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvQuery when eager-loading is set.
 	Edges        EnvEdges `json:"edges"`
@@ -93,7 +95,7 @@ func (*Env) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case env.FieldBuildCount, env.FieldSpawnCount, env.FieldVcpu, env.FieldRAMMB, env.FieldFreeDiskSizeMB, env.FieldTotalDiskSizeMB:
 			values[i] = new(sql.NullInt64)
-		case env.FieldID, env.FieldDockerfile:
+		case env.FieldID, env.FieldDockerfile, env.FieldKernelVersion:
 			values[i] = new(sql.NullString)
 		case env.FieldCreatedAt, env.FieldUpdatedAt, env.FieldLastSpawnedAt:
 			values[i] = new(sql.NullTime)
@@ -198,6 +200,12 @@ func (e *Env) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				e.TotalDiskSizeMB = value.Int64
 			}
+		case env.FieldKernelVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field kernel_version", values[i])
+			} else if value.Valid {
+				e.KernelVersion = value.String
+			}
 		default:
 			e.selectValues.Set(columns[i], values[i])
 		}
@@ -282,6 +290,9 @@ func (e *Env) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("total_disk_size_mb=")
 	builder.WriteString(fmt.Sprintf("%v", e.TotalDiskSizeMB))
+	builder.WriteString(", ")
+	builder.WriteString("kernel_version=")
+	builder.WriteString(e.KernelVersion)
 	builder.WriteByte(')')
 	return builder.String()
 }

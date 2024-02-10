@@ -29,6 +29,9 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
       env {
         NOMAD_NODE_ID = "${node.unique.id}"
         ENVS_DISK = "{{ .EnvsDisk }}"
+        KERNELS_DIR= "/fc-kernels"
+        KERNEL_MOUNT_DIR="/fc-vm"
+        KERNEL_NAME="vmlinux.bin"
       }
 
       resources {
@@ -38,8 +41,9 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
 
       config {
         EnvID = "{{ .EnvID }}"
-        InstanceID   = "{{ .InstanceID }}"
-        ConsulToken   = "{{ .ConsulToken }}"
+        InstanceID = "{{ .InstanceID }}"
+        KernelVersion = "{{ .KernelVersion }}"
+        ConsulToken = "{{ .ConsulToken }}"
         LogsProxyAddress = "{{ .LogsProxyAddress }}"
         SpanID = "{{ .SpanID }}"
         TraceID = "{{ .TraceID }}"

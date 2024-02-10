@@ -19,7 +19,7 @@ mkdir -p "$mount_path"
 
 # Format the disk if it is not already formatted.
 if [[ $(lsblk -no FSTYPE "/dev/disk/by-id/google-${DISK_DEVICE_NAME}") != "xfs" ]]; then
-  mkfs.xfs "/dev/disk/by-id/google-${DISK_DEVICE_NAME}"
+    mkfs.xfs "/dev/disk/by-id/google-${DISK_DEVICE_NAME}"
 fi
 
 mount "/dev/disk/by-id/google-${DISK_DEVICE_NAME}" "$mount_path"
@@ -29,12 +29,20 @@ chmod a+w "$mount_path"
 mkdir -p /mnt/disks/envs-pipeline
 gcsfuse -o=allow_other --implicit-dirs "${FC_ENV_PIPELINE_BUCKET_NAME}" /mnt/disks/envs-pipeline
 
-# Copy the kernel
+# Copy the envd
 env_pipeline_local_dir="/fc-vm"
 mkdir -p $env_pipeline_local_dir
 sudo cp /mnt/disks/envs-pipeline/envd $env_pipeline_local_dir/envd
 sudo chmod +x $env_pipeline_local_dir/envd
 
+# Copy kernels
+mkdir -p /mnt/disks/fc-kernels
+gcsfuse -o=allow_other --implicit-dirs "${FC_KERNELS_BUCKET_NAME}" /mnt/disks/fc-kernels
+kernels_dir="/fc-kernels"
+mkdir -p $kernels_dir
+cp -r /mnt/disks/fc-kernels/* $kernels_dir
+
+# Mount docker contexts
 mkdir -p /mnt/disks/docker-contexts
 gcsfuse -o=allow_other --implicit-dirs "${DOCKER_CONTEXTS_BUCKET_NAME}" /mnt/disks/docker-contexts
 

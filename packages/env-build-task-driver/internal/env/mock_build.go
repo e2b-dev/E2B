@@ -27,16 +27,6 @@ func MockBuild(envID, buildID string) {
 		panic(err)
 	}
 
-	contextsPath := "/mnt/disks/docker-contexts/v1"
-	registry := "us-central1-docker.pkg.dev/e2b-prod/custom-environments"
-	envsDisk := "/mnt/disks/fc-envs/v1"
-	kernelImagePath := "/fc-vm/vmlinux.bin"
-	firecrackerBinaryPath := "/usr/bin/firecracker"
-	envdPath := "/fc-vm/envd"
-	contextFileName := "context.tar.gz"
-	vCPUCount := int64(2)
-	memoryMB := int64(512)
-	diskSizeMB := int64(512)
 	apiSecret := "SUPER_SECR3T_4PI_K3Y"
 
 	writer := NewWriter(envID, buildID, apiSecret)
@@ -44,17 +34,20 @@ func MockBuild(envID, buildID string) {
 	e := Env{
 		BuildID:               buildID,
 		EnvID:                 envID,
-		EnvsDiskPath:          envsDisk,
-		VCpuCount:             vCPUCount,
-		MemoryMB:              memoryMB,
-		DockerContextsPath:    contextsPath,
-		DockerRegistry:        registry,
+		EnvsDiskPath:          "/mnt/disks/fc-envs/v1",
+		VCpuCount:             2,
+		MemoryMB:              512,
+		DockerContextsPath:    "/mnt/disks/docker-contexts/v1",
+		DockerRegistry:        "us-central1-docker.pkg.dev/e2b-prod/custom-environments",
 		StartCmd:              "",
-		KernelImagePath:       kernelImagePath,
-		DiskSizeMB:            diskSizeMB,
-		FirecrackerBinaryPath: firecrackerBinaryPath,
-		EnvdPath:              envdPath,
-		ContextFileName:       contextFileName,
+		KernelsDir:            "/fc-kernels",
+		KernelMountDir:        "/fc-vm",
+		KernelName:            "vmlinux.bin",
+		KernelVersion:         "vmlinux-5.10.186",
+		DiskSizeMB:            512,
+		FirecrackerBinaryPath: "/usr/bin/firecracker",
+		EnvdPath:              "/fc-vm/envd",
+		ContextFileName:       "context.tar.gz",
 		BuildLogsWriter:       writer,
 	}
 

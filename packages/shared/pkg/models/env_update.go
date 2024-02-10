@@ -249,6 +249,20 @@ func (eu *EnvUpdate) AddTotalDiskSizeMB(i int64) *EnvUpdate {
 	return eu
 }
 
+// SetKernelVersion sets the "kernel_version" field.
+func (eu *EnvUpdate) SetKernelVersion(s string) *EnvUpdate {
+	eu.mutation.SetKernelVersion(s)
+	return eu
+}
+
+// SetNillableKernelVersion sets the "kernel_version" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableKernelVersion(s *string) *EnvUpdate {
+	if s != nil {
+		eu.SetKernelVersion(*s)
+	}
+	return eu
+}
+
 // SetTeam sets the "team" edge to the Team entity.
 func (eu *EnvUpdate) SetTeam(t *Team) *EnvUpdate {
 	return eu.SetTeamID(t.ID)
@@ -407,6 +421,9 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := eu.mutation.AddedTotalDiskSizeMB(); ok {
 		_spec.AddField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := eu.mutation.KernelVersion(); ok {
+		_spec.SetField(env.FieldKernelVersion, field.TypeString, value)
 	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -727,6 +744,20 @@ func (euo *EnvUpdateOne) AddTotalDiskSizeMB(i int64) *EnvUpdateOne {
 	return euo
 }
 
+// SetKernelVersion sets the "kernel_version" field.
+func (euo *EnvUpdateOne) SetKernelVersion(s string) *EnvUpdateOne {
+	euo.mutation.SetKernelVersion(s)
+	return euo
+}
+
+// SetNillableKernelVersion sets the "kernel_version" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableKernelVersion(s *string) *EnvUpdateOne {
+	if s != nil {
+		euo.SetKernelVersion(*s)
+	}
+	return euo
+}
+
 // SetTeam sets the "team" edge to the Team entity.
 func (euo *EnvUpdateOne) SetTeam(t *Team) *EnvUpdateOne {
 	return euo.SetTeamID(t.ID)
@@ -915,6 +946,9 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	}
 	if value, ok := euo.mutation.AddedTotalDiskSizeMB(); ok {
 		_spec.AddField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
+	}
+	if value, ok := euo.mutation.KernelVersion(); ok {
+		_spec.SetField(env.FieldKernelVersion, field.TypeString, value)
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{

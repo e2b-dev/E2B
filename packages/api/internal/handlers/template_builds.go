@@ -19,6 +19,8 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
+const defaultKernelVersion = "vmlinux-5.10.186"
+
 func (a *APIStore) PostTemplates(c *gin.Context) {
 	template := a.PostTemplatesWithoutResponse(c)
 	if template != nil {
@@ -176,11 +178,13 @@ func (a *APIStore) PostTemplatesWithoutResponse(c *gin.Context) *api.Template {
 			buildID,
 			dockerfile,
 			startCmd,
+			defaultKernelVersion,
 			properties,
 			nomad.BuildConfig{
-				VCpuCount:  tier.Vcpu,
-				MemoryMB:   tier.RAMMB,
-				DiskSizeMB: tier.DiskMB,
+				VCpuCount:     tier.Vcpu,
+				MemoryMB:      tier.RAMMB,
+				DiskSizeMB:    tier.DiskMB,
+				KernelVersion: defaultKernelVersion,
 			})
 
 		if buildErr != nil {
@@ -324,7 +328,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 		attribute.String("env.alias", alias),
 	)
 
-	env, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
+	env, envKernelVersion, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
 	if accessErr != nil {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("the sandbox template '%s' does not exist", cleanedAliasOrEnvID))
 
@@ -410,11 +414,13 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 			buildID,
 			dockerfile,
 			startCmd,
+			envKernelVersion,
 			properties,
 			nomad.BuildConfig{
-				VCpuCount:  tier.Vcpu,
-				MemoryMB:   tier.RAMMB,
-				DiskSizeMB: tier.DiskMB,
+				VCpuCount:     tier.Vcpu,
+				MemoryMB:      tier.RAMMB,
+				DiskSizeMB:    tier.DiskMB,
+				KernelVersion: defaultKernelVersion,
 			})
 
 		if buildErr != nil {
@@ -478,6 +484,7 @@ func (a *APIStore) buildEnv(
 	buildID uuid.UUID,
 	dockerfile,
 	startCmd string,
+	envKernelVersion string,
 	posthogProperties posthog.Properties,
 	vmConfig nomad.BuildConfig,
 ) (err error) {
@@ -505,6 +512,7 @@ func (a *APIStore) buildEnv(
 		a.tracer,
 		childCtx,
 		envID,
+		envKernelVersion,
 		buildID.String(),
 		startCmd,
 		a.apiSecret,
@@ -518,7 +526,18 @@ func (a *APIStore) buildEnv(
 		return err
 	}
 
-	err = a.supabase.UpsertEnv(ctx, teamID, envID, buildID, dockerfile, vmConfig.VCpuCount, vmConfig.MemoryMB, vmConfig.DiskSizeMB, diskSize)
+	err = a.supabase.UpsertEnv(
+		ctx,
+		teamID,
+		envID,
+		buildID,
+		dockerfile,
+		vmConfig.VCpuCount,
+		vmConfig.MemoryMB,
+		vmConfig.DiskSizeMB,
+		diskSize,
+		defaultKernelVersion,
+	)
 
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)

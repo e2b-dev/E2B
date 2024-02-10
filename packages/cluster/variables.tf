@@ -128,6 +128,11 @@ variable "fc_env_pipeline_bucket_name" {
   description = "The name of the bucket to store the files for firecracker environment pipeline"
 }
 
+variable "fc_kernels_bucket_name" {
+  type        = string
+  description = "The name of the bucket to store the kernels for firecracker"
+}
+
 variable "consul_acl_token_secret" {
   type = string
 }

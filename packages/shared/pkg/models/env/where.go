@@ -132,6 +132,11 @@ func TotalDiskSizeMB(v int64) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldTotalDiskSizeMB, v))
 }
 
+// KernelVersion applies equality check predicate on the "kernel_version" field. It's identical to KernelVersionEQ.
+func KernelVersion(v string) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldKernelVersion, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldCreatedAt, v))
@@ -635,6 +640,71 @@ func TotalDiskSizeMBLT(v int64) predicate.Env {
 // TotalDiskSizeMBLTE applies the LTE predicate on the "total_disk_size_mb" field.
 func TotalDiskSizeMBLTE(v int64) predicate.Env {
 	return predicate.Env(sql.FieldLTE(FieldTotalDiskSizeMB, v))
+}
+
+// KernelVersionEQ applies the EQ predicate on the "kernel_version" field.
+func KernelVersionEQ(v string) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldKernelVersion, v))
+}
+
+// KernelVersionNEQ applies the NEQ predicate on the "kernel_version" field.
+func KernelVersionNEQ(v string) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldKernelVersion, v))
+}
+
+// KernelVersionIn applies the In predicate on the "kernel_version" field.
+func KernelVersionIn(vs ...string) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldKernelVersion, vs...))
+}
+
+// KernelVersionNotIn applies the NotIn predicate on the "kernel_version" field.
+func KernelVersionNotIn(vs ...string) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldKernelVersion, vs...))
+}
+
+// KernelVersionGT applies the GT predicate on the "kernel_version" field.
+func KernelVersionGT(v string) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldKernelVersion, v))
+}
+
+// KernelVersionGTE applies the GTE predicate on the "kernel_version" field.
+func KernelVersionGTE(v string) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldKernelVersion, v))
+}
+
+// KernelVersionLT applies the LT predicate on the "kernel_version" field.
+func KernelVersionLT(v string) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldKernelVersion, v))
+}
+
+// KernelVersionLTE applies the LTE predicate on the "kernel_version" field.
+func KernelVersionLTE(v string) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldKernelVersion, v))
+}
+
+// KernelVersionContains applies the Contains predicate on the "kernel_version" field.
+func KernelVersionContains(v string) predicate.Env {
+	return predicate.Env(sql.FieldContains(FieldKernelVersion, v))
+}
+
+// KernelVersionHasPrefix applies the HasPrefix predicate on the "kernel_version" field.
+func KernelVersionHasPrefix(v string) predicate.Env {
+	return predicate.Env(sql.FieldHasPrefix(FieldKernelVersion, v))
+}
+
+// KernelVersionHasSuffix applies the HasSuffix predicate on the "kernel_version" field.
+func KernelVersionHasSuffix(v string) predicate.Env {
+	return predicate.Env(sql.FieldHasSuffix(FieldKernelVersion, v))
+}
+
+// KernelVersionEqualFold applies the EqualFold predicate on the "kernel_version" field.
+func KernelVersionEqualFold(v string) predicate.Env {
+	return predicate.Env(sql.FieldEqualFold(FieldKernelVersion, v))
+}
+
+// KernelVersionContainsFold applies the ContainsFold predicate on the "kernel_version" field.
+func KernelVersionContainsFold(v string) predicate.Env {
+	return predicate.Env(sql.FieldContainsFold(FieldKernelVersion, v))
 }
 
 // HasTeam applies the HasEdge predicate on the "team" edge.

@@ -15,9 +15,6 @@ func MockInstance(envID, instanceID string) {
 
 	tracer := otel.Tracer("test")
 
-	consulToken := os.Getenv("CONSUL_TOKEN")
-	envsDisk := "/mnt/disks/fc-envs/v1"
-
 	hosts, err := txeh.NewHostsDefault()
 	if err != nil {
 		panic("Failed to initialize etc hosts handler")
@@ -32,14 +29,17 @@ func MockInstance(envID, instanceID string) {
 			InstanceID:       instanceID,
 			TraceID:          "test",
 			TeamID:           "test",
-			ConsulToken:      consulToken,
+			ConsulToken:      os.Getenv("CONSUL_TOKEN"),
 			LogsProxyAddress: "",
 			NodeID:           "testtesttest",
-			EnvsDisk:         envsDisk,
+			EnvsDisk:         "/mnt/disks/fc-envs/v1",
+			KernelVersion:    "5.10.186",
+			KernelMountDir:   "/fc-vm",
+			KernelsDir:       "/fc-kernels",
+			KernelName:       "vmlinux.bin",
 		},
 		hosts,
 	)
-
 	if err != nil {
 		panic(err)
 	}

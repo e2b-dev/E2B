@@ -116,13 +116,6 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo mkdir -p /fc-vm",
-      "sudo curl https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.5/x86_64/vmlinux-${var.kernel_version} -o /fc-vm/vmlinux.bin",
-    ]
-  }
-
-  provisioner "shell" {
-    inline = [
       "sudo mkdir -p /opt/nomad/plugins",
     ]
   }

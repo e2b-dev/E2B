@@ -29,6 +29,9 @@ type InstanceFiles struct {
 
 	EnvInstancePath string
 	SocketPath      string
+
+	KernelDirPath      string
+	KernelMountDirPath string
 }
 
 func newInstanceFiles(
@@ -36,7 +39,11 @@ func newInstanceFiles(
 	tracer trace.Tracer,
 	slot *IPSlot,
 	envID,
-	envsDisk string,
+	envsDisk,
+	kernelVersion,
+	kernelsDir,
+	kernelMountDir,
+	kernelName string,
 ) (*InstanceFiles, error) {
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
@@ -89,17 +96,24 @@ func newInstanceFiles(
 		return nil, errMsg
 	}
 
+	// Create kernel path
+	kernelPath := filepath.Join(kernelsDir, kernelVersion)
+
 	childSpan.SetAttributes(
 		attribute.String("instance.env_instance_path", envInstancePath),
 		attribute.String("instance.build.dir_path", buildDirPath),
 		attribute.String("instance.env_path", envPath),
+		attribute.String("instance.kernel.mount_path", filepath.Join(kernelMountDir, kernelName)),
+		attribute.String("instance.kernel.path", filepath.Join(kernelPath, kernelName)),
 	)
 
 	return &InstanceFiles{
-		EnvInstancePath: envInstancePath,
-		BuildDirPath:    buildDirPath,
-		EnvPath:         envPath,
-		SocketPath:      socketPath,
+		EnvInstancePath:    envInstancePath,
+		BuildDirPath:       buildDirPath,
+		EnvPath:            envPath,
+		SocketPath:         socketPath,
+		KernelDirPath:      kernelPath,
+		KernelMountDirPath: kernelMountDir,
 	}, nil
 }
 
