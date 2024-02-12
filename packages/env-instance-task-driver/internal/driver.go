@@ -54,7 +54,7 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 		panic("Failed to load etc hosts")
 	}
 
-	return &driver.Driver[*DriverExtra, *taskHandle]{
+	return &driver.Driver[*DriverExtra, *driver.TaskHandle[*extraTaskHandle]]{
 		Tracer:             tracer,
 		Eventer:            eventer.NewEventer(ctx, logger),
 		Config:             &driver.Config{},
@@ -65,7 +65,7 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 		DriverCapabilities: capabilities,
 		ConfigSpec:         configSpec,
 		TaskConfigSpec:     taskConfigSpec,
-		Tasks:              driver.NewTaskStore[*taskHandle](),
+		Tasks:              driver.NewTaskStore[*driver.TaskHandle[*extraTaskHandle]](),
 		Extra: &DriverExtra{
 			hosts: hosts,
 		},

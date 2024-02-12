@@ -59,7 +59,7 @@ type (
 )
 
 func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
-	driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger,
+	driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], logger hclog.Logger,
 ) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
 	ctx, span := tracer.Start(driverCtx, "start-task-validation", trace.WithAttributes(
 		attribute.String("alloc.id", cfg.AllocID),
@@ -137,20 +137,25 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 
 	cancellableBuildContext, cancel := context.WithCancel(driverCtx)
 
-	h := &taskHandle{
-		taskConfig: cfg,
-		taskState:  drivers.TaskStateRunning,
-		startedAt:  time.Now().Round(time.Millisecond),
-		logger:     logger,
-		env:        &env,
-		exited:     make(chan struct{}),
-		cancel:     cancel,
-		ctx:        cancellableBuildContext,
+	h := &driver.TaskHandle[*extraTaskHandle]{
+		TaskConfig: cfg,
+		TaskState:  drivers.TaskStateRunning,
+		StartedAt:  time.Now().Round(time.Millisecond),
+		Logger:     logger,
+		Exited:     make(chan struct{}),
+		Cancel:     cancel,
+		Ctx:        cancellableBuildContext,
+		Extra: &extraTaskHandle{
+			env:          &env,
+			docker:       de.docker,
+			legacyDocker: de.legacyDockerClient,
+			nomadToken:   nomadToken,
+		},
 	}
 
 	driverState := TaskState{
 		TaskConfig: cfg,
-		StartedAt:  h.startedAt,
+		StartedAt:  h.StartedAt,
 	}
 
 	handle := drivers.NewTaskHandle(taskHandleVersion)
@@ -168,7 +173,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 
 	go func() {
 		defer cancel()
-		h.cancel = cancel
+		h.Cancel = cancel
 
 		buildContext, childBuildSpan := tracer.Start(
 			trace.ContextWithSpanContext(cancellableBuildContext, childSpan.SpanContext()),
@@ -176,7 +181,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		)
 		defer childBuildSpan.End()
 
-		h.run(buildContext, tracer, de.docker, de.legacyDockerClient, nomadToken)
+		h.Run(buildContext, tracer)
 
 		err := writer.Close()
 		if err != nil {
@@ -192,7 +197,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 	return handle, nil, nil
 }
 
-func (de *DriverExtra) WaitTask(ctx, driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger, taskID string) (<-chan *drivers.ExitResult, error) {
+func (de *DriverExtra) WaitTask(ctx, driverCtx context.Context, _ trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string) (<-chan *drivers.ExitResult, error) {
 	handle, ok := tasks.Get(taskID)
 	if !ok {
 		return nil, drivers.ErrTaskNotFound
@@ -204,7 +209,7 @@ func (de *DriverExtra) WaitTask(ctx, driverCtx context.Context, tracer trace.Tra
 	return ch, nil
 }
 
-func handleWait(ctx, driverCtx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
+func handleWait(ctx, driverCtx context.Context, handle *driver.TaskHandle[*extraTaskHandle], ch chan *drivers.ExitResult) {
 	defer close(ch)
 
 	for {
@@ -213,27 +218,27 @@ func handleWait(ctx, driverCtx context.Context, handle *taskHandle, ch chan *dri
 			return
 		case <-driverCtx.Done():
 			return
-		case <-handle.ctx.Done():
+		case <-handle.Ctx.Done():
 			s := handle.TaskStatus()
 			if s.State == drivers.TaskStateExited {
-				ch <- handle.exitResult
+				ch <- handle.ExitResult
 			}
 		}
 	}
 }
 
-func (de *DriverExtra) StopTask(ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger, taskID string, timeout time.Duration, signal string) error {
+func (de *DriverExtra) StopTask(_ context.Context, _ trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string, timeout time.Duration, signal string) error {
 	handle, ok := tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
 	}
 
-	handle.cancel()
+	handle.Cancel()
 
 	return nil
 }
 
-func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger, taskID string, force bool) error {
+func (de *DriverExtra) DestroyTask(_ context.Context, _ trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string, force bool) error {
 	handle, ok := tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
@@ -243,7 +248,7 @@ func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tas
 		return errors.New("task is still running")
 	}
 
-	handle.cancel()
+	handle.Cancel()
 	tasks.Delete(taskID)
 
 	return nil

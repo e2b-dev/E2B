@@ -58,7 +58,7 @@ var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 })
 
 func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
-	ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger,
+	ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], logger hclog.Logger,
 ) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
 	ctx, span := tracer.Start(ctx, "start-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("alloc.id", cfg.AllocID),
@@ -121,18 +121,20 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		return nil, nil, errMsg
 	}
 
-	h := &taskHandle{
-		ctx:        childCtx,
-		taskConfig: cfg,
-		taskState:  drivers.TaskStateRunning,
-		startedAt:  time.Now().Round(time.Millisecond),
-		logger:     logger,
-		Instance:   instance,
+	h := &driver.TaskHandle[*extraTaskHandle]{
+		Ctx:        childCtx,
+		TaskConfig: cfg,
+		TaskState:  drivers.TaskStateRunning,
+		StartedAt:  time.Now().Round(time.Millisecond),
+		Logger:     logger,
+		Extra: &extraTaskHandle{
+			Instance: instance,
+		},
 	}
 
 	driverState := TaskState{
 		TaskConfig: cfg,
-		StartedAt:  h.startedAt,
+		StartedAt:  h.StartedAt,
 	}
 
 	handle := drivers.NewTaskHandle(taskHandleVersion)
@@ -164,13 +166,13 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		)
 		defer instanceSpan.End()
 
-		h.run(instanceContext)
+		h.Run(instanceContext, tracer)
 	}()
 
 	return handle, nil, nil
 }
 
-func (de *DriverExtra) WaitTask(ctx context.Context, driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger, taskID string) (<-chan *drivers.ExitResult, error) {
+func (de *DriverExtra) WaitTask(ctx context.Context, driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string) (<-chan *drivers.ExitResult, error) {
 	validationCtx, validationSpan := tracer.Start(ctx, "wait-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("task.id", taskID),
 	))
@@ -188,7 +190,7 @@ func (de *DriverExtra) WaitTask(ctx context.Context, driverCtx context.Context, 
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(validationCtx, attribute.String("link", "validation")),
-			trace.LinkFromContext(h.ctx, attribute.String("link", "start-env-instance-task")),
+			trace.LinkFromContext(h.Ctx, attribute.String("link", "start-env-instance-task")),
 		),
 	)
 	defer childSpan.End()
@@ -199,7 +201,7 @@ func (de *DriverExtra) WaitTask(ctx context.Context, driverCtx context.Context, 
 	return ch, nil
 }
 
-func (de *DriverExtra) StopTask(ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger, taskID string, timeout time.Duration, signal string) error {
+func (de *DriverExtra) StopTask(ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string, timeout time.Duration, signal string) error {
 	ctx, span := tracer.Start(ctx, "stop-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("task.id", taskID),
 	))
@@ -217,12 +219,12 @@ func (de *DriverExtra) StopTask(ctx context.Context, tracer trace.Tracer, tasks 
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
-			trace.LinkFromContext(h.ctx, attribute.String("link", "start-instance-task")),
+			trace.LinkFromContext(h.Ctx, attribute.String("link", "start-instance-task")),
 		),
 	)
 	defer childSpan.End()
 
-	if err := h.shutdown(childCtx, tracer); err != nil {
+	if err := h.Extra.shutdown(childCtx, tracer); err != nil {
 		errMsg := fmt.Errorf("executor Shutdown failed: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
@@ -232,7 +234,7 @@ func (de *DriverExtra) StopTask(ctx context.Context, tracer trace.Tracer, tasks 
 	return nil
 }
 
-func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger, taskID string, force bool) error {
+func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string, force bool) error {
 	ctx, span := tracer.Start(ctx, "destroy-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("task.id", taskID),
 	))
@@ -250,20 +252,42 @@ func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tas
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
-			trace.LinkFromContext(h.ctx, attribute.String("link", "start-env-instance-task")),
+			trace.LinkFromContext(h.Ctx, attribute.String("link", "start-env-instance-task")),
 		),
 	)
 	defer childSpan.End()
 
 	if force {
-		if err := h.shutdown(childCtx, tracer); err != nil {
+		if err := h.Extra.shutdown(childCtx, tracer); err == nil {
+			telemetry.ReportEvent(childCtx, "waiting for state lock")
+
+			h.Mu.Lock()
+			h.ExitResult = &drivers.ExitResult{}
+			h.ExitResult.ExitCode = 0
+			h.ExitResult.Signal = 0
+			h.CompletedAt = time.Now()
+			h.TaskState = drivers.TaskStateExited
+			h.Mu.Unlock()
+
+			telemetry.ReportEvent(childCtx, "updated task exit info")
+		} else {
 			errMsg := fmt.Errorf("executor Shutdown failed: %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
+
+			h.Mu.Lock()
+			h.ExitResult = &drivers.ExitResult{}
+			h.ExitResult.ExitCode = 1
+			h.ExitResult.Signal = 0
+			h.CompletedAt = time.Now()
+			h.TaskState = drivers.TaskStateUnknown
+			h.ExitResult.Err = errMsg
+			h.Mu.Unlock()
 		}
+
 		telemetry.ReportEvent(childCtx, "shutdown task")
 	}
 
-	h.Instance.CleanupAfterFCStop(childCtx, tracer, de.hosts)
+	h.Extra.Instance.CleanupAfterFCStop(childCtx, tracer, de.hosts)
 
 	tasks.Delete(taskID)
 	telemetry.ReportEvent(childCtx, "task deleted")
@@ -271,7 +295,7 @@ func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tas
 	return nil
 }
 
-func handleWait(ctx context.Context, driverCtx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
+func handleWait(ctx context.Context, driverCtx context.Context, handle *driver.TaskHandle[*extraTaskHandle], ch chan *drivers.ExitResult) {
 	defer close(ch)
 
 	// TODO: Use context for waiting for task
@@ -287,7 +311,7 @@ func handleWait(ctx context.Context, driverCtx context.Context, handle *taskHand
 		case <-ticker.C:
 			s := handle.TaskStatus()
 			if s.State == drivers.TaskStateExited {
-				ch <- handle.exitResult
+				ch <- handle.ExitResult
 			}
 		}
 	}

@@ -48,7 +48,7 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 
 	tracer := otel.Tracer("driver")
 
-	client, err := client.NewClientWithOpts(client.FromEnv)
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		panic(err)
 	}
@@ -58,11 +58,11 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 		panic(err)
 	}
 
-	return &driver.Driver[*DriverExtra, *taskHandle]{
+	return &driver.Driver[*DriverExtra, *driver.TaskHandle[*extraTaskHandle]]{
 		Tracer:             tracer,
 		Eventer:            eventer.NewEventer(ctx, logger),
 		Config:             &driver.Config{},
-		Tasks:              driver.NewTaskStore[*taskHandle](),
+		Tasks:              driver.NewTaskStore[*driver.TaskHandle[*extraTaskHandle]](),
 		Ctx:                ctx,
 		SignalShutdown:     cancel,
 		Logger:             logger,
@@ -71,7 +71,7 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 		Info:               pluginInfo,
 		DriverCapabilities: capabilities,
 		Extra: &DriverExtra{
-			docker:             client,
+			docker:             dockerClient,
 			legacyDockerClient: legacyClient,
 		},
 	}
