@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
+	"github.com/e2b-dev/infra/packages/shared/pkg/driver"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/hashicorp/go-hclog"
@@ -57,13 +58,15 @@ type (
 	}
 )
 
-func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
-	ctx, span := d.tracer.Start(d.ctx, "start-task-validation", trace.WithAttributes(
+func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
+	driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger,
+) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
+	ctx, span := tracer.Start(driverCtx, "start-task-validation", trace.WithAttributes(
 		attribute.String("alloc.id", cfg.AllocID),
 	))
 	defer span.End()
 
-	if _, ok := d.tasks.Get(cfg.ID); ok {
+	if _, ok := tasks.Get(cfg.ID); ok {
 		return nil, nil, fmt.Errorf("task with ID %q already started", cfg.ID)
 	}
 
@@ -75,9 +78,9 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		return nil, nil, errMsg
 	}
 
-	d.logger.Info("starting task", "task_cfg", hclog.Fmt("%+v", taskConfig))
+	logger.Info("starting task", "task_cfg", hclog.Fmt("%+v", taskConfig))
 
-	childCtx, childSpan := telemetry.GetContextFromRemote(ctx, d.tracer, "start-task", taskConfig.SpanID, taskConfig.TraceID)
+	childCtx, childSpan := telemetry.GetContextFromRemote(ctx, tracer, "start-task", taskConfig.SpanID, taskConfig.TraceID)
 	defer childSpan.End()
 
 	contextsPath := cfg.Env["DOCKER_CONTEXTS_PATH"]
@@ -132,13 +135,13 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		GoogleServiceAccountBase64: googleServiceAccountBase64,
 	}
 
-	cancellableBuildContext, cancel := context.WithCancel(d.ctx)
+	cancellableBuildContext, cancel := context.WithCancel(driverCtx)
 
 	h := &taskHandle{
 		taskConfig: cfg,
 		taskState:  drivers.TaskStateRunning,
 		startedAt:  time.Now().Round(time.Millisecond),
-		logger:     d.logger,
+		logger:     logger,
 		env:        &env,
 		exited:     make(chan struct{}),
 		cancel:     cancel,
@@ -154,26 +157,26 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle.Config = cfg
 
 	if err := handle.SetDriverState(&driverState); err != nil {
-		d.logger.Error("failed to start task, error setting driver state", "error", err)
+		logger.Error("failed to start task, error setting driver state", "error", err)
 		errMsg := fmt.Errorf("failed to set driver state: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return nil, nil, errMsg
 	}
 
-	d.tasks.Set(cfg.ID, h)
+	tasks.Set(cfg.ID, h)
 
 	go func() {
 		defer cancel()
 		h.cancel = cancel
 
-		buildContext, childBuildSpan := d.tracer.Start(
+		buildContext, childBuildSpan := tracer.Start(
 			trace.ContextWithSpanContext(cancellableBuildContext, childSpan.SpanContext()),
 			"background-build-env",
 		)
 		defer childBuildSpan.End()
 
-		h.run(buildContext, d.tracer, d.docker, d.legacyDockerClient, nomadToken)
+		h.run(buildContext, tracer, de.docker, de.legacyDockerClient, nomadToken)
 
 		err := writer.Close()
 		if err != nil {
@@ -189,34 +192,26 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	return handle, nil, nil
 }
 
-func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
-	if handle == nil {
-		return errors.New("error: handle cannot be nil")
-	}
-
-	return fmt.Errorf("recover task not implemented")
-}
-
-func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.ExitResult, error) {
-	handle, ok := d.tasks.Get(taskID)
+func (de *DriverExtra) WaitTask(ctx, driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger, taskID string) (<-chan *drivers.ExitResult, error) {
+	handle, ok := tasks.Get(taskID)
 	if !ok {
 		return nil, drivers.ErrTaskNotFound
 	}
 
 	ch := make(chan *drivers.ExitResult)
-	go d.handleWait(ctx, handle, ch)
+	go handleWait(ctx, driverCtx, handle, ch)
 
 	return ch, nil
 }
 
-func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
+func handleWait(ctx, driverCtx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
 	defer close(ch)
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-d.ctx.Done():
+		case <-driverCtx.Done():
 			return
 		case <-handle.ctx.Done():
 			s := handle.TaskStatus()
@@ -227,8 +222,8 @@ func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *dr
 	}
 }
 
-func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) error {
-	handle, ok := d.tasks.Get(taskID)
+func (de *DriverExtra) StopTask(ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger, taskID string, timeout time.Duration, signal string) error {
+	handle, ok := tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
 	}
@@ -238,8 +233,8 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 	return nil
 }
 
-func (d *Driver) DestroyTask(taskID string, force bool) error {
-	handle, ok := d.tasks.Get(taskID)
+func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*taskHandle], logger hclog.Logger, taskID string, force bool) error {
+	handle, ok := tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
 	}
@@ -249,33 +244,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 	}
 
 	handle.cancel()
-	d.tasks.Delete(taskID)
+	tasks.Delete(taskID)
 
 	return nil
-}
-
-func (d *Driver) InspectTask(taskID string) (*drivers.TaskStatus, error) {
-	handle, ok := d.tasks.Get(taskID)
-	if !ok {
-		return nil, drivers.ErrTaskNotFound
-	}
-
-	return handle.TaskStatus(), nil
-}
-
-func (d *Driver) TaskEvents(ctx context.Context) (<-chan *drivers.TaskEvent, error) {
-	return d.eventer.TaskEvents(ctx)
-}
-
-func (d *Driver) TaskStats(ctx context.Context, taskID string, interval time.Duration) (<-chan *drivers.TaskResourceUsage, error) {
-	_, ok := d.tasks.Get(taskID)
-	if !ok {
-		return nil, drivers.ErrTaskNotFound
-	}
-
-	return nil, drivers.DriverStatsNotImplemented
-}
-
-func (d *Driver) TaskConfigSchema() (*hclspec.Spec, error) {
-	return taskConfigSpec, nil
 }

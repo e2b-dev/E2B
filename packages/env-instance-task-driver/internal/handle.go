@@ -9,8 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
 
@@ -55,7 +56,7 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 	}
 }
 
-func (h *taskHandle) run(ctx context.Context, driver *Driver) {
+func (h *taskHandle) run(_ context.Context) {
 	pid, err := strconv.Atoi(h.Instance.FC.Pid)
 	if err != nil {
 		h.logger.Info(fmt.Sprintf("ERROR Env-instance-task-driver Could not parse pid=%s after initialization", h.Instance.FC.Pid))
@@ -83,11 +84,11 @@ func (h *taskHandle) run(ctx context.Context, driver *Driver) {
 	}
 }
 
-func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
-	childCtx, childSpan := driver.tracer.Start(ctx, "shutdown")
+func (h *taskHandle) shutdown(ctx context.Context, tracer trace.Tracer) error {
+	childCtx, childSpan := tracer.Start(ctx, "shutdown")
 	defer childSpan.End()
 
-	err := h.Instance.FC.Stop(childCtx, driver.tracer)
+	err := h.Instance.FC.Stop(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to stop FC: %w", err)
 
