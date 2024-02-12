@@ -25,6 +25,7 @@ func (ts *TaskStore[TaskHandler]) Get(id string) (TaskHandler, bool) {
 	defer ts.mu.RUnlock()
 
 	t, ok := ts.store[id]
+
 	return t, ok
 }
 

@@ -42,6 +42,8 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 	logger = logger.Named(PluginName)
 	tracer := otel.Tracer("driver")
 
+	configSpec := hclspec.NewObject(map[string]*hclspec.Spec{})
+
 	hosts, err := txeh.NewHostsDefault()
 	if err != nil {
 		panic("Failed to initialize etc hosts handler")
@@ -61,7 +63,8 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 		Logger:             logger,
 		Info:               pluginInfo,
 		DriverCapabilities: capabilities,
-		ConfigSpec:         hclspec.NewObject(map[string]*hclspec.Spec{}),
+		ConfigSpec:         configSpec,
+		TaskConfigSpec:     taskConfigSpec,
 		Tasks:              driver.NewTaskStore[*taskHandle](),
 		Extra: &DriverExtra{
 			hosts: hosts,

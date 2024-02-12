@@ -56,6 +56,9 @@ type Driver[Extra ExtraDriver[TaskHandle], TaskHandle HandleInterface] struct {
 	// DriverCapabilities is the capabilities of the driver
 	DriverCapabilities *drivers.Capabilities
 
+	// TaskConfigSpec is the schema for the task configuration
+	TaskConfigSpec *hclspec.Spec
+
 	// configSpec is the schema for the driver configuration
 	ConfigSpec *hclspec.Spec
 
@@ -73,7 +76,7 @@ type Driver[Extra ExtraDriver[TaskHandle], TaskHandle HandleInterface] struct {
 }
 
 func (d *Driver[Extra, TaskHandle]) TaskConfigSchema() (*hclspec.Spec, error) {
-	return d.ConfigSpec, nil
+	return d.TaskConfigSpec, nil
 }
 
 func (d *Driver[Extra, TaskHandle]) RecoverTask(handle *drivers.TaskHandle) error {

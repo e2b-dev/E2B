@@ -66,6 +66,7 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 		Ctx:                ctx,
 		SignalShutdown:     cancel,
 		Logger:             logger,
+		TaskConfigSpec:     taskConfigSpec,
 		ConfigSpec:         configSpec,
 		Info:               pluginInfo,
 		DriverCapabilities: capabilities,
