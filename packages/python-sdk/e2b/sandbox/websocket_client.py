@@ -31,7 +31,13 @@ class WebSocket:
         self._queue_in = queue_in
         self._queue_out = queue_out
 
-    async def run(self):
+    def run(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        loop.run_until_complete(self.async_run())
+
+    async def async_run(self):
         await self._connect()
         await self.close()
 
