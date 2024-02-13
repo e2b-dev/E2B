@@ -17,8 +17,9 @@ running_sandboxes = Sandbox.list()
 for running_sandbox in running_sandboxes:
     if running_sandbox.metadata.get("user_id", "") == 'uniqueID':
         sandbox = Sandbox.reconnect(running_sandbox.sandbox_id)
+        break
 else:
-    pass
     # Sandbox not found
+    pass
 
 sandbox.close()
