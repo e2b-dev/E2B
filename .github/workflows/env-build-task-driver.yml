@@ -46,7 +46,7 @@ jobs:
         run: chmod +x ./packages/env-build-task-driver/bin/env-build-task-driver
              ./packages/env-build-task-driver/bin/env-build-task-driver
 
-      - name: Upload firecracker task driver
+      - name: Upload env build task driver
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
           path: "./packages/env-build-task-driver/bin/env-build-task-driver"

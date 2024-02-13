@@ -46,7 +46,7 @@ jobs:
         run: chmod +x ./packages/template-delete-task-driver/bin/template-delete-task-driver
              ./packages/template-delete-task-driver/bin/template-delete-task-driver
 
-      - name: Upload firecracker task driver
+      - name: Upload template delete task driver
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
           path: "./packages/template-delete-task-driver/bin/template-delete-task-driver"

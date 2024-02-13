@@ -39,7 +39,7 @@ jobs:
           workload_identity_provider: ${{ secrets.workload_identity_provider }}
           service_account: ${{ secrets.service_account_email }}
 
-      - name: Upload firecracker task driver
+      - name: Upload env instance task driver
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
           path: "./packages/env-instance-task-driver/bin/env-instance-task-driver"
