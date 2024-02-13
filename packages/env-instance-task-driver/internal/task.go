@@ -159,15 +159,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 
 	tasks.Set(cfg.ID, h)
 
-	go func() {
-		instanceContext, instanceSpan := tracer.Start(
-			trace.ContextWithSpanContext(ctx, childSpan.SpanContext()),
-			"background-running-instance",
-		)
-		defer instanceSpan.End()
-
-		h.Run(instanceContext, tracer)
-	}()
+	go h.Run(context.Background(), tracer)
 
 	return handle, nil, nil
 }
