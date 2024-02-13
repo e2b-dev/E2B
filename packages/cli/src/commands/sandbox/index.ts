@@ -2,8 +2,10 @@ import * as commander from 'commander'
 
 import { connectCommand } from './connect'
 import { listCommand } from './list'
+import { killCommand } from './kill'
 
-export const templateCommand = new commander.Command('sandbox')
+export const sandboxCommand = new commander.Command('sandbox').description('Work with sandboxes')
   .alias('sbx')
   .addCommand(connectCommand)
   .addCommand(listCommand)
+  .addCommand(killCommand)
