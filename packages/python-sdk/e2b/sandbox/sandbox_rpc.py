@@ -83,31 +83,27 @@ class SandboxRpc(BaseModel):
             target=self.process_messages, daemon=True, name="e2b-process-messages"
         ).start()
 
-        executor = ThreadPoolExecutor(thread_name_prefix="e2b-websocket")
-        loop = asyncio.new_event_loop()
-
-        # Keep the websocket running as non daemon thread, so it can close websocket properly
-        websocket_task = executor.submit(
-            run_async_func_in_loop,
-            loop,
-            WebSocket(
+        threading.Thread(
+            target=WebSocket(
                 url=self.url,
                 queue_in=self._queue_in,
                 queue_out=self._queue_out,
                 started=started,
                 stopped=stopped,
-            ).run(),
-        )
-
-        self._process_cleanup.append(websocket_task.cancel)
-        self._process_cleanup.append(lambda: loop.stop() if loop.is_running() else None)
-        self._process_cleanup.append(lambda: shutdown_executor(executor))
+            ).run,
+            daemon=True,
+            name="e2b-websocket",
+        ).start()
 
         logger.info("WebSocket waiting to start")
 
         try:
             start_time = time.time()
-            while not started.is_set() and time.time() - start_time < timeout and not self._closed:
+            while (
+                not started.is_set()
+                and time.time() - start_time < timeout
+                and not self._closed
+            ):
                 time.sleep(0.1)
 
             if not started.is_set():
