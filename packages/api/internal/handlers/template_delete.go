@@ -3,20 +3,14 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
-	"cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
-
-// DockerImagesURL is the URL to the docker images in the artifact registry
-var DockerImagesURL = "projects/" + constants.ProjectID + "/locations/" + constants.Region + "/repositories/" + constants.DockerRepositoryName + "/packages/"
 
 // DeleteTemplatesTemplateID serves to delete an env (e.g. in CLI)
 func (a *APIStore) DeleteTemplatesTemplateID(c *gin.Context, aliasOrTemplateID api.TemplateID) {
@@ -76,30 +70,6 @@ func (a *APIStore) DeleteTemplatesTemplateID(c *gin.Context, aliasOrTemplateID a
 		telemetry.ReportCriticalError(ctx, errMsg)
 	} else {
 		telemetry.ReportEvent(ctx, "deleted env from fc-envs disk")
-	}
-
-	dockerContextDelErr := a.cloudStorage.deleteFolder(ctx, strings.Join([]string{"v1", env.TemplateID}, "/"))
-	if dockerContextDelErr != nil {
-		errMsg := fmt.Errorf("error when deleting env docker context from storage bucket: %w", dockerContextDelErr)
-		telemetry.ReportCriticalError(ctx, errMsg)
-	} else {
-		telemetry.ReportEvent(ctx, "deleted env docker context form storage bucket")
-	}
-
-	op, artifactRegistryDeleteErr := a.artifactRegistry.DeletePackage(ctx, &artifactregistrypb.DeletePackageRequest{Name: DockerImagesURL + env.TemplateID})
-	if artifactRegistryDeleteErr != nil {
-		errMsg := fmt.Errorf("error when deleting env image from registry: %w", artifactRegistryDeleteErr)
-		telemetry.ReportCriticalError(ctx, errMsg)
-	} else {
-		telemetry.ReportEvent(ctx, "started deleting env image from registry")
-
-		err = op.Wait(ctx)
-		if err != nil {
-			errMsg := fmt.Errorf("error when waiting for env image deleting from registry: %w", err)
-			telemetry.ReportCriticalError(ctx, errMsg)
-		} else {
-			telemetry.ReportEvent(ctx, "deleted env image from registry")
-		}
 	}
 
 	dbErr := a.supabase.DeleteEnv(ctx, env.TemplateID)

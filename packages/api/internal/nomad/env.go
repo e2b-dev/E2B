@@ -43,7 +43,7 @@ type BuildConfig struct {
 //go:embed env-build.hcl
 var envBuildFile string
 
-//go:embed env-delete.hcl
+//go:embed template-delete.hcl
 var envDeleteFile string
 
 var (
@@ -243,7 +243,7 @@ func (n *NomadClient) DeleteEnvBuild(jobID string, purge bool) error {
 }
 
 func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID string) error {
-	childCtx, childSpan := t.Start(ctx, "delete-env-job")
+	childCtx, childSpan := t.Start(ctx, "delete-template-job")
 	defer childSpan.End()
 
 	traceID := childSpan.SpanContext().TraceID().String()
@@ -259,15 +259,28 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 	var jobDef bytes.Buffer
 
 	jobVars := struct {
-		EnvID      string
-		FCEnvsDisk string
-		JobName    string
-		TaskName   string
+		JobName            string
+		SpanID             string
+		TraceID            string
+		TaskName           string
+		TemplateID         string
+		ProjectID          string
+		Region             string
+		DockerContextsPath string
+		DockerRegistry     string
+		EnvsDisk           string
+		BucketName         string
 	}{
-		EnvID:      envID,
-		FCEnvsDisk: envsDisk,
-		JobName:    deleteJobName,
-		TaskName:   deleteTaskName,
+		SpanID:         spanID,
+		TraceID:        traceID,
+		TemplateID:     envID,
+		ProjectID:      constants.ProjectID,
+		Region:         constants.Region,
+		DockerRegistry: constants.DockerRepositoryName,
+		EnvsDisk:       envsDisk,
+		BucketName:     constants.DockerContextBucketName,
+		JobName:        deleteJobName,
+		TaskName:       deleteTaskName,
 	}
 
 	err := envDeleteTemplate.Execute(&jobDef, jobVars)
@@ -285,7 +298,7 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 
 	_, _, err = n.client.Jobs().Register(job, nil)
 	if err != nil {
-		return fmt.Errorf("failed to register '%s%s' job: %w", deleteJobNameWithSlash, jobVars.EnvID, err)
+		return fmt.Errorf("failed to register '%s%s' job: %w", deleteJobNameWithSlash, envID, err)
 	}
 
 	select {

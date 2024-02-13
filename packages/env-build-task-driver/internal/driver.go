@@ -11,51 +11,13 @@ import (
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/driver"
 )
 
 const (
 	PluginName    = "env-build-task-driver"
 	PluginVersion = "0.2.0"
-)
-
-type (
-	Config struct{}
-
-	Driver struct {
-		tracer trace.Tracer
-
-		// eventer is used to handle multiplexing of TaskEvents calls such that an
-		// event can be broadcast to all callers
-		eventer *eventer.Eventer
-
-		// config is the plugin configuration set by the SetConfig RPC
-		config *Config
-
-		// nomadConfig is the client config from Nomad
-		nomadConfig *base.ClientDriverConfig
-
-		// tasks is the in memory datastore mapping taskIDs to driver handles
-		tasks *taskStore
-
-		// ctx is the context for the driver. It is passed to other subsystems to
-		// coordinate shutdown
-		ctx context.Context
-
-		// signalShutdown is called when the driver is shutting down and cancels
-		// the ctx passed to any subsystems
-		signalShutdown context.CancelFunc
-
-		// logger will log to the Nomad agent
-		logger hclog.Logger
-
-		docker *client.Client
-
-		legacyDockerClient *docker.Client
-
-		drivers.DriverExecTaskNotSupported
-		drivers.DriverSignalTaskNotSupported
-	}
 )
 
 var (
@@ -74,13 +36,19 @@ var (
 	}
 )
 
+type DriverExtra struct {
+	docker *client.Client
+
+	legacyDockerClient *docker.Client
+}
+
 func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 	ctx, cancel := context.WithCancel(context.Background())
 	logger = logger.Named(PluginName)
 
 	tracer := otel.Tracer("driver")
 
-	client, err := client.NewClientWithOpts(client.FromEnv)
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		panic(err)
 	}
@@ -90,44 +58,21 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 		panic(err)
 	}
 
-	return &Driver{
-		tracer:             tracer,
-		docker:             client,
-		legacyDockerClient: legacyClient,
-		eventer:            eventer.NewEventer(ctx, logger),
-		config:             &Config{},
-		tasks:              newTaskStore(),
-		ctx:                ctx,
-		signalShutdown:     cancel,
-		logger:             logger,
+	return &driver.Driver[*DriverExtra, *driver.TaskHandle[*extraTaskHandle]]{
+		Tracer:             tracer,
+		Eventer:            eventer.NewEventer(ctx, logger),
+		Config:             &driver.Config{},
+		Tasks:              driver.NewTaskStore[*driver.TaskHandle[*extraTaskHandle]](),
+		Ctx:                ctx,
+		SignalShutdown:     cancel,
+		Logger:             logger,
+		TaskConfigSpec:     taskConfigSpec,
+		ConfigSpec:         configSpec,
+		Info:               pluginInfo,
+		DriverCapabilities: capabilities,
+		Extra: &DriverExtra{
+			docker:             dockerClient,
+			legacyDockerClient: legacyClient,
+		},
 	}
-}
-
-func (d *Driver) PluginInfo() (*base.PluginInfoResponse, error) {
-	return pluginInfo, nil
-}
-
-func (d *Driver) ConfigSchema() (*hclspec.Spec, error) {
-	return configSpec, nil
-}
-
-func (d *Driver) SetConfig(cfg *base.Config) error {
-	var config Config
-	if len(cfg.PluginConfig) != 0 {
-		if err := base.MsgPackDecode(cfg.PluginConfig, &config); err != nil {
-			return err
-		}
-	}
-
-	d.config = &config
-
-	if cfg.AgentConfig != nil {
-		d.nomadConfig = cfg.AgentConfig.Driver
-	}
-
-	return nil
-}
-
-func (d *Driver) Capabilities() (*drivers.Capabilities, error) {
-	return capabilities, nil
 }

@@ -6,33 +6,26 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
-	"github.com/e2b-dev/infra/packages/shared/pkg/driver"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/driver"
+	"github.com/e2b-dev/infra/packages/shared/pkg/storages"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+
+	"github.com/e2b-dev/infra/packages/template-delete-task-driver/internal/template"
 )
 
 const taskHandleVersion = 1
 
 var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
-	"BuildID": hclspec.NewAttr("BuildID", "string", true),
-	"EnvID":   hclspec.NewAttr("EnvID", "string", true),
-
-	"KernelVersion": hclspec.NewAttr("KernelVersion", "string", true),
-
-	"StartCmd": hclspec.NewAttr("StartCmd", "string", false),
+	"TemplateID": hclspec.NewAttr("TemplateID", "string", true),
 
 	"SpanID":  hclspec.NewAttr("SpanID", "string", true),
 	"TraceID": hclspec.NewAttr("TraceID", "string", true),
-
-	"VCpuCount":  hclspec.NewAttr("VCpuCount", "number", true),
-	"MemoryMB":   hclspec.NewAttr("MemoryMB", "number", true),
-	"DiskSizeMB": hclspec.NewAttr("DiskSizeMB", "number", true),
 })
 
 type (
@@ -42,19 +35,10 @@ type (
 	}
 
 	TaskConfig struct {
-		BuildID string `codec:"BuildID"`
-		EnvID   string `codec:"EnvID"`
-
-		KernelVersion string `codec:"KernelVersion"`
-
-		StartCmd string `codec:"StartCmd"`
+		TemplateID string `codec:"TemplateID"`
 
 		SpanID  string `codec:"SpanID"`
 		TraceID string `codec:"TraceID"`
-
-		VCpuCount  int64 `codec:"VCpuCount"`
-		MemoryMB   int64 `codec:"MemoryMB"`
-		DiskSizeMB int64 `codec:"DiskSizeMB"`
 	}
 )
 
@@ -86,56 +70,41 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 	contextsPath := cfg.Env["DOCKER_CONTEXTS_PATH"]
 	registry := cfg.Env["DOCKER_REGISTRY"]
 	envsDisk := cfg.Env["ENVS_DISK"]
-	envdPath := cfg.Env["ENVD_PATH"]
-	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
-	contextFileName := cfg.Env["CONTEXT_FILE_NAME"]
-	apiSecret := cfg.Env["API_SECRET"]
-	googleServiceAccountBase64 := cfg.Env["GOOGLE_SERVICE_ACCOUNT_BASE64"]
-	nomadToken := cfg.Env["NOMAD_TOKEN"]
-	kernelsDir := cfg.Env["KERNELS_DIR"]
-	kernelMountDir := cfg.Env["KERNEL_MOUNT_DIR"]
-	kernelName := cfg.Env["KERNEL_NAME"]
+	projectID := cfg.Env["PROJECT_ID"]
+	region := cfg.Env["REGION"]
+	bucketName := cfg.Env["BUCKET_NAME"]
 
 	telemetry.SetAttributes(childCtx,
-		attribute.String("build_id", taskConfig.BuildID),
-		attribute.String("env_id", taskConfig.EnvID),
-		attribute.String("start_cmd", taskConfig.StartCmd),
-		attribute.Int64("vcpu_count", taskConfig.VCpuCount),
-		attribute.Int64("memory_mb", taskConfig.MemoryMB),
-		attribute.Int64("disk_size_mb", taskConfig.DiskSizeMB),
+		attribute.String("template_id", taskConfig.TemplateID),
 		attribute.String("contexts_path", contextsPath),
+		attribute.String("contexts_bucket", bucketName),
 		attribute.String("registry", registry),
 		attribute.String("envs_disk", envsDisk),
-		attribute.String("envd_path", envdPath),
-		attribute.String("firecracker_binary_path", firecrackerBinaryPath),
-		attribute.String("context_file_name", contextFileName),
-		attribute.String("kernel_version", taskConfig.KernelVersion),
 	)
 
-	writer := env.NewWriter(taskConfig.EnvID, taskConfig.BuildID, apiSecret)
+	tmp := template.Template{
+		TemplateID:         taskConfig.TemplateID,
+		EnvsDiskPath:       envsDisk,
+		DockerContextsPath: contextsPath,
+		DockerRegistryName: registry,
 
-	env := env.Env{
-		BuildID:                    taskConfig.BuildID,
-		EnvID:                      taskConfig.EnvID,
-		EnvsDiskPath:               envsDisk,
-		VCpuCount:                  taskConfig.VCpuCount,
-		MemoryMB:                   taskConfig.MemoryMB,
-		DockerContextsPath:         contextsPath,
-		DockerRegistry:             registry,
-		KernelVersion:              taskConfig.KernelVersion,
-		KernelsDir:                 kernelsDir,
-		KernelMountDir:             kernelMountDir,
-		KernelName:                 kernelName,
-		StartCmd:                   taskConfig.StartCmd,
-		DiskSizeMB:                 taskConfig.DiskSizeMB,
-		FirecrackerBinaryPath:      firecrackerBinaryPath,
-		EnvdPath:                   envdPath,
-		ContextFileName:            contextFileName,
-		BuildLogsWriter:            writer,
-		GoogleServiceAccountBase64: googleServiceAccountBase64,
+		ProjectID: projectID,
+		Region:    region,
+
+		BucketName: bucketName,
 	}
 
-	cancellableBuildContext, cancel := context.WithCancel(driverCtx)
+	cloudStorage, err := storages.NewGoogleCloudStorage(ctx, bucketName)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to initialize Google Cloud Storage client: %w", err)
+
+		telemetry.ReportCriticalError(ctx, errMsg)
+		return nil, nil, errMsg
+	}
+
+	logger.Info("Initialized Google Cloud Storage client")
+
+	cancellableContext, cancel := context.WithCancel(driverCtx)
 
 	h := &driver.TaskHandle[*extraTaskHandle]{
 		TaskConfig: cfg,
@@ -144,12 +113,11 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		Logger:     logger,
 		Exited:     make(chan struct{}),
 		Cancel:     cancel,
-		Ctx:        cancellableBuildContext,
+		Ctx:        cancellableContext,
 		Extra: &extraTaskHandle{
-			env:          &env,
-			docker:       de.docker,
-			legacyDocker: de.legacyDockerClient,
-			nomadToken:   nomadToken,
+			template:         &tmp,
+			storage:          cloudStorage,
+			artifactRegistry: de.artifactRegistry,
 		},
 	}
 
@@ -161,7 +129,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
-	if err := handle.SetDriverState(&driverState); err != nil {
+	if err = handle.SetDriverState(&driverState); err != nil {
 		logger.Error("failed to start task, error setting driver state", "error", err)
 		errMsg := fmt.Errorf("failed to set driver state: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -175,23 +143,13 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		defer cancel()
 		h.Cancel = cancel
 
-		buildContext, childBuildSpan := tracer.Start(
-			trace.ContextWithSpanContext(cancellableBuildContext, childSpan.SpanContext()),
-			"background-build-env",
+		deleteContext, childDeleteSpan := tracer.Start(
+			trace.ContextWithSpanContext(cancellableContext, childSpan.SpanContext()),
+			"background-delete-template",
 		)
-		defer childBuildSpan.End()
+		defer childDeleteSpan.End()
 
-		h.Run(buildContext, tracer)
-
-		err := writer.Close()
-		if err != nil {
-			errMsg := fmt.Errorf("error closing build logs writer: %w", err)
-			telemetry.ReportError(buildContext, errMsg)
-		} else {
-			telemetry.ReportEvent(buildContext, "build logs writer closed")
-		}
-
-		<-writer.Done
+		h.Run(deleteContext, tracer)
 	}()
 
 	return handle, nil, nil
@@ -246,6 +204,11 @@ func (de *DriverExtra) DestroyTask(_ context.Context, _ trace.Tracer, tasks *dri
 
 	if handle.IsRunning() && !force {
 		return errors.New("task is still running")
+	}
+
+	err := handle.Extra.storage.Close()
+	if err != nil {
+		return fmt.Errorf("error closing Cloud Storage client: %v", err)
 	}
 
 	handle.Cancel()

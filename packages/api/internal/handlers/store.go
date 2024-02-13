@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
-	"cloud.google.com/go/storage"
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
+	"github.com/e2b-dev/infra/packages/shared/pkg/storages"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/posthog/posthog-go"
@@ -36,8 +36,7 @@ type APIStore struct {
 	buildCache                 *nomad.BuildCache
 	nomad                      *nomad.NomadClient
 	supabase                   *db.DB
-	cloudStorage               *cloudStorage
-	artifactRegistry           *artifactregistry.Client
+	cloudStorage               *storages.GoogleCloudStorage
 	apiSecret                  string
 	googleServiceAccountBase64 string
 }
@@ -125,27 +124,13 @@ func NewAPIStore() *APIStore {
 		fmt.Println("Skipping syncing intances with Nomad, running locally")
 	}
 
-	storageClient, err := storage.NewClient(ctx)
+	cStorage, err := storages.NewGoogleCloudStorage(ctx, constants.DockerContextBucketName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error initializing Cloud Storage client\n: %v\n", err)
 		panic(err)
 	}
 
 	fmt.Println("Initialized Cloud Storage client")
-
-	cStorage := &cloudStorage{
-		bucket:  os.Getenv("GOOGLE_CLOUD_STORAGE_BUCKET"),
-		client:  storageClient,
-		context: ctx,
-	}
-
-	artifactRegistry, err := artifactregistry.NewClient(ctx)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error initializing Artifact Registry client\n: %v\n", err)
-		panic(err)
-	}
-
-	fmt.Println("Initialized Artifact Registry client")
 
 	apiSecret := os.Getenv("API_SECRET")
 	if apiSecret == "" {
@@ -174,7 +159,6 @@ func NewAPIStore() *APIStore {
 		analytics:                  analytics,
 		posthog:                    posthogClient,
 		cloudStorage:               cStorage,
-		artifactRegistry:           artifactRegistry,
 		apiSecret:                  apiSecret,
 		buildCache:                 buildCache,
 		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
@@ -195,14 +179,9 @@ func (a *APIStore) Close() {
 		fmt.Fprintf(os.Stderr, "Error closing Posthog client\n: %v\n", err)
 	}
 
-	err = a.cloudStorage.client.Close()
+	err = a.cloudStorage.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error closing Cloud Storage client\n: %v\n", err)
-	}
-
-	err = a.artifactRegistry.Close()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error closing Artifact Registry client\n: %v\n", err)
 	}
 }
 

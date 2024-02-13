@@ -1,4 +1,4 @@
-package handlers
+package storages
 
 import (
 	"context"
@@ -13,14 +13,34 @@ import (
 
 const streamFileUploadTimeout = 50 * time.Second
 
-type cloudStorage struct {
+type GoogleCloudStorage struct {
 	client  *storage.Client
 	context context.Context
 	bucket  string
 }
 
-// streamFileUpload uploads an object via a stream and returns the path to the file.
-func (cs *cloudStorage) streamFileUpload(name string, content io.Reader) (*string, error) {
+func NewGoogleCloudStorage(ctx context.Context, bucket string) (*GoogleCloudStorage, error) {
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Error initializing Cloud Storage client: %v", err)
+	}
+
+	fmt.Println("Initialized Cloud Storage client")
+
+	return &GoogleCloudStorage{
+		client:  client,
+		context: ctx,
+		bucket:  bucket,
+	}, nil
+}
+
+// Close closes the Google Cloud Storage client.
+func (cs *GoogleCloudStorage) Close() error {
+	return cs.client.Close()
+}
+
+// StreamFileUpload uploads an object via a stream and returns the path to the file.
+func (cs *GoogleCloudStorage) StreamFileUpload(name string, content io.Reader) (*string, error) {
 	ctx, cancel := context.WithTimeout(cs.context, streamFileUploadTimeout)
 	defer cancel()
 
@@ -42,8 +62,8 @@ func (cs *cloudStorage) streamFileUpload(name string, content io.Reader) (*strin
 	return &url, nil
 }
 
-// deleteFileOrFolder deletes an object via a stream and returns the path to the file
-func (cs *cloudStorage) deleteFolder(ctx context.Context, name string) error {
+// DeleteFolder deletes an object via a stream and returns the path to the file
+func (cs *GoogleCloudStorage) DeleteFolder(ctx context.Context, name string) error {
 	objects := cs.client.Bucket(cs.bucket).Objects(ctx, &storage.Query{Prefix: name})
 	for { // Iterate over all objects in the folder
 		objAttrs, err := objects.Next()
@@ -54,7 +74,7 @@ func (cs *cloudStorage) deleteFolder(ctx context.Context, name string) error {
 			return fmt.Errorf("objects.Next: %w", err)
 		}
 
-		if err := cs.client.Bucket(cs.bucket).Object(objAttrs.Name).Delete(ctx); err != nil {
+		if err = cs.client.Bucket(cs.bucket).Object(objAttrs.Name).Delete(ctx); err != nil {
 			return fmt.Errorf("Object(%s).Delete: %w", objAttrs.Name, err)
 		}
 	}

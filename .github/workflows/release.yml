@@ -68,6 +68,10 @@ jobs:
               - 'packages/shared/**'
               - 'packages/env-build-task-driver/**'
               - '.github/workflows/env-build-task-driver.yml'
+            template-delete-task-driver:
+              - 'packages/shared/**'
+              - 'packages/template-delete-task-driver/**'
+              - '.github/workflows/template-delete-task-driver.yml'
             fc-kernels:
               - 'packages/fc-kernels/**'
               - '.github/workflows/fc-kernels.yml'
@@ -99,6 +103,19 @@ jobs:
       needs.changes.outputs.version == 'true' &&
       needs.changes.outputs.env-build-task-driver == 'true'
     uses: ./.github/workflows/env-build-task-driver.yml
+    secrets:
+      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
+      gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
+
+  template-delete-task-driver:
+    name: Template delete task driver
+    needs: changes
+    if: |
+      always() &&
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.template-delete-task-driver == 'true'
+    uses: ./.github/workflows/template-delete-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}

@@ -1,4 +1,4 @@
-name: Env build task driver
+name: Template delete task driver
 
 on:
   workflow_call:
@@ -21,16 +21,16 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version-file: ./packages/env-build-task-driver/go.mod
+          go-version-file: ./packages/template-delete-task-driver/go.mod
           cache: true
-          cache-dependency-path: ./packages/env-build-task-driver/go.sum
+          cache-dependency-path: ./packages/template-delete-task-driver/go.sum
 
       - name: Download deps
-        working-directory: ./packages/env-build-task-driver
+        working-directory: ./packages/template-delete-task-driver
         run: go mod tidy
 
       - name: Build
-        working-directory: ./packages/env-build-task-driver
+        working-directory: ./packages/template-delete-task-driver
         run: make build
 
       - name: Setup Service Account
@@ -40,15 +40,15 @@ jobs:
           service_account: ${{ secrets.service_account_email }}
 
       - name: List files
-        run: ls -la ./packages/env-build-task-driver/bin
+        run: ls -la ./packages/template-delete-task-driver/bin
 
       - name: try to run
-        run: chmod +x ./packages/env-build-task-driver/bin/env-build-task-driver
-             ./packages/env-build-task-driver/bin/env-build-task-driver
+        run: chmod +x ./packages/template-delete-task-driver/bin/template-delete-task-driver
+             ./packages/template-delete-task-driver/bin/template-delete-task-driver
 
-      - name: Upload env build task driver
+      - name: Upload template delete task driver
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
-          path: "./packages/env-build-task-driver/bin/env-build-task-driver"
+          path: "./packages/template-delete-task-driver/bin/template-delete-task-driver"
           destination: "${{ secrets.gcp_project_id }}-fc-env-pipeline"
           gzip: false

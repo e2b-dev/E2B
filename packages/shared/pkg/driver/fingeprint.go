@@ -1,4 +1,4 @@
-package internal
+package driver
 
 import (
 	"context"
@@ -10,14 +10,14 @@ import (
 
 const fingerprintPeriod = 30 * time.Second
 
-func (d *Driver) Fingerprint(ctx context.Context) (<-chan *drivers.Fingerprint, error) {
+func (d *Driver[Extra, TaskHandle]) Fingerprint(ctx context.Context) (<-chan *drivers.Fingerprint, error) {
 	ch := make(chan *drivers.Fingerprint)
-	go d.handleFingerprint(ctx, ch)
+	go d.HandleFingerprint(ctx, ch)
 
 	return ch, nil
 }
 
-func (d *Driver) handleFingerprint(ctx context.Context, ch chan<- *drivers.Fingerprint) {
+func (d *Driver[Extra, TaskHandle]) HandleFingerprint(ctx context.Context, ch chan<- *drivers.Fingerprint) {
 	defer close(ch)
 
 	ticker := time.NewTimer(0)
@@ -26,7 +26,7 @@ func (d *Driver) handleFingerprint(ctx context.Context, ch chan<- *drivers.Finge
 		select {
 		case <-ctx.Done():
 			return
-		case <-d.ctx.Done():
+		case <-d.Ctx.Done():
 			return
 		case <-ticker.C:
 			ticker.Reset(fingerprintPeriod)
@@ -35,7 +35,7 @@ func (d *Driver) handleFingerprint(ctx context.Context, ch chan<- *drivers.Finge
 	}
 }
 
-func (d *Driver) buildFingerprint() *drivers.Fingerprint {
+func (d *Driver[Extra, TaskHandle]) buildFingerprint() *drivers.Fingerprint {
 	return &drivers.Fingerprint{
 		Attributes:        map[string]*structs.Attribute{},
 		Health:            drivers.HealthStateHealthy,
