@@ -3,7 +3,7 @@ import * as commander from 'commander'
 
 import { spawnConnectedTerminal } from 'src/terminal'
 import { asBold, asPrimary } from 'src/utils/format'
-import { ensureAPIKey } from '../api'
+import { ensureAPIKey } from '../../api'
 
 export const connectCommand = new commander.Command('connect')
   .description('Connect terminal to already running sandbox')
