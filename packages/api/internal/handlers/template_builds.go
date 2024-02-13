@@ -124,7 +124,7 @@ func (a *APIStore) PostTemplatesWithoutResponse(c *gin.Context) *api.Template {
 		attribute.String("build.start_cmd", startCmd),
 	)
 
-	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
+	_, err = a.cloudStorage.StreamFileUpload(strings.Join([]string{"v1", envID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when uploading file to cloud storage: %s", err))
 
@@ -358,7 +358,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 
 	telemetry.SetAttributes(ctx, attribute.String("build.id", buildID.String()))
 
-	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", env.TemplateID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
+	_, err = a.cloudStorage.StreamFileUpload(strings.Join([]string{"v1", env.TemplateID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when uploading file to cloud storage: %s", err))
 

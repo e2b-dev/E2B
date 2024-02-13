@@ -190,6 +190,7 @@ leave_on_terminate = true
 
 plugin "env-instance-task-driver" {}
 plugin "env-build-task-driver" {}
+plugin "template-delete-task-driver" {}
 
 EOF
     )

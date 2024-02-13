@@ -8,4 +8,5 @@ use (
 	./packages/env-instance-task-driver
 	./packages/envd
 	./packages/shared
+	./packages/template-delete-task-driver
 )

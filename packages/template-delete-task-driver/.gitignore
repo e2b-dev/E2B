@@ -1,0 +1,9 @@
+*.out
+.plan
+alloc
+plugin
+env-delete-task-driver
+
+bin
+__debug_*
+dev-scripts/vmconfig.json
