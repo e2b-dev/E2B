@@ -8,7 +8,7 @@ import * as e2b from 'e2b'
 const killSandbox = e2b.withAPIKey(
   e2b.api.path('/sandboxes/{sandboxID}').method('delete').create(),
 )
-export const killCommand = new commander.Command('shell')
+export const killCommand = new commander.Command('kill')
   .description('Kill sandbox')
   .argument('<sandboxID>', `Kill the sandbox specified by ${asBold('<sandboxID>')}`)
   .alias('kl')
@@ -24,11 +24,14 @@ export const killCommand = new commander.Command('shell')
       }
 
       await killSandbox(  apiKey, { sandboxID } )
-      // We explicitly call exit because the sandbox is keeping the program alive.
-      // We also don't want to call sandbox.close because that would disconnect other users from the edit session.
-      process.exit(0)
+
+      console.log(`Sandbox ${asBold(sandboxID)} has been killed`)
     } catch (err: any) {
-      console.error(err)
+      if (err?.status === 404) {
+        console.error(`Sandbox ${asBold(sandboxID)} wasn't found`)
+      } else {
+        console.error(err)
+      }
       process.exit(1)
     }
   })
