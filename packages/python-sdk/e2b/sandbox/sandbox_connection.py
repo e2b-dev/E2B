@@ -288,7 +288,6 @@ class SandboxConnection:
     def _start_refreshing(self):
         threading.Thread(
             target=self._refresh,
-            args=(self._sandbox.sandbox_id,),
             daemon=True,
             name="e2b-sandbox-refresh",
         ).start()
@@ -406,7 +405,7 @@ class SandboxConnection:
             if id == data.params["subscription"]:
                 sub.handler(data.params["result"])
 
-    def _refresh(self, sandbox_id: str):
+    def _refresh(self):
         if not self._sandbox:
             logger.info("No sandbox to refresh. Sandbox was not created")
             return
@@ -429,7 +428,7 @@ class SandboxConnection:
                     sleep(SANDBOX_REFRESH_PERIOD)
                     try:
                         api.sandboxes_sandbox_id_refreshes_post(
-                            sandbox_id,
+                            self._sandbox.sandbox_id,
                             client.SandboxesSandboxIDRefreshesPostRequest(duration=0),
                         )
                         logger.debug(f"Refreshed sandbox {self.id}")
@@ -468,3 +467,16 @@ class SandboxConnection:
         api_key = get_api_key(api_key)
         with E2BApiClient(api_key=api_key) as api_client:
             return client.SandboxesApi(api_client).sandboxes_get()
+
+    @staticmethod
+    def kill(sandbox_id: str, api_key: Optional[str] = None) -> None:
+        """
+        Kill the running sandbox specified by the sandbox ID.
+
+        :param sandbox_id: ID of the sandbox to kill.
+        :param api_key: API key to use for authentication.
+        If not provided, the `E2B_API_KEY` environment variable will be used.
+        """
+        api_key = get_api_key(api_key)
+        with E2BApiClient(api_key=api_key) as api_client:
+            return client.SandboxesApi(api_client).sandboxes_sandbox_id_delete(sandbox_id=sandbox_id)
