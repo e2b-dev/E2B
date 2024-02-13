@@ -8,7 +8,6 @@ import (
 	"os"
 	"time"
 
-	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/storages"
@@ -38,7 +37,6 @@ type APIStore struct {
 	nomad                      *nomad.NomadClient
 	supabase                   *db.DB
 	cloudStorage               *storages.GoogleCloudStorage
-	artifactRegistry           *artifactregistry.Client
 	apiSecret                  string
 	googleServiceAccountBase64 string
 }
@@ -134,14 +132,6 @@ func NewAPIStore() *APIStore {
 
 	fmt.Println("Initialized Cloud Storage client")
 
-	artifactRegistry, err := artifactregistry.NewClient(ctx)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error initializing Artifact Registry client\n: %v\n", err)
-		panic(err)
-	}
-
-	fmt.Println("Initialized Artifact Registry client")
-
 	apiSecret := os.Getenv("API_SECRET")
 	if apiSecret == "" {
 		apiSecret = "SUPER_SECR3T_4PI_K3Y"
@@ -169,7 +159,6 @@ func NewAPIStore() *APIStore {
 		analytics:                  analytics,
 		posthog:                    posthogClient,
 		cloudStorage:               cStorage,
-		artifactRegistry:           artifactRegistry,
 		apiSecret:                  apiSecret,
 		buildCache:                 buildCache,
 		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
@@ -193,11 +182,6 @@ func (a *APIStore) Close() {
 	err = a.cloudStorage.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error closing Cloud Storage client\n: %v\n", err)
-	}
-
-	err = a.artifactRegistry.Close()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error closing Artifact Registry client\n: %v\n", err)
 	}
 }
 
