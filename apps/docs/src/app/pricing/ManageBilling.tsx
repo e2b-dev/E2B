@@ -16,12 +16,12 @@ function ManageBilling() {
   }
 
   return (
-    <div className="flex flex-col items-start justify-start gap-4 -mb-8">
-        <div className="flex flex-col items-start justify-start">
-        </div>
-        <Button onClick={() => router.push(manageBillingURL)}>
-          Manage Billing
-        </Button>
+    <div className="flex flex-col items-start justify-start gap-4 mb-8">
+      <div className="flex flex-col items-start justify-start">
+      </div>
+      <Button onClick={() => router.push(manageBillingURL)}>
+        Manage Billing
+      </Button>
     </div>
   )
 }
