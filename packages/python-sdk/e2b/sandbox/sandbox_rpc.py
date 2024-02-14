@@ -111,10 +111,6 @@ class SandboxRpc(BaseModel):
                 raise TimeoutException("WebSocket failed to start")
         except BaseException as e:
             self.close()
-
-            if loop.is_running():
-                loop.stop()
-
             raise SandboxException(f"WebSocket failed to start: {e}") from e
 
         logger.info("WebSocket started")
