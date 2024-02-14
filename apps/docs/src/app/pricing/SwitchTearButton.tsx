@@ -51,7 +51,9 @@ function SwitchTearButton({
     }
   }
 
-  if (!user || !billingApiURL || user.teams[0].tier === tierID) {
+  // Only show the button if the user is on the base_v1 tier.
+  // Teams can have custom tiers. We only want the button to users on the free tier.
+  if (!user || !billingApiURL || user.teams[0].tier !== 'base_v1') {
     return
   }
 
