@@ -37,17 +37,18 @@ class CodeSnippetManager(BaseModel):
             if self.on_scan_ports:
                 self.on_scan_ports(ports)
 
-        try:
-            self.sandbox._handle_subscriptions(
-                SubscriptionArgs(
-                    service=self.service_name,
-                    handler=on_scan_ports,
-                    method="scanOpenedPorts",
+        if self.on_scan_ports:
+            try:
+                self.sandbox._handle_subscriptions(
+                    SubscriptionArgs(
+                        service=self.service_name,
+                        handler=on_scan_ports,
+                        method="scanOpenedPorts",
+                    )
                 )
-            )
-        except RpcException as e:
-            raise SandboxException(e.message) from e
-        except MultipleExceptions as e:
-            raise SandboxException("Failed to subscribe to RPC services") from e
+            except RpcException as e:
+                raise SandboxException(e.message) from e
+            except MultipleExceptions as e:
+                raise SandboxException("Failed to subscribe to RPC services") from e
 
         return self
