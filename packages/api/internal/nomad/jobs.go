@@ -82,7 +82,7 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 				Filter: fmt.Sprintf("JobID matches \"%s\"", filterString),
 			})
 			if err != nil {
-				n.logger.Errorf("Error getting jobs: %v\n", err)
+				n.logger.Errorf("Error getting jobs: %v", err)
 
 				return
 			}
@@ -116,7 +116,7 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 		select {
 		case sub.wait <- *alloc:
 		default:
-			n.logger.Errorf("channel for job %s is full\n", alloc.JobID)
+			n.logger.Errorf("channel for job %s is full", alloc.JobID)
 		}
 	}
 
@@ -135,7 +135,7 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 		select {
 		case sub.wait <- *alloc:
 		default:
-			n.logger.Errorf("channel for job %s is full\n", alloc.JobID)
+			n.logger.Errorf("channel for job %s is full", alloc.JobID)
 		}
 	}
 }

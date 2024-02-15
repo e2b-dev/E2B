@@ -67,7 +67,7 @@ func (p *PosthogClient) IdentifyAnalyticsTeam(teamID string, teamName string) {
 	},
 	)
 	if err != nil {
-		p.logger.Errorf("error when setting group property in Posthog: %v\n", err)
+		p.logger.Errorf("error when setting group property in Posthog: %v", err)
 	}
 }
 
@@ -80,7 +80,7 @@ func (p *PosthogClient) CreateAnalyticsTeamEvent(teamID, event string, propertie
 			Set("team", teamID),
 	})
 	if err != nil {
-		p.logger.Errorf("error when sending event to Posthog: %v\n", err)
+		p.logger.Errorf("error when sending event to Posthog: %v", err)
 	}
 }
 
@@ -93,7 +93,7 @@ func (p *PosthogClient) CreateAnalyticsUserEvent(userID string, teamID string, e
 			Set("team", teamID),
 	})
 	if err != nil {
-		p.logger.Errorf("error when sending event to Posthog: %v\n", err)
+		p.logger.Errorf("error when sending event to Posthog: %v", err)
 	}
 }
 

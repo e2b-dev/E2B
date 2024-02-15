@@ -61,7 +61,7 @@ func NewAPIStore() *APIStore {
 
 	supabaseClient, err := db.NewClient(ctx)
 	if err != nil {
-		logger.Errorf("Error initializing Supabase client\n: %v\n", err)
+		logger.Errorf("Error initializing Supabase client\n: %v", err)
 		panic(err)
 	}
 
@@ -79,7 +79,7 @@ func NewAPIStore() *APIStore {
 	if env.IsProduction() {
 		instances, instancesErr := nomadClient.GetInstances()
 		if instancesErr != nil {
-			logger.Errorf("Error loading current instances from Nomad\n: %v\n", instancesErr.Err)
+			logger.Errorf("Error loading current instances from Nomad\n: %v", instancesErr.Err)
 		}
 
 		initialInstances = instances
@@ -102,7 +102,7 @@ func NewAPIStore() *APIStore {
 
 	analytics, err := analyticscollector.NewAnalytics()
 	if err != nil {
-		logger.Errorf("Error initializing Analytics client\n: %v\n", err)
+		logger.Errorf("Error initializing Analytics client\n: %v", err)
 	}
 
 	logger.Info("Initialized Analytics client")
@@ -119,7 +119,7 @@ func NewAPIStore() *APIStore {
 
 	cStorage, err := storages.NewGoogleCloudStorage(ctx, constants.DockerContextBucketName)
 	if err != nil {
-		logger.Errorf("Error initializing Cloud Storage client\n: %v\n", err)
+		logger.Errorf("Error initializing Cloud Storage client\n: %v", err)
 		panic(err)
 	}
 
@@ -163,17 +163,17 @@ func (a *APIStore) Close() {
 
 	err := a.analytics.Close()
 	if err != nil {
-		a.logger.Errorf("Error closing Analytics\n: %v\n", err)
+		a.logger.Errorf("Error closing Analytics\n: %v", err)
 	}
 
 	err = a.posthog.Close()
 	if err != nil {
-		a.logger.Errorf("Error closing Posthog client\n: %v\n", err)
+		a.logger.Errorf("Error closing Posthog client\n: %v", err)
 	}
 
 	err = a.cloudStorage.Close()
 	if err != nil {
-		a.logger.Errorf("Error closing Cloud Storage client\n: %v\n", err)
+		a.logger.Errorf("Error closing Cloud Storage client\n: %v", err)
 	}
 }
 
@@ -275,7 +275,7 @@ func deleteInstance(
 			Duration:      float32(duration),
 		})
 		if err != nil {
-			logger.Errorf("error sending Analytics event: %v\n", err)
+			logger.Errorf("error sending Analytics event: %v", err)
 		}
 
 		posthogClient.CreateAnalyticsTeamEvent(

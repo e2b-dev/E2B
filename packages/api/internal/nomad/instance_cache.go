@@ -157,7 +157,7 @@ func (c *InstanceCache) Sync(instances []*InstanceInfo) {
 
 	_, err := c.analytics.RunningInstances(context.Background(), &analyticscollector.RunningInstancesEvent{InstanceIds: instanceIds, Timestamp: timestamppb.Now()})
 	if err != nil {
-		c.logger.Errorf("Error sending running instances event to analytics\n: %v\n", err)
+		c.logger.Errorf("Error sending running instances event to analytics\n: %v", err)
 	}
 }
 
@@ -192,7 +192,7 @@ func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, log
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
 			err := deleteInstance(i.Value(), true)
 			if err != nil {
-				logger.Errorf("Error deleting instance (%v)\n: %v\n", er, err.Err)
+				logger.Errorf("Error deleting instance (%v)\n: %v", er, err.Err)
 			}
 
 			instanceCache.UpdateCounter(i.Value(), -1)
@@ -218,7 +218,7 @@ func (c *InstanceCache) KeepInSync(client *NomadClient) {
 
 		activeInstances, err := client.GetInstances()
 		if err != nil {
-			c.logger.Errorf("Error loading current instances from Nomad\n: %v\n", err.Err)
+			c.logger.Errorf("Error loading current instances from Nomad\n: %v", err.Err)
 		} else {
 			c.Sync(activeInstances)
 		}
