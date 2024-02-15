@@ -93,6 +93,11 @@ variable "analytics_collector_api_token" {
   default = ""
 }
 
+variable "otel_tracing_print" {
+  type    = string
+  default = ""
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -144,6 +149,7 @@ job "orchestration-api" {
         GCP_REGION                    = var.gcp_region
         ANALYTICS_COLLECTOR_HOST      = var.analytics_collector_host
         ANALYTICS_COLLECTOR_API_TOKEN = var.analytics_collector_api_token
+        OTEL_TRACING_PRINT            = var.otel_tracing_print
       }
 
       config {

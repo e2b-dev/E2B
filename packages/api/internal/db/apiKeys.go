@@ -23,10 +23,9 @@ func (db *DB) GetTeamAuth(ctx context.Context, apiKey string) (*models.Team, err
 		Where(team.IsDefault(true)).
 		WithTeamTier().
 		Only(ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get team from API key: %w", err)
-
-		fmt.Println(errMsg.Error())
 
 		return nil, errMsg
 	}
@@ -53,10 +52,9 @@ func (db *DB) GetUserID(ctx context.Context, token string) (*uuid.UUID, error) {
 		Query().
 		Where(accesstoken.ID(token)).
 		Only(ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get user from access token: %w", err)
-
-		fmt.Println(errMsg.Error())
 
 		return nil, errMsg
 	}

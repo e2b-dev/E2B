@@ -25,9 +25,9 @@ func (a *APIStore) GetSandboxesWithoutResponse(c *gin.Context) []api.RunningSand
 
 	instanceInfo := a.instanceCache.GetInstances(&team.ID)
 
-	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
-	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "listed running instances", properties)
+	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
+	a.posthog.CreateAnalyticsTeamEvent(team.ID.String(), "listed running instances", properties)
 
 	sandboxes := make([]api.RunningSandboxes, 0)
 

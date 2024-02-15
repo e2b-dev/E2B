@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
@@ -30,7 +30,7 @@ import (
 type APIStore struct {
 	Ctx                        context.Context
 	analytics                  *analyticscollector.Analytics
-	posthog                    posthog.Client
+	posthog                    *PosthogClient
 	tracer                     trace.Tracer
 	instanceCache              *nomad.InstanceCache
 	buildCache                 *nomad.BuildCache
@@ -39,6 +39,7 @@ type APIStore struct {
 	cloudStorage               *storages.GoogleCloudStorage
 	apiSecret                  string
 	googleServiceAccountBase64 string
+	logger                     *zap.SugaredLogger
 }
 
 func NewAPIStore() *APIStore {
@@ -48,37 +49,29 @@ func NewAPIStore() *APIStore {
 
 	tracer := otel.Tracer("api")
 
-	nomadClient := nomad.InitNomadClient()
-
-	fmt.Println("Initialized Nomad client")
-
-	supabaseClient, err := db.NewClient(ctx)
+	logger, err := utils.NewLogger(env.IsProduction())
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error initializing Supabase client\n: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error initializing logger\n: %v\n", err)
 		panic(err)
 	}
 
-	fmt.Println("Initialized Supabase client")
+	nomadClient := nomad.InitNomadClient(logger)
 
-	posthogAPIKey := os.Getenv("POSTHOG_API_KEY")
-	posthogLogger := posthog.StdLogger(log.New(os.Stderr, "posthog ", log.LstdFlags))
+	logger.Info("Initialized Nomad client")
 
-	if posthogAPIKey == "" {
-		fmt.Println("No Posthog API key provided, silencing logs")
-
-		writer := &utils.NoOpWriter{}
-		posthogLogger = posthog.StdLogger(log.New(writer, "posthog ", log.LstdFlags))
+	supabaseClient, err := db.NewClient(ctx)
+	if err != nil {
+		logger.Errorf("Error initializing Supabase client\n: %v\n", err)
+		panic(err)
 	}
 
-	posthogClient, posthogErr := posthog.NewWithConfig(posthogAPIKey, posthog.Config{
-		Interval:  30 * time.Second,
-		BatchSize: 100,
-		Verbose:   false,
-		Logger:    posthogLogger,
-	})
+	logger.Info("Initialized Supabase client")
+
+	posthogClient, posthogErr := NewPosthogClient(logger)
 
 	if posthogErr != nil {
-		panic(fmt.Sprintf("Error initializing Posthog client\n: %s", posthogErr))
+		logger.Errorf("Error initializing Posthog client\n: %v", posthogErr)
+		panic(posthogErr)
 	}
 
 	var initialInstances []*InstanceInfo
@@ -86,12 +79,12 @@ func NewAPIStore() *APIStore {
 	if env.IsProduction() {
 		instances, instancesErr := nomadClient.GetInstances()
 		if instancesErr != nil {
-			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %v\n", instancesErr.Err)
+			logger.Errorf("Error loading current instances from Nomad\n: %v\n", instancesErr.Err)
 		}
 
 		initialInstances = instances
 	} else {
-		fmt.Println("Skipping loading instances from Nomad, running locally")
+		logger.Info("Skipping loading instances from Nomad, running locally")
 	}
 
 	meter := otel.GetMeterProvider().Meter("nomad")
@@ -109,28 +102,26 @@ func NewAPIStore() *APIStore {
 
 	analytics, err := analyticscollector.NewAnalytics()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error initializing Analytics client\n: %v\n", err)
+		logger.Errorf("Error initializing Analytics client\n: %v\n", err)
 	}
 
-	fmt.Println("Initialized Analytics client")
+	logger.Info("Initialized Analytics client")
 
-	instanceCache := nomad.NewInstanceCache(analytics.Client, getDeleteInstanceFunction(ctx, nomadClient, analytics, posthogClient), initialInstances, instancesCounter)
+	instanceCache := nomad.NewInstanceCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, nomadClient, analytics, posthogClient, logger), initialInstances, instancesCounter)
 
-	fmt.Println("Initialized instance cache")
+	logger.Info("Initialized instance cache")
 
 	if env.IsProduction() {
 		go instanceCache.KeepInSync(nomadClient)
 	} else {
-		fmt.Println("Skipping syncing intances with Nomad, running locally")
+		logger.Info("Skipping syncing intances with Nomad, running locally")
 	}
 
 	cStorage, err := storages.NewGoogleCloudStorage(ctx, constants.DockerContextBucketName)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error initializing Cloud Storage client\n: %v\n", err)
+		logger.Errorf("Error initializing Cloud Storage client\n: %v\n", err)
 		panic(err)
 	}
-
-	fmt.Println("Initialized Cloud Storage client")
 
 	apiSecret := os.Getenv("API_SECRET")
 	if apiSecret == "" {
@@ -162,6 +153,7 @@ func NewAPIStore() *APIStore {
 		apiSecret:                  apiSecret,
 		buildCache:                 buildCache,
 		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
+		logger:                     logger,
 	}
 }
 
@@ -171,17 +163,17 @@ func (a *APIStore) Close() {
 
 	err := a.analytics.Close()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error closing Analytics\n: %v\n", err)
+		a.logger.Errorf("Error closing Analytics\n: %v\n", err)
 	}
 
 	err = a.posthog.Close()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error closing Posthog client\n: %v\n", err)
+		a.logger.Errorf("Error closing Posthog client\n: %v\n", err)
 	}
 
 	err = a.cloudStorage.Close()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error closing Cloud Storage client\n: %v\n", err)
+		a.logger.Errorf("Error closing Cloud Storage client\n: %v\n", err)
 	}
 }
 
@@ -193,11 +185,7 @@ func (a *APIStore) sendAPIStoreError(c *gin.Context, code int, message string) {
 		Message: message,
 	}
 
-	err := c.Error(fmt.Errorf(message))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error sending error: %v\n", err)
-	}
-
+	c.Error(fmt.Errorf(message))
 	c.JSON(code, apiErr)
 }
 
@@ -241,7 +229,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 		}
 	}
 
-	return deleteInstance(a.Ctx, a.nomad, a.analytics, a.posthog, info, purge)
+	return deleteInstance(a.Ctx, a.nomad, a.analytics, a.posthog, a.logger, info, purge)
 }
 
 func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, kernelVersion string, hasAccess bool, err error) {
@@ -250,9 +238,9 @@ func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, 
 
 type InstanceInfo = nomad.InstanceInfo
 
-func getDeleteInstanceFunction(ctx context.Context, nomad *nomad.NomadClient, analytics *analyticscollector.Analytics, posthogClient posthog.Client) func(info nomad.InstanceInfo, purge bool) *api.APIError {
+func getDeleteInstanceFunction(ctx context.Context, nomad *nomad.NomadClient, analytics *analyticscollector.Analytics, posthogClient *PosthogClient, logger *zap.SugaredLogger) func(info nomad.InstanceInfo, purge bool) *api.APIError {
 	return func(info InstanceInfo, purge bool) *api.APIError {
-		return deleteInstance(ctx, nomad, analytics, posthogClient, info, purge)
+		return deleteInstance(ctx, nomad, analytics, posthogClient, logger, info, purge)
 	}
 }
 
@@ -260,7 +248,8 @@ func deleteInstance(
 	ctx context.Context,
 	nomad *nomad.NomadClient,
 	analytics *analyticscollector.Analytics,
-	posthogClient posthog.Client,
+	posthogClient *PosthogClient,
+	logger *zap.SugaredLogger,
 	info InstanceInfo,
 	purge bool,
 ) *api.APIError {
@@ -286,11 +275,10 @@ func deleteInstance(
 			Duration:      float32(duration),
 		})
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error sending Analytics event: %v\n", err)
+			logger.Errorf("error sending Analytics event: %v\n", err)
 		}
 
-		CreateAnalyticsTeamEvent(
-			posthogClient,
+		posthogClient.CreateAnalyticsTeamEvent(
 			info.TeamID.String(),
 			"closed_instance", posthog.NewProperties().
 				Set("instance_id", info.Instance.SandboxID).
@@ -300,21 +288,4 @@ func deleteInstance(
 	}
 
 	return nil
-}
-
-func (a *APIStore) GetPackageToPosthogProperties(header *http.Header) posthog.Properties {
-	properties := posthog.NewProperties().
-		Set("browser", header.Get("browser")).
-		Set("lang", header.Get("lang")).
-		Set("lang_version", header.Get("lang_version")).
-		Set("machine", header.Get("machine")).
-		Set("os", header.Get("os")).
-		Set("package_version", header.Get("package_version")).
-		Set("processor", header.Get("processor")).
-		Set("publisher", header.Get("publisher")).
-		Set("release", header.Get("release")).
-		Set("sdk_runtime", header.Get("sdk_runtime")).
-		Set("system", header.Get("system"))
-
-	return properties
 }

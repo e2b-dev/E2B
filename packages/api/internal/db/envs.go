@@ -133,10 +133,9 @@ func (db *DB) UpsertEnv(
 			e.AddBuildCount(1)
 		}).
 		Exec(ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to upsert env with id '%s': %w", envID, err)
-
-		fmt.Println(errMsg.Error())
 
 		return errMsg
 	}

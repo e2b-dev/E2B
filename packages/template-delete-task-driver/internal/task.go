@@ -102,8 +102,6 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		return nil, nil, errMsg
 	}
 
-	logger.Info("Initialized Google Cloud Storage client")
-
 	cancellableContext, cancel := context.WithCancel(driverCtx)
 
 	h := &driver.TaskHandle[*extraTaskHandle]{

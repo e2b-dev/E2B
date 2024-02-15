@@ -86,9 +86,9 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c *gin.Con
 
 	telemetry.ReportEvent(ctx, "got environment build")
 
-	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
-	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "got environment detail", properties.Set("environment", templateID))
+	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
+	a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "got environment detail", properties.Set("environment", templateID))
 
 	return &result
 }

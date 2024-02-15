@@ -226,7 +226,6 @@ func (n *NomadClient) BuildEnvJob(
 		_, err = n.client.Variables().Delete("env-build/disk-size-mb/"+envID, nil)
 		if err != nil {
 			telemetry.ReportError(childCtx, fmt.Errorf("cannot delete disk size variable: %w", err))
-			fmt.Printf("cannot delete disk size variable: %v", err)
 		}
 
 		return 0, fmt.Errorf("didn't find disk size for the build: %w", err)

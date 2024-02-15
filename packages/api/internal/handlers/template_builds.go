@@ -108,9 +108,9 @@ func (a *APIStore) PostTemplatesWithoutResponse(c *gin.Context) *api.Template {
 		}
 	}
 
-	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
-	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "submitted environment build request", properties.
+	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
+	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "submitted environment build request", properties.
 		Set("environment", envID).
 		Set("build_id", buildID).
 		Set("dockerfile", dockerfile).
@@ -332,15 +332,15 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 	if accessErr != nil {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("the sandbox template '%s' does not exist", cleanedAliasOrEnvID))
 
-		errMsg := fmt.Errorf("error env not found: %w", accessErr)
+		errMsg := fmt.Errorf("env not found: %w", accessErr)
 		telemetry.ReportError(ctx, errMsg)
 
 		return nil
 	}
 
-	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
-	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "submitted environment build request", properties.
+	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
+	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "submitted environment build request", properties.
 		Set("environment", env.TemplateID).
 		Set("build_id", buildID).
 		Set("alias", alias).
@@ -500,7 +500,7 @@ func (a *APIStore) buildEnv(
 	startTime := time.Now()
 
 	defer func() {
-		CreateAnalyticsUserEvent(a.posthog, userID, teamID.String(), "built environment", posthogProperties.
+		a.posthog.CreateAnalyticsUserEvent(userID, teamID.String(), "built environment", posthogProperties.
 			Set("environment", envID).
 			Set("build_id", buildID).
 			Set("duration", time.Since(startTime).String()).

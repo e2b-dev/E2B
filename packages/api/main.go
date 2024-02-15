@@ -7,19 +7,18 @@ import (
 	"os"
 	"time"
 
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3filter"
-	"github.com/gin-contrib/cors"
-	limits "github.com/gin-contrib/size"
-	"github.com/gin-gonic/gin"
-	middleware "github.com/oapi-codegen/gin-middleware"
-
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
 	tracingMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware/otel/tracing"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/gin-contrib/cors"
+	limits "github.com/gin-contrib/size"
+	"github.com/gin-gonic/gin"
+	middleware "github.com/oapi-codegen/gin-middleware"
 )
 
 const (
@@ -43,7 +42,15 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 		// We use custom otel gin middleware because we want to log 4xx errors in the otel
 		customMiddleware.ExcludeRoutes(tracingMiddleware.Middleware(serviceName), "/health"),
 		// customMiddleware.IncludeRoutes(metricsMiddleware.Middleware(serviceName), "/instances"),
-		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		customMiddleware.ExcludeRoutes(gin.LoggerWithWriter(gin.DefaultWriter),
+			"/health",
+			"/sandboxes/:sandboxID/refreshes",
+			"/instances/:instanceID/refreshes",
+			"/envs/:envID/builds/:buildID",
+			"/templates/:templateID/builds/:buildID",
+			"/envs/:envID/builds/:buildID/logs",
+			"/templates/:templateID/builds/:buildID/logs",
+		),
 		gin.Recovery(),
 	)
 
@@ -85,6 +92,14 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 		limits.RequestSizeLimiter(maxUploadLimit),
 		middleware.OapiRequestValidatorWithOptions(swagger,
 			&middleware.Options{
+				ErrorHandler: func(c *gin.Context, message string, statusCode int) {
+					ctx := c.Request.Context()
+					telemetry.ReportError(ctx, fmt.Errorf(message))
+
+					// Log the error
+
+					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": message})
+				},
 				Options: openapi3filter.Options{
 					AuthenticationFunc: AuthenticationFunc,
 				},

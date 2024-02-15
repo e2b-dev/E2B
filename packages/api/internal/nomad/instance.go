@@ -91,9 +91,10 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		metadataRaw := job.Meta[metadataKey]
 
 		var metadata map[string]string
+
 		err = json.Unmarshal([]byte(metadataRaw), &metadata)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to unmarshal metadata for job '%s': %v\n", job.ID, err)
+			n.logger.Errorf("failed to unmarshal metadata for job '%s': %v\n", job.ID, err)
 		}
 
 		var teamUUID *uuid.UUID
@@ -102,7 +103,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		if teamID != "" {
 			parsedTeamID, parseErr := uuid.Parse(teamID)
 			if parseErr != nil {
-				fmt.Fprintf(os.Stderr, "failed to parse team ID '%s' for job '%s': %v\n", teamID, job.ID, parseErr)
+				n.logger.Errorf("failed to parse team ID '%s' for job '%s': %v\n", teamID, job.ID, parseErr)
 			} else {
 				teamUUID = &parsedTeamID
 			}
@@ -114,7 +115,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 
 		clientID, ok := nodeMap[job.ID]
 		if !ok {
-			fmt.Fprintf(os.Stderr, "failed to get client ID for job '%s'\n", job.ID)
+			n.logger.Errorf("failed to get client ID for job '%s'\n", job.ID)
 		}
 
 		instances = append(instances, &InstanceInfo{

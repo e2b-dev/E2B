@@ -84,9 +84,9 @@ func (a *APIStore) DeleteTemplatesTemplateID(c *gin.Context, aliasOrTemplateID a
 
 	telemetry.ReportEvent(ctx, "deleted env from db")
 
-	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
-	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "deleted environment", properties.Set("environment", env.TemplateID))
+	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
+	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "deleted environment", properties.Set("environment", env.TemplateID))
 
 	c.JSON(http.StatusOK, nil)
 }

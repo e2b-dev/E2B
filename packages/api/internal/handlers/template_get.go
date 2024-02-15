@@ -53,9 +53,9 @@ func (a *APIStore) GetTemplatesWithoutResponse(c *gin.Context) []*api.Template {
 
 	telemetry.ReportEvent(ctx, "listed environments")
 
-	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
-	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	CreateAnalyticsUserEvent(a.posthog, userID.String(), team.ID.String(), "listed environments", properties)
+	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
+	a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "listed environments", properties)
 
 	return envs
 }

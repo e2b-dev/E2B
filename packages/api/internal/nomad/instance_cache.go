@@ -3,13 +3,13 @@ package nomad
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
@@ -33,6 +33,7 @@ type InstanceInfo struct {
 type InstanceCache struct {
 	cache     *ttlcache.Cache[string, InstanceInfo]
 	counter   metric.Int64UpDownCounter
+	logger    *zap.SugaredLogger
 	analytics analyticscollector.AnalyticsCollectorClient
 }
 
@@ -156,13 +157,13 @@ func (c *InstanceCache) Sync(instances []*InstanceInfo) {
 
 	_, err := c.analytics.RunningInstances(context.Background(), &analyticscollector.RunningInstancesEvent{InstanceIds: instanceIds, Timestamp: timestamppb.Now()})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error sending running instances event to analytics\n: %v\n", err)
+		c.logger.Errorf("Error sending running instances event to analytics\n: %v\n", err)
 	}
 }
 
 // We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now.
-func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*InstanceInfo, counter metric.Int64UpDownCounter) *InstanceCache {
+func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, logger *zap.SugaredLogger, deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*InstanceInfo, counter metric.Int64UpDownCounter) *InstanceCache {
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, InstanceInfo](InstanceExpiration),
 	)
@@ -170,6 +171,7 @@ func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, del
 	instanceCache := &InstanceCache{
 		cache:     cache,
 		counter:   counter,
+		logger:    logger,
 		analytics: analytics,
 	}
 
@@ -190,7 +192,7 @@ func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, del
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
 			err := deleteInstance(i.Value(), true)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error deleting instance (%v)\n: %v\n", er, err.Err)
+				logger.Errorf("Error deleting instance (%v)\n: %v\n", er, err.Err)
 			}
 
 			instanceCache.UpdateCounter(i.Value(), -1)
@@ -216,7 +218,7 @@ func (c *InstanceCache) KeepInSync(client *NomadClient) {
 
 		activeInstances, err := client.GetInstances()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %v\n", err.Err)
+			c.logger.Errorf("Error loading current instances from Nomad\n: %v\n", err.Err)
 		} else {
 			c.Sync(activeInstances)
 		}

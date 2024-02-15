@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"go.uber.org/zap"
 
 	"github.com/hashicorp/nomad/api"
 )
@@ -17,11 +18,12 @@ var (
 
 type NomadClient struct {
 	client      *api.Client
+	logger      *zap.SugaredLogger
 	subscribers *utils.Map[*jobSubscriber]
 	cancel      context.CancelFunc
 }
 
-func InitNomadClient() *NomadClient {
+func InitNomadClient(logger *zap.SugaredLogger) *NomadClient {
 	client, err := api.NewClient(&api.Config{
 		Address:  nomadAddress,
 		SecretID: nomadToken,
@@ -34,6 +36,7 @@ func InitNomadClient() *NomadClient {
 
 	n := &NomadClient{
 		client:      client,
+		logger:      logger,
 		subscribers: utils.NewMap[*jobSubscriber](),
 		cancel:      cancel,
 	}

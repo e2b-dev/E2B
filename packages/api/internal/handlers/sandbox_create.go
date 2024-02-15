@@ -118,9 +118,9 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 
 	telemetry.ReportEvent(ctx, "created environment instance")
 
-	IdentifyAnalyticsTeam(a.posthog, team.ID.String(), team.Name)
-	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	CreateAnalyticsTeamEvent(a.posthog, team.ID.String(), "created_instance",
+	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
+	a.posthog.CreateAnalyticsTeamEvent(team.ID.String(), "created_instance",
 		properties.
 			Set("environment", env.TemplateID).
 			Set("instance_id", sandbox.SandboxID).

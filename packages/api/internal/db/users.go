@@ -21,7 +21,6 @@ func (db *DB) GetDefaultTeamFromUserID(ctx context.Context, userID uuid.UUID) (t
 		Only(ctx)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get default team from user: %w", err)
-		fmt.Println(errMsg.Error())
 
 		return nil, errMsg
 	}
@@ -38,9 +37,9 @@ func (db *DB) GetDefaultTeamAndTierFromUserID(ctx context.Context, userID uuid.U
 		Where(team.IsDefaultEQ(true), team.HasUsersWith(user.ID(userID))).
 		WithTeamTier().
 		Only(ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get default team from user: %w", err)
-		fmt.Println(errMsg.Error())
 
 		return nil, errMsg
 	}
@@ -55,9 +54,9 @@ func (db *DB) GetTeam(ctx context.Context, teamID uuid.UUID) (*models.Team, erro
 		Query().
 		Where(team.ID(teamID)).
 		Only(ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get team: %w", err)
-		fmt.Println(errMsg.Error())
 
 		return nil, errMsg
 	}

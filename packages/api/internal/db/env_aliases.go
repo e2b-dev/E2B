@@ -14,10 +14,9 @@ func (db *DB) DeleteEnvAlias(ctx context.Context, alias string) error {
 		EnvAlias.
 		DeleteOneID(alias).
 		Exec(ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to delete env alias '%s': %w", alias, err)
-
-		fmt.Println(errMsg.Error())
 
 		return errMsg
 	}
@@ -32,10 +31,9 @@ func (db *DB) DeleteNilEnvAlias(ctx context.Context, alias string) error {
 		DeleteOneID(alias).
 		Where(envalias.EnvIDIsNil()).
 		Exec(ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to delete env alias '%s': %w", alias, err)
-
-		fmt.Println(errMsg.Error())
 
 		return errMsg
 	}
@@ -51,10 +49,9 @@ func (db *DB) reserveEnvAlias(ctx context.Context, alias string) error {
 		SetID(alias).
 		SetNillableEnvID(nil).
 		Exec(ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to reserve env alias '%s': %w", alias, err)
-
-		fmt.Println(errMsg.Error())
 
 		return errMsg
 	}
@@ -86,10 +83,9 @@ func (db *DB) UpdateEnvAlias(ctx context.Context, alias, envID string) error {
 			envalias.And(envalias.EnvIDIsNil(), envalias.ID(alias)),
 		), envalias.IsName(true)).
 		Exec(ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to delete env alias '%s' for env '%s': %w", alias, envID, err)
-
-		fmt.Println(errMsg.Error())
 
 		return rollback(tx, errMsg)
 	}
@@ -100,19 +96,17 @@ func (db *DB) UpdateEnvAlias(ctx context.Context, alias, envID string) error {
 		SetID(alias).
 		SetEnvID(envID).
 		Exec(ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to update env alias '%s' for env '%s': %w", alias, envID, err)
-
-		fmt.Println(errMsg.Error())
 
 		return rollback(tx, errMsg)
 	}
 
 	err = tx.Commit()
+
 	if err != nil {
 		errMsg := fmt.Errorf("committing transaction: %w", err)
-
-		fmt.Println(errMsg.Error())
 
 		return errMsg
 	}
@@ -136,8 +130,6 @@ func (db *DB) EnsureEnvAlias(ctx context.Context, alias, envID string) error {
 		}
 	} else if err != nil {
 		errMsg := fmt.Errorf("failed to get env alias '%s': %w", envID, err)
-
-		fmt.Println(errMsg.Error())
 
 		return errMsg
 	}

@@ -10,13 +10,18 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+var OTELTracingPrint = os.Getenv("OTEL_TRACING_PRINT") != "false"
+
 func SetAttributes(ctx context.Context, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
-	if len(attrs) == 0 {
-		fmt.Printf("No attrs set")
-	} else {
-		fmt.Printf("Attrs set: %v\n", attrs)
+	if OTELTracingPrint {
+		fmt.Printf("It's on - OTELTracingPrint: %s", os.Getenv("OTEL_TRACING_PRINT"))
+		if len(attrs) == 0 {
+			fmt.Printf("No attrs set")
+		} else {
+			fmt.Printf("Attrs set: %v\n", attrs)
+		}
 	}
 
 	span.SetAttributes(attrs...)
@@ -25,10 +30,12 @@ func SetAttributes(ctx context.Context, attrs ...attribute.KeyValue) {
 func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
-	if len(attrs) == 0 {
-		fmt.Printf("-> %s\n", name)
-	} else {
-		fmt.Printf("-> %s - %v\n", name, attrs)
+	if OTELTracingPrint {
+		if len(attrs) == 0 {
+			fmt.Printf("-> %s\n", name)
+		} else {
+			fmt.Printf("-> %s - %v\n", name, attrs)
+		}
 	}
 
 	span.AddEvent(name,
@@ -39,10 +46,14 @@ func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) 
 func ReportCriticalError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
-	if len(attrs) == 0 {
-		fmt.Fprintf(os.Stderr, "Critical error: %v\n", err)
-	} else {
-		fmt.Fprintf(os.Stderr, "Critical error: %v - %v\n", err, attrs)
+	if OTELTracingPrint {
+		fmt.Printf("It's on - OTELTracingPrint: %s", os.Getenv("OTEL_TRACING_PRINT"))
+
+		if len(attrs) == 0 {
+			fmt.Fprintf(os.Stderr, "Critical error: %v\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "Critical error: %v - %v\n", err, attrs)
+		}
 	}
 
 	span.RecordError(err,
@@ -58,10 +69,13 @@ func ReportCriticalError(ctx context.Context, err error, attrs ...attribute.KeyV
 func ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
-	if len(attrs) == 0 {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-	} else {
-		fmt.Fprintf(os.Stderr, "Error: %v - %v\n", err, attrs)
+	if OTELTracingPrint {
+		fmt.Printf("It's on - OTELTracingPrint: %s", os.Getenv("OTEL_TRACING_PRINT"))
+		if len(attrs) == 0 {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: %v - %v\n", err, attrs)
+		}
 	}
 
 	span.RecordError(err,
