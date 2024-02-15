@@ -253,7 +253,10 @@ class Sandbox(SandboxConnection):
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
         timeout: Optional[float] = TIMEOUT,
-        **kwargs,
+        api_key: Optional[str] = None,
+        _debug_hostname: Optional[str] = None,
+        _debug_port: Optional[int] = None,
+        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
         Reconnects to a previously created sandbox.
@@ -266,6 +269,8 @@ class Sandbox(SandboxConnection):
         :param on_stderr: A default callback that is called when stderr with a newline is received from the process
         :param on_exit: A default callback that is called when the process exits
         :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
+        :param api_key: The API key to use, if not provided, the `E2B_API_KEY` environment variable is used
+
 
         ```py
         sandbox = Sandbox()
@@ -289,12 +294,12 @@ class Sandbox(SandboxConnection):
             on_stderr=on_stderr,
             on_exit=on_exit,
             timeout=timeout,
+            api_key=api_key,
             _sandbox=models.Sandbox(
                 sandbox_id=sandbox_id,
                 client_id=client_id,
                 template_id=getattr(cls, "sandbox_template_id", "unknown"),
             ),
-            **kwargs,
         )
 
     def _open(
