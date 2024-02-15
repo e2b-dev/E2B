@@ -468,6 +468,8 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 		aliases = append(aliases, alias)
 	}
 
+	a.logger.Infof("Built template %s with build id %s", env.TemplateID, buildID.String())
+
 	return &api.Template{
 		TemplateID: env.TemplateID,
 		BuildID:    buildID.String(),

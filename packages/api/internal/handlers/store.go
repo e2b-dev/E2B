@@ -287,5 +287,7 @@ func deleteInstance(
 		)
 	}
 
+	logger.Infof("Closed sandbox '%s' after %f seconds", info.Instance.SandboxID, duration)
+
 	return nil
 }

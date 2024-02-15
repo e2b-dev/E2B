@@ -167,5 +167,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		attribute.String("instance.id", sandbox.SandboxID),
 	)
 
+	a.logger.Infof("Created sandbox '%s' for team '%s'", sandbox.SandboxID, team.ID)
+
 	return sandbox
 }
