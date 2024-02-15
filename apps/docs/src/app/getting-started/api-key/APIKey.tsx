@@ -1,12 +1,12 @@
-"use client";
+'use client'
 
-import clsx from "clsx";
-import { useAccessToken, useApiKey, useUser } from "@/utils/useUser";
-import { usePostHog } from "posthog-js/react";
-import { useSignIn } from "@/utils/useSignIn";
-import { obfuscateSecret } from "@/utils/obfuscate";
-import { Button } from "@/components/Button";
-import { CopyButton } from "@/components/CopyButton";
+import clsx from 'clsx'
+import { useAccessToken, useApiKey, useUser } from '@/utils/useUser'
+import { usePostHog } from 'posthog-js/react'
+import { useSignIn } from '@/utils/useSignIn'
+import { obfuscateSecret } from '@/utils/obfuscate'
+import { Button } from '@/components/Button'
+import { CopyButton } from '@/components/CopyButton'
 import { Note } from '@/components/mdx'
 
 export function CopyableSecret({
@@ -30,14 +30,14 @@ export function CopyableSecret({
           code={secret}
           onAfterCopy={onAfterCopy}
           customPositionClassNames={clsx(
-            "top-[-2px] bottom-[2px]" /* nudge 2px up*/,
-            "left-[-8px] right-[-8px]" /* widen a little to fit nicely */,
-            "min-h-[28px]"
+            'top-[-2px] bottom-[2px]' /* nudge 2px up*/,
+            'left-[-8px] right-[-8px]' /* widen a little to fit nicely */,
+            'min-h-[28px]'
           )}
         />
       </span>
     </div>
-  );
+  )
 }
 
 function SecretBlock({ name, description, secret, posthog, tip }) {
@@ -48,7 +48,7 @@ function SecretBlock({ name, description, secret, posthog, tip }) {
         <div className="group text-sm ml-4 border-2 mt-1 outline-2 outline-offset-2 outline-zinc-700 rounded-full px-[8px]">
           <CopyableSecret
             secret={secret}
-            onAfterCopy={() => posthog?.capture("copied API key")}
+            onAfterCopy={() => posthog?.capture('copied API key')}
             obfuscateStart={12}
             obfuscateEnd={5}
           />
@@ -57,15 +57,15 @@ function SecretBlock({ name, description, secret, posthog, tip }) {
       <span>{description}</span>
       <span>{tip}</span>
     </div>
-  );
+  )
 }
 
 function APIKey() {
-  const signIn = useSignIn();
-  const { user } = useUser();
-  const apiKey = useApiKey();
-  const posthog = usePostHog();
-  const accessToken = useAccessToken();
+  const signIn = useSignIn()
+  const { user } = useUser()
+  const apiKey = useApiKey()
+  const posthog = usePostHog()
+  const accessToken = useAccessToken()
 
   return (
     <div className="flex flex-col items-start justify-start -mb-6">
@@ -119,7 +119,7 @@ function APIKey() {
         </div>
       )}
     </div>
-  );
+  )
 }
 
-export default APIKey;
+export default APIKey

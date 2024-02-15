@@ -69,9 +69,9 @@ export const useSandboxStore = create<SandboxStore>((set, get) => ({
 type SandboxMeta = {
   sandbox: Sandbox;
   promise: Promise<Sandbox>;
-};
+}
 
 export type SandboxStore = {
   sandbox: SandboxMeta;
   initSandbox: (apiKey: string) => Promise<Sandbox>;
-};
+}

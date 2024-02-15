@@ -1,27 +1,29 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/Button'
 import { useUser } from '@/utils/useUser'
-import { useRouter } from 'next/navigation'
-
-
-const manageBillingURL = process.env.NEXT_PUBLIC_STRIPE_BILLING_URL
 
 function ManageBilling() {
   const { user } = useUser()
-  const router = useRouter()
+  const [url, setURL] = useState('')
 
-  if (!user || !manageBillingURL) {
+  useEffect(function getBillingURL() {
+    if (!user) return
+    const u = `${process.env.NEXT_PUBLIC_STRIPE_BILLING_URL}?prefilled_email=${user.teams[0].email}`
+    setURL(u)
+  }, [user])
+
+  if (!user || !url) {
     return
   }
 
   return (
-    <div className="flex flex-col items-start justify-start gap-4 mb-8">
-      <div className="flex flex-col items-start justify-start">
-      </div>
-      <Button onClick={() => router.push(manageBillingURL)}>
-        Manage Billing
-      </Button>
+    <div className="mb-8 flex flex-col items-start justify-start gap-4">
+      <div className="flex flex-col items-start justify-start"></div>
+      <a href={url} target="_blank" rel="noreferrer">
+        <Button>Manage Billing</Button>
+      </a>
     </div>
   )
 }

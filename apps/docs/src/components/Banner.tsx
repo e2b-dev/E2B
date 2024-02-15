@@ -10,21 +10,21 @@ interface Promo {
   validTo: string
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export function Banner() {
   const { user } = useUser()
 
   const { data, error, isLoading } = useSWR<Promo>(`/docs/pricing/promo?${new URLSearchParams({ id: user?.pricingTier.id })}`, fetcher)
 
-  if (isLoading) return null;
+  if (isLoading) return null
 
   if (error) {
     console.error('Error fetching promo:', error)
-    return null;
+    return null
   }
 
-  if (!user?.pricingTier.isPromo) return null;
+  if (!user?.pricingTier.isPromo) return null
 
   return (
     <div className="py-2 px-8 border-y border-zinc-700 flex flex-col md:flex-row gap-1 fixed inset-x-0 top-[55px] bg-zinc-800 z-40">
