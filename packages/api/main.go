@@ -11,6 +11,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
 	tracingMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware/otel/tracing"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -92,14 +93,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 		limits.RequestSizeLimiter(maxUploadLimit),
 		middleware.OapiRequestValidatorWithOptions(swagger,
 			&middleware.Options{
-				ErrorHandler: func(c *gin.Context, message string, statusCode int) {
-					ctx := c.Request.Context()
-					telemetry.ReportError(ctx, fmt.Errorf(message))
-
-					// Log the error
-
-					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": message})
-				},
+				ErrorHandler: utils.ErrorHandler,
 				Options: openapi3filter.Options{
 					AuthenticationFunc: AuthenticationFunc,
 				},
