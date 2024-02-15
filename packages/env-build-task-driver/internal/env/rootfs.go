@@ -70,7 +70,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 
 	network, err := rootfs.client.NetworkCreate(childCtx, env.BuildID, types.NetworkCreate{})
 	if err != nil {
-		errMsg := fmt.Errorf("error creating network %w", err)
+		errMsg := fmt.Errorf("error creating network: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return nil, errMsg
@@ -79,7 +79,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	defer func() {
 		err = rootfs.client.NetworkRemove(childCtx, network.ID)
 		if err != nil {
-			errMsg := fmt.Errorf("error removing network %w", err)
+			errMsg := fmt.Errorf("error removing network: %w", err)
 			telemetry.ReportError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "removed network")
@@ -88,7 +88,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 
 	err = rootfs.buildDockerImage(childCtx, tracer, network.ID)
 	if err != nil {
-		errMsg := fmt.Errorf("error building docker image %w", err)
+		errMsg := fmt.Errorf("error building docker image: %w", err)
 
 		rootfs.cleanupDockerImage(childCtx, tracer)
 
@@ -97,7 +97,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 
 	err = rootfs.createRootfsFile(childCtx, tracer, network.ID)
 	if err != nil {
-		errMsg := fmt.Errorf("error creating rootfs file %w", err)
+		errMsg := fmt.Errorf("error creating rootfs file: %w", err)
 
 		rootfs.cleanupDockerImage(childCtx, tracer)
 
@@ -113,7 +113,7 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer, netw
 
 	dockerContextFile, err := os.Open(r.env.DockerContextPath())
 	if err != nil {
-		errMsg := fmt.Errorf("error opening docker context file %w", err)
+		errMsg := fmt.Errorf("error opening docker context file: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -160,7 +160,7 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer, netw
 		r.env.BuildLogsWriter.Write([]byte(err.Error() + "\n"))
 		r.env.BuildLogsWriter.Write([]byte("Build failed, received error while building docker image.\n"))
 
-		errMsg := fmt.Errorf("error building docker image for env %w", err)
+		errMsg := fmt.Errorf("error building docker image for env: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -183,7 +183,7 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 
 	authConfigBytes, err := json.Marshal(authConfig)
 	if err != nil {
-		errMsg := fmt.Errorf("error marshaling auth config %w", err)
+		errMsg := fmt.Errorf("error marshaling auth config: %w", err)
 
 		return errMsg
 	}
@@ -194,7 +194,7 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 		RegistryAuth: authConfigBase64,
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error pushing image %w", err)
+		errMsg := fmt.Errorf("error pushing image: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -202,7 +202,7 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 
 	_, err = io.Copy(os.Stdout, logs)
 	if err != nil {
-		errMsg := fmt.Errorf("error copying logs %w", err)
+		errMsg := fmt.Errorf("error copying logs: %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 
 		return errMsg
@@ -210,7 +210,7 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 
 	err = logs.Close()
 	if err != nil {
-		errMsg := fmt.Errorf("error closing logs %w", err)
+		errMsg := fmt.Errorf("error closing logs: %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 
 		return errMsg
@@ -230,7 +230,7 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 		PruneChildren: false,
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error removing image %w", err)
+		errMsg := fmt.Errorf("error removing image: %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "removed image")
@@ -257,7 +257,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		StartCmd: strings.ReplaceAll(r.env.StartCmd, "\"", "\\\""),
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error executing provision script %w", err)
+		errMsg := fmt.Errorf("error executing provision script: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -266,7 +266,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 	telemetry.ReportEvent(childCtx, "executed provision script template")
 
 	if err != nil {
-		errMsg := fmt.Errorf("error generating network name %w", err)
+		errMsg := fmt.Errorf("error generating network name: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -299,7 +299,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		},
 	}, nil, &v1.Platform{}, "")
 	if err != nil {
-		errMsg := fmt.Errorf("error creating container %w", err)
+		errMsg := fmt.Errorf("error creating container: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -322,7 +322,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 				Context:       cleanupContext,
 			})
 			if err != nil {
-				errMsg := fmt.Errorf("error removing container %w", err)
+				errMsg := fmt.Errorf("error removing container: %w", err)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "removed container")
@@ -336,7 +336,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 				All:     true,
 			})
 			if err != nil {
-				errMsg := fmt.Errorf("error pruning build cache %w", err)
+				errMsg := fmt.Errorf("error pruning build cache: %w", err)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned build cache")
@@ -344,7 +344,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 			_, err = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeout))
 			if err != nil {
-				errMsg := fmt.Errorf("error pruning images %w", err)
+				errMsg := fmt.Errorf("error pruning images: %w", err)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned images")
@@ -352,7 +352,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 			_, err = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeout))
 			if err != nil {
-				errMsg := fmt.Errorf("error pruning containers %w", err)
+				errMsg := fmt.Errorf("error pruning containers: %w", err)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned containers")
@@ -373,7 +373,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		defer func() {
 			err = pw.Close()
 			if err != nil {
-				errMsg := fmt.Errorf("error closing pipe %w", err)
+				errMsg := fmt.Errorf("error closing pipe: %w", err)
 				telemetry.ReportCriticalError(childCtx, errMsg)
 			} else {
 				telemetry.ReportEvent(childCtx, "closed pipe")
@@ -384,7 +384,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		defer func() {
 			err = tw.Close()
 			if err != nil {
-				errMsg := fmt.Errorf("error closing tar writer %w", err)
+				errMsg := fmt.Errorf("error closing tar writer: %w", err)
 				telemetry.ReportCriticalError(childCtx, errMsg)
 			} else {
 				telemetry.ReportEvent(childCtx, "closed tar writer")
@@ -394,7 +394,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		for _, file := range filesToTar {
 			addErr := addFileToTarWriter(tw, file)
 			if addErr != nil {
-				errMsg := fmt.Errorf("error adding envd to tar writer %w", addErr)
+				errMsg := fmt.Errorf("error adding envd to tar writer: %w", addErr)
 				telemetry.ReportCriticalError(childCtx, errMsg)
 
 				return
@@ -412,7 +412,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		NoOverwriteDirNonDir: false,
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error copying envd to container %w", err)
+		errMsg := fmt.Errorf("error copying envd to container: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -422,7 +422,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 	err = r.client.ContainerStart(childCtx, cont.ID, types.ContainerStartOptions{})
 	if err != nil {
-		errMsg := fmt.Errorf("error starting container %w", err)
+		errMsg := fmt.Errorf("error starting container: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -453,7 +453,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 			Timestamps:   false,
 		})
 		if err != nil {
-			errMsg := fmt.Errorf("error getting container logs %w", err)
+			errMsg := fmt.Errorf("error getting container logs: %w", err)
 			telemetry.ReportError(anonymousChildCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(anonymousChildCtx, "setup container logs")
@@ -463,13 +463,13 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 	wait, errWait := r.client.ContainerWait(childCtx, cont.ID, container.WaitConditionNotRunning)
 	select {
 	case <-childCtx.Done():
-		errMsg := fmt.Errorf("error waiting for container %w", childCtx.Err())
+		errMsg := fmt.Errorf("error waiting for container: %w", childCtx.Err())
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
 	case waitErr := <-errWait:
 		if waitErr != nil {
-			errMsg := fmt.Errorf("error waiting for container %w", waitErr)
+			errMsg := fmt.Errorf("error waiting for container: %w", waitErr)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 
 			return errMsg
@@ -487,7 +487,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 	inspection, err := r.client.ContainerInspect(ctx, cont.ID)
 	if err != nil {
-		errMsg := fmt.Errorf("error inspecting container %w", err)
+		errMsg := fmt.Errorf("error inspecting container: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -517,7 +517,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 	rootfsFile, err := os.Create(r.env.tmpRootfsPath())
 	if err != nil {
-		errMsg := fmt.Errorf("error creating rootfs file %w", err)
+		errMsg := fmt.Errorf("error creating rootfs file: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -528,7 +528,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 	defer func() {
 		rootfsErr := rootfsFile.Close()
 		if rootfsErr != nil {
-			errMsg := fmt.Errorf("error closing rootfs file %w", rootfsErr)
+			errMsg := fmt.Errorf("error closing rootfs file: %w", rootfsErr)
 			telemetry.ReportError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "closed rootfs file")
@@ -544,7 +544,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 			OutputStream: pw,
 		})
 		if err != nil {
-			errMsg := fmt.Errorf("error downloading from container %w", err)
+			errMsg := fmt.Errorf("error downloading from container: %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "downloaded from container")
@@ -552,7 +552,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 		err = pw.Close()
 		if err != nil {
-			errMsg := fmt.Errorf("error closing pipe %w", err)
+			errMsg := fmt.Errorf("error closing pipe: %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "closed pipe")
@@ -567,7 +567,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 			r.env.BuildLogsWriter.Write([]byte(fmt.Sprintf("Build failed - exceeded maximum size %v MB.\n", maxRootfsSize>>ToMBShift)))
 		}
 
-		errMsg := fmt.Errorf("error converting tar to ext4 %w", err)
+		errMsg := fmt.Errorf("error converting tar to ext4: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -588,7 +588,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 	err = cmd.Run()
 	if err != nil {
-		errMsg := fmt.Errorf("error making rootfs file writable %w", err)
+		errMsg := fmt.Errorf("error making rootfs file writable: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -598,7 +598,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 	rootfsStats, err := rootfsFile.Stat()
 	if err != nil {
-		errMsg := fmt.Errorf("error statting rootfs file %w", err)
+		errMsg := fmt.Errorf("error statting rootfs file: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -613,7 +613,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 	err = rootfsFile.Truncate(rootfsSize)
 	if err != nil {
-		errMsg := fmt.Errorf("error truncating rootfs file %w to size of build + defaultDiskSizeMB", err)
+		errMsg := fmt.Errorf("error truncating rootfs file: %w to size of build + defaultDiskSizeMB", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -634,7 +634,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 	err = cmd.Run()
 	if err != nil {
-		errMsg := fmt.Errorf("error resizing rootfs file %w", err)
+		errMsg := fmt.Errorf("error resizing rootfs file: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg

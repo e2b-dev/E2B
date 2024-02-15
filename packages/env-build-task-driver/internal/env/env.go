@@ -181,7 +181,7 @@ func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Cli
 
 			err := rootfs.pushDockerImage(pushContext, tracer)
 			if err != nil {
-				errMsg := fmt.Errorf("error pushing docker image %w", err)
+				errMsg := fmt.Errorf("error pushing docker image: %w", err)
 				telemetry.ReportCriticalError(pushContext, errMsg)
 			} else {
 				telemetry.ReportEvent(pushContext, "pushed docker image")
@@ -305,7 +305,7 @@ func (e *Env) Cleanup(ctx context.Context, tracer trace.Tracer) {
 
 	err := os.RemoveAll(e.tmpBuildDirPath())
 	if err != nil {
-		errMsg := fmt.Errorf("error cleaning up env files %w", err)
+		errMsg := fmt.Errorf("error cleaning up env files: %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "cleaned up env files")

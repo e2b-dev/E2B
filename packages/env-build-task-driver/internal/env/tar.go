@@ -10,7 +10,7 @@ import (
 func addFileToTarWriter(writer *tar.Writer, file fileToTar) error {
 	f, err := os.Open(file.localPath)
 	if err != nil {
-		errMsg := fmt.Errorf("error opening file %w", err)
+		errMsg := fmt.Errorf("error opening file: %w", err)
 
 		return errMsg
 	}
@@ -18,14 +18,14 @@ func addFileToTarWriter(writer *tar.Writer, file fileToTar) error {
 	defer func() {
 		closeErr := f.Close()
 		if closeErr != nil {
-			errMsg := fmt.Errorf("error closing file %w", closeErr)
+			errMsg := fmt.Errorf("error closing file: %w", closeErr)
 			fmt.Print(errMsg)
 		}
 	}()
 
 	stat, err := f.Stat()
 	if err != nil {
-		errMsg := fmt.Errorf("error statting file %w", err)
+		errMsg := fmt.Errorf("error statting file: %w", err)
 
 		return errMsg
 	}
@@ -38,14 +38,14 @@ func addFileToTarWriter(writer *tar.Writer, file fileToTar) error {
 
 	err = writer.WriteHeader(hdr)
 	if err != nil {
-		errMsg := fmt.Errorf("error writing tar header %w", err)
+		errMsg := fmt.Errorf("error writing tar header: %w", err)
 
 		return errMsg
 	}
 
 	_, err = io.Copy(writer, f)
 	if err != nil {
-		errMsg := fmt.Errorf("error copying file to tar %w", err)
+		errMsg := fmt.Errorf("error copying file to tar: %w", err)
 
 		return errMsg
 	}

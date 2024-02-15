@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
+	"github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -156,7 +156,7 @@ func startFC(
 		defer func() {
 			readerErr := cmdStdoutReader.Close()
 			if readerErr != nil {
-				errMsg := fmt.Errorf("error closing vmm stdout reader %w", readerErr)
+				errMsg := fmt.Errorf("error closing vmm stdout reader: %w", readerErr)
 				telemetry.ReportError(vmmCtx, errMsg)
 			}
 		}()
@@ -174,7 +174,7 @@ func startFC(
 
 		readerErr := scanner.Err()
 		if readerErr != nil {
-			errMsg := fmt.Errorf("error reading vmm stdout %w", readerErr)
+			errMsg := fmt.Errorf("error reading vmm stdout: %w", readerErr)
 			telemetry.ReportError(vmmCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(vmmCtx, "vmm stdout reader closed")
@@ -185,7 +185,7 @@ func startFC(
 		defer func() {
 			readerErr := cmdStderrReader.Close()
 			if readerErr != nil {
-				errMsg := fmt.Errorf("error closing vmm stdout reader %w", readerErr)
+				errMsg := fmt.Errorf("error closing vmm stdout reader: %w", readerErr)
 				telemetry.ReportError(vmmCtx, errMsg)
 			}
 		}()
@@ -203,7 +203,7 @@ func startFC(
 
 		readerErr := cmdStderrReader.Close()
 		if readerErr != nil {
-			errMsg := fmt.Errorf("error closing vmm stderr reader %w", readerErr)
+			errMsg := fmt.Errorf("error closing vmm stderr reader: %w", readerErr)
 			telemetry.ReportError(vmmCtx, errMsg)
 		}
 	}()

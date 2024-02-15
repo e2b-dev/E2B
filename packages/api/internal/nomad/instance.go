@@ -54,7 +54,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		Filter: fmt.Sprintf("ID contains \"%s\" and Status == \"%s\"", instanceJobNameWithSlash, jobRunningStatus),
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("failed to get jobs from Nomad %w", err)
+		errMsg := fmt.Errorf("failed to get jobs from Nomad: %w", err)
 
 		return nil, &api.APIError{
 			Err:       errMsg,
@@ -67,7 +67,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		Filter: fmt.Sprintf("JobID contains \"%s\"", instanceJobNameWithSlash),
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("failed to get allocations from Nomad %w", err)
+		errMsg := fmt.Errorf("failed to get allocations from Nomad: %w", err)
 
 		return nil, &api.APIError{
 			Err:       errMsg,
@@ -342,7 +342,7 @@ func (n *NomadClient) CreateSandbox(
 			if instanceErr == nil {
 				allocErr = fmt.Errorf("starting instance failed")
 			} else {
-				allocErr = fmt.Errorf("starting instance failed %w", instanceErr)
+				allocErr = fmt.Errorf("starting instance failed: %w", instanceErr)
 			}
 
 			telemetry.ReportCriticalError(childCtx, allocErr)

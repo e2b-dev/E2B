@@ -201,7 +201,7 @@ func (n *NomadClient) BuildEnvJob(
 			if buildErr == nil {
 				allocErr = fmt.Errorf("building failed")
 			} else {
-				allocErr = fmt.Errorf("building failed %w", buildErr)
+				allocErr = fmt.Errorf("building failed: %w", buildErr)
 			}
 
 			telemetry.ReportCriticalError(childCtx, allocErr)

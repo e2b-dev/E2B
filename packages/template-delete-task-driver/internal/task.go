@@ -208,7 +208,7 @@ func (de *DriverExtra) DestroyTask(_ context.Context, _ trace.Tracer, tasks *dri
 
 	err := handle.Extra.storage.Close()
 	if err != nil {
-		return fmt.Errorf("error closing Cloud Storage client: %v", err)
+		return fmt.Errorf("error closing Cloud Storage client: %w", err)
 	}
 
 	handle.Cancel()

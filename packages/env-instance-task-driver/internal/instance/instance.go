@@ -65,7 +65,7 @@ func NewInstance(
 		if err != nil {
 			slotErr := ips.Release(childCtx, tracer)
 			if slotErr != nil {
-				errMsg := fmt.Errorf("error removing network namespace after failed instance start %w", slotErr)
+				errMsg := fmt.Errorf("error removing network namespace after failed instance start: %w", slotErr)
 				telemetry.ReportError(childCtx, errMsg)
 			} else {
 				telemetry.ReportEvent(childCtx, "released ip slot")
@@ -77,7 +77,7 @@ func NewInstance(
 		if err != nil {
 			ntErr := ips.RemoveNetwork(childCtx, tracer, hosts)
 			if ntErr != nil {
-				errMsg := fmt.Errorf("error removing network namespace after failed instance start %w", ntErr)
+				errMsg := fmt.Errorf("error removing network namespace after failed instance start: %w", ntErr)
 				telemetry.ReportError(childCtx, errMsg)
 			} else {
 				telemetry.ReportEvent(childCtx, "removed network namespace")
@@ -87,7 +87,7 @@ func NewInstance(
 
 	err = ips.CreateNetwork(childCtx, tracer, hosts)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to create namespaces %w", err)
+		errMsg := fmt.Errorf("failed to create namespaces: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return nil, errMsg
@@ -107,7 +107,7 @@ func NewInstance(
 		config.KernelName,
 	)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to create env for FC %w", err)
+		errMsg := fmt.Errorf("failed to create env for FC: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return nil, errMsg
@@ -119,7 +119,7 @@ func NewInstance(
 		if err != nil {
 			envErr := fsEnv.Cleanup(childCtx, tracer)
 			if envErr != nil {
-				errMsg := fmt.Errorf("error deleting env after failed fc start %w", err)
+				errMsg := fmt.Errorf("error deleting env after failed fc start: %w", err)
 				telemetry.ReportCriticalError(childCtx, errMsg)
 			} else {
 				telemetry.ReportEvent(childCtx, "deleted env")
@@ -142,7 +142,7 @@ func NewInstance(
 		},
 	)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to start FC %w", err)
+		errMsg := fmt.Errorf("failed to start FC: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return nil, errMsg
@@ -170,7 +170,7 @@ func (i *Instance) CleanupAfterFCStop(
 
 	err := i.Slot.RemoveNetwork(childCtx, tracer, hosts)
 	if err != nil {
-		errMsg := fmt.Errorf("cannot remove network when destroying task %w", err)
+		errMsg := fmt.Errorf("cannot remove network when destroying task: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "removed network")

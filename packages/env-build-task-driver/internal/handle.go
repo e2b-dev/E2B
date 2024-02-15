@@ -41,7 +41,7 @@ func (h *extraTaskHandle) Run(ctx context.Context, tracer trace.Tracer) error {
 	config.SecretID = h.nomadToken
 	nomadClient, err := api.NewClient(config)
 	if err != nil {
-		errMsg := fmt.Errorf("error creating nomad client %w", err)
+		errMsg := fmt.Errorf("error creating nomad client: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -53,7 +53,7 @@ func (h *extraTaskHandle) Run(ctx context.Context, tracer trace.Tracer) error {
 	}
 	_, _, err = nomadClient.Variables().Create(variable, nil)
 	if err != nil {
-		errMsg := fmt.Errorf("error creating nomad variable %w", err)
+		errMsg := fmt.Errorf("error creating nomad variable: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg

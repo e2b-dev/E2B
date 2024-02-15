@@ -36,7 +36,7 @@ func NewFCNetwork(ctx context.Context, tracer trace.Tracer, env *Env) (*FCNetwor
 
 	err := network.setup(childCtx, tracer)
 	if err != nil {
-		errMsg := fmt.Errorf("error setting up network %w", err)
+		errMsg := fmt.Errorf("error setting up network: %w", err)
 
 		network.Cleanup(childCtx, tracer)
 
@@ -61,7 +61,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	// Save the original (host) namespace and restore it upon function exit
 	hostNS, err := netns.Get()
 	if err != nil {
-		errMsg := fmt.Errorf("cannot get current (host) namespace %w", err)
+		errMsg := fmt.Errorf("cannot get current (host) namespace: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -72,7 +72,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	defer func() {
 		netErr := netns.Set(hostNS)
 		if netErr != nil {
-			errMsg := fmt.Errorf("error resetting network namespace back to the host namespace %w", netErr)
+			errMsg := fmt.Errorf("error resetting network namespace back to the host namespace: %w", netErr)
 			telemetry.ReportError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "reset network namespace back to the host namespace")
@@ -80,7 +80,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 
 		netErr = hostNS.Close()
 		if netErr != nil {
-			errMsg := fmt.Errorf("error closing host network namespace %w", netErr)
+			errMsg := fmt.Errorf("error closing host network namespace: %w", netErr)
 			telemetry.ReportError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "closed host network namespace")
@@ -90,7 +90,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	// Create namespace
 	ns, err := netns.NewNamed(n.namespaceID)
 	if err != nil {
-		errMsg := fmt.Errorf("cannot create new namespace %w", err)
+		errMsg := fmt.Errorf("cannot create new namespace: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -101,7 +101,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	defer func() {
 		nsErr := ns.Close()
 		if nsErr != nil {
-			errMsg := fmt.Errorf("error closing namespace %w", nsErr)
+			errMsg := fmt.Errorf("error closing namespace: %w", nsErr)
 			telemetry.ReportError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "closed namespace")
@@ -119,7 +119,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 
 	err = netlink.LinkAdd(tap)
 	if err != nil {
-		errMsg := fmt.Errorf("error creating tap device %w", err)
+		errMsg := fmt.Errorf("error creating tap device: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -130,7 +130,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	// Active tap device
 	err = netlink.LinkSetUp(tap)
 	if err != nil {
-		errMsg := fmt.Errorf("error setting tap device up %w", err)
+		errMsg := fmt.Errorf("error setting tap device up: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -141,7 +141,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	// Add ip address to tap device
 	ip, ipNet, err := net.ParseCIDR(fcTapCIDR)
 	if err != nil {
-		errMsg := fmt.Errorf("error parsing tap CIDR %w", err)
+		errMsg := fmt.Errorf("error parsing tap CIDR: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -156,7 +156,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 		},
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error setting address of the tap device %w", err)
+		errMsg := fmt.Errorf("error setting address of the tap device: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -173,7 +173,7 @@ func (n *FCNetwork) Cleanup(ctx context.Context, tracer trace.Tracer) {
 
 	err := netns.DeleteNamed(n.namespaceID)
 	if err != nil {
-		errMsg := fmt.Errorf("error deleting namespace %w", err)
+		errMsg := fmt.Errorf("error deleting namespace: %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "deleted namespace")

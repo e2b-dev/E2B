@@ -82,7 +82,7 @@ func newInstanceFiles(
 		filepath.Join(envInstancePath, "rootfs.ext4"),
 	)
 	if err != nil {
-		errMsg := fmt.Errorf("error creating reflinked rootfs %w", err)
+		errMsg := fmt.Errorf("error creating reflinked rootfs: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return nil, errMsg
@@ -132,7 +132,7 @@ func (env *InstanceFiles) Cleanup(
 
 	err := os.RemoveAll(env.EnvInstancePath)
 	if err != nil {
-		errMsg := fmt.Errorf("error deleting env instance files %w", err)
+		errMsg := fmt.Errorf("error deleting env instance files: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		// TODO: Check the socket?
@@ -142,7 +142,7 @@ func (env *InstanceFiles) Cleanup(
 	// Remove socket
 	err = os.Remove(env.SocketPath)
 	if err != nil {
-		errMsg := fmt.Errorf("error deleting socket %w", err)
+		errMsg := fmt.Errorf("error deleting socket: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "removed socket")

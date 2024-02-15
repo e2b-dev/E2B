@@ -78,7 +78,7 @@ func (ips *IPSlot) CreateNetwork(
 	// Save the original (host) namespace and restore it upon function exit
 	hostNS, err := netns.Get()
 	if err != nil {
-		errMsg := fmt.Errorf("cannot get current (host) namespace %w", err)
+		errMsg := fmt.Errorf("cannot get current (host) namespace: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -87,12 +87,12 @@ func (ips *IPSlot) CreateNetwork(
 	defer func() {
 		err = netns.Set(hostNS)
 		if err != nil {
-			errMsg := fmt.Errorf("error resetting network namespace back to the host namespace %w", err)
+			errMsg := fmt.Errorf("error resetting network namespace back to the host namespace: %w", err)
 			telemetry.ReportError(childCtx, errMsg)
 		}
 		err = hostNS.Close()
 		if err != nil {
-			errMsg := fmt.Errorf("error closing host network namespace %w", err)
+			errMsg := fmt.Errorf("error closing host network namespace: %w", err)
 			telemetry.ReportError(childCtx, errMsg)
 		}
 	}()
@@ -100,7 +100,7 @@ func (ips *IPSlot) CreateNetwork(
 	// Create NS for the env instance
 	ns, err := netns.NewNamed(ips.NamespaceID())
 	if err != nil {
-		errMsg := fmt.Errorf("cannot create new namespace %w", err)
+		errMsg := fmt.Errorf("cannot create new namespace: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -117,7 +117,7 @@ func (ips *IPSlot) CreateNetwork(
 	}
 	err = netlink.LinkAdd(veth)
 	if err != nil {
-		errMsg := fmt.Errorf("error creating veth device %w", err)
+		errMsg := fmt.Errorf("error creating veth device: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -126,7 +126,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	vpeer, err := netlink.LinkByName(ips.VpeerName())
 	if err != nil {
-		errMsg := fmt.Errorf("error finding vpeer %w", err)
+		errMsg := fmt.Errorf("error finding vpeer: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -135,7 +135,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	err = netlink.LinkSetUp(vpeer)
 	if err != nil {
-		errMsg := fmt.Errorf("error setting vpeer device up %w", err)
+		errMsg := fmt.Errorf("error setting vpeer device up: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -144,7 +144,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	ip, ipNet, err := net.ParseCIDR(ips.VpeerCIDR())
 	if err != nil {
-		errMsg := fmt.Errorf("error parsing vpeer CIDR %w", err)
+		errMsg := fmt.Errorf("error parsing vpeer CIDR: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -158,7 +158,7 @@ func (ips *IPSlot) CreateNetwork(
 		},
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error adding vpeer device address %w", err)
+		errMsg := fmt.Errorf("error adding vpeer device address: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -168,7 +168,7 @@ func (ips *IPSlot) CreateNetwork(
 	// Move Veth device to the host NS
 	err = netlink.LinkSetNsFd(veth, int(hostNS))
 	if err != nil {
-		errMsg := fmt.Errorf("error moving veth device to the host namespace %w", err)
+		errMsg := fmt.Errorf("error moving veth device to the host namespace: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -177,7 +177,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	err = netns.Set(hostNS)
 	if err != nil {
-		errMsg := fmt.Errorf("error setting network namespace %w", err)
+		errMsg := fmt.Errorf("error setting network namespace: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -186,7 +186,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	vethInHost, err := netlink.LinkByName(ips.VethName())
 	if err != nil {
-		errMsg := fmt.Errorf("error finding veth %w", err)
+		errMsg := fmt.Errorf("error finding veth: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -195,7 +195,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	err = netlink.LinkSetUp(vethInHost)
 	if err != nil {
-		errMsg := fmt.Errorf("error setting veth device up %w", err)
+		errMsg := fmt.Errorf("error setting veth device up: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -204,7 +204,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	ip, ipNet, err = net.ParseCIDR(ips.VethCIDR())
 	if err != nil {
-		errMsg := fmt.Errorf("error parsing veth  CIDR %w", err)
+		errMsg := fmt.Errorf("error parsing veth  CIDR: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -218,7 +218,7 @@ func (ips *IPSlot) CreateNetwork(
 		},
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error adding veth device address %w", err)
+		errMsg := fmt.Errorf("error adding veth device address: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -227,7 +227,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	err = netns.Set(ns)
 	if err != nil {
-		errMsg := fmt.Errorf("error setting network namespace to %s %w", ns.String(), err)
+		errMsg := fmt.Errorf("error setting network namespace to %s: %w", ns.String(), err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -244,7 +244,7 @@ func (ips *IPSlot) CreateNetwork(
 	}
 	err = netlink.LinkAdd(tap)
 	if err != nil {
-		errMsg := fmt.Errorf("error creating tap device %w", err)
+		errMsg := fmt.Errorf("error creating tap device: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -253,7 +253,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	err = netlink.LinkSetUp(tap)
 	if err != nil {
-		errMsg := fmt.Errorf("error setting tap device up %w", err)
+		errMsg := fmt.Errorf("error setting tap device up: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -262,7 +262,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	ip, ipNet, err = net.ParseCIDR(ips.TapCIDR())
 	if err != nil {
-		errMsg := fmt.Errorf("error parsing tap CIDR %w", err)
+		errMsg := fmt.Errorf("error parsing tap CIDR: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -276,7 +276,7 @@ func (ips *IPSlot) CreateNetwork(
 		},
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error setting address of the tap device %w", err)
+		errMsg := fmt.Errorf("error setting address of the tap device: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -286,7 +286,7 @@ func (ips *IPSlot) CreateNetwork(
 	// Set NS lo device up
 	lo, err := netlink.LinkByName(loNS)
 	if err != nil {
-		errMsg := fmt.Errorf("error finding lo %w", err)
+		errMsg := fmt.Errorf("error finding lo: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -295,7 +295,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	err = netlink.LinkSetUp(lo)
 	if err != nil {
-		errMsg := fmt.Errorf("error setting lo device up %w", err)
+		errMsg := fmt.Errorf("error setting lo device up: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -308,7 +308,7 @@ func (ips *IPSlot) CreateNetwork(
 		Gw:    net.ParseIP(ips.VethIP()),
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error adding default NS route %w", err)
+		errMsg := fmt.Errorf("error adding default NS route: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -317,7 +317,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	tables, err := iptables.New()
 	if err != nil {
-		errMsg := fmt.Errorf("error initializing iptables %w", err)
+		errMsg := fmt.Errorf("error initializing iptables: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -327,7 +327,7 @@ func (ips *IPSlot) CreateNetwork(
 	// Add NAT routing rules to NS
 	err = tables.Append("nat", "POSTROUTING", "-o", ips.VpeerName(), "-s", ips.NamespaceSnapshotIP(), "-j", "SNAT", "--to", ips.HostSnapshotIP())
 	if err != nil {
-		errMsg := fmt.Errorf("error creating postrouting rule to vpeer %w", err)
+		errMsg := fmt.Errorf("error creating postrouting rule to vpeer: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -336,7 +336,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	err = tables.Append("nat", "PREROUTING", "-i", ips.VpeerName(), "-d", ips.HostSnapshotIP(), "-j", "DNAT", "--to", ips.NamespaceSnapshotIP())
 	if err != nil {
-		errMsg := fmt.Errorf("error creating postrouting rule from vpeer %w", err)
+		errMsg := fmt.Errorf("error creating postrouting rule from vpeer: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -346,7 +346,7 @@ func (ips *IPSlot) CreateNetwork(
 	// Go back to original namespace
 	err = netns.Set(hostNS)
 	if err != nil {
-		errMsg := fmt.Errorf("error setting network namespace to %s %w", hostNS.String(), err)
+		errMsg := fmt.Errorf("error setting network namespace to %s: %w", hostNS.String(), err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -356,7 +356,7 @@ func (ips *IPSlot) CreateNetwork(
 	// Add routing from host to FC namespace
 	_, ipNet, err = net.ParseCIDR(ips.HostSnapshotCIDR())
 	if err != nil {
-		errMsg := fmt.Errorf("error parsing host snapshot CIDR %w", err)
+		errMsg := fmt.Errorf("error parsing host snapshot CIDR: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -368,7 +368,7 @@ func (ips *IPSlot) CreateNetwork(
 		Dst: ipNet,
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error adding route from host to FC %w", err)
+		errMsg := fmt.Errorf("error adding route from host to FC: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -378,7 +378,7 @@ func (ips *IPSlot) CreateNetwork(
 	// Add host forwarding rules
 	err = tables.Append("filter", "FORWARD", "-i", ips.VethName(), "-o", hostDefaultGateway, "-j", "ACCEPT")
 	if err != nil {
-		errMsg := fmt.Errorf("error creating forwarding rule to default gateway %w", err)
+		errMsg := fmt.Errorf("error creating forwarding rule to default gateway: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -387,7 +387,7 @@ func (ips *IPSlot) CreateNetwork(
 
 	err = tables.Append("filter", "FORWARD", "-i", hostDefaultGateway, "-o", ips.VethName(), "-j", "ACCEPT")
 	if err != nil {
-		errMsg := fmt.Errorf("error creating forwarding rule from default gateway %w", err)
+		errMsg := fmt.Errorf("error creating forwarding rule from default gateway: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -397,7 +397,7 @@ func (ips *IPSlot) CreateNetwork(
 	// Add host postrouting rules
 	err = tables.Append("nat", "POSTROUTING", "-s", ips.HostSnapshotCIDR(), "-o", hostDefaultGateway, "-j", "MASQUERADE")
 	if err != nil {
-		errMsg := fmt.Errorf("error creating postrouting rule %w", err)
+		errMsg := fmt.Errorf("error creating postrouting rule: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -408,7 +408,7 @@ func (ips *IPSlot) CreateNetwork(
 	hosts.AddHost(ips.HostSnapshotIP(), ips.InstanceID)
 	err = hosts.Save()
 	if err != nil {
-		errMsg := fmt.Errorf("error adding env instance to etc hosts %w", err)
+		errMsg := fmt.Errorf("error adding env instance to etc hosts: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -425,7 +425,7 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, ho
 	hosts.RemoveHost(ipSlot.InstanceID)
 	err := hosts.Save()
 	if err != nil {
-		errMsg := fmt.Errorf("error removing env instance to etc hosts %w", err)
+		errMsg := fmt.Errorf("error removing env instance to etc hosts: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "removed env instance to etc hosts")
@@ -433,7 +433,7 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, ho
 
 	tables, err := iptables.New()
 	if err != nil {
-		errMsg := fmt.Errorf("error initializing iptables %w", err)
+		errMsg := fmt.Errorf("error initializing iptables: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "initialized iptables")
@@ -441,7 +441,7 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, ho
 		// Delete host forwarding rules
 		err = tables.Delete("filter", "FORWARD", "-i", ipSlot.VethName(), "-o", hostDefaultGateway, "-j", "ACCEPT")
 		if err != nil {
-			errMsg := fmt.Errorf("error deleting host forwarding rule to default gateway %w", err)
+			errMsg := fmt.Errorf("error deleting host forwarding rule to default gateway: %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "deleted host forwarding rule to default gateway")
@@ -449,7 +449,7 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, ho
 
 		err = tables.Delete("filter", "FORWARD", "-i", hostDefaultGateway, "-o", ipSlot.VethName(), "-j", "ACCEPT")
 		if err != nil {
-			errMsg := fmt.Errorf("error deleting host forwarding rule from default gateway %w", err)
+			errMsg := fmt.Errorf("error deleting host forwarding rule from default gateway: %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "deleted host forwarding rule from default gateway")
@@ -458,7 +458,7 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, ho
 		// Delete host postrouting rules
 		err = tables.Delete("nat", "POSTROUTING", "-s", ipSlot.HostSnapshotCIDR(), "-o", hostDefaultGateway, "-j", "MASQUERADE")
 		if err != nil {
-			errMsg := fmt.Errorf("error deleting host postrouting rule %w", err)
+			errMsg := fmt.Errorf("error deleting host postrouting rule: %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "deleted host postrouting rule")
@@ -468,7 +468,7 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, ho
 	// Delete routing from host to FC namespace
 	_, ipNet, err := net.ParseCIDR(ipSlot.HostSnapshotCIDR())
 	if err != nil {
-		errMsg := fmt.Errorf("error parsing host snapshot CIDR %w", err)
+		errMsg := fmt.Errorf("error parsing host snapshot CIDR: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "parsed CIDR")
@@ -478,7 +478,7 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, ho
 			Dst: ipNet,
 		})
 		if err != nil {
-			errMsg := fmt.Errorf("error deleting route from host to FC %w", err)
+			errMsg := fmt.Errorf("error deleting route from host to FC: %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "deleted route from host to FC")
@@ -491,14 +491,14 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, ho
 	// the same name immediately after deleting the namespace.
 	veth, err := netlink.LinkByName(ipSlot.VethName())
 	if err != nil {
-		errMsg := fmt.Errorf("error finding veth %w", err)
+		errMsg := fmt.Errorf("error finding veth: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "found veth")
 
 		err = netlink.LinkDel(veth)
 		if err != nil {
-			errMsg := fmt.Errorf("error deleting veth device %w", err)
+			errMsg := fmt.Errorf("error deleting veth device: %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "deleted veth device")
@@ -507,7 +507,7 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, ho
 
 	err = netns.DeleteNamed(ipSlot.NamespaceID())
 	if err != nil {
-		errMsg := fmt.Errorf("error deleting namespace %w", err)
+		errMsg := fmt.Errorf("error deleting namespace: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "deleted namespace")
