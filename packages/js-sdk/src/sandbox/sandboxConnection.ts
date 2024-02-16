@@ -183,9 +183,10 @@ export class SandboxConnection {
    * @param apiKey API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
    */
   static async kill(sandboxID: string, apiKey?: string): Promise<void> {
+    const id = sandboxID.split('-')[0]
     apiKey = getApiKey(apiKey)
     try {
-      await killSandbox(apiKey, {sandboxID})
+      await killSandbox(apiKey, {sandboxID: id})
     } catch (e) {
       if (e instanceof killSandbox.Error) {
         const error = e.getActualType()
@@ -546,14 +547,14 @@ export class SandboxConnection {
     try {
       // eslint-disable-next-line no-constant-condition
       while (true) {
+        await wait(SANDBOX_REFRESH_PERIOD)
+
         if (!this.isOpen) {
           this.logger.debug?.(
             `Cannot refresh sandbox ${this.id} - it was closed`,
           )
           return
         }
-
-        await wait(SANDBOX_REFRESH_PERIOD)
 
         try {
           await refreshSandbox(this.apiKey, {
