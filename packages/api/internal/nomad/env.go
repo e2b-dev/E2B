@@ -23,7 +23,7 @@ const (
 	buildJobName          = "env-build"
 	buildJobNameWithSlash = buildJobName + "/"
 
-	buildFinishTimeout = time.Minute * 30
+	buildFinishTimeout = time.Hour
 
 	deleteJobName          = "env-delete"
 	deleteJobNameWithSlash = deleteJobName + "/"
