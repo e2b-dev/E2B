@@ -1,0 +1,38 @@
+name: JS SDK Release Candidate
+
+on:
+  pull_request:
+    types: [ labeled ]
+
+jobs:
+  build:
+    if: ${{ github.event.label.name == 'rc' }}
+    runs-on: ubuntu-latest
+    defaults:
+        run:
+            working-directory: packages/js-sdk
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: pnpm/action-setup@v2
+
+    - name: Setup Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: pnpm
+
+    - name: Configure pnpm
+      run: |
+        pnpm config set auto-install-peers true
+        pnpm config set exclude-links-from-lockfile true
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Release Candidate
+      run: |
+        npm version prerelease --preid=${{ github.ref_name ||
+        npm publish --tag rc --dry-run
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
