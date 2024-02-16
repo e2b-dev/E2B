@@ -15,20 +15,22 @@ export async function create(lifetime: number, opts: SandboxOpts={}): Promise<st
 }
 
 /**
- * Starts a new process.
+ * Executes a command in a sandbox and waits until it finishes.
  * @overload
+ * @param cmd Command to run
  * @param sandboxId Sandbox ID
  * @returns Process output
  */
 /**
- * Starts a new process and wait until it finishes.
+ * Executes a command in a sandbox and waits until it finishes.
+ * @param cmd Command to run
  * @param sandboxID Sandbox ID
  * @param opts Process options
  * @returns Process output
  */
-export async function exec(sandboxID: string, opts: ProcessOpts & {apiKey: string}): Promise<ProcessOutput> {
-  const s = await Sandbox.reconnect({sandboxID, apiKey: opts.apiKey })
-  const result = await s.process.startAndWait(opts)
+export async function exec(cmd: string, sandboxID: string, opts?: Omit<ProcessOpts, 'cmd'> & {apiKey: string}): Promise<ProcessOutput> {
+  const s = await Sandbox.reconnect({sandboxID, apiKey: opts?.apiKey })
+  const result = await s.process.startAndWait({...opts, cmd})
   await s.close()
   return result
 }
