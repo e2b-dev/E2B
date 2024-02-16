@@ -5,11 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"syscall"
 	"time"
 
 	"github.com/firecracker-microvm/firecracker-go-sdk"
@@ -297,37 +295,13 @@ func (fc *FC) Stop(ctx context.Context, tracer trace.Tracer) error {
 	))
 	defer childSpan.End()
 
-	err := fc.Cmd.Process.Signal(syscall.SIGTERM)
+	err := fc.Cmd.Process.Kill()
 	if err != nil {
-		errMsg := fmt.Errorf("failed to send SIGTERM to FC process: %w", err)
+		errMsg := fmt.Errorf("failed to send KILL to FC process: %w", err)
 
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
-		telemetry.ReportEvent(childCtx, "sent SIGTERM to FC process")
-	}
-
-	pid, pErr := strconv.Atoi(fc.Pid)
-	if pErr == nil {
-		timeout := time.After(10 * time.Second)
-
-	pidCheck:
-		for {
-			select {
-			case <-timeout:
-				fc.Cmd.Process.Kill()
-				break pidCheck
-			default:
-				process, err := os.FindProcess(int(pid))
-				if err != nil {
-					break pidCheck
-				}
-
-				if process.Signal(syscall.Signal(0)) != nil {
-					break pidCheck
-				}
-			}
-			time.Sleep(fcKillCheckInternval)
-		}
+		telemetry.ReportEvent(childCtx, "sent KILL to FC process")
 	}
 
 	return nil
