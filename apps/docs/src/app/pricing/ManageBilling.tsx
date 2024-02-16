@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/Button'
+import { ArrowRight } from 'lucide-react'
 import { useUser } from '@/utils/useUser'
 
 function ManageBilling() {
@@ -19,11 +19,11 @@ function ManageBilling() {
   }
 
   return (
-    <div className="mb-8 flex flex-col items-start justify-start gap-4">
-      <div className="flex flex-col items-start justify-start"></div>
+    <div className="mb-8 flex items-center justify-start gap-1">
       <a href={url} target="_blank" rel="noreferrer">
-        <Button>Manage Billing</Button>
+        Manage Billing
       </a>
+      <ArrowRight size={16} />
     </div>
   )
 }
