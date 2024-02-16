@@ -34,6 +34,7 @@ const (
 	ToMBShift      = 20
 	// Max size of the rootfs file in MB.
 	maxRootfsSize = 15000 << ToMBShift
+	cacheTimeout  = "48h"
 )
 
 type Rootfs struct {
@@ -329,10 +330,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 			}
 
 			// Move prunning to separate goroutine
-			cacheTimeout := filters.Arg("until", "6h")
+			cacheTimeoutArg := filters.Arg("until", cacheTimeout)
 
 			_, err = r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
-				Filters: filters.NewArgs(cacheTimeout),
+				Filters: filters.NewArgs(cacheTimeoutArg),
 				All:     true,
 			})
 			if err != nil {
