@@ -50,6 +50,9 @@ type ServerInterface interface {
 	// (POST /sandboxes)
 	PostSandboxes(c *gin.Context)
 
+	// (DELETE /sandboxes/{sandboxID})
+	DeleteSandboxesSandboxID(c *gin.Context, sandboxID SandboxID)
+
 	// (POST /sandboxes/{sandboxID}/refreshes)
 	PostSandboxesSandboxIDRefreshes(c *gin.Context, sandboxID SandboxID)
 
@@ -341,6 +344,32 @@ func (siw *ServerInterfaceWrapper) PostSandboxes(c *gin.Context) {
 	siw.Handler.PostSandboxes(c)
 }
 
+// DeleteSandboxesSandboxID operation middleware
+func (siw *ServerInterfaceWrapper) DeleteSandboxesSandboxID(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "sandboxID" -------------
+	var sandboxID SandboxID
+
+	err = runtime.BindStyledParameter("simple", false, "sandboxID", c.Param("sandboxID"), &sandboxID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter sandboxID: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(ApiKeyAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.DeleteSandboxesSandboxID(c, sandboxID)
+}
+
 // PostSandboxesSandboxIDRefreshes operation middleware
 func (siw *ServerInterfaceWrapper) PostSandboxesSandboxIDRefreshes(c *gin.Context) {
 
@@ -567,6 +596,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.POST(options.BaseURL+"/instances/:instanceID/refreshes", wrapper.PostInstancesInstanceIDRefreshes)
 	router.GET(options.BaseURL+"/sandboxes", wrapper.GetSandboxes)
 	router.POST(options.BaseURL+"/sandboxes", wrapper.PostSandboxes)
+	router.DELETE(options.BaseURL+"/sandboxes/:sandboxID", wrapper.DeleteSandboxesSandboxID)
 	router.POST(options.BaseURL+"/sandboxes/:sandboxID/refreshes", wrapper.PostSandboxesSandboxIDRefreshes)
 	router.GET(options.BaseURL+"/templates", wrapper.GetTemplates)
 	router.POST(options.BaseURL+"/templates", wrapper.PostTemplates)

@@ -96,6 +96,11 @@ func (c *InstanceCache) KeepAliveFor(instanceID string, duration time.Duration) 
 	return nil
 }
 
+// Kill the instance and remove it from the cache.
+func (c *InstanceCache) Kill(instanceID string) {
+	c.cache.Delete(instanceID)
+}
+
 // Get the item from the cache.
 func (c *InstanceCache) Get(instanceID string) (*ttlcache.Item[string, InstanceInfo], error) {
 	item := c.cache.Get(instanceID, ttlcache.WithDisableTouchOnHit[string, InstanceInfo]())
