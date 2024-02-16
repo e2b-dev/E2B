@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/google/uuid"
 	middleware "github.com/oapi-codegen/gin-middleware"
@@ -25,7 +27,7 @@ type authenticator[T any] struct {
 	headerKey          string
 	prefix             string
 	removePrefix       string
-	validationFunction func(context.Context, string) (T, error)
+	validationFunction func(context.Context, string) (T, *api.APIError)
 	contextKey         string
 	errorMessage       string
 }
@@ -61,13 +63,17 @@ func (a *authenticator[T]) Authenticate(ctx context.Context, input *openapi3filt
 	// Now, we need to get the API key from the request
 	apiKey, err := a.getAPIKeyFromRequest(input.RequestValidationInput.Request)
 	if err != nil {
+		telemetry.ReportCriticalError(ctx, fmt.Errorf("%v %w", a.errorMessage, err))
+
 		return fmt.Errorf("%v %w", a.errorMessage, err)
 	}
 
 	// If the API key is valid, we will get a result back
-	result, err := a.validationFunction(ctx, apiKey)
-	if err != nil {
-		return fmt.Errorf("%s %w", a.errorMessage, err)
+	result, validationError := a.validationFunction(ctx, apiKey)
+	if validationError != nil {
+		telemetry.ReportError(ctx, fmt.Errorf("%s %w", a.errorMessage, validationError.Err))
+
+		return fmt.Errorf(a.errorMessage)
 	}
 
 	// Set the property on the gin context
@@ -76,7 +82,7 @@ func (a *authenticator[T]) Authenticate(ctx context.Context, input *openapi3filt
 	return nil
 }
 
-func CreateAuthenticationFunc(teamValidationFunction func(context.Context, string) (models.Team, error), userValidationFunction func(context.Context, string) (uuid.UUID, error)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+func CreateAuthenticationFunc(teamValidationFunction func(context.Context, string) (models.Team, *api.APIError), userValidationFunction func(context.Context, string) (uuid.UUID, *api.APIError)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 	apiKeyValidator := authenticator[models.Team]{
 		securitySchemeName: "ApiKeyAuth",
 		headerKey:          "X-API-Key",
@@ -84,7 +90,7 @@ func CreateAuthenticationFunc(teamValidationFunction func(context.Context, strin
 		removePrefix:       "",
 		validationFunction: teamValidationFunction,
 		contextKey:         constants.TeamContextKey,
-		errorMessage:       "invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key:",
+		errorMessage:       "Invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key.",
 	}
 	accessTokenValidator := authenticator[uuid.UUID]{
 		securitySchemeName: "AccessTokenAuth",
@@ -93,7 +99,7 @@ func CreateAuthenticationFunc(teamValidationFunction func(context.Context, strin
 		removePrefix:       "Bearer ",
 		validationFunction: userValidationFunction,
 		contextKey:         constants.UserIDContextKey,
-		errorMessage:       "invalid Access token, try to login again by running `e2b login`:",
+		errorMessage:       "Invalid Access token, try to login again by running `e2b login`.",
 	}
 
 	return func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {

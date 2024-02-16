@@ -193,27 +193,27 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
 
-func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (models.Team, error) {
+func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (models.Team, *api.APIError) {
 	team, err := a.supabase.GetTeamAuth(ctx, apiKey)
 	if err != nil {
-		return models.Team{}, fmt.Errorf("failed to get get team from db for api key: %w", err)
-	}
-
-	if team == nil {
-		return models.Team{}, fmt.Errorf("failed to get a team from api key")
+		return models.Team{}, &api.APIError{
+			Err:       fmt.Errorf("failed to get the team from db for an api key: %w", err),
+			ClientMsg: "Cannot get the team for the given API key",
+			Code:      http.StatusUnauthorized,
+		}
 	}
 
 	return *team, nil
 }
 
-func (a *APIStore) GetUserFromAccessToken(ctx context.Context, accessToken string) (uuid.UUID, error) {
+func (a *APIStore) GetUserFromAccessToken(ctx context.Context, accessToken string) (uuid.UUID, *api.APIError) {
 	userID, err := a.supabase.GetUserID(ctx, accessToken)
 	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("failed to get get user from db for access token: %w", err)
-	}
-
-	if userID == nil {
-		return uuid.UUID{}, fmt.Errorf("failed to get a user from access token")
+		return uuid.UUID{}, &api.APIError{
+			Err:       fmt.Errorf("failed to get the user from db for an access token: %w", err),
+			ClientMsg: "Cannot get the user for the given access token",
+			Code:      http.StatusUnauthorized,
+		}
 	}
 
 	return *userID, nil
