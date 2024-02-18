@@ -1,24 +1,18 @@
-const { experimental_stateless } = require('../dist/index')
-const {
-  create,
-  exec,
-  kill,
-  downloadFile,
-} = experimental_stateless
+const e2b = require('../dist/index')
 
 async function main() {
   const apiKey = '...'
   const lifetime = 60_000 * 5 // 5 minutes
 
   console.log('> Creating sandbox...')
-  const sandboxID = await create({ apiKey }, {
+  const sandboxID = await e2b.experimental_stateless.create({ apiKey }, {
     keepAliveFor: lifetime,
   })
   console.log('...sandbox created, sandbox id -', sandboxID)
 
   const cmd = 'echo hello world'
   console.log(`\n> Executing command "${cmd}"...`)
-  await exec({
+  await e2b.experimental_stateless.exec({
     apiKey,
     sandboxID
   }, {
@@ -33,7 +27,7 @@ async function main() {
   console.log('...command finished')
 
   console.log('\n> Downloading file...')
-  const content = await downloadFile({
+  const content = await e2b.experimental_stateless.downloadFile({
     apiKey,
     sandboxID,
   }, {
@@ -42,7 +36,7 @@ async function main() {
   console.log('...downloaded file:\n', content.toString())
 
   console.log(`\n> Killing sandbox "${sandboxID}"...`)
-  await kill({
+  await e2b.experimental_stateless.kill({
     apiKey,
     sandboxID,
   })
@@ -53,3 +47,4 @@ main()
   .then(() => {
     console.log('\n\nFinished')
   })
+
