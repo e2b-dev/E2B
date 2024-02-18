@@ -32,4 +32,6 @@ export type { Action } from './sandbox/index'
 
 export { Sandbox }
 export default Sandbox
-export * as stateless from './sandbox/stateless'
+
+// Experimental
+export * as experimental_stateless from './sandbox/stateless'
