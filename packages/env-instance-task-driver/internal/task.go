@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/driver"
@@ -23,7 +24,8 @@ type (
 		InstanceID string `codec:"InstanceID"`
 		EnvID      string `codec:"EnvID"`
 
-		KernelVersion string `codec:"KernelVersion"`
+		KernelVersion      string `codec:"KernelVersion"`
+		FirecrackerVersion string `codec:"FirecrackerVersion"`
 
 		TeamID string `codec:"TeamID"`
 
@@ -45,7 +47,8 @@ var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 	"InstanceID": hclspec.NewAttr("InstanceID", "string", true),
 	"EnvID":      hclspec.NewAttr("EnvID", "string", true),
 
-	"KernelVersion": hclspec.NewAttr("KernelVersion", "string", true),
+	"KernelVersion":      hclspec.NewAttr("KernelVersion", "string", true),
+	"FirecrackerVersion": hclspec.NewAttr("FirecrackerVersion", "string", true),
 
 	"TeamID": hclspec.NewAttr("TeamID", "string", false),
 
@@ -96,19 +99,20 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		childCtx,
 		tracer,
 		&instance.InstanceConfig{
-			EnvID:            taskConfig.EnvID,
-			AllocID:          cfg.AllocID,
-			InstanceID:       taskConfig.InstanceID,
-			TraceID:          taskConfig.TraceID,
-			TeamID:           taskConfig.TeamID,
-			ConsulToken:      taskConfig.ConsulToken,
-			LogsProxyAddress: taskConfig.LogsProxyAddress,
-			KernelVersion:    taskConfig.KernelVersion,
-			NodeID:           cfg.Env["NOMAD_NODE_ID"],
-			EnvsDisk:         cfg.Env["ENVS_DISK"],
-			KernelsDir:       cfg.Env["KERNELS_DIR"],
-			KernelMountDir:   cfg.Env["KERNEL_MOUNT_DIR"],
-			KernelName:       cfg.Env["KERNEL_NAME"],
+			EnvID:                 taskConfig.EnvID,
+			AllocID:               cfg.AllocID,
+			InstanceID:            taskConfig.InstanceID,
+			TraceID:               taskConfig.TraceID,
+			TeamID:                taskConfig.TeamID,
+			ConsulToken:           taskConfig.ConsulToken,
+			LogsProxyAddress:      taskConfig.LogsProxyAddress,
+			KernelVersion:         taskConfig.KernelVersion,
+			NodeID:                cfg.Env["NOMAD_NODE_ID"],
+			EnvsDisk:              cfg.Env["ENVS_DISK"],
+			KernelsDir:            cfg.Env["KERNELS_DIR"],
+			KernelMountDir:        cfg.Env["KERNEL_MOUNT_DIR"],
+			KernelName:            cfg.Env["KERNEL_NAME"],
+			FirecrackerBinaryPath: filepath.Join(cfg.Env["FC_VERSIONS_DIR"], taskConfig.FirecrackerVersion),
 		},
 		de.hosts,
 	)

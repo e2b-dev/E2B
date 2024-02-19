@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
@@ -23,7 +24,8 @@ var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 	"BuildID": hclspec.NewAttr("BuildID", "string", true),
 	"EnvID":   hclspec.NewAttr("EnvID", "string", true),
 
-	"KernelVersion": hclspec.NewAttr("KernelVersion", "string", true),
+	"KernelVersion":      hclspec.NewAttr("KernelVersion", "string", true),
+	"FirecrackerVersion": hclspec.NewAttr("FirecrackerVersion", "string", true),
 
 	"StartCmd": hclspec.NewAttr("StartCmd", "string", false),
 
@@ -45,7 +47,8 @@ type (
 		BuildID string `codec:"BuildID"`
 		EnvID   string `codec:"EnvID"`
 
-		KernelVersion string `codec:"KernelVersion"`
+		KernelVersion      string `codec:"KernelVersion"`
+		FirecrackerVersion string `codec:"FirecrackerVersion"`
 
 		StartCmd string `codec:"StartCmd"`
 
@@ -87,7 +90,6 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 	registry := cfg.Env["DOCKER_REGISTRY"]
 	envsDisk := cfg.Env["ENVS_DISK"]
 	envdPath := cfg.Env["ENVD_PATH"]
-	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
 	contextFileName := cfg.Env["CONTEXT_FILE_NAME"]
 	apiSecret := cfg.Env["API_SECRET"]
 	googleServiceAccountBase64 := cfg.Env["GOOGLE_SERVICE_ACCOUNT_BASE64"]
@@ -95,6 +97,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 	kernelsDir := cfg.Env["KERNELS_DIR"]
 	kernelMountDir := cfg.Env["KERNEL_MOUNT_DIR"]
 	kernelName := cfg.Env["KERNEL_NAME"]
+	firecrackerVersionsDir := cfg.Env["FC_VERSIONS_DIR"]
 
 	telemetry.SetAttributes(childCtx,
 		attribute.String("build_id", taskConfig.BuildID),
@@ -107,9 +110,9 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		attribute.String("registry", registry),
 		attribute.String("envs_disk", envsDisk),
 		attribute.String("envd_path", envdPath),
-		attribute.String("firecracker_binary_path", firecrackerBinaryPath),
 		attribute.String("context_file_name", contextFileName),
 		attribute.String("kernel_version", taskConfig.KernelVersion),
+		attribute.String("firecracker_version", taskConfig.FirecrackerVersion),
 	)
 
 	writer := env.NewWriter(taskConfig.EnvID, taskConfig.BuildID, apiSecret)
@@ -128,7 +131,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		KernelName:                 kernelName,
 		StartCmd:                   taskConfig.StartCmd,
 		DiskSizeMB:                 taskConfig.DiskSizeMB,
-		FirecrackerBinaryPath:      firecrackerBinaryPath,
+		FirecrackerBinaryPath:      filepath.Join(firecrackerVersionsDir, taskConfig.FirecrackerVersion),
 		EnvdPath:                   envdPath,
 		ContextFileName:            contextFileName,
 		BuildLogsWriter:            writer,
