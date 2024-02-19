@@ -42,6 +42,13 @@ kernels_dir="/fc-kernels"
 mkdir -p $kernels_dir
 cp -r /mnt/disks/fc-kernels/* $kernels_dir
 
+# Copy FC versions
+mkdir -p /mnt/disks/fc-versions
+gcsfuse -o=allow_other --implicit-dirs "${FC_VERSIONS_BUCKET_NAME}" /mnt/disks/fc-versions
+fc_versions_dir="/fc-versions"
+mkdir -p $fc_versions_dir
+cp -r /mnt/disks/fc-versions/* $fc_versions_dir
+
 # Mount docker contexts
 mkdir -p /mnt/disks/docker-contexts
 gcsfuse -o=allow_other --implicit-dirs "${DOCKER_CONTEXTS_BUCKET_NAME}" /mnt/disks/docker-contexts

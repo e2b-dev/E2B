@@ -76,3 +76,9 @@ resource "google_storage_bucket_iam_member" "fc_kernels_bucket_iam" {
   role   = "roles/storage.objectViewer"
   member = "serviceAccount:${var.gcp_service_account_email}"
 }
+
+resource "google_storage_bucket_iam_member" "fc_versions_bucket_iam" {
+  bucket = google_storage_bucket.fc_versions_bucket.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${var.gcp_service_account_email}"
+}
