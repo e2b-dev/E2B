@@ -343,7 +343,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 				telemetry.ReportEvent(cleanupContext, "pruned build cache")
 			}
 
-			_, err = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeout))
+			_, err = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeoutArg))
 			if err != nil {
 				errMsg := fmt.Errorf("error pruning images: %w", err)
 				telemetry.ReportError(cleanupContext, errMsg)
@@ -351,7 +351,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 				telemetry.ReportEvent(cleanupContext, "pruned images")
 			}
 
-			_, err = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeout))
+			_, err = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeoutArg))
 			if err != nil {
 				errMsg := fmt.Errorf("error pruning containers: %w", err)
 				telemetry.ReportError(cleanupContext, errMsg)
