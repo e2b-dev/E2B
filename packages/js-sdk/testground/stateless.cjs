@@ -26,12 +26,22 @@ async function main() {
   })
   console.log('...command finished')
 
+  console.log('\n> Uploading file...')
+  await e2b.experimental_stateless.uploadFile({
+    apiKey,
+    sandboxID,
+  }, {
+    path: '/tmp/hello.txt',
+    content: new TextEncoder().encode('hello world'),
+  })
+  console.log('...file uploaded')
+
   console.log('\n> Downloading file...')
   const content = await e2b.experimental_stateless.downloadFile({
     apiKey,
     sandboxID,
   }, {
-    path: '/etc/hosts'
+    path: '/tmp/hello.txt'
   })
   console.log('...downloaded file:\n', content.toString())
 
@@ -47,4 +57,3 @@ main()
   .then(() => {
     console.log('\n\nFinished')
   })
-

@@ -51,3 +51,16 @@ export async function downloadFile({ apiKey, sandboxID }: { sandboxID: string, a
   await s.close()
   return result
 }
+
+/**
+ * Uploads a file to a sandbox.
+ * @param apiKey API key
+ * @param sandboxID ID of the sandbox to which the file will be uploaded
+ * @param path Path where the file will be stored inside the sandbox
+ * @param content The content of the file as a byte array
+ */
+export async function uploadFile({ apiKey, sandboxID }: { sandboxID: string, apiKey?: string }, { path, content }: { path: string, content: Uint8Array }) {
+  const s = await Sandbox.reconnect({ apiKey, sandboxID })
+  await s.filesystem.writeBytes(path, content)
+  await s.close()
+}
