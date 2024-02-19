@@ -5,24 +5,18 @@ set -euo pipefail
 GCP_PROJECT_ID=$1
 
 # Check if the file exists
-if [ -f "kernel_versions.txt" ]; then
-  # Read kernel versions from the file
+if [ -f "firecracker_versions.txt" ]; then
   while IFS= read -r version; do
-    # Download kernel
-
-    stringarray=($version)
-    fc_version=${stringarray[0]}
-    kernel_version=${stringarray[1]}
 
     # Upload kernel to GCP bucket
-    gsutil -h "Cache-Control:no-cache, max-age=0" cp -r "builds/vmlinux-${kernel_version}" "gs://${GCP_PROJECT_ID}-fc-kernels"
+    gsutil -h "Cache-Control:no-cache, max-age=0" cp -r "builds/${version}" "gs://${GCP_PROJECT_ID}-fc-versions"
 
-    rm -rf "builds/${kernel_version}"
-  done <"kernel_versions.txt"
+    rm -rf "builds/${firecracker_version}"
+  done <"firecracker_versions.txt"
 
-  echo "All kernels uploaded to GCP bucket successfully."
+  echo "All FC versions uploaded to GCP bucket successfully."
 else
-  echo "Error: kernel_versions.txt not found."
+  echo "Error: firecracker_versions.txt not found."
 fi
 
 rm -rf builds/*
