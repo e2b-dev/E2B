@@ -139,7 +139,7 @@ func startFC(
 		fsEnv.KernelMountDirPath,
 	)
 
-	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", fsEnv.SocketPath)
+	fcCmd := fmt.Sprintf("%s --api-sock %s", fsEnv.FirecrackerBinaryPath, fsEnv.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
 	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", rootfsMountCmd+kernelMountCmd+inNetNSCmd+fcCmd)

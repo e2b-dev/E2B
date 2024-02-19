@@ -106,6 +106,7 @@ func NewInstance(
 		config.KernelsDir,
 		config.KernelMountDir,
 		config.KernelName,
+		config.FirecrackerBinaryPath,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create env for FC: %w", err)
