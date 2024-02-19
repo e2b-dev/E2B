@@ -54,6 +54,12 @@ func (tc *TierCreate) SetConcurrentInstances(i int64) *TierCreate {
 	return tc
 }
 
+// SetMaxLengthHours sets the "max_length_hours" field.
+func (tc *TierCreate) SetMaxLengthHours(i int64) *TierCreate {
+	tc.mutation.SetMaxLengthHours(i)
+	return tc
+}
+
 // SetID sets the "id" field.
 func (tc *TierCreate) SetID(s string) *TierCreate {
 	tc.mutation.SetID(s)
@@ -124,6 +130,9 @@ func (tc *TierCreate) check() error {
 	if _, ok := tc.mutation.ConcurrentInstances(); !ok {
 		return &ValidationError{Name: "concurrent_instances", err: errors.New(`models: missing required field "Tier.concurrent_instances"`)}
 	}
+	if _, ok := tc.mutation.MaxLengthHours(); !ok {
+		return &ValidationError{Name: "max_length_hours", err: errors.New(`models: missing required field "Tier.max_length_hours"`)}
+	}
 	return nil
 }
 
@@ -180,6 +189,10 @@ func (tc *TierCreate) createSpec() (*Tier, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.ConcurrentInstances(); ok {
 		_spec.SetField(tier.FieldConcurrentInstances, field.TypeInt64, value)
 		_node.ConcurrentInstances = value
+	}
+	if value, ok := tc.mutation.MaxLengthHours(); ok {
+		_spec.SetField(tier.FieldMaxLengthHours, field.TypeInt64, value)
+		_node.MaxLengthHours = value
 	}
 	if nodes := tc.mutation.TeamsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -334,6 +347,24 @@ func (u *TierUpsert) AddConcurrentInstances(v int64) *TierUpsert {
 	return u
 }
 
+// SetMaxLengthHours sets the "max_length_hours" field.
+func (u *TierUpsert) SetMaxLengthHours(v int64) *TierUpsert {
+	u.Set(tier.FieldMaxLengthHours, v)
+	return u
+}
+
+// UpdateMaxLengthHours sets the "max_length_hours" field to the value that was provided on create.
+func (u *TierUpsert) UpdateMaxLengthHours() *TierUpsert {
+	u.SetExcluded(tier.FieldMaxLengthHours)
+	return u
+}
+
+// AddMaxLengthHours adds v to the "max_length_hours" field.
+func (u *TierUpsert) AddMaxLengthHours(v int64) *TierUpsert {
+	u.Add(tier.FieldMaxLengthHours, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -477,6 +508,27 @@ func (u *TierUpsertOne) AddConcurrentInstances(v int64) *TierUpsertOne {
 func (u *TierUpsertOne) UpdateConcurrentInstances() *TierUpsertOne {
 	return u.Update(func(s *TierUpsert) {
 		s.UpdateConcurrentInstances()
+	})
+}
+
+// SetMaxLengthHours sets the "max_length_hours" field.
+func (u *TierUpsertOne) SetMaxLengthHours(v int64) *TierUpsertOne {
+	return u.Update(func(s *TierUpsert) {
+		s.SetMaxLengthHours(v)
+	})
+}
+
+// AddMaxLengthHours adds v to the "max_length_hours" field.
+func (u *TierUpsertOne) AddMaxLengthHours(v int64) *TierUpsertOne {
+	return u.Update(func(s *TierUpsert) {
+		s.AddMaxLengthHours(v)
+	})
+}
+
+// UpdateMaxLengthHours sets the "max_length_hours" field to the value that was provided on create.
+func (u *TierUpsertOne) UpdateMaxLengthHours() *TierUpsertOne {
+	return u.Update(func(s *TierUpsert) {
+		s.UpdateMaxLengthHours()
 	})
 }
 
@@ -789,6 +841,27 @@ func (u *TierUpsertBulk) AddConcurrentInstances(v int64) *TierUpsertBulk {
 func (u *TierUpsertBulk) UpdateConcurrentInstances() *TierUpsertBulk {
 	return u.Update(func(s *TierUpsert) {
 		s.UpdateConcurrentInstances()
+	})
+}
+
+// SetMaxLengthHours sets the "max_length_hours" field.
+func (u *TierUpsertBulk) SetMaxLengthHours(v int64) *TierUpsertBulk {
+	return u.Update(func(s *TierUpsert) {
+		s.SetMaxLengthHours(v)
+	})
+}
+
+// AddMaxLengthHours adds v to the "max_length_hours" field.
+func (u *TierUpsertBulk) AddMaxLengthHours(v int64) *TierUpsertBulk {
+	return u.Update(func(s *TierUpsert) {
+		s.AddMaxLengthHours(v)
+	})
+}
+
+// UpdateMaxLengthHours sets the "max_length_hours" field to the value that was provided on create.
+func (u *TierUpsertBulk) UpdateMaxLengthHours() *TierUpsertBulk {
+	return u.Update(func(s *TierUpsert) {
+		s.UpdateMaxLengthHours()
 	})
 }
 

@@ -87,7 +87,7 @@ func NewBuildCache(counter metric.Int64UpDownCounter) *BuildCache {
 	}
 }
 
-// Get returns the build info
+// Get returns the build info.
 func (c *BuildCache) Get(envID string, buildID uuid.UUID) (*BuildInfo, error) {
 	item := c.cache.Get(envID)
 
@@ -108,7 +108,7 @@ func (c *BuildCache) Get(envID string, buildID uuid.UUID) (*BuildInfo, error) {
 	return value, nil
 }
 
-// Append appends logs to the build
+// Append appends logs to the build.
 func (c *BuildCache) Append(envID string, buildID uuid.UUID, logs []string) error {
 	item, err := c.Get(envID, buildID)
 	if err != nil {
@@ -122,7 +122,7 @@ func (c *BuildCache) Append(envID string, buildID uuid.UUID, logs []string) erro
 	return nil
 }
 
-// Create creates a new build if it doesn't exist in the cache or the build was already finished
+// Create creates a new build if it doesn't exist in the cache or the build was already finished.
 func (c *BuildCache) Create(envID string, buildID uuid.UUID, teamID uuid.UUID) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -147,7 +147,7 @@ func (c *BuildCache) Create(envID string, buildID uuid.UUID, teamID uuid.UUID) e
 	return nil
 }
 
-// SetDone marks the build as finished
+// SetDone marks the build as finished.
 func (c *BuildCache) SetDone(envID string, buildID uuid.UUID, status api.TemplateBuildStatus) error {
 	item, err := c.Get(envID, buildID)
 	if err != nil {

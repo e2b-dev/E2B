@@ -7,6 +7,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
     {{ .AliasKey }} = "{{ .Alias }}"
     {{ .InstanceIDKey }} = "{{ .InstanceID }}"
     {{ .TeamIDKey }} = "{{ .TeamID }}"
+    {{ .MaxInstanceLengthKey}} = "{{ .MaxInstanceLength }}"
     {{ .MetadataKey }} = "{{ .Metadata }}"
   }
 
