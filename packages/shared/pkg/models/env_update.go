@@ -263,6 +263,20 @@ func (eu *EnvUpdate) SetNillableKernelVersion(s *string) *EnvUpdate {
 	return eu
 }
 
+// SetFirecrackerVersion sets the "firecracker_version" field.
+func (eu *EnvUpdate) SetFirecrackerVersion(s string) *EnvUpdate {
+	eu.mutation.SetFirecrackerVersion(s)
+	return eu
+}
+
+// SetNillableFirecrackerVersion sets the "firecracker_version" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableFirecrackerVersion(s *string) *EnvUpdate {
+	if s != nil {
+		eu.SetFirecrackerVersion(*s)
+	}
+	return eu
+}
+
 // SetTeam sets the "team" edge to the Team entity.
 func (eu *EnvUpdate) SetTeam(t *Team) *EnvUpdate {
 	return eu.SetTeamID(t.ID)
@@ -424,6 +438,9 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := eu.mutation.KernelVersion(); ok {
 		_spec.SetField(env.FieldKernelVersion, field.TypeString, value)
+	}
+	if value, ok := eu.mutation.FirecrackerVersion(); ok {
+		_spec.SetField(env.FieldFirecrackerVersion, field.TypeString, value)
 	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -758,6 +775,20 @@ func (euo *EnvUpdateOne) SetNillableKernelVersion(s *string) *EnvUpdateOne {
 	return euo
 }
 
+// SetFirecrackerVersion sets the "firecracker_version" field.
+func (euo *EnvUpdateOne) SetFirecrackerVersion(s string) *EnvUpdateOne {
+	euo.mutation.SetFirecrackerVersion(s)
+	return euo
+}
+
+// SetNillableFirecrackerVersion sets the "firecracker_version" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableFirecrackerVersion(s *string) *EnvUpdateOne {
+	if s != nil {
+		euo.SetFirecrackerVersion(*s)
+	}
+	return euo
+}
+
 // SetTeam sets the "team" edge to the Team entity.
 func (euo *EnvUpdateOne) SetTeam(t *Team) *EnvUpdateOne {
 	return euo.SetTeamID(t.ID)
@@ -949,6 +980,9 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	}
 	if value, ok := euo.mutation.KernelVersion(); ok {
 		_spec.SetField(env.FieldKernelVersion, field.TypeString, value)
+	}
+	if value, ok := euo.mutation.FirecrackerVersion(); ok {
+		_spec.SetField(env.FieldFirecrackerVersion, field.TypeString, value)
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{

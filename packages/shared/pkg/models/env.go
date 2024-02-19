@@ -47,6 +47,8 @@ type Env struct {
 	TotalDiskSizeMB int64 `json:"total_disk_size_mb,omitempty"`
 	// KernelVersion holds the value of the "kernel_version" field.
 	KernelVersion string `json:"kernel_version,omitempty"`
+	// FirecrackerVersion holds the value of the "firecracker_version" field.
+	FirecrackerVersion string `json:"firecracker_version,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvQuery when eager-loading is set.
 	Edges        EnvEdges `json:"edges"`
@@ -95,7 +97,7 @@ func (*Env) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case env.FieldBuildCount, env.FieldSpawnCount, env.FieldVcpu, env.FieldRAMMB, env.FieldFreeDiskSizeMB, env.FieldTotalDiskSizeMB:
 			values[i] = new(sql.NullInt64)
-		case env.FieldID, env.FieldDockerfile, env.FieldKernelVersion:
+		case env.FieldID, env.FieldDockerfile, env.FieldKernelVersion, env.FieldFirecrackerVersion:
 			values[i] = new(sql.NullString)
 		case env.FieldCreatedAt, env.FieldUpdatedAt, env.FieldLastSpawnedAt:
 			values[i] = new(sql.NullTime)
@@ -206,6 +208,12 @@ func (e *Env) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				e.KernelVersion = value.String
 			}
+		case env.FieldFirecrackerVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field firecracker_version", values[i])
+			} else if value.Valid {
+				e.FirecrackerVersion = value.String
+			}
 		default:
 			e.selectValues.Set(columns[i], values[i])
 		}
@@ -293,6 +301,9 @@ func (e *Env) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("kernel_version=")
 	builder.WriteString(e.KernelVersion)
+	builder.WriteString(", ")
+	builder.WriteString("firecracker_version=")
+	builder.WriteString(e.FirecrackerVersion)
 	builder.WriteByte(')')
 	return builder.String()
 }

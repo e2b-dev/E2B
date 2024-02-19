@@ -140,7 +140,8 @@ func (n *NomadClient) CreateSandbox(
 	alias,
 	teamID string,
 	metadata map[string]string,
-	kernelVersion string,
+	kernelVersion,
+	firecrackerVersion string,
 ) (*api.Sandbox, *api.APIError) {
 	childCtx, childSpan := t.Start(ctx, "create-instance",
 		trace.WithAttributes(
@@ -174,43 +175,45 @@ func (n *NomadClient) CreateSandbox(
 	var jobDef bytes.Buffer
 
 	jobVars := struct {
-		SpanID           string
-		ConsulToken      string
-		TraceID          string
-		EnvID            string
-		Alias            string
-		InstanceID       string
-		LogsProxyAddress string
-		KernelVersion    string
-		TaskName         string
-		JobName          string
-		EnvsDisk         string
-		TeamID           string
-		EnvIDKey         string
-		AliasKey         string
-		InstanceIDKey    string
-		TeamIDKey        string
-		MetadataKey      string
-		Metadata         string
+		SpanID             string
+		ConsulToken        string
+		TraceID            string
+		EnvID              string
+		Alias              string
+		InstanceID         string
+		LogsProxyAddress   string
+		KernelVersion      string
+		FirecrackerVersion string
+		TaskName           string
+		JobName            string
+		EnvsDisk           string
+		TeamID             string
+		EnvIDKey           string
+		AliasKey           string
+		InstanceIDKey      string
+		TeamIDKey          string
+		MetadataKey        string
+		Metadata           string
 	}{
-		TeamIDKey:        teamIDMetaKey,
-		EnvIDKey:         envIDMetaKey,
-		AliasKey:         aliasMetaKey,
-		InstanceIDKey:    instanceIDMetaKey,
-		MetadataKey:      metadataKey,
-		KernelVersion:    kernelVersion,
-		SpanID:           spanID,
-		TeamID:           teamID,
-		TraceID:          traceID,
-		LogsProxyAddress: logsProxyAddress,
-		ConsulToken:      consulToken,
-		EnvID:            envID,
-		Alias:            strings.ReplaceAll(alias, "\"", "\\\""),
-		InstanceID:       instanceID,
-		TaskName:         defaultTaskName,
-		JobName:          instanceJobName,
-		EnvsDisk:         envsDisk,
-		Metadata:         strings.ReplaceAll(string(metadataSerialized), "\"", "\\\""),
+		TeamIDKey:          teamIDMetaKey,
+		EnvIDKey:           envIDMetaKey,
+		AliasKey:           aliasMetaKey,
+		InstanceIDKey:      instanceIDMetaKey,
+		MetadataKey:        metadataKey,
+		KernelVersion:      kernelVersion,
+		FirecrackerVersion: firecrackerVersion,
+		SpanID:             spanID,
+		TeamID:             teamID,
+		TraceID:            traceID,
+		LogsProxyAddress:   logsProxyAddress,
+		ConsulToken:        consulToken,
+		EnvID:              envID,
+		Alias:              strings.ReplaceAll(alias, "\"", "\\\""),
+		InstanceID:         instanceID,
+		TaskName:           defaultTaskName,
+		JobName:            instanceJobName,
+		EnvsDisk:           envsDisk,
+		Metadata:           strings.ReplaceAll(string(metadataSerialized), "\"", "\\\""),
 	}
 
 	err = envInstanceTemplate.Execute(&jobDef, jobVars)

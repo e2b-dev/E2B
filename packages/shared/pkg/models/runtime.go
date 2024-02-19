@@ -39,6 +39,10 @@ func init() {
 	envDescKernelVersion := envFields[14].Descriptor()
 	// env.DefaultKernelVersion holds the default value on creation for the kernel_version field.
 	env.DefaultKernelVersion = envDescKernelVersion.Default.(string)
+	// envDescFirecrackerVersion is the schema descriptor for firecracker_version field.
+	envDescFirecrackerVersion := envFields[15].Descriptor()
+	// env.DefaultFirecrackerVersion holds the default value on creation for the firecracker_version field.
+	env.DefaultFirecrackerVersion = envDescFirecrackerVersion.Default.(string)
 	envaliasFields := schema.EnvAlias{}.Fields()
 	_ = envaliasFields
 	// envaliasDescIsName is the schema descriptor for is_name field.

@@ -34,10 +34,11 @@ const (
 )
 
 type BuildConfig struct {
-	DiskSizeMB    int64
-	VCpuCount     int64
-	MemoryMB      int64
-	KernelVersion string
+	KernelVersion      string
+	FirecrackerVersion string
+	DiskSizeMB         int64
+	VCpuCount          int64
+	MemoryMB           int64
 }
 
 //go:embed env-build.hcl
@@ -57,6 +58,7 @@ func (n *NomadClient) BuildEnvJob(
 	envID,
 	envKernelVersion,
 	// build is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
+	envFirecrackerVersion,
 	buildID,
 	startCmd,
 	apiSecret,
@@ -74,10 +76,12 @@ func (n *NomadClient) BuildEnvJob(
 		attribute.String("passed_trace_id_hex", traceID),
 		attribute.String("passed_span_id_hex", spanID),
 		attribute.String("env.kernel.version", envKernelVersion),
+		attribute.String("env.firecracker.version", envFirecrackerVersion),
 		attribute.String("env.id", envID),
 		attribute.String("build.id", buildID),
 		attribute.Int64("build.disk_size_mb", vmConfig.DiskSizeMB),
 		attribute.String("build.kernel.version", vmConfig.KernelVersion),
+		attribute.String("build.firecracker.version", vmConfig.FirecrackerVersion),
 		attribute.Int64("build.vcpu_count", vmConfig.VCpuCount),
 		attribute.Int64("build.memory_mb", vmConfig.MemoryMB),
 	)
@@ -99,6 +103,7 @@ func (n *NomadClient) BuildEnvJob(
 		GCPRegion                  string
 		DockerRepositoryName       string
 		KernelVersion              string
+		FirecrackerVersion         string
 		VCpuCount                  int64
 		MemoryMB                   int64
 		DiskSizeMB                 int64
@@ -112,6 +117,7 @@ func (n *NomadClient) BuildEnvJob(
 		VCpuCount:                  vmConfig.VCpuCount,
 		MemoryMB:                   vmConfig.MemoryMB,
 		KernelVersion:              strings.ReplaceAll(vmConfig.KernelVersion, "\"", "\\\""),
+		FirecrackerVersion:         strings.ReplaceAll(vmConfig.FirecrackerVersion, "\"", "\\\""),
 		TraceID:                    traceID,
 		EnvID:                      envID,
 		TaskName:                   defaultTaskName,

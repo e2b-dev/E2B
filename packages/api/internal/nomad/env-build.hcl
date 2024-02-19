@@ -31,6 +31,7 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
         KERNELS_DIR= "/fc-kernels"
         KERNEL_MOUNT_DIR="/fc-vm"
         KERNEL_NAME="vmlinux.bin"
+        FC_VERSIONS_DIR="/fc-versions"
       }
 
       resources {
@@ -42,6 +43,7 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
         StartCmd = "{{ .StartCmd }}"
         BuildID = "{{ .BuildID }}"
         EnvID = "{{ .EnvID }}"
+        FirecrackerVersion = "{{ .FirecrackerVersion }}"
         KernelVersion = "{{ .KernelVersion }}"
         VCpuCount = "{{ .VCpuCount }}"
         DiskSizeMB = "{{ .DiskSizeMB }}"

@@ -12,6 +12,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	DefaultKernelVersion      = "vmlinux-5.10.186"
+	DefaultFirecrackerVersion = "firecracker-v1.5.0"
+)
+
 type Env struct {
 	ent.Schema
 }
@@ -35,7 +40,8 @@ func (Env) Fields() []ent.Field {
 		field.Int64("ram_mb"),
 		field.Int64("free_disk_size_mb"),
 		field.Int64("total_disk_size_mb"),
-		field.String("kernel_version").Default("vmlinux-5.10.186"),
+		field.String("kernel_version").Default(DefaultKernelVersion),
+		field.String("firecracker_version").Default(DefaultFirecrackerVersion),
 	}
 }
 

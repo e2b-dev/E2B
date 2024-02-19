@@ -137,6 +137,11 @@ func KernelVersion(v string) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldKernelVersion, v))
 }
 
+// FirecrackerVersion applies equality check predicate on the "firecracker_version" field. It's identical to FirecrackerVersionEQ.
+func FirecrackerVersion(v string) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldFirecrackerVersion, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldCreatedAt, v))
@@ -705,6 +710,71 @@ func KernelVersionEqualFold(v string) predicate.Env {
 // KernelVersionContainsFold applies the ContainsFold predicate on the "kernel_version" field.
 func KernelVersionContainsFold(v string) predicate.Env {
 	return predicate.Env(sql.FieldContainsFold(FieldKernelVersion, v))
+}
+
+// FirecrackerVersionEQ applies the EQ predicate on the "firecracker_version" field.
+func FirecrackerVersionEQ(v string) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldFirecrackerVersion, v))
+}
+
+// FirecrackerVersionNEQ applies the NEQ predicate on the "firecracker_version" field.
+func FirecrackerVersionNEQ(v string) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldFirecrackerVersion, v))
+}
+
+// FirecrackerVersionIn applies the In predicate on the "firecracker_version" field.
+func FirecrackerVersionIn(vs ...string) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldFirecrackerVersion, vs...))
+}
+
+// FirecrackerVersionNotIn applies the NotIn predicate on the "firecracker_version" field.
+func FirecrackerVersionNotIn(vs ...string) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldFirecrackerVersion, vs...))
+}
+
+// FirecrackerVersionGT applies the GT predicate on the "firecracker_version" field.
+func FirecrackerVersionGT(v string) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldFirecrackerVersion, v))
+}
+
+// FirecrackerVersionGTE applies the GTE predicate on the "firecracker_version" field.
+func FirecrackerVersionGTE(v string) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldFirecrackerVersion, v))
+}
+
+// FirecrackerVersionLT applies the LT predicate on the "firecracker_version" field.
+func FirecrackerVersionLT(v string) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldFirecrackerVersion, v))
+}
+
+// FirecrackerVersionLTE applies the LTE predicate on the "firecracker_version" field.
+func FirecrackerVersionLTE(v string) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldFirecrackerVersion, v))
+}
+
+// FirecrackerVersionContains applies the Contains predicate on the "firecracker_version" field.
+func FirecrackerVersionContains(v string) predicate.Env {
+	return predicate.Env(sql.FieldContains(FieldFirecrackerVersion, v))
+}
+
+// FirecrackerVersionHasPrefix applies the HasPrefix predicate on the "firecracker_version" field.
+func FirecrackerVersionHasPrefix(v string) predicate.Env {
+	return predicate.Env(sql.FieldHasPrefix(FieldFirecrackerVersion, v))
+}
+
+// FirecrackerVersionHasSuffix applies the HasSuffix predicate on the "firecracker_version" field.
+func FirecrackerVersionHasSuffix(v string) predicate.Env {
+	return predicate.Env(sql.FieldHasSuffix(FieldFirecrackerVersion, v))
+}
+
+// FirecrackerVersionEqualFold applies the EqualFold predicate on the "firecracker_version" field.
+func FirecrackerVersionEqualFold(v string) predicate.Env {
+	return predicate.Env(sql.FieldEqualFold(FieldFirecrackerVersion, v))
+}
+
+// FirecrackerVersionContainsFold applies the ContainsFold predicate on the "firecracker_version" field.
+func FirecrackerVersionContainsFold(v string) predicate.Env {
+	return predicate.Env(sql.FieldContainsFold(FieldFirecrackerVersion, v))
 }
 
 // HasTeam applies the HasEdge predicate on the "team" edge.

@@ -32,6 +32,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
         KERNELS_DIR= "/fc-kernels"
         KERNEL_MOUNT_DIR="/fc-vm"
         KERNEL_NAME="vmlinux.bin"
+        FC_VERSIONS_DIR="/fc-versions"
       }
 
       resources {
@@ -42,6 +43,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
       config {
         EnvID = "{{ .EnvID }}"
         InstanceID = "{{ .InstanceID }}"
+        FirecrackerVersion = "{{ .FirecrackerVersion }}"
         KernelVersion = "{{ .KernelVersion }}"
         ConsulToken = "{{ .ConsulToken }}"
         LogsProxyAddress = "{{ .LogsProxyAddress }}"

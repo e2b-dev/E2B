@@ -45,6 +45,7 @@ var (
 		{Name: "free_disk_size_mb", Type: field.TypeInt64},
 		{Name: "total_disk_size_mb", Type: field.TypeInt64},
 		{Name: "kernel_version", Type: field.TypeString, Default: "vmlinux-5.10.186"},
+		{Name: "firecracker_version", Type: field.TypeString, Default: "firecracker-v1.5.0"},
 		{Name: "team_id", Type: field.TypeUUID},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
@@ -55,7 +56,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "envs_teams_envs",
-				Columns:    []*schema.Column{EnvsColumns[14]},
+				Columns:    []*schema.Column{EnvsColumns[15]},
 				RefColumns: []*schema.Column{TeamsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
