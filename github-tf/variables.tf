@@ -13,7 +13,6 @@ variable "gcp_zone" {
   type        = string
 }
 
-
 variable "github_organization" {
   description = "The name of the github organization"
   type        = string
@@ -31,6 +30,11 @@ variable "prefix" {
 
 variable "terraform_state_bucket" {
   description = "The name of the bucket to store terraform state in"
+  type        = string
+}
+
+variable "fc_versions_bucket" {
+  description = "The name of the bucket to store build fc versions"
   type        = string
 }
 

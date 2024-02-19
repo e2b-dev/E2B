@@ -11,22 +11,25 @@ runtimes:
     - go@1.21.0
 lint:
   ignore:
-    - linters: [ALL]
+    - linters:
+        - ALL
       paths:
         - packages/api/internal/api/api.gen.go
         - packages/api/internal/api/spec.gen.go
         - packages/api/internal/api/types.gen.go
         - packages/env-instance-task-driver/internal/client/**
         - packages/env-build-task-driver/internal/client/**
-    - linters: [codespell]
+    - linters:
+        - codespell
       paths:
-        - "**/go.work.sum"
-        - "**/go.sum"
-    - linters: [gitleaks,trufflehog]
+        - '**/go.work.sum'
+        - '**/go.sum'
+    - linters:
+        - gitleaks
+        - trufflehog
       paths:
-        - "**/go.work.sum"
-        - "**/go.sum"
-
+        - '**/go.work.sum'
+        - '**/go.sum'
   enabled:
     - actionlint@1.6.25
     - gitleaks@8.18.0

@@ -31,6 +31,17 @@ resource "google_storage_bucket" "fc_kernels_bucket" {
   labels = var.labels
 }
 
+resource "google_storage_bucket" "fc_versions_bucket" {
+  location = var.gcp_region
+  name     = "${var.gcp_project_id}-fc-versions"
+
+  public_access_prevention    = "enforced"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+
+  labels = var.labels
+}
+
 resource "google_storage_bucket" "fc_env_pipeline_bucket" {
   location = var.gcp_region
   name     = "${var.gcp_project_id}-fc-env-pipeline"
