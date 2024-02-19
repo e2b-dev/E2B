@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
@@ -104,7 +105,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		metadata = *sandboxMetadata
 	}
 
-	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, env.TemplateID, alias, team.ID.String(), metadata, kernelVersion)
+	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, env.TemplateID, alias, team.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, kernelVersion)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -128,9 +129,10 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 	)
 
 	if cacheErr := a.instanceCache.Add(InstanceInfo{
-		Instance: sandbox,
-		TeamID:   &team.ID,
-		Metadata: metadata,
+		Instance:          sandbox,
+		TeamID:            &team.ID,
+		Metadata:          metadata,
+		MaxInstanceLength: time.Duration(team.Edges.TeamTier.MaxLengthHours) * time.Hour,
 	}); cacheErr != nil {
 		errMsg := fmt.Errorf("error when adding instance to cache: %w", cacheErr)
 		telemetry.ReportError(ctx, errMsg)

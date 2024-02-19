@@ -129,6 +129,27 @@ func (tu *TierUpdate) AddConcurrentInstances(i int64) *TierUpdate {
 	return tu
 }
 
+// SetMaxLengthHours sets the "max_length_hours" field.
+func (tu *TierUpdate) SetMaxLengthHours(i int64) *TierUpdate {
+	tu.mutation.ResetMaxLengthHours()
+	tu.mutation.SetMaxLengthHours(i)
+	return tu
+}
+
+// SetNillableMaxLengthHours sets the "max_length_hours" field if the given value is not nil.
+func (tu *TierUpdate) SetNillableMaxLengthHours(i *int64) *TierUpdate {
+	if i != nil {
+		tu.SetMaxLengthHours(*i)
+	}
+	return tu
+}
+
+// AddMaxLengthHours adds i to the "max_length_hours" field.
+func (tu *TierUpdate) AddMaxLengthHours(i int64) *TierUpdate {
+	tu.mutation.AddMaxLengthHours(i)
+	return tu
+}
+
 // AddTeamIDs adds the "teams" edge to the Team entity by IDs.
 func (tu *TierUpdate) AddTeamIDs(ids ...uuid.UUID) *TierUpdate {
 	tu.mutation.AddTeamIDs(ids...)
@@ -238,6 +259,12 @@ func (tu *TierUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.AddedConcurrentInstances(); ok {
 		_spec.AddField(tier.FieldConcurrentInstances, field.TypeInt64, value)
+	}
+	if value, ok := tu.mutation.MaxLengthHours(); ok {
+		_spec.SetField(tier.FieldMaxLengthHours, field.TypeInt64, value)
+	}
+	if value, ok := tu.mutation.AddedMaxLengthHours(); ok {
+		_spec.AddField(tier.FieldMaxLengthHours, field.TypeInt64, value)
 	}
 	if tu.mutation.TeamsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -409,6 +436,27 @@ func (tuo *TierUpdateOne) AddConcurrentInstances(i int64) *TierUpdateOne {
 	return tuo
 }
 
+// SetMaxLengthHours sets the "max_length_hours" field.
+func (tuo *TierUpdateOne) SetMaxLengthHours(i int64) *TierUpdateOne {
+	tuo.mutation.ResetMaxLengthHours()
+	tuo.mutation.SetMaxLengthHours(i)
+	return tuo
+}
+
+// SetNillableMaxLengthHours sets the "max_length_hours" field if the given value is not nil.
+func (tuo *TierUpdateOne) SetNillableMaxLengthHours(i *int64) *TierUpdateOne {
+	if i != nil {
+		tuo.SetMaxLengthHours(*i)
+	}
+	return tuo
+}
+
+// AddMaxLengthHours adds i to the "max_length_hours" field.
+func (tuo *TierUpdateOne) AddMaxLengthHours(i int64) *TierUpdateOne {
+	tuo.mutation.AddMaxLengthHours(i)
+	return tuo
+}
+
 // AddTeamIDs adds the "teams" edge to the Team entity by IDs.
 func (tuo *TierUpdateOne) AddTeamIDs(ids ...uuid.UUID) *TierUpdateOne {
 	tuo.mutation.AddTeamIDs(ids...)
@@ -548,6 +596,12 @@ func (tuo *TierUpdateOne) sqlSave(ctx context.Context) (_node *Tier, err error) 
 	}
 	if value, ok := tuo.mutation.AddedConcurrentInstances(); ok {
 		_spec.AddField(tier.FieldConcurrentInstances, field.TypeInt64, value)
+	}
+	if value, ok := tuo.mutation.MaxLengthHours(); ok {
+		_spec.SetField(tier.FieldMaxLengthHours, field.TypeInt64, value)
+	}
+	if value, ok := tuo.mutation.AddedMaxLengthHours(); ok {
+		_spec.AddField(tier.FieldMaxLengthHours, field.TypeInt64, value)
 	}
 	if tuo.mutation.TeamsCleared() {
 		edge := &sqlgraph.EdgeSpec{

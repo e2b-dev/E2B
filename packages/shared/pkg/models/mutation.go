@@ -3928,6 +3928,8 @@ type TierMutation struct {
 	adddisk_mb              *int64
 	concurrent_instances    *int64
 	addconcurrent_instances *int64
+	max_length_hours        *int64
+	addmax_length_hours     *int64
 	clearedFields           map[string]struct{}
 	teams                   map[uuid.UUID]struct{}
 	removedteams            map[uuid.UUID]struct{}
@@ -4301,6 +4303,62 @@ func (m *TierMutation) ResetConcurrentInstances() {
 	m.addconcurrent_instances = nil
 }
 
+// SetMaxLengthHours sets the "max_length_hours" field.
+func (m *TierMutation) SetMaxLengthHours(i int64) {
+	m.max_length_hours = &i
+	m.addmax_length_hours = nil
+}
+
+// MaxLengthHours returns the value of the "max_length_hours" field in the mutation.
+func (m *TierMutation) MaxLengthHours() (r int64, exists bool) {
+	v := m.max_length_hours
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxLengthHours returns the old "max_length_hours" field's value of the Tier entity.
+// If the Tier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TierMutation) OldMaxLengthHours(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxLengthHours is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxLengthHours requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxLengthHours: %w", err)
+	}
+	return oldValue.MaxLengthHours, nil
+}
+
+// AddMaxLengthHours adds i to the "max_length_hours" field.
+func (m *TierMutation) AddMaxLengthHours(i int64) {
+	if m.addmax_length_hours != nil {
+		*m.addmax_length_hours += i
+	} else {
+		m.addmax_length_hours = &i
+	}
+}
+
+// AddedMaxLengthHours returns the value that was added to the "max_length_hours" field in this mutation.
+func (m *TierMutation) AddedMaxLengthHours() (r int64, exists bool) {
+	v := m.addmax_length_hours
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMaxLengthHours resets all changes to the "max_length_hours" field.
+func (m *TierMutation) ResetMaxLengthHours() {
+	m.max_length_hours = nil
+	m.addmax_length_hours = nil
+}
+
 // AddTeamIDs adds the "teams" edge to the Team entity by ids.
 func (m *TierMutation) AddTeamIDs(ids ...uuid.UUID) {
 	if m.teams == nil {
@@ -4389,7 +4447,7 @@ func (m *TierMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TierMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.name != nil {
 		fields = append(fields, tier.FieldName)
 	}
@@ -4404,6 +4462,9 @@ func (m *TierMutation) Fields() []string {
 	}
 	if m.concurrent_instances != nil {
 		fields = append(fields, tier.FieldConcurrentInstances)
+	}
+	if m.max_length_hours != nil {
+		fields = append(fields, tier.FieldMaxLengthHours)
 	}
 	return fields
 }
@@ -4423,6 +4484,8 @@ func (m *TierMutation) Field(name string) (ent.Value, bool) {
 		return m.DiskMB()
 	case tier.FieldConcurrentInstances:
 		return m.ConcurrentInstances()
+	case tier.FieldMaxLengthHours:
+		return m.MaxLengthHours()
 	}
 	return nil, false
 }
@@ -4442,6 +4505,8 @@ func (m *TierMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldDiskMB(ctx)
 	case tier.FieldConcurrentInstances:
 		return m.OldConcurrentInstances(ctx)
+	case tier.FieldMaxLengthHours:
+		return m.OldMaxLengthHours(ctx)
 	}
 	return nil, fmt.Errorf("unknown Tier field %s", name)
 }
@@ -4486,6 +4551,13 @@ func (m *TierMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetConcurrentInstances(v)
 		return nil
+	case tier.FieldMaxLengthHours:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxLengthHours(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Tier field %s", name)
 }
@@ -4506,6 +4578,9 @@ func (m *TierMutation) AddedFields() []string {
 	if m.addconcurrent_instances != nil {
 		fields = append(fields, tier.FieldConcurrentInstances)
 	}
+	if m.addmax_length_hours != nil {
+		fields = append(fields, tier.FieldMaxLengthHours)
+	}
 	return fields
 }
 
@@ -4522,6 +4597,8 @@ func (m *TierMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedDiskMB()
 	case tier.FieldConcurrentInstances:
 		return m.AddedConcurrentInstances()
+	case tier.FieldMaxLengthHours:
+		return m.AddedMaxLengthHours()
 	}
 	return nil, false
 }
@@ -4558,6 +4635,13 @@ func (m *TierMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddConcurrentInstances(v)
+		return nil
+	case tier.FieldMaxLengthHours:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxLengthHours(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Tier numeric field %s", name)
@@ -4600,6 +4684,9 @@ func (m *TierMutation) ResetField(name string) error {
 		return nil
 	case tier.FieldConcurrentInstances:
 		m.ResetConcurrentInstances()
+		return nil
+	case tier.FieldMaxLengthHours:
+		m.ResetMaxLengthHours()
 		return nil
 	}
 	return fmt.Errorf("unknown Tier field %s", name)

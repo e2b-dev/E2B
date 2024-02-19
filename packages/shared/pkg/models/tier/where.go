@@ -89,6 +89,11 @@ func ConcurrentInstances(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldConcurrentInstances, v))
 }
 
+// MaxLengthHours applies equality check predicate on the "max_length_hours" field. It's identical to MaxLengthHoursEQ.
+func MaxLengthHours(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldEQ(FieldMaxLengthHours, v))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Tier {
 	return predicate.Tier(sql.FieldEQ(FieldName, v))
@@ -312,6 +317,46 @@ func ConcurrentInstancesLT(v int64) predicate.Tier {
 // ConcurrentInstancesLTE applies the LTE predicate on the "concurrent_instances" field.
 func ConcurrentInstancesLTE(v int64) predicate.Tier {
 	return predicate.Tier(sql.FieldLTE(FieldConcurrentInstances, v))
+}
+
+// MaxLengthHoursEQ applies the EQ predicate on the "max_length_hours" field.
+func MaxLengthHoursEQ(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldEQ(FieldMaxLengthHours, v))
+}
+
+// MaxLengthHoursNEQ applies the NEQ predicate on the "max_length_hours" field.
+func MaxLengthHoursNEQ(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldNEQ(FieldMaxLengthHours, v))
+}
+
+// MaxLengthHoursIn applies the In predicate on the "max_length_hours" field.
+func MaxLengthHoursIn(vs ...int64) predicate.Tier {
+	return predicate.Tier(sql.FieldIn(FieldMaxLengthHours, vs...))
+}
+
+// MaxLengthHoursNotIn applies the NotIn predicate on the "max_length_hours" field.
+func MaxLengthHoursNotIn(vs ...int64) predicate.Tier {
+	return predicate.Tier(sql.FieldNotIn(FieldMaxLengthHours, vs...))
+}
+
+// MaxLengthHoursGT applies the GT predicate on the "max_length_hours" field.
+func MaxLengthHoursGT(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldGT(FieldMaxLengthHours, v))
+}
+
+// MaxLengthHoursGTE applies the GTE predicate on the "max_length_hours" field.
+func MaxLengthHoursGTE(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldGTE(FieldMaxLengthHours, v))
+}
+
+// MaxLengthHoursLT applies the LT predicate on the "max_length_hours" field.
+func MaxLengthHoursLT(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldLT(FieldMaxLengthHours, v))
+}
+
+// MaxLengthHoursLTE applies the LTE predicate on the "max_length_hours" field.
+func MaxLengthHoursLTE(v int64) predicate.Tier {
+	return predicate.Tier(sql.FieldLTE(FieldMaxLengthHours, v))
 }
 
 // HasTeams applies the HasEdge predicate on the "teams" edge.

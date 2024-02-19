@@ -135,6 +135,7 @@ var (
 		{Name: "ram_mb", Type: field.TypeInt64, Default: "512"},
 		{Name: "disk_mb", Type: field.TypeInt64, Default: "512"},
 		{Name: "concurrent_instances", Type: field.TypeInt64, Comment: "The number of instances the team can run concurrently"},
+		{Name: "max_length_hours", Type: field.TypeInt64},
 	}
 	// TiersTable holds the schema information for the "tiers" table.
 	TiersTable = &schema.Table{

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -29,11 +30,12 @@ const (
 
 	instanceStartTimeout = time.Second * 20
 
-	envIDMetaKey      = "ENV_ID"
-	aliasMetaKey      = "ALIAS"
-	instanceIDMetaKey = "INSTANCE_ID"
-	teamIDMetaKey     = "TEAM_ID"
-	metadataKey       = "METADATA"
+	envIDMetaKey             = "ENV_ID"
+	aliasMetaKey             = "ALIAS"
+	instanceIDMetaKey        = "INSTANCE_ID"
+	teamIDMetaKey            = "TEAM_ID"
+	maxInstanceLengthMetaKey = "MAX_INSTANCE_LENGTH_HOURS"
+	metadataKey              = "METADATA"
 )
 
 var (
@@ -89,6 +91,19 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		aliasRaw := job.Meta[aliasMetaKey]
 		teamID := job.Meta[teamIDMetaKey]
 		metadataRaw := job.Meta[metadataKey]
+		maxInstanceLengthHoursString := job.Meta[maxInstanceLengthMetaKey]
+		maxInstanceLengthInt, err := strconv.Atoi(maxInstanceLengthHoursString)
+
+		var maxInstanceLength time.Duration
+
+		if err == nil {
+			maxInstanceLength = time.Duration(maxInstanceLengthInt) * time.Hour
+		} else {
+			n.logger.Errorf("failed to parse max instance length for job '%s': %v", job.ID, err)
+
+			// Default to 1 hour (the length of the for base tier)
+			maxInstanceLength = time.Hour
+		}
 
 		var metadata map[string]string
 
@@ -125,8 +140,9 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 				Alias:      alias,
 				ClientID:   clientID,
 			},
-			TeamID:   teamUUID,
-			Metadata: metadata,
+			TeamID:            teamUUID,
+			Metadata:          metadata,
+			MaxInstanceLength: maxInstanceLength,
 		})
 	}
 
@@ -139,6 +155,7 @@ func (n *NomadClient) CreateSandbox(
 	envID,
 	alias,
 	teamID string,
+	maxInstanceLengthHours int64,
 	metadata map[string]string,
 	kernelVersion string,
 ) (*api.Sandbox, *api.APIError) {
@@ -174,43 +191,47 @@ func (n *NomadClient) CreateSandbox(
 	var jobDef bytes.Buffer
 
 	jobVars := struct {
-		SpanID           string
-		ConsulToken      string
-		TraceID          string
-		EnvID            string
-		Alias            string
-		InstanceID       string
-		LogsProxyAddress string
-		KernelVersion    string
-		TaskName         string
-		JobName          string
-		EnvsDisk         string
-		TeamID           string
-		EnvIDKey         string
-		AliasKey         string
-		InstanceIDKey    string
-		TeamIDKey        string
-		MetadataKey      string
-		Metadata         string
+		SpanID               string
+		ConsulToken          string
+		TraceID              string
+		EnvID                string
+		Alias                string
+		InstanceID           string
+		LogsProxyAddress     string
+		KernelVersion        string
+		TaskName             string
+		JobName              string
+		EnvsDisk             string
+		TeamID               string
+		EnvIDKey             string
+		AliasKey             string
+		InstanceIDKey        string
+		TeamIDKey            string
+		MaxInstanceLengthKey string
+		MaxInstanceLength    string
+		MetadataKey          string
+		Metadata             string
 	}{
-		TeamIDKey:        teamIDMetaKey,
-		EnvIDKey:         envIDMetaKey,
-		AliasKey:         aliasMetaKey,
-		InstanceIDKey:    instanceIDMetaKey,
-		MetadataKey:      metadataKey,
-		KernelVersion:    kernelVersion,
-		SpanID:           spanID,
-		TeamID:           teamID,
-		TraceID:          traceID,
-		LogsProxyAddress: logsProxyAddress,
-		ConsulToken:      consulToken,
-		EnvID:            envID,
-		Alias:            strings.ReplaceAll(alias, "\"", "\\\""),
-		InstanceID:       instanceID,
-		TaskName:         defaultTaskName,
-		JobName:          instanceJobName,
-		EnvsDisk:         envsDisk,
-		Metadata:         strings.ReplaceAll(string(metadataSerialized), "\"", "\\\""),
+		TeamIDKey:            teamIDMetaKey,
+		EnvIDKey:             envIDMetaKey,
+		AliasKey:             aliasMetaKey,
+		InstanceIDKey:        instanceIDMetaKey,
+		MaxInstanceLengthKey: maxInstanceLengthMetaKey,
+		MetadataKey:          metadataKey,
+		KernelVersion:        kernelVersion,
+		SpanID:               spanID,
+		TeamID:               teamID,
+		TraceID:              traceID,
+		LogsProxyAddress:     logsProxyAddress,
+		ConsulToken:          consulToken,
+		EnvID:                envID,
+		Alias:                strings.ReplaceAll(alias, "\"", "\\\""),
+		MaxInstanceLength:    strconv.FormatInt(maxInstanceLengthHours, 10),
+		InstanceID:           instanceID,
+		TaskName:             defaultTaskName,
+		JobName:              instanceJobName,
+		EnvsDisk:             envsDisk,
+		Metadata:             strings.ReplaceAll(string(metadataSerialized), "\"", "\\\""),
 	}
 
 	err = envInstanceTemplate.Execute(&jobDef, jobVars)
