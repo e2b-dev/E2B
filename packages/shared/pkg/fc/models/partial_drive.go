@@ -23,7 +23,7 @@ type PartialDrive struct {
 	// Required: true
 	DriveID *string `json:"drive_id"`
 
-	// Host level path for the guest drive
+	// Host level path for the guest drive. This field is optional for virtio-block config and should be omitted for vhost-user-block configuration.
 	PathOnHost string `json:"path_on_host,omitempty"`
 
 	// rate limiter

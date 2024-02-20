@@ -25,8 +25,11 @@ type Logger struct {
 	Level *string `json:"level,omitempty"`
 
 	// Path to the named pipe or file for the human readable log output.
-	// Required: true
-	LogPath *string `json:"log_path"`
+	LogPath string `json:"log_path,omitempty"`
+
+	// The module path to filter log messages by.
+	// Example: api_server::request
+	Module string `json:"module,omitempty"`
 
 	// Whether or not to output the level in the logs.
 	ShowLevel *bool `json:"show_level,omitempty"`
@@ -40,10 +43,6 @@ func (m *Logger) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateLevel(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLogPath(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -101,15 +100,6 @@ func (m *Logger) validateLevel(formats strfmt.Registry) error {
 
 	// value enum
 	if err := m.validateLevelEnum("level", "body", *m.Level); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Logger) validateLogPath(formats strfmt.Registry) error {
-
-	if err := validate.Required("log_path", "body", m.LogPath); err != nil {
 		return err
 	}
 
