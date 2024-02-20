@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -86,6 +87,11 @@ func (n *NomadClient) BuildEnvJob(
 		attribute.Int64("build.memory_mb", vmConfig.MemoryMB),
 	)
 
+	version, err := sandbox.NewVersionInfo(vmConfig.FirecrackerVersion)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse firecracker version: %w", err)
+	}
+
 	var jobDef bytes.Buffer
 
 	jobVars := struct {
@@ -108,7 +114,9 @@ func (n *NomadClient) BuildEnvJob(
 		MemoryMB                   int64
 		DiskSizeMB                 int64
 		NomadToken                 string
+		HugePages                  bool
 	}{
+		HugePages:                  version.HasHugePages(),
 		APISecret:                  apiSecret,
 		BuildID:                    buildID,
 		StartCmd:                   strings.ReplaceAll(startCmd, "\"", "\\\""),
@@ -130,7 +138,7 @@ func (n *NomadClient) BuildEnvJob(
 		NomadToken:                 nomadToken,
 	}
 
-	err := envBuildTemplate.Execute(&jobDef, jobVars)
+	err = envBuildTemplate.Execute(&jobDef, jobVars)
 	if err != nil {
 		return 0, fmt.Errorf("failed to `envBuildJobTemp.Execute()`: %w", err)
 	}
