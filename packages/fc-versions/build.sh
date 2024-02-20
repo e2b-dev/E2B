@@ -1,36 +1,33 @@
-# #!/bin/bash
+#!/bin/bash
 
-# set -euo pipefail
+set -euo pipefail
 
-# function build_version {
-#   local version=$1
-#   echo "Starting build for kernel version: $version"
+function build_version {
+  local version=$1
+  echo "Starting build for Firecracker commit: $version"
 
-#   stringarray=($version)
-#   kernel_version=${stringarray[1]}
+  echo "Checking out repo for Firecracker at commit: $version"
+  git checkout "${version}"
 
-#   cp ../configs/"${kernel_version}.config" .config
+  # The format will be: latest_tag-number_of_commits_since-latest_commit_hash — v1.7.0-dev-252-g8bb88311
+  version_name=$(git describe --tag)
+  echo "Version name: $version_name"
 
-#   echo "Checking out repo for kernel at version: $kernel_version"
-#   git fetch --depth 1 origin "v${kernel_version}"
-#   git checkout FETCH_HEAD
+  echo "Building Firecracker version: $version_name"
+  tools/devtool build --release
 
-#   echo "Building kernel version: $kernel_version"
-#   make vmlinux -j "$(nproc)"
+  echo "Copying finished build to builds directory"
+  mkdir -p "../builds/${version_name}"
+  cp build/cargo_target/x86_64-unknown-linux-musl/release/firecracker "../builds/${version_name}/firecracker"
+}
 
-#   echo "Copying finished build to builds directory"
-#   mkdir -p "../builds/vmlinux-${kernel_version}"
-#   cp vmlinux "../builds/vmlinux-${kernel_version}/vmlinux.bin"
-# }
+echo "Cloning the Firecracker repository"
+git clone https://github.com/firecracker-microvm/firecracker.git firecracker
+cd firecracker
 
-# echo "Cloning the linux kernel repository"
-# git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git linux
-# cd linux
+grep -v '^ *#' <../firecracker_versions.txt | while IFS= read -r version; do
+  build_version "$version"
+done
 
-# grep -v '^ *#' < ../kernel_versions.txt | while IFS= read -r version
-# do
-#   build_version "$version"
-# done
-
-# cd ..
-# rm -rf linux
+cd ..
+rm -rf firecracker
