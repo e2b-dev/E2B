@@ -8,7 +8,6 @@ packer {
   }
 }
 
-# TODO: Separate server and client images
 source "googlecompute" "orch" {
   image_family = "e2b-orch"
   # TODO: Overwrite the image instead of creating timestamped images every time we build its
@@ -63,8 +62,6 @@ build {
     ]
   }
 
-
-  # TODO: Remove unused deps
   provisioner "shell" {
     inline = [
       "sudo apt-get update",

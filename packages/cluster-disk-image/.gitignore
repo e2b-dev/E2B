@@ -1,2 +1,1 @@
-packer/modules/install-firecracker/release-*
 setup/tc-redirect-tap
