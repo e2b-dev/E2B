@@ -72,7 +72,7 @@ func loadSnapshot(
 		Context: childCtx,
 		Body: &models.SnapshotLoadParams{
 			ResumeVM:            true,
-			EnableDiffSnapshots: true,
+			EnableDiffSnapshots: false,
 			MemBackend: &models.MemoryBackend{
 				BackendPath: &memfilePath,
 				BackendType: &backendType,

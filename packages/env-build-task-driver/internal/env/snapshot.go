@@ -346,7 +346,7 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 	telemetry.ReportEvent(childCtx, "set fc network config")
 
 	smt := true
-	trackDirtyPages := true
+	trackDirtyPages := false
 
 	machineConfig := &models.MachineConfiguration{
 		VcpuCount:       &s.env.VCpuCount,
