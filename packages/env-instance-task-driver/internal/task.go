@@ -112,7 +112,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 			KernelsDir:            cfg.Env["KERNELS_DIR"],
 			KernelMountDir:        cfg.Env["KERNEL_MOUNT_DIR"],
 			KernelName:            cfg.Env["KERNEL_NAME"],
-			FirecrackerBinaryPath: filepath.Join(cfg.Env["FC_VERSIONS_DIR"], taskConfig.FirecrackerVersion),
+			FirecrackerBinaryPath: filepath.Join(cfg.Env["FC_VERSIONS_DIR"], taskConfig.FirecrackerVersion, cfg.Env["FC_BINARY_NAME"]),
 		},
 		de.hosts,
 	)

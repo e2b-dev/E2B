@@ -98,6 +98,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 	kernelMountDir := cfg.Env["KERNEL_MOUNT_DIR"]
 	kernelName := cfg.Env["KERNEL_NAME"]
 	firecrackerVersionsDir := cfg.Env["FC_VERSIONS_DIR"]
+	firecrackerBinaryName := cfg.Env["FC_BINARY_NAME"]
 
 	telemetry.SetAttributes(childCtx,
 		attribute.String("build_id", taskConfig.BuildID),
@@ -131,7 +132,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		KernelName:                 kernelName,
 		StartCmd:                   taskConfig.StartCmd,
 		DiskSizeMB:                 taskConfig.DiskSizeMB,
-		FirecrackerBinaryPath:      filepath.Join(firecrackerVersionsDir, taskConfig.FirecrackerVersion),
+		FirecrackerBinaryPath:      filepath.Join(firecrackerVersionsDir, taskConfig.FirecrackerVersion, firecrackerBinaryName),
 		EnvdPath:                   envdPath,
 		ContextFileName:            contextFileName,
 		BuildLogsWriter:            writer,

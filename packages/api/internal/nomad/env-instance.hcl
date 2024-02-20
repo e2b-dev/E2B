@@ -32,6 +32,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
         KERNELS_DIR= "/fc-kernels"
         KERNEL_MOUNT_DIR="/fc-vm"
         KERNEL_NAME="vmlinux.bin"
+        FC_BINARY_NAME="firecracker"
         FC_VERSIONS_DIR="/fc-versions"
       }
 
