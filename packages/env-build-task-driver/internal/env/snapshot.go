@@ -306,9 +306,9 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 		DriveID: rootfs,
 		Body: &models.Drive{
 			DriveID:      &rootfs,
-			PathOnHost:   &pathOnHost,
+			PathOnHost:   pathOnHost,
 			IsRootDevice: &isRootDevice,
-			IsReadOnly:   &isReadOnly,
+			IsReadOnly:   isReadOnly,
 			IoEngine:     &ioEngine,
 		},
 	}
@@ -347,17 +347,24 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 
 	smt := true
 	trackDirtyPages := true
-	machineConfig := operations.PutMachineConfigurationParams{
-		Context: childCtx,
-		Body: &models.MachineConfiguration{
-			VcpuCount:       &s.env.VCpuCount,
-			MemSizeMib:      &s.env.MemoryMB,
-			Smt:             &smt,
-			TrackDirtyPages: &trackDirtyPages,
-		},
+
+	machineConfig := &models.MachineConfiguration{
+		VcpuCount:       &s.env.VCpuCount,
+		MemSizeMib:      &s.env.MemoryMB,
+		Smt:             &smt,
+		TrackDirtyPages: &trackDirtyPages,
 	}
 
-	_, err = s.client.Operations.PutMachineConfiguration(&machineConfig)
+	if s.env.HugePages {
+		machineConfig.HugePages = models.MachineConfigurationHugePagesNr2M
+	}
+
+	machineConfigParams := operations.PutMachineConfigurationParams{
+		Context: childCtx,
+		Body:    machineConfig,
+	}
+
+	_, err = s.client.Operations.PutMachineConfiguration(&machineConfigParams)
 	if err != nil {
 		errMsg := fmt.Errorf("error setting fc machine config: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

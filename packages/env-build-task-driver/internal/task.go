@@ -27,6 +27,8 @@ var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 	"KernelVersion":      hclspec.NewAttr("KernelVersion", "string", true),
 	"FirecrackerVersion": hclspec.NewAttr("FirecrackerVersion", "string", true),
 
+	"HugePages": hclspec.NewAttr("HugePages", "bool", false),
+
 	"StartCmd": hclspec.NewAttr("StartCmd", "string", false),
 
 	"SpanID":  hclspec.NewAttr("SpanID", "string", true),
@@ -49,6 +51,8 @@ type (
 
 		KernelVersion      string `codec:"KernelVersion"`
 		FirecrackerVersion string `codec:"FirecrackerVersion"`
+
+		HugePages bool `codec:"HugePages"`
 
 		StartCmd string `codec:"StartCmd"`
 
@@ -137,6 +141,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		ContextFileName:            contextFileName,
 		BuildLogsWriter:            writer,
 		GoogleServiceAccountBase64: googleServiceAccountBase64,
+		HugePages:                  taskConfig.HugePages,
 	}
 
 	cancellableBuildContext, cancel := context.WithCancel(driverCtx)
