@@ -1,2 +1,2 @@
-v1.5
+v1.5.0
 8bb883111ff608dc2ca1a08d5e4eb2ddbd5c1c8b

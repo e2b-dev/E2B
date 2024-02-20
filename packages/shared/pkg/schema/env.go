@@ -14,7 +14,7 @@ import (
 
 const (
 	DefaultKernelVersion      = "vmlinux-5.10.186"
-	DefaultFirecrackerVersion = "firecracker-v1.5.0"
+	DefaultFirecrackerVersion = "v1.5.0"
 )
 
 type Env struct {
