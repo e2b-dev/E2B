@@ -68,7 +68,8 @@ hugepage_size_in_mib=2
 echo "- Huge page size: $hugepage_size_in_mib MiB"
 hugepages=$(($hugepages_ram / $hugepage_size_in_mib))
 
-base_hugepages_percentage=60
+# This percentage will be permanently allocated for huge pages and in monitoring it will be shown as used.
+base_hugepages_percentage=30
 base_hugepages=$(($hugepages * $base_hugepages_percentage / 100))
 base_hugepages=$(remove_decimal $base_hugepages)
 echo "- Allocating $base_hugepages huge pages (${base_hugepages_percentage}%) for base usage"
