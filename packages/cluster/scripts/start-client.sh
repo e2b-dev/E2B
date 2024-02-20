@@ -23,7 +23,7 @@ available_ram=$(($available_ram / 1024))                        # in MiB
 echo "- Total memory: $available_ram MiB"
 
 min_normal_ram=$((4 * 1024))                            # 4 GiB
-min_normal_percentage_ram=$(($available_ram * 6 / 100)) # 6% of the total memory
+min_normal_percentage_ram=$(($available_ram * 8 / 100)) # 8% of the total memory
 max_normal_ram=$((32 * 1024))                           # 32 GiB
 
 max() {
@@ -65,10 +65,20 @@ hugepages_ram=$(ensure_even $hugepages_ram)
 echo "- RAM for hugepages: $hugepages_ram MiB"
 
 hugepage_size_in_mib=2
+echo "- Huge page size: $hugepage_size_in_mib MiB"
 hugepages=$(($hugepages_ram / $hugepage_size_in_mib))
-echo "- Allocating $hugepages huge pages"
 
-echo $hugepages >/proc/sys/vm/nr_hugepages
+base_hugepages_percentage=60
+base_hugepages=$(($hugepages * $base_hugepages_percentage / 100))
+base_hugepages=$(remove_decimal $base_hugepages)
+echo "- Allocating $base_hugepages huge pages (${base_hugepages_percentage}%) for base usage"
+echo $base_hugepages >/proc/sys/vm/nr_hugepages
+
+overcommitment_hugepages_percentage=$((100 - $base_hugepages_percentage))
+overcommitment_hugepages=$(($hugepages * $overcommitment_hugepages_percentage / 100))
+overcommitment_hugepages=$(remove_decimal $overcommitment_hugepages)
+echo "- Allocating $overcommitment_hugepages huge pages (${overcommitment_hugepages_percentage}%) for overcommitment"
+echo $overcommitment_hugepages >/proc/sys/vm/nr_overcommit_hugepages
 
 # --- Mount the persistent disk with Firecracker environments.
 # See https://cloud.google.com/compute/docs/disks/add-persistent-disk#create_disk
