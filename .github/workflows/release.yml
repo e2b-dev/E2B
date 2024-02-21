@@ -22,6 +22,7 @@ jobs:
       api: ${{ steps.filter.outputs.api }}
       envd: ${{ steps.filter.outputs.envd }}
       fc-kernels: ${{ steps.filter.outputs.fc-kernels }}
+      template-delete-task-driver: ${{ steps.filter.outputs.template-delete-task-driver }}
       env-instance-task-driver: ${{ steps.filter.outputs.env-instance-task-driver }}
       env-build-task-driver: ${{ steps.filter.outputs.env-build-task-driver }}
       version: ${{ steps.filter.outputs.version }}
@@ -183,6 +184,7 @@ jobs:
         api,
         envd,
         env-instance-task-driver,
+        template-delete-task-driver,
         env-build-task-driver,
       ]
     if: |
@@ -194,6 +196,7 @@ jobs:
       (needs.fc-kernels.result == 'success' || needs.fc-kernels.result == 'skipped') &&
       (needs.env-instance-task-driver.result == 'success' || needs.env-instance-task-driver.result == 'skipped') &&
       (needs.env-build-task-driver.result == 'success' || needs.env-build-task-driver.result == 'skipped') &&
+      (needs.template-delete-task-driver.result == 'success' || needs.template-delete-task-driver.result == 'skipped') &&
       (needs.api.result == 'success' || needs.api.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
     secrets:
