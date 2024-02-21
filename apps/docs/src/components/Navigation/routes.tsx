@@ -20,7 +20,9 @@ import {
   ShieldQuestion,
   TerminalSquare,
   Timer,
-  Variable, HardDrive,
+  Variable,
+  HardDrive,
+  BarChart,
 } from 'lucide-react'
 
 import logoOpenAI from '@/images/logos/openai.svg'
@@ -33,16 +35,6 @@ export const routes = [
       { title: 'Introduction', href: '/' },
       {
         icon: (
-          <HeartHandshake
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Open source',
-        href: '/open-source',
-      },
-      {
-        icon: (
           <DollarSign
             strokeWidth={1}
             size={20}
@@ -50,6 +42,26 @@ export const routes = [
         ),
         title: 'Pricing',
         href: '/pricing',
+      },
+      {
+        icon: (
+          <BarChart
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Your Usage',
+        href: '/usage',
+      },
+      {
+        icon: (
+          <HeartHandshake
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Open source',
+        href: '/open-source',
       },
       {
         icon: (
