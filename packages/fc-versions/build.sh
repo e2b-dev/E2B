@@ -14,7 +14,7 @@ function build_version {
   echo "Version name: $version_name"
 
   echo "Building Firecracker version: $version_name"
-  tools/devtool build --release
+  tools/devtool -y build --release
 
   echo "Copying finished build to builds directory"
   mkdir -p "../builds/${version_name}"
