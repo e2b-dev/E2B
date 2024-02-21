@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 
 import { useUsage } from '@/utils/useUsage'
+import { useUser } from '@/utils/useUser'
 
 function usedCredits(totalCosts: number, unpaidCosts: number) {
   return totalCosts - unpaidCosts
@@ -17,12 +18,24 @@ function formatCurrency(value: number) {
 
 function Credits() {
   // TODO: If not logged in, show a message to log in
+  const { user } = useUser()
+
   // TODO: Show user their plan
   // TODO: Add "switch tier"/"manage billing" button
   const { credits, costs } = useUsage()
 
+  if (!user) {
+    return (
+      <div>
+        <span>Sign in to see your usage</span>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col justify-start items-start">
+    <div className="flex flex-col justify-start items-start gap-4">
+      <span>Your sandbox usage for the past 3 months</span>
+
       <div className="flex flex-col justify-start items-start gap-1">
         <div className="flex items-center gap-1">
           <Ticket size={20} />
