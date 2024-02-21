@@ -5,7 +5,7 @@ import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
-import { useSandboxStore } from './useSandbox'
+import { useSandboxStore } from '@/utils/useSandbox'
 
 type Team = {
   id: string
