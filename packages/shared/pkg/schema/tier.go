@@ -21,6 +21,7 @@ func (Tier) Fields() []ent.Field {
 		field.Int64("ram_mb").Annotations(entsql.Check("ram_mb > 0"), entsql.Default("512")),
 		field.Int64("disk_mb").Annotations(entsql.Check("disk_mb > 0"), entsql.Default("512")),
 		field.Int64("concurrent_instances").Annotations(entsql.Check("concurrent_instances > 0")).Comment("The number of instances the team can run concurrently"),
+		field.Int64("max_length_hours"),
 	}
 }
 

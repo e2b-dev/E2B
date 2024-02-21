@@ -22,6 +22,8 @@ const (
 	FieldDiskMB = "disk_mb"
 	// FieldConcurrentInstances holds the string denoting the concurrent_instances field in the database.
 	FieldConcurrentInstances = "concurrent_instances"
+	// FieldMaxLengthHours holds the string denoting the max_length_hours field in the database.
+	FieldMaxLengthHours = "max_length_hours"
 	// EdgeTeams holds the string denoting the teams edge name in mutations.
 	EdgeTeams = "teams"
 	// Table holds the table name of the tier in the database.
@@ -43,6 +45,7 @@ var Columns = []string{
 	FieldRAMMB,
 	FieldDiskMB,
 	FieldConcurrentInstances,
+	FieldMaxLengthHours,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -86,6 +89,11 @@ func ByDiskMB(opts ...sql.OrderTermOption) OrderOption {
 // ByConcurrentInstances orders the results by the concurrent_instances field.
 func ByConcurrentInstances(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldConcurrentInstances, opts...).ToFunc()
+}
+
+// ByMaxLengthHours orders the results by the max_length_hours field.
+func ByMaxLengthHours(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMaxLengthHours, opts...).ToFunc()
 }
 
 // ByTeamsCount orders the results by teams count.
