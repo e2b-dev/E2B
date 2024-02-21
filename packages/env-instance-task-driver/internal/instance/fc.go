@@ -139,6 +139,11 @@ func startFC(
 	fcCmd := fmt.Sprintf("%s --api-sock %s", fsEnv.FirecrackerBinaryPath, fsEnv.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
+	telemetry.SetAttributes(childCtx,
+		attribute.String("instance.firecracker.command", fcCmd),
+		attribute.String("instance.netns.command", inNetNSCmd),
+	)
+
 	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", rootfsMountCmd+kernelMountCmd+inNetNSCmd+fcCmd)
 
 	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
