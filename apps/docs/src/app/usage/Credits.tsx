@@ -10,20 +10,12 @@ import ManageBilling from '@/components/ManageBilling'
 import { useUsage } from '@/utils/useUsage'
 import { useUser } from '@/utils/useUser'
 
-function usedCredits(totalCosts: number, unpaidCosts: number) {
-  return totalCosts - unpaidCosts
-}
-
 function formatCurrency(value: number) {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function Credits() {
   const { user } = useUser()
-
-  // TODO: Show user their plan
-
-  // TODO: Add "switch tier"/"manage billing" button
   const { credits, costs } = useUsage()
 
   if (!user) {
