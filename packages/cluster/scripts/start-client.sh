@@ -53,7 +53,7 @@ ensure_even() {
 }
 
 remove_decimal() {
-    echo ${1%.*}
+    echo "$(echo $1 | sed 's/\..*//')"
 }
 
 reserved_normal_ram=$(max $min_normal_ram $min_normal_percentage_ram)
@@ -74,13 +74,13 @@ hugepages=$(($hugepages_ram / $hugepage_size_in_mib))
 base_hugepages_percentage=60
 base_hugepages=$(($hugepages * $base_hugepages_percentage / 100))
 base_hugepages=$(remove_decimal $base_hugepages)
-echo "- Allocating $base_hugepages huge pages (${base_hugepages_percentage}%) for base usage"
+echo "- Allocating $base_hugepages huge pages ($base_hugepages_percentage%) for base usage"
 echo $base_hugepages >/proc/sys/vm/nr_hugepages
 
 overcommitment_hugepages_percentage=$((100 - $base_hugepages_percentage))
 overcommitment_hugepages=$(($hugepages * $overcommitment_hugepages_percentage / 100))
 overcommitment_hugepages=$(remove_decimal $overcommitment_hugepages)
-echo "- Allocating $overcommitment_hugepages huge pages (${overcommitment_hugepages_percentage}%) for overcommitment"
+echo "- Allocating $overcommitment_hugepages huge pages ($overcommitment_hugepages_percentage%) for overcommitment"
 echo $overcommitment_hugepages >/proc/sys/vm/nr_overcommit_hugepages
 
 # --- Mount the persistent disk with Firecracker environments.
