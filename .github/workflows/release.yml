@@ -202,6 +202,7 @@ jobs:
         api,
         envd,
         env-instance-task-driver,
+        template-delete-task-driver,
         env-build-task-driver,
       ]
     if: |
@@ -214,6 +215,7 @@ jobs:
       (needs.fc-versions.result == 'success' || needs.fc-versions.result == 'skipped') &&
       (needs.env-instance-task-driver.result == 'success' || needs.env-instance-task-driver.result == 'skipped') &&
       (needs.env-build-task-driver.result == 'success' || needs.env-build-task-driver.result == 'skipped') &&
+      (needs.template-delete-task-driver.result == 'success' || needs.template-delete-task-driver.result == 'skipped') &&
       (needs.api.result == 'success' || needs.api.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
     secrets:
