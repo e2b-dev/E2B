@@ -13,6 +13,9 @@ type Team = {
   tier: string
   is_default: boolean
   email: string
+  team_billing: {
+    credit_card_added: boolean
+  }[]
 }
 
 type UserContextType = {
@@ -103,12 +106,14 @@ export const CustomUserContextProvider = (props) => {
       // @ts-ignore
       const { data: userTeams, teamsError } = await supabase
         .from('users_teams')
-        .select('teams (id, name, is_default, tier, email)')
+        .select('teams (id, name, is_default, tier, email, team_billing (credit_card_added))')
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+      console.log('>>>>>>>>>>>>>>>>>>>> userTeams', userTeams)
       if (teamsError) Sentry.captureException(teamsError)
       // TODO: Adjust when user can be part of multiple teams
       // @ts-ignore
       const teams = userTeams?.map(userTeam => userTeam.teams as Team)
+
       const defaultTeam = teams?.find(team => team.is_default)
 
       if (!defaultTeam) {
