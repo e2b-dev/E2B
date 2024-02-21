@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	"github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
@@ -20,8 +19,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
-
-const fcKillCheckInternval = 4 * time.Second
 
 type MmdsMetadata struct {
 	InstanceID string `json:"instanceID"`

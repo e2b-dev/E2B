@@ -131,6 +131,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		TaskState:  drivers.TaskStateRunning,
 		StartedAt:  time.Now().Round(time.Millisecond),
 		Logger:     logger,
+		Exited:     make(chan struct{}),
 		Extra: &extraTaskHandle{
 			Instance: instance,
 		},

@@ -20,14 +20,14 @@ import (
 const (
 	InstanceExpiration = time.Second * 15
 	cacheSyncTime      = time.Minute * 3
-	maxInstanceLength  = time.Hour * 24
 )
 
 type InstanceInfo struct {
-	Instance  *api.Sandbox
-	TeamID    *uuid.UUID
-	Metadata  map[string]string
-	StartTime *time.Time
+	Instance          *api.Sandbox
+	TeamID            *uuid.UUID
+	Metadata          map[string]string
+	StartTime         *time.Time
+	MaxInstanceLength time.Duration
 }
 
 type InstanceCache struct {
@@ -55,7 +55,7 @@ func (c *InstanceCache) Add(instance InstanceInfo) error {
 	return nil
 }
 
-func getMaxAllowedTTL(startTime time.Time, duration time.Duration) time.Duration {
+func getMaxAllowedTTL(startTime time.Time, duration, maxInstanceLength time.Duration) time.Duration {
 	runningTime := time.Since(startTime)
 	timeLeft := maxInstanceLength - runningTime
 
@@ -80,12 +80,12 @@ func (c *InstanceCache) KeepAliveFor(instanceID string, duration time.Duration) 
 	}
 
 	instance := item.Value()
-	if (time.Since(*instance.StartTime)) > maxInstanceLength {
+	if (time.Since(*instance.StartTime)) > instance.MaxInstanceLength {
 		c.cache.Delete(instanceID)
 
 		return fmt.Errorf("instance \"%s\" reached maximal allowed uptime", instanceID)
 	} else {
-		maxAllowedTTL := getMaxAllowedTTL(*instance.StartTime, duration)
+		maxAllowedTTL := getMaxAllowedTTL(*instance.StartTime, duration, instance.MaxInstanceLength)
 
 		item = c.cache.Set(instanceID, instance, maxAllowedTTL)
 		if item == nil {
