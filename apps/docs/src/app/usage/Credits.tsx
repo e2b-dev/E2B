@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
+import SpinnerIcon from '@/components/Spinner'
 import ManageBilling from '@/components/ManageBilling'
 import { useUsage } from '@/utils/useUsage'
 import { useUser } from '@/utils/useUser'
@@ -16,7 +17,7 @@ function formatCurrency(value: number) {
 
 function Credits() {
   const { user } = useUser()
-  const { credits, costs } = useUsage()
+  const { credits, usage, isLoading } = useUsage()
 
   if (!user) {
     return (
@@ -39,25 +40,28 @@ function Credits() {
           <span className="font-medium text-white">Credits left</span>
         </div>
         <span className="text-sm">Will be used when generating invoice</span>
-        <span className="text-sm font-mono text-green-300/80">${credits}</span>
+        {isLoading && <SpinnerIcon />}
+        {!isLoading && (
+          <span className="text-sm font-mono text-green-300/80">${credits}</span>
+        )}
       </div>
 
       <div className="flex flex-col justify-start items-start gap-1">
-        {costs.map((cost, index) => (
+        {usage.map((u, index) => (
           <React.Fragment key={index}>
             <h3 className="text-xl">
-              {new Date(cost.year, cost.month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              {new Date(u.year, u.month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </h3>
 
             <div className="flex flex-col justify-start items-start gap-4">
               <div className="flex flex-col items-start justify-start gap-1">
                 <span className="font-bold">Total costs</span>
-                <span className="text-sm font-mono">${formatCurrency(cost.total_costs)}</span>
+                <span className="text-sm font-mono">${formatCurrency(u.total_cost)}</span>
               </div>
 
               <div className="flex flex-col items-start justify-start gap-1">
-                <span className="font-bold">{new Date().getMonth() + 1 === cost.month ? 'To pay' : 'Paid'}</span>
-                <span className="text-sm font-mono">${formatCurrency(cost.unpaid_costs)}</span>
+                <span className="font-bold">{new Date().getMonth() + 1 === u.month ? 'To pay' : 'Paid'}</span>
+                <span className="text-sm font-mono">${formatCurrency(u.unpaid_cost)}</span>
               </div>
             </div>
           </React.Fragment>
