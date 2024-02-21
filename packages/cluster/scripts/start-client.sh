@@ -48,6 +48,7 @@ gcsfuse -o=allow_other --implicit-dirs "${FC_VERSIONS_BUCKET_NAME}" /mnt/disks/f
 fc_versions_dir="/fc-versions"
 mkdir -p $fc_versions_dir
 cp -r /mnt/disks/fc-versions/* $fc_versions_dir
+chmod +x -R /fc-versions
 
 # Mount docker contexts
 mkdir -p /mnt/disks/docker-contexts
