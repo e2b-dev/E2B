@@ -9,8 +9,8 @@ function build_version {
   echo "Checking out repo for Firecracker at commit: $version"
   git checkout "${version}"
 
-  # The format will be: latest_tag-number_of_commits_since-latest_commit_hash — v1.7.0-dev-252-g8bb88311
-  version_name=$(git describe --tag)
+  # The format will be: latest_tag_latest_commit_hash — v1.7.0-dev_g8bb88311
+  version_name=$(git describe --tags --abbrev=0 $(git rev-parse HEAD))_$(git rev-parse --short HEAD)
   echo "Version name: $version_name"
 
   echo "Building Firecracker version: $version_name"
