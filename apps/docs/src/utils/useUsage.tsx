@@ -50,32 +50,10 @@ export function useUsage() {
       }).then(res => res.json()),
     ])
 
-    // TODO: Fetch from API server
     setCredits(c)
     setUsage(u)
     setIsLoading(false)
-    // setCosts([
-    //   {
-    //     month: 2,
-    //     year: 2024,
-    //     total_costs: 23.85,
-    //     unpaid_costs: 23.85,
-    //   },
-    //   {
-    //     month: 1,
-    //     year: 2024,
-    //     total_costs: 232,
-    //     unpaid_costs: 0,
-    //   },
-    //   {
-    //     month: 12,
-    //     year: 2023,
-    //     total_costs: 32.221,
-    //     unpaid_costs: 0,
-    //   },
-    // ])
-
-  }, [user, supabase])
+  }, [user, supabase, apiKey])
 
   useEffect(function () {
     fetchCredits()
