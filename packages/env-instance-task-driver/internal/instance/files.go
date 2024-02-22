@@ -57,7 +57,7 @@ func waitForSocket(socketPath string, timeout time.Duration) error {
 			// Check if timeout has been reached
 			elapsed := time.Since(start)
 			if elapsed >= timeout {
-				return fmt.Errorf("timeout reached while waiting for socket file")
+				return fmt.Errorf("timeout reached while waiting for socket file: %s", socketPath)
 			}
 
 			// Wait for a short duration before checking again
