@@ -28,6 +28,8 @@ const (
 )
 
 type InstanceFiles struct {
+	UFFDSocketPath *string
+
 	EnvPath      string
 	BuildDirPath string
 
@@ -39,8 +41,6 @@ type InstanceFiles struct {
 
 	FirecrackerBinaryPath string
 	UFFDBinaryPath        string
-
-	UFFDSocketPath *string
 }
 
 func waitForSocket(socketPath string, timeout time.Duration) error {

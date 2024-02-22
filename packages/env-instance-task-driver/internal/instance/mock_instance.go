@@ -48,7 +48,7 @@ func MockInstance(envID, instanceID string) {
 		panic(err)
 	}
 
-	fmt.Print("[Instance is running]")
+	fmt.Println("[Instance is running]")
 
 	defer instance.CleanupAfterFCStop(ctx, tracer, hosts)
 

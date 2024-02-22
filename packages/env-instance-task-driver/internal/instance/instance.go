@@ -5,19 +5,19 @@ import (
 	"fmt"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-	"github.com/txn2/txeh"
 
+	"github.com/txn2/txeh"
 	"go.opentelemetry.io/otel/trace"
 )
 
 type Instance struct {
-	EnvID string
-
 	Files *InstanceFiles
 	Slot  *IPSlot
 	FC    *FC
 
 	config *InstanceConfig
+
+	EnvID string
 }
 
 type InstanceConfig struct {
