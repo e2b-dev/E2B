@@ -78,7 +78,6 @@ func loadSnapshot(
 		err := waitForSocket(*uffdSocketPath, socketReadyCheckInterval)
 		if err != nil {
 			telemetry.ReportCriticalError(childCtx, err)
-
 			return err
 		} else {
 			telemetry.ReportEvent(childCtx, "uffd socket ready")
@@ -162,25 +161,34 @@ func startFC(
 		fsEnv.KernelMountDirPath,
 	)
 
+	fcCmd := fmt.Sprintf("%s --api-sock %s", fsEnv.FirecrackerBinaryPath, fsEnv.SocketPath)
+	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
+
 	var uffdCmd string
 
 	if fsEnv.UFFDSocketPath != nil {
 		memfilePath := filepath.Join(fsEnv.EnvPath, MemfileName)
-		uffdCmd = fmt.Sprintf("%s %s %s & ", fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
+		uffdCmd = fmt.Sprintf("(%s %s %s &) &&", fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
 		telemetry.SetAttributes(childCtx,
 			attribute.String("instance.uffd.command", uffdCmd),
 		)
 	}
-
-	fcCmd := fmt.Sprintf("%s --api-sock %s", fsEnv.FirecrackerBinaryPath, fsEnv.SocketPath)
-	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
 	telemetry.SetAttributes(childCtx,
 		attribute.String("instance.firecracker.command", fcCmd),
 		attribute.String("instance.netns.command", inNetNSCmd),
 	)
 
-	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", rootfsMountCmd+kernelMountCmd+inNetNSCmd+uffdCmd+fcCmd)
+	cmd := exec.CommandContext(
+		vmmCtx,
+		"unshare",
+		"-pm",
+		"--kill-child",
+		"--",
+		"bash",
+		"-c",
+		rootfsMountCmd+kernelMountCmd+uffdCmd+inNetNSCmd+fcCmd,
+	)
 
 	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
 	cmdStderrReader, cmdStderrWriter := io.Pipe()
