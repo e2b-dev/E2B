@@ -25,8 +25,6 @@ import {
   BarChart,
 } from 'lucide-react'
 
-import logoOpenAI from '@/images/logos/openai.svg'
-import Image from 'next/image'
 
 export const routes = [
   {
@@ -124,22 +122,6 @@ export const routes = [
       //   // title: 'Hello World: Simple AI Junior Developer',
       //   // href: '/guide/simple-ai-junior-developer',
       // },
-    ],
-  },
-  {
-    title: 'LLM Platforms',
-    links: [
-      {
-        icon: (
-          <Image
-            src={logoOpenAI}
-            alt="OpenAI logo"
-            className="h-4 w-4"
-          />
-        ),
-        title: 'OpenAI',
-        href: '/llm-platforms/openai',
-      },
     ],
   },
   {
