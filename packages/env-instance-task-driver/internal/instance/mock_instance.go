@@ -2,6 +2,7 @@ package instance
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -38,7 +39,7 @@ func MockInstance(envID, instanceID string) {
 			KernelsDir:            "/fc-kernels",
 			KernelName:            "vmlinux.bin",
 			UFFDBinaryPath:        "/fc-versions/v1.7.0-dev_8bb88311/uffd",
-			HugePages:             false,
+			HugePages:             true,
 			FirecrackerBinaryPath: "/fc-versions/v1.7.0-dev_8bb88311/firecracker",
 		},
 		hosts,
@@ -46,6 +47,8 @@ func MockInstance(envID, instanceID string) {
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Print("[Instance is running]")
 
 	defer instance.CleanupAfterFCStop(ctx, tracer, hosts)
 
