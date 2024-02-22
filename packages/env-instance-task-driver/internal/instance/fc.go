@@ -153,6 +153,13 @@ func startFC(
 		fsEnv.KernelMountDirPath,
 	)
 
+	var uffdCmd string
+
+	if fsEnv.UFFDSocketPath != nil {
+		memfilePath := filepath.Join(fsEnv.EnvPath, MemfileName)
+		uffdCmd = fmt.Sprint("%s %s %s", fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
+	}
+
 	fcCmd := fmt.Sprintf("%s --api-sock %s", fsEnv.FirecrackerBinaryPath, fsEnv.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
@@ -161,7 +168,7 @@ func startFC(
 		attribute.String("instance.netns.command", inNetNSCmd),
 	)
 
-	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", rootfsMountCmd+kernelMountCmd+inNetNSCmd+fcCmd)
+	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", rootfsMountCmd+kernelMountCmd+inNetNSCmd+uffdCmd+fcCmd)
 
 	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
 	cmdStderrReader, cmdStderrWriter := io.Pipe()

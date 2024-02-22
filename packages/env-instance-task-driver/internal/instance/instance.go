@@ -35,6 +35,7 @@ type InstanceConfig struct {
 	KernelsDir            string
 	KernelName            string
 	FirecrackerBinaryPath string
+	UFFDBinaryPath        string
 	HugePages             bool
 }
 
@@ -108,6 +109,7 @@ func NewInstance(
 		config.KernelMountDir,
 		config.KernelName,
 		config.FirecrackerBinaryPath,
+		config.UFFDBinaryPath,
 		config.HugePages,
 	)
 	if err != nil {
