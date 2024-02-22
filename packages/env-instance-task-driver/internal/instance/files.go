@@ -34,6 +34,8 @@ type InstanceFiles struct {
 	KernelMountDirPath string
 
 	FirecrackerBinaryPath string
+
+	UFFDSocketPath *string
 }
 
 func newInstanceFiles(
@@ -47,6 +49,7 @@ func newInstanceFiles(
 	kernelMountDir,
 	kernelName,
 	firecrackerBinaryPath string,
+	hugePages bool,
 ) (*InstanceFiles, error) {
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
@@ -99,6 +102,21 @@ func newInstanceFiles(
 		return nil, errMsg
 	}
 
+	// Create UFFD socket
+	var uffdSocketPath *string
+
+	if hugePages {
+		socketName := fmt.Sprintf("uffd-%s", slot.InstanceID)
+		socket, sockErr := getSocketPath(socketName)
+		if sockErr != nil {
+			errMsg := fmt.Errorf("error getting UFFD socket path: %w", sockErr)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+			return nil, errMsg
+		}
+
+		uffdSocketPath = &socket
+	}
+
 	// Create kernel path
 	kernelPath := filepath.Join(kernelsDir, kernelVersion)
 
@@ -119,6 +137,7 @@ func newInstanceFiles(
 		KernelDirPath:         kernelPath,
 		KernelMountDirPath:    kernelMountDir,
 		FirecrackerBinaryPath: firecrackerBinaryPath,
+		UFFDSocketPath:        uffdSocketPath,
 	}, nil
 }
 
@@ -151,6 +170,17 @@ func (env *InstanceFiles) Cleanup(
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "removed socket")
+	}
+
+	// Remove UFFD socket
+	if env.UFFDSocketPath != nil {
+		err = os.Remove(*env.UFFDSocketPath)
+		if err != nil {
+			errMsg := fmt.Errorf("error deleting socket for UFFD: %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "removed UFFD socket")
+		}
 	}
 
 	return nil

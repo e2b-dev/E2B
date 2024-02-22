@@ -42,12 +42,17 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 	return httpClient
 }
 
+type hugePages struct {
+	socketPath string
+}
+
 func loadSnapshot(
 	ctx context.Context,
 	tracer trace.Tracer,
 	socketPath,
 	envPath string,
 	metadata interface{},
+	uffdSocketPath *string,
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "load-snapshot", trace.WithAttributes(
 		attribute.String("instance.socket.path", socketPath),
@@ -67,17 +72,29 @@ func loadSnapshot(
 		attribute.String("instance.snapfile.path", snapfilePath),
 	)
 
-	backendType := models.MemoryBackendBackendTypeFile
+	var backend *models.MemoryBackend
+
+	if uffdSocketPath != nil {
+		backendType := models.MemoryBackendBackendTypeUffd
+		backend = &models.MemoryBackend{
+			BackendPath: uffdSocketPath,
+			BackendType: &backendType,
+		}
+	} else {
+		backendType := models.MemoryBackendBackendTypeFile
+		backend = &models.MemoryBackend{
+			BackendPath: &memfilePath,
+			BackendType: &backendType,
+		}
+	}
+
 	snapshotConfig := operations.LoadSnapshotParams{
 		Context: childCtx,
 		Body: &models.SnapshotLoadParams{
 			ResumeVM:            true,
 			EnableDiffSnapshots: false,
-			MemBackend: &models.MemoryBackend{
-				BackendPath: &memfilePath,
-				BackendType: &backendType,
-			},
-			SnapshotPath: &snapfilePath,
+			MemBackend:          backend,
+			SnapshotPath:        &snapfilePath,
 		},
 	}
 
@@ -241,6 +258,7 @@ func startFC(
 		fsEnv.SocketPath,
 		fsEnv.EnvPath,
 		mmdsMetadata,
+		fsEnv.UFFDSocketPath,
 	); err != nil {
 		m.StopVMM()
 		errMsg := fmt.Errorf("failed to load snapshot: %w", err)

@@ -35,6 +35,7 @@ type InstanceConfig struct {
 	KernelsDir            string
 	KernelName            string
 	FirecrackerBinaryPath string
+	HugePages             bool
 }
 
 func NewInstance(
@@ -107,6 +108,7 @@ func NewInstance(
 		config.KernelMountDir,
 		config.KernelName,
 		config.FirecrackerBinaryPath,
+		config.HugePages,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create env for FC: %w", err)

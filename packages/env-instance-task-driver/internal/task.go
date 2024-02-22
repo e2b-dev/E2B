@@ -27,6 +27,8 @@ type (
 		KernelVersion      string `codec:"KernelVersion"`
 		FirecrackerVersion string `codec:"FirecrackerVersion"`
 
+		HugePages bool `codec:"HugePages"`
+
 		TeamID string `codec:"TeamID"`
 
 		TraceID string `codec:"TraceID"`
@@ -49,6 +51,8 @@ var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 
 	"KernelVersion":      hclspec.NewAttr("KernelVersion", "string", true),
 	"FirecrackerVersion": hclspec.NewAttr("FirecrackerVersion", "string", true),
+
+	"HugePages": hclspec.NewAttr("HugePages", "bool", false),
 
 	"TeamID": hclspec.NewAttr("TeamID", "string", false),
 
@@ -112,6 +116,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 			KernelsDir:            cfg.Env["KERNELS_DIR"],
 			KernelMountDir:        cfg.Env["KERNEL_MOUNT_DIR"],
 			KernelName:            cfg.Env["KERNEL_NAME"],
+			HugePages:             taskConfig.HugePages,
 			FirecrackerBinaryPath: filepath.Join(cfg.Env["FC_VERSIONS_DIR"], taskConfig.FirecrackerVersion, cfg.Env["FC_BINARY_NAME"]),
 		},
 		de.hosts,

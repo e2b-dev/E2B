@@ -43,6 +43,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
       }
 
       config {
+        HugePages = {{ .HugePages }}
         EnvID = "{{ .EnvID }}"
         InstanceID = "{{ .InstanceID }}"
         FirecrackerVersion = "{{ .FirecrackerVersion }}"

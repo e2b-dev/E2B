@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/google/uuid"
@@ -189,6 +190,17 @@ func (n *NomadClient) CreateSandbox(
 		attribute.String("passed_span_id_hex", spanID),
 	)
 
+	features, err := sandbox.NewVersionInfo(firecrackerVersion)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to get features for firecracker version '%s': %w", firecrackerVersion, err)
+
+		return nil, &api.APIError{
+			Err:       errMsg,
+			ClientMsg: "Cannot create a environment instance right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
+
 	var jobDef bytes.Buffer
 
 	jobVars := struct {
@@ -213,7 +225,9 @@ func (n *NomadClient) CreateSandbox(
 		MaxInstanceLength    string
 		MetadataKey          string
 		Metadata             string
+		HugePages            bool
 	}{
+		HugePages:            features.HasHugePages(),
 		TeamIDKey:            teamIDMetaKey,
 		EnvIDKey:             envIDMetaKey,
 		AliasKey:             aliasMetaKey,
