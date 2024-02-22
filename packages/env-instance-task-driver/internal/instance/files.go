@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/KarpelesLab/reflink"
 	"go.opentelemetry.io/otel/attribute"
@@ -21,6 +22,9 @@ const (
 
 	BuildDirName        = "builds"
 	EnvInstancesDirName = "env-instances"
+
+	socketReadyCheckInterval = 25 * time.Millisecond
+	socketWaitTimeout        = 2 * time.Second
 )
 
 type InstanceFiles struct {
@@ -37,6 +41,32 @@ type InstanceFiles struct {
 	UFFDBinaryPath        string
 
 	UFFDSocketPath *string
+}
+
+func waitForSocket(socketPath string, timeout time.Duration) error {
+	start := time.Now()
+
+	for {
+		_, err := os.Stat(socketPath)
+		if err == nil {
+			// Socket file exists
+			return nil
+		} else if os.IsNotExist(err) {
+			// Socket file doesn't exist yet
+
+			// Check if timeout has been reached
+			elapsed := time.Since(start)
+			if elapsed >= timeout {
+				return fmt.Errorf("timeout reached while waiting for socket file")
+			}
+
+			// Wait for a short duration before checking again
+			time.Sleep(socketReadyCheckInterval)
+		} else {
+			// Error occurred while checking for socket file
+			return err
+		}
+	}
 }
 
 func newInstanceFiles(

@@ -75,6 +75,15 @@ func loadSnapshot(
 	var backend *models.MemoryBackend
 
 	if uffdSocketPath != nil {
+		err := waitForSocket(*uffdSocketPath, socketReadyCheckInterval)
+		if err != nil {
+			telemetry.ReportCriticalError(childCtx, err)
+
+			return err
+		} else {
+			telemetry.ReportEvent(childCtx, "uffd socket ready")
+		}
+
 		backendType := models.MemoryBackendBackendTypeUffd
 		backend = &models.MemoryBackend{
 			BackendPath: uffdSocketPath,
@@ -157,7 +166,10 @@ func startFC(
 
 	if fsEnv.UFFDSocketPath != nil {
 		memfilePath := filepath.Join(fsEnv.EnvPath, MemfileName)
-		uffdCmd = fmt.Sprint("%s %s %s", fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
+		uffdCmd = fmt.Sprintf("%s %s %s & ", fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
+		telemetry.SetAttributes(childCtx,
+			attribute.String("instance.uffd.command", uffdCmd),
+		)
 	}
 
 	fcCmd := fmt.Sprintf("%s --api-sock %s", fsEnv.FirecrackerBinaryPath, fsEnv.SocketPath)
@@ -291,6 +303,8 @@ func startFC(
 		return nil, errMsg
 	}
 
+	telemetry.ReportEvent(childCtx, "got pid for FC")
+
 	fc := &FC{
 		Cmd: cmd,
 		Pid: strconv.Itoa(pid),
@@ -298,7 +312,6 @@ func startFC(
 
 	telemetry.SetAttributes(
 		childCtx,
-
 		attribute.String("alloc.id", allocID),
 		attribute.String("instance.pid", fc.Pid),
 		attribute.String("instance.socket.path", fsEnv.SocketPath),
