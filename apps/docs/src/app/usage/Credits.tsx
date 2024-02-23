@@ -42,7 +42,7 @@ function Credits() {
         <span className="text-sm">Will be used when generating invoice</span>
         {isLoading && <SpinnerIcon />}
         {!isLoading && (
-          <span className="text-sm font-mono text-green-300/80">${credits}</span>
+          <span className="text-sm font-mono text-green-300/80">${formatCurrency(credits)}</span>
         )}
       </div>
 
