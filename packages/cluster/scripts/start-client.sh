@@ -26,7 +26,7 @@ echo "- Total memory: $available_ram MiB"
 
 min_normal_ram=$((4 * 1024))                            # 4 GiB
 min_normal_percentage_ram=$(($available_ram * 8 / 100)) # 8% of the total memory
-max_normal_ram=$((32 * 1024))                           # 24 GiB
+max_normal_ram=$((32 * 1024))                           # 32 GiB
 
 max() {
     if (($1 > $2)); then
