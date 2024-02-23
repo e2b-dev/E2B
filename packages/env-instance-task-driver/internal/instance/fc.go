@@ -74,6 +74,7 @@ func loadSnapshot(
 		err := waitForSocket(*uffdSocketPath, socketReadyCheckInterval)
 		if err != nil {
 			telemetry.ReportCriticalError(childCtx, err)
+
 			return err
 		} else {
 			telemetry.ReportEvent(childCtx, "uffd socket ready")
@@ -178,7 +179,7 @@ func startFC(
 	cmd := exec.CommandContext(
 		vmmCtx,
 		"unshare",
-		"-pm",
+		"-pfm",
 		"--kill-child",
 		"--",
 		"bash",
