@@ -17,7 +17,6 @@ export interface MonthlyCosts {
 }
 
 const usageUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/usage`
-const creditsUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/credits`
 
 export function useUsage() {
   const { user } = useUser()
@@ -34,24 +33,15 @@ export function useUsage() {
     if (teams.length === 0) return
     if (!apiKey) return
 
-    const [
-      { credits: c },
-      u,
-    ] = await Promise.all([
-      fetch(creditsUrl, {
-        headers: {
-          'X-Team-API-Key': apiKey,
-        },
-      }).then(res => res.json()),
+    const teamUsage = await
       fetch(usageUrl, {
         headers: {
           'X-Team-API-Key': apiKey,
         },
-      }).then(res => res.json()),
-    ])
+      }).then(res => res.json())
 
-    setCredits(c)
-    setUsage(u)
+    setCredits(teamUsage.credits)
+    setUsage(teamUsage.usages as MonthlyCosts[])
     setIsLoading(false)
   }, [user, supabase, apiKey])
 

@@ -42,7 +42,7 @@ function Credits() {
         <span className="text-sm">Will be used when generating invoice</span>
         {isLoading && <SpinnerIcon />}
         {!isLoading && (
-          <span className="text-sm font-mono text-green-300/80">${credits}</span>
+          <span className="text-sm font-mono text-green-300/80">${formatCurrency(credits)}</span>
         )}
       </div>
 
@@ -51,6 +51,7 @@ function Credits() {
           <React.Fragment key={index}>
             <h3 className="text-xl">
               {new Date(u.year, u.month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              {u.year === 2024 && u.month === 2 ? ' (calculated from the 21st onwards)' : ''}
             </h3>
 
             <div className="flex flex-col justify-start items-start gap-4">
