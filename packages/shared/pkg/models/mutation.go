@@ -507,6 +507,7 @@ type EnvMutation struct {
 	total_disk_size_mb    *int64
 	addtotal_disk_size_mb *int64
 	kernel_version        *string
+	firecracker_version   *string
 	clearedFields         map[string]struct{}
 	team                  *uuid.UUID
 	clearedteam           bool
@@ -1259,6 +1260,42 @@ func (m *EnvMutation) ResetKernelVersion() {
 	m.kernel_version = nil
 }
 
+// SetFirecrackerVersion sets the "firecracker_version" field.
+func (m *EnvMutation) SetFirecrackerVersion(s string) {
+	m.firecracker_version = &s
+}
+
+// FirecrackerVersion returns the value of the "firecracker_version" field in the mutation.
+func (m *EnvMutation) FirecrackerVersion() (r string, exists bool) {
+	v := m.firecracker_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFirecrackerVersion returns the old "firecracker_version" field's value of the Env entity.
+// If the Env object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvMutation) OldFirecrackerVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFirecrackerVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFirecrackerVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFirecrackerVersion: %w", err)
+	}
+	return oldValue.FirecrackerVersion, nil
+}
+
+// ResetFirecrackerVersion resets all changes to the "firecracker_version" field.
+func (m *EnvMutation) ResetFirecrackerVersion() {
+	m.firecracker_version = nil
+}
+
 // ClearTeam clears the "team" edge to the Team entity.
 func (m *EnvMutation) ClearTeam() {
 	m.clearedteam = true
@@ -1374,7 +1411,7 @@ func (m *EnvMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, env.FieldCreatedAt)
 	}
@@ -1417,6 +1454,9 @@ func (m *EnvMutation) Fields() []string {
 	if m.kernel_version != nil {
 		fields = append(fields, env.FieldKernelVersion)
 	}
+	if m.firecracker_version != nil {
+		fields = append(fields, env.FieldFirecrackerVersion)
+	}
 	return fields
 }
 
@@ -1453,6 +1493,8 @@ func (m *EnvMutation) Field(name string) (ent.Value, bool) {
 		return m.TotalDiskSizeMB()
 	case env.FieldKernelVersion:
 		return m.KernelVersion()
+	case env.FieldFirecrackerVersion:
+		return m.FirecrackerVersion()
 	}
 	return nil, false
 }
@@ -1490,6 +1532,8 @@ func (m *EnvMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldTotalDiskSizeMB(ctx)
 	case env.FieldKernelVersion:
 		return m.OldKernelVersion(ctx)
+	case env.FieldFirecrackerVersion:
+		return m.OldFirecrackerVersion(ctx)
 	}
 	return nil, fmt.Errorf("unknown Env field %s", name)
 }
@@ -1596,6 +1640,13 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetKernelVersion(v)
+		return nil
+	case env.FieldFirecrackerVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFirecrackerVersion(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)
@@ -1771,6 +1822,9 @@ func (m *EnvMutation) ResetField(name string) error {
 		return nil
 	case env.FieldKernelVersion:
 		m.ResetKernelVersion()
+		return nil
+	case env.FieldFirecrackerVersion:
+		m.ResetFirecrackerVersion()
 		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)

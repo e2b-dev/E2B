@@ -21,19 +21,20 @@ type Instance struct {
 }
 
 type InstanceConfig struct {
-	EnvID            string
-	AllocID          string
-	NodeID           string
-	ConsulToken      string
-	EnvsDisk         string
-	InstanceID       string
-	LogsProxyAddress string
-	TraceID          string
-	TeamID           string
-	KernelVersion    string
-	KernelMountDir   string
-	KernelsDir       string
-	KernelName       string
+	EnvID                 string
+	AllocID               string
+	NodeID                string
+	ConsulToken           string
+	EnvsDisk              string
+	InstanceID            string
+	LogsProxyAddress      string
+	TraceID               string
+	TeamID                string
+	KernelVersion         string
+	KernelMountDir        string
+	KernelsDir            string
+	KernelName            string
+	FirecrackerBinaryPath string
 }
 
 func NewInstance(
@@ -105,6 +106,7 @@ func NewInstance(
 		config.KernelsDir,
 		config.KernelMountDir,
 		config.KernelName,
+		config.FirecrackerBinaryPath,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create env for FC: %w", err)

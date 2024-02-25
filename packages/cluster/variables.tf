@@ -133,6 +133,10 @@ variable "fc_kernels_bucket_name" {
   description = "The name of the bucket to store the kernels for firecracker"
 }
 
+variable "fc_versions_bucket_name" {
+  type = string
+}
+
 variable "consul_acl_token_secret" {
   type = string
 }

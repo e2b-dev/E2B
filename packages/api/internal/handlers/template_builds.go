@@ -16,10 +16,9 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/schema"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
-
-const defaultKernelVersion = "vmlinux-5.10.186"
 
 func (a *APIStore) PostTemplates(c *gin.Context) {
 	template := a.PostTemplatesWithoutResponse(c)
@@ -178,13 +177,15 @@ func (a *APIStore) PostTemplatesWithoutResponse(c *gin.Context) *api.Template {
 			buildID,
 			dockerfile,
 			startCmd,
-			defaultKernelVersion,
+			schema.DefaultKernelVersion,
+			schema.DefaultFirecrackerVersion,
 			properties,
 			nomad.BuildConfig{
-				VCpuCount:     tier.Vcpu,
-				MemoryMB:      tier.RAMMB,
-				DiskSizeMB:    tier.DiskMB,
-				KernelVersion: defaultKernelVersion,
+				VCpuCount:          tier.Vcpu,
+				MemoryMB:           tier.RAMMB,
+				DiskSizeMB:         tier.DiskMB,
+				KernelVersion:      schema.DefaultKernelVersion,
+				FirecrackerVersion: schema.DefaultFirecrackerVersion,
 			})
 
 		if buildErr != nil {
@@ -328,7 +329,7 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 		attribute.String("env.alias", alias),
 	)
 
-	env, envKernelVersion, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
+	env, envKernelVersion, envFirecrackerVersion, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
 	if accessErr != nil {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("the sandbox template '%s' does not exist", cleanedAliasOrEnvID))
 
@@ -415,12 +416,14 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 			dockerfile,
 			startCmd,
 			envKernelVersion,
+			envFirecrackerVersion,
 			properties,
 			nomad.BuildConfig{
-				VCpuCount:     tier.Vcpu,
-				MemoryMB:      tier.RAMMB,
-				DiskSizeMB:    tier.DiskMB,
-				KernelVersion: defaultKernelVersion,
+				VCpuCount:          tier.Vcpu,
+				MemoryMB:           tier.RAMMB,
+				DiskSizeMB:         tier.DiskMB,
+				KernelVersion:      schema.DefaultKernelVersion,
+				FirecrackerVersion: schema.DefaultFirecrackerVersion,
 			})
 
 		if buildErr != nil {
@@ -485,8 +488,9 @@ func (a *APIStore) buildEnv(
 	envID string,
 	buildID uuid.UUID,
 	dockerfile,
-	startCmd string,
-	envKernelVersion string,
+	startCmd,
+	envKernelVersion,
+	envFirecrackerVersion string,
 	posthogProperties posthog.Properties,
 	vmConfig nomad.BuildConfig,
 ) (err error) {
@@ -515,6 +519,7 @@ func (a *APIStore) buildEnv(
 		childCtx,
 		envID,
 		envKernelVersion,
+		envFirecrackerVersion,
 		buildID.String(),
 		startCmd,
 		a.apiSecret,
@@ -538,7 +543,8 @@ func (a *APIStore) buildEnv(
 		vmConfig.MemoryMB,
 		vmConfig.DiskSizeMB,
 		diskSize,
-		defaultKernelVersion,
+		schema.DefaultKernelVersion,
+		schema.DefaultFirecrackerVersion,
 	)
 
 	if err != nil {

@@ -31,6 +31,17 @@ resource "google_storage_bucket" "fc_kernels_bucket" {
   labels = var.labels
 }
 
+resource "google_storage_bucket" "fc_versions_bucket" {
+  location = var.gcp_region
+  name     = "${var.gcp_project_id}-fc-versions"
+
+  public_access_prevention    = "enforced"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+
+  labels = var.labels
+}
+
 resource "google_storage_bucket" "fc_env_pipeline_bucket" {
   location = var.gcp_region
   name     = "${var.gcp_project_id}-fc-env-pipeline"
@@ -62,6 +73,12 @@ resource "google_storage_bucket_iam_member" "instance_setup_bucket_iam" {
 
 resource "google_storage_bucket_iam_member" "fc_kernels_bucket_iam" {
   bucket = google_storage_bucket.fc_kernels_bucket.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${var.gcp_service_account_email}"
+}
+
+resource "google_storage_bucket_iam_member" "fc_versions_bucket_iam" {
+  bucket = google_storage_bucket.fc_versions_bucket.name
   role   = "roles/storage.objectViewer"
   member = "serviceAccount:${var.gcp_service_account_email}"
 }

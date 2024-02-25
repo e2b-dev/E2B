@@ -14,3 +14,7 @@ output "fc_env_pipeline_bucket_name" {
 output "fc_kernels_bucket_name" {
   value = google_storage_bucket.fc_kernels_bucket.name
 }
+
+output "fc_versions_bucket_name" {
+  value = google_storage_bucket.fc_versions_bucket.name
+}

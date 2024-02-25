@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	"github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
@@ -20,8 +19,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/fc/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
-
-const fcKillCheckInternval = 4 * time.Second
 
 type MmdsMetadata struct {
 	InstanceID string `json:"instanceID"`
@@ -139,8 +136,13 @@ func startFC(
 		fsEnv.KernelMountDirPath,
 	)
 
-	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", fsEnv.SocketPath)
+	fcCmd := fmt.Sprintf("%s --api-sock %s", fsEnv.FirecrackerBinaryPath, fsEnv.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
+
+	telemetry.SetAttributes(childCtx,
+		attribute.String("instance.firecracker.command", fcCmd),
+		attribute.String("instance.netns.command", inNetNSCmd),
+	)
 
 	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", rootfsMountCmd+kernelMountCmd+inNetNSCmd+fcCmd)
 

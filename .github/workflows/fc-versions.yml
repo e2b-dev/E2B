@@ -1,0 +1,36 @@
+name: FC Versions
+
+on:
+  workflow_call:
+    secrets:
+      service_account_email:
+        required: true
+      workload_identity_provider:
+        required: true
+      gcp_project_id:
+        required: true
+
+jobs:
+  publish:
+    name: Upload FCs
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Service Account
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
+
+      - name: Build firecracker versions
+        working-directory: ./packages/fc-versions
+        run: make build
+
+      - name: Upload kernels
+        uses: "google-github-actions/upload-cloud-storage@v1"
+        with:
+          path: "./packages/fc-versions/builds"
+          destination: "${{ secrets.gcp_project_id }}-fc-versions"
+          gzip: false

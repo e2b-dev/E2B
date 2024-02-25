@@ -22,6 +22,7 @@ jobs:
       api: ${{ steps.filter.outputs.api }}
       envd: ${{ steps.filter.outputs.envd }}
       fc-kernels: ${{ steps.filter.outputs.fc-kernels }}
+      fc-versions: ${{ steps.filter.outputs.fc-versions }}
       template-delete-task-driver: ${{ steps.filter.outputs.template-delete-task-driver }}
       env-instance-task-driver: ${{ steps.filter.outputs.env-instance-task-driver }}
       env-build-task-driver: ${{ steps.filter.outputs.env-build-task-driver }}
@@ -76,6 +77,9 @@ jobs:
             fc-kernels:
               - 'packages/fc-kernels/**'
               - '.github/workflows/fc-kernels.yml'
+            fc-versions:
+              - 'packages/fc-versions/**'
+              - '.github/workflows/fc-versions.yml'
             version:
               - 'VERSION'
 
@@ -174,6 +178,19 @@ jobs:
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
       gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
 
+  fc-versions:
+    name: FC Versions
+    needs: changes
+    if: |
+      always() &&
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.fc-versions == 'true'
+    uses: ./.github/workflows/fc-versions.yml
+    secrets:
+      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
+      gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
+
   terraform:
     name: Terraform
     needs:
@@ -181,6 +198,7 @@ jobs:
         changes,
         cluster-disk-image,
         fc-kernels,
+        fc-versions,
         api,
         envd,
         env-instance-task-driver,
@@ -194,6 +212,7 @@ jobs:
       (needs.cluster-disk-image.result == 'success' || needs.cluster-disk-image.result == 'skipped') &&
       (needs.envd.result == 'success' || needs.envd.result == 'skipped') &&
       (needs.fc-kernels.result == 'success' || needs.fc-kernels.result == 'skipped') &&
+      (needs.fc-versions.result == 'success' || needs.fc-versions.result == 'skipped') &&
       (needs.env-instance-task-driver.result == 'success' || needs.env-instance-task-driver.result == 'skipped') &&
       (needs.env-build-task-driver.result == 'success' || needs.env-build-task-driver.result == 'skipped') &&
       (needs.template-delete-task-driver.result == 'success' || needs.template-delete-task-driver.result == 'skipped') &&

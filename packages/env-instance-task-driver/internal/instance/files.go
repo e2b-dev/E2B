@@ -32,6 +32,8 @@ type InstanceFiles struct {
 
 	KernelDirPath      string
 	KernelMountDirPath string
+
+	FirecrackerBinaryPath string
 }
 
 func newInstanceFiles(
@@ -43,7 +45,8 @@ func newInstanceFiles(
 	kernelVersion,
 	kernelsDir,
 	kernelMountDir,
-	kernelName string,
+	kernelName,
+	firecrackerBinaryPath string,
 ) (*InstanceFiles, error) {
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
@@ -105,15 +108,17 @@ func newInstanceFiles(
 		attribute.String("instance.env_path", envPath),
 		attribute.String("instance.kernel.mount_path", filepath.Join(kernelMountDir, kernelName)),
 		attribute.String("instance.kernel.path", filepath.Join(kernelPath, kernelName)),
+		attribute.String("instance.firecracker.path", firecrackerBinaryPath),
 	)
 
 	return &InstanceFiles{
-		EnvInstancePath:    envInstancePath,
-		BuildDirPath:       buildDirPath,
-		EnvPath:            envPath,
-		SocketPath:         socketPath,
-		KernelDirPath:      kernelPath,
-		KernelMountDirPath: kernelMountDir,
+		EnvInstancePath:       envInstancePath,
+		BuildDirPath:          buildDirPath,
+		EnvPath:               envPath,
+		SocketPath:            socketPath,
+		KernelDirPath:         kernelPath,
+		KernelMountDirPath:    kernelMountDir,
+		FirecrackerBinaryPath: firecrackerBinaryPath,
 	}, nil
 }
 

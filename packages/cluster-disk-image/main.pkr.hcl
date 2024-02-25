@@ -8,7 +8,6 @@ packer {
   }
 }
 
-# TODO: Separate server and client images
 source "googlecompute" "orch" {
   image_family = "e2b-orch"
   # TODO: Overwrite the image instead of creating timestamped images every time we build its
@@ -63,8 +62,6 @@ build {
     ]
   }
 
-
-  # TODO: Remove unused deps
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
@@ -85,7 +82,6 @@ build {
     ]
   }
 
-  # TODO: Remove unused deps
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /opt/gruntwork",
@@ -99,19 +95,9 @@ build {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.consul_version}"
   }
 
-  # TODO: Remove unused deps - is Consul already using dnsmasq?
-  # provisioner "shell" {
-  #   script = "${path.root}/setup/install-dnsmasq.sh"
-  # }
-
   provisioner "shell" {
     script          = "${path.root}/setup/install-nomad.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.nomad_version}"
-  }
-
-  provisioner "shell" {
-    script          = "${path.root}/setup/install-firecracker.sh"
-    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
 
   provisioner "shell" {

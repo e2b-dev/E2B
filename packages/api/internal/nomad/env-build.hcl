@@ -23,7 +23,6 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
         DOCKER_REGISTRY = "{{ .GCPRegion }}-docker.pkg.dev/{{ .GCPProjectID }}/{{ .DockerRepositoryName }}"
         DOCKER_CONTEXTS_PATH = "/mnt/disks/docker-contexts/v1"
         ENVD_PATH = "/fc-vm/envd"
-        FIRECRACKER_BINARY_PATH = "/usr/bin/firecracker"
         CONTEXT_FILE_NAME = "context.tar.gz"
         API_SECRET = "{{ .APISecret }}"
         GOOGLE_SERVICE_ACCOUNT_BASE64 = "{{ .GoogleServiceAccountBase64 }}"
@@ -31,6 +30,8 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
         KERNELS_DIR= "/fc-kernels"
         KERNEL_MOUNT_DIR="/fc-vm"
         KERNEL_NAME="vmlinux.bin"
+        FC_BINARY_NAME="firecracker"
+        FC_VERSIONS_DIR="/fc-versions"
       }
 
       resources {
@@ -42,6 +43,7 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
         StartCmd = "{{ .StartCmd }}"
         BuildID = "{{ .BuildID }}"
         EnvID = "{{ .EnvID }}"
+        FirecrackerVersion = "{{ .FirecrackerVersion }}"
         KernelVersion = "{{ .KernelVersion }}"
         VCpuCount = "{{ .VCpuCount }}"
         DiskSizeMB = "{{ .DiskSizeMB }}"

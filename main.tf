@@ -102,6 +102,7 @@ module "github_tf" {
   domain_name            = var.domain_name
   terraform_state_bucket = var.terraform_state_bucket
   kernel_bucket          = module.buckets.fc_kernels_bucket_name
+  fc_versions_bucket     = module.buckets.fc_versions_bucket_name
 
   prefix = var.prefix
 }
@@ -133,6 +134,7 @@ module "cluster" {
   cluster_setup_bucket_name   = module.buckets.cluster_setup_bucket_name
   fc_env_pipeline_bucket_name = module.buckets.fc_env_pipeline_bucket_name
   fc_kernels_bucket_name      = module.buckets.fc_kernels_bucket_name
+  fc_versions_bucket_name     = module.buckets.fc_versions_bucket_name
 
   consul_acl_token_secret = module.init.consul_acl_token_secret
   nomad_acl_token_secret  = module.init.nomad_acl_token_secret

@@ -158,6 +158,20 @@ func (ec *EnvCreate) SetNillableKernelVersion(s *string) *EnvCreate {
 	return ec
 }
 
+// SetFirecrackerVersion sets the "firecracker_version" field.
+func (ec *EnvCreate) SetFirecrackerVersion(s string) *EnvCreate {
+	ec.mutation.SetFirecrackerVersion(s)
+	return ec
+}
+
+// SetNillableFirecrackerVersion sets the "firecracker_version" field if the given value is not nil.
+func (ec *EnvCreate) SetNillableFirecrackerVersion(s *string) *EnvCreate {
+	if s != nil {
+		ec.SetFirecrackerVersion(*s)
+	}
+	return ec
+}
+
 // SetID sets the "id" field.
 func (ec *EnvCreate) SetID(s string) *EnvCreate {
 	ec.mutation.SetID(s)
@@ -239,6 +253,10 @@ func (ec *EnvCreate) defaults() {
 		v := env.DefaultKernelVersion
 		ec.mutation.SetKernelVersion(v)
 	}
+	if _, ok := ec.mutation.FirecrackerVersion(); !ok {
+		v := env.DefaultFirecrackerVersion
+		ec.mutation.SetFirecrackerVersion(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -281,6 +299,9 @@ func (ec *EnvCreate) check() error {
 	}
 	if _, ok := ec.mutation.KernelVersion(); !ok {
 		return &ValidationError{Name: "kernel_version", err: errors.New(`models: missing required field "Env.kernel_version"`)}
+	}
+	if _, ok := ec.mutation.FirecrackerVersion(); !ok {
+		return &ValidationError{Name: "firecracker_version", err: errors.New(`models: missing required field "Env.firecracker_version"`)}
 	}
 	if _, ok := ec.mutation.TeamID(); !ok {
 		return &ValidationError{Name: "team", err: errors.New(`models: missing required edge "Env.team"`)}
@@ -373,6 +394,10 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 	if value, ok := ec.mutation.KernelVersion(); ok {
 		_spec.SetField(env.FieldKernelVersion, field.TypeString, value)
 		_node.KernelVersion = value
+	}
+	if value, ok := ec.mutation.FirecrackerVersion(); ok {
+		_spec.SetField(env.FieldFirecrackerVersion, field.TypeString, value)
+		_node.FirecrackerVersion = value
 	}
 	if nodes := ec.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -659,6 +684,18 @@ func (u *EnvUpsert) UpdateKernelVersion() *EnvUpsert {
 	return u
 }
 
+// SetFirecrackerVersion sets the "firecracker_version" field.
+func (u *EnvUpsert) SetFirecrackerVersion(v string) *EnvUpsert {
+	u.Set(env.FieldFirecrackerVersion, v)
+	return u
+}
+
+// UpdateFirecrackerVersion sets the "firecracker_version" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateFirecrackerVersion() *EnvUpsert {
+	u.SetExcluded(env.FieldFirecrackerVersion)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -938,6 +975,20 @@ func (u *EnvUpsertOne) SetKernelVersion(v string) *EnvUpsertOne {
 func (u *EnvUpsertOne) UpdateKernelVersion() *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdateKernelVersion()
+	})
+}
+
+// SetFirecrackerVersion sets the "firecracker_version" field.
+func (u *EnvUpsertOne) SetFirecrackerVersion(v string) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetFirecrackerVersion(v)
+	})
+}
+
+// UpdateFirecrackerVersion sets the "firecracker_version" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateFirecrackerVersion() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateFirecrackerVersion()
 	})
 }
 
@@ -1387,6 +1438,20 @@ func (u *EnvUpsertBulk) SetKernelVersion(v string) *EnvUpsertBulk {
 func (u *EnvUpsertBulk) UpdateKernelVersion() *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdateKernelVersion()
+	})
+}
+
+// SetFirecrackerVersion sets the "firecracker_version" field.
+func (u *EnvUpsertBulk) SetFirecrackerVersion(v string) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetFirecrackerVersion(v)
+	})
+}
+
+// UpdateFirecrackerVersion sets the "firecracker_version" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateFirecrackerVersion() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateFirecrackerVersion()
 	})
 }
 

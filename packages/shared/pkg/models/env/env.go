@@ -42,6 +42,8 @@ const (
 	FieldTotalDiskSizeMB = "total_disk_size_mb"
 	// FieldKernelVersion holds the string denoting the kernel_version field in the database.
 	FieldKernelVersion = "kernel_version"
+	// FieldFirecrackerVersion holds the string denoting the firecracker_version field in the database.
+	FieldFirecrackerVersion = "firecracker_version"
 	// EdgeTeam holds the string denoting the team edge name in mutations.
 	EdgeTeam = "team"
 	// EdgeEnvAliases holds the string denoting the env_aliases edge name in mutations.
@@ -83,6 +85,7 @@ var Columns = []string{
 	FieldFreeDiskSizeMB,
 	FieldTotalDiskSizeMB,
 	FieldKernelVersion,
+	FieldFirecrackerVersion,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -106,6 +109,8 @@ var (
 	DefaultSpawnCount int64
 	// DefaultKernelVersion holds the default value on creation for the "kernel_version" field.
 	DefaultKernelVersion string
+	// DefaultFirecrackerVersion holds the default value on creation for the "firecracker_version" field.
+	DefaultFirecrackerVersion string
 )
 
 // OrderOption defines the ordering options for the Env queries.
@@ -184,6 +189,11 @@ func ByTotalDiskSizeMB(opts ...sql.OrderTermOption) OrderOption {
 // ByKernelVersion orders the results by the kernel_version field.
 func ByKernelVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKernelVersion, opts...).ToFunc()
+}
+
+// ByFirecrackerVersion orders the results by the firecracker_version field.
+func ByFirecrackerVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFirecrackerVersion, opts...).ToFunc()
 }
 
 // ByTeamField orders the results by team field.
