@@ -5,7 +5,7 @@ info:
     The API is accessible through HTTP calls on specific URLs
     carrying JSON modeled data.
     The transport medium is a Unix Domain Socket.
-  version: 1.5.0
+  version: 1.7.0-dev
   termsOfService: ""
   contact:
     email: "compute-capsule@amazon.com"
@@ -330,9 +330,10 @@ paths:
         The vCPU count is restricted to the [1, 32] range.
         With SMT enabled, the vCPU count is required to be either 1 or an even number in the range.
         otherwise there are no restrictions regarding the vCPU count.
+        If 2M hugetlbfs pages are specified, then `mem_size_mib` must be a multiple of 2.
         If any of the parameters has an incorrect value, the whole update fails.
         All parameters that are optional and are not specified are set to their default values
-        (smt = false, track_dirty_pages = false, cpu_template = None).
+        (smt = false, track_dirty_pages = false, cpu_template = None, huge_pages = None).
       operationId: putMachineConfiguration
       parameters:
         - name: body
@@ -846,30 +847,33 @@ definitions:
     type: object
     required:
       - drive_id
-      - is_read_only
       - is_root_device
-      - path_on_host
     properties:
       drive_id:
         type: string
-      cache_type:
-        type: string
-        description: Represents the caching strategy for the block device.
-        enum: ["Unsafe", "Writeback"]
-        default: "Unsafe"
-      is_read_only:
-        type: boolean
-      is_root_device:
-        type: boolean
       partuuid:
         type: string
         description:
           Represents the unique id of the boot partition of this device. It is
           optional and it will be taken into account only if the is_root_device
           field is true.
+      is_root_device:
+        type: boolean
+      cache_type:
+        type: string
+        description: Represents the caching strategy for the block device.
+        enum: ["Unsafe", "Writeback"]
+        default: "Unsafe"
+
+      # VirtioBlock specific parameters
+      is_read_only:
+        type: boolean
+        description: Is block read only.
+          This field is required for virtio-block config and should be omitted for vhost-user-block configuration.
       path_on_host:
         type: string
-        description: Host level path for the guest drive
+        description: Host level path for the guest drive.
+          This field is required for virtio-block config and should be omitted for vhost-user-block configuration.
       rate_limiter:
         $ref: "#/definitions/RateLimiter"
       io_engine:
@@ -877,8 +881,15 @@ definitions:
         description:
           Type of the IO engine used by the device. "Async" is supported on
           host kernels newer than 5.10.51.
+          This field is optional for virtio-block config and should be omitted for vhost-user-block configuration.
         enum: ["Sync", "Async"]
         default: "Sync"
+
+      # VhostUserBlock specific parameters
+      socket:
+        type: string
+        description: Path to the socket of vhost-user-block backend.
+          This field is required for vhost-user-block config should be omitted for virtio-block configuration.
 
   Error:
     type: object
@@ -961,8 +972,6 @@ definitions:
   Logger:
     type: object
     description: Describes the configuration option for the logging capability.
-    required:
-      - log_path
     properties:
       level:
         type: string
@@ -980,11 +989,15 @@ definitions:
         type: boolean
         description: Whether or not to include the file path and line number of the log's origin.
         default: false
+      module:
+        type: string
+        description: The module path to filter log messages by.
+        example: api_server::request
 
   MachineConfiguration:
     type: object
     description:
-      Describes the number of vCPUs, memory size, SMT capabilities and
+      Describes the number of vCPUs, memory size, SMT capabilities, huge page configuration and
       the CPU template.
     required:
       - mem_size_mib
@@ -1012,6 +1025,12 @@ definitions:
         minimum: 1
         maximum: 32
         description: Number of vCPUs (either 1 or an even number)
+      huge_pages:
+        type: string
+        enum:
+          - None
+          - 2M
+        description: Which huge pages configuration (if any) should be used to back guest memory.
 
   MemoryBackend:
     type: object
@@ -1105,7 +1124,8 @@ definitions:
         type: string
       path_on_host:
         type: string
-        description: Host level path for the guest drive
+        description: Host level path for the guest drive.
+          This field is optional for virtio-block config and should be omitted for vhost-user-block configuration.
       rate_limiter:
         $ref: "#/definitions/RateLimiter"
 
@@ -1129,6 +1149,7 @@ definitions:
     description:
       Defines an IO rate limiter with independent bytes/s and ops/s limits.
       Limits are defined by configuring each of the _bandwidth_ and _ops_ token buckets.
+      This field is optional for virtio-block config and should be omitted for vhost-user-block configuration.
     properties:
       bandwidth:
         $ref: "#/definitions/TokenBucket"
@@ -1157,12 +1178,6 @@ definitions:
         description:
           Type of snapshot to create. It is optional and by default, a full
           snapshot is created.
-      version:
-        type: string
-        description:
-          The microVM version for which we want to create the snapshot.
-          It is optional and it defaults to the current version. This parameter
-          has been deprecated and it will be removed in future Firecracker release.
 
   SnapshotLoadParams:
     type: object

@@ -29,8 +29,8 @@ type MmdsMetadata struct {
 }
 
 type FC struct {
-	Pid string
 	Cmd *exec.Cmd
+	Pid string
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -48,6 +48,7 @@ func loadSnapshot(
 	socketPath,
 	envPath string,
 	metadata interface{},
+	uffdSocketPath *string,
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "load-snapshot", trace.WithAttributes(
 		attribute.String("instance.socket.path", socketPath),
@@ -67,17 +68,38 @@ func loadSnapshot(
 		attribute.String("instance.snapfile.path", snapfilePath),
 	)
 
-	backendType := models.MemoryBackendBackendTypeFile
+	var backend *models.MemoryBackend
+
+	if uffdSocketPath != nil {
+		err := waitForSocket(*uffdSocketPath, socketReadyCheckInterval)
+		if err != nil {
+			telemetry.ReportCriticalError(childCtx, err)
+
+			return err
+		} else {
+			telemetry.ReportEvent(childCtx, "uffd socket ready")
+		}
+
+		backendType := models.MemoryBackendBackendTypeUffd
+		backend = &models.MemoryBackend{
+			BackendPath: uffdSocketPath,
+			BackendType: &backendType,
+		}
+	} else {
+		backendType := models.MemoryBackendBackendTypeFile
+		backend = &models.MemoryBackend{
+			BackendPath: &memfilePath,
+			BackendType: &backendType,
+		}
+	}
+
 	snapshotConfig := operations.LoadSnapshotParams{
 		Context: childCtx,
 		Body: &models.SnapshotLoadParams{
 			ResumeVM:            true,
-			EnableDiffSnapshots: true,
-			MemBackend: &models.MemoryBackend{
-				BackendPath: &memfilePath,
-				BackendType: &backendType,
-			},
-			SnapshotPath: &snapfilePath,
+			EnableDiffSnapshots: false,
+			MemBackend:          backend,
+			SnapshotPath:        &snapfilePath,
 		},
 	}
 
@@ -139,12 +161,31 @@ func startFC(
 	fcCmd := fmt.Sprintf("%s --api-sock %s", fsEnv.FirecrackerBinaryPath, fsEnv.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
+	var uffdCmd string
+
+	if fsEnv.UFFDSocketPath != nil {
+		memfilePath := filepath.Join(fsEnv.EnvPath, MemfileName)
+		uffdCmd = fmt.Sprintf("(%s %s %s &) &&", fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
+		telemetry.SetAttributes(childCtx,
+			attribute.String("instance.uffd.command", uffdCmd),
+		)
+	}
+
 	telemetry.SetAttributes(childCtx,
 		attribute.String("instance.firecracker.command", fcCmd),
 		attribute.String("instance.netns.command", inNetNSCmd),
 	)
 
-	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", rootfsMountCmd+kernelMountCmd+inNetNSCmd+fcCmd)
+	cmd := exec.CommandContext(
+		vmmCtx,
+		"unshare",
+		"-pfm",
+		"--kill-child",
+		"--",
+		"bash",
+		"-c",
+		rootfsMountCmd+kernelMountCmd+uffdCmd+inNetNSCmd+fcCmd,
+	)
 
 	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
 	cmdStderrReader, cmdStderrWriter := io.Pipe()
@@ -217,8 +258,10 @@ func startFC(
 	if err != nil {
 		errMsg := fmt.Errorf("failed creating machine: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return nil, errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "created vmm")
 
 	m.Handlers.Validation = m.Handlers.Validation.Clear()
@@ -231,8 +274,10 @@ func startFC(
 	if err != nil {
 		errMsg := fmt.Errorf("failed to start preboot FC: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return nil, errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "started FC in preboot")
 
 	if err := loadSnapshot(
@@ -241,12 +286,19 @@ func startFC(
 		fsEnv.SocketPath,
 		fsEnv.EnvPath,
 		mmdsMetadata,
+		fsEnv.UFFDSocketPath,
 	); err != nil {
-		m.StopVMM()
+		stopErr := m.StopVMM()
+		if stopErr != nil {
+			telemetry.ReportError(childCtx, fmt.Errorf("error stopping vmm: %w", stopErr))
+		}
+
 		errMsg := fmt.Errorf("failed to load snapshot: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return nil, errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "loaded snapshot")
 
 	defer func() {
@@ -263,8 +315,11 @@ func startFC(
 	if errpid != nil {
 		errMsg := fmt.Errorf("failed getting pid for machine: %w", errpid)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return nil, errMsg
 	}
+
+	telemetry.ReportEvent(childCtx, "got pid for FC")
 
 	fc := &FC{
 		Cmd: cmd,
@@ -273,7 +328,6 @@ func startFC(
 
 	telemetry.SetAttributes(
 		childCtx,
-
 		attribute.String("alloc.id", allocID),
 		attribute.String("instance.pid", fc.Pid),
 		attribute.String("instance.socket.path", fsEnv.SocketPath),

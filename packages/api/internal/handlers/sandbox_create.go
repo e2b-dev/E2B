@@ -152,17 +152,9 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 	}
 
 	go func() {
-		updateContext, childSpan := a.tracer.Start(
-			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
-			"update-spawn-count-for-env",
-		)
-		defer childSpan.End()
-
-		err = a.supabase.UpdateEnvLastUsed(updateContext, env.TemplateID)
+		err = a.supabase.UpdateEnvLastUsed(context.Background(), env.TemplateID)
 		if err != nil {
-			telemetry.ReportCriticalError(updateContext, err)
-		} else {
-			telemetry.ReportEvent(updateContext, "updated last used for env")
+			a.logger.Errorf("Error when updating last used for env: %s", err)
 		}
 	}()
 

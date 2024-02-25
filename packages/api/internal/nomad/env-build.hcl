@@ -40,6 +40,7 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
       }
 
       config {
+        HugePages = {{ .HugePages }}
         StartCmd = "{{ .StartCmd }}"
         BuildID = "{{ .BuildID }}"
         EnvID = "{{ .EnvID }}"

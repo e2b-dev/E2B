@@ -5,19 +5,19 @@ import (
 	"fmt"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-	"github.com/txn2/txeh"
 
+	"github.com/txn2/txeh"
 	"go.opentelemetry.io/otel/trace"
 )
 
 type Instance struct {
-	EnvID string
-
 	Files *InstanceFiles
 	Slot  *IPSlot
 	FC    *FC
 
 	config *InstanceConfig
+
+	EnvID string
 }
 
 type InstanceConfig struct {
@@ -35,6 +35,8 @@ type InstanceConfig struct {
 	KernelsDir            string
 	KernelName            string
 	FirecrackerBinaryPath string
+	UFFDBinaryPath        string
+	HugePages             bool
 }
 
 func NewInstance(
@@ -107,6 +109,8 @@ func NewInstance(
 		config.KernelMountDir,
 		config.KernelName,
 		config.FirecrackerBinaryPath,
+		config.UFFDBinaryPath,
+		config.HugePages,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create env for FC: %w", err)

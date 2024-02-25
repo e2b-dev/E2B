@@ -2,6 +2,7 @@ package instance
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -24,19 +25,22 @@ func MockInstance(envID, instanceID string) {
 		ctx,
 		tracer,
 		&InstanceConfig{
-			EnvID:            envID,
-			AllocID:          "test",
-			InstanceID:       instanceID,
-			TraceID:          "test",
-			TeamID:           "test",
-			ConsulToken:      os.Getenv("CONSUL_TOKEN"),
-			LogsProxyAddress: "",
-			NodeID:           "testtesttest",
-			EnvsDisk:         "/mnt/disks/fc-envs/v1",
-			KernelVersion:    "5.10.186",
-			KernelMountDir:   "/fc-vm",
-			KernelsDir:       "/fc-kernels",
-			KernelName:       "vmlinux.bin",
+			EnvID:                 envID,
+			AllocID:               "test",
+			InstanceID:            instanceID,
+			TraceID:               "test",
+			TeamID:                "test",
+			ConsulToken:           os.Getenv("CONSUL_TOKEN"),
+			LogsProxyAddress:      "",
+			NodeID:                "testtesttest",
+			EnvsDisk:              "/mnt/disks/fc-envs/v1",
+			KernelVersion:         "vmlinux-5.10.186",
+			KernelMountDir:        "/fc-vm",
+			KernelsDir:            "/fc-kernels",
+			KernelName:            "vmlinux.bin",
+			UFFDBinaryPath:        "/fc-versions/v1.7.0-dev_8bb88311/uffd",
+			HugePages:             true,
+			FirecrackerBinaryPath: "/fc-versions/v1.7.0-dev_8bb88311/firecracker",
 		},
 		hosts,
 	)
@@ -44,5 +48,12 @@ func MockInstance(envID, instanceID string) {
 		panic(err)
 	}
 
-	instance.CleanupAfterFCStop(ctx, tracer, hosts)
+	fmt.Println("[Instance is running]")
+
+	defer instance.CleanupAfterFCStop(ctx, tracer, hosts)
+
+	err = instance.FC.Stop(ctx, tracer)
+	if err != nil {
+		panic(err)
+	}
 }

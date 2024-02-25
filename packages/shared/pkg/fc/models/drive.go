@@ -28,13 +28,12 @@ type Drive struct {
 	// Required: true
 	DriveID *string `json:"drive_id"`
 
-	// Type of the IO engine used by the device. "Async" is supported on host kernels newer than 5.10.51.
+	// Type of the IO engine used by the device. "Async" is supported on host kernels newer than 5.10.51. This field is optional for virtio-block config and should be omitted for vhost-user-block configuration.
 	// Enum: [Sync Async]
 	IoEngine *string `json:"io_engine,omitempty"`
 
-	// is read only
-	// Required: true
-	IsReadOnly *bool `json:"is_read_only"`
+	// Is block read only. This field is required for virtio-block config and should be omitted for vhost-user-block configuration.
+	IsReadOnly bool `json:"is_read_only,omitempty"`
 
 	// is root device
 	// Required: true
@@ -43,12 +42,14 @@ type Drive struct {
 	// Represents the unique id of the boot partition of this device. It is optional and it will be taken into account only if the is_root_device field is true.
 	Partuuid string `json:"partuuid,omitempty"`
 
-	// Host level path for the guest drive
-	// Required: true
-	PathOnHost *string `json:"path_on_host"`
+	// Host level path for the guest drive. This field is required for virtio-block config and should be omitted for vhost-user-block configuration.
+	PathOnHost string `json:"path_on_host,omitempty"`
 
 	// rate limiter
 	RateLimiter *RateLimiter `json:"rate_limiter,omitempty"`
+
+	// Path to the socket of vhost-user-block backend. This field is required for vhost-user-block config should be omitted for virtio-block configuration.
+	Socket string `json:"socket,omitempty"`
 }
 
 // Validate validates this drive
@@ -67,15 +68,7 @@ func (m *Drive) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateIsReadOnly(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateIsRootDevice(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validatePathOnHost(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -182,27 +175,9 @@ func (m *Drive) validateIoEngine(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Drive) validateIsReadOnly(formats strfmt.Registry) error {
-
-	if err := validate.Required("is_read_only", "body", m.IsReadOnly); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (m *Drive) validateIsRootDevice(formats strfmt.Registry) error {
 
 	if err := validate.Required("is_root_device", "body", m.IsRootDevice); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Drive) validatePathOnHost(formats strfmt.Registry) error {
-
-	if err := validate.Required("path_on_host", "body", m.PathOnHost); err != nil {
 		return err
 	}
 

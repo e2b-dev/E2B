@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/KarpelesLab/reflink"
 	"go.opentelemetry.io/otel/attribute"
@@ -21,9 +22,14 @@ const (
 
 	BuildDirName        = "builds"
 	EnvInstancesDirName = "env-instances"
+
+	socketReadyCheckInterval = 25 * time.Millisecond
+	socketWaitTimeout        = 2 * time.Second
 )
 
 type InstanceFiles struct {
+	UFFDSocketPath *string
+
 	EnvPath      string
 	BuildDirPath string
 
@@ -34,6 +40,33 @@ type InstanceFiles struct {
 	KernelMountDirPath string
 
 	FirecrackerBinaryPath string
+	UFFDBinaryPath        string
+}
+
+func waitForSocket(socketPath string, timeout time.Duration) error {
+	start := time.Now()
+
+	for {
+		_, err := os.Stat(socketPath)
+		if err == nil {
+			// Socket file exists
+			return nil
+		} else if os.IsNotExist(err) {
+			// Socket file doesn't exist yet
+
+			// Check if timeout has been reached
+			elapsed := time.Since(start)
+			if elapsed >= timeout {
+				return fmt.Errorf("timeout reached while waiting for socket file: %s", socketPath)
+			}
+
+			// Wait for a short duration before checking again
+			time.Sleep(socketReadyCheckInterval)
+		} else {
+			// Error occurred while checking for socket file
+			return err
+		}
+	}
 }
 
 func newInstanceFiles(
@@ -46,7 +79,9 @@ func newInstanceFiles(
 	kernelsDir,
 	kernelMountDir,
 	kernelName,
-	firecrackerBinaryPath string,
+	firecrackerBinaryPath,
+	uffdBinaryPath string,
+	hugePages bool,
 ) (*InstanceFiles, error) {
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
@@ -99,6 +134,21 @@ func newInstanceFiles(
 		return nil, errMsg
 	}
 
+	// Create UFFD socket
+	var uffdSocketPath *string
+
+	if hugePages {
+		socketName := fmt.Sprintf("uffd-%s", slot.InstanceID)
+		socket, sockErr := getSocketPath(socketName)
+		if sockErr != nil {
+			errMsg := fmt.Errorf("error getting UFFD socket path: %w", sockErr)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+			return nil, errMsg
+		}
+
+		uffdSocketPath = &socket
+	}
+
 	// Create kernel path
 	kernelPath := filepath.Join(kernelsDir, kernelVersion)
 
@@ -119,6 +169,8 @@ func newInstanceFiles(
 		KernelDirPath:         kernelPath,
 		KernelMountDirPath:    kernelMountDir,
 		FirecrackerBinaryPath: firecrackerBinaryPath,
+		UFFDSocketPath:        uffdSocketPath,
+		UFFDBinaryPath:        uffdBinaryPath,
 	}, nil
 }
 
@@ -151,6 +203,17 @@ func (env *InstanceFiles) Cleanup(
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "removed socket")
+	}
+
+	// Remove UFFD socket
+	if env.UFFDSocketPath != nil {
+		err = os.Remove(*env.UFFDSocketPath)
+		if err != nil {
+			errMsg := fmt.Errorf("error deleting socket for UFFD: %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "removed UFFD socket")
+		}
 	}
 
 	return nil

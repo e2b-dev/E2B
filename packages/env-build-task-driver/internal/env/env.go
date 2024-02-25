@@ -80,6 +80,9 @@ type Env struct {
 
 	// Version of the kernel.
 	KernelVersion string
+
+	// Whether to use hugepages or not.
+	HugePages bool
 }
 
 //go:embed provision.sh

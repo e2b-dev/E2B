@@ -16,7 +16,6 @@ func SetAttributes(ctx context.Context, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
 	if OTELTracingPrint {
-		fmt.Printf("It's on - OTELTracingPrint: %s", os.Getenv("OTEL_TRACING_PRINT"))
 		if len(attrs) == 0 {
 			fmt.Printf("No attrs set")
 		} else {
@@ -47,8 +46,6 @@ func ReportCriticalError(ctx context.Context, err error, attrs ...attribute.KeyV
 	span := trace.SpanFromContext(ctx)
 
 	if OTELTracingPrint {
-		fmt.Printf("It's on - OTELTracingPrint: %s", os.Getenv("OTEL_TRACING_PRINT"))
-
 		if len(attrs) == 0 {
 			fmt.Fprintf(os.Stderr, "Critical error: %v\n", err)
 		} else {
@@ -70,7 +67,6 @@ func ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
 	if OTELTracingPrint {
-		fmt.Printf("It's on - OTELTracingPrint: %s", os.Getenv("OTEL_TRACING_PRINT"))
 		if len(attrs) == 0 {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		} else {

@@ -19,6 +19,11 @@ function build_version {
   echo "Copying finished build to builds directory"
   mkdir -p "../builds/${version_name}"
   cp build/cargo_target/x86_64-unknown-linux-musl/release/firecracker "../builds/${version_name}/firecracker"
+
+  # The following command needs cmake and libclang-dev
+  # It builds the defautl UFFD
+  cargo build --example uffd_valid_handler --release
+  cp build/cargo_target/release/examples/uffd_valid_handler "../builds/${version_name}/uffd"
 }
 
 echo "Cloning the Firecracker repository"
