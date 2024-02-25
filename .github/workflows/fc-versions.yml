@@ -24,11 +24,11 @@ jobs:
           workload_identity_provider: ${{ secrets.workload_identity_provider }}
           service_account: ${{ secrets.service_account_email }}
 
-      - name: Build firecracker versions
+      - name: Build FC versions
         working-directory: ./packages/fc-versions
         run: make build
 
-      - name: Upload kernels
+      - name: Upload FC versions
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
           path: "./packages/fc-versions/builds"
