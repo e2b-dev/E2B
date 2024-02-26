@@ -6,7 +6,7 @@ import { spawnCommand } from './spawn'
 import { initCommand } from './init'
 import { deleteCommand } from './delete'
 
-export const templateCommand = new commander.Command('template')
+export const templateCommand = new commander.Command('template').description('Manage sandbox templates')
   .alias('tpl')
   .addCommand(buildCommand)
   .addCommand(listCommand)
