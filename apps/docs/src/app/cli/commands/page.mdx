@@ -6,6 +6,53 @@ Build your sandbox with our CLI. {{ className: 'lead' }}
 You can use `--help` flag for more information about commands.
 </Note>
 
+## Auth
+
+---
+
+## `login`
+
+Log in to the CLI. It will save your access token in `~/.e2b` file.
+
+```bash
+e2b auth login
+```
+
+---
+
+## `logout`
+
+Log out of the CLI. It will remove your access token from `~/.e2b` file.
+
+```
+e2b auth logout
+```
+
+---
+
+## Templates
+
+---
+
+## `init`
+
+Creates a basic Dockerfile (`./e2b.Dockerfile`) in current directory.
+You can then run `e2b template build` to build sandbox template from this Dockerfile.
+
+```bash
+e2b template init
+```
+
+#### **Options**
+
+<Options>
+  <Option name="path" type="-p, --path">
+    Change the root directory where the command is executed to `path` directory.
+  </Option>
+</Options>
+
+---
+
 ## `build`
 
 Builds a sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` from the root directory.
@@ -13,11 +60,11 @@ By default, the root directory is the current working directory.
 This command also creates the `e2b.toml` config.
 
 ```bash
-e2b build
+e2b template build
 ```
 
 <Note>
-Running `e2b build` without specifying a template with the `[template]` argument will rebuild template defined by the `e2b.toml` config.
+Running `e2b template build` without specifying a template with the `[template]` argument will rebuild template defined by the `e2b.toml` config.
 
 If there is no `e2b.toml` config a new template will be created.
 </Note>
@@ -50,25 +97,6 @@ If there is no `e2b.toml` config a new template will be created.
 
 ---
 
-## `init`
-
-Creates a basic Dockerfile (`./e2b.Dockerfile`) in current directory.
-You can then run `e2b build` to build sandbox template from this Dockerfile.
-
-```bash
-e2b init
-```
-
-#### **Options**
-
-<Options>
-  <Option name="path" type="-p, --path">
-    Change the root directory where the command is executed to `path` directory.
-  </Option>
-</Options>
-
----
-
 ## `delete`
 
 Delete the sandbox template specified by the `[template]` argument, `e2b.toml` config in the working directory, or by an interactive selection.
@@ -77,11 +105,11 @@ By default, the root directory is the current working directory.
 This command also deletes the `e2b.toml` config.
 
 ```bash
-e2b delete
+e2b template delete
 ```
 
 <Note>
-Running `e2b delete` without specifying a template with the `[template]` argument will delete the template defined by the `e2b.toml` config.
+Running `e2b template delete` without specifying a template with the `[template]` argument will delete the template defined by the `e2b.toml` config.
 </Note>
 
 #### **Arguments**
@@ -114,32 +142,12 @@ Running `e2b delete` without specifying a template with the `[template]` argumen
 List your sandbox templates.
 
 ```bash
-e2b list
+e2b template list
 ```
 
 ---
 
-## `login`
-
-Log in to the CLI. It will save your access token in `~/.e2b` file.
-
-```bash
-e2b login
-```
-
----
-
-## `logout`
-
-Log out of the CLI. It will remove your access token from `~/.e2b` file.
-
-```
-e2b logout
-```
-
----
-
-## `shell`
+## `spawn`
 
 Spawns a sandbox and connects your terminal to the sandbox.
 This command can be used to debug your sandbox template.
@@ -147,11 +155,11 @@ This command can be used to debug your sandbox template.
 This command works similar to the `docker run -it <image> bash` command in Docker.
 
 ```bash
-e2b shell
+e2b template spawn
 ```
 
 <Note>
-Running `e2b shell` without specifying a template with the `[template]` argument will spawn sandbox defined by the `e2b.toml` config.
+Running `e2b template spawn` without specifying a template with the `[template]` argument will spawn sandbox defined by the `e2b.toml` config.
 </Note>
 
 #### **Arguments**
@@ -173,12 +181,16 @@ Running `e2b shell` without specifying a template with the `[template]` argument
 
 ---
 
-## `sandboxes`
+## Sandboxes
+
+---
+
+## `list`
 
 List your spawned sandboxes that are running right now.
 
 ```bash
-e2b sandboxes
+e2b sandbox list
 ```
 
 ---
@@ -191,11 +203,11 @@ This command is useful if you need to debug a running sandbox.
 This command works similar to the `docker exec -it <container> bash` command in Docker.
 
 ```bash
-e2b connect <sandboxID>
+e2b sandbox connect <sandboxID>
 ```
 
 <Note>
-You can use `e2b sandboxes` to get a list of running sandboxes and their IDs that can be used with `e2b connect <sandboxID>` command.
+You can use `e2b sandbox list` to get a list of running sandboxes and their IDs that can be used with `e2b sandbox connect <sandboxID>` command.
 </Note>
 
 #### **Arguments**
@@ -206,7 +218,7 @@ You can use `e2b sandboxes` to get a list of running sandboxes and their IDs tha
   </Option>
 </Options>
 
-### Next steps
+## Next steps
 
 1. [Create your first sandbox template](/sandbox/templates/overview)
 1. [Check out the official guides](/guides/custom-sandbox)
