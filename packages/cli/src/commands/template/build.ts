@@ -64,6 +64,14 @@ export const buildCommand = new commander.Command('build')
     '-c, --cmd <start-command>',
     'Specify command that will be executed when the sandbox is started',
   )
+  .option(
+    '--cpu-count <cpu-count>',
+    'Specify the number of CPUs that will be used to run the sandbox. The default value is 1.',
+  )
+  .option(
+    '--memory-mb <memory-mb>',
+    'Specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.',
+  )
   .alias('bd')
   .action(
     async (
@@ -73,6 +81,8 @@ export const buildCommand = new commander.Command('build')
         dockerfile?: string;
         name?: string;
         cmd?: string;
+        cpuCount?: string;
+        memoryMb?: string;
       },
     ) => {
       try {
@@ -89,6 +99,7 @@ export const buildCommand = new commander.Command('build')
 
         let dockerfile = opts.dockerfile
         let startCmd = opts.cmd
+
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root)
@@ -175,6 +186,21 @@ export const buildCommand = new commander.Command('build')
 
         if (startCmd) {
           body.append('startCmd', startCmd)
+        }
+
+        if (opts.cpuCount) {
+          body.append('cpuCount', opts.cpuCount)
+        }
+
+        if (opts.memoryMb) {
+          if (parseInt(opts.memoryMb) % 2 !== 0) {
+            console.error(
+              `The memory in megabytes must be an even number. You provided ${asLocal(opts.memoryMb)}.`,
+            )
+            process.exit(1)
+          }
+
+          body.append('memoryMB', opts.memoryMb)
         }
 
         const estimatedSize = estimateContentLength(body)
