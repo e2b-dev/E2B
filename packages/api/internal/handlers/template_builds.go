@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/schema"
@@ -95,6 +97,14 @@ func (a *APIStore) PostTemplatesWithoutResponse(c *gin.Context) *api.Template {
 	alias := c.PostForm("alias")
 	startCmd := c.PostForm("startCmd")
 
+	cpuCount, ramMB, apiError := getCPUAndRAM(tier.ID, c.PostForm("cpuCount"), c.PostForm("memoryMB"))
+	if apiError != nil {
+		telemetry.ReportCriticalError(ctx, apiError.Err)
+		a.sendAPIStoreError(c, apiError.Code, apiError.ClientMsg)
+
+		return nil
+	}
+
 	if alias != "" {
 		alias, err = utils.CleanEnvID(alias)
 		if err != nil {
@@ -121,6 +131,8 @@ func (a *APIStore) PostTemplatesWithoutResponse(c *gin.Context) *api.Template {
 		attribute.String("env.alias", alias),
 		attribute.String("build.dockerfile", dockerfile),
 		attribute.String("build.start_cmd", startCmd),
+		attribute.Int64("build.cpuCount", cpuCount),
+		attribute.Int64("build.ram_mb", ramMB),
 	)
 
 	_, err = a.cloudStorage.StreamFileUpload(strings.Join([]string{"v1", envID, buildID.String(), "context.tar.gz"}, "/"), fileContent)
@@ -181,8 +193,8 @@ func (a *APIStore) PostTemplatesWithoutResponse(c *gin.Context) *api.Template {
 			schema.DefaultFirecrackerVersion,
 			properties,
 			nomad.BuildConfig{
-				VCpuCount:          tier.Vcpu,
-				MemoryMB:           tier.RAMMB,
+				VCpuCount:          cpuCount,
+				MemoryMB:           ramMB,
 				DiskSizeMB:         tier.DiskMB,
 				KernelVersion:      schema.DefaultKernelVersion,
 				FirecrackerVersion: schema.DefaultFirecrackerVersion,
@@ -312,6 +324,15 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 
 	dockerfile := c.PostForm("dockerfile")
 	alias := c.PostForm("alias")
+
+	cpuCount, ramMB, apiError := getCPUAndRAM(tier.ID, c.PostForm("cpuCount"), c.PostForm("memoryMB"))
+	if apiError != nil {
+		telemetry.ReportCriticalError(ctx, apiError.Err)
+		a.sendAPIStoreError(c, apiError.Code, apiError.ClientMsg)
+
+		return nil
+	}
+
 	if alias != "" {
 		alias, err = utils.CleanEnvID(alias)
 		if err != nil {
@@ -326,6 +347,8 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("build.id", buildID.String()),
+		attribute.Int64("build.cpuCount", cpuCount),
+		attribute.Int64("build.ram_mb", ramMB),
 		attribute.String("env.alias", alias),
 	)
 
@@ -419,8 +442,8 @@ func (a *APIStore) PostTemplatesTemplateIDWithoutResponse(c *gin.Context, aliasO
 			envFirecrackerVersion,
 			properties,
 			nomad.BuildConfig{
-				VCpuCount:          tier.Vcpu,
-				MemoryMB:           tier.RAMMB,
+				VCpuCount:          cpuCount,
+				MemoryMB:           ramMB,
 				DiskSizeMB:         tier.DiskMB,
 				KernelVersion:      schema.DefaultKernelVersion,
 				FirecrackerVersion: schema.DefaultFirecrackerVersion,
@@ -546,7 +569,6 @@ func (a *APIStore) buildEnv(
 		schema.DefaultKernelVersion,
 		schema.DefaultFirecrackerVersion,
 	)
-
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)
 		telemetry.ReportCriticalError(childCtx, err)
@@ -555,4 +577,70 @@ func (a *APIStore) buildEnv(
 	}
 
 	return nil
+}
+
+func getCPUAndRAM(tierID, cpuStr, memoryMBStr string) (int64, int64, *api.APIError) {
+	cpu := constants.DefaultTemplateCPU
+	ramMB := constants.DefaultTemplateMemory
+
+	// Check if team can customize the resources
+	if (cpuStr != "" || memoryMBStr != "") && tierID == constants.BaseTierID {
+		return 0, 0, &api.APIError{
+			Err:       fmt.Errorf("team with tier %s can't customize resources", tierID),
+			ClientMsg: "Team with this tier can't customize resources, don't specify cpu count or memory",
+			Code:      http.StatusBadRequest,
+		}
+	}
+
+	if cpuStr != "" {
+		cpuInt, err := strconv.Atoi(cpuStr)
+		if err != nil {
+			return 0, 0, &api.APIError{
+				Err:       fmt.Errorf("error when parsing customCPUs: %w", err),
+				ClientMsg: "CPU count must be a number",
+				Code:      http.StatusBadRequest,
+			}
+		}
+
+		if cpuInt < constants.MinTemplateCPU || cpuInt > constants.MaxTemplateCPU {
+			return 0, 0, &api.APIError{
+				Err:       err,
+				ClientMsg: fmt.Sprintf("CPU must be between %d and %d", constants.MinTemplateCPU, constants.MaxTemplateCPU),
+				Code:      http.StatusBadRequest,
+			}
+		}
+
+		cpu = cpuInt
+	}
+
+	if memoryMBStr != "" {
+		memoryMBInt, err := strconv.Atoi(memoryMBStr)
+		if err != nil {
+			return 0, 0, &api.APIError{
+				Err:       err,
+				ClientMsg: "Memory must be a number",
+				Code:      http.StatusBadRequest,
+			}
+		}
+
+		if memoryMBInt < constants.MinTemplateMemory || memoryMBInt > constants.MaxTemplateMemory {
+			return 0, 0, &api.APIError{
+				Err:       err,
+				ClientMsg: fmt.Sprintf("Memory must be between %d and %d", constants.MinTemplateMemory, constants.MaxTemplateMemory),
+				Code:      http.StatusBadRequest,
+			}
+		}
+
+		if memoryMBInt%2 != 0 {
+			return 0, 0, &api.APIError{
+				Err:       fmt.Errorf("customMemory must be divisible by 2"),
+				ClientMsg: "Memory must be a divisible by 2",
+				Code:      http.StatusBadRequest,
+			}
+		}
+
+		ramMB = memoryMBInt
+	}
+
+	return int64(cpu), int64(ramMB), nil
 }
