@@ -276,8 +276,14 @@ type PostTemplatesMultipartBody struct {
 	// BuildContext Docker build context
 	BuildContext openapi_types.File `json:"buildContext"`
 
+	// CpuCount CPU cores for the template
+	CpuCount *string `json:"cpuCount,omitempty"`
+
 	// Dockerfile Dockerfile content
 	Dockerfile string `json:"dockerfile"`
+
+	// MemoryMB Memory limit for the template in MB
+	MemoryMB *string `json:"memoryMB,omitempty"`
 
 	// StartCmd Start command to execute in the template after the build
 	StartCmd *string `json:"startCmd,omitempty"`
@@ -291,8 +297,14 @@ type PostTemplatesTemplateIDMultipartBody struct {
 	// BuildContext Docker build context
 	BuildContext openapi_types.File `json:"buildContext"`
 
+	// CpuCount CPU cores for the template
+	CpuCount *string `json:"cpuCount,omitempty"`
+
 	// Dockerfile Dockerfile content
 	Dockerfile string `json:"dockerfile"`
+
+	// MemoryMB Memory limit for the template in MB
+	MemoryMB *string `json:"memoryMB,omitempty"`
 
 	// StartCmd Start command to execute in the template after the build
 	StartCmd *string `json:"startCmd,omitempty"`
