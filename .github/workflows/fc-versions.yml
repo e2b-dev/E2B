@@ -34,3 +34,4 @@ jobs:
           path: "./packages/fc-versions/builds"
           destination: "${{ secrets.gcp_project_id }}-fc-versions"
           gzip: false
+          parent: false
