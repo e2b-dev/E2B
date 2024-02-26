@@ -17,9 +17,7 @@ export const killCommand = new commander.Command('kill')
       const apiKey = ensureAPIKey()
 
       if (!sandboxID) {
-        console.error(
-          `You need to specify sandbox ID`,
-        )
+        console.error('You need to specify sandbox ID')
         process.exit(1)
       }
 
