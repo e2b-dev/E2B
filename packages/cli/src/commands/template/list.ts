@@ -3,7 +3,7 @@ import * as commander from 'commander'
 import * as e2b from 'e2b'
 
 import { ensureAccessToken } from 'src/api'
-import { listAliases } from '../utils/format'
+import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
 
 const listTemplates = e2b.withAccessToken(
