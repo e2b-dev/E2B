@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/Button'
 import { useUser } from '@/utils/useUser'
 import { tiers } from '@/utils/consts'
+import { useSignIn } from '@/utils/useSignIn'
+import Spinner from '@/components/Spinner'
 
 import { TierActiveTag } from './TierActiveTag'
 
 function SwitchToHobbyButton() {
-  const { user } = useUser()
+  const { user, isLoading } = useUser()
+  const signIn = useSignIn()
   const [url, setURL] = useState('')
 
   useEffect(function getBillingURL() {
@@ -17,10 +20,21 @@ function SwitchToHobbyButton() {
     setURL(u)
   }, [user])
 
+  if (isLoading) {
+    return <Spinner />
+  }
+
+
+  if (!user && !isLoading) {
+    return (
+      <Button onClick={() => signIn()}>Sign Up</Button>
+    )
+  }
+
   // Only show the button if the user is on the base_v1 tier.
   // Teams can have custom tiers. We only want the button to users on the free tier.
-  if (!user || (user.pricingTier.id !== tiers.hobby.id && user.pricingTier.id !== tiers.pro.id)) {
-    return
+  if (user.pricingTier.id !== tiers.hobby.id && user.pricingTier.id !== tiers.pro.id) {
+    return null
   }
 
   return (

@@ -1,10 +1,11 @@
+import clsx from 'clsx'
+import { LogOutIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+
 import { Button } from '@/components/Button'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useRouter } from 'next/navigation'
 import { useApiKey, useUser } from '@/utils/useUser'
-import { LogOutIcon } from 'lucide-react'
 import { CopyButton } from '@/components/CopyButton'
-import clsx from 'clsx'
 import { HeaderSeparator } from '@/components/HeaderUtils'
 import { usePostHog } from 'posthog-js/react'
 import { obfuscateSecret } from '@/utils/obfuscate'
@@ -12,11 +13,11 @@ import { useSignIn } from '@/utils/useSignIn'
 
 
 function CopyableSecret({
-                          secret = '',
-                          onAfterCopy,
-                          obfuscateStart,
-                          obfuscateEnd,
-                        }: {
+  secret = '',
+  onAfterCopy,
+  obfuscateStart,
+  obfuscateEnd,
+}: {
   secret: string;
   onAfterCopy: () => void;
   obfuscateStart?: number;
@@ -94,7 +95,7 @@ export const Auth = function () {
               onAfterCopy={() => posthog?.capture('copied API key')}
             />
           </div>
-          <HeaderSeparator/>
+          <HeaderSeparator />
           <div className="flex items-center gap-2">
             <div className="whitespace-nowrap text-xs font-bold">
               {user.email}
@@ -105,7 +106,7 @@ export const Auth = function () {
               title="Sign out"
               onClick={() => signOut()}
             >
-              <LogOutIcon className="h-5 w-5"/>
+              <LogOutIcon className="h-5 w-5" />
             </Button>
           </div>
         </div>

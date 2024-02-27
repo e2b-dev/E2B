@@ -4,6 +4,8 @@ import { Button } from '@/components/Button'
 import { useUser } from '@/utils/useUser'
 import { useState } from 'react'
 import { tiers } from '@/utils/consts'
+import { useSignIn } from '@/utils/useSignIn'
+import Spinner from '@/components/Spinner'
 
 import { TierActiveTag } from './TierActiveTag'
 
@@ -22,7 +24,8 @@ function createCheckout(tierID: string, teamID: string) {
 }
 
 function SwitchTierButton() {
-  const { user } = useUser()
+  const { user, isLoading } = useUser()
+  const signIn = useSignIn()
   const [error, setError] = useState('')
 
   async function createCheckoutSession() {
@@ -38,9 +41,21 @@ function SwitchTierButton() {
     }
   }
 
+  if (isLoading) {
+    return <Spinner />
+  }
+
+
+  if (!user && !isLoading) {
+    return (
+      <Button onClick={() => signIn()}>Sign Up</Button>
+    )
+  }
+
+
   // Only show the button if the user is on the base_v1 tier.
   // Teams can have custom tiers. We only want the button to users on the free tier.
-  if (!user || !billingApiURL || (user.pricingTier.id !== tiers.hobby.id && user.pricingTier.id !== tiers.pro.id)) {
+  if (!billingApiURL || (user.pricingTier.id !== tiers.hobby.id && user.pricingTier.id !== tiers.pro.id)) {
     return
   }
 
