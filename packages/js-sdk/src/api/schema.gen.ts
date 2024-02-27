@@ -130,6 +130,10 @@ export interface paths {
             dockerfile: string;
             /** @description Start command to execute in the template after the build */
             startCmd?: string;
+            /** @description CPU cores for the template */
+            cpuCount?: string;
+            /** @description Memory limit for the template in MB */
+            memoryMB?: string;
           };
         };
       };
@@ -167,6 +171,10 @@ export interface paths {
             dockerfile: string;
             /** @description Start command to execute in the template after the build */
             startCmd?: string;
+            /** @description CPU cores for the template */
+            cpuCount?: string;
+            /** @description Memory limit for the template in MB */
+            memoryMB?: string;
           };
         };
       };

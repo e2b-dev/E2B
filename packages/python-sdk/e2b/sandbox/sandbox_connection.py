@@ -492,4 +492,6 @@ class SandboxConnection:
         """
         api_key = get_api_key(api_key)
         with E2BApiClient(api_key=api_key) as api_client:
-            return client.SandboxesApi(api_client).sandboxes_sandbox_id_delete(sandbox_id=sandbox_id)
+            return client.SandboxesApi(api_client).sandboxes_sandbox_id_delete(
+                sandbox_id=sandbox_id
+            )
