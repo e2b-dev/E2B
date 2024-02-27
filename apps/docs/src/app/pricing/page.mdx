@@ -1,4 +1,5 @@
 import ManageBilling from '@/components/ManageBilling'
+import SandboxSpec from '@/components/SandboxSpec'
 
 import Promo from './Promo'
 import SwitchToHobbyButton from './SwitchToHobbyButton'
@@ -8,15 +9,22 @@ import SwitchToProButton from './SwitchToProButton'
 
 <ManageBilling />
 
-
 We charge you based on your real sandbox usage. All new users get one-time free $100 worth of usage in credits. {{ className: 'lead' }}
 
 ## Resource pricing
+We charge per second of a running sandbox like this:
 - vCPU: $0.000014 per second (~$0.05 per hour)
 - GB RAM: $0.0000045 per second (~$0.018 per hour)
+- GB storage: Free
+
+### Sandbox compute
+You can customize the sandbox with **any combination** of the CPU and RAM based on the following tables.
+
+<SandboxSpec/>
+
 
 ## Plans
-Additionally to the usage costs, you can also select a tier that includes dedicated support, prioritized features, and customizable sandbox machine specs.
+Additionally to the usage costs, you can also select a tier that includes dedicated support, prioritized features, and higher sandbox limits.
 
 ### Hobby tier ($0/month + usage costs)
 <SwitchToHobbyButton/>
@@ -24,10 +32,6 @@ Additionally to the usage costs, you can also select a tier that includes dedica
 - Community support
 - Up to 1 hour sandbox session length
 - Up to 20 concurrently running sandboxes
-- Hobby sandbox machine specs:
-  - 2 vCPU
-  - 512 MB RAM
-  - 1 GB free disk storage
 
 **Expected costs on the Hobby plan**
 - Example of running 1 Hobby sandbox for 1 second = 2 * $0.000014 + 0.5 * $0.0000045 = $0.00003
@@ -43,10 +47,6 @@ Additionally to the usage costs, you can also select a tier that includes dedica
 - Customize your sandbox machine specs based on your needs ([let us know](/getting-help))
 - Up to 24 hours sandbox session length
 - Up to 100 concurrently running sandboxes
-- Pro sandbox machine specs:
-  - 4 vCPU
-  - 4 GB RAM
-  - 5 GB free disk storage
 
 
 **Expected costs on the Pro plan**
