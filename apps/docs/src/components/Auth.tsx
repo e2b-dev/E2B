@@ -1,6 +1,9 @@
+'use client'
+
 import clsx from 'clsx'
 import { LogOutIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+
 
 import { Button } from '@/components/Button'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
@@ -114,7 +117,7 @@ export const Auth = function () {
         <div className="flex items-center justify-center gap-3">
           {/* @ts-ignore */}
           <Button
-            onClick={() => signIn()}
+            onClick={() => signIn('auth-sign-up')}
             variant="textTernary"
             className="whitespace-nowrap text-xs"
           >

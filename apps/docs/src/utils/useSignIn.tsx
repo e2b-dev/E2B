@@ -1,17 +1,15 @@
 'use client'
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter } from 'next/navigation'
 
 // TODO: Maybe consolidate with useUser?
 export function useSignIn() {
-  const supabase = createClientComponentClient()
-  return async function signInWithGitHub() {
-    await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: window.location.href,
-        scopes: 'email',
-      },
-    })
+  const router = useRouter()
+
+  return function signIn(hash?: string) {
+    router.push('/sign')
+    if (hash) {
+      router.push(`#${hash}`)
+    }
   }
 }
