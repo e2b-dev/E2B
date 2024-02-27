@@ -23,7 +23,7 @@ export async function create({ apiKey }: { apiKey?: string }, { keepAliveFor, ..
  * @returns Process' output
  */
 export async function exec({ apiKey, sandboxID }: { sandboxID: string, apiKey?: string }, opts: ProcessOpts) {
-  const s = await Sandbox.reconnect({ apiKey, sandboxID })
+  const s = await Sandbox.reconnect({ apiKey, sandboxID, timeout: opts.timeout })
   const result = await s.process.startAndWait({ ...opts })
   await s.close()
   return result

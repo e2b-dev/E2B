@@ -412,8 +412,7 @@ export class Sandbox extends SandboxConnection {
       startAndWait: async (optsOrCmd: string | ProcessOpts) => {
         const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
         const process = await this.process.start(opts)
-        const out = await process.wait()
-        return out
+        return process.wait(opts.timeout)
       }
     }
 
