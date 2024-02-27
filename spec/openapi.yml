@@ -36,7 +36,7 @@ components:
       required: true
       schema:
         type: string
-#  ------ Deprecated --------
+    #  ------ Deprecated --------
     envID:
       name: envID
       in: path
@@ -49,7 +49,7 @@ components:
       required: true
       schema:
         type: string
-#  ----------------------
+  #  ----------------------
 
   responses:
     400:
@@ -199,7 +199,7 @@ components:
         message:
           type: string
           description: Error
-#  ------ Deprecated --------
+    #  ------ Deprecated --------
     Environment:
       required:
         - envID
@@ -306,7 +306,7 @@ components:
 tags:
   - name: templates
   - name: sandboxes
-#  ------ Deprecated --------
+  #  ------ Deprecated --------
   - name: instances
   - name: envs
 # ---------------------------
@@ -326,7 +326,7 @@ paths:
       description: List all running sandboxes
       tags: [sandboxes]
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       responses:
         200:
           description: Successfully returned all running sandboxes
@@ -365,6 +365,24 @@ paths:
           $ref: "#/components/responses/401"
         400:
           $ref: "#/components/responses/400"
+        500:
+          $ref: "#/components/responses/500"
+
+  /sandboxes/{sandboxID}:
+    delete:
+      description: Kill a sandbox
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        204:
+          description: The sandbox was killed successfully
+        404:
+          $ref: "#/components/responses/404"
+        401:
+          $ref: "#/components/responses/401"
         500:
           $ref: "#/components/responses/500"
 
@@ -444,6 +462,12 @@ paths:
                 startCmd:
                   description: Start command to execute in the template after the build
                   type: string
+                cpuCount:
+                  description: CPU cores for the template
+                  type: string  # form data does not support integer
+                memoryMB:
+                  description: Memory limit for the template in MB
+                  type: string  # form data does not support integer
             encoding:
               buildContext:
                 contentType: application/octet-stream
@@ -491,6 +515,12 @@ paths:
                 startCmd:
                   description: Start command to execute in the template after the build
                   type: string
+                cpuCount:
+                  description: CPU cores for the template
+                  type: string  # form data does not support integer
+                memoryMB:
+                  description: Memory limit for the template in MB
+                  type: string  # form data does not support integer
             encoding:
               buildContext:
                 contentType: application/octet-stream
@@ -774,7 +804,7 @@ paths:
       description: List all running instances
       tags: [instances]
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       responses:
         200:
           description: Successfully returned all running instances
