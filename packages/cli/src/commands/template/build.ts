@@ -66,7 +66,7 @@ export const buildCommand = new commander.Command('build')
   )
   .option(
     '--cpu-count <cpu-count>',
-    'Specify the number of CPUs that will be used to run the sandbox. The default value is 1.',
+    'Specify the number of CPUs that will be used to run the sandbox. The default value is 2.',
   )
   .option(
     '--memory-mb <memory-mb>',

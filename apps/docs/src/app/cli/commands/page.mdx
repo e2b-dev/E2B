@@ -93,6 +93,12 @@ If there is no `e2b.toml` config a new template will be created.
   <Option type="-d, --dockerfile" name="dockerfile">
     Specify the path to Dockerfile. By default E2B tries to find `e2b.Dockerfile` or `Dockerfile` in the root directory.
   </Option>
+  <Option type="--cpu-count" name="cpu-count">
+    Specify the number of CPUs that will be used to run the sandbox. The default value is 2.
+  </Option>
+  <Option type="--memory-mb" name="memory-mb">
+    Specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.
+  </Option>
 </Options>
 
 ---
