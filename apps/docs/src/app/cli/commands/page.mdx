@@ -28,6 +28,14 @@ Log out of the CLI. It will remove your access token from `~/.e2b` file.
 e2b auth logout
 ```
 
+## `auth info`
+
+Get info about your current user.
+
+```
+e2b auth info
+```
+
 ---
 
 # Templates
@@ -147,6 +155,8 @@ List your sandbox templates.
 e2b template list
 ```
 
+---
+
 # Sandboxes
 
 <br/>
@@ -182,8 +192,6 @@ You can use `e2b sandbox list` to get a list of running sandboxes and their IDs 
   </Option>
 </Options>
 
----
-
 ## `sandbox spawn`
 
 Spawns a sandbox and connects your terminal to the sandbox.
@@ -215,8 +223,6 @@ Running `e2b sandbox spawn` without specifying a template with the `[template]` 
     Change the root directory where the command is executed to `path` directory.
   </Option>
 </Options>
-
----
 
 ## `sandbox kill`
 
