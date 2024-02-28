@@ -12,17 +12,25 @@ import SwitchToProButton from './SwitchToProButton'
 We charge you based on your real sandbox usage. All new users get one-time free $100 worth of usage in credits. {{ className: 'lead' }}
 
 ## Resource pricing
-We charge per second of a running sandbox like this:
+We charge per second of a running sandbox.
 - vCPU: $0.000014 per second (~$0.05 per hour)
 - GiB RAM: $0.0000045 per second (~$0.018 per hour)
 - GiB storage: Free
 
+<Note>
+1 GiB is equal to 1,024 MiB
+</Note>
+
 ### Sandbox compute
 Pro customers can customize the sandbox with **any combination** of the CPU and RAM based on the following tables.
 
+<Note>
+To customize your sandbox compute, you need to build your custom sandbox template using the CLI by running [`e2b template build`](http://localhost:3000/docs/cli/commands#template-build) and specifying the `--cpu-count` and `--memory-mb` options.
+</Note>
+
 <SandboxSpec/>
 
-[Let us know](/getting-help) if you need more powerful spec.
+[Let us know](/getting-help) if you need more powerful compute.
 
 ## Plans
 Additionally to the usage costs, you can also select a tier that includes dedicated support, prioritized features, and higher sandbox limits.
@@ -39,7 +47,7 @@ Additionally to the usage costs, you can also select a tier that includes dedica
 - One-time $100 of usage in credits
 - Dedicated Slack channel with live Pro support from our team
 - Prioritized features
-- Customize your sandbox machine specs
+- Customize your [sandbox compute](/sandbox/compute)
 - Up to 24 hours sandbox session length
 - Up to 100 concurrently running sandboxes
 

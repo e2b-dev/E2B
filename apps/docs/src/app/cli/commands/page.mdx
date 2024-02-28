@@ -6,11 +6,13 @@ Build your sandbox with our CLI. {{ className: 'lead' }}
 You can use `--help` flag for more information about commands.
 </Note>
 
-## Auth
-
 ---
 
-## `login`
+# Auth
+
+<br/>
+
+## `auth login`
 
 Log in to the CLI. It will save your access token in `~/.e2b` file.
 
@@ -18,9 +20,7 @@ Log in to the CLI. It will save your access token in `~/.e2b` file.
 e2b auth login
 ```
 
----
-
-## `logout`
+## `auth logout`
 
 Log out of the CLI. It will remove your access token from `~/.e2b` file.
 
@@ -30,11 +30,11 @@ e2b auth logout
 
 ---
 
-## Templates
+# Templates
 
----
+<br/>
 
-## `init`
+## `template init`
 
 Creates a basic Dockerfile (`./e2b.Dockerfile`) in current directory.
 You can then run `e2b template build` to build sandbox template from this Dockerfile.
@@ -51,9 +51,8 @@ e2b template init
   </Option>
 </Options>
 
----
 
-## `build`
+## `template build`
 
 Builds a sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` from the root directory.
 By default, the root directory is the current working directory.
@@ -101,9 +100,7 @@ If there is no `e2b.toml` config a new template will be created.
   </Option>
 </Options>
 
----
-
-## `delete`
+## `template delete`
 
 Delete the sandbox template specified by the `[template]` argument, `e2b.toml` config in the working directory, or by an interactive selection.
 By default, the root directory is the current working directory.
@@ -141,9 +138,8 @@ Running `e2b template delete` without specifying a template with the `[template]
   </Option>
 </Options>
 
----
 
-## `list`
+## `template list`
 
 List your sandbox templates.
 
@@ -151,9 +147,7 @@ List your sandbox templates.
 e2b template list
 ```
 
----
-
-## `spawn`
+## `template spawn`
 
 Spawns a sandbox and connects your terminal to the sandbox.
 This command can be used to debug your sandbox template.
@@ -187,11 +181,11 @@ Running `e2b template spawn` without specifying a template with the `[template]`
 
 ---
 
-## Sandboxes
+# Sandboxes
 
----
+<br/>
 
-## `list`
+## `sandbox list`
 
 List your spawned sandboxes that are running right now.
 
@@ -199,9 +193,7 @@ List your spawned sandboxes that are running right now.
 e2b sandbox list
 ```
 
----
-
-## `connect`
+## `sandbox connect`
 
 Connects your terminal to a running sandbox that you spawned via the E2B SDK.
 This command is useful if you need to debug a running sandbox.
@@ -223,9 +215,3 @@ You can use `e2b sandbox list` to get a list of running sandboxes and their IDs 
     Specify the ID of a running sandbox you want to connect to.
   </Option>
 </Options>
-
-## Next steps
-
-1. [Create your first sandbox template](/sandbox/templates/overview)
-1. [Check out the official guides](/guides/custom-sandbox)
-{/* 1. [Follow the "Hello World" example](/guides/) */}
