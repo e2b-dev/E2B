@@ -122,7 +122,13 @@ type RunningSandboxes struct {
 	Alias *string `json:"alias,omitempty"`
 
 	// ClientID Identifier of the client
-	ClientID string           `json:"clientID"`
+	ClientID string `json:"clientID"`
+
+	// CpuCount CPU cores for the sandbox
+	CpuCount int `json:"cpuCount"`
+
+	// MemoryMB Memory limit for the sandbox in MB
+	MemoryMB int              `json:"memoryMB"`
 	Metadata *SandboxMetadata `json:"metadata,omitempty"`
 
 	// SandboxID Identifier of the sandbox
