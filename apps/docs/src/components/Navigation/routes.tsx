@@ -138,8 +138,8 @@ export const routes = [
             size={20}
           />
         ),
-        title: 'Resources',
-        href: '/sandbox/resources',
+        title: 'Compute',
+        href: '/sandbox/compute',
       },
       {
         icon: (
