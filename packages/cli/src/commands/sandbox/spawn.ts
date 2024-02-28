@@ -11,8 +11,8 @@ import fs from 'fs'
 import { pathOption } from '../../options'
 
 export const spawnCommand = new commander.Command('spawn')
-  .description('Spawn sandbox and connect terminal to it')
-  .argument('[template]', `Spawn and connect to sandbox specified by ${asBold('[template]')}`)
+  .description('spawn sandbox and connect terminal to it')
+  .argument('[template]', `spawn and connect to sandbox specified by ${asBold('[template]')}`)
   .addOption(pathOption)
   .alias('sp')
   .action(async (template: string | undefined, opts: {
@@ -46,7 +46,7 @@ export const spawnCommand = new commander.Command('spawn')
 
       if (!templateID) {
         console.error(
-          `You need to specify sandbox template ID or path to sandbox template config`,
+          'You need to specify sandbox template ID or path to sandbox template config',
         )
         process.exit(1)
       }
