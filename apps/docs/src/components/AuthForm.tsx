@@ -6,11 +6,13 @@ import {
 
 } from '@supabase/auth-ui-shared'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useSearchParams } from 'next/navigation'
 
 const supabase = createClientComponentClient()
 
 function AuthForm() {
-  const url = typeof window !== 'undefined' ? window.location.href : undefined
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect_to')
 
   return (
     <div className="flex flex-1 items-center">
@@ -21,12 +23,10 @@ function AuthForm() {
         }}
         theme="dark"
         providers={['github']}
-        queryParams={{
-          redirect_to: url,
-        }}
         providerScopes={{
           github: 'email',
         }}
+        redirectTo={redirectTo}
       />
     </div>
   )

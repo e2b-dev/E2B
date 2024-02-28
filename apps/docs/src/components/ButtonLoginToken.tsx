@@ -14,7 +14,7 @@ export function ButtonLoginToken() {
 
   return (
     <Button
-      onClick={() => signIn('auth-sign-up')}
+      onClick={() => signIn({ hash: 'auth-sign-up' })}
       variant="textTernary"
       className={extraClassName}
     >

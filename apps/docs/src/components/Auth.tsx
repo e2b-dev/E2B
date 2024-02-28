@@ -117,7 +117,7 @@ export const Auth = function () {
         <div className="flex items-center justify-center gap-3">
           {/* @ts-ignore */}
           <Button
-            onClick={() => signIn('auth-sign-up')}
+            onClick={() => signIn({ hash: 'auth-sign-up' })}
             variant="textTernary"
             className="whitespace-nowrap text-xs"
           >

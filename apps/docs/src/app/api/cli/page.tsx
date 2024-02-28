@@ -129,13 +129,13 @@ export default function Page() {
               "
               >
                 <span className="text-gray-200">
-                  <LaptopIcon size={60}/>
+                  <LaptopIcon size={60} />
                 </span>
                 <span className="text-gray-400">
-                  <Link2Icon size={30}/>
+                  <Link2Icon size={30} />
                 </span>
                 <span className="text-gray-200">
-                  <CloudIcon size={60}/>
+                  <CloudIcon size={60} />
                 </span>
               </p>
               <h2 className="mt-6 text-base font-semibold leading-7">
