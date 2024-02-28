@@ -55,9 +55,7 @@ function AuthForm() {
           supabaseClient={supabase}
           appearance={{
             theme: ThemeSupa,
-            // TODO: Customize auth styling
-            // https://supabase.com/docs/guides/auth/auth-helpers/auth-ui#create-theme
-            // https://supabase.com/docs/guides/auth/auth-helpers/auth-ui#override-themes
+            // TODO: Customize auth styling — https://supabase.com/docs/guides/auth/auth-helpers/auth-ui#customization
           }}
           view={view}
           theme="dark"
