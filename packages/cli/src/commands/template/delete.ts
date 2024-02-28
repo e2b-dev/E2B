@@ -27,16 +27,16 @@ export const deleteCommand = new commander.Command('delete')
   .description(`delete sandbox template and ${asLocal(configName)} config`)
   .argument(
     '[template]',
-    `Specify ${asBold(
+    `specify ${asBold(
       '[template]',
-    )} to delete it. If you don's specify ${asBold(
+    )} to delete it. If you dont specify ${asBold(
       '[template]',
     )} the command will try to delete sandbox template defined by ${asLocal('e2b.toml')}.`,
   )
   .addOption(pathOption)
   .addOption(selectMultipleOption)
   .alias('dl')
-  .option('-y, --yes', 'Skip manual delete confirmation')
+  .option('-y, --yes', 'skip manual delete confirmation')
   .action(async (template, opts: { path?: string, yes?: boolean, select?: boolean }) => {
     try {
       const accessToken = ensureAccessToken()
