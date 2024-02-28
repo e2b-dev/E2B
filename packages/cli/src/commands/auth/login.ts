@@ -22,7 +22,7 @@ export const loginCommand = new commander.Command('login')
       console.log(
         `Already logged in as ${asBold(
           userConfig.email,
-        )}, if you want to login as a different user, logout first by running 'e2b logout'.`,
+        )}, if you want to login as a different user, logout first by running 'e2b auth logout'.`,
       )
       return
     } else if (!userConfig) {
