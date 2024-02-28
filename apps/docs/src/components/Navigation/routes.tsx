@@ -48,7 +48,7 @@ export const routes = [
             size={20}
           />
         ),
-        title: 'Your Usage',
+        title: 'Compute Usage',
         href: '/usage',
       },
       {
