@@ -462,6 +462,12 @@ paths:
                 startCmd:
                   description: Start command to execute in the template after the build
                   type: string
+                cpuCount:
+                  description: CPU cores for the template
+                  type: string  # form data does not support integer
+                memoryMB:
+                  description: Memory limit for the template in MB
+                  type: string  # form data does not support integer
             encoding:
               buildContext:
                 contentType: application/octet-stream
@@ -509,6 +515,12 @@ paths:
                 startCmd:
                   description: Start command to execute in the template after the build
                   type: string
+                cpuCount:
+                  description: CPU cores for the template
+                  type: string  # form data does not support integer
+                memoryMB:
+                  description: Memory limit for the template in MB
+                  type: string  # form data does not support integer
             encoding:
               buildContext:
                 contentType: application/octet-stream

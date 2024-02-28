@@ -53,6 +53,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 	// Get team from context, use TeamContextKey
 	team := c.Value(constants.TeamContextKey).(models.Team)
 
+	// Check if team has access to the environment
 	env, kernelVersion, firecrackerVersion, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
 		errMsg := fmt.Errorf("error when checking team access: %w", checkErr)
@@ -116,20 +117,8 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		return nil
 	}
 
-	c.Set("instanceID", sandbox.SandboxID)
-
-	telemetry.ReportEvent(ctx, "created environment instance")
-
-	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
-	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
-	a.posthog.CreateAnalyticsTeamEvent(team.ID.String(), "created_instance",
-		properties.
-			Set("environment", env.TemplateID).
-			Set("instance_id", sandbox.SandboxID).
-			Set("alias", alias),
-	)
-
 	if cacheErr := a.instanceCache.Add(InstanceInfo{
+		StartTime:         nil,
 		Instance:          sandbox,
 		TeamID:            &team.ID,
 		Metadata:          metadata,
@@ -150,6 +139,19 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 
 		return nil
 	}
+
+	c.Set("instanceID", sandbox.SandboxID)
+
+	telemetry.ReportEvent(ctx, "created environment instance")
+
+	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
+	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
+	a.posthog.CreateAnalyticsTeamEvent(team.ID.String(), "created_instance",
+		properties.
+			Set("environment", env.TemplateID).
+			Set("instance_id", sandbox.SandboxID).
+			Set("alias", alias),
+	)
 
 	go func() {
 		err = a.supabase.UpdateEnvLastUsed(context.Background(), env.TemplateID)
