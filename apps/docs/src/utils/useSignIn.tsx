@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 
 export interface Opts {
-  hash?: string;
+  view?: string;
   /**
    * Redirect to the current URL after signing in
    * @default Enabled by default
@@ -15,15 +15,23 @@ export function useSignIn() {
   const router = useRouter()
 
   return function signIn(opts?: Opts) {
-    let target = '/sign'
+    let target = '/sign-in'
+
+    if (opts?.redirectToCurrentUrl !== false || opts?.view) {
+      target += '?'
+    }
 
     if (opts?.redirectToCurrentUrl !== false) {
       const url = typeof window !== 'undefined' ? window.location.href : undefined
-      target += '?redirect_to=' + url
+      target += 'redirect_to=' + url
     }
 
-    if (opts?.hash) {
-      target += `#${opts.hash}`
+    if (opts?.redirectToCurrentUrl !== false && opts?.view) {
+      target += '&'
+    }
+
+    if (opts?.view) {
+      target += 'view=' + opts.view
     }
 
     router.push(target, { scroll: true })
