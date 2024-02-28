@@ -2,6 +2,7 @@ import logging
 import re
 import inspect
 import threading
+import time
 from concurrent.futures import Future
 from typing import (
     Any,
@@ -169,7 +170,13 @@ class Process:
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out. If set to None, the method will continue to wait until it completes, regardless of time
         """
-        return self._finished.result(timeout)
+        start_time = time.time()
+        while timeout is None or time.time() - start_time < timeout:
+            if self._finished.done():
+                return self._finished.result()
+            time.sleep(0.1)
+            if not self._sandbox.is_open:
+                break
 
     def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """

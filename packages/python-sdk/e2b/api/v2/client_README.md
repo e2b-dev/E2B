@@ -73,6 +73,7 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *SandboxesApi* | [**sandboxes_get**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_get) | **GET** /sandboxes | 
 *SandboxesApi* | [**sandboxes_post**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_post) | **POST** /sandboxes | 
+*SandboxesApi* | [**sandboxes_sandbox_id_delete**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_sandbox_id_delete) | **DELETE** /sandboxes/{sandboxID} | 
 *SandboxesApi* | [**sandboxes_sandbox_id_refreshes_post**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_sandbox_id_refreshes_post) | **POST** /sandboxes/{sandboxID}/refreshes | 
 
 

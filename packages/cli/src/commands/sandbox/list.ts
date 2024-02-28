@@ -8,9 +8,9 @@ const listRunningSandboxes = e2b.withAPIKey(
   e2b.api.path('/sandboxes').method('get').create(),
 )
 
-export const runningSandboxesCommand = new commander.Command('sandboxes')
+export const listCommand = new commander.Command('list')
   .description('List all running sandboxes')
-  .alias('sb')
+  .alias('ls')
   .action(async () => {
     try {
       const apiKey = ensureAPIKey()
@@ -26,10 +26,10 @@ export const runningSandboxesCommand = new commander.Command('sandboxes')
             { name: 'templateID', alignment: 'left', title: 'Template ID' },
             { name: 'alias', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
-            { name: 'metadata', alignment: 'left', title: 'Metadata'},
+            { name: 'metadata', alignment: 'left', title: 'Metadata' },
           ],
           disabledColumns: ['clientID'],
-          rows: sandboxes.map((sandbox) => ({ ...sandbox, sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,startedAt: new Date(sandbox.startedAt).toLocaleString(), metadata: JSON.stringify(sandbox.metadata) })),
+          rows: sandboxes.map((sandbox) => ({ ...sandbox, sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`, startedAt: new Date(sandbox.startedAt).toLocaleString(), metadata: JSON.stringify(sandbox.metadata) })),
           colorMap: {
             orange: '\x1b[38;5;216m',
           },
