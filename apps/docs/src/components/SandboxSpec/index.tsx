@@ -1,5 +1,6 @@
 import CPUSpec, { CPUValue } from './CPUSpec'
 import RAMSpec from './RAMSpec'
+import StorageSpec, { StorageValue } from './StorageSpec'
 
 
 const cpuVals: CPUValue[] = [
@@ -40,11 +41,34 @@ const cpuVals: CPUValue[] = [
 const cpuPrice = 0.000014
 const ramPrice = 0.0000045
 
+const storageValues: StorageValue[] = [
+  {
+    value: 1,
+    plan: 'Hobby'
+  },
+  {
+    value: 5,
+    plan: 'Pro'
+  },
+]
+
 function SandboxSpec() {
   return (
-    <div className="w-full flex flex-col gap-8 items-center">
-      <CPUSpec cpuVals={cpuVals} cpuPrice={cpuPrice} />
-      <RAMSpec ramPrice={ramPrice} />
+    <div className="w-full flex flex-col gap-6 items-start">
+      <div className="w-full flex flex-col gap-4 items-start">
+        <h3 className="text-xl font-bold">CPU</h3>
+        <CPUSpec cpuVals={cpuVals} cpuPrice={cpuPrice} />
+      </div>
+
+      <div className="w-full flex flex-col gap-4 items-start">
+        <h3 className="text-xl font-bold">RAM</h3>
+        <RAMSpec ramPrice={ramPrice} />
+      </div>
+
+      <div className="w-full flex flex-col gap-4 items-start">
+        <h3 className="text-xl font-bold">Storage</h3>
+        <StorageSpec storageVals={storageValues} />
+      </div>
     </div>
   )
 }
