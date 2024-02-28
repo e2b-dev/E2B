@@ -27,8 +27,8 @@ function CPUSpec({
             className="flex items-center justify-between w-full p-2 border-b border-white/10"
           >
             <div className="flex items-center justify-start space-between w-full w-[300px]">
-              <span className="text-sm flex-1 font-mono text-left">{val.value}</span>
-              <span className="text-sm font-mono text-left w-[150px]">{val.plan}</span>
+              <span className="text-sm flex-1 font-mono text-left">{val.value} GiB</span>
+              <span className="text-sm font-mono text-left w-[150px]">{val.plan} GiB</span>
             </div>
 
             <span className="text-sm font-mono text-right">Free</span>
