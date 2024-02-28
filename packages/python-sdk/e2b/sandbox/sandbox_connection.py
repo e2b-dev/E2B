@@ -54,7 +54,7 @@ class RunningSandbox(BaseModel):
     sandbox_id: str
     template_id: str
     alias: Optional[str]
-    metadata: Dict[str, str] | None
+    metadata: Optional[Dict[str, str]]
     started_at: datetime
 
 
