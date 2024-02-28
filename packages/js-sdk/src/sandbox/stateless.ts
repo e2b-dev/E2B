@@ -10,8 +10,12 @@ import { ProcessOpts } from './process'
  */
 export async function create({ apiKey }: { apiKey?: string }, { keepAliveFor, ...opts }: Omit<SandboxOpts, 'apiKey'> & { keepAliveFor: number }) {
   const s = await Sandbox.create({ apiKey, ...opts })
-  await s.keepAlive(keepAliveFor)
-  await s.close()
+  try {
+    await s.keepAlive(keepAliveFor)
+  } finally {
+    await s.close()
+  }
+
   return s.id
 }
 
@@ -24,9 +28,12 @@ export async function create({ apiKey }: { apiKey?: string }, { keepAliveFor, ..
  */
 export async function exec({ apiKey, sandboxID }: { sandboxID: string, apiKey?: string }, opts: ProcessOpts) {
   const s = await Sandbox.reconnect({ apiKey, sandboxID, timeout: opts.timeout })
-  const result = await s.process.startAndWait({ ...opts })
-  await s.close()
-  return result
+  try {
+    const result = await s.process.startAndWait({ ...opts })
+    return result
+  } finally {
+    await s.close()
+  }
 }
 
 /**
@@ -47,9 +54,12 @@ export function kill({ apiKey, sandboxID }: { sandboxID: string, apiKey?: string
  */
 export async function downloadFile({ apiKey, sandboxID }: { sandboxID: string, apiKey?: string }, { path }: { path: string }) {
   const s = await Sandbox.reconnect({ apiKey, sandboxID })
-  const result = await s.filesystem.readBytes(path)
-  await s.close()
-  return result
+  try {
+    const result = await s.filesystem.readBytes(path)
+    return result
+  } finally {
+    await s.close()
+  }
 }
 
 /**
@@ -61,6 +71,9 @@ export async function downloadFile({ apiKey, sandboxID }: { sandboxID: string, a
  */
 export async function uploadFile({ apiKey, sandboxID }: { sandboxID: string, apiKey?: string }, { path, content }: { path: string, content: Uint8Array }) {
   const s = await Sandbox.reconnect({ apiKey, sandboxID })
-  await s.filesystem.writeBytes(path, content)
-  await s.close()
+  try {
+    await s.filesystem.writeBytes(path, content)
+  } finally {
+    await s.close()
+  }
 }
