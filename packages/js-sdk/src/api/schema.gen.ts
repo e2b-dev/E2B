@@ -49,6 +49,23 @@ export interface paths {
       };
     };
   };
+  "/sandboxes/{sandboxID}": {
+    /** Kill a sandbox */
+    delete: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      responses: {
+        /** The sandbox was killed successfully */
+        204: never;
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
   "/sandboxes/{sandboxID}/refreshes": {
     /** Refresh the sandbox extending its time to live */
     post: {

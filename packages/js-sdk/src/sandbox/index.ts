@@ -18,7 +18,7 @@ export type DownloadFileFormat =
   | 'blob'
   | 'buffer'
   | 'arraybuffer'
-  | 'text';
+  | 'text'
 
 export interface SandboxOpts extends SandboxConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler;
@@ -37,7 +37,7 @@ export interface Action<S extends Sandbox = Sandbox, T = {
 
 /**
  * E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
- * 
+ *
  * That means:
  * - Access to Linux OS
  * - Using filesystem (create, list, and delete files and dirs)
@@ -47,16 +47,16 @@ export interface Action<S extends Sandbox = Sandbox, T = {
  *
  * Check usage docs - https://e2b.dev/docs/sandbox/overview
  *
- * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants. 
- * 
+ * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
+ *
  * Use the {@link Sandbox.create} method to create a new sandbox.
- * 
+ *
  * @example
  * ```ts
  * import { Sandbox } from '@e2b/sdk'
- * 
+ *
  * const sandbox = await Sandbox.create()
- * 
+ *
  * await sandbox.close()
  * ```
  */
@@ -81,7 +81,7 @@ export class Sandbox extends SandboxConnection {
 
   /**
    * Use `Sandbox.create()` instead.
-   * 
+   *
    * @hidden
    * @hide
    * @internal
@@ -412,8 +412,7 @@ export class Sandbox extends SandboxConnection {
       startAndWait: async (optsOrCmd: string | ProcessOpts) => {
         const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
         const process = await this.process.start(opts)
-        const out = await process.wait()
-        return out
+        return process.wait(opts.timeout)
       }
     }
 
@@ -428,7 +427,7 @@ export class Sandbox extends SandboxConnection {
    * If a file with the same name already exists, it will be overwritten.
    */
   get fileURL() {
-    const protocol = this.getProtocol('http', this.opts.__debug_devEnv !== "local")
+    const protocol = this.getProtocol('http', this.opts.__debug_devEnv !== 'local')
     const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
     return `${protocol}://${hostname}${FILE_ROUTE}`
   }
@@ -463,7 +462,7 @@ export class Sandbox extends SandboxConnection {
    * ```
    * @constructs Sandbox
    */
-  static async create<S extends typeof Sandbox>(this: S): Promise<InstanceType<S>>;
+  static async create<S extends typeof Sandbox>(this: S): Promise<InstanceType<S>>
   /**
    * Creates a new Sandbox from the template with the specified ID.
    * @param template Sandbox template ID or name
@@ -474,7 +473,7 @@ export class Sandbox extends SandboxConnection {
    * const sandbox = await Sandbox.create("sandboxTemplateID")
    * ```
    */
-  static async create<S extends typeof Sandbox>(this: S, template: string): Promise<InstanceType<S>>;
+  static async create<S extends typeof Sandbox>(this: S, template: string): Promise<InstanceType<S>>
   /**
    * Creates a new Sandbox from the specified options.
    * @param opts Sandbox options
@@ -488,7 +487,7 @@ export class Sandbox extends SandboxConnection {
    * })
    * ```
    */
-  static async create<S extends typeof Sandbox>(this: S, opts: SandboxOpts): Promise<InstanceType<S>>;
+  static async create<S extends typeof Sandbox>(this: S, opts: SandboxOpts): Promise<InstanceType<S>>
   static async create(optsOrTemplate?: string | SandboxOpts) {
     const opts: SandboxOpts | undefined = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
     const sandbox = new Sandbox(opts)
@@ -506,14 +505,14 @@ export class Sandbox extends SandboxConnection {
    * ```ts
    * const sandbox = await Sandbox.create()
    * const sandboxID = sandbox.id
-   * 
+   *
    * await sandbox.keepAlive(300 * 1000)
    * await sandbox.close()
-   * 
+   *
    * const reconnectedSandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
-  static async reconnect<S extends typeof Sandbox>(this: S, sandboxID: string): Promise<InstanceType<S>>;
+  static async reconnect<S extends typeof Sandbox>(this: S, sandboxID: string): Promise<InstanceType<S>>
   /**
    * Reconnects to an existing Sandbox.
    * @param opts Sandbox options
@@ -523,16 +522,16 @@ export class Sandbox extends SandboxConnection {
    * ```ts
    * const sandbox = await Sandbox.create()
    * const sandboxID = sandbox.id
-   * 
+   *
    * await sandbox.keepAlive(300 * 1000)
    * await sandbox.close()
-   * 
+   *
    * const reconnectedSandbox = await Sandbox.reconnect({
    *   sandboxID,
    * })
    * ```
    */
-  static async reconnect<S extends typeof Sandbox>(this: S, opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>>;
+  static async reconnect<S extends typeof Sandbox>(this: S, opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>>
   static async reconnect<S extends typeof Sandbox>(this: S, sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>> {
     let id: string
     let opts: SandboxOpts
@@ -544,7 +543,7 @@ export class Sandbox extends SandboxConnection {
       opts = sandboxIDorOpts
     }
 
-    const sandboxIDAndClientID = id.split("-")
+    const sandboxIDAndClientID = id.split('-')
     const sandboxID = sandboxIDAndClientID[0]
     const clientID = sandboxIDAndClientID[1]
     opts.__sandbox = { sandboxID, clientID, templateID: 'unknown' }
@@ -569,7 +568,7 @@ export class Sandbox extends SandboxConnection {
    * sandbox.addAction('readFile', (sandbox, args) => sandbox.filesystem.read(args.path))
    * ```
    */
-  addAction<T = { [name: string]: any }>(action: Action<this, T>): this;
+  addAction<T = { [name: string]: any }>(action: Action<this, T>): this
   /**
    * Add a new action with a specified name.
    *
@@ -589,7 +588,7 @@ export class Sandbox extends SandboxConnection {
    * sandbox.addAction(readFile)
    * ```
    */
-  addAction<T = { [name: string]: any }>(name: string, action: Action<this, T>): this;
+  addAction<T = { [name: string]: any }>(name: string, action: Action<this, T>): this
   addAction<T = { [name: string]: any }>(actionOrName: string | Action<this, T>, action?: Action<this, T>): this {
     if (typeof actionOrName === 'string') {
       if (!action) throw new Error('Action is required')
@@ -736,7 +735,7 @@ export class Sandbox extends SandboxConnection {
         cwd: '/',
       })
     } catch (err) {
-      this.logger.debug?.("start command not started", err)
+      this.logger.debug?.('start command not started', err)
     }
   }
 }
