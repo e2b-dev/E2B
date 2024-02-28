@@ -9,7 +9,7 @@ const listRunningSandboxes = e2b.withAPIKey(
 )
 
 export const listCommand = new commander.Command('list')
-  .description('List all running sandboxes')
+  .description('list all running sandboxes')
   .alias('ls')
   .action(async () => {
     try {
@@ -26,8 +26,8 @@ export const listCommand = new commander.Command('list')
             { name: 'templateID', alignment: 'left', title: 'Template ID' },
             { name: 'alias', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
-            { name: 'cpuCount', alignment: 'left', title: 'CPUs'},
-            { name: 'memoryMB', alignment: 'left', title: 'RAM MB'},
+            { name: 'cpuCount', alignment: 'left', title: 'CPUs' },
+            { name: 'memoryMB', alignment: 'left', title: 'RAM MB' },
             { name: 'metadata', alignment: 'left', title: 'Metadata' },
           ],
           disabledColumns: ['clientID'],

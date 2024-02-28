@@ -11,7 +11,7 @@ const listTemplates = e2b.withAccessToken(
 )
 
 export const listCommand = new commander.Command('list')
-  .description('List sandbox templates')
+  .description('list sandbox templates')
   .alias('ls')
   .action(async () => {
     try {

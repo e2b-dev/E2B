@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import { USER_CONFIG_PATH } from 'src/user'
 
 export const logoutCommand = new commander.Command('logout')
-  .description('Log out of CLI')
+  .description('log out of CLI')
   .action(() => {
     if (fs.existsSync(USER_CONFIG_PATH)) {
       fs.unlinkSync(USER_CONFIG_PATH) // Delete user config

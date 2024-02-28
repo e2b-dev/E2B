@@ -5,7 +5,7 @@ import { listCommand } from './list'
 import { killCommand } from './kill'
 import { spawnCommand } from './spawn'
 
-export const sandboxCommand = new commander.Command('sandbox').description('Work with sandboxes')
+export const sandboxCommand = new commander.Command('sandbox').description('work with sandboxes')
   .alias('sbx')
   .addCommand(connectCommand)
   .addCommand(listCommand)

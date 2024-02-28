@@ -24,7 +24,7 @@ const deleteTemplate = e2b.withAccessToken(
 )
 
 export const deleteCommand = new commander.Command('delete')
-  .description(`Delete sandbox template and ${asLocal(configName)} config`)
+  .description(`delete sandbox template and ${asLocal(configName)} config`)
   .argument(
     '[template]',
     `Specify ${asBold(
