@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pytest
 
 from e2b import Sandbox
@@ -5,7 +7,7 @@ from e2b.sandbox.exception import TimeoutException
 
 
 def test_create_sandbox_timeout():
-    sandbox: Sandbox | None = None
+    sandbox: Optional[Sandbox] = None
 
     with pytest.raises(TimeoutException):
         sandbox = Sandbox(timeout=0.01)
@@ -15,7 +17,7 @@ def test_create_sandbox_timeout():
 
 
 def test_process_timeout():
-    sandbox: Sandbox | None = None
+    sandbox: Optional[Sandbox] = None
 
     with pytest.raises(TimeoutException):
         sandbox = Sandbox()
@@ -29,7 +31,7 @@ def test_process_timeout():
 
 
 def test_filesystem_timeout():
-    sandbox: Sandbox | None = None
+    sandbox: Optional[Sandbox] = None
 
     with pytest.raises(TimeoutException):
         sandbox = Sandbox()

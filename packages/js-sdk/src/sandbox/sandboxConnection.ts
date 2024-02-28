@@ -12,13 +12,13 @@ import { EnvVars } from './envVars'
 import { getApiKey } from '../utils/apiKey'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SubscriptionHandler = (result: any) => void;
+type SubscriptionHandler = (result: any) => void
 
 type Service =
   | typeof processService
   | typeof codeSnippetService
   | typeof filesystemService
-  | typeof terminalService;
+  | typeof terminalService
 
 interface Subscriber {
   service: Service;
@@ -124,7 +124,7 @@ export class SandboxConnection {
       this.cwd = this.cwd.replace('~', '/home/user')
     }
 
-    const defaultEnvVars = { PYTHONUNBUFFERED: "1" }
+    const defaultEnvVars = { PYTHONUNBUFFERED: '1' }
 
     this.envVars = { ...defaultEnvVars, ...opts.envVars || {} }
 
@@ -165,6 +165,8 @@ export class SandboxConnection {
       return res.data.map(sandbox => ({
         sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,
         templateID: sandbox.templateID,
+        cpuCount: sandbox.cpuCount,
+        memoryMB: sandbox.memoryMB,
         ...sandbox.alias && { alias: sandbox.alias },
         ...sandbox.metadata && { metadata: sandbox.metadata },
         startedAt: new Date(sandbox.startedAt),

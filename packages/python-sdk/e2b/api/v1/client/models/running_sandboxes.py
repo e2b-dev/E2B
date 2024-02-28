@@ -19,7 +19,7 @@ import json
 
 from datetime import datetime
 from typing import Any, Dict, Optional
-from pydantic import BaseModel, Field, StrictStr
+from pydantic import BaseModel, Field, StrictInt, StrictStr
 
 
 class RunningSandboxes(BaseModel):
@@ -42,6 +42,12 @@ class RunningSandboxes(BaseModel):
     started_at: datetime = Field(
         ..., alias="startedAt", description="Time when the sandbox was started"
     )
+    cpu_count: StrictInt = Field(
+        ..., alias="cpuCount", description="CPU cores for the sandbox"
+    )
+    memory_mb: StrictInt = Field(
+        ..., alias="memoryMB", description="Memory limit for the sandbox in MB"
+    )
     metadata: Optional[Dict[str, StrictStr]] = None
     additional_properties: Dict[str, Any] = {}
     __properties = [
@@ -50,6 +56,8 @@ class RunningSandboxes(BaseModel):
         "sandboxID",
         "clientID",
         "startedAt",
+        "cpuCount",
+        "memoryMB",
         "metadata",
     ]
 
@@ -100,6 +108,8 @@ class RunningSandboxes(BaseModel):
                 "sandbox_id": obj.get("sandboxID"),
                 "client_id": obj.get("clientID"),
                 "started_at": obj.get("startedAt"),
+                "cpu_count": obj.get("cpuCount"),
+                "memory_mb": obj.get("memoryMB"),
                 "metadata": obj.get("metadata"),
             }
         )

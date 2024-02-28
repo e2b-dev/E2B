@@ -482,6 +482,10 @@ export interface components {
        * @description Time when the sandbox was started
        */
       startedAt: string;
+      /** @description CPU cores for the sandbox */
+      cpuCount: number;
+      /** @description Memory limit for the sandbox in MB */
+      memoryMB: number;
       metadata?: components["schemas"]["SandboxMetadata"];
     };
     NewSandbox: {

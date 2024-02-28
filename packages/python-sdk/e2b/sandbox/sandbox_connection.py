@@ -55,6 +55,8 @@ class RunningSandbox(BaseModel):
     template_id: str
     alias: Optional[str]
     metadata: Optional[Dict[str, str]]
+    cpu_count: int
+    memory_mb: int
     started_at: datetime
 
 
@@ -472,11 +474,8 @@ class SandboxConnection:
         with E2BApiClient(api_key=api_key) as api_client:
             return [
                 RunningSandbox(
-                    metadata=sandbox.metadata,
                     sandbox_id=f"{sandbox.sandbox_id}-{sandbox.client_id}",
-                    template_id=sandbox.template_id,
-                    alias=sandbox.alias,
-                    started_at=sandbox.started_at,
+                    **sandbox.dict(exclude={'sandbox_id', 'client_id'})
                 )
                 for sandbox in client.SandboxesApi(api_client).sandboxes_get()
             ]
