@@ -8,16 +8,38 @@ function RAMSpec({
   return (
     <div className="w-full flex flex-col gap-2 items-start justify-start">
       <div className="flex items-center justify-between w-full px-2 bg-brand-500/10 rounded">
-        <span className="text-white font-bold">RAM</span>
-        <span className="text-white font-bold">Costs</span>
+        <div className="flex items-center justify-start space-between w-full">
+          <span className="text-sm text-white font-bold w-[400px]">RAM</span>
+          <span className="text-sm text-white font-bold text-right w-[45px]">Plan</span>
+        </div>
+        <span className="text-sm text-white font-bold w-full text-center">Costs</span>
       </div>
 
-      <div className="flex flex-col items-start justify-start w-full">
-        <div
-          className="flex items-center justify-between w-full p-2 border-b border-white/10"
-        >
-          <span className="font-mono text-right"><b>even</b> value <b>between 128 MB</b> and <b>8192 MB</b></span>
-          <span className="font-mono text-right">${ramPrice}/GB/s</span>
+      <div className="flex items-center justify-start w-full">
+        <div className="flex flex-col items-sart justify-start">
+          <div
+            className="flex items-center justify-between w-full border-b border-white/10"
+          >
+            {/* Hobby */}
+            <div className="flex items-center justify-end py-2 pl-2">
+              <span className="text-sm flex-1 font-mono text-left w-[350px]">512 MiB</span>
+              <span className="text-sm font-mono text-left w-[95px]">Hobby / Pro</span>
+            </div>
+          </div>
+
+          {/* Pro */}
+          <div
+            className="flex items-center justify-start"
+          >
+            <div className="flex items-center justify-end py-2 pl-2 w-full">
+              <span className="text-sm flex-1 font-mono text-left w-[400px]"><b>even</b> value <b>between 128 MiB</b> and <b>8,192 MiB</b></span>
+              <span className="text-sm font-mono text-right w-[45px]">Pro</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-1 items-center justify-center p-2">
+          <span className="text-sm font-mono">${ramPrice}/GiB/s</span>
         </div>
       </div>
     </div>
