@@ -48,7 +48,7 @@ export const routes = [
             size={20}
           />
         ),
-        title: 'Compute Usage',
+        title: 'Track usage',
         href: '/usage',
       },
       {
