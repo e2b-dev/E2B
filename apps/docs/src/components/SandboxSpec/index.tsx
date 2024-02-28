@@ -56,17 +56,17 @@ function SandboxSpec() {
   return (
     <div className="w-full flex flex-col gap-6 items-start">
       <div className="w-full flex flex-col gap-4 items-start">
-        <h3 className="text-xl font-bold">CPU</h3>
+        <h3 className="text-lg font-bold">CPU</h3>
         <CPUSpec cpuVals={cpuVals} cpuPrice={cpuPrice} />
       </div>
 
       <div className="w-full flex flex-col gap-4 items-start">
-        <h3 className="text-xl font-bold">RAM</h3>
+        <h3 className="text-lg font-bold">RAM</h3>
         <RAMSpec ramPrice={ramPrice} />
       </div>
 
       <div className="w-full flex flex-col gap-4 items-start">
-        <h3 className="text-xl font-bold">Storage</h3>
+        <h3 className="text-lg font-bold">Storage</h3>
         <StorageSpec storageVals={storageValues} />
       </div>
     </div>
