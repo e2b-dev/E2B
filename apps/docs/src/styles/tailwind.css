@@ -12,22 +12,28 @@
     }
 
     code[class*='language-'] .Code-line_highlighted {
-        position: relative; /* holds highlight element */
-        z-index: 1; /* force above the highlight defined below */
+        position: relative;
+        /* holds highlight element */
+        z-index: 1;
+        /* force above the highlight defined below */
     }
 
     code[class*='language-'] .Code-line_highlighted:before {
         content: '';
         position: absolute;
-        left: -16px; /* align nicely with code border */
+        left: -16px;
+        /* align nicely with code border */
         top: -5px;
-        bottom: -5px; /* breathing space */
+        bottom: -5px;
+        /* breathing space */
         border-left: 3px solid theme('colors.brand.500');
-        width: 300px; /* arbitrary value, looks nice */
+        width: 300px;
+        /* arbitrary value, looks nice */
         /* TODO: Theme colors */
         background: linear-gradient(to right, hsl(240, 3%, 21%), #1d1d20);
         pointer-events: none;
-        z-index: -1; /* force below code */
+        z-index: -1;
+        /* force below code */
     }
 
     [inert] ::-webkit-scrollbar {
@@ -42,10 +48,34 @@
         border-radius: 10px;
     }
 
-    #auth-sign-up button, #auth-sign-in button {
+    .supabase-auth-ui_ui-button {
+        @apply rounded-lg;
+    }
+
+    div button.supabase-auth-ui_ui-button.auth-button {
+        @apply rounded-full;
+    }
+
+    #auth-sign-up button,
+    #auth-forgot-password button,
+    #auth-sign-in button {
         border: none;
         @apply text-base font-medium transition;
-        @apply bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-brand-400/10 dark:text-brand-400 dark:ring-1 dark:ring-inset dark:ring-brand-400/20 dark:hover:bg-brand-400/10 dark:hover:text-brand-300 dark:hover:ring-brand-300;
+        @apply bg-zinc-900 py-1 px-3 rounded-full text-white hover:bg-zinc-700 dark:bg-brand-400/10 dark:text-brand-400 dark:ring-1 dark:ring-inset dark:ring-brand-400/20 dark:hover:bg-brand-400/10 dark:hover:text-brand-300 dark:hover:ring-brand-300;
+    }
+
+    #auth-forgot-password label,
+    #auth-sign-up label,
+    #auth-sign-in label {
+        @apply text-sm font-medium text-zinc-500;
+    }
+
+
+    #auth-forgot-password input,
+    #auth-sign-up input,
+    #auth-sign-in input {
+        @apply rounded-full bg-zinc-800 text-zinc-100 border-zinc-700 hover:border-zinc-600;
+        /* @apply bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-brand-400/10 dark:text-brand-400 dark:ring-1 dark:ring-inset dark:ring-brand-400/20 dark:hover:bg-brand-400/10 dark:hover:text-brand-300 dark:hover:ring-brand-300; */
     }
 }
 

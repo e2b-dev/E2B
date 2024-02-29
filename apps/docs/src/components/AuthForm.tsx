@@ -44,17 +44,29 @@ function AuthForm() {
 
 
   return (
-    <div className="mx-auto flex flex-1 max-w-[320px] justify-center items-center flex-col">
+    <div className="mx-auto flex flex-1 w-full justify-center items-center flex-col">
       <h1 className="text-4xl font-bold mt-8 mb-4">
         {view === 'sign_in' && 'Sign in to E2B'}
         {view === 'sign_up' && 'Sign up to E2B'}
         {view === 'forgotten_password' && 'Reset password'}
       </h1>
-      <div className="flex">
+      <div className="md:w-[420px] w-[240px]">
         <Auth
           supabaseClient={supabase}
           appearance={{
             theme: ThemeSupa,
+            extend: true,
+            className: {
+              button: 'auth-button',
+            },
+          }}
+          localization={{
+            variables: {
+              sign_in: {
+                email_label: 'Email address',
+                password_label: 'Password',
+              },
+            },
           }}
           view={view}
           theme="dark"
@@ -63,6 +75,7 @@ function AuthForm() {
           providerScopes={{
             github: 'email',
           }}
+
           redirectTo={redirectTo}
         />
       </div>
