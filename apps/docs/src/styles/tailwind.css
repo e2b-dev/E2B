@@ -53,7 +53,11 @@
     }
 
     div button.supabase-auth-ui_ui-button.auth-button {
-        @apply rounded-full;
+        @apply rounded-full bg-zinc-800 border-zinc-700 hover:border-zinc-500 transition hover:bg-zinc-800 text-sm text-zinc-100;
+    }
+
+    .supabase-auth-ui_ui-divider.auth-divider {
+        @apply border-zinc-900/5;
     }
 
     #auth-sign-up button,
@@ -67,15 +71,14 @@
     #auth-forgot-password label,
     #auth-sign-up label,
     #auth-sign-in label {
-        @apply text-sm font-medium text-zinc-500;
+        @apply text-sm font-medium text-zinc-500 transition;
     }
 
 
     #auth-forgot-password input,
     #auth-sign-up input,
     #auth-sign-in input {
-        @apply rounded-full bg-zinc-800 text-zinc-100 border-zinc-700 hover:border-zinc-600;
-        /* @apply bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-brand-400/10 dark:text-brand-400 dark:ring-1 dark:ring-inset dark:ring-brand-400/20 dark:hover:bg-brand-400/10 dark:hover:text-brand-300 dark:hover:ring-brand-300; */
+        @apply rounded-full bg-zinc-900 text-zinc-200 border-zinc-700 hover:border-zinc-500 transition text-sm;
     }
 }
 

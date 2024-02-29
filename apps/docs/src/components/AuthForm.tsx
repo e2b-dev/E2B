@@ -58,6 +58,7 @@ function AuthForm() {
             extend: true,
             className: {
               button: 'auth-button',
+              divider: 'auth-divider',
             },
           }}
           localization={{
@@ -79,7 +80,7 @@ function AuthForm() {
           redirectTo={redirectTo}
         />
       </div>
-      <div className="flex flex-1 flex-col space-x-2">
+      <div className="flex flex-1 flex-col pt-4">
         {view === 'sign_up' &&
           <div className="flex items-center justify-start gap-2">
             <span className="text-zinc-400">Already have an account?</span>
