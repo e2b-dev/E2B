@@ -31,7 +31,9 @@ export const listCommand = new commander.Command('list')
             { name: 'metadata', alignment: 'left', title: 'Metadata' },
           ],
           disabledColumns: ['clientID'],
-          rows: sandboxes.map((sandbox) => ({ ...sandbox, sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`, startedAt: new Date(sandbox.startedAt).toLocaleString(), metadata: JSON.stringify(sandbox.metadata) })),
+          rows: sandboxes.map((sandbox) => ({ ...sandbox, sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`, startedAt: new Date(sandbox.startedAt).toLocaleString(), metadata: JSON.stringify(sandbox.metadata) })).sort(
+            (a, b) => a.startedAt.localeCompare(b.startedAt) || a.sandboxID.localeCompare(b.sandboxID)
+          ),
           colorMap: {
             orange: '\x1b[38;5;216m',
           },
