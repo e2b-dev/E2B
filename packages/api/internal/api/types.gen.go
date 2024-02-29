@@ -122,7 +122,13 @@ type RunningSandboxes struct {
 	Alias *string `json:"alias,omitempty"`
 
 	// ClientID Identifier of the client
-	ClientID string           `json:"clientID"`
+	ClientID string `json:"clientID"`
+
+	// CpuCount CPU cores for the sandbox
+	CpuCount int `json:"cpuCount"`
+
+	// MemoryMB Memory limit for the sandbox in MB
+	MemoryMB int              `json:"memoryMB"`
 	Metadata *SandboxMetadata `json:"metadata,omitempty"`
 
 	// SandboxID Identifier of the sandbox
@@ -276,8 +282,14 @@ type PostTemplatesMultipartBody struct {
 	// BuildContext Docker build context
 	BuildContext openapi_types.File `json:"buildContext"`
 
+	// CpuCount CPU cores for the template
+	CpuCount *string `json:"cpuCount,omitempty"`
+
 	// Dockerfile Dockerfile content
 	Dockerfile string `json:"dockerfile"`
+
+	// MemoryMB Memory limit for the template in MB
+	MemoryMB *string `json:"memoryMB,omitempty"`
 
 	// StartCmd Start command to execute in the template after the build
 	StartCmd *string `json:"startCmd,omitempty"`
@@ -291,8 +303,14 @@ type PostTemplatesTemplateIDMultipartBody struct {
 	// BuildContext Docker build context
 	BuildContext openapi_types.File `json:"buildContext"`
 
+	// CpuCount CPU cores for the template
+	CpuCount *string `json:"cpuCount,omitempty"`
+
 	// Dockerfile Dockerfile content
 	Dockerfile string `json:"dockerfile"`
+
+	// MemoryMB Memory limit for the template in MB
+	MemoryMB *string `json:"memoryMB,omitempty"`
 
 	// StartCmd Start command to execute in the template after the build
 	StartCmd *string `json:"startCmd,omitempty"`

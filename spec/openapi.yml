@@ -109,6 +109,8 @@ components:
         - sandboxID
         - clientID
         - startedAt
+        - cpuCount
+        - memoryMB
       properties:
         templateID:
           type: string
@@ -126,6 +128,12 @@ components:
           type: string
           format: date-time
           description: Time when the sandbox was started
+        cpuCount:
+          type: integer
+          description: CPU cores for the sandbox
+        memoryMB:
+          type: integer
+          description: Memory limit for the sandbox in MB
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
 
@@ -462,6 +470,12 @@ paths:
                 startCmd:
                   description: Start command to execute in the template after the build
                   type: string
+                cpuCount:
+                  description: CPU cores for the template
+                  type: string  # form data does not support integer
+                memoryMB:
+                  description: Memory limit for the template in MB
+                  type: string  # form data does not support integer
             encoding:
               buildContext:
                 contentType: application/octet-stream
@@ -509,6 +523,12 @@ paths:
                 startCmd:
                   description: Start command to execute in the template after the build
                   type: string
+                cpuCount:
+                  description: CPU cores for the template
+                  type: string  # form data does not support integer
+                memoryMB:
+                  description: Memory limit for the template in MB
+                  type: string  # form data does not support integer
             encoding:
               buildContext:
                 contentType: application/octet-stream
