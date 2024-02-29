@@ -92,8 +92,7 @@ function APIKey() {
             description={
               <div className="flex flex-col">
                 <span>
-                  Use for <strong>managing</strong> the sandboxes
-                  (creating/listing/deleting).
+                  Use for <strong>managing</strong> the sandboxes with CLI - list/kill/connect, and for building custom sandbox templates with CLI.
                 </span>
                 <span>
                   Not needed when logging in CLI via <code>e2b login</code>.
