@@ -329,7 +329,7 @@ class ProcessManager:
                     "Failed to subscribe to RPC services necessary for starting process"
                 ) from e
 
-        future_exit_handler_finish = Future[ProcessOutput]()
+        future_exit_handler_finish: Future[ProcessOutput] = Future()
 
         def exit_handler():
             future_exit.result()
