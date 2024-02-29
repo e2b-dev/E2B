@@ -35,10 +35,6 @@ resource "google_compute_instance_group_manager" "server_cluster" {
   ]
 
   lifecycle {
-    # DEV ONLY - IGNORE CHANGES TO THE IMAGE
-    ignore_changes = [
-      version,
-    ]
     create_before_destroy = false
   }
 }
