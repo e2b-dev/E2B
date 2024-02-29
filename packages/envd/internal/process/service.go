@@ -26,7 +26,7 @@ type Service struct {
 	processes *Manager
 }
 
-const maxScanCapacity = 1024 * 1024 // 1MB
+const maxScanCapacity = 1024 * 1024 * 1024 // 1024MB
 
 func NewService(logger *zap.SugaredLogger, env *env.EnvConfig) *Service {
 	return &Service{
@@ -56,7 +56,7 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 	buf := make([]byte, maxScanCapacity)
 	scanner.Buffer(buf, maxScanCapacity)
 
-	// The default max buffer size is 64k - we are increasing this to 1MB.
+	// The default max buffer size is 64k - we are increasing this to 1024MB.
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -97,7 +97,7 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 
 	scanErr := scanner.Err()
 	if scanErr != nil {
-		s.logger.Warnw("Scanner error",
+		s.logger.Errorw("Scanner error",
 			"error", scanErr,
 		)
 	}
