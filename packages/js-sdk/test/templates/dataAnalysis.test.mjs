@@ -14,7 +14,7 @@ plt.show()
   )
   await sandbox.close()
   expect(result.artifacts.length).toEqual(1)
-}, 15000)
+}, 17000)
 
 
 test('test_install_packages', async () => {

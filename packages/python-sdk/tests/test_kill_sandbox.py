@@ -1,13 +1,11 @@
-import pytest
-
-from e2b import Sandbox, SandboxException
+from e2b import Sandbox
 
 
 def test_kill_sandbox():
     s = Sandbox()
     Sandbox.kill(s.id)
 
-    with pytest.raises(SandboxException):
-        s._refresh()
+    sandboxes = Sandbox.list()
+    assert s.id not in [sandbox.sandbox_id for sandbox in sandboxes]
 
     s.close()

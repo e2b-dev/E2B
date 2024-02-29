@@ -38,7 +38,7 @@ def test_filesystem_timeout():
         sandbox.filesystem.write(
             "test.txt",
             "Hello World",
-            timeout=0.01,
+            timeout=0.001,
         )
 
     if sandbox:
