@@ -197,8 +197,11 @@ export class SandboxConnection {
    */
   static async kill(sandboxID: string, apiKey?: string): Promise<void> {
     apiKey = getApiKey(apiKey)
+
+    const shortID = sandboxID.split('-')[0]
+
     try {
-      await killSandbox(apiKey, {sandboxID})
+      await killSandbox(apiKey, {sandboxID: shortID})
     } catch (e) {
       if (e instanceof killSandbox.Error) {
         const error = e.getActualType()

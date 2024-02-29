@@ -11,7 +11,6 @@ from datetime import datetime
 from pydantic import BaseModel
 from urllib3.exceptions import ReadTimeoutError, MaxRetryError, ConnectTimeoutError
 
-
 from e2b.api import E2BApiClient, exceptions, models, client
 from e2b.constants import (
     SANDBOX_DOMAIN,
@@ -32,7 +31,6 @@ from e2b.sandbox.sandbox_rpc import Notification, SandboxRpc
 from e2b.utils.api_key import get_api_key
 from e2b.utils.future import DeferredFuture
 from e2b.utils.str import camel_case_to_snake_case
-
 
 logger = logging.getLogger(__name__)
 
@@ -475,7 +473,7 @@ class SandboxConnection:
             return [
                 RunningSandbox(
                     sandbox_id=f"{sandbox.sandbox_id}-{sandbox.client_id}",
-                    **sandbox.dict(exclude={'sandbox_id', 'client_id'})
+                    **sandbox.dict(exclude={"sandbox_id", "client_id"}),
                 )
                 for sandbox in client.SandboxesApi(api_client).sandboxes_get()
             ]
@@ -490,7 +488,9 @@ class SandboxConnection:
         If not provided, the `E2B_API_KEY` environment variable will be used.
         """
         api_key = get_api_key(api_key)
+
+        short_id = sandbox_id.split("-")[0]
         with E2BApiClient(api_key=api_key) as api_client:
             return client.SandboxesApi(api_client).sandboxes_sandbox_id_delete(
-                sandbox_id=sandbox_id
+                sandbox_id=short_id
             )
