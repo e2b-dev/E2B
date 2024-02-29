@@ -92,10 +92,13 @@ function APIKey() {
             description={
               <div className="flex flex-col">
                 <span>
-                  Use for <strong>managing</strong> the sandboxes with CLI - list/kill/connect, and for building custom sandbox templates with CLI.
+                  Used only in the CLI, <strong>not needed in the SDK</strong>.
                 </span>
                 <span>
-                  Not needed when logging in CLI via <code>e2b login</code>.
+                  Access token is for <strong>managing</strong> sandboxes with CLI - list/kill/connect, and for building custom sandbox templates with CLI.
+                </span>
+                <span>
+                  Acess token is not needed when logging in CLI via <code>e2b auth login</code>.
                 </span>
               </div>
             }
