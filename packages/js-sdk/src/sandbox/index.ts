@@ -37,7 +37,7 @@ export interface Action<S extends Sandbox = Sandbox, T = {
 
 /**
  * E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
- * 
+ *
  * That means:
  * - Access to Linux OS
  * - Using filesystem (create, list, and delete files and dirs)
@@ -47,16 +47,16 @@ export interface Action<S extends Sandbox = Sandbox, T = {
  *
  * Check usage docs - https://e2b.dev/docs/sandbox/overview
  *
- * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants. 
- * 
+ * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
+ *
  * Use the {@link Sandbox.create} method to create a new sandbox.
- * 
+ *
  * @example
  * ```ts
  * import { Sandbox } from '@e2b/sdk'
- * 
+ *
  * const sandbox = await Sandbox.create()
- * 
+ *
  * await sandbox.close()
  * ```
  */
@@ -81,7 +81,7 @@ export class Sandbox extends SandboxConnection {
 
   /**
    * Use `Sandbox.create()` instead.
-   * 
+   *
    * @hidden
    * @hide
    * @internal
@@ -506,10 +506,10 @@ export class Sandbox extends SandboxConnection {
    * ```ts
    * const sandbox = await Sandbox.create()
    * const sandboxID = sandbox.id
-   * 
+   *
    * await sandbox.keepAlive(300 * 1000)
    * await sandbox.close()
-   * 
+   *
    * const reconnectedSandbox = await Sandbox.reconnect(sandboxID)
    * ```
    */
@@ -523,10 +523,10 @@ export class Sandbox extends SandboxConnection {
    * ```ts
    * const sandbox = await Sandbox.create()
    * const sandboxID = sandbox.id
-   * 
+   *
    * await sandbox.keepAlive(300 * 1000)
    * await sandbox.close()
-   * 
+   *
    * const reconnectedSandbox = await Sandbox.reconnect({
    *   sandboxID,
    * })
@@ -717,6 +717,7 @@ export class Sandbox extends SandboxConnection {
     )
 
     if (this.cwd) {
+      this.logger.debug?.(`Custom cwd for Sandbox set: "${this.cwd}"`)
       await this.filesystem.makeDir(this.cwd)
     }
 
