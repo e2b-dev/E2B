@@ -1,23 +1,17 @@
 'use client'
+
 import Image from 'next/image'
-import { Children, createContext, isValidElement, useContext, useEffect, useReducer, useRef, useState } from 'react'
+import { Children, createContext, isValidElement, useContext, useEffect, useRef, useState } from 'react'
 import { Tab } from '@headlessui/react'
 import clsx from 'clsx'
 import { create } from 'zustand'
 import {
-  LoaderIcon,
-  PlayIcon,
   File,
   Terminal,
 } from 'lucide-react'
 
 import { CopyButton } from '@/components/CopyButton'
-import { useApiKey } from '@/utils/useUser'
-import { ProcessMessage } from 'e2b'
-import { useSandboxStore } from '@/utils/useSandbox'
-import { useSignIn } from '@/utils/useSignIn'
-import { LangShort, languageNames, mdLangToLangShort } from '@/utils/consts'
-import { usePostHog } from 'posthog-js/react'
+import { LangShort, languageNames } from '@/utils/consts'
 import logoNode from '@/images/logos/node.svg'
 import logoPython from '@/images/logos/python.svg'
 
@@ -40,112 +34,15 @@ export function getPanelTitle({
 function CodePanel({
   children,
   code,
-  lang,
-  isRunnable = true,
 }: {
   children: React.ReactNode;
   code?: string;
   lang?: LangShort;
   isRunnable?: boolean;
 }) {
-  const signIn = useSignIn()
-  const apiKey = useApiKey()
-  const posthog = usePostHog()
-
-  const codeGroupContext = useContext(CodeGroupContext)
-
-  const sandboxDef = useSandboxStore((s) => s.sandbox)
-  const initSandbox = useSandboxStore((s) => s.initSandbox)
-  const { outputLines, dispatch } = useOutputReducer()
-  const [isRunning, setIsRunning] = useState(false)
-
-  function appendOutput(out: ProcessMessage) {
-    dispatch({ type: 'push', payload: out.line })
-  }
-
-  function filterAndMaybeAppendOutput(out: ProcessMessage) {
-    if (out.line.includes('Cannot refresh sandbox')) return
-    if (out.line.includes('Trying to reconnect')) return
-    console.log(`⚠️ Sandbox stderr ${out.line}`)
-    // appendOutput(out) // TODO: Reconsider logging to console after making the runs more stable
-  }
-
-  function handleSandboxCreationError(err: Error) {
-    console.error(err)
-    setIsRunning(false)
-    dispatch({ type: 'clear' })
-  }
-
-  async function onRun() {
-    if (!apiKey) {
-      window.alert('You need to sign in to run code snippets')
-      void signIn()
-      return
-    }
-    dispatch({ type: 'clear' })
-    setIsRunning(true)
-    posthog?.capture('run code snippet', {
-      language: lang,
-      snippetPath: codeGroupContext?.path ?? 'unknown snippet',
-    })
-
-    let sandbox = sandboxDef?.sandbox
-    try {
-      if (!sandbox) {
-        if (sandboxDef?.promise) {
-          console.log('Sandbox is still being created, waiting...')
-          sandbox = await sandboxDef.promise
-        } else {
-          console.log('Sandbox not ready yet, creating...')
-          sandbox = await initSandbox(apiKey)
-        }
-      }
-    } catch (err) {
-      handleSandboxCreationError(err)
-      return
-    }
-
-    if (!sandbox) {
-      console.warn(
-        'This should not happen, sandbox is null, debug & fix properly later',
-      )
-      setIsRunning(false)
-      return
-    }
-
-    let runtime = `E2B_API_KEY=${apiKey}`
-    if (lang === LangShort.js) {
-      runtime += ' node'
-      const filename = '/code/index.js'
-      await sandbox.filesystem.write(filename, code)
-      sandbox.process.start({
-        cmd: `${runtime} ${filename}`,
-        onStdout: appendOutput,
-        onStderr: filterAndMaybeAppendOutput,
-        onExit: () => setIsRunning(false), // TODO: Inspect why it's exiting so late
-      })
-    } else if (lang === LangShort.py) {
-      runtime += ' python3'
-      const filename = '/main.py'
-      await sandbox.filesystem.write(filename, code)
-      sandbox.process.start({
-        cmd: `${runtime} ${filename}`,
-        cwd: '/code',
-        onStdout: appendOutput,
-        onStderr: filterAndMaybeAppendOutput,
-        onExit: () => setIsRunning(false),
-      })
-    } else {
-      throw new Error('Unsupported runtime for playground')
-    }
-  }
-
   const child = Children.only(children)
   if (isValidElement(child)) code = child.props.code ?? code // Get code from child if available
-  if (isValidElement(child)) {
-    // @ts-ignore
-    lang = mdLangToLangShort[child.props.language ?? lang] // Get lang from child if available
-  }
+
   if (!code) {
     throw new Error(
       '`CodePanel` requires a `code` prop, or a child with a `code` prop.',
@@ -161,51 +58,9 @@ function CodePanel({
         top-[-40px]
       "
       >
-        {isRunnable && (
-          <button
-            className={clsx(
-              `
-                group
-                flex cursor-pointer
-                items-center
-                space-x-2 rounded-md bg-transparent p-1 text-xs
-                transition-all
-              `,
-              isRunning && 'cursor-wait',
-            )}
-            disabled={isRunning}
-            onClick={onRun}
-          >
-            {isRunning ? (
-              <>
-                <span>Running</span>
-                <LoaderIcon
-                  className="h-4 w-4 animate-spin text-brand-400 transition-all group-hover:text-brand-300"
-                  strokeWidth={2.5}
-                />
-              </>
-            ) : (
-              <>
-                <span>Run</span>
-                <PlayIcon
-                  className="h-4 w-4 text-brand-400 transition-all group-hover:text-brand-300"
-                  strokeWidth={2.5}
-                />
-              </>
-            )}
-          </button>
-        )}
       </div>
 
       <pre className="overflow-x-auto p-4 text-xs text-white">{children}</pre>
-      {(outputLines.length > 0 || isRunning) && (
-        <div className="flex max-h-[200px] flex-col items-start justify-start bg-zinc-800 px-4 py-1 font-mono">
-          <span className="font-mono text-xs text-zinc-500">Output</span>
-          <pre className="h-full w-full overflow-auto whitespace-pre text-xs text-white">
-            {outputLines.join('\n')}
-          </pre>
-        </div>
-      )}
       <CopyButton code={code} />
     </div>
   )
@@ -434,27 +289,6 @@ export function useTabGroupProps(availableLanguages: Array<string>) {
 }
 
 const CodeGroupContext = createContext(null)
-
-function useOutputReducer() {
-  const [outputLines, dispatch] = useReducer(
-    (
-      state: string[],
-      action: {
-        type: 'push' | 'clear';
-        payload?: string;
-      },
-    ) => {
-      switch (action.type) {
-        case 'push':
-          return [...state, action.payload]
-        case 'clear':
-          return []
-      }
-    },
-    [],
-  )
-  return { outputLines, dispatch }
-}
 
 export function CodeGroup({
   children,
