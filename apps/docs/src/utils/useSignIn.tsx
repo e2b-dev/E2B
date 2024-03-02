@@ -23,7 +23,7 @@ export function useSignIn() {
 
     if (opts?.redirectToCurrentUrl !== false) {
       const url = typeof window !== 'undefined' ? window.location.href : undefined
-      target += 'redirect_to=' + url
+      target += 'redirect_to=' + encodeURI(url)
     }
 
     if (opts?.redirectToCurrentUrl !== false && opts?.view) {
@@ -31,7 +31,7 @@ export function useSignIn() {
     }
 
     if (opts?.view) {
-      target += 'view=' + opts.view
+      target += 'view=' + encodeURI(opts.view)
     }
 
     router.push(target, { scroll: true })
