@@ -56,6 +56,10 @@
         @apply rounded-full bg-zinc-800 border-zinc-700 hover:border-zinc-500 transition hover:bg-zinc-800 text-sm text-zinc-100;
     }
 
+    .supabase-auth-ui_ui-message {
+        @apply text-sm text-zinc-500;
+    }
+
     .supabase-auth-ui_ui-divider.auth-divider {
         @apply border-zinc-900/5;
     }

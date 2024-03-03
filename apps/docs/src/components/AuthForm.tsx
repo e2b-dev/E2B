@@ -42,9 +42,8 @@ function AuthForm() {
     }
   }, [user.user, router, redirectTo])
 
-
   return (
-    <div className="mx-auto flex flex-1 w-full justify-center items-center flex-col">
+    <div className="mx-auto flex flex-1 w-full justify-center items-center flex-col pt-4">
       <h1 className="text-4xl font-bold mt-8 mb-4">
         {view === 'sign_in' && 'Sign in to E2B'}
         {view === 'sign_up' && 'Sign up to E2B'}
@@ -76,7 +75,6 @@ function AuthForm() {
           providerScopes={{
             github: 'email',
           }}
-
           redirectTo={redirectTo}
         />
       </div>
@@ -93,14 +91,14 @@ function AuthForm() {
           </div>
         }
 
-        {view === 'sign_in' &&
+        {/* {view === 'sign_in' &&
           <Button
             onClick={() => setView('forgotten_password')}
             variant="textSubtle"
           >
             Forgot your password?
           </Button>
-        }
+        } */}
 
         {view === 'sign_in' &&
           <div className="flex items-center justify-start gap-2">
