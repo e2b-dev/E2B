@@ -63,11 +63,17 @@ importers:
       '@supabase/auth-helpers-nextjs':
         specifier: ^0.7.4
         version: 0.7.4(@supabase/supabase-js@2.36.0)
+      '@supabase/auth-ui-react':
+        specifier: ^0.4.7
+        version: 0.4.7(@supabase/supabase-js@2.36.0)
+      '@supabase/auth-ui-shared':
+        specifier: ^0.1.8
+        version: 0.1.8(@supabase/supabase-js@2.36.0)
       '@supabase/supabase-auth-helpers':
         specifier: ^1.4.2
         version: 1.4.2
       '@supabase/supabase-js':
-        specifier: ^2.32.0
+        specifier: ^2.36.0
         version: 2.36.0
       '@tailwindcss/typography':
         specifier: 0.5.9
@@ -2560,6 +2566,10 @@ packages:
       p-map: 4.0.0
     dev: true
 
+  /@stitches/core@1.2.8:
+    resolution: {integrity: sha512-Gfkvwk9o9kE9r9XNBmJRfV8zONvXThnm1tcuojL04Uy5uRyqg93DC83lDebl0rocZCfKSjUv+fWYtMQmEDJldg==}
+    dev: false
+
   /@stylistic/eslint-plugin-js@1.6.2(eslint@8.49.0):
     resolution: {integrity: sha512-ndT6X2KgWGxv8101pdMOxL8pihlYIHcOv3ICd70cgaJ9exwkPn8hJj4YQwslxoAlre1TFHnXd/G1/hYXgDrjIA==}
     engines: {node: ^16.0.0 || >=18.0.0}
@@ -2606,6 +2616,27 @@ packages:
     dependencies:
       '@supabase/supabase-js': 2.36.0
       jose: 4.14.6
+    dev: false
+
+  /@supabase/auth-ui-react@0.4.7(@supabase/supabase-js@2.36.0):
+    resolution: {integrity: sha512-Lp4FQGFh7BMX1Y/BFaUKidbryL7eskj1fl6Lby7BeHrTctbdvDbCMjVKS8wZ2rxuI8FtPS2iU900fSb70FHknQ==}
+    peerDependencies:
+      '@supabase/supabase-js': ^2.21.0
+    dependencies:
+      '@stitches/core': 1.2.8
+      '@supabase/auth-ui-shared': 0.1.8(@supabase/supabase-js@2.36.0)
+      '@supabase/supabase-js': 2.36.0
+      prop-types: 15.8.1
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+    dev: false
+
+  /@supabase/auth-ui-shared@0.1.8(@supabase/supabase-js@2.36.0):
+    resolution: {integrity: sha512-ouQ0DjKcEFg+0gZigFIEgu01V3e6riGZPzgVD0MJsCBNsMsiDT74+GgCEIElMUpTGkwSja3xLwdFRFgMNFKcjg==}
+    peerDependencies:
+      '@supabase/supabase-js': ^2.21.0
+    dependencies:
+      '@supabase/supabase-js': 2.36.0
     dev: false
 
   /@supabase/functions-js@1.3.4:

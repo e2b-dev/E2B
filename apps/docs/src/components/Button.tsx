@@ -34,7 +34,7 @@ const variantStyles = {
   textLink:
     'text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-500 underline decoration-2 decoration-brand-500/30',
   textSubtle:
-    'text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-500 underline', // same as text, but gray-ish
+    'text-sm text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-500 underline', // same as text, but gray-ish
   textTernary:
     'text-yellow-500 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-500', // same as text, but gray-ish
 }
@@ -44,18 +44,18 @@ type ButtonProps = {
   disabled?: boolean
   arrow?: 'left' | 'right'
 } & (
-  | React.ComponentPropsWithoutRef<typeof Link>
-  | (React.ComponentPropsWithoutRef<'button'> & { href?: undefined })
+    | React.ComponentPropsWithoutRef<typeof Link>
+    | (React.ComponentPropsWithoutRef<'button'> & { href?: undefined })
   )
 
 export function Button({
-                         variant = 'primary',
-                         disabled = false,
-                         className,
-                         children,
-                         arrow,
-                         ...props
-                       }: ButtonProps) {
+  variant = 'primary',
+  disabled = false,
+  className,
+  children,
+  arrow,
+  ...props
+}: ButtonProps) {
   className = clsx(
     'inline-flex gap-0.5 justify-center overflow-hidden text-base font-medium transition',
     variantStyles[variant],

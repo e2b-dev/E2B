@@ -11,6 +11,8 @@ import { Section } from '@/components/SectionProvider'
 import Canonical from '@/components/Navigation/canonical'
 
 export const metadata: Metadata = {
+  // TODO: Add metadataBase
+  // metadataBase: ''
   title: {
     template: '%s - E2B Docs',
     default: 'E2B Docs - Runtime Sandbox for LLM Apps',

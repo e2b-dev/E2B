@@ -22,10 +22,11 @@ export function Layout({
   const pathname = usePathname()
   const relativePathname = pathname.replace(new RegExp('^/docs'), '')
   const shouldShowBanner = user?.pricingTier.isPromo
+  const isAuth = relativePathname.startsWith('/sign-in')
 
   return (
     <SectionProvider sections={allSections[relativePathname] ?? []}>
-      <div className="h-full lg:ml-[var(--sidebar-nav-width)]">
+      <div className={clsx('h-full', { 'lg:ml-[var(--sidebar-nav-width)]': !isAuth })}>
         <motion.header
           layoutScroll
           className={clsx(
@@ -47,13 +48,15 @@ export function Layout({
               lg:pb-8
             "
           >
-            <Header />
-            <Navigation className="hidden lg:my-4 lg:block" />
+            {/* @ts-ignore */}
+            <Header isAuth={isAuth} />
+            {!isAuth && <Navigation className="hidden lg:my-4 lg:block" />}
           </div>
         </motion.header>
         {shouldShowBanner && <Banner />}
-        <div
-          className="
+        {!isAuth && (
+          <div
+            className="
           relative
           flex
           h-full
@@ -67,13 +70,33 @@ export function Layout({
           lg:px-8
           lg:dark:border-white/10
           "
-        >
-          <main className="
+          >
+            <main className="
             flex-auto
           ">
-            {children}</main>
-          <Footer />
-        </div>
+              {children}</main>
+            <Footer />
+          </div>
+        )}
+        {isAuth && (
+          <div
+            className="
+          relative
+          flex
+          h-full
+          flex-col
+          pt-14
+          "
+          >
+            <main className="
+            flex
+            flex-1
+          ">
+              {children}
+            </main>
+            <Footer />
+          </div>
+        )}
       </div>
     </SectionProvider>
   )

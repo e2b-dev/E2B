@@ -1,3 +1,5 @@
+'use client'
+
 import clsx from 'clsx'
 import { LogOutIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -10,7 +12,6 @@ import { HeaderSeparator } from '@/components/HeaderUtils'
 import { usePostHog } from 'posthog-js/react'
 import { obfuscateSecret } from '@/utils/obfuscate'
 import { useSignIn } from '@/utils/useSignIn'
-
 
 function CopyableSecret({
   secret = '',
@@ -114,7 +115,7 @@ export const Auth = function () {
         <div className="flex items-center justify-center gap-3">
           {/* @ts-ignore */}
           <Button
-            onClick={() => signIn()}
+            onClick={() => signIn({ view: 'sign-up' })}
             variant="textTernary"
             className="whitespace-nowrap text-xs"
           >

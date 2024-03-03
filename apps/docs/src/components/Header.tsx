@@ -21,7 +21,7 @@ const TopLevelNavItem = dynamic(() => import('@/components/TopLevelNavItem'), {
 })
 
 // @ts-ignore
-export const Header = forwardRef(function Header({ className }, ref) {
+export const Header = forwardRef(function Header({ className, isAuth }, ref) {
   const { isOpen: mobileNavIsOpen } = useMobileNavigationStore()
   const isInsideMobileNavigation = useIsInsideMobileNavigation()
 
@@ -91,7 +91,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
           <Logo className="h-6" />
         </Link>
       </div>
-      <Search />
+      {!isAuth && <Search />}
       <div className="flex items-center gap-5 lg:hidden">
         <MobileNavigation />
         <Link
@@ -101,7 +101,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
           <Logo className="h-6" />
         </Link>
       </div>
-      <div className="flex items-center gap-4">
+      {!isAuth && <div className="flex items-center gap-4">
         <nav className="hidden md:block">
           <ul
             role="list"
@@ -131,6 +131,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
           <Auth />
         </div>
       </div>
+      }
     </motion.div>
   )
 })

@@ -117,7 +117,7 @@ function APIKey() {
       ) : (
         <div className="flex flex-col items-start justiy-start gap-4 mt-6">
           <span>You can get your API key by signing up.</span>
-          <Button onClick={() => signIn()}>Sign up to get your API key</Button>
+          <Button onClick={() => signIn({ view: 'sign-up' })}>Sign up to get your API key</Button>
         </div>
       )}
     </div>
