@@ -33,44 +33,44 @@ const getTemplate = e2b.withAccessToken(
 
 export const buildCommand = new commander.Command('build')
   .description(
-    `Build sandbox template defined by ${asLocalRelative(
+    `build sandbox template defined by ${asLocalRelative(
       defaultDockerfileName,
     )} or ${asLocalRelative(
       fallbackDockerfileName,
     )} in root directory. By default the root directory is the current working directory. This command also creates ${asLocal(
       configName,
-    )} config`,
+    )} config.`,
   )
   .argument(
     '[template]',
-    `Specify ${asBold(
+    `specify ${asBold(
       '[template]',
     )} to rebuild it. If you don's specify ${asBold(
       '[template]',
-    )} and there is no ${asLocal('e2b.toml')} a new sandbox template will be created`,
+    )} and there is no ${asLocal('e2b.toml')} a new sandbox template will be created.`,
   )
   .addOption(pathOption)
   .option(
     '-d, --dockerfile <file>',
-    `Specify path to Dockerfile. By default E2B tries to find ${asLocal(
+    `specify path to Dockerfile. By default E2B tries to find ${asLocal(
       defaultDockerfileName,
-    )} or ${asLocal(fallbackDockerfileName)} in root directory`,
+    )} or ${asLocal(fallbackDockerfileName)} in root directory.`,
   )
   .option(
     '-n, --name <template-name>',
-    'Specify sandbox template name. You can use the template name to start the sandbox with SDK. The template name must be lowercase and contain only letters, numbers, dashes and underscores',
+    'specify sandbox template name. You can use the template name to start the sandbox with SDK. The template name must be lowercase and contain only letters, numbers, dashes and underscores.',
   )
   .option(
     '-c, --cmd <start-command>',
-    'Specify command that will be executed when the sandbox is started',
+    'specify command that will be executed when the sandbox is started.',
   )
   .option(
     '--cpu-count <cpu-count>',
-    'Specify the number of CPUs that will be used to run the sandbox. The default value is 2.',
+    'specify the number of CPUs that will be used to run the sandbox. The default value is 2.',
   )
   .option(
     '--memory-mb <memory-mb>',
-    'Specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.',
+    'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.',
   )
   .alias('bd')
   .action(
@@ -206,7 +206,7 @@ export const buildCommand = new commander.Command('build')
         const estimatedSize = estimateContentLength(body)
         if (estimatedSize > maxContentSize) {
           console.error(
-            `The sandbox template build context is too large ${asLocal(`${Math.round(estimatedSize / 1024 / 1024 * 100) /100} MiB`)}. The maximum size is ${asLocal(
+            `The sandbox template build context is too large ${asLocal(`${Math.round(estimatedSize / 1024 / 1024 * 100) / 100} MiB`)}. The maximum size is ${asLocal(
               `${maxContentSize / 1024 / 1024} MiB.`)}\n\nCheck if you are not including unnecessary files in the build context (e.g. node_modules)`,
           )
           process.exit(1)

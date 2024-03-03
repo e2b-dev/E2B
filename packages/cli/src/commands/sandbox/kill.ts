@@ -9,8 +9,8 @@ const killSandbox = e2b.withAPIKey(
   e2b.api.path('/sandboxes/{sandboxID}').method('delete').create(),
 )
 export const killCommand = new commander.Command('kill')
-  .description('Kill sandbox')
-  .argument('<sandboxID>', `Kill the sandbox specified by ${asBold('<sandboxID>')}`)
+  .description('kill sandbox')
+  .argument('<sandboxID>', `kill the sandbox specified by ${asBold('<sandboxID>')}`)
   .alias('kl')
   .action(async (sandboxID: string) => {
     try {
@@ -21,7 +21,7 @@ export const killCommand = new commander.Command('kill')
         process.exit(1)
       }
 
-      await killSandbox(  apiKey, { sandboxID } )
+      await killSandbox(apiKey, { sandboxID })
 
       console.log(`Sandbox ${asBold(sandboxID)} has been killed`)
     } catch (err: any) {

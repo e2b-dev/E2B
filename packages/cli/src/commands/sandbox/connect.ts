@@ -6,8 +6,8 @@ import { asBold, asPrimary } from 'src/utils/format'
 import { ensureAPIKey } from '../../api'
 
 export const connectCommand = new commander.Command('connect')
-  .description('Connect terminal to already running sandbox')
-  .argument('<sandboxID>', `Connect to sandbox with ${asBold('<sandboxID>')}`)
+  .description('connect terminal to already running sandbox')
+  .argument('<sandboxID>', `connect to sandbox with ${asBold('<sandboxID>')}`)
   .alias('cn')
   .action(async (sandboxID: string) => {
     try {
@@ -15,7 +15,7 @@ export const connectCommand = new commander.Command('connect')
 
       if (!sandboxID) {
         console.error(
-          `You need to specify sandbox ID`,
+          'You need to specify sandbox ID',
         )
         process.exit(1)
       }

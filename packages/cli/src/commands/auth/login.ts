@@ -10,7 +10,7 @@ import { DOCS_BASE, getUserConfig, USER_CONFIG_PATH, UserConfig } from 'src/user
 import { asBold, asFormattedError } from 'src/utils/format'
 
 export const loginCommand = new commander.Command('login')
-  .description('Log in to CLI')
+  .description('log in to CLI')
   .action(async () => {
     let userConfig
     try {
