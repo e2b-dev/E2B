@@ -58,6 +58,7 @@ function AuthForm() {
             className: {
               button: 'auth-button',
               divider: 'auth-divider',
+              message: 'auth-message',
             },
           }}
           localization={{
