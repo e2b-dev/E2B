@@ -84,6 +84,20 @@ components:
         type: string
         description: Metadata of the sandbox
 
+    SandboxLogs:
+      required:
+        - logs
+        - logsOffset
+      properties:
+        logs:
+          type: array
+          items:
+            type: string
+          description: Logs of the sandbox
+        logsOffset:
+          type: integer
+          description: Index of the last log
+
     Sandbox:
       required:
         - templateID
@@ -376,6 +390,34 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
+  /sandboxes/{sandboxID}/logs:
+    get:
+      description: Get sandbox logs
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+        - in: query
+          name: logsOffset
+          schema:
+            default: 0
+            type: integer
+          description: Index of the starting log that should be returned with the sandbox
+      responses:
+        200:
+          description: Successfully returned the sandbox logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SandboxLogs"
+        404:
+          $ref: "#/components/responses/404"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+
   /sandboxes/{sandboxID}:
     delete:
       description: Kill a sandbox
@@ -472,10 +514,10 @@ paths:
                   type: string
                 cpuCount:
                   description: CPU cores for the template
-                  type: string  # form data does not support integer
+                  type: string # form data does not support integer
                 memoryMB:
                   description: Memory limit for the template in MB
-                  type: string  # form data does not support integer
+                  type: string # form data does not support integer
             encoding:
               buildContext:
                 contentType: application/octet-stream
@@ -525,10 +567,10 @@ paths:
                   type: string
                 cpuCount:
                   description: CPU cores for the template
-                  type: string  # form data does not support integer
+                  type: string # form data does not support integer
                 memoryMB:
                   description: Memory limit for the template in MB
-                  type: string  # form data does not support integer
+                  type: string # form data does not support integer
             encoding:
               buildContext:
                 contentType: application/octet-stream
