@@ -262,7 +262,8 @@ class ProcessManager:
         def handle_exit(exit_code: int):
             output.exit_code = exit_code
             logger.info(f"Process {process_id} exited with exit code {exit_code}")
-            future_exit.set_result(True)
+            if not future_exit.done():
+                future_exit.set_result(True)
 
         def handle_stdout(data: Dict[Any, Any]):
             out = OutStdoutResponse(**data)
@@ -354,7 +355,9 @@ class ProcessManager:
 
         def trigger_exit():
             logger.info(f"Exiting the process (id: {process_id})")
-            future_exit.set_result(None)
+            if not future_exit.done():
+                future_exit.set_result(None)
+
             future_exit_handler_finish.result()
             logger.debug(f"Exited the process (id: {process_id})")
 
