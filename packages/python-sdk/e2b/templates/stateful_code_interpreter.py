@@ -135,7 +135,7 @@ class CodeInterpreterV2(Sandbox):
 
         return result
 
-    def execute(self, code: str) -> Result:
+    def exec_python(self, code: str) -> Result:
         ws = self._connect_kernel()
         ws.send(json.dumps(self._send_execute_request(code)))
         result = self._wait_for_result(ws)
