@@ -9,7 +9,7 @@ permissions:
 jobs:
   release:
     name: Release Candidate
-    if: ${{ contains( github.event.pull_request.labels.*.name, 'rc') }}
+    if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
     runs-on: ubuntu-latest
     defaults:
         run:
