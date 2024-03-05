@@ -30,6 +30,10 @@ variable "grafana_logs_endpoint" {
   type = string
 }
 
+variable "loki_endpoint" {
+  type = string
+}
+
 job "logs-collector" {
   datacenters = [var.gcp_zone]
   type        = "service"
@@ -125,6 +129,14 @@ inputs = ["envd"]
 source = """
 .service = "envd"
 """
+
+# TODO: Send envd logs to the new on prem loki sink
+
+[sinks.local_loki_logs]
+type = "loki"
+inputs = [ "add_source_envd" ]
+endpoint = "${var.loki_endpoint}"
+encoding.codec = "json"
 
 [sinks.grafana]
 type = "loki"
