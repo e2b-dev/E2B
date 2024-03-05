@@ -30,18 +30,6 @@ func (tc *TierCreate) SetName(s string) *TierCreate {
 	return tc
 }
 
-// SetVcpu sets the "vcpu" field.
-func (tc *TierCreate) SetVcpu(i int64) *TierCreate {
-	tc.mutation.SetVcpu(i)
-	return tc
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (tc *TierCreate) SetRAMMB(i int64) *TierCreate {
-	tc.mutation.SetRAMMB(i)
-	return tc
-}
-
 // SetDiskMB sets the "disk_mb" field.
 func (tc *TierCreate) SetDiskMB(i int64) *TierCreate {
 	tc.mutation.SetDiskMB(i)
@@ -118,12 +106,6 @@ func (tc *TierCreate) check() error {
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`models: missing required field "Tier.name"`)}
 	}
-	if _, ok := tc.mutation.Vcpu(); !ok {
-		return &ValidationError{Name: "vcpu", err: errors.New(`models: missing required field "Tier.vcpu"`)}
-	}
-	if _, ok := tc.mutation.RAMMB(); !ok {
-		return &ValidationError{Name: "ram_mb", err: errors.New(`models: missing required field "Tier.ram_mb"`)}
-	}
 	if _, ok := tc.mutation.DiskMB(); !ok {
 		return &ValidationError{Name: "disk_mb", err: errors.New(`models: missing required field "Tier.disk_mb"`)}
 	}
@@ -173,14 +155,6 @@ func (tc *TierCreate) createSpec() (*Tier, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.Name(); ok {
 		_spec.SetField(tier.FieldName, field.TypeString, value)
 		_node.Name = value
-	}
-	if value, ok := tc.mutation.Vcpu(); ok {
-		_spec.SetField(tier.FieldVcpu, field.TypeInt64, value)
-		_node.Vcpu = value
-	}
-	if value, ok := tc.mutation.RAMMB(); ok {
-		_spec.SetField(tier.FieldRAMMB, field.TypeInt64, value)
-		_node.RAMMB = value
 	}
 	if value, ok := tc.mutation.DiskMB(); ok {
 		_spec.SetField(tier.FieldDiskMB, field.TypeInt64, value)
@@ -272,42 +246,6 @@ func (u *TierUpsert) SetName(v string) *TierUpsert {
 // UpdateName sets the "name" field to the value that was provided on create.
 func (u *TierUpsert) UpdateName() *TierUpsert {
 	u.SetExcluded(tier.FieldName)
-	return u
-}
-
-// SetVcpu sets the "vcpu" field.
-func (u *TierUpsert) SetVcpu(v int64) *TierUpsert {
-	u.Set(tier.FieldVcpu, v)
-	return u
-}
-
-// UpdateVcpu sets the "vcpu" field to the value that was provided on create.
-func (u *TierUpsert) UpdateVcpu() *TierUpsert {
-	u.SetExcluded(tier.FieldVcpu)
-	return u
-}
-
-// AddVcpu adds v to the "vcpu" field.
-func (u *TierUpsert) AddVcpu(v int64) *TierUpsert {
-	u.Add(tier.FieldVcpu, v)
-	return u
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (u *TierUpsert) SetRAMMB(v int64) *TierUpsert {
-	u.Set(tier.FieldRAMMB, v)
-	return u
-}
-
-// UpdateRAMMB sets the "ram_mb" field to the value that was provided on create.
-func (u *TierUpsert) UpdateRAMMB() *TierUpsert {
-	u.SetExcluded(tier.FieldRAMMB)
-	return u
-}
-
-// AddRAMMB adds v to the "ram_mb" field.
-func (u *TierUpsert) AddRAMMB(v int64) *TierUpsert {
-	u.Add(tier.FieldRAMMB, v)
 	return u
 }
 
@@ -424,48 +362,6 @@ func (u *TierUpsertOne) SetName(v string) *TierUpsertOne {
 func (u *TierUpsertOne) UpdateName() *TierUpsertOne {
 	return u.Update(func(s *TierUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetVcpu sets the "vcpu" field.
-func (u *TierUpsertOne) SetVcpu(v int64) *TierUpsertOne {
-	return u.Update(func(s *TierUpsert) {
-		s.SetVcpu(v)
-	})
-}
-
-// AddVcpu adds v to the "vcpu" field.
-func (u *TierUpsertOne) AddVcpu(v int64) *TierUpsertOne {
-	return u.Update(func(s *TierUpsert) {
-		s.AddVcpu(v)
-	})
-}
-
-// UpdateVcpu sets the "vcpu" field to the value that was provided on create.
-func (u *TierUpsertOne) UpdateVcpu() *TierUpsertOne {
-	return u.Update(func(s *TierUpsert) {
-		s.UpdateVcpu()
-	})
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (u *TierUpsertOne) SetRAMMB(v int64) *TierUpsertOne {
-	return u.Update(func(s *TierUpsert) {
-		s.SetRAMMB(v)
-	})
-}
-
-// AddRAMMB adds v to the "ram_mb" field.
-func (u *TierUpsertOne) AddRAMMB(v int64) *TierUpsertOne {
-	return u.Update(func(s *TierUpsert) {
-		s.AddRAMMB(v)
-	})
-}
-
-// UpdateRAMMB sets the "ram_mb" field to the value that was provided on create.
-func (u *TierUpsertOne) UpdateRAMMB() *TierUpsertOne {
-	return u.Update(func(s *TierUpsert) {
-		s.UpdateRAMMB()
 	})
 }
 
@@ -757,48 +653,6 @@ func (u *TierUpsertBulk) SetName(v string) *TierUpsertBulk {
 func (u *TierUpsertBulk) UpdateName() *TierUpsertBulk {
 	return u.Update(func(s *TierUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetVcpu sets the "vcpu" field.
-func (u *TierUpsertBulk) SetVcpu(v int64) *TierUpsertBulk {
-	return u.Update(func(s *TierUpsert) {
-		s.SetVcpu(v)
-	})
-}
-
-// AddVcpu adds v to the "vcpu" field.
-func (u *TierUpsertBulk) AddVcpu(v int64) *TierUpsertBulk {
-	return u.Update(func(s *TierUpsert) {
-		s.AddVcpu(v)
-	})
-}
-
-// UpdateVcpu sets the "vcpu" field to the value that was provided on create.
-func (u *TierUpsertBulk) UpdateVcpu() *TierUpsertBulk {
-	return u.Update(func(s *TierUpsert) {
-		s.UpdateVcpu()
-	})
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (u *TierUpsertBulk) SetRAMMB(v int64) *TierUpsertBulk {
-	return u.Update(func(s *TierUpsert) {
-		s.SetRAMMB(v)
-	})
-}
-
-// AddRAMMB adds v to the "ram_mb" field.
-func (u *TierUpsertBulk) AddRAMMB(v int64) *TierUpsertBulk {
-	return u.Update(func(s *TierUpsert) {
-		s.AddRAMMB(v)
-	})
-}
-
-// UpdateRAMMB sets the "ram_mb" field to the value that was provided on create.
-func (u *TierUpsertBulk) UpdateRAMMB() *TierUpsertBulk {
-	return u.Update(func(s *TierUpsert) {
-		s.UpdateRAMMB()
 	})
 }
 
