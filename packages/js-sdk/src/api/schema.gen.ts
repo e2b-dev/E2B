@@ -49,6 +49,31 @@ export interface paths {
       };
     };
   };
+  "/sandboxes/{sandboxID}/logs": {
+    /** Get sandbox logs */
+    get: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+        query: {
+          /** Index of the starting log that should be returned with the sandbox */
+          logsOffset?: number;
+        };
+      };
+      responses: {
+        /** Successfully returned the sandbox logs */
+        200: {
+          content: {
+            "application/json": components["schemas"]["SandboxLogs"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
   "/sandboxes/{sandboxID}": {
     /** Kill a sandbox */
     delete: {
@@ -236,6 +261,12 @@ export interface paths {
 export interface components {
   schemas: {
     SandboxMetadata: { [key: string]: string };
+    SandboxLogs: {
+      /** @description Logs of the sandbox */
+      logs: string[];
+      /** @description Index of the last log */
+      logsOffset: number;
+    };
     Sandbox: {
       /** @description Identifier of the template from which is the sandbox created */
       templateID: string;
