@@ -1,3 +1,6 @@
+locals {
+  instance_group_update_policy_max_surge_fixed = try(var.instance_group_update_policy_max_surge_fixed, var.cluster_size - 1 ? var.cluster_size : 0)
+}
 resource "google_compute_health_check" "consul_check" {
   name                = "${var.cluster_name}-consul-check"
   check_interval_sec  = 5
