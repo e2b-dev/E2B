@@ -12,6 +12,7 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/storages"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/grafana/loki/pkg/logcli/client"
 	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
@@ -37,10 +38,13 @@ type APIStore struct {
 	nomad                      *nomad.NomadClient
 	supabase                   *db.DB
 	cloudStorage               *storages.GoogleCloudStorage
+	lokiClient                 *client.DefaultClient
 	apiSecret                  string
 	googleServiceAccountBase64 string
 	logger                     *zap.SugaredLogger
 }
+
+var lokiAddress = os.Getenv("LOKI_ADDRESS")
 
 func NewAPIStore() *APIStore {
 	fmt.Println("Initializing API store")
@@ -123,6 +127,16 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
+	var lokiClient *client.DefaultClient
+
+	if lokiAddress != "" {
+		lokiClient = &client.DefaultClient{
+			Address: lokiAddress,
+		}
+	} else {
+		logger.Warn("LOKI_ADDRESS not set, disabling Loki client")
+	}
+
 	apiSecret := os.Getenv("API_SECRET")
 	if apiSecret == "" {
 		apiSecret = "SUPER_SECR3T_4PI_K3Y"
@@ -154,6 +168,7 @@ func NewAPIStore() *APIStore {
 		buildCache:                 buildCache,
 		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
 		logger:                     logger,
+		lokiClient:                 lokiClient,
 	}
 }
 

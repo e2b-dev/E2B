@@ -38,6 +38,7 @@ job "loki" {
         path     = "/health"
         interval = "20s"
         timeout  = "2s"
+        port     = var.loki_service_port_number
       }
     }
 

@@ -8,7 +8,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/gin-gonic/gin"
-	"github.com/grafana/loki/pkg/logcli/client"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -26,13 +25,8 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 		attribute.String("team.id", teamID.String()),
 	)
 
-	client := client.DefaultClient{
-		Address: string(a.Config.LokiAddress),
-	}
-
-	res, err := client.QueryRange()
+	res, err := a.lokiClient.QueryRange()
 	if err != nil {
-
 	}
 
 	resType := res.Data.Result.Type()

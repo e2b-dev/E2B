@@ -98,6 +98,10 @@ variable "otel_tracing_print" {
   default = ""
 }
 
+variable "loki_service_port_number" {
+  type = number
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -150,6 +154,7 @@ job "orchestration-api" {
         ANALYTICS_COLLECTOR_HOST      = var.analytics_collector_host
         ANALYTICS_COLLECTOR_API_TOKEN = var.analytics_collector_api_token
         OTEL_TRACING_PRINT            = var.otel_tracing_print
+        LOKI_ADDRESS                  = "http://localhost:${var.loki_service_port_number}"
       }
 
       config {
