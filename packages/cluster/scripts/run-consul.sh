@@ -273,6 +273,8 @@ EOF
   "client_addr": "0.0.0.0",
   "datacenter": "$datacenter",
   "node_name": "$instance_id",
+  "leave_on_terminate": true,
+  "skip_leave_on_interrupt": true,
   $recursors_config
   $retry_join_json
   "server": $server,
