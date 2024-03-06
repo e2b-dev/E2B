@@ -7,6 +7,7 @@ import (
 	_ "net/http/pprof"
 	"time"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/ports"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -16,7 +17,6 @@ import (
 	"github.com/e2b-dev/infra/packages/envd/internal/file"
 	"github.com/e2b-dev/infra/packages/envd/internal/filesystem"
 	"github.com/e2b-dev/infra/packages/envd/internal/port"
-	"github.com/e2b-dev/infra/packages/envd/internal/ports"
 	"github.com/e2b-dev/infra/packages/envd/internal/process"
 	"github.com/e2b-dev/infra/packages/envd/internal/terminal"
 )
@@ -109,6 +109,7 @@ func main() {
 		return
 	}
 
+	debug = true
 	envConfig, l, err := env.NewEnv(debug)
 	if err != nil {
 		panic(err)
