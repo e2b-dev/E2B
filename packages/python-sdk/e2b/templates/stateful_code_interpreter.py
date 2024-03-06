@@ -34,6 +34,7 @@ class CodeInterpreterV2(Sandbox):
 
     def __init__(
         self,
+        template: Optional[str] = None,
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
@@ -44,7 +45,7 @@ class CodeInterpreterV2(Sandbox):
         **kwargs,
     ):
         super().__init__(
-            template=self.template,
+            template=template or self.template,
             api_key=api_key,
             cwd=cwd,
             env_vars=env_vars,
@@ -66,7 +67,7 @@ class CodeInterpreterV2(Sandbox):
         url = f"{self.get_protocol()}://{self.get_hostname(8888)}"
         headers = {"Authorization": f"Token {self._jupyter_server_token}"}
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(f"{url}/api", headers=headers)
         while response.status_code != 200:
             sleep(0.2)
             response = requests.get(f"{url}/api", headers=headers)
