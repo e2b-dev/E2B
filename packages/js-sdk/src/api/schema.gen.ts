@@ -58,7 +58,9 @@ export interface paths {
         };
         query: {
           /** Index of the starting log that should be returned with the sandbox */
-          logsOffset?: number;
+          offset?: number;
+          /** Maximum number of logs that should be returned with the sandbox */
+          limit?: number;
         };
       };
       responses: {

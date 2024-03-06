@@ -37,6 +37,6 @@ export async function listSandboxLogs({
   sandboxID,
   offset,
 }: { apiKey: string, sandboxID: string, offset: number }): Promise<e2b.components['schemas']['SandboxLogs']> {
-  const response = await getSandboxLogs(apiKey, { sandboxID, logsOffset: offset })
+  const response = await getSandboxLogs(apiKey, { sandboxID, offset })
   return response.data
 }
