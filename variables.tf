@@ -151,3 +151,14 @@ variable "terraform_state_bucket" {
   description = "The name of the bucket to store terraform state in"
   type        = string
 }
+
+variable "loki_service_port" {
+  type = object({
+    name = string
+    port = number
+  })
+  default = {
+    name = "loki"
+    port = 3100
+  }
+}

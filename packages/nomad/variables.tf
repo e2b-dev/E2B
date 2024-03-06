@@ -148,3 +148,14 @@ variable "analytics_collector_host_secret_name" {
 variable "analytics_collector_api_token_secret_name" {
   type = string
 }
+
+variable "loki_bucket_name" {
+  type = string
+}
+
+variable "loki_service_port" {
+  type = object({
+    name = string
+    port = number
+  })
+}

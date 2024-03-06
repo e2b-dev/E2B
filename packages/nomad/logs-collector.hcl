@@ -30,8 +30,8 @@ variable "grafana_logs_endpoint" {
   type = string
 }
 
-variable "loki_endpoint" {
-  type = string
+variable "loki_service_port_number" {
+  type = number
 }
 
 job "logs-collector" {
@@ -105,8 +105,8 @@ job "logs-collector" {
 data_dir = "alloc/data/vector/"
 
 [api]
-  enabled = true
-  address = "0.0.0.0:${var.logs_health_port_number}"
+enabled = true
+address = "0.0.0.0:${var.logs_health_port_number}"
 
 [sources.vector]
 type = "internal_logs"
@@ -130,12 +130,10 @@ source = """
 .service = "envd"
 """
 
-# TODO: Send envd logs to the new on prem loki sink
-
 [sinks.local_loki_logs]
 type = "loki"
 inputs = [ "add_source_envd" ]
-endpoint = "${var.loki_endpoint}"
+endpoint = "0.0.0.0:${var.loki_service_port_number}"
 encoding.codec = "json"
 
 [sinks.grafana]

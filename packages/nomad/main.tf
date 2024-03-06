@@ -147,9 +147,26 @@ resource "nomad_job" "logs-collector" {
       logs_health_path        = var.logs_health_proxy_port.health_path
       logs_port_name          = var.logs_proxy_port.name
 
+      loki_service_port_number = var.loki_service_port.port
+
       grafana_api_key       = data.google_secret_manager_secret_version.grafana_api_key.secret_data
       grafana_logs_endpoint = data.google_secret_manager_secret_version.grafana_logs_endpoint.secret_data
       grafana_logs_username = data.google_secret_manager_secret_version.grafana_logs_username.secret_data
+    }
+  }
+}
+
+resource "nomad_job" "loki" {
+  jobspec = file("${path.module}/loki.hcl")
+
+  hcl2 {
+    vars = {
+      gcp_zone = var.gcp_zone
+
+      loki_bucket_name = var.loki_bucket_name
+
+      loki_service_port_number = var.loki_service_port.port
+      loki_service_port_name   = var.loki_service_port.name
     }
   }
 }

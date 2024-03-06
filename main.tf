@@ -202,4 +202,8 @@ module "nomad" {
   grafana_metrics_username_secret_name = module.init.grafana_metrics_username_secret_name
   grafana_traces_endpoint_secret_name  = module.init.grafana_traces_endpoint_secret_name
   grafana_traces_username_secret_name  = module.init.grafana_traces_username_secret_name
+
+  # Logs
+  loki_bucket_name  = module.buckets.loki_bucket_name
+  loki_service_port = var.loki_service_port
 }
