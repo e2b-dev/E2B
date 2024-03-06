@@ -1,14 +1,25 @@
 package handlers
 
 import (
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/grafana/loki/pkg/logproto"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
+)
+
+const (
+	defaultLogsLimit  int   = 100
+	defaultLogsOffset int64 = 0
 )
 
 func (a *APIStore) GetSandboxesSandboxIDLogs(
@@ -25,16 +36,32 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 		attribute.String("team.id", teamID.String()),
 	)
 
-	res, err := a.lokiClient.QueryRange()
-	if err != nil {
+	limit := defaultLogsLimit
+	if params.Limit != nil {
+		limit = int(*params.Limit)
 	}
 
-	resType := res.Data.Result.Type()
+	offset := defaultLogsOffset
+	if params.Offset != nil {
+		offset = int64(*params.Offset)
+	}
 
-	// TODO: Sanitize offset, id
-	// TODO: Filter for teamID too -> can this be part of the query?
-	// TODO: Create LogQL query to get logs from the sandbox
+	// TODO: Sanitize id
+	// https://grafana.com/blog/2021/01/05/how-to-escape-special-characters-with-lokis-logql/
+	id := strings.ReplaceAll(sandboxID, "`", "\\`")
+	query := fmt.Sprintf("{source=\"logs-collector\", service=\"envd\"} | json logger=\"logger\", envID=\"envID\", sandboxID=\"instanceID\", teamID=\"teamID\" | teamID = `%s` | sandboxID = `%s`", teamID.String(), id)
+
 	// TODO: Can LogQL handle pagination naturally?
+	// TODO: Should we return the final offset with each response?
+	res, err := a.lokiClient.Query(query, limit, time.Unix(offset, 0), logproto.FORWARD, false)
+	if err != nil {
+		errMsg := fmt.Errorf("error when returning logs for sandbox: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error returning logs for sandbox '%s", sandboxID))
 
-	// TODO: Return logs
+		return
+	}
+
+	// TODO: Return logs in a good format
+	c.JSON(http.StatusOK, res.Data)
 }

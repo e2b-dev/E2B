@@ -279,8 +279,11 @@ type PostInstancesInstanceIDRefreshesJSONBody struct {
 
 // GetSandboxesSandboxIDLogsParams defines parameters for GetSandboxesSandboxIDLogs.
 type GetSandboxesSandboxIDLogsParams struct {
-	// LogsOffset Index of the starting log that should be returned with the sandbox
-	LogsOffset *int `form:"logsOffset,omitempty" json:"logsOffset,omitempty"`
+	// Offset Index of the starting log that should be returned with the sandbox
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Limit Maximum number of logs that should be returned with the sandbox
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // PostSandboxesSandboxIDRefreshesJSONBody defines parameters for PostSandboxesSandboxIDRefreshes.

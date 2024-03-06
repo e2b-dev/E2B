@@ -399,11 +399,17 @@ paths:
       parameters:
         - $ref: "#/components/parameters/sandboxID"
         - in: query
-          name: logsOffset
+          name: offset
           schema:
             default: 0
             type: integer
           description: Index of the starting log that should be returned with the sandbox
+        - in: query
+          name: limit
+          schema:
+            default: 100
+            type: integer
+          description: Maximum number of logs that should be returned with the sandbox
       responses:
         200:
           description: Successfully returned the sandbox logs
