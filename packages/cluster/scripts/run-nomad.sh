@@ -186,7 +186,6 @@ client {
     read_only = false
   }
 }
-leave_on_terminate = true
 
 plugin "env-instance-task-driver" {}
 plugin "env-build-task-driver" {}
@@ -208,6 +207,9 @@ advertise {
   rpc  = "$instance_ip_address"
   serf = "$instance_ip_address"
 }
+
+leave_on_interrupt = true
+leave_on_terminate = true
 
 $client_config
 
