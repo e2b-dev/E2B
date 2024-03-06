@@ -161,7 +161,11 @@ class CodeInterpreterV2(Sandbox):
                     if input_accepted:
                         break
                 elif response["content"]["execution_state"] == "error":
-                    result.error = "Kernel execution error"
+                    result.error = Error(
+                        name=response["content"]["ename"],
+                        value=response["content"]["evalue"],
+                        traceback=response["content"]["traceback"],
+                    )
                     break
 
             elif response["msg_type"] == "execute_reply":
