@@ -83,19 +83,31 @@ common:
 schema_config:
  configs:
     - from: 2024-03-05
-      store: boltdb-shipper
+      store: tsdb
       object_store: gcs
-      schema: v11
+      schema: v12
       index:
         prefix: loki_index_
         period: 24h
 
+compactor:
+  working_directory: /data/retention
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
+  delete_request_store: gcs
+
+# The bucket lifecycle policy should be set to delete objects after MORE than the specified retention period
+limits_config:
+  retention_period: 168h
+
 storage_config:
   gcs:
     bucket_name: "${var.loki_bucket_name}"
-  boltdb_shipper:
-    active_index_directory: local/boltdb-shipper-active
-    cache_location: local/boltdb-shipper-cache
+  tsdb_shipper:
+    active_index_directory: local/tsdb-shipper-active
+    cache_location: local/tsdb-shipper-cache
     cache_ttl: 24h
     shared_store: gcs
 
