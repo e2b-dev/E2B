@@ -26,7 +26,7 @@ Before you create your first custom sandbox, you will need to authenticate in th
 Run the following command in your terminal.
 <CodeGroup isTerminalCommand title="Login to CLI" isRunnable={false}>
 ```bash
-e2b login
+e2b auth login
 ```
 </CodeGroup>
 
@@ -39,7 +39,7 @@ To describe how your custom sandbox will look like, create a new Dockerfile and 
 We use this Dockerfile as the [template file](/sandbox/templates/template-file).
 
 <Note>
-Run `e2b init` to create `e2b.Dockerfile` in the current directory.
+Run `e2b template init` to create `e2b.Dockerfile` in the current directory.
 </Note>
 
 We want our custom sandbox to have the [ffmpeg](https://www.ffmpeg.org/) isntalled - ffmpeg is a tool for editing video and audio files.
@@ -61,7 +61,7 @@ Now it's time to create your custom sandbox based on the sandbox template file (
 Run the following command inside the template file directory in your terminal.
 <CodeGroup isTerminalCommand title="Build sandbox template" isRunnable={false}>
 ```bash
-e2b build --name "my-agent-sandbox"
+e2b template build --name "my-agent-sandbox"
 ```
 </CodeGroup>
 
@@ -145,7 +145,7 @@ This will rebuild the template.
 
 <CodeGroup isTerminalCommand title="Update sandbox template" isRunnable={false}>
 ```bash
-e2b build
+e2b template build
 ```
 </CodeGroup>
 
