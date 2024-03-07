@@ -59,6 +59,11 @@ RUN apt update \
 Now it's time to create your custom sandbox based on the sandbox template file (the `e2b.Dockefile` file) you just created in the previous step.
 
 Run the following command inside the template file directory in your terminal.
+<Note>
+[Pro users](/pricing) can use the `--cpu-count=` ([docs](/cli/commands#template-build)) and `--memory-mb=` ([docs](/cli/commands#template-build)) flags to customize the sandbox compute.
+Read more about the compute [here](/sandbox/compute).
+</Note>
+
 <CodeGroup isTerminalCommand title="Build sandbox template" isRunnable={false}>
 ```bash
 e2b template build --name "my-agent-sandbox"
