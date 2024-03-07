@@ -8,8 +8,11 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
   PIP_NO_CACHE_DIR=1 \
   JUPYTER_CONFIG_PATH="/home/user/.jupyter"
 
+
 WORKDIR /code
 
-RUN pip install jupyter-server ipython ipykernel
+COPY ./requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+
 RUN ipython kernel install --name "python3" --user
 COPY ./jupyter_server_config.py /home/user/.jupyter/
