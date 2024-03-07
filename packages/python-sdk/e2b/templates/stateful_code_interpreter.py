@@ -4,13 +4,13 @@ import os
 import time
 import uuid
 from time import sleep
-from typing import Optional, Callable, Any, List
+from typing import Optional, Callable, Any, List, Union, Literal
 
 import requests
 from pydantic import BaseModel
 from websocket import create_connection
 
-from e2b import Sandbox, EnvVars, ProcessMessage
+from e2b import Sandbox, EnvVars, ProcessMessage, OpenPort
 from e2b.constants import TIMEOUT
 
 
@@ -56,8 +56,9 @@ class CodeInterpreterV2(Sandbox):
             **kwargs,
         )
 
-        self._jupyter_server_token = binascii.hexlify(os.urandom(24)).decode("ascii")
-        self._jupyter_kernel_id = self._start_jupyter()
+        if not kwargs.get("_sandbox"):
+            self._jupyter_server_token = binascii.hexlify(os.urandom(24)).decode("ascii")
+            self._jupyter_kernel_id = self._start_jupyter()
 
     def _start_jupyter(self) -> str:
         self.process.start(
@@ -77,7 +78,45 @@ class CodeInterpreterV2(Sandbox):
             raise Exception(f"Error creating kernel: {response.status_code}")
 
         kernel = json.loads(response.text)
+
+        self.filesystem.make_dir("/root/.jupyter")
+        self.filesystem.write("/root/.jupyter/config.json", json.dumps({"token": self._jupyter_server_token, "kernelId": kernel["id"]}))
         return kernel["id"]
+
+    @classmethod
+    def reconnect(
+        cls,
+        sandbox_id: str,
+        cwd: Optional[str] = None,
+        env_vars: Optional[EnvVars] = None,
+        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
+        timeout: Optional[float] = TIMEOUT,
+        api_key: Optional[str] = None,
+        _debug_hostname: Optional[str] = None,
+        _debug_port: Optional[int] = None,
+        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+    ):
+        sandbox = super().reconnect(
+            sandbox_id=sandbox_id,
+            cwd=cwd,
+            env_vars=env_vars,
+            on_scan_ports=on_scan_ports,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
+            on_exit=on_exit,
+            timeout=timeout,
+            api_key=api_key,
+            _debug_hostname=_debug_hostname,
+            _debug_port=_debug_port,
+            _debug_dev_env=_debug_dev_env,
+        )
+        data = json.loads(sandbox.filesystem.read("/root/.jupyter/config.json"))
+        sandbox._jupyter_server_token = data["token"]
+        sandbox._jupyter_kernel_id = data["kernelId"]
+        return sandbox
 
     def _connect_kernel(self):
         header = {"Authorization": f"Token {self._jupyter_server_token}"}

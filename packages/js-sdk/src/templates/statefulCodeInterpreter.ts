@@ -20,8 +20,8 @@ interface Result {
 
 export class CodeInterpreterV2 extends Sandbox {
   private static template = 'code-interpreter-stateful'
-  private jupyter_server_token: string
-  private jupyter_kernel_id?: string
+  private jupyterServerToken: string
+  private jupyterKernelID?: string
 
   /**
    * Use `DataAnalysis.create()` instead.
@@ -33,7 +33,7 @@ export class CodeInterpreterV2 extends Sandbox {
    */
   constructor(opts: SandboxOpts) {
     super({ template: opts.template || CodeInterpreterV2.template, ...opts })
-    this.jupyter_server_token = randomBytes(24).toString('hex')
+    this.jupyterServerToken = randomBytes(24).toString('hex')
   }
 
   /**
@@ -50,7 +50,7 @@ export class CodeInterpreterV2 extends Sandbox {
   static override async create(opts?: SandboxOpts) {
     const sandbox = new CodeInterpreterV2({ ...(opts ? opts : {}) })
     await sandbox._open({ timeout: opts?.timeout })
-    sandbox.jupyter_kernel_id = await sandbox.startJupyter()
+    sandbox.jupyterKernelID = await sandbox.startJupyter()
 
     return sandbox
   }
@@ -112,10 +112,10 @@ export class CodeInterpreterV2 extends Sandbox {
     await sandbox._open({ timeout: opts?.timeout })
 
     const data = await sandbox.filesystem.read('/root/.jupyter/config.json')
-    const { token, kernelId } = JSON.parse(data)
+    const { token, kernel_id } = JSON.parse(data)
 
-    sandbox.jupyter_server_token = token
-    sandbox.jupyter_kernel_id = kernelId
+    sandbox.jupyterServerToken = token
+    sandbox.jupyterKernelID = kernel_id
     return sandbox
   }
 
@@ -169,11 +169,11 @@ export class CodeInterpreterV2 extends Sandbox {
 
   private async startJupyter() {
     await this.process.start(
-      `jupyter server --IdentityProvider.token=${this.jupyter_server_token}`,
+      `jupyter server --IdentityProvider.token=${this.jupyterServerToken}`,
     )
 
     const url = `${this.getProtocol()}://${this.getHostname(8888)}`
-    const headers = { Authorization: `Token ${this.jupyter_server_token}` }
+    const headers = { Authorization: `Token ${this.jupyterServerToken}` }
 
     let response = await fetch(`${url}/api`, { headers })
     while (!response.ok) {
@@ -189,7 +189,7 @@ export class CodeInterpreterV2 extends Sandbox {
     const kernel = await response.json()
 
     await this.filesystem.makeDir('/root/.jupyter')
-    await this.filesystem.write('/root/.jupyter/config.json', JSON.stringify({token: this.jupyter_server_token, kernelId: kernel.id}))
+    await this.filesystem.write('/root/.jupyter/config.json', JSON.stringify({token: this.jupyterServerToken, kernel_id: kernel.id}))
 
     return kernel.id
   }
@@ -200,10 +200,10 @@ export class CodeInterpreterV2 extends Sandbox {
     onStdout?: (out: ProcessMessage) => Promise<void> | void,
     onStderr?: (out: ProcessMessage) => Promise<void> | void,
   ) {
-    const headers = { Authorization: `Token ${this.jupyter_server_token}` }
+    const headers = { Authorization: `Token ${this.jupyterServerToken}` }
     const ws = new IWebSocket(
       `${this.getProtocol('ws')}://${this.getHostname(8888)}/api/kernels/${
-        this.jupyter_kernel_id
+        this.jupyterKernelID
       }/channels`,
       { headers },
     )
