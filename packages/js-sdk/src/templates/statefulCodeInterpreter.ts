@@ -20,7 +20,7 @@ interface Result {
 
 export class CodeInterpreterV2 extends Sandbox {
   private static template = 'code-interpreter-stateful'
-  private readonly jupyter_server_token: string
+  private jupyter_server_token: string
   private jupyter_kernel_id?: string
 
   /**
@@ -51,6 +51,71 @@ export class CodeInterpreterV2 extends Sandbox {
     const sandbox = new CodeInterpreterV2({ ...(opts ? opts : {}) })
     await sandbox._open({ timeout: opts?.timeout })
     sandbox.jupyter_kernel_id = await sandbox.startJupyter()
+
+    return sandbox
+  }
+
+
+  /**
+   * Reconnects to an existing Sandbox.
+   * @param sandboxID Sandbox ID
+   * @returns Existing Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * const sandboxID = sandbox.id
+   *
+   * await sandbox.keepAlive(300 * 1000)
+   * await sandbox.close()
+   *
+   * const reconnectedSandbox = await Sandbox.reconnect(sandboxID)
+   * ```
+   */
+  static async reconnect<S extends typeof CodeInterpreterV2>(this: S, sandboxID: string): Promise<InstanceType<S>>
+  /**
+   * Reconnects to an existing Sandbox.
+   * @param opts Sandbox options
+   * @returns Existing Sandbox
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * const sandboxID = sandbox.id
+   *
+   * await sandbox.keepAlive(300 * 1000)
+   * await sandbox.close()
+   *
+   * const reconnectedSandbox = await Sandbox.reconnect({
+   *   sandboxID,
+   * })
+   * ```
+   */
+  static async reconnect<S extends typeof CodeInterpreterV2>(this: S, opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>>
+  static async reconnect<S extends typeof CodeInterpreterV2>(this: S, sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>> {
+    let id: string
+    let opts: SandboxOpts
+    if (typeof sandboxIDorOpts === 'string') {
+      id = sandboxIDorOpts
+      opts = {}
+    } else {
+      id = sandboxIDorOpts.sandboxID
+      opts = sandboxIDorOpts
+    }
+
+    const sandboxIDAndClientID = id.split('-')
+    const sandboxID = sandboxIDAndClientID[0]
+    const clientID = sandboxIDAndClientID[1]
+    opts.__sandbox = { sandboxID, clientID, templateID: 'unknown' }
+
+    const sandbox = new this(opts) as InstanceType<S>
+    await sandbox._open({ timeout: opts?.timeout })
+
+    const data = await sandbox.filesystem.read('/root/.jupyter/config.json')
+    const { token, kernelId } = JSON.parse(data)
+
+    sandbox.jupyter_server_token = token
+    sandbox.jupyter_kernel_id = kernelId
     return sandbox
   }
 
@@ -122,6 +187,10 @@ export class CodeInterpreterV2 extends Sandbox {
     }
 
     const kernel = await response.json()
+
+    await this.filesystem.makeDir('/root/.jupyter')
+    await this.filesystem.write('/root/.jupyter/config.json', JSON.stringify({token: this.jupyter_server_token, kernelId: kernel.id}))
+
     return kernel.id
   }
 
