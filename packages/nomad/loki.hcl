@@ -14,6 +14,10 @@ variable "loki_bucket_name" {
   type = string
 }
 
+variable "consul_token" {
+  type = string
+}
+
 job "loki" {
   datacenters = [var.gcp_zone]
   type        = "service"
@@ -24,7 +28,7 @@ job "loki" {
     count = 1
 
     network {
-      port "loki-api" {
+      port "loki" {
         to = var.loki_service_port_number
       }
     }
@@ -35,7 +39,7 @@ job "loki" {
 
       check {
         type     = "http"
-        path     = "/health"
+        path     = "/ready"
         interval = "20s"
         timeout  = "2s"
         port     = var.loki_service_port_number
@@ -65,9 +69,35 @@ auth_enabled: false
 
 server:
   http_listen_port: ${var.loki_service_port_number}
+  log_level: "debug"
 
-gcs_storage_config:
-  bucket_name: "${var.loki_bucket_name}"
+analytics:
+  reporting_enabled: false
+
+common:
+  path_prefix: /tmp/loki
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+ configs:
+    - from: 2024-03-05
+      store: boltdb-shipper
+      object_store: gcs
+      schema: v11
+      index:
+        prefix: loki_index_
+        period: 24h
+
+storage_config:
+  gcs:
+    bucket_name: "${var.loki_bucket_name}"
+  boltdb_shipper:
+    active_index_directory: local/boltdb-shipper-active
+    cache_location: local/boltdb-shipper-cache
+    cache_ttl: 24h
+    shared_store: gcs
 
 EOF
 

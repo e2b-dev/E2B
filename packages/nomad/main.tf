@@ -165,6 +165,8 @@ resource "nomad_job" "loki" {
     vars = {
       gcp_zone = var.gcp_zone
 
+      consul_token = var.consul_acl_token_secret
+
       loki_bucket_name = var.loki_bucket_name
 
       loki_service_port_number = var.loki_service_port.port

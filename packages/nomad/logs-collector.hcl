@@ -133,8 +133,12 @@ source = """
 [sinks.local_loki_logs]
 type = "loki"
 inputs = [ "add_source_envd" ]
-endpoint = "0.0.0.0:${var.loki_service_port_number}"
+endpoint = "http://localhost:${var.loki_service_port_number}"
 encoding.codec = "json"
+
+[sinks.local_loki_logs.labels]
+source = "logs-collector"
+service = "{{ service }}"
 
 [sinks.grafana]
 type = "loki"
