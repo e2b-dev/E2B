@@ -41,7 +41,7 @@ function CodePanel({
   isRunnable?: boolean;
 }) {
   const child = Children.only(children)
-  if (isValidElement(child)) code = child.props.code ?? code // Get code from child if available
+  if (isValidElement(child)) code = (child.props as any).code ?? code // Get code from child if available
 
   if (!code) {
     throw new Error(
