@@ -80,7 +80,7 @@ class CodeInterpreterV2(Sandbox):
         kernel = json.loads(response.text)
 
         self.filesystem.make_dir("/root/.jupyter")
-        self.filesystem.write("/root/.jupyter/config.json", json.dumps({"token": self._jupyter_server_token, "kernelId": kernel["id"]}))
+        self.filesystem.write("/root/.jupyter/config.json", json.dumps({"token": self._jupyter_server_token, "kernel_id": kernel["id"]}))
         return kernel["id"]
 
     @classmethod
@@ -115,7 +115,7 @@ class CodeInterpreterV2(Sandbox):
         )
         data = json.loads(sandbox.filesystem.read("/root/.jupyter/config.json"))
         sandbox._jupyter_server_token = data["token"]
-        sandbox._jupyter_kernel_id = data["kernelId"]
+        sandbox._jupyter_kernel_id = data["kernel_id"]
         return sandbox
 
     def _connect_kernel(self):
