@@ -80,7 +80,7 @@ function AuthForm() {
         />
       </div>
       <div className="flex flex-1 flex-col pt-4">
-        {view === 'sign_up' &&
+        {view === 'sign_up' || view === 'forgotten_password' &&
           <div className="flex items-center justify-start gap-2">
             <span className="text-zinc-400">Already have an account?</span>
             <Button
@@ -92,14 +92,14 @@ function AuthForm() {
           </div>
         }
 
-        {/* {view === 'sign_in' &&
+        {view === 'sign_in' &&
           <Button
             onClick={() => setView('forgotten_password')}
             variant="textSubtle"
           >
             Forgot your password?
           </Button>
-        } */}
+        }
 
         {view === 'sign_in' &&
           <div className="flex items-center justify-start gap-2">
