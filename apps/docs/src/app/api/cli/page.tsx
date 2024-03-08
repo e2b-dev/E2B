@@ -1,11 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useApiKey, useUser } from '@/utils/useUser'
 import { DialogAnimated } from '@/components/DialogAnimated'
 import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
 import { Button } from '@/components/Button'
-import { useSignIn } from '@/utils/useSignIn'
 import { usePostHog } from 'posthog-js/react'
 import { useEffect } from 'react'
 
@@ -17,7 +17,6 @@ type UserConfig = {
 }
 
 export default function Page() {
-  const signIn = useSignIn()
   const posthog = usePostHog()
   const { user, isLoading: userIsLoading } = useUser()
   const apiKey = useApiKey()
@@ -94,9 +93,9 @@ export default function Page() {
       content = <span className="text-gray-300">Loading, please wait</span>
     } else if (!user) {
       content = (
-        <>
-          <Button onClick={() => signIn()}>Sign In to continue</Button>
-        </>
+        <Link href="/sign-in">
+          <Button>Sign In to continue</Button>
+        </Link>
       )
     } else {
       content = (

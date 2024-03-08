@@ -1,17 +1,16 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/Button'
 import { useUser } from '@/utils/useUser'
 import { tiers } from '@/utils/consts'
-import { useSignIn } from '@/utils/useSignIn'
 import Spinner from '@/components/Spinner'
 
 import { TierActiveTag } from './TierActiveTag'
 
 function SwitchToHobbyButton() {
   const { user, isLoading } = useUser()
-  const signIn = useSignIn()
   const [url, setURL] = useState('')
 
   useEffect(function getBillingURL() {
@@ -27,7 +26,9 @@ function SwitchToHobbyButton() {
 
   if (!user && !isLoading) {
     return (
-      <Button onClick={() => signIn()}>Sign Up</Button>
+      <Link href="/sign-in?view=sign-up">
+        <Button>Sign Up</Button>
+      </Link>
     )
   }
 
