@@ -1,5 +1,5 @@
-resource "google_compute_health_check" "consul_check" {
-  name                = "${var.cluster_name}-consul-client-check"
+resource "google_compute_health_check" "nomad_check" {
+  name                = "${var.cluster_name}-nomad-client-check"
   check_interval_sec  = 5
   timeout_sec         = 5
   healthy_threshold   = 2
@@ -7,7 +7,7 @@ resource "google_compute_health_check" "consul_check" {
 
   http_health_check {
     request_path = "/v1/status/peers"
-    port         = "8500"
+    port         = "4646"
   }
 }
 
@@ -46,7 +46,7 @@ resource "google_compute_instance_group_manager" "client_cluster" {
   }
 
   auto_healing_policies {
-    health_check      = google_compute_health_check.consul_check.id
+    health_check      = google_compute_health_check.nomad_check.id
     initial_delay_sec = 0
   }
 
