@@ -140,7 +140,7 @@ c = get_config()  # noqa
 #
 #          Takes precedence over allow_origin_pat.
 #  Default: ''
-# c.ServerApp.allow_origin = ''
+c.ServerApp.allow_origin = '*'
 
 # Use a regular expression for the Access-Control-Allow-Origin header
 #
