@@ -1,10 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import { Button } from '@/components/Button'
 import { useUser } from '@/utils/useUser'
 import { useState } from 'react'
 import { tiers } from '@/utils/consts'
-import { useSignIn } from '@/utils/useSignIn'
 import Spinner from '@/components/Spinner'
 
 import { TierActiveTag } from './TierActiveTag'
@@ -25,7 +25,6 @@ function createCheckout(tierID: string, teamID: string) {
 
 function SwitchTierButton() {
   const { user, isLoading } = useUser()
-  const signIn = useSignIn()
   const [error, setError] = useState('')
 
   async function createCheckoutSession() {
@@ -48,7 +47,9 @@ function SwitchTierButton() {
 
   if (!user && !isLoading) {
     return (
-      <Button onClick={() => signIn()}>Sign Up</Button>
+      <Link href="/sign-in?view=sign-up">
+        <Button>Sign Up</Button>
+      </Link>
     )
   }
 

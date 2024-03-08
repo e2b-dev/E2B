@@ -1,6 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
+import Link from 'next/link'
 import { LogOutIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -11,7 +12,6 @@ import { CopyButton } from '@/components/CopyButton'
 import { HeaderSeparator } from '@/components/HeaderUtils'
 import { usePostHog } from 'posthog-js/react'
 import { obfuscateSecret } from '@/utils/obfuscate'
-import { useSignIn } from '@/utils/useSignIn'
 
 function CopyableSecret({
   secret = '',
@@ -46,7 +46,6 @@ function CopyableSecret({
 
 export const Auth = function () {
   const { user, isLoading, error } = useUser()
-  const signIn = useSignIn()
   const apiKey = useApiKey()
   const posthog = usePostHog()
   const router = useRouter()
@@ -59,14 +58,23 @@ export const Auth = function () {
     window.location.reload()
   }
 
+  function redirectToCurrentURL() {
+    const url = typeof window !== 'undefined' ? window.location.href : undefined
+
+    const encodedURL = encodeURIComponent(url)
+    return `redirect_to=${encodedURL}`
+  }
+
+
   if (error)
     return (
       <div className="flex flex-row items-center gap-4">
         <span className="text-sm text-red-500" title={error?.message}>
           Something went wrong
         </span>
-        {/* @ts-ignore */}
-        <Button onClick={() => signIn()}>Sign In</Button>
+        <Link href={`/sign-in?${redirectToCurrentURL()}`}>
+          <Button>Sign In</Button>
+        </Link>
       </div>
     )
 
@@ -113,16 +121,18 @@ export const Auth = function () {
         </div>
       ) : (
         <div className="flex items-center justify-center gap-3">
-          {/* @ts-ignore */}
-          <Button
-            onClick={() => signIn({ view: 'sign-up' })}
-            variant="textTernary"
-            className="whitespace-nowrap text-xs"
-          >
-            Sign up to get your API key
-          </Button>
-          {/* @ts-ignore */}
-          <Button onClick={() => signIn()}>Sign In</Button>
+          <Link href={`/sign-in?view=sign-up&${redirectToCurrentURL()}`}>
+            <Button
+              variant="textTernary"
+              className="whitespace-nowrap text-xs"
+            >
+              Sign up to get your API key
+            </Button>
+          </Link>
+
+          <Link href={`/sign-in?${redirectToCurrentURL()}`}>
+            <Button>Sign In</Button>
+          </Link>
         </div>
       )}
     </>

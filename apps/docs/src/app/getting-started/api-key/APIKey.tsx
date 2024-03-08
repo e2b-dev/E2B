@@ -1,9 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import clsx from 'clsx'
-import { useAccessToken, useApiKey, useUser } from '@/utils/useUser'
 import { usePostHog } from 'posthog-js/react'
-import { useSignIn } from '@/utils/useSignIn'
+
+import { useAccessToken, useApiKey, useUser } from '@/utils/useUser'
 import { obfuscateSecret } from '@/utils/obfuscate'
 import { Button } from '@/components/Button'
 import { CopyButton } from '@/components/CopyButton'
@@ -61,7 +62,6 @@ function SecretBlock({ name, description, secret, posthog, tip }) {
 }
 
 function APIKey() {
-  const signIn = useSignIn()
   const { user } = useUser()
   const apiKey = useApiKey()
   const posthog = usePostHog()
@@ -117,7 +117,9 @@ function APIKey() {
       ) : (
         <div className="flex flex-col items-start justiy-start gap-4 mt-6">
           <span>You can get your API key by signing up.</span>
-          <Button onClick={() => signIn({ view: 'sign-up' })}>Sign up to get your API key</Button>
+          <Link href="/sign-in?view=sign-up">
+            <Button>Sign up to get your API key</Button>
+          </Link>
         </div>
       )}
     </div>

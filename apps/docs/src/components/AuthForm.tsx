@@ -46,7 +46,7 @@ function AuthForm() {
     <div className="mx-auto flex flex-1 w-full justify-center items-center flex-col pt-4">
       <h1 className="text-4xl font-bold mt-8 mb-4">
         {view === 'sign_in' && 'Sign in to E2B'}
-        {view === 'sign_up' && 'Sign up to E2B'}
+        {view === 'sign_up' && 'Create new E2B account'}
         {view === 'forgotten_password' && 'Reset password'}
       </h1>
       <div className="md:w-[420px] w-[240px]">
