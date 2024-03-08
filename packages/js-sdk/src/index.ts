@@ -23,6 +23,7 @@ export { runCode, CodeRuntime } from './runCode' // Export CodeRuntime enum as v
 import { Sandbox } from './sandbox/index'
 
 import { DataAnalysis } from './templates/dataAnalysis'
+export { CodeInterpreterV2 } from './templates/statefulCodeInterpreter'
 export { DataAnalysis as CodeInterpreter }
 
 export { Artifact, DataAnalysis } from './templates/dataAnalysis'

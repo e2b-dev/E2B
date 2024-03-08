@@ -1,0 +1,15 @@
+# This is a config for E2B sandbox template.
+# You can use 'template_id' (1tsfj5yvigmgc5gmgqz2) or 'template_name (code-interpreter-stateful) from this config to spawn a sandbox:
+
+# Python SDK
+# from e2b import Sandbox
+# sandbox = Sandbox(template='code-interpreter-stateful')
+
+# JS SDK
+# import { Sandbox } from 'e2b'
+# const sandbox = await Sandbox.create({ template: 'code-interpreter-stateful' })
+
+template_id = "1tsfj5yvigmgc5gmgqz2"
+dockerfile = "e2b.Dockerfile"
+template_name = "code-interpreter-stateful"
+start_cmd = "/home/user/.jupyter/start-up.sh"

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e2b"
-version = "0.14.9"
+version = "0.14.10a12"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
@@ -21,6 +21,7 @@ websockets = ">=11.0.3"
 jsonrpcclient = ">=4.0.3"
 requests = ">=2.31.0"
 typing-extensions = ">=4.8.0"
+websocket-client = "^1.7.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
