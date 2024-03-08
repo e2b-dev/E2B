@@ -58,6 +58,13 @@ export const Auth = function () {
     window.location.reload()
   }
 
+  function redirectToCurrentURL() {
+    const url = typeof window !== 'undefined' ? window.location.href : undefined
+
+    const encodedURL = encodeURIComponent(url)
+    return `redirect_to=${encodedURL}`
+  }
+
 
   if (error)
     return (
@@ -65,7 +72,7 @@ export const Auth = function () {
         <span className="text-sm text-red-500" title={error?.message}>
           Something went wrong
         </span>
-        <Link href="/sign-in">
+        <Link href={`/sign-in?${redirectToCurrentURL()}`}>
           <Button>Sign In</Button>
         </Link>
       </div>
@@ -114,7 +121,7 @@ export const Auth = function () {
         </div>
       ) : (
         <div className="flex items-center justify-center gap-3">
-          <Link href="/sign-in?view=sign-up">
+          <Link href={`/sign-in?view=sign-up&${redirectToCurrentURL()}`}>
             <Button
               variant="textTernary"
               className="whitespace-nowrap text-xs"
@@ -123,7 +130,7 @@ export const Auth = function () {
             </Button>
           </Link>
 
-          <Link href="/sign-in">
+          <Link href={`/sign-in?${redirectToCurrentURL()}`}>
             <Button>Sign In</Button>
           </Link>
         </div>
