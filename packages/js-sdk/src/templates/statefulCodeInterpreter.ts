@@ -1,7 +1,6 @@
 import { Sandbox, SandboxOpts } from '../sandbox'
 import { ProcessMessage } from '../sandbox/process'
 import { randomBytes } from 'crypto'
-import wait from '../utils/wait'
 import IWebSocket from 'isomorphic-ws'
 
 interface ExecutionError {
@@ -20,7 +19,6 @@ interface Result {
 
 export class CodeInterpreterV2 extends Sandbox {
   private static template = 'code-interpreter-stateful'
-  private jupyterServerToken: string
   private jupyterKernelID?: string
 
   /**
@@ -33,7 +31,6 @@ export class CodeInterpreterV2 extends Sandbox {
    */
   constructor(opts: SandboxOpts) {
     super({ template: opts.template || CodeInterpreterV2.template, ...opts })
-    this.jupyterServerToken = randomBytes(24).toString('hex')
   }
 
   /**
@@ -50,7 +47,7 @@ export class CodeInterpreterV2 extends Sandbox {
   static override async create(opts?: SandboxOpts) {
     const sandbox = new CodeInterpreterV2({ ...(opts ? opts : {}) })
     await sandbox._open({ timeout: opts?.timeout })
-    await sandbox.startJupyter()
+    sandbox.jupyterKernelID = await sandbox.getKernelID()
 
     return sandbox
   }
@@ -111,7 +108,7 @@ export class CodeInterpreterV2 extends Sandbox {
     const sandbox = new this(opts) as InstanceType<S>
     await sandbox._open({ timeout: opts?.timeout })
 
-    await sandbox.startJupyter()
+    sandbox.jupyterKernelID = await sandbox.getKernelID()
     return sandbox
   }
 
@@ -163,10 +160,8 @@ export class CodeInterpreterV2 extends Sandbox {
     return result
   }
 
-  private async startJupyter() {
-    const data = JSON.parse(await this.filesystem.read('/root/.jupyter/config.json'))
-    this.jupyterServerToken = data.token
-    this.jupyterKernelID = data.kernel_id
+  private async getKernelID() {
+    return await this.filesystem.read('/root/.jupyter/kernel_id')
   }
 
   private async _connectKernel(
@@ -175,12 +170,10 @@ export class CodeInterpreterV2 extends Sandbox {
     onStdout?: (out: ProcessMessage) => Promise<void> | void,
     onStderr?: (out: ProcessMessage) => Promise<void> | void,
   ) {
-    const headers = { Authorization: `Token ${this.jupyterServerToken}` }
     const ws = new IWebSocket(
       `${this.getProtocol('ws')}://${this.getHostname(8888)}/api/kernels/${
         this.jupyterKernelID
       }/channels`,
-      { headers },
     )
 
     const opened = new Promise<void>((resolve) => {

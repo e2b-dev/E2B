@@ -1,16 +1,12 @@
-import binascii
 import json
-import os
 import time
 import uuid
-from time import sleep
-from typing import Optional, Callable, Any, List, Union, Literal
+from typing import Optional, Callable, Any, List
 
-import requests
 from pydantic import BaseModel
 from websocket import create_connection
 
-from e2b import Sandbox, EnvVars, ProcessMessage, OpenPort
+from e2b import Sandbox, EnvVars, ProcessMessage
 from e2b.constants import TIMEOUT
 
 
@@ -56,18 +52,14 @@ class CodeInterpreterV2(Sandbox):
             **kwargs,
         )
 
-        self._setup_jupyter()
+        self._jupyter_kernel_id = self._get_kernel_id()
 
-    def _setup_jupyter(self) -> None:
-        config = json.loads(self.filesystem.read("/root/.jupyter/config.json"))
-        self._jupyter_server_token = config["token"]
-        self._jupyter_kernel_id = config["kernel_id"]
+    def _get_kernel_id(self) -> str:
+        return self.filesystem.read("/root/.jupyter/kernel_id")
 
     def _connect_kernel(self):
-        header = {"Authorization": f"Token {self._jupyter_server_token}"}
         return create_connection(
             f"{self.get_protocol('ws')}://{self.get_hostname(8888)}/api/kernels/{self._jupyter_kernel_id}/channels",
-            header=header,
         )
 
     @staticmethod
