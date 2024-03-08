@@ -50,7 +50,7 @@ export class CodeInterpreterV2 extends Sandbox {
   static override async create(opts?: SandboxOpts) {
     const sandbox = new CodeInterpreterV2({ ...(opts ? opts : {}) })
     await sandbox._open({ timeout: opts?.timeout })
-    sandbox.jupyterKernelID = await sandbox.startJupyter()
+    await sandbox.startJupyter()
 
     return sandbox
   }
@@ -111,11 +111,7 @@ export class CodeInterpreterV2 extends Sandbox {
     const sandbox = new this(opts) as InstanceType<S>
     await sandbox._open({ timeout: opts?.timeout })
 
-    const data = await sandbox.filesystem.read('/root/.jupyter/config.json')
-    const { token, kernel_id } = JSON.parse(data)
-
-    sandbox.jupyterServerToken = token
-    sandbox.jupyterKernelID = kernel_id
+    await sandbox.startJupyter()
     return sandbox
   }
 
@@ -168,30 +164,9 @@ export class CodeInterpreterV2 extends Sandbox {
   }
 
   private async startJupyter() {
-    await this.process.start(
-      `jupyter server --IdentityProvider.token=${this.jupyterServerToken}`,
-    )
-
-    const url = `${this.getProtocol()}://${this.getHostname(8888)}`
-    const headers = { Authorization: `Token ${this.jupyterServerToken}` }
-
-    let response = await fetch(`${url}/api`, { headers })
-    while (!response.ok) {
-      await wait(200)
-      response = await fetch(`${url}/api`, { headers })
-    }
-
-    response = await fetch(`${url}/api/kernels`, { headers, method: 'POST' })
-    if (!response.ok) {
-      throw new Error(`Error creating kernel: ${response.status}`)
-    }
-
-    const kernel = await response.json()
-
-    await this.filesystem.makeDir('/root/.jupyter')
-    await this.filesystem.write('/root/.jupyter/config.json', JSON.stringify({token: this.jupyterServerToken, kernel_id: kernel.id}))
-
-    return kernel.id
+    const data = JSON.parse(await this.filesystem.read('/root/.jupyter/config.json'))
+    this.jupyterServerToken = data.token
+    this.jupyterKernelID = data.kernel_id
   }
 
   private async _connectKernel(
