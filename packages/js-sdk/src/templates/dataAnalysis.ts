@@ -10,6 +10,10 @@ export class Artifact<S extends DataAnalysis> {
     this.path = path
     this._sandbox = sandbox
   }
+
+  async download() {
+    return this._sandbox.downloadFile(this.path)
+  }
 }
 
 export interface RunPythonOpts<S extends DataAnalysis> extends Omit<ProcessOpts, 'cmd'> {
