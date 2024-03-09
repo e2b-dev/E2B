@@ -20,6 +20,7 @@ import (
 	"github.com/e2b-dev/infra/packages/envd/internal/ports"
 	"github.com/e2b-dev/infra/packages/envd/internal/process"
 	"github.com/e2b-dev/infra/packages/envd/internal/terminal"
+	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 )
 
 // TODO: I'm not really sure if we're using RPC Notifier and Subscriber in the right way.
@@ -27,8 +28,7 @@ import (
 // https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
 
 const (
-	Version                = "dev"
-	defaultServerPort uint = 49982
+	Version = "dev"
 
 	startCmdID = "_startCmd"
 )
@@ -96,7 +96,7 @@ func parseFlags() {
 	flag.UintVar(
 		&serverPort,
 		"port",
-		defaultServerPort,
+		consts.DefaultEnvdServerPort,
 		"a port on which the daemon should run",
 	)
 
