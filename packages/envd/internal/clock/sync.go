@@ -11,18 +11,23 @@ type ClockSync struct {
 	logger *zap.SugaredLogger
 	// The sync could probably be done better with waitgroup
 	mu sync.RWMutex
+	// wg sync.WaitGroup
 }
 
 func New(logger *zap.SugaredLogger) *ClockSync {
 	return &ClockSync{
 		logger: logger,
 		mu:     sync.RWMutex{},
+		// wg: sync.WaitGroup{},
 	}
 }
 
 func (c *ClockSync) Sync() {
+	// c.wg.Add(1)
 	c.mu.Lock()
+
 	go func() {
+		// defer c.wg.Done()
 		defer c.mu.Unlock()
 
 		err := exec.Command("chronyc", "-a", "makestep").Run()
@@ -35,6 +40,7 @@ func (c *ClockSync) Sync() {
 }
 
 func (c *ClockSync) Wait() {
+	// c.wg.Wait()
 	defer c.mu.RUnlock()
 	c.mu.RLock()
 }
