@@ -10,13 +10,13 @@ import (
 type ClockSync struct {
 	logger *zap.SugaredLogger
 	// The sync could probably be done better with waitgroup
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 func New(logger *zap.SugaredLogger) *ClockSync {
 	return &ClockSync{
 		logger: logger,
-		mu:     sync.Mutex{},
+		mu:     sync.RWMutex{},
 	}
 }
 
@@ -35,6 +35,6 @@ func (c *ClockSync) Sync() {
 }
 
 func (c *ClockSync) Wait() {
-	defer c.mu.Unlock()
-	c.mu.Lock()
+	defer c.mu.RUnlock()
+	c.mu.RLock()
 }
