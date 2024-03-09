@@ -9,6 +9,7 @@ import (
 	"github.com/rs/xid"
 	"go.uber.org/zap"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/clock"
 	"github.com/e2b-dev/infra/packages/envd/internal/env"
 	"github.com/e2b-dev/infra/packages/envd/internal/subscriber"
 )
@@ -19,13 +20,17 @@ type Service struct {
 
 	terminals *Manager
 
+	clock *clock.ClockSync
+
 	dataSubs *subscriber.Manager
 	exitSubs *subscriber.Manager
 }
 
-func NewService(logger *zap.SugaredLogger, env *env.EnvConfig) *Service {
+func NewService(logger *zap.SugaredLogger, env *env.EnvConfig, clock *clock.ClockSync) *Service {
 	return &Service{
 		logger: logger,
+
+		clock: clock,
 
 		env:       env,
 		terminals: NewManager(logger),
@@ -74,6 +79,9 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 		if id == "" {
 			id = xid.New().String()
 		}
+
+		// We need to wait for the clock to sync before we start the process.
+		s.clock.Wait()
 
 		newTerm, err := s.terminals.Add(
 			id,

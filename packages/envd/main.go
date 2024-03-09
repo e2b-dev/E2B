@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/clock"
 	"github.com/e2b-dev/infra/packages/envd/internal/env"
 	"github.com/e2b-dev/infra/packages/envd/internal/file"
 	"github.com/e2b-dev/infra/packages/envd/internal/filesystem"
@@ -45,6 +46,15 @@ var (
 func serveWs(w http.ResponseWriter, r *http.Request) {
 	logger.Debug("WS connection started")
 	wsHandler.ServeHTTP(w, r)
+}
+
+func syncHandler(clock *clock.ClockSync) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		logger.Debug("/sync request")
+		clock.Sync()
+
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 func pingHandler(w http.ResponseWriter, r *http.Request) {
@@ -135,6 +145,8 @@ func main() {
 
 	go portScanner.ScanAndBroadcast()
 
+	clock := clock.New(logger.Named("clockSvc"))
+
 	ports := ports.NewService(logger.Named("codeSnippetSvc"), portScanner)
 	// WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK
 	if err := rpcServer.RegisterName("codeSnippet", ports); err != nil {
@@ -152,7 +164,7 @@ func main() {
 		)
 	}
 
-	processService := process.NewService(logger.Named("processSvc"), envConfig)
+	processService := process.NewService(logger.Named("processSvc"), envConfig, clock)
 	if err := rpcServer.RegisterName("process", processService); err != nil {
 		logger.Panicw("failed to register process service", "error", err)
 	}
@@ -171,13 +183,16 @@ func main() {
 		}
 	}
 
-	terminalService := terminal.NewService(logger.Named("terminalSvc"), envConfig)
+	terminalService := terminal.NewService(logger.Named("terminalSvc"), envConfig, clock)
 	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
 		logger.Panicw("failed to register terminal service", "error", err)
 	}
 
 	router := mux.NewRouter()
 	wsHandler = rpcServer.WebsocketHandler([]string{"*"})
+
+	// The /sync route is used for syncing the clock.
+	router.Handle("/sync", syncHandler(clock))
 
 	router.HandleFunc("/ws", serveWs)
 	// The /ping route is used for the terminal extension to check if envd is running.
