@@ -43,6 +43,7 @@ login-gcloud:
 .PHONY: init
 init:
 	@ printf "Initializing Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
+	./scripts/confirm.sh $(ENV)
 	terraform init -input=false -backend-config="bucket=${TERRAFORM_STATE_BUCKET}"
 	$(MAKE) -C packages/cluster-disk-image init
 	$(tf_vars) terraform apply -target=module.init -target=module.buckets -auto-approve -input=false -compact-warnings
@@ -56,6 +57,7 @@ plan:
 .PHONY: apply
 apply:
 	@ printf "Applying Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
+	./scripts/confirm.sh $(ENV)
 	$(tf_vars) \
 	terraform apply \
 	-auto-approve \
@@ -77,6 +79,7 @@ plan-without-jobs:
 .PHONY: apply-without-jobs
 apply-without-jobs:
 	@ printf "Applying Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
+	./scripts/confirm.sh $(ENV)
 	$(tf_vars) \
 	terraform apply \
 	-auto-approve \
@@ -88,6 +91,7 @@ apply-without-jobs:
 .PHONY: destroy
 destroy:
 	@ printf "Destroying Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
+	./scripts/confirm.sh $(ENV)
 	DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | grep -v -e "fc_envs_disk" -e "buckets" | uniq | awk '{print "-target=" $$0 ""}' | xargs)
 	$(tf_vars) \
 	terraform destroy \
