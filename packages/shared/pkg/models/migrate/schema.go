@@ -45,7 +45,7 @@ var (
 		{Name: "free_disk_size_mb", Type: field.TypeInt64},
 		{Name: "total_disk_size_mb", Type: field.TypeInt64},
 		{Name: "kernel_version", Type: field.TypeString, Default: "vmlinux-5.10.186"},
-		{Name: "firecracker_version", Type: field.TypeString, Default: "v1.5.0_8a43b32e"},
+		{Name: "firecracker_version", Type: field.TypeString, Default: "v1.7.0-dev_8bb88311"},
 		{Name: "team_id", Type: field.TypeUUID},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
@@ -132,8 +132,6 @@ var (
 	TiersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "name", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
-		{Name: "vcpu", Type: field.TypeInt64, Default: "2"},
-		{Name: "ram_mb", Type: field.TypeInt64, Default: "512"},
 		{Name: "disk_mb", Type: field.TypeInt64, Default: "512"},
 		{Name: "concurrent_instances", Type: field.TypeInt64, Comment: "The number of instances the team can run concurrently"},
 		{Name: "max_length_hours", Type: field.TypeInt64},
@@ -218,8 +216,6 @@ func init() {
 	TiersTable.Annotation.Checks = map[string]string{
 		"tiers_concurrent_sessions_check": "concurrent_instances > 0",
 		"tiers_disk_mb_check":             "disk_mb > 0",
-		"tiers_ram_mb_check":              "ram_mb > 0",
-		"tiers_vcpu_check":                "vcpu > 0",
 	}
 	UsersTable.Annotation = &entsql.Annotation{}
 	UsersTeamsTable.ForeignKeys[0].RefTable = UsersTable

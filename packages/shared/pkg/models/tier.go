@@ -18,10 +18,6 @@ type Tier struct {
 	ID string `json:"id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
-	// Vcpu holds the value of the "vcpu" field.
-	Vcpu int64 `json:"vcpu,omitempty"`
-	// RAMMB holds the value of the "ram_mb" field.
-	RAMMB int64 `json:"ram_mb,omitempty"`
 	// DiskMB holds the value of the "disk_mb" field.
 	DiskMB int64 `json:"disk_mb,omitempty"`
 	// The number of instances the team can run concurrently
@@ -57,7 +53,7 @@ func (*Tier) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tier.FieldVcpu, tier.FieldRAMMB, tier.FieldDiskMB, tier.FieldConcurrentInstances, tier.FieldMaxLengthHours:
+		case tier.FieldDiskMB, tier.FieldConcurrentInstances, tier.FieldMaxLengthHours:
 			values[i] = new(sql.NullInt64)
 		case tier.FieldID, tier.FieldName:
 			values[i] = new(sql.NullString)
@@ -87,18 +83,6 @@ func (t *Tier) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				t.Name = value.String
-			}
-		case tier.FieldVcpu:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field vcpu", values[i])
-			} else if value.Valid {
-				t.Vcpu = value.Int64
-			}
-		case tier.FieldRAMMB:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field ram_mb", values[i])
-			} else if value.Valid {
-				t.RAMMB = value.Int64
 			}
 		case tier.FieldDiskMB:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -161,12 +145,6 @@ func (t *Tier) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
 	builder.WriteString("name=")
 	builder.WriteString(t.Name)
-	builder.WriteString(", ")
-	builder.WriteString("vcpu=")
-	builder.WriteString(fmt.Sprintf("%v", t.Vcpu))
-	builder.WriteString(", ")
-	builder.WriteString("ram_mb=")
-	builder.WriteString(fmt.Sprintf("%v", t.RAMMB))
 	builder.WriteString(", ")
 	builder.WriteString("disk_mb=")
 	builder.WriteString(fmt.Sprintf("%v", t.DiskMB))

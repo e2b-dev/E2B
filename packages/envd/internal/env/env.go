@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	defaultLogDir    = filepath.Join("/Users", "i", "Work", "e2b", "api", "packages", "envd", "log")
+	defaultLogDir    = filepath.Join("/var", "log")
 	defaultGatewayIP = net.IPv4(169, 254, 0, 21)
 	defaultWorkdir   = "/code"
 )

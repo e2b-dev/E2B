@@ -14,10 +14,6 @@ const (
 	FieldID = "id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldVcpu holds the string denoting the vcpu field in the database.
-	FieldVcpu = "vcpu"
-	// FieldRAMMB holds the string denoting the ram_mb field in the database.
-	FieldRAMMB = "ram_mb"
 	// FieldDiskMB holds the string denoting the disk_mb field in the database.
 	FieldDiskMB = "disk_mb"
 	// FieldConcurrentInstances holds the string denoting the concurrent_instances field in the database.
@@ -41,8 +37,6 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldName,
-	FieldVcpu,
-	FieldRAMMB,
 	FieldDiskMB,
 	FieldConcurrentInstances,
 	FieldMaxLengthHours,
@@ -69,16 +63,6 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
-}
-
-// ByVcpu orders the results by the vcpu field.
-func ByVcpu(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVcpu, opts...).ToFunc()
-}
-
-// ByRAMMB orders the results by the ram_mb field.
-func ByRAMMB(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRAMMB, opts...).ToFunc()
 }
 
 // ByDiskMB orders the results by the disk_mb field.

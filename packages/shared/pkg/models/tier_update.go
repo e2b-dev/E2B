@@ -45,48 +45,6 @@ func (tu *TierUpdate) SetNillableName(s *string) *TierUpdate {
 	return tu
 }
 
-// SetVcpu sets the "vcpu" field.
-func (tu *TierUpdate) SetVcpu(i int64) *TierUpdate {
-	tu.mutation.ResetVcpu()
-	tu.mutation.SetVcpu(i)
-	return tu
-}
-
-// SetNillableVcpu sets the "vcpu" field if the given value is not nil.
-func (tu *TierUpdate) SetNillableVcpu(i *int64) *TierUpdate {
-	if i != nil {
-		tu.SetVcpu(*i)
-	}
-	return tu
-}
-
-// AddVcpu adds i to the "vcpu" field.
-func (tu *TierUpdate) AddVcpu(i int64) *TierUpdate {
-	tu.mutation.AddVcpu(i)
-	return tu
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (tu *TierUpdate) SetRAMMB(i int64) *TierUpdate {
-	tu.mutation.ResetRAMMB()
-	tu.mutation.SetRAMMB(i)
-	return tu
-}
-
-// SetNillableRAMMB sets the "ram_mb" field if the given value is not nil.
-func (tu *TierUpdate) SetNillableRAMMB(i *int64) *TierUpdate {
-	if i != nil {
-		tu.SetRAMMB(*i)
-	}
-	return tu
-}
-
-// AddRAMMB adds i to the "ram_mb" field.
-func (tu *TierUpdate) AddRAMMB(i int64) *TierUpdate {
-	tu.mutation.AddRAMMB(i)
-	return tu
-}
-
 // SetDiskMB sets the "disk_mb" field.
 func (tu *TierUpdate) SetDiskMB(i int64) *TierUpdate {
 	tu.mutation.ResetDiskMB()
@@ -236,18 +194,6 @@ func (tu *TierUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Name(); ok {
 		_spec.SetField(tier.FieldName, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.Vcpu(); ok {
-		_spec.SetField(tier.FieldVcpu, field.TypeInt64, value)
-	}
-	if value, ok := tu.mutation.AddedVcpu(); ok {
-		_spec.AddField(tier.FieldVcpu, field.TypeInt64, value)
-	}
-	if value, ok := tu.mutation.RAMMB(); ok {
-		_spec.SetField(tier.FieldRAMMB, field.TypeInt64, value)
-	}
-	if value, ok := tu.mutation.AddedRAMMB(); ok {
-		_spec.AddField(tier.FieldRAMMB, field.TypeInt64, value)
-	}
 	if value, ok := tu.mutation.DiskMB(); ok {
 		_spec.SetField(tier.FieldDiskMB, field.TypeInt64, value)
 	}
@@ -349,48 +295,6 @@ func (tuo *TierUpdateOne) SetNillableName(s *string) *TierUpdateOne {
 	if s != nil {
 		tuo.SetName(*s)
 	}
-	return tuo
-}
-
-// SetVcpu sets the "vcpu" field.
-func (tuo *TierUpdateOne) SetVcpu(i int64) *TierUpdateOne {
-	tuo.mutation.ResetVcpu()
-	tuo.mutation.SetVcpu(i)
-	return tuo
-}
-
-// SetNillableVcpu sets the "vcpu" field if the given value is not nil.
-func (tuo *TierUpdateOne) SetNillableVcpu(i *int64) *TierUpdateOne {
-	if i != nil {
-		tuo.SetVcpu(*i)
-	}
-	return tuo
-}
-
-// AddVcpu adds i to the "vcpu" field.
-func (tuo *TierUpdateOne) AddVcpu(i int64) *TierUpdateOne {
-	tuo.mutation.AddVcpu(i)
-	return tuo
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (tuo *TierUpdateOne) SetRAMMB(i int64) *TierUpdateOne {
-	tuo.mutation.ResetRAMMB()
-	tuo.mutation.SetRAMMB(i)
-	return tuo
-}
-
-// SetNillableRAMMB sets the "ram_mb" field if the given value is not nil.
-func (tuo *TierUpdateOne) SetNillableRAMMB(i *int64) *TierUpdateOne {
-	if i != nil {
-		tuo.SetRAMMB(*i)
-	}
-	return tuo
-}
-
-// AddRAMMB adds i to the "ram_mb" field.
-func (tuo *TierUpdateOne) AddRAMMB(i int64) *TierUpdateOne {
-	tuo.mutation.AddRAMMB(i)
 	return tuo
 }
 
@@ -572,18 +476,6 @@ func (tuo *TierUpdateOne) sqlSave(ctx context.Context) (_node *Tier, err error) 
 	}
 	if value, ok := tuo.mutation.Name(); ok {
 		_spec.SetField(tier.FieldName, field.TypeString, value)
-	}
-	if value, ok := tuo.mutation.Vcpu(); ok {
-		_spec.SetField(tier.FieldVcpu, field.TypeInt64, value)
-	}
-	if value, ok := tuo.mutation.AddedVcpu(); ok {
-		_spec.AddField(tier.FieldVcpu, field.TypeInt64, value)
-	}
-	if value, ok := tuo.mutation.RAMMB(); ok {
-		_spec.SetField(tier.FieldRAMMB, field.TypeInt64, value)
-	}
-	if value, ok := tuo.mutation.AddedRAMMB(); ok {
-		_spec.AddField(tier.FieldRAMMB, field.TypeInt64, value)
 	}
 	if value, ok := tuo.mutation.DiskMB(); ok {
 		_spec.SetField(tier.FieldDiskMB, field.TypeInt64, value)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
 )
 
@@ -115,7 +116,25 @@ func (db *DB) UpdateEnvAlias(ctx context.Context, alias, envID string) error {
 }
 
 func (db *DB) EnsureEnvAlias(ctx context.Context, alias, envID string) error {
-	_, err := db.
+	envs, err := db.
+		Client.
+		Env.
+		Query().
+		Where(env.ID(alias)).
+		All(ctx)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to get env '%s': %w", alias, err)
+
+		return errMsg
+	}
+
+	if len(envs) > 0 {
+		errMsg := fmt.Errorf("alias '%s' is already used for an another env", alias)
+
+		return errMsg
+	}
+
+	_, err = db.
 		Client.
 		EnvAlias.
 		Query().
