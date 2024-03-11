@@ -9,13 +9,13 @@ import (
 
 type ClockSync struct {
 	logger *zap.SugaredLogger
-	mu     sync.RWMutex
+	mu     sync.Mutex
 }
 
 func New(logger *zap.SugaredLogger) *ClockSync {
 	return &ClockSync{
 		logger: logger,
-		mu:     sync.RWMutex{},
+		mu:     sync.Mutex{},
 	}
 }
 
@@ -35,6 +35,6 @@ func (c *ClockSync) Sync() {
 }
 
 func (c *ClockSync) Wait() {
-	defer c.mu.RUnlock()
-	c.mu.RLock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 }
