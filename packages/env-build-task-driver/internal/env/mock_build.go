@@ -45,7 +45,7 @@ func MockBuild(envID, buildID string) {
 		KernelName:            "vmlinux.bin",
 		KernelVersion:         "vmlinux-5.10.186",
 		DiskSizeMB:            512,
-		FirecrackerBinaryPath: "/usr/bin/firecracker",
+		FirecrackerBinaryPath: "/fc-versions/v1.7.0-dev_8bb88311/firecracker",
 		EnvdPath:              "/fc-vm/envd",
 		ContextFileName:       "context.tar.gz",
 		BuildLogsWriter:       writer,
