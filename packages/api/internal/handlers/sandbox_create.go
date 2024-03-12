@@ -16,6 +16,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const defaultRequestLimit = 20
+
+var postSandboxParallelLimit = utils.NewBlockingSemaphore(defaultRequestLimit)
+
 func (a *APIStore) PostSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -88,6 +92,22 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		attribute.String("env.kernel.version", kernelVersion),
 		attribute.String("env.firecracker.version", firecrackerVersion),
 	)
+
+	telemetry.ReportEvent(ctx, "waiting for parallel lock")
+	limitCtx, limitCancel := context.WithCancel(ctx)
+	
+	defer limitCancel()
+
+	limitErr := postSandboxParallelLimit.Acquire(limitCtx)
+	if limitErr != nil {
+		errMsg := fmt.Errorf("error when acquiring parallel lock: %w", limitErr)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		a.sendAPIStoreError(c, http.StatusTooManyRequests, "Too many requests")
+	}
+
+	defer postSandboxParallelLimit.Release()
+	telemetry.ReportEvent(ctx, "parallel lock passed")
 
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
