@@ -84,6 +84,17 @@ resource "nomad_job" "api" {
   }
 }
 
+resource "nomad_job" "docker_reverse_proxy" {
+  jobspec = file("${path.module}/docker-reverse-proxy.hcl")
+
+  hcl2 {
+    vars = {
+      image_name  = var.docker_reverse_proxy_image_digest
+      port_number = 5000
+    }
+  }
+}
+
 resource "nomad_job" "client_proxy" {
   jobspec = file("${path.module}/client-proxy.hcl")
 

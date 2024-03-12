@@ -41,6 +41,18 @@ locals {
       }
       groups = [{ group = var.client_instance_group }]
     }
+    docker-reverse-proxy = {
+      protocol                        = "HTTP"
+      port                            = 5000
+      port_name                       = "docker-reverse-proxy"
+      timeout_sec                     = 30
+      connection_draining_timeout_sec = 1
+      health_check = {
+        request_path = "/health"
+        port         = 5000
+      }
+      groups = [{ group = var.client_instance_group }]
+    }
     nomad = {
       protocol                        = "HTTP"
       port                            = 80
@@ -164,6 +176,13 @@ resource "google_compute_url_map" "orch_map" {
 
   host_rule {
     hosts = [
+      "docker.${var.domain_name}",
+    ]
+    path_matcher = "docker-reverse-proxy-paths"
+  }
+
+  host_rule {
+    hosts = [
       "nomad.${var.domain_name}",
     ]
     path_matcher = "nomad-paths"
@@ -186,6 +205,10 @@ resource "google_compute_url_map" "orch_map" {
   path_matcher {
     name            = "api-paths"
     default_service = google_compute_backend_service.default["api"].self_link
+  }
+  path_matcher {
+    name            = "docker-reverse-proxy-paths"
+    default_service = google_compute_backend_service.default["docker-reverse-proxy"].self_link
   }
 
   path_matcher {

@@ -156,6 +156,17 @@ module "api" {
   prefix = var.prefix
 }
 
+module "docker_reverse_proxy" {
+  source = "./packages/docker-reverse-proxy"
+
+  gcp_project_id = var.gcp_project_id
+  gcp_region     = var.gcp_region
+
+
+  labels = var.labels
+  prefix = var.prefix
+}
+
 module "nomad" {
   source = "./packages/nomad"
 
@@ -202,4 +213,7 @@ module "nomad" {
   grafana_metrics_username_secret_name = module.init.grafana_metrics_username_secret_name
   grafana_traces_endpoint_secret_name  = module.init.grafana_traces_endpoint_secret_name
   grafana_traces_username_secret_name  = module.init.grafana_traces_username_secret_name
+
+  # Docker reverse proxy
+  docker_reverse_proxy_image_digest = module.docker_reverse_proxy.docker_reverse_proxy_image_digest
 }
