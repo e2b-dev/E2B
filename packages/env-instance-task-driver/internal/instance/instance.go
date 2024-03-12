@@ -3,6 +3,7 @@ package instance
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -24,7 +25,7 @@ type Instance struct {
 }
 
 var httpClient = http.Client{
-	Timeout: 2 * time.Second,
+	Timeout: 5 * time.Second,
 }
 
 type InstanceConfig struct {
@@ -174,7 +175,13 @@ func NewInstance(
 
 	go func() {
 		context := context.Background()
-		instance.EnsureClockSync(context)
+
+		clockErr := instance.EnsureClockSync(context)
+		if clockErr != nil {
+			telemetry.ReportError(context, fmt.Errorf("failed to sync clock: %w", clockErr))
+		} else {
+			telemetry.ReportEvent(context, "clock synced")
+		}
 	}()
 
 	return instance, nil
@@ -183,7 +190,7 @@ func NewInstance(
 func (i *Instance) syncClock(ctx context.Context) error {
 	i.Slot.HostSnapshotIP()
 
-	request, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s:%s", i.Slot.HostSnapshotIP(), consts.DefaultEnvdServerPort), nil)
+	request, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("http://%s:%d", i.Slot.HostSnapshotIP(), consts.DefaultEnvdServerPort), nil)
 	if err != nil {
 		return err
 	}
@@ -192,6 +199,11 @@ func (i *Instance) syncClock(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	if _, err := io.Copy(io.Discard, response.Body); err != nil {
+		return err
+	}
+
 	defer response.Body.Close()
 
 	return nil
@@ -208,7 +220,6 @@ syncLoop:
 			err := i.syncClock(ctx)
 			if err != nil {
 				telemetry.ReportError(ctx, fmt.Errorf("error syncing clock: %w", err))
-				time.Sleep(50 * time.Millisecond)
 				continue
 			}
 			break syncLoop
