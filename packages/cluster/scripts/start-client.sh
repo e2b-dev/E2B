@@ -15,7 +15,7 @@ exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&
 # The THP are by default set to madvise
 # We are allocating the hugepages at the start when the memory is not fragmented yet
 echo "[Setting up huge pages]"
-sudo mkdir /mnt/hugepages
+sudo mkdir -p /mnt/hugepages
 mount -t hugetlbfs none /mnt/hugepages
 # Increase proactive compaction to reduce memory fragmentation for using overcomitted huge pages
 echo 40 >/proc/sys/vm/compaction_proactiveness
@@ -165,4 +165,3 @@ EOF
 # These variables are passed in via Terraform template interpolation
 /opt/consul/bin/run-consul.sh --client --cluster-tag-name "${CLUSTER_TAG_NAME}" --enable-gossip-encryption --gossip-encryption-key "${CONSUL_GOSSIP_ENCRYPTION_KEY}" &
 /opt/nomad/bin/run-nomad.sh --client --consul-token "${CONSUL_TOKEN}" &
-
