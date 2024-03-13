@@ -16,6 +16,7 @@ export type {
   FilesystemEventListener,
 } from './sandbox/filesystemWatcher'
 
+export { AuthenticationError, CurrentWorkingDirectoryDoesntExistError, TimeoutError } from './error'
 export { Process, ProcessMessage, ProcessOutput } from './sandbox/process'
 export type { ProcessManager } from './sandbox/process'
 export type { EnvVars } from './sandbox/envVars'
