@@ -18,7 +18,7 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-const defaultRequestLimit = 20
+const defaultRequestLimit = 16
 
 var postSandboxParallelLimit = semaphore.NewWeighted(defaultRequestLimit)
 
