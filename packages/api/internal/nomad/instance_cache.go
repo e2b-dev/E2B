@@ -35,8 +35,8 @@ type InstanceInfo struct {
 }
 
 type InstanceReservation struct {
-	count int32
-	mu    *sync.RWMutex
+	mu    sync.RWMutex
+	count int64
 }
 
 type ReservationCache struct {
@@ -49,7 +49,7 @@ func NewReservationCache() *ReservationCache {
 	}
 }
 
-func (r *ReservationCache) Reserve(teamID uuid.UUID, limit int64) error {
+func (r *ReservationCache) reserve(teamID uuid.UUID, limit int64) error {
 	reservation, found := r.reservations.Get(teamID.String())
 	if !found {
 		reservation = &InstanceReservation{}
@@ -63,7 +63,7 @@ func (r *ReservationCache) Reserve(teamID uuid.UUID, limit int64) error {
 	reservation.mu.Lock()
 	defer reservation.mu.Unlock()
 
-	if int64(reservation.count) >= limit {
+	if reservation.count >= limit {
 		return fmt.Errorf("team %s reached the limit of reservations", teamID)
 	}
 
@@ -72,7 +72,7 @@ func (r *ReservationCache) Reserve(teamID uuid.UUID, limit int64) error {
 	return nil
 }
 
-func (r *ReservationCache) Release(teamID uuid.UUID) error {
+func (r *ReservationCache) release(teamID uuid.UUID) error {
 	reservation, found := r.reservations.Get(teamID.String())
 	if !found {
 		return fmt.Errorf("reservation for team %s not found", teamID)
@@ -90,7 +90,7 @@ func (r *ReservationCache) Release(teamID uuid.UUID) error {
 	return nil
 }
 
-func (r *ReservationCache) Count(teamID *uuid.UUID) int32 {
+func (r *ReservationCache) count(teamID *uuid.UUID) int64 {
 	reservation, found := r.reservations.Get(teamID.String())
 	if !found {
 		return 0
