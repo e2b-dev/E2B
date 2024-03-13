@@ -3,6 +3,8 @@ package nomad
 import (
 	"context"
 	"fmt"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,6 +16,7 @@ import (
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -31,11 +34,92 @@ type InstanceInfo struct {
 	MaxInstanceLength time.Duration
 }
 
+type InstanceReservation struct {
+	count int32
+	mu    *sync.RWMutex
+}
+
+type ReservationCache struct {
+	reservations *smap.Map[*InstanceReservation]
+}
+
+func NewReservationCache() *ReservationCache {
+	return &ReservationCache{
+		reservations: smap.New[*InstanceReservation](),
+	}
+}
+
+func (r *ReservationCache) Reserve(teamID uuid.UUID, limit int64) error {
+	reservation, found := r.reservations.Get(teamID.String())
+	if !found {
+		reservation = &InstanceReservation{}
+		inserted := r.reservations.InsertIfAbsent(teamID.String(), reservation)
+
+		if !inserted {
+			fmt.Fprintf(os.Stderr, "reservation for team %s already exists, skipping insertion", teamID)
+		}
+	}
+
+	reservation.mu.Lock()
+	defer reservation.mu.Unlock()
+
+	if int64(reservation.count) >= limit {
+		return fmt.Errorf("team %s reached the limit of reservations", teamID)
+	}
+
+	reservation.count++
+
+	return nil
+}
+
+func (r *ReservationCache) Release(teamID uuid.UUID) error {
+	reservation, found := r.reservations.Get(teamID.String())
+	if !found {
+		return fmt.Errorf("reservation for team %s not found", teamID)
+	}
+
+	reservation.mu.Lock()
+	defer reservation.mu.Unlock()
+
+	if reservation.count == 0 {
+		return fmt.Errorf("all reservations for team %s already released", teamID)
+	}
+
+	reservation.count--
+
+	return nil
+}
+
+func (r *ReservationCache) Count(teamID *uuid.UUID) int32 {
+	reservation, found := r.reservations.Get(teamID.String())
+	if !found {
+		return 0
+	}
+
+	reservation.mu.RLock()
+	defer reservation.mu.RUnlock()
+
+	return reservation.count
+}
+
 type InstanceCache struct {
+	reservations *ReservationCache
+
 	cache     *ttlcache.Cache[string, InstanceInfo]
 	counter   metric.Int64UpDownCounter
 	logger    *zap.SugaredLogger
 	analytics analyticscollector.AnalyticsCollectorClient
+}
+
+func (c *InstanceCache) Reserve(team uuid.UUID, limit int64) (error, func() error) {
+	err := c.reservations.Reserve(team, limit-int64(c.CountForTeam(team)))
+	if err != nil {
+		return fmt.Errorf("error when reserving instance: %w", err), nil
+	}
+
+	return nil, func() error {
+		return c.reservations.Release(team)
+	}
 }
 
 // Add the instance to the cache and start expiration timer.
@@ -179,6 +263,8 @@ func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, log
 		counter:   counter,
 		logger:    logger,
 		analytics: analytics,
+
+		reservations: NewReservationCache(),
 	}
 
 	cache.OnInsertion(func(ctx context.Context, i *ttlcache.Item[string, InstanceInfo]) {

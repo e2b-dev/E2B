@@ -95,7 +95,9 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
-	if instanceCount := a.instanceCache.CountForTeam(team.ID); int64(instanceCount) >= maxInstancesPerTeam {
+
+	err, release := a.instanceCache.Reserve(team.ID, maxInstancesPerTeam)
+	if err != nil {
 		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, team.Edges.TeamTier.ConcurrentInstances)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
@@ -105,6 +107,13 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 		return
 	}
+
+	defer func() {
+		releaseErr := release()
+		if releaseErr != nil {
+			a.logger.Errorf("Error when releasing reservation: %w", releaseErr)
+		}
+	}()
 
 	var metadata map[string]string
 	if body.Metadata != nil {
