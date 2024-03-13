@@ -24,6 +24,7 @@ from e2b.sandbox.exception import (
     ProcessException,
     RpcException,
     CurrentWorkingDirectoryDoesntExistException,
+    TimeoutException,
 )
 from e2b.sandbox.out import OutStderrResponse, OutStdoutResponse
 from e2b.sandbox.sandbox_connection import SandboxConnection, SubscriptionArgs
@@ -179,6 +180,8 @@ class Process:
             time.sleep(0.1)
             if not self._sandbox.is_open:
                 break
+
+        raise TimeoutException(f"Process did not finish within {timeout} seconds")
 
     def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
