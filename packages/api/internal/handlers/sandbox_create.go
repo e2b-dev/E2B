@@ -11,14 +11,16 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sync/semaphore"
 )
 
 const defaultRequestLimit = 20
 
-var postSandboxParallelLimit = utils.NewBlockingSemaphore(defaultRequestLimit)
+var postSandboxParallelLimit = semaphore.NewWeighted(defaultRequestLimit)
 
 func (a *APIStore) PostSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -95,10 +97,10 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 
 	telemetry.ReportEvent(ctx, "waiting for parallel lock")
 	limitCtx, limitCancel := context.WithCancel(ctx)
-	
+
 	defer limitCancel()
 
-	limitErr := postSandboxParallelLimit.Acquire(limitCtx)
+	limitErr := postSandboxParallelLimit.Acquire(limitCtx, 1)
 	if limitErr != nil {
 		errMsg := fmt.Errorf("error when acquiring parallel lock: %w", limitErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -106,7 +108,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		a.sendAPIStoreError(c, http.StatusTooManyRequests, "Too many requests")
 	}
 
-	defer postSandboxParallelLimit.Release()
+	defer postSandboxParallelLimit.Release(1)
 	telemetry.ReportEvent(ctx, "parallel lock passed")
 
 	// Check if team has reached max instances
