@@ -101,7 +101,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		errMsg := fmt.Errorf("error when acquiring parallel lock: %w", limitErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
-		a.sendAPIStoreError(c, http.StatusTooManyRequests, "Too many requests")
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Too many requests")
 	}
 
 	defer postSandboxParallelLimit.Release(1)
