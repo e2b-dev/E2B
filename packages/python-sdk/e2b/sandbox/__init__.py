@@ -7,6 +7,11 @@ from .exception import (
     RpcException,
     SandboxException,
     TerminalException,
+    TimeoutException,
+    AuthenticationException,
+    SandboxNotOpenException,
+    UnsupportedRuntimeException,
+    MultipleExceptions,
 )
 from .filesystem import FileInfo, FilesystemManager
 from .filesystem_watcher import (
