@@ -96,11 +96,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 	)
 
 	telemetry.ReportEvent(ctx, "waiting for parallel lock")
-	limitCtx, limitCancel := context.WithCancel(ctx)
-
-	defer limitCancel()
-
-	limitErr := postSandboxParallelLimit.Acquire(limitCtx, 1)
+	limitErr := postSandboxParallelLimit.Acquire(ctx, 1)
 	if limitErr != nil {
 		errMsg := fmt.Errorf("error when acquiring parallel lock: %w", limitErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
