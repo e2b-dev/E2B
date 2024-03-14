@@ -11,10 +11,16 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sync/semaphore"
 )
+
+const defaultRequestLimit = 16
+
+var postSandboxParallelLimit = semaphore.NewWeighted(defaultRequestLimit)
 
 func (a *APIStore) PostSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -88,6 +94,21 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		attribute.String("env.kernel.version", kernelVersion),
 		attribute.String("env.firecracker.version", firecrackerVersion),
 	)
+
+	telemetry.ReportEvent(ctx, "waiting for create sandbox parallel limit semaphore slot")
+
+	limitErr := postSandboxParallelLimit.Acquire(ctx, 1)
+	if limitErr != nil {
+		errMsg := fmt.Errorf("error when acquiring parallel lock: %w", limitErr)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Request canceled or timed out.")
+
+		return nil
+	}
+
+	defer postSandboxParallelLimit.Release(1)
+	telemetry.ReportEvent(ctx, "create sandbox parallel limit semaphore slot acquired")
 
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
