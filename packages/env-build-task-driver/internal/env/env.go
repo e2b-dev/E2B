@@ -169,29 +169,6 @@ func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Cli
 		return errMsg
 	}
 
-	defer func() {
-		go func() {
-			pushContext, pushSpan := tracer.Start(
-				trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
-				"push-docker-image-and-cleanup",
-			)
-			defer pushSpan.End()
-
-			if err != nil {
-				// We will not push the docker image if we failed to create the rootfs.
-				return
-			}
-
-			err := rootfs.pushDockerImage(pushContext, tracer)
-			if err != nil {
-				errMsg := fmt.Errorf("error pushing docker image: %w", err)
-				telemetry.ReportCriticalError(pushContext, errMsg)
-			} else {
-				telemetry.ReportEvent(pushContext, "pushed docker image")
-			}
-		}()
-	}()
-
 	network, err := NewFCNetwork(childCtx, tracer, e)
 	if err != nil {
 		errMsg := fmt.Errorf("error network setup for FC while building env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)

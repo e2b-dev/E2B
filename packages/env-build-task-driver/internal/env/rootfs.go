@@ -69,25 +69,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		env:          env,
 	}
 
-	network, err := rootfs.client.NetworkCreate(childCtx, env.BuildID, types.NetworkCreate{})
-	if err != nil {
-		errMsg := fmt.Errorf("error creating network: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return nil, errMsg
-	}
-
-	defer func() {
-		err = rootfs.client.NetworkRemove(childCtx, network.ID)
-		if err != nil {
-			errMsg := fmt.Errorf("error removing network: %w", err)
-			telemetry.ReportError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "removed network")
-		}
-	}()
-
-	err = rootfs.buildDockerImage(childCtx, tracer, network.ID)
+	err := rootfs.pullDockerImage(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image: %w", err)
 
@@ -96,7 +78,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		return nil, errMsg
 	}
 
-	err = rootfs.createRootfsFile(childCtx, tracer, network.ID)
+	err = rootfs.createRootfsFile(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs file: %w", err)
 
@@ -108,72 +90,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	return rootfs, nil
 }
 
-func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer, networkName string) error {
-	childCtx, childSpan := tracer.Start(ctx, "build-docker-image")
-	defer childSpan.End()
-
-	dockerContextFile, err := os.Open(r.env.DockerContextPath())
-	if err != nil {
-		errMsg := fmt.Errorf("error opening docker context file: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "opened docker context file")
-
-	defer func() {
-		closeErr := dockerContextFile.Close()
-		if closeErr != nil {
-			// We can probably disregard 'already closed' error if we are reading file from gcsfuse bucket because gcsfuse files behave this way - they look closed after reading
-			errMsg := fmt.Errorf("error closing docker context file (we can probably disregard 'already closed' error if we are reading file from gcsfuse bucket because gcsfuse files behave this way): %w", closeErr)
-			telemetry.ReportError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "closed docker context file")
-		}
-	}()
-
-	buildCtx, cancel := context.WithCancel(childCtx)
-	defer cancel()
-
-	innerBuildCtx, innerBuildSpan := tracer.Start(buildCtx, "build-docker-image-logs")
-	defer innerBuildSpan.End()
-
-	buildOutputWriter := telemetry.NewEventWriter(innerBuildCtx, "docker-build-output")
-	writer := &MultiWriter{
-		writers: []io.Writer{buildOutputWriter, r.env.BuildLogsWriter},
-	}
-
-	err = r.legacyClient.BuildImage(docker.BuildImageOptions{
-		NetworkMode:  networkName,
-		Memory:       r.env.MemoryMB << ToMBShift,
-		CPUPeriod:    100000,
-		CPUQuota:     r.env.VCpuCount * 100000,
-		Context:      buildCtx,
-		Dockerfile:   dockerfileName,
-		InputStream:  dockerContextFile,
-		OutputStream: writer,
-		Name:         r.dockerTag(),
-		Pull:         true,
-	})
-
-	if err != nil {
-		r.env.BuildLogsWriter.Write([]byte(err.Error() + "\n"))
-		r.env.BuildLogsWriter.Write([]byte("Build failed, received error while building docker image.\n"))
-
-		errMsg := fmt.Errorf("error building docker image for env: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	r.env.BuildLogsWriter.Write([]byte("\nRunning postprocessing. It can take up to few minutes.\n\n"))
-	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("docker.image.tag", r.dockerTag()))
-
-	return nil
-}
-
-func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error {
+func (r *Rootfs) pullDockerImage(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "push-docker-image")
 	defer childSpan.End()
 
@@ -191,11 +108,11 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 
 	authConfigBase64 := base64.URLEncoding.EncodeToString(authConfigBytes)
 
-	logs, err := r.client.ImagePush(childCtx, r.dockerTag(), types.ImagePushOptions{
+	logs, err := r.client.ImagePull(childCtx, r.dockerTag(), types.ImagePullOptions{
 		RegistryAuth: authConfigBase64,
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error pushing image: %w", err)
+		errMsg := fmt.Errorf("error pulling image: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -217,7 +134,7 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 		return errMsg
 	}
 
-	telemetry.ReportEvent(childCtx, "pushed image")
+	telemetry.ReportEvent(childCtx, "pulled image")
 
 	return nil
 }
@@ -242,10 +159,30 @@ func (r *Rootfs) dockerTag() string {
 	return r.env.DockerRegistry + "/" + r.env.EnvID + ":" + r.env.BuildID
 }
 
-func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, networkName string) error {
+func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
 
+	//
+	//
+	//network, err := rootfs.client.NetworkCreate(childCtx, env.BuildID, types.NetworkCreate{})
+	//if err != nil {
+	//	errMsg := fmt.Errorf("error creating network: %w", err)
+	//	telemetry.ReportCriticalError(childCtx, errMsg)
+	//
+	//	return nil, errMsg
+	//}
+	//
+	//defer func() {
+	//	err = rootfs.client.NetworkRemove(childCtx, network.ID)
+	//	if err != nil {
+	//		errMsg := fmt.Errorf("error removing network: %w", err)
+	//		telemetry.ReportError(childCtx, errMsg)
+	//	} else {
+	//		telemetry.ReportEvent(childCtx, "removed network")
+	//	}
+	//}()
+	//
 	var scriptDef bytes.Buffer
 
 	err := EnvInstanceTemplate.Execute(&scriptDef, struct {
@@ -290,7 +227,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		CapAdd:      []string{"CHOWN", "DAC_OVERRIDE", "FSETID", "FOWNER", "SETGID", "SETUID", "NET_RAW", "SYS_CHROOT"},
 		CapDrop:     []string{"ALL"},
 		// TODO: Network mode is causing problems with /etc/hosts - we want to find a way to fix this and enable network mode again
-		// NetworkMode: container.NetworkMode(networkName),
+		// NetworkMode: container.NetworkMode(network.ID),
 		Resources: container.Resources{
 			Memory:     r.env.MemoryMB << ToMBShift,
 			CPUPeriod:  100000,
