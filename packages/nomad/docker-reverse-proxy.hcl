@@ -1,3 +1,5 @@
+# TODO: Rewrite everything to variables
+
 variable "gcp_zone" {
   type    = string
   default = "us-central1-a"
@@ -14,6 +16,15 @@ variable "port_number" {
   default = 0
 }
 
+variable "postgres_connection_string" {
+  type    = string
+  default = ""
+}
+
+variable "google_service_account_secret" {
+  type    = string
+  default = ""
+}
 
 job "docker-reverse-proxy" {
   datacenters = [var.gcp_zone]
@@ -49,9 +60,11 @@ job "docker-reverse-proxy" {
         memory_max = 1024
         cpu        = 512
       }
-#
-#      env {
-#      }
+
+      env {
+        POSTGRES_CONNECTION_STRING = var.postgres_connection_string
+        GOOGLE_SERVICE_ACCOUNT_SECRET = var.google_service_account_secret
+      }
 
       config {
         network_mode = "host"

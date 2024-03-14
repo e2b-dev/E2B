@@ -41,6 +41,7 @@ locals {
       }
       groups = [{ group = var.client_instance_group }]
     }
+#    TODO: Change values to variables
     docker-reverse-proxy = {
       protocol                        = "HTTP"
       port                            = 5000
@@ -174,6 +175,7 @@ resource "google_compute_url_map" "orch_map" {
     path_matcher = "api-paths"
   }
 
+#  TODO: Change values to variables
   host_rule {
     hosts = [
       "docker.${var.domain_name}",
