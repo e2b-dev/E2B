@@ -7,6 +7,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/team"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/teamapikey"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/user"
@@ -28,27 +29,37 @@ func init() {
 	// env.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	env.DefaultUpdatedAt = envDescUpdatedAt.Default.(func() time.Time)
 	// envDescBuildCount is the schema descriptor for build_count field.
-	envDescBuildCount := envFields[7].Descriptor()
+	envDescBuildCount := envFields[5].Descriptor()
 	// env.DefaultBuildCount holds the default value on creation for the build_count field.
 	env.DefaultBuildCount = envDescBuildCount.Default.(int32)
 	// envDescSpawnCount is the schema descriptor for spawn_count field.
-	envDescSpawnCount := envFields[8].Descriptor()
+	envDescSpawnCount := envFields[6].Descriptor()
 	// env.DefaultSpawnCount holds the default value on creation for the spawn_count field.
 	env.DefaultSpawnCount = envDescSpawnCount.Default.(int64)
-	// envDescKernelVersion is the schema descriptor for kernel_version field.
-	envDescKernelVersion := envFields[14].Descriptor()
-	// env.DefaultKernelVersion holds the default value on creation for the kernel_version field.
-	env.DefaultKernelVersion = envDescKernelVersion.Default.(string)
-	// envDescFirecrackerVersion is the schema descriptor for firecracker_version field.
-	envDescFirecrackerVersion := envFields[15].Descriptor()
-	// env.DefaultFirecrackerVersion holds the default value on creation for the firecracker_version field.
-	env.DefaultFirecrackerVersion = envDescFirecrackerVersion.Default.(string)
 	envaliasFields := schema.EnvAlias{}.Fields()
 	_ = envaliasFields
 	// envaliasDescIsName is the schema descriptor for is_name field.
 	envaliasDescIsName := envaliasFields[2].Descriptor()
 	// envalias.DefaultIsName holds the default value on creation for the is_name field.
 	envalias.DefaultIsName = envaliasDescIsName.Default.(bool)
+	envbuildFields := schema.EnvBuild{}.Fields()
+	_ = envbuildFields
+	// envbuildDescCreatedAt is the schema descriptor for created_at field.
+	envbuildDescCreatedAt := envbuildFields[1].Descriptor()
+	// envbuild.DefaultCreatedAt holds the default value on creation for the created_at field.
+	envbuild.DefaultCreatedAt = envbuildDescCreatedAt.Default.(func() time.Time)
+	// envbuildDescUpdatedAt is the schema descriptor for updated_at field.
+	envbuildDescUpdatedAt := envbuildFields[2].Descriptor()
+	// envbuild.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	envbuild.DefaultUpdatedAt = envbuildDescUpdatedAt.Default.(func() time.Time)
+	// envbuildDescKernelVersion is the schema descriptor for kernel_version field.
+	envbuildDescKernelVersion := envbuildFields[10].Descriptor()
+	// envbuild.DefaultKernelVersion holds the default value on creation for the kernel_version field.
+	envbuild.DefaultKernelVersion = envbuildDescKernelVersion.Default.(string)
+	// envbuildDescFirecrackerVersion is the schema descriptor for firecracker_version field.
+	envbuildDescFirecrackerVersion := envbuildFields[11].Descriptor()
+	// envbuild.DefaultFirecrackerVersion holds the default value on creation for the firecracker_version field.
+	envbuild.DefaultFirecrackerVersion = envbuildDescFirecrackerVersion.Default.(string)
 	teamFields := schema.Team{}.Fields()
 	_ = teamFields
 	// teamDescCreatedAt is the schema descriptor for created_at field.

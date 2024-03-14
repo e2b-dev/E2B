@@ -15,6 +15,7 @@ func ErrorHandler(c *gin.Context, message string, statusCode int) {
 
 	ctx := c.Request.Context()
 
+	// TODO: If old template request -> Update CLI
 	data, err := c.GetRawData()
 	if err == nil {
 		errMsg = fmt.Errorf("OpenAPI validation error: %s, data: %s", message, data)

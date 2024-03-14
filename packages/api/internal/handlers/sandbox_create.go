@@ -60,21 +60,12 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 	team := c.Value(constants.TeamContextKey).(models.Team)
 
 	// Check if team has access to the environment
-	env, kernelVersion, firecrackerVersion, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
+	env, kernelVersion, firecrackerVersion, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
 		errMsg := fmt.Errorf("error when checking team access: %w", checkErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", checkErr))
-
-		return nil
-	}
-
-	if !hasAccess {
-		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", team.ID, env.TemplateID)
-		telemetry.ReportError(ctx, errMsg)
-
-		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
 
 		return nil
 	}

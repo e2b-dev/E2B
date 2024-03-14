@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
-
-	"github.com/google/uuid"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 func (db *DB) DeleteEnv(ctx context.Context, envID string) error {
@@ -32,9 +34,15 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Temp
 		Client.
 		Env.
 		Query().
-		Where(env.Or(env.TeamID(teamID), env.Public(true))).
+		Where(
+			env.Or(env.TeamID(teamID), env.Public(true)),
+			env.HasBuildsWith(envbuild.StatusEQ(envbuild.StatusSuccess)),
+		).
 		Order(models.Asc(env.FieldCreatedAt)).
 		WithEnvAliases().
+		WithBuilds(func(query *models.EnvBuildQuery) {
+			query.Where(envbuild.StatusEQ(envbuild.StatusSuccess)).Order(models.Desc(envbuild.FieldFinishedAt)).Limit(1)
+		}).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list envs: %w", err)
@@ -46,9 +54,10 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Temp
 			aliases[i] = alias.ID
 		}
 
+		build := item.Edges.Builds[0]
 		result = append(result, &api.Template{
 			TemplateID: item.ID,
-			BuildID:    item.BuildID.String(),
+			BuildID:    build.ID.String(),
 			Public:     item.Public,
 			Aliases:    &aliases,
 		})
@@ -64,11 +73,23 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 		Client.
 		Env.
 		Query().
-		Where(env.Or(env.HasEnvAliasesWith(envalias.ID(aliasOrEnvID)), env.ID(aliasOrEnvID)), env.Or(env.TeamID(teamID), env.Public(true))).
+		Where(
+			env.Or(
+				env.HasEnvAliasesWith(envalias.ID(aliasOrEnvID)),
+				env.ID(aliasOrEnvID),
+			),
+			env.Or(
+				env.TeamID(teamID),
+				env.Public(true),
+			),
+			env.HasBuildsWith(envbuild.StatusEQ(envbuild.StatusSuccess)),
+		).
 		WithEnvAliases(func(query *models.EnvAliasQuery) {
 			query.Order(models.Asc(envalias.FieldID)) // TODO: remove once we have only 1 alias per env
 		}).
-		Only(ctx)
+		WithBuilds(func(query *models.EnvBuildQuery) {
+			query.Where(envbuild.StatusEQ(envbuild.StatusSuccess)).Order(models.Desc(envbuild.FieldFinishedAt)).Limit(1)
+		}).Only(ctx)
 
 	notFound := models.IsNotFound(err)
 	if notFound {
@@ -86,12 +107,13 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 		aliases[i] = alias.ID
 	}
 
+	build := dbEnv.Edges.Builds[0]
 	return &api.Template{
 		TemplateID: dbEnv.ID,
-		BuildID:    dbEnv.BuildID.String(),
+		BuildID:    build.ID.String(),
 		Public:     dbEnv.Public,
 		Aliases:    &aliases,
-	}, dbEnv.KernelVersion, dbEnv.FirecrackerVersion, nil
+	}, build.KernelVersion, build.FirecrackerVersion, nil
 }
 
 func (db *DB) UpsertEnv(
@@ -99,39 +121,29 @@ func (db *DB) UpsertEnv(
 	teamID uuid.UUID,
 	envID string,
 	buildID uuid.UUID,
-	dockerfile string,
 	vCPU,
 	ramMB,
-	freeDiskSizeMB,
-	totalDiskSizeMB int64,
+	freeDiskSizeMB int64,
 	kernelVersion,
 	firecrackerVersion string,
 ) error {
-	err := db.
-		Client.
+	tx, err := db.Client.Tx(ctx)
+	if err != nil {
+		err = fmt.Errorf("error when starting transaction: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.
 		Env.
 		Create().
 		SetID(envID).
-		SetBuildID(buildID).
 		SetTeamID(teamID).
-		SetDockerfile(dockerfile).
 		SetPublic(false).
-		SetRAMMB(ramMB).
-		SetVcpu(vCPU).
-		SetKernelVersion(kernelVersion).
-		SetFirecrackerVersion(firecrackerVersion).
-		SetFreeDiskSizeMB(freeDiskSizeMB).
-		SetTotalDiskSizeMB(totalDiskSizeMB).
 		OnConflictColumns(env.FieldID).
-		UpdateBuildID().
-		UpdateDockerfile().
 		UpdateUpdatedAt().
-		UpdateVcpu().
-		UpdateRAMMB().
-		UpdateKernelVersion().
-		UpdateFirecrackerVersion().
-		UpdateFreeDiskSizeMB().
-		UpdateTotalDiskSizeMB().
 		Update(func(e *models.EnvUpsert) {
 			e.AddBuildCount(1)
 		}).
@@ -142,16 +154,34 @@ func (db *DB) UpsertEnv(
 		return errMsg
 	}
 
+	err = tx.EnvBuild.Create().
+		SetID(buildID).
+		SetEnvID(envID).
+		SetStatus(envbuild.StatusWaiting).
+		SetRAMMB(ramMB).
+		SetVcpu(vCPU).
+		SetKernelVersion(kernelVersion).
+		SetFirecrackerVersion(firecrackerVersion).
+		SetFreeDiskSizeMB(freeDiskSizeMB).
+		Exec(ctx)
+	err = tx.Commit()
+	if err != nil {
+		err = fmt.Errorf("error when committing transaction: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		return err
+	}
+
 	return nil
 }
 
-func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *api.Template, kernelVersion, firecrackerVersion string, hasAccess bool, err error) {
+func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *api.Template, kernelVersion, firecrackerVersion string, err error) {
 	envDB, kernelVersion, firecrackerVersion, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
 	if err != nil {
-		return nil, "", "", false, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
+		return nil, "", "", fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}
 
-	return envDB, kernelVersion, firecrackerVersion, true, nil
+	return envDB, kernelVersion, firecrackerVersion, nil
 }
 
 func (db *DB) UpdateEnvLastUsed(ctx context.Context, envID string) (err error) {

@@ -154,6 +154,23 @@ components:
           items:
             type: string
 
+    TemplateBuildRequest:
+      properties:
+          alias:
+            description: Alias of the template
+            type: string
+          startCmd:
+            description: Start command to execute in the template after the build
+            type: string
+          cpuCount:
+            description: CPU cores for the template
+            type: integer
+            minimum: 1
+          memoryMB:
+            description: Memory limit for the template in MB
+            type: integer
+            minimum: 128
+
     TemplateBuild:
       required:
         - templateID
@@ -329,39 +346,13 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              type: object
-              required:
-                - buildContext
-                - dockerfile
-              properties:
-                alias:
-                  description: Alias of the template
-                  type: string
-                buildContext:
-                  description: Docker build context
-                  type: string
-                  format: binary
-                dockerfile:
-                  type: string
-                  description: Dockerfile content
-                startCmd:
-                  description: Start command to execute in the template after the build
-                  type: string
-                cpuCount:
-                  description: CPU cores for the template
-                  type: string  # form data does not support integer
-                memoryMB:
-                  description: Memory limit for the template in MB
-                  type: string  # form data does not support integer
-            encoding:
-              buildContext:
-                contentType: application/octet-stream
+              $ref: "#/components/schemas/TemplateBuildRequest"
 
       responses:
         202:
-          description: The build has started
+          description: The build was accepted
           content:
             application/json:
               schema:
@@ -382,39 +373,13 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              type: object
-              required:
-                - buildContext
-                - dockerfile
-              properties:
-                alias:
-                  description: Alias of the template
-                  type: string
-                buildContext:
-                  description: Docker build context
-                  type: string
-                  format: binary
-                dockerfile:
-                  type: string
-                  description: Dockerfile content
-                startCmd:
-                  description: Start command to execute in the template after the build
-                  type: string
-                cpuCount:
-                  description: CPU cores for the template
-                  type: string  # form data does not support integer
-                memoryMB:
-                  description: Memory limit for the template in MB
-                  type: string  # form data does not support integer
-            encoding:
-              buildContext:
-                contentType: application/octet-stream
+              $ref: "#/components/schemas/TemplateBuildRequest"
 
       responses:
         202:
-          description: The build has started
+          description: The build was accepted
           content:
             application/json:
               schema:
@@ -466,6 +431,21 @@ paths:
           $ref: "#/components/responses/404"
         500:
           $ref: "#/components/responses/500"
+    post:
+      description: Start the build
+      tags: [templates]
+      security:
+          - AccessTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/buildID"
+      responses:
+        202:
+          description: The build has started
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
 
   /templates/{templateID}/builds/{buildID}/logs:
     post:
@@ -473,193 +453,6 @@ paths:
       tags: [templates]
       parameters:
         - $ref: "#/components/parameters/templateID"
-        - $ref: "#/components/parameters/buildID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - apiSecret
-                - logs
-              properties:
-                apiSecret:
-                  description: API secret
-                  type: string
-                logs:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        201:
-          description: Successfully added log
-        401:
-          $ref: "#/components/responses/401"
-        404:
-          $ref: "#/components/responses/404"
-
-  #  ------ Deprecated --------
-  /envs:
-    get:
-      description: List all environments
-      tags: [envs]
-      security:
-        - AccessTokenAuth: []
-      responses:
-        200:
-          description: Successfully returned all environments
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  allOf:
-                    - $ref: "#/components/schemas/Environment"
-        401:
-          $ref: "#/components/responses/401"
-        500:
-          $ref: "#/components/responses/500"
-    post:
-      description: Create a new environment
-      tags: [envs]
-      security:
-        - AccessTokenAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - buildContext
-                - dockerfile
-              properties:
-                alias:
-                  description: Alias of the environment
-                  type: string
-                buildContext:
-                  description: Docker build context
-                  type: string
-                  format: binary
-                dockerfile:
-                  type: string
-                  description: Dockerfile content
-                startCmd:
-                  description: Start command to execute in the template after the build
-                  type: string
-            encoding:
-              buildContext:
-                contentType: application/octet-stream
-
-      responses:
-        202:
-          description: The build has started
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Environment"
-        401:
-          $ref: "#/components/responses/401"
-        500:
-          $ref: "#/components/responses/500"
-
-  /envs/{envID}:
-    post:
-      description: Rebuild an environment
-      tags: [envs]
-      security:
-        - AccessTokenAuth: []
-      parameters:
-        - $ref: "#/components/parameters/envID"
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - buildContext
-                - dockerfile
-              properties:
-                alias:
-                  description: Alias of the environment
-                  type: string
-                buildContext:
-                  description: Docker build context
-                  type: string
-                  format: binary
-                dockerfile:
-                  type: string
-                  description: Dockerfile content
-                startCmd:
-                  description: Start command to execute in the template after the build
-                  type: string
-            encoding:
-              buildContext:
-                contentType: application/octet-stream
-
-      responses:
-        202:
-          description: The build has started
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Environment"
-        401:
-          $ref: "#/components/responses/401"
-        500:
-          $ref: "#/components/responses/500"
-    delete:
-      description: Delete an environment
-      tags: [envs]
-      security:
-        - AccessTokenAuth: []
-      parameters:
-        - $ref: "#/components/parameters/envID"
-      responses:
-        204:
-          description: The environment was deleted successfully
-        401:
-          $ref: "#/components/responses/401"
-        500:
-          $ref: "#/components/responses/500"
-
-  /envs/{envID}/builds/{buildID}:
-    get:
-      description: Get environment build info
-      tags: [envs]
-      security:
-        - AccessTokenAuth: []
-      parameters:
-        - $ref: "#/components/parameters/envID"
-        - $ref: "#/components/parameters/buildID"
-        - in: query
-          name: logsOffset
-          schema:
-            default: 0
-            type: integer
-          description: Index of the starting build log that should be returned with the environment
-      responses:
-        200:
-          description: Successfully returned the environment
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EnvironmentBuild"
-        401:
-          $ref: "#/components/responses/401"
-        404:
-          $ref: "#/components/responses/404"
-        500:
-          $ref: "#/components/responses/500"
-
-  /envs/{envID}/builds/{buildID}/logs:
-    post:
-      description: Add a build log
-      tags: [envs]
-      parameters:
-        - $ref: "#/components/parameters/envID"
         - $ref: "#/components/parameters/buildID"
       requestBody:
         required: true

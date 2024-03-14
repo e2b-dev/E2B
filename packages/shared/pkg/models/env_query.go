@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/internal"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/predicate"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/team"
@@ -28,6 +29,7 @@ type EnvQuery struct {
 	predicates     []predicate.Env
 	withTeam       *TeamQuery
 	withEnvAliases *EnvAliasQuery
+	withBuilds     *EnvBuildQuery
 	modifiers      []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -109,6 +111,31 @@ func (eq *EnvQuery) QueryEnvAliases() *EnvAliasQuery {
 		schemaConfig := eq.schemaConfig
 		step.To.Schema = schemaConfig.EnvAlias
 		step.Edge.Schema = schemaConfig.EnvAlias
+		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBuilds chains the current query on the "builds" edge.
+func (eq *EnvQuery) QueryBuilds() *EnvBuildQuery {
+	query := (&EnvBuildClient{config: eq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := eq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := eq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(env.Table, env.FieldID, selector),
+			sqlgraph.To(envbuild.Table, envbuild.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, env.BuildsTable, env.BuildsColumn),
+		)
+		schemaConfig := eq.schemaConfig
+		step.To.Schema = schemaConfig.EnvBuild
+		step.Edge.Schema = schemaConfig.EnvBuild
 		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
 		return fromU, nil
 	}
@@ -309,6 +336,7 @@ func (eq *EnvQuery) Clone() *EnvQuery {
 		predicates:     append([]predicate.Env{}, eq.predicates...),
 		withTeam:       eq.withTeam.Clone(),
 		withEnvAliases: eq.withEnvAliases.Clone(),
+		withBuilds:     eq.withBuilds.Clone(),
 		// clone intermediate query.
 		sql:  eq.sql.Clone(),
 		path: eq.path,
@@ -334,6 +362,17 @@ func (eq *EnvQuery) WithEnvAliases(opts ...func(*EnvAliasQuery)) *EnvQuery {
 		opt(query)
 	}
 	eq.withEnvAliases = query
+	return eq
+}
+
+// WithBuilds tells the query-builder to eager-load the nodes that are connected to
+// the "builds" edge. The optional arguments are used to configure the query builder of the edge.
+func (eq *EnvQuery) WithBuilds(opts ...func(*EnvBuildQuery)) *EnvQuery {
+	query := (&EnvBuildClient{config: eq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	eq.withBuilds = query
 	return eq
 }
 
@@ -415,9 +454,10 @@ func (eq *EnvQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Env, err
 	var (
 		nodes       = []*Env{}
 		_spec       = eq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			eq.withTeam != nil,
 			eq.withEnvAliases != nil,
+			eq.withBuilds != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -453,6 +493,13 @@ func (eq *EnvQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Env, err
 		if err := eq.loadEnvAliases(ctx, query, nodes,
 			func(n *Env) { n.Edges.EnvAliases = []*EnvAlias{} },
 			func(n *Env, e *EnvAlias) { n.Edges.EnvAliases = append(n.Edges.EnvAliases, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := eq.withBuilds; query != nil {
+		if err := eq.loadBuilds(ctx, query, nodes,
+			func(n *Env) { n.Edges.Builds = []*EnvBuild{} },
+			func(n *Env, e *EnvBuild) { n.Edges.Builds = append(n.Edges.Builds, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -503,6 +550,39 @@ func (eq *EnvQuery) loadEnvAliases(ctx context.Context, query *EnvAliasQuery, no
 	}
 	query.Where(predicate.EnvAlias(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(env.EnvAliasesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EnvID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "env_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "env_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (eq *EnvQuery) loadBuilds(ctx context.Context, query *EnvBuildQuery, nodes []*Env, init func(*Env), assign func(*Env, *EnvBuild)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Env)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(envbuild.FieldEnvID)
+	}
+	query.Where(predicate.EnvBuild(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(env.BuildsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

@@ -232,7 +232,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	return deleteInstance(a.Ctx, a.nomad, a.analytics, a.posthog, a.logger, info, purge)
 }
 
-func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, kernelVersion, firecrackerVersion string, hasAccess bool, err error) {
+func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, kernelVersion, firecrackerVersion string, err error) {
 	return a.supabase.HasEnvAccess(ctx, aliasOrEnvID, teamID, public)
 }
 

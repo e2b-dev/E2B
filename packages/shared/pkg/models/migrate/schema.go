@@ -34,18 +34,10 @@ var (
 		{Name: "id", Type: field.TypeString, Unique: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "dockerfile", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "public", Type: field.TypeBool, Default: "false"},
-		{Name: "build_id", Type: field.TypeUUID},
 		{Name: "build_count", Type: field.TypeInt32, Default: 1},
 		{Name: "spawn_count", Type: field.TypeInt64, Comment: "Number of times the env was spawned", Default: 0},
 		{Name: "last_spawned_at", Type: field.TypeTime, Nullable: true, Comment: "Timestamp of the last time the env was spawned"},
-		{Name: "vcpu", Type: field.TypeInt64},
-		{Name: "ram_mb", Type: field.TypeInt64},
-		{Name: "free_disk_size_mb", Type: field.TypeInt64},
-		{Name: "total_disk_size_mb", Type: field.TypeInt64},
-		{Name: "kernel_version", Type: field.TypeString, Default: "vmlinux-5.10.186"},
-		{Name: "firecracker_version", Type: field.TypeString, Default: "v1.7.0-dev_8bb88311"},
 		{Name: "team_id", Type: field.TypeUUID},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
@@ -56,7 +48,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "envs_teams_envs",
-				Columns:    []*schema.Column{EnvsColumns[15]},
+				Columns:    []*schema.Column{EnvsColumns[7]},
 				RefColumns: []*schema.Column{TeamsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -77,6 +69,35 @@ var (
 			{
 				Symbol:     "env_aliases_envs_env_aliases",
 				Columns:    []*schema.Column{EnvAliasesColumns[2]},
+				RefColumns: []*schema.Column{EnvsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// EnvBuildsColumns holds the columns for the "env_builds" table.
+	EnvBuildsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"waiting", "building", "failed", "success"}, Default: "waiting"},
+		{Name: "vcpu", Type: field.TypeInt64},
+		{Name: "ram_mb", Type: field.TypeInt64},
+		{Name: "free_disk_size_mb", Type: field.TypeInt64},
+		{Name: "total_disk_size_mb", Type: field.TypeInt64, Nullable: true},
+		{Name: "kernel_version", Type: field.TypeString, Default: "vmlinux-5.10.186"},
+		{Name: "firecracker_version", Type: field.TypeString, Default: "v1.7.0-dev_8bb88311"},
+		{Name: "env_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+	}
+	// EnvBuildsTable holds the schema information for the "env_builds" table.
+	EnvBuildsTable = &schema.Table{
+		Name:       "env_builds",
+		Columns:    EnvBuildsColumns,
+		PrimaryKey: []*schema.Column{EnvBuildsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "env_builds_envs_builds",
+				Columns:    []*schema.Column{EnvBuildsColumns[11]},
 				RefColumns: []*schema.Column{EnvsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -191,6 +212,7 @@ var (
 		AccessTokensTable,
 		EnvsTable,
 		EnvAliasesTable,
+		EnvBuildsTable,
 		TeamsTable,
 		TeamAPIKeysTable,
 		TiersTable,
@@ -208,6 +230,8 @@ func init() {
 	EnvAliasesTable.Annotation = &entsql.Annotation{
 		Table: "env_aliases",
 	}
+	EnvBuildsTable.ForeignKeys[0].RefTable = EnvsTable
+	EnvBuildsTable.Annotation = &entsql.Annotation{}
 	TeamsTable.ForeignKeys[0].RefTable = TiersTable
 	TeamsTable.Annotation = &entsql.Annotation{}
 	TeamAPIKeysTable.ForeignKeys[0].RefTable = TeamsTable
