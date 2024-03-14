@@ -95,17 +95,20 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		attribute.String("env.firecracker.version", firecrackerVersion),
 	)
 
-	telemetry.ReportEvent(ctx, "waiting for parallel lock")
+	telemetry.ReportEvent(ctx, "waiting for create sandbox parallel limit semaphore slot")
+
 	limitErr := postSandboxParallelLimit.Acquire(ctx, 1)
 	if limitErr != nil {
 		errMsg := fmt.Errorf("error when acquiring parallel lock: %w", limitErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
-		a.sendAPIStoreError(c, http.StatusInternalServerError, "Too many requests")
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Request canceled or timed out.")
+
+		return nil
 	}
 
 	defer postSandboxParallelLimit.Release(1)
-	telemetry.ReportEvent(ctx, "parallel lock passed")
+	telemetry.ReportEvent(ctx, "create sandbox parallel limit semaphore slot acquired")
 
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
