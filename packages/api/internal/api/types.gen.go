@@ -5,20 +5,11 @@ package api
 
 import (
 	"time"
-
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
 	AccessTokenAuthScopes = "AccessTokenAuth.Scopes"
 	ApiKeyAuthScopes      = "ApiKeyAuth.Scopes"
-)
-
-// Defines values for EnvironmentBuildStatus.
-const (
-	EnvironmentBuildStatusBuilding EnvironmentBuildStatus = "building"
-	EnvironmentBuildStatusError    EnvironmentBuildStatus = "error"
-	EnvironmentBuildStatusReady    EnvironmentBuildStatus = "ready"
 )
 
 // Defines values for TemplateBuildStatus.
@@ -27,39 +18,6 @@ const (
 	TemplateBuildStatusError    TemplateBuildStatus = "error"
 	TemplateBuildStatusReady    TemplateBuildStatus = "ready"
 )
-
-// Environment defines model for Environment.
-type Environment struct {
-	// Aliases Aliases of the environment
-	Aliases *[]string `json:"aliases,omitempty"`
-
-	// BuildID Identifier of the last successful build for given environment
-	BuildID string `json:"buildID"`
-
-	// EnvID Identifier of the environment
-	EnvID string `json:"envID"`
-
-	// Public Whether the environment is public or only accessible by the team
-	Public bool `json:"public"`
-}
-
-// EnvironmentBuild defines model for EnvironmentBuild.
-type EnvironmentBuild struct {
-	// BuildID Identifier of the build
-	BuildID string `json:"buildID"`
-
-	// EnvID Identifier of the environment
-	EnvID string `json:"envID"`
-
-	// Logs Build logs
-	Logs []string `json:"logs"`
-
-	// Status Status of the environment
-	Status *EnvironmentBuildStatus `json:"status,omitempty"`
-}
-
-// EnvironmentBuildStatus Status of the environment
-type EnvironmentBuildStatus string
 
 // Error defines model for Error.
 type Error struct {
@@ -70,50 +28,12 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-// Instance defines model for Instance.
-type Instance struct {
-	// ClientID Identifier of the client
-	ClientID string `json:"clientID"`
-
-	// EnvID Identifier of the environment from which is the instance created
-	EnvID string `json:"envID"`
-
-	// InstanceID Identifier of the instance
-	InstanceID string `json:"instanceID"`
-}
-
-// InstanceMetadata defines model for InstanceMetadata.
-type InstanceMetadata map[string]string
-
-// NewInstance defines model for NewInstance.
-type NewInstance struct {
-	// EnvID Identifier of the required environment
-	EnvID    string            `json:"envID"`
-	Metadata *InstanceMetadata `json:"metadata,omitempty"`
-}
-
 // NewSandbox defines model for NewSandbox.
 type NewSandbox struct {
 	Metadata *SandboxMetadata `json:"metadata,omitempty"`
 
 	// TemplateID Identifier of the required template
 	TemplateID string `json:"templateID"`
-}
-
-// RunningInstance defines model for RunningInstance.
-type RunningInstance struct {
-	// ClientID Identifier of the client
-	ClientID string `json:"clientID"`
-
-	// EnvID Identifier of the environment from which is the instance created
-	EnvID string `json:"envID"`
-
-	// InstanceID Identifier of the instance
-	InstanceID string            `json:"instanceID"`
-	Metadata   *InstanceMetadata `json:"metadata,omitempty"`
-
-	// StartedAt Time when the instance was started
-	StartedAt time.Time `json:"startedAt"`
 }
 
 // RunningSandboxes defines model for RunningSandboxes.
@@ -192,14 +112,23 @@ type TemplateBuild struct {
 // TemplateBuildStatus Status of the template
 type TemplateBuildStatus string
 
+// TemplateBuildRequest defines model for TemplateBuildRequest.
+type TemplateBuildRequest struct {
+	// Alias Alias of the template
+	Alias *string `json:"alias,omitempty"`
+
+	// CpuCount CPU cores for the template
+	CpuCount *int `json:"cpuCount,omitempty"`
+
+	// MemoryMB Memory limit for the template in MB
+	MemoryMB *int `json:"memoryMB,omitempty"`
+
+	// StartCmd Start command to execute in the template after the build
+	StartCmd *string `json:"startCmd,omitempty"`
+}
+
 // BuildID defines model for buildID.
 type BuildID = string
-
-// EnvID defines model for envID.
-type EnvID = string
-
-// InstanceID defines model for instanceID.
-type InstanceID = string
 
 // SandboxID defines model for sandboxID.
 type SandboxID = string
@@ -219,101 +148,10 @@ type N404 = Error
 // N500 defines model for 500.
 type N500 = Error
 
-// PostEnvsMultipartBody defines parameters for PostEnvs.
-type PostEnvsMultipartBody struct {
-	// Alias Alias of the environment
-	Alias *string `json:"alias,omitempty"`
-
-	// BuildContext Docker build context
-	BuildContext openapi_types.File `json:"buildContext"`
-
-	// Dockerfile Dockerfile content
-	Dockerfile string `json:"dockerfile"`
-
-	// StartCmd Start command to execute in the template after the build
-	StartCmd *string `json:"startCmd,omitempty"`
-}
-
-// PostEnvsEnvIDMultipartBody defines parameters for PostEnvsEnvID.
-type PostEnvsEnvIDMultipartBody struct {
-	// Alias Alias of the environment
-	Alias *string `json:"alias,omitempty"`
-
-	// BuildContext Docker build context
-	BuildContext openapi_types.File `json:"buildContext"`
-
-	// Dockerfile Dockerfile content
-	Dockerfile string `json:"dockerfile"`
-
-	// StartCmd Start command to execute in the template after the build
-	StartCmd *string `json:"startCmd,omitempty"`
-}
-
-// GetEnvsEnvIDBuildsBuildIDParams defines parameters for GetEnvsEnvIDBuildsBuildID.
-type GetEnvsEnvIDBuildsBuildIDParams struct {
-	// LogsOffset Index of the starting build log that should be returned with the environment
-	LogsOffset *int `form:"logsOffset,omitempty" json:"logsOffset,omitempty"`
-}
-
-// PostEnvsEnvIDBuildsBuildIDLogsJSONBody defines parameters for PostEnvsEnvIDBuildsBuildIDLogs.
-type PostEnvsEnvIDBuildsBuildIDLogsJSONBody struct {
-	// ApiSecret API secret
-	ApiSecret string   `json:"apiSecret"`
-	Logs      []string `json:"logs"`
-}
-
-// PostInstancesInstanceIDRefreshesJSONBody defines parameters for PostInstancesInstanceIDRefreshes.
-type PostInstancesInstanceIDRefreshesJSONBody struct {
-	// Duration Duration for which the instance should be kept alive in seconds
-	Duration *int `json:"duration,omitempty"`
-}
-
 // PostSandboxesSandboxIDRefreshesJSONBody defines parameters for PostSandboxesSandboxIDRefreshes.
 type PostSandboxesSandboxIDRefreshesJSONBody struct {
 	// Duration Duration for which the sandbox should be kept alive in seconds
 	Duration *int `json:"duration,omitempty"`
-}
-
-// PostTemplatesMultipartBody defines parameters for PostTemplates.
-type PostTemplatesMultipartBody struct {
-	// Alias Alias of the template
-	Alias *string `json:"alias,omitempty"`
-
-	// BuildContext Docker build context
-	BuildContext openapi_types.File `json:"buildContext"`
-
-	// CpuCount CPU cores for the template
-	CpuCount *string `json:"cpuCount,omitempty"`
-
-	// Dockerfile Dockerfile content
-	Dockerfile string `json:"dockerfile"`
-
-	// MemoryMB Memory limit for the template in MB
-	MemoryMB *string `json:"memoryMB,omitempty"`
-
-	// StartCmd Start command to execute in the template after the build
-	StartCmd *string `json:"startCmd,omitempty"`
-}
-
-// PostTemplatesTemplateIDMultipartBody defines parameters for PostTemplatesTemplateID.
-type PostTemplatesTemplateIDMultipartBody struct {
-	// Alias Alias of the template
-	Alias *string `json:"alias,omitempty"`
-
-	// BuildContext Docker build context
-	BuildContext openapi_types.File `json:"buildContext"`
-
-	// CpuCount CPU cores for the template
-	CpuCount *string `json:"cpuCount,omitempty"`
-
-	// Dockerfile Dockerfile content
-	Dockerfile string `json:"dockerfile"`
-
-	// MemoryMB Memory limit for the template in MB
-	MemoryMB *string `json:"memoryMB,omitempty"`
-
-	// StartCmd Start command to execute in the template after the build
-	StartCmd *string `json:"startCmd,omitempty"`
 }
 
 // GetTemplatesTemplateIDBuildsBuildIDParams defines parameters for GetTemplatesTemplateIDBuildsBuildID.
@@ -329,32 +167,17 @@ type PostTemplatesTemplateIDBuildsBuildIDLogsJSONBody struct {
 	Logs      []string `json:"logs"`
 }
 
-// PostEnvsMultipartRequestBody defines body for PostEnvs for multipart/form-data ContentType.
-type PostEnvsMultipartRequestBody PostEnvsMultipartBody
-
-// PostEnvsEnvIDMultipartRequestBody defines body for PostEnvsEnvID for multipart/form-data ContentType.
-type PostEnvsEnvIDMultipartRequestBody PostEnvsEnvIDMultipartBody
-
-// PostEnvsEnvIDBuildsBuildIDLogsJSONRequestBody defines body for PostEnvsEnvIDBuildsBuildIDLogs for application/json ContentType.
-type PostEnvsEnvIDBuildsBuildIDLogsJSONRequestBody PostEnvsEnvIDBuildsBuildIDLogsJSONBody
-
-// PostInstancesJSONRequestBody defines body for PostInstances for application/json ContentType.
-type PostInstancesJSONRequestBody = NewInstance
-
-// PostInstancesInstanceIDRefreshesJSONRequestBody defines body for PostInstancesInstanceIDRefreshes for application/json ContentType.
-type PostInstancesInstanceIDRefreshesJSONRequestBody PostInstancesInstanceIDRefreshesJSONBody
-
 // PostSandboxesJSONRequestBody defines body for PostSandboxes for application/json ContentType.
 type PostSandboxesJSONRequestBody = NewSandbox
 
 // PostSandboxesSandboxIDRefreshesJSONRequestBody defines body for PostSandboxesSandboxIDRefreshes for application/json ContentType.
 type PostSandboxesSandboxIDRefreshesJSONRequestBody PostSandboxesSandboxIDRefreshesJSONBody
 
-// PostTemplatesMultipartRequestBody defines body for PostTemplates for multipart/form-data ContentType.
-type PostTemplatesMultipartRequestBody PostTemplatesMultipartBody
+// PostTemplatesJSONRequestBody defines body for PostTemplates for application/json ContentType.
+type PostTemplatesJSONRequestBody = TemplateBuildRequest
 
-// PostTemplatesTemplateIDMultipartRequestBody defines body for PostTemplatesTemplateID for multipart/form-data ContentType.
-type PostTemplatesTemplateIDMultipartRequestBody PostTemplatesTemplateIDMultipartBody
+// PostTemplatesTemplateIDJSONRequestBody defines body for PostTemplatesTemplateID for application/json ContentType.
+type PostTemplatesTemplateIDJSONRequestBody = TemplateBuildRequest
 
 // PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody defines body for PostTemplatesTemplateIDBuildsBuildIDLogs for application/json ContentType.
 type PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody PostTemplatesTemplateIDBuildsBuildIDLogsJSONBody
