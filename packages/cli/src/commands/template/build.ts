@@ -7,7 +7,7 @@ import * as boxen from 'boxen'
 
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
-import { getFiles, getRoot } from 'src/utils/filesystem'
+import { getRoot } from 'src/utils/filesystem'
 import {
   asBold,
   asBuildLogs,
@@ -20,15 +20,26 @@ import {
   withDelimiter,
 } from 'src/utils/format'
 import { pathOption } from 'src/options'
-import { createBlobFromFiles } from 'src/docker/archive'
 import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
-import { configName, getConfigPath, loadConfig, maxContentSize, saveConfig } from 'src/config'
-import { estimateContentLength } from '../../utils/form'
+import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
+import * as child_process from 'child_process'
 
 const templateCheckInterval = 1_000 // 1 sec
 
 const getTemplate = e2b.withAccessToken(
   e2b.api.path('/templates/{templateID}/builds/{buildID}').method('get').create(),
+)
+
+const requestTemplateBuild = e2b.withAccessToken(
+  e2b.api.path('/templates').method('post').create(),
+)
+
+const requestTemplateRebuild = e2b.withAccessToken(
+  e2b.api.path('/templates/{templateID}').method('post').create(),
+)
+
+const triggerTemplateBuild = e2b.withAccessToken(
+  e2b.api.path('/templates/{templateID}/builds/{buildID}').method('post').create(),
 )
 
 export const buildCommand = new commander.Command('build')
@@ -67,10 +78,12 @@ export const buildCommand = new commander.Command('build')
   .option(
     '--cpu-count <cpu-count>',
     'specify the number of CPUs that will be used to run the sandbox. The default value is 2.',
+            parseInt,
   )
   .option(
     '--memory-mb <memory-mb>',
     'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.',
+      parseInt,
   )
   .alias('bd')
   .action(
@@ -81,8 +94,8 @@ export const buildCommand = new commander.Command('build')
         dockerfile?: string;
         name?: string;
         cmd?: string;
-        cpuCount?: string;
-        memoryMb?: string;
+        cpuCount?: number;
+        memoryMb?: number;
       },
     ) => {
       try {
@@ -99,7 +112,8 @@ export const buildCommand = new commander.Command('build')
 
         let dockerfile = opts.dockerfile
         let startCmd = opts.cmd
-
+        let cpuCount= opts.cpuCount
+        let memoryMB = opts.memoryMb
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root)
@@ -123,6 +137,8 @@ export const buildCommand = new commander.Command('build')
           templateID = config.template_id
           dockerfile = opts.dockerfile || config.dockerfile
           startCmd = opts.cmd || config.start_cmd
+          cpuCount = opts.cpuCount || config.cpu_count
+          memoryMB = opts.memoryMb || config.memory_mb
         }
 
         if (config && templateID && config.template_id !== templateID) {
@@ -131,22 +147,12 @@ export const buildCommand = new commander.Command('build')
           process.exit(1)
         }
 
-        const filePaths = await getFiles(root, {
-          respectGitignore: false,
-          respectDockerignore: true,
-          overrideIgnoreFor: [dockerfile || defaultDockerfileName],
-        })
-
         if (newName && config?.template_name && newName !== config?.template_name) {
           console.log(
             `The sandbox template name will be changed from ${asLocal(config.template_name)} to ${asLocal(newName)}.`,
           )
         }
         const name = newName || config?.template_name
-
-        console.log(
-          `Preparing sandbox template building (${filePaths.length} files in Docker build context). ${!filePaths.length ? `If you are using ${asLocal('.dockerignore')} check if it is configured correctly.` : ''}`,
-        )
 
         const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
           root,
@@ -159,79 +165,53 @@ export const buildCommand = new commander.Command('build')
           )} that will be used to build the sandbox template.`,
         )
 
-        const body = new FormData()
-
-        body.append('dockerfile', dockerfileContent)
-
-        // It should be possible to pipe directly to the API
-        // instead of creating a blob in memory then streaming.
-        const blob = await createBlobFromFiles(
-          root,
-          filePaths,
-          dockerfileRelativePath !== fallbackDockerfileName
-            ? [
-              {
-                oldPath: dockerfileRelativePath,
-                newPath: fallbackDockerfileName,
-              },
-            ]
-            : [],
-          maxContentSize,
-        )
-        body.append('buildContext', blob, 'env.tar.gz.e2b')
-
-        if (name) {
-          body.append('alias', name)
-        }
-
-        if (startCmd) {
-          body.append('startCmd', startCmd)
-        }
-
-        if (opts.cpuCount) {
-          body.append('cpuCount', opts.cpuCount)
+        const body = {
+                alias: name,
+                startCmd: startCmd,
+                cpuCount: cpuCount,
+                memoryMB: memoryMB,
+                dockerfile: dockerfileContent,
         }
 
         if (opts.memoryMb) {
-          if (parseInt(opts.memoryMb) % 2 !== 0) {
+          if (opts.memoryMb % 2 !== 0) {
             console.error(
-              `The memory in megabytes must be an even number. You provided ${asLocal(opts.memoryMb)}.`,
+              `The memory in megabytes must be an even number. You provided ${asLocal(opts.memoryMb.toFixed(0))}.`,
             )
             process.exit(1)
           }
-
-          body.append('memoryMB', opts.memoryMb)
         }
 
-        const estimatedSize = estimateContentLength(body)
-        if (estimatedSize > maxContentSize) {
-          console.error(
-            `The sandbox template build context is too large ${asLocal(`${Math.round(estimatedSize / 1024 / 1024 * 100) / 100} MiB`)}. The maximum size is ${asLocal(
-              `${maxContentSize / 1024 / 1024} MiB.`)}\n\nCheck if you are not including unnecessary files in the build context (e.g. node_modules)`,
-          )
-          process.exit(1)
-        }
-
-        const build = await buildTemplate(accessToken, body, !!config, configPath, templateID)
+        const template = await requestBuildTemplate(accessToken, body, !!config, relativeConfigPath, templateID)
 
         console.log(
-          `Started building the sandbox template ${asFormattedSandboxTemplate(
-            build,
+          `Requested build for the sandbox template ${asFormattedSandboxTemplate(
+            template,
           )} `,
         )
-
-        await waitForBuildFinish(accessToken, build.templateID, build.buildID, name)
 
         await saveConfig(
           configPath,
           {
-            template_id: build.templateID,
+            template_id: template.templateID,
             dockerfile: dockerfileRelativePath,
             template_name: name,
             start_cmd: startCmd,
+            cpu_count: cpuCount,
+            memory_mb: memoryMB,
           },
           true,
         )
+
+        child_process.execSync(`echo ${accessToken} | docker login docker.e2b-staging.com -u _e2b_access_token --password-stdin`, { stdio: 'inherit', cwd: root})
+        child_process.execSync(`docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.e2b-staging.com/e2b-dev/e2b-custom-environments/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root})
+        child_process.execSync(`docker push docker.e2b-staging.com/e2b-dev/e2b-custom-environments/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root })
+
+        await triggerBuild(accessToken, template.templateID, template.buildID)
+
+        await waitForBuildFinish(accessToken, template.templateID, template.buildID, name)
+
+        process.exit(0)
       } catch (err: any) {
         console.error(err)
         process.exit(1)
@@ -424,9 +404,9 @@ function getDockerfile(root: string, file?: string) {
   )
 }
 
-async function buildTemplate(
+async function requestBuildTemplate(
   accessToken: string,
-  body: FormData,
+  args: e2b.paths['/templates']['post']['requestBody']['content']['application/json'],
   hasConfig: boolean,
   configPath: string,
   templateID?: string,
@@ -436,27 +416,18 @@ async function buildTemplate(
     'logs'
   >
 > {
-  const res = await fetch(e2b.API_HOST + (templateID ? `/templates/${templateID}` : '/templates'), {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body,
-  })
-
-  let data: any
-
-  try {
-    data = await res.json()
-  } catch (e) {
-    throw new Error(
-      `Build API request failed: ${res.statusText}`,
-    )
+  let res
+  if (templateID) {
+    res = await requestTemplateRebuild(accessToken, { templateID, ...args })
+  } else {
+    res = await requestTemplateBuild(accessToken, args)
   }
 
   if (!res.ok) {
     const error:
       | e2b.paths['/templates']['post']['responses']['401']['content']['application/json']
       | e2b.paths['/templates']['post']['responses']['500']['content']['application/json'] =
-      data as any
+      res.data as any
 
     if (error.code === 401) {
       throw new Error(
@@ -483,5 +454,40 @@ async function buildTemplate(
     )
   }
 
-  return data as any
+  return res.data as any
+}
+
+
+async function triggerBuild(
+  accessToken: string,
+  templateID: string,
+  buildID: string,
+) {
+  const res = await triggerTemplateBuild(accessToken, { templateID, buildID })
+
+  if (!res.ok) {
+    const error:
+      | e2b.paths['/templates/{templateID}/builds/{buildID}']['post']['responses']['401']['content']['application/json']
+      | e2b.paths['/templates/{templateID}/builds/{buildID}']['post']['responses']['500']['content']['application/json'] =
+      res.data as any
+
+    if (error.code === 401) {
+      throw new Error(
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
+        }`,
+      )
+    }
+
+    if (error.code === 500) {
+      throw new Error(
+        `Server error: ${res.statusText}, ${error.message ?? 'no message'}`,
+      )
+    }
+
+    throw new Error(
+      `API request failed: ${res.statusText}, ${error.message ?? 'no message'}`,
+    )
+  }
+
+  return
 }
