@@ -242,9 +242,6 @@ importers:
 
   packages/cli:
     dependencies:
-      '@balena/dockerignore':
-        specifier: ^1.0.2
-        version: 1.0.2
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
@@ -291,9 +288,6 @@ importers:
       '@types/node':
         specifier: ^18.18.6
         version: 18.18.6
-      '@types/tar-fs':
-        specifier: ^2.0.3
-        version: 2.0.3
       '@types/update-notifier':
         specifier: 6.0.5
         version: 6.0.5
@@ -547,10 +541,6 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.14.0
-
-  /@balena/dockerignore@1.0.2:
-    resolution: {integrity: sha512-wMue2Sy4GAVTk6Ic4tJVcnfdau+gx2EnG7S+uAEe+TWJFqE4YoWN4/H8MSLj4eYJKxGg26lZwboEniNiNwZQ6Q==}
-    dev: false
 
   /@changesets/apply-release-plan@6.1.4:
     resolution: {integrity: sha512-FMpKF1fRlJyCZVYHr3CbinpZZ+6MwvOtWUuO8uo+svcATEoc1zRDcj23pAurJ2TZ/uVz1wFHH6K3NlACy0PLew==}
@@ -3001,19 +2991,6 @@ packages:
 
   /@types/semver@7.5.2:
     resolution: {integrity: sha512-7aqorHYgdNO4DM36stTiGO3DvKoex9TQRwsJU6vMaFGyqpBA1MNZkz+PG3gaNUPpTAOYhT1WR7M1JyA3fbS9Cw==}
-
-  /@types/tar-fs@2.0.3:
-    resolution: {integrity: sha512-ADS99HAnztB8MD+LSOdzDrDLcSe5oBIg+SUQwwsgnsOgZobWoSqYmg9ZJWdvLppoKV8R8kZinX6Om+LlsNuIlQ==}
-    dependencies:
-      '@types/node': 18.18.6
-      '@types/tar-stream': 3.1.2
-    dev: true
-
-  /@types/tar-stream@3.1.2:
-    resolution: {integrity: sha512-qnIpUItVb5u8jl3kbrHofkM40ggO3YKSzc7TWqLYjDdwlrL7CiEAkDySaGfeUBLtC50RTfh2acdz51ItUbV7pQ==}
-    dependencies:
-      '@types/node': 18.18.6
-    dev: true
 
   /@types/through@0.0.33:
     resolution: {integrity: sha512-HsJ+z3QuETzP3cswwtzt2vEIiHBk/dCcHGhbmG5X3ecnwFD/lPrMpliGXxSCg03L9AhrdwA4Oz/qfspkDW+xGQ==}

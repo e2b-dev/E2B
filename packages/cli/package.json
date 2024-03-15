@@ -30,7 +30,6 @@
   "devDependencies": {
     "@types/inquirer": "^9.0.7",
     "@types/node": "^18.18.6",
-    "@types/tar-fs": "^2.0.3",
     "@types/update-notifier": "6.0.5",
     "knip": "^2.33.4",
     "npm-check-updates": "^16.14.6",
@@ -48,7 +47,6 @@
     "e2b": "dist/index.js"
   },
   "dependencies": {
-    "@balena/dockerignore": "^1.0.2",
     "@iarna/toml": "^2.2.5",
     "async-listen": "^3.0.1",
     "boxen": "^7.1.1",
