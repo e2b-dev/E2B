@@ -60,7 +60,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 	team := c.Value(constants.TeamContextKey).(models.Team)
 
 	// Check if team has access to the environment
-	env, kernelVersion, firecrackerVersion, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
+	env, build, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
 		errMsg := fmt.Errorf("error when checking team access: %w", checkErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -82,8 +82,8 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		attribute.String("env.team.id", team.ID.String()),
 		attribute.String("env.id", env.TemplateID),
 		attribute.String("env.alias", alias),
-		attribute.String("env.kernel.version", kernelVersion),
-		attribute.String("env.firecracker.version", firecrackerVersion),
+		attribute.String("env.kernel.version", build.KernelVersion),
+		attribute.String("env.firecracker.version", build.FirecrackerVersion),
 	)
 
 	telemetry.ReportEvent(ctx, "waiting for create sandbox parallel limit semaphore slot")
@@ -119,7 +119,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		metadata = *sandboxMetadata
 	}
 
-	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, env.TemplateID, alias, team.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, kernelVersion, firecrackerVersion)
+	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		telemetry.ReportCriticalError(ctx, errMsg)

@@ -68,7 +68,7 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Temp
 
 var ErrEnvNotFound = fmt.Errorf("env not found")
 
-func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (result *api.Template, kernelVersion string, firecrackerVersion string, err error) {
+func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (result *api.Template, build *models.EnvBuild, err error) {
 	dbEnv, err := db.
 		Client.
 		Env.
@@ -93,13 +93,13 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 
 	notFound := models.IsNotFound(err)
 	if notFound {
-		return nil, "", "", ErrEnvNotFound
+		return nil, nil, ErrEnvNotFound
 	} else if err != nil {
-		return nil, "", "", fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
+		return nil, nil, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
 	}
 
 	if !canBePublic && dbEnv.TeamID != teamID {
-		return nil, "", "", fmt.Errorf("you don't have access to this env '%s'", aliasOrEnvID)
+		return nil, nil, fmt.Errorf("you don't have access to this env '%s'", aliasOrEnvID)
 	}
 
 	aliases := make([]string, len(dbEnv.Edges.EnvAliases))
@@ -107,13 +107,13 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 		aliases[i] = alias.ID
 	}
 
-	build := dbEnv.Edges.Builds[0]
+	build = dbEnv.Edges.Builds[0]
 	return &api.Template{
 		TemplateID: dbEnv.ID,
 		BuildID:    build.ID.String(),
 		Public:     dbEnv.Public,
 		Aliases:    &aliases,
-	}, build.KernelVersion, build.FirecrackerVersion, nil
+	}, build, nil
 }
 
 func (db *DB) UpsertEnv(
@@ -126,6 +126,7 @@ func (db *DB) UpsertEnv(
 	freeDiskSizeMB int64,
 	kernelVersion,
 	firecrackerVersion string,
+	startCmd *string,
 ) error {
 	tx, err := db.Client.Tx(ctx)
 	if err != nil {
@@ -163,6 +164,7 @@ func (db *DB) UpsertEnv(
 		SetKernelVersion(kernelVersion).
 		SetFirecrackerVersion(firecrackerVersion).
 		SetFreeDiskSizeMB(freeDiskSizeMB).
+		SetNillableStartCmd(startCmd).
 		Exec(ctx)
 	err = tx.Commit()
 	if err != nil {
@@ -175,13 +177,43 @@ func (db *DB) UpsertEnv(
 	return nil
 }
 
-func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *api.Template, kernelVersion, firecrackerVersion string, err error) {
-	envDB, kernelVersion, firecrackerVersion, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
+func (db *DB) FinishEnvBuild(
+	ctx context.Context,
+	envID string,
+	buildID uuid.UUID,
+	totalDiskSizeMB int64,
+) error {
+	err := db.Client.EnvBuild.Update().Where(envbuild.ID(buildID), envbuild.EnvID(envID)).
+		SetTotalDiskSizeMB(totalDiskSizeMB).SetStatus(envbuild.StatusSuccess).Exec(ctx)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
+		return fmt.Errorf("failed to finish env build '%s': %w", buildID, err)
 	}
 
-	return envDB, kernelVersion, firecrackerVersion, nil
+	return nil
+}
+
+func (db *DB) EnvBuildSetStatus(
+	ctx context.Context,
+	envID string,
+	buildID uuid.UUID,
+	status envbuild.Status,
+) error {
+	err := db.Client.EnvBuild.Update().Where(envbuild.ID(buildID), envbuild.EnvID(envID)).
+		SetStatus(status).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to finish env build '%s': %w", buildID, err)
+	}
+
+	return nil
+}
+
+func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *api.Template, build *models.EnvBuild, err error) {
+	envDB, build, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
+	}
+
+	return envDB, build, nil
 }
 
 func (db *DB) UpdateEnvLastUsed(ctx context.Context, envID string) (err error) {

@@ -121,12 +121,15 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 	envKernelVersion := schema.DefaultKernelVersion
 	envFirecrackerVersion := schema.DefaultFirecrackerVersion
 	if !new {
-		_, envKernelVersion, envFirecrackerVersion, err = a.CheckTeamAccessEnv(ctx, templateID, team.ID, false)
+		_, build, checkErr := a.CheckTeamAccessEnv(ctx, templateID, team.ID, false)
 
-		if err != nil {
+		envKernelVersion = build.KernelVersion
+		envFirecrackerVersion = build.FirecrackerVersion
+
+		if checkErr != nil {
 			a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("the sandbox template '%s' does not exist", templateID))
 
-			errMsg := fmt.Errorf("env not found: %w", err)
+			errMsg := fmt.Errorf("env not found: %w", checkErr)
 			telemetry.ReportError(ctx, errMsg)
 
 			return nil
@@ -157,9 +160,8 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 			telemetry.ReportCriticalError(ctx, err)
 
 			return nil
-		} else {
-			telemetry.ReportEvent(ctx, "inserted alias", attribute.String("env.alias", alias))
 		}
+		telemetry.ReportEvent(ctx, "inserted alias", attribute.String("env.alias", alias))
 	}
 
 	err = a.supabase.UpsertEnv(
@@ -172,6 +174,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		tier.DiskMB,
 		envKernelVersion,
 		envFirecrackerVersion,
+		body.StartCmd,
 	)
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)

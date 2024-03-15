@@ -18,9 +18,9 @@ type EnvAlias struct {
 	// ID of the ent.
 	ID string `json:"id,omitempty"`
 	// EnvID holds the value of the "env_id" field.
-	EnvID *string `json:"env_id,omitempty"`
-	// IsName holds the value of the "is_name" field.
-	IsName bool `json:"is_name,omitempty"`
+	EnvID string `json:"env_id,omitempty"`
+	// IsRenameable holds the value of the "is_renameable" field.
+	IsRenameable bool `json:"is_renameable,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvAliasQuery when eager-loading is set.
 	Edges        EnvAliasEdges `json:"edges"`
@@ -54,7 +54,7 @@ func (*EnvAlias) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case envalias.FieldIsName:
+		case envalias.FieldIsRenameable:
 			values[i] = new(sql.NullBool)
 		case envalias.FieldID, envalias.FieldEnvID:
 			values[i] = new(sql.NullString)
@@ -83,14 +83,13 @@ func (ea *EnvAlias) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field env_id", values[i])
 			} else if value.Valid {
-				ea.EnvID = new(string)
-				*ea.EnvID = value.String
+				ea.EnvID = value.String
 			}
-		case envalias.FieldIsName:
+		case envalias.FieldIsRenameable:
 			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_name", values[i])
+				return fmt.Errorf("unexpected type %T for field is_renameable", values[i])
 			} else if value.Valid {
-				ea.IsName = value.Bool
+				ea.IsRenameable = value.Bool
 			}
 		default:
 			ea.selectValues.Set(columns[i], values[i])
@@ -133,13 +132,11 @@ func (ea *EnvAlias) String() string {
 	var builder strings.Builder
 	builder.WriteString("EnvAlias(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", ea.ID))
-	if v := ea.EnvID; v != nil {
-		builder.WriteString("env_id=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("env_id=")
+	builder.WriteString(ea.EnvID)
 	builder.WriteString(", ")
-	builder.WriteString("is_name=")
-	builder.WriteString(fmt.Sprintf("%v", ea.IsName))
+	builder.WriteString("is_renameable=")
+	builder.WriteString(fmt.Sprintf("%v", ea.IsRenameable))
 	builder.WriteByte(')')
 	return builder.String()
 }

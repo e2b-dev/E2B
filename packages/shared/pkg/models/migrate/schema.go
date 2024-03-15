@@ -57,8 +57,8 @@ var (
 	// EnvAliasesColumns holds the columns for the "env_aliases" table.
 	EnvAliasesColumns = []*schema.Column{
 		{Name: "alias", Type: field.TypeString, Unique: true, SchemaType: map[string]string{"postgres": "text"}},
-		{Name: "is_name", Type: field.TypeBool, Default: true},
-		{Name: "env_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "is_renameable", Type: field.TypeBool, Default: true},
+		{Name: "env_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// EnvAliasesTable holds the schema information for the "env_aliases" table.
 	EnvAliasesTable = &schema.Table{
@@ -81,6 +81,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"waiting", "building", "failed", "success"}, Default: "waiting"},
+		{Name: "start_cmd", Type: field.TypeString, Nullable: true},
 		{Name: "vcpu", Type: field.TypeInt64},
 		{Name: "ram_mb", Type: field.TypeInt64},
 		{Name: "free_disk_size_mb", Type: field.TypeInt64},
@@ -97,7 +98,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "env_builds_envs_builds",
-				Columns:    []*schema.Column{EnvBuildsColumns[11]},
+				Columns:    []*schema.Column{EnvBuildsColumns[12]},
 				RefColumns: []*schema.Column{EnvsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},

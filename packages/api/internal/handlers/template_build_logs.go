@@ -94,7 +94,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c *gin.Con
 }
 
 // PostTemplatesTemplateIDBuildsBuildIDLogs serves to add logs from the Build Driver
-func (a *APIStore) PostTemplatesTemplateIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvID, buildID string) {
+func (a *APIStore) PostTemplatesTemplateIDBuildsBuildIDLogs(c *gin.Context, envID api.TemplateID, buildID string) {
 	ctx := c.Request.Context()
 
 	body, err := parseBody[api.PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody](ctx, c)

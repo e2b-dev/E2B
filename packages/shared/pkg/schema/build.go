@@ -26,6 +26,7 @@ func (EnvBuild) Fields() []ent.Field {
 		field.Time("finished_at").Optional().Nillable(),
 		field.String("env_id").SchemaType(map[string]string{dialect.Postgres: "text"}).Optional().Nillable(),
 		field.Enum("status").Values("waiting", "building", "failed", "success").Default("waiting"),
+		field.String("start_cmd").Optional().Nillable(),
 		field.Int64("vcpu"),
 		field.Int64("ram_mb"),
 		field.Int64("free_disk_size_mb"),

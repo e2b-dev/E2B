@@ -1459,7 +1459,7 @@ type EnvAliasMutation struct {
 	op            Op
 	typ           string
 	id            *string
-	is_name       *bool
+	is_renameable *bool
 	clearedFields map[string]struct{}
 	env           *string
 	clearedenv    bool
@@ -1589,7 +1589,7 @@ func (m *EnvAliasMutation) EnvID() (r string, exists bool) {
 // OldEnvID returns the old "env_id" field's value of the EnvAlias entity.
 // If the EnvAlias object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvAliasMutation) OldEnvID(ctx context.Context) (v *string, err error) {
+func (m *EnvAliasMutation) OldEnvID(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldEnvID is only allowed on UpdateOne operations")
 	}
@@ -1603,58 +1603,45 @@ func (m *EnvAliasMutation) OldEnvID(ctx context.Context) (v *string, err error) 
 	return oldValue.EnvID, nil
 }
 
-// ClearEnvID clears the value of the "env_id" field.
-func (m *EnvAliasMutation) ClearEnvID() {
-	m.env = nil
-	m.clearedFields[envalias.FieldEnvID] = struct{}{}
-}
-
-// EnvIDCleared returns if the "env_id" field was cleared in this mutation.
-func (m *EnvAliasMutation) EnvIDCleared() bool {
-	_, ok := m.clearedFields[envalias.FieldEnvID]
-	return ok
-}
-
 // ResetEnvID resets all changes to the "env_id" field.
 func (m *EnvAliasMutation) ResetEnvID() {
 	m.env = nil
-	delete(m.clearedFields, envalias.FieldEnvID)
 }
 
-// SetIsName sets the "is_name" field.
-func (m *EnvAliasMutation) SetIsName(b bool) {
-	m.is_name = &b
+// SetIsRenameable sets the "is_renameable" field.
+func (m *EnvAliasMutation) SetIsRenameable(b bool) {
+	m.is_renameable = &b
 }
 
-// IsName returns the value of the "is_name" field in the mutation.
-func (m *EnvAliasMutation) IsName() (r bool, exists bool) {
-	v := m.is_name
+// IsRenameable returns the value of the "is_renameable" field in the mutation.
+func (m *EnvAliasMutation) IsRenameable() (r bool, exists bool) {
+	v := m.is_renameable
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldIsName returns the old "is_name" field's value of the EnvAlias entity.
+// OldIsRenameable returns the old "is_renameable" field's value of the EnvAlias entity.
 // If the EnvAlias object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvAliasMutation) OldIsName(ctx context.Context) (v bool, err error) {
+func (m *EnvAliasMutation) OldIsRenameable(ctx context.Context) (v bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsName is only allowed on UpdateOne operations")
+		return v, errors.New("OldIsRenameable is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsName requires an ID field in the mutation")
+		return v, errors.New("OldIsRenameable requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsName: %w", err)
+		return v, fmt.Errorf("querying old value for OldIsRenameable: %w", err)
 	}
-	return oldValue.IsName, nil
+	return oldValue.IsRenameable, nil
 }
 
-// ResetIsName resets all changes to the "is_name" field.
-func (m *EnvAliasMutation) ResetIsName() {
-	m.is_name = nil
+// ResetIsRenameable resets all changes to the "is_renameable" field.
+func (m *EnvAliasMutation) ResetIsRenameable() {
+	m.is_renameable = nil
 }
 
 // ClearEnv clears the "env" edge to the Env entity.
@@ -1665,7 +1652,7 @@ func (m *EnvAliasMutation) ClearEnv() {
 
 // EnvCleared reports if the "env" edge to the Env entity was cleared.
 func (m *EnvAliasMutation) EnvCleared() bool {
-	return m.EnvIDCleared() || m.clearedenv
+	return m.clearedenv
 }
 
 // EnvIDs returns the "env" edge IDs in the mutation.
@@ -1722,8 +1709,8 @@ func (m *EnvAliasMutation) Fields() []string {
 	if m.env != nil {
 		fields = append(fields, envalias.FieldEnvID)
 	}
-	if m.is_name != nil {
-		fields = append(fields, envalias.FieldIsName)
+	if m.is_renameable != nil {
+		fields = append(fields, envalias.FieldIsRenameable)
 	}
 	return fields
 }
@@ -1735,8 +1722,8 @@ func (m *EnvAliasMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case envalias.FieldEnvID:
 		return m.EnvID()
-	case envalias.FieldIsName:
-		return m.IsName()
+	case envalias.FieldIsRenameable:
+		return m.IsRenameable()
 	}
 	return nil, false
 }
@@ -1748,8 +1735,8 @@ func (m *EnvAliasMutation) OldField(ctx context.Context, name string) (ent.Value
 	switch name {
 	case envalias.FieldEnvID:
 		return m.OldEnvID(ctx)
-	case envalias.FieldIsName:
-		return m.OldIsName(ctx)
+	case envalias.FieldIsRenameable:
+		return m.OldIsRenameable(ctx)
 	}
 	return nil, fmt.Errorf("unknown EnvAlias field %s", name)
 }
@@ -1766,12 +1753,12 @@ func (m *EnvAliasMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEnvID(v)
 		return nil
-	case envalias.FieldIsName:
+	case envalias.FieldIsRenameable:
 		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetIsName(v)
+		m.SetIsRenameable(v)
 		return nil
 	}
 	return fmt.Errorf("unknown EnvAlias field %s", name)
@@ -1802,11 +1789,7 @@ func (m *EnvAliasMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *EnvAliasMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(envalias.FieldEnvID) {
-		fields = append(fields, envalias.FieldEnvID)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1819,11 +1802,6 @@ func (m *EnvAliasMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *EnvAliasMutation) ClearField(name string) error {
-	switch name {
-	case envalias.FieldEnvID:
-		m.ClearEnvID()
-		return nil
-	}
 	return fmt.Errorf("unknown EnvAlias nullable field %s", name)
 }
 
@@ -1834,8 +1812,8 @@ func (m *EnvAliasMutation) ResetField(name string) error {
 	case envalias.FieldEnvID:
 		m.ResetEnvID()
 		return nil
-	case envalias.FieldIsName:
-		m.ResetIsName()
+	case envalias.FieldIsRenameable:
+		m.ResetIsRenameable()
 		return nil
 	}
 	return fmt.Errorf("unknown EnvAlias field %s", name)
@@ -1925,6 +1903,7 @@ type EnvBuildMutation struct {
 	updated_at            *time.Time
 	finished_at           *time.Time
 	status                *envbuild.Status
+	start_cmd             *string
 	vcpu                  *int64
 	addvcpu               *int64
 	ram_mb                *int64
@@ -2251,6 +2230,55 @@ func (m *EnvBuildMutation) OldStatus(ctx context.Context) (v envbuild.Status, er
 // ResetStatus resets all changes to the "status" field.
 func (m *EnvBuildMutation) ResetStatus() {
 	m.status = nil
+}
+
+// SetStartCmd sets the "start_cmd" field.
+func (m *EnvBuildMutation) SetStartCmd(s string) {
+	m.start_cmd = &s
+}
+
+// StartCmd returns the value of the "start_cmd" field in the mutation.
+func (m *EnvBuildMutation) StartCmd() (r string, exists bool) {
+	v := m.start_cmd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartCmd returns the old "start_cmd" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldStartCmd(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartCmd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartCmd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartCmd: %w", err)
+	}
+	return oldValue.StartCmd, nil
+}
+
+// ClearStartCmd clears the value of the "start_cmd" field.
+func (m *EnvBuildMutation) ClearStartCmd() {
+	m.start_cmd = nil
+	m.clearedFields[envbuild.FieldStartCmd] = struct{}{}
+}
+
+// StartCmdCleared returns if the "start_cmd" field was cleared in this mutation.
+func (m *EnvBuildMutation) StartCmdCleared() bool {
+	_, ok := m.clearedFields[envbuild.FieldStartCmd]
+	return ok
+}
+
+// ResetStartCmd resets all changes to the "start_cmd" field.
+func (m *EnvBuildMutation) ResetStartCmd() {
+	m.start_cmd = nil
+	delete(m.clearedFields, envbuild.FieldStartCmd)
 }
 
 // SetVcpu sets the "vcpu" field.
@@ -2624,7 +2652,7 @@ func (m *EnvBuildMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvBuildMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, envbuild.FieldCreatedAt)
 	}
@@ -2639,6 +2667,9 @@ func (m *EnvBuildMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, envbuild.FieldStatus)
+	}
+	if m.start_cmd != nil {
+		fields = append(fields, envbuild.FieldStartCmd)
 	}
 	if m.vcpu != nil {
 		fields = append(fields, envbuild.FieldVcpu)
@@ -2676,6 +2707,8 @@ func (m *EnvBuildMutation) Field(name string) (ent.Value, bool) {
 		return m.EnvID()
 	case envbuild.FieldStatus:
 		return m.Status()
+	case envbuild.FieldStartCmd:
+		return m.StartCmd()
 	case envbuild.FieldVcpu:
 		return m.Vcpu()
 	case envbuild.FieldRAMMB:
@@ -2707,6 +2740,8 @@ func (m *EnvBuildMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldEnvID(ctx)
 	case envbuild.FieldStatus:
 		return m.OldStatus(ctx)
+	case envbuild.FieldStartCmd:
+		return m.OldStartCmd(ctx)
 	case envbuild.FieldVcpu:
 		return m.OldVcpu(ctx)
 	case envbuild.FieldRAMMB:
@@ -2762,6 +2797,13 @@ func (m *EnvBuildMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case envbuild.FieldStartCmd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartCmd(v)
 		return nil
 	case envbuild.FieldVcpu:
 		v, ok := value.(int64)
@@ -2892,6 +2934,9 @@ func (m *EnvBuildMutation) ClearedFields() []string {
 	if m.FieldCleared(envbuild.FieldEnvID) {
 		fields = append(fields, envbuild.FieldEnvID)
 	}
+	if m.FieldCleared(envbuild.FieldStartCmd) {
+		fields = append(fields, envbuild.FieldStartCmd)
+	}
 	if m.FieldCleared(envbuild.FieldTotalDiskSizeMB) {
 		fields = append(fields, envbuild.FieldTotalDiskSizeMB)
 	}
@@ -2914,6 +2959,9 @@ func (m *EnvBuildMutation) ClearField(name string) error {
 		return nil
 	case envbuild.FieldEnvID:
 		m.ClearEnvID()
+		return nil
+	case envbuild.FieldStartCmd:
+		m.ClearStartCmd()
 		return nil
 	case envbuild.FieldTotalDiskSizeMB:
 		m.ClearTotalDiskSizeMB()
@@ -2940,6 +2988,9 @@ func (m *EnvBuildMutation) ResetField(name string) error {
 		return nil
 	case envbuild.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case envbuild.FieldStartCmd:
+		m.ResetStartCmd()
 		return nil
 	case envbuild.FieldVcpu:
 		m.ResetVcpu()

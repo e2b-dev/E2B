@@ -24,6 +24,7 @@ const (
 
 type InstanceInfo struct {
 	Instance          *api.Sandbox
+	BuildID           *uuid.UUID
 	TeamID            *uuid.UUID
 	Metadata          map[string]string
 	StartTime         *time.Time
@@ -45,8 +46,8 @@ func (c *InstanceCache) Add(instance InstanceInfo) error {
 		instance.StartTime = &now
 	}
 
-	if instance.TeamID == nil || instance.Instance.SandboxID == "" || instance.Instance.ClientID == "" || instance.Instance.TemplateID == "" {
-		return fmt.Errorf("instance %+v (%+v) is missing team ID, instance ID, client ID, or env ID ", instance, instance.Instance)
+	if instance.TeamID == nil || instance.BuildID == nil || instance.Instance.SandboxID == "" || instance.Instance.ClientID == "" || instance.Instance.TemplateID == "" {
+		return fmt.Errorf("instance %+v (%+v) is missing team ID, build ID,  instance ID, client ID, or env ID ", instance, instance.Instance)
 	}
 
 	c.cache.Set(instance.Instance.SandboxID, instance, ttlcache.DefaultTTL)

@@ -32,6 +32,7 @@ const (
 	instanceStartTimeout = time.Second * 20
 
 	envIDMetaKey             = "ENV_ID"
+	buildIDMetaKey           = "BUILD_ID"
 	aliasMetaKey             = "ALIAS"
 	instanceIDMetaKey        = "INSTANCE_ID"
 	teamIDMetaKey            = "TEAM_ID"
@@ -89,6 +90,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 	for _, job := range jobs {
 		instanceID := job.Meta[instanceIDMetaKey]
 		envID := job.Meta[envIDMetaKey]
+		buildID := job.Meta[buildIDMetaKey]
 		aliasRaw := job.Meta[aliasMetaKey]
 		teamID := job.Meta[teamIDMetaKey]
 		metadataRaw := job.Meta[metadataKey]
@@ -114,6 +116,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		}
 
 		var teamUUID *uuid.UUID
+		var buildUUID *uuid.UUID
 		var alias *string
 
 		if teamID != "" {
@@ -123,6 +126,14 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 			} else {
 				teamUUID = &parsedTeamID
 			}
+		}
+
+		if buildID != "" {
+			parsedBuildID, parseErr := uuid.Parse(buildID)
+			if parseErr != nil {
+				n.logger.Errorf("failed to parse build ID '%s' for job '%s': %v\n", buildID, job.ID, err)
+			}
+			buildUUID = &parsedBuildID
 		}
 
 		if aliasRaw != "" {
@@ -141,6 +152,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 				Alias:      alias,
 				ClientID:   clientID,
 			},
+			BuildID:           buildUUID,
 			TeamID:            teamUUID,
 			Metadata:          metadata,
 			MaxInstanceLength: maxInstanceLength,
@@ -155,7 +167,8 @@ func (n *NomadClient) CreateSandbox(
 	ctx context.Context,
 	envID,
 	alias,
-	teamID string,
+	teamID,
+	buildID string,
 	maxInstanceLengthHours int64,
 	metadata map[string]string,
 	kernelVersion,
@@ -208,6 +221,7 @@ func (n *NomadClient) CreateSandbox(
 		ConsulToken          string
 		TraceID              string
 		EnvID                string
+		BuildID              string
 		Alias                string
 		InstanceID           string
 		LogsProxyAddress     string
@@ -218,6 +232,7 @@ func (n *NomadClient) CreateSandbox(
 		EnvsDisk             string
 		TeamID               string
 		EnvIDKey             string
+		BuildIDKey           string
 		AliasKey             string
 		InstanceIDKey        string
 		TeamIDKey            string
@@ -229,6 +244,7 @@ func (n *NomadClient) CreateSandbox(
 	}{
 		HugePages:            features.HasHugePages(),
 		TeamIDKey:            teamIDMetaKey,
+		BuildIDKey:           buildIDMetaKey,
 		EnvIDKey:             envIDMetaKey,
 		AliasKey:             aliasMetaKey,
 		InstanceIDKey:        instanceIDMetaKey,
@@ -238,6 +254,7 @@ func (n *NomadClient) CreateSandbox(
 		FirecrackerVersion:   firecrackerVersion,
 		SpanID:               spanID,
 		TeamID:               teamID,
+		BuildID:              buildID,
 		TraceID:              traceID,
 		LogsProxyAddress:     logsProxyAddress,
 		ConsulToken:          consulToken,

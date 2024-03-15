@@ -557,12 +557,9 @@ func (eq *EnvQuery) loadEnvAliases(ctx context.Context, query *EnvAliasQuery, no
 	}
 	for _, n := range neighbors {
 		fk := n.EnvID
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "env_id" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "env_id" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "env_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
