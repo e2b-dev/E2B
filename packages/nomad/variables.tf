@@ -46,6 +46,7 @@ variable "custom_envs_repository_name" {
 variable "gcp_project_id" {
   type = string
 }
+
 variable "gcp_region" {
   type = string
 }

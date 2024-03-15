@@ -109,6 +109,9 @@ resource "nomad_job" "docker_reverse_proxy" {
       postgres_connection_string = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
       google_service_account_secret = google_service_account_key.google_service_key.private_key
       port_number = 5000
+      domain_name = var.domain_name
+      gcp_project_id = var.gcp_project_id
+      docker_registry = var.custom_envs_repository_name
     }
   }
 }

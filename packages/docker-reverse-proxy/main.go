@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/auth"
-	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 	"io"
 	"log"
 	"net/http"
@@ -16,7 +14,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/auth"
+	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 )
+
+var GCPProject = os.Getenv("GCP_PROJECT_ID")
+var Domain = os.Getenv("DOMAIN_NAME")
+var DockerRegistry = os.Getenv("DOCKER_REGISTRY")
 
 // TODO: Rewrite all hardcoded strings to constants / variables
 // TODO: Remove debug transport
@@ -71,7 +76,7 @@ func main() {
 
 		if req.URL.Path == "/v2/" {
 			if req.Header.Get("Authorization") == "" {
-				w.Header().Set("Www-Authenticate", "Bearer realm=\"https://docker.e2b-staging.com/v2/token\"")
+				w.Header().Set("Www-Authenticate", fmt.Sprintf("Bearer realm=\"https://docker.%s/v2/token\"", Domain))
 				w.WriteHeader(http.StatusUnauthorized)
 
 				return
@@ -88,13 +93,13 @@ func main() {
 		}
 
 		path := req.URL.String()
-		if strings.HasPrefix(path, "/v2/e2b-dev/e2b-orchestration/") {
+		if strings.HasPrefix(path, fmt.Sprintf("/v2/%s/%s/", GCPProject, DockerRegistry)) {
 			fmt.Printf("\n\nHeaders: %+v\n", req.Header)
 			fmt.Printf("Body: %+v\n", req.Body)
 
 			fmt.Printf("Path: %s\n", path)
 
-			envWithBuildID := strings.Split(strings.TrimPrefix(path, "/v2/e2b-dev/e2b-orchestration/"), ":")
+			envWithBuildID := strings.Split(strings.TrimPrefix(path, fmt.Sprintf("/v2/%s/%s/", GCPProject, DockerRegistry)), ":")
 			fmt.Printf("EnvWithBuildID: %+v\n", envWithBuildID)
 			envID := envWithBuildID[0]
 			buildID := envWithBuildID[1]
@@ -151,7 +156,7 @@ func getToken() (string, error) {
 		log.Fatal("GOOGLE_SERVICE_ACCOUNT_SECRET is not set")
 	}
 
-	r, err := http.NewRequest(http.MethodGet, "https://us-central1-docker.pkg.dev/v2/token?service=us-central1-docker.pkg.dev&scope=repository:e2b-dev/e2b-orchestration/docker-reverse-proxy:push%2Cpull", nil)
+	r, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://us-central1-docker.pkg.dev/v2/token?service=us-central1-docker.pkg.dev&scope=repository:%s/%s/test:push&pull", GCPProject, DockerRegistry), nil)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return "", err
