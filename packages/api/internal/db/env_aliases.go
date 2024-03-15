@@ -116,18 +116,31 @@ func (db *DB) EnsureEnvAlias(ctx context.Context, alias, envID string) error {
 		return errMsg
 	}
 
-	err = db.
-		Client.
-		EnvAlias.
-		Create().
-		SetEnvID(envID).SetIsRenameable(true).SetID(alias).OnConflictColumns(
-		envalias.EnvFieldID,
-	).DoNothing().Exec(ctx)
+	aliasDB, err := db.Client.EnvAlias.Query().Where(envalias.ID(alias)).First(ctx)
 
 	if err != nil {
-		errMsg := fmt.Errorf("failed to get env alias '%s': %w", envID, err)
+		if !models.IsNotFound(err) {
+			errMsg := fmt.Errorf("failed to get env alias '%s': %w", alias, err)
 
-		return errMsg
+			return errMsg
+		}
+		err = db.
+			Client.
+			EnvAlias.
+			Create().
+			SetEnvID(envID).SetIsRenameable(true).SetID(alias).
+			Exec(ctx)
+
+		if err != nil {
+			errMsg := fmt.Errorf("failed to create env alias '%s': %w", envID, err)
+
+			return errMsg
+		}
+		if aliasDB.EnvID != envID {
+			errMsg := fmt.Errorf("alias '%s' is already used", alias)
+
+			return errMsg
+		}
 	}
 
 	return nil
