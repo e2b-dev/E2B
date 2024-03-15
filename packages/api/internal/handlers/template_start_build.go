@@ -79,6 +79,10 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 	if err != nil {
 		err = fmt.Errorf("error when setting build status: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
+
+		a.buildCache.Delete(templateID, buildUUID, team.ID)
+
+		return
 	}
 
 	go func() {

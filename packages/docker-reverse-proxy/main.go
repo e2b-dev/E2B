@@ -94,9 +94,11 @@ func main() {
 
 			fmt.Printf("Path: %s\n", path)
 
-			splitted := strings.Split(strings.TrimPrefix(path, "/v2/e2b-dev/e2b-orchestration/"), "/")
-			fmt.Printf("Splitted: %s\n", splitted)
-			envID := splitted[0]
+			envWithBuildID := strings.Split(strings.TrimPrefix(path, "/v2/e2b-dev/e2b-orchestration/"), ":")
+			fmt.Printf("EnvWithBuildID: %+v\n", envWithBuildID)
+			envID := envWithBuildID[0]
+			buildID := envWithBuildID[1]
+
 			accessTokenBase64 := req.Header.Get("Authorization")
 			fmt.Printf("AccessTokenBase64: %s\n", accessTokenBase64)
 
@@ -112,7 +114,7 @@ func main() {
 			fmt.Printf("EnvID: %s\n", envID)
 			fmt.Printf("AccessToken: %s\n", accessToken)
 
-			hasAccess, err := auth.Validate(ctx, database.Client, accessToken, envID)
+			hasAccess, err := auth.Validate(ctx, database.Client, accessToken, envID, buildID)
 			if err != nil {
 				fmt.Printf("Error: %s\n", err)
 				w.WriteHeader(http.StatusInternalServerError)
