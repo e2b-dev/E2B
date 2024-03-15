@@ -204,11 +204,26 @@ export const buildCommand = new commander.Command('build')
         )
 
         child_process.execSync(`echo ${accessToken} | docker login docker.e2b-staging.com -u _e2b_access_token --password-stdin`, { stdio: 'inherit', cwd: root})
-        child_process.execSync(`docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.e2b-staging.com/e2b-dev/e2b-custom-environments/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root})
+        process.stdout.write('\n')
+
+        console.log('Building docker image...')
+        child_process.execSync(`DOCKER_CLI_HINTS=false docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.e2b-staging.com/e2b-dev/e2b-custom-environments/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root})
+
+        process.stdout.write('\n')
+        console.log('Pushing docker image...')
         child_process.execSync(`docker push docker.e2b-staging.com/e2b-dev/e2b-custom-environments/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root })
 
+        process.stdout.write('\n')
+        console.log('Triggering build...')
         await triggerBuild(accessToken, template.templateID, template.buildID)
 
+        console.log(
+          `Triggered build for the sandbox template ${asFormattedSandboxTemplate(
+            template,
+          )} `,
+        )
+
+        console.log('Waiting for build to finish...')
         await waitForBuildFinish(accessToken, template.templateID, template.buildID, name)
 
         process.exit(0)
