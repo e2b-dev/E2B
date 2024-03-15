@@ -132,6 +132,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 	if cacheErr := a.instanceCache.Add(InstanceInfo{
 		StartTime:         nil,
 		Instance:          sandbox,
+		BuildID:           &build.ID,
 		TeamID:            &team.ID,
 		Metadata:          metadata,
 		MaxInstanceLength: time.Duration(team.Edges.TeamTier.MaxLengthHours) * time.Hour,
