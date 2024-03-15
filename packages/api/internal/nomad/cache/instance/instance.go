@@ -3,6 +3,7 @@ package instance
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,10 +34,14 @@ type InstanceInfo struct {
 type InstanceCache struct {
 	reservations *ReservationCache
 
-	cache     *ttlcache.Cache[string, InstanceInfo]
+	cache *ttlcache.Cache[string, InstanceInfo]
+
+	logger *zap.SugaredLogger
+
 	counter   metric.Int64UpDownCounter
-	logger    *zap.SugaredLogger
 	analytics analyticscollector.AnalyticsCollectorClient
+
+	mu sync.Mutex
 }
 
 // We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync

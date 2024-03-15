@@ -8,6 +8,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
@@ -97,7 +98,9 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
 
-	err, release := a.instanceCache.Reserve(team.ID, maxInstancesPerTeam)
+	sandboxID := nomad.InstanceIDPrefix + utils.GenerateID()
+
+	err, releaseTeamSandboxReservation := a.instanceCache.Reserve(sandboxID, team.ID, maxInstancesPerTeam)
 	if err != nil {
 		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, team.Edges.TeamTier.ConcurrentInstances)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -109,19 +112,14 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		return
 	}
 
-	defer func() {
-		releaseErr := release()
-		if releaseErr != nil {
-			a.logger.Errorf("Error when releasing reservation: %w", releaseErr)
-		}
-	}()
+	defer releaseTeamSandboxReservation()
 
 	var metadata map[string]string
 	if body.Metadata != nil {
 		metadata = *body.Metadata
 	}
 
-	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
+	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx,sandboxID, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		telemetry.ReportCriticalError(ctx, errMsg)

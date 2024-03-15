@@ -82,6 +82,9 @@ func (c *InstanceCache) Add(instance InstanceInfo) error {
 	c.cache.Set(instance.Instance.SandboxID, instance, ttlcache.DefaultTTL)
 	c.UpdateCounter(instance, 1)
 
+	// Release the reservation if it exists
+	c.reservations.release(instance.Instance.SandboxID)
+
 	return nil
 }
 

@@ -16,7 +16,6 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/google/uuid"
 
@@ -28,7 +27,7 @@ import (
 const (
 	instanceJobName          = "env-instance"
 	instanceJobNameWithSlash = instanceJobName + "/"
-	instanceIDPrefix         = "i"
+	InstanceIDPrefix         = "i"
 
 	instanceStartTimeout = time.Second * 20
 
@@ -166,6 +165,7 @@ func (n *NomadClient) GetInstances() ([]*instance.InstanceInfo, *api.APIError) {
 func (n *NomadClient) CreateSandbox(
 	t trace.Tracer,
 	ctx context.Context,
+	instanceID,
 	envID,
 	alias,
 	teamID,
@@ -181,8 +181,6 @@ func (n *NomadClient) CreateSandbox(
 		),
 	)
 	defer childSpan.End()
-
-	instanceID := instanceIDPrefix + utils.GenerateID()
 
 	traceID := childSpan.SpanContext().TraceID().String()
 	spanID := childSpan.SpanContext().SpanID().String()
