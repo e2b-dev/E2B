@@ -25,6 +25,8 @@ const (
 	FieldEnvID = "env_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldDockerfile holds the string denoting the dockerfile field in the database.
+	FieldDockerfile = "dockerfile"
 	// FieldStartCmd holds the string denoting the start_cmd field in the database.
 	FieldStartCmd = "start_cmd"
 	// FieldVcpu holds the string denoting the vcpu field in the database.
@@ -60,6 +62,7 @@ var Columns = []string{
 	FieldFinishedAt,
 	FieldEnvID,
 	FieldStatus,
+	FieldDockerfile,
 	FieldStartCmd,
 	FieldVcpu,
 	FieldRAMMB,
@@ -149,6 +152,11 @@ func ByEnvID(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByDockerfile orders the results by the dockerfile field.
+func ByDockerfile(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDockerfile, opts...).ToFunc()
 }
 
 // ByStartCmd orders the results by the start_cmd field.

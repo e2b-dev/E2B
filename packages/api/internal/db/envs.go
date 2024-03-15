@@ -127,6 +127,7 @@ func (db *DB) UpsertEnv(
 	kernelVersion,
 	firecrackerVersion string,
 	startCmd *string,
+	dockerfile string,
 ) error {
 	tx, err := db.Client.Tx(ctx)
 	if err != nil {
@@ -165,6 +166,7 @@ func (db *DB) UpsertEnv(
 		SetFirecrackerVersion(firecrackerVersion).
 		SetFreeDiskSizeMB(freeDiskSizeMB).
 		SetNillableStartCmd(startCmd).
+		SetDockerfile(dockerfile).
 		Exec(ctx)
 	err = tx.Commit()
 	if err != nil {

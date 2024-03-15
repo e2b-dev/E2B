@@ -27,8 +27,6 @@ import (
 )
 
 const (
-	// Name of the dockerfile in the Docker context.
-	dockerfileName = "Dockerfile"
 	// Path to the envd in the FC VM.
 	envdRootfsPath = "/usr/bin/envd"
 	ToMBShift      = 20

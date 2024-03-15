@@ -80,6 +80,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		attribute.String("env.id", templateID),
 		attribute.String("env.team.tier", tier.ID),
 		attribute.String("build.id", buildID.String()),
+		attribute.String("env.dockerfile", body.Dockerfile),
 	)
 
 	if body.Alias != nil {
@@ -175,6 +176,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		envKernelVersion,
 		envFirecrackerVersion,
 		body.StartCmd,
+		body.Dockerfile,
 	)
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)

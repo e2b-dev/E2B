@@ -95,6 +95,20 @@ func (ebc *EnvBuildCreate) SetNillableStatus(e *envbuild.Status) *EnvBuildCreate
 	return ebc
 }
 
+// SetDockerfile sets the "dockerfile" field.
+func (ebc *EnvBuildCreate) SetDockerfile(s string) *EnvBuildCreate {
+	ebc.mutation.SetDockerfile(s)
+	return ebc
+}
+
+// SetNillableDockerfile sets the "dockerfile" field if the given value is not nil.
+func (ebc *EnvBuildCreate) SetNillableDockerfile(s *string) *EnvBuildCreate {
+	if s != nil {
+		ebc.SetDockerfile(*s)
+	}
+	return ebc
+}
+
 // SetStartCmd sets the "start_cmd" field.
 func (ebc *EnvBuildCreate) SetStartCmd(s string) *EnvBuildCreate {
 	ebc.mutation.SetStartCmd(s)
@@ -321,6 +335,10 @@ func (ebc *EnvBuildCreate) createSpec() (*EnvBuild, *sqlgraph.CreateSpec) {
 		_spec.SetField(envbuild.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
 	}
+	if value, ok := ebc.mutation.Dockerfile(); ok {
+		_spec.SetField(envbuild.FieldDockerfile, field.TypeString, value)
+		_node.Dockerfile = &value
+	}
 	if value, ok := ebc.mutation.StartCmd(); ok {
 		_spec.SetField(envbuild.FieldStartCmd, field.TypeString, value)
 		_node.StartCmd = &value
@@ -476,6 +494,24 @@ func (u *EnvBuildUpsert) SetStatus(v envbuild.Status) *EnvBuildUpsert {
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *EnvBuildUpsert) UpdateStatus() *EnvBuildUpsert {
 	u.SetExcluded(envbuild.FieldStatus)
+	return u
+}
+
+// SetDockerfile sets the "dockerfile" field.
+func (u *EnvBuildUpsert) SetDockerfile(v string) *EnvBuildUpsert {
+	u.Set(envbuild.FieldDockerfile, v)
+	return u
+}
+
+// UpdateDockerfile sets the "dockerfile" field to the value that was provided on create.
+func (u *EnvBuildUpsert) UpdateDockerfile() *EnvBuildUpsert {
+	u.SetExcluded(envbuild.FieldDockerfile)
+	return u
+}
+
+// ClearDockerfile clears the value of the "dockerfile" field.
+func (u *EnvBuildUpsert) ClearDockerfile() *EnvBuildUpsert {
+	u.SetNull(envbuild.FieldDockerfile)
 	return u
 }
 
@@ -717,6 +753,27 @@ func (u *EnvBuildUpsertOne) SetStatus(v envbuild.Status) *EnvBuildUpsertOne {
 func (u *EnvBuildUpsertOne) UpdateStatus() *EnvBuildUpsertOne {
 	return u.Update(func(s *EnvBuildUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetDockerfile sets the "dockerfile" field.
+func (u *EnvBuildUpsertOne) SetDockerfile(v string) *EnvBuildUpsertOne {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.SetDockerfile(v)
+	})
+}
+
+// UpdateDockerfile sets the "dockerfile" field to the value that was provided on create.
+func (u *EnvBuildUpsertOne) UpdateDockerfile() *EnvBuildUpsertOne {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.UpdateDockerfile()
+	})
+}
+
+// ClearDockerfile clears the value of the "dockerfile" field.
+func (u *EnvBuildUpsertOne) ClearDockerfile() *EnvBuildUpsertOne {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.ClearDockerfile()
 	})
 }
 
@@ -1145,6 +1202,27 @@ func (u *EnvBuildUpsertBulk) SetStatus(v envbuild.Status) *EnvBuildUpsertBulk {
 func (u *EnvBuildUpsertBulk) UpdateStatus() *EnvBuildUpsertBulk {
 	return u.Update(func(s *EnvBuildUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetDockerfile sets the "dockerfile" field.
+func (u *EnvBuildUpsertBulk) SetDockerfile(v string) *EnvBuildUpsertBulk {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.SetDockerfile(v)
+	})
+}
+
+// UpdateDockerfile sets the "dockerfile" field to the value that was provided on create.
+func (u *EnvBuildUpsertBulk) UpdateDockerfile() *EnvBuildUpsertBulk {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.UpdateDockerfile()
+	})
+}
+
+// ClearDockerfile clears the value of the "dockerfile" field.
+func (u *EnvBuildUpsertBulk) ClearDockerfile() *EnvBuildUpsertBulk {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.ClearDockerfile()
 	})
 }
 

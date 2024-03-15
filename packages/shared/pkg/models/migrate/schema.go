@@ -80,14 +80,15 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"waiting", "building", "failed", "success"}, Default: "waiting"},
-		{Name: "start_cmd", Type: field.TypeString, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"waiting", "building", "failed", "success"}, Default: "waiting", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "dockerfile", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "start_cmd", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "vcpu", Type: field.TypeInt64},
 		{Name: "ram_mb", Type: field.TypeInt64},
 		{Name: "free_disk_size_mb", Type: field.TypeInt64},
 		{Name: "total_disk_size_mb", Type: field.TypeInt64, Nullable: true},
-		{Name: "kernel_version", Type: field.TypeString, Default: "vmlinux-5.10.186"},
-		{Name: "firecracker_version", Type: field.TypeString, Default: "v1.7.0-dev_8bb88311"},
+		{Name: "kernel_version", Type: field.TypeString, Default: "vmlinux-5.10.186", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "firecracker_version", Type: field.TypeString, Default: "v1.7.0-dev_8bb88311", SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "env_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// EnvBuildsTable holds the schema information for the "env_builds" table.
@@ -98,7 +99,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "env_builds_envs_builds",
-				Columns:    []*schema.Column{EnvBuildsColumns[12]},
+				Columns:    []*schema.Column{EnvBuildsColumns[13]},
 				RefColumns: []*schema.Column{EnvsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},

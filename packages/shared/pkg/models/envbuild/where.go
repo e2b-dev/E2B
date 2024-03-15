@@ -77,6 +77,11 @@ func EnvID(v string) predicate.EnvBuild {
 	return predicate.EnvBuild(sql.FieldEQ(FieldEnvID, v))
 }
 
+// Dockerfile applies equality check predicate on the "dockerfile" field. It's identical to DockerfileEQ.
+func Dockerfile(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldEQ(FieldDockerfile, v))
+}
+
 // StartCmd applies equality check predicate on the "start_cmd" field. It's identical to StartCmdEQ.
 func StartCmd(v string) predicate.EnvBuild {
 	return predicate.EnvBuild(sql.FieldEQ(FieldStartCmd, v))
@@ -335,6 +340,81 @@ func StatusIn(vs ...Status) predicate.EnvBuild {
 // StatusNotIn applies the NotIn predicate on the "status" field.
 func StatusNotIn(vs ...Status) predicate.EnvBuild {
 	return predicate.EnvBuild(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// DockerfileEQ applies the EQ predicate on the "dockerfile" field.
+func DockerfileEQ(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldEQ(FieldDockerfile, v))
+}
+
+// DockerfileNEQ applies the NEQ predicate on the "dockerfile" field.
+func DockerfileNEQ(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldNEQ(FieldDockerfile, v))
+}
+
+// DockerfileIn applies the In predicate on the "dockerfile" field.
+func DockerfileIn(vs ...string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldIn(FieldDockerfile, vs...))
+}
+
+// DockerfileNotIn applies the NotIn predicate on the "dockerfile" field.
+func DockerfileNotIn(vs ...string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldNotIn(FieldDockerfile, vs...))
+}
+
+// DockerfileGT applies the GT predicate on the "dockerfile" field.
+func DockerfileGT(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldGT(FieldDockerfile, v))
+}
+
+// DockerfileGTE applies the GTE predicate on the "dockerfile" field.
+func DockerfileGTE(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldGTE(FieldDockerfile, v))
+}
+
+// DockerfileLT applies the LT predicate on the "dockerfile" field.
+func DockerfileLT(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldLT(FieldDockerfile, v))
+}
+
+// DockerfileLTE applies the LTE predicate on the "dockerfile" field.
+func DockerfileLTE(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldLTE(FieldDockerfile, v))
+}
+
+// DockerfileContains applies the Contains predicate on the "dockerfile" field.
+func DockerfileContains(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldContains(FieldDockerfile, v))
+}
+
+// DockerfileHasPrefix applies the HasPrefix predicate on the "dockerfile" field.
+func DockerfileHasPrefix(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldHasPrefix(FieldDockerfile, v))
+}
+
+// DockerfileHasSuffix applies the HasSuffix predicate on the "dockerfile" field.
+func DockerfileHasSuffix(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldHasSuffix(FieldDockerfile, v))
+}
+
+// DockerfileIsNil applies the IsNil predicate on the "dockerfile" field.
+func DockerfileIsNil() predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldIsNull(FieldDockerfile))
+}
+
+// DockerfileNotNil applies the NotNil predicate on the "dockerfile" field.
+func DockerfileNotNil() predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldNotNull(FieldDockerfile))
+}
+
+// DockerfileEqualFold applies the EqualFold predicate on the "dockerfile" field.
+func DockerfileEqualFold(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldEqualFold(FieldDockerfile, v))
+}
+
+// DockerfileContainsFold applies the ContainsFold predicate on the "dockerfile" field.
+func DockerfileContainsFold(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldContainsFold(FieldDockerfile, v))
 }
 
 // StartCmdEQ applies the EQ predicate on the "start_cmd" field.

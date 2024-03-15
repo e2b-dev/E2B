@@ -29,6 +29,8 @@ type EnvBuild struct {
 	EnvID *string `json:"env_id,omitempty"`
 	// Status holds the value of the "status" field.
 	Status envbuild.Status `json:"status,omitempty"`
+	// Dockerfile holds the value of the "dockerfile" field.
+	Dockerfile *string `json:"dockerfile,omitempty"`
 	// StartCmd holds the value of the "start_cmd" field.
 	StartCmd *string `json:"start_cmd,omitempty"`
 	// Vcpu holds the value of the "vcpu" field.
@@ -78,7 +80,7 @@ func (*EnvBuild) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case envbuild.FieldVcpu, envbuild.FieldRAMMB, envbuild.FieldFreeDiskSizeMB, envbuild.FieldTotalDiskSizeMB:
 			values[i] = new(sql.NullInt64)
-		case envbuild.FieldEnvID, envbuild.FieldStatus, envbuild.FieldStartCmd, envbuild.FieldKernelVersion, envbuild.FieldFirecrackerVersion:
+		case envbuild.FieldEnvID, envbuild.FieldStatus, envbuild.FieldDockerfile, envbuild.FieldStartCmd, envbuild.FieldKernelVersion, envbuild.FieldFirecrackerVersion:
 			values[i] = new(sql.NullString)
 		case envbuild.FieldCreatedAt, envbuild.FieldUpdatedAt, envbuild.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -136,6 +138,13 @@ func (eb *EnvBuild) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				eb.Status = envbuild.Status(value.String)
+			}
+		case envbuild.FieldDockerfile:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field dockerfile", values[i])
+			} else if value.Valid {
+				eb.Dockerfile = new(string)
+				*eb.Dockerfile = value.String
 			}
 		case envbuild.FieldStartCmd:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -240,6 +249,11 @@ func (eb *EnvBuild) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", eb.Status))
+	builder.WriteString(", ")
+	if v := eb.Dockerfile; v != nil {
+		builder.WriteString("dockerfile=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	if v := eb.StartCmd; v != nil {
 		builder.WriteString("start_cmd=")

@@ -120,6 +120,9 @@ type TemplateBuildRequest struct {
 	// CpuCount CPU cores for the template
 	CpuCount *int `json:"cpuCount,omitempty"`
 
+	// Dockerfile Dockerfile for the template
+	Dockerfile string `json:"dockerfile"`
+
 	// MemoryMB Memory limit for the template in MB
 	MemoryMB *int `json:"memoryMB,omitempty"`
 

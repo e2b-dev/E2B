@@ -1903,6 +1903,7 @@ type EnvBuildMutation struct {
 	updated_at            *time.Time
 	finished_at           *time.Time
 	status                *envbuild.Status
+	dockerfile            *string
 	start_cmd             *string
 	vcpu                  *int64
 	addvcpu               *int64
@@ -2230,6 +2231,55 @@ func (m *EnvBuildMutation) OldStatus(ctx context.Context) (v envbuild.Status, er
 // ResetStatus resets all changes to the "status" field.
 func (m *EnvBuildMutation) ResetStatus() {
 	m.status = nil
+}
+
+// SetDockerfile sets the "dockerfile" field.
+func (m *EnvBuildMutation) SetDockerfile(s string) {
+	m.dockerfile = &s
+}
+
+// Dockerfile returns the value of the "dockerfile" field in the mutation.
+func (m *EnvBuildMutation) Dockerfile() (r string, exists bool) {
+	v := m.dockerfile
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDockerfile returns the old "dockerfile" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldDockerfile(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDockerfile is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDockerfile requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDockerfile: %w", err)
+	}
+	return oldValue.Dockerfile, nil
+}
+
+// ClearDockerfile clears the value of the "dockerfile" field.
+func (m *EnvBuildMutation) ClearDockerfile() {
+	m.dockerfile = nil
+	m.clearedFields[envbuild.FieldDockerfile] = struct{}{}
+}
+
+// DockerfileCleared returns if the "dockerfile" field was cleared in this mutation.
+func (m *EnvBuildMutation) DockerfileCleared() bool {
+	_, ok := m.clearedFields[envbuild.FieldDockerfile]
+	return ok
+}
+
+// ResetDockerfile resets all changes to the "dockerfile" field.
+func (m *EnvBuildMutation) ResetDockerfile() {
+	m.dockerfile = nil
+	delete(m.clearedFields, envbuild.FieldDockerfile)
 }
 
 // SetStartCmd sets the "start_cmd" field.
@@ -2652,7 +2702,7 @@ func (m *EnvBuildMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvBuildMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, envbuild.FieldCreatedAt)
 	}
@@ -2667,6 +2717,9 @@ func (m *EnvBuildMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, envbuild.FieldStatus)
+	}
+	if m.dockerfile != nil {
+		fields = append(fields, envbuild.FieldDockerfile)
 	}
 	if m.start_cmd != nil {
 		fields = append(fields, envbuild.FieldStartCmd)
@@ -2707,6 +2760,8 @@ func (m *EnvBuildMutation) Field(name string) (ent.Value, bool) {
 		return m.EnvID()
 	case envbuild.FieldStatus:
 		return m.Status()
+	case envbuild.FieldDockerfile:
+		return m.Dockerfile()
 	case envbuild.FieldStartCmd:
 		return m.StartCmd()
 	case envbuild.FieldVcpu:
@@ -2740,6 +2795,8 @@ func (m *EnvBuildMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldEnvID(ctx)
 	case envbuild.FieldStatus:
 		return m.OldStatus(ctx)
+	case envbuild.FieldDockerfile:
+		return m.OldDockerfile(ctx)
 	case envbuild.FieldStartCmd:
 		return m.OldStartCmd(ctx)
 	case envbuild.FieldVcpu:
@@ -2797,6 +2854,13 @@ func (m *EnvBuildMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case envbuild.FieldDockerfile:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDockerfile(v)
 		return nil
 	case envbuild.FieldStartCmd:
 		v, ok := value.(string)
@@ -2934,6 +2998,9 @@ func (m *EnvBuildMutation) ClearedFields() []string {
 	if m.FieldCleared(envbuild.FieldEnvID) {
 		fields = append(fields, envbuild.FieldEnvID)
 	}
+	if m.FieldCleared(envbuild.FieldDockerfile) {
+		fields = append(fields, envbuild.FieldDockerfile)
+	}
 	if m.FieldCleared(envbuild.FieldStartCmd) {
 		fields = append(fields, envbuild.FieldStartCmd)
 	}
@@ -2959,6 +3026,9 @@ func (m *EnvBuildMutation) ClearField(name string) error {
 		return nil
 	case envbuild.FieldEnvID:
 		m.ClearEnvID()
+		return nil
+	case envbuild.FieldDockerfile:
+		m.ClearDockerfile()
 		return nil
 	case envbuild.FieldStartCmd:
 		m.ClearStartCmd()
@@ -2988,6 +3058,9 @@ func (m *EnvBuildMutation) ResetField(name string) error {
 		return nil
 	case envbuild.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case envbuild.FieldDockerfile:
+		m.ResetDockerfile()
 		return nil
 	case envbuild.FieldStartCmd:
 		m.ResetStartCmd()

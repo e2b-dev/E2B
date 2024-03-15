@@ -155,9 +155,14 @@ components:
             type: string
 
     TemplateBuildRequest:
+      required:
+        - dockerfile
       properties:
           alias:
             description: Alias of the template
+            type: string
+          dockerfile:
+            description: Dockerfile for the template
             type: string
           startCmd:
             description: Start command to execute in the template after the build

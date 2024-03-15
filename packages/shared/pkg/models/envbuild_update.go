@@ -99,6 +99,26 @@ func (ebu *EnvBuildUpdate) SetNillableStatus(e *envbuild.Status) *EnvBuildUpdate
 	return ebu
 }
 
+// SetDockerfile sets the "dockerfile" field.
+func (ebu *EnvBuildUpdate) SetDockerfile(s string) *EnvBuildUpdate {
+	ebu.mutation.SetDockerfile(s)
+	return ebu
+}
+
+// SetNillableDockerfile sets the "dockerfile" field if the given value is not nil.
+func (ebu *EnvBuildUpdate) SetNillableDockerfile(s *string) *EnvBuildUpdate {
+	if s != nil {
+		ebu.SetDockerfile(*s)
+	}
+	return ebu
+}
+
+// ClearDockerfile clears the value of the "dockerfile" field.
+func (ebu *EnvBuildUpdate) ClearDockerfile() *EnvBuildUpdate {
+	ebu.mutation.ClearDockerfile()
+	return ebu
+}
+
 // SetStartCmd sets the "start_cmd" field.
 func (ebu *EnvBuildUpdate) SetStartCmd(s string) *EnvBuildUpdate {
 	ebu.mutation.SetStartCmd(s)
@@ -320,6 +340,12 @@ func (ebu *EnvBuildUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := ebu.mutation.Status(); ok {
 		_spec.SetField(envbuild.FieldStatus, field.TypeEnum, value)
 	}
+	if value, ok := ebu.mutation.Dockerfile(); ok {
+		_spec.SetField(envbuild.FieldDockerfile, field.TypeString, value)
+	}
+	if ebu.mutation.DockerfileCleared() {
+		_spec.ClearField(envbuild.FieldDockerfile, field.TypeString)
+	}
 	if value, ok := ebu.mutation.StartCmd(); ok {
 		_spec.SetField(envbuild.FieldStartCmd, field.TypeString, value)
 	}
@@ -479,6 +505,26 @@ func (ebuo *EnvBuildUpdateOne) SetNillableStatus(e *envbuild.Status) *EnvBuildUp
 	if e != nil {
 		ebuo.SetStatus(*e)
 	}
+	return ebuo
+}
+
+// SetDockerfile sets the "dockerfile" field.
+func (ebuo *EnvBuildUpdateOne) SetDockerfile(s string) *EnvBuildUpdateOne {
+	ebuo.mutation.SetDockerfile(s)
+	return ebuo
+}
+
+// SetNillableDockerfile sets the "dockerfile" field if the given value is not nil.
+func (ebuo *EnvBuildUpdateOne) SetNillableDockerfile(s *string) *EnvBuildUpdateOne {
+	if s != nil {
+		ebuo.SetDockerfile(*s)
+	}
+	return ebuo
+}
+
+// ClearDockerfile clears the value of the "dockerfile" field.
+func (ebuo *EnvBuildUpdateOne) ClearDockerfile() *EnvBuildUpdateOne {
+	ebuo.mutation.ClearDockerfile()
 	return ebuo
 }
 
@@ -732,6 +778,12 @@ func (ebuo *EnvBuildUpdateOne) sqlSave(ctx context.Context) (_node *EnvBuild, er
 	}
 	if value, ok := ebuo.mutation.Status(); ok {
 		_spec.SetField(envbuild.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := ebuo.mutation.Dockerfile(); ok {
+		_spec.SetField(envbuild.FieldDockerfile, field.TypeString, value)
+	}
+	if ebuo.mutation.DockerfileCleared() {
+		_spec.ClearField(envbuild.FieldDockerfile, field.TypeString)
 	}
 	if value, ok := ebuo.mutation.StartCmd(); ok {
 		_spec.SetField(envbuild.FieldStartCmd, field.TypeString, value)
