@@ -11,6 +11,9 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/schema"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
@@ -122,11 +125,9 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 	envKernelVersion := schema.DefaultKernelVersion
 	envFirecrackerVersion := schema.DefaultFirecrackerVersion
 	if !new {
-		_, build, checkErr := a.CheckTeamAccessEnv(ctx, templateID, team.ID, false)
-
-		envKernelVersion = build.KernelVersion
-		envFirecrackerVersion = build.FirecrackerVersion
-
+		envDB, checkErr := a.supabase.Client.Env.Query().Where(env.ID(templateID), env.TeamID(team.ID)).WithBuilds(func(query *models.EnvBuildQuery) {
+			query.Where(envbuild.StatusEQ(envbuild.StatusSuccess)).Order(models.Desc(envbuild.FieldFinishedAt)).Limit(1)
+		}).Only(ctx)
 		if checkErr != nil {
 			a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("the sandbox template '%s' does not exist", templateID))
 
@@ -134,6 +135,12 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 			telemetry.ReportError(ctx, errMsg)
 
 			return nil
+		}
+
+		if len(envDB.Edges.Builds) > 0 {
+			build := envDB.Edges.Builds[0]
+			envKernelVersion = build.KernelVersion
+			envFirecrackerVersion = build.FirecrackerVersion
 		}
 	}
 
