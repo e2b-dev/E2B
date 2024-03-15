@@ -186,7 +186,10 @@ func (db *DB) FinishEnvBuild(
 	totalDiskSizeMB int64,
 ) error {
 	err := db.Client.EnvBuild.Update().Where(envbuild.ID(buildID), envbuild.EnvID(envID)).
-		SetTotalDiskSizeMB(totalDiskSizeMB).SetStatus(envbuild.StatusSuccess).Exec(ctx)
+		SetFinishedAt(time.Now()).
+		SetTotalDiskSizeMB(totalDiskSizeMB).
+		SetStatus(envbuild.StatusSuccess).
+		Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to finish env build '%s': %w", buildID, err)
 	}
