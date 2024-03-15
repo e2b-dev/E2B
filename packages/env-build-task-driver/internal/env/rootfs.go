@@ -89,7 +89,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 }
 
 func (r *Rootfs) pullDockerImage(ctx context.Context, tracer trace.Tracer) error {
-	childCtx, childSpan := tracer.Start(ctx, "push-docker-image")
+	childCtx, childSpan := tracer.Start(ctx, "pull-docker-image")
 	defer childSpan.End()
 
 	authConfig := registry.AuthConfig{
@@ -108,6 +108,7 @@ func (r *Rootfs) pullDockerImage(ctx context.Context, tracer trace.Tracer) error
 
 	logs, err := r.client.ImagePull(childCtx, r.dockerTag(), types.ImagePullOptions{
 		RegistryAuth: authConfigBase64,
+		Platform:     "linux/amd64",
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("error pulling image: %w", err)
