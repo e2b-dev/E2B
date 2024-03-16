@@ -91,7 +91,7 @@ resource "google_service_account" "docker_registry_service_account" {
 }
 
 resource "google_artifact_registry_repository_iam_member" "orchestration_repository_member" {
-  repository = "e2b-orchestration"
+  repository = var.custom_envs_repository_name
   role       = "roles/artifactregistry.writer"
   member     = "serviceAccount:${google_service_account.docker_registry_service_account.email}"
 }

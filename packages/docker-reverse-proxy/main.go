@@ -27,24 +27,6 @@ var DockerRegistry = os.Getenv("DOCKER_REGISTRY")
 // TODO: Remove debug transport
 // TODO: Check default values for Proxy, maybe increase some values
 
-type DebugTransport struct{}
-
-func (DebugTransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	b, err := httputil.DumpRequestOut(r, false)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(string(b))
-	res, err := http.DefaultTransport.RoundTrip(r)
-	if err != nil {
-		fmt.Printf("Error: %s\n", err)
-	}
-	fmt.Printf("Response header: %+v\n", res.Header)
-	fmt.Printf("Response status: %+v\n", res.Status)
-	fmt.Printf("Request header: %+v\n", res.Request.Header)
-	return res, err
-}
-
 func main() {
 	ctx := context.Background()
 
@@ -66,7 +48,6 @@ func main() {
 		Host:   "us-central1-docker.pkg.dev",
 	}
 	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
-	proxy.Transport = DebugTransport{}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/health" {
@@ -94,53 +75,53 @@ func main() {
 
 		path := req.URL.String()
 		if strings.HasPrefix(path, fmt.Sprintf("/v2/%s/%s/", GCPProject, DockerRegistry)) {
-			fmt.Printf("\n\nHeaders: %+v\n", req.Header)
-			fmt.Printf("Body: %+v\n", req.Body)
+			if !strings.HasPrefix(path, fmt.Sprintf("/v2/%s/%s/pkg/blobs/uploads/", GCPProject, DockerRegistry)) {
+				pathInRepo := strings.TrimPrefix(path, fmt.Sprintf("/v2/%s/%s/", GCPProject, DockerRegistry))
+				envWithBuildID := strings.Split(strings.Split(pathInRepo, "/")[0], ":")
 
-			fmt.Printf("Path: %s\n", path)
+				var buildID *string
+				envID := envWithBuildID[0]
+				if len(envWithBuildID) == 2 {
+					buildID = &envWithBuildID[1]
+				}
 
-			envWithBuildID := strings.Split(strings.TrimPrefix(path, fmt.Sprintf("/v2/%s/%s/", GCPProject, DockerRegistry)), ":")
-			fmt.Printf("EnvWithBuildID: %+v\n", envWithBuildID)
-			envID := envWithBuildID[0]
-			buildID := envWithBuildID[1]
+				accessTokenBase64 := req.Header.Get("Authorization")
+				accessTokenBytes, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(accessTokenBase64, "Bearer "))
+				if err != nil {
+					fmt.Printf("Error: %s\n", err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 
-			accessTokenBase64 := req.Header.Get("Authorization")
-			fmt.Printf("AccessTokenBase64: %s\n", accessTokenBase64)
+				accessToken := strings.TrimPrefix(string(accessTokenBytes), "_e2b_access_token:")
+				hasAccess, err := auth.Validate(ctx, database.Client, accessToken, envID, buildID)
+				if err != nil {
+					fmt.Printf("Error: %s\n", err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 
-			accessTokenBytes, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(accessTokenBase64, "Bearer "))
-			if err != nil {
-				fmt.Printf("Error: %s\n", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			accessToken := strings.TrimPrefix(string(accessTokenBytes), "_e2b_access_token:")
-
-			fmt.Printf("EnvID: %s\n", envID)
-			fmt.Printf("AccessToken: %s\n", accessToken)
-
-			hasAccess, err := auth.Validate(ctx, database.Client, accessToken, envID, buildID)
-			if err != nil {
-				fmt.Printf("Error: %s\n", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			if !hasAccess {
-				fmt.Printf("Access denied\n")
-				w.WriteHeader(http.StatusForbidden)
-				return
+				if !hasAccess {
+					fmt.Printf("Access denied\n")
+					w.WriteHeader(http.StatusForbidden)
+					return
+				}
 			}
 
 			req.Host = req.URL.Host
-
-			fmt.Println("Setting token", token)
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 			proxy.ServeHTTP(w, req)
 			return
 		}
 
+		if strings.HasPrefix(path, fmt.Sprintf("/artifacts-uploads/namespaces/%s/repositories/%s/uploads/", GCPProject, DockerRegistry)) {
+			req.Host = req.URL.Host
+			proxy.ServeHTTP(w, req)
+			return
+		}
+
+		fmt.Printf("No matching route found for path: %s\n", path)
 		w.WriteHeader(http.StatusNotFound) // 404 for no matching route found
 		return
 	})
@@ -149,6 +130,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", strconv.Itoa(*port)), nil))
 }
 
+// TODO: rework this - make cache between envID, scope and token
 func getToken() (string, error) {
 	key := os.Getenv("GOOGLE_SERVICE_ACCOUNT_SECRET")
 	fmt.Printf("Key: %s\n", key)
@@ -156,7 +138,7 @@ func getToken() (string, error) {
 		log.Fatal("GOOGLE_SERVICE_ACCOUNT_SECRET is not set")
 	}
 
-	r, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://us-central1-docker.pkg.dev/v2/token?service=us-central1-docker.pkg.dev&scope=repository:%s/%s/test:push&pull", GCPProject, DockerRegistry), nil)
+	r, err := http.NewRequest(http.MethodGet, "https://us-central1-docker.pkg.dev/v2/token?service=us-central1-docker.pkg.dev&scope=repository:e2b-dev/e2b-custom-environments/w0osphtclpbejdf8xg1g:push%2Cpull", nil)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return "", err
@@ -173,7 +155,16 @@ func getToken() (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		body := make([]byte, resp.ContentLength)
+		_, err := resp.Body.Read(body)
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+
+		fmt.Println("Body: ", string(body))
 		fmt.Println("Status code: ", resp.StatusCode)
+
 		return "", fmt.Errorf("status code: %d", resp.StatusCode)
 	}
 
