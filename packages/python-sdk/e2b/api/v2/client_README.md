@@ -74,6 +74,7 @@ Class | Method | HTTP request | Description
 *SandboxesApi* | [**sandboxes_get**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_get) | **GET** /sandboxes | 
 *SandboxesApi* | [**sandboxes_post**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_post) | **POST** /sandboxes | 
 *SandboxesApi* | [**sandboxes_sandbox_id_delete**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_sandbox_id_delete) | **DELETE** /sandboxes/{sandboxID} | 
+*SandboxesApi* | [**sandboxes_sandbox_id_logs_get**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_sandbox_id_logs_get) | **GET** /sandboxes/{sandboxID}/logs | 
 *SandboxesApi* | [**sandboxes_sandbox_id_refreshes_post**](e2b/api/v2/client/docs/SandboxesApi.md#sandboxes_sandbox_id_refreshes_post) | **POST** /sandboxes/{sandboxID}/refreshes | 
 
 
@@ -89,6 +90,7 @@ Class | Method | HTTP request | Description
  - [RunningInstance](e2b/api/v2/client/docs/RunningInstance.md)
  - [RunningSandboxes](e2b/api/v2/client/docs/RunningSandboxes.md)
  - [Sandbox](e2b/api/v2/client/docs/Sandbox.md)
+ - [SandboxLogs](e2b/api/v2/client/docs/SandboxLogs.md)
  - [SandboxesSandboxIDRefreshesPostRequest](e2b/api/v2/client/docs/SandboxesSandboxIDRefreshesPostRequest.md)
  - [Template](e2b/api/v2/client/docs/Template.md)
  - [TemplateBuild](e2b/api/v2/client/docs/TemplateBuild.md)

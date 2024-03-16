@@ -43,6 +43,7 @@ from e2b.api.v2.client.models.new_sandbox import NewSandbox
 from e2b.api.v2.client.models.running_instance import RunningInstance
 from e2b.api.v2.client.models.running_sandboxes import RunningSandboxes
 from e2b.api.v2.client.models.sandbox import Sandbox
+from e2b.api.v2.client.models.sandbox_logs import SandboxLogs
 from e2b.api.v2.client.models.sandboxes_sandbox_id_refreshes_post_request import (
     SandboxesSandboxIDRefreshesPostRequest,
 )
