@@ -145,7 +145,7 @@ func main() {
 
 	go portScanner.ScanAndBroadcast()
 
-	clock := clock.New(logger.Named("clockSvc"))
+	clock := clock.New(logger.Named("clockSvc"), envConfig.Shell)
 
 	ports := ports.NewService(logger.Named("codeSnippetSvc"), portScanner)
 	// WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK

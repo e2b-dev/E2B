@@ -33,3 +33,5 @@ require (
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
 )
+
+replace github.com/e2b-dev/infra/packages/shared v0.0.0 => ../shared
