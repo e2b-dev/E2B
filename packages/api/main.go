@@ -48,7 +48,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 			"/sandboxes/:sandboxID/refreshes",
 			"/instances/:instanceID/refreshes",
 			"/envs/:envID/builds/:buildID",
-			"/templates/:templateID/builds/:buildID",
+			"/templates/:templateID/builds/:buildID", // TODO: We need only ignore get, maybe rename?
 			"/envs/:envID/builds/:buildID/logs",
 			"/templates/:templateID/builds/:buildID/logs",
 		),

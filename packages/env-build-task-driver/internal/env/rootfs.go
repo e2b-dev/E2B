@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
@@ -161,6 +162,25 @@ func (r *Rootfs) dockerTag() string {
 func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
+
+	done := false
+	go func() {
+		now := time.Now()
+		for {
+			msg := []byte(fmt.Sprintf("Postprocessing (%s)\r", time.Since(now).Round(time.Second)))
+			if done {
+				r.env.BuildLogsWriter.Write(msg)
+				r.env.BuildLogsWriter.Write([]byte("Postprocessing done.                   \n"))
+				return
+			}
+			select {
+			case <-childCtx.Done():
+				return
+			case <-time.After(100 * time.Millisecond):
+				r.env.BuildLogsWriter.Write(msg)
+			}
+		}
+	}()
 
 	//
 	//
@@ -577,7 +597,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		return errMsg
 	}
 
-	r.env.BuildLogsWriter.Write([]byte("Postprocessing finished.\n"))
+	done = true
 	telemetry.ReportEvent(childCtx, "resized rootfs file")
 
 	return nil
