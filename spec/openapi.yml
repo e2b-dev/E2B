@@ -137,6 +137,9 @@ components:
       required:
         - templateID
         - buildID
+        - cpuCount
+        - memoryMB
+        - storageGB
         - public
       properties:
         templateID:
@@ -145,6 +148,15 @@ components:
         buildID:
           type: string
           description: Identifier of the last successful build for given template
+        cpuCount:
+          type: integer
+          description: CPU cores for the sandbox
+        memoryMB:
+          type: integer
+          description: Memory limit for the sandbox in MB
+        storageGB:
+          type: number
+          description: Storage limit for the sandbox in GB
         public:
           type: boolean
           description: Whether the template is public or only accessible by the team
@@ -409,33 +421,6 @@ paths:
           $ref: "#/components/responses/500"
 
   /templates/{templateID}/builds/{buildID}:
-    get:
-      description: Get template build info
-      tags: [templates]
-      security:
-        - AccessTokenAuth: []
-      parameters:
-        - $ref: "#/components/parameters/templateID"
-        - $ref: "#/components/parameters/buildID"
-        - in: query
-          name: logsOffset
-          schema:
-            default: 0
-            type: integer
-          description: Index of the starting build log that should be returned with the template
-      responses:
-        200:
-          description: Successfully returned the template
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TemplateBuild"
-        401:
-          $ref: "#/components/responses/401"
-        404:
-          $ref: "#/components/responses/404"
-        500:
-          $ref: "#/components/responses/500"
     post:
       description: Start the build
       tags: [templates]
@@ -483,3 +468,32 @@ paths:
           $ref: "#/components/responses/401"
         404:
           $ref: "#/components/responses/404"
+
+  /templates/{templateID}/builds/{buildID}/status:
+    get:
+      description: Get template build info
+      tags: [ templates ]
+      security:
+        - AccessTokenAuth: [ ]
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/buildID"
+        - in: query
+          name: logsOffset
+          schema:
+            default: 0
+            type: integer
+          description: Index of the starting build log that should be returned with the template
+      responses:
+        200:
+          description: Successfully returned the template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateBuild"
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"

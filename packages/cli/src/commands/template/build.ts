@@ -24,10 +24,10 @@ import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/consta
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 import * as child_process from 'child_process'
 
-const templateCheckInterval = 1_000 // 1 sec
+const templateCheckInterval = 500 // 0.5 sec
 
 const getTemplate = e2b.withAccessToken(
-  e2b.api.path('/templates/{templateID}/builds/{buildID}').method('get').create(),
+  e2b.api.path('/templates/{templateID}/builds/{buildID}/status').method('get').create(),
 )
 
 const requestTemplateBuild = e2b.withAccessToken(
@@ -183,6 +183,7 @@ export const buildCommand = new commander.Command('build')
         }
 
         const template = await requestBuildTemplate(accessToken, body, !!config, relativeConfigPath, templateID)
+        templateID = template.templateID
 
         console.log(
           `Requested build for the sandbox template ${asFormattedSandboxTemplate(
@@ -214,8 +215,9 @@ export const buildCommand = new commander.Command('build')
         child_process.execSync(`docker push docker.e2b-staging.com/e2b-dev/e2b-custom-environments/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root })
 
         process.stdout.write('\n')
+
         console.log('Triggering build...')
-        await triggerBuild(accessToken, template.templateID, template.buildID)
+        await triggerBuild(accessToken, templateID, template.buildID)
 
         console.log(
           `Triggered build for the sandbox template ${asFormattedSandboxTemplate(
@@ -224,7 +226,7 @@ export const buildCommand = new commander.Command('build')
         )
 
         console.log('Waiting for build to finish...')
-        await waitForBuildFinish(accessToken, template.templateID, template.buildID, name)
+        await waitForBuildFinish(accessToken, templateID, template.buildID, name)
 
         process.exit(0)
       } catch (err: any) {

@@ -163,30 +163,6 @@ export interface paths {
     };
   };
   "/templates/{templateID}/builds/{buildID}": {
-    /** Get template build info */
-    get: {
-      parameters: {
-        path: {
-          templateID: components["parameters"]["templateID"];
-          buildID: components["parameters"]["buildID"];
-        };
-        query: {
-          /** Index of the starting build log that should be returned with the template */
-          logsOffset?: number;
-        };
-      };
-      responses: {
-        /** Successfully returned the template */
-        200: {
-          content: {
-            "application/json": components["schemas"]["TemplateBuild"];
-          };
-        };
-        401: components["responses"]["401"];
-        404: components["responses"]["404"];
-        500: components["responses"]["500"];
-      };
-    };
     /** Start the build */
     post: {
       parameters: {
@@ -229,6 +205,32 @@ export interface paths {
       };
     };
   };
+  "/templates/{templateID}/builds/{buildID}/status": {
+    /** Get template build info */
+    get: {
+      parameters: {
+        path: {
+          templateID: components["parameters"]["templateID"];
+          buildID: components["parameters"]["buildID"];
+        };
+        query: {
+          /** Index of the starting build log that should be returned with the template */
+          logsOffset?: number;
+        };
+      };
+      responses: {
+        /** Successfully returned the template */
+        200: {
+          content: {
+            "application/json": components["schemas"]["TemplateBuild"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
 }
 
 export interface components {
@@ -262,6 +264,8 @@ export interface components {
       cpuCount: number;
       /** @description Memory limit for the sandbox in MB */
       memoryMB: number;
+      /** @description Storage limit for the sandbox in GB */
+      storageGB: number;
       metadata?: components["schemas"]["SandboxMetadata"];
     };
     NewSandbox: {
@@ -274,6 +278,12 @@ export interface components {
       templateID: string;
       /** @description Identifier of the last successful build for given template */
       buildID: string;
+      /** @description CPU cores for the sandbox */
+      cpuCount: number;
+      /** @description Memory limit for the sandbox in MB */
+      memoryMB: number;
+      /** @description Storage limit for the sandbox in GB */
+      storageGB: number;
       /** @description Whether the template is public or only accessible by the team */
       public: boolean;
       /** @description Aliases of the template */
