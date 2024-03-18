@@ -105,13 +105,13 @@ resource "nomad_job" "docker_reverse_proxy" {
 
   hcl2 {
     vars = {
-      image_name  = var.docker_reverse_proxy_image_digest
-      postgres_connection_string = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
+      image_name                    = var.docker_reverse_proxy_image_digest
+      postgres_connection_string    = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
       google_service_account_secret = google_service_account_key.google_service_key.private_key
-      port_number = 5000
-      domain_name = var.domain_name
-      gcp_project_id = var.gcp_project_id
-      docker_registry = var.custom_envs_repository_name
+      port_number                   = 5000
+      domain_name                   = var.domain_name
+      gcp_project_id                = var.gcp_project_id
+      docker_registry               = var.custom_envs_repository_name
     }
   }
 }

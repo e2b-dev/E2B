@@ -125,6 +125,16 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 	envKernelVersion := schema.DefaultKernelVersion
 	envFirecrackerVersion := schema.DefaultFirecrackerVersion
 	if !new {
+		err = a.supabase.Client.EnvBuild.Update().Where(envbuild.ID(buildID), envbuild.StatusEQ(envbuild.StatusBuilding)).SetStatus(envbuild.StatusFailed).Exec(ctx)
+		if err != nil {
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating env: %s", err))
+
+			err = fmt.Errorf("error when updating env: %w", err)
+			telemetry.ReportCriticalError(ctx, err)
+
+			return nil
+		}
+
 		envDB, checkErr := a.supabase.Client.Env.Query().Where(env.ID(templateID), env.TeamID(team.ID)).WithBuilds(func(query *models.EnvBuildQuery) {
 			query.Where(envbuild.StatusEQ(envbuild.StatusSuccess)).Order(models.Desc(envbuild.FieldFinishedAt)).Limit(1)
 		}).Only(ctx)
@@ -194,7 +204,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		return nil
 	}
 
-	aliases := []string{}
+	var aliases []string
 
 	if alias != "" {
 		aliases = append(aliases, alias)
