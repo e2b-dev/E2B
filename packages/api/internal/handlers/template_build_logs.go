@@ -32,7 +32,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildID(c *gin.Context, templateI
 
 		telemetry.ReportCriticalError(ctx, errMsg)
 
-		return nil
+		return
 	}
 
 	buildUUID, err := uuid.Parse(buildID)
@@ -83,7 +83,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildID(c *gin.Context, templateI
 	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
 	a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "got environment detail", properties.Set("environment", templateID))
 
-	c.JSON(http.StatusOK, &result)
+	c.JSON(http.StatusOK, result)
 }
 
 // PostTemplatesTemplateIDBuildsBuildIDLogs serves to add logs from the Build Driver
