@@ -126,7 +126,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 	envKernelVersion := schema.DefaultKernelVersion
 	envFirecrackerVersion := schema.DefaultFirecrackerVersion
 	if !new {
-		err = a.db.Client.EnvBuild.Update().Where(envbuild.ID(buildID), envbuild.StatusEQ(envbuild.StatusBuilding)).SetStatus(envbuild.StatusFailed).SetFinishedAt(time.Now()).Exec(ctx)
+		err = a.db.Client.EnvBuild.Update().Where(envbuild.ID(buildID), envbuild.StatusEQ(envbuild.StatusWaiting)).SetStatus(envbuild.StatusFailed).SetFinishedAt(time.Now()).Exec(ctx)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating env: %s", err))
 
