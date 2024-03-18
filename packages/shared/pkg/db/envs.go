@@ -17,6 +17,9 @@ import (
 type Template struct {
 	TemplateID string
 	BuildID    string
+	VCPU       int64
+	DiskMB     int64
+	RAMMB      int64
 	Public     bool
 	Aliases    *[]string
 }
@@ -64,6 +67,9 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*Template
 		result = append(result, &Template{
 			TemplateID: item.ID,
 			BuildID:    build.ID.String(),
+			VCPU:       build.Vcpu,
+			RAMMB:      build.RAMMB,
+			DiskMB:     build.FreeDiskSizeMB,
 			Public:     item.Public,
 			Aliases:    &aliases,
 		})
@@ -117,6 +123,9 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 	return &Template{
 		TemplateID: dbEnv.ID,
 		BuildID:    build.ID.String(),
+		VCPU:       build.Vcpu,
+		RAMMB:      build.RAMMB,
+		DiskMB:     build.FreeDiskSizeMB,
 		Public:     dbEnv.Public,
 		Aliases:    &aliases,
 	}, build, nil

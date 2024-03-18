@@ -87,7 +87,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Request canceled or timed out.")
 
-		return nil
+		return
 	}
 
 	defer postSandboxParallelLimit.Release(1)

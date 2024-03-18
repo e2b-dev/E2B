@@ -137,6 +137,9 @@ components:
       required:
         - templateID
         - buildID
+        - cpuCount
+        - memoryMB
+        - storageGB
         - public
       properties:
         templateID:
@@ -145,6 +148,15 @@ components:
         buildID:
           type: string
           description: Identifier of the last successful build for given template
+        cpuCount:
+          type: integer
+          description: CPU cores for the sandbox
+        memoryMB:
+          type: integer
+          description: Memory limit for the sandbox in MB
+        storageGB:
+          type: number
+          description: Storage limit for the sandbox in GB
         public:
           type: boolean
           description: Whether the template is public or only accessible by the team

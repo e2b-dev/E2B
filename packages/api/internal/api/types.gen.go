@@ -87,8 +87,17 @@ type Template struct {
 	// BuildID Identifier of the last successful build for given template
 	BuildID string `json:"buildID"`
 
+	// CpuCount CPU cores for the sandbox
+	CpuCount int `json:"cpuCount"`
+
+	// MemoryMB Memory limit for the sandbox in MB
+	MemoryMB int `json:"memoryMB"`
+
 	// Public Whether the template is public or only accessible by the team
 	Public bool `json:"public"`
+
+	// StorageGB Storage limit for the sandbox in GB
+	StorageGB float32 `json:"storageGB"`
 
 	// TemplateID Identifier of the template
 	TemplateID string `json:"templateID"`

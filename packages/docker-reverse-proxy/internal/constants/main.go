@@ -17,11 +17,11 @@ func CheckRequired() error {
 	}
 
 	if DockerRegistry == "" {
-		missing = append(missing, "DOCKER_REGISTRY")
+		missing = append(missing, "GCP_DOCKER_REPOSITORY_NAME")
 	}
 
 	if GoogleServiceAccountSecret == "" {
-		missing = append(missing, "GOOGLE_SERVICE_ACCOUNT_SECRET")
+		missing = append(missing, "GOOGLE_SERVICE_ACCOUNT_BASE64")
 	}
 
 	if GCPRegion == "" {
