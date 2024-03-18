@@ -9,8 +9,7 @@ import (
 )
 
 func (a *APIStore) Proxy(w http.ResponseWriter, req *http.Request) {
-
-	// Validate the token
+	// Validate the token by checking if the generated token is in the cache
 	authHeader := req.Header.Get("Authorization")
 	e2bToken := strings.TrimPrefix(authHeader, "Bearer ")
 
@@ -24,7 +23,7 @@ func (a *APIStore) Proxy(w http.ResponseWriter, req *http.Request) {
 
 	templateID := token.TemplateID
 
-	// Check if the request is for the correct
+	// Check if the request is for the correct repository
 	path := req.URL.String()
 	repoPrefix := fmt.Sprintf("/v2/%s/%s/", constants.GCPProject, constants.DockerRegistry)
 	artifactUploadPrefix := fmt.Sprintf("/artifacts-uploads/namespaces/%s/repositories/%s/uploads/", constants.GCPProject, constants.DockerRegistry)

@@ -4,14 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/constants"
-	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/handlers"
 	"log"
 	"net/http"
 	"strconv"
-)
 
-// TODO: Check default values for Proxy, maybe increase some values
+	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/constants"
+	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/handlers"
+)
 
 func main() {
 	ctx := context.Background()
@@ -45,7 +44,7 @@ func main() {
 
 		// Auth endpoint for docker
 		if req.URL.Path == "/v2/token" {
-			err := store.GetToken(w, req)
+			err = store.GetToken(w, req)
 			if err != nil {
 				fmt.Printf("Error while getting token: %s\n", err)
 			}

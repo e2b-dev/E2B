@@ -67,6 +67,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		return nil
 	}
 
+	// Generate a build id for the new build
 	buildID, err := uuid.NewRandom()
 	if err != nil {
 		err = fmt.Errorf("error when generating build id: %w", err)
@@ -126,7 +127,11 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 	envKernelVersion := schema.DefaultKernelVersion
 	envFirecrackerVersion := schema.DefaultFirecrackerVersion
 	if !new {
-		err = a.db.Client.EnvBuild.Update().Where(envbuild.ID(buildID), envbuild.StatusEQ(envbuild.StatusWaiting)).SetStatus(envbuild.StatusFailed).SetFinishedAt(time.Now()).Exec(ctx)
+		// Mark the previous not started builds as failed
+		err = a.db.Client.EnvBuild.Update().Where(
+			envbuild.EnvID(templateID),
+			envbuild.StatusEQ(envbuild.StatusWaiting),
+		).SetStatus(envbuild.StatusFailed).SetFinishedAt(time.Now()).Exec(ctx)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating env: %s", err))
 
@@ -136,6 +141,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 			return nil
 		}
 
+		// Get the previous successful build's kernel and firecracker version
 		envDB, checkErr := a.db.Client.Env.Query().Where(env.ID(templateID), env.TeamID(team.ID)).WithBuilds(func(query *models.EnvBuildQuery) {
 			query.Where(envbuild.StatusEQ(envbuild.StatusSuccess)).Order(models.Desc(envbuild.FieldFinishedAt)).Limit(1)
 		}).Only(ctx)
@@ -170,6 +176,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 	)
 	telemetry.ReportEvent(ctx, "started updating environment")
 
+	// Check if the alias is available and claim it
 	if alias != "" {
 		err = a.db.EnsureEnvAlias(ctx, alias, templateID)
 		if err != nil {
@@ -183,7 +190,8 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		telemetry.ReportEvent(ctx, "inserted alias", attribute.String("env.alias", alias))
 	}
 
-	err = a.db.UpsertEnv(
+	// Create or update the template, create a new build
+	err = a.db.NewEnvBuild(
 		ctx,
 		team.ID,
 		templateID,

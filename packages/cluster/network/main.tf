@@ -41,16 +41,15 @@ locals {
       }
       groups = [{ group = var.client_instance_group }]
     }
-    #    TODO: Change values to variables
     docker-reverse-proxy = {
       protocol                        = "HTTP"
-      port                            = 5000
-      port_name                       = "docker-reverse-proxy"
+      port                            = var.docker_reverse_proxy_port.port
+      port_name                       = var.docker_reverse_proxy_port.name
       timeout_sec                     = 30
       connection_draining_timeout_sec = 1
       health_check = {
-        request_path = "/health"
-        port         = 5000
+        request_path = var.docker_reverse_proxy_port.health_path
+        port         = var.docker_reverse_proxy_port.port
       }
       groups = [{ group = var.client_instance_group }]
     }

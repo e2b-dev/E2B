@@ -21,6 +21,7 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
+// PostTemplatesTemplateIDBuildsBuildID triggers a new build after the user pushes the Docker image to the registry
 func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, templateID api.TemplateID, buildID api.BuildID) {
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
@@ -47,6 +48,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 
 	telemetry.ReportEvent(ctx, "started environment build")
 
+	// Check if the user has access to the template, load the template with build info
 	envDB, err := a.db.Client.Env.Query().Where(
 		env.IDEQ(templateID),
 		env.TeamID(team.ID),
@@ -65,6 +67,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 		return
 	}
 
+	// Create a new build cache for storing logs
 	err = a.buildCache.Create(templateID, buildUUID, team.ID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("there's already running build for %s", templateID))
@@ -75,6 +78,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 		return
 	}
 
+	// Set the build status to building
 	err = a.db.EnvBuildSetStatus(ctx, envDB.ID, buildUUID, envbuild.StatusBuilding)
 	if err != nil {
 		err = fmt.Errorf("error when setting build status: %w", err)
@@ -85,6 +89,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 		return
 	}
 
+	// Trigger the build in the background
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
 			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
@@ -99,6 +104,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			startCmd = *build.StartCmd
 		}
 
+		// Call the Nomad API to build the environment
 		diskSize, buildErr := a.buildEnv(
 			buildContext,
 			userID.String(),
@@ -144,6 +150,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 		childSpan.End()
 	}()
 
+	c.Status(http.StatusAccepted)
 }
 
 func (a *APIStore) buildEnv(

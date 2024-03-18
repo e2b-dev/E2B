@@ -1,5 +1,3 @@
-# TODO: Rewrite everything to variables
-
 variable "gcp_zone" {
   type    = string
   default = "us-central1-a"
@@ -28,6 +26,11 @@ variable "domain_name" {
 variable "docker_registry" {
   type    = string
   default = ""
+}
+
+variable "health_check_path" {
+    type    = string
+    default = "/health"
 }
 
 variable "port_number" {
@@ -69,7 +72,7 @@ job "docker-reverse-proxy" {
       check {
         type     = "http"
         name     = "health"
-        path     = "/health"
+        path     = var.health_check_path
         interval = "20s"
         timeout  = "5s"
         port     = var.port_number

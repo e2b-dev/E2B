@@ -163,14 +163,14 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
 
-	done := false
+	postprocessingFinished := false
 	go func() {
 		now := time.Now()
 		for {
 			msg := []byte(fmt.Sprintf("Postprocessing (%s)\r", time.Since(now).Round(time.Second)))
-			if done {
+			if postprocessingFinished {
 				r.env.BuildLogsWriter.Write(msg)
-				r.env.BuildLogsWriter.Write([]byte("Postprocessing done.                   \n"))
+				r.env.BuildLogsWriter.Write([]byte("Postprocessing finished.                   \n"))
 				return
 			}
 			select {
@@ -597,7 +597,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		return errMsg
 	}
 
-	done = true
+	postprocessingFinished = true
 	telemetry.ReportEvent(childCtx, "resized rootfs file")
 
 	return nil

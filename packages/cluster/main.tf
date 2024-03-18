@@ -109,7 +109,8 @@ module "client_cluster" {
   client_proxy_port        = var.client_proxy_port
   client_proxy_health_port = var.client_proxy_health_port
 
-  api_port = var.api_port
+  api_port                  = var.api_port
+  docker_reverse_proxy_port = var.docker_reverse_proxy_port
 
   service_account_email = var.google_service_account_email
 
@@ -125,9 +126,10 @@ module "network" {
 
   gcp_project_id = var.gcp_project_id
 
-  api_port     = var.api_port
-  network_name = var.network_name
-  domain_name  = var.domain_name
+  api_port                  = var.api_port
+  docker_reverse_proxy_port = var.docker_reverse_proxy_port
+  network_name              = var.network_name
+  domain_name               = var.domain_name
 
   client_instance_group    = module.client_cluster.instance_group
   client_proxy_port        = var.client_proxy_port

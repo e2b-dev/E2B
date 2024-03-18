@@ -126,6 +126,7 @@ module "cluster" {
   client_proxy_health_port     = var.client_proxy_health_port
   client_proxy_port            = var.client_proxy_port
   api_port                     = var.api_port
+  docker_reverse_proxy_port    = var.docker_reverse_proxy_port
   google_service_account_email = module.init.service_account_email
   domain_name                  = var.domain_name
 

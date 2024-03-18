@@ -32,7 +32,6 @@ func (a *APIStore) Login(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("invalid access token")
 	}
 
-	fmt.Printf("Token: %s\n", r.Header.Get("Authorization"))
 	w.WriteHeader(http.StatusOK)
 
 	return nil

@@ -18,6 +18,9 @@ type DockerToken struct {
 	ExpiresIn int    `json:"expires_in"`
 }
 
+// expiresIn is the expiration time for the token in seconds, it's an access token and it still the same, no need to refresh it
+const expiresIn = 60 * 60 * 24 * 30 // 30 days
+
 // The scope is in format "repository:<project>/<repo>/<templateID>:<action>"
 var scopeRegex = regexp.MustCompile(`repository:(?P<project>[^/]+)/(?P<repo>[^/]+)/(?P<templateID>[^:]+):(?P<action>[^:]+)`)
 
@@ -51,7 +54,7 @@ func (a *APIStore) GetToken(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusOK)
 
 		// The same token is returned for the initial login request
-		response := fmt.Sprintf(`{"token": "%s", "expires_in": 360000}`, strings.TrimPrefix(authHeader, "Basic "))
+		response := fmt.Sprintf(`{"token": "%s", "expires_in": %d}`, strings.TrimPrefix(authHeader, "Basic "), expiresIn)
 		w.Write([]byte(response))
 
 		return nil

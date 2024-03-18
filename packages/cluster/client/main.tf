@@ -20,10 +20,9 @@ resource "google_compute_instance_group_manager" "client_cluster" {
     instance_template = google_compute_instance_template.client.id
   }
 
-  # TODO: Change to a variable
   named_port {
-    name = "docker-reverse-proxy"
-    port = 5000
+    name = var.docker_reverse_proxy_port.name
+    port = var.docker_reverse_proxy_port.port
   }
 
   named_port {

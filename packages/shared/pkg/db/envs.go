@@ -131,7 +131,7 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 	}, build, nil
 }
 
-func (db *DB) UpsertEnv(
+func (db *DB) NewEnvBuild(
 	ctx context.Context,
 	teamID uuid.UUID,
 	envID string,
@@ -225,15 +225,6 @@ func (db *DB) EnvBuildSetStatus(
 	}
 
 	return nil
-}
-
-func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *Template, build *models.EnvBuild, err error) {
-	envDB, build, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)
-	}
-
-	return envDB, build, nil
 }
 
 func (db *DB) UpdateEnvLastUsed(ctx context.Context, envID string) (err error) {

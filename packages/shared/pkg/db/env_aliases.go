@@ -116,7 +116,7 @@ func (db *DB) EnsureEnvAlias(ctx context.Context, alias, envID string) error {
 		return errMsg
 	}
 
-	aliasDB, err := db.Client.EnvAlias.Query().Where(envalias.ID(alias)).First(ctx)
+	aliasDB, err := db.Client.EnvAlias.Query().Where(envalias.ID(alias)).Only(ctx)
 
 	if err != nil {
 		if !models.IsNotFound(err) {
