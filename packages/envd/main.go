@@ -41,7 +41,6 @@ var (
 	serverPort   uint
 	versionFlag  bool
 	startCmdFlag string
-	
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -51,8 +50,8 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 func syncHandler(clock *clock.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// logger.Debug("/sync request")
-		// clock.Sync()
+		logger.Debug("/sync request")
+		clock.Sync()
 
 		w.WriteHeader(http.StatusOK)
 	}

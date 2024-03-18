@@ -173,6 +173,7 @@ func NewInstance(
 		config: config,
 	}
 
+	telemetry.ReportEvent(childCtx, "ensuring clock sync")
 	go func() {
 		context := context.Background()
 

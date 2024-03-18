@@ -22,7 +22,6 @@ func NewService(logger *zap.SugaredLogger, shell string) *Service {
 }
 
 func (s *Service) Sync() {
-	s.logger.Debug("Waiting for clock sync lock")
 	s.mu.Lock()
 
 	go func() {
