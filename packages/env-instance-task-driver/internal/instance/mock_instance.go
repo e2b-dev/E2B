@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-func MockInstance(envID, instanceID string) {
+func MockInstance(envID, instanceID string, keepAlive time.Duration) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
 
@@ -49,6 +49,8 @@ func MockInstance(envID, instanceID string) {
 	}
 
 	fmt.Println("[Instance is running]")
+
+	time.Sleep(keepAlive)
 
 	defer instance.CleanupAfterFCStop(ctx, tracer, hosts)
 
