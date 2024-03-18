@@ -7,13 +7,19 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
+
+type Template struct {
+	TemplateID string
+	BuildID    string
+	Public     bool
+	Aliases    *[]string
+}
 
 func (db *DB) DeleteEnv(ctx context.Context, envID string) error {
 	_, err := db.
@@ -29,7 +35,7 @@ func (db *DB) DeleteEnv(ctx context.Context, envID string) error {
 	return nil
 }
 
-func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Template, err error) {
+func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*Template, err error) {
 	envs, err := db.
 		Client.
 		Env.
@@ -55,7 +61,7 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Temp
 		}
 
 		build := item.Edges.Builds[0]
-		result = append(result, &api.Template{
+		result = append(result, &Template{
 			TemplateID: item.ID,
 			BuildID:    build.ID.String(),
 			Public:     item.Public,
@@ -68,7 +74,7 @@ func (db *DB) GetEnvs(ctx context.Context, teamID uuid.UUID) (result []*api.Temp
 
 var ErrEnvNotFound = fmt.Errorf("env not found")
 
-func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (result *api.Template, build *models.EnvBuild, err error) {
+func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (result *Template, build *models.EnvBuild, err error) {
 	dbEnv, err := db.
 		Client.
 		Env.
@@ -108,7 +114,7 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 	}
 
 	build = dbEnv.Edges.Builds[0]
-	return &api.Template{
+	return &Template{
 		TemplateID: dbEnv.ID,
 		BuildID:    build.ID.String(),
 		Public:     dbEnv.Public,
@@ -204,7 +210,7 @@ func (db *DB) EnvBuildSetStatus(
 	status envbuild.Status,
 ) error {
 	err := db.Client.EnvBuild.Update().Where(envbuild.ID(buildID), envbuild.EnvID(envID)).
-		SetStatus(status).Exec(ctx)
+		SetStatus(status).SetFinishedAt(time.Now()).Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to finish env build '%s': %w", buildID, err)
 	}
@@ -212,7 +218,7 @@ func (db *DB) EnvBuildSetStatus(
 	return nil
 }
 
-func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *api.Template, build *models.EnvBuild, err error) {
+func (db *DB) HasEnvAccess(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, canBePublic bool) (env *Template, build *models.EnvBuild, err error) {
 	envDB, build, err := db.GetEnv(ctx, aliasOrEnvID, teamID, canBePublic)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get env '%s': %w", aliasOrEnvID, err)

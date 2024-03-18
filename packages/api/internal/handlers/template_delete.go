@@ -64,7 +64,7 @@ func (a *APIStore) DeleteTemplatesTemplateID(c *gin.Context, aliasOrTemplateID a
 		telemetry.ReportEvent(ctx, "deleted env from fc-envs disk")
 	}
 
-	dbErr := a.supabase.DeleteEnv(ctx, env.TemplateID)
+	dbErr := a.db.DeleteEnv(ctx, env.TemplateID)
 	if dbErr != nil {
 		errMsg := fmt.Errorf("error when deleting env from db: %w", dbErr)
 		telemetry.ReportCriticalError(ctx, errMsg)

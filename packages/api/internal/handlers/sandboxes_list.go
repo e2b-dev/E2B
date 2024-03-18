@@ -14,11 +14,6 @@ import (
 )
 
 func (a *APIStore) GetSandboxes(c *gin.Context) {
-	sandboxes := a.GetSandboxesWithoutResponse(c)
-	c.JSON(http.StatusOK, sandboxes)
-}
-
-func (a *APIStore) GetSandboxesWithoutResponse(c *gin.Context) []api.RunningSandboxes {
 	ctx := c.Request.Context()
 
 	team := c.Value(constants.TeamContextKey).(models.Team)
@@ -40,11 +35,11 @@ func (a *APIStore) GetSandboxesWithoutResponse(c *gin.Context) []api.RunningSand
 		buildIDs = append(buildIDs, *info.BuildID)
 	}
 
-	builds, err := a.supabase.Client.EnvBuild.Query().Where(envbuild.IDIn(buildIDs...)).All(ctx)
+	builds, err := a.db.Client.EnvBuild.Query().Where(envbuild.IDIn(buildIDs...)).All(ctx)
 	if err != nil {
 		telemetry.ReportCriticalError(ctx, err)
 
-		return nil
+		return
 	}
 
 	buildsMap := make(map[uuid.UUID]*models.EnvBuild, len(builds))
@@ -77,5 +72,5 @@ func (a *APIStore) GetSandboxesWithoutResponse(c *gin.Context) []api.RunningSand
 		sandboxes = append(sandboxes, instance)
 	}
 
-	return sandboxes
+	c.JSON(http.StatusOK, sandboxes)
 }

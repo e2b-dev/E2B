@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -125,7 +126,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 	envKernelVersion := schema.DefaultKernelVersion
 	envFirecrackerVersion := schema.DefaultFirecrackerVersion
 	if !new {
-		err = a.supabase.Client.EnvBuild.Update().Where(envbuild.ID(buildID), envbuild.StatusEQ(envbuild.StatusBuilding)).SetStatus(envbuild.StatusFailed).Exec(ctx)
+		err = a.db.Client.EnvBuild.Update().Where(envbuild.ID(buildID), envbuild.StatusEQ(envbuild.StatusBuilding)).SetStatus(envbuild.StatusFailed).SetFinishedAt(time.Now()).Exec(ctx)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating env: %s", err))
 
@@ -135,7 +136,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 			return nil
 		}
 
-		envDB, checkErr := a.supabase.Client.Env.Query().Where(env.ID(templateID), env.TeamID(team.ID)).WithBuilds(func(query *models.EnvBuildQuery) {
+		envDB, checkErr := a.db.Client.Env.Query().Where(env.ID(templateID), env.TeamID(team.ID)).WithBuilds(func(query *models.EnvBuildQuery) {
 			query.Where(envbuild.StatusEQ(envbuild.StatusSuccess)).Order(models.Desc(envbuild.FieldFinishedAt)).Limit(1)
 		}).Only(ctx)
 		if checkErr != nil {
@@ -170,7 +171,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 	telemetry.ReportEvent(ctx, "started updating environment")
 
 	if alias != "" {
-		err = a.supabase.EnsureEnvAlias(ctx, alias, templateID)
+		err = a.db.EnsureEnvAlias(ctx, alias, templateID)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
 
@@ -182,7 +183,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		telemetry.ReportEvent(ctx, "inserted alias", attribute.String("env.alias", alias))
 	}
 
-	err = a.supabase.UpsertEnv(
+	err = a.db.UpsertEnv(
 		ctx,
 		team.ID,
 		templateID,

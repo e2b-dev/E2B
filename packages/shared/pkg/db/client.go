@@ -12,8 +12,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 )
 
-// TODO: Move completely from API
-
 type DB struct {
 	Client *models.Client
 	ctx    context.Context

@@ -47,7 +47,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 
 	telemetry.ReportEvent(ctx, "started environment build")
 
-	envDB, err := a.supabase.Client.Env.Query().Where(
+	envDB, err := a.db.Client.Env.Query().Where(
 		env.IDEQ(templateID),
 		env.TeamID(team.ID),
 	).WithBuilds(
@@ -75,7 +75,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 		return
 	}
 
-	err = a.supabase.EnvBuildSetStatus(ctx, envDB.ID, buildUUID, envbuild.StatusBuilding)
+	err = a.db.EnvBuildSetStatus(ctx, envDB.ID, buildUUID, envbuild.StatusBuilding)
 	if err != nil {
 		err = fmt.Errorf("error when setting build status: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
@@ -119,7 +119,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 		if buildErr != nil {
 			status = api.TemplateBuildStatusError
 
-			err = a.supabase.EnvBuildSetStatus(buildContext, envDB.ID, buildUUID, envbuild.StatusFailed)
+			err = a.db.EnvBuildSetStatus(buildContext, envDB.ID, buildUUID, envbuild.StatusFailed)
 			if err != nil {
 				err = fmt.Errorf("error when setting build status: %w", err)
 				telemetry.ReportCriticalError(buildContext, err)
@@ -130,7 +130,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			telemetry.ReportCriticalError(buildContext, errMsg)
 		} else {
 			status = api.TemplateBuildStatusReady
-			err = a.supabase.FinishEnvBuild(buildContext, envDB.ID, buildUUID, diskSize)
+			err = a.db.FinishEnvBuild(buildContext, envDB.ID, buildUUID, diskSize)
 
 			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", templateID))
 		}
