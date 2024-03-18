@@ -36,7 +36,7 @@ func MockBuild(envID, buildID string) {
 		EnvID:                 envID,
 		EnvsDiskPath:          "/mnt/disks/fc-envs/v1",
 		VCpuCount:             2,
-		MemoryMB:              512,
+		MemoryMB:              256,
 		DockerContextsPath:    "/mnt/disks/docker-contexts/v1",
 		DockerRegistry:        "us-central1-docker.pkg.dev/e2b-prod/custom-environments",
 		StartCmd:              "",

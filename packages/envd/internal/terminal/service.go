@@ -20,13 +20,13 @@ type Service struct {
 
 	terminals *Manager
 
-	clock *clock.ClockSync
+	clock *clock.Service
 
 	dataSubs *subscriber.Manager
 	exitSubs *subscriber.Manager
 }
 
-func NewService(logger *zap.SugaredLogger, env *env.EnvConfig, clock *clock.ClockSync) *Service {
+func NewService(logger *zap.SugaredLogger, env *env.EnvConfig, clock *clock.Service) *Service {
 	return &Service{
 		logger: logger,
 

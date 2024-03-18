@@ -41,6 +41,7 @@ var (
 	serverPort   uint
 	versionFlag  bool
 	startCmdFlag string
+	
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -48,10 +49,10 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	wsHandler.ServeHTTP(w, r)
 }
 
-func syncHandler(clock *clock.ClockSync) http.HandlerFunc {
+func syncHandler(clock *clock.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		logger.Debug("/sync request")
-		clock.Sync()
+		// logger.Debug("/sync request")
+		// clock.Sync()
 
 		w.WriteHeader(http.StatusOK)
 	}
@@ -145,7 +146,7 @@ func main() {
 
 	go portScanner.ScanAndBroadcast()
 
-	clock := clock.New(logger.Named("clockSvc"), envConfig.Shell)
+	clock := clock.NewService(logger.Named("clockSvc"), envConfig.Shell)
 
 	ports := ports.NewService(logger.Named("codeSnippetSvc"), portScanner)
 	// WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK
@@ -191,8 +192,9 @@ func main() {
 	router := mux.NewRouter()
 	wsHandler = rpcServer.WebsocketHandler([]string{"*"})
 
+	clockHandler := syncHandler(clock)
 	// The /sync route is used for syncing the clock.
-	router.Handle("/sync", syncHandler(clock))
+	router.Handle("/sync", clockHandler)
 
 	router.HandleFunc("/ws", serveWs)
 	// The /ping route is used for the terminal extension to check if envd is running.

@@ -24,14 +24,14 @@ type Service struct {
 	logger *zap.SugaredLogger
 	env    *env.EnvConfig
 
-	clock *clock.ClockSync
+	clock *clock.Service
 
 	processes *Manager
 }
 
 const maxScanCapacity = 64 * 1024 * 1024 // 64MB
 
-func NewService(logger *zap.SugaredLogger, env *env.EnvConfig, clock *clock.ClockSync) *Service {
+func NewService(logger *zap.SugaredLogger, env *env.EnvConfig, clock *clock.Service) *Service {
 	return &Service{
 		logger:    logger,
 		processes: NewManager(logger),
