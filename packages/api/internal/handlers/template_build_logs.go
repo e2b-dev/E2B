@@ -13,8 +13,8 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-// GetTemplatesTemplateIDBuildsBuildID serves to get an template build status (e.g. to CLI)
-func (a *APIStore) GetTemplatesTemplateIDBuildsBuildID(c *gin.Context, templateID api.TemplateID, buildID api.BuildID, params api.GetTemplatesTemplateIDBuildsBuildIDParams) {
+// GetTemplatesTemplateIDBuildsBuildIDStatus serves to get a template build status (e.g. to CLI)
+func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDStatus(c *gin.Context, templateID api.TemplateID, buildID api.BuildID, params api.GetTemplatesTemplateIDBuildsBuildIDStatusParams) {
 	ctx := c.Request.Context()
 
 	userID := c.Value(constants.UserIDContextKey).(uuid.UUID)
@@ -77,12 +77,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildID(c *gin.Context, templateI
 		Status:     &status,
 	}
 
-	telemetry.ReportEvent(ctx, "got environment build")
-
-	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
-	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
-	a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "got environment detail", properties.Set("environment", templateID))
-
+	telemetry.ReportEvent(ctx, "got template build status")
 	c.JSON(http.StatusOK, result)
 }
 

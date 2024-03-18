@@ -157,17 +157,17 @@ type PostSandboxesSandboxIDRefreshesJSONBody struct {
 	Duration *int `json:"duration,omitempty"`
 }
 
-// GetTemplatesTemplateIDBuildsBuildIDParams defines parameters for GetTemplatesTemplateIDBuildsBuildID.
-type GetTemplatesTemplateIDBuildsBuildIDParams struct {
-	// LogsOffset Index of the starting build log that should be returned with the template
-	LogsOffset *int `form:"logsOffset,omitempty" json:"logsOffset,omitempty"`
-}
-
 // PostTemplatesTemplateIDBuildsBuildIDLogsJSONBody defines parameters for PostTemplatesTemplateIDBuildsBuildIDLogs.
 type PostTemplatesTemplateIDBuildsBuildIDLogsJSONBody struct {
 	// ApiSecret API secret
 	ApiSecret string   `json:"apiSecret"`
 	Logs      []string `json:"logs"`
+}
+
+// GetTemplatesTemplateIDBuildsBuildIDStatusParams defines parameters for GetTemplatesTemplateIDBuildsBuildIDStatus.
+type GetTemplatesTemplateIDBuildsBuildIDStatusParams struct {
+	// LogsOffset Index of the starting build log that should be returned with the template
+	LogsOffset *int `form:"logsOffset,omitempty" json:"logsOffset,omitempty"`
 }
 
 // PostSandboxesJSONRequestBody defines body for PostSandboxes for application/json ContentType.
