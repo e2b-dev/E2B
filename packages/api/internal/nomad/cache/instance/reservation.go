@@ -76,17 +76,11 @@ func (c *InstanceCache) Reserve(instanceID string, team uuid.UUID, limit int64) 
 	// Count unique IDs for team
 	ids := map[string]struct{}{}
 
-	for _, item := range c.reservations.list(team) {
+	for _, item := range append(c.reservations.list(team), c.list(team)...) {
 		ids[item] = struct{}{}
 	}
 
-	for _, item := range c.list(team) {
-		ids[item] = struct{}{}
-	}
-
-	reservedIDs := int64(len(ids))
-
-	if reservedIDs >= limit {
+	if int64(len(ids)) >= limit {
 		return fmt.Errorf("team %s has reached the limit of reserved instances", team), nil
 	}
 
