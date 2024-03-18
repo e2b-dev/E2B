@@ -84,22 +84,6 @@ resource "nomad_job" "api" {
   }
 }
 
-# TODO: Move to correct place
-resource "google_service_account" "docker_registry_service_account" {
-  account_id   = "e2b-docker-registry-sa"
-  display_name = "Docker Registry Service Account"
-}
-
-resource "google_artifact_registry_repository_iam_member" "orchestration_repository_member" {
-  repository = var.custom_envs_repository_name
-  role       = "roles/artifactregistry.writer"
-  member     = "serviceAccount:${google_service_account.docker_registry_service_account.email}"
-}
-
-resource "google_service_account_key" "google_service_key" {
-  service_account_id = google_service_account.docker_registry_service_account.id
-}
-
 resource "nomad_job" "docker_reverse_proxy" {
   jobspec = file("${path.module}/docker-reverse-proxy.hcl")
 
@@ -107,10 +91,12 @@ resource "nomad_job" "docker_reverse_proxy" {
     vars = {
       image_name                    = var.docker_reverse_proxy_image_digest
       postgres_connection_string    = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
-      google_service_account_secret = google_service_account_key.google_service_key.private_key
-      port_number                   = 5000
+      google_service_account_secret = var.docker_reverse_proxy_service_account_key
+      port_number                   = var.docker_reverse_proxy_port.port
+      port_name                     = var.docker_reverse_proxy_port.name
       domain_name                   = var.domain_name
       gcp_project_id                = var.gcp_project_id
+      gcp_region                    = var.gcp_region
       docker_registry               = var.custom_envs_repository_name
     }
   }

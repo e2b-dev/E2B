@@ -5,6 +5,11 @@ variable "gcp_zone" {
   default = "us-central1-a"
 }
 
+variable "gcp_region" {
+  type    = string
+  default = "us-central1"
+}
+
 variable "gcp_project_id" {
   type    = string
   default = ""
@@ -28,6 +33,11 @@ variable "docker_registry" {
 variable "port_number" {
   type    = number
   default = 5000
+}
+
+variable "port_name" {
+  type    = string
+  default = ""
 }
 
 variable "postgres_connection_string" {
@@ -78,6 +88,7 @@ job "docker-reverse-proxy" {
       env {
         POSTGRES_CONNECTION_STRING = var.postgres_connection_string
         GOOGLE_SERVICE_ACCOUNT_SECRET = var.google_service_account_secret
+        GCP_REGION = var.gcp_region
         GCP_PROJECT_ID = var.gcp_project_id
         DOCKER_REGISTRY = var.docker_registry
         DOMAIN_NAME = var.domain_name
@@ -86,7 +97,7 @@ job "docker-reverse-proxy" {
       config {
         network_mode = "host"
         image        = var.image_name
-        ports        = ["docker-reverse-proxy"]
+        ports        = [var.port_name]
         args = [
           "--port", "${var.port_number}",
         ]

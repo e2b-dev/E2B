@@ -14,7 +14,7 @@ const (
 
 type AccessTokenData struct {
 	AccessToken string
-	EnvID       string
+	TemplateID  string
 }
 
 type AuthCache struct {
@@ -28,9 +28,7 @@ func New() *AuthCache {
 
 	go cache.Start()
 
-	return &AuthCache{
-		cache: cache,
-	}
+	return &AuthCache{cache: cache}
 }
 
 // Get returns the auth token for the given teamID and e2bToken.
@@ -44,14 +42,14 @@ func (c *AuthCache) Get(e2bToken string) (*AccessTokenData, error) {
 	return item.Value(), nil
 }
 
-// Create creates a new auth token for the given teamID and accessToken and returns e2bToken
-func (c *AuthCache) Create(userAccessToken, envID, encodedDockerRegistryAccessToken string) {
+// Create creates a new auth token for the given templateID and accessToken and returns e2bToken
+func (c *AuthCache) Create(userAccessToken, templateID, encodedDockerRegistryAccessToken string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	data := &AccessTokenData{
 		AccessToken: encodedDockerRegistryAccessToken,
-		EnvID:       envID,
+		TemplateID:  templateID,
 	}
 
 	c.cache.Set(userAccessToken, data, authInfoExpiration)

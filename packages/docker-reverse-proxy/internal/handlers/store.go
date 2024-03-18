@@ -2,17 +2,20 @@ package handlers
 
 import (
 	"context"
-	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/cache"
-	"github.com/e2b-dev/infra/packages/shared/pkg/db"
+	"fmt"
 	"log"
 	"net/http/httputil"
 	"net/url"
+
+	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/cache"
+	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/constants"
+	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 )
 
 type APIStore struct {
 	db        *db.DB
 	AuthCache *cache.AuthCache
-	Proxy     *httputil.ReverseProxy
+	proxy     *httputil.ReverseProxy
 }
 
 func NewStore(ctx context.Context) *APIStore {
@@ -25,7 +28,7 @@ func NewStore(ctx context.Context) *APIStore {
 	// TODO: Move to env
 	targetUrl := &url.URL{
 		Scheme: "https",
-		Host:   "us-central1-docker.pkg.dev",
+		Host:   fmt.Sprintf("%s-docker.pkg.dev", constants.GCPRegion),
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
@@ -33,6 +36,6 @@ func NewStore(ctx context.Context) *APIStore {
 	return &APIStore{
 		db:        database,
 		AuthCache: authCache,
-		Proxy:     proxy,
+		proxy:     proxy,
 	}
 }

@@ -162,6 +162,8 @@ module "docker_reverse_proxy" {
   gcp_project_id = var.gcp_project_id
   gcp_region     = var.gcp_region
 
+  custom_envs_repository_name   = module.api.custom_envs_repository_name
+  orchestration_repository_name = module.init.orchestration_repository_name
 
   labels = var.labels
   prefix = var.prefix
@@ -215,5 +217,7 @@ module "nomad" {
   grafana_traces_username_secret_name  = module.init.grafana_traces_username_secret_name
 
   # Docker reverse proxy
-  docker_reverse_proxy_image_digest = module.docker_reverse_proxy.docker_reverse_proxy_image_digest
+  docker_reverse_proxy_image_digest        = module.docker_reverse_proxy.docker_reverse_proxy_image_digest
+  docker_reverse_proxy_port                = var.docker_reverse_proxy_port
+  docker_reverse_proxy_service_account_key = module.docker_reverse_proxy.docker_reverse_proxy_service_account_key
 }
