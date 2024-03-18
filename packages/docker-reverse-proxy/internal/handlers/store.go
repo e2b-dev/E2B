@@ -25,7 +25,6 @@ func NewStore(ctx context.Context) *APIStore {
 		log.Fatal(err)
 	}
 
-	// TODO: Move to env
 	targetUrl := &url.URL{
 		Scheme: "https",
 		Host:   fmt.Sprintf("%s-docker.pkg.dev", constants.GCPRegion),
