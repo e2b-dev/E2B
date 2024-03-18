@@ -29,9 +29,11 @@ func (c *ClockSync) Sync() {
 		defer c.mu.Unlock()
 		c.logger.Info("Syncing clock")
 
-		err := exec.Command(c.shell, "-l", "-c", "sudo", "chronyc", "-a", "makestep").Run()
+		err := exec.Command(c.shell, "-l", "-c", "sudo chronyc -a makestep").Run()
 		if err != nil {
-			c.logger.Error("Failed to sync clock", "error", err)
+			c.logger.Errorw("Failed to sync clock:",
+				"error", err,
+			)
 		} else {
 			c.logger.Debug("Clock synced")
 		}
