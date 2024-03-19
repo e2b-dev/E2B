@@ -22,7 +22,7 @@ type DockerToken struct {
 const expiresIn = 60 * 60 * 24 * 30 // 30 days
 
 // The scope is in format "repository:<project>/<repo>/<templateID>:<action>"
-var scopeRegex = regexp.MustCompile(`repository:(?P<project>[^/]+)/(?P<repo>[^/]+)/(?P<templateID>[^:]+):(?P<action>[^:]+)`)
+var scopeRegex = regexp.MustCompile(fmt.Sprintf(`^repository:%s/%s/(?P<templateID>[^:]+):(?P<action>[^:]+)$`, constants.GCPProject, constants.DockerRegistry))
 
 // GetToken validates if user has access to template and then returns a new token for required scope
 func (a *APIStore) GetToken(w http.ResponseWriter, r *http.Request) error {
@@ -67,13 +67,11 @@ func (a *APIStore) GetToken(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("invalid scope %s", scope)
 	}
 
-	project := scopeRegexMatches[1]
-	repo := scopeRegexMatches[2]
-	templateID := scopeRegexMatches[3]
-	action := scopeRegexMatches[4]
+	templateID := scopeRegexMatches[1]
+	action := scopeRegexMatches[2]
 
-	// Check if the scope is for valid repository and don't allow a delete actions
-	if project != constants.GCPProject || repo != constants.DockerRegistry || strings.Contains(action, "delete") {
+	// Don't allow a delete actions
+	if strings.Contains(action, "delete") {
 		w.WriteHeader(http.StatusForbidden)
 
 		return fmt.Errorf("access denied for scope %s", scope)
@@ -94,7 +92,7 @@ func (a *APIStore) GetToken(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Get docker token from the actual registry for the scope
-	dockerToken, err := getToken(scope)
+	dockerToken, err := getToken(templateID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 
@@ -114,12 +112,19 @@ func (a *APIStore) GetToken(w http.ResponseWriter, r *http.Request) error {
 }
 
 // getToken gets a new token from the actual registry for the required scope
-func getToken(scope string) (*DockerToken, error) {
-	url := fmt.Sprintf("https://%s-docker.pkg.dev/v2/token?service=%s-docker.pkg.dev/token&scope=%s", constants.GCPRegion, constants.GCPRegion, scope)
+func getToken(templateID string) (*DockerToken, error) {
+	url := fmt.Sprintf(
+		"https://%s-docker.pkg.dev/v2/token?service=%s-docker.pkg.dev/token&scope=repository:%s/%s/%s:push,pull",
+		constants.GCPRegion,
+		constants.GCPRegion,
+		constants.GCPProject,
+		constants.DockerRegistry,
+		templateID,
+	)
 
 	r, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request for scope - %s: %w", scope, err)
+		return nil, fmt.Errorf("failed to create request for scope - %s: %w", templateID, err)
 	}
 
 	// Use the service account credentials for the request
@@ -128,29 +133,29 @@ func getToken(scope string) (*DockerToken, error) {
 	resp, err := http.DefaultClient.Do(r)
 	defer resp.Body.Close()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get token for scope - %s: %w", scope, err)
+		return nil, fmt.Errorf("failed to get token for scope - %s: %w", templateID, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		body := make([]byte, resp.ContentLength)
 		_, err := resp.Body.Read(body)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read body for failed token acquisition (%d) for scope - %s: %w", resp.StatusCode, scope, err)
+			return nil, fmt.Errorf("failed to read body for failed token acquisition (%d) for scope - %s: %w", resp.StatusCode, templateID, err)
 		}
 		defer resp.Body.Close()
 
-		return nil, fmt.Errorf("failed to get token (%d) for scope - %s: %s", resp.StatusCode, scope, string(body))
+		return nil, fmt.Errorf("failed to get token (%d) for scope - %s: %s", resp.StatusCode, templateID, string(body))
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read body for successful token acquisition for scope - %s: %w", scope, err)
+		return nil, fmt.Errorf("failed to read body for successful token acquisition for scope - %s: %w", templateID, err)
 	}
 
 	parsedBody := &DockerToken{}
 	err = json.Unmarshal(body, parsedBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse body for successful token acquisition for scope - %s: %w", scope, err)
+		return nil, fmt.Errorf("failed to parse body for successful token acquisition for scope - %s: %w", templateID, err)
 	}
 
 	return parsedBody, nil

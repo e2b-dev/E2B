@@ -12,8 +12,6 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
-	"github.com/e2b-dev/infra/packages/shared/pkg/models"
-	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/schema"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -25,7 +23,7 @@ func (a *APIStore) PostTemplates(c *gin.Context) {
 
 	telemetry.ReportEvent(ctx, "started creating new environment")
 
-	template := a.TemplateRequestBuild(c, envID, true)
+	template := a.TemplateRequestBuild(c, envID)
 	if template != nil {
 		c.JSON(http.StatusAccepted, &template)
 	}
@@ -42,14 +40,14 @@ func (a *APIStore) PostTemplatesTemplateID(c *gin.Context, templateID api.Templa
 		return
 	}
 
-	template := a.TemplateRequestBuild(c, cleanedTemplateID, false)
+	template := a.TemplateRequestBuild(c, cleanedTemplateID)
 
 	if template != nil {
 		c.JSON(http.StatusAccepted, &template)
 	}
 }
 
-func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateID, new bool) *api.Template {
+func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateID) *api.Template {
 	ctx := c.Request.Context()
 
 	body, err := parseBody[api.TemplateBuildRequest](ctx, c)
@@ -124,41 +122,18 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		}
 	}
 
-	envKernelVersion := schema.DefaultKernelVersion
-	envFirecrackerVersion := schema.DefaultFirecrackerVersion
-	if !new {
-		// Mark the previous not started builds as failed
-		err = a.db.Client.EnvBuild.Update().Where(
-			envbuild.EnvID(templateID),
-			envbuild.StatusEQ(envbuild.StatusWaiting),
-		).SetStatus(envbuild.StatusFailed).SetFinishedAt(time.Now()).Exec(ctx)
-		if err != nil {
-			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating env: %s", err))
+	// Mark the previous not started builds as failed
+	err = a.db.Client.EnvBuild.Update().Where(
+		envbuild.EnvID(templateID),
+		envbuild.StatusEQ(envbuild.StatusWaiting),
+	).SetStatus(envbuild.StatusFailed).SetFinishedAt(time.Now()).Exec(ctx)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating env: %s", err))
 
-			err = fmt.Errorf("error when updating env: %w", err)
-			telemetry.ReportCriticalError(ctx, err)
+		err = fmt.Errorf("error when updating env: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
 
-			return nil
-		}
-
-		// Get the previous successful build's kernel and firecracker version
-		envDB, checkErr := a.db.Client.Env.Query().Where(env.ID(templateID), env.TeamID(team.ID)).WithBuilds(func(query *models.EnvBuildQuery) {
-			query.Where(envbuild.StatusEQ(envbuild.StatusSuccess)).Order(models.Desc(envbuild.FieldFinishedAt)).Limit(1)
-		}).Only(ctx)
-		if checkErr != nil {
-			a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("the sandbox template '%s' does not exist", templateID))
-
-			errMsg := fmt.Errorf("env not found: %w", checkErr)
-			telemetry.ReportError(ctx, errMsg)
-
-			return nil
-		}
-
-		if len(envDB.Edges.Builds) > 0 {
-			build := envDB.Edges.Builds[0]
-			envKernelVersion = build.KernelVersion
-			envFirecrackerVersion = build.FirecrackerVersion
-		}
+		return nil
 	}
 
 	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
@@ -199,8 +174,8 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		cpuCount,
 		ramMB,
 		tier.DiskMB,
-		envKernelVersion,
-		envFirecrackerVersion,
+		schema.DefaultKernelVersion,
+		schema.DefaultFirecrackerVersion,
 		body.StartCmd,
 		body.Dockerfile,
 	)

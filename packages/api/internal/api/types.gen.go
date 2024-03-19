@@ -96,9 +96,6 @@ type Template struct {
 	// Public Whether the template is public or only accessible by the team
 	Public bool `json:"public"`
 
-	// StorageGB Storage limit for the sandbox in GB
-	StorageGB float32 `json:"storageGB"`
-
 	// TemplateID Identifier of the template
 	TemplateID string `json:"templateID"`
 }

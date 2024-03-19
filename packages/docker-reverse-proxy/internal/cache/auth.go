@@ -2,7 +2,6 @@ package cache
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/jellydator/ttlcache/v3"
@@ -19,8 +18,6 @@ type AccessTokenData struct {
 
 type AuthCache struct {
 	cache *ttlcache.Cache[string, *AccessTokenData]
-
-	mu sync.Mutex
 }
 
 func New() *AuthCache {
@@ -44,9 +41,6 @@ func (c *AuthCache) Get(e2bToken string) (*AccessTokenData, error) {
 
 // Create creates a new auth token for the given templateID and accessToken and returns e2bToken
 func (c *AuthCache) Create(userAccessToken, templateID, encodedDockerRegistryAccessToken string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	data := &AccessTokenData{
 		AccessToken: encodedDockerRegistryAccessToken,
 		TemplateID:  templateID,

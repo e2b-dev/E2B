@@ -50,7 +50,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 
 	// Check if the user has access to the template, load the template with build info
 	envDB, err := a.db.Client.Env.Query().Where(
-		env.IDEQ(templateID),
+		env.ID(templateID),
 		env.TeamID(team.ID),
 	).WithBuilds(
 		func(query *models.EnvBuildQuery) {
@@ -112,8 +112,6 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			envDB.ID,
 			buildUUID,
 			startCmd,
-			build.KernelVersion,
-			build.FirecrackerVersion,
 			nomad.BuildConfig{
 				VCpuCount:          build.Vcpu,
 				MemoryMB:           build.RAMMB,
@@ -159,9 +157,7 @@ func (a *APIStore) buildEnv(
 	teamID uuid.UUID,
 	envID string,
 	buildID uuid.UUID,
-	startCmd,
-	envKernelVersion,
-	envFirecrackerVersion string,
+	startCmd string,
 	vmConfig nomad.BuildConfig,
 ) (diskSize int64, err error) {
 	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
@@ -189,8 +185,6 @@ func (a *APIStore) buildEnv(
 		a.tracer,
 		childCtx,
 		envID,
-		envKernelVersion,
-		envFirecrackerVersion,
 		buildID.String(),
 		startCmd,
 		a.apiSecret,

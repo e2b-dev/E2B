@@ -154,9 +154,6 @@ components:
         memoryMB:
           type: integer
           description: Memory limit for the sandbox in MB
-        storageGB:
-          type: number
-          description: Storage limit for the sandbox in GB
         public:
           type: boolean
           description: Whether the template is public or only accessible by the team
