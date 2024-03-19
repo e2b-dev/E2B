@@ -189,9 +189,9 @@ func NewInstance(
 }
 
 func (i *Instance) syncClock(ctx context.Context) error {
-	i.Slot.HostSnapshotIP()
+	address := fmt.Sprintf("http://%s:%d/sync", i.Slot.HostSnapshotIP(), consts.DefaultEnvdServerPort)
 
-	request, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("http://%s:%d", i.Slot.HostSnapshotIP(), consts.DefaultEnvdServerPort), nil)
+	request, err := http.NewRequestWithContext(ctx, "POST", address, nil)
 	if err != nil {
 		return err
 	}
