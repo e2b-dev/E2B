@@ -163,17 +163,27 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
 
-	postprocessingFinished := false
+	var err error
+	postprocessingFinished := make(chan error)
+	defer func() { postprocessingFinished <- err }()
+
 	go func() {
 		now := time.Now()
 		for {
 			msg := []byte(fmt.Sprintf("Postprocessing (%s)\r", time.Since(now).Round(time.Second)))
-			if postprocessingFinished {
+
+			select {
+			case postprocessingErr := <-postprocessingFinished:
+				if postprocessingErr != nil {
+					r.env.BuildLogsWriter.Write([]byte(fmt.Sprintf("Postprocessing failed: %s\n", postprocessingErr)))
+
+					return
+				}
+
 				r.env.BuildLogsWriter.Write(msg)
 				r.env.BuildLogsWriter.Write([]byte("Postprocessing finished.                   \n"))
+
 				return
-			}
-			select {
 			case <-childCtx.Done():
 				return
 			case <-time.After(100 * time.Millisecond):
@@ -204,7 +214,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	//
 	var scriptDef bytes.Buffer
 
-	err := EnvInstanceTemplate.Execute(&scriptDef, struct {
+	err = EnvInstanceTemplate.Execute(&scriptDef, struct {
 		EnvID    string
 		BuildID  string
 		StartCmd string
@@ -597,7 +607,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		return errMsg
 	}
 
-	postprocessingFinished = true
 	telemetry.ReportEvent(childCtx, "resized rootfs file")
 
 	return nil
