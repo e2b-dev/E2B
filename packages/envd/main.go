@@ -193,7 +193,7 @@ func main() {
 
 	clockHandler := syncHandler(clock)
 	// The /sync route is used for syncing the clock.
-	router.Handle("/sync", clockHandler)
+	router.HandleFunc("/sync", clockHandler)
 
 	router.HandleFunc("/ws", serveWs)
 	// The /ping route is used for the terminal extension to check if envd is running.
