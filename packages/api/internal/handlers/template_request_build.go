@@ -12,6 +12,9 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/schema"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -23,7 +26,7 @@ func (a *APIStore) PostTemplates(c *gin.Context) {
 
 	telemetry.ReportEvent(ctx, "started creating new environment")
 
-	template := a.TemplateRequestBuild(c, envID)
+	template := a.TemplateRequestBuild(c, envID, true)
 	if template != nil {
 		c.JSON(http.StatusAccepted, &template)
 	}
@@ -40,14 +43,14 @@ func (a *APIStore) PostTemplatesTemplateID(c *gin.Context, templateID api.Templa
 		return
 	}
 
-	template := a.TemplateRequestBuild(c, cleanedTemplateID)
+	template := a.TemplateRequestBuild(c, cleanedTemplateID, false)
 
 	if template != nil {
 		c.JSON(http.StatusAccepted, &template)
 	}
 }
 
-func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateID) *api.Template {
+func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateID, new bool) *api.Template {
 	ctx := c.Request.Context()
 
 	body, err := parseBody[api.TemplateBuildRequest](ctx, c)
@@ -63,6 +66,19 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		telemetry.ReportCriticalError(ctx, err)
 
 		return nil
+	}
+
+	if !new {
+		// Check if the user has access to the template
+		_, err = a.db.Client.Env.Query().Where(env.ID(templateID), env.TeamID(team.ID)).Only(ctx)
+		if err != nil {
+			a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error when getting env: %s", err))
+
+			err = fmt.Errorf("error when getting env: %w", err)
+			telemetry.ReportCriticalError(ctx, err)
+
+			return nil
+		}
 	}
 
 	// Generate a build id for the new build
@@ -122,8 +138,42 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		}
 	}
 
+	// Start a transaction to prevent partial updates
+	tx, err := a.db.Client.Tx(ctx)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when starting transaction: %s", err))
+
+		err = fmt.Errorf("error when starting transaction: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		return nil
+	}
+	defer tx.Rollback()
+
+	// Create the template / or update the build count
+	err = tx.
+		Env.
+		Create().
+		SetID(templateID).
+		SetTeamID(team.ID).
+		SetPublic(false).
+		OnConflictColumns(env.FieldID).
+		UpdateUpdatedAt().
+		Update(func(e *models.EnvUpsert) {
+			e.AddBuildCount(1)
+		}).
+		Exec(ctx)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating env: %s", err))
+
+		err = fmt.Errorf("error when updating env: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		return nil
+	}
+
 	// Mark the previous not started builds as failed
-	err = a.db.Client.EnvBuild.Update().Where(
+	err = tx.EnvBuild.Update().Where(
 		envbuild.EnvID(templateID),
 		envbuild.StatusEQ(envbuild.StatusWaiting),
 	).SetStatus(envbuild.StatusFailed).SetFinishedAt(time.Now()).Exec(ctx)
@@ -131,6 +181,96 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating env: %s", err))
 
 		err = fmt.Errorf("error when updating env: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+
+		return nil
+	}
+
+	// Insert the new build
+	err = tx.EnvBuild.Create().
+		SetID(buildID).
+		SetEnvID(templateID).
+		SetStatus(envbuild.StatusWaiting).
+		SetRAMMB(ramMB).
+		SetVcpu(cpuCount).
+		SetKernelVersion(schema.DefaultKernelVersion).
+		SetFirecrackerVersion(schema.DefaultFirecrackerVersion).
+		SetFreeDiskSizeMB(tier.DiskMB).
+		SetNillableStartCmd(body.StartCmd).
+		SetDockerfile(body.Dockerfile).
+		Exec(ctx)
+
+	// Check if the alias is available and claim it
+	if alias != "" {
+		envs, err := tx.
+			Env.
+			Query().
+			Where(env.ID(alias)).
+			All(ctx)
+		if err != nil {
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking alias: %s", err))
+
+			err = fmt.Errorf("error when checking alias: %w", err)
+			telemetry.ReportCriticalError(ctx, err)
+
+			return nil
+
+		}
+
+		if len(envs) > 0 {
+			a.sendAPIStoreError(c, http.StatusConflict, "Alias already used")
+
+			err = fmt.Errorf("alias already used: %w", err)
+			telemetry.ReportCriticalError(ctx, err)
+
+			return nil
+		}
+
+		aliasDB, err := tx.EnvAlias.Query().Where(envalias.ID(alias)).Only(ctx)
+
+		if err != nil {
+			if !models.IsNotFound(err) {
+				a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking alias: %s", err))
+
+				err = fmt.Errorf("error when checking alias: %w", err)
+				telemetry.ReportCriticalError(ctx, err)
+
+				return nil
+
+			}
+			err = tx.
+				EnvAlias.
+				Create().
+				SetEnvID(templateID).SetIsRenamable(true).SetID(alias).
+				Exec(ctx)
+
+			if err != nil {
+				a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
+
+				err = fmt.Errorf("error when inserting alias: %w", err)
+				telemetry.ReportCriticalError(ctx, err)
+
+				return nil
+
+			}
+		} else if aliasDB.EnvID != templateID {
+			a.sendAPIStoreError(c, http.StatusForbidden, "Alias already used")
+
+			err = fmt.Errorf("alias already used: %w", err)
+			telemetry.ReportCriticalError(ctx, err)
+
+			return nil
+		}
+
+		telemetry.ReportEvent(ctx, "inserted alias", attribute.String("env.alias", alias))
+	}
+
+	// Commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when committing transaction: %s", err))
+
+		err = fmt.Errorf("error when committing transaction: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 
 		return nil
@@ -150,43 +290,6 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 		attribute.Int64("build.ram_mb", ramMB),
 	)
 	telemetry.ReportEvent(ctx, "started updating environment")
-
-	// Check if the alias is available and claim it
-	if alias != "" {
-		err = a.db.EnsureEnvAlias(ctx, alias, templateID)
-		if err != nil {
-			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
-
-			err = fmt.Errorf("error when inserting alias: %w", err)
-			telemetry.ReportCriticalError(ctx, err)
-
-			return nil
-		}
-		telemetry.ReportEvent(ctx, "inserted alias", attribute.String("env.alias", alias))
-	}
-
-	// Create or update the template, create a new build
-	err = a.db.NewEnvBuild(
-		ctx,
-		team.ID,
-		templateID,
-		buildID,
-		cpuCount,
-		ramMB,
-		tier.DiskMB,
-		schema.DefaultKernelVersion,
-		schema.DefaultFirecrackerVersion,
-		body.StartCmd,
-		body.Dockerfile,
-	)
-	if err != nil {
-		err = fmt.Errorf("error when updating env: %w", err)
-		telemetry.ReportCriticalError(ctx, err)
-
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating env: %s", err))
-
-		return nil
-	}
 
 	var aliases []string
 

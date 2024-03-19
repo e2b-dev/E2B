@@ -11,7 +11,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 type Template struct {
@@ -129,69 +128,6 @@ func (db *DB) GetEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID,
 		Public:     dbEnv.Public,
 		Aliases:    &aliases,
 	}, build, nil
-}
-
-func (db *DB) NewEnvBuild(
-	ctx context.Context,
-	teamID uuid.UUID,
-	envID string,
-	buildID uuid.UUID,
-	vCPU,
-	ramMB,
-	freeDiskSizeMB int64,
-	kernelVersion,
-	firecrackerVersion string,
-	startCmd *string,
-	dockerfile string,
-) error {
-	tx, err := db.Client.Tx(ctx)
-	if err != nil {
-		err = fmt.Errorf("error when starting transaction: %w", err)
-		telemetry.ReportCriticalError(ctx, err)
-
-		return err
-	}
-	defer tx.Rollback()
-
-	err = tx.
-		Env.
-		Create().
-		SetID(envID).
-		SetTeamID(teamID).
-		SetPublic(false).
-		OnConflictColumns(env.FieldID).
-		UpdateUpdatedAt().
-		Update(func(e *models.EnvUpsert) {
-			e.AddBuildCount(1)
-		}).
-		Exec(ctx)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to upsert env with id '%s': %w", envID, err)
-
-		return errMsg
-	}
-
-	err = tx.EnvBuild.Create().
-		SetID(buildID).
-		SetEnvID(envID).
-		SetStatus(envbuild.StatusWaiting).
-		SetRAMMB(ramMB).
-		SetVcpu(vCPU).
-		SetKernelVersion(kernelVersion).
-		SetFirecrackerVersion(firecrackerVersion).
-		SetFreeDiskSizeMB(freeDiskSizeMB).
-		SetNillableStartCmd(startCmd).
-		SetDockerfile(dockerfile).
-		Exec(ctx)
-	err = tx.Commit()
-	if err != nil {
-		err = fmt.Errorf("error when committing transaction: %w", err)
-		telemetry.ReportCriticalError(ctx, err)
-
-		return err
-	}
-
-	return nil
 }
 
 func (db *DB) FinishEnvBuild(

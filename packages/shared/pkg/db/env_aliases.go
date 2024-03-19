@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
-	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
 )
 
@@ -92,55 +91,6 @@ func (db *DB) UpdateEnvAlias(ctx context.Context, alias, envID string) error {
 		errMsg := fmt.Errorf("committing transaction: %w", err)
 
 		return errMsg
-	}
-
-	return nil
-}
-
-func (db *DB) EnsureEnvAlias(ctx context.Context, alias, envID string) error {
-	envs, err := db.
-		Client.
-		Env.
-		Query().
-		Where(env.ID(alias)).
-		All(ctx)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to get env '%s': %w", alias, err)
-
-		return errMsg
-	}
-
-	if len(envs) > 0 {
-		errMsg := fmt.Errorf("alias '%s' is already used for an another env", alias)
-
-		return errMsg
-	}
-
-	aliasDB, err := db.Client.EnvAlias.Query().Where(envalias.ID(alias)).Only(ctx)
-
-	if err != nil {
-		if !models.IsNotFound(err) {
-			errMsg := fmt.Errorf("failed to get env alias '%s': %w", alias, err)
-
-			return errMsg
-		}
-		err = db.
-			Client.
-			EnvAlias.
-			Create().
-			SetEnvID(envID).SetIsRenamable(true).SetID(alias).
-			Exec(ctx)
-
-		if err != nil {
-			errMsg := fmt.Errorf("failed to create env alias '%s': %w", envID, err)
-
-			return errMsg
-		}
-		if aliasDB.EnvID != envID {
-			errMsg := fmt.Errorf("alias '%s' is already used", alias)
-
-			return errMsg
-		}
 	}
 
 	return nil
