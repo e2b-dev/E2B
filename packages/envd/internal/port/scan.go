@@ -5,7 +5,7 @@ import (
 
 	"github.com/drael/GOnetstat"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/smap"
+	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
 )
 
 type Scanner struct {

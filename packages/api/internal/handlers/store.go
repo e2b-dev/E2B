@@ -20,6 +20,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
@@ -32,7 +33,7 @@ type APIStore struct {
 	analytics                  *analyticscollector.Analytics
 	posthog                    *PosthogClient
 	tracer                     trace.Tracer
-	instanceCache              *nomad.InstanceCache
+	instanceCache              *instance.InstanceCache
 	buildCache                 *nomad.BuildCache
 	nomad                      *nomad.NomadClient
 	db                         *db.DB
@@ -74,7 +75,7 @@ func NewAPIStore() *APIStore {
 		panic(posthogErr)
 	}
 
-	var initialInstances []*InstanceInfo
+	var initialInstances []*instance.InstanceInfo
 
 	if env.IsProduction() {
 		instances, instancesErr := nomadClient.GetInstances()
@@ -107,12 +108,12 @@ func NewAPIStore() *APIStore {
 
 	logger.Info("Initialized Analytics client")
 
-	instanceCache := nomad.NewInstanceCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, nomadClient, analytics, posthogClient, logger), initialInstances, instancesCounter)
+	instanceCache := instance.NewCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, nomadClient, analytics, posthogClient, logger), initialInstances, instancesCounter)
 
 	logger.Info("Initialized instance cache")
 
 	if env.IsProduction() {
-		go instanceCache.KeepInSync(nomadClient)
+		go nomadClient.KeepInSync(instanceCache)
 	} else {
 		logger.Info("Skipping syncing intances with Nomad, running locally")
 	}
@@ -245,10 +246,8 @@ func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, 
 	}, build, nil
 }
 
-type InstanceInfo = nomad.InstanceInfo
-
-func getDeleteInstanceFunction(ctx context.Context, nomad *nomad.NomadClient, analytics *analyticscollector.Analytics, posthogClient *PosthogClient, logger *zap.SugaredLogger) func(info nomad.InstanceInfo, purge bool) *api.APIError {
-	return func(info InstanceInfo, purge bool) *api.APIError {
+func getDeleteInstanceFunction(ctx context.Context, nomad *nomad.NomadClient, analytics *analyticscollector.Analytics, posthogClient *PosthogClient, logger *zap.SugaredLogger) func(info instance.InstanceInfo, purge bool) *api.APIError {
+	return func(info instance.InstanceInfo, purge bool) *api.APIError {
 		return deleteInstance(ctx, nomad, analytics, posthogClient, logger, info, purge)
 	}
 }
@@ -259,7 +258,7 @@ func deleteInstance(
 	analytics *analyticscollector.Analytics,
 	posthogClient *PosthogClient,
 	logger *zap.SugaredLogger,
-	info InstanceInfo,
+	info instance.InstanceInfo,
 	purge bool,
 ) *api.APIError {
 	duration := time.Since(*info.StartTime).Seconds()

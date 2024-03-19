@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/google/uuid"
 
@@ -27,7 +27,7 @@ import (
 const (
 	instanceJobName          = "env-instance"
 	instanceJobNameWithSlash = instanceJobName + "/"
-	instanceIDPrefix         = "i"
+	InstanceIDPrefix         = "i"
 
 	instanceStartTimeout = time.Second * 20
 
@@ -49,7 +49,7 @@ var (
 var envInstanceFile string
 var envInstanceTemplate = template.Must(template.New(instanceJobName).Parse(envInstanceFile))
 
-func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
+func (n *NomadClient) GetInstances() ([]*instance.InstanceInfo, *api.APIError) {
 	jobs, _, err := n.client.Jobs().ListOptions(&nomadAPI.JobListOptions{
 		Fields: &nomadAPI.JobListFields{
 			Meta: true,
@@ -85,7 +85,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		nodeMap[alloc.JobID] = alloc.NodeID[:shortNodeIDLength]
 	}
 
-	instances := make([]*InstanceInfo, 0, len(jobs))
+	instances := make([]*instance.InstanceInfo, 0, len(jobs))
 
 	for _, job := range jobs {
 		instanceID := job.Meta[instanceIDMetaKey]
@@ -145,7 +145,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 			n.logger.Errorf("failed to get client ID for job '%s'", job.ID)
 		}
 
-		instances = append(instances, &InstanceInfo{
+		instances = append(instances, &instance.InstanceInfo{
 			Instance: &api.Sandbox{
 				SandboxID:  instanceID,
 				TemplateID: envID,
@@ -165,6 +165,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 func (n *NomadClient) CreateSandbox(
 	t trace.Tracer,
 	ctx context.Context,
+	instanceID,
 	envID,
 	alias,
 	teamID,
@@ -180,8 +181,6 @@ func (n *NomadClient) CreateSandbox(
 		),
 	)
 	defer childSpan.End()
-
-	instanceID := instanceIDPrefix + utils.GenerateID()
 
 	traceID := childSpan.SpanContext().TraceID().String()
 	spanID := childSpan.SpanContext().SpanID().String()

@@ -1,4 +1,4 @@
-name: Docker reverse
+name: Docker reverse proxy
 
 on:
   workflow_call:
