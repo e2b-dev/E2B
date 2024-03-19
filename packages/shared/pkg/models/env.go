@@ -25,30 +25,14 @@ type Env struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// TeamID holds the value of the "team_id" field.
 	TeamID uuid.UUID `json:"team_id,omitempty"`
-	// Dockerfile holds the value of the "dockerfile" field.
-	Dockerfile string `json:"dockerfile,omitempty"`
 	// Public holds the value of the "public" field.
 	Public bool `json:"public,omitempty"`
-	// BuildID holds the value of the "build_id" field.
-	BuildID uuid.UUID `json:"build_id,omitempty"`
 	// BuildCount holds the value of the "build_count" field.
 	BuildCount int32 `json:"build_count,omitempty"`
 	// Number of times the env was spawned
 	SpawnCount int64 `json:"spawn_count,omitempty"`
 	// Timestamp of the last time the env was spawned
 	LastSpawnedAt time.Time `json:"last_spawned_at,omitempty"`
-	// Vcpu holds the value of the "vcpu" field.
-	Vcpu int64 `json:"vcpu,omitempty"`
-	// RAMMB holds the value of the "ram_mb" field.
-	RAMMB int64 `json:"ram_mb,omitempty"`
-	// FreeDiskSizeMB holds the value of the "free_disk_size_mb" field.
-	FreeDiskSizeMB int64 `json:"free_disk_size_mb,omitempty"`
-	// TotalDiskSizeMB holds the value of the "total_disk_size_mb" field.
-	TotalDiskSizeMB int64 `json:"total_disk_size_mb,omitempty"`
-	// KernelVersion holds the value of the "kernel_version" field.
-	KernelVersion string `json:"kernel_version,omitempty"`
-	// FirecrackerVersion holds the value of the "firecracker_version" field.
-	FirecrackerVersion string `json:"firecracker_version,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvQuery when eager-loading is set.
 	Edges        EnvEdges `json:"edges"`
@@ -61,9 +45,11 @@ type EnvEdges struct {
 	Team *Team `json:"team,omitempty"`
 	// EnvAliases holds the value of the env_aliases edge.
 	EnvAliases []*EnvAlias `json:"env_aliases,omitempty"`
+	// Builds holds the value of the builds edge.
+	Builds []*EnvBuild `json:"builds,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // TeamOrErr returns the Team value or an error if the edge
@@ -88,6 +74,15 @@ func (e EnvEdges) EnvAliasesOrErr() ([]*EnvAlias, error) {
 	return nil, &NotLoadedError{edge: "env_aliases"}
 }
 
+// BuildsOrErr returns the Builds value or an error if the edge
+// was not loaded in eager-loading.
+func (e EnvEdges) BuildsOrErr() ([]*EnvBuild, error) {
+	if e.loadedTypes[2] {
+		return e.Builds, nil
+	}
+	return nil, &NotLoadedError{edge: "builds"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Env) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -95,13 +90,13 @@ func (*Env) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case env.FieldPublic:
 			values[i] = new(sql.NullBool)
-		case env.FieldBuildCount, env.FieldSpawnCount, env.FieldVcpu, env.FieldRAMMB, env.FieldFreeDiskSizeMB, env.FieldTotalDiskSizeMB:
+		case env.FieldBuildCount, env.FieldSpawnCount:
 			values[i] = new(sql.NullInt64)
-		case env.FieldID, env.FieldDockerfile, env.FieldKernelVersion, env.FieldFirecrackerVersion:
+		case env.FieldID:
 			values[i] = new(sql.NullString)
 		case env.FieldCreatedAt, env.FieldUpdatedAt, env.FieldLastSpawnedAt:
 			values[i] = new(sql.NullTime)
-		case env.FieldTeamID, env.FieldBuildID:
+		case env.FieldTeamID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -142,23 +137,11 @@ func (e *Env) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				e.TeamID = *value
 			}
-		case env.FieldDockerfile:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field dockerfile", values[i])
-			} else if value.Valid {
-				e.Dockerfile = value.String
-			}
 		case env.FieldPublic:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field public", values[i])
 			} else if value.Valid {
 				e.Public = value.Bool
-			}
-		case env.FieldBuildID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field build_id", values[i])
-			} else if value != nil {
-				e.BuildID = *value
 			}
 		case env.FieldBuildCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -177,42 +160,6 @@ func (e *Env) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field last_spawned_at", values[i])
 			} else if value.Valid {
 				e.LastSpawnedAt = value.Time
-			}
-		case env.FieldVcpu:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field vcpu", values[i])
-			} else if value.Valid {
-				e.Vcpu = value.Int64
-			}
-		case env.FieldRAMMB:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field ram_mb", values[i])
-			} else if value.Valid {
-				e.RAMMB = value.Int64
-			}
-		case env.FieldFreeDiskSizeMB:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field free_disk_size_mb", values[i])
-			} else if value.Valid {
-				e.FreeDiskSizeMB = value.Int64
-			}
-		case env.FieldTotalDiskSizeMB:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field total_disk_size_mb", values[i])
-			} else if value.Valid {
-				e.TotalDiskSizeMB = value.Int64
-			}
-		case env.FieldKernelVersion:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field kernel_version", values[i])
-			} else if value.Valid {
-				e.KernelVersion = value.String
-			}
-		case env.FieldFirecrackerVersion:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field firecracker_version", values[i])
-			} else if value.Valid {
-				e.FirecrackerVersion = value.String
 			}
 		default:
 			e.selectValues.Set(columns[i], values[i])
@@ -235,6 +182,11 @@ func (e *Env) QueryTeam() *TeamQuery {
 // QueryEnvAliases queries the "env_aliases" edge of the Env entity.
 func (e *Env) QueryEnvAliases() *EnvAliasQuery {
 	return NewEnvClient(e.config).QueryEnvAliases(e)
+}
+
+// QueryBuilds queries the "builds" edge of the Env entity.
+func (e *Env) QueryBuilds() *EnvBuildQuery {
+	return NewEnvClient(e.config).QueryBuilds(e)
 }
 
 // Update returns a builder for updating this Env.
@@ -269,14 +221,8 @@ func (e *Env) String() string {
 	builder.WriteString("team_id=")
 	builder.WriteString(fmt.Sprintf("%v", e.TeamID))
 	builder.WriteString(", ")
-	builder.WriteString("dockerfile=")
-	builder.WriteString(e.Dockerfile)
-	builder.WriteString(", ")
 	builder.WriteString("public=")
 	builder.WriteString(fmt.Sprintf("%v", e.Public))
-	builder.WriteString(", ")
-	builder.WriteString("build_id=")
-	builder.WriteString(fmt.Sprintf("%v", e.BuildID))
 	builder.WriteString(", ")
 	builder.WriteString("build_count=")
 	builder.WriteString(fmt.Sprintf("%v", e.BuildCount))
@@ -286,24 +232,6 @@ func (e *Env) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("last_spawned_at=")
 	builder.WriteString(e.LastSpawnedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("vcpu=")
-	builder.WriteString(fmt.Sprintf("%v", e.Vcpu))
-	builder.WriteString(", ")
-	builder.WriteString("ram_mb=")
-	builder.WriteString(fmt.Sprintf("%v", e.RAMMB))
-	builder.WriteString(", ")
-	builder.WriteString("free_disk_size_mb=")
-	builder.WriteString(fmt.Sprintf("%v", e.FreeDiskSizeMB))
-	builder.WriteString(", ")
-	builder.WriteString("total_disk_size_mb=")
-	builder.WriteString(fmt.Sprintf("%v", e.TotalDiskSizeMB))
-	builder.WriteString(", ")
-	builder.WriteString("kernel_version=")
-	builder.WriteString(e.KernelVersion)
-	builder.WriteString(", ")
-	builder.WriteString("firecracker_version=")
-	builder.WriteString(e.FirecrackerVersion)
 	builder.WriteByte(')')
 	return builder.String()
 }

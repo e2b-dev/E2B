@@ -46,7 +46,7 @@ func (w BuildLogsWriter) sendLogsAPICall(logs []string) error {
 		return err
 	}
 
-	response, err := w.httpClient.Post(APIHost+"/envs/"+w.envID+"/builds/"+w.buildID+"/logs", "application/json", bytes.NewBuffer(jsonData))
+	response, err := w.httpClient.Post(APIHost+"/templates/"+w.envID+"/builds/"+w.buildID+"/logs", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		err = fmt.Errorf("error posting logs to API: %w", err)
 

@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/team"
 	"github.com/google/uuid"
 )
@@ -60,21 +61,9 @@ func (ec *EnvCreate) SetTeamID(u uuid.UUID) *EnvCreate {
 	return ec
 }
 
-// SetDockerfile sets the "dockerfile" field.
-func (ec *EnvCreate) SetDockerfile(s string) *EnvCreate {
-	ec.mutation.SetDockerfile(s)
-	return ec
-}
-
 // SetPublic sets the "public" field.
 func (ec *EnvCreate) SetPublic(b bool) *EnvCreate {
 	ec.mutation.SetPublic(b)
-	return ec
-}
-
-// SetBuildID sets the "build_id" field.
-func (ec *EnvCreate) SetBuildID(u uuid.UUID) *EnvCreate {
-	ec.mutation.SetBuildID(u)
 	return ec
 }
 
@@ -120,58 +109,6 @@ func (ec *EnvCreate) SetNillableLastSpawnedAt(t *time.Time) *EnvCreate {
 	return ec
 }
 
-// SetVcpu sets the "vcpu" field.
-func (ec *EnvCreate) SetVcpu(i int64) *EnvCreate {
-	ec.mutation.SetVcpu(i)
-	return ec
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (ec *EnvCreate) SetRAMMB(i int64) *EnvCreate {
-	ec.mutation.SetRAMMB(i)
-	return ec
-}
-
-// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
-func (ec *EnvCreate) SetFreeDiskSizeMB(i int64) *EnvCreate {
-	ec.mutation.SetFreeDiskSizeMB(i)
-	return ec
-}
-
-// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
-func (ec *EnvCreate) SetTotalDiskSizeMB(i int64) *EnvCreate {
-	ec.mutation.SetTotalDiskSizeMB(i)
-	return ec
-}
-
-// SetKernelVersion sets the "kernel_version" field.
-func (ec *EnvCreate) SetKernelVersion(s string) *EnvCreate {
-	ec.mutation.SetKernelVersion(s)
-	return ec
-}
-
-// SetNillableKernelVersion sets the "kernel_version" field if the given value is not nil.
-func (ec *EnvCreate) SetNillableKernelVersion(s *string) *EnvCreate {
-	if s != nil {
-		ec.SetKernelVersion(*s)
-	}
-	return ec
-}
-
-// SetFirecrackerVersion sets the "firecracker_version" field.
-func (ec *EnvCreate) SetFirecrackerVersion(s string) *EnvCreate {
-	ec.mutation.SetFirecrackerVersion(s)
-	return ec
-}
-
-// SetNillableFirecrackerVersion sets the "firecracker_version" field if the given value is not nil.
-func (ec *EnvCreate) SetNillableFirecrackerVersion(s *string) *EnvCreate {
-	if s != nil {
-		ec.SetFirecrackerVersion(*s)
-	}
-	return ec
-}
-
 // SetID sets the "id" field.
 func (ec *EnvCreate) SetID(s string) *EnvCreate {
 	ec.mutation.SetID(s)
@@ -196,6 +133,21 @@ func (ec *EnvCreate) AddEnvAliases(e ...*EnvAlias) *EnvCreate {
 		ids[i] = e[i].ID
 	}
 	return ec.AddEnvAliasIDs(ids...)
+}
+
+// AddBuildIDs adds the "builds" edge to the EnvBuild entity by IDs.
+func (ec *EnvCreate) AddBuildIDs(ids ...uuid.UUID) *EnvCreate {
+	ec.mutation.AddBuildIDs(ids...)
+	return ec
+}
+
+// AddBuilds adds the "builds" edges to the EnvBuild entity.
+func (ec *EnvCreate) AddBuilds(e ...*EnvBuild) *EnvCreate {
+	ids := make([]uuid.UUID, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return ec.AddBuildIDs(ids...)
 }
 
 // Mutation returns the EnvMutation object of the builder.
@@ -249,14 +201,6 @@ func (ec *EnvCreate) defaults() {
 		v := env.DefaultSpawnCount
 		ec.mutation.SetSpawnCount(v)
 	}
-	if _, ok := ec.mutation.KernelVersion(); !ok {
-		v := env.DefaultKernelVersion
-		ec.mutation.SetKernelVersion(v)
-	}
-	if _, ok := ec.mutation.FirecrackerVersion(); !ok {
-		v := env.DefaultFirecrackerVersion
-		ec.mutation.SetFirecrackerVersion(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -270,38 +214,14 @@ func (ec *EnvCreate) check() error {
 	if _, ok := ec.mutation.TeamID(); !ok {
 		return &ValidationError{Name: "team_id", err: errors.New(`models: missing required field "Env.team_id"`)}
 	}
-	if _, ok := ec.mutation.Dockerfile(); !ok {
-		return &ValidationError{Name: "dockerfile", err: errors.New(`models: missing required field "Env.dockerfile"`)}
-	}
 	if _, ok := ec.mutation.Public(); !ok {
 		return &ValidationError{Name: "public", err: errors.New(`models: missing required field "Env.public"`)}
-	}
-	if _, ok := ec.mutation.BuildID(); !ok {
-		return &ValidationError{Name: "build_id", err: errors.New(`models: missing required field "Env.build_id"`)}
 	}
 	if _, ok := ec.mutation.BuildCount(); !ok {
 		return &ValidationError{Name: "build_count", err: errors.New(`models: missing required field "Env.build_count"`)}
 	}
 	if _, ok := ec.mutation.SpawnCount(); !ok {
 		return &ValidationError{Name: "spawn_count", err: errors.New(`models: missing required field "Env.spawn_count"`)}
-	}
-	if _, ok := ec.mutation.Vcpu(); !ok {
-		return &ValidationError{Name: "vcpu", err: errors.New(`models: missing required field "Env.vcpu"`)}
-	}
-	if _, ok := ec.mutation.RAMMB(); !ok {
-		return &ValidationError{Name: "ram_mb", err: errors.New(`models: missing required field "Env.ram_mb"`)}
-	}
-	if _, ok := ec.mutation.FreeDiskSizeMB(); !ok {
-		return &ValidationError{Name: "free_disk_size_mb", err: errors.New(`models: missing required field "Env.free_disk_size_mb"`)}
-	}
-	if _, ok := ec.mutation.TotalDiskSizeMB(); !ok {
-		return &ValidationError{Name: "total_disk_size_mb", err: errors.New(`models: missing required field "Env.total_disk_size_mb"`)}
-	}
-	if _, ok := ec.mutation.KernelVersion(); !ok {
-		return &ValidationError{Name: "kernel_version", err: errors.New(`models: missing required field "Env.kernel_version"`)}
-	}
-	if _, ok := ec.mutation.FirecrackerVersion(); !ok {
-		return &ValidationError{Name: "firecracker_version", err: errors.New(`models: missing required field "Env.firecracker_version"`)}
 	}
 	if _, ok := ec.mutation.TeamID(); !ok {
 		return &ValidationError{Name: "team", err: errors.New(`models: missing required edge "Env.team"`)}
@@ -351,17 +271,9 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 		_spec.SetField(env.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := ec.mutation.Dockerfile(); ok {
-		_spec.SetField(env.FieldDockerfile, field.TypeString, value)
-		_node.Dockerfile = value
-	}
 	if value, ok := ec.mutation.Public(); ok {
 		_spec.SetField(env.FieldPublic, field.TypeBool, value)
 		_node.Public = value
-	}
-	if value, ok := ec.mutation.BuildID(); ok {
-		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
-		_node.BuildID = value
 	}
 	if value, ok := ec.mutation.BuildCount(); ok {
 		_spec.SetField(env.FieldBuildCount, field.TypeInt32, value)
@@ -374,30 +286,6 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 	if value, ok := ec.mutation.LastSpawnedAt(); ok {
 		_spec.SetField(env.FieldLastSpawnedAt, field.TypeTime, value)
 		_node.LastSpawnedAt = value
-	}
-	if value, ok := ec.mutation.Vcpu(); ok {
-		_spec.SetField(env.FieldVcpu, field.TypeInt64, value)
-		_node.Vcpu = value
-	}
-	if value, ok := ec.mutation.RAMMB(); ok {
-		_spec.SetField(env.FieldRAMMB, field.TypeInt64, value)
-		_node.RAMMB = value
-	}
-	if value, ok := ec.mutation.FreeDiskSizeMB(); ok {
-		_spec.SetField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
-		_node.FreeDiskSizeMB = value
-	}
-	if value, ok := ec.mutation.TotalDiskSizeMB(); ok {
-		_spec.SetField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
-		_node.TotalDiskSizeMB = value
-	}
-	if value, ok := ec.mutation.KernelVersion(); ok {
-		_spec.SetField(env.FieldKernelVersion, field.TypeString, value)
-		_node.KernelVersion = value
-	}
-	if value, ok := ec.mutation.FirecrackerVersion(); ok {
-		_spec.SetField(env.FieldFirecrackerVersion, field.TypeString, value)
-		_node.FirecrackerVersion = value
 	}
 	if nodes := ec.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -429,6 +317,23 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 			},
 		}
 		edge.Schema = ec.schemaConfig.EnvAlias
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ec.mutation.BuildsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.BuildsTable,
+			Columns: []string{env.BuildsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envbuild.FieldID, field.TypeUUID),
+			},
+		}
+		edge.Schema = ec.schemaConfig.EnvBuild
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
@@ -510,18 +415,6 @@ func (u *EnvUpsert) UpdateTeamID() *EnvUpsert {
 	return u
 }
 
-// SetDockerfile sets the "dockerfile" field.
-func (u *EnvUpsert) SetDockerfile(v string) *EnvUpsert {
-	u.Set(env.FieldDockerfile, v)
-	return u
-}
-
-// UpdateDockerfile sets the "dockerfile" field to the value that was provided on create.
-func (u *EnvUpsert) UpdateDockerfile() *EnvUpsert {
-	u.SetExcluded(env.FieldDockerfile)
-	return u
-}
-
 // SetPublic sets the "public" field.
 func (u *EnvUpsert) SetPublic(v bool) *EnvUpsert {
 	u.Set(env.FieldPublic, v)
@@ -531,18 +424,6 @@ func (u *EnvUpsert) SetPublic(v bool) *EnvUpsert {
 // UpdatePublic sets the "public" field to the value that was provided on create.
 func (u *EnvUpsert) UpdatePublic() *EnvUpsert {
 	u.SetExcluded(env.FieldPublic)
-	return u
-}
-
-// SetBuildID sets the "build_id" field.
-func (u *EnvUpsert) SetBuildID(v uuid.UUID) *EnvUpsert {
-	u.Set(env.FieldBuildID, v)
-	return u
-}
-
-// UpdateBuildID sets the "build_id" field to the value that was provided on create.
-func (u *EnvUpsert) UpdateBuildID() *EnvUpsert {
-	u.SetExcluded(env.FieldBuildID)
 	return u
 }
 
@@ -597,102 +478,6 @@ func (u *EnvUpsert) UpdateLastSpawnedAt() *EnvUpsert {
 // ClearLastSpawnedAt clears the value of the "last_spawned_at" field.
 func (u *EnvUpsert) ClearLastSpawnedAt() *EnvUpsert {
 	u.SetNull(env.FieldLastSpawnedAt)
-	return u
-}
-
-// SetVcpu sets the "vcpu" field.
-func (u *EnvUpsert) SetVcpu(v int64) *EnvUpsert {
-	u.Set(env.FieldVcpu, v)
-	return u
-}
-
-// UpdateVcpu sets the "vcpu" field to the value that was provided on create.
-func (u *EnvUpsert) UpdateVcpu() *EnvUpsert {
-	u.SetExcluded(env.FieldVcpu)
-	return u
-}
-
-// AddVcpu adds v to the "vcpu" field.
-func (u *EnvUpsert) AddVcpu(v int64) *EnvUpsert {
-	u.Add(env.FieldVcpu, v)
-	return u
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (u *EnvUpsert) SetRAMMB(v int64) *EnvUpsert {
-	u.Set(env.FieldRAMMB, v)
-	return u
-}
-
-// UpdateRAMMB sets the "ram_mb" field to the value that was provided on create.
-func (u *EnvUpsert) UpdateRAMMB() *EnvUpsert {
-	u.SetExcluded(env.FieldRAMMB)
-	return u
-}
-
-// AddRAMMB adds v to the "ram_mb" field.
-func (u *EnvUpsert) AddRAMMB(v int64) *EnvUpsert {
-	u.Add(env.FieldRAMMB, v)
-	return u
-}
-
-// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
-func (u *EnvUpsert) SetFreeDiskSizeMB(v int64) *EnvUpsert {
-	u.Set(env.FieldFreeDiskSizeMB, v)
-	return u
-}
-
-// UpdateFreeDiskSizeMB sets the "free_disk_size_mb" field to the value that was provided on create.
-func (u *EnvUpsert) UpdateFreeDiskSizeMB() *EnvUpsert {
-	u.SetExcluded(env.FieldFreeDiskSizeMB)
-	return u
-}
-
-// AddFreeDiskSizeMB adds v to the "free_disk_size_mb" field.
-func (u *EnvUpsert) AddFreeDiskSizeMB(v int64) *EnvUpsert {
-	u.Add(env.FieldFreeDiskSizeMB, v)
-	return u
-}
-
-// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
-func (u *EnvUpsert) SetTotalDiskSizeMB(v int64) *EnvUpsert {
-	u.Set(env.FieldTotalDiskSizeMB, v)
-	return u
-}
-
-// UpdateTotalDiskSizeMB sets the "total_disk_size_mb" field to the value that was provided on create.
-func (u *EnvUpsert) UpdateTotalDiskSizeMB() *EnvUpsert {
-	u.SetExcluded(env.FieldTotalDiskSizeMB)
-	return u
-}
-
-// AddTotalDiskSizeMB adds v to the "total_disk_size_mb" field.
-func (u *EnvUpsert) AddTotalDiskSizeMB(v int64) *EnvUpsert {
-	u.Add(env.FieldTotalDiskSizeMB, v)
-	return u
-}
-
-// SetKernelVersion sets the "kernel_version" field.
-func (u *EnvUpsert) SetKernelVersion(v string) *EnvUpsert {
-	u.Set(env.FieldKernelVersion, v)
-	return u
-}
-
-// UpdateKernelVersion sets the "kernel_version" field to the value that was provided on create.
-func (u *EnvUpsert) UpdateKernelVersion() *EnvUpsert {
-	u.SetExcluded(env.FieldKernelVersion)
-	return u
-}
-
-// SetFirecrackerVersion sets the "firecracker_version" field.
-func (u *EnvUpsert) SetFirecrackerVersion(v string) *EnvUpsert {
-	u.Set(env.FieldFirecrackerVersion, v)
-	return u
-}
-
-// UpdateFirecrackerVersion sets the "firecracker_version" field to the value that was provided on create.
-func (u *EnvUpsert) UpdateFirecrackerVersion() *EnvUpsert {
-	u.SetExcluded(env.FieldFirecrackerVersion)
 	return u
 }
 
@@ -775,20 +560,6 @@ func (u *EnvUpsertOne) UpdateTeamID() *EnvUpsertOne {
 	})
 }
 
-// SetDockerfile sets the "dockerfile" field.
-func (u *EnvUpsertOne) SetDockerfile(v string) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetDockerfile(v)
-	})
-}
-
-// UpdateDockerfile sets the "dockerfile" field to the value that was provided on create.
-func (u *EnvUpsertOne) UpdateDockerfile() *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateDockerfile()
-	})
-}
-
 // SetPublic sets the "public" field.
 func (u *EnvUpsertOne) SetPublic(v bool) *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
@@ -800,20 +571,6 @@ func (u *EnvUpsertOne) SetPublic(v bool) *EnvUpsertOne {
 func (u *EnvUpsertOne) UpdatePublic() *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdatePublic()
-	})
-}
-
-// SetBuildID sets the "build_id" field.
-func (u *EnvUpsertOne) SetBuildID(v uuid.UUID) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetBuildID(v)
-	})
-}
-
-// UpdateBuildID sets the "build_id" field to the value that was provided on create.
-func (u *EnvUpsertOne) UpdateBuildID() *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateBuildID()
 	})
 }
 
@@ -877,118 +634,6 @@ func (u *EnvUpsertOne) UpdateLastSpawnedAt() *EnvUpsertOne {
 func (u *EnvUpsertOne) ClearLastSpawnedAt() *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.ClearLastSpawnedAt()
-	})
-}
-
-// SetVcpu sets the "vcpu" field.
-func (u *EnvUpsertOne) SetVcpu(v int64) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetVcpu(v)
-	})
-}
-
-// AddVcpu adds v to the "vcpu" field.
-func (u *EnvUpsertOne) AddVcpu(v int64) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.AddVcpu(v)
-	})
-}
-
-// UpdateVcpu sets the "vcpu" field to the value that was provided on create.
-func (u *EnvUpsertOne) UpdateVcpu() *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateVcpu()
-	})
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (u *EnvUpsertOne) SetRAMMB(v int64) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetRAMMB(v)
-	})
-}
-
-// AddRAMMB adds v to the "ram_mb" field.
-func (u *EnvUpsertOne) AddRAMMB(v int64) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.AddRAMMB(v)
-	})
-}
-
-// UpdateRAMMB sets the "ram_mb" field to the value that was provided on create.
-func (u *EnvUpsertOne) UpdateRAMMB() *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateRAMMB()
-	})
-}
-
-// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
-func (u *EnvUpsertOne) SetFreeDiskSizeMB(v int64) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetFreeDiskSizeMB(v)
-	})
-}
-
-// AddFreeDiskSizeMB adds v to the "free_disk_size_mb" field.
-func (u *EnvUpsertOne) AddFreeDiskSizeMB(v int64) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.AddFreeDiskSizeMB(v)
-	})
-}
-
-// UpdateFreeDiskSizeMB sets the "free_disk_size_mb" field to the value that was provided on create.
-func (u *EnvUpsertOne) UpdateFreeDiskSizeMB() *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateFreeDiskSizeMB()
-	})
-}
-
-// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
-func (u *EnvUpsertOne) SetTotalDiskSizeMB(v int64) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetTotalDiskSizeMB(v)
-	})
-}
-
-// AddTotalDiskSizeMB adds v to the "total_disk_size_mb" field.
-func (u *EnvUpsertOne) AddTotalDiskSizeMB(v int64) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.AddTotalDiskSizeMB(v)
-	})
-}
-
-// UpdateTotalDiskSizeMB sets the "total_disk_size_mb" field to the value that was provided on create.
-func (u *EnvUpsertOne) UpdateTotalDiskSizeMB() *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateTotalDiskSizeMB()
-	})
-}
-
-// SetKernelVersion sets the "kernel_version" field.
-func (u *EnvUpsertOne) SetKernelVersion(v string) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetKernelVersion(v)
-	})
-}
-
-// UpdateKernelVersion sets the "kernel_version" field to the value that was provided on create.
-func (u *EnvUpsertOne) UpdateKernelVersion() *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateKernelVersion()
-	})
-}
-
-// SetFirecrackerVersion sets the "firecracker_version" field.
-func (u *EnvUpsertOne) SetFirecrackerVersion(v string) *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetFirecrackerVersion(v)
-	})
-}
-
-// UpdateFirecrackerVersion sets the "firecracker_version" field to the value that was provided on create.
-func (u *EnvUpsertOne) UpdateFirecrackerVersion() *EnvUpsertOne {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateFirecrackerVersion()
 	})
 }
 
@@ -1238,20 +883,6 @@ func (u *EnvUpsertBulk) UpdateTeamID() *EnvUpsertBulk {
 	})
 }
 
-// SetDockerfile sets the "dockerfile" field.
-func (u *EnvUpsertBulk) SetDockerfile(v string) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetDockerfile(v)
-	})
-}
-
-// UpdateDockerfile sets the "dockerfile" field to the value that was provided on create.
-func (u *EnvUpsertBulk) UpdateDockerfile() *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateDockerfile()
-	})
-}
-
 // SetPublic sets the "public" field.
 func (u *EnvUpsertBulk) SetPublic(v bool) *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
@@ -1263,20 +894,6 @@ func (u *EnvUpsertBulk) SetPublic(v bool) *EnvUpsertBulk {
 func (u *EnvUpsertBulk) UpdatePublic() *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdatePublic()
-	})
-}
-
-// SetBuildID sets the "build_id" field.
-func (u *EnvUpsertBulk) SetBuildID(v uuid.UUID) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetBuildID(v)
-	})
-}
-
-// UpdateBuildID sets the "build_id" field to the value that was provided on create.
-func (u *EnvUpsertBulk) UpdateBuildID() *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateBuildID()
 	})
 }
 
@@ -1340,118 +957,6 @@ func (u *EnvUpsertBulk) UpdateLastSpawnedAt() *EnvUpsertBulk {
 func (u *EnvUpsertBulk) ClearLastSpawnedAt() *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.ClearLastSpawnedAt()
-	})
-}
-
-// SetVcpu sets the "vcpu" field.
-func (u *EnvUpsertBulk) SetVcpu(v int64) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetVcpu(v)
-	})
-}
-
-// AddVcpu adds v to the "vcpu" field.
-func (u *EnvUpsertBulk) AddVcpu(v int64) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.AddVcpu(v)
-	})
-}
-
-// UpdateVcpu sets the "vcpu" field to the value that was provided on create.
-func (u *EnvUpsertBulk) UpdateVcpu() *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateVcpu()
-	})
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (u *EnvUpsertBulk) SetRAMMB(v int64) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetRAMMB(v)
-	})
-}
-
-// AddRAMMB adds v to the "ram_mb" field.
-func (u *EnvUpsertBulk) AddRAMMB(v int64) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.AddRAMMB(v)
-	})
-}
-
-// UpdateRAMMB sets the "ram_mb" field to the value that was provided on create.
-func (u *EnvUpsertBulk) UpdateRAMMB() *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateRAMMB()
-	})
-}
-
-// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
-func (u *EnvUpsertBulk) SetFreeDiskSizeMB(v int64) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetFreeDiskSizeMB(v)
-	})
-}
-
-// AddFreeDiskSizeMB adds v to the "free_disk_size_mb" field.
-func (u *EnvUpsertBulk) AddFreeDiskSizeMB(v int64) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.AddFreeDiskSizeMB(v)
-	})
-}
-
-// UpdateFreeDiskSizeMB sets the "free_disk_size_mb" field to the value that was provided on create.
-func (u *EnvUpsertBulk) UpdateFreeDiskSizeMB() *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateFreeDiskSizeMB()
-	})
-}
-
-// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
-func (u *EnvUpsertBulk) SetTotalDiskSizeMB(v int64) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetTotalDiskSizeMB(v)
-	})
-}
-
-// AddTotalDiskSizeMB adds v to the "total_disk_size_mb" field.
-func (u *EnvUpsertBulk) AddTotalDiskSizeMB(v int64) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.AddTotalDiskSizeMB(v)
-	})
-}
-
-// UpdateTotalDiskSizeMB sets the "total_disk_size_mb" field to the value that was provided on create.
-func (u *EnvUpsertBulk) UpdateTotalDiskSizeMB() *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateTotalDiskSizeMB()
-	})
-}
-
-// SetKernelVersion sets the "kernel_version" field.
-func (u *EnvUpsertBulk) SetKernelVersion(v string) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetKernelVersion(v)
-	})
-}
-
-// UpdateKernelVersion sets the "kernel_version" field to the value that was provided on create.
-func (u *EnvUpsertBulk) UpdateKernelVersion() *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateKernelVersion()
-	})
-}
-
-// SetFirecrackerVersion sets the "firecracker_version" field.
-func (u *EnvUpsertBulk) SetFirecrackerVersion(v string) *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.SetFirecrackerVersion(v)
-	})
-}
-
-// UpdateFirecrackerVersion sets the "firecracker_version" field to the value that was provided on create.
-func (u *EnvUpsertBulk) UpdateFirecrackerVersion() *EnvUpsertBulk {
-	return u.Update(func(s *EnvUpsert) {
-		s.UpdateFirecrackerVersion()
 	})
 }
 

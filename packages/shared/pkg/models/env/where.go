@@ -82,19 +82,9 @@ func TeamID(v uuid.UUID) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldTeamID, v))
 }
 
-// Dockerfile applies equality check predicate on the "dockerfile" field. It's identical to DockerfileEQ.
-func Dockerfile(v string) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldDockerfile, v))
-}
-
 // Public applies equality check predicate on the "public" field. It's identical to PublicEQ.
 func Public(v bool) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldPublic, v))
-}
-
-// BuildID applies equality check predicate on the "build_id" field. It's identical to BuildIDEQ.
-func BuildID(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldBuildID, v))
 }
 
 // BuildCount applies equality check predicate on the "build_count" field. It's identical to BuildCountEQ.
@@ -110,36 +100,6 @@ func SpawnCount(v int64) predicate.Env {
 // LastSpawnedAt applies equality check predicate on the "last_spawned_at" field. It's identical to LastSpawnedAtEQ.
 func LastSpawnedAt(v time.Time) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldLastSpawnedAt, v))
-}
-
-// Vcpu applies equality check predicate on the "vcpu" field. It's identical to VcpuEQ.
-func Vcpu(v int64) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldVcpu, v))
-}
-
-// RAMMB applies equality check predicate on the "ram_mb" field. It's identical to RAMMBEQ.
-func RAMMB(v int64) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldRAMMB, v))
-}
-
-// FreeDiskSizeMB applies equality check predicate on the "free_disk_size_mb" field. It's identical to FreeDiskSizeMBEQ.
-func FreeDiskSizeMB(v int64) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldFreeDiskSizeMB, v))
-}
-
-// TotalDiskSizeMB applies equality check predicate on the "total_disk_size_mb" field. It's identical to TotalDiskSizeMBEQ.
-func TotalDiskSizeMB(v int64) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldTotalDiskSizeMB, v))
-}
-
-// KernelVersion applies equality check predicate on the "kernel_version" field. It's identical to KernelVersionEQ.
-func KernelVersion(v string) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldKernelVersion, v))
-}
-
-// FirecrackerVersion applies equality check predicate on the "firecracker_version" field. It's identical to FirecrackerVersionEQ.
-func FirecrackerVersion(v string) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldFirecrackerVersion, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -242,71 +202,6 @@ func TeamIDNotIn(vs ...uuid.UUID) predicate.Env {
 	return predicate.Env(sql.FieldNotIn(FieldTeamID, vs...))
 }
 
-// DockerfileEQ applies the EQ predicate on the "dockerfile" field.
-func DockerfileEQ(v string) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldDockerfile, v))
-}
-
-// DockerfileNEQ applies the NEQ predicate on the "dockerfile" field.
-func DockerfileNEQ(v string) predicate.Env {
-	return predicate.Env(sql.FieldNEQ(FieldDockerfile, v))
-}
-
-// DockerfileIn applies the In predicate on the "dockerfile" field.
-func DockerfileIn(vs ...string) predicate.Env {
-	return predicate.Env(sql.FieldIn(FieldDockerfile, vs...))
-}
-
-// DockerfileNotIn applies the NotIn predicate on the "dockerfile" field.
-func DockerfileNotIn(vs ...string) predicate.Env {
-	return predicate.Env(sql.FieldNotIn(FieldDockerfile, vs...))
-}
-
-// DockerfileGT applies the GT predicate on the "dockerfile" field.
-func DockerfileGT(v string) predicate.Env {
-	return predicate.Env(sql.FieldGT(FieldDockerfile, v))
-}
-
-// DockerfileGTE applies the GTE predicate on the "dockerfile" field.
-func DockerfileGTE(v string) predicate.Env {
-	return predicate.Env(sql.FieldGTE(FieldDockerfile, v))
-}
-
-// DockerfileLT applies the LT predicate on the "dockerfile" field.
-func DockerfileLT(v string) predicate.Env {
-	return predicate.Env(sql.FieldLT(FieldDockerfile, v))
-}
-
-// DockerfileLTE applies the LTE predicate on the "dockerfile" field.
-func DockerfileLTE(v string) predicate.Env {
-	return predicate.Env(sql.FieldLTE(FieldDockerfile, v))
-}
-
-// DockerfileContains applies the Contains predicate on the "dockerfile" field.
-func DockerfileContains(v string) predicate.Env {
-	return predicate.Env(sql.FieldContains(FieldDockerfile, v))
-}
-
-// DockerfileHasPrefix applies the HasPrefix predicate on the "dockerfile" field.
-func DockerfileHasPrefix(v string) predicate.Env {
-	return predicate.Env(sql.FieldHasPrefix(FieldDockerfile, v))
-}
-
-// DockerfileHasSuffix applies the HasSuffix predicate on the "dockerfile" field.
-func DockerfileHasSuffix(v string) predicate.Env {
-	return predicate.Env(sql.FieldHasSuffix(FieldDockerfile, v))
-}
-
-// DockerfileEqualFold applies the EqualFold predicate on the "dockerfile" field.
-func DockerfileEqualFold(v string) predicate.Env {
-	return predicate.Env(sql.FieldEqualFold(FieldDockerfile, v))
-}
-
-// DockerfileContainsFold applies the ContainsFold predicate on the "dockerfile" field.
-func DockerfileContainsFold(v string) predicate.Env {
-	return predicate.Env(sql.FieldContainsFold(FieldDockerfile, v))
-}
-
 // PublicEQ applies the EQ predicate on the "public" field.
 func PublicEQ(v bool) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldPublic, v))
@@ -315,46 +210,6 @@ func PublicEQ(v bool) predicate.Env {
 // PublicNEQ applies the NEQ predicate on the "public" field.
 func PublicNEQ(v bool) predicate.Env {
 	return predicate.Env(sql.FieldNEQ(FieldPublic, v))
-}
-
-// BuildIDEQ applies the EQ predicate on the "build_id" field.
-func BuildIDEQ(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldBuildID, v))
-}
-
-// BuildIDNEQ applies the NEQ predicate on the "build_id" field.
-func BuildIDNEQ(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldNEQ(FieldBuildID, v))
-}
-
-// BuildIDIn applies the In predicate on the "build_id" field.
-func BuildIDIn(vs ...uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldIn(FieldBuildID, vs...))
-}
-
-// BuildIDNotIn applies the NotIn predicate on the "build_id" field.
-func BuildIDNotIn(vs ...uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldNotIn(FieldBuildID, vs...))
-}
-
-// BuildIDGT applies the GT predicate on the "build_id" field.
-func BuildIDGT(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldGT(FieldBuildID, v))
-}
-
-// BuildIDGTE applies the GTE predicate on the "build_id" field.
-func BuildIDGTE(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldGTE(FieldBuildID, v))
-}
-
-// BuildIDLT applies the LT predicate on the "build_id" field.
-func BuildIDLT(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldLT(FieldBuildID, v))
-}
-
-// BuildIDLTE applies the LTE predicate on the "build_id" field.
-func BuildIDLTE(v uuid.UUID) predicate.Env {
-	return predicate.Env(sql.FieldLTE(FieldBuildID, v))
 }
 
 // BuildCountEQ applies the EQ predicate on the "build_count" field.
@@ -487,296 +342,6 @@ func LastSpawnedAtNotNil() predicate.Env {
 	return predicate.Env(sql.FieldNotNull(FieldLastSpawnedAt))
 }
 
-// VcpuEQ applies the EQ predicate on the "vcpu" field.
-func VcpuEQ(v int64) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldVcpu, v))
-}
-
-// VcpuNEQ applies the NEQ predicate on the "vcpu" field.
-func VcpuNEQ(v int64) predicate.Env {
-	return predicate.Env(sql.FieldNEQ(FieldVcpu, v))
-}
-
-// VcpuIn applies the In predicate on the "vcpu" field.
-func VcpuIn(vs ...int64) predicate.Env {
-	return predicate.Env(sql.FieldIn(FieldVcpu, vs...))
-}
-
-// VcpuNotIn applies the NotIn predicate on the "vcpu" field.
-func VcpuNotIn(vs ...int64) predicate.Env {
-	return predicate.Env(sql.FieldNotIn(FieldVcpu, vs...))
-}
-
-// VcpuGT applies the GT predicate on the "vcpu" field.
-func VcpuGT(v int64) predicate.Env {
-	return predicate.Env(sql.FieldGT(FieldVcpu, v))
-}
-
-// VcpuGTE applies the GTE predicate on the "vcpu" field.
-func VcpuGTE(v int64) predicate.Env {
-	return predicate.Env(sql.FieldGTE(FieldVcpu, v))
-}
-
-// VcpuLT applies the LT predicate on the "vcpu" field.
-func VcpuLT(v int64) predicate.Env {
-	return predicate.Env(sql.FieldLT(FieldVcpu, v))
-}
-
-// VcpuLTE applies the LTE predicate on the "vcpu" field.
-func VcpuLTE(v int64) predicate.Env {
-	return predicate.Env(sql.FieldLTE(FieldVcpu, v))
-}
-
-// RAMMBEQ applies the EQ predicate on the "ram_mb" field.
-func RAMMBEQ(v int64) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldRAMMB, v))
-}
-
-// RAMMBNEQ applies the NEQ predicate on the "ram_mb" field.
-func RAMMBNEQ(v int64) predicate.Env {
-	return predicate.Env(sql.FieldNEQ(FieldRAMMB, v))
-}
-
-// RAMMBIn applies the In predicate on the "ram_mb" field.
-func RAMMBIn(vs ...int64) predicate.Env {
-	return predicate.Env(sql.FieldIn(FieldRAMMB, vs...))
-}
-
-// RAMMBNotIn applies the NotIn predicate on the "ram_mb" field.
-func RAMMBNotIn(vs ...int64) predicate.Env {
-	return predicate.Env(sql.FieldNotIn(FieldRAMMB, vs...))
-}
-
-// RAMMBGT applies the GT predicate on the "ram_mb" field.
-func RAMMBGT(v int64) predicate.Env {
-	return predicate.Env(sql.FieldGT(FieldRAMMB, v))
-}
-
-// RAMMBGTE applies the GTE predicate on the "ram_mb" field.
-func RAMMBGTE(v int64) predicate.Env {
-	return predicate.Env(sql.FieldGTE(FieldRAMMB, v))
-}
-
-// RAMMBLT applies the LT predicate on the "ram_mb" field.
-func RAMMBLT(v int64) predicate.Env {
-	return predicate.Env(sql.FieldLT(FieldRAMMB, v))
-}
-
-// RAMMBLTE applies the LTE predicate on the "ram_mb" field.
-func RAMMBLTE(v int64) predicate.Env {
-	return predicate.Env(sql.FieldLTE(FieldRAMMB, v))
-}
-
-// FreeDiskSizeMBEQ applies the EQ predicate on the "free_disk_size_mb" field.
-func FreeDiskSizeMBEQ(v int64) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldFreeDiskSizeMB, v))
-}
-
-// FreeDiskSizeMBNEQ applies the NEQ predicate on the "free_disk_size_mb" field.
-func FreeDiskSizeMBNEQ(v int64) predicate.Env {
-	return predicate.Env(sql.FieldNEQ(FieldFreeDiskSizeMB, v))
-}
-
-// FreeDiskSizeMBIn applies the In predicate on the "free_disk_size_mb" field.
-func FreeDiskSizeMBIn(vs ...int64) predicate.Env {
-	return predicate.Env(sql.FieldIn(FieldFreeDiskSizeMB, vs...))
-}
-
-// FreeDiskSizeMBNotIn applies the NotIn predicate on the "free_disk_size_mb" field.
-func FreeDiskSizeMBNotIn(vs ...int64) predicate.Env {
-	return predicate.Env(sql.FieldNotIn(FieldFreeDiskSizeMB, vs...))
-}
-
-// FreeDiskSizeMBGT applies the GT predicate on the "free_disk_size_mb" field.
-func FreeDiskSizeMBGT(v int64) predicate.Env {
-	return predicate.Env(sql.FieldGT(FieldFreeDiskSizeMB, v))
-}
-
-// FreeDiskSizeMBGTE applies the GTE predicate on the "free_disk_size_mb" field.
-func FreeDiskSizeMBGTE(v int64) predicate.Env {
-	return predicate.Env(sql.FieldGTE(FieldFreeDiskSizeMB, v))
-}
-
-// FreeDiskSizeMBLT applies the LT predicate on the "free_disk_size_mb" field.
-func FreeDiskSizeMBLT(v int64) predicate.Env {
-	return predicate.Env(sql.FieldLT(FieldFreeDiskSizeMB, v))
-}
-
-// FreeDiskSizeMBLTE applies the LTE predicate on the "free_disk_size_mb" field.
-func FreeDiskSizeMBLTE(v int64) predicate.Env {
-	return predicate.Env(sql.FieldLTE(FieldFreeDiskSizeMB, v))
-}
-
-// TotalDiskSizeMBEQ applies the EQ predicate on the "total_disk_size_mb" field.
-func TotalDiskSizeMBEQ(v int64) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldTotalDiskSizeMB, v))
-}
-
-// TotalDiskSizeMBNEQ applies the NEQ predicate on the "total_disk_size_mb" field.
-func TotalDiskSizeMBNEQ(v int64) predicate.Env {
-	return predicate.Env(sql.FieldNEQ(FieldTotalDiskSizeMB, v))
-}
-
-// TotalDiskSizeMBIn applies the In predicate on the "total_disk_size_mb" field.
-func TotalDiskSizeMBIn(vs ...int64) predicate.Env {
-	return predicate.Env(sql.FieldIn(FieldTotalDiskSizeMB, vs...))
-}
-
-// TotalDiskSizeMBNotIn applies the NotIn predicate on the "total_disk_size_mb" field.
-func TotalDiskSizeMBNotIn(vs ...int64) predicate.Env {
-	return predicate.Env(sql.FieldNotIn(FieldTotalDiskSizeMB, vs...))
-}
-
-// TotalDiskSizeMBGT applies the GT predicate on the "total_disk_size_mb" field.
-func TotalDiskSizeMBGT(v int64) predicate.Env {
-	return predicate.Env(sql.FieldGT(FieldTotalDiskSizeMB, v))
-}
-
-// TotalDiskSizeMBGTE applies the GTE predicate on the "total_disk_size_mb" field.
-func TotalDiskSizeMBGTE(v int64) predicate.Env {
-	return predicate.Env(sql.FieldGTE(FieldTotalDiskSizeMB, v))
-}
-
-// TotalDiskSizeMBLT applies the LT predicate on the "total_disk_size_mb" field.
-func TotalDiskSizeMBLT(v int64) predicate.Env {
-	return predicate.Env(sql.FieldLT(FieldTotalDiskSizeMB, v))
-}
-
-// TotalDiskSizeMBLTE applies the LTE predicate on the "total_disk_size_mb" field.
-func TotalDiskSizeMBLTE(v int64) predicate.Env {
-	return predicate.Env(sql.FieldLTE(FieldTotalDiskSizeMB, v))
-}
-
-// KernelVersionEQ applies the EQ predicate on the "kernel_version" field.
-func KernelVersionEQ(v string) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldKernelVersion, v))
-}
-
-// KernelVersionNEQ applies the NEQ predicate on the "kernel_version" field.
-func KernelVersionNEQ(v string) predicate.Env {
-	return predicate.Env(sql.FieldNEQ(FieldKernelVersion, v))
-}
-
-// KernelVersionIn applies the In predicate on the "kernel_version" field.
-func KernelVersionIn(vs ...string) predicate.Env {
-	return predicate.Env(sql.FieldIn(FieldKernelVersion, vs...))
-}
-
-// KernelVersionNotIn applies the NotIn predicate on the "kernel_version" field.
-func KernelVersionNotIn(vs ...string) predicate.Env {
-	return predicate.Env(sql.FieldNotIn(FieldKernelVersion, vs...))
-}
-
-// KernelVersionGT applies the GT predicate on the "kernel_version" field.
-func KernelVersionGT(v string) predicate.Env {
-	return predicate.Env(sql.FieldGT(FieldKernelVersion, v))
-}
-
-// KernelVersionGTE applies the GTE predicate on the "kernel_version" field.
-func KernelVersionGTE(v string) predicate.Env {
-	return predicate.Env(sql.FieldGTE(FieldKernelVersion, v))
-}
-
-// KernelVersionLT applies the LT predicate on the "kernel_version" field.
-func KernelVersionLT(v string) predicate.Env {
-	return predicate.Env(sql.FieldLT(FieldKernelVersion, v))
-}
-
-// KernelVersionLTE applies the LTE predicate on the "kernel_version" field.
-func KernelVersionLTE(v string) predicate.Env {
-	return predicate.Env(sql.FieldLTE(FieldKernelVersion, v))
-}
-
-// KernelVersionContains applies the Contains predicate on the "kernel_version" field.
-func KernelVersionContains(v string) predicate.Env {
-	return predicate.Env(sql.FieldContains(FieldKernelVersion, v))
-}
-
-// KernelVersionHasPrefix applies the HasPrefix predicate on the "kernel_version" field.
-func KernelVersionHasPrefix(v string) predicate.Env {
-	return predicate.Env(sql.FieldHasPrefix(FieldKernelVersion, v))
-}
-
-// KernelVersionHasSuffix applies the HasSuffix predicate on the "kernel_version" field.
-func KernelVersionHasSuffix(v string) predicate.Env {
-	return predicate.Env(sql.FieldHasSuffix(FieldKernelVersion, v))
-}
-
-// KernelVersionEqualFold applies the EqualFold predicate on the "kernel_version" field.
-func KernelVersionEqualFold(v string) predicate.Env {
-	return predicate.Env(sql.FieldEqualFold(FieldKernelVersion, v))
-}
-
-// KernelVersionContainsFold applies the ContainsFold predicate on the "kernel_version" field.
-func KernelVersionContainsFold(v string) predicate.Env {
-	return predicate.Env(sql.FieldContainsFold(FieldKernelVersion, v))
-}
-
-// FirecrackerVersionEQ applies the EQ predicate on the "firecracker_version" field.
-func FirecrackerVersionEQ(v string) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldFirecrackerVersion, v))
-}
-
-// FirecrackerVersionNEQ applies the NEQ predicate on the "firecracker_version" field.
-func FirecrackerVersionNEQ(v string) predicate.Env {
-	return predicate.Env(sql.FieldNEQ(FieldFirecrackerVersion, v))
-}
-
-// FirecrackerVersionIn applies the In predicate on the "firecracker_version" field.
-func FirecrackerVersionIn(vs ...string) predicate.Env {
-	return predicate.Env(sql.FieldIn(FieldFirecrackerVersion, vs...))
-}
-
-// FirecrackerVersionNotIn applies the NotIn predicate on the "firecracker_version" field.
-func FirecrackerVersionNotIn(vs ...string) predicate.Env {
-	return predicate.Env(sql.FieldNotIn(FieldFirecrackerVersion, vs...))
-}
-
-// FirecrackerVersionGT applies the GT predicate on the "firecracker_version" field.
-func FirecrackerVersionGT(v string) predicate.Env {
-	return predicate.Env(sql.FieldGT(FieldFirecrackerVersion, v))
-}
-
-// FirecrackerVersionGTE applies the GTE predicate on the "firecracker_version" field.
-func FirecrackerVersionGTE(v string) predicate.Env {
-	return predicate.Env(sql.FieldGTE(FieldFirecrackerVersion, v))
-}
-
-// FirecrackerVersionLT applies the LT predicate on the "firecracker_version" field.
-func FirecrackerVersionLT(v string) predicate.Env {
-	return predicate.Env(sql.FieldLT(FieldFirecrackerVersion, v))
-}
-
-// FirecrackerVersionLTE applies the LTE predicate on the "firecracker_version" field.
-func FirecrackerVersionLTE(v string) predicate.Env {
-	return predicate.Env(sql.FieldLTE(FieldFirecrackerVersion, v))
-}
-
-// FirecrackerVersionContains applies the Contains predicate on the "firecracker_version" field.
-func FirecrackerVersionContains(v string) predicate.Env {
-	return predicate.Env(sql.FieldContains(FieldFirecrackerVersion, v))
-}
-
-// FirecrackerVersionHasPrefix applies the HasPrefix predicate on the "firecracker_version" field.
-func FirecrackerVersionHasPrefix(v string) predicate.Env {
-	return predicate.Env(sql.FieldHasPrefix(FieldFirecrackerVersion, v))
-}
-
-// FirecrackerVersionHasSuffix applies the HasSuffix predicate on the "firecracker_version" field.
-func FirecrackerVersionHasSuffix(v string) predicate.Env {
-	return predicate.Env(sql.FieldHasSuffix(FieldFirecrackerVersion, v))
-}
-
-// FirecrackerVersionEqualFold applies the EqualFold predicate on the "firecracker_version" field.
-func FirecrackerVersionEqualFold(v string) predicate.Env {
-	return predicate.Env(sql.FieldEqualFold(FieldFirecrackerVersion, v))
-}
-
-// FirecrackerVersionContainsFold applies the ContainsFold predicate on the "firecracker_version" field.
-func FirecrackerVersionContainsFold(v string) predicate.Env {
-	return predicate.Env(sql.FieldContainsFold(FieldFirecrackerVersion, v))
-}
-
 // HasTeam applies the HasEdge predicate on the "team" edge.
 func HasTeam() predicate.Env {
 	return predicate.Env(func(s *sql.Selector) {
@@ -827,6 +392,35 @@ func HasEnvAliasesWith(preds ...predicate.EnvAlias) predicate.Env {
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.EnvAlias
 		step.Edge.Schema = schemaConfig.EnvAlias
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBuilds applies the HasEdge predicate on the "builds" edge.
+func HasBuilds() predicate.Env {
+	return predicate.Env(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BuildsTable, BuildsColumn),
+		)
+		schemaConfig := internal.SchemaConfigFromContext(s.Context())
+		step.To.Schema = schemaConfig.EnvBuild
+		step.Edge.Schema = schemaConfig.EnvBuild
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBuildsWith applies the HasEdge predicate on the "builds" edge with a given conditions (other predicates).
+func HasBuildsWith(preds ...predicate.EnvBuild) predicate.Env {
+	return predicate.Env(func(s *sql.Selector) {
+		step := newBuildsStep()
+		schemaConfig := internal.SchemaConfigFromContext(s.Context())
+		step.To.Schema = schemaConfig.EnvBuild
+		step.Edge.Schema = schemaConfig.EnvBuild
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

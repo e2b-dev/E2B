@@ -1,0 +1,47 @@
+name: Docker reverse
+
+on:
+  workflow_call:
+    secrets:
+      service_account_email:
+        required: true
+      workload_identity_provider:
+        required: true
+      gcp_project_id:
+        required: true
+
+env:
+  IMAGE_TAG:  us-central1-docker.pkg.dev/${{ secrets.gcp_project_id }}/e2b-orchestration/docker-reverse-proxy:latest
+
+jobs:
+  publish:
+    name: Build & push
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Service Account
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
+
+      - name: Configure Docker
+        run: gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Prepare shared package
+        working-directory: ./packages/docker-reverse-proxy
+        run: cp -r ../shared .shared/
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./packages/docker-reverse-proxy
+          push: true
+          tags: ${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=docker-reverse-proxy
+          cache-to: type=gha,scope=docker-reverse-proxy

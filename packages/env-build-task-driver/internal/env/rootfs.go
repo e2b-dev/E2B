@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
@@ -27,8 +28,6 @@ import (
 )
 
 const (
-	// Name of the dockerfile in the Docker context.
-	dockerfileName = "Dockerfile"
 	// Path to the envd in the FC VM.
 	envdRootfsPath = "/usr/bin/envd"
 	ToMBShift      = 20
@@ -69,25 +68,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		env:          env,
 	}
 
-	network, err := rootfs.client.NetworkCreate(childCtx, env.BuildID, types.NetworkCreate{})
-	if err != nil {
-		errMsg := fmt.Errorf("error creating network: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return nil, errMsg
-	}
-
-	defer func() {
-		err = rootfs.client.NetworkRemove(childCtx, network.ID)
-		if err != nil {
-			errMsg := fmt.Errorf("error removing network: %w", err)
-			telemetry.ReportError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "removed network")
-		}
-	}()
-
-	err = rootfs.buildDockerImage(childCtx, tracer, network.ID)
+	err := rootfs.pullDockerImage(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image: %w", err)
 
@@ -96,7 +77,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		return nil, errMsg
 	}
 
-	err = rootfs.createRootfsFile(childCtx, tracer, network.ID)
+	err = rootfs.createRootfsFile(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs file: %w", err)
 
@@ -108,73 +89,8 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	return rootfs, nil
 }
 
-func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer, networkName string) error {
-	childCtx, childSpan := tracer.Start(ctx, "build-docker-image")
-	defer childSpan.End()
-
-	dockerContextFile, err := os.Open(r.env.DockerContextPath())
-	if err != nil {
-		errMsg := fmt.Errorf("error opening docker context file: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "opened docker context file")
-
-	defer func() {
-		closeErr := dockerContextFile.Close()
-		if closeErr != nil {
-			// We can probably disregard 'already closed' error if we are reading file from gcsfuse bucket because gcsfuse files behave this way - they look closed after reading
-			errMsg := fmt.Errorf("error closing docker context file (we can probably disregard 'already closed' error if we are reading file from gcsfuse bucket because gcsfuse files behave this way): %w", closeErr)
-			telemetry.ReportError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "closed docker context file")
-		}
-	}()
-
-	buildCtx, cancel := context.WithCancel(childCtx)
-	defer cancel()
-
-	innerBuildCtx, innerBuildSpan := tracer.Start(buildCtx, "build-docker-image-logs")
-	defer innerBuildSpan.End()
-
-	buildOutputWriter := telemetry.NewEventWriter(innerBuildCtx, "docker-build-output")
-	writer := &MultiWriter{
-		writers: []io.Writer{buildOutputWriter, r.env.BuildLogsWriter},
-	}
-
-	err = r.legacyClient.BuildImage(docker.BuildImageOptions{
-		NetworkMode:  networkName,
-		Memory:       r.env.MemoryMB << ToMBShift,
-		CPUPeriod:    100000,
-		CPUQuota:     r.env.VCpuCount * 100000,
-		Context:      buildCtx,
-		Dockerfile:   dockerfileName,
-		InputStream:  dockerContextFile,
-		OutputStream: writer,
-		Name:         r.dockerTag(),
-		Pull:         true,
-	})
-
-	if err != nil {
-		r.env.BuildLogsWriter.Write([]byte(err.Error() + "\n"))
-		r.env.BuildLogsWriter.Write([]byte("Build failed, received error while building docker image.\n"))
-
-		errMsg := fmt.Errorf("error building docker image for env: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	r.env.BuildLogsWriter.Write([]byte("\nRunning postprocessing. It can take up to few minutes.\n\n"))
-	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("docker.image.tag", r.dockerTag()))
-
-	return nil
-}
-
-func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error {
-	childCtx, childSpan := tracer.Start(ctx, "push-docker-image")
+func (r *Rootfs) pullDockerImage(ctx context.Context, tracer trace.Tracer) error {
+	childCtx, childSpan := tracer.Start(ctx, "pull-docker-image")
 	defer childSpan.End()
 
 	authConfig := registry.AuthConfig{
@@ -191,11 +107,12 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 
 	authConfigBase64 := base64.URLEncoding.EncodeToString(authConfigBytes)
 
-	logs, err := r.client.ImagePush(childCtx, r.dockerTag(), types.ImagePushOptions{
+	logs, err := r.client.ImagePull(childCtx, r.dockerTag(), types.ImagePullOptions{
 		RegistryAuth: authConfigBase64,
+		Platform:     "linux/amd64",
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("error pushing image: %w", err)
+		errMsg := fmt.Errorf("error pulling image: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
@@ -217,7 +134,7 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 		return errMsg
 	}
 
-	telemetry.ReportEvent(childCtx, "pushed image")
+	telemetry.ReportEvent(childCtx, "pulled image")
 
 	return nil
 }
@@ -242,13 +159,62 @@ func (r *Rootfs) dockerTag() string {
 	return r.env.DockerRegistry + "/" + r.env.EnvID + ":" + r.env.BuildID
 }
 
-func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, networkName string) error {
+func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
 
+	var err error
+	postprocessingFinished := make(chan error)
+	defer func() { postprocessingFinished <- err }()
+
+	go func() {
+		now := time.Now()
+		for {
+			msg := []byte(fmt.Sprintf("Postprocessing (%s)\r", time.Since(now).Round(time.Second)))
+
+			select {
+			case postprocessingErr := <-postprocessingFinished:
+				if postprocessingErr != nil {
+					r.env.BuildLogsWriter.Write([]byte(fmt.Sprintf("Postprocessing failed: %s\n", postprocessingErr)))
+
+					return
+				}
+
+				r.env.BuildLogsWriter.Write(msg)
+				r.env.BuildLogsWriter.Write([]byte("Postprocessing finished.                   \n"))
+
+				return
+			case <-childCtx.Done():
+				return
+			case <-time.After(100 * time.Millisecond):
+				r.env.BuildLogsWriter.Write(msg)
+			}
+		}
+	}()
+
+	//
+	//
+	//network, err := rootfs.client.NetworkCreate(childCtx, env.BuildID, types.NetworkCreate{})
+	//if err != nil {
+	//	errMsg := fmt.Errorf("error creating network: %w", err)
+	//	telemetry.ReportCriticalError(childCtx, errMsg)
+	//
+	//	return nil, errMsg
+	//}
+	//
+	//defer func() {
+	//	err = rootfs.client.NetworkRemove(childCtx, network.ID)
+	//	if err != nil {
+	//		errMsg := fmt.Errorf("error removing network: %w", err)
+	//		telemetry.ReportError(childCtx, errMsg)
+	//	} else {
+	//		telemetry.ReportEvent(childCtx, "removed network")
+	//	}
+	//}()
+	//
 	var scriptDef bytes.Buffer
 
-	err := EnvInstanceTemplate.Execute(&scriptDef, struct {
+	err = EnvInstanceTemplate.Execute(&scriptDef, struct {
 		EnvID    string
 		BuildID  string
 		StartCmd string
@@ -290,7 +256,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		CapAdd:      []string{"CHOWN", "DAC_OVERRIDE", "FSETID", "FOWNER", "SETGID", "SETUID", "NET_RAW", "SYS_CHROOT"},
 		CapDrop:     []string{"ALL"},
 		// TODO: Network mode is causing problems with /etc/hosts - we want to find a way to fix this and enable network mode again
-		// NetworkMode: container.NetworkMode(networkName),
+		// NetworkMode: container.NetworkMode(network.ID),
 		Resources: container.Resources{
 			Memory:     r.env.MemoryMB << ToMBShift,
 			CPUPeriod:  100000,
@@ -316,14 +282,14 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 			)
 			defer cleanupSpan.End()
 
-			err = r.legacyClient.RemoveContainer(docker.RemoveContainerOptions{
+			removeErr := r.legacyClient.RemoveContainer(docker.RemoveContainerOptions{
 				ID:            cont.ID,
 				RemoveVolumes: true,
 				Force:         true,
 				Context:       cleanupContext,
 			})
-			if err != nil {
-				errMsg := fmt.Errorf("error removing container: %w", err)
+			if removeErr != nil {
+				errMsg := fmt.Errorf("error removing container: %w", removeErr)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "removed container")
@@ -332,28 +298,28 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 			// Move prunning to separate goroutine
 			cacheTimeoutArg := filters.Arg("until", cacheTimeout)
 
-			_, err = r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
+			_, pruneErr := r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
 				Filters: filters.NewArgs(cacheTimeoutArg),
 				All:     true,
 			})
-			if err != nil {
-				errMsg := fmt.Errorf("error pruning build cache: %w", err)
+			if pruneErr != nil {
+				errMsg := fmt.Errorf("error pruning build cache: %w", pruneErr)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned build cache")
 			}
 
-			_, err = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeoutArg))
-			if err != nil {
-				errMsg := fmt.Errorf("error pruning images: %w", err)
+			_, pruneErr = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeoutArg))
+			if pruneErr != nil {
+				errMsg := fmt.Errorf("error pruning images: %w", pruneErr)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned images")
 			}
 
-			_, err = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeoutArg))
-			if err != nil {
-				errMsg := fmt.Errorf("error pruning containers: %w", err)
+			_, pruneErr = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeoutArg))
+			if pruneErr != nil {
+				errMsg := fmt.Errorf("error pruning containers: %w", pruneErr)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned containers")
@@ -372,9 +338,9 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 	go func() {
 		defer func() {
-			err = pw.Close()
-			if err != nil {
-				errMsg := fmt.Errorf("error closing pipe: %w", err)
+			closeErr := pw.Close()
+			if closeErr != nil {
+				errMsg := fmt.Errorf("error closing pipe: %w", closeErr)
 				telemetry.ReportCriticalError(childCtx, errMsg)
 			} else {
 				telemetry.ReportEvent(childCtx, "closed pipe")
@@ -421,7 +387,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 
 	telemetry.ReportEvent(childCtx, "copied envd to container")
 
-	err = r.client.ContainerStart(childCtx, cont.ID, types.ContainerStartOptions{})
+	err = r.client.ContainerStart(childCtx, cont.ID, container.StartOptions{})
 	if err != nil {
 		errMsg := fmt.Errorf("error starting container: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -442,7 +408,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 			writers: []io.Writer{containerStderrWriter, r.env.BuildLogsWriter},
 		}
 
-		err := r.legacyClient.Logs(docker.LogsOptions{
+		logsErr := r.legacyClient.Logs(docker.LogsOptions{
 			Stdout:       true,
 			Stderr:       true,
 			RawTerminal:  false,
@@ -453,8 +419,8 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 			Follow:       true,
 			Timestamps:   false,
 		})
-		if err != nil {
-			errMsg := fmt.Errorf("error getting container logs: %w", err)
+		if logsErr != nil {
+			errMsg := fmt.Errorf("error getting container logs: %w", logsErr)
 			telemetry.ReportError(anonymousChildCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(anonymousChildCtx, "setup container logs")
@@ -539,21 +505,21 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 	pr, pw = io.Pipe()
 
 	go func() {
-		err := r.legacyClient.DownloadFromContainer(cont.ID, docker.DownloadFromContainerOptions{
+		downloadErr := r.legacyClient.DownloadFromContainer(cont.ID, docker.DownloadFromContainerOptions{
 			Context:      childCtx,
 			Path:         "/",
 			OutputStream: pw,
 		})
-		if err != nil {
-			errMsg := fmt.Errorf("error downloading from container: %w", err)
+		if downloadErr != nil {
+			errMsg := fmt.Errorf("error downloading from container: %w", downloadErr)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "downloaded from container")
 		}
 
-		err = pw.Close()
-		if err != nil {
-			errMsg := fmt.Errorf("error closing pipe: %w", err)
+		closeErr := pw.Close()
+		if closeErr != nil {
+			errMsg := fmt.Errorf("error closing pipe: %w", closeErr)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "closed pipe")
@@ -641,7 +607,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 		return errMsg
 	}
 
-	r.env.BuildLogsWriter.Write([]byte("Postprocessing finished.\n"))
 	telemetry.ReportEvent(childCtx, "resized rootfs file")
 
 	return nil

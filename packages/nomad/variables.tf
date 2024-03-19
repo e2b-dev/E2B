@@ -46,6 +46,7 @@ variable "custom_envs_repository_name" {
 variable "gcp_project_id" {
   type = string
 }
+
 variable "gcp_region" {
   type = string
 }
@@ -146,5 +147,22 @@ variable "analytics_collector_host_secret_name" {
 }
 
 variable "analytics_collector_api_token_secret_name" {
+  type = string
+}
+
+# Docker reverse proxy
+variable "docker_reverse_proxy_image_digest" {
+  type = string
+}
+
+variable "docker_reverse_proxy_port" {
+  type = object({
+    name        = string
+    port        = number
+    health_path = string
+  })
+}
+
+variable "docker_reverse_proxy_service_account_key" {
   type = string
 }

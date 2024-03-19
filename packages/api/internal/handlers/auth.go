@@ -19,7 +19,7 @@ func (a *APIStore) GetTeam(c *gin.Context) (*models.Team, error) {
 
 	userID := a.GetUserID(c)
 
-	team, err := a.supabase.GetDefaultTeamAndTierFromUserID(ctx, userID)
+	team, err := a.db.GetDefaultTeamAndTierFromUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("error when getting default team: %w", err)
 	}
