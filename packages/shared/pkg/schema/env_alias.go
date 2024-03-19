@@ -17,7 +17,7 @@ func (EnvAlias) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").Unique().StorageKey("alias").Immutable().SchemaType(map[string]string{dialect.Postgres: "text"}),
 		field.String("env_id").SchemaType(map[string]string{dialect.Postgres: "text"}),
-		field.Bool("is_renameable").Default(true),
+		field.Bool("is_renamable").Default(true),
 	}
 }
 

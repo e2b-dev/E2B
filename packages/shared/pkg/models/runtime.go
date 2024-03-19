@@ -38,10 +38,10 @@ func init() {
 	env.DefaultSpawnCount = envDescSpawnCount.Default.(int64)
 	envaliasFields := schema.EnvAlias{}.Fields()
 	_ = envaliasFields
-	// envaliasDescIsRenameable is the schema descriptor for is_renameable field.
-	envaliasDescIsRenameable := envaliasFields[2].Descriptor()
-	// envalias.DefaultIsRenameable holds the default value on creation for the is_renameable field.
-	envalias.DefaultIsRenameable = envaliasDescIsRenameable.Default.(bool)
+	// envaliasDescIsRenamable is the schema descriptor for is_renamable field.
+	envaliasDescIsRenamable := envaliasFields[2].Descriptor()
+	// envalias.DefaultIsRenamable holds the default value on creation for the is_renamable field.
+	envalias.DefaultIsRenamable = envaliasDescIsRenamable.Default.(bool)
 	envbuildFields := schema.EnvBuild{}.Fields()
 	_ = envbuildFields
 	// envbuildDescCreatedAt is the schema descriptor for created_at field.

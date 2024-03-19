@@ -69,9 +69,9 @@ func EnvID(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldEQ(FieldEnvID, v))
 }
 
-// IsRenameable applies equality check predicate on the "is_renameable" field. It's identical to IsRenameableEQ.
-func IsRenameable(v bool) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldEQ(FieldIsRenameable, v))
+// IsRenamable applies equality check predicate on the "is_renamable" field. It's identical to IsRenamableEQ.
+func IsRenamable(v bool) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldEQ(FieldIsRenamable, v))
 }
 
 // EnvIDEQ applies the EQ predicate on the "env_id" field.
@@ -139,14 +139,14 @@ func EnvIDContainsFold(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldContainsFold(FieldEnvID, v))
 }
 
-// IsRenameableEQ applies the EQ predicate on the "is_renameable" field.
-func IsRenameableEQ(v bool) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldEQ(FieldIsRenameable, v))
+// IsRenamableEQ applies the EQ predicate on the "is_renamable" field.
+func IsRenamableEQ(v bool) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldEQ(FieldIsRenamable, v))
 }
 
-// IsRenameableNEQ applies the NEQ predicate on the "is_renameable" field.
-func IsRenameableNEQ(v bool) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldNEQ(FieldIsRenameable, v))
+// IsRenamableNEQ applies the NEQ predicate on the "is_renamable" field.
+func IsRenamableNEQ(v bool) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldNEQ(FieldIsRenamable, v))
 }
 
 // HasEnv applies the HasEdge predicate on the "env" edge.

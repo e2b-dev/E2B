@@ -19,8 +19,8 @@ type EnvAlias struct {
 	ID string `json:"id,omitempty"`
 	// EnvID holds the value of the "env_id" field.
 	EnvID string `json:"env_id,omitempty"`
-	// IsRenameable holds the value of the "is_renameable" field.
-	IsRenameable bool `json:"is_renameable,omitempty"`
+	// IsRenamable holds the value of the "is_renamable" field.
+	IsRenamable bool `json:"is_renamable,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvAliasQuery when eager-loading is set.
 	Edges        EnvAliasEdges `json:"edges"`
@@ -54,7 +54,7 @@ func (*EnvAlias) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case envalias.FieldIsRenameable:
+		case envalias.FieldIsRenamable:
 			values[i] = new(sql.NullBool)
 		case envalias.FieldID, envalias.FieldEnvID:
 			values[i] = new(sql.NullString)
@@ -85,11 +85,11 @@ func (ea *EnvAlias) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				ea.EnvID = value.String
 			}
-		case envalias.FieldIsRenameable:
+		case envalias.FieldIsRenamable:
 			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_renameable", values[i])
+				return fmt.Errorf("unexpected type %T for field is_renamable", values[i])
 			} else if value.Valid {
-				ea.IsRenameable = value.Bool
+				ea.IsRenamable = value.Bool
 			}
 		default:
 			ea.selectValues.Set(columns[i], values[i])
@@ -135,8 +135,8 @@ func (ea *EnvAlias) String() string {
 	builder.WriteString("env_id=")
 	builder.WriteString(ea.EnvID)
 	builder.WriteString(", ")
-	builder.WriteString("is_renameable=")
-	builder.WriteString(fmt.Sprintf("%v", ea.IsRenameable))
+	builder.WriteString("is_renamable=")
+	builder.WriteString(fmt.Sprintf("%v", ea.IsRenamable))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -57,7 +57,7 @@ var (
 	// EnvAliasesColumns holds the columns for the "env_aliases" table.
 	EnvAliasesColumns = []*schema.Column{
 		{Name: "alias", Type: field.TypeString, Unique: true, SchemaType: map[string]string{"postgres": "text"}},
-		{Name: "is_renameable", Type: field.TypeBool, Default: true},
+		{Name: "is_renamable", Type: field.TypeBool, Default: true},
 		{Name: "env_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// EnvAliasesTable holds the schema information for the "env_aliases" table.

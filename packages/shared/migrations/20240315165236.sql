@@ -1,5 +1,5 @@
 -- Modify "env_aliases" table
-ALTER TABLE "public"."env_aliases" RENAME COLUMN "is_name" TO "is_renameable";
+ALTER TABLE "public"."env_aliases" RENAME COLUMN "is_name" TO "is_renamable";
 ALTER TABLE "public"."env_aliases" ALTER COLUMN "env_id" SET NOT NULL;
 
 -- Create "env_builds" table

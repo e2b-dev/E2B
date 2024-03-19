@@ -44,16 +44,16 @@ func (eau *EnvAliasUpdate) SetNillableEnvID(s *string) *EnvAliasUpdate {
 	return eau
 }
 
-// SetIsRenameable sets the "is_renameable" field.
-func (eau *EnvAliasUpdate) SetIsRenameable(b bool) *EnvAliasUpdate {
-	eau.mutation.SetIsRenameable(b)
+// SetIsRenamable sets the "is_renamable" field.
+func (eau *EnvAliasUpdate) SetIsRenamable(b bool) *EnvAliasUpdate {
+	eau.mutation.SetIsRenamable(b)
 	return eau
 }
 
-// SetNillableIsRenameable sets the "is_renameable" field if the given value is not nil.
-func (eau *EnvAliasUpdate) SetNillableIsRenameable(b *bool) *EnvAliasUpdate {
+// SetNillableIsRenamable sets the "is_renamable" field if the given value is not nil.
+func (eau *EnvAliasUpdate) SetNillableIsRenamable(b *bool) *EnvAliasUpdate {
 	if b != nil {
-		eau.SetIsRenameable(*b)
+		eau.SetIsRenamable(*b)
 	}
 	return eau
 }
@@ -127,8 +127,8 @@ func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := eau.mutation.IsRenameable(); ok {
-		_spec.SetField(envalias.FieldIsRenameable, field.TypeBool, value)
+	if value, ok := eau.mutation.IsRenamable(); ok {
+		_spec.SetField(envalias.FieldIsRenamable, field.TypeBool, value)
 	}
 	if eau.mutation.EnvCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -199,16 +199,16 @@ func (eauo *EnvAliasUpdateOne) SetNillableEnvID(s *string) *EnvAliasUpdateOne {
 	return eauo
 }
 
-// SetIsRenameable sets the "is_renameable" field.
-func (eauo *EnvAliasUpdateOne) SetIsRenameable(b bool) *EnvAliasUpdateOne {
-	eauo.mutation.SetIsRenameable(b)
+// SetIsRenamable sets the "is_renamable" field.
+func (eauo *EnvAliasUpdateOne) SetIsRenamable(b bool) *EnvAliasUpdateOne {
+	eauo.mutation.SetIsRenamable(b)
 	return eauo
 }
 
-// SetNillableIsRenameable sets the "is_renameable" field if the given value is not nil.
-func (eauo *EnvAliasUpdateOne) SetNillableIsRenameable(b *bool) *EnvAliasUpdateOne {
+// SetNillableIsRenamable sets the "is_renamable" field if the given value is not nil.
+func (eauo *EnvAliasUpdateOne) SetNillableIsRenamable(b *bool) *EnvAliasUpdateOne {
 	if b != nil {
-		eauo.SetIsRenameable(*b)
+		eauo.SetIsRenamable(*b)
 	}
 	return eauo
 }
@@ -312,8 +312,8 @@ func (eauo *EnvAliasUpdateOne) sqlSave(ctx context.Context) (_node *EnvAlias, er
 			}
 		}
 	}
-	if value, ok := eauo.mutation.IsRenameable(); ok {
-		_spec.SetField(envalias.FieldIsRenameable, field.TypeBool, value)
+	if value, ok := eauo.mutation.IsRenamable(); ok {
+		_spec.SetField(envalias.FieldIsRenamable, field.TypeBool, value)
 	}
 	if eauo.mutation.EnvCleared() {
 		edge := &sqlgraph.EdgeSpec{

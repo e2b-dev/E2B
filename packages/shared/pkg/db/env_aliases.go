@@ -64,7 +64,7 @@ func (db *DB) UpdateEnvAlias(ctx context.Context, alias, envID string) error {
 		Delete().
 		Where(
 			envalias.EnvID(envID),
-			envalias.IsRenameable(true)).
+			envalias.IsRenamable(true)).
 		Exec(ctx)
 
 	if err != nil {
@@ -128,7 +128,7 @@ func (db *DB) EnsureEnvAlias(ctx context.Context, alias, envID string) error {
 			Client.
 			EnvAlias.
 			Create().
-			SetEnvID(envID).SetIsRenameable(true).SetID(alias).
+			SetEnvID(envID).SetIsRenamable(true).SetID(alias).
 			Exec(ctx)
 
 		if err != nil {

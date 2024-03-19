@@ -1459,7 +1459,7 @@ type EnvAliasMutation struct {
 	op            Op
 	typ           string
 	id            *string
-	is_renameable *bool
+	is_renamable  *bool
 	clearedFields map[string]struct{}
 	env           *string
 	clearedenv    bool
@@ -1608,40 +1608,40 @@ func (m *EnvAliasMutation) ResetEnvID() {
 	m.env = nil
 }
 
-// SetIsRenameable sets the "is_renameable" field.
-func (m *EnvAliasMutation) SetIsRenameable(b bool) {
-	m.is_renameable = &b
+// SetIsRenamable sets the "is_renamable" field.
+func (m *EnvAliasMutation) SetIsRenamable(b bool) {
+	m.is_renamable = &b
 }
 
-// IsRenameable returns the value of the "is_renameable" field in the mutation.
-func (m *EnvAliasMutation) IsRenameable() (r bool, exists bool) {
-	v := m.is_renameable
+// IsRenamable returns the value of the "is_renamable" field in the mutation.
+func (m *EnvAliasMutation) IsRenamable() (r bool, exists bool) {
+	v := m.is_renamable
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldIsRenameable returns the old "is_renameable" field's value of the EnvAlias entity.
+// OldIsRenamable returns the old "is_renamable" field's value of the EnvAlias entity.
 // If the EnvAlias object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvAliasMutation) OldIsRenameable(ctx context.Context) (v bool, err error) {
+func (m *EnvAliasMutation) OldIsRenamable(ctx context.Context) (v bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsRenameable is only allowed on UpdateOne operations")
+		return v, errors.New("OldIsRenamable is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsRenameable requires an ID field in the mutation")
+		return v, errors.New("OldIsRenamable requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsRenameable: %w", err)
+		return v, fmt.Errorf("querying old value for OldIsRenamable: %w", err)
 	}
-	return oldValue.IsRenameable, nil
+	return oldValue.IsRenamable, nil
 }
 
-// ResetIsRenameable resets all changes to the "is_renameable" field.
-func (m *EnvAliasMutation) ResetIsRenameable() {
-	m.is_renameable = nil
+// ResetIsRenamable resets all changes to the "is_renamable" field.
+func (m *EnvAliasMutation) ResetIsRenamable() {
+	m.is_renamable = nil
 }
 
 // ClearEnv clears the "env" edge to the Env entity.
@@ -1709,8 +1709,8 @@ func (m *EnvAliasMutation) Fields() []string {
 	if m.env != nil {
 		fields = append(fields, envalias.FieldEnvID)
 	}
-	if m.is_renameable != nil {
-		fields = append(fields, envalias.FieldIsRenameable)
+	if m.is_renamable != nil {
+		fields = append(fields, envalias.FieldIsRenamable)
 	}
 	return fields
 }
@@ -1722,8 +1722,8 @@ func (m *EnvAliasMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case envalias.FieldEnvID:
 		return m.EnvID()
-	case envalias.FieldIsRenameable:
-		return m.IsRenameable()
+	case envalias.FieldIsRenamable:
+		return m.IsRenamable()
 	}
 	return nil, false
 }
@@ -1735,8 +1735,8 @@ func (m *EnvAliasMutation) OldField(ctx context.Context, name string) (ent.Value
 	switch name {
 	case envalias.FieldEnvID:
 		return m.OldEnvID(ctx)
-	case envalias.FieldIsRenameable:
-		return m.OldIsRenameable(ctx)
+	case envalias.FieldIsRenamable:
+		return m.OldIsRenamable(ctx)
 	}
 	return nil, fmt.Errorf("unknown EnvAlias field %s", name)
 }
@@ -1753,12 +1753,12 @@ func (m *EnvAliasMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEnvID(v)
 		return nil
-	case envalias.FieldIsRenameable:
+	case envalias.FieldIsRenamable:
 		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetIsRenameable(v)
+		m.SetIsRenamable(v)
 		return nil
 	}
 	return fmt.Errorf("unknown EnvAlias field %s", name)
@@ -1812,8 +1812,8 @@ func (m *EnvAliasMutation) ResetField(name string) error {
 	case envalias.FieldEnvID:
 		m.ResetEnvID()
 		return nil
-	case envalias.FieldIsRenameable:
-		m.ResetIsRenameable()
+	case envalias.FieldIsRenamable:
+		m.ResetIsRenamable()
 		return nil
 	}
 	return fmt.Errorf("unknown EnvAlias field %s", name)
