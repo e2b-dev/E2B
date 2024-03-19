@@ -24,11 +24,11 @@ func NewReservationCache() *ReservationCache {
 }
 
 func (r *ReservationCache) reserve(instanceID string, team uuid.UUID) error {
-	found := r.reservations.InsertIfAbsent(instanceID, &Reservation{
+	inserted := r.reservations.InsertIfAbsent(instanceID, &Reservation{
 		team:       team,
 		instanceID: instanceID,
 	})
-	if found {
+	if !inserted {
 		return fmt.Errorf("reservation for instance %s already exists", instanceID)
 	}
 
