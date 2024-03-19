@@ -282,14 +282,14 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			)
 			defer cleanupSpan.End()
 
-			err = r.legacyClient.RemoveContainer(docker.RemoveContainerOptions{
+			removeErr := r.legacyClient.RemoveContainer(docker.RemoveContainerOptions{
 				ID:            cont.ID,
 				RemoveVolumes: true,
 				Force:         true,
 				Context:       cleanupContext,
 			})
-			if err != nil {
-				errMsg := fmt.Errorf("error removing container: %w", err)
+			if removeErr != nil {
+				errMsg := fmt.Errorf("error removing container: %w", removeErr)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "removed container")
@@ -298,28 +298,28 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			// Move prunning to separate goroutine
 			cacheTimeoutArg := filters.Arg("until", cacheTimeout)
 
-			_, err = r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
+			_, pruneErr := r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
 				Filters: filters.NewArgs(cacheTimeoutArg),
 				All:     true,
 			})
-			if err != nil {
-				errMsg := fmt.Errorf("error pruning build cache: %w", err)
+			if pruneErr != nil {
+				errMsg := fmt.Errorf("error pruning build cache: %w", pruneErr)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned build cache")
 			}
 
-			_, err = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeoutArg))
-			if err != nil {
-				errMsg := fmt.Errorf("error pruning images: %w", err)
+			_, pruneErr = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeoutArg))
+			if pruneErr != nil {
+				errMsg := fmt.Errorf("error pruning images: %w", pruneErr)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned images")
 			}
 
-			_, err = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeoutArg))
-			if err != nil {
-				errMsg := fmt.Errorf("error pruning containers: %w", err)
+			_, pruneErr = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeoutArg))
+			if pruneErr != nil {
+				errMsg := fmt.Errorf("error pruning containers: %w", pruneErr)
 				telemetry.ReportError(cleanupContext, errMsg)
 			} else {
 				telemetry.ReportEvent(cleanupContext, "pruned containers")
@@ -338,9 +338,9 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	go func() {
 		defer func() {
-			err = pw.Close()
-			if err != nil {
-				errMsg := fmt.Errorf("error closing pipe: %w", err)
+			closeErr := pw.Close()
+			if closeErr != nil {
+				errMsg := fmt.Errorf("error closing pipe: %w", closeErr)
 				telemetry.ReportCriticalError(childCtx, errMsg)
 			} else {
 				telemetry.ReportEvent(childCtx, "closed pipe")
@@ -387,7 +387,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "copied envd to container")
 
-	err = r.client.ContainerStart(childCtx, cont.ID, types.ContainerStartOptions{})
+	err = r.client.ContainerStart(childCtx, cont.ID, container.StartOptions{})
 	if err != nil {
 		errMsg := fmt.Errorf("error starting container: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -408,7 +408,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			writers: []io.Writer{containerStderrWriter, r.env.BuildLogsWriter},
 		}
 
-		err := r.legacyClient.Logs(docker.LogsOptions{
+		logsErr := r.legacyClient.Logs(docker.LogsOptions{
 			Stdout:       true,
 			Stderr:       true,
 			RawTerminal:  false,
@@ -419,8 +419,8 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			Follow:       true,
 			Timestamps:   false,
 		})
-		if err != nil {
-			errMsg := fmt.Errorf("error getting container logs: %w", err)
+		if logsErr != nil {
+			errMsg := fmt.Errorf("error getting container logs: %w", logsErr)
 			telemetry.ReportError(anonymousChildCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(anonymousChildCtx, "setup container logs")
@@ -505,21 +505,21 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	pr, pw = io.Pipe()
 
 	go func() {
-		err := r.legacyClient.DownloadFromContainer(cont.ID, docker.DownloadFromContainerOptions{
+		downloadErr := r.legacyClient.DownloadFromContainer(cont.ID, docker.DownloadFromContainerOptions{
 			Context:      childCtx,
 			Path:         "/",
 			OutputStream: pw,
 		})
-		if err != nil {
-			errMsg := fmt.Errorf("error downloading from container: %w", err)
+		if downloadErr != nil {
+			errMsg := fmt.Errorf("error downloading from container: %w", downloadErr)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "downloaded from container")
 		}
 
-		err = pw.Close()
-		if err != nil {
-			errMsg := fmt.Errorf("error closing pipe: %w", err)
+		closeErr := pw.Close()
+		if closeErr != nil {
+			errMsg := fmt.Errorf("error closing pipe: %w", closeErr)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "closed pipe")
