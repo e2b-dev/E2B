@@ -264,8 +264,6 @@ export interface components {
       cpuCount: number;
       /** @description Memory limit for the sandbox in MB */
       memoryMB: number;
-      /** @description Storage limit for the sandbox in GB */
-      storageGB: number;
       metadata?: components["schemas"]["SandboxMetadata"];
     };
     NewSandbox: {
@@ -282,12 +280,12 @@ export interface components {
       cpuCount: number;
       /** @description Memory limit for the sandbox in MB */
       memoryMB: number;
-      /** @description Storage limit for the sandbox in GB */
-      storageGB: number;
       /** @description Whether the template is public or only accessible by the team */
       public: boolean;
       /** @description Aliases of the template */
       aliases?: string[];
+    } & {
+      storageGB: unknown;
     };
     TemplateBuildRequest: {
       /** @description Alias of the template */
