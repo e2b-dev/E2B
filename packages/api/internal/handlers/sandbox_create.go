@@ -8,6 +8,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -130,7 +131,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		return
 	}
 
-	if cacheErr := a.instanceCache.Add(InstanceInfo{
+	if cacheErr := a.instanceCache.Add(instance.InstanceInfo{
 		StartTime:         nil,
 		Instance:          sandbox,
 		BuildID:           &build.ID,

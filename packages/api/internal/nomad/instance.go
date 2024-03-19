@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -49,7 +50,7 @@ var (
 var envInstanceFile string
 var envInstanceTemplate = template.Must(template.New(instanceJobName).Parse(envInstanceFile))
 
-func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
+func (n *NomadClient) GetInstances() ([]*instance.InstanceInfo, *api.APIError) {
 	jobs, _, err := n.client.Jobs().ListOptions(&nomadAPI.JobListOptions{
 		Fields: &nomadAPI.JobListFields{
 			Meta: true,
@@ -85,7 +86,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		nodeMap[alloc.JobID] = alloc.NodeID[:shortNodeIDLength]
 	}
 
-	instances := make([]*InstanceInfo, 0, len(jobs))
+	instances := make([]*instance.InstanceInfo, 0, len(jobs))
 
 	for _, job := range jobs {
 		instanceID := job.Meta[instanceIDMetaKey]
@@ -145,7 +146,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 			n.logger.Errorf("failed to get client ID for job '%s'", job.ID)
 		}
 
-		instances = append(instances, &InstanceInfo{
+		instances = append(instances, &instance.InstanceInfo{
 			Instance: &api.Sandbox{
 				SandboxID:  instanceID,
 				TemplateID: envID,
