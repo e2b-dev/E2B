@@ -32,12 +32,11 @@ export const listCommand = new commander.Command('list')
           columns: [
             { name: 'templateID', alignment: 'left', title: 'Template ID' },
             { name: 'aliases', alignment: 'left', title: 'Template Name', color: 'orange' },
-            { name: 'cpuCount', alignment: 'left', title: 'vCPUs' },
-            { name: 'memoryMB', alignment: 'left', title: 'RAM MiB' },
-            { name: 'storageGB', alignment: 'left', title: 'Storage GiB' },
+            { name: 'cpuCount', alignment: 'right', title: 'vCPUs' },
+            { name: 'memoryMB', alignment: 'right', title: 'RAM MiB' },
           ],
           disabledColumns: ['public', 'buildID'],
-          rows: templates.map((template) => ({ ...template, storageGB: Math.round(template.storageGB * 100) / 100, aliases: listAliases(template.aliases) })),
+          rows: templates.map((template) => ({ ...template, aliases: listAliases(template.aliases) })),
           colorMap: {
             orange: '\x1b[38;5;216m',
           },
