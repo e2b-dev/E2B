@@ -4,7 +4,7 @@ import * as path from 'path'
 import * as e2b from 'e2b'
 import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
-
+import commandExists from 'command-exists'
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getRoot } from 'src/utils/filesystem'
@@ -99,6 +99,14 @@ export const buildCommand = new commander.Command('build')
       },
     ) => {
       try {
+        const dockerInstalled = commandExists.sync('docker')
+        if (!dockerInstalled) {
+          console.error(
+            'Docker is required to build and push the sandbox template. Please install Docker and try again.',
+          )
+          process.exit(1)
+        }
+
         const accessToken = ensureAccessToken()
         process.stdout.write('\n')
 
@@ -203,6 +211,7 @@ export const buildCommand = new commander.Command('build')
           },
           true,
         )
+
 
         child_process.execSync(`echo ${accessToken} | docker login docker.e2b-staging.com -u _e2b_access_token --password-stdin`, { stdio: 'inherit', cwd: root})
         process.stdout.write('\n')
