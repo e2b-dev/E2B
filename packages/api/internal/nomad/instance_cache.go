@@ -187,6 +187,7 @@ func NewInstanceCache(analytics analyticscollector.AnalyticsCollectorClient, log
 			InstanceId:    instanceInfo.Instance.SandboxID,
 			EnvironmentId: instanceInfo.Instance.TemplateID,
 			TeamId:        instanceInfo.TeamID.String(),
+			BuildId:       instanceInfo.BuildID.String(),
 			Timestamp:     timestamppb.Now(),
 		})
 		if err != nil {
