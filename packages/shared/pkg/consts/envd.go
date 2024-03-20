@@ -1,3 +1,3 @@
 package consts
 
-const DefaultEnvdServerPort uint = 49982
+const DefaultEnvdServerPort int64 = 49982

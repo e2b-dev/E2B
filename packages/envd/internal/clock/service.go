@@ -26,7 +26,7 @@ func (s *Service) Sync() {
 
 	go func() {
 		defer s.mu.Unlock()
-		s.logger.Info("Syncing clock")
+		s.logger.Debug("Syncing clock")
 
 		err := exec.Command(s.shell, "-l", "-c", "sudo chronyc -a makestep").Run()
 		if err != nil {

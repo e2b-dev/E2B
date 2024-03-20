@@ -24,7 +24,7 @@ func NewScanner(period time.Duration) *Scanner {
 		period:    period,
 		subs:      smap.New[*ScannerSubscriber](),
 		scanExit:  make(chan struct{}),
-		Processes: make(chan GOnetstat.Process),
+		Processes: make(chan GOnetstat.Process, 20),
 	}
 }
 

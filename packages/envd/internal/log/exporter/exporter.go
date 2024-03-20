@@ -68,9 +68,9 @@ func (w *HTTPLogsExporter) start() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error getting mmds token: %v\n", err)
 
-			w.Lock()
-			w.logs = append(w.logs, logs...)
-			w.Unlock()
+			// w.Lock()
+			// w.logs = append(w.logs, logs...)
+			// w.Unlock()
 
 			continue
 		}
@@ -79,9 +79,9 @@ func (w *HTTPLogsExporter) start() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error getting instance logging options from mmds (token %s): %v\n", token, err)
 
-			w.Lock()
-			w.logs = append(w.logs, logs...)
-			w.Unlock()
+			// w.Lock()
+			// w.logs = append(w.logs, logs...)
+			// w.Unlock()
 
 			continue
 		}
@@ -91,9 +91,9 @@ func (w *HTTPLogsExporter) start() {
 			if jsonErr != nil {
 				fmt.Fprintf(os.Stderr, "error adding instance logging options (%+v) to JSON (%+v) with logs : %v\n", mmdsOpts, log, jsonErr)
 
-				w.Lock()
-				w.logs = append(w.logs, log)
-				w.Unlock()
+				// w.Lock()
+				// w.logs = append(w.logs, log)
+				// w.Unlock()
 
 				continue
 			}
@@ -102,11 +102,11 @@ func (w *HTTPLogsExporter) start() {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("error sending instance logs: %+v", err))
 
-				w.Lock()
-				w.logs = append(w.logs, log)
-				w.Unlock()
+				// w.Lock()
+				// w.logs = append(w.logs, log)
+				// w.Unlock()
 
-				break
+				continue
 			}
 		}
 	}

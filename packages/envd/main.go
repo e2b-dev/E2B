@@ -38,7 +38,7 @@ var (
 	wsHandler http.Handler
 
 	debug        bool
-	serverPort   uint
+	serverPort   int64
 	versionFlag  bool
 	startCmdFlag string
 )
@@ -93,7 +93,7 @@ func parseFlags() {
 		"print envd version",
 	)
 
-	flag.UintVar(
+	flag.Int64Var(
 		&serverPort,
 		"port",
 		consts.DefaultEnvdServerPort,
