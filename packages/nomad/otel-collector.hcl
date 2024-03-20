@@ -121,7 +121,7 @@ receivers:
           params:
             format: ['prometheus']
           consul_sd_configs:
-          - services: ['nomad-client', 'nomad', 'api', 'client-proxy', 'session-proxy', 'otel-collector', 'logs-collector']
+          - services: ['nomad-client', 'nomad', 'api', 'client-proxy', 'session-proxy', 'otel-collector', 'logs-collector', 'docker-reverse-proxy']
 
           relabel_configs:
           - source_labels: ['__meta_consul_tags']
