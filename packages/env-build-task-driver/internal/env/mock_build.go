@@ -49,6 +49,7 @@ func MockBuild(envID, buildID string) {
 		EnvdPath:              "/fc-vm/envd",
 		ContextFileName:       "context.tar.gz",
 		BuildLogsWriter:       writer,
+		HugePages:             true,
 	}
 
 	err = e.Build(ctx, tracer, client, legacyClient)

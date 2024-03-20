@@ -156,7 +156,6 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer, netw
 		Name:         r.dockerTag(),
 		Pull:         true,
 	})
-
 	if err != nil {
 		r.env.BuildLogsWriter.Write([]byte(err.Error() + "\n"))
 		r.env.BuildLogsWriter.Write([]byte("Build failed, received error while building docker image.\n"))
@@ -610,7 +609,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer, netw
 	// In bytes
 	rootfsSize := rootfsStats.Size() + r.env.DiskSizeMB<<ToMBShift
 
-	r.env.RootfsSize = rootfsSize
+	r.env.rootfsSize = rootfsSize
 
 	err = rootfsFile.Truncate(rootfsSize)
 	if err != nil {
