@@ -8,7 +8,7 @@ echo "BUILD_ID={{ .BuildID }}" >>/.e2b
 
 # We are downloading the packages manually
 apt-get update --download-only
-DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y openssh-server chrony sudo systemd socat linuxptp
+DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y openssh-server sudo systemd socat linuxptp
 
 # Set up autologin.
 mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
@@ -91,9 +91,9 @@ echo "user ALL=(ALL:ALL) NOPASSWD: ALL" >>/etc/sudoers
 mkdir -p /code
 mkdir -p /home/user
 
-chmod 777 -R /home/user
-chmod 777 -R /usr/local
-chmod 777 -R /code
+# chmod 777 -R /home/user
+# chmod 777 -R /usr/local
+# chmod 777 -R /code
 
 # TODO: Right now the chown line has no effect in the FC, even though it correctly changes the owner here.
 # It may be becayse of the way we are starting the FC VM?
@@ -103,7 +103,7 @@ echo "nameserver 8.8.8.8" >/etc/resolv.conf
 
 # Start systemd services
 systemctl enable envd
-systemctl enable chrony 2>&1
+# systemctl enable chrony 2>&1
 
 # Add start command service if the start command is not empty.
 if [ -n "{{ .StartCmd }}" ]; then

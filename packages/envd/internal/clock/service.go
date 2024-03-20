@@ -3,6 +3,7 @@ package clock
 import (
 	"os/exec"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -28,13 +29,18 @@ func (s *Service) Sync() {
 		defer s.mu.Unlock()
 		s.logger.Debug("Syncing clock")
 
-		err := exec.Command(s.shell, "-l", "-c", "sudo chronyc -a makestep").Run()
+		start := time.Now()
+
+		// err := exec.Command("/usr/bin/chronyc", "-a", "makestep").Run()
+		err := exec.Command("/usr/bin/bash", "-c", "/usr/bin/date -s @$(/usr/sbin/phc_ctl /dev/ptp0 get | awk '{print $5}')").Run()
 		if err != nil {
 			s.logger.Errorw("Failed to sync clock:",
 				"error", err,
 			)
 		} else {
-			s.logger.Debug("Clock synced")
+
+			end := time.Since(start)
+			s.logger.Debugw("Clock synced", "duration", end)
 		}
 	}()
 }
