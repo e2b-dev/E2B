@@ -84,8 +84,8 @@ update-envd:
 
 update-envd-locally:
 	make build
-	chmod +x bin/envd
-	cp bin/envd /fc-vm/envd
+	make upload-local
+	cp /mnt/disks/envs-pipeline/envd /fc-vm/envd
 
 build-and-upload:
 	make build
