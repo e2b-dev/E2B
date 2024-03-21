@@ -10,12 +10,10 @@ import (
 	"fmt"
 	"net"
 	"os/exec"
-	"slices"
 
 	"go.uber.org/zap"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/env"
-	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 )
 
 type PortState string
@@ -39,9 +37,6 @@ type Forwarder struct {
 	ports             map[string]*PortToForward
 	scannerSubscriber *ScannerSubscriber
 	sourceIP          net.IP
-
-	// Default ports that should be forwarded.
-	defaultForwardedPorts []int64
 }
 
 func NewForwarder(
@@ -59,11 +54,10 @@ func NewForwarder(
 	)
 
 	return &Forwarder{
-		logger:                logger,
-		sourceIP:              env.GatewayIP,
-		ports:                 make(map[string]*PortToForward),
-		scannerSubscriber:     scannerSub,
-		defaultForwardedPorts: []int64{consts.DefaultEnvdServerPort},
+		logger:            logger,
+		sourceIP:          env.GatewayIP,
+		ports:             make(map[string]*PortToForward),
+		scannerSubscriber: scannerSub,
 	}
 }
 
@@ -72,20 +66,6 @@ func (f *Forwarder) StartForwarding() {
 		f.logger.Error("Cannot start forwarding because scanner subscriber is nil")
 
 		return
-	}
-
-	for _, port := range f.defaultForwardedPorts {
-		key := fmt.Sprintf("%s-%v", "", port)
-
-		ptf := &PortToForward{
-			pid:   "",
-			port:  port,
-			state: PortStateForward,
-			socat: nil,
-		}
-
-		f.ports[key] = ptf
-		f.startPortForwarding(ptf)
 	}
 
 	for {
@@ -97,9 +77,7 @@ func (f *Forwarder) StartForwarding() {
 			// Go through the ports that are currently being forwarded and set all of them
 			// to the `DELETE` state. We don't know yet if they will be there after refresh.
 			for _, v := range f.ports {
-				if !slices.Contains(f.defaultForwardedPorts, v.port) {
-					v.state = PortStateDelete
-				}
+				v.state = PortStateDelete
 			}
 
 			// Let's refresh our map of currently forwarded ports and mark the currently opened ones with the "FORWARD" state.
@@ -126,7 +104,7 @@ func (f *Forwarder) StartForwarding() {
 						state: PortStateForward,
 					}
 					f.ports[key] = ptf
-					f.startPortForwarding(ptf)
+					f.starPortForwarding(ptf)
 				}
 			}
 
@@ -134,13 +112,14 @@ func (f *Forwarder) StartForwarding() {
 			// that stayed marked as "DELETE".
 			for _, v := range f.ports {
 				if v.state == PortStateDelete {
+					f.stopPortForwarding(v)
 				}
 			}
 		}
 	}
 }
 
-func (f *Forwarder) startPortForwarding(p *PortToForward) {
+func (f *Forwarder) starPortForwarding(p *PortToForward) {
 	// https://unix.stackexchange.com/questions/311492/redirect-application-listening-on-localhost-to-listening-on-external-interface
 	// socat -d -d TCP4-LISTEN:4000,bind=169.254.0.21,fork TCP4:localhost:4000
 	socatCmd := fmt.Sprintf(
