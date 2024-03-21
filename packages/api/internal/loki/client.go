@@ -18,31 +18,25 @@ import (
 	"github.com/prometheus/common/config"
 
 	"github.com/grafana/dskit/backoff"
-
-	"github.com/grafana/loki/pkg/loghttp"
-	"github.com/grafana/loki/pkg/logproto"
-	"github.com/grafana/loki/pkg/util"
-	"github.com/grafana/loki/pkg/util/build"
 )
 
 const (
 	queryPath         = "/loki/api/v1/query"
-	queryRangePath    = "/loki/api/v1/query_range"
-	labelsPath        = "/loki/api/v1/labels"
-	labelValuesPath   = "/loki/api/v1/label/%s/values"
-	seriesPath        = "/loki/api/v1/series"
-	tailPath          = "/loki/api/v1/tail"
-	statsPath         = "/loki/api/v1/index/stats"
-	volumePath        = "/loki/api/v1/index/volume"
-	volumeRangePath   = "/loki/api/v1/index/volume_range"
+	// queryRangePath    = "/loki/api/v1/query_range"
+	// labelsPath        = "/loki/api/v1/labels"
+	// labelValuesPath   = "/loki/api/v1/label/%s/values"
+	// seriesPath        = "/loki/api/v1/series"
+	// tailPath          = "/loki/api/v1/tail"
+	// statsPath         = "/loki/api/v1/index/stats"
 	defaultAuthHeader = "Authorization"
+	version           = "v1"
 )
 
-var userAgent = fmt.Sprintf("loki-logcli/%s", build.Version)
+var userAgent = fmt.Sprintf("loki-logcli/%s", "0.0.0-unknown")
 
 // Client contains all the methods to query a Loki instance, it's an interface to allow multiple implementations.
 type Client interface {
-	Query(queryStr string, limit int, time time.Time, direction logproto.Direction, quiet bool) (*loghttp.QueryResponse, error)
+	Query(queryStr string, limit int, time time.Time, direction Direction, quiet bool) (*QueryResponse, error)
 }
 
 // Tripperware can wrap a roundtripper.
@@ -72,10 +66,10 @@ type DefaultClient struct {
 }
 
 // Query uses the /api/v1/query endpoint to execute an instant query
-// excluding interfacer b/c it suggests taking the interface promql.Node instead of logproto.Direction b/c it happens to have a String() method
+// excluding interfacer b/c it suggests taking the interface promql.Node instead of Direction b/c it happens to have a String() method
 // nolint:interfacer
-func (c *DefaultClient) Query(queryStr string, limit int, time time.Time, direction logproto.Direction, quiet bool) (*loghttp.QueryResponse, error) {
-	qsb := util.NewQueryStringBuilder()
+func (c *DefaultClient) Query(queryStr string, limit int, time time.Time, direction Direction, quiet bool) (*QueryResponse, error) {
+	qsb := NewQueryStringBuilder()
 	qsb.SetString("query", queryStr)
 	qsb.SetInt("limit", int64(limit))
 	qsb.SetInt("time", time.UnixNano())
@@ -84,9 +78,9 @@ func (c *DefaultClient) Query(queryStr string, limit int, time time.Time, direct
 	return c.doQuery(queryPath, qsb.Encode(), quiet)
 }
 
-func (c *DefaultClient) doQuery(path string, query string, quiet bool) (*loghttp.QueryResponse, error) {
+func (c *DefaultClient) doQuery(path string, query string, quiet bool) (*QueryResponse, error) {
 	var err error
-	var r loghttp.QueryResponse
+	var r QueryResponse
 
 	if err = c.doRequest(path, query, quiet, &r); err != nil {
 		return nil, err
@@ -236,52 +230,6 @@ func (c *DefaultClient) getHTTPRequestHeader() (http.Header, error) {
 		h.Set(c.AuthHeader, "Bearer "+bearerToken)
 	}
 	return h, nil
-}
-
-func (c *DefaultClient) wsConnect(path, query string, quiet bool) (*websocket.Conn, error) {
-	us, err := buildURL(c.Address, path, query)
-	if err != nil {
-		return nil, err
-	}
-
-	tlsConfig, err := config.NewTLSConfig(&c.TLSConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	if strings.HasPrefix(us, "http") {
-		us = strings.Replace(us, "http", "ws", 1)
-	}
-
-	if !quiet {
-		log.Println(us)
-	}
-
-	h, err := c.getHTTPRequestHeader()
-	if err != nil {
-		return nil, err
-	}
-
-	ws := websocket.Dialer{
-		TLSClientConfig: tlsConfig,
-	}
-
-	if c.ProxyURL != "" {
-		ws.Proxy = func(req *http.Request) (*url.URL, error) {
-			return url.Parse(c.ProxyURL)
-		}
-	}
-
-	conn, resp, err := ws.Dial(us, h)
-	if err != nil {
-		if resp == nil {
-			return nil, err
-		}
-		buf, _ := io.ReadAll(resp.Body) // nolint
-		return nil, fmt.Errorf("Error response from server: %s (%v)", string(buf), err)
-	}
-
-	return conn, nil
 }
 
 // buildURL concats a url `http://foo/bar` with a path `/buzz`.

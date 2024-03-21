@@ -12,7 +12,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/storages"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/grafana/loki/pkg/logcli/client"
 	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
@@ -23,6 +22,7 @@ import (
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/db"
+	"github.com/e2b-dev/infra/packages/api/internal/loki"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
@@ -38,7 +38,7 @@ type APIStore struct {
 	nomad                      *nomad.NomadClient
 	supabase                   *db.DB
 	cloudStorage               *storages.GoogleCloudStorage
-	lokiClient                 *client.DefaultClient
+	lokiClient                 *loki.DefaultClient
 	apiSecret                  string
 	googleServiceAccountBase64 string
 	logger                     *zap.SugaredLogger
@@ -127,10 +127,10 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
-	var lokiClient *client.DefaultClient
+	var lokiClient *loki.DefaultClient
 
 	if lokiAddress != "" {
-		lokiClient = &client.DefaultClient{
+		lokiClient = &loki.DefaultClient{
 			Address: lokiAddress,
 		}
 	} else {

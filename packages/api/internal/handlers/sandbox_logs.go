@@ -8,7 +8,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/grafana/loki/pkg/logproto"
+	"github.com/e2b-dev/infra/packages/api/internal/loki"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -53,7 +53,7 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 
 	// TODO: Can LogQL handle pagination naturally?
 	// TODO: Should we return the final offset with each response?
-	res, err := a.lokiClient.Query(query, limit, time.Unix(offset, 0), logproto.FORWARD, false)
+	res, err := a.lokiClient.Query(query, limit, time.Unix(offset, 0), loki.FORWARD, false)
 	if err != nil {
 		errMsg := fmt.Errorf("error when returning logs for sandbox: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
