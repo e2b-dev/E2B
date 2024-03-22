@@ -196,6 +196,8 @@ func (n *NomadClient) CreateSandbox(
 		}
 	}
 
+	telemetry.ReportEvent(childCtx, "Marshalled metadata")
+
 	telemetry.SetAttributes(
 		childCtx,
 		attribute.String("passed_trace_id_hex", traceID),
@@ -212,6 +214,8 @@ func (n *NomadClient) CreateSandbox(
 			Code:      http.StatusInternalServerError,
 		}
 	}
+
+	telemetry.ReportEvent(childCtx, "Got FC version info")
 
 	var jobDef bytes.Buffer
 
@@ -278,6 +282,8 @@ func (n *NomadClient) CreateSandbox(
 		}
 	}
 
+	telemetry.ReportEvent(childCtx, "Templated job")
+
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
@@ -288,6 +294,8 @@ func (n *NomadClient) CreateSandbox(
 			Code:      http.StatusInternalServerError,
 		}
 	}
+
+	telemetry.ReportEvent(childCtx, "Parsed HCL job")
 
 	sub := n.newSubscriber(*job.ID, taskRunningState, defaultTaskName)
 	defer sub.close()
@@ -303,6 +311,7 @@ func (n *NomadClient) CreateSandbox(
 		}
 	}
 
+	telemetry.ReportEvent(childCtx, "Registered job")
 	telemetry.ReportEvent(childCtx, "Started waiting for job to start")
 
 	select {
@@ -346,6 +355,8 @@ func (n *NomadClient) CreateSandbox(
 		}
 	case alloc := <-sub.wait:
 		var allocErr error
+
+		telemetry.ReportEvent(childCtx, "Got allocation")
 
 		defer func() {
 			if allocErr != nil {

@@ -27,6 +27,8 @@ var postSandboxParallelLimit = semaphore.NewWeighted(defaultRequestLimit)
 func (a *APIStore) PostSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
 
+	telemetry.ReportEvent(ctx, "Parsed body")
+
 	body, err := parseBody[api.PostSandboxesJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
@@ -50,6 +52,8 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		return
 	}
 
+	telemetry.ReportEvent(ctx, "Cleaned sandbox ID")
+
 	// Get team from context, use TeamContextKey
 	team := c.Value(constants.TeamContextKey).(models.Team)
 
@@ -63,6 +67,8 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 		return
 	}
+
+	telemetry.ReportEvent(ctx, "Checked team access")
 
 	var alias string
 	if env.Aliases != nil && len(*env.Aliases) > 0 {
@@ -112,6 +118,8 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		return
 	}
 
+	telemetry.ReportEvent(ctx, "Reserved team sandbox slot")
+
 	defer releaseTeamSandboxReservation()
 
 	var metadata map[string]string
@@ -128,6 +136,8 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 		return
 	}
+
+	telemetry.ReportEvent(ctx, "Created sandbox")
 
 	if cacheErr := a.instanceCache.Add(instance.InstanceInfo{
 		StartTime:         nil,
@@ -155,7 +165,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	c.Set("instanceID", sandbox.SandboxID)
 
-	telemetry.ReportEvent(ctx, "created environment instance")
+	telemetry.ReportEvent(ctx, "Added sandbox to cache")
 
 	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
 	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
@@ -165,6 +175,8 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 			Set("instance_id", sandbox.SandboxID).
 			Set("alias", alias),
 	)
+
+	telemetry.ReportEvent(ctx, "Created analytics event")
 
 	go func() {
 		err = a.db.UpdateEnvLastUsed(context.Background(), env.TemplateID)
