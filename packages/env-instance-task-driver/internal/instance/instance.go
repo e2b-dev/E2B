@@ -3,7 +3,11 @@ package instance
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"time"
 
+	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/txn2/txeh"
@@ -18,6 +22,10 @@ type Instance struct {
 	config *InstanceConfig
 
 	EnvID string
+}
+
+var httpClient = http.Client{
+	Timeout: 5 * time.Second,
 }
 
 type InstanceConfig struct {
@@ -156,14 +164,70 @@ func NewInstance(
 
 	telemetry.ReportEvent(childCtx, "initialized FC")
 
-	return &Instance{
+	instance := &Instance{
 		EnvID: config.EnvID,
 		Files: fsEnv,
 		Slot:  ips,
 		FC:    fc,
 
 		config: config,
-	}, nil
+	}
+
+	telemetry.ReportEvent(childCtx, "ensuring clock sync")
+	go func() {
+		context := context.Background()
+
+		clockErr := instance.EnsureClockSync(context)
+		if clockErr != nil {
+			telemetry.ReportError(context, fmt.Errorf("failed to sync clock: %w", clockErr))
+		} else {
+			telemetry.ReportEvent(context, "clock synced")
+		}
+	}()
+
+	return instance, nil
+}
+
+func (i *Instance) syncClock(ctx context.Context) error {
+	address := fmt.Sprintf("http://%s:%d/sync", i.Slot.HostSnapshotIP(), consts.DefaultEnvdServerPort)
+
+	request, err := http.NewRequestWithContext(ctx, "POST", address, nil)
+	if err != nil {
+		return err
+	}
+
+	response, err := httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+
+	if _, err := io.Copy(io.Discard, response.Body); err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+
+	return nil
+}
+
+func (i *Instance) EnsureClockSync(ctx context.Context) error {
+syncLoop:
+	for {
+		select {
+		case <-time.After(10 * time.Second):
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			err := i.syncClock(ctx)
+			if err != nil {
+				telemetry.ReportError(ctx, fmt.Errorf("error syncing clock: %w", err))
+				continue
+			}
+			break syncLoop
+		}
+	}
+
+	return nil
 }
 
 func (i *Instance) CleanupAfterFCStop(

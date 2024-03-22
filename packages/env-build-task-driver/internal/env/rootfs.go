@@ -576,7 +576,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	// In bytes
 	rootfsSize := rootfsStats.Size() + r.env.DiskSizeMB<<ToMBShift
 
-	r.env.RootfsSize = rootfsSize
+	r.env.rootfsSize = rootfsSize
 
 	err = rootfsFile.Truncate(rootfsSize)
 	if err != nil {

@@ -67,7 +67,7 @@ type Env struct {
 	GoogleServiceAccountBase64 string
 
 	// Real size of the rootfs after building the env.
-	RootfsSize int64
+	rootfsSize int64
 
 	// Path to the directory where the dir with kernel is mounted.
 	KernelMountDir string
@@ -92,6 +92,11 @@ var EnvInstanceTemplate = template.Must(template.New("provisioning-script").Pars
 // Path to the directory where the kernel is stored.
 func (e *Env) KernelDirPath() string {
 	return filepath.Join(e.KernelsDir, e.KernelVersion)
+}
+
+// Path to the directory where the kernel is stored.
+func (e *Env) RootfsSize() int64 {
+	return e.rootfsSize
 }
 
 // Path to the directory where the kernel can be accessed inside when the dirs are mounted.

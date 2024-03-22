@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/clock"
 	"github.com/e2b-dev/infra/packages/envd/internal/env"
 	"github.com/e2b-dev/infra/packages/envd/internal/file"
 	"github.com/e2b-dev/infra/packages/envd/internal/filesystem"
@@ -19,6 +20,7 @@ import (
 	"github.com/e2b-dev/infra/packages/envd/internal/ports"
 	"github.com/e2b-dev/infra/packages/envd/internal/process"
 	"github.com/e2b-dev/infra/packages/envd/internal/terminal"
+	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 )
 
 // TODO: I'm not really sure if we're using RPC Notifier and Subscriber in the right way.
@@ -26,8 +28,7 @@ import (
 // https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
 
 const (
-	Version                = "dev"
-	defaultServerPort uint = 49982
+	Version = "dev"
 
 	startCmdID = "_startCmd"
 )
@@ -37,7 +38,7 @@ var (
 	wsHandler http.Handler
 
 	debug        bool
-	serverPort   uint
+	serverPort   int64
 	versionFlag  bool
 	startCmdFlag string
 )
@@ -45,6 +46,15 @@ var (
 func serveWs(w http.ResponseWriter, r *http.Request) {
 	logger.Debug("WS connection started")
 	wsHandler.ServeHTTP(w, r)
+}
+
+func syncHandler(clock *clock.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		logger.Debug("/sync request")
+		clock.Sync()
+
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 func pingHandler(w http.ResponseWriter, r *http.Request) {
@@ -83,10 +93,10 @@ func parseFlags() {
 		"print envd version",
 	)
 
-	flag.UintVar(
+	flag.Int64Var(
 		&serverPort,
 		"port",
-		defaultServerPort,
+		consts.DefaultEnvdServerPort,
 		"a port on which the daemon should run",
 	)
 
@@ -135,6 +145,8 @@ func main() {
 
 	go portScanner.ScanAndBroadcast()
 
+	clock := clock.NewService(logger.Named("clockSvc"))
+
 	ports := ports.NewService(logger.Named("codeSnippetSvc"), portScanner)
 	// WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK
 	if err := rpcServer.RegisterName("codeSnippet", ports); err != nil {
@@ -152,7 +164,7 @@ func main() {
 		)
 	}
 
-	processService := process.NewService(logger.Named("processSvc"), envConfig)
+	processService := process.NewService(logger.Named("processSvc"), envConfig, clock)
 	if err := rpcServer.RegisterName("process", processService); err != nil {
 		logger.Panicw("failed to register process service", "error", err)
 	}
@@ -171,13 +183,17 @@ func main() {
 		}
 	}
 
-	terminalService := terminal.NewService(logger.Named("terminalSvc"), envConfig)
+	terminalService := terminal.NewService(logger.Named("terminalSvc"), envConfig, clock)
 	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
 		logger.Panicw("failed to register terminal service", "error", err)
 	}
 
 	router := mux.NewRouter()
 	wsHandler = rpcServer.WebsocketHandler([]string{"*"})
+
+	clockHandler := syncHandler(clock)
+	// The /sync route is used for syncing the clock.
+	router.HandleFunc("/sync", clockHandler)
 
 	router.HandleFunc("/ws", serveWs)
 	// The /ping route is used for the terminal extension to check if envd is running.
