@@ -16,14 +16,14 @@ type EnvAlias struct {
 func (EnvAlias) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").Unique().StorageKey("alias").Immutable().SchemaType(map[string]string{dialect.Postgres: "text"}),
-		field.String("env_id").Nillable().Optional().SchemaType(map[string]string{dialect.Postgres: "text"}),
-		field.Bool("is_name").Default(true),
+		field.String("env_id").SchemaType(map[string]string{dialect.Postgres: "text"}),
+		field.Bool("is_renamable").Default(true),
 	}
 }
 
 func (EnvAlias) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("env", Env.Type).Ref("env_aliases").Unique().Field("env_id"),
+		edge.From("env", Env.Type).Ref("env_aliases").Unique().Field("env_id").Required(),
 	}
 }
 

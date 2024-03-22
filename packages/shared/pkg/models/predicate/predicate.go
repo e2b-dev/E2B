@@ -15,6 +15,9 @@ type Env func(*sql.Selector)
 // EnvAlias is the predicate function for envalias builders.
 type EnvAlias func(*sql.Selector)
 
+// EnvBuild is the predicate function for envbuild builders.
+type EnvBuild func(*sql.Selector)
+
 // Team is the predicate function for team builders.
 type Team func(*sql.Selector)
 

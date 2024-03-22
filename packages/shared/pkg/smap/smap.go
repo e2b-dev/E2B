@@ -26,6 +26,10 @@ func (m *Map[V]) Insert(key string, value V) {
 	m.m.Set(key, value)
 }
 
+func (m *Map[V]) InsertIfAbsent(key string, value V) bool {
+	return m.m.SetIfAbsent(key, value)
+}
+
 func (m *Map[V]) Items() map[string]V {
 	return m.m.Items()
 }

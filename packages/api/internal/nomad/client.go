@@ -4,7 +4,9 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
+	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"go.uber.org/zap"
 
@@ -49,4 +51,18 @@ func InitNomadClient(logger *zap.SugaredLogger) *NomadClient {
 func (n *NomadClient) Close() {
 	n.client.Close()
 	n.cancel()
+}
+
+// Sync the cache with the actual instances in Nomad to handle instances that died.
+func (n *NomadClient) KeepInSync(instanceCache *instance.InstanceCache) {
+	for {
+		time.Sleep(instance.CacheSyncTime)
+
+		activeInstances, err := n.GetInstances()
+		if err != nil {
+			n.logger.Errorf("Error loading current instances from Nomad\n: %v", err.Err)
+		} else {
+			instanceCache.Sync(activeInstances)
+		}
+	}
 }

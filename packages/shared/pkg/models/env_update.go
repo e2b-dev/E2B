@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/internal"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/predicate"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/team"
@@ -61,20 +62,6 @@ func (eu *EnvUpdate) SetNillableTeamID(u *uuid.UUID) *EnvUpdate {
 	return eu
 }
 
-// SetDockerfile sets the "dockerfile" field.
-func (eu *EnvUpdate) SetDockerfile(s string) *EnvUpdate {
-	eu.mutation.SetDockerfile(s)
-	return eu
-}
-
-// SetNillableDockerfile sets the "dockerfile" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableDockerfile(s *string) *EnvUpdate {
-	if s != nil {
-		eu.SetDockerfile(*s)
-	}
-	return eu
-}
-
 // SetPublic sets the "public" field.
 func (eu *EnvUpdate) SetPublic(b bool) *EnvUpdate {
 	eu.mutation.SetPublic(b)
@@ -85,20 +72,6 @@ func (eu *EnvUpdate) SetPublic(b bool) *EnvUpdate {
 func (eu *EnvUpdate) SetNillablePublic(b *bool) *EnvUpdate {
 	if b != nil {
 		eu.SetPublic(*b)
-	}
-	return eu
-}
-
-// SetBuildID sets the "build_id" field.
-func (eu *EnvUpdate) SetBuildID(u uuid.UUID) *EnvUpdate {
-	eu.mutation.SetBuildID(u)
-	return eu
-}
-
-// SetNillableBuildID sets the "build_id" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableBuildID(u *uuid.UUID) *EnvUpdate {
-	if u != nil {
-		eu.SetBuildID(*u)
 	}
 	return eu
 }
@@ -165,118 +138,6 @@ func (eu *EnvUpdate) ClearLastSpawnedAt() *EnvUpdate {
 	return eu
 }
 
-// SetVcpu sets the "vcpu" field.
-func (eu *EnvUpdate) SetVcpu(i int64) *EnvUpdate {
-	eu.mutation.ResetVcpu()
-	eu.mutation.SetVcpu(i)
-	return eu
-}
-
-// SetNillableVcpu sets the "vcpu" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableVcpu(i *int64) *EnvUpdate {
-	if i != nil {
-		eu.SetVcpu(*i)
-	}
-	return eu
-}
-
-// AddVcpu adds i to the "vcpu" field.
-func (eu *EnvUpdate) AddVcpu(i int64) *EnvUpdate {
-	eu.mutation.AddVcpu(i)
-	return eu
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (eu *EnvUpdate) SetRAMMB(i int64) *EnvUpdate {
-	eu.mutation.ResetRAMMB()
-	eu.mutation.SetRAMMB(i)
-	return eu
-}
-
-// SetNillableRAMMB sets the "ram_mb" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableRAMMB(i *int64) *EnvUpdate {
-	if i != nil {
-		eu.SetRAMMB(*i)
-	}
-	return eu
-}
-
-// AddRAMMB adds i to the "ram_mb" field.
-func (eu *EnvUpdate) AddRAMMB(i int64) *EnvUpdate {
-	eu.mutation.AddRAMMB(i)
-	return eu
-}
-
-// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
-func (eu *EnvUpdate) SetFreeDiskSizeMB(i int64) *EnvUpdate {
-	eu.mutation.ResetFreeDiskSizeMB()
-	eu.mutation.SetFreeDiskSizeMB(i)
-	return eu
-}
-
-// SetNillableFreeDiskSizeMB sets the "free_disk_size_mb" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableFreeDiskSizeMB(i *int64) *EnvUpdate {
-	if i != nil {
-		eu.SetFreeDiskSizeMB(*i)
-	}
-	return eu
-}
-
-// AddFreeDiskSizeMB adds i to the "free_disk_size_mb" field.
-func (eu *EnvUpdate) AddFreeDiskSizeMB(i int64) *EnvUpdate {
-	eu.mutation.AddFreeDiskSizeMB(i)
-	return eu
-}
-
-// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
-func (eu *EnvUpdate) SetTotalDiskSizeMB(i int64) *EnvUpdate {
-	eu.mutation.ResetTotalDiskSizeMB()
-	eu.mutation.SetTotalDiskSizeMB(i)
-	return eu
-}
-
-// SetNillableTotalDiskSizeMB sets the "total_disk_size_mb" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableTotalDiskSizeMB(i *int64) *EnvUpdate {
-	if i != nil {
-		eu.SetTotalDiskSizeMB(*i)
-	}
-	return eu
-}
-
-// AddTotalDiskSizeMB adds i to the "total_disk_size_mb" field.
-func (eu *EnvUpdate) AddTotalDiskSizeMB(i int64) *EnvUpdate {
-	eu.mutation.AddTotalDiskSizeMB(i)
-	return eu
-}
-
-// SetKernelVersion sets the "kernel_version" field.
-func (eu *EnvUpdate) SetKernelVersion(s string) *EnvUpdate {
-	eu.mutation.SetKernelVersion(s)
-	return eu
-}
-
-// SetNillableKernelVersion sets the "kernel_version" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableKernelVersion(s *string) *EnvUpdate {
-	if s != nil {
-		eu.SetKernelVersion(*s)
-	}
-	return eu
-}
-
-// SetFirecrackerVersion sets the "firecracker_version" field.
-func (eu *EnvUpdate) SetFirecrackerVersion(s string) *EnvUpdate {
-	eu.mutation.SetFirecrackerVersion(s)
-	return eu
-}
-
-// SetNillableFirecrackerVersion sets the "firecracker_version" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableFirecrackerVersion(s *string) *EnvUpdate {
-	if s != nil {
-		eu.SetFirecrackerVersion(*s)
-	}
-	return eu
-}
-
 // SetTeam sets the "team" edge to the Team entity.
 func (eu *EnvUpdate) SetTeam(t *Team) *EnvUpdate {
 	return eu.SetTeamID(t.ID)
@@ -295,6 +156,21 @@ func (eu *EnvUpdate) AddEnvAliases(e ...*EnvAlias) *EnvUpdate {
 		ids[i] = e[i].ID
 	}
 	return eu.AddEnvAliasIDs(ids...)
+}
+
+// AddBuildIDs adds the "builds" edge to the EnvBuild entity by IDs.
+func (eu *EnvUpdate) AddBuildIDs(ids ...uuid.UUID) *EnvUpdate {
+	eu.mutation.AddBuildIDs(ids...)
+	return eu
+}
+
+// AddBuilds adds the "builds" edges to the EnvBuild entity.
+func (eu *EnvUpdate) AddBuilds(e ...*EnvBuild) *EnvUpdate {
+	ids := make([]uuid.UUID, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return eu.AddBuildIDs(ids...)
 }
 
 // Mutation returns the EnvMutation object of the builder.
@@ -327,6 +203,27 @@ func (eu *EnvUpdate) RemoveEnvAliases(e ...*EnvAlias) *EnvUpdate {
 		ids[i] = e[i].ID
 	}
 	return eu.RemoveEnvAliasIDs(ids...)
+}
+
+// ClearBuilds clears all "builds" edges to the EnvBuild entity.
+func (eu *EnvUpdate) ClearBuilds() *EnvUpdate {
+	eu.mutation.ClearBuilds()
+	return eu
+}
+
+// RemoveBuildIDs removes the "builds" edge to EnvBuild entities by IDs.
+func (eu *EnvUpdate) RemoveBuildIDs(ids ...uuid.UUID) *EnvUpdate {
+	eu.mutation.RemoveBuildIDs(ids...)
+	return eu
+}
+
+// RemoveBuilds removes "builds" edges to EnvBuild entities.
+func (eu *EnvUpdate) RemoveBuilds(e ...*EnvBuild) *EnvUpdate {
+	ids := make([]uuid.UUID, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return eu.RemoveBuildIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -385,14 +282,8 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := eu.mutation.UpdatedAt(); ok {
 		_spec.SetField(env.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := eu.mutation.Dockerfile(); ok {
-		_spec.SetField(env.FieldDockerfile, field.TypeString, value)
-	}
 	if value, ok := eu.mutation.Public(); ok {
 		_spec.SetField(env.FieldPublic, field.TypeBool, value)
-	}
-	if value, ok := eu.mutation.BuildID(); ok {
-		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
 	}
 	if value, ok := eu.mutation.BuildCount(); ok {
 		_spec.SetField(env.FieldBuildCount, field.TypeInt32, value)
@@ -411,36 +302,6 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if eu.mutation.LastSpawnedAtCleared() {
 		_spec.ClearField(env.FieldLastSpawnedAt, field.TypeTime)
-	}
-	if value, ok := eu.mutation.Vcpu(); ok {
-		_spec.SetField(env.FieldVcpu, field.TypeInt64, value)
-	}
-	if value, ok := eu.mutation.AddedVcpu(); ok {
-		_spec.AddField(env.FieldVcpu, field.TypeInt64, value)
-	}
-	if value, ok := eu.mutation.RAMMB(); ok {
-		_spec.SetField(env.FieldRAMMB, field.TypeInt64, value)
-	}
-	if value, ok := eu.mutation.AddedRAMMB(); ok {
-		_spec.AddField(env.FieldRAMMB, field.TypeInt64, value)
-	}
-	if value, ok := eu.mutation.FreeDiskSizeMB(); ok {
-		_spec.SetField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
-	}
-	if value, ok := eu.mutation.AddedFreeDiskSizeMB(); ok {
-		_spec.AddField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
-	}
-	if value, ok := eu.mutation.TotalDiskSizeMB(); ok {
-		_spec.SetField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
-	}
-	if value, ok := eu.mutation.AddedTotalDiskSizeMB(); ok {
-		_spec.AddField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
-	}
-	if value, ok := eu.mutation.KernelVersion(); ok {
-		_spec.SetField(env.FieldKernelVersion, field.TypeString, value)
-	}
-	if value, ok := eu.mutation.FirecrackerVersion(); ok {
-		_spec.SetField(env.FieldFirecrackerVersion, field.TypeString, value)
 	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -521,6 +382,54 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if eu.mutation.BuildsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.BuildsTable,
+			Columns: []string{env.BuildsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envbuild.FieldID, field.TypeUUID),
+			},
+		}
+		edge.Schema = eu.schemaConfig.EnvBuild
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := eu.mutation.RemovedBuildsIDs(); len(nodes) > 0 && !eu.mutation.BuildsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.BuildsTable,
+			Columns: []string{env.BuildsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envbuild.FieldID, field.TypeUUID),
+			},
+		}
+		edge.Schema = eu.schemaConfig.EnvBuild
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := eu.mutation.BuildsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.BuildsTable,
+			Columns: []string{env.BuildsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envbuild.FieldID, field.TypeUUID),
+			},
+		}
+		edge.Schema = eu.schemaConfig.EnvBuild
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.Node.Schema = eu.schemaConfig.Env
 	ctx = internal.NewSchemaConfigContext(ctx, eu.schemaConfig)
 	_spec.AddModifiers(eu.modifiers...)
@@ -573,20 +482,6 @@ func (euo *EnvUpdateOne) SetNillableTeamID(u *uuid.UUID) *EnvUpdateOne {
 	return euo
 }
 
-// SetDockerfile sets the "dockerfile" field.
-func (euo *EnvUpdateOne) SetDockerfile(s string) *EnvUpdateOne {
-	euo.mutation.SetDockerfile(s)
-	return euo
-}
-
-// SetNillableDockerfile sets the "dockerfile" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableDockerfile(s *string) *EnvUpdateOne {
-	if s != nil {
-		euo.SetDockerfile(*s)
-	}
-	return euo
-}
-
 // SetPublic sets the "public" field.
 func (euo *EnvUpdateOne) SetPublic(b bool) *EnvUpdateOne {
 	euo.mutation.SetPublic(b)
@@ -597,20 +492,6 @@ func (euo *EnvUpdateOne) SetPublic(b bool) *EnvUpdateOne {
 func (euo *EnvUpdateOne) SetNillablePublic(b *bool) *EnvUpdateOne {
 	if b != nil {
 		euo.SetPublic(*b)
-	}
-	return euo
-}
-
-// SetBuildID sets the "build_id" field.
-func (euo *EnvUpdateOne) SetBuildID(u uuid.UUID) *EnvUpdateOne {
-	euo.mutation.SetBuildID(u)
-	return euo
-}
-
-// SetNillableBuildID sets the "build_id" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableBuildID(u *uuid.UUID) *EnvUpdateOne {
-	if u != nil {
-		euo.SetBuildID(*u)
 	}
 	return euo
 }
@@ -677,118 +558,6 @@ func (euo *EnvUpdateOne) ClearLastSpawnedAt() *EnvUpdateOne {
 	return euo
 }
 
-// SetVcpu sets the "vcpu" field.
-func (euo *EnvUpdateOne) SetVcpu(i int64) *EnvUpdateOne {
-	euo.mutation.ResetVcpu()
-	euo.mutation.SetVcpu(i)
-	return euo
-}
-
-// SetNillableVcpu sets the "vcpu" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableVcpu(i *int64) *EnvUpdateOne {
-	if i != nil {
-		euo.SetVcpu(*i)
-	}
-	return euo
-}
-
-// AddVcpu adds i to the "vcpu" field.
-func (euo *EnvUpdateOne) AddVcpu(i int64) *EnvUpdateOne {
-	euo.mutation.AddVcpu(i)
-	return euo
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (euo *EnvUpdateOne) SetRAMMB(i int64) *EnvUpdateOne {
-	euo.mutation.ResetRAMMB()
-	euo.mutation.SetRAMMB(i)
-	return euo
-}
-
-// SetNillableRAMMB sets the "ram_mb" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableRAMMB(i *int64) *EnvUpdateOne {
-	if i != nil {
-		euo.SetRAMMB(*i)
-	}
-	return euo
-}
-
-// AddRAMMB adds i to the "ram_mb" field.
-func (euo *EnvUpdateOne) AddRAMMB(i int64) *EnvUpdateOne {
-	euo.mutation.AddRAMMB(i)
-	return euo
-}
-
-// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
-func (euo *EnvUpdateOne) SetFreeDiskSizeMB(i int64) *EnvUpdateOne {
-	euo.mutation.ResetFreeDiskSizeMB()
-	euo.mutation.SetFreeDiskSizeMB(i)
-	return euo
-}
-
-// SetNillableFreeDiskSizeMB sets the "free_disk_size_mb" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableFreeDiskSizeMB(i *int64) *EnvUpdateOne {
-	if i != nil {
-		euo.SetFreeDiskSizeMB(*i)
-	}
-	return euo
-}
-
-// AddFreeDiskSizeMB adds i to the "free_disk_size_mb" field.
-func (euo *EnvUpdateOne) AddFreeDiskSizeMB(i int64) *EnvUpdateOne {
-	euo.mutation.AddFreeDiskSizeMB(i)
-	return euo
-}
-
-// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
-func (euo *EnvUpdateOne) SetTotalDiskSizeMB(i int64) *EnvUpdateOne {
-	euo.mutation.ResetTotalDiskSizeMB()
-	euo.mutation.SetTotalDiskSizeMB(i)
-	return euo
-}
-
-// SetNillableTotalDiskSizeMB sets the "total_disk_size_mb" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableTotalDiskSizeMB(i *int64) *EnvUpdateOne {
-	if i != nil {
-		euo.SetTotalDiskSizeMB(*i)
-	}
-	return euo
-}
-
-// AddTotalDiskSizeMB adds i to the "total_disk_size_mb" field.
-func (euo *EnvUpdateOne) AddTotalDiskSizeMB(i int64) *EnvUpdateOne {
-	euo.mutation.AddTotalDiskSizeMB(i)
-	return euo
-}
-
-// SetKernelVersion sets the "kernel_version" field.
-func (euo *EnvUpdateOne) SetKernelVersion(s string) *EnvUpdateOne {
-	euo.mutation.SetKernelVersion(s)
-	return euo
-}
-
-// SetNillableKernelVersion sets the "kernel_version" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableKernelVersion(s *string) *EnvUpdateOne {
-	if s != nil {
-		euo.SetKernelVersion(*s)
-	}
-	return euo
-}
-
-// SetFirecrackerVersion sets the "firecracker_version" field.
-func (euo *EnvUpdateOne) SetFirecrackerVersion(s string) *EnvUpdateOne {
-	euo.mutation.SetFirecrackerVersion(s)
-	return euo
-}
-
-// SetNillableFirecrackerVersion sets the "firecracker_version" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableFirecrackerVersion(s *string) *EnvUpdateOne {
-	if s != nil {
-		euo.SetFirecrackerVersion(*s)
-	}
-	return euo
-}
-
 // SetTeam sets the "team" edge to the Team entity.
 func (euo *EnvUpdateOne) SetTeam(t *Team) *EnvUpdateOne {
 	return euo.SetTeamID(t.ID)
@@ -807,6 +576,21 @@ func (euo *EnvUpdateOne) AddEnvAliases(e ...*EnvAlias) *EnvUpdateOne {
 		ids[i] = e[i].ID
 	}
 	return euo.AddEnvAliasIDs(ids...)
+}
+
+// AddBuildIDs adds the "builds" edge to the EnvBuild entity by IDs.
+func (euo *EnvUpdateOne) AddBuildIDs(ids ...uuid.UUID) *EnvUpdateOne {
+	euo.mutation.AddBuildIDs(ids...)
+	return euo
+}
+
+// AddBuilds adds the "builds" edges to the EnvBuild entity.
+func (euo *EnvUpdateOne) AddBuilds(e ...*EnvBuild) *EnvUpdateOne {
+	ids := make([]uuid.UUID, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return euo.AddBuildIDs(ids...)
 }
 
 // Mutation returns the EnvMutation object of the builder.
@@ -839,6 +623,27 @@ func (euo *EnvUpdateOne) RemoveEnvAliases(e ...*EnvAlias) *EnvUpdateOne {
 		ids[i] = e[i].ID
 	}
 	return euo.RemoveEnvAliasIDs(ids...)
+}
+
+// ClearBuilds clears all "builds" edges to the EnvBuild entity.
+func (euo *EnvUpdateOne) ClearBuilds() *EnvUpdateOne {
+	euo.mutation.ClearBuilds()
+	return euo
+}
+
+// RemoveBuildIDs removes the "builds" edge to EnvBuild entities by IDs.
+func (euo *EnvUpdateOne) RemoveBuildIDs(ids ...uuid.UUID) *EnvUpdateOne {
+	euo.mutation.RemoveBuildIDs(ids...)
+	return euo
+}
+
+// RemoveBuilds removes "builds" edges to EnvBuild entities.
+func (euo *EnvUpdateOne) RemoveBuilds(e ...*EnvBuild) *EnvUpdateOne {
+	ids := make([]uuid.UUID, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return euo.RemoveBuildIDs(ids...)
 }
 
 // Where appends a list predicates to the EnvUpdate builder.
@@ -927,14 +732,8 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	if value, ok := euo.mutation.UpdatedAt(); ok {
 		_spec.SetField(env.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := euo.mutation.Dockerfile(); ok {
-		_spec.SetField(env.FieldDockerfile, field.TypeString, value)
-	}
 	if value, ok := euo.mutation.Public(); ok {
 		_spec.SetField(env.FieldPublic, field.TypeBool, value)
-	}
-	if value, ok := euo.mutation.BuildID(); ok {
-		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
 	}
 	if value, ok := euo.mutation.BuildCount(); ok {
 		_spec.SetField(env.FieldBuildCount, field.TypeInt32, value)
@@ -953,36 +752,6 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	}
 	if euo.mutation.LastSpawnedAtCleared() {
 		_spec.ClearField(env.FieldLastSpawnedAt, field.TypeTime)
-	}
-	if value, ok := euo.mutation.Vcpu(); ok {
-		_spec.SetField(env.FieldVcpu, field.TypeInt64, value)
-	}
-	if value, ok := euo.mutation.AddedVcpu(); ok {
-		_spec.AddField(env.FieldVcpu, field.TypeInt64, value)
-	}
-	if value, ok := euo.mutation.RAMMB(); ok {
-		_spec.SetField(env.FieldRAMMB, field.TypeInt64, value)
-	}
-	if value, ok := euo.mutation.AddedRAMMB(); ok {
-		_spec.AddField(env.FieldRAMMB, field.TypeInt64, value)
-	}
-	if value, ok := euo.mutation.FreeDiskSizeMB(); ok {
-		_spec.SetField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
-	}
-	if value, ok := euo.mutation.AddedFreeDiskSizeMB(); ok {
-		_spec.AddField(env.FieldFreeDiskSizeMB, field.TypeInt64, value)
-	}
-	if value, ok := euo.mutation.TotalDiskSizeMB(); ok {
-		_spec.SetField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
-	}
-	if value, ok := euo.mutation.AddedTotalDiskSizeMB(); ok {
-		_spec.AddField(env.FieldTotalDiskSizeMB, field.TypeInt64, value)
-	}
-	if value, ok := euo.mutation.KernelVersion(); ok {
-		_spec.SetField(env.FieldKernelVersion, field.TypeString, value)
-	}
-	if value, ok := euo.mutation.FirecrackerVersion(); ok {
-		_spec.SetField(env.FieldFirecrackerVersion, field.TypeString, value)
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1058,6 +827,54 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 			},
 		}
 		edge.Schema = euo.schemaConfig.EnvAlias
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if euo.mutation.BuildsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.BuildsTable,
+			Columns: []string{env.BuildsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envbuild.FieldID, field.TypeUUID),
+			},
+		}
+		edge.Schema = euo.schemaConfig.EnvBuild
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := euo.mutation.RemovedBuildsIDs(); len(nodes) > 0 && !euo.mutation.BuildsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.BuildsTable,
+			Columns: []string{env.BuildsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envbuild.FieldID, field.TypeUUID),
+			},
+		}
+		edge.Schema = euo.schemaConfig.EnvBuild
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := euo.mutation.BuildsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   env.BuildsTable,
+			Columns: []string{env.BuildsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(envbuild.FieldID, field.TypeUUID),
+			},
+		}
+		edge.Schema = euo.schemaConfig.EnvBuild
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}

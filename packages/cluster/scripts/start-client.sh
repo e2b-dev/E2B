@@ -15,18 +15,17 @@ exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&
 # The THP are by default set to madvise
 # We are allocating the hugepages at the start when the memory is not fragmented yet
 echo "[Setting up huge pages]"
-sudo mkdir /mnt/hugepages
+sudo mkdir -p /mnt/hugepages
 mount -t hugetlbfs none /mnt/hugepages
 # Increase proactive compaction to reduce memory fragmentation for using overcomitted huge pages
-echo 40 >/proc/sys/vm/compaction_proactiveness
 
 available_ram=$(grep MemTotal /proc/meminfo | awk '{print $2}') # in KiB
 available_ram=$(($available_ram / 1024))                        # in MiB
 echo "- Total memory: $available_ram MiB"
 
-min_normal_ram=$((4 * 1024))                            # 4 GiB
-min_normal_percentage_ram=$(($available_ram * 8 / 100)) # 8% of the total memory
-max_normal_ram=$((32 * 1024))                           # 32 GiB
+min_normal_ram=$((4 * 1024))                             # 4 GiB
+min_normal_percentage_ram=$(($available_ram * 16 / 100)) # 16% of the total memory
+max_normal_ram=$((42 * 1024))                            # 42 GiB
 
 max() {
     if (($1 > $2)); then
@@ -71,7 +70,7 @@ echo "- Huge page size: $hugepage_size_in_mib MiB"
 hugepages=$(($hugepages_ram / $hugepage_size_in_mib))
 
 # This percentage will be permanently allocated for huge pages and in monitoring it will be shown as used.
-base_hugepages_percentage=60
+base_hugepages_percentage=100
 base_hugepages=$(($hugepages * $base_hugepages_percentage / 100))
 base_hugepages=$(remove_decimal $base_hugepages)
 echo "- Allocating $base_hugepages huge pages ($base_hugepages_percentage%) for base usage"
@@ -165,4 +164,3 @@ EOF
 # These variables are passed in via Terraform template interpolation
 /opt/consul/bin/run-consul.sh --client --cluster-tag-name "${CLUSTER_TAG_NAME}" --enable-gossip-encryption --gossip-encryption-key "${CONSUL_GOSSIP_ENCRYPTION_KEY}" &
 /opt/nomad/bin/run-nomad.sh --client --consul-token "${CONSUL_TOKEN}" &
-

@@ -44,22 +44,16 @@ func (eau *EnvAliasUpdate) SetNillableEnvID(s *string) *EnvAliasUpdate {
 	return eau
 }
 
-// ClearEnvID clears the value of the "env_id" field.
-func (eau *EnvAliasUpdate) ClearEnvID() *EnvAliasUpdate {
-	eau.mutation.ClearEnvID()
+// SetIsRenamable sets the "is_renamable" field.
+func (eau *EnvAliasUpdate) SetIsRenamable(b bool) *EnvAliasUpdate {
+	eau.mutation.SetIsRenamable(b)
 	return eau
 }
 
-// SetIsName sets the "is_name" field.
-func (eau *EnvAliasUpdate) SetIsName(b bool) *EnvAliasUpdate {
-	eau.mutation.SetIsName(b)
-	return eau
-}
-
-// SetNillableIsName sets the "is_name" field if the given value is not nil.
-func (eau *EnvAliasUpdate) SetNillableIsName(b *bool) *EnvAliasUpdate {
+// SetNillableIsRenamable sets the "is_renamable" field if the given value is not nil.
+func (eau *EnvAliasUpdate) SetNillableIsRenamable(b *bool) *EnvAliasUpdate {
 	if b != nil {
-		eau.SetIsName(*b)
+		eau.SetIsRenamable(*b)
 	}
 	return eau
 }
@@ -107,6 +101,14 @@ func (eau *EnvAliasUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (eau *EnvAliasUpdate) check() error {
+	if _, ok := eau.mutation.EnvID(); eau.mutation.EnvCleared() && !ok {
+		return errors.New(`models: clearing a required unique edge "EnvAlias.env"`)
+	}
+	return nil
+}
+
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (eau *EnvAliasUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *EnvAliasUpdate {
 	eau.modifiers = append(eau.modifiers, modifiers...)
@@ -114,6 +116,9 @@ func (eau *EnvAliasUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *EnvA
 }
 
 func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := eau.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	if ps := eau.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -122,8 +127,8 @@ func (eau *EnvAliasUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := eau.mutation.IsName(); ok {
-		_spec.SetField(envalias.FieldIsName, field.TypeBool, value)
+	if value, ok := eau.mutation.IsRenamable(); ok {
+		_spec.SetField(envalias.FieldIsRenamable, field.TypeBool, value)
 	}
 	if eau.mutation.EnvCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -194,22 +199,16 @@ func (eauo *EnvAliasUpdateOne) SetNillableEnvID(s *string) *EnvAliasUpdateOne {
 	return eauo
 }
 
-// ClearEnvID clears the value of the "env_id" field.
-func (eauo *EnvAliasUpdateOne) ClearEnvID() *EnvAliasUpdateOne {
-	eauo.mutation.ClearEnvID()
+// SetIsRenamable sets the "is_renamable" field.
+func (eauo *EnvAliasUpdateOne) SetIsRenamable(b bool) *EnvAliasUpdateOne {
+	eauo.mutation.SetIsRenamable(b)
 	return eauo
 }
 
-// SetIsName sets the "is_name" field.
-func (eauo *EnvAliasUpdateOne) SetIsName(b bool) *EnvAliasUpdateOne {
-	eauo.mutation.SetIsName(b)
-	return eauo
-}
-
-// SetNillableIsName sets the "is_name" field if the given value is not nil.
-func (eauo *EnvAliasUpdateOne) SetNillableIsName(b *bool) *EnvAliasUpdateOne {
+// SetNillableIsRenamable sets the "is_renamable" field if the given value is not nil.
+func (eauo *EnvAliasUpdateOne) SetNillableIsRenamable(b *bool) *EnvAliasUpdateOne {
 	if b != nil {
-		eauo.SetIsName(*b)
+		eauo.SetIsRenamable(*b)
 	}
 	return eauo
 }
@@ -270,6 +269,14 @@ func (eauo *EnvAliasUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (eauo *EnvAliasUpdateOne) check() error {
+	if _, ok := eauo.mutation.EnvID(); eauo.mutation.EnvCleared() && !ok {
+		return errors.New(`models: clearing a required unique edge "EnvAlias.env"`)
+	}
+	return nil
+}
+
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (eauo *EnvAliasUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *EnvAliasUpdateOne {
 	eauo.modifiers = append(eauo.modifiers, modifiers...)
@@ -277,6 +284,9 @@ func (eauo *EnvAliasUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *
 }
 
 func (eauo *EnvAliasUpdateOne) sqlSave(ctx context.Context) (_node *EnvAlias, err error) {
+	if err := eauo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(envalias.Table, envalias.Columns, sqlgraph.NewFieldSpec(envalias.FieldID, field.TypeString))
 	id, ok := eauo.mutation.ID()
 	if !ok {
@@ -302,8 +312,8 @@ func (eauo *EnvAliasUpdateOne) sqlSave(ctx context.Context) (_node *EnvAlias, er
 			}
 		}
 	}
-	if value, ok := eauo.mutation.IsName(); ok {
-		_spec.SetField(envalias.FieldIsName, field.TypeBool, value)
+	if value, ok := eauo.mutation.IsRenamable(); ok {
+		_spec.SetField(envalias.FieldIsRenamable, field.TypeBool, value)
 	}
 	if eauo.mutation.EnvCleared() {
 		edge := &sqlgraph.EdgeSpec{

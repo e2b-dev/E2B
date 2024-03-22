@@ -37,7 +37,7 @@ func (a *APIStore) DeleteTemplatesTemplateID(c *gin.Context, aliasOrTemplateID a
 		return
 	}
 
-	env, kernelVersion, firecrackerVersion, hasAccess, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
+	env, build, accessErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, false)
 	if accessErr != nil {
 		errMsg := fmt.Errorf("error env not found: %w", accessErr)
 		telemetry.ReportError(ctx, errMsg)
@@ -52,18 +52,9 @@ func (a *APIStore) DeleteTemplatesTemplateID(c *gin.Context, aliasOrTemplateID a
 		attribute.String("env.team.id", team.ID.String()),
 		attribute.String("env.team.name", team.Name),
 		attribute.String("env.id", env.TemplateID),
-		attribute.String("env.kernel.version", kernelVersion),
-		attribute.String("env.firecracker.version", firecrackerVersion),
+		attribute.String("env.kernel.version", build.KernelVersion),
+		attribute.String("env.firecracker.version", build.FirecrackerVersion),
 	)
-
-	if !hasAccess {
-		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this sandbox template")
-
-		errMsg := fmt.Errorf("user doesn't have access to env '%s'", env.TemplateID)
-		telemetry.ReportError(ctx, errMsg)
-
-		return
-	}
 
 	deleteJobErr := a.nomad.DeleteEnv(a.tracer, ctx, env.TemplateID)
 	if deleteJobErr != nil {
@@ -73,7 +64,7 @@ func (a *APIStore) DeleteTemplatesTemplateID(c *gin.Context, aliasOrTemplateID a
 		telemetry.ReportEvent(ctx, "deleted env from fc-envs disk")
 	}
 
-	dbErr := a.supabase.DeleteEnv(ctx, env.TemplateID)
+	dbErr := a.db.DeleteEnv(ctx, env.TemplateID)
 	if dbErr != nil {
 		errMsg := fmt.Errorf("error when deleting env from db: %w", dbErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
