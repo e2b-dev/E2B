@@ -42,7 +42,7 @@ EOF
 # Set up chrony.
 mkdir -p /etc/chrony
 cat <<EOF >/etc/chrony/chrony.conf
-refclock PHC /dev/ptp0 poll 0 dpoll 0 offset 0 trust prefer
+refclock PHC /dev/ptp0 poll -1 dpoll -1 offset 0 trust prefer
 makestep 1 -1
 EOF
 

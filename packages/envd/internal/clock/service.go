@@ -26,9 +26,8 @@ func (s *Service) Sync() {
 	go func() {
 		defer s.mu.Unlock()
 
-		err := exec.Command("/usr/bin/bash", "-c", "/usr/bin/date -s @$(/usr/sbin/phc_ctl /dev/ptp0 get | cut -d' ' -f5)").Run()
 		// The chronyc -a makestep is not immediately stepping the clock
-		// err := exec.Command("/usr/bin/chronyc", "-a", "makestep").Run()
+		err := exec.Command("/usr/bin/bash", "-c", "/usr/bin/date -s @$(/usr/sbin/phc_ctl /dev/ptp0 get | cut -d' ' -f5)").Run()
 		if err != nil {
 			s.logger.Errorw("Failed to sync clock:",
 				"error", err,
