@@ -14,6 +14,7 @@ require (
 	github.com/hashicorp/go-hclog v1.6.2
 	github.com/hashicorp/nomad v1.7.5
 	github.com/lib/pq v1.10.9
+	github.com/orcaman/concurrent-map/v2 v2.0.1
 	go.opentelemetry.io/otel v1.23.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v0.42.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.19.0
