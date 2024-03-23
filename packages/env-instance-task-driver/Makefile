@@ -37,6 +37,9 @@ update-driver-locally:
 	sleep 4
 	sudo supervisorctl restart nomad
 
+test:
+	sudo go run -race -gcflags=all="-N -l" main.go -env idnrwvs3vrde6hknozc0 -instance test-instance-1 -alive 60
+
 build-and-upload:
 	make build
 	make upload

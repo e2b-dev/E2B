@@ -7,6 +7,23 @@ locals {
   }
 }
 
+resource "google_secret_manager_secret" "consul_gossip_encryption_key" {
+  secret_id = "${var.prefix}consul-gossip-key"
+
+  replication {
+    auto {}
+  }
+}
+
+resource "random_id" "consul_gossip_encryption_key" {
+  byte_length = 32
+}
+
+resource "google_secret_manager_secret_version" "consul_gossip_encryption_key" {
+  secret      = google_secret_manager_secret.consul_gossip_encryption_key.name
+  secret_data = random_id.consul_gossip_encryption_key.b64_std
+}
+
 resource "google_project_iam_member" "network_viewer" {
   project = var.gcp_project_id
   member  = "serviceAccount:${var.google_service_account_email}"
@@ -32,13 +49,14 @@ module "server_cluster" {
   source = "./server"
 
   startup_script = templatefile("${path.module}/scripts/start-server.sh", {
-    NUM_SERVERS          = var.server_cluster_size
-    CLUSTER_TAG_NAME     = var.cluster_tag_name
-    SCRIPTS_BUCKET       = var.cluster_setup_bucket_name
-    NOMAD_TOKEN          = var.nomad_acl_token_secret
-    CONSUL_TOKEN         = var.consul_acl_token_secret
-    RUN_CONSUL_FILE_HASH = local.file_hash["scripts/run-consul.sh"]
-    RUN_NOMAD_FILE_HASH  = local.file_hash["scripts/run-nomad.sh"]
+    NUM_SERVERS                  = var.server_cluster_size
+    CLUSTER_TAG_NAME             = var.cluster_tag_name
+    SCRIPTS_BUCKET               = var.cluster_setup_bucket_name
+    NOMAD_TOKEN                  = var.nomad_acl_token_secret
+    CONSUL_TOKEN                 = var.consul_acl_token_secret
+    RUN_CONSUL_FILE_HASH         = local.file_hash["scripts/run-consul.sh"]
+    RUN_NOMAD_FILE_HASH          = local.file_hash["scripts/run-nomad.sh"]
+    CONSUL_GOSSIP_ENCRYPTION_KEY = google_secret_manager_secret_version.consul_gossip_encryption_key.secret_data
   })
 
   cluster_name     = "${var.prefix}${var.server_cluster_name}"
@@ -60,19 +78,20 @@ module "client_cluster" {
   source = "./client"
 
   startup_script = templatefile("${path.module}/scripts/start-client.sh", {
-    CLUSTER_TAG_NAME            = var.cluster_tag_name
-    SCRIPTS_BUCKET              = var.cluster_setup_bucket_name
-    FC_KERNELS_BUCKET_NAME      = var.fc_kernels_bucket_name
-    FC_VERSIONS_BUCKET_NAME     = var.fc_versions_bucket_name
-    FC_ENV_PIPELINE_BUCKET_NAME = var.fc_env_pipeline_bucket_name
-    DOCKER_CONTEXTS_BUCKET_NAME = var.docker_contexts_bucket_name
-    DISK_DEVICE_NAME            = var.fc_envs_disk_device_name
-    GCP_REGION                  = var.gcp_region
-    GOOGLE_SERVICE_ACCOUNT_KEY  = var.google_service_account_key
-    NOMAD_TOKEN                 = var.nomad_acl_token_secret
-    CONSUL_TOKEN                = var.consul_acl_token_secret
-    RUN_CONSUL_FILE_HASH        = local.file_hash["scripts/run-consul.sh"]
-    RUN_NOMAD_FILE_HASH         = local.file_hash["scripts/run-nomad.sh"]
+    CLUSTER_TAG_NAME             = var.cluster_tag_name
+    SCRIPTS_BUCKET               = var.cluster_setup_bucket_name
+    FC_KERNELS_BUCKET_NAME       = var.fc_kernels_bucket_name
+    FC_VERSIONS_BUCKET_NAME      = var.fc_versions_bucket_name
+    FC_ENV_PIPELINE_BUCKET_NAME  = var.fc_env_pipeline_bucket_name
+    DOCKER_CONTEXTS_BUCKET_NAME  = var.docker_contexts_bucket_name
+    DISK_DEVICE_NAME             = var.fc_envs_disk_device_name
+    GCP_REGION                   = var.gcp_region
+    GOOGLE_SERVICE_ACCOUNT_KEY   = var.google_service_account_key
+    NOMAD_TOKEN                  = var.nomad_acl_token_secret
+    CONSUL_TOKEN                 = var.consul_acl_token_secret
+    RUN_CONSUL_FILE_HASH         = local.file_hash["scripts/run-consul.sh"]
+    RUN_NOMAD_FILE_HASH          = local.file_hash["scripts/run-nomad.sh"]
+    CONSUL_GOSSIP_ENCRYPTION_KEY = google_secret_manager_secret_version.consul_gossip_encryption_key.secret_data
   })
 
   cluster_name     = "${var.prefix}${var.client_cluster_name}"
@@ -90,7 +109,8 @@ module "client_cluster" {
   client_proxy_port        = var.client_proxy_port
   client_proxy_health_port = var.client_proxy_health_port
 
-  api_port = var.api_port
+  api_port                  = var.api_port
+  docker_reverse_proxy_port = var.docker_reverse_proxy_port
 
   service_account_email = var.google_service_account_email
 
@@ -106,9 +126,10 @@ module "network" {
 
   gcp_project_id = var.gcp_project_id
 
-  api_port     = var.api_port
-  network_name = var.network_name
-  domain_name  = var.domain_name
+  api_port                  = var.api_port
+  docker_reverse_proxy_port = var.docker_reverse_proxy_port
+  network_name              = var.network_name
+  domain_name               = var.domain_name
 
   client_instance_group    = module.client_cluster.instance_group
   client_proxy_port        = var.client_proxy_port

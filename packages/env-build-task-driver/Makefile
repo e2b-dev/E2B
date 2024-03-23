@@ -38,7 +38,7 @@ update-driver-locally:
 	sudo supervisorctl restart nomad
 
 test:
-	sudo go run -race -gcflags=all="-N -l" main.go -env zu6biammj4nr19vmspq5 -build 07ed806d-239d-b4cd-6189-4621769edc34
+	sudo go run -race -gcflags=all="-N -l" main.go -env idnrwvs3vrde6hknozc0 -build 4b24ff27-8f62-4a47-9b77-e599090cacee
 
 build-and-upload:
 	make build

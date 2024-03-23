@@ -84,6 +84,25 @@ resource "nomad_job" "api" {
   }
 }
 
+resource "nomad_job" "docker_reverse_proxy" {
+  jobspec = file("${path.module}/docker-reverse-proxy.hcl")
+
+  hcl2 {
+    vars = {
+      image_name                    = var.docker_reverse_proxy_image_digest
+      postgres_connection_string    = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
+      google_service_account_secret = var.docker_reverse_proxy_service_account_key
+      port_number                   = var.docker_reverse_proxy_port.port
+      port_name                     = var.docker_reverse_proxy_port.name
+      health_check_path             = var.docker_reverse_proxy_port.health_path
+      domain_name                   = var.domain_name
+      gcp_project_id                = var.gcp_project_id
+      gcp_region                    = var.gcp_region
+      docker_registry               = var.custom_envs_repository_name
+    }
+  }
+}
+
 resource "nomad_job" "client_proxy" {
   jobspec = file("${path.module}/client-proxy.hcl")
 

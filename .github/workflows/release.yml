@@ -20,6 +20,7 @@ jobs:
       get-version: ${{ steps.getversion.outputs.version }}
       cluster-disk-image: ${{ steps.filter.outputs.cluster-disk-image }}
       api: ${{ steps.filter.outputs.api }}
+      docker-reverse-proxy: ${{ steps.filter.outputs.docker-reverse-proxy }}
       envd: ${{ steps.filter.outputs.envd }}
       fc-kernels: ${{ steps.filter.outputs.fc-kernels }}
       fc-versions: ${{ steps.filter.outputs.fc-versions }}
@@ -58,6 +59,10 @@ jobs:
               - '.github/workflows/api.yml'
               - 'api.Dockerfile'
               - '.dockerignore'
+            docker-reverse-proxy:
+              - 'packages/shared/**'
+              - 'packages/docker-reverse-proxy/**'
+              - '.github/workflows/docker-reverse-proxy.yml'
             envd:
               - 'packages/shared/**'
               - 'packages/envd/**'
@@ -165,6 +170,19 @@ jobs:
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
       gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
 
+  docker-reverse-proxy:
+    name: Docker reverse proxy image
+    needs: changes
+    if: |
+      always() &&
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.docker-reverse-proxy == 'true'
+    uses: ./.github/workflows/docker-reverse-proxy.yml
+    secrets:
+      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
+      gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
+
   fc-kernels:
     name: FC Kernels
     needs: changes
@@ -200,6 +218,7 @@ jobs:
         fc-kernels,
         fc-versions,
         api,
+        docker-reverse-proxy,
         envd,
         env-instance-task-driver,
         template-delete-task-driver,
@@ -216,7 +235,8 @@ jobs:
       (needs.env-instance-task-driver.result == 'success' || needs.env-instance-task-driver.result == 'skipped') &&
       (needs.env-build-task-driver.result == 'success' || needs.env-build-task-driver.result == 'skipped') &&
       (needs.template-delete-task-driver.result == 'success' || needs.template-delete-task-driver.result == 'skipped') &&
-      (needs.api.result == 'success' || needs.api.result == 'skipped')
+      (needs.api.result == 'success' || needs.api.result == 'skipped') &&
+      (needs.docker-reverse-proxy.result == 'success' || needs.docker-reverse-proxy.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
     secrets:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}

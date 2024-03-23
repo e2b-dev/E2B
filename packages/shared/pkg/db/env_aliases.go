@@ -24,30 +24,13 @@ func (db *DB) DeleteEnvAlias(ctx context.Context, alias string) error {
 	return nil
 }
 
-func (db *DB) DeleteNilEnvAlias(ctx context.Context, alias string) error {
-	err := db.
-		Client.
-		EnvAlias.
-		DeleteOneID(alias).
-		Where(envalias.EnvIDIsNil()).
-		Exec(ctx)
-
-	if err != nil {
-		errMsg := fmt.Errorf("failed to delete env alias '%s': %w", alias, err)
-
-		return errMsg
-	}
-
-	return nil
-}
-
-func (db *DB) reserveEnvAlias(ctx context.Context, alias string) error {
+func (db *DB) reserveEnvAlias(ctx context.Context, envID, alias string) error {
 	err := db.
 		Client.
 		EnvAlias.
 		Create().
 		SetID(alias).
-		SetNillableEnvID(nil).
+		SetEnvID(envID).
 		Exec(ctx)
 
 	if err != nil {
@@ -78,10 +61,9 @@ func (db *DB) UpdateEnvAlias(ctx context.Context, alias, envID string) error {
 	_, err = tx.
 		EnvAlias.
 		Delete().
-		Where(envalias.Or(
+		Where(
 			envalias.EnvID(envID),
-			envalias.And(envalias.EnvIDIsNil(), envalias.ID(alias)),
-		), envalias.IsName(true)).
+			envalias.IsRenamable(true)).
 		Exec(ctx)
 
 	if err != nil {
@@ -107,29 +89,6 @@ func (db *DB) UpdateEnvAlias(ctx context.Context, alias, envID string) error {
 
 	if err != nil {
 		errMsg := fmt.Errorf("committing transaction: %w", err)
-
-		return errMsg
-	}
-
-	return nil
-}
-
-func (db *DB) EnsureEnvAlias(ctx context.Context, alias, envID string) error {
-	_, err := db.
-		Client.
-		EnvAlias.
-		Query().
-		Where(envalias.EnvID(envID), envalias.IsName(true), envalias.ID(alias)).
-		Only(ctx)
-
-	notFound := models.IsNotFound(err)
-	if notFound {
-		err = db.reserveEnvAlias(ctx, alias)
-		if err != nil {
-			return err
-		}
-	} else if err != nil {
-		errMsg := fmt.Errorf("failed to get env alias '%s': %w", envID, err)
 
 		return errMsg
 	}

@@ -7,6 +7,7 @@ import (
 	"io"
 	"sync"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/clock"
 	"github.com/e2b-dev/infra/packages/envd/internal/env"
 	"github.com/e2b-dev/infra/packages/envd/internal/output"
 	"github.com/e2b-dev/infra/packages/envd/internal/subscriber"
@@ -23,15 +24,19 @@ type Service struct {
 	logger *zap.SugaredLogger
 	env    *env.EnvConfig
 
+	clock *clock.Service
+
 	processes *Manager
 }
 
-const maxScanCapacity = 1024 * 1024 // 1MB
+const maxScanCapacity = 64 * 1024 * 1024 // 64MB
 
-func NewService(logger *zap.SugaredLogger, env *env.EnvConfig) *Service {
+func NewService(logger *zap.SugaredLogger, env *env.EnvConfig, clock *clock.Service) *Service {
 	return &Service{
 		logger:    logger,
 		processes: NewManager(logger),
+
+		clock: clock,
 
 		env: env,
 
@@ -53,10 +58,10 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 	// Pipe should be automatically closed when the process exits -> this should EOF the scanner.
 	scanner := bufio.NewScanner(pipe)
 
-	buf := make([]byte, maxScanCapacity)
+	buf := make([]byte, 0, maxScanCapacity)
 	scanner.Buffer(buf, maxScanCapacity)
 
-	// The default max buffer size is 64k - we are increasing this to 1MB.
+	// The default max buffer size is 64k - we are increasing this to 64MB.
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -97,7 +102,7 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 
 	scanErr := scanner.Err()
 	if scanErr != nil {
-		s.logger.Warnw("Scanner error",
+		s.logger.Errorw("Scanner error",
 			"error", scanErr,
 		)
 	}
@@ -200,6 +205,9 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		}
 
 		newProc.Stdin = &stdin
+
+		// We need to wait for the clock to sync before we start the process.
+		s.clock.Wait()
 
 		if startErr := newProc.cmd.Start(); startErr != nil {
 			s.processes.Remove(newProc.ID)

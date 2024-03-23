@@ -14,6 +14,7 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/accesstoken"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envalias"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/predicate"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/team"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/teamapikey"
@@ -35,6 +36,7 @@ const (
 	TypeAccessToken = "AccessToken"
 	TypeEnv         = "Env"
 	TypeEnvAlias    = "EnvAlias"
+	TypeEnvBuild    = "EnvBuild"
 	TypeTeam        = "Team"
 	TypeTeamAPIKey  = "TeamAPIKey"
 	TypeTier        = "Tier"
@@ -485,38 +487,29 @@ func (m *AccessTokenMutation) ResetEdge(name string) error {
 // EnvMutation represents an operation that mutates the Env nodes in the graph.
 type EnvMutation struct {
 	config
-	op                    Op
-	typ                   string
-	id                    *string
-	created_at            *time.Time
-	updated_at            *time.Time
-	dockerfile            *string
-	public                *bool
-	build_id              *uuid.UUID
-	build_count           *int32
-	addbuild_count        *int32
-	spawn_count           *int64
-	addspawn_count        *int64
-	last_spawned_at       *time.Time
-	vcpu                  *int64
-	addvcpu               *int64
-	ram_mb                *int64
-	addram_mb             *int64
-	free_disk_size_mb     *int64
-	addfree_disk_size_mb  *int64
-	total_disk_size_mb    *int64
-	addtotal_disk_size_mb *int64
-	kernel_version        *string
-	firecracker_version   *string
-	clearedFields         map[string]struct{}
-	team                  *uuid.UUID
-	clearedteam           bool
-	env_aliases           map[string]struct{}
-	removedenv_aliases    map[string]struct{}
-	clearedenv_aliases    bool
-	done                  bool
-	oldValue              func(context.Context) (*Env, error)
-	predicates            []predicate.Env
+	op                 Op
+	typ                string
+	id                 *string
+	created_at         *time.Time
+	updated_at         *time.Time
+	public             *bool
+	build_count        *int32
+	addbuild_count     *int32
+	spawn_count        *int64
+	addspawn_count     *int64
+	last_spawned_at    *time.Time
+	clearedFields      map[string]struct{}
+	team               *uuid.UUID
+	clearedteam        bool
+	env_aliases        map[string]struct{}
+	removedenv_aliases map[string]struct{}
+	clearedenv_aliases bool
+	builds             map[uuid.UUID]struct{}
+	removedbuilds      map[uuid.UUID]struct{}
+	clearedbuilds      bool
+	done               bool
+	oldValue           func(context.Context) (*Env, error)
+	predicates         []predicate.Env
 }
 
 var _ ent.Mutation = (*EnvMutation)(nil)
@@ -731,42 +724,6 @@ func (m *EnvMutation) ResetTeamID() {
 	m.team = nil
 }
 
-// SetDockerfile sets the "dockerfile" field.
-func (m *EnvMutation) SetDockerfile(s string) {
-	m.dockerfile = &s
-}
-
-// Dockerfile returns the value of the "dockerfile" field in the mutation.
-func (m *EnvMutation) Dockerfile() (r string, exists bool) {
-	v := m.dockerfile
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDockerfile returns the old "dockerfile" field's value of the Env entity.
-// If the Env object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldDockerfile(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDockerfile is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDockerfile requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDockerfile: %w", err)
-	}
-	return oldValue.Dockerfile, nil
-}
-
-// ResetDockerfile resets all changes to the "dockerfile" field.
-func (m *EnvMutation) ResetDockerfile() {
-	m.dockerfile = nil
-}
-
 // SetPublic sets the "public" field.
 func (m *EnvMutation) SetPublic(b bool) {
 	m.public = &b
@@ -801,42 +758,6 @@ func (m *EnvMutation) OldPublic(ctx context.Context) (v bool, err error) {
 // ResetPublic resets all changes to the "public" field.
 func (m *EnvMutation) ResetPublic() {
 	m.public = nil
-}
-
-// SetBuildID sets the "build_id" field.
-func (m *EnvMutation) SetBuildID(u uuid.UUID) {
-	m.build_id = &u
-}
-
-// BuildID returns the value of the "build_id" field in the mutation.
-func (m *EnvMutation) BuildID() (r uuid.UUID, exists bool) {
-	v := m.build_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldBuildID returns the old "build_id" field's value of the Env entity.
-// If the Env object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldBuildID(ctx context.Context) (v uuid.UUID, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldBuildID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldBuildID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldBuildID: %w", err)
-	}
-	return oldValue.BuildID, nil
-}
-
-// ResetBuildID resets all changes to the "build_id" field.
-func (m *EnvMutation) ResetBuildID() {
-	m.build_id = nil
 }
 
 // SetBuildCount sets the "build_count" field.
@@ -1000,302 +921,6 @@ func (m *EnvMutation) ResetLastSpawnedAt() {
 	delete(m.clearedFields, env.FieldLastSpawnedAt)
 }
 
-// SetVcpu sets the "vcpu" field.
-func (m *EnvMutation) SetVcpu(i int64) {
-	m.vcpu = &i
-	m.addvcpu = nil
-}
-
-// Vcpu returns the value of the "vcpu" field in the mutation.
-func (m *EnvMutation) Vcpu() (r int64, exists bool) {
-	v := m.vcpu
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldVcpu returns the old "vcpu" field's value of the Env entity.
-// If the Env object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldVcpu(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVcpu is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVcpu requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVcpu: %w", err)
-	}
-	return oldValue.Vcpu, nil
-}
-
-// AddVcpu adds i to the "vcpu" field.
-func (m *EnvMutation) AddVcpu(i int64) {
-	if m.addvcpu != nil {
-		*m.addvcpu += i
-	} else {
-		m.addvcpu = &i
-	}
-}
-
-// AddedVcpu returns the value that was added to the "vcpu" field in this mutation.
-func (m *EnvMutation) AddedVcpu() (r int64, exists bool) {
-	v := m.addvcpu
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetVcpu resets all changes to the "vcpu" field.
-func (m *EnvMutation) ResetVcpu() {
-	m.vcpu = nil
-	m.addvcpu = nil
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (m *EnvMutation) SetRAMMB(i int64) {
-	m.ram_mb = &i
-	m.addram_mb = nil
-}
-
-// RAMMB returns the value of the "ram_mb" field in the mutation.
-func (m *EnvMutation) RAMMB() (r int64, exists bool) {
-	v := m.ram_mb
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRAMMB returns the old "ram_mb" field's value of the Env entity.
-// If the Env object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldRAMMB(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRAMMB is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRAMMB requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRAMMB: %w", err)
-	}
-	return oldValue.RAMMB, nil
-}
-
-// AddRAMMB adds i to the "ram_mb" field.
-func (m *EnvMutation) AddRAMMB(i int64) {
-	if m.addram_mb != nil {
-		*m.addram_mb += i
-	} else {
-		m.addram_mb = &i
-	}
-}
-
-// AddedRAMMB returns the value that was added to the "ram_mb" field in this mutation.
-func (m *EnvMutation) AddedRAMMB() (r int64, exists bool) {
-	v := m.addram_mb
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetRAMMB resets all changes to the "ram_mb" field.
-func (m *EnvMutation) ResetRAMMB() {
-	m.ram_mb = nil
-	m.addram_mb = nil
-}
-
-// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
-func (m *EnvMutation) SetFreeDiskSizeMB(i int64) {
-	m.free_disk_size_mb = &i
-	m.addfree_disk_size_mb = nil
-}
-
-// FreeDiskSizeMB returns the value of the "free_disk_size_mb" field in the mutation.
-func (m *EnvMutation) FreeDiskSizeMB() (r int64, exists bool) {
-	v := m.free_disk_size_mb
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldFreeDiskSizeMB returns the old "free_disk_size_mb" field's value of the Env entity.
-// If the Env object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldFreeDiskSizeMB(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldFreeDiskSizeMB is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldFreeDiskSizeMB requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldFreeDiskSizeMB: %w", err)
-	}
-	return oldValue.FreeDiskSizeMB, nil
-}
-
-// AddFreeDiskSizeMB adds i to the "free_disk_size_mb" field.
-func (m *EnvMutation) AddFreeDiskSizeMB(i int64) {
-	if m.addfree_disk_size_mb != nil {
-		*m.addfree_disk_size_mb += i
-	} else {
-		m.addfree_disk_size_mb = &i
-	}
-}
-
-// AddedFreeDiskSizeMB returns the value that was added to the "free_disk_size_mb" field in this mutation.
-func (m *EnvMutation) AddedFreeDiskSizeMB() (r int64, exists bool) {
-	v := m.addfree_disk_size_mb
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetFreeDiskSizeMB resets all changes to the "free_disk_size_mb" field.
-func (m *EnvMutation) ResetFreeDiskSizeMB() {
-	m.free_disk_size_mb = nil
-	m.addfree_disk_size_mb = nil
-}
-
-// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
-func (m *EnvMutation) SetTotalDiskSizeMB(i int64) {
-	m.total_disk_size_mb = &i
-	m.addtotal_disk_size_mb = nil
-}
-
-// TotalDiskSizeMB returns the value of the "total_disk_size_mb" field in the mutation.
-func (m *EnvMutation) TotalDiskSizeMB() (r int64, exists bool) {
-	v := m.total_disk_size_mb
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTotalDiskSizeMB returns the old "total_disk_size_mb" field's value of the Env entity.
-// If the Env object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldTotalDiskSizeMB(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTotalDiskSizeMB is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTotalDiskSizeMB requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTotalDiskSizeMB: %w", err)
-	}
-	return oldValue.TotalDiskSizeMB, nil
-}
-
-// AddTotalDiskSizeMB adds i to the "total_disk_size_mb" field.
-func (m *EnvMutation) AddTotalDiskSizeMB(i int64) {
-	if m.addtotal_disk_size_mb != nil {
-		*m.addtotal_disk_size_mb += i
-	} else {
-		m.addtotal_disk_size_mb = &i
-	}
-}
-
-// AddedTotalDiskSizeMB returns the value that was added to the "total_disk_size_mb" field in this mutation.
-func (m *EnvMutation) AddedTotalDiskSizeMB() (r int64, exists bool) {
-	v := m.addtotal_disk_size_mb
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetTotalDiskSizeMB resets all changes to the "total_disk_size_mb" field.
-func (m *EnvMutation) ResetTotalDiskSizeMB() {
-	m.total_disk_size_mb = nil
-	m.addtotal_disk_size_mb = nil
-}
-
-// SetKernelVersion sets the "kernel_version" field.
-func (m *EnvMutation) SetKernelVersion(s string) {
-	m.kernel_version = &s
-}
-
-// KernelVersion returns the value of the "kernel_version" field in the mutation.
-func (m *EnvMutation) KernelVersion() (r string, exists bool) {
-	v := m.kernel_version
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldKernelVersion returns the old "kernel_version" field's value of the Env entity.
-// If the Env object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldKernelVersion(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldKernelVersion is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldKernelVersion requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldKernelVersion: %w", err)
-	}
-	return oldValue.KernelVersion, nil
-}
-
-// ResetKernelVersion resets all changes to the "kernel_version" field.
-func (m *EnvMutation) ResetKernelVersion() {
-	m.kernel_version = nil
-}
-
-// SetFirecrackerVersion sets the "firecracker_version" field.
-func (m *EnvMutation) SetFirecrackerVersion(s string) {
-	m.firecracker_version = &s
-}
-
-// FirecrackerVersion returns the value of the "firecracker_version" field in the mutation.
-func (m *EnvMutation) FirecrackerVersion() (r string, exists bool) {
-	v := m.firecracker_version
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldFirecrackerVersion returns the old "firecracker_version" field's value of the Env entity.
-// If the Env object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldFirecrackerVersion(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldFirecrackerVersion is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldFirecrackerVersion requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldFirecrackerVersion: %w", err)
-	}
-	return oldValue.FirecrackerVersion, nil
-}
-
-// ResetFirecrackerVersion resets all changes to the "firecracker_version" field.
-func (m *EnvMutation) ResetFirecrackerVersion() {
-	m.firecracker_version = nil
-}
-
 // ClearTeam clears the "team" edge to the Team entity.
 func (m *EnvMutation) ClearTeam() {
 	m.clearedteam = true
@@ -1377,6 +1002,60 @@ func (m *EnvMutation) ResetEnvAliases() {
 	m.removedenv_aliases = nil
 }
 
+// AddBuildIDs adds the "builds" edge to the EnvBuild entity by ids.
+func (m *EnvMutation) AddBuildIDs(ids ...uuid.UUID) {
+	if m.builds == nil {
+		m.builds = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.builds[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBuilds clears the "builds" edge to the EnvBuild entity.
+func (m *EnvMutation) ClearBuilds() {
+	m.clearedbuilds = true
+}
+
+// BuildsCleared reports if the "builds" edge to the EnvBuild entity was cleared.
+func (m *EnvMutation) BuildsCleared() bool {
+	return m.clearedbuilds
+}
+
+// RemoveBuildIDs removes the "builds" edge to the EnvBuild entity by IDs.
+func (m *EnvMutation) RemoveBuildIDs(ids ...uuid.UUID) {
+	if m.removedbuilds == nil {
+		m.removedbuilds = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.builds, ids[i])
+		m.removedbuilds[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBuilds returns the removed IDs of the "builds" edge to the EnvBuild entity.
+func (m *EnvMutation) RemovedBuildsIDs() (ids []uuid.UUID) {
+	for id := range m.removedbuilds {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BuildsIDs returns the "builds" edge IDs in the mutation.
+func (m *EnvMutation) BuildsIDs() (ids []uuid.UUID) {
+	for id := range m.builds {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBuilds resets all changes to the "builds" edge.
+func (m *EnvMutation) ResetBuilds() {
+	m.builds = nil
+	m.clearedbuilds = false
+	m.removedbuilds = nil
+}
+
 // Where appends a list predicates to the EnvMutation builder.
 func (m *EnvMutation) Where(ps ...predicate.Env) {
 	m.predicates = append(m.predicates, ps...)
@@ -1411,7 +1090,7 @@ func (m *EnvMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, env.FieldCreatedAt)
 	}
@@ -1421,14 +1100,8 @@ func (m *EnvMutation) Fields() []string {
 	if m.team != nil {
 		fields = append(fields, env.FieldTeamID)
 	}
-	if m.dockerfile != nil {
-		fields = append(fields, env.FieldDockerfile)
-	}
 	if m.public != nil {
 		fields = append(fields, env.FieldPublic)
-	}
-	if m.build_id != nil {
-		fields = append(fields, env.FieldBuildID)
 	}
 	if m.build_count != nil {
 		fields = append(fields, env.FieldBuildCount)
@@ -1438,24 +1111,6 @@ func (m *EnvMutation) Fields() []string {
 	}
 	if m.last_spawned_at != nil {
 		fields = append(fields, env.FieldLastSpawnedAt)
-	}
-	if m.vcpu != nil {
-		fields = append(fields, env.FieldVcpu)
-	}
-	if m.ram_mb != nil {
-		fields = append(fields, env.FieldRAMMB)
-	}
-	if m.free_disk_size_mb != nil {
-		fields = append(fields, env.FieldFreeDiskSizeMB)
-	}
-	if m.total_disk_size_mb != nil {
-		fields = append(fields, env.FieldTotalDiskSizeMB)
-	}
-	if m.kernel_version != nil {
-		fields = append(fields, env.FieldKernelVersion)
-	}
-	if m.firecracker_version != nil {
-		fields = append(fields, env.FieldFirecrackerVersion)
 	}
 	return fields
 }
@@ -1471,30 +1126,14 @@ func (m *EnvMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case env.FieldTeamID:
 		return m.TeamID()
-	case env.FieldDockerfile:
-		return m.Dockerfile()
 	case env.FieldPublic:
 		return m.Public()
-	case env.FieldBuildID:
-		return m.BuildID()
 	case env.FieldBuildCount:
 		return m.BuildCount()
 	case env.FieldSpawnCount:
 		return m.SpawnCount()
 	case env.FieldLastSpawnedAt:
 		return m.LastSpawnedAt()
-	case env.FieldVcpu:
-		return m.Vcpu()
-	case env.FieldRAMMB:
-		return m.RAMMB()
-	case env.FieldFreeDiskSizeMB:
-		return m.FreeDiskSizeMB()
-	case env.FieldTotalDiskSizeMB:
-		return m.TotalDiskSizeMB()
-	case env.FieldKernelVersion:
-		return m.KernelVersion()
-	case env.FieldFirecrackerVersion:
-		return m.FirecrackerVersion()
 	}
 	return nil, false
 }
@@ -1510,30 +1149,14 @@ func (m *EnvMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldUpdatedAt(ctx)
 	case env.FieldTeamID:
 		return m.OldTeamID(ctx)
-	case env.FieldDockerfile:
-		return m.OldDockerfile(ctx)
 	case env.FieldPublic:
 		return m.OldPublic(ctx)
-	case env.FieldBuildID:
-		return m.OldBuildID(ctx)
 	case env.FieldBuildCount:
 		return m.OldBuildCount(ctx)
 	case env.FieldSpawnCount:
 		return m.OldSpawnCount(ctx)
 	case env.FieldLastSpawnedAt:
 		return m.OldLastSpawnedAt(ctx)
-	case env.FieldVcpu:
-		return m.OldVcpu(ctx)
-	case env.FieldRAMMB:
-		return m.OldRAMMB(ctx)
-	case env.FieldFreeDiskSizeMB:
-		return m.OldFreeDiskSizeMB(ctx)
-	case env.FieldTotalDiskSizeMB:
-		return m.OldTotalDiskSizeMB(ctx)
-	case env.FieldKernelVersion:
-		return m.OldKernelVersion(ctx)
-	case env.FieldFirecrackerVersion:
-		return m.OldFirecrackerVersion(ctx)
 	}
 	return nil, fmt.Errorf("unknown Env field %s", name)
 }
@@ -1564,26 +1187,12 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTeamID(v)
 		return nil
-	case env.FieldDockerfile:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDockerfile(v)
-		return nil
 	case env.FieldPublic:
 		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPublic(v)
-		return nil
-	case env.FieldBuildID:
-		v, ok := value.(uuid.UUID)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetBuildID(v)
 		return nil
 	case env.FieldBuildCount:
 		v, ok := value.(int32)
@@ -1606,48 +1215,6 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastSpawnedAt(v)
 		return nil
-	case env.FieldVcpu:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVcpu(v)
-		return nil
-	case env.FieldRAMMB:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRAMMB(v)
-		return nil
-	case env.FieldFreeDiskSizeMB:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetFreeDiskSizeMB(v)
-		return nil
-	case env.FieldTotalDiskSizeMB:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTotalDiskSizeMB(v)
-		return nil
-	case env.FieldKernelVersion:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetKernelVersion(v)
-		return nil
-	case env.FieldFirecrackerVersion:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetFirecrackerVersion(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)
 }
@@ -1662,18 +1229,6 @@ func (m *EnvMutation) AddedFields() []string {
 	if m.addspawn_count != nil {
 		fields = append(fields, env.FieldSpawnCount)
 	}
-	if m.addvcpu != nil {
-		fields = append(fields, env.FieldVcpu)
-	}
-	if m.addram_mb != nil {
-		fields = append(fields, env.FieldRAMMB)
-	}
-	if m.addfree_disk_size_mb != nil {
-		fields = append(fields, env.FieldFreeDiskSizeMB)
-	}
-	if m.addtotal_disk_size_mb != nil {
-		fields = append(fields, env.FieldTotalDiskSizeMB)
-	}
 	return fields
 }
 
@@ -1686,14 +1241,6 @@ func (m *EnvMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedBuildCount()
 	case env.FieldSpawnCount:
 		return m.AddedSpawnCount()
-	case env.FieldVcpu:
-		return m.AddedVcpu()
-	case env.FieldRAMMB:
-		return m.AddedRAMMB()
-	case env.FieldFreeDiskSizeMB:
-		return m.AddedFreeDiskSizeMB()
-	case env.FieldTotalDiskSizeMB:
-		return m.AddedTotalDiskSizeMB()
 	}
 	return nil, false
 }
@@ -1716,34 +1263,6 @@ func (m *EnvMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSpawnCount(v)
-		return nil
-	case env.FieldVcpu:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddVcpu(v)
-		return nil
-	case env.FieldRAMMB:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddRAMMB(v)
-		return nil
-	case env.FieldFreeDiskSizeMB:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddFreeDiskSizeMB(v)
-		return nil
-	case env.FieldTotalDiskSizeMB:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddTotalDiskSizeMB(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Env numeric field %s", name)
@@ -1790,14 +1309,8 @@ func (m *EnvMutation) ResetField(name string) error {
 	case env.FieldTeamID:
 		m.ResetTeamID()
 		return nil
-	case env.FieldDockerfile:
-		m.ResetDockerfile()
-		return nil
 	case env.FieldPublic:
 		m.ResetPublic()
-		return nil
-	case env.FieldBuildID:
-		m.ResetBuildID()
 		return nil
 	case env.FieldBuildCount:
 		m.ResetBuildCount()
@@ -1808,36 +1321,21 @@ func (m *EnvMutation) ResetField(name string) error {
 	case env.FieldLastSpawnedAt:
 		m.ResetLastSpawnedAt()
 		return nil
-	case env.FieldVcpu:
-		m.ResetVcpu()
-		return nil
-	case env.FieldRAMMB:
-		m.ResetRAMMB()
-		return nil
-	case env.FieldFreeDiskSizeMB:
-		m.ResetFreeDiskSizeMB()
-		return nil
-	case env.FieldTotalDiskSizeMB:
-		m.ResetTotalDiskSizeMB()
-		return nil
-	case env.FieldKernelVersion:
-		m.ResetKernelVersion()
-		return nil
-	case env.FieldFirecrackerVersion:
-		m.ResetFirecrackerVersion()
-		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EnvMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.team != nil {
 		edges = append(edges, env.EdgeTeam)
 	}
 	if m.env_aliases != nil {
 		edges = append(edges, env.EdgeEnvAliases)
+	}
+	if m.builds != nil {
+		edges = append(edges, env.EdgeBuilds)
 	}
 	return edges
 }
@@ -1856,15 +1354,24 @@ func (m *EnvMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case env.EdgeBuilds:
+		ids := make([]ent.Value, 0, len(m.builds))
+		for id := range m.builds {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EnvMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedenv_aliases != nil {
 		edges = append(edges, env.EdgeEnvAliases)
+	}
+	if m.removedbuilds != nil {
+		edges = append(edges, env.EdgeBuilds)
 	}
 	return edges
 }
@@ -1879,18 +1386,27 @@ func (m *EnvMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case env.EdgeBuilds:
+		ids := make([]ent.Value, 0, len(m.removedbuilds))
+		for id := range m.removedbuilds {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EnvMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedteam {
 		edges = append(edges, env.EdgeTeam)
 	}
 	if m.clearedenv_aliases {
 		edges = append(edges, env.EdgeEnvAliases)
+	}
+	if m.clearedbuilds {
+		edges = append(edges, env.EdgeBuilds)
 	}
 	return edges
 }
@@ -1903,6 +1419,8 @@ func (m *EnvMutation) EdgeCleared(name string) bool {
 		return m.clearedteam
 	case env.EdgeEnvAliases:
 		return m.clearedenv_aliases
+	case env.EdgeBuilds:
+		return m.clearedbuilds
 	}
 	return false
 }
@@ -1928,6 +1446,9 @@ func (m *EnvMutation) ResetEdge(name string) error {
 	case env.EdgeEnvAliases:
 		m.ResetEnvAliases()
 		return nil
+	case env.EdgeBuilds:
+		m.ResetBuilds()
+		return nil
 	}
 	return fmt.Errorf("unknown Env edge %s", name)
 }
@@ -1938,7 +1459,7 @@ type EnvAliasMutation struct {
 	op            Op
 	typ           string
 	id            *string
-	is_name       *bool
+	is_renamable  *bool
 	clearedFields map[string]struct{}
 	env           *string
 	clearedenv    bool
@@ -2068,7 +1589,7 @@ func (m *EnvAliasMutation) EnvID() (r string, exists bool) {
 // OldEnvID returns the old "env_id" field's value of the EnvAlias entity.
 // If the EnvAlias object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvAliasMutation) OldEnvID(ctx context.Context) (v *string, err error) {
+func (m *EnvAliasMutation) OldEnvID(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldEnvID is only allowed on UpdateOne operations")
 	}
@@ -2082,58 +1603,45 @@ func (m *EnvAliasMutation) OldEnvID(ctx context.Context) (v *string, err error) 
 	return oldValue.EnvID, nil
 }
 
-// ClearEnvID clears the value of the "env_id" field.
-func (m *EnvAliasMutation) ClearEnvID() {
-	m.env = nil
-	m.clearedFields[envalias.FieldEnvID] = struct{}{}
-}
-
-// EnvIDCleared returns if the "env_id" field was cleared in this mutation.
-func (m *EnvAliasMutation) EnvIDCleared() bool {
-	_, ok := m.clearedFields[envalias.FieldEnvID]
-	return ok
-}
-
 // ResetEnvID resets all changes to the "env_id" field.
 func (m *EnvAliasMutation) ResetEnvID() {
 	m.env = nil
-	delete(m.clearedFields, envalias.FieldEnvID)
 }
 
-// SetIsName sets the "is_name" field.
-func (m *EnvAliasMutation) SetIsName(b bool) {
-	m.is_name = &b
+// SetIsRenamable sets the "is_renamable" field.
+func (m *EnvAliasMutation) SetIsRenamable(b bool) {
+	m.is_renamable = &b
 }
 
-// IsName returns the value of the "is_name" field in the mutation.
-func (m *EnvAliasMutation) IsName() (r bool, exists bool) {
-	v := m.is_name
+// IsRenamable returns the value of the "is_renamable" field in the mutation.
+func (m *EnvAliasMutation) IsRenamable() (r bool, exists bool) {
+	v := m.is_renamable
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldIsName returns the old "is_name" field's value of the EnvAlias entity.
+// OldIsRenamable returns the old "is_renamable" field's value of the EnvAlias entity.
 // If the EnvAlias object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvAliasMutation) OldIsName(ctx context.Context) (v bool, err error) {
+func (m *EnvAliasMutation) OldIsRenamable(ctx context.Context) (v bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsName is only allowed on UpdateOne operations")
+		return v, errors.New("OldIsRenamable is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsName requires an ID field in the mutation")
+		return v, errors.New("OldIsRenamable requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsName: %w", err)
+		return v, fmt.Errorf("querying old value for OldIsRenamable: %w", err)
 	}
-	return oldValue.IsName, nil
+	return oldValue.IsRenamable, nil
 }
 
-// ResetIsName resets all changes to the "is_name" field.
-func (m *EnvAliasMutation) ResetIsName() {
-	m.is_name = nil
+// ResetIsRenamable resets all changes to the "is_renamable" field.
+func (m *EnvAliasMutation) ResetIsRenamable() {
+	m.is_renamable = nil
 }
 
 // ClearEnv clears the "env" edge to the Env entity.
@@ -2144,7 +1652,7 @@ func (m *EnvAliasMutation) ClearEnv() {
 
 // EnvCleared reports if the "env" edge to the Env entity was cleared.
 func (m *EnvAliasMutation) EnvCleared() bool {
-	return m.EnvIDCleared() || m.clearedenv
+	return m.clearedenv
 }
 
 // EnvIDs returns the "env" edge IDs in the mutation.
@@ -2201,8 +1709,8 @@ func (m *EnvAliasMutation) Fields() []string {
 	if m.env != nil {
 		fields = append(fields, envalias.FieldEnvID)
 	}
-	if m.is_name != nil {
-		fields = append(fields, envalias.FieldIsName)
+	if m.is_renamable != nil {
+		fields = append(fields, envalias.FieldIsRenamable)
 	}
 	return fields
 }
@@ -2214,8 +1722,8 @@ func (m *EnvAliasMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case envalias.FieldEnvID:
 		return m.EnvID()
-	case envalias.FieldIsName:
-		return m.IsName()
+	case envalias.FieldIsRenamable:
+		return m.IsRenamable()
 	}
 	return nil, false
 }
@@ -2227,8 +1735,8 @@ func (m *EnvAliasMutation) OldField(ctx context.Context, name string) (ent.Value
 	switch name {
 	case envalias.FieldEnvID:
 		return m.OldEnvID(ctx)
-	case envalias.FieldIsName:
-		return m.OldIsName(ctx)
+	case envalias.FieldIsRenamable:
+		return m.OldIsRenamable(ctx)
 	}
 	return nil, fmt.Errorf("unknown EnvAlias field %s", name)
 }
@@ -2245,12 +1753,12 @@ func (m *EnvAliasMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEnvID(v)
 		return nil
-	case envalias.FieldIsName:
+	case envalias.FieldIsRenamable:
 		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetIsName(v)
+		m.SetIsRenamable(v)
 		return nil
 	}
 	return fmt.Errorf("unknown EnvAlias field %s", name)
@@ -2281,11 +1789,7 @@ func (m *EnvAliasMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *EnvAliasMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(envalias.FieldEnvID) {
-		fields = append(fields, envalias.FieldEnvID)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2298,11 +1802,6 @@ func (m *EnvAliasMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *EnvAliasMutation) ClearField(name string) error {
-	switch name {
-	case envalias.FieldEnvID:
-		m.ClearEnvID()
-		return nil
-	}
 	return fmt.Errorf("unknown EnvAlias nullable field %s", name)
 }
 
@@ -2313,8 +1812,8 @@ func (m *EnvAliasMutation) ResetField(name string) error {
 	case envalias.FieldEnvID:
 		m.ResetEnvID()
 		return nil
-	case envalias.FieldIsName:
-		m.ResetIsName()
+	case envalias.FieldIsRenamable:
+		m.ResetIsRenamable()
 		return nil
 	}
 	return fmt.Errorf("unknown EnvAlias field %s", name)
@@ -2392,6 +1891,1274 @@ func (m *EnvAliasMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown EnvAlias edge %s", name)
+}
+
+// EnvBuildMutation represents an operation that mutates the EnvBuild nodes in the graph.
+type EnvBuildMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	created_at            *time.Time
+	updated_at            *time.Time
+	finished_at           *time.Time
+	status                *envbuild.Status
+	dockerfile            *string
+	start_cmd             *string
+	vcpu                  *int64
+	addvcpu               *int64
+	ram_mb                *int64
+	addram_mb             *int64
+	free_disk_size_mb     *int64
+	addfree_disk_size_mb  *int64
+	total_disk_size_mb    *int64
+	addtotal_disk_size_mb *int64
+	kernel_version        *string
+	firecracker_version   *string
+	clearedFields         map[string]struct{}
+	env                   *string
+	clearedenv            bool
+	done                  bool
+	oldValue              func(context.Context) (*EnvBuild, error)
+	predicates            []predicate.EnvBuild
+}
+
+var _ ent.Mutation = (*EnvBuildMutation)(nil)
+
+// envbuildOption allows management of the mutation configuration using functional options.
+type envbuildOption func(*EnvBuildMutation)
+
+// newEnvBuildMutation creates new mutation for the EnvBuild entity.
+func newEnvBuildMutation(c config, op Op, opts ...envbuildOption) *EnvBuildMutation {
+	m := &EnvBuildMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeEnvBuild,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withEnvBuildID sets the ID field of the mutation.
+func withEnvBuildID(id uuid.UUID) envbuildOption {
+	return func(m *EnvBuildMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *EnvBuild
+		)
+		m.oldValue = func(ctx context.Context) (*EnvBuild, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().EnvBuild.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withEnvBuild sets the old EnvBuild of the mutation.
+func withEnvBuild(node *EnvBuild) envbuildOption {
+	return func(m *EnvBuildMutation) {
+		m.oldValue = func(context.Context) (*EnvBuild, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m EnvBuildMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m EnvBuildMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("models: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of EnvBuild entities.
+func (m *EnvBuildMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *EnvBuildMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *EnvBuildMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().EnvBuild.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *EnvBuildMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *EnvBuildMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *EnvBuildMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *EnvBuildMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *EnvBuildMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *EnvBuildMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetFinishedAt sets the "finished_at" field.
+func (m *EnvBuildMutation) SetFinishedAt(t time.Time) {
+	m.finished_at = &t
+}
+
+// FinishedAt returns the value of the "finished_at" field in the mutation.
+func (m *EnvBuildMutation) FinishedAt() (r time.Time, exists bool) {
+	v := m.finished_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinishedAt returns the old "finished_at" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldFinishedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinishedAt: %w", err)
+	}
+	return oldValue.FinishedAt, nil
+}
+
+// ClearFinishedAt clears the value of the "finished_at" field.
+func (m *EnvBuildMutation) ClearFinishedAt() {
+	m.finished_at = nil
+	m.clearedFields[envbuild.FieldFinishedAt] = struct{}{}
+}
+
+// FinishedAtCleared returns if the "finished_at" field was cleared in this mutation.
+func (m *EnvBuildMutation) FinishedAtCleared() bool {
+	_, ok := m.clearedFields[envbuild.FieldFinishedAt]
+	return ok
+}
+
+// ResetFinishedAt resets all changes to the "finished_at" field.
+func (m *EnvBuildMutation) ResetFinishedAt() {
+	m.finished_at = nil
+	delete(m.clearedFields, envbuild.FieldFinishedAt)
+}
+
+// SetEnvID sets the "env_id" field.
+func (m *EnvBuildMutation) SetEnvID(s string) {
+	m.env = &s
+}
+
+// EnvID returns the value of the "env_id" field in the mutation.
+func (m *EnvBuildMutation) EnvID() (r string, exists bool) {
+	v := m.env
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnvID returns the old "env_id" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldEnvID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnvID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnvID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnvID: %w", err)
+	}
+	return oldValue.EnvID, nil
+}
+
+// ClearEnvID clears the value of the "env_id" field.
+func (m *EnvBuildMutation) ClearEnvID() {
+	m.env = nil
+	m.clearedFields[envbuild.FieldEnvID] = struct{}{}
+}
+
+// EnvIDCleared returns if the "env_id" field was cleared in this mutation.
+func (m *EnvBuildMutation) EnvIDCleared() bool {
+	_, ok := m.clearedFields[envbuild.FieldEnvID]
+	return ok
+}
+
+// ResetEnvID resets all changes to the "env_id" field.
+func (m *EnvBuildMutation) ResetEnvID() {
+	m.env = nil
+	delete(m.clearedFields, envbuild.FieldEnvID)
+}
+
+// SetStatus sets the "status" field.
+func (m *EnvBuildMutation) SetStatus(e envbuild.Status) {
+	m.status = &e
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *EnvBuildMutation) Status() (r envbuild.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldStatus(ctx context.Context) (v envbuild.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *EnvBuildMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetDockerfile sets the "dockerfile" field.
+func (m *EnvBuildMutation) SetDockerfile(s string) {
+	m.dockerfile = &s
+}
+
+// Dockerfile returns the value of the "dockerfile" field in the mutation.
+func (m *EnvBuildMutation) Dockerfile() (r string, exists bool) {
+	v := m.dockerfile
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDockerfile returns the old "dockerfile" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldDockerfile(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDockerfile is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDockerfile requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDockerfile: %w", err)
+	}
+	return oldValue.Dockerfile, nil
+}
+
+// ClearDockerfile clears the value of the "dockerfile" field.
+func (m *EnvBuildMutation) ClearDockerfile() {
+	m.dockerfile = nil
+	m.clearedFields[envbuild.FieldDockerfile] = struct{}{}
+}
+
+// DockerfileCleared returns if the "dockerfile" field was cleared in this mutation.
+func (m *EnvBuildMutation) DockerfileCleared() bool {
+	_, ok := m.clearedFields[envbuild.FieldDockerfile]
+	return ok
+}
+
+// ResetDockerfile resets all changes to the "dockerfile" field.
+func (m *EnvBuildMutation) ResetDockerfile() {
+	m.dockerfile = nil
+	delete(m.clearedFields, envbuild.FieldDockerfile)
+}
+
+// SetStartCmd sets the "start_cmd" field.
+func (m *EnvBuildMutation) SetStartCmd(s string) {
+	m.start_cmd = &s
+}
+
+// StartCmd returns the value of the "start_cmd" field in the mutation.
+func (m *EnvBuildMutation) StartCmd() (r string, exists bool) {
+	v := m.start_cmd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartCmd returns the old "start_cmd" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldStartCmd(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartCmd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartCmd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartCmd: %w", err)
+	}
+	return oldValue.StartCmd, nil
+}
+
+// ClearStartCmd clears the value of the "start_cmd" field.
+func (m *EnvBuildMutation) ClearStartCmd() {
+	m.start_cmd = nil
+	m.clearedFields[envbuild.FieldStartCmd] = struct{}{}
+}
+
+// StartCmdCleared returns if the "start_cmd" field was cleared in this mutation.
+func (m *EnvBuildMutation) StartCmdCleared() bool {
+	_, ok := m.clearedFields[envbuild.FieldStartCmd]
+	return ok
+}
+
+// ResetStartCmd resets all changes to the "start_cmd" field.
+func (m *EnvBuildMutation) ResetStartCmd() {
+	m.start_cmd = nil
+	delete(m.clearedFields, envbuild.FieldStartCmd)
+}
+
+// SetVcpu sets the "vcpu" field.
+func (m *EnvBuildMutation) SetVcpu(i int64) {
+	m.vcpu = &i
+	m.addvcpu = nil
+}
+
+// Vcpu returns the value of the "vcpu" field in the mutation.
+func (m *EnvBuildMutation) Vcpu() (r int64, exists bool) {
+	v := m.vcpu
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVcpu returns the old "vcpu" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldVcpu(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVcpu is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVcpu requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVcpu: %w", err)
+	}
+	return oldValue.Vcpu, nil
+}
+
+// AddVcpu adds i to the "vcpu" field.
+func (m *EnvBuildMutation) AddVcpu(i int64) {
+	if m.addvcpu != nil {
+		*m.addvcpu += i
+	} else {
+		m.addvcpu = &i
+	}
+}
+
+// AddedVcpu returns the value that was added to the "vcpu" field in this mutation.
+func (m *EnvBuildMutation) AddedVcpu() (r int64, exists bool) {
+	v := m.addvcpu
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVcpu resets all changes to the "vcpu" field.
+func (m *EnvBuildMutation) ResetVcpu() {
+	m.vcpu = nil
+	m.addvcpu = nil
+}
+
+// SetRAMMB sets the "ram_mb" field.
+func (m *EnvBuildMutation) SetRAMMB(i int64) {
+	m.ram_mb = &i
+	m.addram_mb = nil
+}
+
+// RAMMB returns the value of the "ram_mb" field in the mutation.
+func (m *EnvBuildMutation) RAMMB() (r int64, exists bool) {
+	v := m.ram_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRAMMB returns the old "ram_mb" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldRAMMB(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRAMMB is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRAMMB requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRAMMB: %w", err)
+	}
+	return oldValue.RAMMB, nil
+}
+
+// AddRAMMB adds i to the "ram_mb" field.
+func (m *EnvBuildMutation) AddRAMMB(i int64) {
+	if m.addram_mb != nil {
+		*m.addram_mb += i
+	} else {
+		m.addram_mb = &i
+	}
+}
+
+// AddedRAMMB returns the value that was added to the "ram_mb" field in this mutation.
+func (m *EnvBuildMutation) AddedRAMMB() (r int64, exists bool) {
+	v := m.addram_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRAMMB resets all changes to the "ram_mb" field.
+func (m *EnvBuildMutation) ResetRAMMB() {
+	m.ram_mb = nil
+	m.addram_mb = nil
+}
+
+// SetFreeDiskSizeMB sets the "free_disk_size_mb" field.
+func (m *EnvBuildMutation) SetFreeDiskSizeMB(i int64) {
+	m.free_disk_size_mb = &i
+	m.addfree_disk_size_mb = nil
+}
+
+// FreeDiskSizeMB returns the value of the "free_disk_size_mb" field in the mutation.
+func (m *EnvBuildMutation) FreeDiskSizeMB() (r int64, exists bool) {
+	v := m.free_disk_size_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFreeDiskSizeMB returns the old "free_disk_size_mb" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldFreeDiskSizeMB(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFreeDiskSizeMB is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFreeDiskSizeMB requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFreeDiskSizeMB: %w", err)
+	}
+	return oldValue.FreeDiskSizeMB, nil
+}
+
+// AddFreeDiskSizeMB adds i to the "free_disk_size_mb" field.
+func (m *EnvBuildMutation) AddFreeDiskSizeMB(i int64) {
+	if m.addfree_disk_size_mb != nil {
+		*m.addfree_disk_size_mb += i
+	} else {
+		m.addfree_disk_size_mb = &i
+	}
+}
+
+// AddedFreeDiskSizeMB returns the value that was added to the "free_disk_size_mb" field in this mutation.
+func (m *EnvBuildMutation) AddedFreeDiskSizeMB() (r int64, exists bool) {
+	v := m.addfree_disk_size_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFreeDiskSizeMB resets all changes to the "free_disk_size_mb" field.
+func (m *EnvBuildMutation) ResetFreeDiskSizeMB() {
+	m.free_disk_size_mb = nil
+	m.addfree_disk_size_mb = nil
+}
+
+// SetTotalDiskSizeMB sets the "total_disk_size_mb" field.
+func (m *EnvBuildMutation) SetTotalDiskSizeMB(i int64) {
+	m.total_disk_size_mb = &i
+	m.addtotal_disk_size_mb = nil
+}
+
+// TotalDiskSizeMB returns the value of the "total_disk_size_mb" field in the mutation.
+func (m *EnvBuildMutation) TotalDiskSizeMB() (r int64, exists bool) {
+	v := m.total_disk_size_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalDiskSizeMB returns the old "total_disk_size_mb" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldTotalDiskSizeMB(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalDiskSizeMB is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalDiskSizeMB requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalDiskSizeMB: %w", err)
+	}
+	return oldValue.TotalDiskSizeMB, nil
+}
+
+// AddTotalDiskSizeMB adds i to the "total_disk_size_mb" field.
+func (m *EnvBuildMutation) AddTotalDiskSizeMB(i int64) {
+	if m.addtotal_disk_size_mb != nil {
+		*m.addtotal_disk_size_mb += i
+	} else {
+		m.addtotal_disk_size_mb = &i
+	}
+}
+
+// AddedTotalDiskSizeMB returns the value that was added to the "total_disk_size_mb" field in this mutation.
+func (m *EnvBuildMutation) AddedTotalDiskSizeMB() (r int64, exists bool) {
+	v := m.addtotal_disk_size_mb
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTotalDiskSizeMB clears the value of the "total_disk_size_mb" field.
+func (m *EnvBuildMutation) ClearTotalDiskSizeMB() {
+	m.total_disk_size_mb = nil
+	m.addtotal_disk_size_mb = nil
+	m.clearedFields[envbuild.FieldTotalDiskSizeMB] = struct{}{}
+}
+
+// TotalDiskSizeMBCleared returns if the "total_disk_size_mb" field was cleared in this mutation.
+func (m *EnvBuildMutation) TotalDiskSizeMBCleared() bool {
+	_, ok := m.clearedFields[envbuild.FieldTotalDiskSizeMB]
+	return ok
+}
+
+// ResetTotalDiskSizeMB resets all changes to the "total_disk_size_mb" field.
+func (m *EnvBuildMutation) ResetTotalDiskSizeMB() {
+	m.total_disk_size_mb = nil
+	m.addtotal_disk_size_mb = nil
+	delete(m.clearedFields, envbuild.FieldTotalDiskSizeMB)
+}
+
+// SetKernelVersion sets the "kernel_version" field.
+func (m *EnvBuildMutation) SetKernelVersion(s string) {
+	m.kernel_version = &s
+}
+
+// KernelVersion returns the value of the "kernel_version" field in the mutation.
+func (m *EnvBuildMutation) KernelVersion() (r string, exists bool) {
+	v := m.kernel_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKernelVersion returns the old "kernel_version" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldKernelVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKernelVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKernelVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKernelVersion: %w", err)
+	}
+	return oldValue.KernelVersion, nil
+}
+
+// ResetKernelVersion resets all changes to the "kernel_version" field.
+func (m *EnvBuildMutation) ResetKernelVersion() {
+	m.kernel_version = nil
+}
+
+// SetFirecrackerVersion sets the "firecracker_version" field.
+func (m *EnvBuildMutation) SetFirecrackerVersion(s string) {
+	m.firecracker_version = &s
+}
+
+// FirecrackerVersion returns the value of the "firecracker_version" field in the mutation.
+func (m *EnvBuildMutation) FirecrackerVersion() (r string, exists bool) {
+	v := m.firecracker_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFirecrackerVersion returns the old "firecracker_version" field's value of the EnvBuild entity.
+// If the EnvBuild object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvBuildMutation) OldFirecrackerVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFirecrackerVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFirecrackerVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFirecrackerVersion: %w", err)
+	}
+	return oldValue.FirecrackerVersion, nil
+}
+
+// ResetFirecrackerVersion resets all changes to the "firecracker_version" field.
+func (m *EnvBuildMutation) ResetFirecrackerVersion() {
+	m.firecracker_version = nil
+}
+
+// ClearEnv clears the "env" edge to the Env entity.
+func (m *EnvBuildMutation) ClearEnv() {
+	m.clearedenv = true
+	m.clearedFields[envbuild.FieldEnvID] = struct{}{}
+}
+
+// EnvCleared reports if the "env" edge to the Env entity was cleared.
+func (m *EnvBuildMutation) EnvCleared() bool {
+	return m.EnvIDCleared() || m.clearedenv
+}
+
+// EnvIDs returns the "env" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EnvID instead. It exists only for internal usage by the builders.
+func (m *EnvBuildMutation) EnvIDs() (ids []string) {
+	if id := m.env; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEnv resets all changes to the "env" edge.
+func (m *EnvBuildMutation) ResetEnv() {
+	m.env = nil
+	m.clearedenv = false
+}
+
+// Where appends a list predicates to the EnvBuildMutation builder.
+func (m *EnvBuildMutation) Where(ps ...predicate.EnvBuild) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the EnvBuildMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *EnvBuildMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.EnvBuild, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *EnvBuildMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *EnvBuildMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (EnvBuild).
+func (m *EnvBuildMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *EnvBuildMutation) Fields() []string {
+	fields := make([]string, 0, 13)
+	if m.created_at != nil {
+		fields = append(fields, envbuild.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, envbuild.FieldUpdatedAt)
+	}
+	if m.finished_at != nil {
+		fields = append(fields, envbuild.FieldFinishedAt)
+	}
+	if m.env != nil {
+		fields = append(fields, envbuild.FieldEnvID)
+	}
+	if m.status != nil {
+		fields = append(fields, envbuild.FieldStatus)
+	}
+	if m.dockerfile != nil {
+		fields = append(fields, envbuild.FieldDockerfile)
+	}
+	if m.start_cmd != nil {
+		fields = append(fields, envbuild.FieldStartCmd)
+	}
+	if m.vcpu != nil {
+		fields = append(fields, envbuild.FieldVcpu)
+	}
+	if m.ram_mb != nil {
+		fields = append(fields, envbuild.FieldRAMMB)
+	}
+	if m.free_disk_size_mb != nil {
+		fields = append(fields, envbuild.FieldFreeDiskSizeMB)
+	}
+	if m.total_disk_size_mb != nil {
+		fields = append(fields, envbuild.FieldTotalDiskSizeMB)
+	}
+	if m.kernel_version != nil {
+		fields = append(fields, envbuild.FieldKernelVersion)
+	}
+	if m.firecracker_version != nil {
+		fields = append(fields, envbuild.FieldFirecrackerVersion)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *EnvBuildMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case envbuild.FieldCreatedAt:
+		return m.CreatedAt()
+	case envbuild.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case envbuild.FieldFinishedAt:
+		return m.FinishedAt()
+	case envbuild.FieldEnvID:
+		return m.EnvID()
+	case envbuild.FieldStatus:
+		return m.Status()
+	case envbuild.FieldDockerfile:
+		return m.Dockerfile()
+	case envbuild.FieldStartCmd:
+		return m.StartCmd()
+	case envbuild.FieldVcpu:
+		return m.Vcpu()
+	case envbuild.FieldRAMMB:
+		return m.RAMMB()
+	case envbuild.FieldFreeDiskSizeMB:
+		return m.FreeDiskSizeMB()
+	case envbuild.FieldTotalDiskSizeMB:
+		return m.TotalDiskSizeMB()
+	case envbuild.FieldKernelVersion:
+		return m.KernelVersion()
+	case envbuild.FieldFirecrackerVersion:
+		return m.FirecrackerVersion()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *EnvBuildMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case envbuild.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case envbuild.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case envbuild.FieldFinishedAt:
+		return m.OldFinishedAt(ctx)
+	case envbuild.FieldEnvID:
+		return m.OldEnvID(ctx)
+	case envbuild.FieldStatus:
+		return m.OldStatus(ctx)
+	case envbuild.FieldDockerfile:
+		return m.OldDockerfile(ctx)
+	case envbuild.FieldStartCmd:
+		return m.OldStartCmd(ctx)
+	case envbuild.FieldVcpu:
+		return m.OldVcpu(ctx)
+	case envbuild.FieldRAMMB:
+		return m.OldRAMMB(ctx)
+	case envbuild.FieldFreeDiskSizeMB:
+		return m.OldFreeDiskSizeMB(ctx)
+	case envbuild.FieldTotalDiskSizeMB:
+		return m.OldTotalDiskSizeMB(ctx)
+	case envbuild.FieldKernelVersion:
+		return m.OldKernelVersion(ctx)
+	case envbuild.FieldFirecrackerVersion:
+		return m.OldFirecrackerVersion(ctx)
+	}
+	return nil, fmt.Errorf("unknown EnvBuild field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EnvBuildMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case envbuild.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case envbuild.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case envbuild.FieldFinishedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinishedAt(v)
+		return nil
+	case envbuild.FieldEnvID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnvID(v)
+		return nil
+	case envbuild.FieldStatus:
+		v, ok := value.(envbuild.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case envbuild.FieldDockerfile:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDockerfile(v)
+		return nil
+	case envbuild.FieldStartCmd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartCmd(v)
+		return nil
+	case envbuild.FieldVcpu:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVcpu(v)
+		return nil
+	case envbuild.FieldRAMMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRAMMB(v)
+		return nil
+	case envbuild.FieldFreeDiskSizeMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFreeDiskSizeMB(v)
+		return nil
+	case envbuild.FieldTotalDiskSizeMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalDiskSizeMB(v)
+		return nil
+	case envbuild.FieldKernelVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKernelVersion(v)
+		return nil
+	case envbuild.FieldFirecrackerVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFirecrackerVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EnvBuild field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *EnvBuildMutation) AddedFields() []string {
+	var fields []string
+	if m.addvcpu != nil {
+		fields = append(fields, envbuild.FieldVcpu)
+	}
+	if m.addram_mb != nil {
+		fields = append(fields, envbuild.FieldRAMMB)
+	}
+	if m.addfree_disk_size_mb != nil {
+		fields = append(fields, envbuild.FieldFreeDiskSizeMB)
+	}
+	if m.addtotal_disk_size_mb != nil {
+		fields = append(fields, envbuild.FieldTotalDiskSizeMB)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *EnvBuildMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case envbuild.FieldVcpu:
+		return m.AddedVcpu()
+	case envbuild.FieldRAMMB:
+		return m.AddedRAMMB()
+	case envbuild.FieldFreeDiskSizeMB:
+		return m.AddedFreeDiskSizeMB()
+	case envbuild.FieldTotalDiskSizeMB:
+		return m.AddedTotalDiskSizeMB()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EnvBuildMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case envbuild.FieldVcpu:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVcpu(v)
+		return nil
+	case envbuild.FieldRAMMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRAMMB(v)
+		return nil
+	case envbuild.FieldFreeDiskSizeMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFreeDiskSizeMB(v)
+		return nil
+	case envbuild.FieldTotalDiskSizeMB:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalDiskSizeMB(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EnvBuild numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *EnvBuildMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(envbuild.FieldFinishedAt) {
+		fields = append(fields, envbuild.FieldFinishedAt)
+	}
+	if m.FieldCleared(envbuild.FieldEnvID) {
+		fields = append(fields, envbuild.FieldEnvID)
+	}
+	if m.FieldCleared(envbuild.FieldDockerfile) {
+		fields = append(fields, envbuild.FieldDockerfile)
+	}
+	if m.FieldCleared(envbuild.FieldStartCmd) {
+		fields = append(fields, envbuild.FieldStartCmd)
+	}
+	if m.FieldCleared(envbuild.FieldTotalDiskSizeMB) {
+		fields = append(fields, envbuild.FieldTotalDiskSizeMB)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *EnvBuildMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *EnvBuildMutation) ClearField(name string) error {
+	switch name {
+	case envbuild.FieldFinishedAt:
+		m.ClearFinishedAt()
+		return nil
+	case envbuild.FieldEnvID:
+		m.ClearEnvID()
+		return nil
+	case envbuild.FieldDockerfile:
+		m.ClearDockerfile()
+		return nil
+	case envbuild.FieldStartCmd:
+		m.ClearStartCmd()
+		return nil
+	case envbuild.FieldTotalDiskSizeMB:
+		m.ClearTotalDiskSizeMB()
+		return nil
+	}
+	return fmt.Errorf("unknown EnvBuild nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *EnvBuildMutation) ResetField(name string) error {
+	switch name {
+	case envbuild.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case envbuild.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case envbuild.FieldFinishedAt:
+		m.ResetFinishedAt()
+		return nil
+	case envbuild.FieldEnvID:
+		m.ResetEnvID()
+		return nil
+	case envbuild.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case envbuild.FieldDockerfile:
+		m.ResetDockerfile()
+		return nil
+	case envbuild.FieldStartCmd:
+		m.ResetStartCmd()
+		return nil
+	case envbuild.FieldVcpu:
+		m.ResetVcpu()
+		return nil
+	case envbuild.FieldRAMMB:
+		m.ResetRAMMB()
+		return nil
+	case envbuild.FieldFreeDiskSizeMB:
+		m.ResetFreeDiskSizeMB()
+		return nil
+	case envbuild.FieldTotalDiskSizeMB:
+		m.ResetTotalDiskSizeMB()
+		return nil
+	case envbuild.FieldKernelVersion:
+		m.ResetKernelVersion()
+		return nil
+	case envbuild.FieldFirecrackerVersion:
+		m.ResetFirecrackerVersion()
+		return nil
+	}
+	return fmt.Errorf("unknown EnvBuild field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *EnvBuildMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.env != nil {
+		edges = append(edges, envbuild.EdgeEnv)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *EnvBuildMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case envbuild.EdgeEnv:
+		if id := m.env; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *EnvBuildMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *EnvBuildMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *EnvBuildMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedenv {
+		edges = append(edges, envbuild.EdgeEnv)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *EnvBuildMutation) EdgeCleared(name string) bool {
+	switch name {
+	case envbuild.EdgeEnv:
+		return m.clearedenv
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *EnvBuildMutation) ClearEdge(name string) error {
+	switch name {
+	case envbuild.EdgeEnv:
+		m.ClearEnv()
+		return nil
+	}
+	return fmt.Errorf("unknown EnvBuild unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *EnvBuildMutation) ResetEdge(name string) error {
+	switch name {
+	case envbuild.EdgeEnv:
+		m.ResetEnv()
+		return nil
+	}
+	return fmt.Errorf("unknown EnvBuild edge %s", name)
 }
 
 // TeamMutation represents an operation that mutates the Team nodes in the graph.
@@ -3974,10 +4741,6 @@ type TierMutation struct {
 	typ                     string
 	id                      *string
 	name                    *string
-	vcpu                    *int64
-	addvcpu                 *int64
-	ram_mb                  *int64
-	addram_mb               *int64
 	disk_mb                 *int64
 	adddisk_mb              *int64
 	concurrent_instances    *int64
@@ -4131,118 +4894,6 @@ func (m *TierMutation) OldName(ctx context.Context) (v string, err error) {
 // ResetName resets all changes to the "name" field.
 func (m *TierMutation) ResetName() {
 	m.name = nil
-}
-
-// SetVcpu sets the "vcpu" field.
-func (m *TierMutation) SetVcpu(i int64) {
-	m.vcpu = &i
-	m.addvcpu = nil
-}
-
-// Vcpu returns the value of the "vcpu" field in the mutation.
-func (m *TierMutation) Vcpu() (r int64, exists bool) {
-	v := m.vcpu
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldVcpu returns the old "vcpu" field's value of the Tier entity.
-// If the Tier object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TierMutation) OldVcpu(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVcpu is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVcpu requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVcpu: %w", err)
-	}
-	return oldValue.Vcpu, nil
-}
-
-// AddVcpu adds i to the "vcpu" field.
-func (m *TierMutation) AddVcpu(i int64) {
-	if m.addvcpu != nil {
-		*m.addvcpu += i
-	} else {
-		m.addvcpu = &i
-	}
-}
-
-// AddedVcpu returns the value that was added to the "vcpu" field in this mutation.
-func (m *TierMutation) AddedVcpu() (r int64, exists bool) {
-	v := m.addvcpu
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetVcpu resets all changes to the "vcpu" field.
-func (m *TierMutation) ResetVcpu() {
-	m.vcpu = nil
-	m.addvcpu = nil
-}
-
-// SetRAMMB sets the "ram_mb" field.
-func (m *TierMutation) SetRAMMB(i int64) {
-	m.ram_mb = &i
-	m.addram_mb = nil
-}
-
-// RAMMB returns the value of the "ram_mb" field in the mutation.
-func (m *TierMutation) RAMMB() (r int64, exists bool) {
-	v := m.ram_mb
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRAMMB returns the old "ram_mb" field's value of the Tier entity.
-// If the Tier object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TierMutation) OldRAMMB(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRAMMB is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRAMMB requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRAMMB: %w", err)
-	}
-	return oldValue.RAMMB, nil
-}
-
-// AddRAMMB adds i to the "ram_mb" field.
-func (m *TierMutation) AddRAMMB(i int64) {
-	if m.addram_mb != nil {
-		*m.addram_mb += i
-	} else {
-		m.addram_mb = &i
-	}
-}
-
-// AddedRAMMB returns the value that was added to the "ram_mb" field in this mutation.
-func (m *TierMutation) AddedRAMMB() (r int64, exists bool) {
-	v := m.addram_mb
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetRAMMB resets all changes to the "ram_mb" field.
-func (m *TierMutation) ResetRAMMB() {
-	m.ram_mb = nil
-	m.addram_mb = nil
 }
 
 // SetDiskMB sets the "disk_mb" field.
@@ -4501,15 +5152,9 @@ func (m *TierMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TierMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 4)
 	if m.name != nil {
 		fields = append(fields, tier.FieldName)
-	}
-	if m.vcpu != nil {
-		fields = append(fields, tier.FieldVcpu)
-	}
-	if m.ram_mb != nil {
-		fields = append(fields, tier.FieldRAMMB)
 	}
 	if m.disk_mb != nil {
 		fields = append(fields, tier.FieldDiskMB)
@@ -4530,10 +5175,6 @@ func (m *TierMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case tier.FieldName:
 		return m.Name()
-	case tier.FieldVcpu:
-		return m.Vcpu()
-	case tier.FieldRAMMB:
-		return m.RAMMB()
 	case tier.FieldDiskMB:
 		return m.DiskMB()
 	case tier.FieldConcurrentInstances:
@@ -4551,10 +5192,6 @@ func (m *TierMutation) OldField(ctx context.Context, name string) (ent.Value, er
 	switch name {
 	case tier.FieldName:
 		return m.OldName(ctx)
-	case tier.FieldVcpu:
-		return m.OldVcpu(ctx)
-	case tier.FieldRAMMB:
-		return m.OldRAMMB(ctx)
 	case tier.FieldDiskMB:
 		return m.OldDiskMB(ctx)
 	case tier.FieldConcurrentInstances:
@@ -4576,20 +5213,6 @@ func (m *TierMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
-		return nil
-	case tier.FieldVcpu:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVcpu(v)
-		return nil
-	case tier.FieldRAMMB:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRAMMB(v)
 		return nil
 	case tier.FieldDiskMB:
 		v, ok := value.(int64)
@@ -4620,12 +5243,6 @@ func (m *TierMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *TierMutation) AddedFields() []string {
 	var fields []string
-	if m.addvcpu != nil {
-		fields = append(fields, tier.FieldVcpu)
-	}
-	if m.addram_mb != nil {
-		fields = append(fields, tier.FieldRAMMB)
-	}
 	if m.adddisk_mb != nil {
 		fields = append(fields, tier.FieldDiskMB)
 	}
@@ -4643,10 +5260,6 @@ func (m *TierMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *TierMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case tier.FieldVcpu:
-		return m.AddedVcpu()
-	case tier.FieldRAMMB:
-		return m.AddedRAMMB()
 	case tier.FieldDiskMB:
 		return m.AddedDiskMB()
 	case tier.FieldConcurrentInstances:
@@ -4662,20 +5275,6 @@ func (m *TierMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *TierMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case tier.FieldVcpu:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddVcpu(v)
-		return nil
-	case tier.FieldRAMMB:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddRAMMB(v)
-		return nil
 	case tier.FieldDiskMB:
 		v, ok := value.(int64)
 		if !ok {
@@ -4726,12 +5325,6 @@ func (m *TierMutation) ResetField(name string) error {
 	switch name {
 	case tier.FieldName:
 		m.ResetName()
-		return nil
-	case tier.FieldVcpu:
-		m.ResetVcpu()
-		return nil
-	case tier.FieldRAMMB:
-		m.ResetRAMMB()
 		return nil
 	case tier.FieldDiskMB:
 		m.ResetDiskMB()

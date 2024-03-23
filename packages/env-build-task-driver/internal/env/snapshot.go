@@ -107,7 +107,6 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		tracer,
 		env.FirecrackerBinaryPath,
 		network.namespaceID,
-		env.KernelMountedPath(),
 		env.KernelMountDir,
 		env.KernelDirPath(),
 	)
@@ -145,16 +144,12 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
-	telemetry.ReportEvent(childCtx, "paused fc")
-
 	err = snapshot.snapshotFC(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error snapshotting fc: %w", err)
 
 		return nil, errMsg
 	}
-
-	telemetry.ReportEvent(childCtx, "snapshotted fc")
 
 	return snapshot, nil
 }
@@ -164,7 +159,6 @@ func (s *Snapshot) startFCProcess(
 	tracer trace.Tracer,
 	fcBinaryPath,
 	networkNamespaceID,
-	kernelMountedPath,
 	kernelMountDir,
 	kernelDirPath string,
 ) error {

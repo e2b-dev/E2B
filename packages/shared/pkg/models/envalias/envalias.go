@@ -14,8 +14,8 @@ const (
 	FieldID = "alias"
 	// FieldEnvID holds the string denoting the env_id field in the database.
 	FieldEnvID = "env_id"
-	// FieldIsName holds the string denoting the is_name field in the database.
-	FieldIsName = "is_name"
+	// FieldIsRenamable holds the string denoting the is_renamable field in the database.
+	FieldIsRenamable = "is_renamable"
 	// EdgeEnv holds the string denoting the env edge name in mutations.
 	EdgeEnv = "env"
 	// EnvFieldID holds the string denoting the ID field of the Env.
@@ -35,7 +35,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldEnvID,
-	FieldIsName,
+	FieldIsRenamable,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -49,8 +49,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// DefaultIsName holds the default value on creation for the "is_name" field.
-	DefaultIsName bool
+	// DefaultIsRenamable holds the default value on creation for the "is_renamable" field.
+	DefaultIsRenamable bool
 )
 
 // OrderOption defines the ordering options for the EnvAlias queries.
@@ -66,9 +66,9 @@ func ByEnvID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnvID, opts...).ToFunc()
 }
 
-// ByIsName orders the results by the is_name field.
-func ByIsName(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsName, opts...).ToFunc()
+// ByIsRenamable orders the results by the is_renamable field.
+func ByIsRenamable(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsRenamable, opts...).ToFunc()
 }
 
 // ByEnvField orders the results by env field.

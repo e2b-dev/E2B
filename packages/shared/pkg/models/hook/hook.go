@@ -45,6 +45,18 @@ func (f EnvAliasFunc) Mutate(ctx context.Context, m models.Mutation) (models.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *models.EnvAliasMutation", m)
 }
 
+// The EnvBuildFunc type is an adapter to allow the use of ordinary
+// function as EnvBuild mutator.
+type EnvBuildFunc func(context.Context, *models.EnvBuildMutation) (models.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EnvBuildFunc) Mutate(ctx context.Context, m models.Mutation) (models.Value, error) {
+	if mv, ok := m.(*models.EnvBuildMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *models.EnvBuildMutation", m)
+}
+
 // The TeamFunc type is an adapter to allow the use of ordinary
 // function as Team mutator.
 type TeamFunc func(context.Context, *models.TeamMutation) (models.Value, error)

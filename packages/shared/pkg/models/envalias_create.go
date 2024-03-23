@@ -29,24 +29,16 @@ func (eac *EnvAliasCreate) SetEnvID(s string) *EnvAliasCreate {
 	return eac
 }
 
-// SetNillableEnvID sets the "env_id" field if the given value is not nil.
-func (eac *EnvAliasCreate) SetNillableEnvID(s *string) *EnvAliasCreate {
-	if s != nil {
-		eac.SetEnvID(*s)
-	}
+// SetIsRenamable sets the "is_renamable" field.
+func (eac *EnvAliasCreate) SetIsRenamable(b bool) *EnvAliasCreate {
+	eac.mutation.SetIsRenamable(b)
 	return eac
 }
 
-// SetIsName sets the "is_name" field.
-func (eac *EnvAliasCreate) SetIsName(b bool) *EnvAliasCreate {
-	eac.mutation.SetIsName(b)
-	return eac
-}
-
-// SetNillableIsName sets the "is_name" field if the given value is not nil.
-func (eac *EnvAliasCreate) SetNillableIsName(b *bool) *EnvAliasCreate {
+// SetNillableIsRenamable sets the "is_renamable" field if the given value is not nil.
+func (eac *EnvAliasCreate) SetNillableIsRenamable(b *bool) *EnvAliasCreate {
 	if b != nil {
-		eac.SetIsName(*b)
+		eac.SetIsRenamable(*b)
 	}
 	return eac
 }
@@ -97,16 +89,22 @@ func (eac *EnvAliasCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (eac *EnvAliasCreate) defaults() {
-	if _, ok := eac.mutation.IsName(); !ok {
-		v := envalias.DefaultIsName
-		eac.mutation.SetIsName(v)
+	if _, ok := eac.mutation.IsRenamable(); !ok {
+		v := envalias.DefaultIsRenamable
+		eac.mutation.SetIsRenamable(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (eac *EnvAliasCreate) check() error {
-	if _, ok := eac.mutation.IsName(); !ok {
-		return &ValidationError{Name: "is_name", err: errors.New(`models: missing required field "EnvAlias.is_name"`)}
+	if _, ok := eac.mutation.EnvID(); !ok {
+		return &ValidationError{Name: "env_id", err: errors.New(`models: missing required field "EnvAlias.env_id"`)}
+	}
+	if _, ok := eac.mutation.IsRenamable(); !ok {
+		return &ValidationError{Name: "is_renamable", err: errors.New(`models: missing required field "EnvAlias.is_renamable"`)}
+	}
+	if _, ok := eac.mutation.EnvID(); !ok {
+		return &ValidationError{Name: "env", err: errors.New(`models: missing required edge "EnvAlias.env"`)}
 	}
 	return nil
 }
@@ -145,9 +143,9 @@ func (eac *EnvAliasCreate) createSpec() (*EnvAlias, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = id
 	}
-	if value, ok := eac.mutation.IsName(); ok {
-		_spec.SetField(envalias.FieldIsName, field.TypeBool, value)
-		_node.IsName = value
+	if value, ok := eac.mutation.IsRenamable(); ok {
+		_spec.SetField(envalias.FieldIsRenamable, field.TypeBool, value)
+		_node.IsRenamable = value
 	}
 	if nodes := eac.mutation.EnvIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -164,7 +162,7 @@ func (eac *EnvAliasCreate) createSpec() (*EnvAlias, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.EnvID = &nodes[0]
+		_node.EnvID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -231,21 +229,15 @@ func (u *EnvAliasUpsert) UpdateEnvID() *EnvAliasUpsert {
 	return u
 }
 
-// ClearEnvID clears the value of the "env_id" field.
-func (u *EnvAliasUpsert) ClearEnvID() *EnvAliasUpsert {
-	u.SetNull(envalias.FieldEnvID)
+// SetIsRenamable sets the "is_renamable" field.
+func (u *EnvAliasUpsert) SetIsRenamable(v bool) *EnvAliasUpsert {
+	u.Set(envalias.FieldIsRenamable, v)
 	return u
 }
 
-// SetIsName sets the "is_name" field.
-func (u *EnvAliasUpsert) SetIsName(v bool) *EnvAliasUpsert {
-	u.Set(envalias.FieldIsName, v)
-	return u
-}
-
-// UpdateIsName sets the "is_name" field to the value that was provided on create.
-func (u *EnvAliasUpsert) UpdateIsName() *EnvAliasUpsert {
-	u.SetExcluded(envalias.FieldIsName)
+// UpdateIsRenamable sets the "is_renamable" field to the value that was provided on create.
+func (u *EnvAliasUpsert) UpdateIsRenamable() *EnvAliasUpsert {
+	u.SetExcluded(envalias.FieldIsRenamable)
 	return u
 }
 
@@ -311,24 +303,17 @@ func (u *EnvAliasUpsertOne) UpdateEnvID() *EnvAliasUpsertOne {
 	})
 }
 
-// ClearEnvID clears the value of the "env_id" field.
-func (u *EnvAliasUpsertOne) ClearEnvID() *EnvAliasUpsertOne {
+// SetIsRenamable sets the "is_renamable" field.
+func (u *EnvAliasUpsertOne) SetIsRenamable(v bool) *EnvAliasUpsertOne {
 	return u.Update(func(s *EnvAliasUpsert) {
-		s.ClearEnvID()
+		s.SetIsRenamable(v)
 	})
 }
 
-// SetIsName sets the "is_name" field.
-func (u *EnvAliasUpsertOne) SetIsName(v bool) *EnvAliasUpsertOne {
+// UpdateIsRenamable sets the "is_renamable" field to the value that was provided on create.
+func (u *EnvAliasUpsertOne) UpdateIsRenamable() *EnvAliasUpsertOne {
 	return u.Update(func(s *EnvAliasUpsert) {
-		s.SetIsName(v)
-	})
-}
-
-// UpdateIsName sets the "is_name" field to the value that was provided on create.
-func (u *EnvAliasUpsertOne) UpdateIsName() *EnvAliasUpsertOne {
-	return u.Update(func(s *EnvAliasUpsert) {
-		s.UpdateIsName()
+		s.UpdateIsRenamable()
 	})
 }
 
@@ -561,24 +546,17 @@ func (u *EnvAliasUpsertBulk) UpdateEnvID() *EnvAliasUpsertBulk {
 	})
 }
 
-// ClearEnvID clears the value of the "env_id" field.
-func (u *EnvAliasUpsertBulk) ClearEnvID() *EnvAliasUpsertBulk {
+// SetIsRenamable sets the "is_renamable" field.
+func (u *EnvAliasUpsertBulk) SetIsRenamable(v bool) *EnvAliasUpsertBulk {
 	return u.Update(func(s *EnvAliasUpsert) {
-		s.ClearEnvID()
+		s.SetIsRenamable(v)
 	})
 }
 
-// SetIsName sets the "is_name" field.
-func (u *EnvAliasUpsertBulk) SetIsName(v bool) *EnvAliasUpsertBulk {
+// UpdateIsRenamable sets the "is_renamable" field to the value that was provided on create.
+func (u *EnvAliasUpsertBulk) UpdateIsRenamable() *EnvAliasUpsertBulk {
 	return u.Update(func(s *EnvAliasUpsert) {
-		s.SetIsName(v)
-	})
-}
-
-// UpdateIsName sets the "is_name" field to the value that was provided on create.
-func (u *EnvAliasUpsertBulk) UpdateIsName() *EnvAliasUpsertBulk {
-	return u.Update(func(s *EnvAliasUpsert) {
-		s.UpdateIsName()
+		s.UpdateIsRenamable()
 	})
 }
 

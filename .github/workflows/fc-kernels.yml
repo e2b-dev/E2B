@@ -34,3 +34,4 @@ jobs:
           path: "./packages/fc-kernels/builds"
           destination: "${{ secrets.gcp_project_id }}-fc-kernels"
           gzip: false
+          parent: false

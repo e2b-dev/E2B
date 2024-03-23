@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/smap"
+	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
 )
 
 type Manager struct {
@@ -70,11 +71,19 @@ func (m *Manager) Create(ctx context.Context, topic string) (*Subscriber, chan s
 		// Keep iterating over the error channel until it's closed.
 		for err := range sub.Subscription.Err() {
 			if err != nil {
-				m.logger.Errorw("Subscription error",
-					"subID", sub.Subscription.ID,
-					"subscription", m.label,
-					"error", err,
-				)
+				if websocket.IsCloseError(err, websocket.CloseAbnormalClosure) {
+					m.logger.Warnw("Websocket abnormal closure",
+						"subID", sub.Subscription.ID,
+						"subscription", m.label,
+						"error", err,
+					)
+				} else {
+					m.logger.Errorw("Subscription error",
+						"subID", sub.Subscription.ID,
+						"subscription", m.label,
+						"error", err,
+					)
+				}
 			}
 		}
 

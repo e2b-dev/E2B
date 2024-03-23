@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/google/uuid"
 
@@ -27,11 +27,12 @@ import (
 const (
 	instanceJobName          = "env-instance"
 	instanceJobNameWithSlash = instanceJobName + "/"
-	instanceIDPrefix         = "i"
+	InstanceIDPrefix         = "i"
 
 	instanceStartTimeout = time.Second * 20
 
 	envIDMetaKey             = "ENV_ID"
+	buildIDMetaKey           = "BUILD_ID"
 	aliasMetaKey             = "ALIAS"
 	instanceIDMetaKey        = "INSTANCE_ID"
 	teamIDMetaKey            = "TEAM_ID"
@@ -48,7 +49,7 @@ var (
 var envInstanceFile string
 var envInstanceTemplate = template.Must(template.New(instanceJobName).Parse(envInstanceFile))
 
-func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
+func (n *NomadClient) GetInstances() ([]*instance.InstanceInfo, *api.APIError) {
 	jobs, _, err := n.client.Jobs().ListOptions(&nomadAPI.JobListOptions{
 		Fields: &nomadAPI.JobListFields{
 			Meta: true,
@@ -84,11 +85,12 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		nodeMap[alloc.JobID] = alloc.NodeID[:shortNodeIDLength]
 	}
 
-	instances := make([]*InstanceInfo, 0, len(jobs))
+	instances := make([]*instance.InstanceInfo, 0, len(jobs))
 
 	for _, job := range jobs {
 		instanceID := job.Meta[instanceIDMetaKey]
 		envID := job.Meta[envIDMetaKey]
+		buildID := job.Meta[buildIDMetaKey]
 		aliasRaw := job.Meta[aliasMetaKey]
 		teamID := job.Meta[teamIDMetaKey]
 		metadataRaw := job.Meta[metadataKey]
@@ -114,6 +116,7 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 		}
 
 		var teamUUID *uuid.UUID
+		var buildUUID *uuid.UUID
 		var alias *string
 
 		if teamID != "" {
@@ -125,6 +128,14 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 			}
 		}
 
+		if buildID != "" {
+			parsedBuildID, parseErr := uuid.Parse(buildID)
+			if parseErr != nil {
+				n.logger.Errorf("failed to parse build ID '%s' for job '%s': %v\n", buildID, job.ID, err)
+			}
+			buildUUID = &parsedBuildID
+		}
+
 		if aliasRaw != "" {
 			alias = &aliasRaw
 		}
@@ -134,13 +145,14 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 			n.logger.Errorf("failed to get client ID for job '%s'", job.ID)
 		}
 
-		instances = append(instances, &InstanceInfo{
+		instances = append(instances, &instance.InstanceInfo{
 			Instance: &api.Sandbox{
 				SandboxID:  instanceID,
 				TemplateID: envID,
 				Alias:      alias,
 				ClientID:   clientID,
 			},
+			BuildID:           buildUUID,
 			TeamID:            teamUUID,
 			Metadata:          metadata,
 			MaxInstanceLength: maxInstanceLength,
@@ -153,9 +165,11 @@ func (n *NomadClient) GetInstances() ([]*InstanceInfo, *api.APIError) {
 func (n *NomadClient) CreateSandbox(
 	t trace.Tracer,
 	ctx context.Context,
+	instanceID,
 	envID,
 	alias,
-	teamID string,
+	teamID,
+	buildID string,
 	maxInstanceLengthHours int64,
 	metadata map[string]string,
 	kernelVersion,
@@ -167,8 +181,6 @@ func (n *NomadClient) CreateSandbox(
 		),
 	)
 	defer childSpan.End()
-
-	instanceID := instanceIDPrefix + utils.GenerateID()
 
 	traceID := childSpan.SpanContext().TraceID().String()
 	spanID := childSpan.SpanContext().SpanID().String()
@@ -183,6 +195,8 @@ func (n *NomadClient) CreateSandbox(
 			Code:      http.StatusInternalServerError,
 		}
 	}
+
+	telemetry.ReportEvent(childCtx, "Marshalled metadata")
 
 	telemetry.SetAttributes(
 		childCtx,
@@ -201,6 +215,8 @@ func (n *NomadClient) CreateSandbox(
 		}
 	}
 
+	telemetry.ReportEvent(childCtx, "Got FC version info")
+
 	var jobDef bytes.Buffer
 
 	jobVars := struct {
@@ -208,6 +224,7 @@ func (n *NomadClient) CreateSandbox(
 		ConsulToken          string
 		TraceID              string
 		EnvID                string
+		BuildID              string
 		Alias                string
 		InstanceID           string
 		LogsProxyAddress     string
@@ -218,6 +235,7 @@ func (n *NomadClient) CreateSandbox(
 		EnvsDisk             string
 		TeamID               string
 		EnvIDKey             string
+		BuildIDKey           string
 		AliasKey             string
 		InstanceIDKey        string
 		TeamIDKey            string
@@ -229,6 +247,7 @@ func (n *NomadClient) CreateSandbox(
 	}{
 		HugePages:            features.HasHugePages(),
 		TeamIDKey:            teamIDMetaKey,
+		BuildIDKey:           buildIDMetaKey,
 		EnvIDKey:             envIDMetaKey,
 		AliasKey:             aliasMetaKey,
 		InstanceIDKey:        instanceIDMetaKey,
@@ -238,6 +257,7 @@ func (n *NomadClient) CreateSandbox(
 		FirecrackerVersion:   firecrackerVersion,
 		SpanID:               spanID,
 		TeamID:               teamID,
+		BuildID:              buildID,
 		TraceID:              traceID,
 		LogsProxyAddress:     logsProxyAddress,
 		ConsulToken:          consulToken,
@@ -262,6 +282,8 @@ func (n *NomadClient) CreateSandbox(
 		}
 	}
 
+	telemetry.ReportEvent(childCtx, "Templated job")
+
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
@@ -272,6 +294,8 @@ func (n *NomadClient) CreateSandbox(
 			Code:      http.StatusInternalServerError,
 		}
 	}
+
+	telemetry.ReportEvent(childCtx, "Parsed HCL job")
 
 	sub := n.newSubscriber(*job.ID, taskRunningState, defaultTaskName)
 	defer sub.close()
@@ -287,6 +311,7 @@ func (n *NomadClient) CreateSandbox(
 		}
 	}
 
+	telemetry.ReportEvent(childCtx, "Registered job")
 	telemetry.ReportEvent(childCtx, "Started waiting for job to start")
 
 	select {
@@ -330,6 +355,8 @@ func (n *NomadClient) CreateSandbox(
 		}
 	case alloc := <-sub.wait:
 		var allocErr error
+
+		telemetry.ReportEvent(childCtx, "Got allocation")
 
 		defer func() {
 			if allocErr != nil {
