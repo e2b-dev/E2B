@@ -49,6 +49,14 @@ variable "api_port" {
   })
 }
 
+variable "docker_reverse_proxy_port" {
+  type = object({
+    name        = string
+    port        = number
+    health_path = string
+  })
+}
+
 variable "client_image_family" {
   type    = string
   default = "e2b-orch"

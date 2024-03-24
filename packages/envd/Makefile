@@ -16,6 +16,7 @@ build-debug:
 	CGO_ENABLED=1 go build -race -gcflags=all="-N -l" -o bin/debug/envd
 
 build-docker:
+	make build
 	DOCKER_BUILDKIT=1 docker build -t envd-debug . -f debug.Dockerfile
 
 start-docker:

@@ -165,7 +165,7 @@ func startFC(
 
 	if fsEnv.UFFDSocketPath != nil {
 		memfilePath := filepath.Join(fsEnv.EnvPath, MemfileName)
-		uffdCmd = fmt.Sprintf("(%s %s %s &) &&", fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
+		uffdCmd = fmt.Sprintf("(%s %s %s &) && ", fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
 		telemetry.SetAttributes(childCtx,
 			attribute.String("instance.uffd.command", uffdCmd),
 		)

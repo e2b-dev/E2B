@@ -8,6 +8,8 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -25,6 +27,8 @@ var postSandboxParallelLimit = semaphore.NewWeighted(defaultRequestLimit)
 func (a *APIStore) PostSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
 
+	telemetry.ReportEvent(ctx, "Parsed body")
+
 	body, err := parseBody[api.PostSandboxesJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
@@ -35,49 +39,36 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		return
 	}
 
-	sandbox := a.PostSandboxesWithoutResponse(c, ctx, body.TemplateID, (*map[string]string)(body.Metadata))
-	if sandbox != nil {
-		c.JSON(http.StatusCreated, &sandbox)
-	}
-}
-
-func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Context, templateID string, sandboxMetadata *map[string]string) *api.Sandbox {
 	span := trace.SpanFromContext(ctx)
-
 	c.Set("traceID", span.SpanContext().TraceID().String())
 
-	cleanedAliasOrEnvID, err := utils.CleanEnvID(templateID)
+	cleanedAliasOrEnvID, err := utils.CleanEnvID(body.TemplateID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid environment ID: %s", err))
 
 		errMsg := fmt.Errorf("error when cleaning env ID: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
-		return nil
+		return
 	}
+
+	telemetry.ReportEvent(ctx, "Cleaned sandbox ID")
 
 	// Get team from context, use TeamContextKey
 	team := c.Value(constants.TeamContextKey).(models.Team)
 
 	// Check if team has access to the environment
-	env, kernelVersion, firecrackerVersion, hasAccess, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
+	env, build, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
 		errMsg := fmt.Errorf("error when checking team access: %w", checkErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", checkErr))
 
-		return nil
+		return
 	}
 
-	if !hasAccess {
-		errMsg := fmt.Errorf("team '%s' doesn't have access to env '%s'", team.ID, env.TemplateID)
-		telemetry.ReportError(ctx, errMsg)
-
-		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
-
-		return nil
-	}
+	telemetry.ReportEvent(ctx, "Checked team access")
 
 	var alias string
 	if env.Aliases != nil && len(*env.Aliases) > 0 {
@@ -91,8 +82,8 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 		attribute.String("env.team.id", team.ID.String()),
 		attribute.String("env.id", env.TemplateID),
 		attribute.String("env.alias", alias),
-		attribute.String("env.kernel.version", kernelVersion),
-		attribute.String("env.firecracker.version", firecrackerVersion),
+		attribute.String("env.kernel.version", build.KernelVersion),
+		attribute.String("env.firecracker.version", build.FirecrackerVersion),
 	)
 
 	telemetry.ReportEvent(ctx, "waiting for create sandbox parallel limit semaphore slot")
@@ -104,7 +95,7 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Request canceled or timed out.")
 
-		return nil
+		return
 	}
 
 	defer postSandboxParallelLimit.Release(1)
@@ -112,35 +103,46 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
-	if instanceCount := a.instanceCache.CountForTeam(team.ID); int64(instanceCount) >= maxInstancesPerTeam {
+
+	sandboxID := nomad.InstanceIDPrefix + utils.GenerateID()
+
+	err, releaseTeamSandboxReservation := a.instanceCache.Reserve(sandboxID, team.ID, maxInstancesPerTeam)
+	if err != nil {
 		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, team.Edges.TeamTier.ConcurrentInstances)
-		telemetry.ReportCriticalError(ctx, errMsg)
+		telemetry.ReportCriticalError(ctx, fmt.Errorf("%w (error: %w)", errMsg, err))
 
 		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
 			"You have reached the maximum number of concurrent E2B sandboxes (%d). If you need more, "+
 				"please contact us at 'https://e2b.dev/docs/getting-help'", maxInstancesPerTeam))
 
-		return nil
+		return
 	}
+
+	telemetry.ReportEvent(ctx, "Reserved team sandbox slot")
+
+	defer releaseTeamSandboxReservation()
 
 	var metadata map[string]string
-	if sandboxMetadata != nil {
-		metadata = *sandboxMetadata
+	if body.Metadata != nil {
+		metadata = *body.Metadata
 	}
 
-	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, env.TemplateID, alias, team.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, kernelVersion, firecrackerVersion)
+	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, sandboxID, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
 		a.sendAPIStoreError(c, instanceErr.Code, instanceErr.ClientMsg)
 
-		return nil
+		return
 	}
 
-	if cacheErr := a.instanceCache.Add(InstanceInfo{
+	telemetry.ReportEvent(ctx, "Created sandbox")
+
+	if cacheErr := a.instanceCache.Add(instance.InstanceInfo{
 		StartTime:         nil,
 		Instance:          sandbox,
+		BuildID:           &build.ID,
 		TeamID:            &team.ID,
 		Metadata:          metadata,
 		MaxInstanceLength: time.Duration(team.Edges.TeamTier.MaxLengthHours) * time.Hour,
@@ -158,12 +160,12 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a sandbox right now")
 
-		return nil
+		return
 	}
 
 	c.Set("instanceID", sandbox.SandboxID)
 
-	telemetry.ReportEvent(ctx, "created environment instance")
+	telemetry.ReportEvent(ctx, "Added sandbox to cache")
 
 	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
 	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
@@ -174,8 +176,10 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 			Set("alias", alias),
 	)
 
+	telemetry.ReportEvent(ctx, "Created analytics event")
+
 	go func() {
-		err = a.supabase.UpdateEnvLastUsed(context.Background(), env.TemplateID)
+		err = a.db.UpdateEnvLastUsed(context.Background(), env.TemplateID)
 		if err != nil {
 			a.logger.Errorf("Error when updating last used for env: %s", err)
 		}
@@ -187,5 +191,5 @@ func (a *APIStore) PostSandboxesWithoutResponse(c *gin.Context, ctx context.Cont
 
 	a.logger.Infof("Created sandbox '%s' for team '%s'", sandbox.SandboxID, team.ID)
 
-	return sandbox
+	c.JSON(http.StatusCreated, &sandbox)
 }

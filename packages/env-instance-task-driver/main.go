@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net/http"
 	_ "net/http/pprof"
+	"time"
 
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
@@ -37,12 +38,13 @@ func main() {
 
 	envID := flag.String("env", "", "env id")
 	instanceID := flag.String("instance", "", "instance id")
+	keepAlive := flag.Int("alive", 0, "keep alive")
 
 	flag.Parse()
 
 	if *envID != "" && *instanceID != "" {
 		// Start of mock build for testing
-		instance.MockInstance(*envID, *instanceID)
+		instance.MockInstance(*envID, *instanceID, time.Duration(*keepAlive)*time.Second)
 	} else {
 		configurePlugin()
 	}

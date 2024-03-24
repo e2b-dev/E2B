@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/nomad/client/structs"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	"go.opentelemetry.io/otel/attribute"
@@ -213,4 +214,18 @@ func (de *DriverExtra) DestroyTask(_ context.Context, _ trace.Tracer, tasks *dri
 	tasks.Delete(taskID)
 
 	return nil
+}
+
+func (de *DriverExtra) TaskStats(ctx context.Context, driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], taskID string, interval time.Duration) (<-chan *structs.TaskResourceUsage, error) {
+	h, ok := tasks.Get(taskID)
+	if !ok {
+		telemetry.ReportCriticalError(ctx, drivers.ErrTaskNotFound)
+
+		return nil, drivers.ErrTaskNotFound
+	}
+
+	statsChannel := make(chan *drivers.TaskResourceUsage)
+	go h.Extra.Stats(ctx, statsChannel, interval)
+
+	return statsChannel, nil
 }

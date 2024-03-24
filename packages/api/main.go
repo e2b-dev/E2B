@@ -46,11 +46,8 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 		customMiddleware.ExcludeRoutes(gin.LoggerWithWriter(gin.DefaultWriter),
 			"/health",
 			"/sandboxes/:sandboxID/refreshes",
-			"/instances/:instanceID/refreshes",
-			"/envs/:envID/builds/:buildID",
-			"/templates/:templateID/builds/:buildID",
-			"/envs/:envID/builds/:buildID/logs",
 			"/templates/:templateID/builds/:buildID/logs",
+			"/templates/:templateID/builds/:buildID/status",
 		),
 		gin.Recovery(),
 	)

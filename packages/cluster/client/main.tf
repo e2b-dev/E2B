@@ -21,6 +21,11 @@ resource "google_compute_instance_group_manager" "client_cluster" {
   }
 
   named_port {
+    name = var.docker_reverse_proxy_port.name
+    port = var.docker_reverse_proxy_port.port
+  }
+
+  named_port {
     name = var.client_proxy_health_port.name
     port = var.client_proxy_health_port.port
   }

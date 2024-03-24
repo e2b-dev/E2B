@@ -20,34 +20,20 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldTeamID holds the string denoting the team_id field in the database.
 	FieldTeamID = "team_id"
-	// FieldDockerfile holds the string denoting the dockerfile field in the database.
-	FieldDockerfile = "dockerfile"
 	// FieldPublic holds the string denoting the public field in the database.
 	FieldPublic = "public"
-	// FieldBuildID holds the string denoting the build_id field in the database.
-	FieldBuildID = "build_id"
 	// FieldBuildCount holds the string denoting the build_count field in the database.
 	FieldBuildCount = "build_count"
 	// FieldSpawnCount holds the string denoting the spawn_count field in the database.
 	FieldSpawnCount = "spawn_count"
 	// FieldLastSpawnedAt holds the string denoting the last_spawned_at field in the database.
 	FieldLastSpawnedAt = "last_spawned_at"
-	// FieldVcpu holds the string denoting the vcpu field in the database.
-	FieldVcpu = "vcpu"
-	// FieldRAMMB holds the string denoting the ram_mb field in the database.
-	FieldRAMMB = "ram_mb"
-	// FieldFreeDiskSizeMB holds the string denoting the free_disk_size_mb field in the database.
-	FieldFreeDiskSizeMB = "free_disk_size_mb"
-	// FieldTotalDiskSizeMB holds the string denoting the total_disk_size_mb field in the database.
-	FieldTotalDiskSizeMB = "total_disk_size_mb"
-	// FieldKernelVersion holds the string denoting the kernel_version field in the database.
-	FieldKernelVersion = "kernel_version"
-	// FieldFirecrackerVersion holds the string denoting the firecracker_version field in the database.
-	FieldFirecrackerVersion = "firecracker_version"
 	// EdgeTeam holds the string denoting the team edge name in mutations.
 	EdgeTeam = "team"
 	// EdgeEnvAliases holds the string denoting the env_aliases edge name in mutations.
 	EdgeEnvAliases = "env_aliases"
+	// EdgeBuilds holds the string denoting the builds edge name in mutations.
+	EdgeBuilds = "builds"
 	// EnvAliasFieldID holds the string denoting the ID field of the EnvAlias.
 	EnvAliasFieldID = "alias"
 	// Table holds the table name of the env in the database.
@@ -66,6 +52,13 @@ const (
 	EnvAliasesInverseTable = "env_aliases"
 	// EnvAliasesColumn is the table column denoting the env_aliases relation/edge.
 	EnvAliasesColumn = "env_id"
+	// BuildsTable is the table that holds the builds relation/edge.
+	BuildsTable = "env_builds"
+	// BuildsInverseTable is the table name for the EnvBuild entity.
+	// It exists in this package in order to avoid circular dependency with the "envbuild" package.
+	BuildsInverseTable = "env_builds"
+	// BuildsColumn is the table column denoting the builds relation/edge.
+	BuildsColumn = "env_id"
 )
 
 // Columns holds all SQL columns for env fields.
@@ -74,18 +67,10 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldTeamID,
-	FieldDockerfile,
 	FieldPublic,
-	FieldBuildID,
 	FieldBuildCount,
 	FieldSpawnCount,
 	FieldLastSpawnedAt,
-	FieldVcpu,
-	FieldRAMMB,
-	FieldFreeDiskSizeMB,
-	FieldTotalDiskSizeMB,
-	FieldKernelVersion,
-	FieldFirecrackerVersion,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -107,10 +92,6 @@ var (
 	DefaultBuildCount int32
 	// DefaultSpawnCount holds the default value on creation for the "spawn_count" field.
 	DefaultSpawnCount int64
-	// DefaultKernelVersion holds the default value on creation for the "kernel_version" field.
-	DefaultKernelVersion string
-	// DefaultFirecrackerVersion holds the default value on creation for the "firecracker_version" field.
-	DefaultFirecrackerVersion string
 )
 
 // OrderOption defines the ordering options for the Env queries.
@@ -136,19 +117,9 @@ func ByTeamID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTeamID, opts...).ToFunc()
 }
 
-// ByDockerfile orders the results by the dockerfile field.
-func ByDockerfile(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDockerfile, opts...).ToFunc()
-}
-
 // ByPublic orders the results by the public field.
 func ByPublic(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPublic, opts...).ToFunc()
-}
-
-// ByBuildID orders the results by the build_id field.
-func ByBuildID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBuildID, opts...).ToFunc()
 }
 
 // ByBuildCount orders the results by the build_count field.
@@ -164,36 +135,6 @@ func BySpawnCount(opts ...sql.OrderTermOption) OrderOption {
 // ByLastSpawnedAt orders the results by the last_spawned_at field.
 func ByLastSpawnedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSpawnedAt, opts...).ToFunc()
-}
-
-// ByVcpu orders the results by the vcpu field.
-func ByVcpu(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVcpu, opts...).ToFunc()
-}
-
-// ByRAMMB orders the results by the ram_mb field.
-func ByRAMMB(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRAMMB, opts...).ToFunc()
-}
-
-// ByFreeDiskSizeMB orders the results by the free_disk_size_mb field.
-func ByFreeDiskSizeMB(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFreeDiskSizeMB, opts...).ToFunc()
-}
-
-// ByTotalDiskSizeMB orders the results by the total_disk_size_mb field.
-func ByTotalDiskSizeMB(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldTotalDiskSizeMB, opts...).ToFunc()
-}
-
-// ByKernelVersion orders the results by the kernel_version field.
-func ByKernelVersion(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldKernelVersion, opts...).ToFunc()
-}
-
-// ByFirecrackerVersion orders the results by the firecracker_version field.
-func ByFirecrackerVersion(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFirecrackerVersion, opts...).ToFunc()
 }
 
 // ByTeamField orders the results by team field.
@@ -216,6 +157,20 @@ func ByEnvAliases(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEnvAliasesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByBuildsCount orders the results by builds count.
+func ByBuildsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBuildsStep(), opts...)
+	}
+}
+
+// ByBuilds orders the results by builds terms.
+func ByBuilds(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBuildsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTeamStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -228,5 +183,12 @@ func newEnvAliasesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EnvAliasesInverseTable, EnvAliasFieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EnvAliasesTable, EnvAliasesColumn),
+	)
+}
+func newBuildsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BuildsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BuildsTable, BuildsColumn),
 	)
 }
