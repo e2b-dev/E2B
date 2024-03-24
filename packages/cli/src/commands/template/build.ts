@@ -23,6 +23,7 @@ import { pathOption } from 'src/options'
 import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 import * as child_process from 'child_process'
+import { SANDBOX_DOMAIN} from 'e2b'
 
 const templateCheckInterval = 500 // 0.5 sec
 
@@ -213,15 +214,15 @@ export const buildCommand = new commander.Command('build')
         )
 
 
-        child_process.execSync(`echo ${accessToken} | docker login docker.e2b-staging.com -u _e2b_access_token --password-stdin`, { stdio: 'inherit', cwd: root})
+        child_process.execSync(`echo ${accessToken} | docker login docker.${SANDBOX_DOMAIN} -u _e2b_access_token --password-stdin`, { stdio: 'inherit', cwd: root})
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        child_process.execSync(`DOCKER_CLI_HINTS=false docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.e2b-staging.com/e2b-dev/e2b-custom-environments/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root})
+        child_process.execSync(`DOCKER_CLI_HINTS=false docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root})
 
         process.stdout.write('\n')
         console.log('Pushing docker image...')
-        child_process.execSync(`docker push docker.e2b-staging.com/e2b-dev/e2b-custom-environments/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root })
+        child_process.execSync(`docker push docker.${SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root })
 
         process.stdout.write('\n')
 
