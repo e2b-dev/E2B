@@ -22,7 +22,7 @@ type DockerToken struct {
 const expiresIn = 60 * 60 * 24 * 30 // 30 days
 
 // The scope is in format "repository:<project>/<repo>/<templateID>:<action>"
-var scopeRegex = regexp.MustCompile(fmt.Sprintf(`^repository:%s/%s/(?P<templateID>[^:]+):(?P<action>[^:]+)$`, constants.GCPProject, constants.DockerRegistry))
+var scopeRegex = regexp.MustCompile(fmt.Sprintf(`^repository:e2b/custom-envs/(?P<templateID>[^:]+):(?P<action>[^:]+)$`))
 
 // GetToken validates if user has access to template and then returns a new token for required scope
 func (a *APIStore) GetToken(w http.ResponseWriter, r *http.Request) error {

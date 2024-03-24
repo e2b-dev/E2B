@@ -25,8 +25,9 @@ func (a *APIStore) Proxy(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	repoPrefix := fmt.Sprintf("/v2/%s/%s/", constants.GCPProject, constants.DockerRegistry)
-	if !strings.HasPrefix(path, repoPrefix) {
+	repoPrefix := fmt.Sprintf("/v2/e2b/custom-envs/")
+	realRepoPrefix := fmt.Sprintf("/v2/%s/%s/", constants.GCPProject, constants.DockerRegistry)
+	if !strings.HasPrefix(path, repoPrefix) && !strings.HasPrefix(path, realRepoPrefix) {
 		// The request shouldn't need any other endpoints, we deny access
 		fmt.Printf("No matching route found for path: %s\n", path)
 
@@ -48,22 +49,28 @@ func (a *APIStore) Proxy(w http.ResponseWriter, req *http.Request) {
 
 	templateID := token.TemplateID
 
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
+
 	// Uploading blobs doesn't have the template ID in the path
-	if !strings.HasPrefix(path, fmt.Sprintf("%spkg/blobs/uploads/", repoPrefix)) {
-		pathInRepo := strings.TrimPrefix(path, repoPrefix)
-		templateWithBuildID := strings.Split(strings.Split(pathInRepo, "/")[0], ":")
+	if strings.HasPrefix(path, fmt.Sprintf("%spkg/blobs/uploads/", realRepoPrefix)) {
+		a.proxy.ServeHTTP(w, req)
 
-		// If the template ID in the path is different from the token template ID, deny access
-		if templateWithBuildID[0] != templateID {
-			w.WriteHeader(http.StatusForbidden)
-			fmt.Printf("Access denied for template: %s\n", templateID)
+		return
+	}
 
-			return
-		}
+	pathInRepo := strings.TrimPrefix(path, repoPrefix)
+	templateWithBuildID := strings.Split(strings.Split(pathInRepo, "/")[0], ":")
+
+	// If the template ID in the path is different from the token template ID, deny access
+	if templateWithBuildID[0] != templateID {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Printf("Access denied for template: %s\n", templateID)
+
+		return
 	}
 
 	// Set the host and access token for the real docker registry
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
+	req.URL.Path = strings.Replace(req.URL.Path, repoPrefix, realRepoPrefix, 1)
 
 	a.proxy.ServeHTTP(w, req)
 	return
