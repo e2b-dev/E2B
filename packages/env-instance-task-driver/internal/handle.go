@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
+	"github.com/hashicorp/nomad/plugins/drivers"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
@@ -64,4 +65,14 @@ func (h *extraTaskHandle) shutdown(ctx context.Context, tracer trace.Tracer) err
 		return errMsg
 	}
 	return nil
+}
+
+func (h *extraTaskHandle) Stats(ctx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
+	defer close(statsChannel)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		}
+	}
 }

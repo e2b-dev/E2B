@@ -2,12 +2,14 @@ package internal
 
 import (
 	"context"
+	"time"
 
 	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/storages"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"github.com/hashicorp/nomad/plugins/drivers"
 
 	"github.com/e2b-dev/infra/packages/template-delete-task-driver/internal/template"
 )
@@ -36,4 +38,14 @@ func (h *extraTaskHandle) Run(ctx context.Context, tracer trace.Tracer) error {
 	}
 
 	return nil
+}
+
+func (h *extraTaskHandle) Stats(ctx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
+	defer close(statsChannel)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		}
+	}
 }

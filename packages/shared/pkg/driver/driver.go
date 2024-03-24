@@ -27,6 +27,7 @@ type ExtraDriver[TaskHandle HandleInterface] interface {
 	WaitTask(ctx context.Context, driverCtx context.Context, tracer trace.Tracer, tasks *TaskStore[TaskHandle], logger hclog.Logger, taskID string) (<-chan *drivers.ExitResult, error)
 	StopTask(ctx context.Context, tracer trace.Tracer, tasks *TaskStore[TaskHandle], logger hclog.Logger, taskID string, timeout time.Duration, signal string) error
 	DestroyTask(ctx context.Context, tracer trace.Tracer, tasks *TaskStore[TaskHandle], logger hclog.Logger, taskID string, force bool) error
+	TaskStats(ctx context.Context, driverCtx context.Context, tracer trace.Tracer, tasks *TaskStore[TaskHandle], taskID string, interval time.Duration) (<-chan *structs.TaskResourceUsage, error)
 }
 
 type Driver[Extra ExtraDriver[TaskHandle], TaskHandle HandleInterface] struct {
@@ -114,12 +115,7 @@ func (d *Driver[Extra, TaskHandle]) InspectTask(taskID string) (*drivers.TaskSta
 }
 
 func (d *Driver[Extra, TaskHandle]) TaskStats(ctx context.Context, taskID string, interval time.Duration) (<-chan *structs.TaskResourceUsage, error) {
-	_, ok := d.Tasks.Get(taskID)
-	if !ok {
-		return nil, drivers.ErrTaskNotFound
-	}
-
-	return nil, drivers.DriverStatsNotImplemented
+	return d.Extra.TaskStats(ctx, d.Ctx, d.Tracer, &d.Tasks, taskID, interval)
 }
 
 func (d *Driver[Extra, TaskHandle]) TaskEvents(ctx context.Context) (<-chan *drivers.TaskEvent, error) {
