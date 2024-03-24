@@ -52,7 +52,7 @@ resource "google_compute_instance_group_manager" "client_cluster" {
 
   auto_healing_policies {
     health_check      = google_compute_health_check.nomad_check.id
-    initial_delay_sec = 0
+    initial_delay_sec = 600
   }
 
   # Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
