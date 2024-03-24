@@ -18,32 +18,30 @@ import re  # noqa: F401
 import json
 
 
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field, StrictBool, StrictStr, conlist
+from typing import Any, Dict, Optional
+from pydantic import BaseModel, Field, StrictStr, conint
 
 
-class Environment(BaseModel):
+class TemplateBuildRequest(BaseModel):
     """
-    Environment
+    TemplateBuildRequest
     """
 
-    env_id: StrictStr = Field(
-        ..., alias="envID", description="Identifier of the environment"
+    alias: Optional[StrictStr] = Field(None, description="Alias of the template")
+    dockerfile: StrictStr = Field(..., description="Dockerfile for the template")
+    start_cmd: Optional[StrictStr] = Field(
+        None,
+        alias="startCmd",
+        description="Start command to execute in the template after the build",
     )
-    build_id: StrictStr = Field(
-        ...,
-        alias="buildID",
-        description="Identifier of the last successful build for given environment",
+    cpu_count: Optional[conint(strict=True, ge=1)] = Field(
+        None, alias="cpuCount", description="CPU cores for the template"
     )
-    public: StrictBool = Field(
-        ...,
-        description="Whether the environment is public or only accessible by the team",
-    )
-    aliases: Optional[conlist(StrictStr)] = Field(
-        None, description="Aliases of the environment"
+    memory_mb: Optional[conint(strict=True, ge=128)] = Field(
+        None, alias="memoryMB", description="Memory limit for the template in MB"
     )
     additional_properties: Dict[str, Any] = {}
-    __properties = ["envID", "buildID", "public", "aliases"]
+    __properties = ["alias", "dockerfile", "startCmd", "cpuCount", "memoryMB"]
 
     class Config:
         """Pydantic configuration"""
@@ -60,8 +58,8 @@ class Environment(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> Environment:
-        """Create an instance of Environment from a JSON string"""
+    def from_json(cls, json_str: str) -> TemplateBuildRequest:
+        """Create an instance of TemplateBuildRequest from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self):
@@ -77,20 +75,21 @@ class Environment(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> Environment:
-        """Create an instance of Environment from a dict"""
+    def from_dict(cls, obj: dict) -> TemplateBuildRequest:
+        """Create an instance of TemplateBuildRequest from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return Environment.parse_obj(obj)
+            return TemplateBuildRequest.parse_obj(obj)
 
-        _obj = Environment.parse_obj(
+        _obj = TemplateBuildRequest.parse_obj(
             {
-                "env_id": obj.get("envID"),
-                "build_id": obj.get("buildID"),
-                "public": obj.get("public"),
-                "aliases": obj.get("aliases"),
+                "alias": obj.get("alias"),
+                "dockerfile": obj.get("dockerfile"),
+                "start_cmd": obj.get("startCmd"),
+                "cpu_count": obj.get("cpuCount"),
+                "memory_mb": obj.get("memoryMB"),
             }
         )
         # store additional fields in additional_properties

@@ -242,15 +242,9 @@ importers:
 
   packages/cli:
     dependencies:
-      '@balena/dockerignore':
-        specifier: ^1.0.2
-        version: 1.0.2
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
-      '@nodelib/fs.walk':
-        specifier: ^2.0.0
-        version: 2.0.0
       async-listen:
         specifier: ^3.0.1
         version: 3.0.1
@@ -263,6 +257,9 @@ importers:
       cli-highlight:
         specifier: ^2.1.11
         version: 2.1.11
+      command-exists:
+        specifier: ^1.2.9
+        version: 1.2.9
       commander:
         specifier: ^11.1.0
         version: 11.1.0
@@ -272,9 +269,6 @@ importers:
       e2b:
         specifier: ^0.12.6
         version: 0.12.6(openai@4.17.4)
-      ignore:
-        specifier: ^5.2.4
-        version: 5.2.4
       inquirer:
         specifier: ^9.2.12
         version: 9.2.12
@@ -284,9 +278,6 @@ importers:
       strip-ansi:
         specifier: ^7.1.0
         version: 7.1.0
-      tar-fs:
-        specifier: ^3.0.4
-        version: 3.0.4
       update-notifier:
         specifier: 5.1.0
         version: 5.1.0
@@ -294,15 +285,15 @@ importers:
         specifier: ^1.3.2
         version: 1.3.2
     devDependencies:
+      '@types/command-exists':
+        specifier: ^1.2.3
+        version: 1.2.3
       '@types/inquirer':
         specifier: ^9.0.7
         version: 9.0.7
       '@types/node':
         specifier: ^18.18.6
         version: 18.18.6
-      '@types/tar-fs':
-        specifier: ^2.0.3
-        version: 2.0.3
       '@types/update-notifier':
         specifier: 6.0.5
         version: 6.0.5
@@ -556,10 +547,6 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.14.0
-
-  /@balena/dockerignore@1.0.2:
-    resolution: {integrity: sha512-wMue2Sy4GAVTk6Ic4tJVcnfdau+gx2EnG7S+uAEe+TWJFqE4YoWN4/H8MSLj4eYJKxGg26lZwboEniNiNwZQ6Q==}
-    dev: false
 
   /@changesets/apply-release-plan@6.1.4:
     resolution: {integrity: sha512-FMpKF1fRlJyCZVYHr3CbinpZZ+6MwvOtWUuO8uo+svcATEoc1zRDcj23pAurJ2TZ/uVz1wFHH6K3NlACy0PLew==}
@@ -1678,6 +1665,7 @@ packages:
     dependencies:
       '@nodelib/fs.stat': 3.0.0
       run-parallel: 1.2.0
+    dev: true
 
   /@nodelib/fs.stat@2.0.5:
     resolution: {integrity: sha512-RkhPPp2zrqDAQA/2jNhnztcPAlv64XdhIp7a7454A5ovI7Bukxgt7MX7udwAu3zg1DcpPU0rz3VV1SeaqvY4+A==}
@@ -1686,6 +1674,7 @@ packages:
   /@nodelib/fs.stat@3.0.0:
     resolution: {integrity: sha512-2tQOI38s19P9i7X/Drt0v8iMA+KMsgdhB/dyPER+e+2Y8L1Z7QvnuRdW/uLuf5YRFUYmnj4bMA6qCuZHFI1GDQ==}
     engines: {node: '>=16.14.0'}
+    dev: true
 
   /@nodelib/fs.walk@1.2.8:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
@@ -1700,6 +1689,7 @@ packages:
     dependencies:
       '@nodelib/fs.scandir': 3.0.0
       fastq: 1.15.0
+    dev: true
 
   /@npmcli/fs@3.1.0:
     resolution: {integrity: sha512-7kZUAaLscfgbwBQRbvdMYaZOWyMEcPTH/tJjnyAWJ/dvvs9Ef+CERx/qJb9GExJpl1qipaDGn7KqHnFGGixd0w==}
@@ -2830,6 +2820,10 @@ packages:
     resolution: {integrity: sha512-69TtiDzu0bcmKQv3yg1Zx409/Kd7r0b5F1PfpYJfSHzLGtB53547V4u+9iqKYsTu/O2ai6KTb0TInNpvuQ3qmg==}
     dev: true
 
+  /@types/command-exists@1.2.3:
+    resolution: {integrity: sha512-PpbaE2XWLaWYboXD6k70TcXO/OdOyyRFq5TVpmlUELNxdkkmXU9fkImNosmXU1DtsNrqdUgWd/nJQYXgwmtdXQ==}
+    dev: true
+
   /@types/configstore@6.0.1:
     resolution: {integrity: sha512-ML2U2xzN6PwCh1I6QgWI3TdzS7CRLsv5DSCLX4/Wfg+f30JF60WgS9ZbVOOrTk+N67WTCSUKm6Q7k6M/BjbXQw==}
     dev: true
@@ -3007,19 +3001,6 @@ packages:
 
   /@types/semver@7.5.2:
     resolution: {integrity: sha512-7aqorHYgdNO4DM36stTiGO3DvKoex9TQRwsJU6vMaFGyqpBA1MNZkz+PG3gaNUPpTAOYhT1WR7M1JyA3fbS9Cw==}
-
-  /@types/tar-fs@2.0.3:
-    resolution: {integrity: sha512-ADS99HAnztB8MD+LSOdzDrDLcSe5oBIg+SUQwwsgnsOgZobWoSqYmg9ZJWdvLppoKV8R8kZinX6Om+LlsNuIlQ==}
-    dependencies:
-      '@types/node': 18.18.6
-      '@types/tar-stream': 3.1.2
-    dev: true
-
-  /@types/tar-stream@3.1.2:
-    resolution: {integrity: sha512-qnIpUItVb5u8jl3kbrHofkM40ggO3YKSzc7TWqLYjDdwlrL7CiEAkDySaGfeUBLtC50RTfh2acdz51ItUbV7pQ==}
-    dependencies:
-      '@types/node': 18.18.6
-    dev: true
 
   /@types/through@0.0.33:
     resolution: {integrity: sha512-HsJ+z3QuETzP3cswwtzt2vEIiHBk/dCcHGhbmG5X3ecnwFD/lPrMpliGXxSCg03L9AhrdwA4Oz/qfspkDW+xGQ==}
@@ -3926,6 +3907,7 @@ packages:
 
   /b4a@1.6.4:
     resolution: {integrity: sha512-fpWrvyVHEKyeEvbKZTVOeZF3VSKKWtJxFIxX/jaVPf+cLbGUSitjb49pHLqPV2BUNNZ0LcoeEGfE/YCpyDYHIw==}
+    dev: true
 
   /babylon@6.18.0:
     resolution: {integrity: sha512-q/UEjfGJ2Cm3oKV71DJz9d25TPnq5rhBVL2Q4fA5wcC3jcrdn7+SssEybFIxwAvvP+YCsCYNKughoF33GxgycQ==}
@@ -4477,6 +4459,10 @@ packages:
 
   /comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
+    dev: false
+
+  /command-exists@1.2.9:
+    resolution: {integrity: sha512-LTQ/SGc+s0Xc0Fu5WaKnR0YiygZkm9eKFvyS+fRsU7/ZWFF8ykFM6Pc9aCVf1+xasOOZpO3BAVgVrKvsqKHV7w==}
     dev: false
 
   /commander@10.0.1:
@@ -5626,6 +5612,7 @@ packages:
 
   /fast-fifo@1.3.2:
     resolution: {integrity: sha512-/d9sfos4yxzpwkDkuN7k2SqFKtYNmCTzgfEpz82x34IM9/zc8KGxQoXg1liNC/izpRM/MBdt44Nmx41ZWqk+FQ==}
+    dev: true
 
   /fast-glob@3.3.1:
     resolution: {integrity: sha512-kNFPyjhh5cKjrUltxs+wFx+ZkbRaxxmZ+X0ZU31SOsxCEtP9VPgtq2teZw1DebupL5GmDaNQ6yKMMVcM41iqDg==}
@@ -8092,6 +8079,7 @@ packages:
 
   /mkdirp-classic@0.5.3:
     resolution: {integrity: sha512-gKLcREMhtuZRwRAfqP3RFW+TK4JqApVBtOIftVgjuABpAtpxhPGaDcfvbhNvD0B8iD1oUr/txX35NjcaY6Ns/A==}
+    dev: true
 
   /mkdirp@0.5.6:
     resolution: {integrity: sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==}
@@ -9235,6 +9223,7 @@ packages:
 
   /queue-tick@1.0.1:
     resolution: {integrity: sha512-kJt5qhMxoszgU/62PLP1CJytzd2NKetjSRnyuj31fDd3Rlcz3fzlFdFLD1SItunPwyqEOkca6GbV612BWfaBag==}
+    dev: true
 
   /quick-lru@4.0.1:
     resolution: {integrity: sha512-ARhCpm70fzdcvNQfPoy49IaanKkTlRWF2JMzqhcJbhSFRZv7nPTvZJdcY7301IPmvW+/p0RgIWnQDLJxifsQ7g==}
@@ -10072,6 +10061,7 @@ packages:
     dependencies:
       fast-fifo: 1.3.2
       queue-tick: 1.0.1
+    dev: true
 
   /string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
@@ -10345,6 +10335,7 @@ packages:
       mkdirp-classic: 0.5.3
       pump: 3.0.0
       tar-stream: 3.1.6
+    dev: true
 
   /tar-stream@2.2.0:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
@@ -10363,6 +10354,7 @@ packages:
       b4a: 1.6.4
       fast-fifo: 1.3.2
       streamx: 2.15.1
+    dev: true
 
   /tar@6.2.0:
     resolution: {integrity: sha512-/Wo7DcT0u5HUV486xg675HtjNd3BXZ6xDbzsCUZPt5iw8bTQ63bP0Raut3mvro9u+CUyq7YQd8Cx55fsZXxqLQ==}

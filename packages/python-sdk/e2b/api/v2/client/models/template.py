@@ -19,7 +19,7 @@ import json
 
 
 from typing import Any, ClassVar, Dict, List, Optional
-from pydantic import BaseModel, StrictBool, StrictStr
+from pydantic import BaseModel, StrictBool, StrictInt, StrictStr
 from pydantic import Field
 
 try:
@@ -40,6 +40,12 @@ class Template(BaseModel):
         description="Identifier of the last successful build for given template",
         alias="buildID",
     )
+    cpu_count: StrictInt = Field(
+        description="CPU cores for the sandbox", alias="cpuCount"
+    )
+    memory_mb: StrictInt = Field(
+        description="Memory limit for the sandbox in MB", alias="memoryMB"
+    )
     public: StrictBool = Field(
         description="Whether the template is public or only accessible by the team"
     )
@@ -47,7 +53,14 @@ class Template(BaseModel):
         default=None, description="Aliases of the template"
     )
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["templateID", "buildID", "public", "aliases"]
+    __properties: ClassVar[List[str]] = [
+        "templateID",
+        "buildID",
+        "cpuCount",
+        "memoryMB",
+        "public",
+        "aliases",
+    ]
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
@@ -103,6 +116,8 @@ class Template(BaseModel):
             {
                 "templateID": obj.get("templateID"),
                 "buildID": obj.get("buildID"),
+                "cpuCount": obj.get("cpuCount"),
+                "memoryMB": obj.get("memoryMB"),
                 "public": obj.get("public"),
                 "aliases": obj.get("aliases"),
             }

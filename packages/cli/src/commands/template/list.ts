@@ -32,6 +32,8 @@ export const listCommand = new commander.Command('list')
           columns: [
             { name: 'templateID', alignment: 'left', title: 'Template ID' },
             { name: 'aliases', alignment: 'left', title: 'Template Name', color: 'orange' },
+            { name: 'cpuCount', alignment: 'right', title: 'vCPUs' },
+            { name: 'memoryMB', alignment: 'right', title: 'RAM MiB' },
           ],
           disabledColumns: ['public', 'buildID'],
           rows: templates.map((template) => ({ ...template, aliases: listAliases(template.aliases) })),

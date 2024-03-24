@@ -80,19 +80,14 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [Environment](e2b/api/v1/client/docs/Environment.md)
- - [EnvironmentBuild](e2b/api/v1/client/docs/EnvironmentBuild.md)
  - [Error](e2b/api/v1/client/docs/Error.md)
- - [Instance](e2b/api/v1/client/docs/Instance.md)
- - [InstancesInstanceIDRefreshesPostRequest](e2b/api/v1/client/docs/InstancesInstanceIDRefreshesPostRequest.md)
- - [NewInstance](e2b/api/v1/client/docs/NewInstance.md)
  - [NewSandbox](e2b/api/v1/client/docs/NewSandbox.md)
- - [RunningInstance](e2b/api/v1/client/docs/RunningInstance.md)
  - [RunningSandboxes](e2b/api/v1/client/docs/RunningSandboxes.md)
  - [Sandbox](e2b/api/v1/client/docs/Sandbox.md)
  - [SandboxesSandboxIDRefreshesPostRequest](e2b/api/v1/client/docs/SandboxesSandboxIDRefreshesPostRequest.md)
  - [Template](e2b/api/v1/client/docs/Template.md)
  - [TemplateBuild](e2b/api/v1/client/docs/TemplateBuild.md)
+ - [TemplateBuildRequest](e2b/api/v1/client/docs/TemplateBuildRequest.md)
  - [TemplatesTemplateIDBuildsBuildIDLogsPostRequest](e2b/api/v1/client/docs/TemplatesTemplateIDBuildsBuildIDLogsPostRequest.md)
 
 

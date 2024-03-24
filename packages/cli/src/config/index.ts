@@ -6,7 +6,6 @@ import * as path from 'path'
 
 import { asFormattedSandboxTemplate, asLocalRelative } from 'src/utils/format'
 
-export const maxContentSize = 256 * 1024 * 1024 // 256MiB
 export const configName = 'e2b.toml'
 
 function getConfigHeader(config: E2BConfig) {
@@ -29,9 +28,11 @@ export const configSchema = yup.object({
   template_name: yup.string().optional(),
   dockerfile: yup.string().required(),
   start_cmd: yup.string().optional(),
+  cpu_count: yup.number().integer().min(1).optional(),
+  memory_mb: yup.number().integer().min(128).optional(),
 })
 
-export type E2BConfig = yup.InferType<typeof configSchema>;
+export type E2BConfig = yup.InferType<typeof configSchema>
 
 interface Migration {
   from: string;
