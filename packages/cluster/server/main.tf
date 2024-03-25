@@ -52,7 +52,7 @@ resource "google_compute_instance_group_manager" "server_cluster" {
 
   auto_healing_policies {
     health_check      = google_compute_health_check.nomad_check.id
-    initial_delay_sec = 0
+    initial_delay_sec = 600
   }
 
   lifecycle {

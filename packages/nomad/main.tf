@@ -55,6 +55,41 @@ provider "consul" {
   token   = var.consul_acl_token_secret
 }
 
+# resource "consul_acl_policy" "agent" {
+#   name  = "agent"
+#   rules = <<-RULE
+#     acl = "deny"
+#     agent_prefix "" {
+#       policy = "deny"
+#     }
+#     event_prefix "" {
+#       policy = "deny"
+#     }
+#     identity_prefix "" {
+#       policy = "deny"
+#     }
+#     key_prefix "" {
+#       policy = "deny"
+#     }
+#     keyring = "deny"
+#     mesh = "deny"
+#     node_prefix "" {
+#       policy = "deny"
+#     }
+#     operator = "deny"
+#     peering = "deny"
+#     query_prefix "" {
+#       policy = "deny"
+#     }
+#     service_prefix "" {
+#       policy = "deny"
+#     }
+#     session_prefix "" {
+#       policy = "deny"
+#     }
+#     RULE
+# }
+
 resource "nomad_job" "api" {
   jobspec = file("${path.module}/api.hcl")
 
