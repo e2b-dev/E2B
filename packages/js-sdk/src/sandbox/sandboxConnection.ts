@@ -201,7 +201,7 @@ export class SandboxConnection {
     const shortID = sandboxID.split('-')[0]
 
     try {
-      await killSandbox(apiKey, {sandboxID: shortID})
+      await killSandbox(apiKey, { sandboxID: shortID })
     } catch (e) {
       if (e instanceof killSandbox.Error) {
         const error = e.getActualType()

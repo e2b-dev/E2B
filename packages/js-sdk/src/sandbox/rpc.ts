@@ -1,26 +1,26 @@
 // Based on https://github.com/radarsu/rpc-websocket-client
 
-import IWebSocket from 'isomorphic-ws';
+import IWebSocket from 'isomorphic-ws'
 
-import { id } from '../utils/id';
+import { id } from '../utils/id'
 
 export type RpcEventFunction = (
   // @ts-ignore
   e: IWebSocket.OpenEvent | IWebSocket.ErrorEvent
-) => void;
-export type RpcMessageEventFunction = (e: IWebSocket.MessageEvent) => void;
-export type RpcCloseEventFunction = (e: IWebSocket.CloseEvent) => void;
+) => void
+export type RpcMessageEventFunction = (e: IWebSocket.MessageEvent) => void
+export type RpcCloseEventFunction = (e: IWebSocket.CloseEvent) => void
 
-export type RpcNotificationEvent = (data: IRpcNotification) => void;
-export type RpcRequestEvent = (data: IRpcRequest) => void;
-export type RpcSuccessResponseEvent = (data: IRpcSuccessResponse) => void;
-export type RpcErrorResponseEvent = (data: IRpcErrorResponse) => void;
+export type RpcNotificationEvent = (data: IRpcNotification) => void
+export type RpcRequestEvent = (data: IRpcRequest) => void
+export type RpcSuccessResponseEvent = (data: IRpcSuccessResponse) => void
+export type RpcErrorResponseEvent = (data: IRpcErrorResponse) => void
 
 export enum RpcVersions {
   RPC_VERSION = '2.0'
 }
 
-export type RpcId = string | number;
+export type RpcId = string | number
 
 export interface IRpcData {
   method: string;
@@ -64,31 +64,31 @@ export type RpcUnidentifiedMessage =
   | IRpcRequest
   | IRpcNotification
   | IRpcSuccessResponse
-  | IRpcErrorResponse;
+  | IRpcErrorResponse
 
 export class RpcWebSocketClient {
   // native websocket
 
-  public ws: IWebSocket;
+  public ws: IWebSocket
 
-  public onOpenHandlers: RpcEventFunction[] = [];
-  public onAnyMessageHandlers: RpcMessageEventFunction[] = [];
+  public onOpenHandlers: RpcEventFunction[] = []
+  public onAnyMessageHandlers: RpcMessageEventFunction[] = []
 
-  public onNotification: RpcNotificationEvent[] = [];
-  public onRequest: RpcRequestEvent[] = [];
-  public onSuccessResponse: RpcSuccessResponseEvent[] = [];
-  public onErrorResponse: RpcErrorResponseEvent[] = [];
+  public onNotification: RpcNotificationEvent[] = []
+  public onRequest: RpcRequestEvent[] = []
+  public onSuccessResponse: RpcSuccessResponseEvent[] = []
+  public onErrorResponse: RpcErrorResponseEvent[] = []
 
-  public onErrorHandlers: RpcEventFunction[] = [];
-  public onCloseHandlers: RpcCloseEventFunction[] = [];
+  public onErrorHandlers: RpcEventFunction[] = []
+  public onCloseHandlers: RpcCloseEventFunction[] = []
 
   public config: IRpcWebSocketConfig = {
     responseTimeout: 10000
-  };
+  }
 
   private idAwaiter: {
     [id: string]: (data?: any) => void;
-  } = {};
+  } = {}
 
   // constructor
   /**
@@ -97,7 +97,7 @@ export class RpcWebSocketClient {
    * @memberof RpcWebSocketClient
    */
   public constructor() {
-    this.ws = undefined as any;
+    this.ws = undefined as any
   }
 
   // public
@@ -108,13 +108,13 @@ export class RpcWebSocketClient {
    * @memberof RpcWebSocketClient
    */
   public connect(url: string, protocols?: string | string[]) {
-    this.ws = new IWebSocket(url, protocols);
-    return this.listen();
+    this.ws = new IWebSocket(url, protocols)
+    return this.listen()
   }
 
   // events
   public onOpen(fn: RpcEventFunction) {
-    this.onOpenHandlers.push(fn);
+    this.onOpenHandlers.push(fn)
   }
 
   /**
@@ -124,15 +124,15 @@ export class RpcWebSocketClient {
    * @memberof RpcWebSocketClient
    */
   public onAnyMessage(fn: RpcMessageEventFunction) {
-    this.onAnyMessageHandlers.push(fn);
+    this.onAnyMessageHandlers.push(fn)
   }
 
   public onError(fn: RpcEventFunction) {
-    this.onErrorHandlers.push(fn);
+    this.onErrorHandlers.push(fn)
   }
 
   public onClose(fn: RpcCloseEventFunction) {
-    this.onCloseHandlers.push(fn);
+    this.onCloseHandlers.push(fn)
   }
 
   /**
@@ -142,50 +142,50 @@ export class RpcWebSocketClient {
    * @memberof RpcWebSocketClient
    */
   public listenMessages() {
-    let previousOnMessage: RpcMessageEventFunction | undefined;
+    let previousOnMessage: RpcMessageEventFunction | undefined
     if (this.ws.onmessage) {
-      previousOnMessage = this.ws.onmessage.bind(this.ws);
+      previousOnMessage = this.ws.onmessage.bind(this.ws)
     }
 
     this.ws.onmessage = (e: IWebSocket.MessageEvent) => {
       if (previousOnMessage) {
-        previousOnMessage(e);
+        previousOnMessage(e)
       }
 
       for (const handler of this.onAnyMessageHandlers) {
-        handler(e);
+        handler(e)
       }
 
-      const data: RpcUnidentifiedMessage = JSON.parse(e.data.toString());
+      const data: RpcUnidentifiedMessage = JSON.parse(e.data.toString())
       if (this.isNotification(data)) {
         // notification
         for (const handler of this.onNotification) {
-          handler(data);
+          handler(data)
         }
       } else if (this.isRequest(data)) {
         // request
         for (const handler of this.onRequest) {
-          handler(data);
+          handler(data)
         }
         // responses
       } else if (this.isSuccessResponse(data)) {
         // success
         for (const handler of this.onSuccessResponse) {
-          handler(data);
+          handler(data)
         }
 
         // resolve awaiting function
-        this.idAwaiter[data.id](data.result);
+        this.idAwaiter[data.id](data.result)
       } else if (this.isErrorResponse(data)) {
         // error
         for (const handler of this.onErrorResponse) {
-          handler(data);
+          handler(data)
         }
 
         // resolve awaiting function
-        this.idAwaiter[data.id](data.error);
+        this.idAwaiter[data.id](data.error)
       }
-    };
+    }
   }
 
   // communication
@@ -199,38 +199,38 @@ export class RpcWebSocketClient {
    */
   public call(method: string, params?: any) {
     return new Promise((resolve, reject) => {
-      const data = this.buildRequest(method, params);
+      const data = this.buildRequest(method, params)
 
       // give limited time for response
-      let timeout: number | NodeJS.Timeout;
+      let timeout: number | NodeJS.Timeout
       if (this.config.responseTimeout) {
         timeout = setTimeout(() => {
           // stop waiting for response
-          delete this.idAwaiter[data.id];
+          delete this.idAwaiter[data.id]
           reject(
             new Error(`Awaiting response to "${method}" with id: ${data.id} timed out.`)
-          );
-        }, this.config.responseTimeout);
+          )
+        }, this.config.responseTimeout)
       }
 
       // expect response
       this.idAwaiter[data.id] = (responseData?: any) => {
         // stop timeout
-        clearInterval(timeout as number);
+        clearInterval(timeout as number)
         // stop waiting for response
-        delete this.idAwaiter[data.id];
+        delete this.idAwaiter[data.id]
 
         if (this.isRpcError(responseData)) {
-          reject(new Error(`RPC Error (${responseData.code}): ${responseData.message}`));
-          return;
+          reject(new Error(`RPC Error (${responseData.code}): ${responseData.message}`))
+          return
         }
 
-        resolve(responseData);
-      };
+        resolve(responseData)
+      }
 
-      const json = JSON.stringify(data);
-      this.ws.send(json);
-    });
+      const json = JSON.stringify(data)
+      this.ws.send(json)
+    })
   }
 
   /**
@@ -240,7 +240,7 @@ export class RpcWebSocketClient {
    * @memberof RpcWebSocketClient
    */
   public notify(method: string, params?: any) {
-    this.ws.send(JSON.stringify(this.buildNotification(method, params)));
+    this.ws.send(JSON.stringify(this.buildNotification(method, params)))
   }
 
   // setup
@@ -251,7 +251,7 @@ export class RpcWebSocketClient {
    * @memberof RpcWebSocketClient
    */
   public customId(idFn: () => string) {
-    this.idFn = idFn;
+    this.idFn = idFn
   }
 
   /**
@@ -259,10 +259,10 @@ export class RpcWebSocketClient {
    * @memberof RpcWebSocketClient
    */
   public noRpc() {
-    this.buildRequest = this.buildRequestBase;
-    this.buildNotification = this.buildNotificationBase;
-    this.buildRpcSuccessResponse = this.buildRpcSuccessResponseBase;
-    this.buildRpcErrorResponse = this.buildRpcErrorResponseBase;
+    this.buildRequest = this.buildRequestBase
+    this.buildNotification = this.buildNotificationBase
+    this.buildRpcSuccessResponse = this.buildRpcSuccessResponseBase
+    this.buildRpcErrorResponse = this.buildRpcErrorResponseBase
   }
 
   /**
@@ -271,7 +271,7 @@ export class RpcWebSocketClient {
    * @memberof RpcWebSocketClient
    */
   public configure(options: IRpcWebSocketConfig) {
-    Object.assign(this.config, options);
+    Object.assign(this.config, options)
   }
 
   /**
@@ -281,7 +281,7 @@ export class RpcWebSocketClient {
    * @memberof RpcWebSocketClient
    */
   public changeSocket(ws: IWebSocket) {
-    this.ws = ws;
+    this.ws = ws
   }
 
   // private
@@ -292,68 +292,68 @@ export class RpcWebSocketClient {
       // @ts-ignore
       this.ws.onopen = (e: IWebSocket.OpenEvent) => {
         for (const handler of this.onOpenHandlers) {
-          handler(e);
+          handler(e)
         }
-        resolve(e);
-      };
+        resolve(e)
+      }
 
       // listen for messages
-      this.listenMessages();
+      this.listenMessages()
 
       // called before onclose
       this.ws.onerror = (e: IWebSocket.ErrorEvent) => {
         for (const handler of this.onErrorHandlers) {
-          handler(e);
+          handler(e)
         }
-      };
+      }
 
       this.ws.onclose = (e: IWebSocket.CloseEvent) => {
         for (const handler of this.onCloseHandlers) {
-          handler(e);
+          handler(e)
         }
-        reject(new Error(`WebSocket closed with code: ${e.code} and reason: ${e.reason}`));
-      };
-    });
+        reject(new Error(`WebSocket closed with code: ${e.code} and reason: ${e.reason}`))
+      }
+    })
   }
 
   // request
   private buildRequest(method: string, params?: any): IRpcRequest {
-    const data = this.buildRequestBase(method, params);
-    data.jsonrpc = RpcVersions.RPC_VERSION;
-    return data;
+    const data = this.buildRequestBase(method, params)
+    data.jsonrpc = RpcVersions.RPC_VERSION
+    return data
   }
 
   private buildRequestBase(method: string, params?: any): IRpcRequest {
-    const data: IRpcRequest = {} as any;
-    data.id = this.idFn();
-    data.method = method;
+    const data: IRpcRequest = {} as any
+    data.id = this.idFn()
+    data.method = method
 
     if (params) {
-      data.params = params;
+      data.params = params
     }
 
-    return data;
+    return data
   }
 
   // notification
   private buildNotification(method: string, params?: any): IRpcNotification {
-    const data = this.buildNotificationBase(method, params);
-    data.jsonrpc = RpcVersions.RPC_VERSION;
-    return data;
+    const data = this.buildNotificationBase(method, params)
+    data.jsonrpc = RpcVersions.RPC_VERSION
+    return data
   }
 
   private buildNotificationBase(
     method: string,
     params?: any
   ): IRpcNotification {
-    const data: IRpcNotification = {} as any;
-    data.method = method;
+    const data: IRpcNotification = {} as any
+    data.method = method
 
     if (params) {
-      data.params = params;
+      data.params = params
     }
 
-    return data;
+    return data
   }
 
   // success response
@@ -361,19 +361,19 @@ export class RpcWebSocketClient {
     id: RpcId,
     result: any
   ): IRpcSuccessResponse {
-    const data = this.buildRpcSuccessResponseBase(id, result);
-    data.jsonrpc = RpcVersions.RPC_VERSION;
-    return data;
+    const data = this.buildRpcSuccessResponseBase(id, result)
+    data.jsonrpc = RpcVersions.RPC_VERSION
+    return data
   }
 
   private buildRpcSuccessResponseBase(
     id: RpcId,
     result: any
   ): IRpcSuccessResponse {
-    const data: IRpcSuccessResponse = {} as any;
-    data.id = id;
-    data.result = result;
-    return data;
+    const data: IRpcSuccessResponse = {} as any
+    data.id = id
+    data.result = result
+    return data
   }
 
   // error response
@@ -381,51 +381,51 @@ export class RpcWebSocketClient {
     id: RpcId,
     error: IRpcError
   ): IRpcErrorResponse {
-    const data = this.buildRpcErrorResponseBase(id, error);
-    data.jsonrpc = RpcVersions.RPC_VERSION;
-    return data;
+    const data = this.buildRpcErrorResponseBase(id, error)
+    data.jsonrpc = RpcVersions.RPC_VERSION
+    return data
   }
 
   private buildRpcErrorResponseBase(
     id: RpcId,
     error: IRpcError
   ): IRpcErrorResponse {
-    const data: IRpcErrorResponse = {} as any;
-    data.id = id;
-    data.error = error;
-    return data;
+    const data: IRpcErrorResponse = {} as any
+    data.id = id
+    data.error = error
+    return data
   }
 
   private idFn(): RpcId {
-    return id(12);
+    return id(12)
   }
 
   // tests
   private isNotification(
     data: RpcUnidentifiedMessage
   ): data is IRpcNotification {
-    return !(data as any).id;
+    return !(data as any).id
   }
 
   private isRequest(data: RpcUnidentifiedMessage): data is IRpcRequest {
-    return (data as any).method;
+    return (data as any).method
   }
 
   private isSuccessResponse(
     data: RpcUnidentifiedMessage
   ): data is IRpcSuccessResponse {
     // eslint-disable-next-line no-prototype-builtins
-    return data.hasOwnProperty(`result`);
+    return data.hasOwnProperty('result')
   }
 
   private isErrorResponse(
     data: RpcUnidentifiedMessage
   ): data is IRpcErrorResponse {
     // eslint-disable-next-line no-prototype-builtins
-    return data.hasOwnProperty(`error`);
+    return data.hasOwnProperty('error')
   }
 
   private isRpcError(data: any): data is IRpcError {
-    return typeof data?.code !== 'undefined';
+    return typeof data?.code !== 'undefined'
   }
 }

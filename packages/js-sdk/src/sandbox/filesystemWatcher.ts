@@ -19,7 +19,7 @@ export interface FilesystemEvent {
   isDir: boolean;
 }
 
-export type FilesystemEventListener = (event: FilesystemEvent) => Promise<void> | void;
+export type FilesystemEventListener = (event: FilesystemEvent) => Promise<void> | void
 
 class FilesystemWatcher {
   // Listeners to filesystem events.

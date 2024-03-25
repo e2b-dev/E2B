@@ -109,7 +109,7 @@ export type TerminalOpts = {
    * Timeout for terminal start in milliseconds (default is 60 seconds)
    */
   timeout?: number;
-};
+}
 
 /**
  * Manager for starting and interacting with terminal sessions in the sandbox.

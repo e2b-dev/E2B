@@ -1,6 +1,6 @@
 export class TimeoutError extends Error {
-	readonly name: 'TimeoutError';
-	constructor(message?: string);
+	readonly name: 'TimeoutError'
+	constructor(message?: string)
 }
 
 export type ClearablePromise<T> = {
@@ -8,7 +8,7 @@ export type ClearablePromise<T> = {
 	Clear the timeout.
 	*/
 	clear: () => void;
-} & Promise<T>;
+} & Promise<T>
 
 export type Options<ReturnType> = {
 	/**
@@ -116,7 +116,7 @@ export type Options<ReturnType> = {
 	```
 	*/
 	signal?: globalThis.AbortSignal;
-};
+}
 
 /**
 Timeout a promise after a specified amount of time.
@@ -143,9 +143,9 @@ await pTimeout(delayedPromise(), {
 */
 export default function pTimeout<ValueType, ReturnType = ValueType>(
 	input: PromiseLike<ValueType>,
-	options: Options<ReturnType> & {message: false}
-): ClearablePromise<ValueType | ReturnType | undefined>;
+	options: Options<ReturnType> & { message: false }
+): ClearablePromise<ValueType | ReturnType | undefined>
 export default function pTimeout<ValueType, ReturnType = ValueType>(
 	input: PromiseLike<ValueType>,
 	options: Options<ReturnType>
-): ClearablePromise<ValueType | ReturnType>;
+): ClearablePromise<ValueType | ReturnType>

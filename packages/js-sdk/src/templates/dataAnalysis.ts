@@ -39,13 +39,13 @@ export class DataAnalysis extends Sandbox {
    * Creates a new Sandbox from the template.
    * @returns New Sandbox
    */
-  static override async create(): Promise<DataAnalysis>;
+  static override async create(): Promise<DataAnalysis>
   /**
    * Creates a new Sandbox from the specified options.
    * @param opts Sandbox options
    * @returns New Sandbox
    */
-  static override async create(opts: SandboxOpts): Promise<DataAnalysis>;
+  static override async create(opts: SandboxOpts): Promise<DataAnalysis>
   static override async create(opts?: SandboxOpts) {
     const sandbox = new DataAnalysis({ ...opts ? opts : {} })
     await sandbox._open({ timeout: opts?.timeout })
