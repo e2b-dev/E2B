@@ -149,6 +149,8 @@ resource "nomad_job" "otel-collector" {
 
       grafana_api_key = data.google_secret_manager_secret_version.grafana_api_key.secret_data
 
+      consul_token = var.consul_acl_token_secret
+
       gcp_zone = var.gcp_zone
     }
   }
