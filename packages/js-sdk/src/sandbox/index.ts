@@ -491,7 +491,7 @@ export class Sandbox extends SandboxConnection {
   static async create<S extends typeof Sandbox>(this: S, opts: SandboxOpts): Promise<InstanceType<S>>
   static async create(optsOrTemplate?: string | SandboxOpts) {
     const opts: SandboxOpts | undefined = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
-    const sandbox = new Sandbox(opts)
+    const sandbox = new this(opts)
     await sandbox._open({ timeout: opts?.timeout })
 
     return sandbox
