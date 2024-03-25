@@ -30,6 +30,10 @@ variable "grafana_metrics_endpoint" {
   type = string
 }
 
+variable "consul_token" {
+  type = string
+}
+
 variables {
   otel_image = "otel/opentelemetry-collector-contrib:0.90.1"
 }
@@ -122,6 +126,7 @@ receivers:
             format: ['prometheus']
           consul_sd_configs:
           - services: ['nomad-client', 'nomad', 'api', 'client-proxy', 'session-proxy', 'otel-collector', 'logs-collector', 'docker-reverse-proxy']
+            token: "${var.consul_token}"
 
           relabel_configs:
           - source_labels: ['__meta_consul_tags']
