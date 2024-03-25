@@ -140,6 +140,7 @@ func main() {
 
 	s := NewGinServer(apiStore, swagger, *port)
 
+	fmt.Printf("Starting server on port %d\n", *port)
 	// And we serve HTTP until the world ends.
 	err = s.ListenAndServe()
 	if err != nil {
