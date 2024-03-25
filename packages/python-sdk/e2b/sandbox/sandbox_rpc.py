@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import threading
 import time
 
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from concurrent.futures import TimeoutError
 from queue import Queue
 from threading import Event
 from typing import Any, Callable, Dict, Iterator, List, Union, Optional
@@ -19,8 +18,7 @@ from websockets.typing import Data
 from e2b.constants import TIMEOUT
 from e2b.sandbox.exception import RpcException, TimeoutException, SandboxException
 from e2b.sandbox.websocket_client import WebSocket
-from e2b.utils.future import DeferredFuture, run_async_func_in_loop
-from e2b.utils.threads import shutdown_executor
+from e2b.utils.future import DeferredFuture
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +72,7 @@ class SandboxRpc(BaseModel):
             self._receive_message(data)
             self._queue_out.task_done()
 
-    def connect(self, timeout: Optional[float] = TIMEOUT):
+    def connect(self, timeout: float = TIMEOUT):
         started = Event()
         stopped = Event()
         self._process_cleanup.append(stopped.set)
@@ -138,7 +136,7 @@ class SandboxRpc(BaseModel):
                 logger.error(f"WebSocket timed out while waiting for: {request} {e}")
                 raise TimeoutException(
                     f"WebSocket timed out while waiting for: {request} {e}"
-                )
+                ) from e
             return r
         except Exception as e:
             logger.error(f"WebSocket received error while waiting for: {request} {e}")
