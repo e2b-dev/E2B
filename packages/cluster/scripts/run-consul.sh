@@ -365,8 +365,8 @@ function start_consul {
 function bootstrap {
   log_info "Waiting for Consul to start"
   while true; do
-    local readonly consul_leader_addr=$(consul info | grep "leader_addr =" | awk -F'=' '{print $2}' | tr -d ' ')
-    local readonly consul_leader=$(consul info | grep "leader =" | awk -F'=' '{print $2}' | tr -d ' ')
+    local readonly consul_leader_addr=$(consul info -token="${consul_token}"| grep "leader_addr =" | awk -F'=' '{print $2}' | tr -d ' ')
+    local readonly consul_leader=$(consul info -token="${consul_token}"| grep "leader =" | awk -F'=' '{print $2}' | tr -d ' ')
     if [[ -n "$consul_leader_addr" ]]; then
       log_info "Consul leader elected"
 
