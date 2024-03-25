@@ -254,11 +254,8 @@ EOF
   },
   "acl": {
     "enabled": true,
-    "default_policy": "allow",
-    "enable_token_persistence": true,
-    "tokens": {
-      "initial_management": "$CONSUL_ACL_MASTER_TOKEN"
-    }
+    "default_policy": "deny",
+    "enable_token_persistence": true
   },
   "telemetry": {
     "prometheus_retention_time": "24h",
@@ -365,22 +362,21 @@ function start_consul {
 function bootstrap {
   log_info "Waiting for Consul to start"
   while true; do
-    local readonly consul_leader_addr=$(consul info | grep "leader_addr =" | awk -F'=' '{print $2}' | tr -d  ' ')
-    local readonly consul_leader=$(consul info | grep "leader =" | awk -F'=' '{print $2}' | tr -d  ' ')
+    local readonly consul_leader_addr=$(consul info -token="${consul_token}"| grep "leader_addr =" | awk -F'=' '{print $2}' | tr -d ' ')
+    local readonly consul_leader=$(consul info -token="${consul_token}"| grep "leader =" | awk -F'=' '{print $2}' | tr -d ' ')
     if [[ -n "$consul_leader_addr" ]]; then
       log_info "Consul leader elected"
 
       if [[ "$consul_leader" == "true" ]]; then
         local readonly consul_token="$1"
         log_info "Bootstrapping Consul"
-        echo "${consul_token}" > /tmp/consul.token
+        echo "${consul_token}" >/tmp/consul.token
         consul acl bootstrap /tmp/consul.token
         rm /tmp/consul.token
       fi
 
       break
     fi
-
 
     log_info "Waiting for Consul to start"
     sleep 1
