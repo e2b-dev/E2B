@@ -255,10 +255,7 @@ EOF
   "acl": {
     "enabled": true,
     "default_policy": "deny",
-    "enable_token_persistence": true,
-    "tokens": {
-      "initial_management": "$CONSUL_ACL_MASTER_TOKEN"
-    }
+    "enable_token_persistence": true
   },
   "telemetry": {
     "prometheus_retention_time": "24h",
