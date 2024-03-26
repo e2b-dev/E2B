@@ -68,10 +68,5 @@ func (h *extraTaskHandle) Run(ctx context.Context, tracer trace.Tracer) error {
 
 func (h *extraTaskHandle) Stats(ctx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
 	defer close(statsChannel)
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		}
-	}
+	<-ctx.Done()
 }

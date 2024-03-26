@@ -36,6 +36,8 @@ func (h *extraTaskHandle) Run(_ context.Context, _ trace.Tracer) error {
 		return errMsg
 	}
 
+	// TODO: Handle via wait here
+
 	for {
 		time.Sleep(processCheckInterval)
 
@@ -69,10 +71,5 @@ func (h *extraTaskHandle) shutdown(ctx context.Context, tracer trace.Tracer) err
 
 func (h *extraTaskHandle) Stats(ctx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
 	defer close(statsChannel)
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		}
-	}
+	<-ctx.Done()
 }
