@@ -1,4 +1,4 @@
-name: SDK Release Candidate
+name: Release Candidates
 
 on:
   pull_request:
@@ -19,7 +19,6 @@ jobs:
 
     - uses: pnpm/action-setup@v3
       if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
-
 
     - name: Setup Node.js 20
       uses: actions/setup-node@v4
