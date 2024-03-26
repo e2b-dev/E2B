@@ -234,12 +234,19 @@ export const buildCommand = new commander.Command('build')
         }
 
         console.log('Building docker image...')
-        child_process.execSync(`DOCKER_CLI_HINTS=false docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root,               shell: '/bin/bash',
-})
+        child_process.execSync(`DOCKER_CLI_HINTS=false docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`, {
+          stdio: 'inherit',
+          cwd: root,
+          shell: '/bin/bash',
+        })
 
         console.log('Docker image built.\n')
         console.log('Pushing docker image...')
-        child_process.execSync(`docker push docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`, { stdio: 'inherit', cwd: root,              shell: '/bin/bash'})
+        child_process.execSync(`docker push docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`, {
+          stdio: 'inherit',
+          cwd: root,
+          shell: '/bin/bash',
+        })
 
         console.log('Docker image pushed.\n')
 
