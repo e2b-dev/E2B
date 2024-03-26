@@ -261,37 +261,21 @@ func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tas
 	)
 	defer childSpan.End()
 
-	if force {
-		if err := h.Extra.shutdown(childCtx, tracer); err == nil {
-			telemetry.ReportEvent(childCtx, "waiting for state lock")
+	if !force {
+		return fmt.Errorf("force is required to destroy task")
+	}
 
-			h.Mu.Lock()
-			h.ExitResult = &drivers.ExitResult{}
-			h.ExitResult.ExitCode = 0
-			h.ExitResult.Signal = 0
-			h.CompletedAt = time.Now()
-			h.TaskState = drivers.TaskStateExited
-			h.Mu.Unlock()
-
-			telemetry.ReportEvent(childCtx, "updated task exit info")
-		} else {
-			errMsg := fmt.Errorf("executor Shutdown failed: %w", err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			h.Mu.Lock()
-			h.ExitResult = &drivers.ExitResult{}
-			h.ExitResult.ExitCode = 1
-			h.ExitResult.Signal = 0
-			h.CompletedAt = time.Now()
-			h.TaskState = drivers.TaskStateUnknown
-			h.ExitResult.Err = errMsg
-			h.Mu.Unlock()
-		}
-
+	shutdownErr := h.Extra.shutdown(childCtx, tracer)
+	if shutdownErr != nil {
+		errMsg := fmt.Errorf("executor Shutdown failed: %w", shutdownErr)
+		telemetry.ReportError(childCtx, errMsg)
+	} else {
 		telemetry.ReportEvent(childCtx, "shutdown task")
 	}
 
 	h.Extra.Instance.CleanupAfterFCStop(childCtx, tracer, de.hosts)
+
+	telemetry.ReportEvent(childCtx, "cleanup after FC stop")
 
 	tasks.Delete(taskID)
 	telemetry.ReportEvent(childCtx, "task deleted")
@@ -302,22 +286,13 @@ func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tas
 func handleWait(ctx context.Context, driverCtx context.Context, handle *driver.TaskHandle[*extraTaskHandle], ch chan *drivers.ExitResult) {
 	defer close(ch)
 
-	// TODO: Use context for waiting for task
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-driverCtx.Done():
-			return
-		case <-ticker.C:
-			s := handle.TaskStatus()
-			if s.State == drivers.TaskStateExited {
-				ch <- handle.ExitResult
-			}
-		}
+	select {
+	case <-ctx.Done():
+		return
+	case <-driverCtx.Done():
+		return
+	case <-handle.Exited:
+		ch <- handle.TaskStatus().ExitResult.Copy()
 	}
 }
 

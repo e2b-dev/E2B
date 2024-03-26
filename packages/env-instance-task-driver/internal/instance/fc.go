@@ -29,8 +29,9 @@ type MmdsMetadata struct {
 }
 
 type FC struct {
-	Cmd *exec.Cmd
-	Pid string
+	Cmd     *exec.Cmd
+	Pid     string
+	Machine *firecracker.Machine
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -322,8 +323,9 @@ func startFC(
 	telemetry.ReportEvent(childCtx, "got pid for FC")
 
 	fc := &FC{
-		Cmd: cmd,
-		Pid: strconv.Itoa(pid),
+		Cmd:     cmd,
+		Pid:     strconv.Itoa(pid),
+		Machine: m,
 	}
 
 	telemetry.SetAttributes(

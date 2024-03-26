@@ -222,18 +222,17 @@ func (de *DriverExtra) WaitTask(ctx, driverCtx context.Context, _ trace.Tracer, 
 func handleWait(ctx, driverCtx context.Context, handle *driver.TaskHandle[*extraTaskHandle], ch chan *drivers.ExitResult) {
 	defer close(ch)
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-driverCtx.Done():
-			return
-		case <-handle.Ctx.Done():
-			s := handle.TaskStatus()
-			if s.State == drivers.TaskStateExited {
-				ch <- handle.ExitResult
-			}
+	select {
+	case <-ctx.Done():
+		return
+	case <-driverCtx.Done():
+		return
+	case <-handle.Ctx.Done():
+		s := handle.TaskStatus()
+		if s.State == drivers.TaskStateExited {
+			ch <- handle.ExitResult
 		}
+		return
 	}
 }
 
