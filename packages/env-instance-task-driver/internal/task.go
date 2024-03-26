@@ -182,25 +182,25 @@ func (de *DriverExtra) WaitTask(ctx context.Context, driverCtx context.Context, 
 	))
 	defer validationSpan.End()
 
-	h, ok := tasks.Get(taskID)
+	handle, ok := tasks.Get(taskID)
 	if !ok {
 		telemetry.ReportCriticalError(validationCtx, drivers.ErrTaskNotFound)
 		return nil, drivers.ErrTaskNotFound
 	}
 
-	childCtx, childSpan := tracer.Start(driverCtx, "wait-env-instance-task",
+	childCtx, childSpan := tracer.Start(ctx, "wait-env-instance-task",
 		trace.WithAttributes(
 			attribute.String("task.id", taskID),
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(validationCtx, attribute.String("link", "validation")),
-			trace.LinkFromContext(h.Ctx, attribute.String("link", "start-env-instance-task")),
+			trace.LinkFromContext(handle.Ctx, attribute.String("link", "start-env-instance-task")),
 		),
 	)
 	defer childSpan.End()
 
 	ch := make(chan *drivers.ExitResult)
-	go handleWait(childCtx, driverCtx, h, ch)
+	go driver.HandleWait(childCtx, driverCtx, handle, ch)
 
 	return ch, nil
 }
@@ -281,17 +281,6 @@ func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tas
 	telemetry.ReportEvent(childCtx, "task deleted")
 
 	return nil
-}
-
-func handleWait(ctx context.Context, driverCtx context.Context, handle *driver.TaskHandle[*extraTaskHandle], ch chan *drivers.ExitResult) {
-	defer close(ch)
-
-	select {
-	case <-ctx.Done():
-	case <-driverCtx.Done():
-	case <-handle.Exited:
-		ch <- handle.TaskStatus().ExitResult.Copy()
-	}
 }
 
 func (de *DriverExtra) TaskStats(ctx context.Context, driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], taskID string, interval time.Duration) (<-chan *structs.TaskResourceUsage, error) {

@@ -95,3 +95,14 @@ func (h *TaskHandle[Extra]) Run(ctx context.Context, tracer trace.Tracer) {
 
 	h.handleResult(nil)
 }
+
+func HandleWait[Extra extraTaskHandle](ctx, driverCtx context.Context, handle *TaskHandle[Extra], ch chan *drivers.ExitResult) {
+	defer close(ch)
+
+	select {
+	case <-ctx.Done():
+	case <-driverCtx.Done():
+	case <-handle.Exited:
+		ch <- handle.TaskStatus().ExitResult.Copy()
+	}
+}

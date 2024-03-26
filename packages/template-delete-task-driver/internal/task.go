@@ -161,23 +161,9 @@ func (de *DriverExtra) WaitTask(ctx, driverCtx context.Context, _ trace.Tracer, 
 	}
 
 	ch := make(chan *drivers.ExitResult)
-	go handleWait(ctx, driverCtx, handle, ch)
+	go driver.HandleWait(ctx, driverCtx, handle, ch)
 
 	return ch, nil
-}
-
-func handleWait(ctx, driverCtx context.Context, handle *driver.TaskHandle[*extraTaskHandle], ch chan *drivers.ExitResult) {
-	defer close(ch)
-
-	select {
-	case <-ctx.Done():
-	case <-driverCtx.Done():
-	case <-handle.Ctx.Done():
-		s := handle.TaskStatus()
-		if s.State == drivers.TaskStateExited {
-			ch <- handle.ExitResult
-		}
-	}
 }
 
 func (de *DriverExtra) StopTask(_ context.Context, _ trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string, timeout time.Duration, signal string) error {
