@@ -9,7 +9,7 @@ resource "google_compute_health_check" "nomad_check" {
   unhealthy_threshold = 10 # 50 seconds
 
   http_health_check {
-    request_path = "/v1/status/peers"
+    request_path = "/v1/agent/health"
     port         = "4646"
   }
 }
