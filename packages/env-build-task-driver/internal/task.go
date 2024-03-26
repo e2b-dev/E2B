@@ -224,15 +224,12 @@ func handleWait(ctx, driverCtx context.Context, handle *driver.TaskHandle[*extra
 
 	select {
 	case <-ctx.Done():
-		return
 	case <-driverCtx.Done():
-		return
 	case <-handle.Ctx.Done():
 		s := handle.TaskStatus()
 		if s.State == drivers.TaskStateExited {
 			ch <- handle.ExitResult
 		}
-		return
 	}
 }
 

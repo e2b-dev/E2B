@@ -288,9 +288,7 @@ func handleWait(ctx context.Context, driverCtx context.Context, handle *driver.T
 
 	select {
 	case <-ctx.Done():
-		return
 	case <-driverCtx.Done():
-		return
 	case <-handle.Exited:
 		ch <- handle.TaskStatus().ExitResult.Copy()
 	}
