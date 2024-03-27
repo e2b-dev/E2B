@@ -28,7 +28,7 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   onStderr?: (out: ProcessMessage) => Promise<void> | void;
   onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
   /** Run after the sandbox connection is established */
-  afterConnectionEstablished?: (() => any)[];
+  afterConnectionEstablished?: ((sandbox: Sandbox) => any)[];
 }
 
 export interface Action<S extends Sandbox = Sandbox, T = {
