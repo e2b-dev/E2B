@@ -219,11 +219,8 @@ export const buildCommand = new commander.Command('build')
 
         if (!opts.skipLogin) {
           try {
-            child_process.execSync(`echo "$E2B_ACCESS_TOKEN" | docker login docker.${e2b.SANDBOX_DOMAIN} -u _e2b_access_token --password-stdin`, {
+            child_process.execSync(`echo ${accessToken} | docker login docker.${e2b.SANDBOX_DOMAIN} -u _e2b_access_token --password-stdin`, {
               stdio: 'inherit',
-              env: {
-                E2B_ACCESS_TOKEN: accessToken,
-              },
               cwd: root,
             })
           } catch (err: any) {
