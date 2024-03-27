@@ -83,9 +83,8 @@ func (n *NomadClient) ListenToJobs(ctx context.Context, index uint64) error {
 
 func (n *NomadClient) newSubscriber(jobID, taskState, taskName string) *jobSubscriber {
 	sub := &jobSubscriber{
-		jobID: jobID,
-		// We add arbitrary buffer to the channel to avoid blocking the Nomad ListenToJobs goroutine
-		wait:        make(chan api.Allocation, 10),
+		jobID:       jobID,
+		wait:        make(chan api.Allocation),
 		taskState:   taskState,
 		subscribers: n.subscribers,
 		taskName:    taskName,
@@ -113,7 +112,7 @@ func (n *NomadClient) processAlloc(alloc *api.Allocation) {
 		select {
 		case sub.wait <- *alloc:
 		default:
-			n.logger.Errorf("channel for job %s is full", alloc.JobID)
+			n.logger.Warnf("channel for job %s is full", alloc.JobID)
 		}
 	}
 
@@ -132,7 +131,7 @@ func (n *NomadClient) processAlloc(alloc *api.Allocation) {
 		select {
 		case sub.wait <- *alloc:
 		default:
-			n.logger.Errorf("channel for job %s is full", alloc.JobID)
+			n.logger.Warnf("channel for job %s is full", alloc.JobID)
 		}
 	}
 }
