@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -29,7 +30,7 @@ func (a *APIStore) Proxy(w http.ResponseWriter, req *http.Request) {
 	realRepoPrefix := fmt.Sprintf("/v2/%s/%s/", constants.GCPProject, constants.DockerRegistry)
 	if !strings.HasPrefix(path, repoPrefix) && !strings.HasPrefix(path, realRepoPrefix) {
 		// The request shouldn't need any other endpoints, we deny access
-		fmt.Printf("No matching route found for path: %s\n", path)
+		log.Printf("No matching route found for path: %s\n", path)
 
 		w.WriteHeader(http.StatusForbidden)
 		return
