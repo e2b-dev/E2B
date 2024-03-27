@@ -106,3 +106,11 @@ func HandleWait[Extra extraTaskHandle](ctx, driverCtx context.Context, handle *T
 		ch <- handle.TaskStatus().ExitResult.Copy()
 	}
 }
+
+func Stats(ctx, driverCtx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
+	defer close(statsChannel)
+	select {
+	case <-ctx.Done():
+	case <-driverCtx.Done():
+	}
+}
