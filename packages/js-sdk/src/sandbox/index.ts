@@ -80,7 +80,7 @@ export class Sandbox extends SandboxConnection {
   readonly _actions: Map<string, Action<any, any>> = new Map()
 
   private readonly onScanPorts?: ScanOpenPortsHandler
-  private readonly afterConnectionEstablished: (() => any)[] = []
+  private readonly afterConnectionEstablished: ((sandbox: Sandbox) => any)[] = []
 
   /**
    * Use `Sandbox.create()` instead.
@@ -730,7 +730,7 @@ export class Sandbox extends SandboxConnection {
     }
 
     for (const fn of this.afterConnectionEstablished) {
-      fn()
+      fn(this)
     }
 
     return this
