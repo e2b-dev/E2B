@@ -27,6 +27,7 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   onStdout?: (out: ProcessMessage) => Promise<void> | void;
   onStderr?: (out: ProcessMessage) => Promise<void> | void;
   onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
+  /** Run after the sandbox connection is established */
   afterConnectionEstablished?: (() => any)[];
 }
 
