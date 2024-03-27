@@ -27,6 +27,7 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   onStdout?: (out: ProcessMessage) => Promise<void> | void;
   onStderr?: (out: ProcessMessage) => Promise<void> | void;
   onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
+  afterConnectionEstablished?: (() => any)[];
 }
 
 export interface Action<S extends Sandbox = Sandbox, T = {
@@ -78,6 +79,7 @@ export class Sandbox extends SandboxConnection {
   readonly _actions: Map<string, Action<any, any>> = new Map()
 
   private readonly onScanPorts?: ScanOpenPortsHandler
+  private readonly afterConnectionEstablished: (() => any)[] = []
 
   /**
    * Use `Sandbox.create()` instead.
@@ -91,6 +93,7 @@ export class Sandbox extends SandboxConnection {
     opts = opts || {}
     super(opts)
     this.onScanPorts = opts.onScanPorts
+    this.afterConnectionEstablished += opts.afterConnectionEstablished || []
 
     // Init Filesystem handler
     this.filesystem = {
@@ -723,6 +726,10 @@ export class Sandbox extends SandboxConnection {
 
     if ((this.opts as SandboxOpts).onStdout || (this.opts as SandboxOpts).onStderr) {
       this.handleStartCmdLogs()
+    }
+
+    for (const fn of this.afterConnectionEstablished) {
+      fn()
     }
 
     return this
