@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "0.4.2-fix-docker-login.2",
+  "version": "0.4.2-fix-docker-login.3",
   "description": "CLI for managing e2b sandbox templates",
   "homepage": "https://e2b.dev",
   "license": "MIT",
