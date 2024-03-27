@@ -19,7 +19,7 @@ The example below shows how to disconnect from a running sandbox and reconnect t
   isRunnable={false}
 />
 
-Call the `keep_alive`/`keepAlive` method on the sandbox instance to keep it alive. You can specify the preferred duration, as a multiple of a default time unit, which is
+Call the `keep_alive`/`keepAlive` method on the sandbox instance to keep it alive. These calls are cumuative, meaning that if you call `keep_alive`/`keepAlive` for 30s, wait for 20s, and then call `keep_alive`/`keepAlive` again for 30s then the sandbox will persist for a total of 1 minute. You can specify the preferred duration, as a multiple of a default time unit, which is
 - 1ms in JS
 - 1s in Python.
 
