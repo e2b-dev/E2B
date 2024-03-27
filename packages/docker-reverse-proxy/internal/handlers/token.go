@@ -46,6 +46,7 @@ func (a *APIStore) GetToken(w http.ResponseWriter, r *http.Request) error {
 	if scope == "" {
 		if !auth.ValidateAccessToken(ctx, a.db.Client, accessToken) {
 			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("invalid access token"))
 
 			return fmt.Errorf("invalid access token")
 		}
