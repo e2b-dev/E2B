@@ -3,8 +3,7 @@ package nomad
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
+	"os"
 
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 
@@ -21,13 +20,11 @@ const (
 	jobRunningStatus = "running"
 
 	defaultTaskName = "start"
-
-	jobCheckInterval = 100 * time.Millisecond
 )
 
 type jobSubscriber struct {
 	subscribers *utils.Map[*jobSubscriber]
-	wait        chan api.AllocationListStub
+	wait        chan api.Allocation
 	jobID       string
 	taskState   string
 	taskName    string
@@ -37,11 +34,45 @@ func (s *jobSubscriber) close() {
 	s.subscribers.Remove(s.jobID)
 }
 
+func (n *NomadClient) ListenToJobs(ctx context.Context) error {
+	topics := map[api.Topic][]string{
+		api.TopicAllocation: {"*"},
+	}
+
+	streamCtx, streamCancel := context.WithCancel(ctx)
+	defer streamCancel()
+
+	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, 0, &api.QueryOptions{
+		Filter:     fmt.Sprintf("JobID contains \"%s\"", instanceJobNameWithSlash),
+		AllowStale: true,
+		Prefix:     instanceJobNameWithSlash,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get Nomad event stream: %w", err)
+	}
+
+	for event := range eventCh {
+		for _, e := range event.Events {
+			alloc, allocErr := e.Allocation()
+			if allocErr != nil {
+				errMsg := fmt.Errorf("cannot retrieve allocations for '%s' job: %w", alloc.JobID, allocErr)
+				fmt.Fprint(os.Stderr, errMsg.Error())
+
+				continue
+			}
+
+			n.processAllocs(alloc)
+		}
+	}
+
+	return nil
+}
+
 func (n *NomadClient) newSubscriber(jobID, taskState, taskName string) *jobSubscriber {
 	sub := &jobSubscriber{
 		jobID: jobID,
 		// We add arbitrary buffer to the channel to avoid blocking the Nomad ListenToJobs goroutine
-		wait:        make(chan api.AllocationListStub, 10),
+		wait:        make(chan api.Allocation, 10),
 		taskState:   taskState,
 		subscribers: n.subscribers,
 		taskName:    taskName,
@@ -52,54 +83,7 @@ func (n *NomadClient) newSubscriber(jobID, taskState, taskName string) *jobSubsc
 	return sub
 }
 
-func (n *NomadClient) ListenToJobs(ctx context.Context) {
-	ticker := time.NewTicker(jobCheckInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		// Loop with a ticker work differently than a loop with sleep.
-		// The ticker will tick every 100ms, but if the loop takes more than 100ms to run, the ticker will tick again immediately.
-		case <-ticker.C:
-			subscribers := n.subscribers.Items()
-
-			if len(subscribers) == 0 {
-				continue
-			}
-
-			filterParts := make([]string, len(subscribers))
-
-			var i int
-
-			for jobID := range subscribers {
-				filterParts[i] = jobID
-				i++
-			}
-
-			filterString := strings.Join(filterParts, "|")
-
-			allocs, _, err := n.client.Allocations().List(&api.QueryOptions{
-				Filter: fmt.Sprintf("JobID matches \"%s\"", filterString),
-			})
-			if err != nil {
-				n.logger.Errorf("Error getting jobs: %v", err)
-
-				return
-			}
-
-			for _, alloc := range allocs {
-				n.processAllocs(alloc)
-			}
-
-		case <-ctx.Done():
-			fmt.Println("Context canceled, stopping ListenToJobs")
-
-			return
-		}
-	}
-}
-
-func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
+func (n *NomadClient) processAllocs(alloc *api.Allocation) {
 	sub, ok := n.subscribers.Get(alloc.JobID)
 
 	if !ok {
