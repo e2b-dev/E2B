@@ -43,7 +43,17 @@ func InitNomadClient(logger *zap.SugaredLogger) *NomadClient {
 		cancel:      cancel,
 	}
 
-	go n.ListenToJobs(ctx)
+	index, err := n.GetStartingIndex(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+		listenErr := n.ListenToJobs(ctx, index)
+		if listenErr != nil {
+			log.Fatalf("Error listening to Nomad jobs\n> %v\n", listenErr)
+		}
+	}()
 
 	return n
 }

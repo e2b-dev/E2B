@@ -34,7 +34,16 @@ func (s *jobSubscriber) close() {
 	s.subscribers.Remove(s.jobID)
 }
 
-func (n *NomadClient) ListenToJobs(ctx context.Context) error {
+func (n *NomadClient) GetStartingIndex(ctx context.Context) (uint64, error) {
+	_, meta, err := n.client.Jobs().List(nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get Nomad jobs: %w", err)
+	}
+
+	return meta.LastIndex, nil
+}
+
+func (n *NomadClient) ListenToJobs(ctx context.Context, index uint64) error {
 	topics := map[api.Topic][]string{
 		api.TopicAllocation: {"*"},
 	}
@@ -42,7 +51,7 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) error {
 	streamCtx, streamCancel := context.WithCancel(ctx)
 	defer streamCancel()
 
-	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, 0, &api.QueryOptions{
+	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, index, &api.QueryOptions{
 		Filter:     fmt.Sprintf("JobID contains \"%s\"", instanceJobNameWithSlash),
 		AllowStale: true,
 		Prefix:     instanceJobNameWithSlash,
@@ -52,6 +61,10 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) error {
 	}
 
 	for event := range eventCh {
+		if event.IsHeartbeat() {
+			continue
+		}
+
 		for _, e := range event.Events {
 			alloc, allocErr := e.Allocation()
 			if allocErr != nil {
@@ -61,7 +74,7 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) error {
 				continue
 			}
 
-			n.processAllocs(alloc)
+			n.processAlloc(alloc)
 		}
 	}
 
@@ -83,7 +96,7 @@ func (n *NomadClient) newSubscriber(jobID, taskState, taskName string) *jobSubsc
 	return sub
 }
 
-func (n *NomadClient) processAllocs(alloc *api.Allocation) {
+func (n *NomadClient) processAlloc(alloc *api.Allocation) {
 	sub, ok := n.subscribers.Get(alloc.JobID)
 
 	if !ok {
