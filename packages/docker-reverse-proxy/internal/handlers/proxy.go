@@ -42,7 +42,7 @@ func (a *APIStore) Proxy(w http.ResponseWriter, req *http.Request) {
 
 	token, err := a.AuthCache.Get(e2bToken)
 	if err != nil {
-		fmt.Printf("Error while getting token: %s\n", err)
+		log.Printf("Error while getting token: %s\n", err)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
@@ -65,7 +65,7 @@ func (a *APIStore) Proxy(w http.ResponseWriter, req *http.Request) {
 	// If the template ID in the path is different from the token template ID, deny access
 	if templateWithBuildID[0] != templateID {
 		w.WriteHeader(http.StatusForbidden)
-		fmt.Printf("Access denied for template: %s\n", templateID)
+		log.Printf("Access denied for template: %s\n", templateID)
 
 		return
 	}
