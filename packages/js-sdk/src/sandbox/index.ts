@@ -94,7 +94,7 @@ export class Sandbox extends SandboxConnection {
     opts = opts || {}
     super(opts)
     this.onScanPorts = opts.onScanPorts
-    this.afterConnectionEstablished += opts.afterConnectionEstablished || []
+    this.afterConnectionEstablished = this.afterConnectionEstablished.concat(opts.afterConnectionEstablished || [])
 
     // Init Filesystem handler
     this.filesystem = {
