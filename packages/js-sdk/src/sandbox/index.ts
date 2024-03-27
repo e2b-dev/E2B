@@ -78,8 +78,8 @@ export class Sandbox extends SandboxConnection {
   // We use any here because we cannot properly reference the type of the Sandbox subclass
   readonly _actions: Map<string, Action<any, any>> = new Map()
 
+  protected static afterConnectionEstablished: ((sandbox: Sandbox) => any)[] = [];
   private readonly onScanPorts?: ScanOpenPortsHandler
-  private static afterConnectionEstablished: ((sandbox: Sandbox) => any)[] = [];
 
   /**
    * Use `Sandbox.create()` instead.
