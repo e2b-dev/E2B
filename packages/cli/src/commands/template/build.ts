@@ -222,7 +222,6 @@ export const buildCommand = new commander.Command('build')
             child_process.execSync(`echo "${accessToken}" | docker login docker.${e2b.SANDBOX_DOMAIN} -u _e2b_access_token --password-stdin`, {
               stdio: 'inherit',
               cwd: root,
-              shell: 'bash',
             })
           } catch (err: any) {
             console.error('Docker login failed. Please try to login with `e2b auth login` and try again.')
@@ -233,11 +232,12 @@ export const buildCommand = new commander.Command('build')
           console.log('Skipped login step\n')
         }
 
+        console.log("Current working directory: ", root)
+
         console.log('Building docker image...')
         child_process.execSync(`DOCKER_CLI_HINTS=false docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`, {
           stdio: 'inherit',
           cwd: root,
-          shell: 'bash',
         })
 
         console.log('Docker image built.\n')
@@ -245,7 +245,6 @@ export const buildCommand = new commander.Command('build')
         child_process.execSync(`docker push docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`, {
           stdio: 'inherit',
           cwd: root,
-          shell: 'bash',
         })
 
         console.log('Docker image pushed.\n')
