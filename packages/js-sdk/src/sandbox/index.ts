@@ -28,7 +28,6 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   onStderr?: (out: ProcessMessage) => Promise<void> | void;
   onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
   /** Run after the sandbox connection is established */
-  afterConnectionEstablished?: ((sandbox: Sandbox) => any)[];
 }
 
 export interface Action<S extends Sandbox = Sandbox, T = {
@@ -80,7 +79,7 @@ export class Sandbox extends SandboxConnection {
   readonly _actions: Map<string, Action<any, any>> = new Map()
 
   private readonly onScanPorts?: ScanOpenPortsHandler
-  private readonly afterConnectionEstablished: ((sandbox: Sandbox) => any)[] = []
+  private static afterConnectionEstablished: ((sandbox: Sandbox) => any)[] = [];
 
   /**
    * Use `Sandbox.create()` instead.
@@ -94,7 +93,6 @@ export class Sandbox extends SandboxConnection {
     opts = opts || {}
     super(opts)
     this.onScanPorts = opts.onScanPorts
-    this.afterConnectionEstablished = this.afterConnectionEstablished.concat(opts.afterConnectionEstablished || [])
 
     // Init Filesystem handler
     this.filesystem = {
@@ -493,10 +491,10 @@ export class Sandbox extends SandboxConnection {
    * ```
    */
   static async create<S extends typeof Sandbox>(this: S, opts: SandboxOpts): Promise<InstanceType<S>>
-  static async create(optsOrTemplate?: string | SandboxOpts) {
+  static async create<S extends typeof Sandbox>(this: S, optsOrTemplate?: string | SandboxOpts) {
     const opts: SandboxOpts | undefined = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
     const sandbox = new this(opts)
-    await sandbox._open({ timeout: opts?.timeout })
+    await sandbox._open({ timeout: opts?.timeout }, this.afterConnectionEstablished)
 
     return sandbox
   }
@@ -554,7 +552,7 @@ export class Sandbox extends SandboxConnection {
     opts.__sandbox = { sandboxID, clientID, templateID: 'unknown' }
 
     const sandbox = new this(opts) as InstanceType<S>
-    await sandbox._open({ timeout: opts?.timeout })
+    await sandbox._open({ timeout: opts?.timeout }, this.afterConnectionEstablished)
 
     return sandbox
   }
@@ -704,7 +702,7 @@ export class Sandbox extends SandboxConnection {
     }
   }
 
-  protected override async _open(opts: CallOpts) {
+  protected override async _open<S extends Sandbox>(this: S, opts: CallOpts, afterConnectionEstablished: ((sandbox: S) => any)[] = []){
     await super._open(opts)
 
     const portsHandler = this.onScanPorts
@@ -729,7 +727,7 @@ export class Sandbox extends SandboxConnection {
       this.handleStartCmdLogs()
     }
 
-    for (const fn of this.afterConnectionEstablished) {
+    for (const fn of afterConnectionEstablished) {
       fn(this)
     }
 
