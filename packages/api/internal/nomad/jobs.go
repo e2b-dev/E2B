@@ -78,7 +78,7 @@ func (n *NomadClient) ListenToJobs(ctx context.Context, index uint64) error {
 		}
 	}
 
-	return nil
+	return fmt.Errorf("nomad event stream closed")
 }
 
 func (n *NomadClient) newSubscriber(jobID, taskState, taskName string) *jobSubscriber {
