@@ -95,7 +95,7 @@ import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({ template: '<your template id>' })
 await sandbox.filesystem.makeDir("/home/user/bucket")
-const process = await sandbox.process.start("s3fs <flags> <bucket-name> /home/user/bucket", { env: { AWS_ACCESS_KEY_ID="<AWS_ACCESS_KEY_ID>", AWS_SECRET_ACCESS_KEY="<AWS_SECRET_ACCESS_KEY>"} })
+const process = await sandbox.process.start("s3fs <flags> <bucket-name> /home/user/bucket", { envVars: { AWS_ACCESS_KEY_ID="<AWS_ACCESS_KEY_ID>", AWS_SECRET_ACCESS_KEY="<AWS_SECRET_ACCESS_KEY>"} })
 const output = await process.wait()
 if (output.exitCode) {
     throw Error(output.stderr)
@@ -107,7 +107,7 @@ from e2b import Sandbox
 
 with Sandbox(template="<your template id>") as sandbox:
     sandbox.filesystem.make_dir("/home/user/bucket")
-    process = sandbox.process.start("s3fs <flags> <bucket-name> /home/user/bucket", env={"AWS_ACCESS_KEY_ID": "<AWS_ACCESS_KEY_ID>", "AWS_SECRET_ACCESS_KEY": "<AWS_SECRET_ACCESS_KEY>"})
+    process = sandbox.process.start("s3fs <flags> <bucket-name> /home/user/bucket", env_vars={"AWS_ACCESS_KEY_ID": "<AWS_ACCESS_KEY_ID>", "AWS_SECRET_ACCESS_KEY": "<AWS_SECRET_ACCESS_KEY>"})
     output = process.wait()
     if output.exit_code:
         raise Exception(output.stderr)
@@ -129,16 +129,21 @@ To allow the default user to access the files add the following flag:
 
 ## Cloudflare R2
 
-For Cloudflare R2 we can use very similar setup as for S3. The `Dockerfile` is the same as for S3. The mounting is slightly different, we need to specify the endpoint for R2. The environment variables are still prefixed with `AWS_`.
+For Cloudflare R2 we can use very similar setup as for S3. The `Dockerfile` is the same as for S3. The mounting is slightly different, we need to save the credentials to the file, also we need to specify the endpoint for R2.
 
 <CodeGroup isRunnable={false}>
 ```js {{ language: 'js' }}
+
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({ template: '<your template id>' })
-await sandbox.filesystem.makeDir("/home/user/bucket")
-const process = await sandbox.process.start("s3fs -o url=https://<ACCOUNT ID>.r2.cloudflarestorage.com <flags> <bucket-name> /home/user/bucket", { env: { AWS_ACCESS_KEY_ID="<R2_ACCESS_KEY_ID>", AWS_SECRET_ACCESS_KEY="<R2_SECRET_ACCESS_KEY>"} })
-const output = await process.wait()
+await sandbox.filesystem.makeDir('/home/user/bucket')
+
+// Create a file with the R2 credentials
+await sandbox.filesystem.write('/home/user/.r2-credentials', '<R2_ACCESS_KEY_ID>:<R2_SECRET_ACCESS_KEY>')
+await sandbox.process.startAndWait('sudo chmod 600 /home/user/.r2-credentials')
+
+const output = await sandbox.process.startAndWait('sudo s3fs -o passwd_file=/home/user/.r2-credentials -o url=https://<ACCOUNT ID>.r2.cloudflarestorage.com <flags> <bucket-name> /home/user/bucket')
 if (output.exitCode) {
     throw Error(output.stderr)
 }
@@ -149,7 +154,12 @@ from e2b import Sandbox
 
 with Sandbox(template="<your template id>") as sandbox:
     sandbox.filesystem.make_dir("/home/user/bucket")
-    process = sandbox.process.start("s3fs -o url=https://<ACCOUNT ID>.r2.cloudflarestorage.com <flags> <bucket-name> /home/user/bucket", env={"AWS_ACCESS_KEY_ID": "<AWS_ACCESS_KEY_ID>", "AWS_SECRET_ACCESS_KEY": "<AWS_SECRET_ACCESS_KEY>"})
+
+    # Create a file with the R2 credentials
+    sandbox.filesystem.write("/home/user/.r2-credentials", "<R2_ACCESS_KEY_ID>:<R2_SECRET_ACCESS_KEY>")
+    sandbox.process.start_and_wait("sudo chmod 600 ~/.r2-credentials")
+
+    process = sandbox.process.start("sudo s3fs -o passwd_file=/home/user/.r2-credentials -o url=https://<ACCOUNT ID>.r2.cloudflarestorage.com <flags> <bucket-name> /home/user/bucket", env_vars={"AWS_ACCESS_KEY_ID": "<R2_ACCESS_KEY_ID>", "AWS_SECRET_ACCESS_KEY": "<R2_SECRET_ACCESS_KEY>"})
     output = process.wait()
     if output.exit_code:
         raise Exception(output.stderr)
