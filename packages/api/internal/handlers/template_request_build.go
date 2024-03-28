@@ -238,6 +238,21 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 				return nil
 
 			}
+
+			count, err := tx.EnvAlias.Delete().Where(envalias.EnvID(templateID), envalias.IsRenamable(true)).Exec(ctx)
+			if err != nil {
+				a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when deleting template alias: %s", err))
+
+				err = fmt.Errorf("error when deleting template alias: %w", err)
+				telemetry.ReportCriticalError(ctx, err)
+
+				return nil
+			}
+
+			if count > 0 {
+				telemetry.ReportEvent(ctx, "deleted old aliases", attribute.Int("env.alias.count", count))
+			}
+
 			err = tx.
 				EnvAlias.
 				Create().
