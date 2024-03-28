@@ -3,14 +3,13 @@ package instance
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/txn2/txeh"
 	"go.opentelemetry.io/otel"
 )
 
-func MockInstance(envID, instanceID string, keepAlive time.Duration) {
+func MockInstance(envID, instanceID, consulToken string, keepAlive time.Duration) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
 
@@ -30,7 +29,7 @@ func MockInstance(envID, instanceID string, keepAlive time.Duration) {
 			InstanceID:            instanceID,
 			TraceID:               "test",
 			TeamID:                "test",
-			ConsulToken:           os.Getenv("CONSUL_TOKEN"),
+			ConsulToken:           consulToken,
 			LogsProxyAddress:      "",
 			NodeID:                "testtesttest",
 			EnvsDisk:              "/mnt/disks/fc-envs/v1",

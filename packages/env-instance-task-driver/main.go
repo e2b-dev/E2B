@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"time"
 
 	log "github.com/hashicorp/go-hclog"
@@ -44,7 +45,9 @@ func main() {
 
 	if *envID != "" && *instanceID != "" {
 		// Start of mock build for testing
-		instance.MockInstance(*envID, *instanceID, time.Duration(*keepAlive)*time.Second)
+		consulToken := os.Getenv("CONSUL_TOKEN")
+
+		instance.MockInstance(*envID, *instanceID, consulToken, time.Duration(*keepAlive)*time.Second)
 	} else {
 		configurePlugin()
 	}
