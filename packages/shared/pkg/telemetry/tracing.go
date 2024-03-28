@@ -12,15 +12,40 @@ import (
 
 var OTELTracingPrint = os.Getenv("OTEL_TRACING_PRINT") != "false"
 
+const DebugID = "debug_id"
+
+func getDebugID(ctx context.Context) *string {
+	if ctx.Value(DebugID) == nil {
+		return nil
+	}
+
+	value := ctx.Value(DebugID).(string)
+
+	return &value
+}
+
+func debugFormat(debugID *string, msg string) string {
+	if debugID == nil {
+		return msg
+	}
+
+	return fmt.Sprintf("[%s] %s", *debugID, msg)
+}
+
 func SetAttributes(ctx context.Context, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
 	if OTELTracingPrint {
+		var msg string
+
 		if len(attrs) == 0 {
-			fmt.Printf("No attrs set")
+			msg = "No attrs set"
 		} else {
-			fmt.Printf("Attrs set: %v\n", attrs)
+			msg = fmt.Sprintf("Attrs set: %v\n", attrs)
 		}
+
+		debugID := getDebugID(ctx)
+		fmt.Print(debugFormat(debugID, msg))
 	}
 
 	span.SetAttributes(attrs...)
@@ -30,11 +55,16 @@ func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) 
 	span := trace.SpanFromContext(ctx)
 
 	if OTELTracingPrint {
+		var msg string
+
 		if len(attrs) == 0 {
-			fmt.Printf("-> %s\n", name)
+			msg = fmt.Sprintf("-> %s\n", name)
 		} else {
-			fmt.Printf("-> %s - %v\n", name, attrs)
+			msg = fmt.Sprintf("-> %s - %v\n", name, attrs)
 		}
+
+		debugID := getDebugID(ctx)
+		fmt.Print(debugFormat(debugID, msg))
 	}
 
 	span.AddEvent(name,
@@ -46,11 +76,16 @@ func ReportCriticalError(ctx context.Context, err error, attrs ...attribute.KeyV
 	span := trace.SpanFromContext(ctx)
 
 	if OTELTracingPrint {
+		var msg string
+
 		if len(attrs) == 0 {
-			fmt.Fprintf(os.Stderr, "Critical error: %v\n", err)
+			msg = fmt.Sprintf("Critical error: %v\n", err)
 		} else {
-			fmt.Fprintf(os.Stderr, "Critical error: %v - %v\n", err, attrs)
+			msg = fmt.Sprintf("Critical error: %v - %v\n", err, attrs)
 		}
+
+		debugID := getDebugID(ctx)
+		fmt.Fprint(os.Stderr, debugFormat(debugID, msg))
 	}
 
 	span.RecordError(err,
@@ -67,11 +102,16 @@ func ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
 	if OTELTracingPrint {
+		var msg string
+
 		if len(attrs) == 0 {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			msg = fmt.Sprintf("Error: %v\n", err)
 		} else {
-			fmt.Fprintf(os.Stderr, "Error: %v - %v\n", err, attrs)
+			msg = fmt.Sprintf("Error: %v - %v\n", err, attrs)
 		}
+
+		debugID := getDebugID(ctx)
+		fmt.Fprint(os.Stderr, debugFormat(debugID, msg))
 	}
 
 	span.RecordError(err,
