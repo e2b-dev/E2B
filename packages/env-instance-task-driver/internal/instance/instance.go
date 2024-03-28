@@ -11,6 +11,7 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/txn2/txeh"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -55,6 +56,10 @@ func NewInstance(
 ) (*Instance, error) {
 	childCtx, childSpan := tracer.Start(ctx, "new-instance")
 	defer childSpan.End()
+
+	telemetry.SetAttributes(childCtx,
+		attribute.String("alloc.id", config.AllocID),
+	)
 
 	// Get slot from Consul KV
 	ips, err := NewSlot(
@@ -141,10 +146,9 @@ func NewInstance(
 		}
 	}()
 
-	fc, err := startFC(
+	fc := NewFC(
 		childCtx,
 		tracer,
-		config.AllocID,
 		ips,
 		fsEnv,
 		&MmdsMetadata{
@@ -155,6 +159,8 @@ func NewInstance(
 			TeamID:     config.TeamID,
 		},
 	)
+
+	err = fc.Start(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to start FC: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

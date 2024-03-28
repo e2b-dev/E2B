@@ -18,13 +18,11 @@ type extraTaskHandle struct {
 }
 
 func (h *extraTaskHandle) GetDriverAttributes() map[string]string {
-	return map[string]string{
-		"Pid": h.Instance.FC.Pid,
-	}
+	return map[string]string{}
 }
 
-func (h *extraTaskHandle) Run(ctx context.Context, _ trace.Tracer) error {
-	return h.Instance.FC.Machine.Wait(ctx)
+func (h *extraTaskHandle) Run(_ context.Context, _ trace.Tracer) error {
+	return h.Instance.FC.Wait()
 }
 
 func (h *extraTaskHandle) shutdown(ctx context.Context, tracer trace.Tracer) error {
