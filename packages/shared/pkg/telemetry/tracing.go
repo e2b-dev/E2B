@@ -41,7 +41,7 @@ func SetAttributes(ctx context.Context, attrs ...attribute.KeyValue) {
 		if len(attrs) == 0 {
 			msg = "No attrs set"
 		} else {
-			msg = fmt.Sprintf("Attrs set: %v\n", attrs)
+			msg = fmt.Sprintf("Attrs set: %#v\n", attrs)
 		}
 
 		debugID := getDebugID(ctx)
@@ -60,7 +60,7 @@ func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) 
 		if len(attrs) == 0 {
 			msg = fmt.Sprintf("-> %s\n", name)
 		} else {
-			msg = fmt.Sprintf("-> %s - %v\n", name, attrs)
+			msg = fmt.Sprintf("-> %s - %#v\n", name, attrs)
 		}
 
 		debugID := getDebugID(ctx)
@@ -81,7 +81,7 @@ func ReportCriticalError(ctx context.Context, err error, attrs ...attribute.KeyV
 		if len(attrs) == 0 {
 			msg = fmt.Sprintf("Critical error: %v\n", err)
 		} else {
-			msg = fmt.Sprintf("Critical error: %v - %v\n", err, attrs)
+			msg = fmt.Sprintf("Critical error: %v - %#v\n", err, attrs)
 		}
 
 		debugID := getDebugID(ctx)
@@ -107,7 +107,7 @@ func ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 		if len(attrs) == 0 {
 			msg = fmt.Sprintf("Error: %v\n", err)
 		} else {
-			msg = fmt.Sprintf("Error: %v - %v\n", err, attrs)
+			msg = fmt.Sprintf("Error: %v - %#v\n", err, attrs)
 		}
 
 		debugID := getDebugID(ctx)
