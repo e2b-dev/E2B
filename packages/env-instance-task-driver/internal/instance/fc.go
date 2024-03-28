@@ -72,7 +72,7 @@ func loadSnapshot(
 	var backend *models.MemoryBackend
 
 	if uffdSocketPath != nil {
-		err := waitForSocket(*uffdSocketPath, socketReadyCheckInterval)
+		err := waitForSocket(*uffdSocketPath, socketWaitTimeout)
 		if err != nil {
 			telemetry.ReportCriticalError(childCtx, err)
 
