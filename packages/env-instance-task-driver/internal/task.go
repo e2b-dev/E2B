@@ -128,7 +128,7 @@ func (de *DriverExtra) StartTask(
 			UFFDBinaryPath:        filepath.Join(cfg.Env["FC_VERSIONS_DIR"], taskConfig.FirecrackerVersion, cfg.Env["UFFD_BINARY_NAME"]),
 			FirecrackerBinaryPath: filepath.Join(cfg.Env["FC_VERSIONS_DIR"], taskConfig.FirecrackerVersion, cfg.Env["FC_BINARY_NAME"]),
 		},
-		de.hosts,
+		de.dns,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create instance: %w", err)
@@ -169,7 +169,7 @@ func (de *DriverExtra) StartTask(
 			telemetry.ReportError(childCtx, errMsg)
 		}
 
-		instance.CleanupAfterFCStop(childCtx, tracer, de.hosts)
+		instance.CleanupAfterFCStop(childCtx, tracer, de.dns)
 
 		errMsg := fmt.Errorf("failed to set driver state: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -317,7 +317,7 @@ func (de *DriverExtra) DestroyTask(
 		telemetry.ReportEvent(childCtx, "shutdown task")
 	}
 
-	h.Extra.Instance.CleanupAfterFCStop(childCtx, tracer, de.hosts)
+	h.Extra.Instance.CleanupAfterFCStop(childCtx, tracer, de.dns)
 
 	telemetry.ReportEvent(childCtx, "cleanup after FC stop")
 

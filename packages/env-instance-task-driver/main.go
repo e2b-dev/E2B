@@ -50,6 +50,11 @@ func main() {
 		// Start of mock build for testing
 		consulToken := os.Getenv("CONSUL_TOKEN")
 
+		dns, err := instance.NewDNS()
+		if err != nil {
+			panic(err)
+		}
+
 		var wg sync.WaitGroup
 
 		for i := 0; i < *count; i++ {
@@ -58,7 +63,8 @@ func main() {
 			go func(in int, envID, instanceID string) {
 				defer wg.Done()
 				id := fmt.Sprintf("%s_%d", instanceID, in)
-				instance.MockInstance(envID, id, consulToken, time.Duration(*keepAlive)*time.Second)
+				fmt.Printf("\nSTARTING [%s]\n\n", id)
+				instance.MockInstance(envID, id, consulToken, dns, time.Duration(*keepAlive)*time.Second)
 			}(i, *envID, *instanceID)
 		}
 
