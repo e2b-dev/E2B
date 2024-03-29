@@ -55,20 +55,26 @@ func main() {
 			panic(err)
 		}
 
-		var wg sync.WaitGroup
+		groupSize := 2
 
 		for i := 0; i < *count; i++ {
-			wg.Add(1)
+			func(in int, envID, instanceID string, count int) {
+				var wg sync.WaitGroup
 
-			go func(in int, envID, instanceID string) {
-				defer wg.Done()
-				id := fmt.Sprintf("%s_%d", instanceID, in)
-				fmt.Printf("\nSTARTING [%s]\n\n", id)
-				instance.MockInstance(envID, id, consulToken, dns, time.Duration(*keepAlive)*time.Second)
-			}(i, *envID, *instanceID)
+				for j := 0; j < groupSize; j++ {
+					wg.Add(1)
+
+					go func(jn int) {
+						defer wg.Done()
+						id := fmt.Sprintf("%s_%d", instanceID, in+jn*count)
+						fmt.Printf("\nSTARTING [%s]\n\n", id)
+						instance.MockInstance(envID, id, consulToken, dns, time.Duration(*keepAlive)*time.Second)
+					}(j)
+				}
+
+				wg.Wait()
+			}(i, *envID, *instanceID, *count)
 		}
-
-		wg.Wait()
 	} else {
 		configurePlugin()
 	}
