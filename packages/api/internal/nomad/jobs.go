@@ -34,15 +34,6 @@ func (s *jobSubscriber) close() {
 	s.subscribers.Remove(s.jobID)
 }
 
-func (n *NomadClient) GetStartingIndex(ctx context.Context) (uint64, error) {
-	_, meta, err := n.client.Jobs().List(nil)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get Nomad jobs: %w", err)
-	}
-
-	return meta.LastIndex, nil
-}
-
 func (n *NomadClient) ListenToJobs(ctx context.Context, index uint64) error {
 	topics := map[api.Topic][]string{
 		api.TopicAllocation: {"*"},
@@ -54,31 +45,40 @@ func (n *NomadClient) ListenToJobs(ctx context.Context, index uint64) error {
 	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, index, &api.QueryOptions{
 		Filter:     fmt.Sprintf("JobID contains \"%s\"", instanceJobNameWithSlash),
 		AllowStale: true,
-		Prefix:     instanceJobNameWithSlash,
+		Prefix:     instanceJobName,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to get Nomad event stream: %w", err)
 	}
 
-	for event := range eventCh {
-		if event.IsHeartbeat() {
-			continue
-		}
-
-		for _, e := range event.Events {
-			alloc, allocErr := e.Allocation()
-			if allocErr != nil {
-				errMsg := fmt.Errorf("cannot retrieve allocations for '%s' job: %w", alloc.JobID, allocErr)
-				fmt.Fprint(os.Stderr, errMsg.Error())
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case event := <-eventCh:
+			if event.Err != nil {
+				fmt.Fprintf(os.Stderr, "error from event stream: %v\n", event.Err)
 
 				continue
 			}
 
-			n.processAlloc(alloc)
+			if event.IsHeartbeat() {
+				continue
+			}
+
+			for _, e := range event.Events {
+				alloc, allocErr := e.Allocation()
+				if allocErr != nil {
+					errMsg := fmt.Errorf("cannot retrieve allocations for '%s' job: %w", alloc.JobID, allocErr)
+					fmt.Fprint(os.Stderr, errMsg.Error())
+
+					continue
+				}
+
+				n.processAlloc(alloc)
+			}
 		}
 	}
-
-	return fmt.Errorf("nomad event stream closed")
 }
 
 func (n *NomadClient) newSubscriber(jobID, taskState, taskName string) *jobSubscriber {
