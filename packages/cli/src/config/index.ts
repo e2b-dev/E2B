@@ -116,5 +116,7 @@ export async function deleteConfig(configPath: string) {
 }
 
 export function getConfigPath(root: string, configPath?: string) {
+  if (configPath && path.isAbsolute(configPath)) return configPath
+
   return path.join(root, configPath || configName)
 }
