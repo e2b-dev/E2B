@@ -34,6 +34,19 @@ func (s *jobSubscriber) close() {
 	s.subscribers.Remove(s.jobID)
 }
 
+func (n *NomadClient) GetStartingIndex(ctx context.Context) (uint64, error) {
+	_, meta, err := n.client.Jobs().List(nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get Nomad jobs: %w", err)
+	}
+
+	if meta.LastIndex == 0 {
+		return 0, nil
+	}
+
+	return meta.LastIndex - 1, nil
+}
+
 func (n *NomadClient) ListenToJobs(ctx context.Context, index uint64) error {
 	topics := map[api.Topic][]string{
 		api.TopicAllocation: {"*"},
@@ -54,12 +67,10 @@ func (n *NomadClient) ListenToJobs(ctx context.Context, index uint64) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil
 		case event := <-eventCh:
 			if event.Err != nil {
-				fmt.Fprintf(os.Stderr, "error from event stream: %v\n", event.Err)
-
-				continue
+				return fmt.Errorf("error from event stream: %w", event.Err)
 			}
 
 			if event.IsHeartbeat() {
