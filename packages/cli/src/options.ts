@@ -9,6 +9,11 @@ export const pathOption = new commander.Option(
   )} directory`,
 )
 
+export const configOption = new commander.Option(
+  '--config <e2b-toml>',
+  'specify path to the e2b config toml. By default E2B tries to find e2b.toml in root directory.',
+)
+
 export const selectOption = new commander.Option(
   '-s, --select',
   'select multiple sandbox templates from interactive list',
