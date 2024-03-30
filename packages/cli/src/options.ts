@@ -11,7 +11,7 @@ export const pathOption = new commander.Option(
 
 export const configOption = new commander.Option(
   '--config <e2b-toml>',
-  'specify path to the e2b config toml. By default E2B tries to find e2b.toml in root directory.',
+  `specify path to the E2B config toml. By default E2B tries to find ${asBold('./e2b.toml')} in root directory.`,
 )
 
 export const selectOption = new commander.Option(
