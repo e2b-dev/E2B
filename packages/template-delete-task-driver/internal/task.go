@@ -43,10 +43,17 @@ type (
 	}
 )
 
-func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
-	driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], logger hclog.Logger,
+func (de *DriverExtra) StartTask(
+	driverCtx context.Context,
+	tracer trace.Tracer,
+	logger hclog.Logger,
+	cfg *drivers.TaskConfig,
+	tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]],
 ) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
-	ctx, span := tracer.Start(driverCtx, "start-task-validation", trace.WithAttributes(
+	bgContext, bgCancel := context.WithCancel(driverCtx)
+	defer bgCancel()
+
+	ctx, span := tracer.Start(bgContext, "start-task-validation", trace.WithAttributes(
 		attribute.String("alloc.id", cfg.AllocID),
 	))
 	defer span.End()
@@ -140,7 +147,6 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 
 	go func() {
 		defer cancel()
-		h.Cancel = cancel
 
 		deleteContext, childDeleteSpan := tracer.Start(
 			trace.ContextWithSpanContext(cancellableContext, childSpan.SpanContext()),
@@ -154,37 +160,34 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 	return handle, nil, nil
 }
 
-func (de *DriverExtra) WaitTask(ctx, driverCtx context.Context, _ trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string) (<-chan *drivers.ExitResult, error) {
+func (de *DriverExtra) WaitTask(
+	ctx,
+	driverCtx context.Context,
+	_ trace.Tracer,
+	_ hclog.Logger,
+	tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]],
+	taskID string,
+) (<-chan *drivers.ExitResult, error) {
 	handle, ok := tasks.Get(taskID)
 	if !ok {
 		return nil, drivers.ErrTaskNotFound
 	}
 
 	ch := make(chan *drivers.ExitResult)
-	go handleWait(ctx, driverCtx, handle, ch)
+	go driver.HandleWait(ctx, driverCtx, handle, ch)
 
 	return ch, nil
 }
 
-func handleWait(ctx, driverCtx context.Context, handle *driver.TaskHandle[*extraTaskHandle], ch chan *drivers.ExitResult) {
-	defer close(ch)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-driverCtx.Done():
-			return
-		case <-handle.Ctx.Done():
-			s := handle.TaskStatus()
-			if s.State == drivers.TaskStateExited {
-				ch <- handle.ExitResult
-			}
-		}
-	}
-}
-
-func (de *DriverExtra) StopTask(_ context.Context, _ trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string, timeout time.Duration, signal string) error {
+func (de *DriverExtra) StopTask(
+	_ context.Context,
+	_ trace.Tracer,
+	_ hclog.Logger,
+	tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]],
+	taskID string,
+	timeout time.Duration,
+	signal string,
+) error {
 	handle, ok := tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
@@ -195,7 +198,14 @@ func (de *DriverExtra) StopTask(_ context.Context, _ trace.Tracer, tasks *driver
 	return nil
 }
 
-func (de *DriverExtra) DestroyTask(_ context.Context, _ trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string, force bool) error {
+func (de *DriverExtra) DestroyTask(
+	_ context.Context,
+	_ trace.Tracer,
+	_ hclog.Logger,
+	tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]],
+	taskID string,
+	force bool,
+) error {
 	handle, ok := tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
@@ -216,8 +226,16 @@ func (de *DriverExtra) DestroyTask(_ context.Context, _ trace.Tracer, tasks *dri
 	return nil
 }
 
-func (de *DriverExtra) TaskStats(ctx context.Context, driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], taskID string, interval time.Duration) (<-chan *structs.TaskResourceUsage, error) {
-	h, ok := tasks.Get(taskID)
+func (de *DriverExtra) TaskStats(
+	ctx context.Context,
+	driverCtx context.Context,
+	tracer trace.Tracer,
+	_ hclog.Logger,
+	tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]],
+	taskID string,
+	interval time.Duration,
+) (<-chan *structs.TaskResourceUsage, error) {
+	_, ok := tasks.Get(taskID)
 	if !ok {
 		telemetry.ReportCriticalError(ctx, drivers.ErrTaskNotFound)
 
@@ -225,7 +243,7 @@ func (de *DriverExtra) TaskStats(ctx context.Context, driverCtx context.Context,
 	}
 
 	statsChannel := make(chan *drivers.TaskResourceUsage)
-	go h.Extra.Stats(ctx, statsChannel, interval)
+	go driver.Stats(ctx, driverCtx, statsChannel, interval)
 
 	return statsChannel, nil
 }

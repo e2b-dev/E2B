@@ -3,9 +3,6 @@ package internal
 import (
 	"context"
 	"fmt"
-	"os"
-	"strconv"
-	"syscall"
 	"time"
 
 	"go.opentelemetry.io/otel/trace"
@@ -16,40 +13,16 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-// Interval at which we check if the process is still running.
-const processCheckInterval = 4 * time.Second
-
 type extraTaskHandle struct {
 	Instance *instance.Instance
 }
 
 func (h *extraTaskHandle) GetDriverAttributes() map[string]string {
-	return map[string]string{
-		"Pid": h.Instance.FC.Pid,
-	}
+	return map[string]string{}
 }
 
 func (h *extraTaskHandle) Run(_ context.Context, _ trace.Tracer) error {
-	pid, err := strconv.Atoi(h.Instance.FC.Pid)
-	if err != nil {
-		errMsg := fmt.Errorf("ERROR Env-instance-task-driver Could not parse pid=%s after initialization", h.Instance.FC.Pid)
-		return errMsg
-	}
-
-	for {
-		time.Sleep(processCheckInterval)
-
-		process, err := os.FindProcess(int(pid))
-		if err != nil {
-			break
-		}
-
-		if process.Signal(syscall.Signal(0)) != nil {
-			break
-		}
-	}
-
-	return nil
+	return h.Instance.FC.Wait()
 }
 
 func (h *extraTaskHandle) shutdown(ctx context.Context, tracer trace.Tracer) error {
@@ -69,10 +42,5 @@ func (h *extraTaskHandle) shutdown(ctx context.Context, tracer trace.Tracer) err
 
 func (h *extraTaskHandle) Stats(ctx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
 	defer close(statsChannel)
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		}
-	}
+	<-ctx.Done()
 }

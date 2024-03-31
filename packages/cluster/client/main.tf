@@ -1,12 +1,12 @@
 resource "google_compute_health_check" "nomad_check" {
   name                = "${var.cluster_name}-nomad-client-check"
-  check_interval_sec  = 5
-  timeout_sec         = 5
+  check_interval_sec  = 15
+  timeout_sec         = 10
   healthy_threshold   = 2
   unhealthy_threshold = 10 # 50 seconds
 
   http_health_check {
-    request_path = "/v1/status/peers"
+    request_path = "/v1/agent/health"
     port         = "4646"
   }
 }

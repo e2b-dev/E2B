@@ -65,10 +65,17 @@ var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 	"ConsulToken": hclspec.NewAttr("ConsulToken", "string", true),
 })
 
-func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
-	ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], logger hclog.Logger,
+func (de *DriverExtra) StartTask(
+	driverCtx context.Context,
+	tracer trace.Tracer,
+	logger hclog.Logger,
+	cfg *drivers.TaskConfig,
+	tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]],
 ) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
-	ctx, span := tracer.Start(ctx, "start-env-instance-task-validation", trace.WithAttributes(
+	bgContext, bgCancel := context.WithCancel(driverCtx)
+	defer bgCancel()
+
+	ctx, span := tracer.Start(bgContext, "start-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("alloc.id", cfg.AllocID),
 	))
 	defer span.End()
@@ -121,7 +128,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 			UFFDBinaryPath:        filepath.Join(cfg.Env["FC_VERSIONS_DIR"], taskConfig.FirecrackerVersion, cfg.Env["UFFD_BINARY_NAME"]),
 			FirecrackerBinaryPath: filepath.Join(cfg.Env["FC_VERSIONS_DIR"], taskConfig.FirecrackerVersion, cfg.Env["FC_BINARY_NAME"]),
 		},
-		de.hosts,
+		de.dns,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create instance: %w", err)
@@ -132,8 +139,11 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 		return nil, nil, errMsg
 	}
 
+	runContext, cancelRunContext := context.WithCancel(driverCtx)
+
 	h := &driver.TaskHandle[*extraTaskHandle]{
-		Ctx:        childCtx,
+		Ctx:        runContext,
+		Cancel:     cancelRunContext,
 		TaskConfig: cfg,
 		TaskState:  drivers.TaskStateRunning,
 		StartedAt:  time.Now().Round(time.Millisecond),
@@ -159,7 +169,7 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 			telemetry.ReportError(childCtx, errMsg)
 		}
 
-		instance.CleanupAfterFCStop(childCtx, tracer, de.hosts)
+		instance.CleanupAfterFCStop(childCtx, tracer, de.dns)
 
 		errMsg := fmt.Errorf("failed to set driver state: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -171,42 +181,66 @@ func (de *DriverExtra) StartTask(cfg *drivers.TaskConfig,
 
 	tasks.Set(cfg.ID, h)
 
-	go h.Run(context.Background(), tracer)
+	go func() {
+		defer cancelRunContext()
+		h.Run(runContext, tracer)
+	}()
 
 	return handle, nil, nil
 }
 
-func (de *DriverExtra) WaitTask(ctx context.Context, driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string) (<-chan *drivers.ExitResult, error) {
-	validationCtx, validationSpan := tracer.Start(ctx, "wait-env-instance-task-validation", trace.WithAttributes(
+func (de *DriverExtra) WaitTask(
+	ctx,
+	driverCtx context.Context,
+	tracer trace.Tracer,
+	_ hclog.Logger,
+	tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]],
+	taskID string,
+) (<-chan *drivers.ExitResult, error) {
+	bgContext, bgCancel := context.WithCancel(ctx)
+	defer bgCancel()
+
+	validationCtx, validationSpan := tracer.Start(bgContext, "wait-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("task.id", taskID),
 	))
 	defer validationSpan.End()
 
-	h, ok := tasks.Get(taskID)
+	handle, ok := tasks.Get(taskID)
 	if !ok {
 		telemetry.ReportCriticalError(validationCtx, drivers.ErrTaskNotFound)
 		return nil, drivers.ErrTaskNotFound
 	}
 
-	childCtx, childSpan := tracer.Start(driverCtx, "wait-env-instance-task",
+	_, childSpan := tracer.Start(ctx, "wait-env-instance-task",
 		trace.WithAttributes(
 			attribute.String("task.id", taskID),
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(validationCtx, attribute.String("link", "validation")),
-			trace.LinkFromContext(h.Ctx, attribute.String("link", "start-env-instance-task")),
+			trace.LinkFromContext(handle.Ctx, attribute.String("link", "start-env-instance-task")),
 		),
 	)
 	defer childSpan.End()
 
 	ch := make(chan *drivers.ExitResult)
-	go handleWait(childCtx, driverCtx, h, ch)
+	go driver.HandleWait(ctx, driverCtx, handle, ch)
 
 	return ch, nil
 }
 
-func (de *DriverExtra) StopTask(ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string, timeout time.Duration, signal string) error {
-	ctx, span := tracer.Start(ctx, "stop-env-instance-task-validation", trace.WithAttributes(
+func (de *DriverExtra) StopTask(
+	driverCtx context.Context,
+	tracer trace.Tracer,
+	_ hclog.Logger,
+	tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]],
+	taskID string,
+	timeout time.Duration,
+	signal string,
+) error {
+	bgContext, bgCancel := context.WithCancel(driverCtx)
+	defer bgCancel()
+
+	ctx, span := tracer.Start(bgContext, "stop-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("task.id", taskID),
 	))
 	defer span.End()
@@ -238,8 +272,18 @@ func (de *DriverExtra) StopTask(ctx context.Context, tracer trace.Tracer, tasks 
 	return nil
 }
 
-func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], _ hclog.Logger, taskID string, force bool) error {
-	ctx, span := tracer.Start(ctx, "destroy-env-instance-task-validation", trace.WithAttributes(
+func (de *DriverExtra) DestroyTask(
+	driverCtx context.Context,
+	tracer trace.Tracer,
+	_ hclog.Logger,
+	tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]],
+	taskID string,
+	force bool,
+) error {
+	bgContext, bgCancel := context.WithCancel(driverCtx)
+	defer bgCancel()
+
+	ctx, span := tracer.Start(bgContext, "destroy-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("task.id", taskID),
 	))
 	defer span.End()
@@ -261,37 +305,21 @@ func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tas
 	)
 	defer childSpan.End()
 
-	if force {
-		if err := h.Extra.shutdown(childCtx, tracer); err == nil {
-			telemetry.ReportEvent(childCtx, "waiting for state lock")
+	if !force {
+		return fmt.Errorf("force is required to destroy task")
+	}
 
-			h.Mu.Lock()
-			h.ExitResult = &drivers.ExitResult{}
-			h.ExitResult.ExitCode = 0
-			h.ExitResult.Signal = 0
-			h.CompletedAt = time.Now()
-			h.TaskState = drivers.TaskStateExited
-			h.Mu.Unlock()
-
-			telemetry.ReportEvent(childCtx, "updated task exit info")
-		} else {
-			errMsg := fmt.Errorf("executor Shutdown failed: %w", err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			h.Mu.Lock()
-			h.ExitResult = &drivers.ExitResult{}
-			h.ExitResult.ExitCode = 1
-			h.ExitResult.Signal = 0
-			h.CompletedAt = time.Now()
-			h.TaskState = drivers.TaskStateUnknown
-			h.ExitResult.Err = errMsg
-			h.Mu.Unlock()
-		}
-
+	shutdownErr := h.Extra.shutdown(childCtx, tracer)
+	if shutdownErr != nil {
+		errMsg := fmt.Errorf("executor Shutdown failed: %w", shutdownErr)
+		telemetry.ReportError(childCtx, errMsg)
+	} else {
 		telemetry.ReportEvent(childCtx, "shutdown task")
 	}
 
-	h.Extra.Instance.CleanupAfterFCStop(childCtx, tracer, de.hosts)
+	h.Extra.Instance.CleanupAfterFCStop(childCtx, tracer, de.dns)
+
+	telemetry.ReportEvent(childCtx, "cleanup after FC stop")
 
 	tasks.Delete(taskID)
 	telemetry.ReportEvent(childCtx, "task deleted")
@@ -299,30 +327,16 @@ func (de *DriverExtra) DestroyTask(ctx context.Context, tracer trace.Tracer, tas
 	return nil
 }
 
-func handleWait(ctx context.Context, driverCtx context.Context, handle *driver.TaskHandle[*extraTaskHandle], ch chan *drivers.ExitResult) {
-	defer close(ch)
-
-	// TODO: Use context for waiting for task
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-driverCtx.Done():
-			return
-		case <-ticker.C:
-			s := handle.TaskStatus()
-			if s.State == drivers.TaskStateExited {
-				ch <- handle.ExitResult
-			}
-		}
-	}
-}
-
-func (de *DriverExtra) TaskStats(ctx context.Context, driverCtx context.Context, tracer trace.Tracer, tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]], taskID string, interval time.Duration) (<-chan *structs.TaskResourceUsage, error) {
-	h, ok := tasks.Get(taskID)
+func (de *DriverExtra) TaskStats(
+	ctx,
+	driverCtx context.Context,
+	tracer trace.Tracer,
+	_ hclog.Logger,
+	tasks *driver.TaskStore[*driver.TaskHandle[*extraTaskHandle]],
+	taskID string,
+	interval time.Duration,
+) (<-chan *structs.TaskResourceUsage, error) {
+	_, ok := tasks.Get(taskID)
 	if !ok {
 		telemetry.ReportCriticalError(ctx, drivers.ErrTaskNotFound)
 
@@ -330,7 +344,7 @@ func (de *DriverExtra) TaskStats(ctx context.Context, driverCtx context.Context,
 	}
 
 	statsChannel := make(chan *drivers.TaskResourceUsage)
-	go h.Extra.Stats(ctx, statsChannel, interval)
+	go driver.Stats(ctx, driverCtx, statsChannel, interval)
 
 	return statsChannel, nil
 }
