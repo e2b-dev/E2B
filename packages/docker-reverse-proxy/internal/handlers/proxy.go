@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -29,7 +30,7 @@ func (a *APIStore) Proxy(w http.ResponseWriter, req *http.Request) {
 	realRepoPrefix := fmt.Sprintf("/v2/%s/%s/", constants.GCPProject, constants.DockerRegistry)
 	if !strings.HasPrefix(path, repoPrefix) && !strings.HasPrefix(path, realRepoPrefix) {
 		// The request shouldn't need any other endpoints, we deny access
-		fmt.Printf("No matching route found for path: %s\n", path)
+		log.Printf("No matching route found for path: %s\n", path)
 
 		w.WriteHeader(http.StatusForbidden)
 		return
@@ -41,7 +42,7 @@ func (a *APIStore) Proxy(w http.ResponseWriter, req *http.Request) {
 
 	token, err := a.AuthCache.Get(e2bToken)
 	if err != nil {
-		fmt.Printf("Error while getting token: %s\n", err)
+		log.Printf("Error while getting token: %s\n", err)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
@@ -64,7 +65,7 @@ func (a *APIStore) Proxy(w http.ResponseWriter, req *http.Request) {
 	// If the template ID in the path is different from the token template ID, deny access
 	if templateWithBuildID[0] != templateID {
 		w.WriteHeader(http.StatusForbidden)
-		fmt.Printf("Access denied for template: %s\n", templateID)
+		log.Printf("Access denied for template: %s\n", templateID)
 
 		return
 	}

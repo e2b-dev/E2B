@@ -362,18 +362,15 @@ function start_consul {
 function bootstrap {
   log_info "Waiting for Consul to start"
   while true; do
-    local readonly consul_leader_addr=$(consul info -token="${consul_token}"| grep "leader_addr =" | awk -F'=' '{print $2}' | tr -d ' ')
-    local readonly consul_leader=$(consul info -token="${consul_token}"| grep "leader =" | awk -F'=' '{print $2}' | tr -d ' ')
-    if [[ -n "$consul_leader_addr" ]]; then
-      log_info "Consul leader elected"
+    instance_ip_address=$(get_instance_ip_address)
 
-      if [[ "$consul_leader" == "true" ]]; then
-        local readonly consul_token="$1"
-        log_info "Bootstrapping Consul"
-        echo "${consul_token}" >/tmp/consul.token
-        consul acl bootstrap /tmp/consul.token
-        rm /tmp/consul.token
-      fi
+    local readonly consul_leader_addr=$(curl http://localhost:8500/v1/status/leader)
+    if [[ "$consul_leader_addr" == "\"$instance_ip_address:8300\"" ]]; then
+      local readonly consul_token="$1"
+      log_info "Bootstrapping Consul"
+      echo "${consul_token}" >/tmp/consul.token
+      consul acl bootstrap /tmp/consul.token
+      rm /tmp/consul.token
 
       break
     fi

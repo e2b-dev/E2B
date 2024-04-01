@@ -3,26 +3,22 @@ package instance
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
-	"github.com/txn2/txeh"
 	"go.opentelemetry.io/otel"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-func MockInstance(envID, instanceID string, keepAlive time.Duration) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+func MockInstance(envID, instanceID, consulToken string, dns *DNS, keepAlive time.Duration) {
+	ctx, cancel := context.WithTimeout(context.WithValue(context.Background(), telemetry.DebugID, instanceID), time.Minute*3)
 	defer cancel()
 
-	tracer := otel.Tracer("test")
-
-	hosts, err := txeh.NewHostsDefault()
-	if err != nil {
-		panic("Failed to initialize etc hosts handler")
-	}
+	tracer := otel.Tracer(fmt.Sprintf("instance-%s", instanceID))
+	childCtx, _ := tracer.Start(ctx, "mock-instance")
 
 	instance, err := NewInstance(
-		ctx,
+		childCtx,
 		tracer,
 		&InstanceConfig{
 			EnvID:                 envID,
@@ -30,7 +26,7 @@ func MockInstance(envID, instanceID string, keepAlive time.Duration) {
 			InstanceID:            instanceID,
 			TraceID:               "test",
 			TeamID:                "test",
-			ConsulToken:           os.Getenv("CONSUL_TOKEN"),
+			ConsulToken:           consulToken,
 			LogsProxyAddress:      "",
 			NodeID:                "testtesttest",
 			EnvsDisk:              "/mnt/disks/fc-envs/v1",
@@ -42,7 +38,7 @@ func MockInstance(envID, instanceID string, keepAlive time.Duration) {
 			HugePages:             true,
 			FirecrackerBinaryPath: "/fc-versions/v1.7.0-dev_8bb88311/firecracker",
 		},
-		hosts,
+		dns,
 	)
 	if err != nil {
 		panic(err)
@@ -52,9 +48,9 @@ func MockInstance(envID, instanceID string, keepAlive time.Duration) {
 
 	time.Sleep(keepAlive)
 
-	defer instance.CleanupAfterFCStop(ctx, tracer, hosts)
+	defer instance.CleanupAfterFCStop(childCtx, tracer, dns)
 
-	err = instance.FC.Stop(ctx, tracer)
+	err = instance.FC.Stop(childCtx, tracer)
 	if err != nil {
 		panic(err)
 	}

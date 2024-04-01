@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
@@ -39,6 +40,7 @@ func Validate(ctx context.Context, db *models.Client, token, envID string) (bool
 func ValidateAccessToken(ctx context.Context, db *models.Client, accessToken string) bool {
 	exists, err := db.AccessToken.Query().Where(accesstoken.ID(accessToken)).Exist(ctx)
 	if err != nil {
+		log.Printf("Error while checking access token: %s\n", err.Error())
 		return false
 	}
 
@@ -62,5 +64,6 @@ func ExtractAccessToken(authHeader, authType string) (string, error) {
 		return "", fmt.Errorf("invalid username %s", username)
 	}
 
-	return loginInfoParts[1], nil
+	// There can be extra whitespace in the token when the user uses Windows
+	return strings.TrimSpace(loginInfoParts[1]), nil
 }

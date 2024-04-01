@@ -3,8 +3,7 @@ package nomad
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
+	"os"
 
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 
@@ -21,13 +20,11 @@ const (
 	jobRunningStatus = "running"
 
 	defaultTaskName = "start"
-
-	jobCheckInterval = 100 * time.Millisecond
 )
 
 type jobSubscriber struct {
 	subscribers *utils.Map[*jobSubscriber]
-	wait        chan api.AllocationListStub
+	wait        chan api.Allocation
 	jobID       string
 	taskState   string
 	taskName    string
@@ -37,11 +34,68 @@ func (s *jobSubscriber) close() {
 	s.subscribers.Remove(s.jobID)
 }
 
+func (n *NomadClient) GetStartingIndex(ctx context.Context) (uint64, error) {
+	_, meta, err := n.client.Jobs().List(nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get Nomad jobs: %w", err)
+	}
+
+	if meta.LastIndex == 0 {
+		return 0, nil
+	}
+
+	return meta.LastIndex - 1, nil
+}
+
+func (n *NomadClient) ListenToJobs(ctx context.Context, index uint64) error {
+	topics := map[api.Topic][]string{
+		api.TopicAllocation: {"*"},
+	}
+
+	streamCtx, streamCancel := context.WithCancel(ctx)
+	defer streamCancel()
+
+	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, index, &api.QueryOptions{
+		Filter:     fmt.Sprintf("JobID contains \"%s\"", instanceJobNameWithSlash),
+		AllowStale: true,
+		Prefix:     instanceJobName,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get Nomad event stream: %w", err)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case event := <-eventCh:
+			if event.Err != nil {
+				return fmt.Errorf("error from event stream: %w", event.Err)
+			}
+
+			if event.IsHeartbeat() {
+				continue
+			}
+
+			for _, e := range event.Events {
+				alloc, allocErr := e.Allocation()
+				if allocErr != nil {
+					errMsg := fmt.Errorf("cannot retrieve allocations for '%s' job: %w", alloc.JobID, allocErr)
+					fmt.Fprint(os.Stderr, errMsg.Error())
+
+					continue
+				}
+
+				n.processAlloc(alloc)
+			}
+		}
+	}
+}
+
 func (n *NomadClient) newSubscriber(jobID, taskState, taskName string) *jobSubscriber {
 	sub := &jobSubscriber{
-		jobID: jobID,
-		// We add arbitrary buffer to the channel to avoid blocking the Nomad ListenToJobs goroutine
-		wait:        make(chan api.AllocationListStub, 10),
+		jobID:       jobID,
+		wait:        make(chan api.Allocation),
 		taskState:   taskState,
 		subscribers: n.subscribers,
 		taskName:    taskName,
@@ -52,54 +106,7 @@ func (n *NomadClient) newSubscriber(jobID, taskState, taskName string) *jobSubsc
 	return sub
 }
 
-func (n *NomadClient) ListenToJobs(ctx context.Context) {
-	ticker := time.NewTicker(jobCheckInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		// Loop with a ticker work differently than a loop with sleep.
-		// The ticker will tick every 100ms, but if the loop takes more than 100ms to run, the ticker will tick again immediately.
-		case <-ticker.C:
-			subscribers := n.subscribers.Items()
-
-			if len(subscribers) == 0 {
-				continue
-			}
-
-			filterParts := make([]string, len(subscribers))
-
-			var i int
-
-			for jobID := range subscribers {
-				filterParts[i] = jobID
-				i++
-			}
-
-			filterString := strings.Join(filterParts, "|")
-
-			allocs, _, err := n.client.Allocations().List(&api.QueryOptions{
-				Filter: fmt.Sprintf("JobID matches \"%s\"", filterString),
-			})
-			if err != nil {
-				n.logger.Errorf("Error getting jobs: %v", err)
-
-				return
-			}
-
-			for _, alloc := range allocs {
-				n.processAllocs(alloc)
-			}
-
-		case <-ctx.Done():
-			fmt.Println("Context canceled, stopping ListenToJobs")
-
-			return
-		}
-	}
-}
-
-func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
+func (n *NomadClient) processAlloc(alloc *api.Allocation) {
 	sub, ok := n.subscribers.Get(alloc.JobID)
 
 	if !ok {
@@ -116,7 +123,7 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 		select {
 		case sub.wait <- *alloc:
 		default:
-			n.logger.Errorf("channel for job %s is full", alloc.JobID)
+			n.logger.Warnf("channel for job %s is full", alloc.JobID)
 		}
 	}
 
@@ -135,7 +142,7 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 		select {
 		case sub.wait <- *alloc:
 		default:
-			n.logger.Errorf("channel for job %s is full", alloc.JobID)
+			n.logger.Warnf("channel for job %s is full", alloc.JobID)
 		}
 	}
 }

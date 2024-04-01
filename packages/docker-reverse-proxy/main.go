@@ -37,7 +37,7 @@ func main() {
 		if req.URL.Path == "/v2/" {
 			err = store.Login(w, req)
 			if err != nil {
-				fmt.Printf("Error while logging in: %s\n", err)
+				log.Printf("Error while logging in: %s\n", err)
 			}
 			return
 		}
@@ -46,7 +46,7 @@ func main() {
 		if req.URL.Path == "/v2/token" {
 			err = store.GetToken(w, req)
 			if err != nil {
-				fmt.Printf("Error while getting token: %s\n", err)
+				log.Printf("Error while getting token: %s\n", err)
 			}
 
 			return
@@ -56,6 +56,6 @@ func main() {
 		store.Proxy(w, req)
 	})
 
-	fmt.Printf("Starting server on port: %d\n", *port)
+	log.Printf("Starting server on port: %d\n", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", strconv.Itoa(*port)), nil))
 }

@@ -23,8 +23,7 @@ const (
 	BuildDirName        = "builds"
 	EnvInstancesDirName = "env-instances"
 
-	socketReadyCheckInterval = 25 * time.Millisecond
-	socketWaitTimeout        = 2 * time.Second
+	socketWaitTimeout = 2 * time.Second
 )
 
 type InstanceFiles struct {
@@ -43,28 +42,28 @@ type InstanceFiles struct {
 	UFFDBinaryPath        string
 }
 
+// waitForSocket waits for the given file to exist
 func waitForSocket(socketPath string, timeout time.Duration) error {
-	start := time.Now()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+
+	ticker := time.NewTicker(10 * time.Millisecond)
+
+	defer func() {
+		cancel()
+		ticker.Stop()
+	}()
 
 	for {
-		_, err := os.Stat(socketPath)
-		if err == nil {
-			// Socket file exists
-			return nil
-		} else if os.IsNotExist(err) {
-			// Socket file doesn't exist yet
-
-			// Check if timeout has been reached
-			elapsed := time.Since(start)
-			if elapsed >= timeout {
-				return fmt.Errorf("timeout reached while waiting for socket file: %s", socketPath)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			if _, err := os.Stat(socketPath); err != nil {
+				continue
 			}
 
-			// Wait for a short duration before checking again
-			time.Sleep(socketReadyCheckInterval)
-		} else {
-			// Error occurred while checking for socket file
-			return err
+			// TODO: Send test HTTP request to make sure socket is available
+			return nil
 		}
 	}
 }

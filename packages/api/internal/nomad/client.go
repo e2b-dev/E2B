@@ -2,6 +2,7 @@ package nomad
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/hashicorp/nomad/api"
 )
+
+const streamRetryTime = 10 * time.Millisecond
 
 var (
 	nomadAddress = os.Getenv("NOMAD_ADDRESS")
@@ -43,7 +46,30 @@ func InitNomadClient(logger *zap.SugaredLogger) *NomadClient {
 		cancel:      cancel,
 	}
 
-	go n.ListenToJobs(ctx)
+	index, err := n.GetStartingIndex(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				listenErr := n.ListenToJobs(ctx, index)
+				if listenErr != nil {
+					fmt.Fprintf(os.Stderr, "Error listening to Nomad jobs\n> %v\n", listenErr)
+
+					time.Sleep(streamRetryTime)
+
+					continue
+				}
+
+				return
+			}
+		}
+	}()
 
 	return n
 }

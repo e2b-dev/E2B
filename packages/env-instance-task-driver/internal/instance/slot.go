@@ -34,8 +34,6 @@ type IPSlot struct {
 	SlotIdx     int
 }
 
-const slotCheckWaitTime = 2
-
 func (ips *IPSlot) VpeerName() string {
 	return "eth0"
 }
