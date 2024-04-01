@@ -3,7 +3,6 @@ module github.com/e2b-dev/infra/packages/api
 go 1.21
 
 require (
-	entgo.io/ent v0.12.5
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/dchest/uniuri v1.2.0
 	github.com/e2b-dev/infra/packages/shared v0.0.0
@@ -15,7 +14,6 @@ require (
 	github.com/grafana/loki v1.6.1
 	github.com/hashicorp/nomad/api v0.0.0-20231208134655-099ee06a607c
 	github.com/jellydator/ttlcache/v3 v3.1.0
-	github.com/lib/pq v1.10.9
 	github.com/oapi-codegen/gin-middleware v1.0.1
 	github.com/oapi-codegen/runtime v1.1.0
 	github.com/orcaman/concurrent-map/v2 v2.0.1
@@ -33,6 +31,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
 	cloud.google.com/go/iam v1.1.6 // indirect
 	cloud.google.com/go/storage v1.38.0 // indirect
+	entgo.io/ent v0.12.5 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -70,6 +69,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.19.1 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
@@ -149,10 +149,10 @@ require (
 	github.com/posthog/posthog-go v0.0.0-20230801140217-d607812dee69
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	go.opentelemetry.io/otel/metric v1.23.0
-	golang.org/x/crypto v0.19.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/sync v0.6.0
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto v0.0.0-20240308144416-29370a3891b7 // indirect
 	google.golang.org/grpc v1.62.0

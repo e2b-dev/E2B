@@ -105,6 +105,19 @@ variable "api_port" {
   }
 }
 
+variable "docker_reverse_proxy_port" {
+  type = object({
+    name        = string
+    port        = number
+    health_path = string
+  })
+  default = {
+    name        = "docker-reverse-proxy"
+    port        = 5000
+    health_path = "/health"
+  }
+}
+
 variable "environment" {
   type    = string
   default = "prod"

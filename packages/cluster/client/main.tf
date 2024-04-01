@@ -1,12 +1,12 @@
 resource "google_compute_health_check" "nomad_check" {
   name                = "${var.cluster_name}-nomad-client-check"
-  check_interval_sec  = 5
-  timeout_sec         = 5
+  check_interval_sec  = 15
+  timeout_sec         = 10
   healthy_threshold   = 2
   unhealthy_threshold = 10 # 50 seconds
 
   http_health_check {
-    request_path = "/v1/status/peers"
+    request_path = "/v1/agent/health"
     port         = "4646"
   }
 }
@@ -18,6 +18,11 @@ resource "google_compute_instance_group_manager" "client_cluster" {
   version {
     name              = google_compute_instance_template.client.id
     instance_template = google_compute_instance_template.client.id
+  }
+
+  named_port {
+    name = var.docker_reverse_proxy_port.name
+    port = var.docker_reverse_proxy_port.port
   }
 
   named_port {
@@ -47,7 +52,7 @@ resource "google_compute_instance_group_manager" "client_cluster" {
 
   auto_healing_policies {
     health_check      = google_compute_health_check.nomad_check.id
-    initial_delay_sec = 0
+    initial_delay_sec = 600
   }
 
   # Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be

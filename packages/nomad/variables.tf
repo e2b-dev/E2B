@@ -46,6 +46,7 @@ variable "custom_envs_repository_name" {
 variable "gcp_project_id" {
   type = string
 }
+
 variable "gcp_region" {
   type = string
 }
@@ -158,4 +159,21 @@ variable "loki_service_port" {
     name = string
     port = number
   })
+}
+
+# Docker reverse proxy
+variable "docker_reverse_proxy_image_digest" {
+  type = string
+}
+
+variable "docker_reverse_proxy_port" {
+  type = object({
+    name        = string
+    port        = number
+    health_path = string
+  })
+}
+
+variable "docker_reverse_proxy_service_account_key" {
+  type = string
 }

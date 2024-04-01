@@ -67,7 +67,7 @@ type Env struct {
 	GoogleServiceAccountBase64 string
 
 	// Real size of the rootfs after building the env.
-	RootfsSize int64
+	rootfsSize int64
 
 	// Path to the directory where the dir with kernel is mounted.
 	KernelMountDir string
@@ -92,6 +92,11 @@ var EnvInstanceTemplate = template.Must(template.New("provisioning-script").Pars
 // Path to the directory where the kernel is stored.
 func (e *Env) KernelDirPath() string {
 	return filepath.Join(e.KernelsDir, e.KernelVersion)
+}
+
+// Path to the directory where the kernel is stored.
+func (e *Env) RootfsSize() int64 {
+	return e.rootfsSize
 }
 
 // Path to the directory where the kernel can be accessed inside when the dirs are mounted.
@@ -168,29 +173,6 @@ func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Cli
 
 		return errMsg
 	}
-
-	defer func() {
-		go func() {
-			pushContext, pushSpan := tracer.Start(
-				trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
-				"push-docker-image-and-cleanup",
-			)
-			defer pushSpan.End()
-
-			if err != nil {
-				// We will not push the docker image if we failed to create the rootfs.
-				return
-			}
-
-			err := rootfs.pushDockerImage(pushContext, tracer)
-			if err != nil {
-				errMsg := fmt.Errorf("error pushing docker image: %w", err)
-				telemetry.ReportCriticalError(pushContext, errMsg)
-			} else {
-				telemetry.ReportEvent(pushContext, "pushed docker image")
-			}
-		}()
-	}()
 
 	network, err := NewFCNetwork(childCtx, tracer, e)
 	if err != nil {

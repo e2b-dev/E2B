@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/nomad/plugins/base"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
-	"github.com/txn2/txeh"
 	"go.opentelemetry.io/otel"
 
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/instance"
 	"github.com/e2b-dev/infra/packages/shared/pkg/driver"
 )
 
@@ -20,7 +20,7 @@ const (
 )
 
 type DriverExtra struct {
-	hosts *txeh.Hosts
+	dns *instance.DNS
 }
 
 var (
@@ -44,14 +44,9 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 
 	configSpec := hclspec.NewObject(map[string]*hclspec.Spec{})
 
-	hosts, err := txeh.NewHostsDefault()
+	dns, err := instance.NewDNS()
 	if err != nil {
-		panic("Failed to initialize etc hosts handler")
-	}
-
-	err = hosts.Reload()
-	if err != nil {
-		panic("Failed to load etc hosts")
+		panic(err)
 	}
 
 	return &driver.Driver[*DriverExtra, *driver.TaskHandle[*extraTaskHandle]]{
@@ -67,7 +62,7 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 		TaskConfigSpec:     taskConfigSpec,
 		Tasks:              driver.NewTaskStore[*driver.TaskHandle[*extraTaskHandle]](),
 		Extra: &DriverExtra{
-			hosts: hosts,
+			dns: dns,
 		},
 	}
 }

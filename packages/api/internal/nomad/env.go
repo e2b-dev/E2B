@@ -57,9 +57,7 @@ func (n *NomadClient) BuildEnvJob(
 	t trace.Tracer,
 	ctx context.Context,
 	envID,
-	envKernelVersion,
 	// build is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
-	envFirecrackerVersion,
 	buildID,
 	startCmd,
 	apiSecret,
@@ -76,8 +74,6 @@ func (n *NomadClient) BuildEnvJob(
 		childCtx,
 		attribute.String("passed_trace_id_hex", traceID),
 		attribute.String("passed_span_id_hex", spanID),
-		attribute.String("env.kernel.version", envKernelVersion),
-		attribute.String("env.firecracker.version", envFirecrackerVersion),
 		attribute.String("env.id", envID),
 		attribute.String("build.id", buildID),
 		attribute.Int64("build.disk_size_mb", vmConfig.DiskSizeMB),

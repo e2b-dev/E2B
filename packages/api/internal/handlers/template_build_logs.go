@@ -13,19 +13,12 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-// GetTemplatesTemplateIDBuildsBuildID serves to get an template build status (e.g. to CLI)
-func (a *APIStore) GetTemplatesTemplateIDBuildsBuildID(c *gin.Context, templateID api.TemplateID, buildID api.BuildID, params api.GetTemplatesTemplateIDBuildsBuildIDParams) {
-	result := a.GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c, templateID, buildID, params)
-	if result != nil {
-		c.JSON(http.StatusOK, &result)
-	}
-}
-
-func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c *gin.Context, templateID api.TemplateID, buildID api.BuildID, params api.GetTemplatesTemplateIDBuildsBuildIDParams) *api.TemplateBuild {
+// GetTemplatesTemplateIDBuildsBuildIDStatus serves to get a template build status (e.g. to CLI)
+func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDStatus(c *gin.Context, templateID api.TemplateID, buildID api.BuildID, params api.GetTemplatesTemplateIDBuildsBuildIDStatusParams) {
 	ctx := c.Request.Context()
 
 	userID := c.Value(constants.UserIDContextKey).(uuid.UUID)
-	team, err := a.supabase.GetDefaultTeamFromUserID(ctx, userID)
+	team, err := a.db.GetDefaultTeamFromUserID(ctx, userID)
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("user.id", userID.String()),
@@ -39,7 +32,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c *gin.Con
 
 		telemetry.ReportCriticalError(ctx, errMsg)
 
-		return nil
+		return
 	}
 
 	buildUUID, err := uuid.Parse(buildID)
@@ -50,7 +43,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c *gin.Con
 
 		telemetry.ReportError(ctx, errMsg)
 
-		return nil
+		return
 	}
 
 	dockerBuild, err := a.buildCache.Get(templateID, buildUUID)
@@ -61,7 +54,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c *gin.Con
 
 		telemetry.ReportError(ctx, msg)
 
-		return nil
+		return
 	}
 
 	if team.ID != dockerBuild.GetTeamID() {
@@ -71,7 +64,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c *gin.Con
 
 		telemetry.ReportError(ctx, msg)
 
-		return nil
+		return
 	}
 
 	status := dockerBuild.GetStatus()
@@ -84,17 +77,12 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDWithoutResponse(c *gin.Con
 		Status:     &status,
 	}
 
-	telemetry.ReportEvent(ctx, "got environment build")
-
-	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
-	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
-	a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "got environment detail", properties.Set("environment", templateID))
-
-	return &result
+	telemetry.ReportEvent(ctx, "got template build status")
+	c.JSON(http.StatusOK, result)
 }
 
 // PostTemplatesTemplateIDBuildsBuildIDLogs serves to add logs from the Build Driver
-func (a *APIStore) PostTemplatesTemplateIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvID, buildID string) {
+func (a *APIStore) PostTemplatesTemplateIDBuildsBuildIDLogs(c *gin.Context, envID api.TemplateID, buildID string) {
 	ctx := c.Request.Context()
 
 	body, err := parseBody[api.PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody](ctx, c)

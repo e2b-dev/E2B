@@ -8,7 +8,7 @@ echo "BUILD_ID={{ .BuildID }}" >>/.e2b
 
 # We are downloading the packages manually
 apt-get update --download-only
-DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y openssh-server chrony sudo systemd socat
+DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y openssh-server sudo systemd socat chrony linuxptp
 
 # Set up autologin.
 mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
@@ -42,7 +42,7 @@ EOF
 # Set up chrony.
 mkdir -p /etc/chrony
 cat <<EOF >/etc/chrony/chrony.conf
-refclock PHC /dev/ptp0 poll -2 dpoll -2 offset 0 trust prefer
+refclock PHC /dev/ptp0 poll -1 dpoll -1 offset 0 trust prefer
 makestep 1 -1
 EOF
 

@@ -126,6 +126,7 @@ module "cluster" {
   client_proxy_health_port     = var.client_proxy_health_port
   client_proxy_port            = var.client_proxy_port
   api_port                     = var.api_port
+  docker_reverse_proxy_port    = var.docker_reverse_proxy_port
   google_service_account_email = module.init.service_account_email
   domain_name                  = var.domain_name
 
@@ -150,6 +151,19 @@ module "api" {
   gcp_region     = var.gcp_region
 
   google_service_account_email  = module.init.service_account_email
+  orchestration_repository_name = module.init.orchestration_repository_name
+
+  labels = var.labels
+  prefix = var.prefix
+}
+
+module "docker_reverse_proxy" {
+  source = "./packages/docker-reverse-proxy"
+
+  gcp_project_id = var.gcp_project_id
+  gcp_region     = var.gcp_region
+
+  custom_envs_repository_name   = module.api.custom_envs_repository_name
   orchestration_repository_name = module.init.orchestration_repository_name
 
   labels = var.labels
@@ -206,4 +220,9 @@ module "nomad" {
   # Logs
   loki_bucket_name  = module.buckets.loki_bucket_name
   loki_service_port = var.loki_service_port
+
+  # Docker reverse proxy
+  docker_reverse_proxy_image_digest        = module.docker_reverse_proxy.docker_reverse_proxy_image_digest
+  docker_reverse_proxy_port                = var.docker_reverse_proxy_port
+  docker_reverse_proxy_service_account_key = module.docker_reverse_proxy.docker_reverse_proxy_service_account_key
 }

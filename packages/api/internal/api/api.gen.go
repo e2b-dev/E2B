@@ -14,35 +14,8 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (GET /envs)
-	GetEnvs(c *gin.Context)
-
-	// (POST /envs)
-	PostEnvs(c *gin.Context)
-
-	// (DELETE /envs/{envID})
-	DeleteEnvsEnvID(c *gin.Context, envID EnvID)
-
-	// (POST /envs/{envID})
-	PostEnvsEnvID(c *gin.Context, envID EnvID)
-
-	// (GET /envs/{envID}/builds/{buildID})
-	GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID EnvID, buildID BuildID, params GetEnvsEnvIDBuildsBuildIDParams)
-
-	// (POST /envs/{envID}/builds/{buildID}/logs)
-	PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID EnvID, buildID BuildID)
-
 	// (GET /health)
 	GetHealth(c *gin.Context)
-
-	// (GET /instances)
-	GetInstances(c *gin.Context)
-
-	// (POST /instances)
-	PostInstances(c *gin.Context)
-
-	// (POST /instances/{instanceID}/refreshes)
-	PostInstancesInstanceIDRefreshes(c *gin.Context, instanceID InstanceID)
 
 	// (GET /sandboxes)
 	GetSandboxes(c *gin.Context)
@@ -71,11 +44,14 @@ type ServerInterface interface {
 	// (POST /templates/{templateID})
 	PostTemplatesTemplateID(c *gin.Context, templateID TemplateID)
 
-	// (GET /templates/{templateID}/builds/{buildID})
-	GetTemplatesTemplateIDBuildsBuildID(c *gin.Context, templateID TemplateID, buildID BuildID, params GetTemplatesTemplateIDBuildsBuildIDParams)
+	// (POST /templates/{templateID}/builds/{buildID})
+	PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, templateID TemplateID, buildID BuildID)
 
 	// (POST /templates/{templateID}/builds/{buildID}/logs)
 	PostTemplatesTemplateIDBuildsBuildIDLogs(c *gin.Context, templateID TemplateID, buildID BuildID)
+
+	// (GET /templates/{templateID}/builds/{buildID}/status)
+	GetTemplatesTemplateIDBuildsBuildIDStatus(c *gin.Context, templateID TemplateID, buildID BuildID, params GetTemplatesTemplateIDBuildsBuildIDStatusParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -86,167 +62,6 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(c *gin.Context)
-
-// GetEnvs operation middleware
-func (siw *ServerInterfaceWrapper) GetEnvs(c *gin.Context) {
-
-	c.Set(AccessTokenAuthScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetEnvs(c)
-}
-
-// PostEnvs operation middleware
-func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
-
-	c.Set(AccessTokenAuthScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.PostEnvs(c)
-}
-
-// DeleteEnvsEnvID operation middleware
-func (siw *ServerInterfaceWrapper) DeleteEnvsEnvID(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "envID" -------------
-	var envID EnvID
-
-	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter envID: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	c.Set(AccessTokenAuthScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.DeleteEnvsEnvID(c, envID)
-}
-
-// PostEnvsEnvID operation middleware
-func (siw *ServerInterfaceWrapper) PostEnvsEnvID(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "envID" -------------
-	var envID EnvID
-
-	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter envID: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	c.Set(AccessTokenAuthScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.PostEnvsEnvID(c, envID)
-}
-
-// GetEnvsEnvIDBuildsBuildID operation middleware
-func (siw *ServerInterfaceWrapper) GetEnvsEnvIDBuildsBuildID(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "envID" -------------
-	var envID EnvID
-
-	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter envID: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	// ------------- Path parameter "buildID" -------------
-	var buildID BuildID
-
-	err = runtime.BindStyledParameter("simple", false, "buildID", c.Param("buildID"), &buildID)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter buildID: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	c.Set(AccessTokenAuthScopes, []string{})
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetEnvsEnvIDBuildsBuildIDParams
-
-	// ------------- Optional query parameter "logsOffset" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "logsOffset", c.Request.URL.Query(), &params.LogsOffset)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter logsOffset: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetEnvsEnvIDBuildsBuildID(c, envID, buildID, params)
-}
-
-// PostEnvsEnvIDBuildsBuildIDLogs operation middleware
-func (siw *ServerInterfaceWrapper) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "envID" -------------
-	var envID EnvID
-
-	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter envID: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	// ------------- Path parameter "buildID" -------------
-	var buildID BuildID
-
-	err = runtime.BindStyledParameter("simple", false, "buildID", c.Param("buildID"), &buildID)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter buildID: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.PostEnvsEnvIDBuildsBuildIDLogs(c, envID, buildID)
-}
 
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
@@ -259,62 +74,6 @@ func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
 	}
 
 	siw.Handler.GetHealth(c)
-}
-
-// GetInstances operation middleware
-func (siw *ServerInterfaceWrapper) GetInstances(c *gin.Context) {
-
-	c.Set(ApiKeyAuthScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetInstances(c)
-}
-
-// PostInstances operation middleware
-func (siw *ServerInterfaceWrapper) PostInstances(c *gin.Context) {
-
-	c.Set(ApiKeyAuthScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.PostInstances(c)
-}
-
-// PostInstancesInstanceIDRefreshes operation middleware
-func (siw *ServerInterfaceWrapper) PostInstancesInstanceIDRefreshes(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "instanceID" -------------
-	var instanceID InstanceID
-
-	err = runtime.BindStyledParameter("simple", false, "instanceID", c.Param("instanceID"), &instanceID)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter instanceID: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	c.Set(ApiKeyAuthScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.PostInstancesInstanceIDRefreshes(c, instanceID)
 }
 
 // GetSandboxes operation middleware
@@ -526,8 +285,8 @@ func (siw *ServerInterfaceWrapper) PostTemplatesTemplateID(c *gin.Context) {
 	siw.Handler.PostTemplatesTemplateID(c, templateID)
 }
 
-// GetTemplatesTemplateIDBuildsBuildID operation middleware
-func (siw *ServerInterfaceWrapper) GetTemplatesTemplateIDBuildsBuildID(c *gin.Context) {
+// PostTemplatesTemplateIDBuildsBuildID operation middleware
+func (siw *ServerInterfaceWrapper) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context) {
 
 	var err error
 
@@ -551,17 +310,6 @@ func (siw *ServerInterfaceWrapper) GetTemplatesTemplateIDBuildsBuildID(c *gin.Co
 
 	c.Set(AccessTokenAuthScopes, []string{})
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetTemplatesTemplateIDBuildsBuildIDParams
-
-	// ------------- Optional query parameter "logsOffset" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "logsOffset", c.Request.URL.Query(), &params.LogsOffset)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter logsOffset: %w", err), http.StatusBadRequest)
-		return
-	}
-
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -569,7 +317,7 @@ func (siw *ServerInterfaceWrapper) GetTemplatesTemplateIDBuildsBuildID(c *gin.Co
 		}
 	}
 
-	siw.Handler.GetTemplatesTemplateIDBuildsBuildID(c, templateID, buildID, params)
+	siw.Handler.PostTemplatesTemplateIDBuildsBuildID(c, templateID, buildID)
 }
 
 // PostTemplatesTemplateIDBuildsBuildIDLogs operation middleware
@@ -605,6 +353,52 @@ func (siw *ServerInterfaceWrapper) PostTemplatesTemplateIDBuildsBuildIDLogs(c *g
 	siw.Handler.PostTemplatesTemplateIDBuildsBuildIDLogs(c, templateID, buildID)
 }
 
+// GetTemplatesTemplateIDBuildsBuildIDStatus operation middleware
+func (siw *ServerInterfaceWrapper) GetTemplatesTemplateIDBuildsBuildIDStatus(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "templateID" -------------
+	var templateID TemplateID
+
+	err = runtime.BindStyledParameter("simple", false, "templateID", c.Param("templateID"), &templateID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter templateID: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// ------------- Path parameter "buildID" -------------
+	var buildID BuildID
+
+	err = runtime.BindStyledParameter("simple", false, "buildID", c.Param("buildID"), &buildID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter buildID: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(AccessTokenAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetTemplatesTemplateIDBuildsBuildIDStatusParams
+
+	// ------------- Optional query parameter "logsOffset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "logsOffset", c.Request.URL.Query(), &params.LogsOffset)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter logsOffset: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetTemplatesTemplateIDBuildsBuildIDStatus(c, templateID, buildID, params)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -632,16 +426,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
-	router.GET(options.BaseURL+"/envs", wrapper.GetEnvs)
-	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
-	router.DELETE(options.BaseURL+"/envs/:envID", wrapper.DeleteEnvsEnvID)
-	router.POST(options.BaseURL+"/envs/:envID", wrapper.PostEnvsEnvID)
-	router.GET(options.BaseURL+"/envs/:envID/builds/:buildID", wrapper.GetEnvsEnvIDBuildsBuildID)
-	router.POST(options.BaseURL+"/envs/:envID/builds/:buildID/logs", wrapper.PostEnvsEnvIDBuildsBuildIDLogs)
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
-	router.GET(options.BaseURL+"/instances", wrapper.GetInstances)
-	router.POST(options.BaseURL+"/instances", wrapper.PostInstances)
-	router.POST(options.BaseURL+"/instances/:instanceID/refreshes", wrapper.PostInstancesInstanceIDRefreshes)
 	router.GET(options.BaseURL+"/sandboxes", wrapper.GetSandboxes)
 	router.POST(options.BaseURL+"/sandboxes", wrapper.PostSandboxes)
 	router.DELETE(options.BaseURL+"/sandboxes/:sandboxID", wrapper.DeleteSandboxesSandboxID)
@@ -651,6 +436,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.POST(options.BaseURL+"/templates", wrapper.PostTemplates)
 	router.DELETE(options.BaseURL+"/templates/:templateID", wrapper.DeleteTemplatesTemplateID)
 	router.POST(options.BaseURL+"/templates/:templateID", wrapper.PostTemplatesTemplateID)
-	router.GET(options.BaseURL+"/templates/:templateID/builds/:buildID", wrapper.GetTemplatesTemplateIDBuildsBuildID)
+	router.POST(options.BaseURL+"/templates/:templateID/builds/:buildID", wrapper.PostTemplatesTemplateIDBuildsBuildID)
 	router.POST(options.BaseURL+"/templates/:templateID/builds/:buildID/logs", wrapper.PostTemplatesTemplateIDBuildsBuildIDLogs)
+	router.GET(options.BaseURL+"/templates/:templateID/builds/:buildID/status", wrapper.GetTemplatesTemplateIDBuildsBuildIDStatus)
 }

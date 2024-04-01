@@ -7,9 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/shared/pkg/env"
-	"github.com/e2b-dev/infra/packages/shared/pkg/storages"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/posthog/posthog-go"
@@ -21,22 +18,27 @@ import (
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/db"
 	"github.com/e2b-dev/infra/packages/api/internal/loki"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/db"
+	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
-)
+	"github.com/e2b-dev/infra/packages/shared/pkg/storages"
+)x
 
 type APIStore struct {
 	Ctx                        context.Context
 	analytics                  *analyticscollector.Analytics
 	posthog                    *PosthogClient
 	tracer                     trace.Tracer
-	instanceCache              *nomad.InstanceCache
+	instanceCache              *instance.InstanceCache
 	buildCache                 *nomad.BuildCache
 	nomad                      *nomad.NomadClient
-	supabase                   *db.DB
+	db                         *db.DB
 	cloudStorage               *storages.GoogleCloudStorage
 	lokiClient                 *loki.DefaultClient
 	apiSecret                  string
@@ -63,7 +65,7 @@ func NewAPIStore() *APIStore {
 
 	logger.Info("Initialized Nomad client")
 
-	supabaseClient, err := db.NewClient(ctx)
+	dbClient, err := db.NewClient(ctx)
 	if err != nil {
 		logger.Errorf("Error initializing Supabase client\n: %v", err)
 		panic(err)
@@ -78,7 +80,7 @@ func NewAPIStore() *APIStore {
 		panic(posthogErr)
 	}
 
-	var initialInstances []*InstanceInfo
+	var initialInstances []*instance.InstanceInfo
 
 	if env.IsProduction() {
 		instances, instancesErr := nomadClient.GetInstances()
@@ -111,12 +113,12 @@ func NewAPIStore() *APIStore {
 
 	logger.Info("Initialized Analytics client")
 
-	instanceCache := nomad.NewInstanceCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, nomadClient, analytics, posthogClient, logger), initialInstances, instancesCounter)
+	instanceCache := instance.NewCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, nomadClient, analytics, posthogClient, logger), initialInstances, instancesCounter)
 
 	logger.Info("Initialized instance cache")
 
 	if env.IsProduction() {
-		go instanceCache.KeepInSync(nomadClient)
+		go nomadClient.KeepInSync(instanceCache)
 	} else {
 		logger.Info("Skipping syncing intances with Nomad, running locally")
 	}
@@ -158,7 +160,7 @@ func NewAPIStore() *APIStore {
 	return &APIStore{
 		Ctx:                        ctx,
 		nomad:                      nomadClient,
-		supabase:                   supabaseClient,
+		db:                         dbClient,
 		instanceCache:              instanceCache,
 		tracer:                     tracer,
 		analytics:                  analytics,
@@ -174,7 +176,7 @@ func NewAPIStore() *APIStore {
 
 func (a *APIStore) Close() {
 	a.nomad.Close()
-	a.supabase.Close()
+	a.db.Close()
 
 	err := a.analytics.Close()
 	if err != nil {
@@ -209,7 +211,7 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 }
 
 func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (models.Team, *api.APIError) {
-	team, err := a.supabase.GetTeamAuth(ctx, apiKey)
+	team, err := a.db.GetTeamAuth(ctx, apiKey)
 	if err != nil {
 		return models.Team{}, &api.APIError{
 			Err:       fmt.Errorf("failed to get the team from db for an api key: %w", err),
@@ -222,7 +224,7 @@ func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (models
 }
 
 func (a *APIStore) GetUserFromAccessToken(ctx context.Context, accessToken string) (uuid.UUID, *api.APIError) {
-	userID, err := a.supabase.GetUserID(ctx, accessToken)
+	userID, err := a.db.GetUserID(ctx, accessToken)
 	if err != nil {
 		return uuid.UUID{}, &api.APIError{
 			Err:       fmt.Errorf("failed to get the user from db for an access token: %w", err),
@@ -247,14 +249,21 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	return deleteInstance(a.Ctx, a.nomad, a.analytics, a.posthog, a.logger, info, purge)
 }
 
-func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, kernelVersion, firecrackerVersion string, hasAccess bool, err error) {
-	return a.supabase.HasEnvAccess(ctx, aliasOrEnvID, teamID, public)
+func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, build *models.EnvBuild, err error) {
+	template, build, err := a.db.GetEnv(ctx, aliasOrEnvID, teamID, public)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &api.Template{
+		TemplateID: template.TemplateID,
+		BuildID:    build.ID.String(),
+		Public:     template.Public,
+		Aliases:    template.Aliases,
+	}, build, nil
 }
 
-type InstanceInfo = nomad.InstanceInfo
-
-func getDeleteInstanceFunction(ctx context.Context, nomad *nomad.NomadClient, analytics *analyticscollector.Analytics, posthogClient *PosthogClient, logger *zap.SugaredLogger) func(info nomad.InstanceInfo, purge bool) *api.APIError {
-	return func(info InstanceInfo, purge bool) *api.APIError {
+func getDeleteInstanceFunction(ctx context.Context, nomad *nomad.NomadClient, analytics *analyticscollector.Analytics, posthogClient *PosthogClient, logger *zap.SugaredLogger) func(info instance.InstanceInfo, purge bool) *api.APIError {
+	return func(info instance.InstanceInfo, purge bool) *api.APIError {
 		return deleteInstance(ctx, nomad, analytics, posthogClient, logger, info, purge)
 	}
 }
@@ -265,7 +274,7 @@ func deleteInstance(
 	analytics *analyticscollector.Analytics,
 	posthogClient *PosthogClient,
 	logger *zap.SugaredLogger,
-	info InstanceInfo,
+	info instance.InstanceInfo,
 	purge bool,
 ) *api.APIError {
 	duration := time.Since(*info.StartTime).Seconds()

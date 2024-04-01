@@ -69,9 +69,9 @@ func EnvID(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldEQ(FieldEnvID, v))
 }
 
-// IsName applies equality check predicate on the "is_name" field. It's identical to IsNameEQ.
-func IsName(v bool) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldEQ(FieldIsName, v))
+// IsRenamable applies equality check predicate on the "is_renamable" field. It's identical to IsRenamableEQ.
+func IsRenamable(v bool) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldEQ(FieldIsRenamable, v))
 }
 
 // EnvIDEQ applies the EQ predicate on the "env_id" field.
@@ -129,16 +129,6 @@ func EnvIDHasSuffix(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldHasSuffix(FieldEnvID, v))
 }
 
-// EnvIDIsNil applies the IsNil predicate on the "env_id" field.
-func EnvIDIsNil() predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldIsNull(FieldEnvID))
-}
-
-// EnvIDNotNil applies the NotNil predicate on the "env_id" field.
-func EnvIDNotNil() predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldNotNull(FieldEnvID))
-}
-
 // EnvIDEqualFold applies the EqualFold predicate on the "env_id" field.
 func EnvIDEqualFold(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldEqualFold(FieldEnvID, v))
@@ -149,14 +139,14 @@ func EnvIDContainsFold(v string) predicate.EnvAlias {
 	return predicate.EnvAlias(sql.FieldContainsFold(FieldEnvID, v))
 }
 
-// IsNameEQ applies the EQ predicate on the "is_name" field.
-func IsNameEQ(v bool) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldEQ(FieldIsName, v))
+// IsRenamableEQ applies the EQ predicate on the "is_renamable" field.
+func IsRenamableEQ(v bool) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldEQ(FieldIsRenamable, v))
 }
 
-// IsNameNEQ applies the NEQ predicate on the "is_name" field.
-func IsNameNEQ(v bool) predicate.EnvAlias {
-	return predicate.EnvAlias(sql.FieldNEQ(FieldIsName, v))
+// IsRenamableNEQ applies the NEQ predicate on the "is_renamable" field.
+func IsRenamableNEQ(v bool) predicate.EnvAlias {
+	return predicate.EnvAlias(sql.FieldNEQ(FieldIsRenamable, v))
 }
 
 // HasEnv applies the HasEdge predicate on the "env" edge.

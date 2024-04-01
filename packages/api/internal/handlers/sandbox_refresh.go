@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/gin-gonic/gin"
 )
@@ -30,13 +30,13 @@ func (a *APIStore) PostSandboxesSandboxIDRefreshes(
 	}
 
 	if body.Duration == nil {
-		duration = nomad.InstanceExpiration
+		duration = instance.InstanceExpiration
 	} else {
 		duration = time.Duration(*body.Duration) * time.Second
 	}
 
-	if duration < nomad.InstanceExpiration {
-		duration = nomad.InstanceExpiration
+	if duration < instance.InstanceExpiration {
+		duration = instance.InstanceExpiration
 	}
 
 	err = a.instanceCache.KeepAliveFor(sandboxID, duration)

@@ -29,13 +29,13 @@
   "[go]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit",
+      "source.organizeImports": "explicit"
     },
   },
   "[go.mod]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit",
+      "source.organizeImports": "explicit"
     },
   },
   "editor.tabCompletion": "on",
