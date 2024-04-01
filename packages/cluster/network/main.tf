@@ -219,6 +219,18 @@ resource "google_compute_url_map" "orch_map" {
   path_matcher {
     name            = "nomad-paths"
     default_service = google_compute_backend_service.default["nomad"].self_link
+
+    path_rule {
+      paths   = ["/v1/metrics"]
+      service = google_compute_backend_service.default["nomad"].self_link
+      route_action {
+        url_rewrite {
+          // We prevent access to these routes by rewriting the path to /
+          path_prefix_rewrite = "/"
+          host_rewrite        = "nomad.${var.domain_name}"
+        }
+      }
+    }
   }
 
   path_matcher {
@@ -324,6 +336,8 @@ resource "google_compute_firewall" "default-hc" {
   ]
   target_tags = [var.cluster_tag_name]
 
+  priority = 999
+
   dynamic "allow" {
     for_each = local.health_checked_backends
     content {
@@ -409,9 +423,11 @@ resource "google_compute_firewall" "orch_firewall_ingress" {
     ports    = ["80", "8080", "4646", "3001", "3002", "3003", "30006", "44313", "50001", "8500"]
   }
 
+  priority = 999
+
   direction     = "INGRESS"
   target_tags   = [var.cluster_tag_name]
-  source_ranges = ["130.211.0.0/22", "35.191.0.0/16", "94.113.136.120"]
+  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
 }
 
 resource "google_compute_firewall" "orch_firewall_egress" {
