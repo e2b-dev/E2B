@@ -361,20 +361,26 @@ function start_consul {
 
 function bootstrap {
   log_info "Waiting for Consul to start"
+  instance_ip_address=$(get_instance_ip_address)
+  log_info "Instance IP Address: $instance_ip_address"
+
   while true; do
-    local readonly consul_leader_addr=$(consul info -token="${consul_token}"| grep "leader_addr =" | awk -F'=' '{print $2}' | tr -d ' ')
-    local readonly consul_leader=$(consul info -token="${consul_token}"| grep "leader =" | awk -F'=' '{print $2}' | tr -d ' ')
-    if [[ -n "$consul_leader_addr" ]]; then
-      log_info "Consul leader elected"
+    consul_leader_addr=$(curl http://localhost:8500/v1/status/leader 2>/dev/null || true)
+    log_info "Consul leader address: $consul_leader_addr"
 
-      if [[ "$consul_leader" == "true" ]]; then
-        local readonly consul_token="$1"
-        log_info "Bootstrapping Consul"
-        echo "${consul_token}" >/tmp/consul.token
-        consul acl bootstrap /tmp/consul.token
-        rm /tmp/consul.token
-      fi
+    if [[ "$consul_leader_addr" == "\"$instance_ip_address:8300\"" ]]; then
+      local consul_token="$1"
+      log_info "Bootstrapping Consul"
+      echo "${consul_token}" >/tmp/consul.token
+      consul acl bootstrap /tmp/consul.token
+      rm /tmp/consul.token
 
+      break
+    fi
+
+    # Consul leader address was already set, but it isn't the current instance
+    if [[ -n "$consul_leader_addr" && "$consul_leader_addr" != "\"\"" ]]; then
+      log_info "Consul is already bootstrapped"
       break
     fi
 
