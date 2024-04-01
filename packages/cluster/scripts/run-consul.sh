@@ -361,17 +361,26 @@ function start_consul {
 
 function bootstrap {
   log_info "Waiting for Consul to start"
-  while true; do
-    instance_ip_address=$(get_instance_ip_address)
+  instance_ip_address=$(get_instance_ip_address)
+  log_info "Instance IP Address: $instance_ip_address"
 
-    local readonly consul_leader_addr=$(curl http://localhost:8500/v1/status/leader)
+  while true; do
+    consul_leader_addr=$(curl http://localhost:8500/v1/status/leader 2>/dev/null || true)
+    log_info "Consul leader address: $consul_leader_addr"
+
     if [[ "$consul_leader_addr" == "\"$instance_ip_address:8300\"" ]]; then
-      local readonly consul_token="$1"
+      local consul_token="$1"
       log_info "Bootstrapping Consul"
       echo "${consul_token}" >/tmp/consul.token
       consul acl bootstrap /tmp/consul.token
       rm /tmp/consul.token
 
+      break
+    fi
+
+    # Consul leader address was already set, but it isn't the current instance
+    if [[ -n "$consul_leader_addr" && "$consul_leader_addr" != "\"\"" ]]; then
+      log_info "Consul is already bootstrapped"
       break
     fi
 
