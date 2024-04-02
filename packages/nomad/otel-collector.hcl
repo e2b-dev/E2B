@@ -125,7 +125,7 @@ receivers:
           params:
             format: ['prometheus']
           consul_sd_configs:
-          - services: ['nomad-client', 'nomad', 'api', 'client-proxy', 'session-proxy', 'otel-collector', 'logs-collector', 'docker-reverse-proxy']
+          - services: ['nomad-client', 'nomad', 'api', 'client-proxy', 'session-proxy', 'otel-collector', 'logs-collector', 'docker-reverse-proxy', 'loki']
             token: "${var.consul_token}"
 
           relabel_configs:
@@ -171,7 +171,7 @@ exporters:
 service:
   telemetry:
     logs:
-      level: debug
+      level: warn
   extensions:
     - basicauth/grafana_cloud_traces
     - basicauth/grafana_cloud_metrics
