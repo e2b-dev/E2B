@@ -1,0 +1,10 @@
+# Results explained
+
+The object returned by the `execCell` method contains the following fields:
+
+- `result`: contains the result of the cell execution
+    - if there's an variable on the last line, it will evaluated (there's an detailed explanation in the [Jupyter documentation](https://ipython.readthedocs.io/en/stable/development/execution.html#running-user-code)
+- `success`: a boolean indicating whether the cell execution was successful
+- `error`: the error message, if any
+- `onStdout`: the cell standard output, as a string
+- `onStderr`: the cell standard error, as a string

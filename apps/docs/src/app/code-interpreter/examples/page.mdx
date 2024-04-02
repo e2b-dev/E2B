@@ -1,0 +1,136 @@
+# Examples
+
+
+
+## Minimal example with the sharing context
+
+The following example demonstrates how to create a shared context between multiple code executions. This is useful when you want to share variables between different code cells.
+
+<CodeGroup isRunnable={false}>
+```js
+import { CodeInterpreter } from '@e2b/code-interpreter'
+
+const sandbox = await CodeInterpreter.create()
+await sandbox.execPython('x = 1')
+
+const result = await sandbox.execPython('x += 1; x')
+console.log(result.output)  // outputs 2
+
+await sandbox.close()
+```
+```python
+from e2b_code_interpreter import CodeInterpreter
+
+with CodeInterpreter() as sandbox:
+    sandbox.exec_cell("x = 1")
+
+    result = sandbox.exec_cell("x+=1; x")
+    print(result.result)  # outputs 2
+
+```
+</CodeGroup>
+
+## Get charts and any display-able data
+
+<CodeGroup isRunnable={false}>
+```js
+import { CodeInterpreter } from '@e2b/code-interpreter';
+
+const sandbox = await CodeInterpreter.create();
+
+const code = `
+import matplotlib.pyplot as plt
+import numpy as np
+
+x = np.linspace(0, 20, 100)
+y = np.sin(x)
+
+plt.plot(x, y)
+plt.show()
+`;
+
+// you can install dependencies in "jupyter notebook style"
+await sandbox.execPython("!pip install matplotlib");
+
+const result = await sandbox.execPython(code);
+
+// this contains the image data, you can e.g. save it to file or send to frontend
+result.display_data[0]["image/png"];
+
+await sandbox.close();
+```
+```python
+import base64
+import io
+
+from matplotlib import image as mpimg, pyplot as plt
+
+from e2b_code_interpreter import CodeInterpreter
+
+code = """
+import matplotlib.pyplot as plt
+import numpy as np
+
+x = np.linspace(0, 20, 100)
+y = np.sin(x)
+
+plt.plot(x, y)
+plt.show()
+"""
+
+with CodeInterpreter() as sandbox:
+    # you can install dependencies in "jupyter notebook style"
+    sandbox.exec_cell("!pip install matplotlib")
+
+    # plot random graph
+    result = sandbox.exec_cell(code)
+
+# there's your image
+image = result.display_data[0]["image/png"]
+
+# example how to show the image / prove it works
+i = base64.b64decode(image)
+i = io.BytesIO(i)
+i = mpimg.imread(i, format='PNG')
+
+plt.imshow(i, interpolation='nearest')
+plt.show()
+```
+</CodeGroup>
+
+## Streaming code output
+
+<CodeGroup isRunnable={false}>
+```js
+import { CodeInterpreter } from "@e2b/code-interpreter";
+
+code = `
+import time
+
+print("hello")
+time.sleep(5)
+print("world")
+`;
+
+const sandbox = await CodeInterpreter.create();
+
+await sandbox.execPython(
+  code,
+  (out) => console.log(out),
+  (outErr) => console.error(outErr),
+);
+````
+```python
+from e2b_code_interpreter import CodeInterpreter
+
+code = """
+import time
+
+print("hello")
+time.sleep(5)
+print("world")
+"""
+with CodeInterpreter() as sandbox:
+    sandbox.exec_cell(code, on_stdout=print, on_stderr=print)
+```
+</ CodeGroup>

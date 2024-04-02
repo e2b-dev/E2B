@@ -1,7 +1,9 @@
 import {
-  Boxes,
+  BarChart,
+  Book,
   Braces,
   ChevronRightSquare,
+  Cog,
   Cpu,
   DollarSign,
   FileDown,
@@ -10,6 +12,7 @@ import {
   Folder,
   FolderTree,
   Hammer,
+  HardDrive,
   HeartHandshake,
   KeyRound,
   Link,
@@ -21,10 +24,8 @@ import {
   TerminalSquare,
   Timer,
   Variable,
-  HardDrive,
-  BarChart,
+  Wrench, FileCode, Lightbulb,
 } from 'lucide-react'
-
 
 export const routes = [
   {
@@ -32,42 +33,22 @@ export const routes = [
     links: [
       { title: 'Introduction', href: '/' },
       {
-        icon: (
-          <DollarSign
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <DollarSign strokeWidth={1} size={20} />,
         title: 'Pricing',
         href: '/pricing',
       },
       {
-        icon: (
-          <BarChart
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <BarChart strokeWidth={1} size={20} />,
         title: 'Track usage',
         href: '/usage',
       },
       {
-        icon: (
-          <HeartHandshake
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <HeartHandshake strokeWidth={1} size={20} />,
         title: 'Open source',
         href: '/open-source',
       },
       {
-        icon: (
-          <ShieldQuestion
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <ShieldQuestion strokeWidth={1} size={20} />,
         title: 'Getting help',
         href: '/getting-help',
       },
@@ -77,32 +58,17 @@ export const routes = [
     title: 'Getting Started',
     links: [
       {
-        icon: (
-          <Settings
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <Settings strokeWidth={1} size={20} />,
         title: 'Installation',
         href: '/getting-started/installation',
       },
       {
-        icon: (
-          <KeyRound
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <KeyRound strokeWidth={1} size={20} />,
         title: 'API Key',
         href: '/getting-started/api-key',
       },
       {
-        icon: (
-          <Hammer
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <Hammer strokeWidth={1} size={20} />,
         title: 'Guide: Custom Code Interpreter',
         href: '/guide/simple-gpt4-code-interpreter',
         //
@@ -132,22 +98,12 @@ export const routes = [
         href: '/sandbox/overview',
       },
       {
-        icon: (
-          <Cpu
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <Cpu strokeWidth={1} size={20} />,
         title: 'Compute',
         href: '/sandbox/compute',
       },
       {
-        icon: (
-          <PencilRuler
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <PencilRuler strokeWidth={1} size={20} />,
         title: 'Customization',
         href: '/sandbox/custom',
       },
@@ -161,159 +117,109 @@ export const routes = [
         href: '/sandbox/templates/overview',
       },
       {
-        icon: (
-          <File
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <File strokeWidth={1} size={20} />,
         title: 'Template File',
         href: '/sandbox/templates/template-file',
       },
       {
-        icon: (
-          <PlaySquare
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <PlaySquare strokeWidth={1} size={20} />,
         title: 'Start Command',
         href: '/sandbox/templates/start-cmd',
       },
       {
-        icon: (
-          <Boxes
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Premade Sandboxes',
-        href: '/sandbox/templates/premade',
-      },
-      {
-        icon: (
-          <Hammer
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <Hammer strokeWidth={1} size={20} />,
         title: 'Guide: Creating Custom Sandbox',
         href: '/guide/custom-sandbox',
       },
       {
-        icon: (
-          <HardDrive
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <HardDrive strokeWidth={1} size={20} />,
         title: 'Connecting buckets to persist data',
         href: '/guide/connect-bucket',
       },
-    ]
+    ],
   },
   {
     title: 'Sandbox API',
     links: [
       {
-        icon: (
-          <Variable
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <Variable strokeWidth={1} size={20} />,
         title: 'Environment Variables',
         href: '/sandbox/api/envs',
       },
       {
-        icon: (
-          <FolderTree
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <FolderTree strokeWidth={1} size={20} />,
         title: 'Filesystem',
         href: '/sandbox/api/filesystem',
       },
       {
-        icon: (
-          <ChevronRightSquare
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <ChevronRightSquare strokeWidth={1} size={20} />,
         title: 'Process',
         href: '/sandbox/api/process',
       },
       {
-        icon: (
-          <Folder
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <Folder strokeWidth={1} size={20} />,
         title: 'Working Directory',
         href: '/sandbox/api/cwd',
       },
       {
-        icon: (
-          <Link
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <Link strokeWidth={1} size={20} />,
         title: 'Sandbox URL',
         href: '/sandbox/api/url',
       },
       {
-        icon: (
-          <FileUp
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <FileUp strokeWidth={1} size={20} />,
         title: 'Upload Files',
         href: '/sandbox/api/upload',
       },
       {
-        icon: (
-          <FileDown
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <FileDown strokeWidth={1} size={20} />,
         title: 'Download Files',
         href: '/sandbox/api/download',
       },
       {
-        icon: (
-          <Timer
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <Timer strokeWidth={1} size={20} />,
         title: 'Timeouts',
         href: '/sandbox/api/timeouts',
       },
       {
-        icon: (
-          <RefreshCw
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <RefreshCw strokeWidth={1} size={20} />,
         title: 'Connect to running sandbox',
         href: '/sandbox/api/reconnect',
       },
       {
-        icon: (
-          <Braces
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <Braces strokeWidth={1} size={20} />,
         title: 'Sandbox metadata',
         href: '/sandbox/api/metadata',
+      },
+    ],
+  },
+  {
+    title: 'Code Interpreter',
+    links: [
+      {
+        icon: <FileCode strokeWidth={1} size={20} />,
+        title: 'Overview',
+        href: '/code-interpreter/overview',
+      },
+      {
+        icon: <Cog strokeWidth={1} size={20} />,
+        title: 'Installation',
+        href: '/code-interpreter/installation',
+      },
+      {
+        icon: <Lightbulb strokeWidth={1} size={20} />,
+        title: 'Results explained',
+        href: '/code-interpreter/results',
+      },
+      {
+        icon: <Book strokeWidth={1} size={20} />,
+        title: 'Examples',
+        href: '/code-interpreter/examples',
+      },
+      {
+        icon: <Wrench strokeWidth={1} size={20} />,
+        title: 'Extending Code Interpreter',
+        href: '/code-interpreter/template',
       },
     ],
   },
@@ -321,22 +227,12 @@ export const routes = [
     title: 'CLI API',
     links: [
       {
-        icon: (
-          <Settings
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <Settings strokeWidth={1} size={20} />,
         title: 'Installation',
         href: '/cli/installation',
       },
       {
-        icon: (
-          <TerminalSquare
-            strokeWidth={1}
-            size={20}
-          />
-        ),
+        icon: <TerminalSquare strokeWidth={1} size={20} />,
         title: 'Commands',
         href: '/cli/commands',
       },

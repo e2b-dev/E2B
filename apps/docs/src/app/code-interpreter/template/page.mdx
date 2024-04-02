@@ -1,0 +1,17 @@
+# Custom template using Code Interpreter
+
+## 
+The template requires custom setup. If you want to build your own custom template and use Code Interpreter, you need to do:
+
+Copy jupyter_server_config.py and start-up.sh from this PR
+Add following commands in your Dockerfile
+# Installs jupyter server and kernel
+RUN pip install jupyter-server ipykernel ipython
+RUN ipython kernel install --name "python3" --user
+# Copes jupyter server config
+COPY ./jupyter_server_config.py /home/user/.jupyter/
+# Setups jupyter server
+COPY ./start-up.sh /home/user/.jupyter/
+RUN chmod +x /home/user/.jupyter/start-up.sh
+Add the following option -c "/home/user/.jupyter/start-up.sh" to e2b template build command or add this line to your e2b.toml.
+start_cmd = "/home/user/.jupyter/start-up.sh"
