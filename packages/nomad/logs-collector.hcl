@@ -86,7 +86,7 @@ job "logs-collector" {
       env {
         VECTOR_CONFIG          = "local/vector.toml"
         VECTOR_REQUIRE_HEALTHY = "true"
-        VECTOR_LOG             = "debug"
+        VECTOR_LOG             = "warn"
       }
 
       resources {
@@ -133,7 +133,7 @@ source = """
 [sinks.local_loki_logs]
 type = "loki"
 inputs = [ "add_source_envd" ]
-endpoint = "http://localhost:${var.loki_service_port_number}"
+endpoint = "http://0.0.0.0:${var.loki_service_port_number}"
 encoding.codec = "json"
 
 [sinks.local_loki_logs.labels]
