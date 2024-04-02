@@ -50,6 +50,7 @@ job "loki" {
       driver = "docker"
 
       config {
+        network_mode = "host"
         image = "grafana/loki:2.9.5"
 
         args = [
@@ -69,13 +70,14 @@ auth_enabled: false
 
 server:
   http_listen_port: ${var.loki_service_port_number}
-  log_level: "debug"
+  log_level: "warn"
 
 analytics:
   reporting_enabled: false
 
 common:
   path_prefix: /tmp/loki
+  replication_factor: 1
   ring:
     kvstore:
       store: inmemory
@@ -91,12 +93,13 @@ schema_config:
         period: 24h
 
 compactor:
-  working_directory: /data/retention
+  working_directory: /tmp/loki/data/retention
   compaction_interval: 10m
   retention_enabled: true
   retention_delete_delay: 2h
   retention_delete_worker_count: 150
   delete_request_store: gcs
+  shared_store: gcs
 
 # The bucket lifecycle policy should be set to delete objects after MORE than the specified retention period
 limits_config:
