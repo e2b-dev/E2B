@@ -42,11 +42,11 @@ job "loki" {
       }
     }
 
-    // volume "loki" {
-    //   type      = "host"
-    //   read_only = false
-    //   source    = "loki"
-    // }
+    volume "loki" {
+      type      = "host"
+      read_only = false
+      source    = "loki"
+    }
 
     task "loki" {
       driver = "docker"
@@ -66,11 +66,11 @@ job "loki" {
         memory = 1024
       }
 
-      // volume_mount {
-      //   volume      = "loki"
-      //   destination = "/loki"
-      //   read_only   = false
-      // }
+      volume_mount {
+        volume      = "loki"
+        destination = "/loki"
+        read_only   = false
+      }
 
       template {
         data = <<EOF
@@ -79,6 +79,8 @@ auth_enabled: false
 server:
   http_listen_port: ${var.loki_service_port_number}
   log_level: "warn"
+  grpc_server_max_recv_msg_size: 104857600  # 100 Mb
+  grpc_server_max_send_msg_size: 104857600  # 100 Mb
 
 common:
   path_prefix: /loki
@@ -114,10 +116,14 @@ query_range:
         max_size_mb: 500
         ttl: 2h
 
+ingester_client:
+  grpc_client_config:
+    max_recv_msg_size: 104857600  # 100 Mb
+    max_send_msg_size: 104857600  # 100 Mb
+
 ingester:
   chunk_idle_period: 5m
   chunk_encoding: snappy
-  chunk_retain_period: 1m
   wal:
     dir: /loki/wal
     flush_on_shutdown: true
@@ -143,6 +149,10 @@ compactor:
 # The bucket lifecycle policy should be set to delete objects after MORE than the specified retention period
 limits_config:
   retention_period: 168h
+  ingestion_rate_mb: 20
+  ingestion_burst_size_mb: 30
+  per_stream_rate_limit: "3MB"
+  per_stream_rate_limit_burst: "10MB"
 
 
 EOF
