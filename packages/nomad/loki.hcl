@@ -14,10 +14,6 @@ variable "loki_bucket_name" {
   type = string
 }
 
-variable "consul_token" {
-  type = string
-}
-
 job "loki" {
   datacenters = [var.gcp_zone]
   type        = "service"
@@ -46,6 +42,12 @@ job "loki" {
       }
     }
 
+    // volume "loki" {
+    //   type      = "host"
+    //   read_only = false
+    //   source    = "loki"
+    // }
+
     task "loki" {
       driver = "docker"
 
@@ -64,6 +66,12 @@ job "loki" {
         memory = 1024
       }
 
+      // volume_mount {
+      //   volume      = "loki"
+      //   destination = "/loki"
+      //   read_only   = false
+      // }
+
       template {
         data = <<EOF
 auth_enabled: false
@@ -72,16 +80,12 @@ server:
   http_listen_port: ${var.loki_service_port_number}
   log_level: "warn"
 
-analytics:
-  reporting_enabled: true
-
 common:
   path_prefix: /loki
   replication_factor: 1
   ring:
     kvstore:
-      consul:
-        acl_token: "${var.consul_token}"
+      store: inmemory
 
 storage_config:
   gcs:
@@ -91,6 +95,32 @@ storage_config:
     cache_location: /loki/tsdb-shipper-cache
     cache_ttl: 24h
     shared_store: gcs
+
+chunk_store_config:
+  chunk_cache_config:
+    embedded_cache:
+      enabled: true
+      max_size_mb: 500
+      ttl: 2h
+
+query_range:
+  align_queries_with_step: true
+  cache_results: true
+  max_retries: 5
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 500
+        ttl: 2h
+
+ingester:
+  chunk_idle_period: 5m
+  chunk_encoding: snappy
+  chunk_retain_period: 1m
+  wal:
+    dir: /loki/wal
+    flush_on_shutdown: true
 
 schema_config:
  configs:
@@ -104,7 +134,7 @@ schema_config:
 
 compactor:
   working_directory: /loki/compactor
-  compaction_interval: 1m
+  compaction_interval: 10m
   retention_enabled: true
   retention_delete_delay: 2h
   retention_delete_worker_count: 150
