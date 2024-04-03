@@ -6,15 +6,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/grafana/loki/pkg/logproto"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/api/internal/loki"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
-	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -53,7 +53,7 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 
 	// TODO: Can LogQL handle pagination naturally?
 	// TODO: Should we return the final offset with each response?
-	res, err := a.lokiClient.Query(query, limit, time.Unix(offset, 0), loki.FORWARD, false)
+	res, err := a.lokiClient.Query(query, limit, time.Unix(offset, 0), logproto.FORWARD, false)
 	if err != nil {
 		errMsg := fmt.Errorf("error when returning logs for sandbox: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
