@@ -1,18 +1,18 @@
 # Execution explained
 
-The object returned by the `execCell` method is little bit more complex, it's based on Jupyter. Here's an detailed explanation in the [Jupyter documentation](https://jupyter-client.readthedocs.io/en/stable/messaging.html).
+The object returned by the `exec cell` method is little bit more complex, it's based on Jupyter. Here's an detailed explanation in the [Jupyter documentation](https://jupyter-client.readthedocs.io/en/stable/messaging.html).
 
 It contains the following fields:
 
 - `results`: A list containing result of the cell (interactively interpreted last line) and display calls (e.g. matplotlib plots).
 - `logs`: Logs printed to stdout and stderr during execution.
-- `error`: An error message, if there was an error during execution of the cell. It works only for Python code, not for system (`!`) commands.
+- `error`: An error message, if there was an error during execution of the cell. It works only for Python code, not for system (`!` e.g `!pip install e2b`) commands.
 
 ## Result object
 
-There are two main types of results:
-- Last line result: The result of the last line of the cell, which is interpreted as the result of the cell. As you would expect in REPL environments.
-- Display calls: Calls to display functions, which can be used to display rich output in the notebook.
+This object can be created in two different ways:
+- Evaluation of the last line: If the last line of the code is an expression, the result is the value of that expression. As you would expect in REPL environments.
+- Display calls: Calls to display functions, which can be used to display rich output in the notebook. E.g. [`img.show()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html), [`display(img)`](https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html), etc.
 
 Represents the data to be displayed as a result of executing a cell in a Jupyter notebook.
 The result is similar to the structure returned by [ipython kernel](https://ipython.readthedocs.io/en/stable/development/execution.html#execution-semantics)
@@ -23,26 +23,33 @@ the other representations are optional.
 
 The result has those basic data types:
 
-Text types:
-- text: text representation of the result, it's always present
-- html: html representation of the result
-- markdown: markdown representation of the result
-- latex: latex representation of the result
+### Text types:
+- `text`: text representation of the result, it's always present
+- `html`: html representation of the result
+- `markdown`: markdown representation of the result
+- `latex`: latex representation of the result
 
-Image types:
- - "image/png": "base64 encoded png image",
- - "image/jpeg": "base64 encoded jpeg image",
- - "image/svg+xml": "svg image",
+### Image types:
+ - `png`: "base64 encoded png image",
+ - `jpeg`: "base64 encoded jpeg image",
+ - `svg`": "svg image",
 
- Other types:
- - "application/json": "json representation",
- - "application/javascript": "javascript representation",
- - "application/pdf": "base64 encoded pdf",
- - "application/geo+json": "geojson
+### Other types:
+ - `json`: "json representation",
+ - `javascript`: "javascript representation",
+ - `pdf`: "base64 encoded pdf"
+
+<Note>
+If you want to integrate your own display formats or how to implement them for your classes, you can read more in [here](https://github.com/ipython/ipython/blob/main/examples/IPython%20Kernel/Custom%20Display%20Logic.ipynb)
+</Note>
 
 ## Logs object
 
 Logs printed to stdout and stderr during execution. Examples of logs are print statements, warnings, subprocess output, etc.
+
+It contains two fields:
+- `stdout`: List of strings, each string is a line printed to stdout.
+- `stderr`: List of strings, each string is a line printed to stderr.
 
 ## Error object
 
@@ -50,6 +57,12 @@ An error message, if there was an error during execution of the cell.
 <Note>
 It works only for Python code, not for system (e.g. `!pip install non_existent_package`) commands. The system commands are executed in a separate process and the output is in stdout/stderr.
 </Note>
+
+It contains three fields:
+- `name`: Name of the error, e.g. `NameError`, `ValueError`, etc.
+- `value`: Value of the error, e.g. `name 'non_existent_variable' is not defined`, etc.
+- `traceback`: Traceback of the error.
+
 
 ## Example how to interpret the results to LLM
 
