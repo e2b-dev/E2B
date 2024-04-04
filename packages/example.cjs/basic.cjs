@@ -1,4 +1,4 @@
-const e2b = require('../dist')
+const e2b = require('../js-sdk')
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
