@@ -60,6 +60,7 @@ resource "nomad_job" "api" {
 
   hcl2 {
     vars = {
+      loki_address                  = "http://localhost:${var.loki_service_port.port}"
       gcp_zone                      = var.gcp_zone
       api_port_name                 = var.api_port.name
       api_port_number               = var.api_port.port
@@ -80,8 +81,6 @@ resource "nomad_job" "api" {
       analytics_collector_host      = data.google_secret_manager_secret_version.analytics_collector_host.secret_data
       analytics_collector_api_token = data.google_secret_manager_secret_version.analytics_collector_api_token.secret_data
       otel_tracing_print            = "false"
-
-      loki_service_port_number = var.loki_service_port.port
     }
   }
 }
