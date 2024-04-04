@@ -41,6 +41,10 @@ export function asPrimary(content: string) {
   return chalk.default.hex(primaryColor)(content)
 }
 
+export function asTimestamp(content: string) {
+  return chalk.default.blue(content)
+}
+
 export function asSandboxTemplate(pathInTemplate?: string) {
   return chalk.default.green(pathInTemplate)
 }
