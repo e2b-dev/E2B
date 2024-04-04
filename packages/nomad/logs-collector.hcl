@@ -128,6 +128,7 @@ type = "remap"
 inputs = ["envd"]
 source = """
 .service = "envd"
+.sandboxID = .instanceID
 """
 
 [sinks.local_loki_logs]
@@ -139,6 +140,9 @@ encoding.codec = "json"
 [sinks.local_loki_logs.labels]
 source = "logs-collector"
 service = "{{ service }}"
+teamID = "{{ teamID }}"
+envID = "{{ envID }}"
+sandboxID = "{{ sandboxID }}"
 
 [sinks.grafana]
 type = "loki"
@@ -152,6 +156,9 @@ auth.password = "${var.grafana_api_key}"
 [sinks.grafana.labels]
 source = "logs-collector"
 service = "{{ service }}"
+teamID = "{{ teamID }}"
+envID = "{{ envID }}"
+sandboxID = "{{ sandboxID }}"
 
         EOH
       }
