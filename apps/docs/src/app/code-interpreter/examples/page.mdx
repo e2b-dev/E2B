@@ -11,10 +11,10 @@ The following example demonstrates how to create a shared context between multip
 import { CodeInterpreter } from '@e2b/code-interpreter'
 
 const sandbox = await CodeInterpreter.create()
-await sandbox.execPython('x = 1')
+await sandbox.notebook.execCell('x = 1')
 
-const result = await sandbox.execPython('x += 1; x')
-console.log(result.output)  // outputs 2
+const execution = await sandbox.notebook.execCell('x+=1; x')
+console.log(execution.text)  // outputs 2
 
 await sandbox.close()
 ```
@@ -22,10 +22,10 @@ await sandbox.close()
 from e2b_code_interpreter import CodeInterpreter
 
 with CodeInterpreter() as sandbox:
-    sandbox.exec_cell("x = 1")
+    sandbox.notebook.exec_cell("x = 1")
 
-    result = sandbox.exec_cell("x+=1; x")
-    print(result.result)  # outputs 2
+    execution = sandbox.notebook.exec_cell("x+=1; x")
+    print(execution.text)  # outputs 2
 
 ```
 </CodeGroup>
@@ -34,9 +34,9 @@ with CodeInterpreter() as sandbox:
 
 <CodeGroup isRunnable={false}>
 ```js
-import { CodeInterpreter } from '@e2b/code-interpreter';
+import { CodeInterpreter } from '@e2b/code-interpreter'
 
-const sandbox = await CodeInterpreter.create();
+const sandbox = await CodeInterpreter.create()
 
 const code = `
 import matplotlib.pyplot as plt
@@ -50,14 +50,14 @@ plt.show()
 `;
 
 // you can install dependencies in "jupyter notebook style"
-await sandbox.execPython("!pip install matplotlib");
+await sandbox.notebook.execCell("!pip install matplotlib")
 
-const result = await sandbox.execPython(code);
+const execution = await sandbox.notebook.execCell(code)
 
 // this contains the image data, you can e.g. save it to file or send to frontend
-result.display_data[0]["image/png"];
+execution.results[0].png
 
-await sandbox.close();
+await sandbox.close()
 ```
 ```python
 import base64
@@ -80,13 +80,13 @@ plt.show()
 
 with CodeInterpreter() as sandbox:
     # you can install dependencies in "jupyter notebook style"
-    sandbox.exec_cell("!pip install matplotlib")
+    sandbox.notebook.exec_cell("!pip install matplotlib")
 
     # plot random graph
-    result = sandbox.exec_cell(code)
+    execution = sandbox.notebook.exec_cell(code)
 
 # there's your image
-image = result.display_data[0]["image/png"]
+image = execution.results[0].png
 
 # example how to show the image / prove it works
 i = base64.b64decode(image)
@@ -106,31 +106,39 @@ import { CodeInterpreter } from "@e2b/code-interpreter";
 
 code = `
 import time
+import pandas as pd
 
 print("hello")
-time.sleep(5)
+time.sleep(3)
+data = pd.DataFrame(data=[[1, 2], [3, 4]], columns=["A", "B"])
+display(data.head(10))
+time.sleep(3)
 print("world")
-`;
+`
 
-const sandbox = await CodeInterpreter.create();
+const sandbox = await CodeInterpreter.create()
 
-await sandbox.execPython(
-  code,
-  (out) => console.log(out),
-  (outErr) => console.error(outErr),
-);
+await sandbox.notebook.execCell(code, {
+  onStdout: (out) => console.log(out),
+  onStderr: (outErr) => console.error(outErr),
+  onResult: (result) => console.log(result.text)
+})
 ````
 ```python
 from e2b_code_interpreter import CodeInterpreter
 
 code = """
 import time
+import pandas as pd
 
 print("hello")
-time.sleep(5)
+time.sleep(3)
+data = pd.DataFrame(data=[[1, 2], [3, 4]], columns=["A", "B"])
+display(data.head(10))
+time.sleep(3)
 print("world")
 """
 with CodeInterpreter() as sandbox:
-    sandbox.exec_cell(code, on_stdout=print, on_stderr=print)
+    sandbox.notebook.exec_cell(code, on_stdout=print, on_stderr=print, on_result=(lambda result: print(result.text)))
 ```
 </ CodeGroup>
