@@ -1,4 +1,40 @@
-# Execution explained
+import Link from 'next/link'
+
+# Code Execution
+
+You can execute code using the notebook module, using the `execCell` method. The method takes a string of code as an argument and returns an object with the results of the execution.
+
+<CodeGroup isRunnable={false}>
+```js
+import { CodeInterpreter } from '@e2b/code-interpreter'
+
+const code = 'print("Hello, World!")'
+
+const sandbox = CodeInterpreter.create()
+const execution = await sandbox.notebook.execCell(code)
+```
+
+```python
+import CodeInterpreter from e2b_code_interpreter
+
+code = "print('Hello, World!')"
+
+sandbox = CodeInterpreter.create()
+execution = sandbox.notebook.exec_cell(code)
+```
+</CodeGroup>
+
+The `execCell` method also accepts following optional arguments:
+- `kernel id`: The ID of the kernel to execute the code on. If not provided, the default kernel is used. See <Link href="/code-interpreter/kernels">here</Link> for more info on kernels.
+- `on stdout`: A callback function to handle standard output messages from the code execution.
+- `on_stderr`: A callback function to handle standard error messages from the code execution.
+- `on_result`: A callback function to handle the result and display calls of the code execution.
+
+## Streaming response
+
+You can use the `on_*` callbacks to handle the output of the code execution as it happens. This is useful for long-running code. You can stream the output to the user as it is generated.
+
+## Execution object
 
 The object returned by the `exec cell` method is little bit more complex, it's based on Jupyter. Here's an detailed explanation in the [Jupyter documentation](https://jupyter-client.readthedocs.io/en/stable/messaging.html).
 
@@ -8,7 +44,7 @@ It contains the following fields:
 - `logs`: Logs printed to stdout and stderr during execution.
 - `error`: An error message, if there was an error during execution of the cell. It works only for Python code, not for system (`!` e.g `!pip install e2b`) commands.
 
-## Result object
+### Result object
 
 This object can be created in two different ways:
 - Evaluation of the last line: If the last line of the code is an expression, the result is the value of that expression. As you would expect in REPL environments.
@@ -23,27 +59,27 @@ the other representations are optional.
 
 The result has those basic data types:
 
-### Text types:
+#### Text types:
 - `text`: text representation of the result, it's always present
 - `html`: html representation of the result
 - `markdown`: markdown representation of the result
 - `latex`: latex representation of the result
 
-### Image types:
+#### Image types:
  - `png`: "base64 encoded png image",
  - `jpeg`: "base64 encoded jpeg image",
  - `svg`": "svg image",
 
-### Other types:
+#### Other types:
  - `json`: "json representation",
  - `javascript`: "javascript representation",
  - `pdf`: "base64 encoded pdf"
 
 <Note>
-If you want to integrate your own display formats or how to implement them for your classes, you can read more in [here](https://github.com/ipython/ipython/blob/main/examples/IPython%20Kernel/Custom%20Display%20Logic.ipynb)
+  If you want to integrate your own display formats or how to implement them for your classes, you can read more in [here](https://github.com/ipython/ipython/blob/main/examples/IPython%20Kernel/Custom%20Display%20Logic.ipynb)
 </Note>
 
-## Logs object
+### Logs object
 
 Logs printed to stdout and stderr during execution. Examples of logs are print statements, warnings, subprocess output, etc.
 
@@ -51,11 +87,11 @@ It contains two fields:
 - `stdout`: List of strings, each string is a line printed to stdout.
 - `stderr`: List of strings, each string is a line printed to stderr.
 
-## Error object
+### Error object
 
 An error message, if there was an error during execution of the cell.
 <Note>
-It works only for Python code, not for system (e.g. `!pip install non_existent_package`) commands. The system commands are executed in a separate process and the output is in stdout/stderr.
+  It works only for Python code, not for system (e.g. `!pip install non_existent_package`) commands. The system commands are executed in a separate process and the output is in stdout/stderr.
 </Note>
 
 It contains three fields:
