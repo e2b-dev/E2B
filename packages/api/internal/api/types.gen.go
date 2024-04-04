@@ -78,8 +78,20 @@ type Sandbox struct {
 
 // SandboxLogs defines model for SandboxLogs.
 type SandboxLogs struct {
-	// Logs Logs of the sandbox
-	Logs []string `json:"logs"`
+	// EnvID ID of the environment
+	EnvID string `json:"envID"`
+
+	// Logs Logs of the sandbox with timestamp and line
+	Logs []struct {
+		// Line Log line content
+		Line string `json:"line"`
+
+		// Timestamp Timestamp of the log entry
+		Timestamp time.Time `json:"timestamp"`
+	} `json:"logs"`
+
+	// SandboxID ID of the sandbox
+	SandboxID string `json:"sandboxID"`
 }
 
 // SandboxMetadata defines model for SandboxMetadata.
@@ -165,8 +177,8 @@ type N500 = Error
 
 // GetSandboxesSandboxIDLogsParams defines parameters for GetSandboxesSandboxIDLogs.
 type GetSandboxesSandboxIDLogsParams struct {
-	// Since Starting timestamp of the logs that should be returned
-	Since *int `form:"since,omitempty" json:"since,omitempty"`
+	// Start Starting timestamp of the logs that should be returned
+	Start *int `form:"start,omitempty" json:"start,omitempty"`
 
 	// Limit Maximum number of logs that should be returned
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`

@@ -151,11 +151,11 @@ func (siw *ServerInterfaceWrapper) GetSandboxesSandboxIDLogs(c *gin.Context) {
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetSandboxesSandboxIDLogsParams
 
-	// ------------- Optional query parameter "since" -------------
+	// ------------- Optional query parameter "start" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "since", c.Request.URL.Query(), &params.Since)
+	err = runtime.BindQueryParameter("form", true, false, "start", c.Request.URL.Query(), &params.Start)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter since: %w", err), http.StatusBadRequest)
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter start: %w", err), http.StatusBadRequest)
 		return
 	}
 
