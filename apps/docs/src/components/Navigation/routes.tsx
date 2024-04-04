@@ -6,8 +6,9 @@ import {
   Cog,
   Cpu,
   DollarSign,
-  FileDown,
   File,
+  FileCode,
+  FileDown,
   FileUp,
   Folder,
   FolderTree,
@@ -21,10 +22,11 @@ import {
   RefreshCw,
   Settings,
   ShieldQuestion,
+  Terminal,
   TerminalSquare,
   Timer,
   Variable,
-  Wrench, FileCode, Lightbulb,
+  Wrench,
 } from 'lucide-react'
 
 export const routes = [
@@ -91,50 +93,32 @@ export const routes = [
     ],
   },
   {
-    title: 'Sandbox',
+    title: 'Code Interpreter API',
     links: [
       {
+        icon: <FileCode strokeWidth={1} size={20} />,
         title: 'Overview',
-        href: '/sandbox/overview',
+        href: '/code-interpreter/overview',
       },
       {
-        icon: <Cpu strokeWidth={1} size={20} />,
-        title: 'Compute',
-        href: '/sandbox/compute',
+        icon: <Terminal strokeWidth={1} size={20} />,
+        title: 'Code Execution',
+        href: '/code-interpreter/execution',
       },
       {
-        icon: <PencilRuler strokeWidth={1} size={20} />,
-        title: 'Customization',
-        href: '/sandbox/custom',
-      },
-    ],
-  },
-  {
-    title: 'Custom Sandboxes',
-    links: [
-      {
-        title: 'Overview',
-        href: '/sandbox/templates/overview',
+        icon: <Book strokeWidth={1} size={20} />,
+        title: 'Examples',
+        href: '/code-interpreter/examples',
       },
       {
-        icon: <File strokeWidth={1} size={20} />,
-        title: 'Template File',
-        href: '/sandbox/templates/template-file',
+        icon: <Wrench strokeWidth={1} size={20} />,
+        title: 'Extending Code Interpreter',
+        href: '/code-interpreter/template',
       },
       {
-        icon: <PlaySquare strokeWidth={1} size={20} />,
-        title: 'Start Command',
-        href: '/sandbox/templates/start-cmd',
-      },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Creating Custom Sandbox',
-        href: '/guide/custom-sandbox',
-      },
-      {
-        icon: <HardDrive strokeWidth={1} size={20} />,
-        title: 'Connecting buckets to persist data',
-        href: '/guide/connect-bucket',
+        icon: <Cog strokeWidth={1} size={20} />,
+        title: 'Kernels',
+        href: '/code-interpreter/kernels',
       },
     ],
   },
@@ -194,36 +178,6 @@ export const routes = [
     ],
   },
   {
-    title: 'Code Interpreter',
-    links: [
-      {
-        icon: <FileCode strokeWidth={1} size={20} />,
-        title: 'Overview',
-        href: '/code-interpreter/overview',
-      },
-      {
-        icon: <Lightbulb strokeWidth={1} size={20} />,
-        title: 'Execution explained',
-        href: '/code-interpreter/execution',
-      },
-      {
-        icon: <Book strokeWidth={1} size={20} />,
-        title: 'Examples',
-        href: '/code-interpreter/examples',
-      },
-      {
-        icon: <Wrench strokeWidth={1} size={20} />,
-        title: 'Extending Code Interpreter',
-        href: '/code-interpreter/template',
-      },
-      {
-        icon: <Cog strokeWidth={1} size={20} />,
-        title: 'Kernels',
-        href: '/code-interpreter/kernels',
-      },
-    ],
-  },
-  {
     title: 'CLI API',
     links: [
       {
@@ -235,6 +189,54 @@ export const routes = [
         icon: <TerminalSquare strokeWidth={1} size={20} />,
         title: 'Commands',
         href: '/cli/commands',
+      },
+    ],
+  },
+  {
+    title: 'Sandbox',
+    links: [
+      {
+        title: 'Overview',
+        href: '/sandbox/overview',
+      },
+      {
+        icon: <Cpu strokeWidth={1} size={20} />,
+        title: 'Compute',
+        href: '/sandbox/compute',
+      },
+      {
+        icon: <PencilRuler strokeWidth={1} size={20} />,
+        title: 'Customization',
+        href: '/sandbox/custom',
+      },
+    ],
+  },
+  {
+    title: 'Custom Sandboxes',
+    links: [
+      {
+        title: 'Overview',
+        href: '/sandbox/templates/overview',
+      },
+      {
+        icon: <File strokeWidth={1} size={20} />,
+        title: 'Template File',
+        href: '/sandbox/templates/template-file',
+      },
+      {
+        icon: <PlaySquare strokeWidth={1} size={20} />,
+        title: 'Start Command',
+        href: '/sandbox/templates/start-cmd',
+      },
+      {
+        icon: <Hammer strokeWidth={1} size={20} />,
+        title: 'Guide: Creating Custom Sandbox',
+        href: '/guide/custom-sandbox',
+      },
+      {
+        icon: <HardDrive strokeWidth={1} size={20} />,
+        title: 'Connecting buckets to persist data',
+        href: '/guide/connect-bucket',
       },
     ],
   },
