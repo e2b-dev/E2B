@@ -100,6 +100,7 @@ variable "otel_tracing_print" {
 
 variable "loki_service_port_number" {
   type = number
+  default = 0
 }
 
 job "orchestration-api" {
