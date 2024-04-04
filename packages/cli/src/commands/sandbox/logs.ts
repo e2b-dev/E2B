@@ -21,11 +21,6 @@ export const logsCommand = new commander.Command('logs')
       const apiKey = ensureAPIKey()
       const runningSandboxes = listSandboxes({ apiKey })
 
-      console.log(util.inspect({
-        apiKey,
-        sandboxID,
-      }, { colors: true, depth: null, maxArrayLength: Infinity, sorted: true, compact: true, breakLength: Infinity }))
-
       const startTime = new Date().getTime()
 
       let start: number | undefined
