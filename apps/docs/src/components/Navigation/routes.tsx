@@ -202,14 +202,9 @@ export const routes = [
         href: '/code-interpreter/overview',
       },
       {
-        icon: <Cog strokeWidth={1} size={20} />,
-        title: 'Installation',
-        href: '/code-interpreter/installation',
-      },
-      {
         icon: <Lightbulb strokeWidth={1} size={20} />,
-        title: 'Results explained',
-        href: '/code-interpreter/results',
+        title: 'Execution explained',
+        href: '/code-interpreter/execution',
       },
       {
         icon: <Book strokeWidth={1} size={20} />,
@@ -220,6 +215,11 @@ export const routes = [
         icon: <Wrench strokeWidth={1} size={20} />,
         title: 'Extending Code Interpreter',
         href: '/code-interpreter/template',
+      },
+      {
+        icon: <Cog strokeWidth={1} size={20} />,
+        title: 'Kernels',
+        href: '/code-interpreter/kernels',
       },
     ],
   },

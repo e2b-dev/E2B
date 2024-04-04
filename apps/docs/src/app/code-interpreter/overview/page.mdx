@@ -6,19 +6,8 @@ import {
 
 # Code Interpreter
 
-<Link
-  className="w-fit flex items-center justify-start space-x-2"
-  href="https://github.com/e2b-dev/code-interpreter/blob/main/template"
-  rel="noopener noreferrer"
-  target="_blank"
->
-  <FileCode
-    size={18}
-    className="text-brand-600"
-  />
-  Template source code
-</Link>
-
+The Code Interpreter template runs a Jupyter server inside the sandbox, which allows for sharing context between code executions.
+Additionally, this new template also partly implements the Jupyter Kernel messaging protocol. This means that, for example, support for plotting charts, rendering DataFrames, etc.
 
 ## Motivation
 
@@ -30,6 +19,19 @@ This new code interpreter template runs a Jupyter server inside the sandbox, whi
 Additionally, this new template also partly implements the [Jupyter Kernel messaging protocol](https://jupyter-client.readthedocs.io/en/latest/messaging.html). This means that, for example, support for plotting charts is now improved and we don't need to do hack-ish solutions like [in the current production version](https://github.com/e2b-dev/E2B/blob/main/sandboxes/code-interpreter/e2b_matplotlib_backend.py) of our code interpreter.
 
 The current code interpreter allows to run Python code but each run share the context. That means that subsequent runs can reference to variables, definitions, etc from past code execution runs.
+
+## Installation
+
+You can install the code interpreter using the following commands:
+
+<CodeGroup isRunnable={false}>
+```bash {{ language: 'js' }}
+npm install @e2b/code-interpreter
+```
+```bash {{ language: 'python' }}
+pip install e2b-code-interpreter
+```
+</CodeGroup>
 
 ## Features
 
