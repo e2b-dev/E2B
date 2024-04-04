@@ -70,34 +70,30 @@ components:
         type: string
         description: Metadata of the sandbox
 
+    SandboxLog:
+      description: Log entry with timestamp and line
+      required:
+        - timestamp
+        - line
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the log entry
+        line:
+          type: string
+          description: Log line content
+
     SandboxLogs:
       required:
         - logs
-        - sandboxID
-        - envID
       properties:
         logs:
+          description: Logs of the sandbox
           type: array
           items:
-            type: object
-            required:
-              - timestamp
-              - line
-            properties:
-              timestamp:
-                type: string
-                format: date-time
-                description: Timestamp of the log entry
-              line:
-                type: string
-                description: Log line content
-          description: Logs of the sandbox with timestamp and line
-        sandboxID:
-          type: string
-          description: ID of the sandbox
-        envID:
-          type: string
-          description: ID of the environment
+            $ref: "#/components/schemas/SandboxLog"
+
     Sandbox:
       required:
         - templateID

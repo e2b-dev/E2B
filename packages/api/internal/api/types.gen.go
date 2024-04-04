@@ -76,22 +76,19 @@ type Sandbox struct {
 	TemplateID string `json:"templateID"`
 }
 
+// SandboxLog Log entry with timestamp and line
+type SandboxLog struct {
+	// Line Log line content
+	Line string `json:"line"`
+
+	// Timestamp Timestamp of the log entry
+	Timestamp time.Time `json:"timestamp"`
+}
+
 // SandboxLogs defines model for SandboxLogs.
 type SandboxLogs struct {
-	// EnvID ID of the environment
-	EnvID string `json:"envID"`
-
-	// Logs Logs of the sandbox with timestamp and line
-	Logs []struct {
-		// Line Log line content
-		Line string `json:"line"`
-
-		// Timestamp Timestamp of the log entry
-		Timestamp time.Time `json:"timestamp"`
-	} `json:"logs"`
-
-	// SandboxID ID of the sandbox
-	SandboxID string `json:"sandboxID"`
+	// Logs Logs of the sandbox
+	Logs []SandboxLog `json:"logs"`
 }
 
 // SandboxMetadata defines model for SandboxMetadata.
