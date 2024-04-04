@@ -7,6 +7,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +17,7 @@ func (a *APIStore) PostSandboxesSandboxIDRefreshes(
 	sandboxID string,
 ) {
 	ctx := c.Request.Context()
+	sandboxID = utils.ShortID(sandboxID)
 
 	var duration time.Duration
 
