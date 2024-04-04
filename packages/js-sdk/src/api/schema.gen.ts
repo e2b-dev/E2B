@@ -57,9 +57,9 @@ export interface paths {
           sandboxID: components["parameters"]["sandboxID"];
         };
         query: {
-          /** Index of the starting log that should be returned with the sandbox */
-          offset?: number;
-          /** Maximum number of logs that should be returned with the sandbox */
+          /** Starting timestamp of the logs that should be returned */
+          start?: number;
+          /** Maximum number of logs that should be returned */
           limit?: number;
         };
       };
@@ -264,10 +264,20 @@ export interface components {
   schemas: {
     SandboxMetadata: { [key: string]: string };
     SandboxLogs: {
-      /** @description Logs of the sandbox */
-      logs: string[];
-      /** @description Index of the last log */
-      logsOffset: number;
+      /** @description Logs of the sandbox with timestamp and line */
+      logs: {
+        /**
+         * Format: date-time
+         * @description Timestamp of the log entry
+         */
+        timestamp: string;
+        /** @description Log line content */
+        line: string;
+      }[];
+      /** @description ID of the sandbox */
+      sandboxID: string;
+      /** @description ID of the environment */
+      envID: string;
     };
     Sandbox: {
       /** @description Identifier of the template from which is the sandbox created */

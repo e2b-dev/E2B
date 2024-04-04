@@ -73,13 +73,31 @@ components:
     SandboxLogs:
       required:
         - logs
+        - sandboxID
+        - envID
       properties:
         logs:
           type: array
           items:
-            type: string
-          description: Logs of the sandbox
-
+            type: object
+            required:
+              - timestamp
+              - line
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+                description: Timestamp of the log entry
+              line:
+                type: string
+                description: Log line content
+          description: Logs of the sandbox with timestamp and line
+        sandboxID:
+          type: string
+          description: ID of the sandbox
+        envID:
+          type: string
+          description: ID of the environment
     Sandbox:
       required:
         - templateID
@@ -305,9 +323,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/sandboxID"
         - in: query
-          name: since
+          name: start
           schema:
-            default: 0
             type: integer
           description: Starting timestamp of the logs that should be returned
         - in: query
