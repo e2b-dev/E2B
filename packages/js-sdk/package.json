@@ -43,6 +43,7 @@
     "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^6.8.0",
     "@typescript-eslint/parser": "^6.8.0",
+    "dotenv": "^16.4.5",
     "knip": "^2.34.0",
     "npm-check-updates": "^16.14.6",
     "openapi-typescript": "^5.4.1",
