@@ -25,7 +25,7 @@ const (
 )
 
 func defaultStartTime() int64 {
-	return time.Now().Add(-oldestLogsLimit).Unix()
+	return time.Now().Add(-oldestLogsLimit).UnixNano()
 }
 
 func (a *APIStore) GetSandboxesSandboxIDLogs(
@@ -58,7 +58,8 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 	id := strings.ReplaceAll(sandboxID, "`", "")
 	query := fmt.Sprintf("{source=\"logs-collector\", service=\"envd\", teamID=`%s`, sandboxID=`%s`}", teamID.String(), id)
 
-	res, err := a.lokiClient.QueryRange(query, limit, time.Unix(since, 0), time.Now(), logproto.FORWARD, time.Duration(0), time.Duration(0), false)
+	// TODO: Check if the nanoseconds conversion is correct
+	res, err := a.lokiClient.QueryRange(query, limit, time.Unix(0, since), time.Now(), logproto.FORWARD, time.Duration(0), time.Duration(0), false)
 	if err != nil {
 		errMsg := fmt.Errorf("error when returning logs for sandbox: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -89,7 +90,7 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 	default:
 		errMsg := fmt.Errorf("unexpected value type %T", res.Data.Result.Type())
 		telemetry.ReportCriticalError(ctx, errMsg)
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error returning logs for sandbox '%s", sandboxID))
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error returning logs for sandbox '%s", sandboxID))
 
 		return
 	}
