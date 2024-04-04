@@ -73,16 +73,12 @@ components:
     SandboxLogs:
       required:
         - logs
-        - logsOffset
       properties:
         logs:
           type: array
           items:
             type: string
           description: Logs of the sandbox
-        logsOffset:
-          type: integer
-          description: Index of the last log
 
     Sandbox:
       required:
@@ -181,23 +177,23 @@ components:
       required:
         - dockerfile
       properties:
-          alias:
-            description: Alias of the template
-            type: string
-          dockerfile:
-            description: Dockerfile for the template
-            type: string
-          startCmd:
-            description: Start command to execute in the template after the build
-            type: string
-          cpuCount:
-            description: CPU cores for the template
-            type: integer
-            minimum: 1
-          memoryMB:
-            description: Memory limit for the template in MB
-            type: integer
-            minimum: 128
+        alias:
+          description: Alias of the template
+          type: string
+        dockerfile:
+          description: Dockerfile for the template
+          type: string
+        startCmd:
+          description: Start command to execute in the template after the build
+          type: string
+        cpuCount:
+          description: CPU cores for the template
+          type: integer
+          minimum: 1
+        memoryMB:
+          description: Memory limit for the template in MB
+          type: integer
+          minimum: 128
 
     TemplateBuild:
       required:
@@ -309,17 +305,17 @@ paths:
       parameters:
         - $ref: "#/components/parameters/sandboxID"
         - in: query
-          name: offset
+          name: since
           schema:
             default: 0
             type: integer
-          description: Index of the starting log that should be returned with the sandbox
+          description: Starting timestamp of the logs that should be returned
         - in: query
           name: limit
           schema:
-            default: 100
+            default: 1000
             type: integer
-          description: Maximum number of logs that should be returned with the sandbox
+          description: Maximum number of logs that should be returned
       responses:
         200:
           description: Successfully returned the sandbox logs
@@ -470,7 +466,7 @@ paths:
       description: Start the build
       tags: [templates]
       security:
-          - AccessTokenAuth: []
+        - AccessTokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
         - $ref: "#/components/parameters/buildID"
@@ -517,9 +513,9 @@ paths:
   /templates/{templateID}/builds/{buildID}/status:
     get:
       description: Get template build info
-      tags: [ templates ]
+      tags: [templates]
       security:
-        - AccessTokenAuth: [ ]
+        - AccessTokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
         - $ref: "#/components/parameters/buildID"

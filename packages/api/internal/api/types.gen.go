@@ -80,9 +80,6 @@ type Sandbox struct {
 type SandboxLogs struct {
 	// Logs Logs of the sandbox
 	Logs []string `json:"logs"`
-
-	// LogsOffset Index of the last log
-	LogsOffset int `json:"logsOffset"`
 }
 
 // SandboxMetadata defines model for SandboxMetadata.
@@ -168,10 +165,10 @@ type N500 = Error
 
 // GetSandboxesSandboxIDLogsParams defines parameters for GetSandboxesSandboxIDLogs.
 type GetSandboxesSandboxIDLogsParams struct {
-	// Offset Index of the starting log that should be returned with the sandbox
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+	// Since Starting timestamp of the logs that should be returned
+	Since *int `form:"since,omitempty" json:"since,omitempty"`
 
-	// Limit Maximum number of logs that should be returned with the sandbox
+	// Limit Maximum number of logs that should be returned
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
