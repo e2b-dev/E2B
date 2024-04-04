@@ -3,7 +3,7 @@ import * as e2b from 'e2b'
 import * as util from 'util'
 
 import { ensureAPIKey } from 'src/api'
-import { asBold, asTimestamp, asPrimary, asDim } from 'src/utils/format'
+import { asBold, asTimestamp, asPrimary } from 'src/utils/format'
 import { listSandboxes } from './list'
 
 const getSandboxLogs = e2b.withAPIKey(
@@ -45,16 +45,15 @@ export const logsCommand = new commander.Command('logs')
 
           printSandboxInfo({
             isRunning: !!sandbox,
-            envID: logs.envID,
-            sandboxID: logs.sandboxID,
+            sandboxID: sandboxID,
           })
         }
 
-        for (const log of logs.logs) {
+        for (const log of logs) {
           printLog(log.timestamp, log.line)
         }
 
-        const lastLog = logs.logs[logs.logs.length - 1]
+        const lastLog = logs[logs.length - 1]
         if (lastLog) {
           start = new Date(lastLog.timestamp).getTime()
         }
@@ -65,19 +64,17 @@ export const logsCommand = new commander.Command('logs')
     }
   })
 
-function printSandboxInfo({ envID, sandboxID, isRunning }: {
-  envID: string,
+function printSandboxInfo({ sandboxID, isRunning }: {
   sandboxID: string,
   isRunning: boolean,
 }) {
-  process.stdout.write(`Logs for ${asBold(isRunning ? 'running' : 'closed')} sandbox ${asPrimary(sandboxID)} created from template ${asDim(envID)}:\n\n`)
+  process.stdout.write(`Logs for ${asBold(isRunning ? 'running' : 'closed')} sandbox ${asPrimary(sandboxID)}:\n\n`)
 }
 
 function printLog(timestamp: string, line: string) {
   const log = JSON.parse(line)
 
   delete log['TraceID']
-  delete log['envID']
   delete log['instanceID']
   delete log['sandboxID']
   delete log['source_type']
@@ -93,7 +90,7 @@ export async function listSandboxLogs({
   apiKey,
   sandboxID,
   start,
-}: { apiKey: string, sandboxID: string, start?: number }): Promise<e2b.components['schemas']['SandboxLogs']> {
+}: { apiKey: string, sandboxID: string, start?: number }): Promise<e2b.components['schemas']['SandboxLog'][]> {
   const response = await getSandboxLogs(apiKey, { sandboxID, start })
-  return response.data
+  return response.data.logs
 }

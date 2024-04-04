@@ -263,21 +263,19 @@ export interface paths {
 export interface components {
   schemas: {
     SandboxMetadata: { [key: string]: string };
+    /** @description Log entry with timestamp and line */
+    SandboxLog: {
+      /**
+       * Format: date-time
+       * @description Timestamp of the log entry
+       */
+      timestamp: string;
+      /** @description Log line content */
+      line: string;
+    };
     SandboxLogs: {
-      /** @description Logs of the sandbox with timestamp and line */
-      logs: {
-        /**
-         * Format: date-time
-         * @description Timestamp of the log entry
-         */
-        timestamp: string;
-        /** @description Log line content */
-        line: string;
-      }[];
-      /** @description ID of the sandbox */
-      sandboxID: string;
-      /** @description ID of the environment */
-      envID: string;
+      /** @description Logs of the sandbox */
+      logs: components["schemas"]["SandboxLog"][];
     };
     Sandbox: {
       /** @description Identifier of the template from which is the sandbox created */
