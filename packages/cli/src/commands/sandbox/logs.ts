@@ -31,7 +31,7 @@ export const logsCommand = new commander.Command('logs')
 
         // Check if 24 hours (in milliseconds) have passed
         if (elapsedTime >= maxRuntime) {
-          console.log('Stopped printing logs after 24 hours.')
+          console.log('\nStopped printing logs — 24 hours have passed')
           break
         }
 
@@ -40,17 +40,21 @@ export const logsCommand = new commander.Command('logs')
           listSandboxLogs({ apiKey, sandboxID, start }),
         ])
 
-        if (info) {
-          const sandbox = info.find(s => s.sandboxID === sandboxID)
+        const sandbox = info ? info.find(s => s.sandboxID === sandboxID) : undefined
+        const isRunning = !!sandbox
 
-          printSandboxInfo({
-            isRunning: !!sandbox,
-            sandboxID: sandboxID,
-          })
-        }
+        printSandboxInfo({
+          isRunning: isRunning,
+          sandboxID: sandboxID,
+        })
 
         for (const log of logs) {
           printLog(log.timestamp, log.line)
+        }
+
+        if (!isRunning) {
+          console.log('\nStopped printing logs — sandbox is closed')
+          break
         }
 
         const lastLog = logs[logs.length - 1]
@@ -68,22 +72,26 @@ function printSandboxInfo({ sandboxID, isRunning }: {
   sandboxID: string,
   isRunning: boolean,
 }) {
-  process.stdout.write(`Logs for ${asBold(isRunning ? 'running' : 'closed')} sandbox ${asPrimary(sandboxID)}:\n\n`)
+  process.stdout.write(`\nLogs for ${asBold(isRunning ? 'running' : 'closed')} sandbox ${asPrimary(sandboxID)}:\n\n`)
 }
 
 function printLog(timestamp: string, line: string) {
   const log = JSON.parse(line)
 
-  delete log['TraceID']
+  const time = `[${new Date(timestamp).toISOString()}]`
+  const level = log['level'].toUpperCase()
+
+  delete log['traceID']
   delete log['instanceID']
   delete log['sandboxID']
   delete log['source_type']
   delete log['teamID']
   delete log['source']
   delete log['service']
+  delete log['envID']
+  delete log['level']
 
-  const time = `[${timestamp}]`
-  console.log(`${asTimestamp(time)} ` + util.inspect(log, { colors: true, depth: null, maxArrayLength: Infinity, sorted: true, compact: true, breakLength: Infinity }))
+  console.log(`${asTimestamp(time)} ${level} ` + util.inspect(log, { colors: true, depth: null, maxArrayLength: Infinity, sorted: true, compact: true, breakLength: Infinity }))
 }
 
 export async function listSandboxLogs({
