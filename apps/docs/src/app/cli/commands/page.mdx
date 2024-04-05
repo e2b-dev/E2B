@@ -241,3 +241,24 @@ Immediately kill a running sandbox.
 e2b sandbox kill <sandboxID>
 ```
 
+## `sandbox logs`
+Start printing logs from the specified sandbox.
+If the sandbox is running new logs will be streamed to the terminal.
+
+This command is useful if you need to debug a running sandbox or check logs from a sandbox that was already closed.
+
+```bash
+e2b sandbox logs <sandboxID>
+```
+
+<Note>
+You can use `e2b sandbox list` to get a list of running sandboxes and their IDs that can be used with `e2b sandbox logs <sandboxID>` command.
+</Note>
+
+#### **Arguments**
+
+<Options>
+  <Option type="<sandboxID>">
+    Specify the ID of sandbox you want to get logs from.
+  </Option>
+</Options>
