@@ -58,6 +58,7 @@ job "loki" {
       resources {
         cpu    = 500
         memory = 1024
+        memory_max = 2048
       }
 
       template {
@@ -90,8 +91,8 @@ chunk_store_config:
   chunk_cache_config:
     embedded_cache:
       enabled: true
-      max_size_mb: 500
-      ttl: 2h
+      max_size_mb: 256
+      ttl: 1h
 
 query_range:
   align_queries_with_step: true
@@ -101,8 +102,8 @@ query_range:
     cache:
       embedded_cache:
         enabled: true
-        max_size_mb: 500
-        ttl: 2h
+        max_size_mb: 256
+        ttl: 1h
 
 ingester_client:
   grpc_client_config:
