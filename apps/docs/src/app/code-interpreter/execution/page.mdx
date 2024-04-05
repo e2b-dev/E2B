@@ -54,13 +54,13 @@ Represents the data to be displayed as a result of executing a cell in a Jupyter
 The result is similar to the structure returned by [ipython kernel](https://ipython.readthedocs.io/en/stable/development/execution.html#execution-semantics)
 
 The result can contain multiple types of data, such as text, images, plots, etc. Each type of data is represented
-as a string, and the result can contain multiple types of data. The text representation is always present, and
+as a string, and the result can contain multiple types of data. The display calls don't have to have text representation, it's always present for the actual result,
 the other representations are optional.
 
 The result has those basic data types:
 
 #### Text types:
-- `text`: text representation of the result, it's always present
+- `text`: text representation of the result
 - `html`: html representation of the result
 - `markdown`: markdown representation of the result
 - `latex`: latex representation of the result
