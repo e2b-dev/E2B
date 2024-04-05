@@ -186,7 +186,7 @@ class SandboxRpc(BaseModel):
 
         self._process_cleanup.clear()
 
-        for handler in self._waiting_for_replies.values():
+        for handler in self._waiting_for_replies.copy().values():
             handler.cancel()
             del handler
 
