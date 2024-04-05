@@ -42,12 +42,6 @@ job "loki" {
       }
     }
 
-    volume "loki" {
-      type      = "host"
-      read_only = false
-      source    = "loki"
-    }
-
     task "loki" {
       driver = "docker"
 
@@ -64,12 +58,6 @@ job "loki" {
       resources {
         cpu    = 500
         memory = 1024
-      }
-
-      volume_mount {
-        volume      = "loki"
-        destination = "/loki"
-        read_only   = false
       }
 
       template {
