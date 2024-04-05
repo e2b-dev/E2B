@@ -322,7 +322,7 @@ paths:
           name: start
           schema:
             type: integer
-          description: Starting timestamp of the logs that should be returned
+          description: Starting timestamp of the logs that should be returned in milliseconds
         - in: query
           name: limit
           schema:
