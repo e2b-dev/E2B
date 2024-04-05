@@ -140,10 +140,10 @@ function printLog(timestamp: string, line: string) {
       level = chalk.default.bgWhite(level)
       break
     case 'INFO':
-      level = chalk.default.bgGreen(level)
+      level = chalk.default.bgGreen(level) + ' '
       break
     case 'WARN':
-      level = chalk.default.bgYellow(level)
+      level = chalk.default.bgYellow(level) + ' '
       break
     case 'ERROR':
       level = chalk.default.white(chalk.default.bgRed(level))
