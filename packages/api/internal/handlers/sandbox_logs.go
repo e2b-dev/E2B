@@ -20,13 +20,8 @@ import (
 )
 
 const (
-	defaultLogsLimit int = 1000
-	oldestLogsLimit      = 168 * time.Hour // 7 days
+	oldestLogsLimit = 168 * time.Hour // 7 days
 )
-
-func defaultStartTime() int64 {
-	return time.Now().Add(-oldestLogsLimit).UnixNano()
-}
 
 func (a *APIStore) GetSandboxesSandboxIDLogs(
 	c *gin.Context,
@@ -43,15 +38,17 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 		attribute.String("team.id", teamID.String()),
 	)
 
-	limit := defaultLogsLimit
-	if params.Limit != nil {
-		limit = *params.Limit
+	var start time.Time
+
+	end := time.Now()
+
+	if params.Start != nil {
+		start = time.UnixMilli(int64(*params.Start))
+	} else {
+		start = end.Add(-oldestLogsLimit)
 	}
 
-	since := defaultStartTime()
-	if params.Start != nil {
-		since = int64(*params.Start)
-	}
+	fmt.Printf("Start: %v\n End: %v\n", start, end)
 
 	// Sanitize ID
 	// https://grafana.com/blog/2021/01/05/how-to-escape-special-characters-with-lokis-logql/
@@ -59,7 +56,7 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 	query := fmt.Sprintf("{source=\"logs-collector\", service=\"envd\", teamID=`%s`, sandboxID=`%s`}", teamID.String(), id)
 
 	// TODO: Check if the nanoseconds conversion is correct
-	res, err := a.lokiClient.QueryRange(query, limit, time.Unix(0, since), time.Now(), logproto.FORWARD, time.Duration(0), time.Duration(0), false)
+	res, err := a.lokiClient.QueryRange(query, *params.Limit, start, end, logproto.FORWARD, time.Duration(0), time.Duration(0), false)
 	if err != nil {
 		errMsg := fmt.Errorf("error when returning logs for sandbox: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
