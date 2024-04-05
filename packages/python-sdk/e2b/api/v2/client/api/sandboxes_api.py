@@ -779,17 +779,13 @@ class SandboxesApi:
     def sandboxes_sandbox_id_logs_get(
         self,
         sandbox_id: StrictStr,
-        offset: Annotated[
+        start: Annotated[
             Optional[StrictInt],
-            Field(
-                description="Index of the starting log that should be returned with the sandbox"
-            ),
+            Field(description="Starting timestamp of the logs that should be returned"),
         ] = None,
         limit: Annotated[
             Optional[StrictInt],
-            Field(
-                description="Maximum number of logs that should be returned with the sandbox"
-            ),
+            Field(description="Maximum number of logs that should be returned"),
         ] = None,
         _request_timeout: Union[
             None,
@@ -809,9 +805,9 @@ class SandboxesApi:
 
         :param sandbox_id: (required)
         :type sandbox_id: str
-        :param offset: Index of the starting log that should be returned with the sandbox
-        :type offset: int
-        :param limit: Maximum number of logs that should be returned with the sandbox
+        :param start: Starting timestamp of the logs that should be returned
+        :type start: int
+        :param limit: Maximum number of logs that should be returned
         :type limit: int
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -837,7 +833,7 @@ class SandboxesApi:
 
         _param = self._sandboxes_sandbox_id_logs_get_serialize(
             sandbox_id=sandbox_id,
-            offset=offset,
+            start=start,
             limit=limit,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -864,17 +860,13 @@ class SandboxesApi:
     def sandboxes_sandbox_id_logs_get_with_http_info(
         self,
         sandbox_id: StrictStr,
-        offset: Annotated[
+        start: Annotated[
             Optional[StrictInt],
-            Field(
-                description="Index of the starting log that should be returned with the sandbox"
-            ),
+            Field(description="Starting timestamp of the logs that should be returned"),
         ] = None,
         limit: Annotated[
             Optional[StrictInt],
-            Field(
-                description="Maximum number of logs that should be returned with the sandbox"
-            ),
+            Field(description="Maximum number of logs that should be returned"),
         ] = None,
         _request_timeout: Union[
             None,
@@ -894,9 +886,9 @@ class SandboxesApi:
 
         :param sandbox_id: (required)
         :type sandbox_id: str
-        :param offset: Index of the starting log that should be returned with the sandbox
-        :type offset: int
-        :param limit: Maximum number of logs that should be returned with the sandbox
+        :param start: Starting timestamp of the logs that should be returned
+        :type start: int
+        :param limit: Maximum number of logs that should be returned
         :type limit: int
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -922,7 +914,7 @@ class SandboxesApi:
 
         _param = self._sandboxes_sandbox_id_logs_get_serialize(
             sandbox_id=sandbox_id,
-            offset=offset,
+            start=start,
             limit=limit,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -949,17 +941,13 @@ class SandboxesApi:
     def sandboxes_sandbox_id_logs_get_without_preload_content(
         self,
         sandbox_id: StrictStr,
-        offset: Annotated[
+        start: Annotated[
             Optional[StrictInt],
-            Field(
-                description="Index of the starting log that should be returned with the sandbox"
-            ),
+            Field(description="Starting timestamp of the logs that should be returned"),
         ] = None,
         limit: Annotated[
             Optional[StrictInt],
-            Field(
-                description="Maximum number of logs that should be returned with the sandbox"
-            ),
+            Field(description="Maximum number of logs that should be returned"),
         ] = None,
         _request_timeout: Union[
             None,
@@ -979,9 +967,9 @@ class SandboxesApi:
 
         :param sandbox_id: (required)
         :type sandbox_id: str
-        :param offset: Index of the starting log that should be returned with the sandbox
-        :type offset: int
-        :param limit: Maximum number of logs that should be returned with the sandbox
+        :param start: Starting timestamp of the logs that should be returned
+        :type start: int
+        :param limit: Maximum number of logs that should be returned
         :type limit: int
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -1007,7 +995,7 @@ class SandboxesApi:
 
         _param = self._sandboxes_sandbox_id_logs_get_serialize(
             sandbox_id=sandbox_id,
-            offset=offset,
+            start=start,
             limit=limit,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -1029,7 +1017,7 @@ class SandboxesApi:
     def _sandboxes_sandbox_id_logs_get_serialize(
         self,
         sandbox_id,
-        offset,
+        start,
         limit,
         _request_auth,
         _content_type,
@@ -1051,8 +1039,8 @@ class SandboxesApi:
         if sandbox_id is not None:
             _path_params["sandboxID"] = sandbox_id
         # process the query parameters
-        if offset is not None:
-            _query_params.append(("offset", offset))
+        if start is not None:
+            _query_params.append(("start", start))
 
         if limit is not None:
             _query_params.append(("limit", limit))

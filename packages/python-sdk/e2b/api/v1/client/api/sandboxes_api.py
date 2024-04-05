@@ -489,17 +489,13 @@ class SandboxesApi:
     def sandboxes_sandbox_id_logs_get(
         self,
         sandbox_id: StrictStr,
-        offset: Annotated[
+        start: Annotated[
             Optional[StrictInt],
-            Field(
-                description="Index of the starting log that should be returned with the sandbox"
-            ),
+            Field(description="Starting timestamp of the logs that should be returned"),
         ] = None,
         limit: Annotated[
             Optional[StrictInt],
-            Field(
-                description="Maximum number of logs that should be returned with the sandbox"
-            ),
+            Field(description="Maximum number of logs that should be returned"),
         ] = None,
         **kwargs
     ) -> SandboxLogs:  # noqa: E501
@@ -509,14 +505,14 @@ class SandboxesApi:
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.sandboxes_sandbox_id_logs_get(sandbox_id, offset, limit, async_req=True)
+        >>> thread = api.sandboxes_sandbox_id_logs_get(sandbox_id, start, limit, async_req=True)
         >>> result = thread.get()
 
         :param sandbox_id: (required)
         :type sandbox_id: str
-        :param offset: Index of the starting log that should be returned with the sandbox
-        :type offset: int
-        :param limit: Maximum number of logs that should be returned with the sandbox
+        :param start: Starting timestamp of the logs that should be returned
+        :type start: int
+        :param limit: Maximum number of logs that should be returned
         :type limit: int
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
@@ -534,24 +530,20 @@ class SandboxesApi:
             message = "Error! Please call the sandboxes_sandbox_id_logs_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
         return self.sandboxes_sandbox_id_logs_get_with_http_info(
-            sandbox_id, offset, limit, **kwargs
+            sandbox_id, start, limit, **kwargs
         )  # noqa: E501
 
     @validate_arguments
     def sandboxes_sandbox_id_logs_get_with_http_info(
         self,
         sandbox_id: StrictStr,
-        offset: Annotated[
+        start: Annotated[
             Optional[StrictInt],
-            Field(
-                description="Index of the starting log that should be returned with the sandbox"
-            ),
+            Field(description="Starting timestamp of the logs that should be returned"),
         ] = None,
         limit: Annotated[
             Optional[StrictInt],
-            Field(
-                description="Maximum number of logs that should be returned with the sandbox"
-            ),
+            Field(description="Maximum number of logs that should be returned"),
         ] = None,
         **kwargs
     ) -> ApiResponse:  # noqa: E501
@@ -561,14 +553,14 @@ class SandboxesApi:
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.sandboxes_sandbox_id_logs_get_with_http_info(sandbox_id, offset, limit, async_req=True)
+        >>> thread = api.sandboxes_sandbox_id_logs_get_with_http_info(sandbox_id, start, limit, async_req=True)
         >>> result = thread.get()
 
         :param sandbox_id: (required)
         :type sandbox_id: str
-        :param offset: Index of the starting log that should be returned with the sandbox
-        :type offset: int
-        :param limit: Maximum number of logs that should be returned with the sandbox
+        :param start: Starting timestamp of the logs that should be returned
+        :type start: int
+        :param limit: Maximum number of logs that should be returned
         :type limit: int
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
@@ -597,7 +589,7 @@ class SandboxesApi:
 
         _params = locals()
 
-        _all_params = ["sandbox_id", "offset", "limit"]
+        _all_params = ["sandbox_id", "start", "limit"]
         _all_params.extend(
             [
                 "async_req",
@@ -629,8 +621,8 @@ class SandboxesApi:
 
         # process the query parameters
         _query_params = []
-        if _params.get("offset") is not None:  # noqa: E501
-            _query_params.append(("offset", _params["offset"]))
+        if _params.get("start") is not None:  # noqa: E501
+            _query_params.append(("start", _params["start"]))
 
         if _params.get("limit") is not None:  # noqa: E501
             _query_params.append(("limit", _params["limit"]))

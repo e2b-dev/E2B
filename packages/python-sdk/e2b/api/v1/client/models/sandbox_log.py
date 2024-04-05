@@ -17,20 +17,20 @@ import pprint
 import re  # noqa: F401
 import json
 
+from datetime import datetime
+from typing import Any, Dict
+from pydantic import BaseModel, Field, StrictStr
 
-from typing import Any, Dict, List
-from pydantic import BaseModel, Field, conlist
-from e2b.api.v1.client.models.sandbox_log import SandboxLog
 
-
-class SandboxLogs(BaseModel):
+class SandboxLog(BaseModel):
     """
-    SandboxLogs
+    Log entry with timestamp and line  # noqa: E501
     """
 
-    logs: conlist(SandboxLog) = Field(..., description="Logs of the sandbox")
+    timestamp: datetime = Field(..., description="Timestamp of the log entry")
+    line: StrictStr = Field(..., description="Log line content")
     additional_properties: Dict[str, Any] = {}
-    __properties = ["logs"]
+    __properties = ["timestamp", "line"]
 
     class Config:
         """Pydantic configuration"""
@@ -47,8 +47,8 @@ class SandboxLogs(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> SandboxLogs:
-        """Create an instance of SandboxLogs from a JSON string"""
+    def from_json(cls, json_str: str) -> SandboxLog:
+        """Create an instance of SandboxLog from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self):
@@ -56,13 +56,6 @@ class SandboxLogs(BaseModel):
         _dict = self.dict(
             by_alias=True, exclude={"additional_properties"}, exclude_none=True
         )
-        # override the default output from pydantic by calling `to_dict()` of each item in logs (list)
-        _items = []
-        if self.logs:
-            for _item in self.logs:
-                if _item:
-                    _items.append(_item.to_dict())
-            _dict["logs"] = _items
         # puts key-value pairs in additional_properties in the top level
         if self.additional_properties is not None:
             for _key, _value in self.additional_properties.items():
@@ -71,20 +64,16 @@ class SandboxLogs(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> SandboxLogs:
-        """Create an instance of SandboxLogs from a dict"""
+    def from_dict(cls, obj: dict) -> SandboxLog:
+        """Create an instance of SandboxLog from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return SandboxLogs.parse_obj(obj)
+            return SandboxLog.parse_obj(obj)
 
-        _obj = SandboxLogs.parse_obj(
-            {
-                "logs": [SandboxLog.from_dict(_item) for _item in obj.get("logs")]
-                if obj.get("logs") is not None
-                else None
-            }
+        _obj = SandboxLog.parse_obj(
+            {"timestamp": obj.get("timestamp"), "line": obj.get("line")}
         )
         # store additional fields in additional_properties
         for _key in obj.keys():

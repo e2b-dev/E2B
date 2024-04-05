@@ -85,6 +85,7 @@ Class | Method | HTTP request | Description
  - [NewSandbox](e2b/api/v1/client/docs/NewSandbox.md)
  - [RunningSandboxes](e2b/api/v1/client/docs/RunningSandboxes.md)
  - [Sandbox](e2b/api/v1/client/docs/Sandbox.md)
+ - [SandboxLog](e2b/api/v1/client/docs/SandboxLog.md)
  - [SandboxLogs](e2b/api/v1/client/docs/SandboxLogs.md)
  - [SandboxesSandboxIDRefreshesPostRequest](e2b/api/v1/client/docs/SandboxesSandboxIDRefreshesPostRequest.md)
  - [Template](e2b/api/v1/client/docs/Template.md)
