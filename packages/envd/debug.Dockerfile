@@ -1,4 +1,4 @@
-FROM golang:1.21
+FROM ubuntu:22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
