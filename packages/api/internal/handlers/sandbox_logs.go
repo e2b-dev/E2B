@@ -55,7 +55,6 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 	id := strings.ReplaceAll(sandboxID, "`", "")
 	query := fmt.Sprintf("{source=\"logs-collector\", service=\"envd\", teamID=`%s`, sandboxID=`%s`}", teamID.String(), id)
 
-	// TODO: Check if the nanoseconds conversion is correct
 	res, err := a.lokiClient.QueryRange(query, *params.Limit, start, end, logproto.FORWARD, time.Duration(0), time.Duration(0), false)
 	if err != nil {
 		errMsg := fmt.Errorf("error when returning logs for sandbox: %w", err)
