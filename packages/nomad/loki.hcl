@@ -111,7 +111,7 @@ ingester_client:
     max_send_msg_size: 104857600  # 100 Mb
 
 ingester:
-  chunk_idle_period: 5m
+  chunk_idle_period: 30m
   chunk_encoding: snappy
   wal:
     dir: /loki/wal
