@@ -48,8 +48,6 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 		start = end.Add(-oldestLogsLimit)
 	}
 
-	fmt.Printf("Start: %v\n End: %v\n", start, end)
-
 	// Sanitize ID
 	// https://grafana.com/blog/2021/01/05/how-to-escape-special-characters-with-lokis-logql/
 	id := strings.ReplaceAll(sandboxID, "`", "")
