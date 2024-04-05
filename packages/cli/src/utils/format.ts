@@ -66,6 +66,11 @@ export function asHeadline(content: string) {
   return chalk.default.underline(asPrimary(asBold(content)))
 }
 
+export function withUnderline(content: string) {
+  return chalk.default.underline(content)
+
+}
+
 export function listAliases(aliases: string[] | undefined) {
   if (!aliases) return undefined
   return aliases.join(' | ')
