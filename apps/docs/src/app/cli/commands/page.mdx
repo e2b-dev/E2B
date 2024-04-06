@@ -242,8 +242,10 @@ e2b sandbox kill <sandboxID>
 ```
 
 ## `sandbox logs`
-Start printing logs from the specified sandbox.
+Starts printing logs from the specified sandbox.
 If the sandbox is running new logs will be streamed to the terminal.
+
+The timestamps are in the UTC format.
 
 This command is useful if you need to debug a running sandbox or check logs from a sandbox that was already closed.
 
@@ -259,6 +261,6 @@ You can use `e2b sandbox list` to get a list of running sandboxes and their IDs 
 
 <Options>
   <Option type="<sandboxID>">
-    Specify the ID of sandbox you want to get logs from.
+    Specify the ID of the sandbox you want to get logs from.
   </Option>
 </Options>
