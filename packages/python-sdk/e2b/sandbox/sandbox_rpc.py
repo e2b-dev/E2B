@@ -186,7 +186,8 @@ class SandboxRpc(BaseModel):
 
         self._process_cleanup.clear()
 
-        for handler in self._waiting_for_replies.values():
+        # .copy() prevents a RuntimeError: dictionary changed size during iteration
+        for handler in self._waiting_for_replies.copy().values():
             handler.cancel()
             del handler
 
