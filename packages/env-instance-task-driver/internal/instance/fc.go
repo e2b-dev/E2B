@@ -1,6 +1,7 @@
 package instance
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
