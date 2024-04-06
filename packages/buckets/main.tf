@@ -7,6 +7,16 @@ resource "google_storage_bucket" "loki_storage_bucket" {
   uniform_bucket_level_access = true
 
   labels = var.labels
+
+  lifecycle_rule {
+    condition {
+      age = 8
+    }
+
+    action {
+      type = "Delete"
+    }
+  }
 }
 
 resource "google_storage_bucket" "envs_docker_context" {
