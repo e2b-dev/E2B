@@ -29,3 +29,6 @@ upload:
 update:
 	make build
 	make upload
+
+test:
+	sudo CONSUL_TOKEN=$(CONSUL_TOKEN) go run -race -gcflags=all="-N -l" main.go -env idnrwvs3vrde6hknozc0 -instance test-instance-1 -alive 2 -count 1

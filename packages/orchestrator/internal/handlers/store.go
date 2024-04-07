@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/api"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/instance"
@@ -86,21 +85,31 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		ctx,
 		tracer,
 		&instance.InstanceConfig{
-			EnvID:                 body.EnvID,
-			NodeID:                nodeID,
-			InstanceID:            body.InstanceID,
-			TraceID:               body.TraceID,
-			TeamID:                body.TeamID,
-			ConsulToken:           body.ConsulToken,
-			LogsProxyAddress:      body.LogsProxyAddress,
-			KernelVersion:         body.KernelVersion,
-			EnvsDisk:              body.EnvsDisk,
-			KernelsDir:            "/fc-kernels",
-			KernelMountDir:        "/fc-vm",
-			KernelName:            "vmlinux.bin",
-			HugePages:             body.HugePages,
-			UFFDBinaryPath:        filepath.Join(fcVersionsDir, body.FirecrackerVersion, uffdBinaryName),
-			FirecrackerBinaryPath: filepath.Join(fcVersionsDir, body.FirecrackerVersion, fcBinaryName),
+			EnvID:            body.EnvID,
+			NodeID:           nodeID,
+			InstanceID:       body.InstanceID,
+			TraceID:          body.TraceID,
+			TeamID:           body.TeamID,
+			ConsulToken:      body.ConsulToken,
+			LogsProxyAddress: body.LogsProxyAddress,
+			// KernelVersion:         body.KernelVersion,
+			// EnvsDisk:              body.EnvsDisk,
+			// KernelsDir:            "/fc-kernels",
+			// KernelMountDir:        "/fc-vm",
+			// KernelName:            "vmlinux.bin",
+			HugePages: body.HugePages,
+			// UFFDBinaryPath:        filepath.Join(fcVersionsDir, body.FirecrackerVersion, uffdBinaryName),
+			// FirecrackerBinaryPath: filepath.Join(fcVersionsDir, body.FirecrackerVersion, fcBinaryName),
+
+			AllocID:        "alloc-id",
+			EnvsDisk:       "/mnt/disks/fc-envs/v1",
+			KernelVersion:  "vmlinux-5.10.186",
+			KernelMountDir: "/fc-vm",
+			KernelsDir:     "/fc-kernels",
+			KernelName:     "vmlinux.bin",
+			UFFDBinaryPath: "/fc-versions/v1.7.0-dev_8bb88311/uffd",
+			// HugePages:             true,
+			FirecrackerBinaryPath: "/fc-versions/v1.7.0-dev_8bb88311/firecracker",
 		},
 		a.dns,
 		&body,

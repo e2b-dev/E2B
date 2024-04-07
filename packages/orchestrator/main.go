@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/api"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/handlers"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/instance"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -72,7 +74,56 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	return s
 }
 
+func test() bool {
+	envID := flag.String("env", "", "env id")
+	instanceID := flag.String("instance", "", "instance id")
+	keepAlive := flag.Int("alive", 0, "keep alive")
+	count := flag.Int("count", 1, "number of spawned instances")
+
+	flag.Parse()
+
+	if *envID != "" && *instanceID != "" {
+		// Start of mock build for testing
+		consulToken := os.Getenv("CONSUL_TOKEN")
+
+		dns, err := instance.NewDNS()
+		if err != nil {
+			panic(err)
+		}
+
+		groupSize := 2
+
+		for i := 0; i < *count; i++ {
+			func(in int, envID, instanceID string, count int) {
+				var wg sync.WaitGroup
+
+				for j := 0; j < groupSize; j++ {
+					wg.Add(1)
+
+					go func(jn int) {
+						defer wg.Done()
+						id := fmt.Sprintf("%s_%d", instanceID, in+jn*count)
+						fmt.Printf("\nSTARTING [%s]\n\n", id)
+						instance.MockInstance(envID, id, consulToken, dns, time.Duration(*keepAlive)*time.Second)
+					}(j)
+				}
+
+				wg.Wait()
+			}(i, *envID, *instanceID, *count)
+		}
+	} else {
+		return false
+	}
+
+	return true
+}
+
+
 func main() {
+	if test() {
+		return
+	}
+
 	fmt.Println("Initializing...")
 
 	port := flag.Int("port", defaultPort, "Port for test HTTP server")
