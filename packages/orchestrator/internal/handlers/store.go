@@ -141,7 +141,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, api.NewSandbox{
 		SandboxID: body.InstanceID,
-		ClientID:  nodeID,
+		ClientID:  clientID,
 	})
 }
 

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/user"
 	"sync"
 	"time"
 
@@ -85,7 +84,7 @@ func test(envID, instanceID *string, keepAlive, count *int) bool {
 			panic(err)
 		}
 
-		groupSize := 2
+		groupSize := 1
 
 		for i := 0; i < *count; i++ {
 			func(in int, envID, instanceID string, count int) {
@@ -113,20 +112,6 @@ func test(envID, instanceID *string, keepAlive, count *int) bool {
 }
 
 func main() {
-	// Retrieve current user information
-	u, err := user.Current()
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-
-	// Print user ID
-	uid := u.Uid
-
-	fmt.Println("User ID:", uid)
-
-	fmt.Println("Initializing...")
-
 	envID := flag.String("env", "", "env id")
 	instanceID := flag.String("instance", "", "instance id")
 	keepAlive := flag.Int("alive", 0, "keep alive")
@@ -134,14 +119,12 @@ func main() {
 
 	port := flag.Int("port", defaultPort, "Port for test HTTP server")
 
+	debug := flag.String("true", "false", "is debug")
+	flag.Parse()
+
 	if test(envID, instanceID, keepAlive, count) {
 		return
 	}
-
-	flag.Parse()
-
-	debug := flag.String("true", "false", "is debug")
-
 	if *debug != "true" {
 		gin.SetMode(gin.ReleaseMode)
 	}
