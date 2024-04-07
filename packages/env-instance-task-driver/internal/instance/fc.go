@@ -119,19 +119,19 @@ func (fc *FC) loadSnapshot(
 	}
 	telemetry.ReportEvent(childCtx, "snapshot loaded")
 
-	go func() {
-		mmdsConfig := operations.PutMmdsParams{
-			Context: childCtx,
-			Body:    metadata,
-		}
+	mmdsConfig := operations.PutMmdsParams{
+		Context: childCtx,
+		Body:    metadata,
+	}
 
-		_, err = httpClient.Operations.PutMmds(&mmdsConfig)
-		if err != nil {
-			telemetry.ReportCriticalError(childCtx, err)
-		} else {
-			telemetry.ReportEvent(childCtx, "mmds data set")
-		}
-	}()
+	_, err = httpClient.Operations.PutMmds(&mmdsConfig)
+	if err != nil {
+		telemetry.ReportCriticalError(childCtx, err)
+
+		return err
+	}
+
+	telemetry.ReportEvent(childCtx, "mmds data set")
 
 	return nil
 }
