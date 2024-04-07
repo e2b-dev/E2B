@@ -60,6 +60,7 @@ resource "nomad_job" "api" {
 
   hcl2 {
     vars = {
+      orchestrator_address          = "http://localhost:5008"
       loki_address                  = "http://localhost:${var.loki_service_port.port}"
       gcp_zone                      = var.gcp_zone
       api_port_name                 = var.api_port.name
@@ -174,6 +175,19 @@ resource "nomad_job" "logs-collector" {
       grafana_api_key       = data.google_secret_manager_secret_version.grafana_api_key.secret_data
       grafana_logs_endpoint = data.google_secret_manager_secret_version.grafana_logs_endpoint.secret_data
       grafana_logs_username = data.google_secret_manager_secret_version.grafana_logs_username.secret_data
+    }
+  }
+}
+
+resource "nomad_job" "orchestrator" {
+  jobspec = file("${path.module}/orchestrator.hcl")
+
+  hcl2 {
+    vars = {
+      gcp_zone     = var.gcp_zone
+      consul_token = var.consul_acl_token_secret
+
+      port = 5008
     }
   }
 }

@@ -1,0 +1,155 @@
+openapi: 3.0.0
+info:
+  version: 0.1.0
+  title: E2B API
+
+components:
+  parameters:
+    sandboxID:
+      name: sandboxID
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    500:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    NewSandbox:
+      required:
+        - sandboxID
+        - clientID
+      properties:
+        sandboxID:
+          type: string
+        clientID:
+          type: string
+
+    Sandbox:
+      required:
+        - spanID
+        - consulToken
+        - traceID
+        - envID
+        - buildID
+        - alias
+        - instanceID
+        - logsProxyAddress
+        - kernelVersion
+        - firecrackerVersion
+        - envsDisk
+        - teamID
+        - maxInstanceLength
+        - metadata
+        - hugePages
+      properties:
+        spanID:
+          type: string
+        consulToken:
+          type: string
+        traceID:
+          type: string
+        envID:
+          type: string
+        buildID:
+          type: string
+        alias:
+          type: string
+        instanceID:
+          type: string
+        logsProxyAddress:
+          type: string
+        kernelVersion:
+          type: string
+        firecrackerVersion:
+          type: string
+        envsDisk:
+          type: string
+        teamID:
+          type: string
+        maxInstanceLength:
+          type: integer
+          format: int32
+        metadata:
+          type: string
+        clientID:
+          type: string
+        hugePages:
+          type: boolean
+
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error
+
+tags:
+  - name: sandboxes
+
+paths:
+  /health:
+    get:
+      description: Health check
+      responses:
+        200:
+          description: Request was successful
+
+  /sandboxes:
+    get:
+      description: List all running sandboxes
+      tags: [sandboxes]
+      responses:
+        200:
+          description: Successfully returned all running sandboxes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Sandbox"
+        500:
+          $ref: "#/components/responses/500"
+    post:
+      description: Create a sandbox from the template
+      tags: [sandboxes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Sandbox"
+      responses:
+        201:
+          description: The sandbox was created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewSandbox"
+
+        500:
+          $ref: "#/components/responses/500"
+
+  /sandboxes/{sandboxID}:
+    delete:
+      description: Kill a sandbox
+      tags: [sandboxes]
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        204:
+          description: The sandbox was killed successfully
+        500:
+          $ref: "#/components/responses/500"

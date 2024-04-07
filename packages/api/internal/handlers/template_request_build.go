@@ -53,7 +53,7 @@ func (a *APIStore) PostTemplatesTemplateID(c *gin.Context, templateID api.Templa
 func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateID, new bool) *api.Template {
 	ctx := c.Request.Context()
 
-	body, err := parseBody[api.TemplateBuildRequest](ctx, c)
+	body, err := utils.ParseBody[api.TemplateBuildRequest](ctx, c)
 
 	telemetry.ReportEvent(ctx, "started request for environment build")
 
@@ -258,7 +258,6 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 				Create().
 				SetEnvID(templateID).SetIsRenamable(true).SetID(alias).
 				Exec(ctx)
-
 			if err != nil {
 				a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when inserting alias: %s", err))
 

@@ -190,6 +190,11 @@ client {
 plugin "env-instance-task-driver" {}
 plugin "env-build-task-driver" {}
 plugin "template-delete-task-driver" {}
+plugin "raw_exec" {
+  config {
+    enabled = true
+  }
+}
 
 EOF
     )
@@ -290,8 +295,7 @@ function start_nomad {
 
 function bootstrap {
   log_info "Waiting for Nomad to start"
-  while test -z "$(curl -s http://127.0.0.1:4646/v1/agent/health)"
-  do
+  while test -z "$(curl -s http://127.0.0.1:4646/v1/agent/health)"; do
     log_info "Nomad not yet started. Waiting for 1 second."
     sleep 1
   done
@@ -299,7 +303,7 @@ function bootstrap {
 
   local readonly nomad_token="$1"
   log_info "Bootstrapping Nomad"
-  echo "$nomad_token" > "/tmp/nomad.token"
+  echo "$nomad_token" >"/tmp/nomad.token"
   nomad acl bootstrap /tmp/nomad.token
   rm "/tmp/nomad.token"
 }

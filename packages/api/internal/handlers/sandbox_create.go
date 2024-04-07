@@ -29,7 +29,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	telemetry.ReportEvent(ctx, "Parsed body")
 
-	body, err := parseBody[api.PostSandboxesJSONRequestBody](ctx, c)
+	body, err := utils.ParseBody[api.PostSandboxesJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 
@@ -127,12 +127,17 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		metadata = *body.Metadata
 	}
 
-	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, sandboxID, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
+	sandbox, instanceErr := a.orchestrator.CreateSandbox(a.tracer, ctx, sandboxID, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
 	if instanceErr != nil {
-		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
+		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
-		a.sendAPIStoreError(c, instanceErr.Code, instanceErr.ClientMsg)
+		apiErr := api.Error{
+			Code:    http.StatusInternalServerError,
+			Message: "Cannot create a sandbox right now",
+		}
+
+		a.sendAPIStoreError(c, int(apiErr.Code), apiErr.Message)
 
 		return
 	}

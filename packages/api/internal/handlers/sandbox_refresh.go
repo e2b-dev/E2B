@@ -21,7 +21,7 @@ func (a *APIStore) PostSandboxesSandboxIDRefreshes(
 
 	var duration time.Duration
 
-	body, err := parseBody[api.PostSandboxesSandboxIDRefreshesJSONBody](ctx, c)
+	body, err := utils.ParseBody[api.PostSandboxesSandboxIDRefreshesJSONBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 

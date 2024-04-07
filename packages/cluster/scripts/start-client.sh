@@ -140,6 +140,9 @@ sudo chmod +x /opt/nomad/plugins/template-delete-task-driver
 sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver
 sudo chmod +x /opt/nomad/plugins/env-instance-task-driver
 
+sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/plugins/orchestrator
+sudo chmod +x /opt/nomad/plugins/orchestrator
+
 # These variables are passed in via Terraform template interpolation
 
 gsutil cp "gs://${SCRIPTS_BUCKET}/run-consul-${RUN_CONSUL_FILE_HASH}.sh" /opt/consul/bin/run-consul.sh
