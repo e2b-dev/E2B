@@ -27,6 +27,5 @@ upload:
 
 .PHONY: update
 update:
-	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) -- 'sudo rm -rf /opt/nomad/orchestrator && \
-	sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/orchestrator && \
-	sudo chmod +x /opt/nomad/orchestrator'
+	make build
+	make upload

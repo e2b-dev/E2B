@@ -31,6 +31,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	r.Use(
 		gin.Recovery(),
+		gin.LoggerWithWriter(gin.DefaultWriter),
 	)
 
 	config := cors.DefaultConfig()
