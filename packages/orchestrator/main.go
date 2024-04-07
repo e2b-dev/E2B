@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/user"
 	"sync"
 	"time"
 
@@ -74,14 +75,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	return s
 }
 
-func test() bool {
-	envID := flag.String("env", "", "env id")
-	instanceID := flag.String("instance", "", "instance id")
-	keepAlive := flag.Int("alive", 0, "keep alive")
-	count := flag.Int("count", 1, "number of spawned instances")
-
-	flag.Parse()
-
+func test(envID, instanceID *string, keepAlive, count *int) bool {
 	if *envID != "" && *instanceID != "" {
 		// Start of mock build for testing
 		consulToken := os.Getenv("CONSUL_TOKEN")
@@ -118,15 +112,32 @@ func test() bool {
 	return true
 }
 
-
 func main() {
-	if test() {
+	// Retrieve current user information
+	u, err := user.Current()
+	if err != nil {
+		fmt.Println("Error:", err)
 		return
 	}
 
+	// Print user ID
+	uid := u.Uid
+
+	fmt.Println("User ID:", uid)
+
 	fmt.Println("Initializing...")
 
+	envID := flag.String("env", "", "env id")
+	instanceID := flag.String("instance", "", "instance id")
+	keepAlive := flag.Int("alive", 0, "keep alive")
+	count := flag.Int("count", 1, "number of spawned instances")
+
 	port := flag.Int("port", defaultPort, "Port for test HTTP server")
+
+	if test(envID, instanceID, keepAlive, count) {
+		return
+	}
+
 	flag.Parse()
 
 	debug := flag.String("true", "false", "is debug")

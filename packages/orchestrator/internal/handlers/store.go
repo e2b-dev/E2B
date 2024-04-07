@@ -77,9 +77,9 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		return
 	}
 
-	fcVersionsDir := "/fc-versions"
-	uffdBinaryName := "uffd"
-	fcBinaryName := "firecracker"
+	// fcVersionsDir := "/fc-versions"
+	// uffdBinaryName := "uffd"
+	// fcBinaryName := "firecracker"
 
 	instance, err := instance.NewInstance(
 		ctx,
