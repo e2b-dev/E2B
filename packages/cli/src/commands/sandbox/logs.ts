@@ -85,6 +85,21 @@ enum LogFormat {
   PRETTY = 'pretty',
 }
 
+const userLoggers = [
+  'filesystemSvc',
+  'filesystemSvc.dirWatcher',
+  'processSvc',
+  'terminalSvc',
+]
+
+function cleanLogger(logger?: string) {
+  if (!logger) {
+    return ''
+  }
+
+  return logger.replaceAll('Svc', '')
+}
+
 export const logsCommand = new commander.Command('logs')
   .description('show logs for sandbox')
   .argument('<sandboxID>', `show logs for sandbox specified by ${asBold('<sandboxID>')}`)
@@ -92,10 +107,14 @@ export const logsCommand = new commander.Command('logs')
   .option('-l, --level <level>', `filter logs by level (${formatEnum(LogLevel)})`, LogLevel.INFO)
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option('--format <format>', `specify format for printing logs (${formatEnum(LogFormat)})`, LogFormat.PRETTY)
+  .option('--s <services>, --service <services>', 'filter logs by service', 'all')
+  .option('-a, --all', 'print all logs, including both the internal logs and logs from user actions')
   .action(async (sandboxID: string, opts?: {
     level: string,
     follow: boolean,
     format: string,
+    all: boolean,
+    services: string,
   }) => {
     try {
       const level = opts?.level.toUpperCase() as LogLevel | undefined
@@ -110,7 +129,7 @@ export const logsCommand = new commander.Command('logs')
 
       const apiKey = ensureAPIKey()
 
-      const getIsRunning = waitForSandboxEnd(apiKey, sandboxID)
+      const getIsRunning = opts?.follow ? waitForSandboxEnd(apiKey, sandboxID) : () => false
 
       let start: number | undefined
       let isFirstRun = true
@@ -132,7 +151,7 @@ export const logsCommand = new commander.Command('logs')
           }
 
           for (const log of logs) {
-            printLog(log.timestamp, log.line, level, format)
+            printLog(log.timestamp, log.line, level, format, opts?.all)
           }
 
           const isRunning = await isRunningPromise
@@ -153,6 +172,7 @@ export const logsCommand = new commander.Command('logs')
 
           const lastLog = logs.length > 0 ? logs[logs.length - 1] : undefined
           if (lastLog) {
+            // TODO: Use the timestamp from the last log instead of the current time?
             start = new Date(lastLog.timestamp).getTime() + 1
           }
         } catch (e) {
@@ -186,10 +206,13 @@ export const logsCommand = new commander.Command('logs')
     }
   })
 
-function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined) {
+function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined, printAll: boolean | undefined) {
   const log = JSON.parse(line)
-
   let level = log['level'].toUpperCase()
+
+  if (!printAll && !userLoggers.includes(log.logger) || !log.logger) {
+    return
+  }
 
   if (!isLevelIncluded(level, allowedLevel)) {
     return
@@ -217,6 +240,8 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
   delete log['source']
   delete log['service']
   delete log['envID']
+
+  log.logger = cleanLogger(log.logger)
 
   if (format === LogFormat.JSON) {
     console.log(JSON.stringify({
