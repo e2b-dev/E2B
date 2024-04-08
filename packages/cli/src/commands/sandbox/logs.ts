@@ -85,8 +85,10 @@ export const logsCommand = new commander.Command('logs')
   .argument('<sandboxID>', `show logs for sandbox specified by ${asBold('<sandboxID>')}`)
   .alias('lg')
   .option('-l, --level <level>', `filter logs by level (${formatLogLevels})`, LogLevel.INFO)
+  .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .action(async (sandboxID: string, opts?: {
     level: string,
+    follow: boolean,
   }) => {
     try {
       const level = opts?.level.toUpperCase() as LogLevel | undefined
@@ -159,7 +161,7 @@ export const logsCommand = new commander.Command('logs')
 
         await wait(400)
         isFirstRun = false
-      } while (getIsRunning())
+      } while (getIsRunning() && opts?.follow)
     } catch (err: any) {
       console.error(err)
       process.exit(1)
