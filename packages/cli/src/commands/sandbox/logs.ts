@@ -52,13 +52,50 @@ function waitForSandboxEnd(apiKey: string, sandboxID: string) {
   return () => isRunning
 }
 
+enum LogLevel {
+  DEBUG = 'DEBUG',
+  INFO = 'INFO',
+  WARN = 'WARN',
+  ERROR = 'ERROR',
+}
+
+function isLevelIncluded(level: LogLevel, allowedLevel?: LogLevel) {
+  if (!allowedLevel) {
+    return true
+  }
+
+  switch (allowedLevel) {
+    case LogLevel.DEBUG:
+      return true
+    case LogLevel.INFO:
+      return level === LogLevel.INFO
+    case LogLevel.WARN:
+      return level === LogLevel.INFO || level === LogLevel.WARN
+    case LogLevel.ERROR:
+      return level === LogLevel.INFO || level === LogLevel.WARN || level === LogLevel.ERROR
+  }
+}
+
+function formatLogLevels() {
+  return Object.values(LogLevel).map(level => asBold(level)).join(', ')
+}
+
 export const logsCommand = new commander.Command('logs')
   .description('show logs for sandbox')
-  .argument('<sandboxID>', `show longs for sandbox specified by ${asBold('<sandboxID>')}`)
+  .argument('<sandboxID>', `show logs for sandbox specified by ${asBold('<sandboxID>')}`)
   .alias('lg')
-  .action(async (sandboxID: string) => {
+  .option('-l, --level <level>', `filter logs by level (${formatLogLevels})`, LogLevel.INFO)
+  .action(async (sandboxID: string, opts?: {
+    level: string,
+  }) => {
     try {
+      const level = opts?.level.toUpperCase() as LogLevel | undefined
+      if (level && !Object.values(LogLevel).includes(level)) {
+        throw new Error(`Invalid log level: ${level}`)
+      }
+
       const apiKey = ensureAPIKey()
+
       const getIsRunning = waitForSandboxEnd(apiKey, sandboxID)
 
       let start: number | undefined
@@ -79,7 +116,7 @@ export const logsCommand = new commander.Command('logs')
           }
 
           for (const log of logs) {
-            printLog(log.timestamp, log.line)
+            printLog(log.timestamp, log.line, level)
           }
 
           const isRunning = await isRunningPromise
@@ -129,23 +166,27 @@ export const logsCommand = new commander.Command('logs')
     }
   })
 
-function printLog(timestamp: string, line: string) {
+function printLog(timestamp: string, line: string, allowedLevel?: LogLevel) {
   const log = JSON.parse(line)
 
   const time = `[${new Date(timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '')}]`
   let level = log['level'].toUpperCase()
 
+  if (!isLevelIncluded(level, allowedLevel)) {
+    return
+  }
+
   switch (level) {
-    case 'DEBUG':
+    case LogLevel.DEBUG:
       level = chalk.default.bgWhite(level)
       break
-    case 'INFO':
+    case LogLevel.INFO:
       level = chalk.default.bgGreen(level) + ' '
       break
-    case 'WARN':
+    case LogLevel.WARN:
       level = chalk.default.bgYellow(level) + ' '
       break
-    case 'ERROR':
+    case LogLevel.ERROR:
       level = chalk.default.white(chalk.default.bgRed(level))
       break
   }
