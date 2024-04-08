@@ -189,7 +189,6 @@ export const logsCommand = new commander.Command('logs')
 function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined) {
   const log = JSON.parse(line)
 
-  const time = `[${new Date(timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '')}]`
   let level = log['level'].toUpperCase()
 
   if (!isLevelIncluded(level, allowedLevel)) {
@@ -220,8 +219,13 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
   delete log['envID']
 
   if (format === LogFormat.JSON) {
-    console.log(JSON.stringify(log))
+    console.log(JSON.stringify({
+      timestamp: new Date(timestamp).toISOString(),
+      level,
+      ...log,
+    }))
   } else {
+    const time = `[${new Date(timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '')}]`
     delete log['sandboxID']
     delete log['level']
     console.log(`${asTimestamp(time)} ${level} ` + util.inspect(log, { colors: true, depth: null, maxArrayLength: Infinity, sorted: true, compact: true, breakLength: Infinity }))
