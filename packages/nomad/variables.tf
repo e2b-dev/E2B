@@ -150,6 +150,17 @@ variable "analytics_collector_api_token_secret_name" {
   type = string
 }
 
+variable "loki_bucket_name" {
+  type = string
+}
+
+variable "loki_service_port" {
+  type = object({
+    name = string
+    port = number
+  })
+}
+
 # Docker reverse proxy
 variable "docker_reverse_proxy_image_digest" {
   type = string

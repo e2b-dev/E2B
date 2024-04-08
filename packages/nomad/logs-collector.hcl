@@ -30,6 +30,10 @@ variable "grafana_logs_endpoint" {
   type = string
 }
 
+variable "loki_service_port_number" {
+  type = number
+}
+
 job "logs-collector" {
   datacenters = [var.gcp_zone]
   type        = "service"
@@ -82,7 +86,7 @@ job "logs-collector" {
       env {
         VECTOR_CONFIG          = "local/vector.toml"
         VECTOR_REQUIRE_HEALTHY = "true"
-        VECTOR_LOG             = "debug"
+        VECTOR_LOG             = "warn"
       }
 
       resources {
@@ -101,8 +105,8 @@ job "logs-collector" {
 data_dir = "alloc/data/vector/"
 
 [api]
-  enabled = true
-  address = "0.0.0.0:${var.logs_health_port_number}"
+enabled = true
+address = "0.0.0.0:${var.logs_health_port_number}"
 
 [sources.vector]
 type = "internal_logs"
@@ -124,7 +128,21 @@ type = "remap"
 inputs = ["envd"]
 source = """
 .service = "envd"
+.sandboxID = .instanceID
 """
+
+[sinks.local_loki_logs]
+type = "loki"
+inputs = [ "add_source_envd" ]
+endpoint = "http://0.0.0.0:${var.loki_service_port_number}"
+encoding.codec = "json"
+
+[sinks.local_loki_logs.labels]
+source = "logs-collector"
+service = "{{ service }}"
+teamID = "{{ teamID }}"
+envID = "{{ envID }}"
+sandboxID = "{{ sandboxID }}"
 
 [sinks.grafana]
 type = "loki"
@@ -138,6 +156,9 @@ auth.password = "${var.grafana_api_key}"
 [sinks.grafana.labels]
 source = "logs-collector"
 service = "{{ service }}"
+teamID = "{{ teamID }}"
+envID = "{{ envID }}"
+sandboxID = "{{ sandboxID }}"
 
         EOH
       }

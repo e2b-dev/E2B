@@ -76,6 +76,21 @@ type Sandbox struct {
 	TemplateID string `json:"templateID"`
 }
 
+// SandboxLog Log entry with timestamp and line
+type SandboxLog struct {
+	// Line Log line content
+	Line string `json:"line"`
+
+	// Timestamp Timestamp of the log entry
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// SandboxLogs defines model for SandboxLogs.
+type SandboxLogs struct {
+	// Logs Logs of the sandbox
+	Logs []SandboxLog `json:"logs"`
+}
+
 // SandboxMetadata defines model for SandboxMetadata.
 type SandboxMetadata map[string]string
 
@@ -156,6 +171,15 @@ type N404 = Error
 
 // N500 defines model for 500.
 type N500 = Error
+
+// GetSandboxesSandboxIDLogsParams defines parameters for GetSandboxesSandboxIDLogs.
+type GetSandboxesSandboxIDLogsParams struct {
+	// Start Starting timestamp of the logs that should be returned
+	Start *int `form:"start,omitempty" json:"start,omitempty"`
+
+	// Limit Maximum number of logs that should be returned
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
 
 // PostSandboxesSandboxIDRefreshesJSONBody defines parameters for PostSandboxesSandboxIDRefreshes.
 type PostSandboxesSandboxIDRefreshesJSONBody struct {

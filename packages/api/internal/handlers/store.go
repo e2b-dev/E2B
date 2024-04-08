@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	loki "github.com/grafana/loki/pkg/logcli/client"
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
@@ -38,10 +39,13 @@ type APIStore struct {
 	nomad                      *nomad.NomadClient
 	db                         *db.DB
 	cloudStorage               *storages.GoogleCloudStorage
+	lokiClient                 *loki.DefaultClient
 	apiSecret                  string
 	googleServiceAccountBase64 string
 	logger                     *zap.SugaredLogger
 }
+
+var lokiAddress = os.Getenv("LOKI_ADDRESS")
 
 func NewAPIStore() *APIStore {
 	fmt.Println("Initializing API store")
@@ -124,6 +128,16 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
+	var lokiClient *loki.DefaultClient
+
+	if lokiAddress != "" {
+		lokiClient = &loki.DefaultClient{
+			Address: lokiAddress,
+		}
+	} else {
+		logger.Warn("LOKI_ADDRESS not set, disabling Loki client")
+	}
+
 	apiSecret := os.Getenv("API_SECRET")
 	if apiSecret == "" {
 		apiSecret = "SUPER_SECR3T_4PI_K3Y"
@@ -155,6 +169,7 @@ func NewAPIStore() *APIStore {
 		buildCache:                 buildCache,
 		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
 		logger:                     logger,
+		lokiClient:                 lokiClient,
 	}
 }
 

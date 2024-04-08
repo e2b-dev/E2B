@@ -1,3 +1,7 @@
+output "loki_bucket_name" {
+  value = google_storage_bucket.loki_storage_bucket.name
+}
+
 output "envs_docker_context_bucket_name" {
   value = google_storage_bucket.envs_docker_context.name
 }

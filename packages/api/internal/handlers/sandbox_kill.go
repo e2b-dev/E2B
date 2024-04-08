@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"go.opentelemetry.io/otel/attribute"
@@ -17,6 +18,7 @@ func (a *APIStore) DeleteSandboxesSandboxID(
 	sandboxID string,
 ) {
 	ctx := c.Request.Context()
+	sandboxID = utils.ShortID(sandboxID)
 
 	teamID := c.Value(constants.TeamContextKey).(models.Team).ID
 

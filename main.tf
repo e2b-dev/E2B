@@ -217,6 +217,10 @@ module "nomad" {
   grafana_traces_endpoint_secret_name  = module.init.grafana_traces_endpoint_secret_name
   grafana_traces_username_secret_name  = module.init.grafana_traces_username_secret_name
 
+  # Logs
+  loki_bucket_name  = module.buckets.loki_bucket_name
+  loki_service_port = var.loki_service_port
+
   # Docker reverse proxy
   docker_reverse_proxy_image_digest        = module.docker_reverse_proxy.docker_reverse_proxy_image_digest
   docker_reverse_proxy_port                = var.docker_reverse_proxy_port
