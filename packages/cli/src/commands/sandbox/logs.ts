@@ -76,24 +76,36 @@ function isLevelIncluded(level: LogLevel, allowedLevel?: LogLevel) {
   }
 }
 
-function formatLogLevels() {
-  return Object.values(LogLevel).map(level => asBold(level)).join(', ')
+function formatEnum(e: { [key: string]: string }) {
+  return Object.values(e).map(level => asBold(level)).join(', ')
+}
+
+enum LogFormat {
+  JSON = 'json',
+  PRETTY = 'pretty',
 }
 
 export const logsCommand = new commander.Command('logs')
   .description('show logs for sandbox')
   .argument('<sandboxID>', `show logs for sandbox specified by ${asBold('<sandboxID>')}`)
   .alias('lg')
-  .option('-l, --level <level>', `filter logs by level (${formatLogLevels})`, LogLevel.INFO)
+  .option('-l, --level <level>', `filter logs by level (${formatEnum(LogLevel)})`, LogLevel.INFO)
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
+  .option('--format <format>', `specify format for printing logs (${formatEnum(LogFormat)})`, LogFormat.PRETTY)
   .action(async (sandboxID: string, opts?: {
     level: string,
     follow: boolean,
+    format: string,
   }) => {
     try {
       const level = opts?.level.toUpperCase() as LogLevel | undefined
       if (level && !Object.values(LogLevel).includes(level)) {
         throw new Error(`Invalid log level: ${level}`)
+      }
+
+      const format = opts?.format.toLowerCase() as LogFormat | undefined
+      if (format && !Object.values(LogFormat).includes(format)) {
+        throw new Error(`Invalid log format: ${format}`)
       }
 
       const apiKey = ensureAPIKey()
@@ -104,7 +116,9 @@ export const logsCommand = new commander.Command('logs')
       let isFirstRun = true
       let firstLogsPrinted = false
 
-      console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
+      if (format === LogFormat.PRETTY) {
+        console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
+      }
 
       const isRunningPromise = listSandboxes({ apiKey }).then(r => r.find(s => getLongID(s.sandboxID, s.clientID) === sandboxID)).then(s => !!s)
 
@@ -118,18 +132,22 @@ export const logsCommand = new commander.Command('logs')
           }
 
           for (const log of logs) {
-            printLog(log.timestamp, log.line, level)
+            printLog(log.timestamp, log.line, level, format)
           }
 
           const isRunning = await isRunningPromise
 
           if (!isRunning && logs.length === 0 && isFirstRun) {
-            console.log(`\nStopped printing logs — sandbox ${withUnderline('not found')}`)
+            if (format === LogFormat.PRETTY) {
+              console.log(`\nStopped printing logs — sandbox ${withUnderline('not found')}`)
+            }
             break
           }
 
           if (!isRunning) {
-            console.log(`\nStopped printing logs — sandbox is ${withUnderline('closed')}`)
+            if (format === LogFormat.PRETTY) {
+              console.log(`\nStopped printing logs — sandbox is ${withUnderline('closed')}`)
+            }
             break
           }
 
@@ -168,7 +186,7 @@ export const logsCommand = new commander.Command('logs')
     }
   })
 
-function printLog(timestamp: string, line: string, allowedLevel?: LogLevel) {
+function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined) {
   const log = JSON.parse(line)
 
   const time = `[${new Date(timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '')}]`
@@ -195,15 +213,19 @@ function printLog(timestamp: string, line: string, allowedLevel?: LogLevel) {
 
   delete log['traceID']
   delete log['instanceID']
-  delete log['sandboxID']
   delete log['source_type']
   delete log['teamID']
   delete log['source']
   delete log['service']
   delete log['envID']
-  delete log['level']
 
-  console.log(`${asTimestamp(time)} ${level} ` + util.inspect(log, { colors: true, depth: null, maxArrayLength: Infinity, sorted: true, compact: true, breakLength: Infinity }))
+  if (format === LogFormat.JSON) {
+    console.log(JSON.stringify(log))
+  } else {
+    delete log['sandboxID']
+    delete log['level']
+    console.log(`${asTimestamp(time)} ${level} ` + util.inspect(log, { colors: true, depth: null, maxArrayLength: Infinity, sorted: true, compact: true, breakLength: Infinity }))
+  }
 }
 
 export async function listSandboxLogs({
