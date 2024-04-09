@@ -130,6 +130,8 @@ build-and-upload-all:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/env-instance-task-driver build-and-upload
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/env-build-task-driver build-and-upload
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/template-delete-task-driver build-and-upload
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/fc-kernels build-and-upload
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/fc-versions build-and-upload
 
 .PHONY: update-api
 update-api:
