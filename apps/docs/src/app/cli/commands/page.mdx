@@ -270,13 +270,12 @@ You can use `e2b sandbox list` to get a list of running sandboxes and their IDs 
 <Options>
   <Option name="level" type="-l, --level">
     Filter logs by level — allowed values are `DEBUG`, `INFO`, `WARN`, `ERROR`.
-    Default value is `INFO`.
+    Default value is `DEBUG`.
   </Option>
   <Option type="-f, --follow">
     Enable streaming logs until the sandbox is closed.
   </Option>
-  <Option name="format" type="--format">
-  .option('--format <format>', 'keep streaming logs until the sandbox is closed', LogFormat.PRETTY)
-    Enable streaming logs until the sandbox is closed.
+  <Option type="-a, --all">
+    Print all logs from the sandbox — including the internal logs.
   </Option>
 </Options>
