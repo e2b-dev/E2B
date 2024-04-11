@@ -60,7 +60,7 @@ resource "nomad_job" "api" {
 
   hcl2 {
     vars = {
-      orchestrator_address          = "http://localhost:5008"
+      orchestrator_address          = "http://localhost:${var.orchestrator_port}"
       loki_address                  = "http://localhost:${var.loki_service_port.port}"
       gcp_zone                      = var.gcp_zone
       api_port_name                 = var.api_port.name
@@ -69,7 +69,7 @@ resource "nomad_job" "api" {
       postgres_connection_string    = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
       posthog_api_key               = data.google_secret_manager_secret_version.posthog_api_key.secret_data
       logs_proxy_address            = var.logs_proxy_address
-      nomad_address                 = "http://localhost:4646"
+      nomad_address                 = "http://localhost:${var.nomad_port}"
       nomad_token                   = var.nomad_acl_token_secret
       consul_token                  = var.consul_acl_token_secret
       environment                   = var.environment
@@ -185,7 +185,12 @@ resource "nomad_job" "orchestrator" {
   hcl2 {
     vars = {
       gcp_zone = var.gcp_zone
-      port     = 5008
+      port     = var.orchestrator_port
+
+      consul_token = var.consul_acl_token_secret
+
+      logs_proxy_address = var.logs_proxy_address
+      otel_tracing_print = "false"
     }
   }
 }

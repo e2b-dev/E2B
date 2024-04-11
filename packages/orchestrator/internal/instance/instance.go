@@ -3,8 +3,10 @@ package instance
 import (
 	"context"
 	"fmt"
+	consul "github.com/hashicorp/consul/api"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/api"
@@ -14,6 +16,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
+
+var logsProxyAddress = os.Getenv("LOGS_PROXY_ADDRESS")
 
 type Instance struct {
 	Files *InstanceFiles
@@ -35,10 +39,8 @@ type InstanceConfig struct {
 	EnvID                 string
 	AllocID               string
 	NodeID                string
-	ConsulToken           string
 	EnvsDisk              string
 	InstanceID            string
-	LogsProxyAddress      string
 	TraceID               string
 	TeamID                string
 	KernelVersion         string
@@ -53,6 +55,7 @@ type InstanceConfig struct {
 func NewInstance(
 	ctx context.Context,
 	tracer trace.Tracer,
+	consul *consul.Client,
 	config *InstanceConfig,
 	dns *DNS,
 	request *api.Sandbox,
@@ -68,9 +71,9 @@ func NewInstance(
 	ips, err := NewSlot(
 		childCtx,
 		tracer,
+		consul,
 		config.NodeID,
 		config.InstanceID,
-		config.ConsulToken,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get IP slot: %w", err)
@@ -82,7 +85,7 @@ func NewInstance(
 
 	defer func() {
 		if err != nil {
-			slotErr := ips.Release(childCtx, tracer)
+			slotErr := ips.Release(childCtx, tracer, consul)
 			if slotErr != nil {
 				errMsg := fmt.Errorf("error removing network namespace after failed instance start: %w", slotErr)
 				telemetry.ReportError(childCtx, errMsg)
@@ -157,7 +160,7 @@ func NewInstance(
 		&MmdsMetadata{
 			InstanceID: config.InstanceID,
 			EnvID:      config.EnvID,
-			Address:    config.LogsProxyAddress,
+			Address:    logsProxyAddress,
 			TraceID:    config.TraceID,
 			TeamID:     config.TeamID,
 		},
@@ -243,6 +246,7 @@ syncLoop:
 func (i *Instance) CleanupAfterFCStop(
 	ctx context.Context,
 	tracer trace.Tracer,
+	consul *consul.Client,
 	dns *DNS,
 ) {
 	childCtx, childSpan := tracer.Start(ctx, "delete-instance")
@@ -264,7 +268,7 @@ func (i *Instance) CleanupAfterFCStop(
 		telemetry.ReportEvent(childCtx, "deleted instance files")
 	}
 
-	err = i.Slot.Release(childCtx, tracer)
+	err = i.Slot.Release(childCtx, tracer, consul)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to release slot: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

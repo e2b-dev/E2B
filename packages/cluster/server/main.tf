@@ -10,7 +10,7 @@ resource "google_compute_health_check" "nomad_check" {
 
   http_health_check {
     request_path = "/v1/agent/health"
-    port         = "4646"
+    port         = var.nomad_port
   }
 }
 
@@ -24,7 +24,7 @@ resource "google_compute_instance_group_manager" "server_cluster" {
 
   named_port {
     name = "nomad"
-    port = 4646
+    port = var.nomad_port
   }
 
   named_port {

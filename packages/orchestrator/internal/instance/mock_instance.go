@@ -3,6 +3,7 @@ package instance
 import (
 	"context"
 	"fmt"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -10,24 +11,25 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-func MockInstance(envID, instanceID, consulToken string, dns *DNS, keepAlive time.Duration) {
+func MockInstance(envID, instanceID string, dns *DNS, keepAlive time.Duration) {
 	ctx, cancel := context.WithTimeout(context.WithValue(context.Background(), telemetry.DebugID, instanceID), time.Minute*3)
 	defer cancel()
 
 	tracer := otel.Tracer(fmt.Sprintf("instance-%s", instanceID))
 	childCtx, _ := tracer.Start(ctx, "mock-instance")
 
+	consulClient, err := consul.New(childCtx)
+
 	instance, err := NewInstance(
 		childCtx,
 		tracer,
+		consulClient,
 		&InstanceConfig{
 			EnvID:                 envID,
 			AllocID:               "test",
 			InstanceID:            instanceID,
 			TraceID:               "test",
 			TeamID:                "test",
-			ConsulToken:           consulToken,
-			LogsProxyAddress:      "",
 			NodeID:                "testtesttest",
 			EnvsDisk:              "/mnt/disks/fc-envs/v1",
 			KernelVersion:         "vmlinux-5.10.186",
@@ -49,7 +51,7 @@ func MockInstance(envID, instanceID, consulToken string, dns *DNS, keepAlive tim
 
 	time.Sleep(keepAlive)
 
-	defer instance.CleanupAfterFCStop(childCtx, tracer, dns)
+	defer instance.CleanupAfterFCStop(childCtx, tracer, consulClient, dns)
 
 	err = instance.FC.Stop(childCtx, tracer)
 	if err != nil {

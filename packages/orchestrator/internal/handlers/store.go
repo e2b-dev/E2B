@@ -5,17 +5,27 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
+
+	"github.com/gin-gonic/gin"
+	consulapi "github.com/hashicorp/consul/api"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/api"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/instance"
 	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 )
 
 const shortNodeIDLength = 8
+const fcVersionsDir = "/fc-versions"
+const kernelDir = "/fc-kernels"
+const kernelMountDir = "/fc-vm"
+const kernelName = "vmlinux.bin"
+const uffdBinaryName = "uffd"
+const fcBinaryName = "firecracker"
 
 var (
 	nodeID   = os.Getenv("NODE_ID")
@@ -27,6 +37,7 @@ type APIStore struct {
 	instances *smap.Map[*instance.Instance]
 	dns       *instance.DNS
 	tracer    trace.Tracer
+	consul    *consulapi.Client
 }
 
 func NewAPIStore() *APIStore {
@@ -39,9 +50,15 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
+	consulClient, err := consul.New(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	return &APIStore{
 		Ctx:       ctx,
 		tracer:    otel.Tracer("orchestrator"),
+		consul:    consulClient,
 		dns:       dns,
 		instances: smap.New[*instance.Instance](),
 	}
@@ -77,39 +94,25 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		return
 	}
 
-	// fcVersionsDir := "/fc-versions"
-	// uffdBinaryName := "uffd"
-	// fcBinaryName := "firecracker"
-
 	instance, err := instance.NewInstance(
 		ctx,
 		tracer,
+		a.consul,
 		&instance.InstanceConfig{
-			EnvID:            body.EnvID,
-			NodeID:           nodeID,
-			InstanceID:       body.InstanceID,
-			TraceID:          body.TraceID,
-			TeamID:           body.TeamID,
-			ConsulToken:      body.ConsulToken,
-			LogsProxyAddress: body.LogsProxyAddress,
-			// KernelVersion:         body.KernelVersion,
-			// EnvsDisk:              body.EnvsDisk,
-			// KernelsDir:            "/fc-kernels",
-			// KernelMountDir:        "/fc-vm",
-			// KernelName:            "vmlinux.bin",
-			HugePages: body.HugePages,
-			// UFFDBinaryPath:        filepath.Join(fcVersionsDir, body.FirecrackerVersion, uffdBinaryName),
-			// FirecrackerBinaryPath: filepath.Join(fcVersionsDir, body.FirecrackerVersion, fcBinaryName),
-
-			AllocID:        "alloc-id",
-			EnvsDisk:       "/mnt/disks/fc-envs/v1",
-			KernelVersion:  "vmlinux-5.10.186",
-			KernelMountDir: "/fc-vm",
-			KernelsDir:     "/fc-kernels",
-			KernelName:     "vmlinux.bin",
-			UFFDBinaryPath: "/fc-versions/v1.7.0-dev_8bb88311/uffd",
-			// HugePages:             true,
-			FirecrackerBinaryPath: "/fc-versions/v1.7.0-dev_8bb88311/firecracker",
+			EnvID:                 body.EnvID,
+			NodeID:                nodeID,
+			InstanceID:            body.InstanceID,
+			TraceID:               body.TraceID,
+			TeamID:                body.TeamID,
+			KernelVersion:         body.KernelVersion,
+			EnvsDisk:              body.EnvsDisk,
+			KernelsDir:            kernelDir,
+			KernelMountDir:        kernelMountDir,
+			KernelName:            kernelName,
+			HugePages:             body.HugePages,
+			UFFDBinaryPath:        filepath.Join(fcVersionsDir, body.FirecrackerVersion, uffdBinaryName),
+			FirecrackerBinaryPath: filepath.Join(fcVersionsDir, body.FirecrackerVersion, fcBinaryName),
+			AllocID:               "alloc-id",
 		},
 		a.dns,
 		&body,
@@ -129,7 +132,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	go func() {
 		tracer := otel.Tracer("close")
-		defer instance.CleanupAfterFCStop(context.Background(), tracer, a.dns)
+		defer instance.CleanupAfterFCStop(context.Background(), tracer, a.consul, a.dns)
 		defer a.instances.Remove(body.InstanceID)
 
 		err := instance.FC.Wait()
@@ -167,7 +170,7 @@ func (a *APIStore) DeleteSandboxesSandboxID(c *gin.Context, sandboxID string) {
 	}
 
 	err := instance.FC.Stop(ctx, tracer)
-	defer instance.CleanupAfterFCStop(ctx, tracer, a.dns)
+	defer instance.CleanupAfterFCStop(ctx, tracer, a.consul, a.dns)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to stop FC: %w", err)
 

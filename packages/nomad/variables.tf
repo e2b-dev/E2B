@@ -10,6 +10,10 @@ variable "nomad_acl_token_secret" {
   type = string
 }
 
+variable "nomad_port" {
+  type = number
+}
+
 # API
 variable "api_docker_image_digest" {
   type = string
@@ -176,4 +180,9 @@ variable "docker_reverse_proxy_port" {
 
 variable "docker_reverse_proxy_service_account_key" {
   type = string
+}
+
+# Orchestrator
+variable "orchestrator_port" {
+  type = number
 }

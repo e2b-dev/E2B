@@ -23,14 +23,12 @@ type Sandbox struct {
 	Alias              string  `json:"alias"`
 	BuildID            string  `json:"buildID"`
 	ClientID           *string `json:"clientID,omitempty"`
-	ConsulToken        string  `json:"consulToken"`
 	EnvID              string  `json:"envID"`
 	EnvsDisk           string  `json:"envsDisk"`
 	FirecrackerVersion string  `json:"firecrackerVersion"`
 	HugePages          bool    `json:"hugePages"`
 	InstanceID         string  `json:"instanceID"`
 	KernelVersion      string  `json:"kernelVersion"`
-	LogsProxyAddress   string  `json:"logsProxyAddress"`
 	MaxInstanceLength  int32   `json:"maxInstanceLength"`
 	Metadata           string  `json:"metadata"`
 	SpanID             string  `json:"spanID"`

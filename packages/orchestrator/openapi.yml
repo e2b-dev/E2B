@@ -33,13 +33,11 @@ components:
     Sandbox:
       required:
         - spanID
-        - consulToken
         - traceID
         - envID
         - buildID
         - alias
         - instanceID
-        - logsProxyAddress
         - kernelVersion
         - firecrackerVersion
         - envsDisk
@@ -50,8 +48,6 @@ components:
       properties:
         spanID:
           type: string
-        consulToken:
-          type: string
         traceID:
           type: string
         envID:
@@ -61,8 +57,6 @@ components:
         alias:
           type: string
         instanceID:
-          type: string
-        logsProxyAddress:
           type: string
         kernelVersion:
           type: string

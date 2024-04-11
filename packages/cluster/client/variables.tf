@@ -37,6 +37,11 @@ variable "service_account_email" {
   type        = string
 }
 
+variable "nomad_port" {
+  description = "The port on which Nomad will listen for incoming connections."
+  type        = number
+}
+
 
 # ---------------------------------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS

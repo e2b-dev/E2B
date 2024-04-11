@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/api"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/handlers"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/instance"
-	"github.com/e2b-dev/infra/packages/shared/pkg/env"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/api"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/handlers"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/test"
+	"github.com/e2b-dev/infra/packages/shared/pkg/env"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const (
@@ -44,21 +44,6 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 		"Origin",
 		"Content-Length",
 		"Content-Type",
-		// API Key header
-		"Authorization",
-		"X-API-Key",
-		// Custom headers sent from SDK
-		"browser",
-		"lang",
-		"lang_version",
-		"machine",
-		"os",
-		"package_version",
-		"processor",
-		"publisher",
-		"release",
-		"sdk_runtime",
-		"system",
 	}
 	r.Use(cors.New(config))
 
@@ -74,43 +59,6 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	return s
 }
 
-func test(envID, instanceID *string, keepAlive, count *int) bool {
-	if *envID != "" && *instanceID != "" {
-		// Start of mock build for testing
-		consulToken := os.Getenv("CONSUL_TOKEN")
-
-		dns, err := instance.NewDNS()
-		if err != nil {
-			panic(err)
-		}
-
-		groupSize := 1
-
-		for i := 0; i < *count; i++ {
-			func(in int, envID, instanceID string, count int) {
-				var wg sync.WaitGroup
-
-				for j := 0; j < groupSize; j++ {
-					wg.Add(1)
-
-					go func(jn int) {
-						defer wg.Done()
-						id := fmt.Sprintf("%s_%d", instanceID, in+jn*count)
-						fmt.Printf("\nSTARTING [%s]\n\n", id)
-						instance.MockInstance(envID, id, consulToken, dns, time.Duration(*keepAlive)*time.Second)
-					}(j)
-				}
-
-				wg.Wait()
-			}(i, *envID, *instanceID, *count)
-		}
-	} else {
-		return false
-	}
-
-	return true
-}
-
 func main() {
 	envID := flag.String("env", "", "env id")
 	instanceID := flag.String("instance", "", "instance id")
@@ -122,9 +70,11 @@ func main() {
 	debug := flag.String("true", "false", "is debug")
 	flag.Parse()
 
-	if test(envID, instanceID, keepAlive, count) {
+	// If we're running a test, we don't need to start the server
+	if test.Run(envID, instanceID, keepAlive, count) {
 		return
 	}
+
 	if *debug != "true" {
 		gin.SetMode(gin.ReleaseMode)
 	}

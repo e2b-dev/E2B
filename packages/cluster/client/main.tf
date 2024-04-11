@@ -7,7 +7,7 @@ resource "google_compute_health_check" "nomad_check" {
 
   http_health_check {
     request_path = "/v1/agent/health"
-    port         = "4646"
+    port         = var.nomad_port
   }
 }
 

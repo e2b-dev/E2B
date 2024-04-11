@@ -61,7 +61,7 @@ locals {
       connection_draining_timeout_sec = 1
       health_check = {
         request_path = "/v1/status/peers"
-        port         = 4646
+        port         = var.nomad_port
       }
       groups = [{ group = var.server_instance_group }]
     }
@@ -420,7 +420,7 @@ resource "google_compute_firewall" "orch_firewall_ingress" {
 
   allow {
     protocol = "tcp"
-    ports    = ["80", "8080", "4646", "3001", "3002", "3003", "30006", "44313", "50001", "8500"]
+    ports    = ["80", "8080", var.nomad_port, "3001", "3002", "3003", "30006", "44313", "50001", "8500"]
   }
 
   priority = 999

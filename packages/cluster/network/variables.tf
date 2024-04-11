@@ -64,6 +64,9 @@ variable "logs_health_proxy_port" {
   })
 }
 
+variable "nomad_port" {
+  type = number
+}
 
 variable "client_instance_group" {
   type = string

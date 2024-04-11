@@ -111,33 +111,11 @@ func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
-func getConsulKV(ctx context.Context, consulToken string) (*consul.KV, error) {
-	config := consul.DefaultConfig()
-	config.Token = consulToken
-
-	consulClient, err := consul.NewClient(config)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to initialize Consul client: %w", err)
-		telemetry.ReportCriticalError(ctx, errMsg)
-
-		return nil, errMsg
-	}
-
-	kv := consulClient.KV()
-
-	telemetry.ReportEvent(ctx, "initialized Consul client")
-
-	return kv, nil
-}
-
-func NewSlot(ctx context.Context, tracer trace.Tracer, nodeID, instanceID, consulToken string) (*IPSlot, error) {
+func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Client, nodeID, instanceID string) (*IPSlot, error) {
 	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
 	defer childSpan.End()
 
-	kv, err := getConsulKV(childCtx, consulToken)
-	if err != nil {
-		return nil, err
-	}
+	kv := consulClient.KV()
 
 	var slot *IPSlot
 
@@ -162,7 +140,6 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, nodeID, instanceID, consu
 				SlotIdx:     slotIdx,
 				NodeShortID: nodeShortID,
 				KVKey:       key,
-				ConsulToken: consulToken,
 			}, nil
 		}
 
@@ -233,7 +210,7 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, nodeID, instanceID, consu
 	return slot, nil
 }
 
-func (ips *IPSlot) Release(ctx context.Context, tracer trace.Tracer) error {
+func (ips *IPSlot) Release(ctx context.Context, tracer trace.Tracer, consulClient *consul.Client) error {
 	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot",
 		trace.WithAttributes(
 			attribute.String("instance.slot.kv.key", ips.KVKey),
@@ -243,10 +220,7 @@ func (ips *IPSlot) Release(ctx context.Context, tracer trace.Tracer) error {
 	)
 	defer childSpan.End()
 
-	kv, err := getConsulKV(childCtx, ips.ConsulToken)
-	if err != nil {
-		return err
-	}
+	kv := consulClient.KV()
 
 	pair, _, err := kv.Get(ips.KVKey, nil)
 	if err != nil {
