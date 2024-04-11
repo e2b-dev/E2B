@@ -68,11 +68,11 @@ function isLevelIncluded(level: LogLevel, allowedLevel?: LogLevel) {
     case LogLevel.DEBUG:
       return true
     case LogLevel.INFO:
-      return level === LogLevel.INFO
-    case LogLevel.WARN:
-      return level === LogLevel.INFO || level === LogLevel.WARN
-    case LogLevel.ERROR:
       return level === LogLevel.INFO || level === LogLevel.WARN || level === LogLevel.ERROR
+    case LogLevel.WARN:
+      return level === LogLevel.WARN || level === LogLevel.ERROR
+    case LogLevel.ERROR:
+      return level === LogLevel.ERROR
   }
 }
 
@@ -89,7 +89,6 @@ const userLoggers = [
   'filesystemSvc',
   'filesystemSvc.dirWatcher',
   'processSvc',
-  'terminalSvc',
 ]
 
 function cleanLogger(logger?: string) {
@@ -104,7 +103,7 @@ export const logsCommand = new commander.Command('logs')
   .description('show logs for sandbox')
   .argument('<sandboxID>', `show logs for sandbox specified by ${asBold('<sandboxID>')}`)
   .alias('lg')
-  .option('-l, --level <level>', `filter logs by level (${formatEnum(LogLevel)})`, LogLevel.INFO)
+  .option('-l, --level <level>', `filter logs by level (${formatEnum(LogLevel)})`, LogLevel.DEBUG)
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option('--format <format>', `specify format for printing logs (${formatEnum(LogFormat)})`, LogFormat.PRETTY)
   .option('--s <services>, --service <services>', 'filter logs by service', 'all')
@@ -210,7 +209,7 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
   const log = JSON.parse(line)
   let level = log['level'].toUpperCase()
 
-  if (!printAll && !userLoggers.includes(log.logger) || !log.logger) {
+  if (!printAll && (!userLoggers.includes(log.logger) || !log.logger)) {
     return
   }
 
