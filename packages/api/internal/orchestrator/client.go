@@ -1,4 +1,4 @@
-package analyticscollector
+package orchestrator
 
 import (
 	"context"
@@ -13,12 +13,12 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	e2bgrpc "github.com/e2b-dev/infra/packages/shared/pkg/grpc"
+	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 )
 
 var (
 	regex = regexp.MustCompile(`http[s]?://`)
-	host  = regex.ReplaceAllString(os.Getenv("ANALYTICS_COLLECTOR_HOST"), "")
+	host  = regex.ReplaceAllString(os.Getenv("ORCHESTRATOR_ADDRESS"), "")
 )
 
 type ClientConnInterface interface {
@@ -27,20 +27,14 @@ type ClientConnInterface interface {
 	Close() error
 }
 
-type Analytics struct {
-	Client     AnalyticsCollectorClient
+type GRPCClient struct {
+	Client     orchestrator.SandboxesServiceClient
 	connection ClientConnInterface
 }
 
 func getConnection() (ClientConnInterface, error) {
-	if host == "" {
-		fmt.Println("Analytics collector not set, using dummy connection")
-
-		return &e2bgrpc.DummyConn{}, nil
-	}
-
 	if strings.HasPrefix(host, "localhost") {
-		conn, err := grpc.Dial(host, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithPerRPCCredentials(&gRPCApiKey{}))
+		conn, err := grpc.Dial(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial: %w", err)
 		}
@@ -60,7 +54,7 @@ func getConnection() (ClientConnInterface, error) {
 		MinVersion: tls.VersionTLS13,
 	})
 
-	conn, err := grpc.Dial(host+":443", grpc.WithAuthority(host), grpc.WithTransportCredentials(cred), grpc.WithPerRPCCredentials(&gRPCApiKey{}))
+	conn, err := grpc.Dial(host, grpc.WithAuthority(host), grpc.WithTransportCredentials(cred))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial: %w", err)
@@ -69,18 +63,18 @@ func getConnection() (ClientConnInterface, error) {
 	return conn, nil
 }
 
-func NewAnalytics() (*Analytics, error) {
+func NewClient() (*GRPCClient, error) {
 	conn, err := getConnection()
 	if err != nil {
 		return nil, fmt.Errorf("failed to establish GRPC connection: %w", err)
 	}
 
-	client := NewAnalyticsCollectorClient(conn)
+	client := orchestrator.NewSandboxesServiceClient(conn)
 
-	return &Analytics{Client: client, connection: conn}, nil
+	return &GRPCClient{Client: client, connection: conn}, nil
 }
 
-func (a *Analytics) Close() error {
+func (a *GRPCClient) Close() error {
 	err := a.connection.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close connection: %w", err)

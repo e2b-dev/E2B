@@ -5,39 +5,20 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"os"
-	"time"
-
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
-const (
-	envsDisk = "/mnt/disks/fc-envs/v1"
-
-	instanceJobName          = "env-instance"
-	instanceJobNameWithSlash = instanceJobName + "/"
-	InstanceIDPrefix         = "i"
-
-	instanceStartTimeout = time.Second * 20
-)
-
-var (
-	logsProxyAddress = os.Getenv("LOGS_PROXY_ADDRESS")
-	consulToken      = os.Getenv("CONSUL_TOKEN")
-)
-
 func (o *Orchestrator) CreateSandbox(
 	t trace.Tracer,
 	ctx context.Context,
-	instanceID,
-	envID,
+	sandboxID,
+	templateID,
 	alias,
 	teamID,
 	buildID string,
@@ -46,9 +27,9 @@ func (o *Orchestrator) CreateSandbox(
 	kernelVersion,
 	firecrackerVersion string,
 ) (*api.Sandbox, error) {
-	childCtx, childSpan := t.Start(ctx, "create-instance",
+	childCtx, childSpan := t.Start(ctx, "create-sandbox",
 		trace.WithAttributes(
-			attribute.String("env.id", envID),
+			attribute.String("env.id", templateID),
 		),
 	)
 	defer childSpan.End()
@@ -80,17 +61,14 @@ func (o *Orchestrator) CreateSandbox(
 
 	telemetry.ReportEvent(childCtx, "Got FC version info")
 
-	res, err := o.client.PostSandboxes(ctx, PostSandboxesJSONRequestBody{
-		EnvID:              envID,
+	res, err := o.grpc.Client.SandboxCreate(ctx, &orchestrator.SandboxCreateRequest{
+		TemplateID:         templateID,
 		Alias:              alias,
 		TeamID:             teamID,
 		BuildID:            buildID,
-		InstanceID:         instanceID,
+		SandboxID:          sandboxID,
 		TraceID:            traceID,
-		ConsulToken:        consulToken,
-		LogsProxyAddress:   logsProxyAddress,
 		KernelVersion:      kernelVersion,
-		EnvsDisk:           envsDisk,
 		FirecrackerVersion: firecrackerVersion,
 		Metadata:           string(metadataSerialized),
 		MaxInstanceLength:  int32(maxInstanceLengthHours),
@@ -98,44 +76,17 @@ func (o *Orchestrator) CreateSandbox(
 		SpanID:             spanID,
 	})
 	if err != nil {
-		errMsg := fmt.Errorf("failed to create instance of environment '%s': %w", envID, err)
+		errMsg := fmt.Errorf("failed to create sandbox of environment '%s': %w", templateID, err)
 
-		return nil, fmt.Errorf("failed to create instance of environment '%s': %w", envID, errMsg)
+		return nil, fmt.Errorf("failed to create sandbox of environment '%s': %w", templateID, errMsg)
 	}
 
-	if res == nil {
-		errMsg := fmt.Errorf("failed to create instance of environment '%s'", envID)
-
-		return nil, fmt.Errorf("failed to create instance of environment '%s': %w", envID, errMsg)
-	}
-
-	if res.StatusCode != http.StatusCreated {
-		errMsg := fmt.Errorf("failed to create instance of environment '%s': %s", envID, res.Status)
-
-		return nil, fmt.Errorf("failed to create instance of environment '%s': %w", envID, errMsg)
-	}
-
-	telemetry.ReportEvent(childCtx, "Created instance")
-
-	body, bodyErr := utils.ParseJSONBody[NewSandbox](ctx, res.Body)
-	if bodyErr != nil {
-		errMsg := fmt.Errorf("failed to parse response body: %w", bodyErr)
-
-		return nil, fmt.Errorf("failed to parse response body: %w", errMsg)
-	}
-
-	telemetry.ReportEvent(childCtx, "Parsed response body")
-
-	if body == nil {
-		errMsg := fmt.Errorf("failed to parse response body")
-
-		return nil, fmt.Errorf("failed to parse response body: %w", errMsg)
-	}
+	telemetry.ReportEvent(childCtx, "Created sandbox")
 
 	return &api.Sandbox{
-		ClientID:   body.ClientID,
-		SandboxID:  instanceID,
-		TemplateID: envID,
+		ClientID:   res.ClientID,
+		SandboxID:  sandboxID,
+		TemplateID: templateID,
 		Alias:      &alias,
 	}, nil
 }

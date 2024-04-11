@@ -3,21 +3,16 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-	"net/http"
+	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 )
 
-func (o *Orchestrator) DeleteInstance(ctx context.Context, instanceID string) error {
-	res, err := o.client.DeleteSandboxesSandboxID(ctx, instanceID)
+func (o *Orchestrator) DeleteInstance(ctx context.Context, sandboxID string) error {
+	_, err := o.grpc.Client.SandboxDelete(ctx, &orchestrator.SandboxRequest{
+		SandboxID: sandboxID,
+	})
+
 	if err != nil {
-		return fmt.Errorf("failed to delete sandbox '%s': %w", instanceID, err)
-	}
-
-	if res == nil {
-		return fmt.Errorf("failed to delete sandbox '%s'", instanceID)
-	}
-
-	if res.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("failed to delete sandbox '%s': %s", instanceID, res.Status)
+		return fmt.Errorf("failed to delete sandbox '%s': %w", sandboxID, err)
 	}
 
 	return nil

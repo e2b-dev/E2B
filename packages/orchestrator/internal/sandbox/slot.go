@@ -1,8 +1,9 @@
-package instance
+package sandbox
 
 import (
 	"context"
 	"fmt"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
 	"math/rand"
 	"slices"
 
@@ -28,10 +29,9 @@ const (
 type IPSlot struct {
 	ConsulToken string
 
-	InstanceID  string
-	NodeShortID string
-	KVKey       string
-	SlotIdx     int
+	InstanceID string
+	KVKey      string
+	SlotIdx    int
 }
 
 func (ips *IPSlot) VpeerName() string {
@@ -111,15 +111,13 @@ func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
-func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Client, nodeID, instanceID string) (*IPSlot, error) {
+func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Client, instanceID string) (*IPSlot, error) {
 	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
 	defer childSpan.End()
 
 	kv := consulClient.KV()
 
 	var slot *IPSlot
-
-	nodeShortID := nodeID[:8]
 
 	trySlot := func(slotIdx int, key string) (*IPSlot, error) {
 		status, _, err := kv.CAS(&consul.KVPair{
@@ -136,10 +134,9 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Clie
 
 		if status {
 			return &IPSlot{
-				InstanceID:  instanceID,
-				SlotIdx:     slotIdx,
-				NodeShortID: nodeShortID,
-				KVKey:       key,
+				InstanceID: instanceID,
+				SlotIdx:    slotIdx,
+				KVKey:      key,
 			}, nil
 		}
 
@@ -148,7 +145,7 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Clie
 
 	for randomTry := 1; randomTry <= 10; randomTry++ {
 		slotIdx := rand.Intn(IPSlotsSize)
-		key := fmt.Sprintf("%s/%d", nodeShortID, slotIdx)
+		key := fmt.Sprintf("%s/%d", constants.ClientID, slotIdx)
 
 		maybeSlot, err := trySlot(slotIdx, key)
 		if err != nil {
@@ -166,13 +163,13 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Clie
 		// This is a fallback for the case when all slots are taken.
 		// There is no Consul lock so it's possible that multiple instances will try to acquire the same slot.
 		// In this case, only one of them will succeed and other will try with different slots.
-		reservedKeys, _, keysErr := kv.Keys(nodeShortID+"/", "", nil)
+		reservedKeys, _, keysErr := kv.Keys(constants.ClientID+"/", "", nil)
 		if keysErr != nil {
 			return nil, fmt.Errorf("failed to read Consul KV: %w", keysErr)
 		}
 
 		for slotIdx := 0; slotIdx < IPSlotsSize; slotIdx++ {
-			key := fmt.Sprintf("%s/%d", nodeShortID, slotIdx)
+			key := fmt.Sprintf("%s/%d", constants.ClientID, slotIdx)
 
 			if slices.Contains(reservedKeys, key) {
 				continue
@@ -203,7 +200,7 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Clie
 	telemetry.SetAttributes(
 		childCtx,
 		attribute.String("instance.slot.kv.key", slot.KVKey),
-		attribute.String("instance.slot.node.short_id", slot.NodeShortID),
+		attribute.String("instance.slot.node.short_id", constants.ClientID),
 		attribute.String("instance.id", slot.InstanceID),
 	)
 
@@ -214,7 +211,7 @@ func (ips *IPSlot) Release(ctx context.Context, tracer trace.Tracer, consulClien
 	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot",
 		trace.WithAttributes(
 			attribute.String("instance.slot.kv.key", ips.KVKey),
-			attribute.String("instance.slot.node.short_id", ips.NodeShortID),
+			attribute.String("instance.slot.node.short_id", constants.ClientID),
 			attribute.String("instance.id", ips.InstanceID),
 		),
 	)

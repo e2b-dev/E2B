@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option go_package = "https://github.com/e2b-dev/infra/orchestrator";
+
+
+
+message SandboxCreateRequest {
+  string spanID = 1;
+  string traceID = 2;
+  string templateID = 3;
+  string buildID = 4;
+  string alias = 5;
+  string sandboxID = 6;
+  string kernelVersion = 7;
+  string firecrackerVersion = 8;
+  string teamID = 9;
+  int32 maxInstanceLength = 10;
+  string metadata = 11;
+  bool hugePages = 12;
+}
+
+message SandboxDetail {
+  string templateID = 1;
+  string buildID = 2;
+  string alias = 3;
+  string sandboxID = 4;
+  string teamID = 5;
+  string metadata = 6;
+  int32 maxInstanceLength = 7;
+  string clientID = 8;
+}
+
+message NewSandbox {
+  string sandboxID = 1;
+  string clientID = 2;
+}
+
+message SandboxRequest {
+  string sandboxID = 1;
+}
+
+message SandboxListResponse {
+  repeated SandboxDetail sandboxes = 1;
+}
+
+
+// Interface exported by the server.
+service SandboxesService {
+  //  SandboxList is a gRPC service that returns a list of all the sandboxes.
+  rpc SandboxCreate (SandboxCreateRequest) returns (NewSandbox);
+  rpc SandboxList (google.protobuf.Empty) returns (SandboxListResponse);
+  rpc SandboxDelete (SandboxRequest) returns (google.protobuf.Empty);
+}
+

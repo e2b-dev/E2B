@@ -5,17 +5,16 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"github.com/golang/protobuf/ptypes/empty"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/google/uuid"
 )
 
 func (o *Orchestrator) GetInstances(ctx context.Context) ([]*instance.InstanceInfo, error) {
-	res, err := o.client.GetSandboxes(ctx)
+	res, err := o.grpc.Client.SandboxList(ctx, &empty.Empty{})
 	if err != nil {
 		return nil, err
 	}
@@ -24,20 +23,11 @@ func (o *Orchestrator) GetInstances(ctx context.Context) ([]*instance.InstanceIn
 		return nil, fmt.Errorf("failed to get sandboxes")
 	}
 
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get sandboxes: %v", res.Status)
-	}
-
-	body, err := utils.ParseJSONBody[[]Sandbox](ctx, res.Body)
-	if err != nil {
-		return nil, err
-	}
-
 	instances := make([]*instance.InstanceInfo, 0)
 
-	for _, sbx := range *body {
-		instanceID := sbx.InstanceID
-		envID := sbx.EnvID
+	for _, sbx := range res.GetSandboxes() {
+		instanceID := sbx.SandboxID
+		envID := sbx.TemplateID
 		buildID := sbx.BuildID
 		aliasRaw := sbx.Alias
 		teamID := sbx.TeamID
@@ -77,22 +67,12 @@ func (o *Orchestrator) GetInstances(ctx context.Context) ([]*instance.InstanceIn
 			alias = &aliasRaw
 		}
 
-		var clientID string
-
-		if sbx.ClientID == nil {
-			fmt.Errorf("client ID is nil for job %s\n", instanceID)
-
-			clientID = ""
-		} else {
-			clientID = *sbx.ClientID
-		}
-
 		instances = append(instances, &instance.InstanceInfo{
 			Instance: &api.Sandbox{
 				SandboxID:  instanceID,
 				TemplateID: envID,
 				Alias:      alias,
-				ClientID:   clientID,
+				ClientID:   sbx.ClientID,
 			},
 			BuildID:           buildUUID,
 			TeamID:            teamUUID,

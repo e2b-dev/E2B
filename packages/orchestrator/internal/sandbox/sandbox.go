@@ -1,34 +1,33 @@
-package instance
+package sandbox
 
 import (
 	"context"
 	"fmt"
+	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	consul "github.com/hashicorp/consul/api"
 	"io"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/api"
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
 var logsProxyAddress = os.Getenv("LOGS_PROXY_ADDRESS")
 
-type Instance struct {
+type Sandbox struct {
 	Files *InstanceFiles
 	Slot  *IPSlot
 	FC    *FC
 
-	Request *api.Sandbox
+	Info *orchestrator.SandboxDetail
 
 	config *InstanceConfig
 
-	EnvID string
+	TemplateID string
 }
 
 var httpClient = http.Client{
@@ -36,11 +35,8 @@ var httpClient = http.Client{
 }
 
 type InstanceConfig struct {
-	EnvID                 string
-	AllocID               string
-	NodeID                string
-	EnvsDisk              string
-	InstanceID            string
+	TemplateID            string
+	SandboxID             string
 	TraceID               string
 	TeamID                string
 	KernelVersion         string
@@ -52,28 +48,23 @@ type InstanceConfig struct {
 	HugePages             bool
 }
 
-func NewInstance(
+func New(
 	ctx context.Context,
 	tracer trace.Tracer,
 	consul *consul.Client,
 	config *InstanceConfig,
 	dns *DNS,
-	request *api.Sandbox,
-) (*Instance, error) {
+	sandboxRequest *orchestrator.SandboxCreateRequest,
+) (*Sandbox, error) {
 	childCtx, childSpan := tracer.Start(ctx, "new-instance")
 	defer childSpan.End()
-
-	telemetry.SetAttributes(childCtx,
-		attribute.String("alloc.id", config.AllocID),
-	)
 
 	// Get slot from Consul KV
 	ips, err := NewSlot(
 		childCtx,
 		tracer,
 		consul,
-		config.NodeID,
-		config.InstanceID,
+		config.SandboxID,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get IP slot: %w", err)
@@ -121,8 +112,7 @@ func NewInstance(
 		childCtx,
 		tracer,
 		ips,
-		config.EnvID,
-		config.EnvsDisk,
+		config.TemplateID,
 		config.KernelVersion,
 		config.KernelsDir,
 		config.KernelMountDir,
@@ -158,8 +148,8 @@ func NewInstance(
 		ips,
 		fsEnv,
 		&MmdsMetadata{
-			InstanceID: config.InstanceID,
-			EnvID:      config.EnvID,
+			InstanceID: config.SandboxID,
+			EnvID:      config.TemplateID,
 			Address:    logsProxyAddress,
 			TraceID:    config.TraceID,
 			TeamID:     config.TeamID,
@@ -176,32 +166,40 @@ func NewInstance(
 
 	telemetry.ReportEvent(childCtx, "initialized FC")
 
-	instance := &Instance{
-		EnvID: config.EnvID,
-		Files: fsEnv,
-		Slot:  ips,
-		FC:    fc,
+	instance := &Sandbox{
+		TemplateID: config.TemplateID,
+		Files:      fsEnv,
+		Slot:       ips,
+		FC:         fc,
 
-		Request: request,
-		config:  config,
+		Info: &orchestrator.SandboxDetail{
+			SandboxID:         config.SandboxID,
+			TemplateID:        config.TemplateID,
+			BuildID:           sandboxRequest.BuildID,
+			TeamID:            config.TeamID,
+			Metadata:          sandboxRequest.Metadata,
+			Alias:             sandboxRequest.Alias,
+			MaxInstanceLength: sandboxRequest.MaxInstanceLength,
+		},
+		config: config,
 	}
 
 	telemetry.ReportEvent(childCtx, "ensuring clock sync")
 	go func() {
-		context := context.Background()
+		backgroundCtx := context.Background()
 
-		clockErr := instance.EnsureClockSync(context)
+		clockErr := instance.EnsureClockSync(backgroundCtx)
 		if clockErr != nil {
-			telemetry.ReportError(context, fmt.Errorf("failed to sync clock: %w", clockErr))
+			telemetry.ReportError(backgroundCtx, fmt.Errorf("failed to sync clock: %w", clockErr))
 		} else {
-			telemetry.ReportEvent(context, "clock synced")
+			telemetry.ReportEvent(backgroundCtx, "clock synced")
 		}
 	}()
 
 	return instance, nil
 }
 
-func (i *Instance) syncClock(ctx context.Context) error {
+func (i *Sandbox) syncClock(ctx context.Context) error {
 	address := fmt.Sprintf("http://%s:%d/sync", i.Slot.HostSnapshotIP(), consts.DefaultEnvdServerPort)
 
 	request, err := http.NewRequestWithContext(ctx, "POST", address, nil)
@@ -223,7 +221,7 @@ func (i *Instance) syncClock(ctx context.Context) error {
 	return nil
 }
 
-func (i *Instance) EnsureClockSync(ctx context.Context) error {
+func (i *Sandbox) EnsureClockSync(ctx context.Context) error {
 syncLoop:
 	for {
 		select {
@@ -243,7 +241,7 @@ syncLoop:
 	return nil
 }
 
-func (i *Instance) CleanupAfterFCStop(
+func (i *Sandbox) CleanupAfterFCStop(
 	ctx context.Context,
 	tracer trace.Tracer,
 	consul *consul.Client,

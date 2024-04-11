@@ -1,4 +1,4 @@
-package instance
+package sandbox
 
 import (
 	"context"
@@ -19,6 +19,7 @@ const (
 	RootfsName   = "rootfs.ext4"
 	SnapfileName = "snapfile"
 	MemfileName  = "memfile"
+	envsDisk     = "/mnt/disks/fc-envs/v1"
 
 	BuildDirName        = "builds"
 	EnvInstancesDirName = "env-instances"
@@ -73,7 +74,6 @@ func newInstanceFiles(
 	tracer trace.Tracer,
 	slot *IPSlot,
 	envID,
-	envsDisk,
 	kernelVersion,
 	kernelsDir,
 	kernelMountDir,
@@ -115,8 +115,8 @@ func newInstanceFiles(
 	}
 
 	err = reflink.Always(
-		filepath.Join(envPath, "rootfs.ext4"),
-		filepath.Join(envInstancePath, "rootfs.ext4"),
+		filepath.Join(envPath, RootfsName),
+		filepath.Join(envInstancePath, RootfsName),
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("error creating reflinked rootfs: %w", err)

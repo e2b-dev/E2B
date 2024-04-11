@@ -41,7 +41,3 @@ run:
 profiler:
 	go tool pprof -http :9991 http://localhost:3000/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
 
-
-.PHONY: generate-orchestrator
-generate-orchestrator:
-	$(codegen) -old-config-style -package=orchestrator -generate=types,client,spec -o=internal/orchestrator/client.gen.go ../orchestrator/openapi.yml

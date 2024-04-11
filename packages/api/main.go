@@ -137,7 +137,7 @@ func main() {
 		defer shutdown()
 	}
 
-	// Create an instance of our handler which satisfies the generated interface
+	// Create an sandbox of our handler which satisfies the generated interface
 	apiStore := handlers.NewAPIStore()
 	defer apiStore.Close()
 

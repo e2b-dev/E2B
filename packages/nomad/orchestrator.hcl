@@ -41,12 +41,12 @@ job "orchestrator" {
       port = var.port
 
       check {
-        type     = "http"
-        name     = "health"
-        path     = "/health"
-        interval = "20s"
-        timeout  = "5s"
-        port     = var.port
+        type         = "grpc"
+        name         = "health"
+        interval     = "20s"
+        timeout      = "5s"
+        grpc_use_tls = false
+        port         = var.port
       }
     }
 

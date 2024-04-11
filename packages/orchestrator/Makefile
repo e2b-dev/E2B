@@ -7,11 +7,11 @@ codegen := go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 
 .PHONY: generate
 generate:
-	rm -rf internal/db/ent
-	go generate ./internal/db/schema/generate.go
-	$(codegen) -old-config-style -generate gin --package api $(openapi) > internal/api/api.gen.go
-	$(codegen) -old-config-style -generate types --package api $(openapi) > internal/api/types.gen.go
-	$(codegen) -old-config-style -generate spec --package api $(openapi) > internal/api/spec.gen.go
+	# You need to install protobuf (brew install protobuf) and following go packages: protoc-gen-go, protoc-gen-go-grpc
+	# https://grpc.io/docs/languages/go/quickstart/
+	@echo "Generating..."
+	@protoc --go_out=../shared/pkg/grpc/orchestrator/ --go_opt=paths=source_relative --go-grpc_out=../shared/pkg/grpc/orchestrator/ --go-grpc_opt=paths=source_relative spec.proto
+	@echo "Done"
 
 .PHONY: build
 build:

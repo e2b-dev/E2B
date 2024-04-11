@@ -1,4 +1,4 @@
-package instance
+package sandbox
 
 import (
 	"context"
@@ -20,18 +20,15 @@ func MockInstance(envID, instanceID string, dns *DNS, keepAlive time.Duration) {
 
 	consulClient, err := consul.New(childCtx)
 
-	instance, err := NewInstance(
+	instance, err := New(
 		childCtx,
 		tracer,
 		consulClient,
 		&InstanceConfig{
-			EnvID:                 envID,
-			AllocID:               "test",
-			InstanceID:            instanceID,
+			TemplateID:            envID,
+			SandboxID:             instanceID,
 			TraceID:               "test",
 			TeamID:                "test",
-			NodeID:                "testtesttest",
-			EnvsDisk:              "/mnt/disks/fc-envs/v1",
 			KernelVersion:         "vmlinux-5.10.186",
 			KernelMountDir:        "/fc-vm",
 			KernelsDir:            "/fc-kernels",
@@ -47,7 +44,7 @@ func MockInstance(envID, instanceID string, dns *DNS, keepAlive time.Duration) {
 		panic(err)
 	}
 
-	fmt.Println("[Instance is running]")
+	fmt.Println("[Sandbox is running]")
 
 	time.Sleep(keepAlive)
 

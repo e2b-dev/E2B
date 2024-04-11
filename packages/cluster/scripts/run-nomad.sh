@@ -454,6 +454,16 @@ function run {
   fi
 
   generate_supervisor_config "$SUPERVISOR_CONFIG_PATH" "$config_dir" "$data_dir" "$bin_dir" "$log_dir" "$user" "$use_sudo"
+
+  if [[ "$client" == "true" ]]; then
+     log_info "Waiting for Nomad servers to start"
+     while test -z "$(curl -s http://127.0.0.1:4646/v1/agent/leader)"
+     do
+       log_info "Nomad servers not yet started. Waiting for 1 second."
+       sleep 1
+     done
+  fi
+
   start_nomad
 
   if [[ "$server" == "true" ]]; then

@@ -3,30 +3,27 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 )
 
-var orchestratorAddress = os.Getenv("ORCHESTRATOR_ADDRESS")
-
 type Orchestrator struct {
-	client *Client
+	grpc *GRPCClient
 }
 
 func New() (*Orchestrator, error) {
-	client, err := NewClient(orchestratorAddress)
+	client, err := NewClient()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Orchestrator{
-		client: client,
+		grpc: client,
 	}, nil
 }
 
-// Sync the cache with the actual instances in Nomad to handle instances that died.
+// KeepInSync the cache with the actual instances in Nomad to handle instances that died.
 func (o *Orchestrator) KeepInSync(ctx context.Context, instanceCache *instance.InstanceCache) {
 	for {
 		time.Sleep(instance.CacheSyncTime)

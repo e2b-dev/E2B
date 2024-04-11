@@ -1,4 +1,4 @@
-package analyticscollector
+package grpc
 
 import (
 	"context"

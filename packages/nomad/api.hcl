@@ -18,22 +18,12 @@ variable "api_port_number" {
   default = 0
 }
 
-variable "consul_token" {
-  type    = string
-  default = ""
-}
-
 variable "nomad_token" {
   type    = string
   default = ""
 }
 
 variable "nomad_address" {
-  type    = string
-  default = ""
-}
-
-variable "logs_proxy_address" {
   type    = string
   default = ""
 }
@@ -145,10 +135,8 @@ job "orchestration-api" {
 
       env {
         ORCHESTRATOR_ADDRESS          = var.orchestrator_address
-        LOGS_PROXY_ADDRESS            = var.logs_proxy_address
         NOMAD_ADDRESS                 = var.nomad_address
         NOMAD_TOKEN                   = var.nomad_token
-        CONSUL_TOKEN                  = var.consul_token
         POSTGRES_CONNECTION_STRING    = var.postgres_connection_string
         POSTHOG_API_KEY               = var.posthog_api_key
         ENVIRONMENT                   = var.environment

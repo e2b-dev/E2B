@@ -2,15 +2,16 @@ package test
 
 import (
 	"fmt"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/instance"
 	"sync"
 	"time"
+
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
 )
 
 func Run(envID, instanceID *string, keepAlive, count *int) bool {
 	if *envID != "" && *instanceID != "" {
 		// Start of mock build for testing
-		dns, err := instance.NewDNS()
+		dns, err := sandbox.NewDNS()
 		if err != nil {
 			panic(err)
 		}
@@ -28,7 +29,7 @@ func Run(envID, instanceID *string, keepAlive, count *int) bool {
 						defer wg.Done()
 						id := fmt.Sprintf("%s_%d", instanceID, in+jn*count)
 						fmt.Printf("\nSTARTING [%s]\n\n", id)
-						instance.MockInstance(envID, id, dns, time.Duration(*keepAlive)*time.Second)
+						sandbox.MockInstance(envID, id, dns, time.Duration(*keepAlive)*time.Second)
 					}(j)
 				}
 
