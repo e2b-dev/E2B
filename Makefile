@@ -92,13 +92,12 @@ apply-without-jobs:
 destroy:
 	@ printf "Destroying Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
 	./scripts/confirm.sh $(ENV)
-	DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | grep -v -e "fc_envs_disk" -e "buckets" | uniq | awk '{print "-target=" $$0 ""}' | xargs)
+	echo $(terraform state list | grep module | cut -d'.' -f1,2 | grep -v -e "fc_envs_disk" -e "buckets" | uniq | awk '{print "-target=" $0 ""}' | xargs)
 	$(tf_vars) \
 	terraform destroy \
 	-input=false \
 	-compact-warnings \
-	-parallelism=20 \
-  	$(DESTROY_TARGETS)
+	-parallelism=20
 
 
 .PHONY: version
@@ -126,7 +125,8 @@ build-all:
 build-and-upload-all:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/envd build-and-upload
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) make update-api
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/env-instance-task-driver build-and-upload
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/docker-reverse-proxy build-and-upload
+
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/env-build-task-driver build-and-upload
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/template-delete-task-driver build-and-upload
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/orchestrator build-and-upload
