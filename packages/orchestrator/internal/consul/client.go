@@ -3,9 +3,11 @@ package consul
 import (
 	"context"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-	consul "github.com/hashicorp/consul/api"
 	"os"
+
+	consul "github.com/hashicorp/consul/api"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 var consulToken = os.Getenv("CONSUL_TOKEN")
