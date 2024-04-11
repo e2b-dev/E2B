@@ -240,6 +240,7 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
   delete log['source']
   delete log['service']
   delete log['envID']
+  delete log['sandboxID']
 
   log.logger = cleanLogger(log.logger)
 
@@ -251,7 +252,6 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
     }))
   } else {
     const time = `[${new Date(timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '')}]`
-    delete log['sandboxID']
     delete log['level']
     console.log(`${asTimestamp(time)} ${level} ` + util.inspect(log, { colors: true, depth: null, maxArrayLength: Infinity, sorted: true, compact: true, breakLength: Infinity }))
   }
