@@ -32,3 +32,6 @@ update:
 
 test:
 	sudo CONSUL_TOKEN=$(CONSUL_TOKEN) go run -race -gcflags=all="-N -l" main.go -env idnrwvs3vrde6hknozc0 -instance test-instance-1 -alive 60 -count 1
+
+.PHONY: build-and-upload
+build-and-upload: build upload
