@@ -48,12 +48,8 @@ job "orchestrator" {
       }
 
       config {
-        command = "/usr/bin/bash"
-        args = [
-          "-l",
-          "-c",
-          "cp /mnt/disks/envs-pipeline/orchestrator /orchestrator && chmod +x /orchestrator && sudo NODE_ID=${node.unique.id} /orchestrator --port ${var.port}",
-        ]
+        command = "/bin/nomad/orchestrator"
+        args    = ["-port", "${var.port}"]
       }
     }
   }
