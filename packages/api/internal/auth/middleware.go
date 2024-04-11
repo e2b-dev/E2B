@@ -1,4 +1,4 @@
-package middleware
+package auth
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	middleware "github.com/oapi-codegen/gin-middleware"
 
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 )
 
@@ -89,7 +88,7 @@ func CreateAuthenticationFunc(teamValidationFunction func(context.Context, strin
 		prefix:             "e2b_",
 		removePrefix:       "",
 		validationFunction: teamValidationFunction,
-		contextKey:         constants.TeamContextKey,
+		contextKey:         TeamContextKey,
 		errorMessage:       "Invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key.",
 	}
 	accessTokenValidator := authenticator[uuid.UUID]{
@@ -98,7 +97,7 @@ func CreateAuthenticationFunc(teamValidationFunction func(context.Context, strin
 		prefix:             "sk_e2b_",
 		removePrefix:       "Bearer ",
 		validationFunction: userValidationFunction,
-		contextKey:         constants.UserIDContextKey,
+		contextKey:         UserIDContextKey,
 		errorMessage:       "Invalid Access token, try to login again by running `e2b login`.",
 	}
 

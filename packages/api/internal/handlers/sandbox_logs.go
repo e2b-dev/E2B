@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"net/http"
 	"strings"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
@@ -31,7 +31,7 @@ func (a *APIStore) GetSandboxesSandboxIDLogs(
 	ctx := c.Request.Context()
 	sandboxID = utils.ShortID(sandboxID)
 
-	teamID := c.Value(constants.TeamContextKey).(models.Team).ID
+	teamID := c.Value(auth.TeamContextKey).(models.Team).ID
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("instance.id", sandboxID),

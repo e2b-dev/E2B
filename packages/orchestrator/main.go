@@ -16,6 +16,9 @@ import (
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/test"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+
+	customMiddleware "github.com/e2b-dev/infra/packages/shared/pkg/gin_utils/middleware"
+	tracingMiddleware "github.com/e2b-dev/infra/packages/shared/pkg/gin_utils/middleware/otel/tracing"
 )
 
 const (
@@ -30,6 +33,16 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	swagger.Servers = nil
 
 	r := gin.New()
+
+	r.Use(
+		// We use custom otel gin middleware because we want to log 4xx errors in the otel
+		customMiddleware.ExcludeRoutes(tracingMiddleware.Middleware(serviceName), "/health"),
+		// customMiddleware.IncludeRoutes(metricsMiddleware.Middleware(serviceName), "/instances"),
+		customMiddleware.ExcludeRoutes(gin.LoggerWithWriter(gin.DefaultWriter),
+			"/health",
+		),
+		gin.Recovery(),
+	)
 
 	r.Use(
 		gin.Recovery(),

@@ -3,11 +3,11 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"net/http"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
@@ -55,7 +55,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 	telemetry.ReportEvent(ctx, "Cleaned sandbox ID")
 
 	// Get team from context, use TeamContextKey
-	team := c.Value(constants.TeamContextKey).(models.Team)
+	team := c.Value(auth.TeamContextKey).(models.Team)
 
 	// Check if team has access to the environment
 	env, build, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
