@@ -125,7 +125,7 @@ receivers:
           params:
             format: ['prometheus']
           consul_sd_configs:
-          - services: ['nomad-client', 'nomad', 'api', 'client-proxy', 'session-proxy', 'otel-collector', 'logs-collector', 'docker-reverse-proxy', 'loki']
+          - services: ['nomad-client', 'nomad', 'api', 'client-proxy', 'session-proxy', 'otel-collector', 'logs-collector', 'docker-reverse-proxy', 'loki', 'orchestrator']
             token: "${var.consul_token}"
 
           relabel_configs:
