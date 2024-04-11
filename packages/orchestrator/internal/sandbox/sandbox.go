@@ -56,7 +56,7 @@ func New(
 	dns *DNS,
 	sandboxRequest *orchestrator.SandboxCreateRequest,
 ) (*Sandbox, error) {
-	childCtx, childSpan := tracer.Start(ctx, "new-instance")
+	childCtx, childSpan := tracer.Start(ctx, "new-sandbox")
 	defer childSpan.End()
 
 	// Get slot from Consul KV

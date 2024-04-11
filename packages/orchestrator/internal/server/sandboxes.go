@@ -8,6 +8,7 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"path/filepath"
@@ -23,11 +24,18 @@ const uffdBinaryName = "uffd"
 const fcBinaryName = "firecracker"
 
 func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator.SandboxCreateRequest) (*orchestrator.NewSandbox, error) {
-	tracer := otel.Tracer("create")
+	childCtx, childSpan := telemetry.GetContextFromRemote(ctx, s.tracer, "sandbox-create", sandboxRequest.SpanID, sandboxRequest.TraceID)
+	defer childSpan.End()
+	childSpan.SetAttributes(
+		attribute.String("env.id", sandboxRequest.TemplateID),
+		attribute.String("env.kernel.version", sandboxRequest.KernelVersion),
+		attribute.String("instance.id", sandboxRequest.SandboxID),
+		attribute.String("client.id", constants.ClientID),
+	)
 
 	sbx, err := sandbox.New(
-		ctx,
-		tracer,
+		childCtx,
+		s.tracer,
 		s.consul,
 		&sandbox.InstanceConfig{
 			TemplateID:            sandboxRequest.TemplateID,
