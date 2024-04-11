@@ -29,7 +29,10 @@ type Service struct {
 	processes *Manager
 }
 
-const maxScanCapacity = 64 * 1024 * 1024 // 64MB
+const (
+	startScanCapacity = 2 * 1024         // 2KB
+	maxScanCapacity   = 32 * 1024 * 1024 // 32MB
+)
 
 func NewService(logger *zap.SugaredLogger, env *env.EnvConfig, clock *clock.Service) *Service {
 	return &Service{
@@ -58,10 +61,10 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 	// Pipe should be automatically closed when the process exits -> this should EOF the scanner.
 	scanner := bufio.NewScanner(pipe)
 
-	buf := make([]byte, 0, maxScanCapacity)
+	buf := make([]byte, 0, startScanCapacity)
 	scanner.Buffer(buf, maxScanCapacity)
 
-	// The default max buffer size is 64k - we are increasing this to 64MB.
+	// The default max buffer size is 64k - we are increasing this to default 2KB and up to 32MB.
 	for scanner.Scan() {
 		line := scanner.Text()
 
