@@ -11,13 +11,9 @@ import (
 )
 
 const (
-	shortNodeIDLength = 8
-
 	taskRunningState = "running"
 	taskDeadState    = "dead"
 	taskPendingState = "pending"
-
-	jobRunningStatus = "running"
 
 	defaultTaskName = "start"
 )
@@ -62,9 +58,7 @@ func (n *NomadClient) ListenToJobs(ctx context.Context, index uint64) error {
 	defer streamCancel()
 
 	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, index, &api.QueryOptions{
-		Filter:     fmt.Sprintf("JobID contains \"%s\"", instanceJobNameWithSlash),
 		AllowStale: true,
-		Prefix:     instanceJobName,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to get Nomad event stream: %w", err)
