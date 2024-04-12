@@ -3,6 +3,12 @@ ENV := $(shell cat ../../.last_used_env || echo "not-set")
 
 client := gcloud compute instances list --format='csv(name)' --project $(GCP_PROJECT_ID) | grep "client"
 
+.PHONY: init
+init:
+	brew install protobuf
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+
 .PHONY: generate
 generate:
 	# You need to install protobuf (brew install protobuf) and following go packages: protoc-gen-go, protoc-gen-go-grpc
