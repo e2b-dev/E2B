@@ -49,6 +49,7 @@ func ValidateAccessToken(ctx context.Context, db *models.Client, accessToken str
 
 func ExtractAccessToken(authHeader, authType string) (string, error) {
 	encodedLoginInfo := strings.TrimSpace(strings.TrimPrefix(authHeader, authType))
+
 	loginInfo, err := base64.StdEncoding.DecodeString(encodedLoginInfo)
 	if err != nil {
 		return "", fmt.Errorf("error while decoding login info for %s: %s", encodedLoginInfo, err)
@@ -64,6 +65,10 @@ func ExtractAccessToken(authHeader, authType string) (string, error) {
 		return "", fmt.Errorf("invalid username %s", username)
 	}
 
+	accessToken := strings.TrimSpace(loginInfoParts[1])
+	if strings.HasPrefix(accessToken, "\"") && strings.HasSuffix(accessToken, "\"") {
+		return strings.Trim(accessToken, "\""), nil
+	}
 	// There can be extra whitespace in the token when the user uses Windows
-	return strings.TrimSpace(loginInfoParts[1]), nil
+	return accessToken, nil
 }
