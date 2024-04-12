@@ -80,7 +80,7 @@ func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator
 	}, nil
 }
 
-func (s *server) SandboxesList(ctx context.Context, _ *emptypb.Empty) (*orchestrator.SandboxListResponse, error) {
+func (s *server) SandboxList(ctx context.Context, _ *emptypb.Empty) (*orchestrator.SandboxListResponse, error) {
 	// TODO:
 	tracer := otel.Tracer("list")
 	_, childSpan := tracer.Start(ctx, "list")
@@ -97,7 +97,7 @@ func (s *server) SandboxesList(ctx context.Context, _ *emptypb.Empty) (*orchestr
 	}, nil
 }
 
-func (s *server) SandboxesDelete(ctx context.Context, in *orchestrator.SandboxRequest) (*emptypb.Empty, error) {
+func (s *server) SandboxDelete(ctx context.Context, in *orchestrator.SandboxRequest) (*emptypb.Empty, error) {
 	tracer := otel.Tracer("delete")
 
 	sbx, ok := s.sandboxes.Get(in.SandboxID)

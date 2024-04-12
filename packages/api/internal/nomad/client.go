@@ -2,14 +2,18 @@ package nomad
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
-
-	"github.com/hashicorp/nomad/api"
-	"go.uber.org/zap"
+	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"go.uber.org/zap"
+
+	"github.com/hashicorp/nomad/api"
 )
+
+const streamRetryTime = 10 * time.Millisecond
 
 var (
 	nomadAddress = os.Getenv("NOMAD_ADDRESS")
@@ -32,7 +36,7 @@ func InitNomadClient(logger *zap.SugaredLogger) *NomadClient {
 		log.Fatalf("Error determining current working dir\n> %s\n", err)
 	}
 
-	_, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 
 	n := &NomadClient{
 		client:      client,
@@ -40,6 +44,31 @@ func InitNomadClient(logger *zap.SugaredLogger) *NomadClient {
 		subscribers: utils.NewMap[*jobSubscriber](),
 		cancel:      cancel,
 	}
+
+	index, err := n.GetStartingIndex(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				listenErr := n.ListenToJobs(ctx, index)
+				if listenErr != nil {
+					fmt.Fprintf(os.Stderr, "Error listening to Nomad jobs\n> %v\n", listenErr)
+
+					time.Sleep(streamRetryTime)
+
+					continue
+				}
+
+				return
+			}
+		}
+	}()
 
 	return n
 }

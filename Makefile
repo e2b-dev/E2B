@@ -37,7 +37,7 @@ ALL_MODULES_ARGS := $(shell echo $(ALL_MODULES) | tr ' ' '\n' | awk '{print "-ta
 login-gcloud:
 	gcloud auth login
 	gcloud config set project "$(GCP_PROJECT_ID)"
-	gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
+	gcloud --quiet auth configure-docker "$(GCP_REFION)-docker.pkg.dev"
 	gcloud auth application-default login
 
 .PHONY: init
@@ -141,7 +141,7 @@ FC_ENVS_SIZE := 200
 
 .PHONE: resize-fc-envs
 resize-fc-envs:
-	gcloud --project=$(GCP_PROJECT_ID) compute disks resize fc-envs --size $(FC_ENVS_SIZE) --zone us-central1-a
+	gcloud --project=$(GCP_PROJECT_ID) compute disks resize fc-envs --size $(FC_ENVS_SIZE) --zone "$GCP_ZONE"
 	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) -- 'sudo xfs_growfs -d /dev/sdb'
 
 .PHONY: switch-env

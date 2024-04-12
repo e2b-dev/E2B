@@ -1,6 +1,6 @@
 variable "gcp_zone" {
   type    = string
-  default = "us-central1-a"
+  default = ""
 }
 
 variable "image_name" {
@@ -146,6 +146,7 @@ job "orchestration-api" {
         GCP_DOCKER_REPOSITORY_NAME    = var.gcp_docker_repository_name
         GCP_PROJECT_ID                = var.gcp_project_id
         GCP_REGION                    = var.gcp_region
+        GCP_ZONE                      = var.gcp_zone
         ANALYTICS_COLLECTOR_HOST      = var.analytics_collector_host
         ANALYTICS_COLLECTOR_API_TOKEN = var.analytics_collector_api_token
         OTEL_TRACING_PRINT            = var.otel_tracing_print

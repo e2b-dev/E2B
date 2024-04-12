@@ -151,6 +151,7 @@ jobs:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
       gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
+      gcp_region: ${{ secrets.E2B_GCP_REGION }}
 
   docker-reverse-proxy:
     name: Docker reverse proxy image
@@ -164,6 +165,7 @@ jobs:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
       gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
+      gcp_region: ${{ secrets.E2B_GCP_REGION }}
 
   fc-kernels:
     name: FC Kernels

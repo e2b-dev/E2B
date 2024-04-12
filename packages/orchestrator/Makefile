@@ -1,6 +1,7 @@
 ENV := $(shell cat ../../.last_used_env || echo "not-set")
 -include ../../.env.${ENV}
 
+client := gcloud compute instances list --format='csv(name)' --project $(GCP_PROJECT_ID) | grep "client"
 
 .PHONY: generate
 generate:
@@ -32,7 +33,7 @@ test:
 update:
 	make build
 	make upload
-	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) -- 'sudo rm -rf /opt/nomad/orchestrator && \
+	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) --zone $(GCP_ZONE) -- 'sudo rm -rf /opt/nomad/orchestrator && \
 	sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/orchestrator && \
 	sudo chmod +x /opt/nomad/orchestrator && \
 	([[ $$(pgrep firecracker) ]] && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found" && \
