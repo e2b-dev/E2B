@@ -22,6 +22,11 @@ variable "otel_tracing_print" {
   default = ""
 }
 
+variable "environment" {
+  type    = string
+  default = ""
+}
+
 
 job "orchestrator" {
   datacenters = [var.gcp_zone]
@@ -63,6 +68,7 @@ job "orchestrator" {
         CONSUL_TOKEN       = var.consul_token
         OTEL_TRACING_PRINT = var.otel_tracing_print
         LOGS_PROXY_ADDRESS = var.logs_proxy_address
+        ENVIRONMENT        = "prod"
       }
 
       config {
