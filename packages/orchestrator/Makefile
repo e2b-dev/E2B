@@ -35,13 +35,3 @@ build-and-upload: build upload
 .PHONY: test
 test:
 	sudo CONSUL_TOKEN=$(CONSUL_TOKEN) go run -race -gcflags=all="-N -l" main.go -env idnrwvs3vrde6hknozc0 -instance test-instance-1 -alive 60 -count 1
-
-update:
-	make build
-	make upload
-	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) --zone $(GCP_ZONE) -- 'sudo rm -rf /opt/nomad/orchestrator && \
-	sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/orchestrator && \
-	sudo chmod +x /opt/nomad/orchestrator && \
-	([[ $$(pgrep firecracker) ]] && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found" && \
-	sleep 4 && \
-	sudo supervisorctl restart nomad'
