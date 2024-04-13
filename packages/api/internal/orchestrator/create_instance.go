@@ -38,7 +38,7 @@ func (o *Orchestrator) CreateSandbox(
 	if err != nil {
 		errMsg := fmt.Errorf("failed to marshal metadata: %w", err)
 
-		return nil, fmt.Errorf("failed to marshal metadata: %w", errMsg)
+		return nil, errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "Marshalled metadata")
@@ -47,7 +47,7 @@ func (o *Orchestrator) CreateSandbox(
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get features for firecracker version '%s': %w", firecrackerVersion, err)
 
-		return nil, fmt.Errorf("failed to get features for firecracker version '%s': %w", firecrackerVersion, errMsg)
+		return nil, errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "Got FC version info")
@@ -67,7 +67,7 @@ func (o *Orchestrator) CreateSandbox(
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create sandbox of environment '%s': %w", templateID, err)
 
-		return nil, fmt.Errorf("failed to create sandbox of environment '%s': %w", templateID, errMsg)
+		return nil, errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "Created sandbox")
