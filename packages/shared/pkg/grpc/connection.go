@@ -22,7 +22,7 @@ type ClientConnInterface interface {
 
 func GetConnection(host string, options ...grpc.DialOption) (ClientConnInterface, error) {
 	if strings.TrimSpace(host) == "" {
-		fmt.Println("Analytics collector not set, using dummy connection")
+		fmt.Println("Host for gRPC not set, using dummy connection")
 
 		return &DummyConn{}, nil
 	}
