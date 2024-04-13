@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	authInfoExpiration = time.Minute * 10 // 10 minutes
+	authInfoExpiration = time.Hour * 2
 )
 
 type AccessTokenData struct {
