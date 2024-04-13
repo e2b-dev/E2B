@@ -72,9 +72,8 @@ job "orchestrator" {
       driver = "raw_exec"
 
       resources {
-        memory     = 512
-        memory_max = 1024
-        cpu        = 512
+        memory     = 1024
+        cpu        = 1000
       }
 
       env {
