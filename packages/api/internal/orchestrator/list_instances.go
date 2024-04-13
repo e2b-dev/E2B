@@ -18,8 +18,15 @@ import (
 
 func (o *Orchestrator) GetInstances(ctx context.Context) ([]*instance.InstanceInfo, error) {
 	res, err := o.grpc.Client.SandboxList(ctx, &empty.Empty{})
-	st, ok := status.FromError(err)
-	if !ok {
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			errMsg := fmt.Errorf("failed to list sandboxes: %w", err)
+			telemetry.ReportCriticalError(ctx, errMsg)
+
+			return nil, errMsg
+		}
+
 		telemetry.ReportCriticalError(
 			ctx,
 			fmt.Errorf("failed to list sandboxes: [%s] %s", st.Code(), st.Message()),

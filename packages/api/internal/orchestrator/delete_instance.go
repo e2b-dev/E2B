@@ -15,8 +15,15 @@ func (o *Orchestrator) DeleteInstance(ctx context.Context, sandboxID string) err
 		SandboxID: sandboxID,
 	})
 
-	st, ok := status.FromError(err)
-	if !ok {
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			errMsg := fmt.Errorf("failed to delete sandbox '%s': %w", sandboxID, err)
+			telemetry.ReportCriticalError(ctx, errMsg)
+
+			return fmt.Errorf("failed to delete sandbox '%s': %w", sandboxID, err)
+		}
+
 		telemetry.ReportCriticalError(
 			ctx,
 			fmt.Errorf("failed to delete sandbox '%s': [%s] %s", sandboxID, st.Code(), st.Message()),

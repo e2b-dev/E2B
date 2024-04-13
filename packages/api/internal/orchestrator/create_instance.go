@@ -66,13 +66,19 @@ func (o *Orchestrator) CreateSandbox(
 		MaxInstanceLength:  int32(maxInstanceLengthHours),
 		HugePages:          features.HasHugePages(),
 	})
-	st, ok := status.FromError(err)
-	if !ok {
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			errMsg := fmt.Errorf("failed to create sandbox '%s': %w", templateID, err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+
+			return nil, errMsg
+		}
+
 		telemetry.ReportCriticalError(
 			childCtx,
 			fmt.Errorf("failed to create sandbox '%s': [%s] %s", templateID, st.Code(), st.Message()),
 		)
-
 		errMsg := fmt.Errorf("failed to create sandbox of environment '%s': %s", templateID, st.Message())
 
 		return nil, errMsg
