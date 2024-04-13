@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/auth"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 )
 
