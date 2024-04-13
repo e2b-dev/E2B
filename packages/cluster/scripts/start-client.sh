@@ -140,8 +140,8 @@ sudo chmod +x /opt/nomad/plugins/template-delete-task-driver
 sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver
 sudo chmod +x /opt/nomad/plugins/env-instance-task-driver
 
-sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/plugins/orchestrator
-sudo chmod +x /opt/nomad/plugins/orchestrator
+sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/orchestrator
+sudo chmod +x /opt/nomad/orchestrator
 
 # These variables are passed in via Terraform template interpolation
 

@@ -21,10 +21,12 @@ build:
 build-debug:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -race -gcflags=all="-N -l" -o bin/orchestrator .
 
+.PHONY: upload
+upload:
+	./upload.sh $(GCP_PROJECT_ID)
+
 .PHONY: update
 update:
-	make build
-	make upload
-	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) -- 'sudo rm -rf /opt/nomad/plugins/orchestrator && \
-	sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/plugins/orchestrator && \
-	sudo chmod +x /opt/nomad/plugins/orchestrator'
+	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) -- 'sudo rm -rf /opt/nomad/orchestrator && \
+	sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/orchestrator && \
+	sudo chmod +x /opt/nomad/orchestrator'

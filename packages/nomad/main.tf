@@ -184,10 +184,8 @@ resource "nomad_job" "orchestrator" {
 
   hcl2 {
     vars = {
-      gcp_zone     = var.gcp_zone
-      consul_token = var.consul_acl_token_secret
-
-      port = 5008
+      gcp_zone = var.gcp_zone
+      port     = 5008
     }
   }
 }

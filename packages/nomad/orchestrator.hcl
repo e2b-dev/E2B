@@ -48,7 +48,7 @@ job "orchestrator" {
       }
 
       config {
-        command = "/"
+        command = "/opt/nomad/orchestrator"
         args = [
           "--port", "${var.port}",
         ]

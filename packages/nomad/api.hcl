@@ -103,6 +103,11 @@ variable "loki_address" {
   default = ""
 }
 
+variable "orchestrator_address" {
+  type    = string
+  default = ""
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -139,6 +144,7 @@ job "orchestration-api" {
       }
 
       env {
+        ORCHESTRATOR_ADDRESS          = var.orchestrator_address
         LOGS_PROXY_ADDRESS            = var.logs_proxy_address
         NOMAD_ADDRESS                 = var.nomad_address
         NOMAD_TOKEN                   = var.nomad_token
