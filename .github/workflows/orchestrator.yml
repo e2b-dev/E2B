@@ -1,0 +1,47 @@
+name: Orchestrator
+
+on:
+  workflow_call:
+    secrets:
+      service_account_email:
+        required: true
+      workload_identity_provider:
+        required: true
+      gcp_project_id:
+        required: true
+
+jobs:
+  publish:
+    name: Build & upload
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: ./packages/orchestrator/go.mod
+          cache: true
+          cache-dependency-path: ./packages/orchestrator/go.sum
+
+      - name: Download deps
+        working-directory: ./packages/orchestrator
+        run: go mod tidy
+
+      - name: Build
+        working-directory: ./packages/orchestrator
+        run: make build
+
+      - name: Setup Service Account
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
+
+      - name: Upload orchestrator
+        uses: "google-github-actions/upload-cloud-storage@v1"
+        with:
+          path: "./packages/orchestrator/bin/orchestrator"
+          destination: "${{ secrets.gcp_project_id }}-fc-env-pipeline"
+          gzip: false
