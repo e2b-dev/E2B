@@ -5,7 +5,7 @@ import "google/protobuf/empty.proto";
 option go_package = "https://github.com/e2b-dev/infra/orchestrator";
 
 
-
+// Data required for creating a new sandbox.
 message SandboxCreateRequest {
   string templateID = 1;
   string buildID = 2;
@@ -19,6 +19,7 @@ message SandboxCreateRequest {
   bool hugePages = 10;
 }
 
+// Data about the sandbox.
 message SandboxDetail {
   string templateID = 1;
   string buildID = 2;
@@ -30,15 +31,18 @@ message SandboxDetail {
   string clientID = 8;
 }
 
+// Data returned after creating the sandbox.
 message NewSandbox {
   string sandboxID = 1;
   string clientID = 2;
 }
 
+// Data required for action on a specified sandbox.
 message SandboxRequest {
   string sandboxID = 1;
 }
 
+// Data returned after listing all the sandboxes.
 message SandboxListResponse {
   repeated SandboxDetail sandboxes = 1;
 }
@@ -46,9 +50,11 @@ message SandboxListResponse {
 
 // Interface exported by the server.
 service SandboxesService {
-  //  SandboxList is a gRPC service that returns a list of all the sandboxes.
+  // SandboxCreate is a gRPC service that creates a new sandbox.
   rpc SandboxCreate (SandboxCreateRequest) returns (NewSandbox);
+  //  SandboxList is a gRPC service that returns a list of all the sandboxes.
   rpc SandboxList (google.protobuf.Empty) returns (SandboxListResponse);
+  // SandboxDelete is a gRPC service that kills a sandbox.
   rpc SandboxDelete (SandboxRequest) returns (google.protobuf.Empty);
 }
 

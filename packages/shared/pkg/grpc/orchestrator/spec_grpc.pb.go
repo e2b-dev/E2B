@@ -23,9 +23,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SandboxesServiceClient interface {
-	// SandboxList is a gRPC service that returns a list of all the sandboxes.
+	// SandboxCreate is a gRPC service that creates a new sandbox.
 	SandboxCreate(ctx context.Context, in *SandboxCreateRequest, opts ...grpc.CallOption) (*NewSandbox, error)
+	// SandboxList is a gRPC service that returns a list of all the sandboxes.
 	SandboxList(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SandboxListResponse, error)
+	// SandboxDelete is a gRPC service that kills a sandbox.
 	SandboxDelete(ctx context.Context, in *SandboxRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -68,9 +70,11 @@ func (c *sandboxesServiceClient) SandboxDelete(ctx context.Context, in *SandboxR
 // All implementations must embed UnimplementedSandboxesServiceServer
 // for forward compatibility
 type SandboxesServiceServer interface {
-	// SandboxList is a gRPC service that returns a list of all the sandboxes.
+	// SandboxCreate is a gRPC service that creates a new sandbox.
 	SandboxCreate(context.Context, *SandboxCreateRequest) (*NewSandbox, error)
+	// SandboxList is a gRPC service that returns a list of all the sandboxes.
 	SandboxList(context.Context, *emptypb.Empty) (*SandboxListResponse, error)
+	// SandboxDelete is a gRPC service that kills a sandbox.
 	SandboxDelete(context.Context, *SandboxRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedSandboxesServiceServer()
 }

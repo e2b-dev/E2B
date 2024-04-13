@@ -21,6 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Data required for creating a new sandbox.
 type SandboxCreateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -140,6 +141,7 @@ func (x *SandboxCreateRequest) GetHugePages() bool {
 	return false
 }
 
+// Data about the sandbox.
 type SandboxDetail struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -243,6 +245,7 @@ func (x *SandboxDetail) GetClientID() string {
 	return ""
 }
 
+// Data returned after creating the sandbox.
 type NewSandbox struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -298,6 +301,7 @@ func (x *NewSandbox) GetClientID() string {
 	return ""
 }
 
+// Data required for action on a specified sandbox.
 type SandboxRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -345,6 +349,7 @@ func (x *SandboxRequest) GetSandboxID() string {
 	return ""
 }
 
+// Data returned after listing all the sandboxes.
 type SandboxListResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
