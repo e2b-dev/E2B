@@ -32,4 +32,5 @@ jobs:
       - name: Install dependencies
         working-directory: tests
         run: |
+          npm install
           E2B_API_KEY=${{ secrets.E2B_API_KEY }} E2B_DOMAIN=${{ secrets.E2B_DOMAIN_STAGING }} npx tsx index.mts
