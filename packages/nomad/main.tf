@@ -178,6 +178,20 @@ resource "nomad_job" "logs-collector" {
   }
 }
 
+data "google_storage_bucket_object" "orchestrator" {
+  name   = "orchestrator"
+  bucket = var.fc_env_pipeline_bucket_name
+}
+
+
+data "external" "checksum" {
+  program = ["bash", "${path.module}/checksum.sh"]
+
+  query = {
+    base64 = data.google_storage_bucket_object.orchestrator.md5hash
+  }
+}
+
 resource "nomad_job" "orchestrator" {
   jobspec = file("${path.module}/orchestrator.hcl")
 
@@ -188,8 +202,11 @@ resource "nomad_job" "orchestrator" {
       environment  = var.environment
       consul_token = var.consul_acl_token_secret
 
-      logs_proxy_address = var.logs_proxy_address
-      otel_tracing_print = "false"
+      bucket_name                = var.fc_env_pipeline_bucket_name
+      google_service_account_key = var.google_service_account_key
+      orchestrator_checksum      = data.external.checksum.result.hex
+      logs_proxy_address         = var.logs_proxy_address
+      otel_tracing_print         = "false"
     }
   }
 }

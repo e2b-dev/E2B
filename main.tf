@@ -229,5 +229,6 @@ module "nomad" {
   docker_reverse_proxy_service_account_key = module.docker_reverse_proxy.docker_reverse_proxy_service_account_key
 
   # Orchestrator
-  orchestrator_port = var.orchestrator_port
+  orchestrator_port           = var.orchestrator_port
+  fc_env_pipeline_bucket_name = module.buckets.fc_env_pipeline_bucket_name
 }

@@ -27,6 +27,20 @@ variable "environment" {
   default = ""
 }
 
+variable "bucket_name" {
+    type    = string
+    default = ""
+}
+
+variable "orchestrator_checksum" {
+  type    = string
+  default = ""
+}
+
+variable "google_service_account_key" {
+  type    = string
+  default = ""
+}
 
 job "orchestrator" {
   datacenters = [var.gcp_zone]
@@ -69,11 +83,19 @@ job "orchestrator" {
         OTEL_TRACING_PRINT = var.otel_tracing_print
         LOGS_PROXY_ADDRESS = var.logs_proxy_address
         ENVIRONMENT        = "prod"
+        GOOGLE_CREDENTIALS           = var.google_service_account_key
       }
 
       config {
-        command = "/opt/nomad/orchestrator"
-        args    = ["-port", "${var.port}"]
+        command = "/bin/bash"
+        args    = ["-c", " chmod +x local/orchestrator && local/orchestrator --port ${var.port}"]
+      }
+
+      artifact {
+        source      = "gcs::https://www.googleapis.com/storage/v1/${var.bucket_name}/orchestrator"
+        options {
+            checksum    = "md5:${var.orchestrator_checksum}"
+        }
       }
     }
   }

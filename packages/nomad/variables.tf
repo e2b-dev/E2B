@@ -186,3 +186,7 @@ variable "docker_reverse_proxy_service_account_key" {
 variable "orchestrator_port" {
   type = number
 }
+
+variable "fc_env_pipeline_bucket_name" {
+  type = string
+}
