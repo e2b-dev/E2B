@@ -18,11 +18,7 @@ const (
 	defaultTaskName = "start"
 )
 
-const (
-	instanceJobName          = "env-instance"
-	instanceJobNameWithSlash = instanceJobName + "/"
-	InstanceIDPrefix         = "i"
-)
+const InstanceIDPrefix = "i"
 
 type jobSubscriber struct {
 	subscribers *utils.Map[*jobSubscriber]
