@@ -43,6 +43,7 @@ variable "google_service_account_key" {
 }
 
 job "orchestrator" {
+  type = "system"
   datacenters = [var.gcp_zone]
 
   priority = 85
