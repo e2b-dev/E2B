@@ -1,9 +1,11 @@
 variable "gcp_zone" {
   type    = string
+  default = ""
 }
 
 variable "gcp_region" {
   type    = string
+  default = ""
 }
 
 variable "gcp_project_id" {

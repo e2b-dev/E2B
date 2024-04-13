@@ -1,5 +1,6 @@
 #!/bin/bash
 # This script is used to convert a base64 encoded string to hex
+# Based on: https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/external#processing-json-in-shell-scripts
 
 set -euo pipefail
 
