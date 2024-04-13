@@ -259,7 +259,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 		}
 	}
 
-	return deleteInstance(a.Ctx, a.orchestrator, a.analytics, a.posthog, a.logger, info, purge)
+	return deleteInstance(a.Ctx, a.orchestrator, a.analytics, a.posthog, a.logger, info)
 }
 
 func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, build *models.EnvBuild, err error) {
@@ -277,7 +277,7 @@ func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, 
 
 func getDeleteInstanceFunction(ctx context.Context, orchestrator *orchestrator.Orchestrator, analytics *analyticscollector.Analytics, posthogClient *PosthogClient, logger *zap.SugaredLogger) func(info instance.InstanceInfo, purge bool) *api.APIError {
 	return func(info instance.InstanceInfo, purge bool) *api.APIError {
-		return deleteInstance(ctx, orchestrator, analytics, posthogClient, logger, info, purge)
+		return deleteInstance(ctx, orchestrator, analytics, posthogClient, logger, info)
 	}
 }
 
@@ -288,7 +288,6 @@ func deleteInstance(
 	posthogClient *PosthogClient,
 	logger *zap.SugaredLogger,
 	info instance.InstanceInfo,
-	purge bool,
 ) *api.APIError {
 	duration := time.Since(*info.StartTime).Seconds()
 
