@@ -3,17 +3,17 @@ package sandbox
 import (
 	"context"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
-	consul "github.com/hashicorp/consul/api"
 	"io"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
+	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	consul "github.com/hashicorp/consul/api"
 )
 
 var logsProxyAddress = os.Getenv("LOGS_PROXY_ADDRESS")
@@ -199,8 +199,8 @@ func New(
 	return instance, nil
 }
 
-func (i *Sandbox) syncClock(ctx context.Context) error {
-	address := fmt.Sprintf("http://%s:%d/sync", i.Slot.HostSnapshotIP(), consts.DefaultEnvdServerPort)
+func (s *Sandbox) syncClock(ctx context.Context) error {
+	address := fmt.Sprintf("http://%s:%d/sync", s.Slot.HostSnapshotIP(), consts.DefaultEnvdServerPort)
 
 	request, err := http.NewRequestWithContext(ctx, "POST", address, nil)
 	if err != nil {
@@ -221,7 +221,7 @@ func (i *Sandbox) syncClock(ctx context.Context) error {
 	return nil
 }
 
-func (i *Sandbox) EnsureClockSync(ctx context.Context) error {
+func (s *Sandbox) EnsureClockSync(ctx context.Context) error {
 syncLoop:
 	for {
 		select {
@@ -229,7 +229,7 @@ syncLoop:
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			err := i.syncClock(ctx)
+			err := s.syncClock(ctx)
 			if err != nil {
 				telemetry.ReportError(ctx, fmt.Errorf("error syncing clock: %w", err))
 				continue
@@ -241,7 +241,7 @@ syncLoop:
 	return nil
 }
 
-func (i *Sandbox) CleanupAfterFCStop(
+func (s *Sandbox) CleanupAfterFCStop(
 	ctx context.Context,
 	tracer trace.Tracer,
 	consul *consul.Client,
@@ -250,7 +250,7 @@ func (i *Sandbox) CleanupAfterFCStop(
 	childCtx, childSpan := tracer.Start(ctx, "delete-instance")
 	defer childSpan.End()
 
-	err := i.Slot.RemoveNetwork(childCtx, tracer, dns)
+	err := s.Slot.RemoveNetwork(childCtx, tracer, dns)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot remove network when destroying task: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -258,7 +258,7 @@ func (i *Sandbox) CleanupAfterFCStop(
 		telemetry.ReportEvent(childCtx, "removed network")
 	}
 
-	err = i.Files.Cleanup(childCtx, tracer)
+	err = s.Files.Cleanup(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to delete instance files: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -266,7 +266,7 @@ func (i *Sandbox) CleanupAfterFCStop(
 		telemetry.ReportEvent(childCtx, "deleted instance files")
 	}
 
-	err = i.Slot.Release(childCtx, tracer, consul)
+	err = s.Slot.Release(childCtx, tracer, consul)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to release slot: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

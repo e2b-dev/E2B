@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	serviceName = "orchestrator" // 256 MiB
+	serviceName = "orchestrator"
 	defaultPort = 5008
 )
 

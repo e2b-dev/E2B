@@ -28,7 +28,6 @@ type server struct {
 }
 
 func New() *grpc.Server {
-
 	s := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(

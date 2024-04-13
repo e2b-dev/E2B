@@ -3,17 +3,18 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
-	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"path/filepath"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"path/filepath"
-
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
+	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const fcVersionsDir = "/fc-versions"
@@ -34,8 +35,6 @@ func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator
 		attribute.String("client.id", constants.ClientID),
 	)
 
-	traceID := childSpan.SpanContext().TraceID().String()
-
 	sbx, err := sandbox.New(
 		childCtx,
 		s.tracer,
@@ -43,7 +42,7 @@ func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator
 		&sandbox.InstanceConfig{
 			TemplateID:            sandboxRequest.TemplateID,
 			SandboxID:             sandboxRequest.SandboxID,
-			TraceID:               traceID,
+			TraceID:               childSpan.SpanContext().TraceID().String(),
 			TeamID:                sandboxRequest.TeamID,
 			KernelVersion:         sandboxRequest.KernelVersion,
 			KernelsDir:            kernelDir,

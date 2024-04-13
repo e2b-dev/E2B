@@ -3,7 +3,6 @@ package sandbox
 import (
 	"context"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
 	"math/rand"
 	"slices"
 
@@ -11,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
