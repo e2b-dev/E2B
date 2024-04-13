@@ -38,7 +38,7 @@ DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 
 login-gcloud:
 	gcloud auth login
 	gcloud config set project "$(GCP_PROJECT_ID)"
-	gcloud --quiet auth configure-docker "$(GCP_REFION)-docker.pkg.dev"
+	gcloud --quiet auth configure-docker "$(GCP_REGION)-docker.pkg.dev"
 	gcloud auth application-default login
 
 .PHONY: init
