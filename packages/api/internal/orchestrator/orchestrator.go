@@ -23,6 +23,10 @@ func New() (*Orchestrator, error) {
 	}, nil
 }
 
+func (o *Orchestrator) Close() error {
+	return o.grpc.Close()
+}
+
 // KeepInSync the cache with the actual instances in Nomad to handle instances that died.
 func (o *Orchestrator) KeepInSync(ctx context.Context, instanceCache *instance.InstanceCache) {
 	for {

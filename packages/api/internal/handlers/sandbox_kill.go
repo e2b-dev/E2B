@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"net/http"
 
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"

@@ -9,13 +9,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	loki "github.com/grafana/loki/pkg/logcli/client"
 	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	loki "github.com/grafana/loki/pkg/logcli/client"
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
@@ -81,7 +81,7 @@ func NewAPIStore() *APIStore {
 		panic(posthogErr)
 	}
 
-	orchestrator, err := orchestrator.New()
+	orch, err := orchestrator.New()
 	if err != nil {
 		logger.Errorf("Error initializing Orchestrator client\n: %v", err)
 		panic(err)
@@ -90,7 +90,7 @@ func NewAPIStore() *APIStore {
 	var initialInstances []*instance.InstanceInfo
 
 	if env.IsProduction() {
-		instances, instancesErr := orchestrator.GetInstances(ctx)
+		instances, instancesErr := orch.GetInstances(ctx)
 		if instancesErr != nil {
 			logger.Errorf("Error loading current instances from Nomad\n: %v", err)
 		}
@@ -120,12 +120,12 @@ func NewAPIStore() *APIStore {
 
 	logger.Info("Initialized Analytics client")
 
-	instanceCache := instance.NewCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, orchestrator, analytics, posthogClient, logger), initialInstances, instancesCounter)
+	instanceCache := instance.NewCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, orch, analytics, posthogClient, logger), initialInstances, instancesCounter)
 
 	logger.Info("Initialized instance cache")
 
 	if env.IsProduction() {
-		go orchestrator.KeepInSync(ctx, instanceCache)
+		go orch.KeepInSync(ctx, instanceCache)
 	} else {
 		logger.Info("Skipping syncing intances with Nomad, running locally")
 	}
@@ -167,7 +167,7 @@ func NewAPIStore() *APIStore {
 	return &APIStore{
 		Ctx:                        ctx,
 		nomad:                      nomadClient,
-		orchestrator:               orchestrator,
+		orchestrator:               orch,
 		db:                         dbClient,
 		instanceCache:              instanceCache,
 		tracer:                     tracer,
@@ -199,6 +199,11 @@ func (a *APIStore) Close() {
 	err = a.cloudStorage.Close()
 	if err != nil {
 		a.logger.Errorf("Error closing Cloud Storage client\n: %v", err)
+	}
+
+	err = a.orchestrator.Close()
+	if err != nil {
+		a.logger.Errorf("Error closing Orchestrator client\n: %v", err)
 	}
 }
 

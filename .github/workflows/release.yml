@@ -25,7 +25,6 @@ jobs:
       fc-kernels: ${{ steps.filter.outputs.fc-kernels }}
       fc-versions: ${{ steps.filter.outputs.fc-versions }}
       template-delete-task-driver: ${{ steps.filter.outputs.template-delete-task-driver }}
-      env-instance-task-driver: ${{ steps.filter.outputs.env-instance-task-driver }}
       env-build-task-driver: ${{ steps.filter.outputs.env-build-task-driver }}
       version: ${{ steps.filter.outputs.version }}
     steps:
@@ -67,10 +66,6 @@ jobs:
               - 'packages/shared/**'
               - 'packages/envd/**'
               - '.github/workflows/envd.yml'
-            env-instance-task-driver:
-              - 'packages/shared/**'
-              - 'packages/env-instance-task-driver/**'
-              - '.github/workflows/env-instance-task-driver.yml'
             env-build-task-driver:
               - 'packages/shared/**'
               - 'packages/env-build-task-driver/**'
@@ -91,19 +86,6 @@ jobs:
       - name: Read Version file
         id: getversion
         run: echo "::set-output name=version::$(cat VERSION)"
-
-  env-instance-task-driver:
-    name: Env instance task driver
-    needs: changes
-    if: |
-      always() &&
-      needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.env-instance-task-driver == 'true'
-    uses: ./.github/workflows/env-instance-task-driver.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
-      gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID}}
 
   env-build-task-driver:
     name: Env build task driver
@@ -220,7 +202,6 @@ jobs:
         api,
         docker-reverse-proxy,
         envd,
-        env-instance-task-driver,
         template-delete-task-driver,
         env-build-task-driver,
       ]
@@ -232,7 +213,6 @@ jobs:
       (needs.envd.result == 'success' || needs.envd.result == 'skipped') &&
       (needs.fc-kernels.result == 'success' || needs.fc-kernels.result == 'skipped') &&
       (needs.fc-versions.result == 'success' || needs.fc-versions.result == 'skipped') &&
-      (needs.env-instance-task-driver.result == 'success' || needs.env-instance-task-driver.result == 'skipped') &&
       (needs.env-build-task-driver.result == 'success' || needs.env-build-task-driver.result == 'skipped') &&
       (needs.template-delete-task-driver.result == 'success' || needs.template-delete-task-driver.result == 'skipped') &&
       (needs.api.result == 'success' || needs.api.result == 'skipped') &&

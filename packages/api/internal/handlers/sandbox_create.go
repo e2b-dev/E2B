@@ -3,21 +3,21 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"net/http"
 	"time"
-
-	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
-	"github.com/e2b-dev/infra/packages/shared/pkg/models"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/semaphore"
+
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const defaultRequestLimit = 16

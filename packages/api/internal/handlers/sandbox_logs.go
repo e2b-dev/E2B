@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"net/http"
 	"strings"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"

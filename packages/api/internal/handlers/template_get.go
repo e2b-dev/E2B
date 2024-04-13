@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"net/http"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"

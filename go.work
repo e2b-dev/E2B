@@ -6,7 +6,6 @@ use (
 	./packages/api
 	./packages/docker-reverse-proxy
 	./packages/env-build-task-driver
-	./packages/env-instance-task-driver
 	./packages/envd
 	./packages/orchestrator
 	./packages/shared

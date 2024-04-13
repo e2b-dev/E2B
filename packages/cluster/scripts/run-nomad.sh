@@ -187,7 +187,6 @@ client {
   }
 }
 
-plugin "env-instance-task-driver" {}
 plugin "env-build-task-driver" {}
 plugin "template-delete-task-driver" {}
 plugin "raw_exec" {
