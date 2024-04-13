@@ -46,6 +46,7 @@ func main() {
 	// Create an instance of our handler which satisfies the generated interface
 	s := server.New()
 
+	log.Printf("Starting server on port %d", *port)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

@@ -34,9 +34,6 @@ func (o *Orchestrator) CreateSandbox(
 	)
 	defer childSpan.End()
 
-	traceID := childSpan.SpanContext().TraceID().String()
-	spanID := childSpan.SpanContext().SpanID().String()
-
 	metadataSerialized, err := json.Marshal(metadata)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to marshal metadata: %w", err)
@@ -45,12 +42,6 @@ func (o *Orchestrator) CreateSandbox(
 	}
 
 	telemetry.ReportEvent(childCtx, "Marshalled metadata")
-
-	telemetry.SetAttributes(
-		childCtx,
-		attribute.String("passed_trace_id_hex", traceID),
-		attribute.String("passed_span_id_hex", spanID),
-	)
 
 	features, err := sandbox.NewVersionInfo(firecrackerVersion)
 	if err != nil {
@@ -67,13 +58,11 @@ func (o *Orchestrator) CreateSandbox(
 		TeamID:             teamID,
 		BuildID:            buildID,
 		SandboxID:          sandboxID,
-		TraceID:            traceID,
 		KernelVersion:      kernelVersion,
 		FirecrackerVersion: firecrackerVersion,
 		Metadata:           string(metadataSerialized),
 		MaxInstanceLength:  int32(maxInstanceLengthHours),
 		HugePages:          features.HasHugePages(),
-		SpanID:             spanID,
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create sandbox of environment '%s': %w", templateID, err)

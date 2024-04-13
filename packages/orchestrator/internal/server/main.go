@@ -2,17 +2,20 @@ package server
 
 import (
 	"context"
-	"fmt"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
-	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
-	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
+	"log"
+
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	consulapi "github.com/hashicorp/consul/api"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
+
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
+	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
+	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
@@ -27,12 +30,13 @@ type server struct {
 func New() *grpc.Server {
 
 	s := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
 			recovery.UnaryServerInterceptor(),
 		),
 	)
 
-	fmt.Println("Initializing orchestrator server")
+	log.Println("Initializing orchestrator server")
 
 	ctx := context.Background()
 

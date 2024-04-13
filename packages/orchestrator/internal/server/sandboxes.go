@@ -24,7 +24,8 @@ const uffdBinaryName = "uffd"
 const fcBinaryName = "firecracker"
 
 func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator.SandboxCreateRequest) (*orchestrator.NewSandbox, error) {
-	childCtx, childSpan := telemetry.GetContextFromRemote(ctx, s.tracer, "sandbox-create", sandboxRequest.SpanID, sandboxRequest.TraceID)
+	childCtx, childSpan := s.tracer.Start(ctx, "sandbox-create")
+
 	defer childSpan.End()
 	childSpan.SetAttributes(
 		attribute.String("env.id", sandboxRequest.TemplateID),
@@ -33,6 +34,8 @@ func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator
 		attribute.String("client.id", constants.ClientID),
 	)
 
+	traceID := childSpan.SpanContext().TraceID().String()
+
 	sbx, err := sandbox.New(
 		childCtx,
 		s.tracer,
@@ -40,7 +43,7 @@ func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator
 		&sandbox.InstanceConfig{
 			TemplateID:            sandboxRequest.TemplateID,
 			SandboxID:             sandboxRequest.SandboxID,
-			TraceID:               sandboxRequest.TraceID,
+			TraceID:               traceID,
 			TeamID:                sandboxRequest.TeamID,
 			KernelVersion:         sandboxRequest.KernelVersion,
 			KernelsDir:            kernelDir,
@@ -81,9 +84,7 @@ func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator
 }
 
 func (s *server) SandboxList(ctx context.Context, _ *emptypb.Empty) (*orchestrator.SandboxListResponse, error) {
-	// TODO:
-	tracer := otel.Tracer("list")
-	_, childSpan := tracer.Start(ctx, "list")
+	_, childSpan := s.tracer.Start(ctx, "sandbox-list")
 	defer childSpan.End()
 
 	sandboxes := make([]*orchestrator.SandboxDetail, len(s.sandboxes.Items()))
@@ -98,7 +99,8 @@ func (s *server) SandboxList(ctx context.Context, _ *emptypb.Empty) (*orchestrat
 }
 
 func (s *server) SandboxDelete(ctx context.Context, in *orchestrator.SandboxRequest) (*emptypb.Empty, error) {
-	tracer := otel.Tracer("delete")
+	_, childSpan := s.tracer.Start(ctx, "sandbox-delete")
+	defer childSpan.End()
 
 	sbx, ok := s.sandboxes.Get(in.SandboxID)
 	if !ok {
@@ -108,8 +110,8 @@ func (s *server) SandboxDelete(ctx context.Context, in *orchestrator.SandboxRequ
 		return nil, status.New(codes.NotFound, errMsg.Error()).Err()
 	}
 
-	err := sbx.FC.Stop(ctx, tracer)
-	defer sbx.CleanupAfterFCStop(ctx, tracer, s.consul, s.dns)
+	err := sbx.FC.Stop(ctx, s.tracer)
+	defer sbx.CleanupAfterFCStop(ctx, s.tracer, s.consul, s.dns)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to stop FC: %w", err)
 
