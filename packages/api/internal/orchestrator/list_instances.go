@@ -5,22 +5,26 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"github.com/golang/protobuf/ptypes/empty"
 	"time"
+
+	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc/status"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/google/uuid"
 )
 
 func (o *Orchestrator) GetInstances(ctx context.Context) ([]*instance.InstanceInfo, error) {
 	res, err := o.grpc.Client.SandboxList(ctx, &empty.Empty{})
-	if err != nil {
-		return nil, err
-	}
-
-	if res == nil {
-		return nil, fmt.Errorf("failed to get sandboxes")
+	st, ok := status.FromError(err)
+	if !ok {
+		telemetry.ReportCriticalError(
+			ctx,
+			fmt.Errorf("failed to list sandboxes: [%s] %s", st.Code(), st.Message()),
+		)
+		return nil, fmt.Errorf("failed to list sandboxes: %s", st.Message())
 	}
 
 	instances := make([]*instance.InstanceInfo, 0)

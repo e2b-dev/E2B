@@ -5,13 +5,15 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/status"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 )
 
 func (o *Orchestrator) CreateSandbox(
@@ -64,8 +66,14 @@ func (o *Orchestrator) CreateSandbox(
 		MaxInstanceLength:  int32(maxInstanceLengthHours),
 		HugePages:          features.HasHugePages(),
 	})
-	if err != nil {
-		errMsg := fmt.Errorf("failed to create sandbox of environment '%s': %w", templateID, err)
+	st, ok := status.FromError(err)
+	if !ok {
+		telemetry.ReportCriticalError(
+			childCtx,
+			fmt.Errorf("failed to create sandbox '%s': [%s] %s", templateID, st.Code(), st.Message()),
+		)
+
+		errMsg := fmt.Errorf("failed to create sandbox of environment '%s': %s", templateID, st.Message())
 
 		return nil, errMsg
 	}
