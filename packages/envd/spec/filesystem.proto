@@ -1,0 +1,113 @@
+// TODO: Add message if the errors are not correctly propagated
+// https://jbrandhorst.com/post/grpc-errors/
+
+syntax = "proto3";
+
+package filesystem;
+
+service Filesystem {
+    rpc Exists(ExistsRequest) returns (ExistsResponse);
+    
+    rpc CreateFile(CreateRequest) returns (CreateResponse);
+    rpc CreateDir(CreateRequest) returns (CreateResponse);
+    
+    rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
+    rpc WriteFile(WriteFileRequest) returns (WriteFileResponse);
+    
+    rpc ListDir(ListDirRequest) returns (ListDirResponse);
+    rpc WatchDir(WatchDirRequest) returns (stream FilesystemEvent);
+
+    rpc Rename(RenameRequest) returns (RenameResponse);
+    rpc Delete(DeleteRequest) returns (DeleteResponse);
+}
+
+message CreateRequest {
+    string path = 1;
+}
+
+message CreateResponse {
+    bool success = 1;
+}
+
+message ReadFileRequest {
+    string path = 1;
+}
+
+message ReadFileResponse {
+    bytes data = 1;
+}
+
+message ExistsRequest {
+    string path = 1;
+}
+
+message ExistsResponse {
+    bool exists = 1;
+    optional EntryInfo entry = 2;
+}
+
+message WriteFileRequest {
+    string path = 1;
+    bytes data = 2;
+}
+
+message WriteFileResponse {
+    bool success = 1;
+}
+
+message DeleteRequest {
+    string path = 1;
+}
+
+message DeleteResponse {
+    bool success = 1;
+}
+
+message RenameRequest {
+    string old_path = 1;
+    string new_path = 2;
+}
+
+message RenameResponse {
+    bool success = 1;
+}
+
+message EntryInfo {
+    string name = 1;
+    EntryType type = 3;
+
+    int64 size = 4;
+    int64 last_modified = 5;
+}
+
+message ListDirRequest {
+    string path = 1;
+}
+
+message ListDirResponse {
+    repeated EntryInfo entries = 1;
+}
+
+message WatchDirRequest {
+    string path = 1;
+}
+
+enum EntryType {
+    FILE = 0;
+    DIRECTORY = 1;
+}
+
+enum EventType {
+    CREATE = 0;
+    WRITE = 1;
+    REMOVE = 2;
+    RENAME = 3;
+    CHMOD = 4;
+}
+
+message FilesystemEvent {
+    string path = 1;
+
+    EventType type = 2;
+    EntryInfo entry = 3;
+}

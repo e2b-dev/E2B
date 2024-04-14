@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+option go_package = "https://github.com/e2b-dev/infra/packages/envd";
+
+package process;
+
+service Process {
+    rpc Start(StartProcessRequest) returns (stream ProcessEvent);
+
+    rpc Kill(KillRequest) returns (KillResponse);
+    rpc SendInput(SendInputRequest) returns (SendInputResponse);
+
+    rpc ResizePTY(ResizePTYRequest) returns (ResizePTYResponse);
+}
+
+message PTYSize {
+    uint32 cols = 1;
+    uint32 rows = 2;
+}
+
+message PTY {
+    PTYSize size = 1;
+}
+
+message StartProcessRequest {    
+    string cmd = 1;
+    repeated string args = 2;
+    
+    map<string, string> env = 3;
+    string cwd = 4;
+
+    optional PTY pty = 5;
+}
+
+message ResizePTYRequest {
+    uint32 pid = 1;
+
+    PTYSize size = 2;
+}
+
+message ResizePTYResponse {
+    bool success = 1;
+}
+
+message ProcessEvent {
+    uint32 pid = 1;
+
+    optional bytes stdout = 2;
+    optional bytes stderr = 3;
+
+    optional int32 exitCode = 4;
+}
+
+message KillRequest {
+    uint32 pid = 1;
+}
+
+message KillResponse {}
+
+message SendInputRequest {
+    uint32 pid = 2;
+
+    bytes stdin = 1;
+}
+
+message SendInputResponse {}

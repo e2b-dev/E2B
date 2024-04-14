@@ -1,0 +1,9 @@
+// TODO: Just adding the proxy to the golang grpc server should be enough to make it work in browser, but I'm not sure about the performance implications.
+
+syntax = "proto3";
+
+import "filesystem.proto";
+import "process.proto";
+import "network.proto";
+
+package spec;

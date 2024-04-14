@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package network;
+
+service Network {
+    rpc CheckPort(CheckPortRequest) returns (CheckPortResponse);
+
+    rpc OpenPort(OpenPortRequest) returns (OpenPortResponse);
+    rpc ClosePort(ClosePortRequest) returns (ClosePortResponse);
+
+    rpc WatchPorts(WatchPortsRequest) returns (stream PortEvent);
+}
+
+message OpenPortRequest {
+    uint32 port = 1;
+}
+
+message OpenPortResponse {
+    bool success = 1;
+}
+
+message ClosePortRequest {
+    uint32 port = 1;
+}
+
+message ClosePortResponse {
+    bool success = 1;
+}
+
+message WatchPortsRequest {}
+
+message PortEvent {
+    uint32 port = 1;
+    bool open = 2;
+}
+
+message CheckPortRequest {
+    uint32 port = 1;
+}
+
+message CheckPortResponse {
+    bool open = 1;
+}

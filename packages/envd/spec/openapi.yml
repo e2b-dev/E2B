@@ -1,0 +1,6 @@
+# This is the API for the REST server in the envd service
+# It should allow downloading and uploading for all files in the sandbox via the URL encoded path to the dir
+# You should be able to define the permissions for each file via the query params when uploading
+# You should be able to specify the format for saving the file/encoding
+
+# The /sync path should be accessible for syncing the clocks - probably by exposing this on a different port that the file serving one?
