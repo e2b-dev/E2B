@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -45,6 +46,8 @@ func (a *APIStore) GetToken(w http.ResponseWriter, r *http.Request) error {
 	scope := r.URL.Query().Get("scope")
 	if scope == "" {
 		if !auth.ValidateAccessToken(ctx, a.db.Client, accessToken) {
+			log.Printf("Invalid access token: '%s'\n", accessToken)
+
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte("invalid access token"))
 
