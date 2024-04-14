@@ -1,6 +1,5 @@
 variable "gcp_zone" {
   type    = string
-  default = ""
 }
 
 variable "image_name" {
