@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -16,7 +16,7 @@ import (
 func (a *APIStore) GetSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	team := c.Value(constants.TeamContextKey).(models.Team)
+	team := c.Value(auth.TeamContextKey).(models.Team)
 
 	telemetry.ReportEvent(ctx, "list running instances")
 

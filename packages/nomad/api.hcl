@@ -1,6 +1,6 @@
 variable "gcp_zone" {
   type    = string
-  default = "us-central1-a"
+  default = ""
 }
 
 variable "image_name" {
@@ -18,22 +18,12 @@ variable "api_port_number" {
   default = 0
 }
 
-variable "consul_token" {
-  type    = string
-  default = ""
-}
-
 variable "nomad_token" {
   type    = string
   default = ""
 }
 
 variable "nomad_address" {
-  type    = string
-  default = ""
-}
-
-variable "logs_proxy_address" {
   type    = string
   default = ""
 }
@@ -103,6 +93,11 @@ variable "loki_address" {
   default = ""
 }
 
+variable "orchestrator_address" {
+  type    = string
+  default = ""
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -139,10 +134,9 @@ job "orchestration-api" {
       }
 
       env {
-        LOGS_PROXY_ADDRESS            = var.logs_proxy_address
+        ORCHESTRATOR_ADDRESS          = var.orchestrator_address
         NOMAD_ADDRESS                 = var.nomad_address
         NOMAD_TOKEN                   = var.nomad_token
-        CONSUL_TOKEN                  = var.consul_token
         POSTGRES_CONNECTION_STRING    = var.postgres_connection_string
         POSTHOG_API_KEY               = var.posthog_api_key
         ENVIRONMENT                   = var.environment
@@ -152,6 +146,7 @@ job "orchestration-api" {
         GCP_DOCKER_REPOSITORY_NAME    = var.gcp_docker_repository_name
         GCP_PROJECT_ID                = var.gcp_project_id
         GCP_REGION                    = var.gcp_region
+        GCP_ZONE                      = var.gcp_zone
         ANALYTICS_COLLECTOR_HOST      = var.analytics_collector_host
         ANALYTICS_COLLECTOR_API_TOKEN = var.analytics_collector_api_token
         OTEL_TRACING_PRINT            = var.otel_tracing_print

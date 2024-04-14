@@ -9,9 +9,10 @@ on:
         required: true
       gcp_project_id:
         required: true
-
+      gcp_region:
+        required: true
 env:
-  IMAGE_TAG:  us-central1-docker.pkg.dev/${{ secrets.gcp_project_id }}/e2b-orchestration/docker-reverse-proxy:latest
+  IMAGE_TAG:  ${{ secrets.gcp_region }}-docker.pkg.dev/${{ secrets.gcp_project_id }}/e2b-orchestration/docker-reverse-proxy:latest
 
 jobs:
   publish:
@@ -28,7 +29,7 @@ jobs:
           service_account: ${{ secrets.service_account_email }}
 
       - name: Configure Docker
-        run: gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
+        run: gcloud --quiet auth configure-docker ${{ secrets.gcp_region }}-docker.pkg.dev
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2

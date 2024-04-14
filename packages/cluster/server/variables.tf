@@ -66,6 +66,11 @@ variable "network_name" {
   type        = string
 }
 
+variable "nomad_port" {
+  description = "The port on which Nomad will listen for incoming connections."
+  type        = number
+}
+
 variable "custom_tags" {
   description = "A list of tags that will be added to the Compute Instance Template in addition to the tags automatically added by this module."
   type        = list(string)

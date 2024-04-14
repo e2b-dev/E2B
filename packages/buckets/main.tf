@@ -19,6 +19,7 @@ resource "google_storage_bucket" "loki_storage_bucket" {
   }
 }
 
+# TODO: Not needed anymore, BUT! we may need it for rebuilding templates
 resource "google_storage_bucket" "envs_docker_context" {
   name     = "${var.gcp_project_id}-envs-docker-context"
   location = var.gcp_region

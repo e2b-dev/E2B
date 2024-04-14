@@ -30,6 +30,7 @@ endif
 
 WITHOUT_JOBS := $(shell echo $(ALL_MODULES) | tr ' ' '\n' | grep -v -e "nomad" | awk '{print "-target=module." $$0 ""}' | xargs)
 ALL_MODULES_ARGS := $(shell echo $(ALL_MODULES) | tr ' ' '\n' | awk '{print "-target=module." $$0 ""}' | xargs)
+DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | grep -v -e "fc_envs_disk" -e "buckets" | uniq | awk '{print "-target=" $$0 ""}' | xargs)
 
 # Login for Packer and Docker (uses gcloud user creds)
 # Login for Terraform (uses application default creds)
@@ -37,7 +38,7 @@ ALL_MODULES_ARGS := $(shell echo $(ALL_MODULES) | tr ' ' '\n' | awk '{print "-ta
 login-gcloud:
 	gcloud auth login
 	gcloud config set project "$(GCP_PROJECT_ID)"
-	gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
+	gcloud --quiet auth configure-docker "$(GCP_REGION)-docker.pkg.dev"
 	gcloud auth application-default login
 
 .PHONY: init
@@ -92,13 +93,12 @@ apply-without-jobs:
 destroy:
 	@ printf "Destroying Terraform for env: `tput setaf 2``tput bold`$(ENV)`tput sgr0`\n\n"
 	./scripts/confirm.sh $(ENV)
-	DESTROY_TARGETS := $(shell terraform state list | grep module | cut -d'.' -f1,2 | grep -v -e "fc_envs_disk" -e "buckets" | uniq | awk '{print "-target=" $$0 ""}' | xargs)
 	$(tf_vars) \
 	terraform destroy \
 	-input=false \
 	-compact-warnings \
 	-parallelism=20 \
-  	$(DESTROY_TARGETS)
+	$(DESTROY_TARGETS)
 
 
 .PHONY: version
@@ -126,8 +126,11 @@ build-all:
 build-and-upload-all:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/envd build-and-upload
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) make update-api
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/env-instance-task-driver build-and-upload
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/docker-reverse-proxy build-and-upload
+
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/env-build-task-driver build-and-upload
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/template-delete-task-driver build-and-upload
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/orchestrator build-and-upload
 
 .PHONY: update-api
 update-api:
@@ -139,7 +142,7 @@ FC_ENVS_SIZE := 200
 
 .PHONE: resize-fc-envs
 resize-fc-envs:
-	gcloud --project=$(GCP_PROJECT_ID) compute disks resize fc-envs --size $(FC_ENVS_SIZE) --zone us-central1-a
+	gcloud --project=$(GCP_PROJECT_ID) compute disks resize fc-envs --size $(FC_ENVS_SIZE) --zone "$GCP_ZONE"
 	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) -- 'sudo xfs_growfs -d /dev/sdb'
 
 .PHONY: switch-env

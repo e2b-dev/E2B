@@ -1,5 +1,5 @@
 job "{{ .JobName }}/{{ .TemplateID }}" {
-  datacenters = ["us-central1-a"]
+  datacenters = ["{{ .GCPZone }}"]
   type = "batch"
 
   priority = 40

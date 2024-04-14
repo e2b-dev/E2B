@@ -60,6 +60,7 @@ resource "nomad_job" "api" {
 
   hcl2 {
     vars = {
+      orchestrator_address          = "http://localhost:${var.orchestrator_port}"
       loki_address                  = "http://localhost:${var.loki_service_port.port}"
       gcp_zone                      = var.gcp_zone
       api_port_name                 = var.api_port.name
@@ -67,10 +68,8 @@ resource "nomad_job" "api" {
       image_name                    = var.api_docker_image_digest
       postgres_connection_string    = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
       posthog_api_key               = data.google_secret_manager_secret_version.posthog_api_key.secret_data
-      logs_proxy_address            = var.logs_proxy_address
-      nomad_address                 = "http://localhost:4646"
+      nomad_address                 = "http://localhost:${var.nomad_port}"
       nomad_token                   = var.nomad_acl_token_secret
-      consul_token                  = var.consul_acl_token_secret
       environment                   = var.environment
       docker_contexts_bucket_name   = var.docker_contexts_bucket_name
       api_secret                    = var.api_secret
@@ -90,6 +89,7 @@ resource "nomad_job" "docker_reverse_proxy" {
 
   hcl2 {
     vars = {
+      gcp_zone                      = var.gcp_zone
       image_name                    = var.docker_reverse_proxy_image_digest
       postgres_connection_string    = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
       google_service_account_secret = var.docker_reverse_proxy_service_account_key
@@ -174,6 +174,39 @@ resource "nomad_job" "logs-collector" {
       grafana_api_key       = data.google_secret_manager_secret_version.grafana_api_key.secret_data
       grafana_logs_endpoint = data.google_secret_manager_secret_version.grafana_logs_endpoint.secret_data
       grafana_logs_username = data.google_secret_manager_secret_version.grafana_logs_username.secret_data
+    }
+  }
+}
+
+data "google_storage_bucket_object" "orchestrator" {
+  name   = "orchestrator"
+  bucket = var.fc_env_pipeline_bucket_name
+}
+
+
+data "external" "checksum" {
+  program = ["bash", "${path.module}/checksum.sh"]
+
+  query = {
+    base64 = data.google_storage_bucket_object.orchestrator.md5hash
+  }
+}
+
+resource "nomad_job" "orchestrator" {
+  jobspec = file("${path.module}/orchestrator.hcl")
+
+  hcl2 {
+    vars = {
+      gcp_zone     = var.gcp_zone
+      port         = var.orchestrator_port
+      environment  = var.environment
+      consul_token = var.consul_acl_token_secret
+
+      bucket_name                = var.fc_env_pipeline_bucket_name
+      google_service_account_key = var.google_service_account_key
+      orchestrator_checksum      = data.external.checksum.result.hex
+      logs_proxy_address         = var.logs_proxy_address
+      otel_tracing_print         = "false"
     }
   }
 }

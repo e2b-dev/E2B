@@ -9,7 +9,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -17,7 +18,7 @@ import (
 func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDStatus(c *gin.Context, templateID api.TemplateID, buildID api.BuildID, params api.GetTemplatesTemplateIDBuildsBuildIDStatusParams) {
 	ctx := c.Request.Context()
 
-	userID := c.Value(constants.UserIDContextKey).(uuid.UUID)
+	userID := c.Value(auth.UserIDContextKey).(uuid.UUID)
 	team, err := a.db.GetDefaultTeamFromUserID(ctx, userID)
 
 	telemetry.SetAttributes(ctx,
@@ -85,7 +86,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDStatus(c *gin.Context, tem
 func (a *APIStore) PostTemplatesTemplateIDBuildsBuildIDLogs(c *gin.Context, envID api.TemplateID, buildID string) {
 	ctx := c.Request.Context()
 
-	body, err := parseBody[api.PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody](ctx, c)
+	body, err := utils.ParseBody[api.PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing body: %s", err))
 

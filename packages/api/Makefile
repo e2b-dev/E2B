@@ -40,3 +40,4 @@ run:
 .PHONY: profiler
 profiler:
 	go tool pprof -http :9991 http://localhost:3000/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
+

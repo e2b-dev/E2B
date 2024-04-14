@@ -118,6 +118,16 @@ variable "docker_reverse_proxy_port" {
   }
 }
 
+variable "nomad_port" {
+  type    = number
+  default = 4646
+}
+
+variable "orchestrator_port" {
+  type    = number
+  default = 5008
+}
+
 variable "environment" {
   type    = string
   default = "prod"

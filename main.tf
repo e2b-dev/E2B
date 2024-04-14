@@ -127,6 +127,7 @@ module "cluster" {
   client_proxy_port            = var.client_proxy_port
   api_port                     = var.api_port
   docker_reverse_proxy_port    = var.docker_reverse_proxy_port
+  nomad_port                   = var.nomad_port
   google_service_account_email = module.init.service_account_email
   domain_name                  = var.domain_name
 
@@ -179,6 +180,7 @@ module "nomad" {
 
   consul_acl_token_secret = module.init.consul_acl_token_secret
   nomad_acl_token_secret  = module.init.nomad_acl_token_secret
+  nomad_port              = var.nomad_port
 
   # API
   logs_proxy_address                        = "http://${module.cluster.logs_proxy_ip}"
@@ -225,4 +227,8 @@ module "nomad" {
   docker_reverse_proxy_image_digest        = module.docker_reverse_proxy.docker_reverse_proxy_image_digest
   docker_reverse_proxy_port                = var.docker_reverse_proxy_port
   docker_reverse_proxy_service_account_key = module.docker_reverse_proxy.docker_reverse_proxy_service_account_key
+
+  # Orchestrator
+  orchestrator_port           = var.orchestrator_port
+  fc_env_pipeline_bucket_name = module.buckets.fc_env_pipeline_bucket_name
 }

@@ -21,7 +21,7 @@ run-profiler:
 update-driver:
 	make build
 	make upload
-	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) -- 'sudo rm -rf /opt/nomad/plugins/env-build-task-driver && \
+	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) --zone $(GCP_ZONE)  -- 'sudo rm -rf /opt/nomad/plugins/env-build-task-driver && \
 	sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-build-task-driver && \
 	([[ $$(pgrep firecracker) ]] && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found" && \

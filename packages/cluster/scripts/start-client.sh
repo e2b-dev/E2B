@@ -128,8 +128,8 @@ gcsfuse -o=allow_other --implicit-dirs "${DOCKER_CONTEXTS_BUCKET_NAME}" /mnt/dis
 
 # Setup Nomad task drivers
 sudo rm -f /opt/nomad/plugins/env-build-task-driver
-sudo rm -f /opt/nomad/plugins/env-instance-task-driver
 sudo rm -f /opt/nomad/plugins/template-delete-task-driver
+sudo rm -f /opt/nomad/orchestrator
 
 sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver
 sudo chmod +x /opt/nomad/plugins/env-build-task-driver
@@ -137,8 +137,8 @@ sudo chmod +x /opt/nomad/plugins/env-build-task-driver
 sudo cp /mnt/disks/envs-pipeline/template-delete-task-driver /opt/nomad/plugins/template-delete-task-driver
 sudo chmod +x /opt/nomad/plugins/template-delete-task-driver
 
-sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver
-sudo chmod +x /opt/nomad/plugins/env-instance-task-driver
+sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/orchestrator
+sudo chmod +x /opt/nomad/orchestrator
 
 # These variables are passed in via Terraform template interpolation
 

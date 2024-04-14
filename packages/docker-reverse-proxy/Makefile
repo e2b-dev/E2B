@@ -11,8 +11,8 @@ build:
 build-debug:
 	CGO_ENABLED=1 go build -race -gcflags=all="-N -l" -o bin/docker-reverse-proxy .
 
-.PHONY: push
-push:
+.PHONY: build-and-upload
+build-and-upload:
 	@cp -r ../shared .shared/
 	@docker buildx install # sets up the buildx as default docker builder (otherwise the command below won't work)
 	@docker build --platform linux/amd64 --tag "$(GCP_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(IMAGE)" --push .

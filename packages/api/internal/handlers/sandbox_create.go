@@ -6,18 +6,18 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sync/semaphore"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-
-	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/sync/semaphore"
 )
 
 const defaultRequestLimit = 16
@@ -29,7 +29,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	telemetry.ReportEvent(ctx, "Parsed body")
 
-	body, err := parseBody[api.PostSandboxesJSONRequestBody](ctx, c)
+	body, err := utils.ParseBody[api.PostSandboxesJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 
@@ -55,7 +55,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 	telemetry.ReportEvent(ctx, "Cleaned sandbox ID")
 
 	// Get team from context, use TeamContextKey
-	team := c.Value(constants.TeamContextKey).(models.Team)
+	team := c.Value(auth.TeamContextKey).(models.Team)
 
 	// Check if team has access to the environment
 	env, build, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
@@ -127,12 +127,17 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		metadata = *body.Metadata
 	}
 
-	sandbox, instanceErr := a.nomad.CreateSandbox(a.tracer, ctx, sandboxID, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
+	sandbox, instanceErr := a.orchestrator.CreateSandbox(a.tracer, ctx, sandboxID, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
 	if instanceErr != nil {
-		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
+		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
 
-		a.sendAPIStoreError(c, instanceErr.Code, instanceErr.ClientMsg)
+		apiErr := api.Error{
+			Code:    http.StatusInternalServerError,
+			Message: errMsg.Error(),
+		}
+
+		a.sendAPIStoreError(c, int(apiErr.Code), apiErr.Message)
 
 		return
 	}

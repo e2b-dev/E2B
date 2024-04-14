@@ -69,6 +69,8 @@ module "server_cluster" {
   network_name          = var.network_name
   service_account_email = var.google_service_account_email
 
+  nomad_port = var.nomad_port
+
   labels = var.labels
 
   depends_on = [google_storage_bucket_object.setup_config_objects]
@@ -111,6 +113,7 @@ module "client_cluster" {
 
   api_port                  = var.api_port
   docker_reverse_proxy_port = var.docker_reverse_proxy_port
+  nomad_port                = var.nomad_port
 
   service_account_email = var.google_service_account_email
 
@@ -137,6 +140,7 @@ module "network" {
 
   server_instance_group = module.server_cluster.instance_group
 
+  nomad_port             = var.nomad_port
   logs_proxy_port        = var.logs_proxy_port
   logs_health_proxy_port = var.logs_health_proxy_port
 

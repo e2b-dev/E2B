@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -17,7 +17,7 @@ import (
 func (a *APIStore) GetTemplates(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	userID := c.Value(constants.UserIDContextKey).(uuid.UUID)
+	userID := c.Value(auth.UserIDContextKey).(uuid.UUID)
 
 	team, err := a.db.GetDefaultTeamFromUserID(ctx, userID)
 	if err != nil {

@@ -103,6 +103,7 @@ func (n *NomadClient) BuildEnvJob(
 		GoogleServiceAccountBase64 string
 		GCPProjectID               string
 		GCPRegion                  string
+		GCPZone                    string
 		DockerRepositoryName       string
 		KernelVersion              string
 		FirecrackerVersion         string
@@ -130,6 +131,7 @@ func (n *NomadClient) BuildEnvJob(
 		GoogleServiceAccountBase64: googleServiceAccountBase64,
 		GCPProjectID:               constants.ProjectID,
 		GCPRegion:                  constants.Region,
+		GCPZone:                    constants.Zone,
 		DockerRepositoryName:       constants.DockerRepositoryName,
 		NomadToken:                 nomadToken,
 	}
@@ -275,6 +277,7 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 		TemplateID         string
 		ProjectID          string
 		Region             string
+		GCPZone            string
 		DockerContextsPath string
 		DockerRegistry     string
 		EnvsDisk           string
@@ -285,6 +288,7 @@ func (n *NomadClient) DeleteEnv(t trace.Tracer, ctx context.Context, envID strin
 		TemplateID:     envID,
 		ProjectID:      constants.ProjectID,
 		Region:         constants.Region,
+		GCPZone:        constants.Zone,
 		DockerRegistry: constants.DockerRepositoryName,
 		EnvsDisk:       envsDisk,
 		BucketName:     constants.DockerContextBucketName,

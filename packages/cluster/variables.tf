@@ -153,6 +153,10 @@ variable "nomad_acl_token_secret" {
   type = string
 }
 
+variable "nomad_port" {
+  type = number
+}
+
 variable "fc_envs_disk_device_name" {
   type    = string
   default = "fc-envs"

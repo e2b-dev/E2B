@@ -6,12 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 )
 
 func (a *APIStore) GetUserID(c *gin.Context) uuid.UUID {
-	return c.Value(constants.UserIDContextKey).(uuid.UUID)
+	return c.Value(auth.UserIDContextKey).(uuid.UUID)
 }
 
 func (a *APIStore) GetTeam(c *gin.Context) (*models.Team, error) {

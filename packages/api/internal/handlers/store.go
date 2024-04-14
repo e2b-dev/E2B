@@ -9,19 +9,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	loki "github.com/grafana/loki/pkg/logcli/client"
 	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	loki "github.com/grafana/loki/pkg/logcli/client"
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
+	"github.com/e2b-dev/infra/packages/api/internal/orchestrator"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
@@ -35,6 +36,7 @@ type APIStore struct {
 	posthog                    *PosthogClient
 	tracer                     trace.Tracer
 	instanceCache              *instance.InstanceCache
+	orchestrator               *orchestrator.Orchestrator
 	buildCache                 *nomad.BuildCache
 	nomad                      *nomad.NomadClient
 	db                         *db.DB
@@ -79,12 +81,18 @@ func NewAPIStore() *APIStore {
 		panic(posthogErr)
 	}
 
+	orch, err := orchestrator.New()
+	if err != nil {
+		logger.Errorf("Error initializing Orchestrator client\n: %v", err)
+		panic(err)
+	}
+
 	var initialInstances []*instance.InstanceInfo
 
 	if env.IsProduction() {
-		instances, instancesErr := nomadClient.GetInstances()
+		instances, instancesErr := orch.GetInstances(ctx)
 		if instancesErr != nil {
-			logger.Errorf("Error loading current instances from Nomad\n: %v", instancesErr.Err)
+			logger.Errorf("Error loading current instances from Nomad\n: %v", err)
 		}
 
 		initialInstances = instances
@@ -112,12 +120,12 @@ func NewAPIStore() *APIStore {
 
 	logger.Info("Initialized Analytics client")
 
-	instanceCache := instance.NewCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, nomadClient, analytics, posthogClient, logger), initialInstances, instancesCounter)
+	instanceCache := instance.NewCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, orch, analytics, posthogClient, logger), initialInstances, instancesCounter)
 
 	logger.Info("Initialized instance cache")
 
 	if env.IsProduction() {
-		go nomadClient.KeepInSync(instanceCache)
+		go orch.KeepInSync(ctx, instanceCache)
 	} else {
 		logger.Info("Skipping syncing intances with Nomad, running locally")
 	}
@@ -159,6 +167,7 @@ func NewAPIStore() *APIStore {
 	return &APIStore{
 		Ctx:                        ctx,
 		nomad:                      nomadClient,
+		orchestrator:               orch,
 		db:                         dbClient,
 		instanceCache:              instanceCache,
 		tracer:                     tracer,
@@ -190,6 +199,11 @@ func (a *APIStore) Close() {
 	err = a.cloudStorage.Close()
 	if err != nil {
 		a.logger.Errorf("Error closing Cloud Storage client\n: %v", err)
+	}
+
+	err = a.orchestrator.Close()
+	if err != nil {
+		a.logger.Errorf("Error closing Orchestrator client\n: %v", err)
 	}
 }
 
@@ -245,7 +259,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 		}
 	}
 
-	return deleteInstance(a.Ctx, a.nomad, a.analytics, a.posthog, a.logger, info, purge)
+	return deleteInstance(a.Ctx, a.orchestrator, a.analytics, a.posthog, a.logger, info)
 }
 
 func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, build *models.EnvBuild, err error) {
@@ -261,26 +275,25 @@ func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, 
 	}, build, nil
 }
 
-func getDeleteInstanceFunction(ctx context.Context, nomad *nomad.NomadClient, analytics *analyticscollector.Analytics, posthogClient *PosthogClient, logger *zap.SugaredLogger) func(info instance.InstanceInfo, purge bool) *api.APIError {
+func getDeleteInstanceFunction(ctx context.Context, orchestrator *orchestrator.Orchestrator, analytics *analyticscollector.Analytics, posthogClient *PosthogClient, logger *zap.SugaredLogger) func(info instance.InstanceInfo, purge bool) *api.APIError {
 	return func(info instance.InstanceInfo, purge bool) *api.APIError {
-		return deleteInstance(ctx, nomad, analytics, posthogClient, logger, info, purge)
+		return deleteInstance(ctx, orchestrator, analytics, posthogClient, logger, info)
 	}
 }
 
 func deleteInstance(
 	ctx context.Context,
-	nomad *nomad.NomadClient,
+	orchestrator *orchestrator.Orchestrator,
 	analytics *analyticscollector.Analytics,
 	posthogClient *PosthogClient,
 	logger *zap.SugaredLogger,
 	info instance.InstanceInfo,
-	purge bool,
 ) *api.APIError {
 	duration := time.Since(*info.StartTime).Seconds()
 
-	delErr := nomad.DeleteInstance(info.Instance.SandboxID, purge)
+	delErr := orchestrator.DeleteInstance(ctx, info.Instance.SandboxID)
 	if delErr != nil {
-		errMsg := fmt.Errorf("cannot delete instance '%s': %w", info.Instance.SandboxID, delErr.Err)
+		errMsg := fmt.Errorf("cannot delete instance '%s': %w", info.Instance.SandboxID, delErr)
 
 		return &api.APIError{
 			Err:       errMsg,

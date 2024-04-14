@@ -7,19 +7,22 @@ import (
 	"os"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/handlers"
-	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
-	tracingMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware/otel/tracing"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
-	"github.com/e2b-dev/infra/packages/shared/pkg/env"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/gin-contrib/cors"
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
 	middleware "github.com/oapi-codegen/gin-middleware"
+
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
+	"github.com/e2b-dev/infra/packages/api/internal/handlers"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/env"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+
+	customMiddleware "github.com/e2b-dev/infra/packages/shared/pkg/gin_utils/middleware"
+	tracingMiddleware "github.com/e2b-dev/infra/packages/shared/pkg/gin_utils/middleware/otel/tracing"
 )
 
 const (
@@ -79,7 +82,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 	r.Use(cors.New(config))
 
 	// Create a team API Key auth validator
-	AuthenticationFunc := customMiddleware.CreateAuthenticationFunc(
+	AuthenticationFunc := auth.CreateAuthenticationFunc(
 		apiStore.GetTeamFromAPIKey,
 		apiStore.GetUserFromAccessToken,
 	)
