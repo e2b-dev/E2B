@@ -43,7 +43,8 @@ message ResizePTYResponse {
 }
 
 message ProcessEvent {
-    uint32 pid = 1;
+    // We want to receive this after process starts as the first event, but not with each message then
+    optional uint32 pid = 1;
 
     optional bytes stdout = 2;
     optional bytes stderr = 3;
