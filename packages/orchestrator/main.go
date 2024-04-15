@@ -29,7 +29,8 @@ func main() {
 	flag.Parse()
 
 	// If we're running a test, we don't need to start the server
-	if test.Run(envID, instanceID, keepAlive, count) {
+	if *envID != "" && *instanceID != "" {
+		test.Run(*envID, *instanceID, keepAlive, count)
 		return
 	}
 
