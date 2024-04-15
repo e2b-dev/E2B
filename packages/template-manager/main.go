@@ -25,6 +25,10 @@ func main() {
 
 	flag.Parse()
 
+	if err := constants.CheckRequired(); err != nil {
+		log.Fatalf("Validation for environment variables failed: %v", err)
+	}
+
 	// If we're running a test, we don't need to start the server
 	if *envID != "" && *buildID != "" {
 		test.Build(*envID, *buildID)

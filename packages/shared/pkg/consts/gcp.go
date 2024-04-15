@@ -1,4 +1,4 @@
-package constants
+package consts
 
 import (
 	"encoding/base64"

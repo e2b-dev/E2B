@@ -36,11 +36,9 @@ const (
 )
 
 var (
-	dockerRegistry             = os.Getenv("DOCKER_REGISTRY")
-	googleServiceAccountBase64 = os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64")
-	authConfig                 = registry.AuthConfig{
+	authConfig = registry.AuthConfig{
 		Username: "_json_key_base64",
-		Password: googleServiceAccountBase64,
+		Password: consts.GoogleServiceAccountSecret,
 	}
 )
 
@@ -159,7 +157,7 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 }
 
 func (r *Rootfs) dockerTag() string {
-	return dockerRegistry + "/" + r.env.EnvID + ":" + r.env.BuildID
+	return fmt.Sprintf("%s-docker.pkg.dev/%s/%s/%s:%s", consts.GCPRegion, consts.GCPProject, consts.DockerRegistry, r.env.EnvID, r.env.BuildID)
 }
 
 func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) error {

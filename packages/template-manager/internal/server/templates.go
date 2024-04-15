@@ -5,10 +5,12 @@ import (
 	"path/filepath"
 
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/build/env"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/build/writer"
 )
@@ -42,7 +44,18 @@ func (s *serverStore) TemplateCreate(ctx context.Context, templateRequest *templ
 		BuildLogsWriter:       logsWriter,
 	}
 
-	go template.Build(childCtx, s.tracer, s.dockerClient, s.legacyDockerClient)
+	go func() {
+		buildContext, buildSpan := s.tracer.Start(
+			trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
+			"background-build-env",
+		)
+		defer buildSpan.End()
+		err := template.Build(buildContext, s.tracer, s.dockerClient, s.legacyDockerClient)
+		if err != nil {
+			telemetry.ReportCriticalError(buildContext, err)
+		}
+	}()
+	telemetry.ReportEvent(childCtx, "Started environment build")
 
 	return nil, nil
 }

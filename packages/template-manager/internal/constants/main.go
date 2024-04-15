@@ -2,9 +2,8 @@ package constants
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
+	"strings"
 )
 
 func CheckRequired() error {
@@ -12,10 +11,6 @@ func CheckRequired() error {
 
 	if consts.GCPProject == "" {
 		missing = append(missing, "GCP_PROJECT_ID")
-	}
-
-	if consts.Domain == "" {
-		missing = append(missing, "DOMAIN_NAME")
 	}
 
 	if consts.DockerRegistry == "" {
