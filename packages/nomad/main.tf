@@ -80,7 +80,7 @@ resource "nomad_job" "api" {
       gcp_docker_repository_name    = var.custom_envs_repository_name
       analytics_collector_host      = data.google_secret_manager_secret_version.analytics_collector_host.secret_data
       analytics_collector_api_token = data.google_secret_manager_secret_version.analytics_collector_api_token.secret_data
-      otel_tracing_print            = "false"
+      otel_tracing_print            = var.otel_tracing_print
     }
   }
 }
@@ -206,7 +206,7 @@ resource "nomad_job" "orchestrator" {
       bucket_name           = var.fc_env_pipeline_bucket_name
       orchestrator_checksum = data.external.orchestrator_checksum.result.hex
       logs_proxy_address    = var.logs_proxy_address
-      otel_tracing_print    = "false"
+      otel_tracing_print    = var.otel_tracing_print
     }
   }
 }
@@ -236,9 +236,10 @@ resource "nomad_job" "template_manager" {
 
       api_secret                 = var.api_secret
       bucket_name                = var.fc_env_pipeline_bucket_name
+      docker_registry            = var.custom_envs_repository_name
       google_service_account_key = var.google_service_account_key
       template_manager_checksum  = data.external.template_manager.result.hex
-      otel_tracing_print         = "false"
+      otel_tracing_print         = var.otel_tracing_print
     }
   }
 }

@@ -79,10 +79,10 @@ job "template-manager" {
 
       env {
         GOOGLE_SERVICE_ACCOUNT_BASE64 = var.google_service_account_key
-        DOCKER_REGISTRY    = var.docker_registry
-        API_SECRET         = var.api_secret
-#        OTEL_TRACING_PRINT  = var.otel_tracing_print
-        ENVIRONMENT        = var.environment
+        GCP_DOCKER_REPOSITORY_NAME    = var.docker_registry
+        API_SECRET                    = var.api_secret
+        OTEL_TRACING_PRINT            = var.otel_tracing_print
+        ENVIRONMENT                   = var.environment
       }
 
       config {

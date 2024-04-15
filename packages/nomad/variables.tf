@@ -14,6 +14,10 @@ variable "nomad_port" {
   type = number
 }
 
+variable "otel_tracing_print" {
+  type = bool
+}
+
 # API
 variable "api_docker_image_digest" {
   type = string

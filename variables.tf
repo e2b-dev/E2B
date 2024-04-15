@@ -138,6 +138,12 @@ variable "environment" {
   default = "prod"
 }
 
+variable "otel_tracing_print" {
+  description = "Whether to print OTEL traces to stdout"
+  type        = bool
+  default     = false
+}
+
 variable "github_organization" {
   type    = string
   default = "e2b-dev"

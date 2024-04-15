@@ -181,6 +181,7 @@ module "nomad" {
   consul_acl_token_secret = module.init.consul_acl_token_secret
   nomad_acl_token_secret  = module.init.nomad_acl_token_secret
   nomad_port              = var.nomad_port
+  otel_tracing_print      = var.otel_tracing_print
 
   # API
   logs_proxy_address                        = "http://${module.cluster.logs_proxy_ip}"
