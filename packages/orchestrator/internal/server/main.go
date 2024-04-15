@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
@@ -74,7 +75,7 @@ func New() *grpc.Server {
 	}
 
 	orchestrator.RegisterSandboxesServiceServer(s, &server{
-		tracer:    otel.Tracer("orchestrator"),
+		tracer:    otel.Tracer(constants.ServiceName),
 		consul:    consulClient,
 		dns:       dns,
 		sandboxes: smap.New[*sandbox.Sandbox](),

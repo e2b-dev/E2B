@@ -10,4 +10,5 @@ use (
 	./packages/orchestrator
 	./packages/shared
 	./packages/template-delete-task-driver
+	./packages/template-manager
 )
