@@ -191,8 +191,8 @@ func (a *APIStore) buildEnv(
 		KernelVersion,
 		firecrackerVersion,
 		startCmd,
-		VCpuCount,
 		MemoryMB,
+		VCpuCount,
 		DiskSizeMB,
 	)
 	if err != nil {
