@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/posthog/posthog-go"
 	"net/http"
 	"os"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	loki "github.com/grafana/loki/pkg/logcli/client"
-	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
@@ -23,6 +23,8 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/orchestrator"
+	"github.com/e2b-dev/infra/packages/api/internal/template-manager"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
@@ -37,6 +39,7 @@ type APIStore struct {
 	tracer                     trace.Tracer
 	instanceCache              *instance.InstanceCache
 	orchestrator               *orchestrator.Orchestrator
+	templateManager            *template_manager.TemplateManager
 	buildCache                 *nomad.BuildCache
 	nomad                      *nomad.NomadClient
 	db                         *db.DB
@@ -84,6 +87,12 @@ func NewAPIStore() *APIStore {
 	orch, err := orchestrator.New()
 	if err != nil {
 		logger.Errorf("Error initializing Orchestrator client\n: %v", err)
+		panic(err)
+	}
+
+	templateManager, err := template_manager.New()
+	if err != nil {
+		logger.Errorf("Error initializing Template manager client\n: %v", err)
 		panic(err)
 	}
 
@@ -168,6 +177,7 @@ func NewAPIStore() *APIStore {
 		Ctx:                        ctx,
 		nomad:                      nomadClient,
 		orchestrator:               orch,
+		templateManager:            templateManager,
 		db:                         dbClient,
 		instanceCache:              instanceCache,
 		tracer:                     tracer,

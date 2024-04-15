@@ -10,7 +10,7 @@ message TemplateCreateRequest {
   string templateID = 1;
   string buildID = 2;
   int32 memoryMB = 3;
-  int32 cpuCount = 4;
+  int32 vCpuCount = 4;
   int32 diskSizeMB = 5;
   string kernelVersion = 6;
   string firecrackerVersion = 7;

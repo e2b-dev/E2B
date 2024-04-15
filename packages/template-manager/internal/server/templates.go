@@ -2,13 +2,15 @@ package server
 
 import (
 	"context"
-	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
-	template_manager "github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
-	"github.com/e2b-dev/infra/packages/template-manager/internal/build/env"
-	"github.com/e2b-dev/infra/packages/template-manager/internal/build/writer"
+	"path/filepath"
+
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"path/filepath"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
+	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
+	"github.com/e2b-dev/infra/packages/template-manager/internal/build/env"
+	"github.com/e2b-dev/infra/packages/template-manager/internal/build/writer"
 )
 
 func (s *serverStore) TemplateCreate(ctx context.Context, templateRequest *template_manager.TemplateCreateRequest) (*emptypb.Empty, error) {
@@ -22,7 +24,7 @@ func (s *serverStore) TemplateCreate(ctx context.Context, templateRequest *templ
 		attribute.String("env.firecracker.version", templateRequest.FirecrackerVersion),
 		attribute.String("env.start_cmd", templateRequest.StartCommand),
 		attribute.Int64("env.memory_mb", int64(templateRequest.MemoryMB)),
-		attribute.Int64("env.vcpu_count", int64(templateRequest.CpuCount)),
+		attribute.Int64("env.vcpu_count", int64(templateRequest.VCpuCount)),
 		attribute.Bool("env.huge_pages", templateRequest.HugePages),
 	)
 
@@ -30,7 +32,7 @@ func (s *serverStore) TemplateCreate(ctx context.Context, templateRequest *templ
 	template := &env.Env{
 		EnvID:                 templateRequest.TemplateID,
 		BuildID:               templateRequest.BuildID,
-		VCpuCount:             int64(templateRequest.CpuCount),
+		VCpuCount:             int64(templateRequest.VCpuCount),
 		MemoryMB:              int64(templateRequest.MemoryMB),
 		StartCmd:              templateRequest.StartCommand,
 		DiskSizeMB:            int64(templateRequest.DiskSizeMB),
