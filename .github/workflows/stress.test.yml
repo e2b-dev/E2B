@@ -2,7 +2,7 @@ name: Stress test
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/50 * * * *'
   workflow_call:
 
 concurrency:

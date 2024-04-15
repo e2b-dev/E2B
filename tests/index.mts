@@ -29,7 +29,7 @@ async function createBatch<T>(length: number, m: () => Promise<T>): Promise<T[]>
 }
 
 const batchSize = 5
-const batchCount = 5
+const batchCount = 10
 
 const sandboxes: Sandbox[] = []
 
@@ -39,7 +39,7 @@ for (let i = 0; i < batchCount; i++) {
   if (s.length > 0) {
     const first = s[0]
     try {
-      await first.keepAlive(1 * 60 * 60 * 1000) // 1 hour
+      await first.keepAlive(2 * 60 * 60 * 1000) // 4 hour
     } catch (error) {
       console.error('ERROR:', error)
     }
