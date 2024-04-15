@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.25.3
-// source: spec.proto
+// source: orchestrator.proto
 
 package orchestrator
 
@@ -180,5 +180,5 @@ var SandboxesService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "spec.proto",
+	Metadata: "orchestrator.proto",
 }

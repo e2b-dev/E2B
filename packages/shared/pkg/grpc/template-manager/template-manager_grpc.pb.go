@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.25.3
-// source: spec.proto
+// source: template-manager.proto
 
 package template_manager
 
@@ -142,5 +142,5 @@ var TemplateService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "spec.proto",
+	Metadata: "template-manager.proto",
 }
