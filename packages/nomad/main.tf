@@ -230,6 +230,8 @@ resource "nomad_job" "template_manager" {
 
   hcl2 {
     vars = {
+      gcp_project = var.gcp_project_id
+      gcp_region  = var.gcp_region
       gcp_zone    = var.gcp_zone
       port        = var.template_manager_port
       environment = var.environment

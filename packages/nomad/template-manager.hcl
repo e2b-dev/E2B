@@ -2,6 +2,14 @@ variable "gcp_zone" {
   type    = string
 }
 
+variable "gcp_project" {
+  type    = string
+}
+
+variable "gcp_region" {
+  type    = string
+}
+
 variable "port" {
   type    = number
   default = 5009
@@ -79,6 +87,8 @@ job "template-manager" {
 
       env {
         GOOGLE_SERVICE_ACCOUNT_BASE64 = var.google_service_account_key
+        GCP_PROJECT_ID                = var.gcp_project
+        GCP_REGION                    = var.gcp_region
         GCP_DOCKER_REPOSITORY_NAME    = var.docker_registry
         API_SECRET                    = var.api_secret
         OTEL_TRACING_PRINT            = var.otel_tracing_print
