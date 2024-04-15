@@ -15,6 +15,7 @@ message TemplateCreateRequest {
   string kernelVersion = 6;
   string firecrackerVersion = 7;
   string startCommand = 8;
+  bool hugePages = 9;
 }
 
 // Data required for deleting a template.

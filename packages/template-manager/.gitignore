@@ -1,0 +1,7 @@
+*.out
+.plan
+alloc
+plugin
+#TODO:
+orchestrator
+bin

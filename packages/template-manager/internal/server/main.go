@@ -1,7 +1,9 @@
 package server
 
 import (
+	"github.com/docker/docker/client"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/constants"
+	docker "github.com/fsouza/go-dockerclient"
 	"log"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
@@ -15,9 +17,12 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
-type server struct {
+type serverStore struct {
 	template_manager.UnimplementedTemplateServiceServer
-	tracer trace.Tracer
+	server             *grpc.Server
+	tracer             trace.Tracer
+	dockerClient       *client.Client
+	legacyDockerClient *docker.Client
 }
 
 func New() *grpc.Server {
@@ -28,10 +33,22 @@ func New() *grpc.Server {
 		),
 	)
 
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		panic(err)
+	}
+
+	legacyClient, err := docker.NewClientFromEnv()
+	if err != nil {
+		panic(err)
+	}
+
 	log.Println("Initializing orchestrator server")
 
-	template_manager.RegisterTemplateServiceServer(s, &server{
-		tracer: otel.Tracer(constants.ServiceName),
+	template_manager.RegisterTemplateServiceServer(s, &serverStore{
+		tracer:             otel.Tracer(constants.ServiceName),
+		dockerClient:       dockerClient,
+		legacyDockerClient: legacyClient,
 	})
 
 	grpc_health_v1.RegisterHealthServer(s, health.NewServer())

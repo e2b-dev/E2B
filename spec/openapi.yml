@@ -102,13 +102,13 @@ components:
       properties:
         templateID:
           type: string
-          description: Identifier of the template from which is the sandbox created
+          description: Identifier of the env from which is the sandbox created
         sandboxID:
           type: string
           description: Identifier of the sandbox
         alias:
           type: string
-          description: Alias of the template
+          description: Alias of the env
         clientID:
           type: string
           description: Identifier of the client
@@ -124,10 +124,10 @@ components:
       properties:
         templateID:
           type: string
-          description: Identifier of the template from which is the sandbox created
+          description: Identifier of the env from which is the sandbox created
         alias:
           type: string
-          description: Alias of the template
+          description: Alias of the env
         sandboxID:
           type: string
           description: Identifier of the sandbox
@@ -153,7 +153,7 @@ components:
       properties:
         templateID:
           type: string
-          description: Identifier of the required template
+          description: Identifier of the required env
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
 
@@ -168,10 +168,10 @@ components:
       properties:
         templateID:
           type: string
-          description: Identifier of the template
+          description: Identifier of the env
         buildID:
           type: string
-          description: Identifier of the last successful build for given template
+          description: Identifier of the last successful build for given env
         cpuCount:
           type: integer
           description: CPU cores for the sandbox
@@ -180,10 +180,10 @@ components:
           description: Memory limit for the sandbox in MB
         public:
           type: boolean
-          description: Whether the template is public or only accessible by the team
+          description: Whether the env is public or only accessible by the team
         aliases:
           type: array
-          description: Aliases of the template
+          description: Aliases of the env
           items:
             type: string
 
@@ -192,20 +192,20 @@ components:
         - dockerfile
       properties:
         alias:
-          description: Alias of the template
+          description: Alias of the env
           type: string
         dockerfile:
-          description: Dockerfile for the template
+          description: Dockerfile for the env
           type: string
         startCmd:
-          description: Start command to execute in the template after the build
+          description: Start command to execute in the env after the build
           type: string
         cpuCount:
-          description: CPU cores for the template
+          description: CPU cores for the env
           type: integer
           minimum: 1
         memoryMB:
-          description: Memory limit for the template in MB
+          description: Memory limit for the env in MB
           type: integer
           minimum: 128
 
@@ -224,13 +224,13 @@ components:
             type: string
         templateID:
           type: string
-          description: Identifier of the template
+          description: Identifier of the env
         buildID:
           type: string
           description: Identifier of the build
         status:
           type: string
-          description: Status of the template
+          description: Status of the env
           enum:
             - building
             - ready
@@ -286,7 +286,7 @@ paths:
         500:
           $ref: "#/components/responses/500"
     post:
-      description: Create a sandbox from the template
+      description: Create a sandbox from the env
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -410,7 +410,7 @@ paths:
         500:
           $ref: "#/components/responses/500"
     post:
-      description: Create a new template
+      description: Create a new env
       tags: [templates]
       security:
         - AccessTokenAuth: []
@@ -435,7 +435,7 @@ paths:
 
   /templates/{templateID}:
     post:
-      description: Rebuild an template
+      description: Rebuild an env
       tags: [templates]
       security:
         - AccessTokenAuth: []
@@ -460,7 +460,7 @@ paths:
         500:
           $ref: "#/components/responses/500"
     delete:
-      description: Delete a template
+      description: Delete a env
       tags: [templates]
       security:
         - AccessTokenAuth: []
@@ -468,7 +468,7 @@ paths:
         - $ref: "#/components/parameters/templateID"
       responses:
         204:
-          description: The template was deleted successfully
+          description: The env was deleted successfully
         401:
           $ref: "#/components/responses/401"
         500:
@@ -525,7 +525,7 @@ paths:
 
   /templates/{templateID}/builds/{buildID}/status:
     get:
-      description: Get template build info
+      description: Get env build info
       tags: [templates]
       security:
         - AccessTokenAuth: []
@@ -537,10 +537,10 @@ paths:
           schema:
             default: 0
             type: integer
-          description: Index of the starting build log that should be returned with the template
+          description: Index of the starting build log that should be returned with the env
       responses:
         200:
-          description: Successfully returned the template
+          description: Successfully returned the env
           content:
             application/json:
               schema:
