@@ -20,7 +20,7 @@ source "googlecompute" "orch" {
   disk_type           = "pd-ssd"
 
   # This is used only for building the image and the GCE VM is then deleted
-  machine_type = "n2-standard-2"
+  machine_type = "n1-standard-4"
 
   # Enable nested virtualization
   image_licenses = ["projects/vm-options/global/licenses/enable-vmx"]
