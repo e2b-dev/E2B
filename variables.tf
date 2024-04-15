@@ -128,6 +128,11 @@ variable "orchestrator_port" {
   default = 5008
 }
 
+variable "template_manager_port" {
+  type    = number
+  default = 5009
+}
+
 variable "environment" {
   type    = string
   default = "prod"

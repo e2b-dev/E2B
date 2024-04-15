@@ -184,7 +184,7 @@ data "google_storage_bucket_object" "orchestrator" {
 }
 
 
-data "external" "checksum" {
+data "external" "orchestrator_checksum" {
   program = ["bash", "${path.module}/checksum.sh"]
 
   query = {
@@ -199,6 +199,39 @@ resource "nomad_job" "orchestrator" {
     vars = {
       gcp_zone     = var.gcp_zone
       port         = var.orchestrator_port
+      environment  = var.environment
+      consul_token = var.consul_acl_token_secret
+
+      bucket_name                = var.fc_env_pipeline_bucket_name
+      google_service_account_key = var.google_service_account_key
+      orchestrator_checksum      = data.external.orchestrator_checksum.result.hex
+      logs_proxy_address         = var.logs_proxy_address
+      otel_tracing_print         = "false"
+    }
+  }
+}
+
+data "google_storage_bucket_object" "template_manager" {
+  name   = "template-manager"
+  bucket = var.fc_env_pipeline_bucket_name
+}
+
+
+data "external" "checksum" {
+  program = ["bash", "${path.module}/checksum.sh"]
+
+  query = {
+    base64 = data.google_storage_bucket_object.template_manager.md5hash
+  }
+}
+
+resource "nomad_job" "template_manager" {
+  jobspec = file("${path.module}/template-manager.hcl")
+
+  hcl2 {
+    vars = {
+      gcp_zone     = var.gcp_zone
+      port         = var.template_manager_port
       environment  = var.environment
       consul_token = var.consul_acl_token_secret
 
