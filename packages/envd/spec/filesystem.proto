@@ -3,6 +3,8 @@
 
 syntax = "proto3";
 
+import "./permission.proto";
+
 package filesystem;
 
 service Filesystem {
@@ -10,19 +12,64 @@ service Filesystem {
     
     rpc CreateFile(CreateRequest) returns (CreateResponse);
     rpc CreateDir(CreateRequest) returns (CreateResponse);
-    
+    rpc CreateLink(CreateRequest) returns (CreateResponse);
+    rpc CreateSymlink(CreateRequest) returns (CreateResponse);
+
     rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
     rpc WriteFile(WriteFileRequest) returns (WriteFileResponse);
     
     rpc ListDir(ListDirRequest) returns (ListDirResponse);
-    rpc WatchDir(WatchDirRequest) returns (stream FilesystemEvent);
-
+    
+    rpc Watch(WatchRequest) returns (stream FilesystemEvent);
     rpc Rename(RenameRequest) returns (RenameResponse);
     rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+    rpc Chmod(ChmodRequest) returns (ChmodResponse);
+    rpc Chown(ChownRequest) returns (ChownResponse);
+
+    // TODO: How should it work when the source is directory vs file?
+    rpc Copy(CopyRequest) returns (CopyResponse);
+}
+
+message CopyRequest {
+    string source = 1;
+    string destination = 2;
+
+    optional Permission permission = 3;
+}
+
+message CopyResponse {
+    bool success = 1;
+}
+
+message ChmodRequest {
+    string path = 1;
+    // TODO: Should the mode be more specific?
+    int32 mode = 2;
+
+    optional Permission permission = 3;
+}
+
+message ChmodResponse {
+    bool success = 1;
+}
+
+message ChownRequest {
+    string path = 1;
+    int32 uid = 2;
+    int32 gid = 3;
+
+    optional Permission permission = 3;
+}
+
+message ChownResponse {
+    bool success = 1;
 }
 
 message CreateRequest {
     string path = 1;
+
+    optional Permission permission = 3;
 }
 
 message CreateResponse {
@@ -31,6 +78,8 @@ message CreateResponse {
 
 message ReadFileRequest {
     string path = 1;
+
+    optional Permission permission = 3;
 }
 
 message ReadFileResponse {
@@ -39,6 +88,8 @@ message ReadFileResponse {
 
 message ExistsRequest {
     string path = 1;
+
+    optional Permission permission = 3;
 }
 
 message ExistsResponse {
@@ -49,6 +100,8 @@ message ExistsResponse {
 message WriteFileRequest {
     string path = 1;
     bytes data = 2;
+
+    optional Permission permission = 3;
 }
 
 message WriteFileResponse {
@@ -57,6 +110,8 @@ message WriteFileResponse {
 
 message DeleteRequest {
     string path = 1;
+
+    optional Permission permission = 3;
 }
 
 message DeleteResponse {
@@ -66,6 +121,8 @@ message DeleteResponse {
 message RenameRequest {
     string old_path = 1;
     string new_path = 2;
+
+    optional Permission permission = 3;
 }
 
 message RenameResponse {
@@ -82,14 +139,18 @@ message EntryInfo {
 
 message ListDirRequest {
     string path = 1;
+
+    optional Permission permission = 3;
 }
 
 message ListDirResponse {
     repeated EntryInfo entries = 1;
 }
 
-message WatchDirRequest {
+message WatchRequest {
     string path = 1;
+
+    optional Permission permission = 3;
 }
 
 enum EntryType {

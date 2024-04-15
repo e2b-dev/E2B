@@ -4,11 +4,22 @@ package network;
 
 service Network {
     rpc CheckPort(CheckPortRequest) returns (CheckPortResponse);
+    rpc ListPorts(ListPortsRequest) returns (ListPortsResponse);
 
     rpc OpenPort(OpenPortRequest) returns (OpenPortResponse);
     rpc ClosePort(ClosePortRequest) returns (ClosePortResponse);
 
-    rpc WatchPorts(WatchPortsRequest) returns (stream PortEvent);
+    // Is this the corret
+    rpc WatchPorts(WatchPortsRequest) returns (stream PortInfo);
+    rpc WaitForPort(OpenPortRequest) returns (stream OpenPortResponse);
+}
+
+
+
+message ListPortsRequest {}
+
+message ListPortsResponse {
+    repeated PortInfo ports = 1;
 }
 
 message OpenPortRequest {
@@ -29,7 +40,7 @@ message ClosePortResponse {
 
 message WatchPortsRequest {}
 
-message PortEvent {
+message PortInfo {
     uint32 port = 1;
     bool open = 2;
 }

@@ -4,3 +4,105 @@
 # You should be able to specify the format for saving the file/encoding
 
 # The /sync path should be accessible for syncing the clocks - probably by exposing this on a different port that the file serving one?
+
+# TODO: Check out how this is handled by S3/Cloud storage
+# For example, they handle the byte range to download by specifying the Range header which may be standard
+# TODO: We can allow uploading byte range too, because we are not storing objects
+
+openapi: 3.0.0
+info:
+  title: envd
+  version: 0.1.0
+  description: The API for the REST server in the envd service
+
+paths:
+  /:
+    get:
+      summary: Download a file from the sandbox
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: The path to the file to download
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The file was downloaded successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /{path}:
+    get:
+      summary: Download a file from the sandbox # TODO: Specify what to do when the file is a directory (just a special file?)
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: The path to the file to download
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The file was downloaded successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+    post:
+      summary: Upload a file to the sandbox
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Absolute path in the sandbox to save the file to, URL encoded.
+          schema:
+            type: string
+        - name: user
+          in: query
+          required: false
+          description: Which user should own the file
+          schema:
+            type: string
+        - name: group
+          in: query
+          required: false
+          description: Which group should own the file
+          schema:
+            type: string
+        - name: permissions
+          in: query
+          required: false
+          description: The permissions for the file
+          schema:
+            type: integer # TODO: Maybe in the string octal format?
+        - name: format # TODO: Is this useful?
+          in: query
+          required: false
+          description: The format for saving the file/encoding
+          schema:
+            type: string
+        - name: overwrite
+          in: query
+          required: false
+          description: Whether to overwrite the file if it already exists
+          schema:
+            type: boolean
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: The file was uploaded successfully
+        # TODO: Signalize that the file overwrote an existing one
+        # TODO: Signalize that the file was a directory

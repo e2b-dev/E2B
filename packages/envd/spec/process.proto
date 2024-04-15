@@ -2,6 +2,8 @@ syntax = "proto3";
 
 option go_package = "https://github.com/e2b-dev/infra/packages/envd";
 
+import "./permission.proto";
+
 package process;
 
 service Process {
@@ -29,7 +31,9 @@ message StartProcessRequest {
     map<string, string> env = 3;
     string cwd = 4;
 
-    optional PTY pty = 5;
+    optional Permission permission = 5;
+
+    optional PTY pty = 6;
 }
 
 message ResizePTYRequest {
