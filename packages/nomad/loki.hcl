@@ -21,8 +21,6 @@ job "loki" {
   priority = 75
 
   group "loki-service" {
-    count = 1
-
     network {
       port "loki" {
         to = var.loki_service_port_number
@@ -56,9 +54,9 @@ job "loki" {
       }
 
       resources {
-        cpu    = 500
+        max_memory = 2048
         memory = 1024
-        memory_max = 2048
+        cpu    = 512
       }
 
       template {

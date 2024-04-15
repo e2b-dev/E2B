@@ -56,7 +56,7 @@ variable "google_service_account_secret" {
 job "docker-reverse-proxy" {
   datacenters = [var.gcp_zone]
 
-  priority = 90
+  priority = 85
 
   group "reverse-proxy" {
     network {
@@ -83,9 +83,9 @@ job "docker-reverse-proxy" {
       driver = "docker"
 
       resources {
-        memory     = 1024
-        memory_max = 1024
-        cpu        = 512
+        max_memory = 2048
+        memory = 512
+        cpu    = 1024
       }
 
       env {

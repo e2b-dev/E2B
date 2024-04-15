@@ -19,13 +19,10 @@ variable "session_proxy_service_name" {
 }
 
 job "session-proxy" {
+  type = "system"
   datacenters = [var.gcp_zone]
 
   priority = 80
-
-  meta {
-    label1 = "job"
-  }
 
   constraint {
     operator = "distinct_hosts"
@@ -33,12 +30,6 @@ job "session-proxy" {
   }
 
   group "session-proxy" {
-    count = var.client_cluster_size
-
-    meta {
-      label1 = "group"
-    }
-
     network {
       port "session" {
         static = var.session_proxy_port_number
@@ -78,8 +69,9 @@ job "session-proxy" {
       }
 
       resources {
-        memory = 1024
-        cpu    = 128
+        max_memory = 2048
+        memory = 512
+        cpu    = 512
       }
 
       template {

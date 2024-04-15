@@ -46,7 +46,7 @@ job "orchestrator" {
   type = "system"
   datacenters = [var.gcp_zone]
 
-  priority = 85
+  priority = 90
 
   group "client-orchestrator" {
     network {
