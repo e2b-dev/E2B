@@ -10,78 +10,6 @@ set -euo pipefail
 # Inspired by https://alestic.com/2010/12/ec2-user-data-output/
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
-# Set up huge pages
-# We are not enabling Transparent Huge Pages for now, as they are not swappable and may result in slowdowns + we are not using swap right now.
-# The THP are by default set to madvise
-# We are allocating the hugepages at the start when the memory is not fragmented yet
-echo "[Setting up huge pages]"
-sudo mkdir -p /mnt/hugepages
-mount -t hugetlbfs none /mnt/hugepages
-# Increase proactive compaction to reduce memory fragmentation for using overcomitted huge pages
-
-available_ram=$(grep MemTotal /proc/meminfo | awk '{print $2}') # in KiB
-available_ram=$(($available_ram / 1024))                        # in MiB
-echo "- Total memory: $available_ram MiB"
-
-min_normal_ram=$((4 * 1024))                             # 4 GiB
-min_normal_percentage_ram=$(($available_ram * 16 / 100)) # 16% of the total memory
-max_normal_ram=$((42 * 1024))                            # 42 GiB
-
-max() {
-    if (($1 > $2)); then
-        echo "$1"
-    else
-        echo "$2"
-    fi
-}
-
-min() {
-    if (($1 < $2)); then
-        echo "$1"
-    else
-        echo "$2"
-    fi
-}
-
-ensure_even() {
-    if (($1 % 2 == 0)); then
-        echo "$1"
-    else
-        echo $(($1 - 1))
-    fi
-}
-
-remove_decimal() {
-    echo "$(echo $1 | sed 's/\..*//')"
-}
-
-reserved_normal_ram=$(max $min_normal_ram $min_normal_percentage_ram)
-reserved_normal_ram=$(min $reserved_normal_ram $max_normal_ram)
-echo "- Reserved RAM: $reserved_normal_ram MiB"
-
-# The huge pages RAM should still be usable for normal pages in most cases.
-hugepages_ram=$(($available_ram - $reserved_normal_ram))
-hugepages_ram=$(remove_decimal $hugepages_ram)
-hugepages_ram=$(ensure_even $hugepages_ram)
-echo "- RAM for hugepages: $hugepages_ram MiB"
-
-hugepage_size_in_mib=2
-echo "- Huge page size: $hugepage_size_in_mib MiB"
-hugepages=$(($hugepages_ram / $hugepage_size_in_mib))
-
-# This percentage will be permanently allocated for huge pages and in monitoring it will be shown as used.
-base_hugepages_percentage=100
-base_hugepages=$(($hugepages * $base_hugepages_percentage / 100))
-base_hugepages=$(remove_decimal $base_hugepages)
-echo "- Allocating $base_hugepages huge pages ($base_hugepages_percentage%) for base usage"
-echo $base_hugepages >/proc/sys/vm/nr_hugepages
-
-overcommitment_hugepages_percentage=$((100 - $base_hugepages_percentage))
-overcommitment_hugepages=$(($hugepages * $overcommitment_hugepages_percentage / 100))
-overcommitment_hugepages=$(remove_decimal $overcommitment_hugepages)
-echo "- Allocating $overcommitment_hugepages huge pages ($overcommitment_hugepages_percentage%) for overcommitment"
-echo $overcommitment_hugepages >/proc/sys/vm/nr_overcommit_hugepages
-
 # --- Mount the persistent disk with Firecracker environments.
 # See https://cloud.google.com/compute/docs/disks/add-persistent-disk#create_disk
 
@@ -160,6 +88,78 @@ cat <<EOF >/root/docker/config.json
     }
 }
 EOF
+
+# Set up huge pages
+# We are not enabling Transparent Huge Pages for now, as they are not swappable and may result in slowdowns + we are not using swap right now.
+# The THP are by default set to madvise
+# We are allocating the hugepages at the start when the memory is not fragmented yet
+echo "[Setting up huge pages]"
+sudo mkdir -p /mnt/hugepages
+mount -t hugetlbfs none /mnt/hugepages
+# Increase proactive compaction to reduce memory fragmentation for using overcomitted huge pages
+
+available_ram=$(grep MemTotal /proc/meminfo | awk '{print $2}') # in KiB
+available_ram=$(($available_ram / 1024))                        # in MiB
+echo "- Total memory: $available_ram MiB"
+
+min_normal_ram=$((4 * 1024))                             # 4 GiB
+min_normal_percentage_ram=$(($available_ram * 16 / 100)) # 16% of the total memory
+max_normal_ram=$((42 * 1024))                            # 42 GiB
+
+max() {
+    if (($1 > $2)); then
+        echo "$1"
+    else
+        echo "$2"
+    fi
+}
+
+min() {
+    if (($1 < $2)); then
+        echo "$1"
+    else
+        echo "$2"
+    fi
+}
+
+ensure_even() {
+    if (($1 % 2 == 0)); then
+        echo "$1"
+    else
+        echo $(($1 - 1))
+    fi
+}
+
+remove_decimal() {
+    echo "$(echo $1 | sed 's/\..*//')"
+}
+
+reserved_normal_ram=$(max $min_normal_ram $min_normal_percentage_ram)
+reserved_normal_ram=$(min $reserved_normal_ram $max_normal_ram)
+echo "- Reserved RAM: $reserved_normal_ram MiB"
+
+# The huge pages RAM should still be usable for normal pages in most cases.
+hugepages_ram=$(($available_ram - $reserved_normal_ram))
+hugepages_ram=$(remove_decimal $hugepages_ram)
+hugepages_ram=$(ensure_even $hugepages_ram)
+echo "- RAM for hugepages: $hugepages_ram MiB"
+
+hugepage_size_in_mib=2
+echo "- Huge page size: $hugepage_size_in_mib MiB"
+hugepages=$(($hugepages_ram / $hugepage_size_in_mib))
+
+# This percentage will be permanently allocated for huge pages and in monitoring it will be shown as used.
+base_hugepages_percentage=20
+base_hugepages=$(($hugepages * $base_hugepages_percentage / 100))
+base_hugepages=$(remove_decimal $base_hugepages)
+echo "- Allocating $base_hugepages huge pages ($base_hugepages_percentage%) for base usage"
+echo $base_hugepages >/proc/sys/vm/nr_hugepages
+
+overcommitment_hugepages_percentage=$((100 - $base_hugepages_percentage))
+overcommitment_hugepages=$(($hugepages * $overcommitment_hugepages_percentage / 100))
+overcommitment_hugepages=$(remove_decimal $overcommitment_hugepages)
+echo "- Allocating $overcommitment_hugepages huge pages ($overcommitment_hugepages_percentage%) for overcommitment"
+echo $overcommitment_hugepages >/proc/sys/vm/nr_overcommit_hugepages
 
 # These variables are passed in via Terraform template interpolation
 /opt/consul/bin/run-consul.sh --client --cluster-tag-name "${CLUSTER_TAG_NAME}" --enable-gossip-encryption --gossip-encryption-key "${CONSUL_GOSSIP_ENCRYPTION_KEY}" &
