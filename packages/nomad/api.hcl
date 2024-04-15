@@ -1,6 +1,5 @@
 variable "gcp_zone" {
   type    = string
-  default = "us-central1-a"
 }
 
 variable "image_name" {
@@ -98,6 +97,11 @@ variable "orchestrator_address" {
   default = ""
 }
 
+variable "template_manager_address" {
+  type    = string
+  default = ""
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -135,6 +139,7 @@ job "orchestration-api" {
 
       env {
         ORCHESTRATOR_ADDRESS          = var.orchestrator_address
+        TEMPLATE_MANAGER_ADDRESS      = var.template_manager_address
         NOMAD_ADDRESS                 = var.nomad_address
         NOMAD_TOKEN                   = var.nomad_token
         POSTGRES_CONNECTION_STRING    = var.postgres_connection_string

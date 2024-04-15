@@ -61,6 +61,7 @@ resource "nomad_job" "api" {
   hcl2 {
     vars = {
       orchestrator_address          = "http://localhost:${var.orchestrator_port}"
+      template_manager_address      = "http://localhost:${var.template_manager_port}"
       loki_address                  = "http://localhost:${var.loki_service_port.port}"
       gcp_zone                      = var.gcp_zone
       api_port_name                 = var.api_port.name
@@ -202,11 +203,10 @@ resource "nomad_job" "orchestrator" {
       environment  = var.environment
       consul_token = var.consul_acl_token_secret
 
-      bucket_name                = var.fc_env_pipeline_bucket_name
-      google_service_account_key = var.google_service_account_key
-      orchestrator_checksum      = data.external.orchestrator_checksum.result.hex
-      logs_proxy_address         = var.logs_proxy_address
-      otel_tracing_print         = "false"
+      bucket_name           = var.fc_env_pipeline_bucket_name
+      orchestrator_checksum = data.external.orchestrator_checksum.result.hex
+      logs_proxy_address    = var.logs_proxy_address
+      otel_tracing_print    = "false"
     }
   }
 }
@@ -217,7 +217,7 @@ data "google_storage_bucket_object" "template_manager" {
 }
 
 
-data "external" "checksum" {
+data "external" "template_manager" {
   program = ["bash", "${path.module}/checksum.sh"]
 
   query = {
@@ -230,15 +230,14 @@ resource "nomad_job" "template_manager" {
 
   hcl2 {
     vars = {
-      gcp_zone     = var.gcp_zone
-      port         = var.template_manager_port
-      environment  = var.environment
-      consul_token = var.consul_acl_token_secret
+      gcp_zone    = var.gcp_zone
+      port        = var.template_manager_port
+      environment = var.environment
 
+      api_secret                 = var.api_secret
       bucket_name                = var.fc_env_pipeline_bucket_name
       google_service_account_key = var.google_service_account_key
-      orchestrator_checksum      = data.external.checksum.result.hex
-      logs_proxy_address         = var.logs_proxy_address
+      template_manager_checksum  = data.external.template_manager.result.hex
       otel_tracing_print         = "false"
     }
   }

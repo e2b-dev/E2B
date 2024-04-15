@@ -1,20 +1,20 @@
 package server
 
 import (
-	"github.com/docker/docker/client"
-	"github.com/e2b-dev/infra/packages/template-manager/internal/constants"
-	docker "github.com/fsouza/go-dockerclient"
 	"log"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"github.com/docker/docker/client"
+	docker "github.com/fsouza/go-dockerclient"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
-	"google.golang.org/grpc/health/grpc_health_v1"
+	"github.com/e2b-dev/infra/packages/template-manager/internal/constants"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 )
 
 type serverStore struct {

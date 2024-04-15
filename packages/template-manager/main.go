@@ -3,14 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/template-manager/internal/constants"
-	"github.com/e2b-dev/infra/packages/template-manager/internal/test"
 	"log"
 	"net"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"github.com/e2b-dev/infra/packages/template-manager/internal/constants"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/server"
+	"github.com/e2b-dev/infra/packages/template-manager/internal/test"
 )
 
 const (

@@ -12,7 +12,7 @@ variable "docker_registry" {
   default = ""
 }
 
-variable "logs_proxy_address" {
+variable "api_secret" {
   type    = string
   default = ""
 }
@@ -33,6 +33,11 @@ variable "template_manager_checksum" {
 }
 
 variable "google_service_account_key" {
+  type    = string
+  default = ""
+}
+
+variable "bucket_name" {
   type    = string
   default = ""
 }
@@ -73,20 +78,22 @@ job "template-manager" {
       }
 
       env {
-        ENVIRONMENT        = "prod"
-        GOOGLE_CREDENTIALS           = var.google_service_account_key
-        DOCKER_REGISTRY     = var.docker_registry
+        GOOGLE_SERVICE_ACCOUNT_BASE64 = var.google_service_account_key
+        DOCKER_REGISTRY    = var.docker_registry
+        API_SECRET         = var.api_secret
+#        OTEL_TRACING_PRINT  = var.otel_tracing_print
+        ENVIRONMENT        = var.environment
       }
 
       config {
         command = "/bin/bash"
-        args    = ["-c", " chmod +x local/orchestrator && local/orchestrator --port ${var.port}"]
+        args    = ["-c", " chmod +x local/template-manager && local/template-manager --port ${var.port}"]
       }
 
       artifact {
-        source      = "gcs::https://www.googleapis.com/storage/v1/${var.bucket_name}/orchestrator"
+        source      = "gcs::https://www.googleapis.com/storage/v1/${var.bucket_name}/template-manager"
         options {
-            checksum    = "md5:${var.orchestrator_checksum}"
+            checksum    = "md5:${var.template_manager_checksum}"
         }
       }
     }

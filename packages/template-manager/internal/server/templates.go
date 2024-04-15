@@ -42,10 +42,7 @@ func (s *serverStore) TemplateCreate(ctx context.Context, templateRequest *templ
 		BuildLogsWriter:       logsWriter,
 	}
 
-	err := template.Build(childCtx, s.tracer, s.dockerClient, s.legacyDockerClient)
-	if err != nil {
-		return nil, err
-	}
+	go template.Build(childCtx, s.tracer, s.dockerClient, s.legacyDockerClient)
 
 	return nil, nil
 }
