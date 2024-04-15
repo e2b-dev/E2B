@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
@@ -104,21 +103,20 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			startCmd = *build.StartCmd
 		}
 
-		// Call the Nomad API to build the environment
+		// Call the Template Manager to build the environment
 		diskSize, buildErr := a.buildEnv(
 			buildContext,
 			userID.String(),
 			team.ID,
 			envDB.ID,
 			buildUUID,
+			schema.DefaultKernelVersion,
+			schema.DefaultFirecrackerVersion,
 			startCmd,
-			nomad.BuildConfig{
-				VCpuCount:          build.Vcpu,
-				MemoryMB:           build.RAMMB,
-				DiskSizeMB:         build.FreeDiskSizeMB,
-				KernelVersion:      schema.DefaultKernelVersion,
-				FirecrackerVersion: schema.DefaultFirecrackerVersion,
-			})
+			build.Vcpu,
+			build.RAMMB,
+			build.FreeDiskSizeMB,
+		)
 
 		if buildErr != nil {
 			status = api.TemplateBuildStatusError
@@ -157,8 +155,12 @@ func (a *APIStore) buildEnv(
 	teamID uuid.UUID,
 	envID string,
 	buildID uuid.UUID,
-	startCmd string,
-	vmConfig nomad.BuildConfig,
+	startCmd,
+	KernelVersion,
+	firecrackerVersion string,
+	VCpuCount,
+	MemoryMB,
+	DiskSizeMB int64,
 ) (diskSize int64, err error) {
 	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
 		trace.WithAttributes(
@@ -181,15 +183,17 @@ func (a *APIStore) buildEnv(
 		)
 	}()
 
-	diskSize, err = a.nomad.BuildEnvJob(
+	err = a.templateManager.CreateTemplate(
 		a.tracer,
 		childCtx,
 		envID,
 		buildID.String(),
+		KernelVersion,
+		firecrackerVersion,
 		startCmd,
-		a.apiSecret,
-		a.googleServiceAccountBase64,
-		vmConfig,
+		VCpuCount,
+		MemoryMB,
+		DiskSizeMB,
 	)
 	if err != nil {
 		err = fmt.Errorf("error when building env: %w", err)
