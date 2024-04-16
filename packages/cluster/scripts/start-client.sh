@@ -75,7 +75,7 @@ gsutil cp "gs://${SCRIPTS_BUCKET}/run-nomad-${RUN_NOMAD_FILE_HASH}.sh" /opt/noma
 
 chmod +x /opt/consul/bin/run-consul.sh /opt/nomad/bin/run-nomad.sh
 
-mkdir /root/docker
+mkdir -p /root/docker
 touch /root/docker/config.json
 cat <<EOF >/root/docker/config.json
 {
