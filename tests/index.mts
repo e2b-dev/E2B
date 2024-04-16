@@ -74,6 +74,7 @@ for (let i = 0; i < batchCount; i++) {
     const first = s[0]
     try {
       await first.keepAlive(60 * 60 * 1000) // 4 hour
+      // Remove the first element
     } catch (error) {
       console.error('ERROR:', error)
     }
@@ -85,6 +86,12 @@ for (let i = 0; i < batchCount; i++) {
 for (const s of sandboxes) {
   try {
     s.close()
+
+    // Randomly kill some sandboxes
+    if (Math.random() > 0.5) {
+      await Sandbox.kill(s.id)
+      continue
+    }
   } catch (error) {
     console.error('ERROR:', error)
   }
