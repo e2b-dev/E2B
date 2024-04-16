@@ -53,7 +53,7 @@ func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateC
 		return err
 	}
 
-	telemetry.ReportEvent(childCtx, "Started environment build")
+	telemetry.ReportEvent(childCtx, "Environment built")
 
 	return nil
 }

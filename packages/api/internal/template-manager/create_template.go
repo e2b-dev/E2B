@@ -11,15 +11,19 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/status"
 
+	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
+	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 func (tm *TemplateManager) CreateTemplate(
 	t trace.Tracer,
 	ctx context.Context,
+	db *db.DB,
 	buildCache *nomad.BuildCache,
 	templateID string,
 	buildID uuid.UUID,
@@ -30,6 +34,8 @@ func (tm *TemplateManager) CreateTemplate(
 	vCpuCount,
 	memoryMB int64,
 ) error {
+	// TODO:
+	diskSize := int64(0)
 	childCtx, childSpan := t.Start(ctx, "create-sandbox",
 		trace.WithAttributes(
 			attribute.String("env.id", templateID),
@@ -75,6 +81,8 @@ func (tm *TemplateManager) CreateTemplate(
 		return errMsg
 	}
 
+	var buildStatus api.TemplateBuildStatus
+
 	go func() {
 		buildContext, buildSpan := t.Start(
 			trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
@@ -84,9 +92,20 @@ func (tm *TemplateManager) CreateTemplate(
 		for {
 			log, receiveErr := logs.Recv()
 			if receiveErr == io.EOF {
-				return
-			} else if receiveErr != nil {
 				break
+			} else if receiveErr != nil {
+				buildStatus = api.TemplateBuildStatusError
+
+				err = db.EnvBuildSetStatus(buildContext, templateID, buildID, envbuild.StatusFailed)
+				if err != nil {
+					err = fmt.Errorf("error when setting build status: %w", err)
+					telemetry.ReportCriticalError(buildContext, err)
+				}
+
+				errMsg := fmt.Errorf("error when building env: %w", receiveErr)
+
+				telemetry.ReportCriticalError(buildContext, errMsg)
+				return
 			}
 
 			logErr := buildCache.Append(templateID, buildID, log.Log)
@@ -94,8 +113,18 @@ func (tm *TemplateManager) CreateTemplate(
 				errMsg := fmt.Errorf("error when saving docker build logs: %w", logErr)
 				telemetry.ReportError(buildContext, errMsg)
 
-				return
+				break
 			}
+		}
+		buildStatus = api.TemplateBuildStatusReady
+		err = db.FinishEnvBuild(buildContext, templateID, buildID, diskSize)
+
+		telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", templateID))
+
+		cacheErr := buildCache.SetDone(templateID, buildID, buildStatus)
+		if cacheErr != nil {
+			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
+			telemetry.ReportCriticalError(buildContext, cacheErr)
 		}
 	}()
 

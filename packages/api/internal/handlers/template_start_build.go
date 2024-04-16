@@ -94,8 +94,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
 			"background-build-env",
 		)
-
-		var status api.TemplateBuildStatus
+		defer childSpan.End()
 
 		build := envDB.Edges.Builds[0]
 		startCmd := ""
@@ -104,7 +103,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 		}
 
 		// Call the Template Manager to build the environment
-		diskSize, buildErr := a.buildEnv(
+		err := a.buildEnv(
 			buildContext,
 			userID.String(),
 			team.ID,
@@ -118,32 +117,14 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			build.FreeDiskSizeMB,
 		)
 
-		if buildErr != nil {
-			status = api.TemplateBuildStatusError
+		if err != nil {
+			err = fmt.Errorf("error when building env: %w", err)
+			telemetry.ReportCriticalError(buildContext, err)
 
-			err = a.db.EnvBuildSetStatus(buildContext, envDB.ID, buildUUID, envbuild.StatusFailed)
-			if err != nil {
-				err = fmt.Errorf("error when setting build status: %w", err)
-				telemetry.ReportCriticalError(buildContext, err)
-			}
+			a.buildCache.Delete(templateID, buildUUID, team.ID)
 
-			errMsg := fmt.Errorf("error when building env: %w", buildErr)
-
-			telemetry.ReportCriticalError(buildContext, errMsg)
-		} else {
-			status = api.TemplateBuildStatusReady
-			err = a.db.FinishEnvBuild(buildContext, envDB.ID, buildUUID, diskSize)
-
-			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", templateID))
+			return
 		}
-
-		cacheErr := a.buildCache.SetDone(templateID, buildUUID, status)
-		if cacheErr != nil {
-			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
-			telemetry.ReportCriticalError(buildContext, cacheErr)
-		}
-
-		childSpan.End()
 	}()
 
 	c.Status(http.StatusAccepted)
@@ -161,7 +142,7 @@ func (a *APIStore) buildEnv(
 	VCpuCount,
 	MemoryMB,
 	DiskSizeMB int64,
-) (diskSize int64, err error) {
+) (err error) {
 	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
 		trace.WithAttributes(
 			attribute.String("env.id", envID),
@@ -186,6 +167,7 @@ func (a *APIStore) buildEnv(
 	err = a.templateManager.CreateTemplate(
 		a.tracer,
 		childCtx,
+		a.db,
 		a.buildCache,
 		envID,
 		buildID,
@@ -200,8 +182,8 @@ func (a *APIStore) buildEnv(
 		err = fmt.Errorf("error when building env: %w", err)
 		telemetry.ReportCriticalError(childCtx, err)
 
-		return diskSize, err
+		return err
 	}
 
-	return diskSize, nil
+	return nil
 }
