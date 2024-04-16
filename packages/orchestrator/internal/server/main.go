@@ -6,7 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	consulapi "github.com/hashicorp/consul/api"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -14,12 +15,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
+	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
+	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
 	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
-	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 type server struct {
@@ -30,36 +33,30 @@ type server struct {
 	consul    *consulapi.Client
 }
 
-// interceptorLogger adapts go-kit logger to interceptor logger.
-// This code is simple enough to be copied and not imported.
-func interceptorLogger(l *log.Logger) logging.Logger {
-	return logging.LoggerFunc(func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
-		switch lvl {
-		case logging.LevelDebug:
-			msg = fmt.Sprintf("DEBUG :%v", msg)
-		case logging.LevelInfo:
-			msg = fmt.Sprintf("INFO :%v", msg)
-		case logging.LevelWarn:
-			msg = fmt.Sprintf("WARN :%v", msg)
-		case logging.LevelError:
-			msg = fmt.Sprintf("ERROR :%v", msg)
-		default:
-			panic(fmt.Sprintf("unknown level %v", lvl))
-		}
-		l.Println(append([]any{"msg", msg}, fields...))
-	})
-}
-
 func New() *grpc.Server {
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
-	opts := []logging.Option{
-		logging.WithLogOnEvents(logging.StartCall, logging.FinishCall),
+	logger, err := logging.New(env.IsProduction())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing logging\n: %v\n", err)
+		panic(err)
+	}
+
+	opts := []grpc_zap.Option{
+		grpc_zap.WithDecider(func(fullMethodName string, err error) bool {
+			// will not log gRPC calls if it was a call to healthcheck and no error was raised
+			if err == nil && fullMethodName == "/grpc.health.v1.Health/Check" {
+				return false
+			}
+
+			// by default everything will be logged
+			return true
+		}),
 	}
 
 	s := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
-			logging.UnaryServerInterceptor(interceptorLogger(logger), opts...),
+			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger.Desugar(), opts...),
 			recovery.UnaryServerInterceptor(),
 		),
 	)

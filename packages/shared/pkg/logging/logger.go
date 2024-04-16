@@ -1,4 +1,4 @@
-package utils
+package logging
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewLogger(prod bool) (*zap.SugaredLogger, error) {
+func New(prod bool) (*zap.SugaredLogger, error) {
 	config := zap.Config{
 		Level:             zap.NewAtomicLevelAt(zap.InfoLevel),
 		Development:       !prod,
@@ -19,7 +19,7 @@ func NewLogger(prod bool) (*zap.SugaredLogger, error) {
 			MessageKey:    "message",
 			LevelKey:      "level",
 			EncodeLevel:   zapcore.LowercaseLevelEncoder,
-			NameKey:       "logger",
+			NameKey:       "logging",
 			StacktraceKey: "stacktrace",
 		},
 		OutputPaths: []string{
@@ -37,7 +37,7 @@ func NewLogger(prod bool) (*zap.SugaredLogger, error) {
 
 	logger, err := config.Build()
 	if err != nil {
-		return nil, fmt.Errorf("error building logger: %w", err)
+		return nil, fmt.Errorf("error building logging: %w", err)
 	}
 
 	return logger.Sugar(), nil
