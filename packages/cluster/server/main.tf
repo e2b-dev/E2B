@@ -122,10 +122,6 @@ resource "google_compute_instance_template" "server" {
   # we need to create a new instance template before we can destroy the old one. Note that any Terraform resource on
   # which this Terraform resource depends will also need this lifecycle statement.
   lifecycle {
-    # DEV ONLY - IGNORE CHANGES TO THE IMAGE
-    ignore_changes = [
-      disk,
-    ]
     create_before_destroy = true
   }
 }
