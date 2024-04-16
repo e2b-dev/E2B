@@ -3,14 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/server"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/test"
-	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
 	"log"
 	"net"
 
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/server"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/test"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
+	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
