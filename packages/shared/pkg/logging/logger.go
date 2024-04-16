@@ -1,4 +1,4 @@
-package utils
+package logging
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewLogger(prod bool) (*zap.SugaredLogger, error) {
+func New(prod bool) (*zap.SugaredLogger, error) {
 	config := zap.Config{
 		Level:             zap.NewAtomicLevelAt(zap.InfoLevel),
 		Development:       !prod,
