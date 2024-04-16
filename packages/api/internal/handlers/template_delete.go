@@ -56,7 +56,7 @@ func (a *APIStore) DeleteTemplatesTemplateID(c *gin.Context, aliasOrTemplateID a
 		attribute.String("env.firecracker.version", build.FirecrackerVersion),
 	)
 
-	deleteJobErr := a.nomad.DeleteEnv(a.tracer, ctx, env.TemplateID)
+	deleteJobErr := a.templateManager.DeleteInstance(ctx, env.TemplateID)
 	if deleteJobErr != nil {
 		errMsg := fmt.Errorf("error when deleting env files from fc-envs disk: %w", deleteJobErr)
 		telemetry.ReportCriticalError(ctx, errMsg)

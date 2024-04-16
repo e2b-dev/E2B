@@ -30,19 +30,18 @@ import (
 )
 
 type APIStore struct {
-	Ctx                        context.Context
-	analytics                  *analyticscollector.Analytics
-	posthog                    *PosthogClient
-	tracer                     trace.Tracer
-	instanceCache              *instance.InstanceCache
-	orchestrator               *orchestrator.Orchestrator
-	templateManager            *template_manager.TemplateManager
-	buildCache                 *nomad.BuildCache
-	nomad                      *nomad.NomadClient
-	db                         *db.DB
-	lokiClient                 *loki.DefaultClient
-	googleServiceAccountBase64 string
-	logger                     *zap.SugaredLogger
+	Ctx             context.Context
+	analytics       *analyticscollector.Analytics
+	posthog         *PosthogClient
+	tracer          trace.Tracer
+	instanceCache   *instance.InstanceCache
+	orchestrator    *orchestrator.Orchestrator
+	templateManager *template_manager.TemplateManager
+	buildCache      *nomad.BuildCache
+	nomad           *nomad.NomadClient
+	db              *db.DB
+	lokiClient      *loki.DefaultClient
+	logger          *zap.SugaredLogger
 }
 
 var lokiAddress = os.Getenv("LOKI_ADDRESS")
@@ -158,19 +157,18 @@ func NewAPIStore() *APIStore {
 	buildCache := nomad.NewBuildCache(buildCounter)
 
 	return &APIStore{
-		Ctx:                        ctx,
-		nomad:                      nomadClient,
-		orchestrator:               orch,
-		templateManager:            templateManager,
-		db:                         dbClient,
-		instanceCache:              instanceCache,
-		tracer:                     tracer,
-		analytics:                  analytics,
-		posthog:                    posthogClient,
-		buildCache:                 buildCache,
-		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
-		logger:                     logger,
-		lokiClient:                 lokiClient,
+		Ctx:             ctx,
+		nomad:           nomadClient,
+		orchestrator:    orch,
+		templateManager: templateManager,
+		db:              dbClient,
+		instanceCache:   instanceCache,
+		tracer:          tracer,
+		analytics:       analytics,
+		posthog:         posthogClient,
+		buildCache:      buildCache,
+		logger:          logger,
+		lokiClient:      lokiClient,
 	}
 }
 

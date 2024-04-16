@@ -72,12 +72,6 @@ resource "nomad_job" "api" {
       nomad_address                 = "http://localhost:${var.nomad_port}"
       nomad_token                   = var.nomad_acl_token_secret
       environment                   = var.environment
-      docker_contexts_bucket_name   = var.docker_contexts_bucket_name
-      api_secret                    = var.api_secret
-      google_service_account_secret = var.google_service_account_key
-      gcp_project_id                = var.gcp_project_id
-      gcp_region                    = var.gcp_region
-      gcp_docker_repository_name    = var.custom_envs_repository_name
       analytics_collector_host      = data.google_secret_manager_secret_version.analytics_collector_host.secret_data
       analytics_collector_api_token = data.google_secret_manager_secret_version.analytics_collector_api_token.secret_data
       otel_tracing_print            = var.otel_tracing_print
