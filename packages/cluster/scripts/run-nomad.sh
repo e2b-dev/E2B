@@ -233,6 +233,8 @@ plugin "docker" {
   }
 }
 
+log_level = "DEBUG"
+
 telemetry {
   collection_interval = "1s"
   disable_hostname = true
