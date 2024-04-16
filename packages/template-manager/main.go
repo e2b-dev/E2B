@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
+	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/constants"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/server"
@@ -46,8 +47,13 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	logger, err := logging.New(env.IsProduction())
+	if err != nil {
+		log.Fatalf("Error initializing logging\n: %v\n", err)
+	}
+
 	// Create an instance of our handler which satisfies the generated interface
-	s := server.New()
+	s := server.New(logger.Desugar())
 
 	log.Printf("Starting server on port %d", *port)
 	if err := s.Serve(lis); err != nil {
