@@ -4,7 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"io"
 	"strconv"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/cache/builds"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
@@ -53,15 +53,17 @@ func (tm *TemplateManager) CreateTemplate(
 	telemetry.ReportEvent(childCtx, "Got FC version info")
 
 	logs, err := tm.grpc.Client.TemplateCreate(ctx, &template_manager.TemplateCreateRequest{
-		TemplateID:         templateID,
-		BuildID:            buildID.String(),
-		VCpuCount:          int32(vCpuCount),
-		MemoryMB:           int32(memoryMB),
-		DiskSizeMB:         int32(diskSizeMB),
-		KernelVersion:      kernelVersion,
-		FirecrackerVersion: firecrackerVersion,
-		HugePages:          features.HasHugePages(),
-		StartCommand:       startCommand,
+		Template: &template_manager.TemplateConfig{
+			TemplateID:         templateID,
+			BuildID:            buildID.String(),
+			VCpuCount:          int32(vCpuCount),
+			MemoryMB:           int32(memoryMB),
+			DiskSizeMB:         int32(diskSizeMB),
+			KernelVersion:      kernelVersion,
+			FirecrackerVersion: firecrackerVersion,
+			HugePages:          features.HasHugePages(),
+			StartCommand:       startCommand,
+		},
 	})
 	err = utils.UnwrapGRPCError(err)
 	if err != nil {
@@ -79,31 +81,32 @@ func (tm *TemplateManager) CreateTemplate(
 			handleBuildErr(ctx, db, buildCache, templateID, buildID, errMsg)
 
 			return errMsg
-		} else {
-			logErr := buildCache.Append(templateID, buildID, log.Log)
-			if logErr != nil {
-				// There was an error saving the logs, the build wasn't found
-				errMsg := fmt.Errorf("error when saving docker build logs: %w", logErr)
-				handleBuildErr(ctx, db, buildCache, templateID, buildID, errMsg)
+		}
+		logErr := buildCache.Append(templateID, buildID, log.Log)
+		if logErr != nil {
+			// There was an error saving the logs, the build wasn't found
+			errMsg := fmt.Errorf("error when saving docker build logs: %w", logErr)
+			handleBuildErr(ctx, db, buildCache, templateID, buildID, errMsg)
 
-				return errMsg
-			}
+			return errMsg
 		}
 	}
 
 	trailer := logs.Trailer()
+	fmt.Printf("trailer: %v\n", trailer)
+
 	rootfsSizeStr, ok := trailer[consts.RootfsSizeKey]
 	if !ok {
-		err = fmt.Errorf("rootfs size not found in trailer")
-		telemetry.ReportCriticalError(childCtx, err)
+		errMsg := fmt.Errorf("rootfs size not found in trailer")
+		handleBuildErr(ctx, db, buildCache, templateID, buildID, errMsg)
 
-		return err
+		return errMsg
 	}
 
 	diskSize, parseErr := strconv.ParseInt(rootfsSizeStr[0], 10, 64)
 	if parseErr != nil {
 		parseErr = fmt.Errorf("error when parsing rootfs size: %w", err)
-		telemetry.ReportCriticalError(childCtx, err)
+		handleBuildErr(ctx, db, buildCache, templateID, buildID, parseErr)
 
 		return parseErr
 	}
@@ -111,7 +114,7 @@ func (tm *TemplateManager) CreateTemplate(
 	err = db.FinishEnvBuild(childCtx, templateID, buildID, diskSize)
 	if err != nil {
 		err = fmt.Errorf("error when finishing build: %w", err)
-		telemetry.ReportCriticalError(childCtx, err)
+		handleBuildErr(ctx, db, buildCache, templateID, buildID, err)
 
 		return err
 	}
@@ -144,6 +147,9 @@ func handleBuildErr(
 		err = fmt.Errorf("error when setting build status: %w", err)
 		telemetry.ReportCriticalError(ctx, err)
 	}
+
+	// Save the error in the logs
+	buildErr = buildCache.Append(templateID, buildID, fmt.Sprintf("Build failed: %s", buildErr))
 
 	cacheErr := buildCache.SetDone(templateID, buildID, api.TemplateBuildStatusError)
 	if cacheErr != nil {

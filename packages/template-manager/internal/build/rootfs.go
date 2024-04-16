@@ -1,4 +1,4 @@
-package env
+package build
 
 import (
 	"archive/tar"

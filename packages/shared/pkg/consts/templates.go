@@ -10,7 +10,7 @@ const (
 	HostEnvdPath  = "/fc-vm/envd"
 	GuestEnvdPath = "/usr/bin/envd"
 
-	RootfsSizeKey = "ROOTFS_SIZE"
+	RootfsSizeKey = "rootfs_size"
 
 	FirecrackerVersionsDir = "/fc-versions"
 	FirecrackerBinaryName  = "firecracker"

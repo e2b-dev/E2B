@@ -5,17 +5,22 @@ import "google/protobuf/empty.proto";
 option go_package = "https://github.com/e2b-dev/infra/template-manager";
 
 
-// Data required for creating a new template.
-message TemplateCreateRequest {
+message TemplateConfig {
   string templateID = 1;
   string buildID = 2;
+
   int32 memoryMB = 3;
   int32 vCpuCount = 4;
   int32 diskSizeMB = 5;
+
   string kernelVersion = 6;
   string firecrackerVersion = 7;
   string startCommand = 8;
   bool hugePages = 9;
+}
+
+message TemplateCreateRequest {
+  TemplateConfig template = 1;
 }
 
 // Data required for deleting a template.

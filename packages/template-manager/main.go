@@ -19,7 +19,8 @@ const (
 )
 
 func main() {
-	envID := flag.String("env", "", "env id")
+	testFlag := flag.String("test", "", "run tests")
+	templateID := flag.String("template", "", "template id")
 	buildID := flag.String("build", "", "build id")
 
 	port := flag.Int("port", defaultPort, "Port for test HTTP server")
@@ -31,11 +32,16 @@ func main() {
 	}
 
 	// If we're running a test, we don't need to start the server
-	if *envID != "" && *buildID != "" {
-		test.Build(*envID, *buildID)
-		return
+	if *testFlag != "" {
+		switch *testFlag {
+		case "build":
+			test.Build(*templateID, *buildID)
+			return
+		case "delete":
+			test.Delete(*templateID)
+			return
+		}
 	}
-	// TODO: Add test for deleting
 
 	if env.IsProduction() {
 		shutdown := telemetry.InitOTLPExporter(constants.ServiceName, "no")

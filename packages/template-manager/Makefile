@@ -32,7 +32,10 @@ upload:
 .PHONY: build-and-upload
 build-and-upload: build upload
 
-# TODO:
-.PHONY: test
-test:
-	sudo CONSUL_TOKEN=$(CONSUL_TOKEN) go run -race -gcflags=all="-N -l" main.go -env idnrwvs3vrde6hknozc0 -instance test-instance-1
+.PHONY: test-build
+test-build:
+	sudo go run -race -gcflags=all="-N -l" main.go -test build -template 0v0c9frk1etrhpxr5ljw -build 3351eada-8633-4e77-a757-6f869abd17c2
+
+.PHONY: test-delete
+test-delete:
+	sudo go run -race -gcflags=all="-N -l" main.go -test delete -env 0v0c9frk1etrhpxr5ljw
