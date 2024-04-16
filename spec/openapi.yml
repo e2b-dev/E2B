@@ -491,38 +491,6 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
-  /templates/{templateID}/builds/{buildID}/logs:
-    post:
-      description: Add a build log
-      tags: [templates]
-      parameters:
-        - $ref: "#/components/parameters/templateID"
-        - $ref: "#/components/parameters/buildID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - apiSecret
-                - logs
-              properties:
-                apiSecret:
-                  description: API secret
-                  type: string
-                logs:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        201:
-          description: Successfully added log
-        401:
-          $ref: "#/components/responses/401"
-        404:
-          $ref: "#/components/responses/404"
-
   /templates/{templateID}/builds/{buildID}/status:
     get:
       description: Get env build info

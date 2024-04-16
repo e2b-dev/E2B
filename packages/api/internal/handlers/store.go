@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/posthog/posthog-go"
 	"net/http"
 	"os"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	loki "github.com/grafana/loki/pkg/logcli/client"
+	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
@@ -41,7 +41,6 @@ type APIStore struct {
 	nomad                      *nomad.NomadClient
 	db                         *db.DB
 	lokiClient                 *loki.DefaultClient
-	apiSecret                  string
 	googleServiceAccountBase64 string
 	logger                     *zap.SugaredLogger
 }
@@ -145,11 +144,6 @@ func NewAPIStore() *APIStore {
 		logger.Warn("LOKI_ADDRESS not set, disabling Loki client")
 	}
 
-	apiSecret := os.Getenv("API_SECRET")
-	if apiSecret == "" {
-		apiSecret = "SUPER_SECR3T_4PI_K3Y"
-	}
-
 	buildCounter, err := meter.Int64UpDownCounter(
 		"api.env.build.running",
 		metric.WithDescription(
@@ -173,7 +167,6 @@ func NewAPIStore() *APIStore {
 		tracer:                     tracer,
 		analytics:                  analytics,
 		posthog:                    posthogClient,
-		apiSecret:                  apiSecret,
 		buildCache:                 buildCache,
 		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
 		logger:                     logger,

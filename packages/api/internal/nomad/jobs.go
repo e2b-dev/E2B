@@ -32,7 +32,7 @@ func (s *jobSubscriber) close() {
 	s.subscribers.Remove(s.jobID)
 }
 
-func (n *NomadClient) GetStartingIndex(ctx context.Context) (uint64, error) {
+func (n *NomadClient) GetStartingIndex(_ context.Context) (uint64, error) {
 	_, meta, err := n.client.Jobs().List(nil)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get Nomad jobs: %w", err)
