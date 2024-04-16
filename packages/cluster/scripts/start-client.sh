@@ -10,6 +10,9 @@ set -euo pipefail
 # Inspired by https://alestic.com/2010/12/ec2-user-data-output/
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
+ulimit -n 65536
+export GOMAXPROCS='nproc'
+
 # --- Mount the persistent disk with Firecracker environments.
 # See https://cloud.google.com/compute/docs/disks/add-persistent-disk#create_disk
 
