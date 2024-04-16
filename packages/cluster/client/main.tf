@@ -5,6 +5,10 @@ resource "google_compute_health_check" "nomad_check" {
   healthy_threshold   = 2
   unhealthy_threshold = 10 # 50 seconds
 
+  log_config {
+    enable = true
+  }
+
   http_health_check {
     request_path = "/v1/agent/health"
     port         = var.nomad_port
