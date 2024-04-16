@@ -1,4 +1,4 @@
-name: Env build task driver
+name: Template manager
 
 on:
   workflow_call:
@@ -21,16 +21,16 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version-file: ./packages/env-build-task-driver/go.mod
+          go-version-file: ./packages/template-manager/go.mod
           cache: true
-          cache-dependency-path: ./packages/env-build-task-driver/go.sum
+          cache-dependency-path: ./packages/template-manager/go.sum
 
       - name: Download deps
-        working-directory: ./packages/env-build-task-driver
+        working-directory: ./packages/template-manager
         run: go mod tidy
 
       - name: Build
-        working-directory: ./packages/env-build-task-driver
+        working-directory: ./packages/template-manager
         run: make build
 
       - name: Setup Service Account
@@ -39,16 +39,9 @@ jobs:
           workload_identity_provider: ${{ secrets.workload_identity_provider }}
           service_account: ${{ secrets.service_account_email }}
 
-      - name: List files
-        run: ls -la ./packages/env-build-task-driver/bin
-
-      - name: try to run
-        run: chmod +x ./packages/env-build-task-driver/bin/env-build-task-driver
-             ./packages/env-build-task-driver/bin/env-build-task-driver
-
-      - name: Upload env build task driver
+      - name: Upload orchestrator
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
-          path: "./packages/env-build-task-driver/bin/env-build-task-driver"
+          path: "./packages/orchestrator/bin/template-manager"
           destination: "${{ secrets.gcp_project_id }}-fc-env-pipeline"
           gzip: false
