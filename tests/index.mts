@@ -73,7 +73,7 @@ for (let i = 0; i < batchCount; i++) {
   if (s.length > 0) {
     const first = s[0]
     try {
-      await first.keepAlive(2 * 60 * 60 * 1000) // 4 hour
+      await first.keepAlive(60 * 60 * 1000) // 4 hour
     } catch (error) {
       console.error('ERROR:', error)
     }
