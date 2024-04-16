@@ -69,8 +69,9 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 
 	go func() {
 		tracer := otel.Tracer("close")
-		defer sbx.CleanupAfterFCStop(context.Background(), tracer, s.consul, s.dns)
+
 		defer s.sandboxes.Remove(req.Sandbox.SandboxID)
+		defer sbx.CleanupAfterFCStop(context.Background(), tracer, s.consul, s.dns)
 
 		err := sbx.FC.Wait()
 		if err != nil {
@@ -126,7 +127,6 @@ func (s *server) Delete(ctx context.Context, in *orchestrator.SandboxRequest) (*
 	}
 
 	err := sbx.FC.Stop(ctx, s.tracer)
-	defer sbx.CleanupAfterFCStop(ctx, s.tracer, s.consul, s.dns)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to stop FC: %w", err)
 
