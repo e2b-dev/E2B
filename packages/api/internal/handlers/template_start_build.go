@@ -121,8 +121,6 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			err = fmt.Errorf("error when building env: %w", buildErr)
 			telemetry.ReportCriticalError(buildContext, buildErr)
 
-			a.buildCache.Delete(templateID, buildUUID, team.ID)
-
 			return
 		}
 
