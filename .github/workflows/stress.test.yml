@@ -28,9 +28,26 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: npm
           cache-dependency-path: tests/package-lock.json
-
+      
       - name: Install dependencies
         working-directory: tests
         run: |
           npm install
-          E2B_API_KEY=${{ secrets.E2B_API_KEY }} E2B_DOMAIN=${{ secrets.E2B_DOMAIN_STAGING }} npx tsx index.mts
+          npm install -g @e2b/cli
+
+      - name: Test build
+        working-directory: tests
+        run: ./build.sh
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_ACCESS_TOKEN: ${{ secrets.E2B_ACCESS_TOKEN_STAGING }}
+          E2B_DOMAIN: ${{ secrets.E2B_DOMAIN_STAGING }}
+
+      - name: Test run
+        working-directory: tests
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_ACCESS_TOKEN: ${{ secrets.E2B_ACCESS_TOKEN_STAGING }}
+          E2B_DOMAIN: ${{ secrets.E2B_DOMAIN_STAGING }}
+        run: |
+          npx tsx index.mts
