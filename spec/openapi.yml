@@ -113,7 +113,7 @@ components:
           type: string
           description: Identifier of the client
 
-    RunningSandboxes:
+    RunningSandbox:
       required:
         - templateID
         - sandboxID
@@ -154,6 +154,9 @@ components:
         templateID:
           type: string
           description: Identifier of the required template
+        timeout:
+          type: integer
+          description: Time to live for the sandbox in seconds.
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
 
@@ -163,7 +166,6 @@ components:
         - buildID
         - cpuCount
         - memoryMB
-        - storageGB
         - public
       properties:
         templateID:
@@ -278,7 +280,7 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: "#/components/schemas/RunningSandboxes"
+                    - $ref: "#/components/schemas/RunningSandbox"
         401:
           $ref: "#/components/responses/401"
         400:
