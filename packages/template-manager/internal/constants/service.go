@@ -1,3 +1,3 @@
 package constants
 
-const ServiceName = "env-manager"
+const ServiceName = "template-manager"

@@ -9,11 +9,11 @@ import (
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc/status"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/cache/builds"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
@@ -63,22 +63,9 @@ func (tm *TemplateManager) CreateTemplate(
 		HugePages:          features.HasHugePages(),
 		StartCommand:       startCommand,
 	})
+	err = utils.UnwrapGRPCError(err)
 	if err != nil {
-		st, ok := status.FromError(err)
-		if !ok {
-			errMsg := fmt.Errorf("failed to create template '%s': %w", templateID, err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			return errMsg
-		}
-
-		telemetry.ReportCriticalError(
-			childCtx,
-			fmt.Errorf("failed to create template '%s': [%s] %s", templateID, st.Code(), st.Message()),
-		)
-		errMsg := fmt.Errorf("failed to create template '%s': %s", templateID, st.Message())
-
-		return errMsg
+		return fmt.Errorf("failed to create template '%s': %w", templateID, err)
 	}
 
 	// Wait for the build to finish and save logs
