@@ -19,164 +19,164 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// SandboxesServiceClient is the client API for SandboxesService service.
+// SandboxClient is the client API for Sandbox service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type SandboxesServiceClient interface {
-	// SandboxCreate is a gRPC service that creates a new sandbox.
-	SandboxCreate(ctx context.Context, in *SandboxCreateRequest, opts ...grpc.CallOption) (*NewSandbox, error)
-	// SandboxList is a gRPC service that returns a list of all the sandboxes.
-	SandboxList(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SandboxListResponse, error)
-	// SandboxDelete is a gRPC service that kills a sandbox.
-	SandboxDelete(ctx context.Context, in *SandboxRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+type SandboxClient interface {
+	// Create is a gRPC service that creates a new sandbox.
+	Create(ctx context.Context, in *SandboxCreateRequest, opts ...grpc.CallOption) (*SandboxCreateResponse, error)
+	// List is a gRPC service that returns a list of all the sandboxes.
+	List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SandboxListResponse, error)
+	// Delete is a gRPC service that kills a sandbox.
+	Delete(ctx context.Context, in *SandboxRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type sandboxesServiceClient struct {
+type sandboxClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewSandboxesServiceClient(cc grpc.ClientConnInterface) SandboxesServiceClient {
-	return &sandboxesServiceClient{cc}
+func NewSandboxClient(cc grpc.ClientConnInterface) SandboxClient {
+	return &sandboxClient{cc}
 }
 
-func (c *sandboxesServiceClient) SandboxCreate(ctx context.Context, in *SandboxCreateRequest, opts ...grpc.CallOption) (*NewSandbox, error) {
-	out := new(NewSandbox)
-	err := c.cc.Invoke(ctx, "/SandboxesService/SandboxCreate", in, out, opts...)
+func (c *sandboxClient) Create(ctx context.Context, in *SandboxCreateRequest, opts ...grpc.CallOption) (*SandboxCreateResponse, error) {
+	out := new(SandboxCreateResponse)
+	err := c.cc.Invoke(ctx, "/Sandbox/Create", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *sandboxesServiceClient) SandboxList(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SandboxListResponse, error) {
+func (c *sandboxClient) List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SandboxListResponse, error) {
 	out := new(SandboxListResponse)
-	err := c.cc.Invoke(ctx, "/SandboxesService/SandboxList", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Sandbox/List", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *sandboxesServiceClient) SandboxDelete(ctx context.Context, in *SandboxRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *sandboxClient) Delete(ctx context.Context, in *SandboxRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/SandboxesService/SandboxDelete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Sandbox/Delete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// SandboxesServiceServer is the server API for SandboxesService service.
-// All implementations must embed UnimplementedSandboxesServiceServer
+// SandboxServer is the server API for Sandbox service.
+// All implementations must embed UnimplementedSandboxServer
 // for forward compatibility
-type SandboxesServiceServer interface {
-	// SandboxCreate is a gRPC service that creates a new sandbox.
-	SandboxCreate(context.Context, *SandboxCreateRequest) (*NewSandbox, error)
-	// SandboxList is a gRPC service that returns a list of all the sandboxes.
-	SandboxList(context.Context, *emptypb.Empty) (*SandboxListResponse, error)
-	// SandboxDelete is a gRPC service that kills a sandbox.
-	SandboxDelete(context.Context, *SandboxRequest) (*emptypb.Empty, error)
-	mustEmbedUnimplementedSandboxesServiceServer()
+type SandboxServer interface {
+	// Create is a gRPC service that creates a new sandbox.
+	Create(context.Context, *SandboxCreateRequest) (*SandboxCreateResponse, error)
+	// List is a gRPC service that returns a list of all the sandboxes.
+	List(context.Context, *emptypb.Empty) (*SandboxListResponse, error)
+	// Delete is a gRPC service that kills a sandbox.
+	Delete(context.Context, *SandboxRequest) (*emptypb.Empty, error)
+	mustEmbedUnimplementedSandboxServer()
 }
 
-// UnimplementedSandboxesServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedSandboxesServiceServer struct {
+// UnimplementedSandboxServer must be embedded to have forward compatible implementations.
+type UnimplementedSandboxServer struct {
 }
 
-func (UnimplementedSandboxesServiceServer) SandboxCreate(context.Context, *SandboxCreateRequest) (*NewSandbox, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SandboxCreate not implemented")
+func (UnimplementedSandboxServer) Create(context.Context, *SandboxCreateRequest) (*SandboxCreateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
-func (UnimplementedSandboxesServiceServer) SandboxList(context.Context, *emptypb.Empty) (*SandboxListResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SandboxList not implemented")
+func (UnimplementedSandboxServer) List(context.Context, *emptypb.Empty) (*SandboxListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedSandboxesServiceServer) SandboxDelete(context.Context, *SandboxRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SandboxDelete not implemented")
+func (UnimplementedSandboxServer) Delete(context.Context, *SandboxRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
-func (UnimplementedSandboxesServiceServer) mustEmbedUnimplementedSandboxesServiceServer() {}
+func (UnimplementedSandboxServer) mustEmbedUnimplementedSandboxServer() {}
 
-// UnsafeSandboxesServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to SandboxesServiceServer will
+// UnsafeSandboxServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SandboxServer will
 // result in compilation errors.
-type UnsafeSandboxesServiceServer interface {
-	mustEmbedUnimplementedSandboxesServiceServer()
+type UnsafeSandboxServer interface {
+	mustEmbedUnimplementedSandboxServer()
 }
 
-func RegisterSandboxesServiceServer(s grpc.ServiceRegistrar, srv SandboxesServiceServer) {
-	s.RegisterService(&SandboxesService_ServiceDesc, srv)
+func RegisterSandboxServer(s grpc.ServiceRegistrar, srv SandboxServer) {
+	s.RegisterService(&Sandbox_ServiceDesc, srv)
 }
 
-func _SandboxesService_SandboxCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Sandbox_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SandboxCreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SandboxesServiceServer).SandboxCreate(ctx, in)
+		return srv.(SandboxServer).Create(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/SandboxesService/SandboxCreate",
+		FullMethod: "/Sandbox/Create",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SandboxesServiceServer).SandboxCreate(ctx, req.(*SandboxCreateRequest))
+		return srv.(SandboxServer).Create(ctx, req.(*SandboxCreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SandboxesService_SandboxList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Sandbox_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SandboxesServiceServer).SandboxList(ctx, in)
+		return srv.(SandboxServer).List(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/SandboxesService/SandboxList",
+		FullMethod: "/Sandbox/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SandboxesServiceServer).SandboxList(ctx, req.(*emptypb.Empty))
+		return srv.(SandboxServer).List(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SandboxesService_SandboxDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Sandbox_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SandboxRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SandboxesServiceServer).SandboxDelete(ctx, in)
+		return srv.(SandboxServer).Delete(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/SandboxesService/SandboxDelete",
+		FullMethod: "/Sandbox/Delete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SandboxesServiceServer).SandboxDelete(ctx, req.(*SandboxRequest))
+		return srv.(SandboxServer).Delete(ctx, req.(*SandboxRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// SandboxesService_ServiceDesc is the grpc.ServiceDesc for SandboxesService service.
+// Sandbox_ServiceDesc is the grpc.ServiceDesc for Sandbox service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var SandboxesService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "SandboxesService",
-	HandlerType: (*SandboxesServiceServer)(nil),
+var Sandbox_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "Sandbox",
+	HandlerType: (*SandboxServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SandboxCreate",
-			Handler:    _SandboxesService_SandboxCreate_Handler,
+			MethodName: "Create",
+			Handler:    _Sandbox_Create_Handler,
 		},
 		{
-			MethodName: "SandboxList",
-			Handler:    _SandboxesService_SandboxList_Handler,
+			MethodName: "List",
+			Handler:    _Sandbox_List_Handler,
 		},
 		{
-			MethodName: "SandboxDelete",
-			Handler:    _SandboxesService_SandboxDelete_Handler,
+			MethodName: "Delete",
+			Handler:    _Sandbox_Delete_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -19,7 +19,6 @@ import (
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/orchestrator"
@@ -29,7 +28,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
-	"github.com/e2b-dev/infra/packages/shared/pkg/storages"
 )
 
 type APIStore struct {
@@ -43,7 +41,6 @@ type APIStore struct {
 	buildCache                 *nomad.BuildCache
 	nomad                      *nomad.NomadClient
 	db                         *db.DB
-	cloudStorage               *storages.GoogleCloudStorage
 	lokiClient                 *loki.DefaultClient
 	apiSecret                  string
 	googleServiceAccountBase64 string
@@ -101,7 +98,7 @@ func NewAPIStore() *APIStore {
 	if env.IsProduction() {
 		instances, instancesErr := orch.GetInstances(ctx)
 		if instancesErr != nil {
-			logger.Errorf("Error loading current instances from Nomad\n: %v", err)
+			logger.Errorf("Error loading current sandboxes\n: %w", instancesErr)
 		}
 
 		initialInstances = instances
@@ -137,12 +134,6 @@ func NewAPIStore() *APIStore {
 		go orch.KeepInSync(ctx, instanceCache)
 	} else {
 		logger.Info("Skipping syncing intances with Nomad, running locally")
-	}
-
-	cStorage, err := storages.NewGoogleCloudStorage(ctx, constants.DockerContextBucketName)
-	if err != nil {
-		logger.Errorf("Error initializing Cloud Storage client\n: %v", err)
-		panic(err)
 	}
 
 	var lokiClient *loki.DefaultClient
@@ -183,7 +174,6 @@ func NewAPIStore() *APIStore {
 		tracer:                     tracer,
 		analytics:                  analytics,
 		posthog:                    posthogClient,
-		cloudStorage:               cStorage,
 		apiSecret:                  apiSecret,
 		buildCache:                 buildCache,
 		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
@@ -204,11 +194,6 @@ func (a *APIStore) Close() {
 	err = a.posthog.Close()
 	if err != nil {
 		a.logger.Errorf("Error closing Posthog client\n: %v", err)
-	}
-
-	err = a.cloudStorage.Close()
-	if err != nil {
-		a.logger.Errorf("Error closing Cloud Storage client\n: %v", err)
 	}
 
 	err = a.orchestrator.Close()

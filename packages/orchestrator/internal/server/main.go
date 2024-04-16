@@ -26,7 +26,7 @@ import (
 )
 
 type server struct {
-	orchestrator.UnimplementedSandboxesServiceServer
+	orchestrator.UnimplementedSandboxServer
 	sandboxes *smap.Map[*sandbox.Sandbox]
 	dns       *sandbox.DNS
 	tracer    trace.Tracer
@@ -74,7 +74,7 @@ func New() *grpc.Server {
 		panic(err)
 	}
 
-	orchestrator.RegisterSandboxesServiceServer(s, &server{
+	orchestrator.RegisterSandboxServer(s, &server{
 		tracer:    otel.Tracer(constants.ServiceName),
 		consul:    consulClient,
 		dns:       dns,

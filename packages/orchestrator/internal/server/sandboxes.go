@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
@@ -17,21 +18,23 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-const fcVersionsDir = "/fc-versions"
-const kernelDir = "/fc-kernels"
-const kernelMountDir = "/fc-vm"
-const kernelName = "vmlinux.bin"
-const uffdBinaryName = "uffd"
-const fcBinaryName = "firecracker"
+const (
+	fcVersionsDir  = "/fc-versions"
+	kernelDir      = "/fc-kernels"
+	kernelMountDir = "/fc-vm"
+	kernelName     = "vmlinux.bin"
+	uffdBinaryName = "uffd"
+	fcBinaryName   = "firecracker"
+)
 
-func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator.SandboxCreateRequest) (*orchestrator.NewSandbox, error) {
+func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequest) (*orchestrator.SandboxCreateResponse, error) {
 	childCtx, childSpan := s.tracer.Start(ctx, "sandbox-create")
 
 	defer childSpan.End()
 	childSpan.SetAttributes(
-		attribute.String("env.id", sandboxRequest.TemplateID),
-		attribute.String("env.kernel.version", sandboxRequest.KernelVersion),
-		attribute.String("instance.id", sandboxRequest.SandboxID),
+		attribute.String("env.id", req.Sandbox.TemplateID),
+		attribute.String("env.kernel.version", req.Sandbox.KernelVersion),
+		attribute.String("instance.id", req.Sandbox.SandboxID),
 		attribute.String("client.id", constants.ClientID),
 	)
 
@@ -40,20 +43,20 @@ func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator
 		s.tracer,
 		s.consul,
 		&sandbox.InstanceConfig{
-			TemplateID:            sandboxRequest.TemplateID,
-			SandboxID:             sandboxRequest.SandboxID,
+			TemplateID:            req.Sandbox.TemplateID,
+			SandboxID:             req.Sandbox.SandboxID,
 			TraceID:               childSpan.SpanContext().TraceID().String(),
-			TeamID:                sandboxRequest.TeamID,
-			KernelVersion:         sandboxRequest.KernelVersion,
+			TeamID:                req.Sandbox.TeamID,
+			KernelVersion:         req.Sandbox.KernelVersion,
 			KernelsDir:            kernelDir,
 			KernelMountDir:        kernelMountDir,
 			KernelName:            kernelName,
-			HugePages:             sandboxRequest.HugePages,
-			UFFDBinaryPath:        filepath.Join(fcVersionsDir, sandboxRequest.FirecrackerVersion, uffdBinaryName),
-			FirecrackerBinaryPath: filepath.Join(fcVersionsDir, sandboxRequest.FirecrackerVersion, fcBinaryName),
+			HugePages:             req.Sandbox.HugePages,
+			UFFDBinaryPath:        filepath.Join(fcVersionsDir, req.Sandbox.FirecrackerVersion, uffdBinaryName),
+			FirecrackerBinaryPath: filepath.Join(fcVersionsDir, req.Sandbox.FirecrackerVersion, fcBinaryName),
 		},
 		s.dns,
-		sandboxRequest,
+		req.Sandbox,
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create sandbox: %w", err)
@@ -62,12 +65,12 @@ func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator
 		return nil, status.New(codes.Internal, errMsg.Error()).Err()
 	}
 
-	s.sandboxes.Insert(sandboxRequest.SandboxID, sbx)
+	s.sandboxes.Insert(req.Sandbox.SandboxID, sbx)
 
 	go func() {
 		tracer := otel.Tracer("close")
 		defer sbx.CleanupAfterFCStop(context.Background(), tracer, s.consul, s.dns)
-		defer s.sandboxes.Remove(sandboxRequest.SandboxID)
+		defer s.sandboxes.Remove(req.Sandbox.SandboxID)
 
 		err := sbx.FC.Wait()
 		if err != nil {
@@ -76,20 +79,46 @@ func (s *server) SandboxCreate(ctx context.Context, sandboxRequest *orchestrator
 		}
 	}()
 
-	return &orchestrator.NewSandbox{
-		SandboxID: sandboxRequest.SandboxID,
-		ClientID:  constants.ClientID,
+	return &orchestrator.SandboxCreateResponse{
+		ClientID: constants.ClientID,
 	}, nil
 }
 
-func (s *server) SandboxList(ctx context.Context, _ *emptypb.Empty) (*orchestrator.SandboxListResponse, error) {
+func (s *server) List(ctx context.Context, _ *emptypb.Empty) (*orchestrator.SandboxListResponse, error) {
 	_, childSpan := s.tracer.Start(ctx, "sandbox-list")
 	defer childSpan.End()
 
-	sandboxes := make([]*orchestrator.SandboxDetail, len(s.sandboxes.Items()))
+	items := s.sandboxes.Items()
 
-	for _, sbx := range s.sandboxes.Items() {
-		sandboxes = append(sandboxes, sbx.Info)
+	sandboxes := make([]*orchestrator.RunningSandbox, 0, len(items))
+
+	for _, sbx := range items {
+		if sbx == nil {
+			continue
+		}
+
+		if sbx.Sandbox == nil {
+			continue
+		}
+
+		fmt.Printf("sandbox %+v", sbx.Sandbox)
+
+		sandboxes = append(sandboxes, &orchestrator.RunningSandbox{
+			Config: &orchestrator.SandboxConfig{
+				SandboxID:          sbx.Sandbox.SandboxID,
+				TemplateID:         sbx.Sandbox.TemplateID,
+				Alias:              sbx.Sandbox.Alias,
+				TeamID:             sbx.Sandbox.TeamID,
+				BuildID:            sbx.Sandbox.BuildID,
+				KernelVersion:      sbx.Sandbox.KernelVersion,
+				Metadata:           sbx.Sandbox.Metadata,
+				MaxInstanceLength:  sbx.Sandbox.MaxInstanceLength,
+				HugePages:          sbx.Sandbox.HugePages,
+				FirecrackerVersion: sbx.Sandbox.FirecrackerVersion,
+			},
+			ClientID:  constants.ClientID,
+			StartTime: timestamppb.New(sbx.StartedAt),
+		})
 	}
 
 	return &orchestrator.SandboxListResponse{
@@ -97,7 +126,7 @@ func (s *server) SandboxList(ctx context.Context, _ *emptypb.Empty) (*orchestrat
 	}, nil
 }
 
-func (s *server) SandboxDelete(ctx context.Context, in *orchestrator.SandboxRequest) (*emptypb.Empty, error) {
+func (s *server) Delete(ctx context.Context, in *orchestrator.SandboxRequest) (*emptypb.Empty, error) {
 	_, childSpan := s.tracer.Start(ctx, "sandbox-delete")
 	defer childSpan.End()
 

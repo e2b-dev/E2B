@@ -19,7 +19,7 @@ import (
 
 const (
 	InstanceExpiration = time.Second * 15
-	CacheSyncTime      = time.Minute * 3
+	CacheSyncTime      = time.Second * 30
 )
 
 type InstanceInfo struct {

@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
@@ -34,7 +35,7 @@ func (o *Orchestrator) KeepInSync(ctx context.Context, instanceCache *instance.I
 
 		activeInstances, err := o.GetInstances(ctx)
 		if err != nil {
-			fmt.Printf("Error loading current instances from Nomad\n: %v", err)
+			fmt.Fprintf(os.Stderr, "Error loading current sandboxes\n: %v", err)
 		} else {
 			instanceCache.Sync(activeInstances)
 		}

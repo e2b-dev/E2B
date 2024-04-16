@@ -29,7 +29,6 @@ run:
 	NOMAD_TOKEN=$(NOMAD_TOKEN) \
 	CONSUL_TOKEN=$(CONSUL_TOKEN) \
 	POSTGRES_CONNECTION_STRING=$(POSTGRES_CONNECTION_STRING) \
-	GOOGLE_CLOUD_STORAGE_BUCKET=$(GOOGLE_CLOUD_STORAGE_BUCKET) \
 	GOTRACEBACK=crash \
 	GODEBUG=madvdontneed=1 \
 	./bin/api --port 3000
@@ -40,4 +39,3 @@ run:
 .PHONY: profiler
 profiler:
 	go tool pprof -http :9991 http://localhost:3000/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
-
