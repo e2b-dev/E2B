@@ -186,8 +186,9 @@ func (a *APIStore) buildEnv(
 	err = a.templateManager.CreateTemplate(
 		a.tracer,
 		childCtx,
+		a.buildCache,
 		envID,
-		buildID.String(),
+		buildID,
 		KernelVersion,
 		firecrackerVersion,
 		startCmd,

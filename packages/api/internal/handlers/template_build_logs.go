@@ -105,26 +105,6 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildIDLogs(c *gin.Context, envI
 		return
 	}
 
-	buildUUID, err := uuid.Parse(buildID)
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, "Invalid build id")
-
-		err = fmt.Errorf("invalid build id: %w", err)
-		telemetry.ReportError(ctx, err)
-
-		return
-	}
-
-	err = a.buildCache.Append(envID, buildUUID, body.Logs)
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when saving docker build logs: %s", err))
-
-		errMsg := fmt.Errorf("error when saving docker build logs: %w", err)
-		telemetry.ReportError(ctx, errMsg)
-
-		return
-	}
-
 	telemetry.ReportEvent(ctx, "added docker build log")
 
 	c.JSON(http.StatusCreated, nil)

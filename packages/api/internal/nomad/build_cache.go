@@ -55,11 +55,11 @@ func (b *BuildInfo) GetTeamID() uuid.UUID {
 	return b.teamID
 }
 
-func (b *BuildInfo) addLogs(logs []string) {
+func (b *BuildInfo) addLog(log string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	b.logs = append(b.logs, logs...)
+	b.logs = append(b.logs, log)
 }
 
 func (b *BuildInfo) setStatus(status api.TemplateBuildStatus) {
@@ -109,7 +109,7 @@ func (c *BuildCache) Get(envID string, buildID uuid.UUID) (*BuildInfo, error) {
 }
 
 // Append appends logs to the build.
-func (c *BuildCache) Append(envID string, buildID uuid.UUID, logs []string) error {
+func (c *BuildCache) Append(envID string, buildID uuid.UUID, log string) error {
 	item, err := c.Get(envID, buildID)
 	if err != nil {
 		errMsg := fmt.Errorf("build for %s not found in cache: %w", envID, err)
@@ -117,7 +117,7 @@ func (c *BuildCache) Append(envID string, buildID uuid.UUID, logs []string) erro
 		return errMsg
 	}
 
-	item.addLogs(logs)
+	item.addLog(log)
 
 	return nil
 }

@@ -4,11 +4,14 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"io"
 
+	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/status"
 
+	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -17,8 +20,9 @@ import (
 func (tm *TemplateManager) CreateTemplate(
 	t trace.Tracer,
 	ctx context.Context,
-	templateID,
-	buildID,
+	buildCache *nomad.BuildCache,
+	templateID string,
+	buildID uuid.UUID,
 	kernelVersion,
 	firecrackerVersion,
 	startCommand string,
@@ -42,9 +46,9 @@ func (tm *TemplateManager) CreateTemplate(
 
 	telemetry.ReportEvent(childCtx, "Got FC version info")
 
-	_, err = tm.grpc.Client.TemplateCreate(ctx, &template_manager.TemplateCreateRequest{
+	logs, err := tm.grpc.Client.TemplateCreate(ctx, &template_manager.TemplateCreateRequest{
 		TemplateID:         templateID,
-		BuildID:            buildID,
+		BuildID:            buildID.String(),
 		VCpuCount:          int32(vCpuCount),
 		MemoryMB:           int32(memoryMB),
 		DiskSizeMB:         int32(diskSizeMB),
@@ -71,7 +75,31 @@ func (tm *TemplateManager) CreateTemplate(
 		return errMsg
 	}
 
-	telemetry.ReportEvent(childCtx, "Created sandbox")
+	go func() {
+		buildContext, buildSpan := t.Start(
+			trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
+			"background-build-template",
+		)
+		defer buildSpan.End()
+		for {
+			log, receiveErr := logs.Recv()
+			if receiveErr == io.EOF {
+				return
+			} else if receiveErr != nil {
+				break
+			}
+
+			logErr := buildCache.Append(templateID, buildID, log.Log)
+			if logErr != nil {
+				errMsg := fmt.Errorf("error when saving docker build logs: %w", logErr)
+				telemetry.ReportError(buildContext, errMsg)
+
+				return
+			}
+		}
+	}()
+
+	telemetry.ReportEvent(childCtx, "Template build started")
 
 	return nil
 }

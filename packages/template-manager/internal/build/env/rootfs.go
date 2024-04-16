@@ -171,7 +171,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	go func() {
 		now := time.Now()
 		for {
-			msg := []byte(fmt.Sprintf("Postprocessing (%s)\r", time.Since(now).Round(time.Second)))
+			msg := []byte(fmt.Sprintf("Postprocessing (%s)       \r", time.Since(now).Round(time.Second)))
 
 			select {
 			case postprocessingErr := <-postprocessingFinished:

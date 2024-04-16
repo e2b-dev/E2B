@@ -23,11 +23,15 @@ message TemplateDeleteRequest {
   string templateID = 1;
 }
 
+// Logs from template build
+message TemplateBuildLog {
+  string log = 1;
+}
 
 // Interface exported by the server.
 service TemplateService {
   // TemplateCreate is a gRPC service that creates a new template
-  rpc TemplateCreate (TemplateCreateRequest) returns (google.protobuf.Empty);
+  rpc TemplateCreate (TemplateCreateRequest) returns (stream TemplateBuildLog);
   // TemplateDelete is a gRPC service that deletes files associated with a template
   rpc TemplateDelete (TemplateDeleteRequest) returns (google.protobuf.Empty);
 }

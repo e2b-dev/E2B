@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
@@ -15,7 +14,8 @@ import (
 	"github.com/e2b-dev/infra/packages/template-manager/internal/build/writer"
 )
 
-func (s *serverStore) TemplateCreate(ctx context.Context, templateRequest *template_manager.TemplateCreateRequest) (*emptypb.Empty, error) {
+func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateCreateRequest, stream template_manager.TemplateService_TemplateCreateServer) error {
+	ctx := stream.Context()
 	childCtx, childSpan := s.tracer.Start(ctx, "env-create")
 	defer childSpan.End()
 
@@ -30,7 +30,7 @@ func (s *serverStore) TemplateCreate(ctx context.Context, templateRequest *templ
 		attribute.Bool("env.huge_pages", templateRequest.HugePages),
 	)
 
-	logsWriter := writer.New(templateRequest.TemplateID, templateRequest.BuildID)
+	logsWriter := writer.New(stream)
 	template := &env.Env{
 		EnvID:                 templateRequest.TemplateID,
 		BuildID:               templateRequest.BuildID,
@@ -44,20 +44,18 @@ func (s *serverStore) TemplateCreate(ctx context.Context, templateRequest *templ
 		BuildLogsWriter:       logsWriter,
 	}
 
-	go func() {
-		buildContext, buildSpan := s.tracer.Start(
-			trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
-			"background-build-env",
-		)
-		defer buildSpan.End()
-		err := template.Build(buildContext, s.tracer, s.dockerClient, s.legacyDockerClient)
-		if err != nil {
-			telemetry.ReportCriticalError(buildContext, err)
-		}
-	}()
+	err := template.Build(childCtx, s.tracer, s.dockerClient, s.legacyDockerClient)
+	if err != nil {
+		telemetry.ReportCriticalError(childCtx, err)
+
+		// TODO:
+		logsWriter.Write([]byte(err.Error()))
+		return err
+	}
+
 	telemetry.ReportEvent(childCtx, "Started environment build")
 
-	return nil, nil
+	return nil
 }
 
 func (s *serverStore) TemplateDelete(ctx context.Context, in *template_manager.TemplateDeleteRequest) (*emptypb.Empty, error) {
