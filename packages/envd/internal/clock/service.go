@@ -43,5 +43,5 @@ func (s *Service) Wait() {
 	s.mu.RLock()
 	s.mu.RUnlock()
 
-	s.logger.Debug("Clock sync lock passsed")
+	s.logger.Debug("Clock sync lock passed")
 }
