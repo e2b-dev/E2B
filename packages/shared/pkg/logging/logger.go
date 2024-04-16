@@ -19,7 +19,7 @@ func New(prod bool) (*zap.SugaredLogger, error) {
 			MessageKey:    "message",
 			LevelKey:      "level",
 			EncodeLevel:   zapcore.LowercaseLevelEncoder,
-			NameKey:       "logging",
+			NameKey:       "logger",
 			StacktraceKey: "stacktrace",
 		},
 		OutputPaths: []string{
@@ -37,7 +37,7 @@ func New(prod bool) (*zap.SugaredLogger, error) {
 
 	logger, err := config.Build()
 	if err != nil {
-		return nil, fmt.Errorf("error building logging: %w", err)
+		return nil, fmt.Errorf("error building logger: %w", err)
 	}
 
 	return logger.Sugar(), nil
