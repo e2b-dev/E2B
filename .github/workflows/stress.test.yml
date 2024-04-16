@@ -3,7 +3,7 @@ name: Stress test
 on:
   schedule:
     - cron: '*/50 * * * *'
-  workflow_call:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
