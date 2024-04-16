@@ -81,8 +81,6 @@ func (tm *TemplateManager) CreateTemplate(
 		return errMsg
 	}
 
-	var buildStatus api.TemplateBuildStatus
-
 	go func() {
 		buildContext, buildSpan := t.Start(
 			trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
@@ -94,17 +92,9 @@ func (tm *TemplateManager) CreateTemplate(
 			if receiveErr == io.EOF {
 				break
 			} else if receiveErr != nil {
-				buildStatus = api.TemplateBuildStatusError
-
-				err = db.EnvBuildSetStatus(buildContext, templateID, buildID, envbuild.StatusFailed)
-				if err != nil {
-					err = fmt.Errorf("error when setting build status: %w", err)
-					telemetry.ReportCriticalError(buildContext, err)
-				}
-
 				errMsg := fmt.Errorf("error when building env: %w", receiveErr)
+				handleBuildErr(ctx, db, buildCache, templateID, buildID, errMsg)
 
-				telemetry.ReportCriticalError(buildContext, errMsg)
 				return
 			}
 
@@ -116,12 +106,18 @@ func (tm *TemplateManager) CreateTemplate(
 				break
 			}
 		}
-		buildStatus = api.TemplateBuildStatusReady
+
 		err = db.FinishEnvBuild(buildContext, templateID, buildID, diskSize)
+		if err != nil {
+			err = fmt.Errorf("error when finishing build: %w", err)
+			telemetry.ReportCriticalError(buildContext, err)
+
+			return
+		}
 
 		telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", templateID))
 
-		cacheErr := buildCache.SetDone(templateID, buildID, buildStatus)
+		cacheErr := buildCache.SetDone(templateID, buildID, api.TemplateBuildStatusReady)
 		if cacheErr != nil {
 			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
 			telemetry.ReportCriticalError(buildContext, cacheErr)
@@ -131,4 +127,28 @@ func (tm *TemplateManager) CreateTemplate(
 	telemetry.ReportEvent(childCtx, "Template build started")
 
 	return nil
+}
+
+func handleBuildErr(
+	ctx context.Context,
+	db *db.DB,
+	buildCache *nomad.BuildCache,
+	templateID string,
+	buildID uuid.UUID,
+	buildErr error,
+) {
+	telemetry.ReportCriticalError(ctx, buildErr)
+
+	err := db.EnvBuildSetStatus(ctx, templateID, buildID, envbuild.StatusFailed)
+	if err != nil {
+		err = fmt.Errorf("error when setting build status: %w", err)
+		telemetry.ReportCriticalError(ctx, err)
+	}
+
+	cacheErr := buildCache.SetDone(templateID, buildID, api.TemplateBuildStatusError)
+	if cacheErr != nil {
+		err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
+		telemetry.ReportCriticalError(ctx, cacheErr)
+	}
+	return
 }
