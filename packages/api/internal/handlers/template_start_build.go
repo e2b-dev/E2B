@@ -103,7 +103,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 		}
 
 		// Call the Template Manager to build the environment
-		err := a.buildEnv(
+		buildErr := a.buildEnv(
 			buildContext,
 			userID.String(),
 			team.ID,
@@ -117,9 +117,9 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			build.FreeDiskSizeMB,
 		)
 
-		if err != nil {
-			err = fmt.Errorf("error when building env: %w", err)
-			telemetry.ReportCriticalError(buildContext, err)
+		if buildErr != nil {
+			err = fmt.Errorf("error when building env: %w", buildErr)
+			telemetry.ReportCriticalError(buildContext, buildErr)
 
 			a.buildCache.Delete(templateID, buildUUID, team.ID)
 
@@ -154,16 +154,6 @@ func (a *APIStore) buildEnv(
 
 	startTime := time.Now()
 
-	defer func() {
-		a.posthog.CreateAnalyticsUserEvent(userID, teamID.String(), "built environment", posthog.NewProperties().
-			Set("user_id", userID).
-			Set("environment", envID).
-			Set("build_id", buildID).
-			Set("duration", time.Since(startTime).String()).
-			Set("success", err != nil),
-		)
-	}()
-
 	err = a.templateManager.CreateTemplate(
 		a.tracer,
 		childCtx,
@@ -184,6 +174,14 @@ func (a *APIStore) buildEnv(
 
 		return err
 	}
+
+	a.posthog.CreateAnalyticsUserEvent(userID, teamID.String(), "built environment", posthog.NewProperties().
+		Set("user_id", userID).
+		Set("environment", envID).
+		Set("build_id", buildID).
+		Set("duration", time.Since(startTime).String()).
+		Set("success", err != nil),
+	)
 
 	return nil
 }

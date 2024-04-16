@@ -36,7 +36,7 @@ func (tm *TemplateManager) CreateTemplate(
 ) error {
 	// TODO:
 	diskSize := int64(0)
-	childCtx, childSpan := t.Start(ctx, "create-sandbox",
+	childCtx, childSpan := t.Start(ctx, "create-template",
 		trace.WithAttributes(
 			attribute.String("env.id", templateID),
 		),
@@ -66,7 +66,7 @@ func (tm *TemplateManager) CreateTemplate(
 	if err != nil {
 		st, ok := status.FromError(err)
 		if !ok {
-			errMsg := fmt.Errorf("failed to create sandbox '%s': %w", templateID, err)
+			errMsg := fmt.Errorf("failed to create template '%s': %w", templateID, err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 
 			return errMsg
@@ -74,55 +74,51 @@ func (tm *TemplateManager) CreateTemplate(
 
 		telemetry.ReportCriticalError(
 			childCtx,
-			fmt.Errorf("failed to create sandbox '%s': [%s] %s", templateID, st.Code(), st.Message()),
+			fmt.Errorf("failed to create template '%s': [%s] %s", templateID, st.Code(), st.Message()),
 		)
-		errMsg := fmt.Errorf("failed to create sandbox of environment '%s': %s", templateID, st.Message())
+		errMsg := fmt.Errorf("failed to create template '%s': %s", templateID, st.Message())
 
 		return errMsg
 	}
 
-	go func() {
-		buildContext, buildSpan := t.Start(
-			trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
-			"background-build-template",
-		)
-		defer buildSpan.End()
-		for {
-			log, receiveErr := logs.Recv()
-			if receiveErr == io.EOF {
-				break
-			} else if receiveErr != nil {
-				errMsg := fmt.Errorf("error when building env: %w", receiveErr)
-				handleBuildErr(ctx, db, buildCache, templateID, buildID, errMsg)
+	// Wait for the build to finish and save logs
+	for {
+		log, receiveErr := logs.Recv()
+		if receiveErr == io.EOF {
+			break
+		} else if receiveErr != nil {
+			// There was an error during the build
+			errMsg := fmt.Errorf("error when building env: %w", receiveErr)
+			handleBuildErr(ctx, db, buildCache, templateID, buildID, errMsg)
 
-				return
-			}
-
+			return errMsg
+		} else {
 			logErr := buildCache.Append(templateID, buildID, log.Log)
 			if logErr != nil {
+				// There was an error saving the logs, the build wasn't found
 				errMsg := fmt.Errorf("error when saving docker build logs: %w", logErr)
-				telemetry.ReportError(buildContext, errMsg)
+				handleBuildErr(ctx, db, buildCache, templateID, buildID, errMsg)
 
-				break
+				return errMsg
 			}
 		}
+	}
 
-		err = db.FinishEnvBuild(buildContext, templateID, buildID, diskSize)
-		if err != nil {
-			err = fmt.Errorf("error when finishing build: %w", err)
-			telemetry.ReportCriticalError(buildContext, err)
+	err = db.FinishEnvBuild(childCtx, templateID, buildID, diskSize)
+	if err != nil {
+		err = fmt.Errorf("error when finishing build: %w", err)
+		telemetry.ReportCriticalError(childCtx, err)
 
-			return
-		}
+		return err
+	}
 
-		telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", templateID))
+	telemetry.ReportEvent(childCtx, "created new environment", attribute.String("env.id", templateID))
 
-		cacheErr := buildCache.SetDone(templateID, buildID, api.TemplateBuildStatusReady)
-		if cacheErr != nil {
-			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
-			telemetry.ReportCriticalError(buildContext, cacheErr)
-		}
-	}()
+	cacheErr := buildCache.SetDone(templateID, buildID, api.TemplateBuildStatusReady)
+	if cacheErr != nil {
+		err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
+		telemetry.ReportCriticalError(childCtx, cacheErr)
+	}
 
 	telemetry.ReportEvent(childCtx, "Template build started")
 
