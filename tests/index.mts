@@ -1,13 +1,47 @@
 import { Sandbox } from 'e2b'
 
+const p = `
+import time
+
+print('start')
+
+for i in range(10):
+    print(i)
+    time.sleep(1)
+
+print('end')
+
+
+import requests
+
+url = 'https://www.google.com/'
+
+response = requests.get(url)
+
+if response.status_code == 200:
+    with open('google.html', 'w', encoding='utf-8') as file:
+        file.write(response.text)
+    print('Website downloaded successfully.')
+else:
+    print(f'Failed to download website. Status code: {response.status_code}')
+
+`
+
 async function createSandbox() {
-  return await Sandbox.create({
+  const sandbox = await Sandbox.create({
     timeout: 20000,
     logger: {
       warn: console.warn,
       error: console.error,
     },
   })
+
+  const out = await sandbox.process.startAndWait('pip install requests')
+  console.log('OUT1:', out)
+  const o2 = await sandbox.process.startAndWait(`python3 -c "${p}"`)
+  console.log('OUT2:', o2)
+
+  return sandbox
 }
 
 export function notEmpty<T>(value: T | null | undefined): value is T {
