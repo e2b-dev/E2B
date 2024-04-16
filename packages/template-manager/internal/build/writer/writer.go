@@ -5,13 +5,7 @@ import (
 )
 
 type BuildLogsWriter struct {
-	Done   chan struct{}
 	stream template_manager.TemplateService_TemplateCreateServer
-}
-
-type LogsData struct {
-	APISecret string   `json:"apiSecret"`
-	Logs      []string `json:"logs"`
 }
 
 func (w BuildLogsWriter) Write(p []byte) (n int, err error) {
@@ -25,7 +19,6 @@ func (w BuildLogsWriter) Write(p []byte) (n int, err error) {
 
 func New(stream template_manager.TemplateService_TemplateCreateServer) BuildLogsWriter {
 	writer := BuildLogsWriter{
-		Done:   make(chan struct{}),
 		stream: stream,
 	}
 

@@ -2,17 +2,17 @@ package server
 
 import (
 	"fmt"
-	"github.com/e2b-dev/infra/packages/template-manager/internal/build"
 	"path/filepath"
 	"strconv"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/metadata"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"github.com/e2b-dev/infra/packages/template-manager/internal/build"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/build/writer"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateCreateRequest, stream template_manager.TemplateService_TemplateCreateServer) error {

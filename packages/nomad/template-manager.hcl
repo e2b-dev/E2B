@@ -58,7 +58,7 @@ job "template-manager" {
 
   group "template-manager" {
     network {
-      port "orchestrator" {
+      port "template-manager" {
         static = var.port
       }
     }

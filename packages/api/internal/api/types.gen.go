@@ -32,13 +32,13 @@ type Error struct {
 type NewSandbox struct {
 	Metadata *SandboxMetadata `json:"metadata,omitempty"`
 
-	// TemplateID Identifier of the required env
+	// TemplateID Identifier of the required template
 	TemplateID string `json:"templateID"`
 }
 
 // RunningSandboxes defines model for RunningSandboxes.
 type RunningSandboxes struct {
-	// Alias Alias of the env
+	// Alias Alias of the template
 	Alias *string `json:"alias,omitempty"`
 
 	// ClientID Identifier of the client
@@ -57,13 +57,13 @@ type RunningSandboxes struct {
 	// StartedAt Time when the sandbox was started
 	StartedAt time.Time `json:"startedAt"`
 
-	// TemplateID Identifier of the env from which is the sandbox created
+	// TemplateID Identifier of the template from which is the sandbox created
 	TemplateID string `json:"templateID"`
 }
 
 // Sandbox defines model for Sandbox.
 type Sandbox struct {
-	// Alias Alias of the env
+	// Alias Alias of the template
 	Alias *string `json:"alias,omitempty"`
 
 	// ClientID Identifier of the client
@@ -72,7 +72,7 @@ type Sandbox struct {
 	// SandboxID Identifier of the sandbox
 	SandboxID string `json:"sandboxID"`
 
-	// TemplateID Identifier of the env from which is the sandbox created
+	// TemplateID Identifier of the template from which is the sandbox created
 	TemplateID string `json:"templateID"`
 }
 
@@ -96,10 +96,10 @@ type SandboxMetadata map[string]string
 
 // Template defines model for Template.
 type Template struct {
-	// Aliases Aliases of the env
+	// Aliases Aliases of the template
 	Aliases *[]string `json:"aliases,omitempty"`
 
-	// BuildID Identifier of the last successful build for given env
+	// BuildID Identifier of the last successful build for given template
 	BuildID string `json:"buildID"`
 
 	// CpuCount CPU cores for the sandbox
@@ -108,10 +108,10 @@ type Template struct {
 	// MemoryMB Memory limit for the sandbox in MB
 	MemoryMB int `json:"memoryMB"`
 
-	// Public Whether the env is public or only accessible by the team
+	// Public Whether the template is public or only accessible by the team
 	Public bool `json:"public"`
 
-	// TemplateID Identifier of the env
+	// TemplateID Identifier of the template
 	TemplateID string `json:"templateID"`
 }
 
@@ -123,31 +123,31 @@ type TemplateBuild struct {
 	// Logs Build logs
 	Logs []string `json:"logs"`
 
-	// Status Status of the env
+	// Status Status of the template
 	Status *TemplateBuildStatus `json:"status,omitempty"`
 
-	// TemplateID Identifier of the env
+	// TemplateID Identifier of the template
 	TemplateID string `json:"templateID"`
 }
 
-// TemplateBuildStatus Status of the env
+// TemplateBuildStatus Status of the template
 type TemplateBuildStatus string
 
 // TemplateBuildRequest defines model for TemplateBuildRequest.
 type TemplateBuildRequest struct {
-	// Alias Alias of the env
+	// Alias Alias of the template
 	Alias *string `json:"alias,omitempty"`
 
-	// CpuCount CPU cores for the env
+	// CpuCount CPU cores for the template
 	CpuCount *int `json:"cpuCount,omitempty"`
 
-	// Dockerfile Dockerfile for the env
+	// Dockerfile Dockerfile for the template
 	Dockerfile string `json:"dockerfile"`
 
-	// MemoryMB Memory limit for the env in MB
+	// MemoryMB Memory limit for the template in MB
 	MemoryMB *int `json:"memoryMB,omitempty"`
 
-	// StartCmd Start command to execute in the env after the build
+	// StartCmd Start command to execute in the template after the build
 	StartCmd *string `json:"startCmd,omitempty"`
 }
 
@@ -189,7 +189,7 @@ type PostSandboxesSandboxIDRefreshesJSONBody struct {
 
 // GetTemplatesTemplateIDBuildsBuildIDStatusParams defines parameters for GetTemplatesTemplateIDBuildsBuildIDStatus.
 type GetTemplatesTemplateIDBuildsBuildIDStatusParams struct {
-	// LogsOffset Index of the starting build log that should be returned with the env
+	// LogsOffset Index of the starting build log that should be returned with the template
 	LogsOffset *int `form:"logsOffset,omitempty" json:"logsOffset,omitempty"`
 }
 

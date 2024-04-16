@@ -93,8 +93,6 @@ func (tm *TemplateManager) CreateTemplate(
 	}
 
 	trailer := logs.Trailer()
-	fmt.Printf("trailer: %v\n", trailer)
-
 	rootfsSizeStr, ok := trailer[consts.RootfsSizeKey]
 	if !ok {
 		errMsg := fmt.Errorf("rootfs size not found in trailer")

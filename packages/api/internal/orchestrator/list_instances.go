@@ -33,8 +33,6 @@ func (o *Orchestrator) GetInstances(ctx context.Context) ([]*instance.InstanceIn
 			return nil, fmt.Errorf("sandbox config is nil when listing sandboxes: %#v", sbx)
 		}
 
-		fmt.Printf("%+v\n", sbx)
-
 		teamID, parseErr := uuid.Parse(config.TeamID)
 		if parseErr != nil {
 			return nil, fmt.Errorf("failed to parse team ID '%s' for job: %w", config.TeamID, parseErr)

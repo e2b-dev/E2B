@@ -460,7 +460,7 @@ paths:
         500:
           $ref: "#/components/responses/500"
     delete:
-      description: Delete a env
+      description: Delete a template
       tags: [templates]
       security:
         - AccessTokenAuth: []

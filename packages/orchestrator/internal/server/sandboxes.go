@@ -101,21 +101,8 @@ func (s *server) List(ctx context.Context, _ *emptypb.Empty) (*orchestrator.Sand
 			continue
 		}
 
-		fmt.Printf("sandbox %+v", sbx.Sandbox)
-
 		sandboxes = append(sandboxes, &orchestrator.RunningSandbox{
-			Config: &orchestrator.SandboxConfig{
-				SandboxID:          sbx.Sandbox.SandboxID,
-				TemplateID:         sbx.Sandbox.TemplateID,
-				Alias:              sbx.Sandbox.Alias,
-				TeamID:             sbx.Sandbox.TeamID,
-				BuildID:            sbx.Sandbox.BuildID,
-				KernelVersion:      sbx.Sandbox.KernelVersion,
-				Metadata:           sbx.Sandbox.Metadata,
-				MaxInstanceLength:  sbx.Sandbox.MaxInstanceLength,
-				HugePages:          sbx.Sandbox.HugePages,
-				FirecrackerVersion: sbx.Sandbox.FirecrackerVersion,
-			},
+			Config:    sbx.Sandbox,
 			ClientID:  constants.ClientID,
 			StartTime: timestamppb.New(sbx.StartedAt),
 		})
