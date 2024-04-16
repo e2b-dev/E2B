@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/posthog/posthog-go"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
@@ -96,6 +95,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 		)
 		defer childSpan.End()
 
+		startTime := time.Now()
 		build := envDB.Edges.Builds[0]
 		startCmd := ""
 		if build.StartCmd != nil {
@@ -103,20 +103,20 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 		}
 
 		// Call the Template Manager to build the environment
-		buildErr := a.buildEnv(
+		buildErr := a.templateManager.CreateTemplate(
+			a.tracer,
 			buildContext,
-			userID.String(),
-			team.ID,
-			envDB.ID,
+			a.db,
+			a.buildCache,
+			templateID,
 			buildUUID,
-			startCmd,
 			schema.DefaultKernelVersion,
 			schema.DefaultFirecrackerVersion,
+			startCmd,
 			build.Vcpu,
 			build.RAMMB,
 			build.FreeDiskSizeMB,
 		)
-
 		if buildErr != nil {
 			err = fmt.Errorf("error when building env: %w", buildErr)
 			telemetry.ReportCriticalError(buildContext, buildErr)
@@ -125,63 +125,16 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 
 			return
 		}
+
+		a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "built environment", posthog.NewProperties().
+			Set("user_id", userID).
+			Set("environment", templateID).
+			Set("build_id", buildID).
+			Set("duration", time.Since(startTime).String()).
+			Set("success", err != nil),
+		)
+
 	}()
 
 	c.Status(http.StatusAccepted)
-}
-
-func (a *APIStore) buildEnv(
-	ctx context.Context,
-	userID string,
-	teamID uuid.UUID,
-	envID string,
-	buildID uuid.UUID,
-	startCmd,
-	KernelVersion,
-	firecrackerVersion string,
-	VCpuCount,
-	MemoryMB,
-	DiskSizeMB int64,
-) (err error) {
-	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
-		trace.WithAttributes(
-			attribute.String("env.id", envID),
-			attribute.String("build.id", buildID.String()),
-			attribute.String("env.team.id", teamID.String()),
-		),
-	)
-	defer childSpan.End()
-
-	startTime := time.Now()
-
-	err = a.templateManager.CreateTemplate(
-		a.tracer,
-		childCtx,
-		a.db,
-		a.buildCache,
-		envID,
-		buildID,
-		KernelVersion,
-		firecrackerVersion,
-		startCmd,
-		MemoryMB,
-		VCpuCount,
-		DiskSizeMB,
-	)
-	if err != nil {
-		err = fmt.Errorf("error when building env: %w", err)
-		telemetry.ReportCriticalError(childCtx, err)
-
-		return err
-	}
-
-	a.posthog.CreateAnalyticsUserEvent(userID, teamID.String(), "built environment", posthog.NewProperties().
-		Set("user_id", userID).
-		Set("environment", envID).
-		Set("build_id", buildID).
-		Set("duration", time.Since(startTime).String()).
-		Set("success", err != nil),
-	)
-
-	return nil
 }

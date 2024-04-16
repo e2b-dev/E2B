@@ -30,8 +30,8 @@ func (tm *TemplateManager) CreateTemplate(
 	kernelVersion,
 	firecrackerVersion,
 	startCommand string,
-	diskSizeMB,
 	vCpuCount,
+	diskSizeMB,
 	memoryMB int64,
 ) error {
 	// TODO:
