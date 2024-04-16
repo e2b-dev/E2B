@@ -37,11 +37,6 @@ variable "orchestrator_checksum" {
   default = ""
 }
 
-variable "google_service_account_key" {
-  type    = string
-  default = ""
-}
-
 job "orchestrator" {
   type = "system"
   datacenters = [var.gcp_zone]
@@ -82,8 +77,7 @@ job "orchestrator" {
         CONSUL_TOKEN       = var.consul_token
         OTEL_TRACING_PRINT = var.otel_tracing_print
         LOGS_PROXY_ADDRESS = var.logs_proxy_address
-        ENVIRONMENT        = "prod"
-        GOOGLE_CREDENTIALS           = var.google_service_account_key
+        ENVIRONMENT        = var.environment
       }
 
       config {

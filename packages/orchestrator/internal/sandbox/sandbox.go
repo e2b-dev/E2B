@@ -23,7 +23,9 @@ type Sandbox struct {
 	Slot  *IPSlot
 	FC    *FC
 
-	Info *orchestrator.SandboxDetail
+	Sandbox *orchestrator.SandboxConfig
+
+	StartedAt time.Time
 
 	config *InstanceConfig
 
@@ -54,7 +56,7 @@ func New(
 	consul *consul.Client,
 	config *InstanceConfig,
 	dns *DNS,
-	sandboxRequest *orchestrator.SandboxCreateRequest,
+	sandboxConfig *orchestrator.SandboxConfig,
 ) (*Sandbox, error) {
 	childCtx, childSpan := tracer.Start(ctx, "new-sandbox")
 	defer childSpan.End()
@@ -172,16 +174,8 @@ func New(
 		Slot:       ips,
 		FC:         fc,
 
-		Info: &orchestrator.SandboxDetail{
-			SandboxID:         config.SandboxID,
-			TemplateID:        config.TemplateID,
-			BuildID:           sandboxRequest.BuildID,
-			TeamID:            config.TeamID,
-			Metadata:          sandboxRequest.Metadata,
-			Alias:             sandboxRequest.Alias,
-			MaxInstanceLength: sandboxRequest.MaxInstanceLength,
-		},
-		config: config,
+		Sandbox: sandboxConfig,
+		config:  config,
 	}
 
 	telemetry.ReportEvent(childCtx, "ensuring clock sync")
@@ -195,6 +189,8 @@ func New(
 			telemetry.ReportEvent(backgroundCtx, "clock synced")
 		}
 	}()
+
+	instance.StartedAt = time.Now()
 
 	return instance, nil
 }

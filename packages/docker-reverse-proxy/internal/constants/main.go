@@ -3,28 +3,30 @@ package constants
 import (
 	"fmt"
 	"strings"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 )
 
 func CheckRequired() error {
 	var missing []string
 
-	if GCPProject == "" {
+	if consts.GCPProject == "" {
 		missing = append(missing, "GCP_PROJECT_ID")
 	}
 
-	if Domain == "" {
+	if consts.Domain == "" {
 		missing = append(missing, "DOMAIN_NAME")
 	}
 
-	if DockerRegistry == "" {
+	if consts.DockerRegistry == "" {
 		missing = append(missing, "GCP_DOCKER_REPOSITORY_NAME")
 	}
 
-	if GoogleServiceAccountSecret == "" {
+	if consts.GoogleServiceAccountSecret == "" {
 		missing = append(missing, "GOOGLE_SERVICE_ACCOUNT_BASE64")
 	}
 
-	if GCPRegion == "" {
+	if consts.GCPRegion == "" {
 		missing = append(missing, "GCP_REGION")
 	}
 

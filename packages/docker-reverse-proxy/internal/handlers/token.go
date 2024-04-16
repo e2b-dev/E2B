@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/auth"
-	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/constants"
 	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 )
 
 type DockerToken struct {
@@ -119,10 +119,10 @@ func (a *APIStore) GetToken(w http.ResponseWriter, r *http.Request) error {
 func getToken(templateID string) (*DockerToken, error) {
 	url := fmt.Sprintf(
 		"https://%s-docker.pkg.dev/v2/token?service=%s-docker.pkg.dev/token&scope=repository:%s/%s/%s:push,pull",
-		constants.GCPRegion,
-		constants.GCPRegion,
-		constants.GCPProject,
-		constants.DockerRegistry,
+		consts.GCPRegion,
+		consts.GCPRegion,
+		consts.GCPProject,
+		consts.DockerRegistry,
 		templateID,
 	)
 
@@ -132,7 +132,7 @@ func getToken(templateID string) (*DockerToken, error) {
 	}
 
 	// Use the service account credentials for the request
-	r.Header.Set("Authorization", fmt.Sprintf("Basic %s", constants.EncodedDockerCredentials))
+	r.Header.Set("Authorization", fmt.Sprintf("Basic %s", consts.EncodedDockerCredentials))
 
 	resp, err := http.DefaultClient.Do(r)
 	defer resp.Body.Close()

@@ -11,12 +11,10 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 )
 
-var (
-	host = os.Getenv("ORCHESTRATOR_ADDRESS")
-)
+var host = os.Getenv("ORCHESTRATOR_ADDRESS")
 
 type GRPCClient struct {
-	Client     orchestrator.SandboxesServiceClient
+	Sandbox    orchestrator.SandboxClient
 	connection e2bgrpc.ClientConnInterface
 }
 
@@ -26,9 +24,9 @@ func NewClient() (*GRPCClient, error) {
 		return nil, fmt.Errorf("failed to establish GRPC connection: %w", err)
 	}
 
-	client := orchestrator.NewSandboxesServiceClient(conn)
+	client := orchestrator.NewSandboxClient(conn)
 
-	return &GRPCClient{Client: client, connection: conn}, nil
+	return &GRPCClient{Sandbox: client, connection: conn}, nil
 }
 
 func (a *GRPCClient) Close() error {

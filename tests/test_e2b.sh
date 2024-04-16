@@ -13,8 +13,8 @@ CHECK_MARK="\xE2\x9C\x94\n\n"
 #echo "Listing templates"
 #e2b template list | grep "${NAME}" > /dev/null
 #printf $CHECK_MARK
-#
-#echo "Creating a new instance"
+
+echo "Creating a new instance"
 RESULT=$(node test.js "${NAME}")
 if [ "$RESULT" != "Hello World" ]; then
     echo "Test failed: $RESULT"

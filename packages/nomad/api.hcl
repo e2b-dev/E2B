@@ -18,16 +18,6 @@ variable "api_port_number" {
   default = 0
 }
 
-variable "nomad_token" {
-  type    = string
-  default = ""
-}
-
-variable "nomad_address" {
-  type    = string
-  default = ""
-}
-
 variable "postgres_connection_string" {
   type    = string
   default = ""
@@ -39,36 +29,6 @@ variable "posthog_api_key" {
 }
 
 variable "environment" {
-  type    = string
-  default = ""
-}
-
-variable "docker_contexts_bucket_name" {
-  type    = string
-  default = ""
-}
-
-variable "api_secret" {
-  type    = string
-  default = ""
-}
-
-variable "google_service_account_secret" {
-  type    = string
-  default = ""
-}
-
-variable "gcp_docker_repository_name" {
-  type    = string
-  default = ""
-}
-
-variable "gcp_project_id" {
-  type    = string
-  default = ""
-}
-
-variable "gcp_region" {
   type    = string
   default = ""
 }
@@ -94,6 +54,11 @@ variable "loki_address" {
 }
 
 variable "orchestrator_address" {
+  type    = string
+  default = ""
+}
+
+variable "template_manager_address" {
   type    = string
   default = ""
 }
@@ -135,22 +100,14 @@ job "orchestration-api" {
 
       env {
         ORCHESTRATOR_ADDRESS          = var.orchestrator_address
-        NOMAD_ADDRESS                 = var.nomad_address
-        NOMAD_TOKEN                   = var.nomad_token
+        TEMPLATE_MANAGER_ADDRESS      = var.template_manager_address
         POSTGRES_CONNECTION_STRING    = var.postgres_connection_string
-        POSTHOG_API_KEY               = var.posthog_api_key
         ENVIRONMENT                   = var.environment
-        GOOGLE_CLOUD_STORAGE_BUCKET   = var.docker_contexts_bucket_name
-        API_SECRET                    = var.api_secret
-        GOOGLE_SERVICE_ACCOUNT_BASE64 = var.google_service_account_secret
-        GCP_DOCKER_REPOSITORY_NAME    = var.gcp_docker_repository_name
-        GCP_PROJECT_ID                = var.gcp_project_id
-        GCP_REGION                    = var.gcp_region
-        GCP_ZONE                      = var.gcp_zone
+        POSTHOG_API_KEY               = var.posthog_api_key
         ANALYTICS_COLLECTOR_HOST      = var.analytics_collector_host
         ANALYTICS_COLLECTOR_API_TOKEN = var.analytics_collector_api_token
-        OTEL_TRACING_PRINT            = var.otel_tracing_print
         LOKI_ADDRESS                  = var.loki_address
+        OTEL_TRACING_PRINT            = var.otel_tracing_print
       }
 
       config {

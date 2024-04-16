@@ -174,7 +174,7 @@ type N500 = Error
 
 // GetSandboxesSandboxIDLogsParams defines parameters for GetSandboxesSandboxIDLogs.
 type GetSandboxesSandboxIDLogsParams struct {
-	// Start Starting timestamp of the logs that should be returned
+	// Start Starting timestamp of the logs that should be returned in milliseconds
 	Start *int `form:"start,omitempty" json:"start,omitempty"`
 
 	// Limit Maximum number of logs that should be returned
@@ -185,13 +185,6 @@ type GetSandboxesSandboxIDLogsParams struct {
 type PostSandboxesSandboxIDRefreshesJSONBody struct {
 	// Duration Duration for which the sandbox should be kept alive in seconds
 	Duration *int `json:"duration,omitempty"`
-}
-
-// PostTemplatesTemplateIDBuildsBuildIDLogsJSONBody defines parameters for PostTemplatesTemplateIDBuildsBuildIDLogs.
-type PostTemplatesTemplateIDBuildsBuildIDLogsJSONBody struct {
-	// ApiSecret API secret
-	ApiSecret string   `json:"apiSecret"`
-	Logs      []string `json:"logs"`
 }
 
 // GetTemplatesTemplateIDBuildsBuildIDStatusParams defines parameters for GetTemplatesTemplateIDBuildsBuildIDStatus.
@@ -211,6 +204,3 @@ type PostTemplatesJSONRequestBody = TemplateBuildRequest
 
 // PostTemplatesTemplateIDJSONRequestBody defines body for PostTemplatesTemplateID for application/json ContentType.
 type PostTemplatesTemplateIDJSONRequestBody = TemplateBuildRequest
-
-// PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody defines body for PostTemplatesTemplateIDBuildsBuildIDLogs for application/json ContentType.
-type PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody PostTemplatesTemplateIDBuildsBuildIDLogsJSONBody

@@ -5,6 +5,7 @@ ENV := $(shell cat .last_used_env || echo "not-set")
 PRINT = @echo -e "\e[1;34mBuilding $<\e[0m"
 
 CLOUDFLARE_API_TOKEN ?= empty
+OTEL_TRACING_PRINT ?= false
 IMAGE := e2b-orchestration/api
 
 server := gcloud compute instances list --project=$(GCP_PROJECT_ID) --format='csv(name)' | grep "server"
@@ -20,7 +21,8 @@ tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_domain_name=$(DOMAIN_NAME) \
 	TF_VAR_cloudflare_api_token=$(CLOUDFLARE_API_TOKEN) \
 	TF_VAR_prefix=$(PREFIX) \
-	TF_VAR_terraform_state_bucket=$(TERRAFORM_STATE_BUCKET)
+	TF_VAR_terraform_state_bucket=$(TERRAFORM_STATE_BUCKET) \
+	TF_VAR_otel_tracing_print=$(OTEL_TRACING_PRINT)
 
 ifeq ($(EXCLUDE_GITHUB),1)
 	ALL_MODULES := $(shell cat main.tf | grep "^module" | awk '{print $$2}' | grep -v -e "github_tf")

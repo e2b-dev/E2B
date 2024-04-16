@@ -19,32 +19,28 @@ import (
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
+	"github.com/e2b-dev/infra/packages/api/internal/cache/builds"
+	"github.com/e2b-dev/infra/packages/api/internal/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/orchestrator"
+	"github.com/e2b-dev/infra/packages/api/internal/template-manager"
 	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 	"github.com/e2b-dev/infra/packages/shared/pkg/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
-	"github.com/e2b-dev/infra/packages/shared/pkg/storages"
 )
 
 type APIStore struct {
-	Ctx                        context.Context
-	analytics                  *analyticscollector.Analytics
-	posthog                    *PosthogClient
-	tracer                     trace.Tracer
-	instanceCache              *instance.InstanceCache
-	orchestrator               *orchestrator.Orchestrator
-	buildCache                 *nomad.BuildCache
-	nomad                      *nomad.NomadClient
-	db                         *db.DB
-	cloudStorage               *storages.GoogleCloudStorage
-	lokiClient                 *loki.DefaultClient
-	apiSecret                  string
-	googleServiceAccountBase64 string
-	logger                     *zap.SugaredLogger
+	Ctx             context.Context
+	analytics       *analyticscollector.Analytics
+	posthog         *PosthogClient
+	tracer          trace.Tracer
+	instanceCache   *instance.InstanceCache
+	orchestrator    *orchestrator.Orchestrator
+	templateManager *template_manager.TemplateManager
+	buildCache      *builds.BuildCache
+	db              *db.DB
+	lokiClient      *loki.DefaultClient
+	logger          *zap.SugaredLogger
 }
 
 var lokiAddress = os.Getenv("LOKI_ADDRESS")
@@ -61,10 +57,6 @@ func NewAPIStore() *APIStore {
 		fmt.Fprintf(os.Stderr, "Error initializing logger\n: %v\n", err)
 		panic(err)
 	}
-
-	nomadClient := nomad.InitNomadClient(logger)
-
-	logger.Info("Initialized Nomad client")
 
 	dbClient, err := db.NewClient(ctx)
 	if err != nil {
@@ -87,19 +79,26 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
+	templateManager, err := template_manager.New()
+	if err != nil {
+		logger.Errorf("Error initializing Template manager client\n: %v", err)
+		panic(err)
+	}
+
 	var initialInstances []*instance.InstanceInfo
 
 	if env.IsProduction() {
 		instances, instancesErr := orch.GetInstances(ctx)
 		if instancesErr != nil {
-			logger.Errorf("Error loading current instances from Nomad\n: %v", err)
+			logger.Errorf("Error loading current sandboxes\n: %w", instancesErr)
 		}
 
 		initialInstances = instances
 	} else {
-		logger.Info("Skipping loading instances from Nomad, running locally")
+		logger.Info("Skipping loading sandboxes, running locally")
 	}
 
+	// TODO: rename later
 	meter := otel.GetMeterProvider().Meter("nomad")
 
 	instancesCounter, err := meter.Int64UpDownCounter(
@@ -127,13 +126,7 @@ func NewAPIStore() *APIStore {
 	if env.IsProduction() {
 		go orch.KeepInSync(ctx, instanceCache)
 	} else {
-		logger.Info("Skipping syncing intances with Nomad, running locally")
-	}
-
-	cStorage, err := storages.NewGoogleCloudStorage(ctx, constants.DockerContextBucketName)
-	if err != nil {
-		logger.Errorf("Error initializing Cloud Storage client\n: %v", err)
-		panic(err)
+		logger.Info("Skipping syncing sandboxes, running locally")
 	}
 
 	var lokiClient *loki.DefaultClient
@@ -144,11 +137,6 @@ func NewAPIStore() *APIStore {
 		}
 	} else {
 		logger.Warn("LOKI_ADDRESS not set, disabling Loki client")
-	}
-
-	apiSecret := os.Getenv("API_SECRET")
-	if apiSecret == "" {
-		apiSecret = "SUPER_SECR3T_4PI_K3Y"
 	}
 
 	buildCounter, err := meter.Int64UpDownCounter(
@@ -162,28 +150,24 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
-	buildCache := nomad.NewBuildCache(buildCounter)
+	buildCache := builds.NewBuildCache(buildCounter)
 
 	return &APIStore{
-		Ctx:                        ctx,
-		nomad:                      nomadClient,
-		orchestrator:               orch,
-		db:                         dbClient,
-		instanceCache:              instanceCache,
-		tracer:                     tracer,
-		analytics:                  analytics,
-		posthog:                    posthogClient,
-		cloudStorage:               cStorage,
-		apiSecret:                  apiSecret,
-		buildCache:                 buildCache,
-		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
-		logger:                     logger,
-		lokiClient:                 lokiClient,
+		Ctx:             ctx,
+		orchestrator:    orch,
+		templateManager: templateManager,
+		db:              dbClient,
+		instanceCache:   instanceCache,
+		tracer:          tracer,
+		analytics:       analytics,
+		posthog:         posthogClient,
+		buildCache:      buildCache,
+		logger:          logger,
+		lokiClient:      lokiClient,
 	}
 }
 
 func (a *APIStore) Close() {
-	a.nomad.Close()
 	a.db.Close()
 
 	err := a.analytics.Close()
@@ -194,11 +178,6 @@ func (a *APIStore) Close() {
 	err = a.posthog.Close()
 	if err != nil {
 		a.logger.Errorf("Error closing Posthog client\n: %v", err)
-	}
-
-	err = a.cloudStorage.Close()
-	if err != nil {
-		a.logger.Errorf("Error closing Cloud Storage client\n: %v", err)
 	}
 
 	err = a.orchestrator.Close()

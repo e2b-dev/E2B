@@ -128,9 +128,20 @@ variable "orchestrator_port" {
   default = 5008
 }
 
+variable "template_manager_port" {
+  type    = number
+  default = 5009
+}
+
 variable "environment" {
   type    = string
   default = "prod"
+}
+
+variable "otel_tracing_print" {
+  description = "Whether to print OTEL traces to stdout"
+  type        = bool
+  default     = false
 }
 
 variable "github_organization" {

@@ -14,6 +14,10 @@ variable "nomad_port" {
   type = number
 }
 
+variable "otel_tracing_print" {
+  type = bool
+}
+
 # API
 variable "api_docker_image_digest" {
   type = string
@@ -189,4 +193,10 @@ variable "orchestrator_port" {
 
 variable "fc_env_pipeline_bucket_name" {
   type = string
+}
+
+
+# Template manager
+variable "template_manager_port" {
+  type = number
 }

@@ -9,11 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/posthog/posthog-go"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/env"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
@@ -95,108 +93,46 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
 			"background-build-env",
 		)
+		defer childSpan.End()
 
-		var status api.TemplateBuildStatus
-
+		startTime := time.Now()
 		build := envDB.Edges.Builds[0]
 		startCmd := ""
 		if build.StartCmd != nil {
 			startCmd = *build.StartCmd
 		}
 
-		// Call the Nomad API to build the environment
-		diskSize, buildErr := a.buildEnv(
+		// Call the Template Manager to build the environment
+		buildErr := a.templateManager.CreateTemplate(
+			a.tracer,
 			buildContext,
-			userID.String(),
-			team.ID,
-			envDB.ID,
+			a.db,
+			a.buildCache,
+			templateID,
 			buildUUID,
+			schema.DefaultKernelVersion,
+			schema.DefaultFirecrackerVersion,
 			startCmd,
-			nomad.BuildConfig{
-				VCpuCount:          build.Vcpu,
-				MemoryMB:           build.RAMMB,
-				DiskSizeMB:         build.FreeDiskSizeMB,
-				KernelVersion:      schema.DefaultKernelVersion,
-				FirecrackerVersion: schema.DefaultFirecrackerVersion,
-			})
-
+			build.Vcpu,
+			build.RAMMB,
+			build.FreeDiskSizeMB,
+		)
 		if buildErr != nil {
-			status = api.TemplateBuildStatusError
+			err = fmt.Errorf("error when building env: %w", buildErr)
+			telemetry.ReportCriticalError(buildContext, buildErr)
 
-			err = a.db.EnvBuildSetStatus(buildContext, envDB.ID, buildUUID, envbuild.StatusFailed)
-			if err != nil {
-				err = fmt.Errorf("error when setting build status: %w", err)
-				telemetry.ReportCriticalError(buildContext, err)
-			}
-
-			errMsg := fmt.Errorf("error when building env: %w", buildErr)
-
-			telemetry.ReportCriticalError(buildContext, errMsg)
-		} else {
-			status = api.TemplateBuildStatusReady
-			err = a.db.FinishEnvBuild(buildContext, envDB.ID, buildUUID, diskSize)
-
-			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env.id", templateID))
+			return
 		}
 
-		cacheErr := a.buildCache.SetDone(templateID, buildUUID, status)
-		if cacheErr != nil {
-			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
-			telemetry.ReportCriticalError(buildContext, cacheErr)
-		}
-
-		childSpan.End()
-	}()
-
-	c.Status(http.StatusAccepted)
-}
-
-func (a *APIStore) buildEnv(
-	ctx context.Context,
-	userID string,
-	teamID uuid.UUID,
-	envID string,
-	buildID uuid.UUID,
-	startCmd string,
-	vmConfig nomad.BuildConfig,
-) (diskSize int64, err error) {
-	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
-		trace.WithAttributes(
-			attribute.String("env.id", envID),
-			attribute.String("build.id", buildID.String()),
-			attribute.String("env.team.id", teamID.String()),
-		),
-	)
-	defer childSpan.End()
-
-	startTime := time.Now()
-
-	defer func() {
-		a.posthog.CreateAnalyticsUserEvent(userID, teamID.String(), "built environment", posthog.NewProperties().
+		a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "built environment", posthog.NewProperties().
 			Set("user_id", userID).
-			Set("environment", envID).
+			Set("environment", templateID).
 			Set("build_id", buildID).
 			Set("duration", time.Since(startTime).String()).
 			Set("success", err != nil),
 		)
+
 	}()
 
-	diskSize, err = a.nomad.BuildEnvJob(
-		a.tracer,
-		childCtx,
-		envID,
-		buildID.String(),
-		startCmd,
-		a.apiSecret,
-		a.googleServiceAccountBase64,
-		vmConfig,
-	)
-	if err != nil {
-		err = fmt.Errorf("error when building env: %w", err)
-		telemetry.ReportCriticalError(childCtx, err)
-
-		return diskSize, err
-	}
-
-	return diskSize, nil
+	c.Status(http.StatusAccepted)
 }

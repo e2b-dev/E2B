@@ -24,9 +24,8 @@ jobs:
       envd: ${{ steps.filter.outputs.envd }}
       fc-kernels: ${{ steps.filter.outputs.fc-kernels }}
       fc-versions: ${{ steps.filter.outputs.fc-versions }}
-      template-delete-task-driver: ${{ steps.filter.outputs.template-delete-task-driver }}
+      template-manager: ${{ steps.filter.outputs.template-manager }}
       orchestrator: ${{ steps.filter.outputs.orchestrator }}
-      env-build-task-driver: ${{ steps.filter.outputs.env-build-task-driver }}
       version: ${{ steps.filter.outputs.version }}
     steps:
       - name: Checkout repository
@@ -71,14 +70,10 @@ jobs:
               - 'packages/shared/**'
               - 'packages/orchestrator/**'
               - '.github/workflows/orchestrator.yml'
-            env-build-task-driver:
+            template-manager:
               - 'packages/shared/**'
-              - 'packages/env-build-task-driver/**'
-              - '.github/workflows/env-build-task-driver.yml'
-            template-delete-task-driver:
-              - 'packages/shared/**'
-              - 'packages/template-delete-task-driver/**'
-              - '.github/workflows/template-delete-task-driver.yml'
+              - 'packages/template-manager/**'
+              - '.github/workflows/template-manager.yml'
             fc-kernels:
               - 'packages/fc-kernels/**'
               - '.github/workflows/fc-kernels.yml'
@@ -105,27 +100,14 @@ jobs:
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
       gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID}}
 
-  env-build-task-driver:
-    name: Env build task driver
-    needs: changes
-    if: |
-      always() &&
-      needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.env-build-task-driver == 'true'
-    uses: ./.github/workflows/env-build-task-driver.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
-      gcp_project_id: ${{ secrets.E2B_GCP_PROJECT_ID }}
-
-  template-delete-task-driver:
+  template-manager:
     name: Template delete task driver
     needs: changes
     if: |
       always() &&
       needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.template-delete-task-driver == 'true'
-    uses: ./.github/workflows/template-delete-task-driver.yml
+      needs.changes.outputs.template-manager == 'true'
+    uses: ./.github/workflows/template-manager.yml
     secrets:
       workload_identity_provider: ${{ secrets.E2B_WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.E2B_SERVICE_ACCOUNT_EMAIL }}
@@ -223,8 +205,7 @@ jobs:
         docker-reverse-proxy,
         envd,
         orchestrator,
-        template-delete-task-driver,
-        env-build-task-driver,
+        template-manager,
       ]
     if: |
       always() &&
@@ -235,8 +216,7 @@ jobs:
       (needs.fc-kernels.result == 'success' || needs.fc-kernels.result == 'skipped') &&
       (needs.fc-versions.result == 'success' || needs.fc-versions.result == 'skipped') &&
       (needs.orchestrator.result == 'success' || needs.orchestrator.result == 'skipped') &&
-      (needs.env-build-task-driver.result == 'success' || needs.env-build-task-driver.result == 'skipped') &&
-      (needs.template-delete-task-driver.result == 'success' || needs.template-delete-task-driver.result == 'skipped') &&
+      (needs.template-manager.result == 'success' || needs.template-manager.result == 'skipped') &&
       (needs.api.result == 'success' || needs.api.result == 'skipped') &&
       (needs.docker-reverse-proxy.result == 'success' || needs.docker-reverse-proxy.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
