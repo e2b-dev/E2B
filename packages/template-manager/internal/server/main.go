@@ -1,6 +1,8 @@
 package server
 
 import (
+	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
+	"context"
 	"log"
 
 	"github.com/docker/docker/client"
@@ -23,9 +25,12 @@ type serverStore struct {
 	tracer             trace.Tracer
 	dockerClient       *client.Client
 	legacyDockerClient *docker.Client
+	artifactRegistry   *artifactregistry.Client
 }
 
 func New() *grpc.Server {
+	ctx := context.Background()
+
 	s := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
@@ -43,12 +48,18 @@ func New() *grpc.Server {
 		panic(err)
 	}
 
+	artifactRegistry, err := artifactregistry.NewClient(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	log.Println("Initializing orchestrator server")
 
 	template_manager.RegisterTemplateServiceServer(s, &serverStore{
 		tracer:             otel.Tracer(constants.ServiceName),
 		dockerClient:       dockerClient,
 		legacyDockerClient: legacyClient,
+		artifactRegistry:   artifactRegistry,
 	})
 
 	grpc_health_v1.RegisterHealthServer(s, health.NewServer())

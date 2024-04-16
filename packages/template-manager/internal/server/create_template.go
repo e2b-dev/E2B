@@ -1,17 +1,14 @@
 package server
 
 import (
-	"context"
 	"path/filepath"
-
-	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/build/env"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/build/writer"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateCreateRequest, stream template_manager.TemplateService_TemplateCreateServer) error {
@@ -56,11 +53,4 @@ func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateC
 	telemetry.ReportEvent(childCtx, "Environment built")
 
 	return nil
-}
-
-func (s *serverStore) TemplateDelete(ctx context.Context, in *template_manager.TemplateDeleteRequest) (*emptypb.Empty, error) {
-	_, childSpan := s.tracer.Start(ctx, "sandbox-delete")
-	defer childSpan.End()
-
-	return nil, nil
 }
