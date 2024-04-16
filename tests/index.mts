@@ -62,8 +62,8 @@ async function createBatch<T>(length: number, m: () => Promise<T>): Promise<T[]>
     .filter(notEmpty)
 }
 
-const batchSize = 5
-const batchCount = 10
+const batchSize = 1
+const batchCount = 1
 
 const sandboxes: Sandbox[] = []
 
@@ -84,11 +84,14 @@ for (let i = 0; i < batchCount; i++) {
 
 for (const s of sandboxes) {
   try {
-    await s.close()
+    s.close()
   } catch (error) {
     console.error('ERROR:', error)
   }
 }
 
+
 console.log('-------------------')
 console.log(`> from ${batchCount * batchSize} sandboxes, ${sandboxes.length} were created`)
+
+process.exit(0)
