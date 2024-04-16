@@ -9,7 +9,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
+	"github.com/e2b-dev/infra/packages/api/internal/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/google/uuid"
 )

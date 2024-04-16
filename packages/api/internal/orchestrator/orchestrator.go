@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
+	"github.com/e2b-dev/infra/packages/api/internal/cache/instance"
 )
 
 type Orchestrator struct {
@@ -28,7 +28,7 @@ func (o *Orchestrator) Close() error {
 	return o.grpc.Close()
 }
 
-// KeepInSync the cache with the actual instances in Nomad to handle instances that died.
+// KeepInSync the cache with the actual instances in Orchestrator to handle instances that died.
 func (o *Orchestrator) KeepInSync(ctx context.Context, instanceCache *instance.InstanceCache) {
 	for {
 		time.Sleep(instance.CacheSyncTime)

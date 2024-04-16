@@ -59,7 +59,7 @@ func (c *InstanceCache) Sync(instances []*InstanceInfo) {
 		instanceMap[instance.Instance.SandboxID] = instance
 	}
 
-	// Delete instances that are not in Nomad anymore
+	// Delete instances that are not in Orchestrator anymore
 	for _, item := range c.cache.Items() {
 		_, found := instanceMap[item.Key()]
 		if !found {

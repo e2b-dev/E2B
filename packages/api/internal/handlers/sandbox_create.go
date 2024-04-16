@@ -13,14 +13,14 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/auth"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
+	"github.com/e2b-dev/infra/packages/api/internal/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const defaultRequestLimit = 16
+const InstanceIDPrefix = "i"
 
 var postSandboxParallelLimit = semaphore.NewWeighted(defaultRequestLimit)
 
@@ -104,7 +104,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
 
-	sandboxID := nomad.InstanceIDPrefix + utils.GenerateID()
+	sandboxID := InstanceIDPrefix + utils.GenerateID()
 
 	err, releaseTeamSandboxReservation := a.instanceCache.Reserve(sandboxID, team.ID, maxInstancesPerTeam)
 	if err != nil {

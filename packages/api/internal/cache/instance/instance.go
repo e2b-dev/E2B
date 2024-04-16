@@ -44,9 +44,9 @@ type InstanceCache struct {
 	mu sync.Mutex
 }
 
-// We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync
-// We are retrieving the tasks from Nomad now.
 func NewCache(analytics analyticscollector.AnalyticsCollectorClient, logger *zap.SugaredLogger, deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*InstanceInfo, counter metric.Int64UpDownCounter) *InstanceCache {
+	// We will need to either use Redis or Consul's KV for storing active sandboxes to keep everything in sync,
+	// right now we load them from Orchestrator
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, InstanceInfo](InstanceExpiration),
 	)

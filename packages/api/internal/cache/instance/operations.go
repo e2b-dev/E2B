@@ -68,7 +68,7 @@ func (c *InstanceCache) GetInstances(teamID *uuid.UUID) (instances []InstanceInf
 }
 
 // Add the instance to the cache and start expiration timer.
-// If the instance already exists we do nothing - it was loaded from Nomad.
+// If the instance already exists we do nothing - it was loaded from Orchestrator.
 func (c *InstanceCache) Add(instance InstanceInfo) error {
 	if instance.StartTime == nil {
 		now := time.Now()

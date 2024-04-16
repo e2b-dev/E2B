@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
+	"github.com/e2b-dev/infra/packages/api/internal/cache/builds"
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
@@ -24,7 +24,7 @@ func (tm *TemplateManager) CreateTemplate(
 	t trace.Tracer,
 	ctx context.Context,
 	db *db.DB,
-	buildCache *nomad.BuildCache,
+	buildCache *builds.BuildCache,
 	templateID string,
 	buildID uuid.UUID,
 	kernelVersion,
@@ -132,7 +132,7 @@ func (tm *TemplateManager) CreateTemplate(
 func handleBuildErr(
 	ctx context.Context,
 	db *db.DB,
-	buildCache *nomad.BuildCache,
+	buildCache *builds.BuildCache,
 	templateID string,
 	buildID uuid.UUID,
 	buildErr error,

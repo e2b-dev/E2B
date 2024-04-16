@@ -13,7 +13,7 @@ require (
 	github.com/gogo/status v1.1.1
 	// https://github.com/grafana/loki/issues/2826. This is the equivalent of the main branch at 2023/11/27 (d62d4e37d1f3dba83cf10a1f6db82830794e1c05)
 	github.com/grafana/loki v0.0.0-20231124145642-d62d4e37d1f3
-	github.com/hashicorp/nomad/api v0.0.0-20231208134655-099ee06a607c
+	github.com/hashicorp/nomad/api v0.0.0-20231208134655-099ee06a607c // indirect
 	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/oapi-codegen/gin-middleware v1.0.1
 	github.com/oapi-codegen/runtime v1.1.0
@@ -192,7 +192,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
-	github.com/hashicorp/cronexpr v1.1.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect

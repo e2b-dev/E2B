@@ -19,8 +19,8 @@ import (
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad/cache/instance"
+	"github.com/e2b-dev/infra/packages/api/internal/cache/builds"
+	"github.com/e2b-dev/infra/packages/api/internal/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/orchestrator"
 	"github.com/e2b-dev/infra/packages/api/internal/template-manager"
 	"github.com/e2b-dev/infra/packages/shared/pkg/db"
@@ -37,8 +37,7 @@ type APIStore struct {
 	instanceCache   *instance.InstanceCache
 	orchestrator    *orchestrator.Orchestrator
 	templateManager *template_manager.TemplateManager
-	buildCache      *nomad.BuildCache
-	nomad           *nomad.NomadClient
+	buildCache      *builds.BuildCache
 	db              *db.DB
 	lokiClient      *loki.DefaultClient
 	logger          *zap.SugaredLogger
@@ -58,10 +57,6 @@ func NewAPIStore() *APIStore {
 		fmt.Fprintf(os.Stderr, "Error initializing logger\n: %v\n", err)
 		panic(err)
 	}
-
-	nomadClient := nomad.InitNomadClient(logger)
-
-	logger.Info("Initialized Nomad client")
 
 	dbClient, err := db.NewClient(ctx)
 	if err != nil {
@@ -100,9 +95,10 @@ func NewAPIStore() *APIStore {
 
 		initialInstances = instances
 	} else {
-		logger.Info("Skipping loading instances from Nomad, running locally")
+		logger.Info("Skipping loading sandboxes, running locally")
 	}
 
+	// TODO: rename later
 	meter := otel.GetMeterProvider().Meter("nomad")
 
 	instancesCounter, err := meter.Int64UpDownCounter(
@@ -130,7 +126,7 @@ func NewAPIStore() *APIStore {
 	if env.IsProduction() {
 		go orch.KeepInSync(ctx, instanceCache)
 	} else {
-		logger.Info("Skipping syncing intances with Nomad, running locally")
+		logger.Info("Skipping syncing sandboxes, running locally")
 	}
 
 	var lokiClient *loki.DefaultClient
@@ -154,11 +150,10 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
-	buildCache := nomad.NewBuildCache(buildCounter)
+	buildCache := builds.NewBuildCache(buildCounter)
 
 	return &APIStore{
 		Ctx:             ctx,
-		nomad:           nomadClient,
 		orchestrator:    orch,
 		templateManager: templateManager,
 		db:              dbClient,
@@ -173,7 +168,6 @@ func NewAPIStore() *APIStore {
 }
 
 func (a *APIStore) Close() {
-	a.nomad.Close()
 	a.db.Close()
 
 	err := a.analytics.Close()
