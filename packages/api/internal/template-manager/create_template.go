@@ -4,7 +4,9 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"io"
+	"strconv"
 
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
@@ -34,8 +36,6 @@ func (tm *TemplateManager) CreateTemplate(
 	diskSizeMB,
 	memoryMB int64,
 ) error {
-	// TODO:
-	diskSize := int64(0)
 	childCtx, childSpan := t.Start(ctx, "create-template",
 		trace.WithAttributes(
 			attribute.String("env.id", templateID),
@@ -89,6 +89,23 @@ func (tm *TemplateManager) CreateTemplate(
 				return errMsg
 			}
 		}
+	}
+
+	trailer := logs.Trailer()
+	rootfsSizeStr, ok := trailer[consts.RootfsSizeKey]
+	if !ok {
+		err = fmt.Errorf("rootfs size not found in trailer")
+		telemetry.ReportCriticalError(childCtx, err)
+
+		return err
+	}
+
+	diskSize, parseErr := strconv.ParseInt(rootfsSizeStr[0], 10, 64)
+	if parseErr != nil {
+		parseErr = fmt.Errorf("error when parsing rootfs size: %w", err)
+		telemetry.ReportCriticalError(childCtx, err)
+
+		return parseErr
 	}
 
 	err = db.FinishEnvBuild(childCtx, templateID, buildID, diskSize)

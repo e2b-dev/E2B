@@ -2,6 +2,9 @@ package server
 
 import (
 	"path/filepath"
+	"strconv"
+
+	"google.golang.org/grpc/metadata"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
@@ -13,7 +16,7 @@ import (
 
 func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateCreateRequest, stream template_manager.TemplateService_TemplateCreateServer) error {
 	ctx := stream.Context()
-	childCtx, childSpan := s.tracer.Start(ctx, "env-create")
+	childCtx, childSpan := s.tracer.Start(ctx, "template-create")
 	defer childSpan.End()
 
 	childSpan.SetAttributes(
@@ -50,6 +53,7 @@ func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateC
 		return err
 	}
 
+	stream.SetTrailer(metadata.Pairs(consts.RootfsSizeKey, strconv.FormatInt(template.RootfsSize(), 10)))
 	telemetry.ReportEvent(childCtx, "Environment built")
 
 	return nil
