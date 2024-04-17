@@ -16,6 +16,7 @@ export async function GET() {
       },
     })
     console.log(`Sandbox '${sandbox.id}' created`)
+    await sandbox.close()
     return new Response(`Sandbox '${sandbox.id}' created`, { status: 200 })
   } catch (error) {
     console.error('Error creating sandbox')
