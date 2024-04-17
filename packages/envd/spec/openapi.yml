@@ -46,6 +46,8 @@ components:
       name: path
       in: path
       required: true
+      allowReserved: true
+      allowEmptyValue: false
       description: Absolute path in the sandbox to the file, URL encoded.
       schema:
         type: string
@@ -58,27 +60,30 @@ components:
         type: string
         pattern: '^bytes=\d*-\d*(,\d*-\d*)*|bytes \d*-\d*/\d+$'
     User:
-      name: user
-      in: query
+      name: User
+      in: header
       required: false
       description: User owning the file
       schema:
         type: string
+        default: "root"
     Mode:
-      name: mode
-      in: query
+      name: Mode
+      in: header
       required: false
       description: File permissions in octal format (e.g., 0755)
       schema:
         type: string
+        default: "0644"
         pattern: "^[0-7]{3,4}$"
     Overwrite:
       name: overwrite
-      in: query
+      in: header
       required: false
       description: Overwrite the file if it exists
       schema:
         type: boolean
+        default: false
   requestBodies:
     FileUpload:
       required: true
