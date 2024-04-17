@@ -121,18 +121,19 @@ bootstrap-nomad:
 build-all:
 	$(MAKE) -C packages/envd build
 	$(MAKE) -C packages/api build
-	$(MAKE) -C packages/env-instance-task-driver build
-	$(MAKE) -C packages/env-build-task-driver build
+	$(MAKE) -C packages/docker-reverse-proxy build
+	$(MAKE) -C packages/orchestrator build
+	$(MAKE) -C packages/template-manager build
+	$(MAKE) -C packages/fc-kernels build
+	$(MAKE) -C packages/fc-versions build
 
 .PHONY: build-and-upload-all
 build-and-upload-all:
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/envd build-and-upload
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) make update-api
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/docker-reverse-proxy build-and-upload
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/env-build-task-driver build-and-upload
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/template-delete-task-driver build-and-upload
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/orchestrator build-and-upload
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/template-delete-task-driver build-and-upload
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/template-manager build-and-upload
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/envd build-and-upload
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/fc-kernels build-and-upload
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) $(MAKE) -C packages/fc-versions build-and-upload
 
