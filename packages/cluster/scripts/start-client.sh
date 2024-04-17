@@ -147,5 +147,5 @@ echo "- Allocating $overcommitment_hugepages huge pages ($overcommitment_hugepag
 echo $overcommitment_hugepages >/proc/sys/vm/nr_overcommit_hugepages
 
 # These variables are passed in via Terraform template interpolation
-/opt/consul/bin/run-consul.sh --client --cluster-tag-name "${CLUSTER_TAG_NAME}" --enable-gossip-encryption --gossip-encryption-key "${CONSUL_GOSSIP_ENCRYPTION_KEY}" &
+/opt/consul/bin/run-consul.sh --client --consul-token "${CONSUL_TOKEN}" --cluster-tag-name "${CLUSTER_TAG_NAME}" --enable-gossip-encryption --gossip-encryption-key "${CONSUL_GOSSIP_ENCRYPTION_KEY}" &
 /opt/nomad/bin/run-nomad.sh --client --consul-token "${CONSUL_TOKEN}" &
