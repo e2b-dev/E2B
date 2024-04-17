@@ -6,7 +6,6 @@ export const runtime = 'nodejs'
 export async function GET() {
   try {
     console.log('Creating sandbox...')
-    // E2B_DOMAIN = e2b-api.com
     const sandbox = await Sandbox.create({
       onStdout: (data) => {
         console.log('sandbox stdout:', data)
