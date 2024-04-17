@@ -1,3 +1,4 @@
+process.env.E2B_DOMAIN = process.env.E2B_STATUS_DOMAIN
 import { Sandbox } from 'e2b'
 
 export const dynamic = 'force-dynamic' // static by default, unless reading the request
@@ -23,4 +24,3 @@ export async function GET() {
     return new Response(error.statusText || 'Error creating sandbox', { status: error.status || 500 })
   }
 }
-
