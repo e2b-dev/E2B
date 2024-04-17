@@ -105,17 +105,23 @@ message ConnectRequest {
     AccessControl access = 2;
 }
 
+message SendInputStreamRequest {
+    bytes stdin = 2;
+
+    AccessControl access = 3;
+}
+
 message ConnectStreamRequest {
     oneof request {
         ConnectRequest connect_request = 10;
-        SendInputRequest send_input_request = 11;
+        SendInputStreamRequest send_input_request = 11;
     }
 }
 
 message StartStreamRequest {
     oneof request {
         StartProcessRequest start_process_request = 10;
-        SendInputRequest send_input_request = 11;
+        SendInputStreamRequest send_input_request = 11;
         ResizePTYRequest resize_pty_request = 12;
     }
 }
