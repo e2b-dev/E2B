@@ -53,24 +53,6 @@ mkdir -p $fc_versions_dir
 cp -r /mnt/disks/fc-versions/* $fc_versions_dir
 chmod +x -R /fc-versions
 
-# Mount docker contexts
-mkdir -p /mnt/disks/docker-contexts
-gcsfuse -o=allow_other --implicit-dirs "${DOCKER_CONTEXTS_BUCKET_NAME}" /mnt/disks/docker-contexts
-
-# Setup Nomad task drivers
-sudo rm -f /opt/nomad/plugins/env-build-task-driver
-sudo rm -f /opt/nomad/plugins/template-delete-task-driver
-sudo rm -f /opt/nomad/orchestrator
-
-sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver
-sudo chmod +x /opt/nomad/plugins/env-build-task-driver
-
-sudo cp /mnt/disks/envs-pipeline/template-delete-task-driver /opt/nomad/plugins/template-delete-task-driver
-sudo chmod +x /opt/nomad/plugins/template-delete-task-driver
-
-sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/orchestrator
-sudo chmod +x /opt/nomad/orchestrator
-
 # These variables are passed in via Terraform template interpolation
 
 gsutil cp "gs://${SCRIPTS_BUCKET}/run-consul-${RUN_CONSUL_FILE_HASH}.sh" /opt/consul/bin/run-consul.sh
