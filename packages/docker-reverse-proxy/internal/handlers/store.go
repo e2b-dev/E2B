@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/cache"
-	"github.com/e2b-dev/infra/packages/docker-reverse-proxy/internal/constants"
+	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/db"
 )
 
@@ -27,7 +27,7 @@ func NewStore(ctx context.Context) *APIStore {
 
 	targetUrl := &url.URL{
 		Scheme: "https",
-		Host:   fmt.Sprintf("%s-docker.pkg.dev", constants.GCPRegion),
+		Host:   fmt.Sprintf("%s-docker.pkg.dev", consts.GCPRegion),
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
