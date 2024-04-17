@@ -1,108 +1,137 @@
-# This is the API for the REST server in the envd service
-# It should allow downloading and uploading for all files in the sandbox via the URL encoded path to the dir
-# You should be able to define the permissions for each file via the query params when uploading
-# You should be able to specify the format for saving the file/encoding
-
-# The /sync path should be accessible for syncing the clocks - probably by exposing this on a different port that the file serving one?
-
-# TODO: Check out how this is handled by S3/Cloud storage
-# For example, they handle the byte range to download by specifying the Range header which may be standard
-# TODO: We can allow uploading byte range too, because we are not storing objects
-
 openapi: 3.0.0
 info:
   title: envd
   version: 0.1.0
-  description: The API for the REST server in the envd service
+  description: API for managing file operations within the envd service sandbox
 
 paths:
-  /:
-    get:
-      summary: Download a file from the sandbox
-      parameters:
-        - name: path
-          in: path
-          required: true
-          description: The path to the file to download
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The file was downloaded successfully
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
   /{path}:
     get:
-      summary: Download a file from the sandbox # TODO: Specify what to do when the file is a directory (just a special file?)
+      summary: Download a file or a specific byte range from the sandbox
       parameters:
-        - name: path
-          in: path
-          required: true
-          description: The path to the file to download
-          schema:
-            type: string
+        - $ref: "#/components/parameters/FilePath"
+        - $ref: "#/components/parameters/Range"
       responses:
         "200":
-          description: The file was downloaded successfully
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
+          $ref: "#/components/responses/FileDownloadSuccess"
+        "206":
+          $ref: "#/components/responses/PartialContent"
+        "400":
+          $ref: "#/components/responses/DirectoryPathError"
+        "416":
+          $ref: "#/components/responses/RangeNotSatisfiableError"
     post:
       summary: Upload a file to the sandbox
       parameters:
-        - name: path
-          in: path
-          required: true
-          description: Absolute path in the sandbox to save the file to, URL encoded.
-          schema:
-            type: string
-        - name: user
-          in: query
-          required: false
-          description: Which user should own the file
-          schema:
-            type: string
-        - name: group
-          in: query
-          required: false
-          description: Which group should own the file
-          schema:
-            type: string
-        - name: permissions
-          in: query
-          required: false
-          description: The permissions for the file
-          schema:
-            type: integer # TODO: Maybe in the string octal format?
-        - name: format # TODO: Is this useful?
-          in: query
-          required: false
-          description: The format for saving the file/encoding
-          schema:
-            type: string
-        - name: overwrite
-          in: query
-          required: false
-          description: Whether to overwrite the file if it already exists
-          schema:
-            type: boolean
+        - $ref: "#/components/parameters/FilePath"
+        - $ref: "#/components/parameters/User"
+        - $ref: "#/components/parameters/Mode"
+        - $ref: "#/components/parameters/Overwrite"
+        - $ref: "#/components/parameters/Range"
       requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
+        $ref: "#/components/requestBodies/FileUpload"
       responses:
-        200:
-          description: The file was uploaded successfully
-        # TODO: Signalize that the file overwrote an existing one
-        # TODO: Signalize that the file was a directory
+        "200":
+          description: The file was uploaded successfully.
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "400":
+          $ref: "#/components/responses/DirectoryPathError"
+        "416":
+          $ref: "#/components/responses/RangeNotSatisfiableError"
+
+components:
+  parameters:
+    FilePath:
+      name: path
+      in: path
+      required: true
+      description: Absolute path in the sandbox to the file, URL encoded.
+      schema:
+        type: string
+    Range:
+      name: Range
+      in: header
+      required: false
+      description: Byte range for downloading or uploading a file, formatted as "bytes=start-end" for downloads and "bytes=start-end/total" for uploads.
+      schema:
+        type: string
+        pattern: '^bytes=\d*-\d*(,\d*-\d*)*|bytes \d*-\d*/\d+$'
+    User:
+      name: user
+      in: query
+      required: false
+      description: User owning the file
+      schema:
+        type: string
+    Mode:
+      name: mode
+      in: query
+      required: false
+      description: File permissions in octal format (e.g., 0755)
+      schema:
+        type: string
+        pattern: "^[0-7]{3,4}$"
+    Overwrite:
+      name: overwrite
+      in: query
+      required: false
+      description: Overwrite the file if it exists
+      schema:
+        type: boolean
+  requestBodies:
+    FileUpload:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
+  responses:
+    FileDownloadSuccess:
+      description: Entire file downloaded successfully.
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+    PartialContent:
+      description: Specified byte range(s) of the file downloaded successfully.
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+    DirectoryPathError:
+      description: Bad Request - The specified path is a directory. Only files can be downloaded.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "The specified path is a directory. Only files can be downloaded."
+    RangeNotSatisfiableError:
+      description: Requested Range Not Satisfiable - The specified byte range is outside the size of the file, or the Range header is formatted incorrectly.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "The specified byte range is outside the size of the file, or the Range header is formatted incorrectly."
+    ConflictError:
+      description: Conflict - The file already exists and overwrite is false.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "The file already exists and overwrite is false."

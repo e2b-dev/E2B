@@ -2,17 +2,21 @@ syntax = "proto3";
 
 option go_package = "https://github.com/e2b-dev/infra/packages/envd";
 
-import "./permission.proto";
+import "permissions.proto";
+import "google/protobuf/empty.proto";
 
 package process;
 
 service Process {
+    rpc List(ListRequest) returns (ListResponse);
+    rpc Connect(ConnectRequest) returns (stream ProcessEvent);
+
     rpc Start(StartProcessRequest) returns (stream ProcessEvent);
 
-    rpc Kill(KillRequest) returns (KillResponse);
-    rpc SendInput(SendInputRequest) returns (SendInputResponse);
+    rpc SendInput(SendInputRequest) returns (google.protobuf.Empty);
+    rpc Kill(KillRequest) returns (google.protobuf.Empty);
 
-    rpc ResizePTY(ResizePTYRequest) returns (ResizePTYResponse);
+    rpc ResizePTY(ResizePTYRequest) returns (google.protobuf.Empty);
 }
 
 message PTYSize {
@@ -24,48 +28,74 @@ message PTY {
     PTYSize size = 1;
 }
 
-message StartProcessRequest {    
+message ProcessConfig {
     string cmd = 1;
     repeated string args = 2;
     
     map<string, string> env = 3;
     string cwd = 4;
+}
 
-    optional Permission permission = 5;
+message ListRequest {
+    AccessControl access = 1;
+}
 
-    optional PTY pty = 6;
+message ListResponse {
+    repeated ProcessConfig processes = 1;
+}
+
+message StartProcessRequest {    
+    ProcessConfig process = 1;
+    optional PTY pty = 2;
+
+    AccessControl access = 3;
 }
 
 message ResizePTYRequest {
     uint32 pid = 1;
 
     PTYSize size = 2;
+
+    AccessControl access = 3;
 }
 
-message ResizePTYResponse {
-    bool success = 1;
+message StartEvent {
+    uint32 pid = 1;
+}
+
+message DataEvent {
+    optional bytes stdout = 1;
+    optional bytes stderr = 2;
+}
+
+message EndEvent {
+    int32 exitCode = 1;
 }
 
 message ProcessEvent {
-    // We want to receive this after process starts as the first event, but not with each message then
-    optional uint32 pid = 1;
-
-    optional bytes stdout = 2;
-    optional bytes stderr = 3;
-
-    optional int32 exitCode = 4;
+    oneof event_type {
+        StartEvent start = 5;
+        DataEvent data = 6;
+        EndEvent end = 7;
+    }
 }
 
 message KillRequest {
     uint32 pid = 1;
-}
 
-message KillResponse {}
+    AccessControl access = 2;
+}
 
 message SendInputRequest {
-    uint32 pid = 2;
+    uint32 pid = 1;
 
-    bytes stdin = 1;
+    bytes stdin = 2;
+
+    AccessControl access = 3;
 }
 
-message SendInputResponse {}
+message ConnectRequest {
+    uint32 pid = 1;
+
+    AccessControl access = 2;
+}

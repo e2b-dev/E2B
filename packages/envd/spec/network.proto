@@ -2,53 +2,42 @@ syntax = "proto3";
 
 package network;
 
+import "permissions.proto";
+import "google/protobuf/empty.proto";
+
 service Network {
-    rpc CheckPort(CheckPortRequest) returns (CheckPortResponse);
+    rpc ConfigurePort(ConfigurePortRequest) returns (google.protobuf.Empty);
     rpc ListPorts(ListPortsRequest) returns (ListPortsResponse);
-
-    rpc OpenPort(OpenPortRequest) returns (OpenPortResponse);
-    rpc ClosePort(ClosePortRequest) returns (ClosePortResponse);
-
-    // Is this the corret
-    rpc WatchPorts(WatchPortsRequest) returns (stream PortInfo);
-    rpc WaitForPort(OpenPortRequest) returns (stream OpenPortResponse);
+    rpc WatchPorts(WatchPortsRequest) returns (stream Port);
 }
 
+message ConfigurePortRequest {
+    uint32 port = 1;
+    PortState state = 2;
 
+    AccessControl access = 3;
+}
 
-message ListPortsRequest {}
+message ListPortsRequest {
+    AccessControl access = 1;
+}
 
 message ListPortsResponse {
-    repeated PortInfo ports = 1;
+    repeated Port ports = 1;
 }
 
-message OpenPortRequest {
+message WatchPortsRequest {
+    repeated uint32 ports = 1;
+
+    AccessControl access = 2;
+}
+
+enum PortState {
+    OPEN = 0;
+    CLOSE = 1;
+}
+
+message Port {
     uint32 port = 1;
-}
-
-message OpenPortResponse {
-    bool success = 1;
-}
-
-message ClosePortRequest {
-    uint32 port = 1;
-}
-
-message ClosePortResponse {
-    bool success = 1;
-}
-
-message WatchPortsRequest {}
-
-message PortInfo {
-    uint32 port = 1;
-    bool open = 2;
-}
-
-message CheckPortRequest {
-    uint32 port = 1;
-}
-
-message CheckPortResponse {
-    bool open = 1;
+    PortState state = 2;
 }

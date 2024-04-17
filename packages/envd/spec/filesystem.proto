@@ -1,161 +1,166 @@
-// TODO: Add message if the errors are not correctly propagated
-// https://jbrandhorst.com/post/grpc-errors/
-
 syntax = "proto3";
 
-import "./permission.proto";
+import "google/protobuf/empty.proto";
+import "permissions.proto";
 
 package filesystem;
 
 service Filesystem {
-    rpc Exists(ExistsRequest) returns (ExistsResponse);
+    rpc Stat(StatRequest) returns (StatResponse);
     
-    rpc CreateFile(CreateRequest) returns (CreateResponse);
-    rpc CreateDir(CreateRequest) returns (CreateResponse);
-    rpc CreateLink(CreateRequest) returns (CreateResponse);
-    rpc CreateSymlink(CreateRequest) returns (CreateResponse);
+    rpc CreateFile(CreateFileRequest) returns (google.protobuf.Empty);
+    rpc ReadFile(ReadFileRequest) returns (stream ReadFileResponse);
+    rpc WriteFile(WriteFileRequest) returns (google.protobuf.Empty);
 
-    rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
-    rpc WriteFile(WriteFileRequest) returns (WriteFileResponse);
+    // Not available in browser
+    rpc WriteFileStream(stream WriteFileStreamRequest) returns (google.protobuf.Empty);
+
+    rpc MakeDir(MakeDirRequest) returns (google.protobuf.Empty);
+    rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
     
-    rpc ListDir(ListDirRequest) returns (ListDirResponse);
-    
+    rpc CreateLink(CreateLinkRequest) returns (google.protobuf.Empty);
+    rpc CreateSymlink(CreateSymlinkRequest) returns (google.protobuf.Empty);
+
     rpc Watch(WatchRequest) returns (stream FilesystemEvent);
-    rpc Rename(RenameRequest) returns (RenameResponse);
-    rpc Delete(DeleteRequest) returns (DeleteResponse);
+    rpc Rename(MoveRequest) returns (google.protobuf.Empty);
+    rpc Remove(RemoveRequest) returns (google.protobuf.Empty);
 
-    rpc Chmod(ChmodRequest) returns (ChmodResponse);
-    rpc Chown(ChownRequest) returns (ChownResponse);
+    rpc Chmod(ChmodRequest) returns (google.protobuf.Empty);
+    rpc Chown(ChownRequest) returns (google.protobuf.Empty);
 
-    // TODO: How should it work when the source is directory vs file?
-    rpc Copy(CopyRequest) returns (CopyResponse);
+    rpc Copy(CopyRequest) returns (google.protobuf.Empty);
+}
+
+message WriteFileStreamRequest {
+    oneof request {
+        WriteFileRequest write_file_request = 10;
+        WriteFileChunkRequest write_file_chunk_request = 11;
+    }
+}
+
+message WriteFileChunkRequest {
+    bytes data = 1;
+}
+
+message CreateFileRequest {
+    string path = 1;
+    AccessControl access = 2;
+}
+
+message MakeDirRequest {
+    string path = 1;
+    int32 mode = 2;
+    AccessControl access = 3;
+}
+
+message CreateLinkRequest {
+    string source = 1;
+    string destination = 2;
+    AccessControl access = 3;
+}
+
+message CreateSymlinkRequest {
+    string source = 1;
+    string destination = 2;
+    AccessControl access = 3;
 }
 
 message CopyRequest {
     string source = 1;
     string destination = 2;
-
-    optional Permission permission = 3;
-}
-
-message CopyResponse {
-    bool success = 1;
+    bool recursive = 3;
+    AccessControl access = 4;
 }
 
 message ChmodRequest {
     string path = 1;
-    // TODO: Should the mode be more specific?
     int32 mode = 2;
-
-    optional Permission permission = 3;
-}
-
-message ChmodResponse {
-    bool success = 1;
+    AccessControl access = 3;
 }
 
 message ChownRequest {
     string path = 1;
     int32 uid = 2;
     int32 gid = 3;
-
-    optional Permission permission = 3;
-}
-
-message ChownResponse {
-    bool success = 1;
-}
-
-message CreateRequest {
-    string path = 1;
-
-    optional Permission permission = 3;
-}
-
-message CreateResponse {
-    bool success = 1;
+    AccessControl access = 4;
 }
 
 message ReadFileRequest {
     string path = 1;
 
-    optional Permission permission = 3;
+    // If specified, the file is read from the given byte offset.
+    optional uint64 offset = 3;
+    // If specified, the file is read up to this many bytes.
+    optional uint64 length = 4;
+
+    AccessControl access = 5;
 }
 
 message ReadFileResponse {
     bytes data = 1;
 }
 
-message ExistsRequest {
+message StatRequest {
     string path = 1;
-
-    optional Permission permission = 3;
+    AccessControl access = 2;
 }
 
-message ExistsResponse {
-    bool exists = 1;
-    optional EntryInfo entry = 2;
+message StatResponse {
+    EntryInfo entry = 1;
 }
 
 message WriteFileRequest {
     string path = 1;
     bytes data = 2;
 
-    optional Permission permission = 3;
+    // If specified, the file is written at the given byte offset.
+    optional uint64 offset = 3;
+    // If specified, the new data overwrites the existing data with this length at the given byte offset.
+    optional uint64 length = 4;
+
+    AccessControl access = 5;
 }
 
-message WriteFileResponse {
-    bool success = 1;
-}
-
-message DeleteRequest {
+message RemoveRequest {
     string path = 1;
-
-    optional Permission permission = 3;
+    bool all = 2;
+    AccessControl access = 3;
 }
 
-message DeleteResponse {
-    bool success = 1;
-}
-
-message RenameRequest {
-    string old_path = 1;
-    string new_path = 2;
-
-    optional Permission permission = 3;
-}
-
-message RenameResponse {
-    bool success = 1;
+message MoveRequest {
+    string source = 1;
+    string destination = 2;
+    AccessControl access = 3;
 }
 
 message EntryInfo {
     string name = 1;
-    EntryType type = 3;
-
+    FileType type = 2;
+    int32 mode = 3;
     int64 size = 4;
     int64 last_modified = 5;
+    AccessControl owner = 6;
 }
 
-message ListDirRequest {
+message ReadDirRequest {
     string path = 1;
-
-    optional Permission permission = 3;
+    AccessControl access = 2;
 }
 
-message ListDirResponse {
+message ReadDirResponse {
     repeated EntryInfo entries = 1;
 }
 
 message WatchRequest {
     string path = 1;
-
-    optional Permission permission = 3;
+    AccessControl access = 2;
 }
 
-enum EntryType {
+enum FileType {
     FILE = 0;
     DIRECTORY = 1;
+    LINK = 2;
+    SYMLINK = 3;
 }
 
 enum EventType {
@@ -168,7 +173,6 @@ enum EventType {
 
 message FilesystemEvent {
     string path = 1;
-
     EventType type = 2;
     EntryInfo entry = 3;
 }

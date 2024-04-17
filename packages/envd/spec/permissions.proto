@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package permissions;
 
-message Permission {
+message AccessControl {
   optional string user = 1;
-  optional string group = 2;
 }
