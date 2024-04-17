@@ -141,25 +141,26 @@ function split_by_lines {
 
 function generate_consul_config {
   local -r server="${1}"
-  local -r config_dir="${2}"
-  local -r user="${3}"
-  local -r cluster_tag_name="${4}"
-  local -r cluster_size_instance_metadata_key_name="${5}"
-  local -r datacenter="${6}"
-  local -r enable_gossip_encryption="${7}"
-  local -r gossip_encryption_key="${8}"
-  local -r enable_rpc_encryption="${9}"
-  local -r verify_server_hostname="${10}"
-  local -r ca_path="${11}"
-  local -r cert_file_path="${12}"
-  local -r key_file_path="${13}"
-  local -r cleanup_dead_servers="${14}"
-  local -r last_contact_threshold="${15}"
-  local -r max_trailing_logs="${16}"
-  local -r server_stabilization_time="${17}"
-  local -r redundancy_zone_tag="${18}"
-  local -r disable_upgrade_migration="${19}"
-  local -r upgrade_version_tag=${20}
+  local -r consul_token="${2}"
+  local -r config_dir="${3}"
+  local -r user="${4}"
+  local -r cluster_tag_name="${5}"
+  local -r cluster_size_instance_metadata_key_name="${6}"
+  local -r datacenter="${7}"
+  local -r enable_gossip_encryption="${8}"
+  local -r gossip_encryption_key="${9}"
+  local -r enable_rpc_encryption="${10}"
+  local -r verify_server_hostname="${11}"
+  local -r ca_path="${12}"
+  local -r cert_file_path="${13}"
+  local -r key_file_path="${14}"
+  local -r cleanup_dead_servers="${15}"
+  local -r last_contact_threshold="${16}"
+  local -r max_trailing_logs="${17}"
+  local -r server_stabilization_time="${18}"
+  local -r redundancy_zone_tag="${19}"
+  local -r disable_upgrade_migration="${20}"
+  local -r upgrade_version_tag=${21}
   local -r config_path="$config_dir/$CONSUL_CONFIG_FILE"
 
   shift 20
@@ -255,7 +256,10 @@ EOF
   "acl": {
     "enabled": true,
     "default_policy": "deny",
-    "enable_token_persistence": true
+    "enable_token_persistence": true,
+    "tokens": {
+      "default": "$consul_token"
+    }
   },
   "telemetry": {
     "prometheus_retention_time": "24h",
@@ -627,6 +631,7 @@ function run {
     fi
 
     generate_consul_config "$server" \
+      "$consul_token" \
       "$config_dir" \
       "$user" \
       "$cluster_tag_name" \
