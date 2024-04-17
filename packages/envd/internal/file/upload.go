@@ -106,5 +106,5 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info("Upload complete", "path", newFilePath)
+	logger.Info("Upload complete ", "path", newFilePath)
 }
