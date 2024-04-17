@@ -54,7 +54,7 @@ job "loki" {
       }
 
       resources {
-        max_memory = 2048
+        memory_max = 2048
         memory = 1024
         cpu    = 512
       }

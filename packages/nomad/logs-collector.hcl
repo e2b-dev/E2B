@@ -88,7 +88,7 @@ job "logs-collector" {
       }
 
       resources {
-        max_memory = 2048
+        memory_max = 2048
         memory = 512
         cpu    = 512
       }
