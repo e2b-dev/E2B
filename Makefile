@@ -4,7 +4,6 @@ ENV := $(shell cat .last_used_env || echo "not-set")
 
 PRINT = @echo -e "\e[1;34mBuilding $<\e[0m"
 
-CLOUDFLARE_API_TOKEN ?= empty
 OTEL_TRACING_PRINT ?= false
 IMAGE := e2b-orchestration/api
 
@@ -19,7 +18,6 @@ tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_gcp_region=$(GCP_REGION) \
 	TF_VAR_gcp_zone=$(GCP_ZONE) \
 	TF_VAR_domain_name=$(DOMAIN_NAME) \
-	TF_VAR_cloudflare_api_token=$(CLOUDFLARE_API_TOKEN) \
 	TF_VAR_prefix=$(PREFIX) \
 	TF_VAR_terraform_state_bucket=$(TERRAFORM_STATE_BUCKET) \
 	TF_VAR_otel_tracing_print=$(OTEL_TRACING_PRINT)
