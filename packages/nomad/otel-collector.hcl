@@ -45,8 +45,6 @@ job "otel-collector" {
   priority = 95
 
   group "collector" {
-    count = 1
-
     network {
       port "health" {
         to = 13133
@@ -102,8 +100,9 @@ job "otel-collector" {
       }
 
       resources {
-        memory = 256
-        cpu    = 256
+        max_memory = 2048
+        memory = 512
+        cpu    = 512
       }
 
       template {
