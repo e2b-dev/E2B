@@ -258,11 +258,11 @@ EOF
     "enable_token_persistence": true
   },
   "telemetry": {
-    "prometheus_retention_time": "24h",
+    "prometheus_retention_time": "2h",
     "disable_hostname": true
   },
   "limits": {
-    "http_max_conns_per_client": 5000
+    "http_max_conns_per_client": 80
   },
   "advertise_addr": "$instance_ip_address",
   "bind_addr": "$instance_ip_address",

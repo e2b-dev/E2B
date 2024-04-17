@@ -234,7 +234,7 @@ plugin "docker" {
 log_level = "DEBUG"
 
 telemetry {
-  collection_interval = "1s"
+  collection_interval = "5s"
   disable_hostname = true
   prometheus_metrics = true
   publish_allocation_metrics = true
@@ -246,8 +246,8 @@ acl {
 }
 
 limits {
-  http_max_conns_per_client = 5000
-  rpc_max_conns_per_client = 5000
+  http_max_conns_per_client = 80
+  rpc_max_conns_per_client = 80
 }
 
 consul {
