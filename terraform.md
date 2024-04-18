@@ -11,6 +11,9 @@ Check if you can use config for terraform state management
    - [Certificate Manager API](https://console.cloud.google.com/apis/library/certificatemanager.googleapis.com)
    - [Compute Engine API](https://console.cloud.google.com/apis/library/compute.googleapis.com)
    - [Artifact Registry API](https://console.cloud.google.com/apis/library/artifactregistry.googleapis.com)
+   - [OS Config API](https://console.cloud.google.com/apis/library/osconfig.googleapis.com)
+   - [Stackdriver Monitoring API](https://console.cloud.google.com/apis/library/monitoring.googleapis.com)
+   - [Stackdriver Logging API](https://console.cloud.google.com/apis/library/logging.googleapis.com)
 6. You will need domain on cloudflare
 7. Run `make init`
 8. build cluster disk image [here](./packages/cluster-disk-image)

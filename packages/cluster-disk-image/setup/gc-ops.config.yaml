@@ -1,10 +1,34 @@
 logging:
+  receivers:
+    nomad:
+      type: files
+      include_paths:
+          - /opt/nomad/log/*.log
+    consul:
+      type: systemd_journald
+  processors:
+    log_filter:
+      type: exclude_logs
+      match_any:
+          - '(jsonPayload._SYSTEMD_UNIT != "consul.service")'
   service:
     pipelines:
       default_pipeline:
-        receivers: []
+        receivers: [nomad]
+      pipeline_consul:
+        receivers: [consul]
+        processors: [log_filter]
 metrics:
   receivers:
     hostmetrics:
       type: hostmetrics
-      collection_interval: 300s
+      collection_interval: 30s
+  processors:
+    metrics_filter:
+      type: exclude_metrics
+      metrics_pattern: []
+  service:
+    pipelines:
+      default_pipeline:
+        receivers: [hostmetrics]
+        processors: [metrics_filter]

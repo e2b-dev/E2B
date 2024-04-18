@@ -74,13 +74,19 @@ resource "google_compute_instance_template" "server" {
   metadata_startup_script = var.startup_script
   metadata = merge(
     {
+      enable-osconfig                          = "TRUE",
+      enable-guest-attributes                  = "TRUE",
       (var.metadata_key_name_for_cluster_size) = var.cluster_size,
     },
     var.custom_metadata,
   )
 
-  labels = var.labels
-
+  labels = merge(
+    var.labels,
+    {
+      goog-ops-agent-policy = "v2-x86-template-1-2-0-${var.gcp_zone}"
+    }
+  )
   scheduling {
     on_host_maintenance = "MIGRATE"
   }
