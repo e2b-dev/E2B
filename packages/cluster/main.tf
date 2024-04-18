@@ -73,7 +73,7 @@ module "server_cluster" {
   cluster_name     = "${var.prefix}${var.server_cluster_name}"
   cluster_size     = var.server_cluster_size
   cluster_tag_name = var.cluster_tag_name
-  gcp_zone = var.gcp_zone
+  gcp_zone         = var.gcp_zone
 
   machine_type = var.server_machine_type
   image_family = var.server_image_family
@@ -111,7 +111,7 @@ module "client_cluster" {
   cluster_name     = "${var.prefix}${var.client_cluster_name}"
   cluster_size     = var.client_cluster_size
   cluster_tag_name = var.cluster_tag_name
-  gcp_zone = var.gcp_zone
+  gcp_zone         = var.gcp_zone
 
   machine_type = var.client_machine_type
   image_family = var.client_image_family

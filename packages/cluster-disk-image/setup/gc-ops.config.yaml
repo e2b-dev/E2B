@@ -8,6 +8,7 @@ logging:
       type: files
       include_paths:
           - /opt/nomad/data/alloc/**/alloc/logs/*
+      record_log_file_path: true
     consul:
       type: systemd_journald
   processors:
