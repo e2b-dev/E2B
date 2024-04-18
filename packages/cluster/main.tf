@@ -30,6 +30,17 @@ resource "google_project_iam_member" "network_viewer" {
   role    = "roles/compute.networkViewer"
 }
 
+resource "google_project_iam_member" "monitoring_editor" {
+  project = var.gcp_project_id
+  member  = "serviceAccount:${var.google_service_account_email}"
+  role    = "roles/monitoring.editor"
+}
+resource "google_project_iam_member" "logging_writer" {
+  project = var.gcp_project_id
+  member  = "serviceAccount:${var.google_service_account_email}"
+  role    = "roles/logging.logWriter"
+}
+
 variable "setup_files" {
   type = map(string)
   default = {
@@ -62,6 +73,7 @@ module "server_cluster" {
   cluster_name     = "${var.prefix}${var.server_cluster_name}"
   cluster_size     = var.server_cluster_size
   cluster_tag_name = var.cluster_tag_name
+  gcp_zone = var.gcp_zone
 
   machine_type = var.server_machine_type
   image_family = var.server_image_family
@@ -99,6 +111,7 @@ module "client_cluster" {
   cluster_name     = "${var.prefix}${var.client_cluster_name}"
   cluster_size     = var.client_cluster_size
   cluster_tag_name = var.cluster_tag_name
+  gcp_zone = var.gcp_zone
 
   machine_type = var.client_machine_type
   image_family = var.client_image_family

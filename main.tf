@@ -112,6 +112,7 @@ module "cluster" {
 
   gcp_project_id             = var.gcp_project_id
   gcp_region                 = var.gcp_region
+  gcp_zone                   = var.gcp_zone
   google_service_account_key = module.init.google_service_account_key
 
   server_cluster_size = var.server_cluster_size

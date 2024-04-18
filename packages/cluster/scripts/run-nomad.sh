@@ -232,6 +232,7 @@ plugin "docker" {
 }
 
 log_level = "DEBUG"
+log_json = true
 
 telemetry {
   collection_interval = "1s"
