@@ -4,6 +4,10 @@ logging:
       type: files
       include_paths:
           - /opt/nomad/log/*.log
+    jobs:
+      type: files
+      include_paths:
+          - /opt/nomad/data/alloc/**/alloc/logs/*
     consul:
       type: systemd_journald
   processors:
@@ -15,10 +19,11 @@ logging:
       type: parse_json
       time_key: "@timestamp"
       time_format: "%Y-%m-%dT%H:%M:%S.%LZ"
-    type: modify_fields
-    fields:
-      severity:
-        move_from: "jsonPayload.@level"
+    modify_fields:
+      type: modify_fields
+      fields:
+        severity:
+          move_from: "jsonPayload.@level"
   service:
     pipelines:
       pipeline_nomad:
@@ -27,6 +32,8 @@ logging:
       pipeline_consul:
         receivers: [consul]
         processors: [log_filter]
+      pipeline_jobs:
+        receivers: [jobs]
 metrics:
   receivers:
     hostmetrics:
