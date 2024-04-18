@@ -1,3 +1,17 @@
+
+# Mutation
+default_value: info
+map_values:
+  debug: debug
+  info: info
+  notice: info
+  warning: warning
+  error: error
+  critical: critical
+  alert: critical
+  emergency: critical
+
+
 logging:
   receivers:
     nomad:
@@ -11,10 +25,19 @@ logging:
       type: exclude_logs
       match_any:
           - '(jsonPayload._SYSTEMD_UNIT != "consul.service")'
+    parse_json:
+      type: parse_json
+      time_key: "@timestamp"
+      time_format: "%Y-%m-%dT%H:%M:%S.%LZ"
+    type: modify_fields
+    fields:
+      severity:
+        move_from: "jsonPayload.@level"
   service:
     pipelines:
-      default_pipeline:
+      pipeline_nomad:
         receivers: [nomad]
+        processors: [parse_json, modify_fields]
       pipeline_consul:
         receivers: [consul]
         processors: [log_filter]
