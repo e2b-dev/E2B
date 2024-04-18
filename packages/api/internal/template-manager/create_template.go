@@ -147,7 +147,7 @@ func handleBuildErr(
 	}
 
 	// Save the error in the logs
-	buildErr = buildCache.Append(templateID, buildID, fmt.Sprintf("Build failed: %s", buildErr))
+	buildErr = buildCache.Append(templateID, buildID, fmt.Sprintf("Build failed: %s\n", buildErr))
 
 	cacheErr := buildCache.SetDone(templateID, buildID, api.TemplateBuildStatusError)
 	if cacheErr != nil {
