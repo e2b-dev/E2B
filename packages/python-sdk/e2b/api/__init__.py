@@ -1,7 +1,7 @@
 from importlib.metadata import version
 from typing import Union
 
-from e2b.constants import API_HOST
+from e2b.constants import DOMAIN, PROTOCOL, DEBUG
 from e2b.api.metadata import default_headers
 
 
@@ -16,11 +16,6 @@ else:
     import e2b.api.v2.client.exceptions as exceptions
 
 
-# Defining the host is optional and defaults to https://api.e2b.dev
-# See configuration.py for a list of all supported configuration parameters.
-configuration = client.Configuration(
-    host=API_HOST,
-)
 
 
 class E2BApiClient(client.ApiClient):
@@ -28,9 +23,17 @@ class E2BApiClient(client.ApiClient):
         self,
         api_key: Union[str, None] = None,
         access_token: Union[str, None] = None,
+        domain: str = DOMAIN,
         *args,
         **kwargs,
     ):
+        prefix = "" if DEBUG else f"api."
+        api_host = f"{PROTOCOL}://{prefix}{domain}"
+
+        # Defining the host is optional and defaults to https://api.e2b.dev
+        # See configuration.py for a list of all supported configuration parameters.
+        configuration = client.Configuration(host=api_host)
+
         configuration.api_key["ApiKeyAuth"] = api_key
         configuration.access_token = access_token
 
@@ -38,4 +41,4 @@ class E2BApiClient(client.ApiClient):
         self.default_headers = default_headers
 
 
-__all__ = ["E2BApiClient", "configuration", "client", "models"]
+__all__ = ["E2BApiClient", "client", "models"]
