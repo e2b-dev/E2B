@@ -1,17 +1,3 @@
-
-# Mutation
-default_value: info
-map_values:
-  debug: debug
-  info: info
-  notice: info
-  warning: warning
-  error: error
-  critical: critical
-  alert: critical
-  emergency: critical
-
-
 logging:
   receivers:
     nomad:
