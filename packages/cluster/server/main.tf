@@ -1,5 +1,5 @@
 locals {
-  instance_group_update_policy_max_surge_fixed = try(var.instance_group_update_policy_max_surge_fixed, var.cluster_size - 1 ? var.cluster_size : 0)
+  instance_group_update_policy_max_surge_fixed = try(var.instance_group_update_policy_max_surge_fixed, var.cluster_size - 1 ? 1 : 0)
 }
 resource "google_compute_health_check" "nomad_check" {
   name                = "${var.cluster_name}-nomad-check"
@@ -37,7 +37,7 @@ resource "google_compute_instance_group_manager" "server_cluster" {
   update_policy {
     type                    = var.instance_group_update_policy_type
     minimal_action          = var.instance_group_update_policy_minimal_action
-    max_surge_fixed         = var.instance_group_update_policy_max_surge_fixed
+    max_surge_fixed         = local.instance_group_update_policy_max_surge_fixed
     max_surge_percent       = var.instance_group_update_policy_max_surge_percent
     max_unavailable_fixed   = var.instance_group_update_policy_max_unavailable_fixed
     max_unavailable_percent = var.instance_group_update_policy_max_unavailable_percent
