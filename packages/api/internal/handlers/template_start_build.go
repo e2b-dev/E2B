@@ -55,7 +55,6 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			query.Where(envbuild.ID(buildUUID))
 		},
 	).Only(ctx)
-
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error when getting env: %s", err))
 
@@ -114,8 +113,8 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			schema.DefaultFirecrackerVersion,
 			startCmd,
 			build.Vcpu,
-			build.RAMMB,
 			build.FreeDiskSizeMB,
+			build.RAMMB,
 		)
 		if buildErr != nil {
 			err = fmt.Errorf("error when building env: %w", buildErr)
@@ -131,7 +130,6 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 			Set("duration", time.Since(startTime).String()).
 			Set("success", err != nil),
 		)
-
 	}()
 
 	c.Status(http.StatusAccepted)
