@@ -64,6 +64,9 @@ export interface SandboxConnectionOpts {
    */
   id?: string;
   apiKey?: string;
+  /**
+   * Domain to use for the API requests. If not provided, the `E2B_DOMAIN` environment variable will be used.
+   */
   domain?: string;
   cwd?: string;
   envVars?: EnvVars;
@@ -162,6 +165,7 @@ export class SandboxConnection {
    * List all running sandboxes
    * 
    * @param apiKey API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
+   * @param domain Domain to use for the API requests. If not provided, the `E2B_DOMAIN` environment variable will be used.
    */
   static async list(apiKey?: string, domain?: string): Promise<RunningSandbox[]> {
     apiKey = getApiKey(apiKey)
@@ -207,6 +211,7 @@ export class SandboxConnection {
    * List all running sandboxes
    * @param sandboxID ID of the sandbox to kill
    * @param apiKey API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
+   * @param domain Domain to use for the API requests. If not provided, the `E2B_DOMAIN` environment variable will be used.
    */
   static async kill(sandboxID: string, apiKey?: string, domain?: string): Promise<void> {
     apiKey = getApiKey(apiKey)
