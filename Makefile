@@ -1,14 +1,8 @@
 ENV := $(shell cat .last_used_env || echo "not-set")
 -include .env.${ENV}
 
-
-PRINT = @echo -e "\e[1;34mBuilding $<\e[0m"
-
 OTEL_TRACING_PRINT ?= false
 IMAGE := e2b-orchestration/api
-
-server := gcloud compute instances list --project=$(GCP_PROJECT_ID) --format='csv(name)' | grep "server"
-client := gcloud compute instances list --project=$(GCP_PROJECT_ID) --format='csv(name)' | grep "client"
 
 tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
 	TF_VAR_client_cluster_size=$(CLIENT_CLUSTER_SIZE) \
@@ -105,16 +99,6 @@ destroy:
 version:
 	./scripts/increment-version.sh
 
-.PHONY: bootstrap-consul
-bootstrap-consul:
-	gcloud compute ssh $$($(server)) --project $(GCP_PROJECT_ID) -- \
-	'consul acl bootstrap'
-
-.PHONY: bootstrap-nomad
-bootstrap-nomad:
-	gcloud compute ssh $$($(server)) --project $(GCP_PROJECT_ID) -- \
-	'nomad acl bootstrap'
-
 .PHONY: build-all
 build-all:
 	$(MAKE) -C packages/envd build
@@ -140,13 +124,6 @@ update-api:
 	docker buildx install # sets up the buildx as default docker builder (otherwise the command below won't work)
 	docker build --platform linux/amd64 --tag "$(GCP_REGION)-docker.pkg.dev/$(GCP_PROJECT_ID)/$(IMAGE)" --push -f api.Dockerfile .
 
-# Set the size of the fc-envs disk
-FC_ENVS_SIZE := 200
-
-.PHONE: resize-fc-envs
-resize-fc-envs:
-	gcloud --project=$(GCP_PROJECT_ID) compute disks resize fc-envs --size $(FC_ENVS_SIZE) --zone "$GCP_ZONE"
-	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) -- 'sudo xfs_growfs -d /dev/sdb'
 
 .PHONY: switch-env
 switch-env:
