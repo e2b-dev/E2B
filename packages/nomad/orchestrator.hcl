@@ -12,6 +12,16 @@ variable "consul_token" {
   default = ""
 }
 
+variable "memory_mb" {
+  type    = number
+  default = 1024
+}
+
+variable "cpu_mhz" {
+  type    = number
+  default = 1000
+}
+
 variable "logs_proxy_address" {
   type    = string
   default = ""
@@ -68,8 +78,8 @@ job "orchestrator" {
       driver = "raw_exec"
 
       resources {
-        memory     = 1024
-        cpu        = 1000
+        memory     = var.memory_mb
+        cpu        = var.cpu_mhz
       }
 
       env {

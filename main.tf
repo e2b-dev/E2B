@@ -10,11 +10,11 @@ terraform {
     }
     google = {
       source  = "hashicorp/google"
-      version = "5.6.0"
+      version = "5.25.0"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "5.6.0"
+      version = "5.25.0"
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
@@ -175,9 +175,10 @@ module "docker_reverse_proxy" {
 module "nomad" {
   source = "./packages/nomad"
 
-  gcp_project_id = var.gcp_project_id
-  gcp_region     = var.gcp_region
-  gcp_zone       = var.gcp_zone
+  gcp_project_id      = var.gcp_project_id
+  gcp_region          = var.gcp_region
+  gcp_zone            = var.gcp_zone
+  client_machine_type = var.client_machine_type
 
   consul_acl_token_secret = module.init.consul_acl_token_secret
   nomad_acl_token_secret  = module.init.nomad_acl_token_secret
