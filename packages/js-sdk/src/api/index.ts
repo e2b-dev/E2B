@@ -1,22 +1,53 @@
 import * as fetcher from 'openapi-typescript-fetch'
 import type { OpArgType, TypedFetch } from 'openapi-typescript-fetch'
 
-import { API_HOST } from '../constants'
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
+import { DEBUG, DOMAIN, SECURE } from '../constants'
 
 const { Fetcher } = fetcher
 
-const client = Fetcher.for<paths>()
+class APIClient {
+  private client = Fetcher.for<paths>()
 
-type ClientType = typeof client
+  constructor(private opts: {
+    secure?: boolean,
+    domain?: string,
+    debug?: boolean,
+  }
+  ) {
+    this.client.configure({
+      baseUrl: this.apiHost,
+      init: {
+        headers: defaultHeaders,
+      },
+    })
+  }
 
-client.configure({
-  baseUrl: API_HOST,
-  init: {
-    headers: defaultHeaders,
-  },
-})
+  get secure() {
+    return this.opts.secure ?? SECURE
+  }
+
+  get domain() {
+    return this.opts.domain ?? DOMAIN
+  }
+
+  get debug() {
+    return this.opts.debug ?? DEBUG
+  }
+
+  get apiDomain() {
+    return this.debug ? 'localhost:3000' : `api.${this.domain}`
+  }
+
+  get apiHost() {
+    return `${this.secure && !this.debug ? 'https' : 'http'}://${this.apiDomain}`
+  }
+
+  get api() {
+    return this.client
+  }
+}
 
 type WithAccessToken<T> = (
   accessToken: string,
@@ -66,5 +97,5 @@ export function withAPIKey<T>(f: TypedFetch<T>) {
   }
 }
 
-export default client
-export type { components, paths, ClientType }
+export type { components, paths }
+export { APIClient }

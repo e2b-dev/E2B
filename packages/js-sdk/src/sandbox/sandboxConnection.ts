@@ -1,7 +1,12 @@
 import { IRpcNotification, RpcWebSocketClient } from './rpc'
 
-import api, { components, withAPIKey } from '../api'
-import { ENVD_PORT, SANDBOX_DOMAIN, SANDBOX_REFRESH_PERIOD, SECURE, WS_RECONNECT_INTERVAL, WS_ROUTE } from '../constants'
+import { APIClient, components, withAPIKey } from '../api'
+import {
+  ENVD_PORT,
+  SANDBOX_REFRESH_PERIOD,
+  WS_RECONNECT_INTERVAL,
+  WS_ROUTE
+} from '../constants'
 import { assertFulfilled, formatSettledErrors, withTimeout } from '../utils/promise'
 import wait from '../utils/wait'
 import { codeSnippetService } from './codeSnippet'
@@ -59,6 +64,7 @@ export interface SandboxConnectionOpts {
    */
   id?: string;
   apiKey?: string;
+  domain?: string;
   cwd?: string;
   envVars?: EnvVars;
   /**
@@ -77,19 +83,6 @@ export interface CallOpts {
   /** Timeout for the call in milliseconds */
   timeout?: number;
 }
-
-const listSandboxes = withAPIKey(
-  api.path('/sandboxes').method('get').create(),
-)
-const createSandbox = withAPIKey(
-  api.path('/sandboxes').method('post').create(),
-)
-const killSandbox = withAPIKey(
-  api.path('/sandboxes/{sandboxID}').method('delete').create(),
-)
-const refreshSandbox = withAPIKey(
-  api.path('/sandboxes/{sandboxID}/refreshes').method('post').create(),
-)
 
 export class SandboxConnection {
   /**
@@ -112,12 +105,14 @@ export class SandboxConnection {
   private readonly apiKey: string
   private readonly rpc = new RpcWebSocketClient()
   private subscribers: Subscriber[] = []
+  private readonly client: APIClient
 
   // let's keep opts readonly, but public - for convenience, mainly when debugging
   protected constructor(readonly opts: SandboxConnectionOpts) {
     this.sandbox = opts.__sandbox
     this.apiKey = getApiKey(opts.apiKey)
 
+    this.client = new APIClient({ domain: opts.domain })
 
     this.cwd = opts.cwd
     if (this.cwd && this.cwd.startsWith('~')) {
@@ -151,13 +146,31 @@ export class SandboxConnection {
     return this.opts.template || this.opts.id || 'base'
   }
 
+  private get refreshSandbox() {
+    return withAPIKey(
+      this.client.api.path('/sandboxes/{sandboxID}/refreshes').method('post').create(),
+    )
+  }
+
+  private get createSandbox() {
+    return withAPIKey(
+      this.client.api.path('/sandboxes').method('post').create(),
+    )
+  }
+
   /**
    * List all running sandboxes
    * 
    * @param apiKey API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
    */
-  static async list(apiKey?: string): Promise<RunningSandbox[]> {
+  static async list(apiKey?: string, domain?: string): Promise<RunningSandbox[]> {
     apiKey = getApiKey(apiKey)
+
+    const client = new APIClient({ domain })
+
+    const listSandboxes = withAPIKey(
+      client.api.path('/sandboxes').method('get').create(),
+    )
 
     try {
       const res = await listSandboxes(apiKey, {})
@@ -195,10 +208,15 @@ export class SandboxConnection {
    * @param sandboxID ID of the sandbox to kill
    * @param apiKey API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
    */
-  static async kill(sandboxID: string, apiKey?: string): Promise<void> {
+  static async kill(sandboxID: string, apiKey?: string, domain?: string): Promise<void> {
     apiKey = getApiKey(apiKey)
 
     const shortID = sandboxID.split('-')[0]
+
+    const client = new APIClient({ domain })
+    const killSandbox = withAPIKey(
+      client.api.path('/sandboxes/{sandboxID}').method('delete').create(),
+    )
 
     try {
       await killSandbox(apiKey, { sandboxID: shortID })
@@ -237,7 +255,7 @@ export class SandboxConnection {
     if (!this.sandbox) {
       throw new Error('Cannot keep alive - sandbox is not initialized')
     }
-    await refreshSandbox(this.apiKey, {
+    await this.refreshSandbox(this.apiKey, {
       sandboxID: this.sandbox?.sandboxID, duration,
     })
   }
@@ -266,7 +284,7 @@ export class SandboxConnection {
       throw new Error('Cannot get sandbox\'s hostname - sandbox is not initialized')
     }
 
-    const hostname = `${this.id}.${SANDBOX_DOMAIN}`
+    const hostname = `${this.id}.${this.client.domain}`
     if (port) {
       return `${port}-${hostname}`
     } else {
@@ -280,7 +298,7 @@ export class SandboxConnection {
    * @param secure Specify if you want to use the secure protocol
    * @returns Protocol for the connection to the sandbox
    */
-  getProtocol(baseProtocol: string = 'http', secure: boolean = SECURE) {
+  getProtocol(baseProtocol: string = 'http', secure: boolean = this.client.secure) {
     return secure ? `${baseProtocol}s` : baseProtocol
   }
 
@@ -413,7 +431,7 @@ export class SandboxConnection {
 
       if (!this.sandbox && !this.opts.__debug_hostname) {
         try {
-          const res = await createSandbox(this.apiKey, {
+          const res = await this.createSandbox(this.apiKey, {
             templateID: this.templateID,
             metadata: this.opts.metadata,
           })
@@ -421,7 +439,7 @@ export class SandboxConnection {
           this.sandbox = res.data
           this.logger.debug?.(`Acquired sandbox "${this.id}"`)
         } catch (e) {
-          if (e instanceof createSandbox.Error) {
+          if (e instanceof this.createSandbox.Error) {
             const error = e.getActualType()
             if (error.status === 400) {
               throw new Error(
@@ -559,6 +577,8 @@ export class SandboxConnection {
   private async refresh(sandboxID: string) {
     this.logger.debug?.(`Started refreshing sandbox "${sandboxID}"`)
 
+
+
     try {
       // eslint-disable-next-line no-constant-condition
       while (true) {
@@ -572,12 +592,12 @@ export class SandboxConnection {
         await wait(SANDBOX_REFRESH_PERIOD)
 
         try {
-          await refreshSandbox(this.apiKey, {
+          await this.refreshSandbox(this.apiKey, {
             sandboxID, duration: 0,
           })
           this.logger.debug?.(`Refreshed sandbox "${sandboxID}"`)
         } catch (e) {
-          if (e instanceof refreshSandbox.Error) {
+          if (e instanceof this.refreshSandbox.Error) {
             const error = e.getActualType()
             if (error.status === 404) {
               this.logger.warn?.(
