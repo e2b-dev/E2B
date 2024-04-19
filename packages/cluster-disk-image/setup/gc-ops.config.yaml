@@ -39,7 +39,7 @@ metrics:
   receivers:
     hostmetrics:
       type: hostmetrics
-      collection_interval: 30s
+      collection_interval: 10s
   processors:
     metrics_filter:
       type: exclude_metrics
