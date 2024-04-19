@@ -10,7 +10,7 @@ const { Fetcher } = fetcher
 class APIClient {
   private client = Fetcher.for<paths>()
 
-  constructor(private opts: {
+  constructor(private opts?: {
     secure?: boolean,
     domain?: string,
     debug?: boolean,
@@ -25,15 +25,15 @@ class APIClient {
   }
 
   get secure() {
-    return this.opts.secure ?? SECURE
+    return this.opts?.secure ?? SECURE
   }
 
   get domain() {
-    return this.opts.domain ?? DOMAIN
+    return this.opts?.domain ?? DOMAIN
   }
 
   get debug() {
-    return this.opts.debug ?? DEBUG
+    return this.opts?.debug ?? DEBUG
   }
 
   get apiDomain() {

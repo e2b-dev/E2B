@@ -1,5 +1,5 @@
-export { default as api, withAPIKey, withAccessToken } from './api'
-export type { ClientType, components, paths } from './api'
+export { APIClient, withAPIKey, withAccessToken } from './api'
+export type { components, paths } from './api'
 
 export { SANDBOX_DOMAIN, API_HOST } from './constants'
 export type { SandboxOpts, DownloadFileFormat } from './sandbox'

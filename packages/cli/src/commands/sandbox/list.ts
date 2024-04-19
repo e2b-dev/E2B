@@ -2,10 +2,10 @@ import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import * as e2b from 'e2b'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAPIKey, client } from 'src/api'
 
 const listRunningSandboxes = e2b.withAPIKey(
-  e2b.api.path('/sandboxes').method('get').create(),
+  client.api.path('/sandboxes').method('get').create(),
 )
 
 export const listCommand = new commander.Command('list')
