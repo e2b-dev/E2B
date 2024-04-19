@@ -195,6 +195,10 @@ variable "fc_env_pipeline_bucket_name" {
   type = string
 }
 
+variable "client_machine_type" {
+  type = string
+}
+
 
 # Template manager
 variable "template_manager_port" {
