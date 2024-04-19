@@ -27,25 +27,27 @@ import {
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 import * as child_process from 'child_process'
 
+import { client } from 'src/api'
+
 const templateCheckInterval = 500 // 0.5 sec
 
 const getTemplate = e2b.withAccessToken(
-  e2b.api
+  client.api
     .path('/templates/{templateID}/builds/{buildID}/status')
     .method('get')
     .create(),
 )
 
 const requestTemplateBuild = e2b.withAccessToken(
-  e2b.api.path('/templates').method('post').create(),
+  client.api.path('/templates').method('post').create(),
 )
 
 const requestTemplateRebuild = e2b.withAccessToken(
-  e2b.api.path('/templates/{templateID}').method('post').create(),
+  client.api.path('/templates/{templateID}').method('post').create(),
 )
 
 const triggerTemplateBuild = e2b.withAccessToken(
-  e2b.api
+  client.api
     .path('/templates/{templateID}/builds/{buildID}')
     .method('post')
     .create(),
@@ -364,9 +366,8 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox
 
 # Start sandbox
-sandbox = Sandbox(template="${
-          aliases?.length ? aliases[0] : template.data.templateID
-        }")
+sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.templateID
+          }")
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview
@@ -377,9 +378,8 @@ sandbox.close()`)
         const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
 
 // Start sandbox
-const sandbox = await Sandbox.create({ template: '${
-          aliases?.length ? aliases[0] : template.data.templateID
-        }' })
+const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.data.templateID
+          }' })
 
 // Interact with sandbox. Learn more here:
 // https://e2b.dev/docs/sandbox/overview
@@ -534,24 +534,21 @@ async function requestBuildTemplate(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${
-          error.message ?? 'no message'
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
         }`,
       )
     }
 
     if (error.code === 404) {
       throw new Error(
-        `Sandbox template you want to build ${
-          templateID ? `(${templateID})` : ''
-        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${
-          hasConfig
-            ? `This could be caused by ${asLocalRelative(
-                configPath,
-              )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
-                configPath,
-              )} and start building the template again.`
-            : ''
+        `Sandbox template you want to build ${templateID ? `(${templateID})` : ''
+        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${hasConfig
+          ? `This could be caused by ${asLocalRelative(
+            configPath,
+          )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
+            configPath,
+          )} and start building the template again.`
+          : ''
         }`,
       )
     }
@@ -585,8 +582,7 @@ async function triggerBuild(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${
-          error.message ?? 'no message'
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
         }`,
       )
     }
