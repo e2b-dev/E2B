@@ -36,6 +36,7 @@ type FC struct {
 	ctx            context.Context
 	socketPath     string
 	envPath        string
+	id             string
 }
 
 func (fc *FC) Wait() error {
@@ -201,6 +202,7 @@ func NewFC(
 	cmd.Stdout = cmdStderrWriter
 
 	return &FC{
+		id:             slot.InstanceID,
 		cmd:            cmd,
 		stdout:         cmdStdoutReader,
 		stderr:         cmdStderrReader,
@@ -237,12 +239,14 @@ func (fc *FC) Start(
 				attribute.String("type", "stdout"),
 				attribute.String("message", line),
 			)
+			fmt.Printf("[firecracker stdout]: %s — %s", fc.id, line)
 		}
 
 		readerErr := scanner.Err()
 		if readerErr != nil {
 			errMsg := fmt.Errorf("error reading vmm stdout: %w", readerErr)
 			telemetry.ReportError(fc.ctx, errMsg)
+			fmt.Printf("[firecracker stdout error]: %s — %v", fc.id, errMsg)
 		} else {
 			telemetry.ReportEvent(fc.ctx, "vmm stdout reader closed")
 		}
@@ -266,12 +270,16 @@ func (fc *FC) Start(
 				attribute.String("type", "stderr"),
 				attribute.String("message", line),
 			)
+			fmt.Printf("[firecracker stderr]: %s — %v", fc.id, line)
 		}
 
 		readerErr := fc.stderr.Close()
 		if readerErr != nil {
 			errMsg := fmt.Errorf("error closing vmm stderr reader: %w", readerErr)
 			telemetry.ReportError(fc.ctx, errMsg)
+			fmt.Printf("[firecracker stderr error]: %s — %v", fc.id, errMsg)
+		} else {
+			telemetry.ReportEvent(fc.ctx, "vmm stderr reader closed")
 		}
 	}()
 
