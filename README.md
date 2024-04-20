@@ -47,24 +47,24 @@ tools as humans do. For example:
 
 ---
 
-## Code interpreter SDK
-We have built a [dedicated SDK](https://github.com/e2b-dev/code-interpreter) for building custom code interpreter in your AI apps. It's build on top of E2B and our core SDK.
+### Code interpreter SDK
+We have built a [dedicated SDK](https://github.com/e2b-dev/code-interpreter) for building custom code interpreters in your AI apps. It's build on top of E2B and our core E2B SDK.
 
-## Getting started & documentation
+### Getting started & documentation
 
 > Please visit [documentation](https://e2b.dev/docs) to get started.
 
 To create and control a sandbox, you use our SDK:
 
-### Python
+**Python**
 
-#### Install SDK
+1. Install SDK
 
 ```bash
 pip install e2b
 ```
 
-#### Start sandbox
+2. Start sandbox
 
 ```py
 from e2b import Sandbox
@@ -79,15 +79,15 @@ sandbox = Sandbox()
 sandbox.close()
 ```
 
-### JavaScript & TypeScript
+**JavaScript & TypeScript**
 
-#### Install SDK
+1. Install SDK
 
 ```bash
 npm install e2b
 ```
 
-#### Start sandbox
+2. Start sandbox
 
 ```js
 import { Sandbox } from "e2b";
