@@ -45,7 +45,12 @@ tools as humans do. For example:
 
 **The E2B sandbox can be connected to any LLM and any AI agent or app.**
 
-## Getting Started & Documentation
+---
+
+## Code interpreter SDK
+We have built a [dedicated SDK](https://github.com/e2b-dev/code-interpreter) for building custom code interpreter in your AI apps. It's build on top of E2B and our core SDK.
+
+## Getting started & documentation
 
 > Please visit [documentation](https://e2b.dev/docs) to get started.
 
