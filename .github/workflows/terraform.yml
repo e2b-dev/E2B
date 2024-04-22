@@ -69,6 +69,7 @@ jobs:
           TERRAFORM_STATE_BUCKET: ${{ secrets.terraform_state_bucket }}
           PREFIX: ${{ secrets.terraform_prefix }}
           DOMAIN_NAME: ${{ secrets.domain_name }}
+          ENVIRONMENT: prod
 
       - name: Deploy Terraform
         run: make apply
@@ -85,3 +86,4 @@ jobs:
           TERRAFORM_STATE_BUCKET: ${{ secrets.terraform_state_bucket }}
           PREFIX: ${{ secrets.terraform_prefix }}
           DOMAIN_NAME: ${{ secrets.domain_name }}
+          ENVIRONMENT: prod
