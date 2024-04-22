@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -17,15 +16,6 @@ import (
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
-)
-
-const (
-	fcVersionsDir  = "/fc-versions"
-	kernelDir      = "/fc-kernels"
-	kernelMountDir = "/fc-vm"
-	kernelName     = "vmlinux.bin"
-	uffdBinaryName = "uffd"
-	fcBinaryName   = "firecracker"
 )
 
 func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequest) (*orchestrator.SandboxCreateResponse, error) {
@@ -43,21 +33,9 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 		childCtx,
 		s.tracer,
 		s.consul,
-		&sandbox.InstanceConfig{
-			TemplateID:            req.Sandbox.TemplateID,
-			SandboxID:             req.Sandbox.SandboxID,
-			TraceID:               childSpan.SpanContext().TraceID().String(),
-			TeamID:                req.Sandbox.TeamID,
-			KernelVersion:         req.Sandbox.KernelVersion,
-			KernelsDir:            kernelDir,
-			KernelMountDir:        kernelMountDir,
-			KernelName:            kernelName,
-			HugePages:             req.Sandbox.HugePages,
-			UFFDBinaryPath:        filepath.Join(fcVersionsDir, req.Sandbox.FirecrackerVersion, uffdBinaryName),
-			FirecrackerBinaryPath: filepath.Join(fcVersionsDir, req.Sandbox.FirecrackerVersion, fcBinaryName),
-		},
 		s.dns,
 		req.Sandbox,
+		childSpan.SpanContext().TraceID().String(),
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create sandbox: %w", err)

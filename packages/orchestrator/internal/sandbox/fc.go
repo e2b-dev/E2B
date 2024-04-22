@@ -30,8 +30,10 @@ type MmdsMetadata struct {
 	TeamID     string `json:"teamID"`
 }
 
-type FC struct {
+type fc struct {
 	ctx context.Context
+
+	mu sync.Mutex
 
 	cmd     *exec.Cmd
 	process *os.Process
@@ -43,17 +45,16 @@ type FC struct {
 
 	uffdSocketPath *string
 
-	pid int
-	id  string
+	id string
 
 	socketPath string
 	envPath    string
 
+	pid            int
 	isBeingStopped bool
-	mu             sync.Mutex
 }
 
-func (fc *FC) Wait() error {
+func (fc *fc) wait() error {
 	if fc.cmd != nil {
 		return fc.cmd.Wait()
 	}
@@ -73,7 +74,7 @@ func (fc *FC) Wait() error {
 	}
 }
 
-func (fc *FC) Recover(pid int) error {
+func (fc *fc) recover(pid int) error {
 	p, err := recoverProcess(pid)
 	if err != nil {
 		return fmt.Errorf("failed to recover process %d: %w", pid, err)
@@ -94,7 +95,7 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 	return httpClient
 }
 
-func (fc *FC) loadSnapshot(
+func (fc *fc) loadSnapshot(
 	ctx context.Context,
 	tracer trace.Tracer,
 	socketPath,
@@ -178,13 +179,13 @@ func (fc *FC) loadSnapshot(
 	return nil
 }
 
-func NewFC(
+func newFC(
 	ctx context.Context,
 	tracer trace.Tracer,
 	slot *IPSlot,
 	fsEnv *SandboxFiles,
 	mmdsMetadata *MmdsMetadata,
-) *FC {
+) *fc {
 	childCtx, childSpan := tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
 		attribute.String("instance.id", slot.InstanceID),
 		attribute.Int("instance.slot.index", slot.SlotIdx),
@@ -232,7 +233,7 @@ func NewFC(
 	cmd.Stderr = cmdStdoutWriter
 	cmd.Stdout = cmdStderrWriter
 
-	return &FC{
+	return &fc{
 		id:             slot.InstanceID,
 		cmd:            cmd,
 		stdout:         cmdStdoutReader,
@@ -245,7 +246,7 @@ func NewFC(
 	}
 }
 
-func (fc *FC) Start(
+func (fc *fc) start(
 	ctx context.Context,
 	tracer trace.Tracer,
 ) error {
@@ -342,7 +343,7 @@ func (fc *FC) Start(
 		fc.metadata,
 		fc.uffdSocketPath,
 	); err != nil {
-		fc.Stop(childCtx, tracer)
+		fc.stop(childCtx, tracer)
 
 		errMsg := fmt.Errorf("failed to load snapshot: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -354,7 +355,7 @@ func (fc *FC) Start(
 
 	defer func() {
 		if err != nil {
-			fc.Stop(childCtx, tracer)
+			fc.stop(childCtx, tracer)
 		}
 	}()
 
@@ -371,7 +372,7 @@ func (fc *FC) Start(
 	return nil
 }
 
-func (fc *FC) Stop(ctx context.Context, tracer trace.Tracer) {
+func (fc *fc) stop(ctx context.Context, tracer trace.Tracer) {
 	fc.mu.Lock()
 	if fc.isBeingStopped {
 		fc.mu.Unlock()

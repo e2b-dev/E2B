@@ -17,7 +17,7 @@ const SigkillWait = 5 * time.Second
 
 var uffdCloseLock sync.Mutex
 
-type UFFD struct {
+type uffd struct {
 	cmd            *exec.Cmd
 	uffdSocketPath *string
 	process        *os.Process
@@ -28,7 +28,7 @@ type UFFD struct {
 	mu             sync.Mutex
 }
 
-func (u *UFFD) Start() error {
+func (u *uffd) start() error {
 	err := u.cmd.Start()
 	if err != nil {
 		return fmt.Errorf("failed to start uffd: %w", err)
@@ -40,7 +40,7 @@ func (u *UFFD) Start() error {
 	return nil
 }
 
-func (u *UFFD) Recover(pid int) error {
+func (u *uffd) recover(pid int) error {
 	p, err := recoverProcess(pid)
 	if err != nil {
 		return fmt.Errorf("failed to recover process %d: %w", pid, err)
@@ -52,7 +52,7 @@ func (u *UFFD) Recover(pid int) error {
 	return nil
 }
 
-func (u *UFFD) Stop(ctx context.Context, tracer trace.Tracer) {
+func (u *uffd) stop(ctx context.Context, tracer trace.Tracer) {
 	u.mu.Lock()
 	if u.isBeingStopped {
 		u.mu.Unlock()
@@ -80,21 +80,21 @@ func (u *UFFD) Stop(ctx context.Context, tracer trace.Tracer) {
 	return
 }
 
-func NewUFFD(
+func newUFFD(
 	fsEnv *SandboxFiles,
-) *UFFD {
+) *uffd {
 	memfilePath := filepath.Join(fsEnv.EnvPath, MemfileName)
 	cmd := exec.Command(fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return &UFFD{
+	return &uffd{
 		cmd:            cmd,
 		uffdSocketPath: fsEnv.UFFDSocketPath,
 	}
 }
 
-func (u *UFFD) Wait() error {
+func (u *uffd) wait() error {
 	if u.cmd != nil {
 		return u.cmd.Wait()
 	}

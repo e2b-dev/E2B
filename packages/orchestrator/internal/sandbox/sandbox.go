@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"go.opentelemetry.io/otel/trace"
@@ -17,62 +18,49 @@ import (
 )
 
 const (
+	fcVersionsDir  = "/fc-versions"
+	kernelsDir     = "/fc-kernels"
+	kernelMountDir = "/fc-vm"
+	kernelName     = "vmlinux.bin"
+	uffdBinaryName = "uffd"
+	fcBinaryName   = "firecracker"
+
 	WaitForUffd       = 80 * time.Millisecond
 	UffdCheckInterval = 10 * time.Millisecond
 )
 
 var logsProxyAddress = os.Getenv("LOGS_PROXY_ADDRESS")
 
-type Sandbox struct {
-	slot  *IPSlot
-	files *SandboxFiles
-
-	fc   *FC
-	uffd *UFFD
-
-	Sandbox *orchestrator.SandboxConfig
-
-	StartedAt time.Time
-
-	config *InstanceConfig
-
-	templateID string
-}
-
 var httpClient = http.Client{
 	Timeout: 5 * time.Second,
 }
 
-type InstanceConfig struct {
-	TemplateID            string
-	SandboxID             string
-	TraceID               string
-	TeamID                string
-	KernelVersion         string
-	KernelMountDir        string
-	KernelsDir            string
-	KernelName            string
-	FirecrackerBinaryPath string
-	UFFDBinaryPath        string
-	HugePages             bool
+type Sandbox struct {
+	slot  *IPSlot
+	files *SandboxFiles
+
+	fc   *fc
+	uffd *uffd
+
+	Sandbox   *orchestrator.SandboxConfig
+	StartedAt time.Time
+	TraceID   string
 }
 
 // This method should recover the sandbox based on slot idx and pids for uffd and fc
-// We are passing all the parameters right now, but it is possible that they do have a overlap
 func RecoverSandbox(
 	ctx context.Context,
 	tracer trace.Tracer,
-	instanceID string,
-	slotIdx int,
 	consul *consul.Client,
-	config *InstanceConfig,
 	dns *DNS,
-	startedAt time.Time,
+	config *orchestrator.SandboxConfig,
+	traceID string,
+	slotIdx,
 	fcPid int,
 	uffdPid *int,
-	sandboxConfig *orchestrator.SandboxConfig,
+	startedAt time.Time,
 ) (*Sandbox, error) {
-	ips := RecoverSlot(instanceID, slotIdx)
+	ips := RecoverSlot(config.SandboxID, slotIdx)
 
 	fsEnv, err := newSandboxFiles(
 		ctx,
@@ -80,21 +68,21 @@ func RecoverSandbox(
 		ips,
 		config.TemplateID,
 		config.KernelVersion,
-		config.KernelsDir,
-		config.KernelMountDir,
-		config.KernelName,
-		config.FirecrackerBinaryPath,
-		config.UFFDBinaryPath,
+		kernelsDir,
+		kernelMountDir,
+		kernelName,
+		fcBinaryPath(config.FirecrackerVersion),
+		uffdBinaryPath(config.FirecrackerVersion),
 		config.HugePages,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	var uffd *UFFD
+	var uffd *uffd
 	if fsEnv.UFFDSocketPath != nil && uffdPid != nil {
-		uffd = NewUFFD(fsEnv)
-		uffdErr := uffd.Recover(*uffdPid)
+		uffd = newUFFD(fsEnv)
+		uffdErr := uffd.recover(*uffdPid)
 		if uffdErr != nil {
 			errMsg := fmt.Errorf("failed to recover UFFD: %w", uffdErr)
 			telemetry.ReportCriticalError(ctx, errMsg)
@@ -103,7 +91,7 @@ func RecoverSandbox(
 		}
 	}
 
-	fc := NewFC(
+	fc := newFC(
 		ctx,
 		tracer,
 		ips,
@@ -112,12 +100,12 @@ func RecoverSandbox(
 			InstanceID: config.SandboxID,
 			EnvID:      config.TemplateID,
 			Address:    logsProxyAddress,
-			TraceID:    config.TraceID,
+			TraceID:    traceID,
 			TeamID:     config.TeamID,
 		},
 	)
 
-	err = fc.Recover(fcPid)
+	err = fc.recover(fcPid)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to recover FC: %w", err)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -134,20 +122,27 @@ func RecoverSandbox(
 		uffd:  uffd,
 		fc:    fc,
 
-		StartedAt:  startedAt,
-		templateID: config.TemplateID,
-		config:     config,
-		Sandbox:    sandboxConfig,
+		StartedAt: startedAt,
+		Sandbox:   config,
+		TraceID:   traceID,
 	}, nil
+}
+
+func uffdBinaryPath(fcVersion string) string {
+	return filepath.Join(fcVersionsDir, fcVersion, uffdBinaryName)
+}
+
+func fcBinaryPath(fcVersion string) string {
+	return filepath.Join(fcVersionsDir, fcVersion, fcBinaryName)
 }
 
 func NewSandbox(
 	ctx context.Context,
 	tracer trace.Tracer,
 	consul *consul.Client,
-	config *InstanceConfig,
 	dns *DNS,
-	sandboxConfig *orchestrator.SandboxConfig,
+	config *orchestrator.SandboxConfig,
+	traceID string,
 ) (*Sandbox, error) {
 	childCtx, childSpan := tracer.Start(ctx, "new-sandbox")
 	defer childSpan.End()
@@ -207,11 +202,11 @@ func NewSandbox(
 		ips,
 		config.TemplateID,
 		config.KernelVersion,
-		config.KernelsDir,
-		config.KernelMountDir,
-		config.KernelName,
-		config.FirecrackerBinaryPath,
-		config.UFFDBinaryPath,
+		kernelsDir,
+		kernelMountDir,
+		kernelName,
+		fcBinaryPath(config.FirecrackerVersion),
+		uffdBinaryPath(config.FirecrackerVersion),
 		config.HugePages,
 	)
 	if err != nil {
@@ -245,11 +240,11 @@ func NewSandbox(
 		}
 	}()
 
-	var uffd *UFFD
+	var uffd *uffd
 	if fsEnv.UFFDSocketPath != nil {
-		uffd = NewUFFD(fsEnv)
+		uffd = newUFFD(fsEnv)
 
-		uffdErr := uffd.Start()
+		uffdErr := uffd.start()
 		if err != nil {
 			errMsg := fmt.Errorf("failed to start uffd: %w", uffdErr)
 			telemetry.ReportCriticalError(childCtx, errMsg)
@@ -278,7 +273,7 @@ func NewSandbox(
 		}
 	}
 
-	fc := NewFC(
+	fc := newFC(
 		childCtx,
 		tracer,
 		ips,
@@ -287,12 +282,12 @@ func NewSandbox(
 			InstanceID: config.SandboxID,
 			EnvID:      config.TemplateID,
 			Address:    logsProxyAddress,
-			TraceID:    config.TraceID,
+			TraceID:    traceID,
 			TeamID:     config.TeamID,
 		},
 	)
 
-	err = fc.Start(childCtx, tracer)
+	err = fc.start(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to start FC: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -303,14 +298,12 @@ func NewSandbox(
 	telemetry.ReportEvent(childCtx, "initialized FC")
 
 	instance := &Sandbox{
-		templateID: config.TemplateID,
-		files:      fsEnv,
-		slot:       ips,
-		fc:         fc,
-		uffd:       uffd,
+		files: fsEnv,
+		slot:  ips,
+		fc:    fc,
+		uffd:  uffd,
 
-		Sandbox: sandboxConfig,
-		config:  config,
+		Sandbox: config,
 	}
 
 	telemetry.ReportEvent(childCtx, "ensuring clock sync")
@@ -414,14 +407,14 @@ func (s *Sandbox) Wait(ctx context.Context, tracer trace.Tracer) (err error) {
 
 	// wg.Add(1)
 	go func() {
-		fcChan <- s.fc.Wait()
+		fcChan <- s.fc.wait()
 		close(fcChan)
 	}()
 
 	if s.uffd != nil {
 		// wg.Add(1)
 		go func() {
-			uffdChan <- s.uffd.Wait()
+			uffdChan <- s.uffd.wait()
 			close(uffdChan)
 		}()
 	} else {
@@ -455,12 +448,28 @@ func (s *Sandbox) Stop(ctx context.Context, tracer trace.Tracer) {
 	childCtx, childSpan := tracer.Start(ctx, "stop-sandbox", trace.WithAttributes())
 	defer childSpan.End()
 
-	s.fc.Stop(childCtx, tracer)
+	s.fc.stop(childCtx, tracer)
 
 	if s.uffd != nil {
 		// Wait until we stop uffd if it exists
 		time.Sleep(1 * time.Second)
 
-		s.uffd.Stop(childCtx, tracer)
+		s.uffd.stop(childCtx, tracer)
 	}
+}
+
+func (s *Sandbox) SlotIdx() int {
+	return s.slot.SlotIdx
+}
+
+func (s *Sandbox) FcPid() int {
+	return s.fc.pid
+}
+
+func (s *Sandbox) UffdPid() *int {
+	if s.uffd == nil {
+		return nil
+	}
+
+	return &s.uffd.pid
 }

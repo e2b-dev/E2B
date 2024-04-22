@@ -64,5 +64,6 @@ func New(logger *zap.Logger) *grpc.Server {
 	})
 
 	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
+
 	return s
 }
