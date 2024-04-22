@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/trace"
@@ -404,49 +405,62 @@ func (s *Sandbox) CleanupAfterFCStop(
 	}
 }
 
-func (s *Sandbox) Wait(ctx context.Context, tracer trace.Tracer) (err error) {
+func (s *Sandbox) waitWithUffd(ctx context.Context, tracer trace.Tracer) error {
 	fcChan := make(chan error)
 	uffdChan := make(chan error)
 
-	// var wg sync.WaitGroup
+	var wg sync.WaitGroup
 
-	// wg.Add(1)
+	wg.Add(1)
+
 	go func() {
+		defer wg.Done()
 		fcChan <- s.fc.wait()
 		close(fcChan)
 	}()
 
-	if s.uffd != nil {
-		// wg.Add(1)
-		go func() {
-			uffdChan <- s.uffd.wait()
-			close(uffdChan)
-		}()
-	} else {
-		uffdChan <- nil
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		uffdChan <- s.uffd.wait()
 		close(uffdChan)
-	}
+	}()
 
-	if s.uffd != nil {
-		select {
-		case err = <-fcChan:
-			s.Stop(ctx, tracer)
-		case err = <-uffdChan:
-			s.Stop(ctx, tracer)
+	select {
+	case <-ctx.Done():
+		s.Stop(ctx, tracer)
+
+		return ctx.Err()
+	case err := <-fcChan:
+		s.Stop(ctx, tracer)
+
+		if err != nil {
+			return err
 		}
-	} else {
-		return <-fcChan
+	case err := <-uffdChan:
+		s.Stop(ctx, tracer)
+
+		if err != nil {
+			return err
+		}
 	}
 
-	// select {
-	// case wg.Done():
-	// 	return nil
-	// case <-ctx.Done():
-	// 	return ctx.Err()
-	// }
-	// Wait for both channel close OR context cancel
+	wg.Wait()
 
-	return err
+	return nil
+}
+
+func (s *Sandbox) waitNoUffd(_ context.Context, _ trace.Tracer) error {
+	return s.fc.wait()
+}
+
+func (s *Sandbox) Wait(ctx context.Context, tracer trace.Tracer) (err error) {
+	if s.uffd != nil {
+		return s.waitWithUffd(ctx, tracer)
+	}
+
+	return s.waitNoUffd(ctx, tracer)
 }
 
 func (s *Sandbox) Stop(ctx context.Context, tracer trace.Tracer) {
