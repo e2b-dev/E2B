@@ -6,5 +6,5 @@ const shortNodeIDLength = 8
 
 var (
 	nodeID   = os.Getenv("NODE_ID")
-	ClientID = "test"
+	ClientID = nodeID[:shortNodeIDLength]
 )
