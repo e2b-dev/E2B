@@ -5,8 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
+	"time"
 
 	"github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
@@ -28,6 +31,7 @@ type MmdsMetadata struct {
 }
 
 type FC struct {
+	uffd           *exec.Cmd
 	cmd            *exec.Cmd
 	stdout         *io.PipeReader
 	stderr         *io.PipeReader
@@ -169,14 +173,13 @@ func NewFC(
 	fcCmd := fmt.Sprintf("%s --api-sock %s", fsEnv.FirecrackerBinaryPath, fsEnv.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
-	var uffdCmd string
+	var uffd *exec.Cmd
 
 	if fsEnv.UFFDSocketPath != nil {
 		memfilePath := filepath.Join(fsEnv.EnvPath, MemfileName)
-		uffdCmd = fmt.Sprintf("(%s %s %s &) && ", fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
-		telemetry.SetAttributes(childCtx,
-			attribute.String("instance.uffd.command", uffdCmd),
-		)
+		uffd = exec.CommandContext(vmmCtx, fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
+		uffd.Stdout = os.Stdout
+		uffd.Stderr = os.Stderr
 	}
 
 	telemetry.SetAttributes(childCtx,
@@ -192,7 +195,7 @@ func NewFC(
 		"--",
 		"bash",
 		"-c",
-		rootfsMountCmd+kernelMountCmd+uffdCmd+inNetNSCmd+fcCmd,
+		rootfsMountCmd+kernelMountCmd+inNetNSCmd+fcCmd,
 	)
 
 	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
@@ -202,6 +205,7 @@ func NewFC(
 	cmd.Stdout = cmdStderrWriter
 
 	return &FC{
+		uffd:           uffd,
 		id:             slot.InstanceID,
 		cmd:            cmd,
 		stdout:         cmdStdoutReader,
@@ -220,6 +224,20 @@ func (fc *FC) Start(
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "start-fc")
 	defer childSpan.End()
+
+	if fc.uffd != nil {
+		uffdErr := fc.uffd.Start()
+		if uffdErr != nil {
+			errMsg := fmt.Errorf("error starting uffd: %w", uffdErr)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+
+			return errMsg
+		}
+	}
+
+	// Wait some time for the uffd to initialize
+	// TODO: Make this less hacky
+	time.Sleep(80 * time.Millisecond)
 
 	go func() {
 		defer func() {
@@ -363,6 +381,28 @@ func (fc *FC) Stop(ctx context.Context, tracer trace.Tracer) error {
 	} else {
 		telemetry.ReportEvent(childCtx, "sent KILL to FC process")
 	}
+
+	time.Sleep(1 * time.Second)
+
+	err = fc.uffd.Process.Signal(syscall.SIGTERM)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "sent SIGTERM to uffd")
+	}
+
+	time.Sleep(5 * time.Second)
+
+	err = fc.uffd.Process.Kill()
+	if err != nil {
+		errMsg := fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "sent SIGKILL to uffd")
+	}
+
+	time.Sleep(1 * time.Second)
 
 	return nil
 }
