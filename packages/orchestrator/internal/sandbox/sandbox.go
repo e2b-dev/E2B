@@ -58,11 +58,87 @@ type InstanceConfig struct {
 }
 
 // This method should recover the sandbox based on slot idx and pids for uffd and fc
-func RecoverSandbox() (*Sandbox, error) {
+// We are passing all the parameters right now, but it is possible that they do have a overlap
+func RecoverSandbox(
+	ctx context.Context,
+	tracer trace.Tracer,
+	instanceID string,
+	slotIdx int,
+	consul *consul.Client,
+	config *InstanceConfig,
+	dns *DNS,
+	startedAt time.Time,
+	fcPid int,
+	uffdPid *int,
+	sandboxConfig *orchestrator.SandboxConfig,
+) (*Sandbox, error) {
+	ips := RecoverSlot(instanceID, slotIdx)
+
+	fsEnv, err := newSandboxFiles(
+		ctx,
+		tracer,
+		ips,
+		config.TemplateID,
+		config.KernelVersion,
+		config.KernelsDir,
+		config.KernelMountDir,
+		config.KernelName,
+		config.FirecrackerBinaryPath,
+		config.UFFDBinaryPath,
+		config.HugePages,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var uffd *UFFD
+	if fsEnv.UFFDSocketPath != nil && uffdPid != nil {
+		uffd = NewUFFD(fsEnv)
+		uffdErr := uffd.Recover(*uffdPid)
+		if uffdErr != nil {
+			errMsg := fmt.Errorf("failed to recover UFFD: %w", uffdErr)
+			telemetry.ReportCriticalError(ctx, errMsg)
+
+			return nil, errMsg
+		}
+	}
+
+	fc := NewFC(
+		ctx,
+		tracer,
+		ips,
+		fsEnv,
+		&MmdsMetadata{
+			InstanceID: config.SandboxID,
+			EnvID:      config.TemplateID,
+			Address:    logsProxyAddress,
+			TraceID:    config.TraceID,
+			TeamID:     config.TeamID,
+		},
+	)
+
+	err = fc.Recover(fcPid)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to recover FC: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		return nil, errMsg
+	}
+
 	// Use the implemented Recovery methods from slot, uffd, fc + finish the recovery/Ensure method for sandboxFiles
 
 	// After returning the sandbox ensure that we start a goroutine that cleans up resources after the .Wait finishes, the same we have for when starting the sandbox.
-	return nil, nil
+	return &Sandbox{
+		slot:  ips,
+		files: fsEnv,
+		uffd:  uffd,
+		fc:    fc,
+
+		StartedAt:  startedAt,
+		templateID: config.TemplateID,
+		config:     config,
+		Sandbox:    sandboxConfig,
+	}, nil
 }
 
 func NewSandbox(
