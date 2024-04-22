@@ -289,6 +289,10 @@ func NewSandbox(
 
 	err = fc.start(childCtx, tracer)
 	if err != nil {
+		if uffd != nil {
+			uffd.stop(childCtx, tracer)
+		}
+
 		errMsg := fmt.Errorf("failed to start FC: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
@@ -307,6 +311,7 @@ func NewSandbox(
 	}
 
 	telemetry.ReportEvent(childCtx, "ensuring clock sync")
+
 	go func() {
 		backgroundCtx := context.Background()
 

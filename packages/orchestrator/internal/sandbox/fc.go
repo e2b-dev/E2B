@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/firecracker-microvm/firecracker-go-sdk"
@@ -226,6 +227,10 @@ func newFC(
 		"-c",
 		rootfsMountCmd+kernelMountCmd+inNetNSCmd+fcCmd,
 	)
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true, // Create a new session
+	}
 
 	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
 	cmdStderrReader, cmdStderrWriter := io.Pipe()

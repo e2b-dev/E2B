@@ -79,8 +79,6 @@ func (u *uffd) stop(ctx context.Context, tracer trace.Tracer) {
 	}
 	uffdCloseLock.Unlock()
 
-	time.Sleep(SigkillWait)
-
 killWait:
 	for {
 		select {
@@ -115,6 +113,15 @@ func newUFFD(
 ) *uffd {
 	memfilePath := filepath.Join(fsEnv.EnvPath, MemfileName)
 	cmd := exec.Command(fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true, // Create a new session
+		Credential: &syscall.Credential{
+			Uid: 1000, // UID for user "ubuntu"
+			Gid: 1000, // GID for user "ubuntu"
+		},
+	}
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
