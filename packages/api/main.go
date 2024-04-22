@@ -132,7 +132,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if env.IsProduction() {
+	if !env.IsLocal() {
 		shutdown := telemetry.InitOTLPExporter(serviceName, swagger.Info.Version)
 		defer shutdown()
 	}

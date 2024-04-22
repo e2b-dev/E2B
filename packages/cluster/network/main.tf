@@ -387,8 +387,8 @@ module "gce_lb_http_logs" {
       }
 
       log_config = {
-        enable      = true
-        sample_rate = 1.0
+        enable      = false
+        sample_rate = 0.0
       }
 
       groups = [

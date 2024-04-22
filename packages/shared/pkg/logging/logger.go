@@ -8,11 +8,11 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func New(prod bool) (*zap.SugaredLogger, error) {
+func New(isLocal bool) (*zap.SugaredLogger, error) {
 	config := zap.Config{
 		Level:             zap.NewAtomicLevelAt(zap.InfoLevel),
-		Development:       !prod,
-		DisableStacktrace: prod,
+		Development:       isLocal,
+		DisableStacktrace: !isLocal,
 		Encoding:          "console",
 		EncoderConfig: zapcore.EncoderConfig{
 			TimeKey:       "timestamp",
