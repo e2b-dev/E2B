@@ -273,7 +273,7 @@ func (fc *FC) Start(
 			fmt.Printf("[firecracker stderr]: %s — %v", fc.id, line)
 		}
 
-		readerErr := fc.stderr.Close()
+		readerErr := scanner.Err()
 		if readerErr != nil {
 			errMsg := fmt.Errorf("error closing vmm stderr reader: %w", readerErr)
 			telemetry.ReportError(fc.ctx, errMsg)
