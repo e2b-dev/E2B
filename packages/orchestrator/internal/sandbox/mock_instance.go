@@ -3,8 +3,9 @@ package sandbox
 import (
 	"context"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
 	"time"
+
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
 
 	"go.opentelemetry.io/otel"
 
@@ -20,7 +21,7 @@ func MockInstance(envID, instanceID string, dns *DNS, keepAlive time.Duration) {
 
 	consulClient, err := consul.New(childCtx)
 
-	instance, err := New(
+	instance, err := NewSandbox(
 		childCtx,
 		tracer,
 		consulClient,
@@ -50,8 +51,5 @@ func MockInstance(envID, instanceID string, dns *DNS, keepAlive time.Duration) {
 
 	defer instance.CleanupAfterFCStop(childCtx, tracer, consulClient, dns)
 
-	err = instance.FC.Stop(childCtx, tracer)
-	if err != nil {
-		panic(err)
-	}
+	instance.fc.Stop(childCtx, tracer)
 }

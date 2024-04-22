@@ -9,14 +9,23 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"go.opentelemetry.io/otel/trace"
 )
+
+const SigkillWait = 5 * time.Second
 
 var uffdCloseLock sync.Mutex
 
 type UFFD struct {
 	cmd            *exec.Cmd
 	uffdSocketPath *string
-	pid            int
+	process        *os.Process
+
+	pid int
+
+	isBeingStopped bool
+	mu             sync.Mutex
 }
 
 func (u *UFFD) Start() error {
@@ -26,43 +35,81 @@ func (u *UFFD) Start() error {
 	}
 
 	u.pid = u.cmd.Process.Pid
+	u.process = u.cmd.Process
 
 	return nil
 }
 
-func (u *UFFD) Stop() error {
-	uffdCloseLock.Lock()
-	err := u.cmd.Process.Signal(syscall.SIGTERM)
+func (u *UFFD) Recover(pid int) error {
+	p, err := recoverProcess(pid)
 	if err != nil {
-		uffdCloseLock.Unlock()
-		return fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		return fmt.Errorf("failed to recover process %d: %w", pid, err)
 	}
-	uffdCloseLock.Unlock()
 
-	time.Sleep(5 * time.Second)
-
-	uffdCloseLock.Lock()
-	err = u.cmd.Process.Kill()
-	if err != nil {
-		uffdCloseLock.Unlock()
-		return fmt.Errorf("failed to send SIGINT to uffd: %w", err)
-	}
-	uffdCloseLock.Unlock()
+	u.pid = pid
+	u.process = p
 
 	return nil
+}
+
+func (u *UFFD) Stop(ctx context.Context, tracer trace.Tracer) {
+	u.mu.Lock()
+	if u.isBeingStopped {
+		u.mu.Unlock()
+		return
+	}
+	u.isBeingStopped = true
+	u.mu.Unlock()
+
+	uffdCloseLock.Lock()
+	err := u.process.Signal(syscall.SIGTERM)
+	if err != nil {
+		fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+	}
+	uffdCloseLock.Unlock()
+
+	time.Sleep(SigkillWait)
+
+	uffdCloseLock.Lock()
+	err = u.process.Kill()
+	if err != nil {
+		fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+	}
+	uffdCloseLock.Unlock()
+
+	return
 }
 
 func NewUFFD(
-	ctx context.Context,
-	fsEnv *InstanceFiles,
-) (*UFFD, error) {
+	fsEnv *SandboxFiles,
+) *UFFD {
 	memfilePath := filepath.Join(fsEnv.EnvPath, MemfileName)
-	cmd := exec.CommandContext(vmmCtx, fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
+	cmd := exec.Command(fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	return &UFFD{
 		cmd:            cmd,
 		uffdSocketPath: fsEnv.UFFDSocketPath,
-	}, nil
+	}
+}
+
+func (u *UFFD) Wait() error {
+	if u.cmd != nil {
+		return u.cmd.Wait()
+	}
+
+	if u.process == nil {
+		return fmt.Errorf("process is nil")
+	}
+
+	// When we recover process and the current process is not parent of that process .Wait will usually not work and throw an error.
+	for {
+		time.Sleep(processCheckInterval)
+
+		isRunning, err := checkIsRunning(u.process)
+		if !isRunning {
+			return err
+		}
+	}
 }

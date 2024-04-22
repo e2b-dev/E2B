@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/firecracker-microvm/firecracker-go-sdk"
@@ -31,28 +30,59 @@ type MmdsMetadata struct {
 	TeamID     string `json:"teamID"`
 }
 
-
 type FC struct {
 	ctx context.Context
 
-	cmd *exec.Cmd
-	pid int
+	cmd     *exec.Cmd
+	process *os.Process
 
 	stdout *io.PipeReader
 	stderr *io.PipeReader
 
 	metadata *MmdsMetadata
 
-	uffd *UFFD
+	uffdSocketPath *string
 
-	id string
+	pid int
+	id  string
 
 	socketPath string
 	envPath    string
+
+	isBeingStopped bool
+	mu             sync.Mutex
 }
 
 func (fc *FC) Wait() error {
-	return fc.cmd.Wait()
+	if fc.cmd != nil {
+		return fc.cmd.Wait()
+	}
+
+	if fc.process == nil {
+		return fmt.Errorf("process is nil")
+	}
+
+	// When we recover process and the current process is not parent of that process .Wait will usually not work and throw an error.
+	for {
+		time.Sleep(processCheckInterval)
+
+		isRunning, err := checkIsRunning(fc.process)
+		if !isRunning {
+			return err
+		}
+	}
+}
+
+func (fc *FC) Recover(pid int) error {
+	p, err := recoverProcess(pid)
+	if err != nil {
+		return fmt.Errorf("failed to recover process %d: %w", pid, err)
+	}
+
+	fc.pid = pid
+	fc.process = p
+
+	return nil
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -152,7 +182,7 @@ func NewFC(
 	ctx context.Context,
 	tracer trace.Tracer,
 	slot *IPSlot,
-	fsEnv *InstanceFiles,
+	fsEnv *SandboxFiles,
 	mmdsMetadata *MmdsMetadata,
 ) *FC {
 	childCtx, childSpan := tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
@@ -181,22 +211,12 @@ func NewFC(
 	fcCmd := fmt.Sprintf("%s --api-sock %s", fsEnv.FirecrackerBinaryPath, fsEnv.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
-	var uffd *exec.Cmd
-
-	if fsEnv.UFFDSocketPath != nil {
-		memfilePath := filepath.Join(fsEnv.EnvPath, MemfileName)
-		uffd = exec.CommandContext(vmmCtx, fsEnv.UFFDBinaryPath, *fsEnv.UFFDSocketPath, memfilePath)
-		uffd.Stdout = os.Stdout
-		uffd.Stderr = os.Stderr
-	}
-
 	telemetry.SetAttributes(childCtx,
 		attribute.String("instance.firecracker.command", fcCmd),
 		attribute.String("instance.netns.command", inNetNSCmd),
 	)
 
-	cmd := exec.CommandContext(
-		vmmCtx,
+	cmd := exec.Command(
 		"unshare",
 		"-pfm",
 		"--kill-child",
@@ -213,7 +233,6 @@ func NewFC(
 	cmd.Stdout = cmdStderrWriter
 
 	return &FC{
-		uffd:           uffd,
 		id:             slot.InstanceID,
 		cmd:            cmd,
 		stdout:         cmdStdoutReader,
@@ -232,20 +251,6 @@ func (fc *FC) Start(
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "start-fc")
 	defer childSpan.End()
-
-	if fc.uffd != nil {
-		uffdErr := fc.uffd.Start()
-		if uffdErr != nil {
-			errMsg := fmt.Errorf("error starting uffd: %w", uffdErr)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			return errMsg
-		}
-	}
-
-	// Wait some time for the uffd to initialize
-	// TODO: Make this less hacky
-	time.Sleep(80 * time.Millisecond)
 
 	go func() {
 		defer func() {
@@ -337,10 +342,7 @@ func (fc *FC) Start(
 		fc.metadata,
 		fc.uffdSocketPath,
 	); err != nil {
-		stopErr := fc.Stop(childCtx, tracer)
-		if stopErr != nil {
-			telemetry.ReportError(childCtx, fmt.Errorf("error stopping vmm: %w", stopErr))
-		}
+		fc.Stop(childCtx, tracer)
 
 		errMsg := fmt.Errorf("failed to load snapshot: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -352,11 +354,7 @@ func (fc *FC) Start(
 
 	defer func() {
 		if err != nil {
-			stopErr := fc.Stop(childCtx, tracer)
-			if stopErr != nil {
-				errMsg := fmt.Errorf("error stopping machine after error: %w", stopErr)
-				telemetry.ReportError(childCtx, errMsg)
-			}
+			fc.Stop(childCtx, tracer)
 		}
 	}()
 
@@ -373,7 +371,15 @@ func (fc *FC) Start(
 	return nil
 }
 
-func (fc *FC) Stop(ctx context.Context, tracer trace.Tracer) error {
+func (fc *FC) Stop(ctx context.Context, tracer trace.Tracer) {
+	fc.mu.Lock()
+	if fc.isBeingStopped {
+		fc.mu.Unlock()
+		return
+	}
+	fc.isBeingStopped = true
+	fc.mu.Unlock()
+
 	childCtx, childSpan := tracer.Start(ctx, "stop-fc", trace.WithAttributes(
 		attribute.String("instance.cmd", fc.cmd.String()),
 		attribute.String("instance.cmd.dir", fc.cmd.Dir),
@@ -384,33 +390,10 @@ func (fc *FC) Stop(ctx context.Context, tracer trace.Tracer) error {
 	err := fc.cmd.Process.Kill()
 	if err != nil {
 		errMsg := fmt.Errorf("failed to send KILL to FC process: %w", err)
-
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "sent KILL to FC process")
 	}
 
-	time.Sleep(1 * time.Second)
-
-	err = fc.uffd.Process.Signal(syscall.SIGTERM)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to send SIGINT to uffd: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-	} else {
-		telemetry.ReportEvent(childCtx, "sent SIGTERM to uffd")
-	}
-
-	time.Sleep(5 * time.Second)
-
-	err = fc.uffd.Process.Kill()
-	if err != nil {
-		errMsg := fmt.Errorf("failed to send SIGINT to uffd: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-	} else {
-		telemetry.ReportEvent(childCtx, "sent SIGKILL to uffd")
-	}
-
-	time.Sleep(1 * time.Second)
-
-	return nil
+	return
 }

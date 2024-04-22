@@ -111,6 +111,14 @@ func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
+func RecoverSlot(instanceID string, slotIdx int) *IPSlot {
+	return &IPSlot{
+		InstanceID: instanceID,
+		SlotIdx:    slotIdx,
+		KVKey:      getKVKey(slotIdx),
+	}
+}
+
 func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Client, instanceID string) (*IPSlot, error) {
 	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
 	defer childSpan.End()
@@ -145,7 +153,7 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Clie
 
 	for randomTry := 1; randomTry <= 10; randomTry++ {
 		slotIdx := rand.Intn(IPSlotsSize)
-		key := fmt.Sprintf("%s/%d", constants.ClientID, slotIdx)
+		key := getKVKey(slotIdx)
 
 		maybeSlot, err := trySlot(slotIdx, key)
 		if err != nil {
@@ -169,7 +177,7 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Clie
 		}
 
 		for slotIdx := 0; slotIdx < IPSlotsSize; slotIdx++ {
-			key := fmt.Sprintf("%s/%d", constants.ClientID, slotIdx)
+			key := getKVKey(slotIdx)
 
 			if slices.Contains(reservedKeys, key) {
 				continue
@@ -263,4 +271,8 @@ func (ips *IPSlot) Release(ctx context.Context, tracer trace.Tracer, consulClien
 	telemetry.ReportEvent(childCtx, "ip slot released")
 
 	return nil
+}
+
+func getKVKey(slotIdx int) string {
+	return fmt.Sprintf("%s/%d", constants.ClientID, slotIdx)
 }

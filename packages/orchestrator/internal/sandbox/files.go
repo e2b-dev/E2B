@@ -27,7 +27,7 @@ const (
 	socketWaitTimeout = 2 * time.Second
 )
 
-type InstanceFiles struct {
+type SandboxFiles struct {
 	UFFDSocketPath *string
 
 	EnvPath      string
@@ -69,7 +69,7 @@ func waitForSocket(socketPath string, timeout time.Duration) error {
 	}
 }
 
-func newInstanceFiles(
+func newSandboxFiles(
 	ctx context.Context,
 	tracer trace.Tracer,
 	slot *IPSlot,
@@ -81,7 +81,7 @@ func newInstanceFiles(
 	firecrackerBinaryPath,
 	uffdBinaryPath string,
 	hugePages bool,
-) (*InstanceFiles, error) {
+) (*SandboxFiles, error) {
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
 			attribute.String("env.id", envID),
@@ -160,7 +160,7 @@ func newInstanceFiles(
 		attribute.String("instance.firecracker.path", firecrackerBinaryPath),
 	)
 
-	return &InstanceFiles{
+	return &SandboxFiles{
 		EnvInstancePath:       envInstancePath,
 		BuildDirPath:          buildDirPath,
 		EnvPath:               envPath,
@@ -173,7 +173,11 @@ func newInstanceFiles(
 	}, nil
 }
 
-func (env *InstanceFiles) Cleanup(
+func (env *SandboxFiles) Ensure() {
+	// TODO: Split the newSandboxFile into a method that assembles the file names in the struct and a method that ensures they exist, to easy the recovery
+}
+
+func (env *SandboxFiles) Cleanup(
 	ctx context.Context,
 	tracer trace.Tracer,
 ) error {

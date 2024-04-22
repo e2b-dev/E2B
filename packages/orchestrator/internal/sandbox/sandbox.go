@@ -16,12 +16,19 @@ import (
 	consul "github.com/hashicorp/consul/api"
 )
 
+const (
+	WaitForUffd       = 80 * time.Millisecond
+	UffdCheckInterval = 10 * time.Millisecond
+)
+
 var logsProxyAddress = os.Getenv("LOGS_PROXY_ADDRESS")
 
 type Sandbox struct {
-	Files *InstanceFiles
-	Slot  *IPSlot
-	FC    *FC
+	slot  *IPSlot
+	files *SandboxFiles
+
+	fc   *FC
+	uffd *UFFD
 
 	Sandbox *orchestrator.SandboxConfig
 
@@ -29,7 +36,7 @@ type Sandbox struct {
 
 	config *InstanceConfig
 
-	TemplateID string
+	templateID string
 }
 
 var httpClient = http.Client{
@@ -50,7 +57,15 @@ type InstanceConfig struct {
 	HugePages             bool
 }
 
-func New(
+// This method should recover the sandbox based on slot idx and pids for uffd and fc
+func RecoverSandbox() (*Sandbox, error) {
+	// Use the implemented Recovery methods from slot, uffd, fc + finish the recovery/Ensure method for sandboxFiles
+
+	// After returning the sandbox ensure that we start a goroutine that cleans up resources after the .Wait finishes, the same we have for when starting the sandbox.
+	return nil, nil
+}
+
+func NewSandbox(
 	ctx context.Context,
 	tracer trace.Tracer,
 	consul *consul.Client,
@@ -110,7 +125,7 @@ func New(
 
 	telemetry.ReportEvent(childCtx, "created network")
 
-	fsEnv, err := newInstanceFiles(
+	fsEnv, err := newSandboxFiles(
 		childCtx,
 		tracer,
 		ips,
@@ -144,6 +159,39 @@ func New(
 		}
 	}()
 
+	var uffd *UFFD
+	if fsEnv.UFFDSocketPath != nil {
+		uffd = NewUFFD(fsEnv)
+
+		uffdErr := uffd.Start()
+		if err != nil {
+			errMsg := fmt.Errorf("failed to start uffd: %w", uffdErr)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+
+			return nil, errMsg
+		}
+
+		// Wait for uffd to initialize — it should be possible to handle this better?
+	uffdWait:
+		for {
+			select {
+			case <-time.After(WaitForUffd):
+				fmt.Printf("waiting for uffd to initialize")
+				return nil, fmt.Errorf("timeout waiting to uffd to initialize")
+			case <-childCtx.Done():
+				return nil, childCtx.Err()
+			default:
+				isRunning, _ := checkIsRunning(uffd.process)
+				fmt.Printf("uffd is running: %v", isRunning)
+				if isRunning {
+					break uffdWait
+				}
+
+				time.Sleep(UffdCheckInterval)
+			}
+		}
+	}
+
 	fc := NewFC(
 		childCtx,
 		tracer,
@@ -169,10 +217,11 @@ func New(
 	telemetry.ReportEvent(childCtx, "initialized FC")
 
 	instance := &Sandbox{
-		TemplateID: config.TemplateID,
-		Files:      fsEnv,
-		Slot:       ips,
-		FC:         fc,
+		templateID: config.TemplateID,
+		files:      fsEnv,
+		slot:       ips,
+		fc:         fc,
+		uffd:       uffd,
 
 		Sandbox: sandboxConfig,
 		config:  config,
@@ -196,7 +245,7 @@ func New(
 }
 
 func (s *Sandbox) syncClock(ctx context.Context) error {
-	address := fmt.Sprintf("http://%s:%d/sync", s.Slot.HostSnapshotIP(), consts.DefaultEnvdServerPort)
+	address := fmt.Sprintf("http://%s:%d/sync", s.slot.HostSnapshotIP(), consts.DefaultEnvdServerPort)
 
 	request, err := http.NewRequestWithContext(ctx, "POST", address, nil)
 	if err != nil {
@@ -246,7 +295,7 @@ func (s *Sandbox) CleanupAfterFCStop(
 	childCtx, childSpan := tracer.Start(ctx, "delete-instance")
 	defer childSpan.End()
 
-	err := s.Slot.RemoveNetwork(childCtx, tracer, dns)
+	err := s.slot.RemoveNetwork(childCtx, tracer, dns)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot remove network when destroying task: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -254,7 +303,7 @@ func (s *Sandbox) CleanupAfterFCStop(
 		telemetry.ReportEvent(childCtx, "removed network")
 	}
 
-	err = s.Files.Cleanup(childCtx, tracer)
+	err = s.files.Cleanup(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to delete instance files: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -262,11 +311,55 @@ func (s *Sandbox) CleanupAfterFCStop(
 		telemetry.ReportEvent(childCtx, "deleted instance files")
 	}
 
-	err = s.Slot.Release(childCtx, tracer, consul)
+	err = s.slot.Release(childCtx, tracer, consul)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to release slot: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "released slot")
+	}
+}
+
+func (s *Sandbox) Wait(ctx context.Context, tracer trace.Tracer) (err error) {
+	fcChan := make(chan error)
+	uffdChan := make(chan error)
+
+	go func() {
+		fcChan <- s.fc.Wait()
+	}()
+
+	if s.uffd != nil {
+		go func() {
+			uffdChan <- s.uffd.Wait()
+		}()
+	} else {
+		uffdChan <- nil
+	}
+
+	if s.uffd != nil {
+		select {
+		case err = <-fcChan:
+			s.Stop(ctx, tracer)
+		case err = <-uffdChan:
+			s.Stop(ctx, tracer)
+		}
+	} else {
+		return <-fcChan
+	}
+
+	return err
+}
+
+func (s *Sandbox) Stop(ctx context.Context, tracer trace.Tracer) {
+	childCtx, childSpan := tracer.Start(ctx, "stop-sandbox", trace.WithAttributes())
+	defer childSpan.End()
+
+	s.fc.Stop(childCtx, tracer)
+
+	if s.uffd != nil {
+		// Wait until we stop uffd if it exists
+		time.Sleep(1 * time.Second)
+
+		s.uffd.Stop(childCtx, tracer)
 	}
 }

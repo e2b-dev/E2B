@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -38,7 +39,7 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 		attribute.String("client.id", constants.ClientID),
 	)
 
-	sbx, err := sandbox.New(
+	sbx, err := sandbox.NewSandbox(
 		childCtx,
 		s.tracer,
 		s.consul,
@@ -73,11 +74,13 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 		defer s.sandboxes.Remove(req.Sandbox.SandboxID)
 		defer sbx.CleanupAfterFCStop(context.Background(), tracer, s.consul, s.dns)
 
-		err := sbx.FC.Wait()
+		err := sbx.Wait(context.Background(), tracer)
 		if err != nil {
-			errMsg := fmt.Errorf("failed to wait for FC: %w", err)
+			errMsg := fmt.Errorf("failed to wait for Sandbox: %w", err)
 			telemetry.ReportCriticalError(ctx, errMsg)
 		}
+		// Wait before removing all resources
+		time.Sleep(1 * time.Second)
 	}()
 
 	return &orchestrator.SandboxCreateResponse{
@@ -126,13 +129,7 @@ func (s *server) Delete(ctx context.Context, in *orchestrator.SandboxRequest) (*
 		return nil, status.New(codes.NotFound, errMsg.Error()).Err()
 	}
 
-	err := sbx.FC.Stop(ctx, s.tracer)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to stop FC: %w", err)
+	sbx.Stop(ctx, s.tracer)
 
-		telemetry.ReportCriticalError(ctx, errMsg)
-		return nil, status.New(codes.Internal, errMsg.Error()).Err()
-	}
-
-	return nil, err
+	return nil, nil
 }
