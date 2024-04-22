@@ -139,6 +139,16 @@ func NewSandbox(
 		config.HugePages,
 	)
 	if err != nil {
+		errMsg := fmt.Errorf("failed to assemble env files info for FC: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return nil, errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "assembled env files info")
+
+	err = fsEnv.Ensure(childCtx)
+	if err != nil {
 		errMsg := fmt.Errorf("failed to create env for FC: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
@@ -324,16 +334,23 @@ func (s *Sandbox) Wait(ctx context.Context, tracer trace.Tracer) (err error) {
 	fcChan := make(chan error)
 	uffdChan := make(chan error)
 
+	// var wg sync.WaitGroup
+
+	// wg.Add(1)
 	go func() {
 		fcChan <- s.fc.Wait()
+		close(fcChan)
 	}()
 
 	if s.uffd != nil {
+		// wg.Add(1)
 		go func() {
 			uffdChan <- s.uffd.Wait()
+			close(uffdChan)
 		}()
 	} else {
 		uffdChan <- nil
+		close(uffdChan)
 	}
 
 	if s.uffd != nil {
@@ -346,6 +363,14 @@ func (s *Sandbox) Wait(ctx context.Context, tracer trace.Tracer) (err error) {
 	} else {
 		return <-fcChan
 	}
+
+	// select {
+	// case wg.Done():
+	// 	return nil
+	// case <-ctx.Done():
+	// 	return ctx.Err()
+	// }
+	// Wait for both channel close OR context cancel
 
 	return err
 }

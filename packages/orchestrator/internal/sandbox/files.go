@@ -93,11 +93,6 @@ func newSandboxFiles(
 	envPath := filepath.Join(envsDisk, envID)
 	envInstancePath := filepath.Join(envPath, EnvInstancesDirName, slot.InstanceID)
 
-	err := os.MkdirAll(envInstancePath, 0o777)
-	if err != nil {
-		telemetry.ReportError(childCtx, err)
-	}
-
 	// Mount overlay
 	buildIDPath := filepath.Join(envPath, BuildIDName)
 
@@ -109,23 +104,7 @@ func newSandboxFiles(
 	buildID := string(data)
 	buildDirPath := filepath.Join(envPath, BuildDirName, buildID)
 
-	mkdirErr := os.MkdirAll(buildDirPath, 0o777)
-	if mkdirErr != nil {
-		telemetry.ReportError(childCtx, err)
-	}
-
-	err = reflink.Always(
-		filepath.Join(envPath, RootfsName),
-		filepath.Join(envInstancePath, RootfsName),
-	)
-	if err != nil {
-		errMsg := fmt.Errorf("error creating reflinked rootfs: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return nil, errMsg
-	}
-
-	// Create socket
+	// Assemble socket path
 	socketPath, sockErr := getSocketPath(slot.InstanceID)
 	if sockErr != nil {
 		errMsg := fmt.Errorf("error getting socket path: %w", sockErr)
@@ -133,7 +112,7 @@ func newSandboxFiles(
 		return nil, errMsg
 	}
 
-	// Create UFFD socket
+	// Assemble UFFD socket path
 	var uffdSocketPath *string
 
 	if hugePages {
@@ -173,8 +152,29 @@ func newSandboxFiles(
 	}, nil
 }
 
-func (env *SandboxFiles) Ensure() {
-	// TODO: Split the newSandboxFile into a method that assembles the file names in the struct and a method that ensures they exist, to easy the recovery
+func (env *SandboxFiles) Ensure(ctx context.Context) error {
+	err := os.MkdirAll(env.EnvInstancePath, 0o777)
+	if err != nil {
+		telemetry.ReportError(ctx, err)
+	}
+
+	mkdirErr := os.MkdirAll(env.BuildDirPath, 0o777)
+	if mkdirErr != nil {
+		telemetry.ReportError(ctx, err)
+	}
+
+	err = reflink.Always(
+		filepath.Join(env.EnvPath, RootfsName),
+		filepath.Join(env.EnvInstancePath, RootfsName),
+	)
+	if err != nil {
+		errMsg := fmt.Errorf("error creating reflinked rootfs: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		return errMsg
+	}
+
+	return nil
 }
 
 func (env *SandboxFiles) Cleanup(
