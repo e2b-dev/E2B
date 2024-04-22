@@ -49,5 +49,5 @@ func MockInstance(envID, instanceID string, dns *DNS, keepAlive time.Duration) {
 
 	defer instance.CleanupAfterFCStop(childCtx, tracer, consulClient, dns)
 
-	instance.fc.stop(childCtx, tracer)
+	instance.Stop(childCtx, tracer)
 }

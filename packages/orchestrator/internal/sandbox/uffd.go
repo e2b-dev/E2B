@@ -10,10 +10,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"go.opentelemetry.io/otel/trace"
 )
 
-const SigkillWait = 5 * time.Second
+const (
+	SigkillWait      = 5 * time.Second
+	SigkillWaitCheck = 100 * time.Millisecond
+)
 
 var uffdCloseLock sync.Mutex
 
@@ -53,31 +57,57 @@ func (u *uffd) recover(pid int) error {
 }
 
 func (u *uffd) stop(ctx context.Context, tracer trace.Tracer) {
+	childCtx, childSpan := tracer.Start(ctx, "stop-uffd", trace.WithAttributes())
+	defer childSpan.End()
+
 	u.mu.Lock()
 	if u.isBeingStopped {
 		u.mu.Unlock()
 		return
 	}
+
 	u.isBeingStopped = true
 	u.mu.Unlock()
 
 	uffdCloseLock.Lock()
 	err := u.process.Signal(syscall.SIGTERM)
 	if err != nil {
-		fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		errMsg := fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "uffd SIGTERM sent")
 	}
 	uffdCloseLock.Unlock()
 
 	time.Sleep(SigkillWait)
 
+killWait:
+	for {
+		select {
+		case <-time.After(SigkillWait):
+			break killWait
+		case <-ctx.Done():
+			break killWait
+		default:
+			isRunning, _ := checkIsRunning(u.process)
+
+			if !isRunning {
+				return
+			}
+
+			time.Sleep(SigkillWaitCheck)
+		}
+	}
+
 	uffdCloseLock.Lock()
 	err = u.process.Kill()
 	if err != nil {
-		fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		errMsg := fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "uffd SIGKILL sent")
 	}
 	uffdCloseLock.Unlock()
-
-	return
 }
 
 func newUFFD(

@@ -29,10 +29,16 @@ func recoverProcess(pid int) (*os.Process, error) {
 }
 
 func checkIsRunning(p *os.Process) (bool, error) {
-	err := p.Signal(syscall.Signal(0))
+	var ws syscall.WaitStatus
+	pid, err := syscall.Wait4(p.Pid, &ws, syscall.WNOHANG, nil)
 	if err != nil {
-		return false, fmt.Errorf("failed to signal process %d: %w", p.Pid, err)
+		return false, fmt.Errorf("failed to wait for process %d: %w", p.Pid, err)
 	}
 
-	return true, nil
+	if pid == 0 {
+		// Process has not exited
+		return true, nil
+	}
+
+	return false, nil // Process has exited
 }
