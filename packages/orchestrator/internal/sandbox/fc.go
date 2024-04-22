@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"time"
 
@@ -30,17 +31,24 @@ type MmdsMetadata struct {
 	TeamID     string `json:"teamID"`
 }
 
+
 type FC struct {
-	uffd           *exec.Cmd
-	cmd            *exec.Cmd
-	stdout         *io.PipeReader
-	stderr         *io.PipeReader
-	uffdSocketPath *string
-	metadata       *MmdsMetadata
-	ctx            context.Context
-	socketPath     string
-	envPath        string
-	id             string
+	ctx context.Context
+
+	cmd *exec.Cmd
+	pid int
+
+	stdout *io.PipeReader
+	stderr *io.PipeReader
+
+	metadata *MmdsMetadata
+
+	uffd *UFFD
+
+	id string
+
+	socketPath string
+	envPath    string
 }
 
 func (fc *FC) Wait() error {
