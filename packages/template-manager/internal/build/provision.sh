@@ -18,6 +18,12 @@ ExecStart=
 ExecStart=-/sbin/agetty --noissue --autologin root %I 115200,38400,9600 vt102
 EOF
 
+# Add swapfile — we enable it in the preexec for envd
+mkdir /swap
+fallocate -l 128M /swap/swapfile
+chmod 600 /swap/swapfile
+mkswap /swap/swapfile
+
 # Set up envd service.
 mkdir -p /etc/systemd/system
 cat <<EOF >/etc/systemd/system/envd.service
@@ -34,6 +40,8 @@ LimitCORE=infinity
 ExecStart=/bin/bash -l -c "/usr/bin/envd"
 OOMPolicy=continue
 OOMScoreAdjust=-1000
+
+ExecStartPre=/bin/bash -c 'echo 1 > /proc/sys/vm/swappiness && swapon /swap/swapfile'
 
 [Install]
 WantedBy=multi-user.target
@@ -130,28 +138,5 @@ EOF
   systemctl enable start_cmd
 
 fi
-
-# Add swapfile
-
-fallocate -l 128M /tmp/swapfile
-chmod 600 /tmp/swapfile
-mkswap /tmp/swapfile
-
-cat <<EOF >/etc/systemd/system/swapfile.swap
-[Unit]
-Description=Swap file
-
-[Swap]
-What=/tmp/swapfile
-Priority=1000
-
-[Service]
-ExecStartPre=/bin/bash -c 'echo 1 > /proc/sys/vm/swappiness'
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable swapfile.swap
 
 echo "Finished provisioning script"
