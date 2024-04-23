@@ -10,11 +10,13 @@ import (
 const processCheckInterval = 1 * time.Second
 
 func recoverProcess(pid int) (*os.Process, error) {
+	// This is NOOP on Linux, it only returns the process struct with PID
 	p, err := os.FindProcess(pid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find process %d: %w", pid, err)
 	}
 
+	// Checks process existence
 	err = p.Signal(syscall.Signal(0))
 	if err != nil {
 		return nil, fmt.Errorf("failed to signal process %d: %w", pid, err)

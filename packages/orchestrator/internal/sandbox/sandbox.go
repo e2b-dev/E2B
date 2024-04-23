@@ -26,8 +26,8 @@ const (
 	uffdBinaryName = "uffd"
 	fcBinaryName   = "firecracker"
 
-	WaitForUffd       = 80 * time.Millisecond
-	UffdCheckInterval = 10 * time.Millisecond
+	waitForUffd       = 80 * time.Millisecond
+	uffdCheckInterval = 10 * time.Millisecond
 )
 
 var logsProxyAddress = os.Getenv("LOGS_PROXY_ADDRESS")
@@ -257,7 +257,7 @@ func NewSandbox(
 	uffdWait:
 		for {
 			select {
-			case <-time.After(WaitForUffd):
+			case <-time.After(waitForUffd):
 				fmt.Printf("waiting for uffd to initialize")
 				return nil, fmt.Errorf("timeout waiting to uffd to initialize")
 			case <-childCtx.Done():
@@ -269,7 +269,7 @@ func NewSandbox(
 					break uffdWait
 				}
 
-				time.Sleep(UffdCheckInterval)
+				time.Sleep(uffdCheckInterval)
 			}
 		}
 	}

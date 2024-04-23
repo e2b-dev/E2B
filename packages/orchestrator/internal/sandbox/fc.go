@@ -64,7 +64,7 @@ func (fc *fc) wait() error {
 		return fmt.Errorf("process is nil")
 	}
 
-	// When we recover process and the current process is not parent of that process .Wait will usually not work and throw an error.
+	// When we recover process and the current process is not parent of that process. Wait will usually not work and throw an error.
 	for {
 		time.Sleep(processCheckInterval)
 
