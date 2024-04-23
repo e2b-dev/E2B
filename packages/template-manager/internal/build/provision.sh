@@ -33,7 +33,7 @@ Environment=GOTRACEBACK=all
 LimitCORE=infinity
 ExecStart=/bin/bash -l -c "/usr/bin/envd"
 OOMPolicy=continue
-OOMScoreAdjust=-999
+OOMScoreAdjust=-1000
 
 [Install]
 WantedBy=multi-user.target
@@ -119,7 +119,9 @@ Type=simple
 Restart=no
 User=user
 Group=user
+OOMScoreAdjust=200
 ExecStart=/bin/bash -l -c "{{ .StartCmd }}"
+OOMPolicy=kill
 
 [Install]
 WantedBy=multi-user.target
@@ -128,5 +130,28 @@ EOF
   systemctl enable start_cmd
 
 fi
+
+# Add swapfile
+
+fallocate -l 128M /tmp/swapfile
+chmod 600 /tmp/swapfile
+mkswap /tmp/swapfile
+
+cat <<EOF >/etc/systemd/system/swapfile.swap
+[Unit]
+Description=Swap file
+
+[Swap]
+What=/tmp/swapfile
+Priority=1000
+
+[Service]
+ExecStartPre=/bin/bash -c 'echo 1 > /proc/sys/vm/swappiness'
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable swapfile.swap
 
 echo "Finished provisioning script"
