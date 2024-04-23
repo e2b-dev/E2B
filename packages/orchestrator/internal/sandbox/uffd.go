@@ -19,6 +19,7 @@ const (
 	SigkillWaitCheck = 100 * time.Millisecond
 )
 
+// uffdCloseLock is used to prevent multiple uffd processes from being closed at the same time, we had a suspicion that this could have been the cause of the infra restarts.
 var uffdCloseLock sync.Mutex
 
 type uffd struct {
