@@ -78,6 +78,7 @@ job "client-proxy" {
         ports        = [var.client_proxy_health_port_name, var.client_proxy_port_name]
         volumes = [
           "local:/etc/nginx/conf.d",
+          "/var/log/client-proxy:/var/log/nginx"
         ]
       }
 
@@ -93,14 +94,34 @@ map $http_upgrade $conn_upgrade {
   "websocket" "Upgrade";
 }
 
+log_format logger-json escape=json
+'{'
+'"source": "client-proxy",'
+'"time": "$time_iso8601",'
+'"resp_body_size": $body_bytes_sent,'
+'"host": "$http_host",'
+'"address": "$remote_addr",'
+'"request_length": $request_length,'
+'"method": "$request_method",'
+'"uri": "$request_uri",'
+'"status": $status,'
+'"user_agent": "$http_user_agent",'
+'"resp_time": $request_time,'
+'"upstream_addr": "$upstream_addr"'
+'}';
+access_log /var/log/nginx/access.log logger-json;
+
 server {
   listen 3002 default_server;
+
   server_name _;
   return 400 "Unsupported domain";
 }
 [[ range service "session-proxy" ]]
 server {
   listen 3002;
+  access_log /var/log/nginx/access.log logger-json;
+
   server_name ~^(.+)-[[ index .ServiceMeta "Client" | sprig_substr 0 8 ]]\.${local.domain_name_escaped}$;
 
   proxy_set_header Host $host;
@@ -135,6 +156,7 @@ server {
   }
 
   location /status {
+    access_log off;
     stub_status;
     allow all;
   }

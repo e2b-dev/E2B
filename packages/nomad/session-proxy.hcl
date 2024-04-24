@@ -59,12 +59,14 @@ job "session-proxy" {
 
     task "session-proxy" {
       driver = "docker"
+
       config {
         image        = "nginx"
         network_mode = "host"
         ports        = [var.session_proxy_port_name, "status"]
         volumes = [
           "local:/etc/nginx/conf.d",
+          "/var/log/session-proxy:/var/log/nginx"
         ]
       }
 
@@ -95,6 +97,23 @@ map $http_upgrade $conn_upgrade {
   default     "";
   "websocket" "Upgrade";
 }
+
+log_format logger-json escape=json
+'{'
+'"source": "session-proxy",'
+'"time": "$time_iso8601",'
+'"resp_body_size": $body_bytes_sent,'
+'"host": "$http_host",'
+'"address": "$remote_addr",'
+'"request_length": $request_length,'
+'"method": "$request_method",'
+'"uri": "$request_uri",'
+'"status": $status,'
+'"user_agent": "$http_user_agent",'
+'"resp_time": $request_time,'
+'"upstream_addr": "$upstream_addr"'
+'}';
+access_log /var/log/nginx/access.log logger-json;
 
 server {
   listen 3003;
@@ -128,6 +147,7 @@ server {
     if ($dbk_session_id = "") {
       return 400 "Unsupported session domain";
     }
+
     proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
   }
 }
@@ -142,6 +162,7 @@ server {
   }
 
   location /status {
+    access_log off;
     stub_status;
     allow all;
   }
