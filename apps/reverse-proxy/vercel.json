@@ -37,6 +37,11 @@
   ],
   "redirects": [
     {
+      "source": "/careers",
+      "destination": "https://e2bdev.notion.site/Careers-at-E2B-2163f176991f43f69b0984bf2a142920",
+      "permanent": true
+    },
+    {
       "source": "/docs",
       "has": [
         {
