@@ -41,7 +41,7 @@ ExecStart=/bin/bash -l -c "/usr/bin/envd"
 OOMPolicy=continue
 OOMScoreAdjust=-1000
 
-ExecStartPre=/bin/bash -c 'echo 1 > /proc/sys/vm/swappiness && swapon /swap/swapfile'
+ExecStartPre=/bin/bash -c 'echo 0 > /proc/sys/vm/swappiness && swapon /swap/swapfile'
 
 [Install]
 WantedBy=multi-user.target
