@@ -1,4 +1,6 @@
 import { Sandbox } from 'e2b'
+import { config } from 'dotenv'
+config()
 
 const p = `
 import time
