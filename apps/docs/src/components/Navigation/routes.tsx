@@ -97,8 +97,8 @@ export const routes = [
     links: [
       {
         icon: <FileCode strokeWidth={1} size={20} />,
-        title: 'Overview',
-        href: '/code-interpreter/overview',
+        title: 'Installation',
+        href: '/code-interpreter/installation',
       },
       {
         icon: <Terminal strokeWidth={1} size={20} />,
