@@ -22,9 +22,9 @@
     <img alt="Last 1 month downloads for the Python SDK" loading="lazy" width="200" height="20" decoding="async" data-nimg="1"
     style="color:transparent;width:auto;height:100%" src="https://img.shields.io/pypi/dm/e2b?label=PyPI%20Downloads">
   </a>
-  <a href="https://www.npmjs.com/package/@e2b/sdk">
+  <a href="https://www.npmjs.com/package/e2b">
     <img alt="Last 1 month downloads for the Python SDK" loading="lazy" width="200" height="20" decoding="async" data-nimg="1"
-    style="color:transparent;width:auto;height:100%" src="https://img.shields.io/npm/dm/%40e2b/sdk?label=NPM%20Downloads">
+    style="color:transparent;width:auto;height:100%" src="https://img.shields.io/npm/dm/e2b?label=NPM%20Downloads">
   </a>
 </h4>
 
@@ -45,21 +45,26 @@ tools as humans do. For example:
 
 **The E2B sandbox can be connected to any LLM and any AI agent or app.**
 
-## Getting Started & Documentation
+---
+
+### Code interpreter SDK
+We have built a [dedicated SDK](https://github.com/e2b-dev/code-interpreter) for building custom code interpreters in your AI apps. It's build on top of E2B and our core E2B SDK.
+
+### Getting started & documentation
 
 > Please visit [documentation](https://e2b.dev/docs) to get started.
 
 To create and control a sandbox, you use our SDK:
 
-### Python
+**Python**
 
-#### Install SDK
+1. Install SDK
 
 ```bash
 pip install e2b
 ```
 
-#### Start sandbox
+2. Start sandbox
 
 ```py
 from e2b import Sandbox
@@ -74,15 +79,15 @@ sandbox = Sandbox()
 sandbox.close()
 ```
 
-### JavaScript & TypeScript
+**JavaScript & TypeScript**
 
-#### Install SDK
+1. Install SDK
 
 ```bash
 npm install e2b
 ```
 
-#### Start sandbox
+2. Start sandbox
 
 ```js
 import { Sandbox } from "e2b";

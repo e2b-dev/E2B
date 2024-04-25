@@ -26,10 +26,7 @@ from .api import (
     E2BApiClient,
     client,
 )
-from .constants import (
-    SANDBOX_DOMAIN,
-    API_HOST,
-)
+from .constants import DOMAIN
 from .sandbox import (
     Sandbox,
     FilesystemOperation,

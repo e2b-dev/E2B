@@ -1,0 +1,51 @@
+name: Stress test
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Repository changes
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: tests
+        run: |
+          npm install
+          npm install -g @e2b/cli
+
+      - name: Test build
+        working-directory: tests
+        run: ./build.sh
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_ACCESS_TOKEN: ${{ secrets.E2B_ACCESS_TOKEN_STAGING }}
+          E2B_DOMAIN: ${{ secrets.E2B_DOMAIN_STAGING }}
+
+      - name: Test run
+        working-directory: tests
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_ACCESS_TOKEN: ${{ secrets.E2B_ACCESS_TOKEN_STAGING }}
+          E2B_DOMAIN: ${{ secrets.E2B_DOMAIN_STAGING }}
+        run: |
+          npx tsx index.mts

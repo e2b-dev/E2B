@@ -19,7 +19,7 @@ import {
   asTypescript,
   withDelimiter,
 } from 'src/utils/format'
-import { pathOption } from 'src/options'
+import { configOption, pathOption } from 'src/options'
 import {
   defaultDockerfileName,
   fallbackDockerfileName,
@@ -27,25 +27,27 @@ import {
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 import * as child_process from 'child_process'
 
+import { client } from 'src/api'
+
 const templateCheckInterval = 500 // 0.5 sec
 
 const getTemplate = e2b.withAccessToken(
-  e2b.api
+  client.api
     .path('/templates/{templateID}/builds/{buildID}/status')
     .method('get')
     .create(),
 )
 
 const requestTemplateBuild = e2b.withAccessToken(
-  e2b.api.path('/templates').method('post').create(),
+  client.api.path('/templates').method('post').create(),
 )
 
 const requestTemplateRebuild = e2b.withAccessToken(
-  e2b.api.path('/templates/{templateID}').method('post').create(),
+  client.api.path('/templates/{templateID}').method('post').create(),
 )
 
 const triggerTemplateBuild = e2b.withAccessToken(
-  e2b.api
+  client.api
     .path('/templates/{templateID}/builds/{buildID}')
     .method('post')
     .create(),
@@ -86,6 +88,7 @@ export const buildCommand = new commander.Command('build')
     '-c, --cmd <start-command>',
     'specify command that will be executed when the sandbox is started.',
   )
+  .addOption(configOption)
   .option(
     '--cpu-count <cpu-count>',
     'specify the number of CPUs that will be used to run the sandbox. The default value is 2.',
@@ -105,6 +108,7 @@ export const buildCommand = new commander.Command('build')
         dockerfile?: string
         name?: string
         cmd?: string
+        config?: string
         cpuCount?: number
         memoryMb?: number
       },
@@ -124,7 +128,9 @@ export const buildCommand = new commander.Command('build')
         const newName = opts.name?.trim()
         if (newName && !/[a-z0-9-_]+/.test(newName)) {
           console.error(
-            `Name ${asLocal(newName)} is not valid. Name can only contain lowercase letters, numbers, dashes and underscores.`,
+            `Name ${asLocal(
+              newName,
+            )} is not valid. Name can only contain lowercase letters, numbers, dashes and underscores.`,
           )
           process.exit(1)
         }
@@ -135,7 +141,7 @@ export const buildCommand = new commander.Command('build')
         let memoryMB = opts.memoryMb
 
         const root = getRoot(opts.path)
-        const configPath = getConfigPath(root)
+        const configPath = getConfigPath(root, opts.config)
 
         const config = fs.existsSync(configPath)
           ? await loadConfig(configPath)
@@ -148,7 +154,9 @@ export const buildCommand = new commander.Command('build')
             `Found sandbox template ${asFormattedSandboxTemplate(
               {
                 templateID: config.template_id,
-                aliases: config.template_name ? [config.template_name] : undefined,
+                aliases: config.template_name
+                  ? [config.template_name]
+                  : undefined,
               },
               relativeConfigPath,
             )}`,
@@ -174,7 +182,9 @@ export const buildCommand = new commander.Command('build')
           newName !== config?.template_name
         ) {
           console.log(
-            `The sandbox template name will be changed from ${asLocal(config.template_name)} to ${asLocal(newName)}.`,
+            `The sandbox template name will be changed from ${asLocal(
+              config.template_name,
+            )} to ${asLocal(newName)}.`,
           )
         }
         const name = newName || config?.template_name
@@ -201,7 +211,9 @@ export const buildCommand = new commander.Command('build')
         if (opts.memoryMb) {
           if (opts.memoryMb % 2 !== 0) {
             console.error(
-              `The memory in megabytes must be an even number. You provided ${asLocal(opts.memoryMb.toFixed(0))}.`,
+              `The memory in megabytes must be an even number. You provided ${asLocal(
+                opts.memoryMb.toFixed(0),
+              )}.`,
             )
             process.exit(1)
           }
@@ -258,6 +270,7 @@ export const buildCommand = new commander.Command('build')
             stdio: 'inherit',
             cwd: root,
             env: {
+              ...process.env,
               DOCKER_CLI_HINTS: 'false',
             },
           },
@@ -354,7 +367,8 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox
 
 # Start sandbox
-sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.templateID}")
+sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.templateID
+          }")
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview
@@ -365,7 +379,8 @@ sandbox.close()`)
         const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
 
 // Start sandbox
-const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.data.templateID}' })
+const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.data.templateID
+          }' })
 
 // Interact with sandbox. Learn more here:
 // https://e2b.dev/docs/sandbox/overview
@@ -374,7 +389,9 @@ const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0]
 await sandbox.close()`)
 
         const examplesMessage = `You can use E2B Python or JS SDK to spawn sandboxes now.
-Find more here - ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')} in ${asBold('Spawn and control your sandbox')} section.`
+Find more here - ${asPrimary(
+          'https://e2b.dev/docs/guide/custom-sandbox',
+        )} in ${asBold('Spawn and control your sandbox')} section.`
 
         const exampleHeader = boxen.default(examplesMessage, {
           padding: {
@@ -395,7 +412,10 @@ Find more here - ${asPrimary('https://e2b.dev/docs/guide/custom-sandbox')} in ${
           float: 'left',
         })
 
-        const exampleUsage = `${withDelimiter(pythonExample, 'Python SDK')}\n${withDelimiter(typescriptExample, 'JS SDK', true)}`
+        const exampleUsage = `${withDelimiter(
+          pythonExample,
+          'Python SDK',
+        )}\n${withDelimiter(typescriptExample, 'JS SDK', true)}`
 
         console.log(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate({
@@ -515,22 +535,21 @@ async function requestBuildTemplate(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'}`,
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
+        }`,
       )
     }
 
     if (error.code === 404) {
       throw new Error(
-        `Sandbox template you want to build ${
-          templateID ? `(${templateID})` : ''
-        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${
-          hasConfig
-            ? `This could be caused by ${asLocalRelative(
-                configPath,
-              )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
-                configPath,
-              )} and start building the template again.`
-            : ''
+        `Sandbox template you want to build ${templateID ? `(${templateID})` : ''
+        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${hasConfig
+          ? `This could be caused by ${asLocalRelative(
+            configPath,
+          )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
+            configPath,
+          )} and start building the template again.`
+          : ''
         }`,
       )
     }
@@ -564,7 +583,8 @@ async function triggerBuild(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'}`,
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
+        }`,
       )
     }
 

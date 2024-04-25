@@ -7,7 +7,7 @@ from os import path
 from typing import Any, Callable, Dict, List, Literal, Optional, IO, Union
 
 from e2b.api import models
-from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
+from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE, DOMAIN
 from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
 from e2b.sandbox.env_vars import EnvVars
 from e2b.sandbox.filesystem import FilesystemManager
@@ -68,6 +68,7 @@ class Sandbox(SandboxConnection):
         on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
         metadata: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = TIMEOUT,
+        domain: str = DOMAIN,
         _sandbox: Optional[models.Sandbox] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
@@ -92,6 +93,7 @@ class Sandbox(SandboxConnection):
         :param on_exit: A default callback that is called when the process exits
         :param metadata: A dictionary of strings that is stored alongside the running sandbox. You can see this metadata when you list running sandboxes.
         :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
+        :param domain: The domain to use for the API
         """
 
         template = id or template or "base"
@@ -137,6 +139,7 @@ class Sandbox(SandboxConnection):
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,
             timeout=timeout,
+            domain=domain,
         )
 
     def _handle_start_cmd_logs(self):
@@ -162,6 +165,7 @@ class Sandbox(SandboxConnection):
         on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
         timeout: Optional[float] = TIMEOUT,
         api_key: Optional[str] = None,
+        domain: str = DOMAIN,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -178,7 +182,7 @@ class Sandbox(SandboxConnection):
         :param on_exit: A default callback that is called when the process exits
         :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
         :param api_key: The API key to use, if not provided, the `E2B_API_KEY` environment variable is used
-
+        :param domain: The domain to use for the API
 
         ```py
         sandbox = Sandbox()
@@ -203,6 +207,7 @@ class Sandbox(SandboxConnection):
             on_exit=on_exit,
             timeout=timeout,
             api_key=api_key,
+            domain=domain,
             _sandbox=models.Sandbox(
                 sandbox_id=sandbox_id,
                 client_id=client_id,
