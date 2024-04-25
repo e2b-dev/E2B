@@ -4,8 +4,7 @@ import requests
 import threading
 
 from os import path
-from typing import Any, Callable, Dict, List, Literal, Optional, IO, TypeVar, Union
-from typing_extensions import Self
+from typing import Any, Callable, Dict, List, Literal, Optional, IO, Union
 
 from e2b.api import models
 from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE, DOMAIN
@@ -17,14 +16,6 @@ from e2b.sandbox.sandbox_connection import SandboxConnection
 from e2b.sandbox.terminal import TerminalManager
 
 logger = logging.getLogger(__name__)
-
-
-S = TypeVar(
-    "S",
-    bound="Sandbox",
-)
-
-Action = Callable[[S, Dict[str, Any]], str]
 
 
 class Sandbox(SandboxConnection):
@@ -150,89 +141,6 @@ class Sandbox(SandboxConnection):
             timeout=timeout,
             domain=domain,
         )
-        self._actions: Dict[str, Action[Self]] = {}
-
-    def add_action(self, action: Action[Self], name: Optional[str] = None) -> "Sandbox":
-        """
-        Add a new action. If the name is not specified, it is automatically extracted from the function name.
-        An action is a function that takes a sandbox and a dictionary of arguments and returns a string.
-
-        You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
-        :param action: The action to add
-        :param name: The name of the action, if not provided, the name of the function will be used
-
-        Example:
-
-            ```python
-            from e2b import Sandbox
-
-            def read_file(sandbox, args):
-                with open(args["path"], "r") as f:
-                    return sandbox.filesystem.read(args.path)
-
-            s = Sandbox()
-            s.add_action(read_file)
-            s.add_action(name="hello", action=lambda s, args: f"Hello {args['name']}!")
-            ```
-        """
-
-        if not name:
-            name = action.__name__
-
-        self._actions[name] = action
-
-        return self
-
-    def remove_action(self, name: str) -> "Sandbox":
-        """
-        Remove an action.
-
-        :param name: The name of the action
-        """
-        del self._actions[name]
-
-        return self
-
-    @property
-    def actions(self) -> Dict[str, Action[Self]]:
-        """
-        Return a dict of added actions.
-        """
-
-        return self._actions.copy()
-
-    def action(self, name: Optional[str] = None):
-        """
-        Decorator to add an action.
-
-        :param name: The name of the action, if not provided, the name of the function will be used
-        """
-
-        def _action(action: Action[Self]):
-            self.add_action(action=action, name=name or action.__name__)
-
-            return action
-
-        return _action
-
-    @property
-    def openai(self):
-        """
-        OpenAI integration that can be used to get output for the actions added in the sandbox.
-
-        Example:
-
-            ```python
-            from e2b import Sandbox
-
-            s = Sandbox()
-            s.openai.actions.run(run)
-            ```
-        """
-
-        from e2b.templates.openai import OpenAI, Actions
-
-        return OpenAI[Self](Actions[Self](self))
 
     def _handle_start_cmd_logs(self):
         def run_in_thread():
