@@ -270,6 +270,7 @@ export const buildCommand = new commander.Command('build')
             stdio: 'inherit',
             cwd: root,
             env: {
+              ...process.env,
               DOCKER_CLI_HINTS: 'false',
             },
           },
