@@ -7,14 +7,12 @@ import {
   Cpu,
   DollarSign,
   File,
-  FileCode,
   FileDown,
   FileUp,
   Folder,
   FolderTree,
   Hammer,
   HardDrive,
-  HeartHandshake,
   KeyRound,
   Link,
   PencilRuler,
@@ -27,13 +25,46 @@ import {
   Timer,
   Variable,
   Wrench,
+  BookOpen,
 } from 'lucide-react'
+
+import Image from 'next/image'
+import logoNode from '@/images/logos/node.svg'
+import logoPython from '@/images/logos/python.svg'
 
 export const routes = [
   {
-    title: 'Overview',
+    title: 'Getting Started',
     links: [
-      { title: 'Introduction', href: '/' },
+      {
+        title: 'Installation',
+        href: '/',
+      },
+      {
+        title: 'helloWorld.[ts|js]',
+        href: '/hello-world/js',
+        icon: <Image src={logoNode} width={20} height={20} alt="Python logo" />,
+        isFontMono: true,
+      },
+      {
+        title: 'hello_world.py',
+        href: '/hello-world/py',
+        icon: <Image src={logoPython} width={20} height={20} alt="Python logo" />,
+        isFontMono: true,
+      },
+      {
+        title: 'Supported LLMs and AI frameworks',
+        href: '/supported',
+      },
+      // {
+      //   title: 'What\'s Code Interpreting?',
+      //   href: '/code-interpreting',
+      // },
+      {
+        icon: <KeyRound strokeWidth={1} size={20} />,
+        title: 'API Key',
+        href: '/getting-started/api-key',
+      },
       {
         icon: <DollarSign strokeWidth={1} size={20} />,
         title: 'Pricing',
@@ -45,11 +76,6 @@ export const routes = [
         href: '/usage',
       },
       {
-        icon: <HeartHandshake strokeWidth={1} size={20} />,
-        title: 'Open source',
-        href: '/open-source',
-      },
-      {
         icon: <ShieldQuestion strokeWidth={1} size={20} />,
         title: 'Getting help',
         href: '/getting-help',
@@ -57,52 +83,70 @@ export const routes = [
     ],
   },
   {
-    title: 'Getting Started',
+    title: 'Guides',
     links: [
       {
-        icon: <Settings strokeWidth={1} size={20} />,
-        title: 'Installation',
-        href: '/getting-started/installation',
-      },
-      {
-        icon: <KeyRound strokeWidth={1} size={20} />,
-        title: 'API Key',
-        href: '/getting-started/api-key',
+        icon: <BookOpen strokeWidth={1} size={20} />,
+        title: 'E2B Cookbook',
+        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main',
       },
       {
         icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Custom Code Interpreter',
-        href: '/guide/simple-gpt4-code-interpreter',
-        //
-        // title: 'Hello World: Simple AI Junior Developer',
-        // href: '/guide/simple-ai-junior-developer',
+        title: 'Guide: Code Interpreter with Llama-3',
+        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/llama-3-code-interpreter',
       },
       // {
-      //   icon: (
-      //     <Hammer
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: 'Guide: Run LLM-generated code',
+      //   icon: <Hammer strokeWidth={1} size={20} />,
+      //   title: 'Guide: Code Interpreter with OpenAI models',
       //   href: '/guide/simple-gpt4-code-interpreter',
-      //   //
-      //   // title: 'Hello World: Simple AI Junior Developer',
-      //   // href: '/guide/simple-ai-junior-developer',
+      // },
+      {
+        icon: <Hammer strokeWidth={1} size={20} />,
+        title: 'Guide: Code Interpreter with Claude 3 Opus',
+        href: 'https://github.com/e2b-dev/e2b-cookbook/blob/main/examples/claude-code-interpreter/claude_code_interpreter.ipynb',
+      },
+      // {
+      //   icon: <Hammer strokeWidth={1} size={20} />,
+      //   title: 'Guide: Secure Sandbox for Devin-like agent',
+      //   href: '/guide/simple-gpt4-code-interpreter',
+      // },
+      // {
+      //   icon: <Hammer strokeWidth={1} size={20} />,
+      //   title: 'Guide: Generative UI with Next.js',
+      //   href: '/guide/simple-gpt4-code-interpreter',
+      // },
+      {
+        icon: <Hammer strokeWidth={1} size={20} />,
+        title: 'Guide: Add code interpreter to LangChain',
+        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/langchain-python',
+      },
+      {
+        icon: <Hammer strokeWidth={1} size={20} />,
+        title: 'Guide: Add code interpreter to LangGraph',
+        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/langgraph-python',
+      },
+      // {
+      //   icon: <Hammer strokeWidth={1} size={20} />,
+      //   title: 'Guide: Upload and analyze CSV files with AI',
+      //   href: '/guide/simple-gpt4-code-interpreter',
+      // },
+      // {
+      //   icon: <Hammer strokeWidth={1} size={20} />,
+      //   title: 'Guide: Customize sandbox compute (TODO: Move this away from guides?)',
+      //   href: '/guide/simple-gpt4-code-interpreter',
       // },
     ],
   },
   {
-    title: 'Code Interpreter API',
+    title: 'E2B SDK: Code Interpreter',
     links: [
       {
-        icon: <FileCode strokeWidth={1} size={20} />,
         title: 'Installation',
         href: '/code-interpreter/installation',
       },
       {
         icon: <Terminal strokeWidth={1} size={20} />,
-        title: 'Code Execution',
+        title: 'AI Code Execution',
         href: '/code-interpreter/execution',
       },
       {
@@ -112,7 +156,12 @@ export const routes = [
       },
       {
         icon: <Wrench strokeWidth={1} size={20} />,
-        title: 'Extending Code Interpreter',
+        title: 'Supported languages',
+        href: '/code-interpreter/template',
+      },
+      {
+        icon: <Wrench strokeWidth={1} size={20} />,
+        title: 'Customization',
         href: '/code-interpreter/template',
       },
       {
@@ -123,8 +172,22 @@ export const routes = [
     ],
   },
   {
-    title: 'Sandbox API',
+    title: 'E2B SDK: Core Sandbox',
     links: [
+      {
+        title: 'Overview',
+        href: '/sandbox/overview',
+      },
+      {
+        icon: <Cpu strokeWidth={1} size={20} />,
+        title: 'Compute',
+        href: '/sandbox/compute',
+      },
+      {
+        icon: <PencilRuler strokeWidth={1} size={20} />,
+        title: 'Customization',
+        href: '/sandbox/custom',
+      },
       {
         icon: <Variable strokeWidth={1} size={20} />,
         title: 'Environment Variables',
@@ -178,7 +241,7 @@ export const routes = [
     ],
   },
   {
-    title: 'CLI API',
+    title: 'CLI',
     links: [
       {
         icon: <Settings strokeWidth={1} size={20} />,
@@ -189,25 +252,6 @@ export const routes = [
         icon: <TerminalSquare strokeWidth={1} size={20} />,
         title: 'Commands',
         href: '/cli/commands',
-      },
-    ],
-  },
-  {
-    title: 'Sandbox',
-    links: [
-      {
-        title: 'Overview',
-        href: '/sandbox/overview',
-      },
-      {
-        icon: <Cpu strokeWidth={1} size={20} />,
-        title: 'Compute',
-        href: '/sandbox/compute',
-      },
-      {
-        icon: <PencilRuler strokeWidth={1} size={20} />,
-        title: 'Customization',
-        href: '/sandbox/custom',
       },
     ],
   },

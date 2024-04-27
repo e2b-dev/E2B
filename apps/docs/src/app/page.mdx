@@ -5,81 +5,25 @@ import { Button } from '@/components/Button'
 
 <HeroPattern />
 
-# Sandbox for AI Apps & Agents
+# Code interpreting for your AI app
+E2B's [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter) allows you to add code interpreting capabilities to your AI apps. {{ className: 'lead' }}
 
-The E2B Sandbox is a secure way to run your AI app. It is a long-running cloud environment where you can let any LLM (GPTs, Claude, local LLMs, etc) use tools exactly like you would do locally. {{ className: 'lead' }}
+With code interpreting, you can build apps like:
+- AI code execution
+- Data analysis with AI
+- AI tutors
+- Reasoning modules for LLM
 
-
-## How Sandboxes Work
-Under the hood, the sandboxes are general purpose machines powered by Ubuntu. Learn more about all features and comparison to other services [here](/sandbox/overview).
-
-
-## What Can You Build with Sandboxes
-The sandboxes can do majority of the things your AI app or agent can do locally. A few popular use cases are:
-
-- **AI data analysis**
-- **Code interpreter**
-- **Run LLM-generated code**
-- **Coding copilots**
-- **AI-powered browsers in the cloud**
-
-## Quick start
-
-### 1. Create an account
-[Sign in](/sign-in) with your GitHub acccount.
-
-### 2. Get your API key
-After sign in, get [your API key](/getting-started/api-key) and set it in the `E2B_API_KEY` environment variable.
-
-### 3. Install the E2B SDK
-We offer both JS and Python SDK.
-
+## Install Code Interpreter SDK
 <CodeGroup isRunnable={false}>
 ```bash {{ language: 'js' }}
-npm install e2b
+npm i @e2b/code-interpreter
 ```
-
 ```bash {{ language: 'python' }}
-pip install e2b
+pip install e2b_code_interpreter
 ```
 </CodeGroup>
 
-### 4. Start up the sandbox
-Sandbox is an isolated cloud environment for your AI app, agent, assistant, etc.
+## Hello World example
+Check out the [JavaScript](/hello-world/js) and [Python](/hello-world/py) Hello World guides to get started. {{ className: 'lead' }}
 
-<CodeGroup isRunnable={false}>
-```js {{ language: 'js' }}
-// 1. Import E2B
-import { Sandbox } from 'e2b'
-
-// 2. Get your Sandbox session
-const sandbox = await Sandbox.create()
-
-// 3. Close the sandbox once done
-await sandbox.close()
-```
-
-```python {{ language: 'python' }}
-# 1. Import E2B
-from e2b import Sandbox
-
-# 2. Get your Sandbox session
-sandbox = Sandbox()
-
-# 3. Close the sandbox once done
-sandbox.close()
-```
-</CodeGroup>
-
-{/* <Note>
-By default the `base` sandbox supports NodeJS 20 and Python 3.10. If you want customize your sandbox (copy files, install dependencies, etc), check out [Sandbox Templates](/sandbox/templates/custom).
-</Note> */}
-
-### Custom sandboxes
-You can create a custom sandbox with preinstalled libraries and prepared files by creating your own [Sandbox Template](/sandbox/templates/overview).
-
-{/* We offer a few [premade sandbox templates](/sandbox/template/prebuilt) for common use cases such as building code interpreters or AI browser assistans. */}
-
-### 🎉 Build your AI app
-
-Now you can let your AI app control the sandbox by using [Sandbox API](/sandbox/api/envs).
