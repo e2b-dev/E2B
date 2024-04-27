@@ -26,6 +26,7 @@ import {
   Timer,
   Variable,
   Wrench,
+  BookOpen,
 } from 'lucide-react'
 
 import Image from 'next/image'
@@ -86,51 +87,55 @@ export const routes = [
     title: 'Guides',
     links: [
       {
-
-        icon: <Hammer strokeWidth={1} size={20} />,
+        icon: <BookOpen strokeWidth={1} size={20} />,
         title: 'E2B Cookbook',
-        href: '/guide/simple-gpt4-code-interpreter',
+        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main',
       },
       {
         icon: <Hammer strokeWidth={1} size={20} />,
         title: 'Guide: Code Interpreter with Llama-3',
-        href: '/guide/simple-gpt4-code-interpreter',
+        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/llama-3-code-interpreter',
       },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Code Interpreter with OpenAI models',
-        href: '/guide/simple-gpt4-code-interpreter',
-      },
+      // {
+      //   icon: <Hammer strokeWidth={1} size={20} />,
+      //   title: 'Guide: Code Interpreter with OpenAI models',
+      //   href: '/guide/simple-gpt4-code-interpreter',
+      // },
       {
         icon: <Hammer strokeWidth={1} size={20} />,
         title: 'Guide: Code Interpreter with Claude 3 Opus',
-        href: '/guide/simple-gpt4-code-interpreter',
+        href: 'https://github.com/e2b-dev/e2b-cookbook/blob/main/examples/claude-code-interpreter/claude_code_interpreter.ipynb',
+      },
+      // {
+      //   icon: <Hammer strokeWidth={1} size={20} />,
+      //   title: 'Guide: Secure Sandbox for Devin-like agent',
+      //   href: '/guide/simple-gpt4-code-interpreter',
+      // },
+      // {
+      //   icon: <Hammer strokeWidth={1} size={20} />,
+      //   title: 'Guide: Generative UI with Next.js',
+      //   href: '/guide/simple-gpt4-code-interpreter',
+      // },
+      {
+        icon: <Hammer strokeWidth={1} size={20} />,
+        title: 'Guide: Add code interpreter to LangChain',
+        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/langchain-python',
       },
       {
         icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Secure Sandbox for Devin-like agent',
-        href: '/guide/simple-gpt4-code-interpreter',
+        title: 'Guide: Add code interpreter to LangGraph',
+        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/langgraph-python',
       },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Generative UI with Next.js',
-        href: '/guide/simple-gpt4-code-interpreter',
-      },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Usage with LangChain',
-        href: '/guide/simple-gpt4-code-interpreter',
-      },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Upload and analyze CSV files with AI',
-        href: '/guide/simple-gpt4-code-interpreter',
-      },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Customize sandbox compute (TODO: Move this away from guides?)',
-        href: '/guide/simple-gpt4-code-interpreter',
-      },
+      // {
+      //   icon: <Hammer strokeWidth={1} size={20} />,
+      //   title: 'Guide: Upload and analyze CSV files with AI',
+      //   href: '/guide/simple-gpt4-code-interpreter',
+      // },
+      // {
+      //   icon: <Hammer strokeWidth={1} size={20} />,
+      //   title: 'Guide: Customize sandbox compute (TODO: Move this away from guides?)',
+      //   href: '/guide/simple-gpt4-code-interpreter',
+      // },
     ],
   },
   {
