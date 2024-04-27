@@ -28,6 +28,10 @@ import {
   Wrench,
 } from 'lucide-react'
 
+import Image from 'next/image'
+import logoNode from '@/images/logos/node.svg'
+import logoPython from '@/images/logos/python.svg'
+
 export const routes = [
   {
     title: 'Getting Started',
@@ -39,11 +43,13 @@ export const routes = [
       {
         title: 'helloWorld.[js|ts]',
         href: '/hello-world/js',
+        icon: <Image src={logoNode} width={20} height={20} alt="Python logo" />,
         isFontMono: true,
       },
       {
         title: 'hello_world.py',
         href: '/hello-world/py',
+        icon: <Image src={logoPython} width={20} height={20} alt="Python logo" />,
         isFontMono: true,
       },
       {

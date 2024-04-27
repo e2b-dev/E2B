@@ -3,7 +3,7 @@ import imgChart from '@/images/hello-world-chart.png'
 
 
 # Hello World
-This short Python guide will show you basics of E2B:
+This Python guide will show you basics of E2B:
 - Connect the code interpreter to an LLM
 - Prompt the LLM to generate the Python code
 - Execute the AI-generated Python code in a secure E2B sandbox
@@ -139,10 +139,12 @@ Create the `main.py` file, import dependencies, and create the `chat()` function
 
 <CodeGroup isFileName title="main.py" isRunnable={false}>
 ```python {{ language: 'python' }}
+import base64
 from dotenv import load_dotenv
 from anthropic import Anthropic
-from typing import List
+from typing import List, Tuple
 from e2b_code_interpreter import CodeInterpreter, Result
+from e2b_code_interpreter.models import Logs
 
 from e2b_hello_world.model import MODEL_NAME, SYSTEM_PROMPT, tools
 from e2b_hello_world.code_interpreter import code_interpret
@@ -152,7 +154,7 @@ load_dotenv()
 
 client = Anthropic()
 
-def chat(code_interpreter: CodeInterpreter, user_message: str) -> List[Result]:
+def chat(code_interpreter: CodeInterpreter, user_message: str) -> Tuple[List[Result], Logs]:
     print(f"\n{'='*50}\nUser Message: {user_message}\n{'='*50}")
 
     message = client.beta.tools.messages.create(
