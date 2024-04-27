@@ -41,7 +41,7 @@ export const routes = [
         href: '/',
       },
       {
-        title: 'helloWorld.[js|ts]',
+        title: 'helloWorld.[ts|js]',
         href: '/hello-world/js',
         icon: <Image src={logoNode} width={20} height={20} alt="Python logo" />,
         isFontMono: true,
