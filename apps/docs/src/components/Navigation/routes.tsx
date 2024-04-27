@@ -75,11 +75,6 @@ export const routes = [
         title: 'Track usage',
         href: '/usage',
       },
-      // {
-      //   icon: <HeartHandshake strokeWidth={1} size={20} />,
-      //   title: 'Open source',
-      //   href: '/open-source',
-      // },
       {
         icon: <ShieldQuestion strokeWidth={1} size={20} />,
         title: 'Getting help',
@@ -95,17 +90,11 @@ export const routes = [
         icon: <Hammer strokeWidth={1} size={20} />,
         title: 'E2B Cookbook',
         href: '/guide/simple-gpt4-code-interpreter',
-        //
-        // title: 'Hello World: Simple AI Junior Developer',
-        // href: '/guide/simple-ai-junior-developer',
       },
       {
         icon: <Hammer strokeWidth={1} size={20} />,
         title: 'Guide: Code Interpreter with Llama-3',
         href: '/guide/simple-gpt4-code-interpreter',
-        //
-        // title: 'Hello World: Simple AI Junior Developer',
-        // href: '/guide/simple-ai-junior-developer',
       },
       {
         icon: <Hammer strokeWidth={1} size={20} />,
