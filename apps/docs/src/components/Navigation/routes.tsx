@@ -7,7 +7,6 @@ import {
   Cpu,
   DollarSign,
   File,
-  FileCode,
   FileDown,
   FileUp,
   Folder,
@@ -142,7 +141,6 @@ export const routes = [
     title: 'E2B SDK: Code Interpreter',
     links: [
       {
-        icon: <FileCode strokeWidth={1} size={20} />,
         title: 'Installation',
         href: '/code-interpreter/installation',
       },
