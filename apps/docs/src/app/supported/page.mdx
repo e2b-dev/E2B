@@ -1,4 +1,9 @@
 # Supported LLMs and AI frameworks
-<Note>
 E2B is LLM agnostic - it supports any LLM models and any AI frameworks.
+
+Usually, all you need from the model is just support for tool use. You then use the E2B code interpreter as a tool.
+If the LLM doesn't support tool use, you can ask the LLM to respond with Markdown or XML and parse the LLM's output on your own. Then just pass the parsed code from code blocks to the code interpreter.
+
+<Note>
+Check out our [cookbook](https://github.com/e2b-dev/e2b-cookbook) for examples.
 </Note>

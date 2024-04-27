@@ -56,10 +56,10 @@ export const routes = [
         title: 'Supported LLMs and AI frameworks',
         href: '/supported',
       },
-      {
-        title: 'What\'s Code Interpreting?',
-        href: '/code-interpreting',
-      },
+      // {
+      //   title: 'What\'s Code Interpreting?',
+      //   href: '/code-interpreting',
+      // },
       {
         icon: <KeyRound strokeWidth={1} size={20} />,
         title: 'API Key',

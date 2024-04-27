@@ -203,7 +203,14 @@ def main():
 ```
 </CodeGroup>
 
-You should see results similar to this:
+After running your code with the following command
+<CodeGroup isRunnable={false}>
+```bash {{ language: 'bash' }}
+$ python main.py
+```
+</CodeGroup>
+
+you should see results similar to this:
 
 ```sh
 stdout=['The median male height is 175.5 cm\n'] stderr=[]
@@ -217,7 +224,7 @@ We got our median in the logs (`stdout`, and `stderr`) but we also something int
 
 ## 6. Save generated chart
 
-This looks like a plot. Let's save it to a file. Add the following to the end of `main.py`.
+This looks like a plot. Let's save it to a file. Add the following to the end of `main.py` and run the code again with `python main.py` in your terminal.
 <CodeGroup isFileName title="main.py" isRunnable={false}>
 ```python {{ language: 'python' }}
     # If we received a chart in PNG form, we can visualize it

@@ -15,16 +15,16 @@ export const metadata: Metadata = {
   // metadataBase: ''
   title: {
     template: '%s - E2B Docs',
-    default: 'E2B Docs - Runtime Sandbox for LLM Apps',
+    default: 'E2B Docs - Code Interpreting for AI apps',
   },
-  description: 'Sandboxed cloud environments for AI-powered apps and agentic workflows',
+  description: 'Open-source secure sandboxes for AI code execution',
   twitter: {
-    title: 'E2B Docs - Runtime Sandbox for LLM Apps',
-    description: 'Sandboxed cloud environments for AI-powered apps and agentic workflows',
+    title: 'E2B Docs - Code Interpreting for AI apps',
+    description: 'Open-source secure sandboxes for AI code execution',
   },
   openGraph: {
-    title: 'E2B Docs - Runtime Sandbox for LLM Apps',
-    description: 'Sandboxed cloud environments for AI-powered apps and agentic workflows',
+    title: 'E2B Docs - Code Interpreting for AI apps',
+    description: 'Open-source secure sandboxes for AI code execution',
   },
 }
 
