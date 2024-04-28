@@ -14,8 +14,9 @@ generate:
 	# You need to install protobuf (brew install protobuf) and following go packages: protoc-gen-go, protoc-gen-go-grpc
 	# https://grpc.io/docs/languages/go/quickstart/
 	@echo "Generating..."
-	@protoc --go_out=internal/services --go_opt=paths=source_relative spec/*.proto
+	@protoc --go_out=internal/services --go_opt=paths=source_relative --go-grpc_out=internal/services --go-grpc_opt=paths=source_relative spec/*.proto
 	@echo "Done"
+
 
 upload:
 	./upload.sh $(GCP_PROJECT_ID)

@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/e2b-dev/infra/packages/envd/internal/port"
 	"github.com/e2b-dev/infra/packages/envd/internal/ports"
 	"github.com/e2b-dev/infra/packages/envd/internal/process"
+	"github.com/e2b-dev/infra/packages/envd/internal/services"
 	"github.com/e2b-dev/infra/packages/envd/internal/terminal"
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 )
@@ -203,16 +205,32 @@ func main() {
 	// The /file route used for downloading and uploading files via SDK.
 	router.HandleFunc("/file", fileHandler)
 
-	server := &http.Server{
-		ReadTimeout:  300 * time.Second,
-		WriteTimeout: 300 * time.Second,
-		Addr:         fmt.Sprintf("0.0.0.0:%d", serverPort),
-		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(router),
+	// server := &http.Server{
+	// 	ReadTimeout:  300 * time.Second,
+	// 	WriteTimeout: 300 * time.Second,
+	// 	Addr:         fmt.Sprintf("0.0.0.0:%d", serverPort),
+	// 	Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(router),
+	// }
+
+	// logger.Debug("Starting server - port: ", serverPort)
+
+	// if err := server.ListenAndServe(); err != nil {
+	// 	logger.Panicw("Failed to start the server", "error", err)
+	// }
+
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", serverPort))
+	if err != nil {
+		logger.Panicw("failed to listen", "error", err)
 	}
 
-	logger.Debug("Starting server - port: ", serverPort)
+	// Create an instance of our handler which satisfies the generated interface
+	s := services.New(context.Background(), logger.Desugar())
+	defer s.Stop()
 
-	if err := server.ListenAndServe(); err != nil {
-		logger.Panicw("Failed to start the server", "error", err)
+	logger.Debugf("Starting server on port %d", serverPort)
+
+	// There is 15 sec keepalive by default
+	if err := s.Serve(lis); err != nil {
+		logger.Panicw("failed to serve", "error", err)
 	}
 }

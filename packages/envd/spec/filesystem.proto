@@ -3,7 +3,7 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 import "spec/permissions.proto";
 
-option go_package = "github.com/e2b-dev/infra/packages/envd";
+option go_package = "github.com/e2b-dev/infra/packages/envd/spec";
 
 package filesystem;
 
@@ -159,18 +159,20 @@ message WatchRequest {
 }
 
 enum FileType {
-    FILE = 0;
-    DIRECTORY = 1;
-    LINK = 2;
-    SYMLINK = 3;
+    UNKNOWN_FileType = 0;
+    FILE = 1;
+    DIRECTORY = 2;
+    LINK = 3;
+    SYMLINK = 4;
 }
 
 enum EventType {
-    CREATE = 0;
-    WRITE = 1;
-    REMOVE = 2;
-    RENAME = 3;
-    CHMOD = 4;
+    UNKNOWN_EventType = 0;
+    CREATE = 1;
+    WRITE = 2;
+    REMOVE = 3;
+    RENAME = 4;
+    CHMOD = 5;
 }
 
 message FilesystemEvent {

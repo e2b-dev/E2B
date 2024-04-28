@@ -3,7 +3,7 @@ syntax = "proto3";
 import "spec/permissions.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/e2b-dev/infra/packages/envd";
+option go_package = "github.com/e2b-dev/infra/packages/envd/spec";
 
 package process;
 
