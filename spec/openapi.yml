@@ -113,7 +113,7 @@ components:
           type: string
           description: Identifier of the client
 
-    RunningSandboxes:
+    RunningSandbox:
       required:
         - templateID
         - sandboxID
@@ -140,9 +140,13 @@ components:
           description: Time when the sandbox was started
         cpuCount:
           type: integer
+          format: int32
+          minimum: 0
           description: CPU cores for the sandbox
         memoryMB:
           type: integer
+          format: int32
+          minimum: 0
           description: Memory limit for the sandbox in MB
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
@@ -154,6 +158,11 @@ components:
         templateID:
           type: string
           description: Identifier of the required template
+        timeout:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Time to live for the sandbox in seconds.
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
 
@@ -163,7 +172,6 @@ components:
         - buildID
         - cpuCount
         - memoryMB
-        - storageGB
         - public
       properties:
         templateID:
@@ -174,9 +182,13 @@ components:
           description: Identifier of the last successful build for given template
         cpuCount:
           type: integer
+          format: int32
+          minimum: 0
           description: CPU cores for the sandbox
         memoryMB:
           type: integer
+          format: int32
+          minimum: 0
           description: Memory limit for the sandbox in MB
         public:
           type: boolean
@@ -203,10 +215,12 @@ components:
         cpuCount:
           description: CPU cores for the template
           type: integer
+          format: int32
           minimum: 1
         memoryMB:
           description: Memory limit for the template in MB
           type: integer
+          format: int32
           minimum: 128
 
     TemplateBuild:
@@ -278,7 +292,7 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: "#/components/schemas/RunningSandboxes"
+                    - $ref: "#/components/schemas/RunningSandbox"
         401:
           $ref: "#/components/responses/401"
         400:
@@ -322,11 +336,15 @@ paths:
           name: start
           schema:
             type: integer
+            format: int64
+            minimum: 0
           description: Starting timestamp of the logs that should be returned in milliseconds
         - in: query
           name: limit
           schema:
             default: 1000
+            format: int32
+            minimum: 0
             type: integer
           description: Maximum number of logs that should be returned
       responses:
@@ -377,6 +395,7 @@ paths:
                 duration:
                   description: Duration for which the sandbox should be kept alive in seconds
                   type: integer
+                  format: int32
                   maximum: 3600 # 1 hour
                   minimum: 0
       parameters:
@@ -505,6 +524,8 @@ paths:
           schema:
             default: 0
             type: integer
+            format: int32
+            minimum: 0
           description: Index of the starting build log that should be returned with the template
       responses:
         200:
