@@ -1,10 +1,51 @@
 logging:
+  receivers:
+    nomad:
+      type: files
+      include_paths:
+          - /opt/nomad/log/*.log
+    jobs:
+      type: files
+      include_paths:
+          - /opt/nomad/data/alloc/**/alloc/logs/*
+      record_log_file_path: true
+    consul:
+      type: systemd_journald
+  processors:
+    log_filter:
+      type: exclude_logs
+      match_any:
+          - '(jsonPayload._SYSTEMD_UNIT != "consul.service")'
+    parse_json:
+      type: parse_json
+      time_key: "@timestamp"
+      time_format: "%Y-%m-%dT%H:%M:%S.%LZ"
+    modify_fields:
+      type: modify_fields
+      fields:
+        severity:
+          move_from: "jsonPayload.@level"
   service:
     pipelines:
-      default_pipeline:
-        receivers: []
+      pipeline_nomad:
+        receivers: [nomad]
+        processors: [parse_json, modify_fields]
+      pipeline_consul:
+        receivers: [consul]
+        processors: [log_filter]
+      pipeline_jobs:
+        receivers: [jobs]
 metrics:
   receivers:
     hostmetrics:
       type: hostmetrics
-      collection_interval: 300s
+      collection_interval: 10s
+  processors:
+    metrics_filter:
+      type: exclude_metrics
+      metrics_pattern: []
+  service:
+    pipelines:
+      default_pipeline:
+        receivers: [hostmetrics]
+        processors: [metrics_filter]

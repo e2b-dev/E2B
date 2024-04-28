@@ -10,6 +10,70 @@ set -euo pipefail
 # Inspired by https://alestic.com/2010/12/ec2-user-data-output/
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
+ulimit -n 65536
+export GOMAXPROCS='nproc'
+
+# --- Mount the persistent disk with Firecracker environments.
+# See https://cloud.google.com/compute/docs/disks/add-persistent-disk#create_disk
+
+mount_path="/mnt/disks/${DISK_DEVICE_NAME}"
+
+mkdir -p "$mount_path"
+
+# Format the disk if it is not already formatted.
+if [[ $(lsblk -no FSTYPE "/dev/disk/by-id/google-${DISK_DEVICE_NAME}") != "xfs" ]]; then
+    mkfs.xfs "/dev/disk/by-id/google-${DISK_DEVICE_NAME}"
+fi
+
+mount "/dev/disk/by-id/google-${DISK_DEVICE_NAME}" "$mount_path"
+chmod a+w "$mount_path"
+
+# Mount env buckets
+mkdir -p /mnt/disks/envs-pipeline
+gcsfuse -o=allow_other --implicit-dirs "${FC_ENV_PIPELINE_BUCKET_NAME}" /mnt/disks/envs-pipeline
+
+# Copy the envd
+env_pipeline_local_dir="/fc-vm"
+mkdir -p $env_pipeline_local_dir
+sudo cp /mnt/disks/envs-pipeline/envd $env_pipeline_local_dir/envd
+sudo chmod +x $env_pipeline_local_dir/envd
+
+# Copy kernels
+mkdir -p /mnt/disks/fc-kernels
+gcsfuse -o=allow_other --implicit-dirs "${FC_KERNELS_BUCKET_NAME}" /mnt/disks/fc-kernels
+kernels_dir="/fc-kernels"
+mkdir -p $kernels_dir
+cp -r /mnt/disks/fc-kernels/* $kernels_dir
+
+# Copy FC versions
+mkdir -p /mnt/disks/fc-versions
+gcsfuse -o=allow_other --implicit-dirs "${FC_VERSIONS_BUCKET_NAME}" /mnt/disks/fc-versions
+fc_versions_dir="/fc-versions"
+mkdir -p $fc_versions_dir
+cp -r /mnt/disks/fc-versions/* $fc_versions_dir
+chmod +x -R /fc-versions
+
+# These variables are passed in via Terraform template interpolation
+
+gsutil cp "gs://${SCRIPTS_BUCKET}/run-consul-${RUN_CONSUL_FILE_HASH}.sh" /opt/consul/bin/run-consul.sh
+gsutil cp "gs://${SCRIPTS_BUCKET}/run-nomad-${RUN_NOMAD_FILE_HASH}.sh" /opt/nomad/bin/run-nomad.sh
+
+chmod +x /opt/consul/bin/run-consul.sh /opt/nomad/bin/run-nomad.sh
+
+mkdir -p /root/docker
+touch /root/docker/config.json
+cat <<EOF >/root/docker/config.json
+{
+    "auths": {
+        "${GCP_REGION}-docker.pkg.dev": {
+            "username": "_json_key_base64",
+            "password": "${GOOGLE_SERVICE_ACCOUNT_KEY}",
+            "server_address": "https://${GCP_REGION}-docker.pkg.dev"
+        }
+    }
+}
+EOF
+
 # Set up huge pages
 # We are not enabling Transparent Huge Pages for now, as they are not swappable and may result in slowdowns + we are not using swap right now.
 # The THP are by default set to madvise
@@ -70,7 +134,7 @@ echo "- Huge page size: $hugepage_size_in_mib MiB"
 hugepages=$(($hugepages_ram / $hugepage_size_in_mib))
 
 # This percentage will be permanently allocated for huge pages and in monitoring it will be shown as used.
-base_hugepages_percentage=100
+base_hugepages_percentage=20
 base_hugepages=$(($hugepages * $base_hugepages_percentage / 100))
 base_hugepages=$(remove_decimal $base_hugepages)
 echo "- Allocating $base_hugepages huge pages ($base_hugepages_percentage%) for base usage"
@@ -82,85 +146,6 @@ overcommitment_hugepages=$(remove_decimal $overcommitment_hugepages)
 echo "- Allocating $overcommitment_hugepages huge pages ($overcommitment_hugepages_percentage%) for overcommitment"
 echo $overcommitment_hugepages >/proc/sys/vm/nr_overcommit_hugepages
 
-# --- Mount the persistent disk with Firecracker environments.
-# See https://cloud.google.com/compute/docs/disks/add-persistent-disk#create_disk
-
-mount_path="/mnt/disks/${DISK_DEVICE_NAME}"
-
-mkdir -p "$mount_path"
-
-# Format the disk if it is not already formatted.
-if [[ $(lsblk -no FSTYPE "/dev/disk/by-id/google-${DISK_DEVICE_NAME}") != "xfs" ]]; then
-    mkfs.xfs "/dev/disk/by-id/google-${DISK_DEVICE_NAME}"
-fi
-
-mount "/dev/disk/by-id/google-${DISK_DEVICE_NAME}" "$mount_path"
-chmod a+w "$mount_path"
-
-# Mount env buckets
-mkdir -p /mnt/disks/envs-pipeline
-gcsfuse -o=allow_other --implicit-dirs "${FC_ENV_PIPELINE_BUCKET_NAME}" /mnt/disks/envs-pipeline
-
-# Copy the envd
-env_pipeline_local_dir="/fc-vm"
-mkdir -p $env_pipeline_local_dir
-sudo cp /mnt/disks/envs-pipeline/envd $env_pipeline_local_dir/envd
-sudo chmod +x $env_pipeline_local_dir/envd
-
-# Copy kernels
-mkdir -p /mnt/disks/fc-kernels
-gcsfuse -o=allow_other --implicit-dirs "${FC_KERNELS_BUCKET_NAME}" /mnt/disks/fc-kernels
-kernels_dir="/fc-kernels"
-mkdir -p $kernels_dir
-cp -r /mnt/disks/fc-kernels/* $kernels_dir
-
-# Copy FC versions
-mkdir -p /mnt/disks/fc-versions
-gcsfuse -o=allow_other --implicit-dirs "${FC_VERSIONS_BUCKET_NAME}" /mnt/disks/fc-versions
-fc_versions_dir="/fc-versions"
-mkdir -p $fc_versions_dir
-cp -r /mnt/disks/fc-versions/* $fc_versions_dir
-chmod +x -R /fc-versions
-
-# Mount docker contexts
-mkdir -p /mnt/disks/docker-contexts
-gcsfuse -o=allow_other --implicit-dirs "${DOCKER_CONTEXTS_BUCKET_NAME}" /mnt/disks/docker-contexts
-
-# Setup Nomad task drivers
-sudo rm -f /opt/nomad/plugins/env-build-task-driver
-sudo rm -f /opt/nomad/plugins/template-delete-task-driver
-sudo rm -f /opt/nomad/orchestrator
-
-sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver
-sudo chmod +x /opt/nomad/plugins/env-build-task-driver
-
-sudo cp /mnt/disks/envs-pipeline/template-delete-task-driver /opt/nomad/plugins/template-delete-task-driver
-sudo chmod +x /opt/nomad/plugins/template-delete-task-driver
-
-sudo cp /mnt/disks/envs-pipeline/orchestrator /opt/nomad/orchestrator
-sudo chmod +x /opt/nomad/orchestrator
-
 # These variables are passed in via Terraform template interpolation
-
-gsutil cp "gs://${SCRIPTS_BUCKET}/run-consul-${RUN_CONSUL_FILE_HASH}.sh" /opt/consul/bin/run-consul.sh
-gsutil cp "gs://${SCRIPTS_BUCKET}/run-nomad-${RUN_NOMAD_FILE_HASH}.sh" /opt/nomad/bin/run-nomad.sh
-
-chmod +x /opt/consul/bin/run-consul.sh /opt/nomad/bin/run-nomad.sh
-
-mkdir /root/docker
-touch /root/docker/config.json
-cat <<EOF >/root/docker/config.json
-{
-    "auths": {
-        "${GCP_REGION}-docker.pkg.dev": {
-            "username": "_json_key_base64",
-            "password": "${GOOGLE_SERVICE_ACCOUNT_KEY}",
-            "server_address": "https://${GCP_REGION}-docker.pkg.dev"
-        }
-    }
-}
-EOF
-
-# These variables are passed in via Terraform template interpolation
-/opt/consul/bin/run-consul.sh --client --cluster-tag-name "${CLUSTER_TAG_NAME}" --enable-gossip-encryption --gossip-encryption-key "${CONSUL_GOSSIP_ENCRYPTION_KEY}" &
+/opt/consul/bin/run-consul.sh --client --consul-token "${CONSUL_TOKEN}" --cluster-tag-name "${CLUSTER_TAG_NAME}" --enable-gossip-encryption --gossip-encryption-key "${CONSUL_GOSSIP_ENCRYPTION_KEY}" &
 /opt/nomad/bin/run-nomad.sh --client --consul-token "${CONSUL_TOKEN}" &

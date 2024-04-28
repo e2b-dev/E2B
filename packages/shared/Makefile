@@ -16,4 +16,4 @@ diff-migrations:
 
 .PHONY: migrate
 migrate:
-	atlas migrate apply --env local --url $(POSTGRES_CONNECTION_STRING)
+	atlas migrate apply --env local --url $(POSTGRES_CONNECTION_STRING) --baseline "20000101000000"

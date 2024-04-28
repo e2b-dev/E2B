@@ -5,6 +5,10 @@ resource "google_compute_health_check" "nomad_check" {
   healthy_threshold   = 2
   unhealthy_threshold = 10 # 50 seconds
 
+  log_config {
+    enable = true
+  }
+
   http_health_check {
     request_path = "/v1/agent/health"
     port         = var.nomad_port
@@ -88,11 +92,18 @@ resource "google_compute_instance_template" "client" {
   machine_type         = var.machine_type
   min_cpu_platform     = "Intel Skylake"
 
-  labels                  = var.labels
+  labels = merge(
+    var.labels,
+    {
+      goog-ops-agent-policy = "v2-x86-template-1-2-0-${var.gcp_zone}"
+    }
+  )
   tags                    = concat([var.cluster_tag_name], var.custom_tags)
   metadata_startup_script = var.startup_script
   metadata = merge(
     {
+      enable-osconfig                          = "TRUE",
+      enable-guest-attributes                  = "TRUE",
       (var.metadata_key_name_for_cluster_size) = var.cluster_size
     },
     var.custom_metadata,

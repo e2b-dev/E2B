@@ -1,9 +1,0 @@
-*.out
-.plan
-alloc
-plugin
-env-build-task-driver
-
-bin
-__debug_*
-dev-scripts/vmconfig.json

@@ -41,8 +41,6 @@ job "logs-collector" {
   priority = 85
 
   group "collector" {
-    count = 1
-
     network {
       port "health" {
         to = var.logs_health_port_number
@@ -90,8 +88,9 @@ job "logs-collector" {
       }
 
       resources {
-        memory = 256
-        cpu    = 256
+        memory_max = 2048
+        memory = 512
+        cpu    = 512
       }
 
       template {

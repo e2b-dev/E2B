@@ -16,5 +16,5 @@ func (a *gRPCApiKey) GetRequestMetadata(_ context.Context, _ ...string) (map[str
 }
 
 func (a *gRPCApiKey) RequireTransportSecurity() bool {
-	return env.IsProduction()
+	return !env.IsLocal()
 }

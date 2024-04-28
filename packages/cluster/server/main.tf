@@ -1,5 +1,5 @@
 locals {
-  instance_group_update_policy_max_surge_fixed = try(var.instance_group_update_policy_max_surge_fixed, var.cluster_size - 1 ? var.cluster_size : 0)
+  instance_group_update_policy_max_surge_fixed = try(var.instance_group_update_policy_max_surge_fixed, var.cluster_size - 1 ? 1 : 0)
 }
 resource "google_compute_health_check" "nomad_check" {
   name                = "${var.cluster_name}-nomad-check"
@@ -37,7 +37,7 @@ resource "google_compute_instance_group_manager" "server_cluster" {
   update_policy {
     type                    = var.instance_group_update_policy_type
     minimal_action          = var.instance_group_update_policy_minimal_action
-    max_surge_fixed         = var.instance_group_update_policy_max_surge_fixed
+    max_surge_fixed         = local.instance_group_update_policy_max_surge_fixed
     max_surge_percent       = var.instance_group_update_policy_max_surge_percent
     max_unavailable_fixed   = var.instance_group_update_policy_max_unavailable_fixed
     max_unavailable_percent = var.instance_group_update_policy_max_unavailable_percent
@@ -74,13 +74,19 @@ resource "google_compute_instance_template" "server" {
   metadata_startup_script = var.startup_script
   metadata = merge(
     {
+      enable-osconfig                          = "TRUE",
+      enable-guest-attributes                  = "TRUE",
       (var.metadata_key_name_for_cluster_size) = var.cluster_size,
     },
     var.custom_metadata,
   )
 
-  labels = var.labels
-
+  labels = merge(
+    var.labels,
+    {
+      goog-ops-agent-policy = "v2-x86-template-1-2-0-${var.gcp_zone}"
+    }
+  )
   scheduling {
     on_host_maintenance = "MIGRATE"
   }
@@ -122,10 +128,6 @@ resource "google_compute_instance_template" "server" {
   # we need to create a new instance template before we can destroy the old one. Note that any Terraform resource on
   # which this Terraform resource depends will also need this lifecycle statement.
   lifecycle {
-    # DEV ONLY - IGNORE CHANGES TO THE IMAGE
-    ignore_changes = [
-      disk,
-    ]
     create_before_destroy = true
   }
 }

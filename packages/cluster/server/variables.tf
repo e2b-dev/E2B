@@ -3,6 +3,11 @@
 # You must provide a value for each of these parameters.
 # ---------------------------------------------------------------------------------------------------------------------
 
+variable "gcp_zone" {
+  description = "The GCP zone in which the server cluster will be created (e.g. us-central1-a)."
+  type        = string
+}
+
 variable "cluster_name" {
   description = "The name of the server cluster (e.g. server-stage). This variable is used to namespace all resources created by this module."
   type        = string
@@ -111,7 +116,7 @@ variable "instance_group_update_policy_max_surge_percent" {
 variable "instance_group_update_policy_max_unavailable_fixed" {
   description = "The maximum number of instances that can be unavailable during the update process. Conflicts with var.instance_group_update_policy_max_unavailable_percent. It has to be either 0 or at least equal to the number of zones. If fixed values are used, at least one of var.instance_group_update_policy_max_unavailable_fixed or var.instance_group_update_policy_max_surge_fixed must be greater than 0."
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "instance_group_update_policy_max_unavailable_percent" {

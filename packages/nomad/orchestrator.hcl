@@ -12,6 +12,16 @@ variable "consul_token" {
   default = ""
 }
 
+variable "memory_mb" {
+  type    = number
+  default = 1024
+}
+
+variable "cpu_mhz" {
+  type    = number
+  default = 1000
+}
+
 variable "logs_proxy_address" {
   type    = string
   default = ""
@@ -37,16 +47,11 @@ variable "orchestrator_checksum" {
   default = ""
 }
 
-variable "google_service_account_key" {
-  type    = string
-  default = ""
-}
-
 job "orchestrator" {
   type = "system"
   datacenters = [var.gcp_zone]
 
-  priority = 85
+  priority = 90
 
   group "client-orchestrator" {
     network {
@@ -73,8 +78,8 @@ job "orchestrator" {
       driver = "raw_exec"
 
       resources {
-        memory     = 1024
-        cpu        = 1000
+        memory     = var.memory_mb
+        cpu        = var.cpu_mhz
       }
 
       env {
@@ -82,8 +87,7 @@ job "orchestrator" {
         CONSUL_TOKEN       = var.consul_token
         OTEL_TRACING_PRINT = var.otel_tracing_print
         LOGS_PROXY_ADDRESS = var.logs_proxy_address
-        ENVIRONMENT        = "prod"
-        GOOGLE_CREDENTIALS           = var.google_service_account_key
+        ENVIRONMENT        = var.environment
       }
 
       config {

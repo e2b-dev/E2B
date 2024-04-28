@@ -274,6 +274,9 @@ resource "google_compute_backend_service" "default" {
   load_balancing_scheme = "EXTERNAL_MANAGED"
   health_checks         = [google_compute_health_check.default[each.key].self_link]
 
+  log_config {
+    enable = true
+  }
 
   dynamic "backend" {
     for_each = toset(each.value["groups"])

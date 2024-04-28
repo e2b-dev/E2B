@@ -10,11 +10,11 @@ terraform {
     }
     google = {
       source  = "hashicorp/google"
-      version = "5.6.0"
+      version = "5.25.0"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "5.6.0"
+      version = "5.25.0"
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
@@ -112,6 +112,7 @@ module "cluster" {
 
   gcp_project_id             = var.gcp_project_id
   gcp_region                 = var.gcp_region
+  gcp_zone                   = var.gcp_zone
   google_service_account_key = module.init.google_service_account_key
 
   server_cluster_size = var.server_cluster_size
@@ -174,13 +175,15 @@ module "docker_reverse_proxy" {
 module "nomad" {
   source = "./packages/nomad"
 
-  gcp_project_id = var.gcp_project_id
-  gcp_region     = var.gcp_region
-  gcp_zone       = var.gcp_zone
+  gcp_project_id      = var.gcp_project_id
+  gcp_region          = var.gcp_region
+  gcp_zone            = var.gcp_zone
+  client_machine_type = var.client_machine_type
 
   consul_acl_token_secret = module.init.consul_acl_token_secret
   nomad_acl_token_secret  = module.init.nomad_acl_token_secret
   nomad_port              = var.nomad_port
+  otel_tracing_print      = var.otel_tracing_print
 
   # API
   logs_proxy_address                        = "http://${module.cluster.logs_proxy_ip}"
@@ -231,4 +234,7 @@ module "nomad" {
   # Orchestrator
   orchestrator_port           = var.orchestrator_port
   fc_env_pipeline_bucket_name = module.buckets.fc_env_pipeline_bucket_name
+
+  # Template manager
+  template_manager_port = var.template_manager_port
 }

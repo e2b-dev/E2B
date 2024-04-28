@@ -187,8 +187,6 @@ client {
   }
 }
 
-plugin "env-build-task-driver" {}
-plugin "template-delete-task-driver" {}
 plugin "raw_exec" {
   config {
     enabled = true
@@ -233,8 +231,11 @@ plugin "docker" {
   }
 }
 
+log_level = "DEBUG"
+log_json = true
+
 telemetry {
-  collection_interval = "1s"
+  collection_interval = "5s"
   disable_hostname = true
   prometheus_metrics = true
   publish_allocation_metrics = true
@@ -246,8 +247,8 @@ acl {
 }
 
 limits {
-  http_max_conns_per_client = 5000
-  rpc_max_conns_per_client = 5000
+  http_max_conns_per_client = 80
+  rpc_max_conns_per_client = 80
 }
 
 consul {
@@ -283,6 +284,7 @@ numprocs=1
 autostart=true
 autorestart=true
 stopsignal=INT
+minfds=65536
 user=$nomad_user
 EOF
 }
@@ -454,15 +456,15 @@ function run {
 
   generate_supervisor_config "$SUPERVISOR_CONFIG_PATH" "$config_dir" "$data_dir" "$bin_dir" "$log_dir" "$user" "$use_sudo"
 
-# TODO: Let client wait for Nomad servers to start
-#  if [[ "$client" == "true" ]]; then
-#     log_info "Waiting for Nomad servers to start"
-#     while test -z "$(curl -s http://127.0.0.1:4646/v1/agent/leader)"
-#     do
-#       log_info "Nomad servers not yet started. Waiting for 1 second."
-#       sleep 1
-#     done
-#  fi
+  # TODO: Let client wait for Nomad servers to start
+  #  if [[ "$client" == "true" ]]; then
+  #     log_info "Waiting for Nomad servers to start"
+  #     while test -z "$(curl -s http://127.0.0.1:4646/v1/agent/leader)"
+  #     do
+  #       log_info "Nomad servers not yet started. Waiting for 1 second."
+  #       sleep 1
+  #     done
+  #  fi
 
   start_nomad
 

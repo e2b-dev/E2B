@@ -10,7 +10,6 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/auth"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -80,52 +79,4 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDStatus(c *gin.Context, tem
 
 	telemetry.ReportEvent(ctx, "got template build status")
 	c.JSON(http.StatusOK, result)
-}
-
-// PostTemplatesTemplateIDBuildsBuildIDLogs serves to add logs from the Build Driver
-func (a *APIStore) PostTemplatesTemplateIDBuildsBuildIDLogs(c *gin.Context, envID api.TemplateID, buildID string) {
-	ctx := c.Request.Context()
-
-	body, err := utils.ParseBody[api.PostTemplatesTemplateIDBuildsBuildIDLogsJSONRequestBody](ctx, c)
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing body: %s", err))
-
-		err = fmt.Errorf("error when parsing body: %w", err)
-		telemetry.ReportCriticalError(ctx, err)
-
-		return
-	}
-
-	if body.ApiSecret != a.apiSecret {
-		a.sendAPIStoreError(c, http.StatusForbidden, "Invalid api secret")
-
-		err = fmt.Errorf("invalid api secret")
-		telemetry.ReportError(ctx, err)
-
-		return
-	}
-
-	buildUUID, err := uuid.Parse(buildID)
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, "Invalid build id")
-
-		err = fmt.Errorf("invalid build id: %w", err)
-		telemetry.ReportError(ctx, err)
-
-		return
-	}
-
-	err = a.buildCache.Append(envID, buildUUID, body.Logs)
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when saving docker build logs: %s", err))
-
-		errMsg := fmt.Errorf("error when saving docker build logs: %w", err)
-		telemetry.ReportError(ctx, errMsg)
-
-		return
-	}
-
-	telemetry.ReportEvent(ctx, "added docker build log")
-
-	c.JSON(http.StatusCreated, nil)
 }

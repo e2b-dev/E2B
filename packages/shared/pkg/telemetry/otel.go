@@ -77,7 +77,7 @@ func InitOTLPExporter(serviceName, serviceVersion string) func() {
 			cancel()
 
 			if err != nil {
-				log.Printf("Failed to connect to collector: %v", err)
+				log.Printf("Failed to connect to otel collector: %v", err)
 				time.Sleep(retryInterval)
 			} else {
 				break

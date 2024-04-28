@@ -379,6 +379,36 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
+  /sandboxes/{sandboxID}/timeout:
+    post:
+      description: Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.
+      security:
+        - ApiKeyAuth: []
+      tags: [sandboxes]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                duration:
+                  description: Duration in seconds from the current time after which the sandbox should expire
+                  type: integer
+                  format: int32
+                  minimum: 0
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        204:
+          description: Successfully set the sandbox timeout 
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+
   /sandboxes/{sandboxID}/refreshes:
     post:
       description: Refresh the sandbox extending its time to live
@@ -396,7 +426,6 @@ paths:
                   description: Duration for which the sandbox should be kept alive in seconds
                   type: integer
                   format: int32
-                  maximum: 3600 # 1 hour
                   minimum: 0
       parameters:
         - $ref: "#/components/parameters/sandboxID"
@@ -509,38 +538,6 @@ paths:
           $ref: "#/components/responses/401"
         500:
           $ref: "#/components/responses/500"
-
-  /templates/{templateID}/builds/{buildID}/logs:
-    post:
-      description: Add a build log
-      tags: [templates]
-      parameters:
-        - $ref: "#/components/parameters/templateID"
-        - $ref: "#/components/parameters/buildID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - apiSecret
-                - logs
-              properties:
-                apiSecret:
-                  description: API secret
-                  type: string
-                logs:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        201:
-          description: Successfully added log
-        401:
-          $ref: "#/components/responses/401"
-        404:
-          $ref: "#/components/responses/404"
 
   /templates/{templateID}/builds/{buildID}/status:
     get:

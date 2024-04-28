@@ -61,6 +61,7 @@ resource "nomad_job" "api" {
   hcl2 {
     vars = {
       orchestrator_address          = "http://localhost:${var.orchestrator_port}"
+      template_manager_address      = "http://localhost:${var.template_manager_port}"
       loki_address                  = "http://localhost:${var.loki_service_port.port}"
       gcp_zone                      = var.gcp_zone
       api_port_name                 = var.api_port.name
@@ -68,18 +69,10 @@ resource "nomad_job" "api" {
       image_name                    = var.api_docker_image_digest
       postgres_connection_string    = data.google_secret_manager_secret_version.postgres_connection_string.secret_data
       posthog_api_key               = data.google_secret_manager_secret_version.posthog_api_key.secret_data
-      nomad_address                 = "http://localhost:${var.nomad_port}"
-      nomad_token                   = var.nomad_acl_token_secret
       environment                   = var.environment
-      docker_contexts_bucket_name   = var.docker_contexts_bucket_name
-      api_secret                    = var.api_secret
-      google_service_account_secret = var.google_service_account_key
-      gcp_project_id                = var.gcp_project_id
-      gcp_region                    = var.gcp_region
-      gcp_docker_repository_name    = var.custom_envs_repository_name
       analytics_collector_host      = data.google_secret_manager_secret_version.analytics_collector_host.secret_data
       analytics_collector_api_token = data.google_secret_manager_secret_version.analytics_collector_api_token.secret_data
-      otel_tracing_print            = "false"
+      otel_tracing_print            = var.otel_tracing_print
     }
   }
 }
@@ -184,12 +177,17 @@ data "google_storage_bucket_object" "orchestrator" {
 }
 
 
-data "external" "checksum" {
+data "external" "orchestrator_checksum" {
   program = ["bash", "${path.module}/checksum.sh"]
 
   query = {
     base64 = data.google_storage_bucket_object.orchestrator.md5hash
   }
+}
+
+data "google_compute_machine_types" "client" {
+  zone   = var.gcp_zone
+  filter = "name = \"${var.client_machine_type}\""
 }
 
 resource "nomad_job" "orchestrator" {
@@ -201,12 +199,48 @@ resource "nomad_job" "orchestrator" {
       port         = var.orchestrator_port
       environment  = var.environment
       consul_token = var.consul_acl_token_secret
+      cpu_mhz      = floor(data.google_compute_machine_types.client.machine_types[0].guest_cpus * 1.5) * 1000
+      memory_mb    = floor(data.google_compute_machine_types.client.machine_types[0].memory_mb * 0.8 / 1024) * 1024
 
+      bucket_name           = var.fc_env_pipeline_bucket_name
+      orchestrator_checksum = data.external.orchestrator_checksum.result.hex
+      logs_proxy_address    = var.logs_proxy_address
+      otel_tracing_print    = var.otel_tracing_print
+    }
+  }
+}
+
+data "google_storage_bucket_object" "template_manager" {
+  name   = "template-manager"
+  bucket = var.fc_env_pipeline_bucket_name
+}
+
+
+data "external" "template_manager" {
+  program = ["bash", "${path.module}/checksum.sh"]
+
+  query = {
+    base64 = data.google_storage_bucket_object.template_manager.md5hash
+  }
+}
+
+resource "nomad_job" "template_manager" {
+  jobspec = file("${path.module}/template-manager.hcl")
+
+  hcl2 {
+    vars = {
+      gcp_project = var.gcp_project_id
+      gcp_region  = var.gcp_region
+      gcp_zone    = var.gcp_zone
+      port        = var.template_manager_port
+      environment = var.environment
+
+      api_secret                 = var.api_secret
       bucket_name                = var.fc_env_pipeline_bucket_name
+      docker_registry            = var.custom_envs_repository_name
       google_service_account_key = var.google_service_account_key
-      orchestrator_checksum      = data.external.checksum.result.hex
-      logs_proxy_address         = var.logs_proxy_address
-      otel_tracing_print         = "false"
+      template_manager_checksum  = data.external.template_manager.result.hex
+      otel_tracing_print         = var.otel_tracing_print
     }
   }
 }

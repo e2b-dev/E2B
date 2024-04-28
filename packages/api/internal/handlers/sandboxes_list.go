@@ -47,21 +47,21 @@ func (a *APIStore) GetSandboxes(c *gin.Context) {
 		buildsMap[build.ID] = build
 	}
 
-	sandboxes := make([]api.RunningSandboxes, 0)
+	sandboxes := make([]api.RunningSandbox, 0)
 
 	for _, info := range instanceInfo {
 		if *info.TeamID != team.ID {
 			continue
 		}
 
-		instance := api.RunningSandboxes{
+		instance := api.RunningSandbox{
 			ClientID:   info.Instance.ClientID,
 			TemplateID: info.Instance.TemplateID,
 			Alias:      info.Instance.Alias,
 			SandboxID:  info.Instance.SandboxID,
 			StartedAt:  *info.StartTime,
-			CpuCount:   int(buildsMap[*info.BuildID].Vcpu),
-			MemoryMB:   int(buildsMap[*info.BuildID].RAMMB),
+			CpuCount:   int32(buildsMap[*info.BuildID].Vcpu),
+			MemoryMB:   int32(buildsMap[*info.BuildID].RAMMB),
 		}
 
 		if info.Metadata != nil {
