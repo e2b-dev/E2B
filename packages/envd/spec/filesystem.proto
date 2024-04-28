@@ -1,7 +1,9 @@
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
-import "permissions.proto";
+import "spec/permissions.proto";
+
+option go_package = "github.com/e2b-dev/infra/packages/envd";
 
 package filesystem;
 
@@ -44,45 +46,45 @@ message WriteFileChunkRequest {
 
 message CreateFileRequest {
     string path = 1;
-    AccessControl access = 2;
+    permissions.AccessControl access = 2;
 }
 
 message MakeDirRequest {
     string path = 1;
     uint32 mode = 2;
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message CreateLinkRequest {
     string source = 1;
     string destination = 2;
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message CreateSymlinkRequest {
     string source = 1;
     string destination = 2;
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message CopyRequest {
     string source = 1;
     string destination = 2;
     bool recursive = 3;
-    AccessControl access = 4;
+    permissions.AccessControl access = 4;
 }
 
 message ChmodRequest {
     string path = 1;
     uint32 mode = 2;
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message ChownRequest {
     string path = 1;
     uint32 uid = 2;
     uint32 gid = 3;
-    AccessControl access = 4;
+    permissions.AccessControl access = 4;
 }
 
 message ReadFileRequest {
@@ -93,7 +95,7 @@ message ReadFileRequest {
     // If specified, the file is read up to this many bytes.
     optional uint64 length = 4;
 
-    AccessControl access = 5;
+    permissions.AccessControl access = 5;
 }
 
 message ReadFileResponse {
@@ -102,7 +104,7 @@ message ReadFileResponse {
 
 message StatRequest {
     string path = 1;
-    AccessControl access = 2;
+    permissions.AccessControl access = 2;
 }
 
 message StatResponse {
@@ -118,19 +120,19 @@ message WriteFileRequest {
     // If specified, the new data overwrites the existing data with this length at the given byte offset.
     optional uint64 length = 4;
 
-    AccessControl access = 5;
+    permissions.AccessControl access = 5;
 }
 
 message RemoveRequest {
     string path = 1;
     bool all = 2;
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message MoveRequest {
     string source = 1;
     string destination = 2;
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message EntryInfo {
@@ -139,12 +141,12 @@ message EntryInfo {
     uint32 mode = 3;
     uint64 size = 4;
     uint64 last_modified = 5;
-    AccessControl owner = 6;
+    permissions.AccessControl owner = 6;
 }
 
 message ReadDirRequest {
     string path = 1;
-    AccessControl access = 2;
+    permissions.AccessControl access = 2;
 }
 
 message ReadDirResponse {
@@ -153,7 +155,7 @@ message ReadDirResponse {
 
 message WatchRequest {
     string path = 1;
-    AccessControl access = 2;
+    permissions.AccessControl access = 2;
 }
 
 enum FileType {

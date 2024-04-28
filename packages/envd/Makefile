@@ -3,6 +3,20 @@ ENV := $(shell cat ../../.last_used_env || echo "not-set")
 
 client := gcloud compute instances list --format='csv(name)' --project $(GCP_PROJECT_ID) | grep "client"
 
+.PHONY: init
+init:
+	brew install protobuf
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+
+.PHONY: generate
+generate:
+	# You need to install protobuf (brew install protobuf) and following go packages: protoc-gen-go, protoc-gen-go-grpc
+	# https://grpc.io/docs/languages/go/quickstart/
+	@echo "Generating..."
+	@protoc --go_out=internal/services --go_opt=paths=source_relative spec/*.proto
+	@echo "Done"
+
 upload:
 	./upload.sh $(GCP_PROJECT_ID)
 
@@ -49,9 +63,6 @@ start-debug-docker:
 
 stop-debug-docker:
 	docker kill `docker ps -a -q --filter ancestor=envd-debug`
-
-connect-wscat:
-	npx -y wscat -c ws://127.0.0.1:49982/ws
 
 # You run the parametrized command like this:
 # make hostname=s3izkj4c-beba8075.ondevbook.com metric=heap interval=90 run-profiler

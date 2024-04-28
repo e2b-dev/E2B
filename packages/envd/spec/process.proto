@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-option go_package = "https://github.com/e2b-dev/infra/packages/envd";
-
-import "permissions.proto";
+import "spec/permissions.proto";
 import "google/protobuf/empty.proto";
+
+option go_package = "github.com/e2b-dev/infra/packages/envd";
 
 package process;
 
@@ -42,7 +42,7 @@ message ProcessConfig {
 }
 
 message ListRequest {
-    AccessControl access = 1;
+    permissions.AccessControl access = 1;
 }
 
 message ListResponse {
@@ -53,7 +53,7 @@ message StartProcessRequest {
     ProcessConfig process = 1;
     optional PTY pty = 2;
 
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message ResizePTYRequest {
@@ -61,7 +61,7 @@ message ResizePTYRequest {
 
     PTYSize size = 2;
 
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message StartEvent {
@@ -88,7 +88,7 @@ message ProcessEvent {
 message KillRequest {
     uint32 pid = 1;
 
-    AccessControl access = 2;
+    permissions.AccessControl access = 2;
 }
 
 message SendInputRequest {
@@ -96,19 +96,19 @@ message SendInputRequest {
 
     bytes stdin = 2;
 
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message ConnectRequest {
     uint32 pid = 1;
 
-    AccessControl access = 2;
+    permissions.AccessControl access = 2;
 }
 
 message SendInputStreamRequest {
     bytes stdin = 2;
 
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message ConnectStreamRequest {

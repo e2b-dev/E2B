@@ -1,9 +1,11 @@
 syntax = "proto3";
 
-package network;
-
-import "permissions.proto";
+import "spec/permissions.proto";
 import "google/protobuf/empty.proto";
+
+option go_package = "github.com/e2b-dev/infra/packages/envd";
+
+package network;
 
 service Network {
     rpc ConfigurePort(ConfigurePortRequest) returns (google.protobuf.Empty);
@@ -15,11 +17,11 @@ message ConfigurePortRequest {
     uint32 port = 1;
     PortState state = 2;
 
-    AccessControl access = 3;
+    permissions.AccessControl access = 3;
 }
 
 message ListPortsRequest {
-    AccessControl access = 1;
+    permissions.AccessControl access = 1;
 }
 
 message ListPortsResponse {
@@ -29,7 +31,7 @@ message ListPortsResponse {
 message WatchPortsRequest {
     repeated uint32 ports = 1;
 
-    AccessControl access = 2;
+    permissions.AccessControl access = 2;
 }
 
 enum PortState {
