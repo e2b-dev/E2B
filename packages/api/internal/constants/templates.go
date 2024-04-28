@@ -1,10 +1,10 @@
 package constants
 
 const (
-	MinTemplateCPU        = 1
-	MinTemplateMemory     = 128
-	MaxTemplateCPU        = 8
-	MaxTemplateMemory     = 8192
-	DefaultTemplateCPU    = 2
-	DefaultTemplateMemory = 512
+	MinTemplateCPU        = int32(1)
+	MinTemplateMemory     = int32(128)
+	MaxTemplateCPU        = int32(8)
+	MaxTemplateMemory     = int32(8192)
+	DefaultTemplateCPU    = int32(2)
+	DefaultTemplateMemory = int32(512)
 )

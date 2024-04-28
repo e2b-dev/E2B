@@ -34,10 +34,13 @@ type NewSandbox struct {
 
 	// TemplateID Identifier of the required template
 	TemplateID string `json:"templateID"`
+
+	// Timeout Time to live for the sandbox in seconds.
+	Timeout *int32 `json:"timeout,omitempty"`
 }
 
-// RunningSandboxes defines model for RunningSandboxes.
-type RunningSandboxes struct {
+// RunningSandbox defines model for RunningSandbox.
+type RunningSandbox struct {
 	// Alias Alias of the template
 	Alias *string `json:"alias,omitempty"`
 
@@ -45,10 +48,10 @@ type RunningSandboxes struct {
 	ClientID string `json:"clientID"`
 
 	// CpuCount CPU cores for the sandbox
-	CpuCount int `json:"cpuCount"`
+	CpuCount int32 `json:"cpuCount"`
 
 	// MemoryMB Memory limit for the sandbox in MB
-	MemoryMB int              `json:"memoryMB"`
+	MemoryMB int32            `json:"memoryMB"`
 	Metadata *SandboxMetadata `json:"metadata,omitempty"`
 
 	// SandboxID Identifier of the sandbox
@@ -103,10 +106,10 @@ type Template struct {
 	BuildID string `json:"buildID"`
 
 	// CpuCount CPU cores for the sandbox
-	CpuCount int `json:"cpuCount"`
+	CpuCount int32 `json:"cpuCount"`
 
 	// MemoryMB Memory limit for the sandbox in MB
-	MemoryMB int `json:"memoryMB"`
+	MemoryMB int32 `json:"memoryMB"`
 
 	// Public Whether the template is public or only accessible by the team
 	Public bool `json:"public"`
@@ -139,13 +142,13 @@ type TemplateBuildRequest struct {
 	Alias *string `json:"alias,omitempty"`
 
 	// CpuCount CPU cores for the template
-	CpuCount *int `json:"cpuCount,omitempty"`
+	CpuCount *int32 `json:"cpuCount,omitempty"`
 
 	// Dockerfile Dockerfile for the template
 	Dockerfile string `json:"dockerfile"`
 
 	// MemoryMB Memory limit for the template in MB
-	MemoryMB *int `json:"memoryMB,omitempty"`
+	MemoryMB *int32 `json:"memoryMB,omitempty"`
 
 	// StartCmd Start command to execute in the template after the build
 	StartCmd *string `json:"startCmd,omitempty"`
@@ -175,22 +178,28 @@ type N500 = Error
 // GetSandboxesSandboxIDLogsParams defines parameters for GetSandboxesSandboxIDLogs.
 type GetSandboxesSandboxIDLogsParams struct {
 	// Start Starting timestamp of the logs that should be returned in milliseconds
-	Start *int `form:"start,omitempty" json:"start,omitempty"`
+	Start *int64 `form:"start,omitempty" json:"start,omitempty"`
 
 	// Limit Maximum number of logs that should be returned
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+	Limit *int32 `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // PostSandboxesSandboxIDRefreshesJSONBody defines parameters for PostSandboxesSandboxIDRefreshes.
 type PostSandboxesSandboxIDRefreshesJSONBody struct {
 	// Duration Duration for which the sandbox should be kept alive in seconds
-	Duration *int `json:"duration,omitempty"`
+	Duration *int32 `json:"duration,omitempty"`
+}
+
+// PostSandboxesSandboxIDTimeoutJSONBody defines parameters for PostSandboxesSandboxIDTimeout.
+type PostSandboxesSandboxIDTimeoutJSONBody struct {
+	// Duration Duration in seconds from the current time after which the sandbox should expire
+	Duration *int32 `json:"duration,omitempty"`
 }
 
 // GetTemplatesTemplateIDBuildsBuildIDStatusParams defines parameters for GetTemplatesTemplateIDBuildsBuildIDStatus.
 type GetTemplatesTemplateIDBuildsBuildIDStatusParams struct {
 	// LogsOffset Index of the starting build log that should be returned with the template
-	LogsOffset *int `form:"logsOffset,omitempty" json:"logsOffset,omitempty"`
+	LogsOffset *int32 `form:"logsOffset,omitempty" json:"logsOffset,omitempty"`
 }
 
 // PostSandboxesJSONRequestBody defines body for PostSandboxes for application/json ContentType.
@@ -198,6 +207,9 @@ type PostSandboxesJSONRequestBody = NewSandbox
 
 // PostSandboxesSandboxIDRefreshesJSONRequestBody defines body for PostSandboxesSandboxIDRefreshes for application/json ContentType.
 type PostSandboxesSandboxIDRefreshesJSONRequestBody PostSandboxesSandboxIDRefreshesJSONBody
+
+// PostSandboxesSandboxIDTimeoutJSONRequestBody defines body for PostSandboxesSandboxIDTimeout for application/json ContentType.
+type PostSandboxesSandboxIDTimeoutJSONRequestBody PostSandboxesSandboxIDTimeoutJSONBody
 
 // PostTemplatesJSONRequestBody defines body for PostTemplates for application/json ContentType.
 type PostTemplatesJSONRequestBody = TemplateBuildRequest

@@ -69,7 +69,7 @@ func (c *InstanceCache) GetInstances(teamID *uuid.UUID) (instances []InstanceInf
 
 // Add the instance to the cache and start expiration timer.
 // If the instance already exists we do nothing - it was loaded from Orchestrator.
-func (c *InstanceCache) Add(instance InstanceInfo) error {
+func (c *InstanceCache) Add(instance InstanceInfo, timeout *int32) error {
 	if instance.StartTime == nil {
 		now := time.Now()
 		instance.StartTime = &now
@@ -79,7 +79,13 @@ func (c *InstanceCache) Add(instance InstanceInfo) error {
 		return fmt.Errorf("instance %+v (%+v) is missing team ID, instance ID, client ID, or env ID ", instance, instance.Instance)
 	}
 
-	c.cache.Set(instance.Instance.SandboxID, instance, ttlcache.DefaultTTL)
+	// TODO: Handle the need to pass timeout when recovering sandboxes after orchestrator restart — we need to save the info about the timeout in the cache too.
+	t := ttlcache.DefaultTTL
+	if timeout != nil {
+		t = time.Duration(*timeout) * time.Second
+	}
+
+	c.cache.Set(instance.Instance.SandboxID, instance, t)
 	c.UpdateCounter(instance, 1)
 
 	// Release the reservation if it exists

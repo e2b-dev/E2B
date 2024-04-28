@@ -19,8 +19,10 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-const defaultRequestLimit = 16
-const InstanceIDPrefix = "i"
+const (
+	defaultRequestLimit = 16
+	InstanceIDPrefix    = "i"
+)
 
 var postSandboxParallelLimit = semaphore.NewWeighted(defaultRequestLimit)
 
@@ -151,7 +153,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		TeamID:            &team.ID,
 		Metadata:          metadata,
 		MaxInstanceLength: time.Duration(team.Edges.TeamTier.MaxLengthHours) * time.Hour,
-	}); cacheErr != nil {
+	}, body.Timeout); cacheErr != nil {
 		errMsg := fmt.Errorf("error when adding instance to cache: %w", cacheErr)
 		telemetry.ReportError(ctx, errMsg)
 

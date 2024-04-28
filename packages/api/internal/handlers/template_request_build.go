@@ -110,11 +110,11 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 	}
 
 	if body.CpuCount != nil {
-		telemetry.SetAttributes(ctx, attribute.Int("env.cpu", *body.CpuCount))
+		telemetry.SetAttributes(ctx, attribute.Int("env.cpu", int(*body.CpuCount)))
 	}
 
 	if body.MemoryMB != nil {
-		telemetry.SetAttributes(ctx, attribute.Int("env.memory_mb", *body.MemoryMB))
+		telemetry.SetAttributes(ctx, attribute.Int("env.memory_mb", int(*body.MemoryMB)))
 	}
 
 	cpuCount, ramMB, apiError := getCPUAndRAM(tier.ID, body.CpuCount, body.MemoryMB)
@@ -321,7 +321,7 @@ func (a *APIStore) TemplateRequestBuild(c *gin.Context, templateID api.TemplateI
 	}
 }
 
-func getCPUAndRAM(tierID string, cpuCount, memoryMB *int) (int64, int64, *api.APIError) {
+func getCPUAndRAM(tierID string, cpuCount, memoryMB *int32) (int64, int64, *api.APIError) {
 	cpu := constants.DefaultTemplateCPU
 	ramMB := constants.DefaultTemplateMemory
 

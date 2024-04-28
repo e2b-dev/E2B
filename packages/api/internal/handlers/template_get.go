@@ -55,8 +55,8 @@ func (a *APIStore) GetTemplates(c *gin.Context) {
 		templates = append(templates, &api.Template{
 			TemplateID: item.TemplateID,
 			BuildID:    item.BuildID,
-			CpuCount:   int(item.VCPU),
-			MemoryMB:   int(item.RAMMB),
+			CpuCount:   int32(item.VCPU),
+			MemoryMB:   int32(item.RAMMB),
 			Public:     item.Public,
 			Aliases:    item.Aliases,
 		})
