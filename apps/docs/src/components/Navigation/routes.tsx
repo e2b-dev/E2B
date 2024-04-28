@@ -138,7 +138,7 @@ export const routes = [
     ],
   },
   {
-    title: 'E2B SDK: Code Interpreter',
+    title: 'E2B Code Interpreter',
     links: [
       {
         title: 'Installation',
@@ -172,7 +172,7 @@ export const routes = [
     ],
   },
   {
-    title: 'E2B SDK: Core Sandbox',
+    title: 'E2B Sandbox',
     links: [
       {
         title: 'Overview',
