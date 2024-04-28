@@ -13,6 +13,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/rs/xid v1.5.0
 	go.uber.org/zap v1.26.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
