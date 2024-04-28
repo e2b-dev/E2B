@@ -1,6 +1,5 @@
 import {
   BarChart,
-  Book,
   Braces,
   ChevronRightSquare,
   Cog,
@@ -149,16 +148,16 @@ export const routes = [
         title: 'AI Code Execution',
         href: '/code-interpreter/execution',
       },
-      {
-        icon: <Book strokeWidth={1} size={20} />,
-        title: 'Examples',
-        href: '/code-interpreter/examples',
-      },
-      {
-        icon: <Wrench strokeWidth={1} size={20} />,
-        title: 'Supported languages',
-        href: '/code-interpreter/template',
-      },
+      // {
+      //   icon: <Book strokeWidth={1} size={20} />,
+      //   title: 'Streaming',
+      //   href: '/code-interpreter/examples',
+      // },
+      // {
+      //   icon: <Wrench strokeWidth={1} size={20} />,
+      //   title: 'Supported languages',
+      //   href: '/code-interpreter/template',
+      // },
       {
         icon: <Wrench strokeWidth={1} size={20} />,
         title: 'Customization',
