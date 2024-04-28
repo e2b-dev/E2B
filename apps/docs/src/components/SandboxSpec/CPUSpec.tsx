@@ -1,5 +1,6 @@
 export interface CPUValue {
   value: number
+  isDefault?: boolean
   plan: 'Hobby / Pro' | 'Pro'
 }
 
@@ -23,17 +24,20 @@ function CPUSpec({
       </div>
 
       <div className="flex flex-col items-start justify-start w-full">
-        {cpuVals.map((val) => (
+        {cpuVals.map((cpuVal) => (
           <div
-            key={val.value}
+            key={cpuVal.value}
             className="flex items-center justify-between w-full p-2 border-b border-white/10"
           >
             <div className="flex items-center justify-start space-between w-full w-[300px]">
-              <span className="text-sm flex-1 font-mono text-left">{val.value}</span>
-              <span className="text-sm font-mono text-left w-[150px]">{val.plan}</span>
+              <div className="flex flex-1 items-center justify-start space-between">
+                <span className="text-sm font-mono text-left">{cpuVal.value}</span>
+                {cpuVal.isDefault && <span className="text-sm font-mono font-semibold text-green-500 text-left ml-1">[default]</span>}
+              </div>
+              <span className="text-sm font-mono text-left w-[150px]">{cpuVal.plan}</span>
             </div>
 
-            <span className="text-sm font-mono text-right">${(val.value * cpuPrice).toFixed(6)}/s</span>
+            <span className="text-sm font-mono text-right">${(cpuVal.value * cpuPrice).toFixed(6)}/s</span>
           </div>
         ))}
       </div>

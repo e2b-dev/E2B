@@ -1,5 +1,6 @@
 export interface Props {
   ramPrice: number
+  isDefault?: boolean
 }
 
 function RAMSpec({
@@ -22,7 +23,10 @@ function RAMSpec({
           >
             {/* Hobby */}
             <div className="flex items-center justify-end py-2 pl-2">
-              <span className="text-sm flex-1 font-mono text-left w-[350px]">512 MiB</span>
+              <div className="flex flex-1 items-center justify-start space-between w-[350px]">
+                <span className="text-sm font-mono text-left">512 MiB</span>
+                <span className="text-sm font-mono font-semibold text-green-500 text-left ml-1">[default]</span>
+              </div>
               <span className="text-sm font-mono text-left w-[95px]">Hobby / Pro</span>
             </div>
           </div>

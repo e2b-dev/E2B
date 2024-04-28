@@ -10,6 +10,7 @@ const cpuVals: CPUValue[] = [
   },
   {
     value: 2,
+    isDefault: true,
     plan: 'Hobby / Pro',
   },
   {
