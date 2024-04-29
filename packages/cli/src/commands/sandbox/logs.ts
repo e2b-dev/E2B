@@ -85,11 +85,14 @@ enum LogFormat {
   PRETTY = 'pretty',
 }
 
-const userLoggers = [
-  'filesystem',
-  'filesystem.dirWatcher',
-  'process',
-]
+enum LogService {
+  PROCESS = 'process',
+  FILESYSTEM = 'filesystem',
+  TERMINAL = 'terminal',
+  NETWORK = 'network',
+  SYSTEM = 'system',
+}
+
 
 function cleanLogger(logger?: string) {
   if (!logger) {
@@ -103,17 +106,15 @@ export const logsCommand = new commander.Command('logs')
   .description('show logs for sandbox')
   .argument('<sandboxID>', `show logs for sandbox specified by ${asBold('<sandboxID>')}`)
   .alias('lg')
-  .option('-l, --level <level>', `filter logs by level (${formatEnum(LogLevel)})`, LogLevel.DEBUG)
+  .option('-l, --level <level>', `filter logs by level (${formatEnum(LogLevel)})`, LogLevel.INFO)
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option('--format <format>', `specify format for printing logs (${formatEnum(LogFormat)})`, LogFormat.PRETTY)
-  .option('--s <services>, --service <services>', 'filter logs by service', 'all')
-  .option('-a, --all', 'print all logs, including both the internal logs and logs from user actions')
+  .option('--s <services...>, --service <services...>', `filter logs by service (${formatEnum(LogService)})`, [LogService.PROCESS, LogService.FILESYSTEM])
   .action(async (sandboxID: string, opts?: {
     level: string,
     follow: boolean,
-    format: string,
-    all: boolean,
-    services: string,
+    format: LogFormat,
+    services: LogService[],
   }) => {
     try {
       const level = opts?.level.toUpperCase() as LogLevel | undefined
@@ -150,7 +151,7 @@ export const logsCommand = new commander.Command('logs')
           }
 
           for (const log of logs) {
-            printLog(log.timestamp, log.line, level, format, opts?.all)
+            printLog(log.timestamp, log.line, level, format, opts?.services)
           }
 
           const isRunning = await isRunningPromise
@@ -205,13 +206,14 @@ export const logsCommand = new commander.Command('logs')
     }
   })
 
-function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined, printAll: boolean | undefined) {
+function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined, allowedLoggers: LogService[]) {
   const log = JSON.parse(line)
   let level = log['level'].toUpperCase()
 
   log.logger = cleanLogger(log.logger)
 
-  if (!printAll && (!userLoggers.includes(log.logger) || !log.logger)) {
+  // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all services.
+  if (!allowedLoggers.some(allowedLogger => log.logger.startsWith(allowedLogger)) && allowedLoggers.length > 0) {
     return
   }
 
