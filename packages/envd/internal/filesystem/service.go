@@ -26,7 +26,7 @@ type Service struct {
 }
 
 func NewService(logger *zap.SugaredLogger) (*Service, error) {
-	dwatcher, err := fswatcher.NewDirWatcher(logger.Named("dirWatcher"))
+	dwatcher, err := fswatcher.NewDirWatcher(logger.Named("watcher"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new dir watcher")
 	}

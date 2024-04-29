@@ -124,7 +124,7 @@ func main() {
 		panic(err)
 	}
 
-	logger = l
+	logger = l.Named("system")
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -147,7 +147,7 @@ func main() {
 
 	clock := clock.NewService(logger.Named("clock"))
 
-	ports := ports.NewService(logger.Named("codeSnippet"), portScanner)
+	ports := ports.NewService(logger.Named("network"), portScanner)
 	// WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK
 	if err := rpcServer.RegisterName("codeSnippet", ports); err != nil {
 		logger.Panicw("failed to register ports service", "error", err)
