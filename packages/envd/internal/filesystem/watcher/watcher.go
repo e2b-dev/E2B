@@ -102,6 +102,10 @@ func (dw *DirWatcher) watchLoop() {
 				continue
 			}
 
+			dw.logger.Infow("Filesystem watched event",
+				"event", ourEvent,
+			)
+
 			dw.Events <- ourEvent
 		}
 	}
@@ -187,7 +191,7 @@ func (dw *DirWatcher) addToWatcher(dirpath string) error {
 		if err := dw.watcher.Add(dirpath); err != nil {
 			dw.removeFromWatchedDirs(dirpath)
 			dw.logger.Errorw(
-				"failed to add path to watcher",
+				"Failed to add path to watcher",
 				"path", dirpath,
 				"WatchList", dw.watcher.WatchList(),
 				"watchedDirs", dw.watchedDirs,
@@ -220,7 +224,7 @@ func (dw *DirWatcher) Add(dirpath string) error {
 
 func (dw *DirWatcher) Remove(dirpath string) error {
 	dw.logger.Infow(
-		"will try to remove path from WatchList",
+		"Removing path from WatchList",
 		"path", dirpath,
 		"watchList", dw.watcher.WatchList(),
 		"watchedDirs", dw.watchedDirs,
