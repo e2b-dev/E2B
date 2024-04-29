@@ -14,9 +14,6 @@ service Filesystem {
     rpc ReadFile(ReadFileRequest) returns (stream ReadFileResponse);
     rpc WriteFile(WriteFileRequest) returns (google.protobuf.Empty);
 
-    // Not available in browser
-    rpc WriteFileStream(stream WriteFileStreamRequest) returns (google.protobuf.Empty);
-
     rpc MakeDir(MakeDirRequest) returns (google.protobuf.Empty);
     rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
     
@@ -33,26 +30,19 @@ service Filesystem {
     rpc Copy(CopyRequest) returns (google.protobuf.Empty);
 }
 
-message WriteFileStreamRequest {
-    oneof request {
-        WriteFileRequest write_file_request = 10;
-        WriteFileChunkRequest write_file_chunk_request = 11;
-    }
-}
-
-message WriteFileChunkRequest {
-    bytes data = 1;
-}
-
 message CreateFileRequest {
     string path = 1;
-    permissions.AccessControl access = 2;
+    bool create_parents = 2;
+    
+    permissions.AccessControl access = 3;
 }
 
 message MakeDirRequest {
     string path = 1;
-    uint32 mode = 2;
-    permissions.AccessControl access = 3;
+    bool create_parents = 2;
+    uint32 mode = 3;
+
+    permissions.AccessControl access = 4;
 }
 
 message CreateLinkRequest {
@@ -115,12 +105,15 @@ message WriteFileRequest {
     string path = 1;
     bytes data = 2;
 
-    // If specified, the file is written at the given byte offset.
-    optional uint64 offset = 3;
-    // If specified, the new data overwrites the existing data with this length at the given byte offset.
-    optional uint64 length = 4;
+    bool create_if_not_exists = 3;
+    bool append = 4;
 
-    permissions.AccessControl access = 5;
+    // If specified, the file is written at the given byte offset.
+    optional uint64 offset = 5;
+    // If specified, the new data overwrites the existing data with this length at the given byte offset.
+    optional uint64 length = 6;
+
+    permissions.AccessControl access = 6;
 }
 
 message RemoveRequest {

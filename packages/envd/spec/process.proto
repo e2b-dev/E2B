@@ -13,11 +13,6 @@ service Process {
     rpc Connect(ConnectRequest) returns (stream ProcessEvent);
     rpc Start(StartProcessRequest) returns (stream ProcessEvent);
 
-    // Not available in browser
-    rpc ConnectStream(stream ConnectStreamRequest) returns (stream ProcessEvent);
-    // Not available in browser
-    rpc StartStream(stream StartStreamRequest) returns (stream ProcessEvent);
-
     rpc SendInput(SendInputRequest) returns (google.protobuf.Empty);
     rpc Kill(KillRequest) returns (google.protobuf.Empty);
 
@@ -75,6 +70,7 @@ message DataEvent {
 
 message EndEvent {
     sint32 exitCode = 1;
+    optional string error = 2;
 }
 
 message ProcessEvent {
@@ -109,19 +105,4 @@ message SendInputStreamRequest {
     bytes stdin = 2;
 
     permissions.AccessControl access = 3;
-}
-
-message ConnectStreamRequest {
-    oneof request {
-        ConnectRequest connect_request = 10;
-        SendInputStreamRequest send_input_request = 11;
-    }
-}
-
-message StartStreamRequest {
-    oneof request {
-        StartProcessRequest start_process_request = 10;
-        SendInputStreamRequest send_input_request = 11;
-        ResizePTYRequest resize_pty_request = 12;
-    }
 }
