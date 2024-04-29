@@ -34,7 +34,7 @@ func main() {
 		return
 	}
 
-	if env.IsProduction() {
+	if !env.IsLocal() {
 		shutdown := telemetry.InitOTLPExporter(constants.ServiceName, "no")
 		defer shutdown()
 	}
@@ -44,7 +44,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	logger, err := logging.New(env.IsProduction())
+	logger, err := logging.New(env.IsLocal())
 	if err != nil {
 		log.Fatalf("Error initializing logging\n: %v\n", err)
 	}

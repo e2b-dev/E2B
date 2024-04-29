@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -18,15 +18,6 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-const (
-	fcVersionsDir  = "/fc-versions"
-	kernelDir      = "/fc-kernels"
-	kernelMountDir = "/fc-vm"
-	kernelName     = "vmlinux.bin"
-	uffdBinaryName = "uffd"
-	fcBinaryName   = "firecracker"
-)
-
 func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequest) (*orchestrator.SandboxCreateResponse, error) {
 	childCtx, childSpan := s.tracer.Start(ctx, "sandbox-create")
 
@@ -38,25 +29,13 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 		attribute.String("client.id", constants.ClientID),
 	)
 
-	sbx, err := sandbox.New(
+	sbx, err := sandbox.NewSandbox(
 		childCtx,
 		s.tracer,
 		s.consul,
-		&sandbox.InstanceConfig{
-			TemplateID:            req.Sandbox.TemplateID,
-			SandboxID:             req.Sandbox.SandboxID,
-			TraceID:               childSpan.SpanContext().TraceID().String(),
-			TeamID:                req.Sandbox.TeamID,
-			KernelVersion:         req.Sandbox.KernelVersion,
-			KernelsDir:            kernelDir,
-			KernelMountDir:        kernelMountDir,
-			KernelName:            kernelName,
-			HugePages:             req.Sandbox.HugePages,
-			UFFDBinaryPath:        filepath.Join(fcVersionsDir, req.Sandbox.FirecrackerVersion, uffdBinaryName),
-			FirecrackerBinaryPath: filepath.Join(fcVersionsDir, req.Sandbox.FirecrackerVersion, fcBinaryName),
-		},
 		s.dns,
 		req.Sandbox,
+		childSpan.SpanContext().TraceID().String(),
 	)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create sandbox: %w", err)
@@ -69,15 +48,19 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 
 	go func() {
 		tracer := otel.Tracer("close")
-
+		closeCtx, _ := tracer.Start(ctx, "close-sandbox")
+		defer telemetry.ReportEvent(closeCtx, "sandbox closed")
 		defer s.sandboxes.Remove(req.Sandbox.SandboxID)
 		defer sbx.CleanupAfterFCStop(context.Background(), tracer, s.consul, s.dns)
 
-		err := sbx.FC.Wait()
+		err := sbx.Wait(context.Background(), tracer)
 		if err != nil {
-			errMsg := fmt.Errorf("failed to wait for FC: %w", err)
-			telemetry.ReportCriticalError(ctx, errMsg)
+			errMsg := fmt.Errorf("failed to wait for Sandbox: %w", err)
+			telemetry.ReportCriticalError(closeCtx, errMsg)
 		}
+
+		// Wait before removing all resources (see defers above)
+		time.Sleep(1 * time.Second)
 	}()
 
 	return &orchestrator.SandboxCreateResponse{
@@ -126,13 +109,7 @@ func (s *server) Delete(ctx context.Context, in *orchestrator.SandboxRequest) (*
 		return nil, status.New(codes.NotFound, errMsg.Error()).Err()
 	}
 
-	err := sbx.FC.Stop(ctx, s.tracer)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to stop FC: %w", err)
+	sbx.Stop(ctx, s.tracer)
 
-		telemetry.ReportCriticalError(ctx, errMsg)
-		return nil, status.New(codes.Internal, errMsg.Error()).Err()
-	}
-
-	return nil, err
+	return nil, nil
 }

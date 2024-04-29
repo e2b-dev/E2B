@@ -18,6 +18,12 @@ ExecStart=
 ExecStart=-/sbin/agetty --noissue --autologin root %I 115200,38400,9600 vt102
 EOF
 
+# Add swapfile — we enable it in the preexec for envd
+mkdir /swap
+fallocate -l 128M /swap/swapfile
+chmod 600 /swap/swapfile
+mkswap /swap/swapfile
+
 # Set up envd service.
 mkdir -p /etc/systemd/system
 cat <<EOF >/etc/systemd/system/envd.service
@@ -33,7 +39,9 @@ Environment=GOTRACEBACK=all
 LimitCORE=infinity
 ExecStart=/bin/bash -l -c "/usr/bin/envd"
 OOMPolicy=continue
-OOMScoreAdjust=-999
+OOMScoreAdjust=-1000
+
+ExecStartPre=/bin/bash -c 'echo 0 > /proc/sys/vm/swappiness && swapon /swap/swapfile'
 
 [Install]
 WantedBy=multi-user.target
@@ -119,7 +127,9 @@ Type=simple
 Restart=no
 User=user
 Group=user
+OOMScoreAdjust=200
 ExecStart=/bin/bash -l -c "{{ .StartCmd }}"
+OOMPolicy=kill
 
 [Install]
 WantedBy=multi-user.target

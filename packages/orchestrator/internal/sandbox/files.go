@@ -27,7 +27,7 @@ const (
 	socketWaitTimeout = 2 * time.Second
 )
 
-type InstanceFiles struct {
+type SandboxFiles struct {
 	UFFDSocketPath *string
 
 	EnvPath      string
@@ -69,7 +69,7 @@ func waitForSocket(socketPath string, timeout time.Duration) error {
 	}
 }
 
-func newInstanceFiles(
+func newSandboxFiles(
 	ctx context.Context,
 	tracer trace.Tracer,
 	slot *IPSlot,
@@ -81,7 +81,7 @@ func newInstanceFiles(
 	firecrackerBinaryPath,
 	uffdBinaryPath string,
 	hugePages bool,
-) (*InstanceFiles, error) {
+) (*SandboxFiles, error) {
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
 			attribute.String("env.id", envID),
@@ -92,11 +92,6 @@ func newInstanceFiles(
 
 	envPath := filepath.Join(envsDisk, envID)
 	envInstancePath := filepath.Join(envPath, EnvInstancesDirName, slot.InstanceID)
-
-	err := os.MkdirAll(envInstancePath, 0o777)
-	if err != nil {
-		telemetry.ReportError(childCtx, err)
-	}
 
 	// Mount overlay
 	buildIDPath := filepath.Join(envPath, BuildIDName)
@@ -109,23 +104,7 @@ func newInstanceFiles(
 	buildID := string(data)
 	buildDirPath := filepath.Join(envPath, BuildDirName, buildID)
 
-	mkdirErr := os.MkdirAll(buildDirPath, 0o777)
-	if mkdirErr != nil {
-		telemetry.ReportError(childCtx, err)
-	}
-
-	err = reflink.Always(
-		filepath.Join(envPath, RootfsName),
-		filepath.Join(envInstancePath, RootfsName),
-	)
-	if err != nil {
-		errMsg := fmt.Errorf("error creating reflinked rootfs: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return nil, errMsg
-	}
-
-	// Create socket
+	// Assemble socket path
 	socketPath, sockErr := getSocketPath(slot.InstanceID)
 	if sockErr != nil {
 		errMsg := fmt.Errorf("error getting socket path: %w", sockErr)
@@ -133,7 +112,7 @@ func newInstanceFiles(
 		return nil, errMsg
 	}
 
-	// Create UFFD socket
+	// Assemble UFFD socket path
 	var uffdSocketPath *string
 
 	if hugePages {
@@ -160,7 +139,7 @@ func newInstanceFiles(
 		attribute.String("instance.firecracker.path", firecrackerBinaryPath),
 	)
 
-	return &InstanceFiles{
+	return &SandboxFiles{
 		EnvInstancePath:       envInstancePath,
 		BuildDirPath:          buildDirPath,
 		EnvPath:               envPath,
@@ -173,7 +152,32 @@ func newInstanceFiles(
 	}, nil
 }
 
-func (env *InstanceFiles) Cleanup(
+func (env *SandboxFiles) Ensure(ctx context.Context) error {
+	err := os.MkdirAll(env.EnvInstancePath, 0o777)
+	if err != nil {
+		telemetry.ReportError(ctx, err)
+	}
+
+	mkdirErr := os.MkdirAll(env.BuildDirPath, 0o777)
+	if mkdirErr != nil {
+		telemetry.ReportError(ctx, err)
+	}
+
+	err = reflink.Always(
+		filepath.Join(env.EnvPath, RootfsName),
+		filepath.Join(env.EnvInstancePath, RootfsName),
+	)
+	if err != nil {
+		errMsg := fmt.Errorf("error creating reflinked rootfs: %w", err)
+		telemetry.ReportCriticalError(ctx, errMsg)
+
+		return errMsg
+	}
+
+	return nil
+}
+
+func (env *SandboxFiles) Cleanup(
 	ctx context.Context,
 	tracer trace.Tracer,
 ) error {

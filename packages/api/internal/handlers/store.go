@@ -52,7 +52,7 @@ func NewAPIStore() *APIStore {
 
 	tracer := otel.Tracer("api")
 
-	logger, err := logging.New(env.IsProduction())
+	logger, err := logging.New(env.IsLocal())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error initializing logger\n: %v\n", err)
 		panic(err)
@@ -87,15 +87,15 @@ func NewAPIStore() *APIStore {
 
 	var initialInstances []*instance.InstanceInfo
 
-	if env.IsProduction() {
+	if env.IsLocal() {
+		logger.Info("Skipping loading sandboxes, running locally")
+	} else {
 		instances, instancesErr := orch.GetInstances(ctx)
 		if instancesErr != nil {
 			logger.Errorf("Error loading current sandboxes\n: %w", instancesErr)
 		}
 
 		initialInstances = instances
-	} else {
-		logger.Info("Skipping loading sandboxes, running locally")
 	}
 
 	// TODO: rename later
@@ -123,10 +123,10 @@ func NewAPIStore() *APIStore {
 
 	logger.Info("Initialized instance cache")
 
-	if env.IsProduction() {
-		go orch.KeepInSync(ctx, instanceCache)
-	} else {
+	if env.IsLocal() {
 		logger.Info("Skipping syncing sandboxes, running locally")
+	} else {
+		go orch.KeepInSync(ctx, instanceCache)
 	}
 
 	var lokiClient *loki.DefaultClient
