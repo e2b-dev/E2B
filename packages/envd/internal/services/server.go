@@ -19,8 +19,10 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
-func New(ctx context.Context, logger *zap.Logger) *grpc.Server {
-	opts := []grpc_zap.Option{logging.WithoutHealthCheck()}
+func NewServer(ctx context.Context, logger *zap.Logger) *grpc.Server {
+	opts := []grpc_zap.Option{
+		logging.WithoutHealthCheck(),
+	}
 
 	s := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),

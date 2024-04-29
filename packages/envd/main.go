@@ -224,7 +224,7 @@ func main() {
 	}
 
 	// Create an instance of our handler which satisfies the generated interface
-	s := services.New(context.Background(), logger.Desugar())
+	s := services.NewServer(context.Background(), logger.Desugar())
 	defer s.Stop()
 
 	logger.Debugf("Starting server on port %d", serverPort)
