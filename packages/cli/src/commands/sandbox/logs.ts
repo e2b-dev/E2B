@@ -86,9 +86,9 @@ enum LogFormat {
 }
 
 const userLoggers = [
-  'filesystemSvc',
-  'filesystemSvc.dirWatcher',
-  'processSvc',
+  'filesystem',
+  'filesystem.dirWatcher',
+  'process',
 ]
 
 function cleanLogger(logger?: string) {
@@ -209,6 +209,8 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
   const log = JSON.parse(line)
   let level = log['level'].toUpperCase()
 
+  log.logger = cleanLogger(log.logger)
+
   if (!printAll && (!userLoggers.includes(log.logger) || !log.logger)) {
     return
   }
@@ -240,8 +242,6 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
   delete log['service']
   delete log['envID']
   delete log['sandboxID']
-
-  log.logger = cleanLogger(log.logger)
 
   if (format === LogFormat.JSON) {
     console.log(JSON.stringify({
