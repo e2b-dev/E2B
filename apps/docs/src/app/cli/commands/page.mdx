@@ -270,12 +270,22 @@ You can use `e2b sandbox list` to get a list of running sandboxes and their IDs 
 <Options>
   <Option name="level" type="-l, --level">
     Filter logs by level — allowed values are `DEBUG`, `INFO`, `WARN`, `ERROR`.
+     The logs with the higher levels will be also shown.
+
     Default value is `DEBUG`.
   </Option>
   <Option type="-f, --follow">
     Enable streaming logs until the sandbox is closed.
   </Option>
-  <Option type="-a, --all">
-    Print all logs from the sandbox — including the internal logs.
+  <Option name="format" type="--format">
+    Specify format for printing logs — allowed values are `pretty`, `json`.
+
+    Default value is `pretty`.
+  </Option>
+  <Option name="services" type="--services">
+    Specify services for printing logs — allowed values are `process`, `filesystem`, `terminal`, `network`.
+    You can specify multiple services by separating them with a space.
+
+    Default value is `process, filesystem`.
   </Option>
 </Options>
