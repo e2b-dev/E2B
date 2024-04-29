@@ -10,6 +10,7 @@ export default defineConfig({
   target: 'node18',
   platform: 'node',
   format: 'cjs',
+  sourcemap: true,
   clean: true,
   noExternal: Object.keys(packageJSON.dependencies).filter(
     f => !excludedPackages.includes(f)

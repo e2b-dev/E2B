@@ -19,7 +19,7 @@ from .filesystem_watcher import (
     FilesystemOperation,
     FilesystemWatcher,
 )
-from .main import Sandbox, Action
+from .main import Sandbox
 from .process import (
     Process,
     ProcessManager,

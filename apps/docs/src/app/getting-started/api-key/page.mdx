@@ -9,6 +9,26 @@ import APIKey from './APIKey'
 
 To use the API key, you either:
 - **Set the API key as the `E2B_API_KEY` environment variable**
-- Or pass it directly to the `Sandbox` constructor like this:
-  <CodeGroupAutoload path="api_key/api_key" isRunnable={false}/>
+- Or pass it directly to the `CodeInterpreter` constructor like this:
+<CodeGroup isRunnable={false}>
+```js {{ language: 'js' }}
+import { CodeInterpreter } from '@e2b/code-interpreter'
+
+const sandbox = await CodeInterpreter.create({ apiKey: 'YOUR_API_KEY' })
+await sandbox.notebook.execCell('x = 1')
+
+const execution = await sandbox.notebook.execCell('x+=1; x')
+console.log(execution.text)  // outputs 2
+
+await sandbox.close()
+```
+```python {{ language: 'python' }}
+import CodeInterpreter from e2b_code_interpreter
+
+with CodeInterpreter(api_key="YOUR_API_KEY") as code_interpreter:
+  sandbox.notebook.exec_cell("x = 1")
+  execution = sandbox.notebook.exec_cell("x+=1; x")
+  print(execution.text)  # outputs 2
+```
+</CodeGroup>
 

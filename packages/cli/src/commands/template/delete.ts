@@ -24,9 +24,10 @@ import { getRoot } from 'src/utils/filesystem'
 import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
+import { client } from 'src/api'
 
 const deleteTemplate = e2b.withAccessToken(
-  e2b.api.path('/templates/{templateID}').method('delete').create(),
+  client.api.path('/templates/{templateID}').method('delete').create(),
 )
 
 export const deleteCommand = new commander.Command('delete')
@@ -133,8 +134,7 @@ export const deleteCommand = new commander.Command('delete')
 
         if (!opts.yes) {
           const confirmed = await confirm(
-            `Do you really want to delete ${
-              templates.length === 1 ? 'this template' : 'these templates'
+            `Do you really want to delete ${templates.length === 1 ? 'this template' : 'these templates'
             }?`,
           )
 

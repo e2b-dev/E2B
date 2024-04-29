@@ -10,7 +10,6 @@ import { Process, ProcessManager, ProcessMessage, ProcessOpts, ProcessOutput, pr
 import { CallOpts, SandboxConnection, SandboxConnectionOpts } from './sandboxConnection'
 import { Terminal, TerminalManager, TerminalOpts, TerminalOutput, terminalService } from './terminal'
 import { resolvePath } from '../utils/filesystem'
-import { Actions } from '../templates/openai'
 import { CurrentWorkingDirectoryDoesntExistError } from '../error'
 
 export type DownloadFileFormat =
@@ -29,11 +28,6 @@ export interface SandboxOpts extends SandboxConnectionOpts {
   onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
 }
 
-export interface Action<S extends Sandbox = Sandbox, T = {
-  [key: string]: any;
-}> {
-  (sandbox: S, args: T): string | Promise<string>;
-}
 
 /**
  * E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
@@ -73,9 +67,6 @@ export class Sandbox extends SandboxConnection {
    * Process manager used to run commands.
    */
   readonly process: ProcessManager
-
-  // We use any here because we cannot properly reference the type of the Sandbox subclass
-  readonly _actions: Map<string, Action<any, any>> = new Map()
 
   private readonly onScanPorts?: ScanOpenPortsHandler
 
@@ -434,26 +425,6 @@ export class Sandbox extends SandboxConnection {
   }
 
   /**
-   * Returns a map of added actions.
-   *
-   * @returns Map of added actions
-   */
-  get actions() {
-    return new Map(this._actions)
-  }
-
-  /**
-   * OpenAI integration that can be used to get output for the actions added in the sandbox.
-   *
-   * @returns OpenAI integration
-   */
-  get openai() {
-    return {
-      actions: new Actions(this),
-    } as const
-  }
-
-  /**
    * Creates a new Sandbox from the default `base` sandbox template.
    * @returns New Sandbox
    *
@@ -553,79 +524,6 @@ export class Sandbox extends SandboxConnection {
     await sandbox._open({ timeout: opts?.timeout })
 
     return sandbox
-  }
-
-  /**
-   * Add a new action. The name of the action is automatically extracted from the function name.
-   *
-   * You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
-   *
-   * @param action Action handler
-   * @returns Sandbox
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.create()
-   * sandbox.addAction('readFile', (sandbox, args) => sandbox.filesystem.read(args.path))
-   * ```
-   */
-  addAction<T = { [name: string]: any }>(action: Action<this, T>): this
-  /**
-   * Add a new action with a specified name.
-   *
-   * You can use this action with specific integrations like OpenAI to interact with the sandbox and get output for the action.
-   *
-   * @param name Action name
-   * @param action Action handler
-   * @returns Sandbox
-   *
-   * @example
-   * ```ts
-   * async function readFile(sandbox: Sandbox, args: any) {
-   *   return sandbox.filesystem.read(args.path)
-   * }
-   *
-   * const sandbox = await Sandbox.create()
-   * sandbox.addAction(readFile)
-   * ```
-   */
-  addAction<T = { [name: string]: any }>(name: string, action: Action<this, T>): this
-  addAction<T = { [name: string]: any }>(actionOrName: string | Action<this, T>, action?: Action<this, T>): this {
-    if (typeof actionOrName === 'string') {
-      if (!action) throw new Error('Action is required')
-      this._actions.set(actionOrName, action)
-      return this
-    } else if (typeof actionOrName === 'function') {
-      action = actionOrName
-
-      if (!action.name) {
-        throw new Error('Action name is required')
-      }
-
-      this._actions.set(action.name, action)
-    } else {
-      throw new Error('Action or action name and action is required')
-    }
-
-    return this
-  }
-
-  /**
-   * Remove an action.
-   * @param name Action name
-   * @returns Sandbox
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.create()
-   * sandbox.addAction('hello', (sandbox, args) => 'Hello World')
-   * sandbox.removeAction('hello')
-   * ```
-   */
-  removeAction(name: string) {
-    this._actions.delete(name)
-
-    return this
   }
 
   /**

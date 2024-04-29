@@ -5,9 +5,10 @@ import * as e2b from 'e2b'
 import { ensureAccessToken } from 'src/api'
 import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
+import { client } from 'src/api'
 
 const listTemplates = e2b.withAccessToken(
-  e2b.api.path('/templates').method('get').create(),
+  client.api.path('/templates').method('get').create(),
 )
 
 export const listCommand = new commander.Command('list')
