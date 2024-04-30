@@ -43,3 +43,8 @@ generate-v1:
 
 .PHONY: generate
 generate: generate-v1 generate-v2
+
+
+.PHONE: generate-grpc
+generate-grpc:
+	poetry run python -m grpc_tools.protoc -I ../../spec --python_out=. --pyi_out=. --grpc_python_out=. ../../spec/*.proto

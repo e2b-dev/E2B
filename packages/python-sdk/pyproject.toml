@@ -21,6 +21,7 @@ websockets = ">=11.0.3"
 jsonrpcclient = ">=4.0.3"
 requests = ">=2.31.0"
 typing-extensions = ">=4.8.0"
+grpcio = "^1.62.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
@@ -29,6 +30,7 @@ pytest-xdist = "^3.3.1"
 python-dotenv = "^1.0.0"
 pytest-dotenv = "^0.5.2"
 openai = "^1.2.3"
+grpcio-tools = "^1.62.2"
 
 [build-system]
 requires = ["poetry-core"]

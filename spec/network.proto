@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+import "permissions.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/e2b-dev/infra/packages/envd/spec";
+
+package network;
+
+service Network {
+    rpc ConfigurePort(ConfigurePortRequest) returns (google.protobuf.Empty);
+    rpc ListPorts(ListPortsRequest) returns (ListPortsResponse);
+    rpc WatchPorts(WatchPortsRequest) returns (stream Port);
+}
+
+message ConfigurePortRequest {
+    uint32 port = 1;
+    PortState state = 2;
+
+    permissions.AccessControl access = 3;
+}
+
+message ListPortsRequest {
+    permissions.AccessControl access = 1;
+}
+
+message ListPortsResponse {
+    repeated Port ports = 1;
+}
+
+message WatchPortsRequest {
+    repeated uint32 ports = 1;
+
+    permissions.AccessControl access = 2;
+}
+
+enum PortState {
+    UNKNOWN_PortState = 0;
+    OPEN = 1;
+    CLOSE = 2;
+}
+
+message Port {
+    uint32 port = 1;
+    PortState state = 2;
+}

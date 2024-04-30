@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+import "permissions.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/e2b-dev/infra/packages/envd/spec";
+
+package process;
+
+service Process {
+    rpc List(ListRequest) returns (ListResponse);
+
+    rpc Connect(ConnectRequest) returns (stream ProcessEvent);
+    rpc Start(StartProcessRequest) returns (stream ProcessEvent);
+
+    rpc SendInput(SendInputRequest) returns (google.protobuf.Empty);
+    rpc Kill(KillRequest) returns (google.protobuf.Empty);
+
+    rpc ResizePTY(ResizePTYRequest) returns (google.protobuf.Empty);
+}
+
+message PTYSize {
+    uint32 cols = 1;
+    uint32 rows = 2;
+}
+
+message PTY {
+    PTYSize size = 1;
+}
+
+message ProcessConfig {
+    string cmd = 1;
+    repeated string args = 2;
+    
+    map<string, string> env = 3;
+    string cwd = 4;
+}
+
+message ListRequest {
+    permissions.AccessControl access = 1;
+}
+
+message ListResponse {
+    repeated ProcessConfig processes = 1;
+}
+
+message StartProcessRequest {    
+    ProcessConfig process = 1;
+    optional PTY pty = 2;
+
+    permissions.AccessControl access = 3;
+}
+
+message ResizePTYRequest {
+    uint32 pid = 1;
+
+    PTYSize size = 2;
+
+    permissions.AccessControl access = 3;
+}
+
+message StartEvent {
+    uint32 pid = 1;
+}
+
+message DataEvent {
+    optional bytes stdout = 1;
+    optional bytes stderr = 2;
+}
+
+message EndEvent {
+    sint32 exitCode = 1;
+    optional string error = 2;
+}
+
+message ProcessEvent {
+    oneof event_type {
+        StartEvent start = 5;
+        DataEvent data = 6;
+        EndEvent end = 7;
+    }
+}
+
+message KillRequest {
+    uint32 pid = 1;
+
+    permissions.AccessControl access = 2;
+}
+
+message SendInputRequest {
+    uint32 pid = 1;
+
+    bytes stdin = 2;
+
+    permissions.AccessControl access = 3;
+}
+
+message ConnectRequest {
+    uint32 pid = 1;
+
+    permissions.AccessControl access = 2;
+}
+
+message SendInputStreamRequest {
+    bytes stdin = 2;
+
+    permissions.AccessControl access = 3;
+}
