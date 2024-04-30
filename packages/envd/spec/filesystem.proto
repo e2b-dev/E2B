@@ -113,7 +113,7 @@ message WriteFileRequest {
     // If specified, the new data overwrites the existing data with this length at the given byte offset.
     optional uint64 length = 6;
 
-    permissions.AccessControl access = 6;
+    permissions.AccessControl access = 7;
 }
 
 message RemoveRequest {

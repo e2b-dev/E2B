@@ -26,10 +26,6 @@ type ProcessClient interface {
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (Process_ConnectClient, error)
 	Start(ctx context.Context, in *StartProcessRequest, opts ...grpc.CallOption) (Process_StartClient, error)
-	// Not available in browser
-	ConnectStream(ctx context.Context, opts ...grpc.CallOption) (Process_ConnectStreamClient, error)
-	// Not available in browser
-	StartStream(ctx context.Context, opts ...grpc.CallOption) (Process_StartStreamClient, error)
 	SendInput(ctx context.Context, in *SendInputRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Kill(ctx context.Context, in *KillRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ResizePTY(ctx context.Context, in *ResizePTYRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -116,68 +112,6 @@ func (x *processStartClient) Recv() (*ProcessEvent, error) {
 	return m, nil
 }
 
-func (c *processClient) ConnectStream(ctx context.Context, opts ...grpc.CallOption) (Process_ConnectStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Process_ServiceDesc.Streams[2], "/process.Process/ConnectStream", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &processConnectStreamClient{stream}
-	return x, nil
-}
-
-type Process_ConnectStreamClient interface {
-	Send(*ConnectStreamRequest) error
-	Recv() (*ProcessEvent, error)
-	grpc.ClientStream
-}
-
-type processConnectStreamClient struct {
-	grpc.ClientStream
-}
-
-func (x *processConnectStreamClient) Send(m *ConnectStreamRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *processConnectStreamClient) Recv() (*ProcessEvent, error) {
-	m := new(ProcessEvent)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *processClient) StartStream(ctx context.Context, opts ...grpc.CallOption) (Process_StartStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Process_ServiceDesc.Streams[3], "/process.Process/StartStream", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &processStartStreamClient{stream}
-	return x, nil
-}
-
-type Process_StartStreamClient interface {
-	Send(*StartStreamRequest) error
-	Recv() (*ProcessEvent, error)
-	grpc.ClientStream
-}
-
-type processStartStreamClient struct {
-	grpc.ClientStream
-}
-
-func (x *processStartStreamClient) Send(m *StartStreamRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *processStartStreamClient) Recv() (*ProcessEvent, error) {
-	m := new(ProcessEvent)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *processClient) SendInput(ctx context.Context, in *SendInputRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/process.Process/SendInput", in, out, opts...)
@@ -212,10 +146,6 @@ type ProcessServer interface {
 	List(context.Context, *ListRequest) (*ListResponse, error)
 	Connect(*ConnectRequest, Process_ConnectServer) error
 	Start(*StartProcessRequest, Process_StartServer) error
-	// Not available in browser
-	ConnectStream(Process_ConnectStreamServer) error
-	// Not available in browser
-	StartStream(Process_StartStreamServer) error
 	SendInput(context.Context, *SendInputRequest) (*emptypb.Empty, error)
 	Kill(context.Context, *KillRequest) (*emptypb.Empty, error)
 	ResizePTY(context.Context, *ResizePTYRequest) (*emptypb.Empty, error)
@@ -234,12 +164,6 @@ func (UnimplementedProcessServer) Connect(*ConnectRequest, Process_ConnectServer
 }
 func (UnimplementedProcessServer) Start(*StartProcessRequest, Process_StartServer) error {
 	return status.Errorf(codes.Unimplemented, "method Start not implemented")
-}
-func (UnimplementedProcessServer) ConnectStream(Process_ConnectStreamServer) error {
-	return status.Errorf(codes.Unimplemented, "method ConnectStream not implemented")
-}
-func (UnimplementedProcessServer) StartStream(Process_StartStreamServer) error {
-	return status.Errorf(codes.Unimplemented, "method StartStream not implemented")
 }
 func (UnimplementedProcessServer) SendInput(context.Context, *SendInputRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendInput not implemented")
@@ -321,58 +245,6 @@ type processStartServer struct {
 
 func (x *processStartServer) Send(m *ProcessEvent) error {
 	return x.ServerStream.SendMsg(m)
-}
-
-func _Process_ConnectStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ProcessServer).ConnectStream(&processConnectStreamServer{stream})
-}
-
-type Process_ConnectStreamServer interface {
-	Send(*ProcessEvent) error
-	Recv() (*ConnectStreamRequest, error)
-	grpc.ServerStream
-}
-
-type processConnectStreamServer struct {
-	grpc.ServerStream
-}
-
-func (x *processConnectStreamServer) Send(m *ProcessEvent) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *processConnectStreamServer) Recv() (*ConnectStreamRequest, error) {
-	m := new(ConnectStreamRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func _Process_StartStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ProcessServer).StartStream(&processStartStreamServer{stream})
-}
-
-type Process_StartStreamServer interface {
-	Send(*ProcessEvent) error
-	Recv() (*StartStreamRequest, error)
-	grpc.ServerStream
-}
-
-type processStartStreamServer struct {
-	grpc.ServerStream
-}
-
-func (x *processStartStreamServer) Send(m *ProcessEvent) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *processStartStreamServer) Recv() (*StartStreamRequest, error) {
-	m := new(StartStreamRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 func _Process_SendInput_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -463,18 +335,6 @@ var Process_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "Start",
 			Handler:       _Process_Start_Handler,
 			ServerStreams: true,
-		},
-		{
-			StreamName:    "ConnectStream",
-			Handler:       _Process_ConnectStream_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "StartStream",
-			Handler:       _Process_StartStream_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
 		},
 	},
 	Metadata: "spec/process.proto",

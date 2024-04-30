@@ -27,8 +27,6 @@ type FilesystemClient interface {
 	CreateFile(ctx context.Context, in *CreateFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (Filesystem_ReadFileClient, error)
 	WriteFile(ctx context.Context, in *WriteFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Not available in browser
-	WriteFileStream(ctx context.Context, opts ...grpc.CallOption) (Filesystem_WriteFileStreamClient, error)
 	MakeDir(ctx context.Context, in *MakeDirRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ReadDir(ctx context.Context, in *ReadDirRequest, opts ...grpc.CallOption) (*ReadDirResponse, error)
 	CreateLink(ctx context.Context, in *CreateLinkRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -108,40 +106,6 @@ func (c *filesystemClient) WriteFile(ctx context.Context, in *WriteFileRequest, 
 	return out, nil
 }
 
-func (c *filesystemClient) WriteFileStream(ctx context.Context, opts ...grpc.CallOption) (Filesystem_WriteFileStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Filesystem_ServiceDesc.Streams[1], "/filesystem.Filesystem/WriteFileStream", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &filesystemWriteFileStreamClient{stream}
-	return x, nil
-}
-
-type Filesystem_WriteFileStreamClient interface {
-	Send(*WriteFileStreamRequest) error
-	CloseAndRecv() (*emptypb.Empty, error)
-	grpc.ClientStream
-}
-
-type filesystemWriteFileStreamClient struct {
-	grpc.ClientStream
-}
-
-func (x *filesystemWriteFileStreamClient) Send(m *WriteFileStreamRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *filesystemWriteFileStreamClient) CloseAndRecv() (*emptypb.Empty, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(emptypb.Empty)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *filesystemClient) MakeDir(ctx context.Context, in *MakeDirRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/filesystem.Filesystem/MakeDir", in, out, opts...)
@@ -179,7 +143,7 @@ func (c *filesystemClient) CreateSymlink(ctx context.Context, in *CreateSymlinkR
 }
 
 func (c *filesystemClient) Watch(ctx context.Context, in *WatchRequest, opts ...grpc.CallOption) (Filesystem_WatchClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Filesystem_ServiceDesc.Streams[2], "/filesystem.Filesystem/Watch", opts...)
+	stream, err := c.cc.NewStream(ctx, &Filesystem_ServiceDesc.Streams[1], "/filesystem.Filesystem/Watch", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -263,8 +227,6 @@ type FilesystemServer interface {
 	CreateFile(context.Context, *CreateFileRequest) (*emptypb.Empty, error)
 	ReadFile(*ReadFileRequest, Filesystem_ReadFileServer) error
 	WriteFile(context.Context, *WriteFileRequest) (*emptypb.Empty, error)
-	// Not available in browser
-	WriteFileStream(Filesystem_WriteFileStreamServer) error
 	MakeDir(context.Context, *MakeDirRequest) (*emptypb.Empty, error)
 	ReadDir(context.Context, *ReadDirRequest) (*ReadDirResponse, error)
 	CreateLink(context.Context, *CreateLinkRequest) (*emptypb.Empty, error)
@@ -293,9 +255,6 @@ func (UnimplementedFilesystemServer) ReadFile(*ReadFileRequest, Filesystem_ReadF
 }
 func (UnimplementedFilesystemServer) WriteFile(context.Context, *WriteFileRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WriteFile not implemented")
-}
-func (UnimplementedFilesystemServer) WriteFileStream(Filesystem_WriteFileStreamServer) error {
-	return status.Errorf(codes.Unimplemented, "method WriteFileStream not implemented")
 }
 func (UnimplementedFilesystemServer) MakeDir(context.Context, *MakeDirRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MakeDir not implemented")
@@ -413,32 +372,6 @@ func _Filesystem_WriteFile_Handler(srv interface{}, ctx context.Context, dec fun
 		return srv.(FilesystemServer).WriteFile(ctx, req.(*WriteFileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
-}
-
-func _Filesystem_WriteFileStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(FilesystemServer).WriteFileStream(&filesystemWriteFileStreamServer{stream})
-}
-
-type Filesystem_WriteFileStreamServer interface {
-	SendAndClose(*emptypb.Empty) error
-	Recv() (*WriteFileStreamRequest, error)
-	grpc.ServerStream
-}
-
-type filesystemWriteFileStreamServer struct {
-	grpc.ServerStream
-}
-
-func (x *filesystemWriteFileStreamServer) SendAndClose(m *emptypb.Empty) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *filesystemWriteFileStreamServer) Recv() (*WriteFileStreamRequest, error) {
-	m := new(WriteFileStreamRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 func _Filesystem_MakeDir_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -685,11 +618,6 @@ var Filesystem_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "ReadFile",
 			Handler:       _Filesystem_ReadFile_Handler,
 			ServerStreams: true,
-		},
-		{
-			StreamName:    "WriteFileStream",
-			Handler:       _Filesystem_WriteFileStream_Handler,
-			ClientStreams: true,
 		},
 		{
 			StreamName:    "Watch",
