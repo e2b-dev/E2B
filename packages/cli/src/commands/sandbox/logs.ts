@@ -232,13 +232,13 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
 
   switch (level) {
     case LogLevel.DEBUG:
-      level = chalk.default.bgWhite(level)
+      level = chalk.default.black(chalk.default.bgWhite(level))
       break
     case LogLevel.INFO:
-      level = chalk.default.bgGreen(level) + ' '
+      level = chalk.default.black(chalk.default.bgGreen(level) + ' ')
       break
     case LogLevel.WARN:
-      level = chalk.default.bgYellow(level) + ' '
+      level = chalk.default.black(chalk.default.bgYellow(level) + ' ')
       break
     case LogLevel.ERROR:
       level = chalk.default.white(chalk.default.bgRed(level))
