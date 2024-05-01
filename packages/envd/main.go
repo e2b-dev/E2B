@@ -124,15 +124,14 @@ func main() {
 		panic(err)
 	}
 
-	logger = l.Named("system")
+	logger = l
 
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Debugw("panic", r)
+			logger.Errorf("panic", r)
 		}
 	}()
 	defer logger.Sync()
-	logger.Debug("Logger and environment construction succeeded")
 
 	// This server is for the Websocket-RPC communication.
 	rpcServer := rpc.NewServer()
