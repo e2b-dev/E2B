@@ -127,7 +127,6 @@ export const logsCommand = new commander.Command('logs')
     format: LogFormat,
     services: LogService[] | boolean,
   }) => {
-    console.log(opts?.services)
     try {
       const level = opts?.level.toUpperCase() as LogLevel | undefined
       if (level && !Object.values(LogLevel).includes(level)) {
