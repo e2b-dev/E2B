@@ -3,13 +3,13 @@ import * as e2b from 'e2b'
 import * as util from 'util'
 import * as chalk from 'chalk'
 
-import { ensureAPIKey } from 'src/api'
+import { client, ensureAPIKey } from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { listSandboxes } from './list'
 import { wait } from 'src/utils/wait'
 
 const getSandboxLogs = e2b.withAPIKey(
-  e2b.api.path('/sandboxes/{sandboxID}/logs').method('get').create(),
+  client.api.path('/sandboxes/{sandboxID}/logs').method('get').create(),
 )
 
 const maxRuntime = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
@@ -109,13 +109,25 @@ export const logsCommand = new commander.Command('logs')
   .option('-l, --level <level>', `filter logs by level (${formatEnum(LogLevel)}). The logs with the higher levels will be also shown.`, LogLevel.INFO)
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option('--format <format>', `specify format for printing logs (${formatEnum(LogFormat)})`, LogFormat.PRETTY)
-  .option('--s <services...>, --service <services...>', `filter logs by service (${formatEnum(LogService)})`, [LogService.PROCESS, LogService.FILESYSTEM])
+  .option('-s, --services [services]', `filter logs by service. The available services are ${formatEnum(LogService)}. Specify multiple services by separating them with a comma.`, (value) => {
+    const services = value.split(',').map(s => s.trim()) as LogService[]
+    // Check if all services are valid
+    services.forEach(s => {
+      if (!Object.values(LogService).includes(s)) {
+        console.error(`Invalid service used as argument: "${s}"\nValid services are ${formatEnum(LogService)}`)
+        process.exit(1)
+      }
+    })
+
+    return services
+  }, [LogService.PROCESS, LogService.FILESYSTEM])
   .action(async (sandboxID: string, opts?: {
     level: string,
     follow: boolean,
     format: LogFormat,
-    services: LogService[],
+    services: LogService[] | boolean,
   }) => {
+    console.log(opts?.services)
     try {
       const level = opts?.level.toUpperCase() as LogLevel | undefined
       if (level && !Object.values(LogLevel).includes(level)) {
@@ -206,14 +218,14 @@ export const logsCommand = new commander.Command('logs')
     }
   })
 
-function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined, allowedLoggers: LogService[]) {
+function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined, allowedLoggers?: LogService[] | boolean) {
   const log = JSON.parse(line)
   let level = log['level'].toUpperCase()
 
   log.logger = cleanLogger(log.logger)
 
   // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all services.
-  if (!allowedLoggers.some(allowedLogger => log.logger.startsWith(allowedLogger)) && allowedLoggers.length > 0) {
+  if (allowedLoggers !== true && Array.isArray(allowedLoggers) && !allowedLoggers.some(allowedLogger => log.logger.startsWith(allowedLogger))) {
     return
   }
 
