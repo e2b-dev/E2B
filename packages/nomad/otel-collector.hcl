@@ -123,34 +123,33 @@ receivers:
   nginx/client-proxy:
     endpoint: http://localhost:3001/status
     collection_interval: 10s
-  filelog/session-proxy:
-    include:
-      - /var/log/session-proxy/access.log
-    operators:
-      - type: json_parser
-        timestamp:
-          parse_from: attributes.time
-          layout: '%Y-%m-%dT%H:%M:%S%j'
-      - type: remove
-        id: body
-        field: body
-    resource:
-      service.name: session-proxy
-  filelog/client-proxy:
-    include:
-      - /var/log/client-proxy/access.log
-    operators:
-      - type: json_parser
-        timestamp:
-          parse_from: attributes.time
-          layout: '%Y-%m-%dT%H:%M:%S%j'
-      - type: remove
-        id: body
-        field: body
-    resource:
-      service.name: client-proxy
-      service.node: {{ env "node.unique.id" }}
-
+  # filelog/session-proxy:
+  #   include:
+  #     - /var/log/session-proxy/access.log
+  #   operators:
+  #     - type: json_parser
+  #       timestamp:
+  #         parse_from: attributes.time
+  #         layout: '%Y-%m-%dT%H:%M:%S%j'
+  #     - type: remove
+  #       id: body
+  #       field: body
+  #   resource:
+  #     service.name: session-proxy
+  # filelog/client-proxy:
+  #   include:
+  #     - /var/log/client-proxy/access.log
+  #   operators:
+  #     - type: json_parser
+  #       timestamp:
+  #         parse_from: attributes.time
+  #         layout: '%Y-%m-%dT%H:%M:%S%j'
+  #     - type: remove
+  #       id: body
+  #       field: body
+  #   resource:
+  #     service.name: client-proxy
+  #     service.node: {{ env "node.unique.id" }}
   prometheus:
     config:
       scrape_configs:
@@ -252,8 +251,8 @@ service:
         - otlp/grafana_cloud_traces
     logs:
       receivers:
-        - filelog/session-proxy
-        - filelog/client-proxy
+      # - filelog/session-proxy
+      # - filelog/client-proxy
         - otlp
       processors: [batch]
       exporters:
