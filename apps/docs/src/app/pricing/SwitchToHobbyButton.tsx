@@ -23,8 +23,7 @@ function SwitchToHobbyButton() {
     return <Spinner />
   }
 
-
-  if (!user && !isLoading) {
+  if (!user) {
     return (
       <Link href="/sign-in?view=sign-up">
         <Button>Sign Up</Button>

@@ -165,7 +165,7 @@ export function CodeGroupHeader({
                       unoptimized
                     />
                   )}
-                  {getPanelTitle(isValidElement(child) ? child.props : {})}
+                  {getPanelTitle(isValidElement(child) ? child.props : {} as any)}
                 </div>
               </Tab>
             ))}
@@ -314,7 +314,7 @@ export function CodeGroup({
 
   const header = (
     <CodeGroupHeader
-      title={title}
+      title={title ?? ''}
       selectedIndex={tabGroupProps.selectedIndex}
       isFileName={isFileName}
       isTerminalCommand={isTerminalCommand}
@@ -328,7 +328,7 @@ export function CodeGroup({
     <CodeGroupContext.Provider
       value={{
         path,
-      }}
+      } as any}
     >
       {hasTabs ? (
         <Tab.Group {...tabGroupProps} className={containerClassName}>

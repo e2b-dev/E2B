@@ -2,8 +2,8 @@ import { NextResponse as Response } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
 export const dynamic = 'force-dynamic' // defaults to force-static
@@ -41,7 +41,8 @@ export async function POST(request: Request) {
     .select('tier')
     .eq('id', teamID)
 
-  if (tiersError) {
+
+  if (teamError) {
     return new Response(teamError.message, { status: 500 })
   }
 

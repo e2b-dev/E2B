@@ -28,16 +28,16 @@ function getView(hash: string): ViewType {
 
 function AuthForm() {
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect_to')
-  const paramView = searchParams.get('view')
+  const redirectTo = searchParams?.get('redirect_to') || undefined
+  const paramView = searchParams?.get('view')
   const router = useRouter()
 
-  const [view, setView] = useState<ViewType>(getView(paramView))
+  const [view, setView] = useState<ViewType>(getView(paramView ?? 'sign-in'))
 
   const user = useUser()
 
   useEffect(function redirect() {
-    if (user.user) {
+    if (user.user && redirectTo) {
       router.push(redirectTo)
     }
   }, [user.user, router, redirectTo])

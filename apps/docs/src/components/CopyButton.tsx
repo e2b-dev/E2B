@@ -22,11 +22,11 @@ function ClipboardIcon(props) {
 }
 
 export function CopyButton({
-                             code,
-                             customPositionClassNames = 'right-4 top-3.5', // default from TailwindUI, works great with code blocks
-                             onAfterCopy = () => {
-                             },
-                           }) {
+  code,
+  customPositionClassNames = 'right-4 top-3.5', // default from TailwindUI, works great with code blocks
+  onAfterCopy = () => {
+  },
+}) {
   const buttonRef = useRef()
   const [copyCount, setCopyCount] = useState(0)
   const copied = copyCount > 0
@@ -47,7 +47,7 @@ export function CopyButton({
   return (
     <button
       type="button"
-      ref={buttonRef}
+      ref={buttonRef as any}
       tabIndex={-1} /* hide from tab order */
       className={clsx(
         customPositionClassNames,
@@ -71,7 +71,7 @@ export function CopyButton({
         )}
       >
         <ClipboardIcon
-          className="h-5 w-5 fill-zinc-500/20 stroke-zinc-500 transition-colors group-hover/button:stroke-zinc-400"/>
+          className="h-5 w-5 fill-zinc-500/20 stroke-zinc-500 transition-colors group-hover/button:stroke-zinc-400" />
         Copy
       </span>
       <span

@@ -21,7 +21,7 @@ const usageUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/usage`
 export function useUsage() {
   const { user } = useUser()
   const apiKey = useApiKey()
-  const [credits, setCredits] = useState(null)
+  const [credits, setCredits] = useState<number | null>(null)
   const [usage, setUsage] = useState<MonthlyCosts[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createPagesBrowserClient()

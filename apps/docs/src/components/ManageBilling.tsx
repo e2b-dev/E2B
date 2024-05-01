@@ -16,7 +16,7 @@ function ManageBilling() {
   }, [user])
 
   if (!user || !url) {
-    return
+    return null
   }
 
   return (

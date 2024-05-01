@@ -2,6 +2,10 @@ import { MetadataRoute } from 'next'
 import fs from 'fs'
 import path from 'path'
 
+function nonNull<T>(value: T | null): value is T {
+  return value !== null
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const appDirectory = path.join(process.cwd(), 'src', 'app')
   const mdxFilePaths = getAllMdxFilePaths(appDirectory)
@@ -23,7 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority,
       }
     })
-    .filter(Boolean)
+    .filter(nonNull)
 }
 
 function getAllMdxFilePaths(directory: string): string[] {

@@ -41,14 +41,14 @@ export const Header = forwardRef(function Header({ className, isAuth }, ref) {
     fetch(config.github.api)
       .then(response => response.json())
       .then(data => setGithubStars(data.stargazers_count))
-      .catch(() => setGithubStars(false))
+      .catch(() => setGithubStars(null))
   }, [setGithubStars])
 
   useEffect(() => {
     fetch(config.discord.api)
       .then(response => response.json())
       .then(async data => setDiscordUsers(data.presence_count))
-      .catch(() => setDiscordUsers(false))
+      .catch(() => setDiscordUsers(null))
   }, [setDiscordUsers])
 
   // TODO: Maybe add Twitter followers count?
