@@ -14,6 +14,9 @@ export default defineConfig({
     deps: {
       interopDefault: true,
     },
-    env: env.parsed,
+    env: {
+      ...process.env as Record<string, string>,
+      ...env.parsed,
+    },
   },
 })
