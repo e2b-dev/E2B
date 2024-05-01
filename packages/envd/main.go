@@ -124,7 +124,7 @@ func main() {
 		panic(err)
 	}
 
-	logger = l
+	logger = l.Named("system")
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -145,15 +145,15 @@ func main() {
 
 	go portScanner.ScanAndBroadcast()
 
-	clock := clock.NewService(logger.Named("clockSvc"))
+	clock := clock.NewService(logger.Named("clock"))
 
-	ports := ports.NewService(logger.Named("codeSnippetSvc"), portScanner)
+	ports := ports.NewService(logger.Named("network"), portScanner)
 	// WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK
 	if err := rpcServer.RegisterName("codeSnippet", ports); err != nil {
 		logger.Panicw("failed to register ports service", "error", err)
 	}
 
-	if filesystemService, err := filesystem.NewService(logger.Named("filesystemSvc")); err == nil {
+	if filesystemService, err := filesystem.NewService(logger.Named("filesystem")); err == nil {
 		if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
 			logger.Panicw("failed to register filesystem service", "error", err)
 		}
@@ -164,7 +164,7 @@ func main() {
 		)
 	}
 
-	processService := process.NewService(logger.Named("processSvc"), envConfig, clock)
+	processService := process.NewService(logger.Named("process"), envConfig, clock)
 	if err := rpcServer.RegisterName("process", processService); err != nil {
 		logger.Panicw("failed to register process service", "error", err)
 	}
@@ -183,7 +183,7 @@ func main() {
 		}
 	}
 
-	terminalService := terminal.NewService(logger.Named("terminalSvc"), envConfig, clock)
+	terminalService := terminal.NewService(logger.Named("terminal"), envConfig, clock)
 	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
 		logger.Panicw("failed to register terminal service", "error", err)
 	}
