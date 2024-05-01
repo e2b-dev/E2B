@@ -49,6 +49,5 @@ from .sandbox import (
     ProcessMessage,
     ProcessOutput,
     TerminalOutput,
-    run_code,
     RunningSandbox,
 )

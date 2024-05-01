@@ -35,8 +35,7 @@
     "knip": "^2.33.4",
     "npm-check-updates": "^16.14.6",
     "tsup": "^7.2.0",
-    "typescript": "^5.2.2",
-    "vitest": "^0.34.6"
+    "typescript": "^5.2.2"
   },
   "files": [
     "dist",

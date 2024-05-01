@@ -20,7 +20,6 @@ export { AuthenticationError, CurrentWorkingDirectoryDoesntExistError, TimeoutEr
 export { Process, ProcessMessage, ProcessOutput } from './sandbox/process'
 export type { ProcessManager } from './sandbox/process'
 export type { EnvVars } from './sandbox/envVars'
-export { runCode, CodeRuntime } from './runCode' // Export CodeRuntime enum as value, not as type, so it can be actually used in consumer code
 import { Sandbox } from './sandbox'
 
 export type { SandboxMetadata, RunningSandbox } from './sandbox/sandboxConnection'

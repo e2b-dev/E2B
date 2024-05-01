@@ -5,7 +5,7 @@ from e2b import Sandbox
 
 load_dotenv()
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
 
 with Sandbox() as sandbox:
     print(sandbox.id)
