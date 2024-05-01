@@ -222,11 +222,6 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
 
   log.logger = cleanLogger(log.logger)
 
-  console.log(allowedLoggers)
-
-  const c = Array.isArray(allowedLoggers) && allowedLoggers.some(allowedLogger => log.logger.startsWith(allowedLogger))
-  console.log('c', c)
-
   // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all loggers.
   if (allowedLoggers !== true && Array.isArray(allowedLoggers) && !allowedLoggers.some(allowedLogger => log.logger.startsWith(allowedLogger))) {
     return
