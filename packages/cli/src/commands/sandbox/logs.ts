@@ -85,7 +85,7 @@ enum LogFormat {
   PRETTY = 'pretty',
 }
 
-enum LogService {
+enum LoggerService {
   PROCESS = 'process',
   FILESYSTEM = 'filesystem',
   TERMINAL = 'terminal',
@@ -109,23 +109,22 @@ export const logsCommand = new commander.Command('logs')
   .option('--level <level>', `filter logs by level (${formatEnum(LogLevel)}). The logs with the higher levels will be also shown.`, LogLevel.INFO)
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option('--format <format>', `specify format for printing logs (${formatEnum(LogFormat)})`, LogFormat.PRETTY)
-  .option('--loggers [loggers]', `filter logs by loggers. The available loggers are ${formatEnum(LogService)}. Specify multiple loggers by separating them with a comma.`, (value) => {
-    const services = value.split(',').map(s => s.trim()) as LogService[]
-    // Check if all services are valid
-    services.forEach(s => {
-      if (!Object.values(LogService).includes(s)) {
-        console.error(`Invalid service used as argument: "${s}"\nValid services are ${formatEnum(LogService)}`)
+  .option('--loggers [loggers]', `filter logs by loggers. The available loggers are ${formatEnum(LoggerService)}. Specify multiple loggers by separating them with a comma.`, (value) => {
+    const loggers = value.split(',').map(s => s.trim()) as LoggerService[]
+    // Check if all loggers are valid
+    loggers.forEach(s => {
+      if (!Object.values(LoggerService).includes(s)) {
+        console.error(`Invalid logger used as argument: "${s}"\nValid loggers are ${formatEnum(LoggerService)}`)
         process.exit(1)
       }
     })
-
-    return services
-  }, [LogService.PROCESS, LogService.FILESYSTEM])
+    return loggers
+  }, [LoggerService.PROCESS, LoggerService.FILESYSTEM])
   .action(async (sandboxID: string, opts?: {
     level: string,
     follow: boolean,
     format: LogFormat,
-    services: LogService[] | boolean,
+    loggers: LoggerService[] | boolean,
   }) => {
     try {
       const level = opts?.level.toUpperCase() as LogLevel | undefined
@@ -162,7 +161,7 @@ export const logsCommand = new commander.Command('logs')
           }
 
           for (const log of logs) {
-            printLog(log.timestamp, log.line, level, format, opts?.services)
+            printLog(log.timestamp, log.line, level, format, opts?.loggers)
           }
 
           const isRunning = await isRunningPromise
@@ -217,13 +216,18 @@ export const logsCommand = new commander.Command('logs')
     }
   })
 
-function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined, allowedLoggers?: LogService[] | boolean) {
+function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined, allowedLoggers?: LoggerService[] | boolean) {
   const log = JSON.parse(line)
   let level = log['level'].toUpperCase()
 
   log.logger = cleanLogger(log.logger)
 
-  // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all services.
+  console.log(allowedLoggers)
+
+  const c = Array.isArray(allowedLoggers) && allowedLoggers.some(allowedLogger => log.logger.startsWith(allowedLogger))
+  console.log('c', c)
+
+  // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all loggers.
   if (allowedLoggers !== true && Array.isArray(allowedLoggers) && !allowedLoggers.some(allowedLogger => log.logger.startsWith(allowedLogger))) {
     return
   }
