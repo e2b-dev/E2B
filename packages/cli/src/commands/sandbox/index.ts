@@ -4,6 +4,7 @@ import { connectCommand } from './connect'
 import { listCommand } from './list'
 import { killCommand } from './kill'
 import { spawnCommand } from './spawn'
+import { logsCommand } from './logs'
 
 export const sandboxCommand = new commander.Command('sandbox').description('work with sandboxes')
   .alias('sbx')
@@ -11,3 +12,4 @@ export const sandboxCommand = new commander.Command('sandbox').description('work
   .addCommand(listCommand)
   .addCommand(killCommand)
   .addCommand(spawnCommand)
+  .addCommand(logsCommand)
