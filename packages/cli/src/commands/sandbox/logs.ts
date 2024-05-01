@@ -90,7 +90,6 @@ enum LoggerService {
   FILESYSTEM = 'filesystem',
   TERMINAL = 'terminal',
   NETWORK = 'network',
-  SYSTEM = 'system',
 }
 
 
