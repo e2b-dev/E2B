@@ -106,8 +106,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       e2b:
-        specifier: ^0.14.0
-        version: 0.14.0
+        specifier: ^0.15.0
+        version: 0.15.0
       fast-glob:
         specifier: ^3.3.0
         version: 3.3.1
@@ -222,20 +222,20 @@ importers:
         version: 4.3.3
       next:
         specifier: latest
-        version: 14.2.3(react-dom@18.3.0)(react@18.3.0)
+        version: 14.2.3(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: latest
-        version: 18.3.0
+        version: 18.3.1
       react-dom:
         specifier: latest
-        version: 18.3.0(react@18.3.0)
+        version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/node':
         specifier: latest
         version: 20.12.7
       '@types/react':
         specifier: latest
-        version: 18.3.0
+        version: 18.3.1
       '@types/react-dom':
         specifier: latest
         version: 18.3.0
@@ -270,8 +270,8 @@ importers:
         specifier: ^2.11.2
         version: 2.11.2
       e2b:
-        specifier: ^0.14.0
-        version: 0.14.0
+        specifier: ^0.15.0
+        version: 0.15.0
       inquirer:
         specifier: ^9.2.12
         version: 9.2.12
@@ -2963,7 +2963,7 @@ packages:
   /@types/react-dom@18.3.0:
     resolution: {integrity: sha512-EhwApuTmMBmXuFOikhQLIBUn6uFg81SwLMOAUgodJF14SOBOCMdU04gDoYi0WOJJHD144TL32z4yDqCW3dnkQg==}
     dependencies:
-      '@types/react': 18.3.0
+      '@types/react': 18.3.1
     dev: true
 
   /@types/react-highlight-words@0.16.4:
@@ -2980,8 +2980,8 @@ packages:
       csstype: 3.1.2
     dev: false
 
-  /@types/react@18.3.0:
-    resolution: {integrity: sha512-DiUcKjzE6soLyln8NNZmyhcQjVv+WsUIFSqetMN0p8927OztKT4VTfFTqsbAi5oAGIcgOmOajlfBqyptDDjZRw==}
+  /@types/react@18.3.1:
+    resolution: {integrity: sha512-V0kuGBX3+prX+DQ/7r2qsv1NsdfnCLnTgnRJ1pYnxykBhGMz+qj+box5lq7XsO5mtZsBqpjwwTu/7wszPfMBcw==}
     dependencies:
       '@types/prop-types': 15.7.6
       csstype: 3.1.2
@@ -4824,8 +4824,8 @@ packages:
     resolution: {integrity: sha512-1A8za6ws41LQgv9HrE/66jyC5yuSjQ3L/KOpFtoBilsAK2iA2wuS5rTt1OCzIvtS2V7nVmedsUU+DGRcjBmOYA==}
     dev: false
 
-  /e2b@0.14.0:
-    resolution: {integrity: sha512-1UASgzRL9T6fJrkQNsgQxmIvXPVCYGkuJ5RjCYXyKQPBkM3CJgaa+H009RhniXoa4HTDSpPR9rPRZVt58a4h1A==}
+  /e2b@0.15.0:
+    resolution: {integrity: sha512-1FVHj1wP64rfQJyJtKbj9CTmTqNzWqgeCsrbq32Q7pIqF7TNiTCD4hfwWm/lDJgKN7Se/U4KAk/ehv81ZHbrxw==}
     engines: {node: '>=18'}
     dependencies:
       isomorphic-ws: 5.0.0(ws@8.15.1)
@@ -8129,7 +8129,7 @@ packages:
       - babel-plugin-macros
     dev: false
 
-  /next@14.2.3(react-dom@18.3.0)(react@18.3.0):
+  /next@14.2.3(react-dom@18.3.1)(react@18.3.1):
     resolution: {integrity: sha512-dowFkFTR8v79NPJO4QsBUtxv0g9BrS/phluVpMAt2ku7H+cbcBJlopXjkWlwxrk/xGqMemr7JkGPGemPrLLX7A==}
     engines: {node: '>=18.17.0'}
     hasBin: true
@@ -8153,9 +8153,9 @@ packages:
       caniuse-lite: 1.0.30001579
       graceful-fs: 4.2.11
       postcss: 8.4.31
-      react: 18.3.0
-      react-dom: 18.3.0(react@18.3.0)
-      styled-jsx: 5.1.1(react@18.3.0)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      styled-jsx: 5.1.1(react@18.3.1)
     optionalDependencies:
       '@next/swc-darwin-arm64': 14.2.3
       '@next/swc-darwin-x64': 14.2.3
@@ -9159,14 +9159,14 @@ packages:
       scheduler: 0.23.0
     dev: false
 
-  /react-dom@18.3.0(react@18.3.0):
-    resolution: {integrity: sha512-zaKdLBftQJnvb7FtDIpZtsAIb2MZU087RM8bRDZU8LVCCFYjPTsDZJNFUWPcVz3HFSN1n/caxi0ca4B/aaVQGQ==}
+  /react-dom@18.3.1(react@18.3.1):
+    resolution: {integrity: sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==}
     peerDependencies:
-      react: ^18.3.0
+      react: ^18.3.1
     dependencies:
       loose-envify: 1.4.0
-      react: 18.3.0
-      scheduler: 0.23.1
+      react: 18.3.1
+      scheduler: 0.23.2
     dev: false
 
   /react-highlight-words@0.20.0(react@18.2.0):
@@ -9246,8 +9246,8 @@ packages:
       loose-envify: 1.4.0
     dev: false
 
-  /react@18.3.0:
-    resolution: {integrity: sha512-RPutkJftSAldDibyrjuku7q11d3oy6wKOyPe5K1HA/HwwrXcEqBdHsLypkC2FFYjP7bPUa6gbzSBhw4sY2JcDg==}
+  /react@18.3.1:
+    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
     engines: {node: '>=0.10.0'}
     dependencies:
       loose-envify: 1.4.0
@@ -9620,8 +9620,8 @@ packages:
       loose-envify: 1.4.0
     dev: false
 
-  /scheduler@0.23.1:
-    resolution: {integrity: sha512-5GKS5JGfiah1O38Vfa9srZE4s3wdHbwjlCrvIookrg2FO9aIwKLOJXuJQFlEfNcVSOXuaL2hzDeY20uVXcUtrw==}
+  /scheduler@0.23.2:
+    resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
     dependencies:
       loose-envify: 1.4.0
     dev: false
@@ -10126,7 +10126,7 @@ packages:
       react: 18.2.0
     dev: false
 
-  /styled-jsx@5.1.1(react@18.3.0):
+  /styled-jsx@5.1.1(react@18.3.1):
     resolution: {integrity: sha512-pW7uC1l4mBZ8ugbiZrcIsiIvVx1UmTfw7UkC3Um2tmfUq9Bhk8IiyEIPl6F8agHgjzku6j0xQEZbfA5uSgSaCw==}
     engines: {node: '>= 12.0.0'}
     peerDependencies:
@@ -10140,7 +10140,7 @@ packages:
         optional: true
     dependencies:
       client-only: 0.0.1
-      react: 18.3.0
+      react: 18.3.1
     dev: false
 
   /sucrase@3.34.0:
