@@ -106,10 +106,10 @@ export const logsCommand = new commander.Command('logs')
   .description('show logs for sandbox')
   .argument('<sandboxID>', `show logs for sandbox specified by ${asBold('<sandboxID>')}`)
   .alias('lg')
-  .option('-l, --level <level>', `filter logs by level (${formatEnum(LogLevel)}). The logs with the higher levels will be also shown.`, LogLevel.INFO)
+  .option('--level <level>', `filter logs by level (${formatEnum(LogLevel)}). The logs with the higher levels will be also shown.`, LogLevel.INFO)
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option('--format <format>', `specify format for printing logs (${formatEnum(LogFormat)})`, LogFormat.PRETTY)
-  .option('-s, --services [services]', `filter logs by service. The available services are ${formatEnum(LogService)}. Specify multiple services by separating them with a comma.`, (value) => {
+  .option('--loggers [loggers]', `filter logs by loggers. The available loggers are ${formatEnum(LogService)}. Specify multiple loggers by separating them with a comma.`, (value) => {
     const services = value.split(',').map(s => s.trim()) as LogService[]
     // Check if all services are valid
     services.forEach(s => {
