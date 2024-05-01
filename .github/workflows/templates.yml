@@ -3,7 +3,7 @@ name: Build and push prepared templates
 on:
   push:
     paths:
-      - 'sandboxes/**'
+      - 'templates/**'
       - '.github/workflows/templates.yml'
     branches:
       - main
@@ -15,7 +15,7 @@ jobs:
   buildAndPublish:
     defaults:
       run:
-        working-directory: ./sandboxes/base
+        working-directory: ./templates/base
 
     name: Build and Push Images
     runs-on: ubuntu-20.04
