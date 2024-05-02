@@ -158,6 +158,11 @@ export const routes = [
       //   title: 'Supported languages',
       //   href: '/code-interpreter/template',
       // },
+      // {
+      //   icon: <Wrench strokeWidth={1} size={20} />,
+      //   title: 'Preinstalled packages (customization)',
+      //   href: '/code-interpreter/template',
+      // },
       {
         icon: <Wrench strokeWidth={1} size={20} />,
         title: 'Customization',
