@@ -19,6 +19,9 @@ const (
 	TemplateBuildStatusReady    TemplateBuildStatus = "ready"
 )
 
+// CPUCount CPU cores for the sandbox
+type CPUCount = int32
+
 // Error defines model for Error.
 type Error struct {
 	// Code Error code
@@ -27,6 +30,9 @@ type Error struct {
 	// Message Error
 	Message string `json:"message"`
 }
+
+// MemoryMB Memory for the sandbox in MB
+type MemoryMB = int32
 
 // NewSandbox defines model for NewSandbox.
 type NewSandbox struct {
@@ -48,10 +54,10 @@ type RunningSandbox struct {
 	ClientID string `json:"clientID"`
 
 	// CpuCount CPU cores for the sandbox
-	CpuCount int32 `json:"cpuCount"`
+	CpuCount CPUCount `json:"cpuCount"`
 
-	// MemoryMB Memory limit for the sandbox in MB
-	MemoryMB int32            `json:"memoryMB"`
+	// MemoryMB Memory for the sandbox in MB
+	MemoryMB MemoryMB         `json:"memoryMB"`
 	Metadata *SandboxMetadata `json:"metadata,omitempty"`
 
 	// SandboxID Identifier of the sandbox
@@ -106,10 +112,10 @@ type Template struct {
 	BuildID string `json:"buildID"`
 
 	// CpuCount CPU cores for the sandbox
-	CpuCount int32 `json:"cpuCount"`
+	CpuCount CPUCount `json:"cpuCount"`
 
-	// MemoryMB Memory limit for the sandbox in MB
-	MemoryMB int32 `json:"memoryMB"`
+	// MemoryMB Memory for the sandbox in MB
+	MemoryMB MemoryMB `json:"memoryMB"`
 
 	// Public Whether the template is public or only accessible by the team
 	Public bool `json:"public"`
@@ -127,7 +133,7 @@ type TemplateBuild struct {
 	Logs []string `json:"logs"`
 
 	// Status Status of the template
-	Status *TemplateBuildStatus `json:"status,omitempty"`
+	Status TemplateBuildStatus `json:"status"`
 
 	// TemplateID Identifier of the template
 	TemplateID string `json:"templateID"`
@@ -141,14 +147,14 @@ type TemplateBuildRequest struct {
 	// Alias Alias of the template
 	Alias *string `json:"alias,omitempty"`
 
-	// CpuCount CPU cores for the template
-	CpuCount *int32 `json:"cpuCount,omitempty"`
+	// CpuCount CPU cores for the sandbox
+	CpuCount *CPUCount `json:"cpuCount,omitempty"`
 
 	// Dockerfile Dockerfile for the template
 	Dockerfile string `json:"dockerfile"`
 
-	// MemoryMB Memory limit for the template in MB
-	MemoryMB *int32 `json:"memoryMB,omitempty"`
+	// MemoryMB Memory for the sandbox in MB
+	MemoryMB *MemoryMB `json:"memoryMB,omitempty"`
 
 	// StartCmd Start command to execute in the template after the build
 	StartCmd *string `json:"startCmd,omitempty"`
@@ -187,7 +193,7 @@ type GetSandboxesSandboxIDLogsParams struct {
 // PostSandboxesSandboxIDRefreshesJSONBody defines parameters for PostSandboxesSandboxIDRefreshes.
 type PostSandboxesSandboxIDRefreshesJSONBody struct {
 	// Duration Duration for which the sandbox should be kept alive in seconds
-	Duration *int32 `json:"duration,omitempty"`
+	Duration *int `json:"duration,omitempty"`
 }
 
 // PostSandboxesSandboxIDTimeoutJSONBody defines parameters for PostSandboxesSandboxIDTimeout.
