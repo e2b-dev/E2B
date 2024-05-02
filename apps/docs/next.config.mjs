@@ -33,7 +33,7 @@ function getFilesHash(rootPath) {
 
   fsWalk.walkSync(rootPath, { stats: true }).forEach(e => {
     if (!e.stats.isDirectory()) {
-      if (e.path.includes(`/node_modules/`)) return // ignore node_modules which may contain symlinks
+      if (e.path.includes('/node_modules/')) return // ignore node_modules which may contain symlinks
       const content = fs.readFileSync(e.path, 'utf8')
       processFile(e.path, content)
     }
@@ -54,13 +54,17 @@ const nextConfig = {
     return config
   },
   async rewrites() {
-    return [
-      {
-        source: '/ingest/:path*',
-        destination: 'https://app.posthog.com/:path*',
-        // BEWARE: setting basePath will break the analytics proxy
-      },
-    ]
+    return {
+      afterFiles: [
+        {
+          source: '/ingest/:path*',
+          destination: 'https://app.posthog.com/:path*',
+          // BEWARE: setting basePath will break the analytics proxy
+        },
+        { source: '/:path*', destination: '/_404/:path*' },
+      ]
+    }
+
   },
   async redirects() {
     return [
