@@ -65,6 +65,20 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
+    CPUCount:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 8
+      description: CPU cores for the sandbox
+
+    MemoryMB:
+      type: integer
+      format: int32
+      minimum: 128
+      maximum: 8192
+      description: Memory for the sandbox in MB
+
     SandboxMetadata:
       additionalProperties:
         type: string
@@ -139,15 +153,9 @@ components:
           format: date-time
           description: Time when the sandbox was started
         cpuCount:
-          type: integer
-          format: int32
-          minimum: 0
-          description: CPU cores for the sandbox
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          type: integer
-          format: int32
-          minimum: 0
-          description: Memory limit for the sandbox in MB
+          $ref: "#/components/schemas/MemoryMB"
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
 
@@ -181,15 +189,9 @@ components:
           type: string
           description: Identifier of the last successful build for given template
         cpuCount:
-          type: integer
-          format: int32
-          minimum: 0
-          description: CPU cores for the sandbox
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          type: integer
-          format: int32
-          minimum: 0
-          description: Memory limit for the sandbox in MB
+          $ref: "#/components/schemas/MemoryMB"
         public:
           type: boolean
           description: Whether the template is public or only accessible by the team
@@ -213,21 +215,15 @@ components:
           description: Start command to execute in the template after the build
           type: string
         cpuCount:
-          description: CPU cores for the template
-          type: integer
-          format: int32
-          minimum: 1
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          description: Memory limit for the template in MB
-          type: integer
-          format: int32
-          minimum: 128
+          $ref: "#/components/schemas/MemoryMB"
 
     TemplateBuild:
       required:
         - templateID
         - buildID
-        - finished
+        - status
         - logs
       properties:
         logs:
@@ -401,7 +397,7 @@ paths:
         - $ref: "#/components/parameters/sandboxID"
       responses:
         204:
-          description: Successfully set the sandbox timeout 
+          description: Successfully set the sandbox timeout
         401:
           $ref: "#/components/responses/401"
         404:
@@ -425,7 +421,7 @@ paths:
                 duration:
                   description: Duration for which the sandbox should be kept alive in seconds
                   type: integer
-                  format: int32
+                  maximum: 3600 # 1 hour
                   minimum: 0
       parameters:
         - $ref: "#/components/parameters/sandboxID"
