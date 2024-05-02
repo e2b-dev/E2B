@@ -81,8 +81,6 @@ class Sandbox(SandboxConnection):
         :param template: ID of the sandbox template or the name of prepared template. If not specified a 'base' template will be used.
         Can be one of the following premade sandbox templates or a custom sandbox template ID:
         - `base` - A basic sandbox with a Linux environment
-        - `Python3-DataAnalysis` - A Python3 sandbox with data analysis tools
-
 
         :param api_key: The API key to use, if not provided, the `E2B_API_KEY` environment variable is used
         :param cwd: The current working directory to use

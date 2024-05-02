@@ -61,6 +61,10 @@ export const Auth = function () {
   function redirectToCurrentURL() {
     const url = typeof window !== 'undefined' ? window.location.href : undefined
 
+    if (!url) {
+      return ''
+    }
+
     const encodedURL = encodeURIComponent(url)
     return `redirect_to=${encodedURL}`
   }

@@ -27,7 +27,7 @@
     "build": "tsc --noEmit && tsup",
     "dev": "tsup --watch",
     "measure": "node test/performance.mjs",
-    "run": "node test/run.mjs",
+    "example": "tsx example.mts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "generate": "openapi-typescript ../../spec/openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",

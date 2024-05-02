@@ -26,7 +26,6 @@ from .process import (
     ProcessMessage,
     ProcessOutput,
 )
-from .run_code import run_code
 from .terminal import (
     Terminal,
     TerminalManager,

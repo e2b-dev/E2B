@@ -10,7 +10,7 @@ import { useEffect, useRef } from 'react'
 // }
 
 function Textarea({ value = '', className, placeholder, onChange, isOpen }) {
-  const ref = useRef(null)
+  const ref = useRef<HTMLTextAreaElement>(null)
 
   useEffect(
     function handleFocus() {

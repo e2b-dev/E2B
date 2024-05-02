@@ -19,10 +19,10 @@ interface SectionState {
   visibleSections: Array<string>
   setVisibleSections: (visibleSections: Array<string>) => void
   registerHeading: ({
-                      id,
-                      ref,
-                      offsetRem,
-                    }: {
+    id,
+    ref,
+    offsetRem,
+  }: {
     id: string
     ref: React.RefObject<HTMLHeadingElement>
     offsetRem: number
@@ -65,7 +65,7 @@ function useVisibleSections(sectionStore: StoreApi<SectionState>) {
   useEffect(() => {
     function checkVisibleSections() {
       const { innerHeight, scrollY } = window
-      const newVisibleSections = []
+      const newVisibleSections: any[] = []
 
       for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
         const { id, headingRef, offsetRem = 0 } = sections[sectionIndex]
@@ -117,9 +117,9 @@ const useIsomorphicLayoutEffect =
   typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 export function SectionProvider({
-                                  sections,
-                                  children,
-                                }: {
+  sections,
+  children,
+}: {
   sections: Array<Section>
   children: React.ReactNode
 }) {

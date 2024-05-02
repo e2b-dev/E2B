@@ -17,7 +17,7 @@ export function LanguageSpecificText({
 }: Props) {
   const languages =
     Children.map(children, child =>
-      getPanelTitle(isValidElement(child) ? child.props : {}),
+      getPanelTitle(isValidElement(child) ? child.props : {} as any),
     ) ?? []
   const tabGroupProps = useTabGroupProps(languages)
 
