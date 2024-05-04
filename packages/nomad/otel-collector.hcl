@@ -35,7 +35,7 @@ variable "consul_token" {
 }
 
 variables {
-  otel_image = "otel/opentelemetry-collector-contrib:0.90.1"
+  otel_image = "otel/opentelemetry-collector-contrib:0.99.0"
 }
 
 job "otel-collector" {
@@ -116,6 +116,10 @@ receivers:
   otlp:
     protocols:
       grpc:
+        max_recv_msg_size_mib: 100
+        read_buffer_size: 10943040
+        max_concurrent_streams: 200
+        write_buffer_size: 10943040
       http:
   nginx/session-proxy:
     endpoint: http://localhost:3004/status
