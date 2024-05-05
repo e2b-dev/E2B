@@ -1,56 +1,59 @@
 import Link from 'next/link'
 import { FileCode } from 'lucide-react'
 
-# Custom template using Code Interpreter
+# Using custom sandbox template & custom compute with Code Interpreter SDK
 
-The Code Interpreter requires a template with a specific setup. If you want to build your own custom template and use Code Interpreter, you need to follow the instructions below.
+If you want to customize the Code Interprerter sandbox (e.g.: add a preinstalled package) you can do that by using a [custom sandbox template](https://e2b.dev/docs/sandbox/templates/overview).
 
-Here's all the source code for the template:
 
-<Link
-  className="w-fit flex items-center justify-start my-[-24px]"
-  href="https://github.com/e2b-dev/code-interpreter/blob/main/template"
-  rel="noopener noreferrer"
-  target="_blank"
->
-  <FileCode
-    size={18}
-    className="text-brand-600"
-  />
-  <span>
-  Template source code
-  </span>
-</Link>
+## Step-by-step guide
+1. Create custom sandbox by following [this guide](https://e2b.dev/docs/guide/custom-sandbox)
 
-## How to create custom template
+2. Use prebuilt [E2B Code Interpreter image](https://hub.docker.com/r/e2bdev/code-interpreter) by replacing the `FROM` command in your `e2b.Dockerfile` with following
 
-If you want to build your own custom template and use Code Interpreter, you need to do:
+    ```sh
+    FROM e2bdev/code-interpreter:latest
+    ```
 
-1. Copy following files to your template folder: [`jupyter_server_config.py`](https://github.com/e2b-dev/code-interpreter/blob/main/template/jupyter_server_config.py), [`ipython_kernel_config.py`](https://github.com/e2b-dev/code-interpreter/blob/main/template/ipython_kernel_config.py) and [`start-up.sh`](https://github.com/e2b-dev/code-interpreter/blob/main/template/start-up.sh).
-2. Setup jupyter server and kernel in your `Dockerfile` by adding these lines:
-```docker
-# Installs jupyter server and kernel
-RUN pip install jupyter-server ipykernel ipython
-RUN ipython kernel install --name "python3" --user
+3. Copy [`start-up.sh`](./start-up.sh) to the same directory where's your `e2b.toml`
 
-# Copies jupyter server, kernel config and start-up script
-COPY ./jupyter_server_config.py /home/user/.jupyter/
-COPY ./ipython_kernel_config.py /home/user/.ipython/
-COPY ./start-up.sh /home/user/.jupyter/
+4. Run the following in the same directory where's your `e2b.toml`
+    ```sh
+    e2b template build -c "/home/user/.jupyter/start-up.sh"
+    ```
 
-# Sets permissions for the start-up script
-RUN chmod +x /home/user/.jupyter/start-up.sh
+5. Use your custom sandbox with Code Interpreter SDK
+
+   **Python**
+   ```python
+   from e2b_code_interpreter import CodeInterpreter
+   sandbox = CodeInterpreter(template="your-custom-sandbox-name")
+   execution = sandbox.notebook.exec_cell("print('hello')")
+   sandbox.close()
+
+   # Or you can use `with` which handles closing the sandbox for you
+   with CodeInterpreter(template="your-custom-sandbox-name") as sandbox:
+       execution = sandbox.notebook.exec_cell("print('hello')")
+   ```
+
+
+   **JavaScript/TypeScript**
+   ```js
+   import { CodeInterpreter } from '@e2b/code-interpreter'
+   const sandbox = await CodeInterpreter.create({ template: 'your-custom-sandbox-name' })
+   const execution = await sandbox.notebook.execCell('print("hello")')
+   await sandbox.close()
+   ```
+
+
+## Customize CPU & RAM of your sandbox
+You can customize number of CPUs and MiB of RAM for your sandbox. To achieve that, specify the `--cpu-count` and `--memory-mb` options during the build step:
+```sh
+e2b template build -c "/home/user/.jupyter/start-up.sh" --cpu-count 4 --memory-mb 4096
 ```
-3. Add the following option `-c "/home/user/.jupyter/start-up.sh"` to `e2b template build` command or add this line to your `e2b.toml`.
-```yaml
-start_cmd = "/home/user/.jupyter/start-up.sh"
-```
+The above will create a custom sandbox with 4 CPUs a 4 GiB of RAM.
 
-<Note>
-  Alternatively, you can use the [`e2bdev/code-interpreter`](https://hub.docker.com/r/e2bdev/code-interpreter) as base image.
-</Note>
-
-## Install another kernels
+## How to install another Python kernels
 
 Jupyter has ability to work with different than Python kernel. It even supports multiple kernels in one notebook. If you want to install another kernels.
 
