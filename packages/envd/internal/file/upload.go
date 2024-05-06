@@ -1,7 +1,7 @@
 package file
 
 import (
-	"fmt"
+	"bytes"
 	"io"
 	"net/http"
 	"os"
@@ -12,42 +12,90 @@ import (
 	"go.uber.org/zap"
 )
 
-const maxFileInMemory = 512 * 1024 * 1024 // 512MB
-
 func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 	logger.Debug(
 		"Starting file upload",
 	)
 
-	if err := r.ParseMultipartForm(maxFileInMemory); err != nil {
-		logger.Error("Error parsing multipart form:", err)
-		http.Error(w, fmt.Sprintf("The uploaded file is too big. Please choose an file that's less than 100MB in size: %s", err.Error()), http.StatusBadRequest)
-
-		return
-	}
-
-	logger.Debug("Multipart form parsed successfully")
-
-	// The argument to FormFile must match the name attribute
-	// of the file input on the frontend
-	file, fileHeader, err := r.FormFile("file")
+	f, err := r.MultipartReader()
 	if err != nil {
-		logger.Error("Error retrieving the file from form-data:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		logger.Error("Error parsing multipart form:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
 
-	logger.Debug("File retrieved successfully")
+	tmpFile, err := os.CreateTemp(os.TempDir(), "envd-upload")
+	if err != nil {
+		logger.Error("Error creating temp file:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
-	defer func() {
-		closeErr := file.Close()
-		if closeErr != nil {
-			logger.Error("Error closing file:", closeErr)
+		return
+	}
+	defer os.Remove(tmpFile.Name())
+
+	closeErr := tmpFile.Close()
+	if closeErr != nil {
+		logger.Error("Error closing file:", closeErr)
+		http.Error(w, closeErr.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	file, err := os.OpenFile(tmpFile.Name(), os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		logger.Error("Error opening file:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+	defer file.Close()
+
+	var filepath string
+
+	for {
+		// Get the next part.
+		part, partErr := f.NextPart()
+		logger.Debugw("Part", "part", partErr)
+
+		if partErr == io.EOF {
+			// We're done reading the parts.
+			break
+		} else if partErr != nil {
+			logger.Error("Error reading form:", partErr)
+			http.Error(w, partErr.Error(), http.StatusInternalServerError)
+
+			return
 		}
-	}()
 
-	filepath := r.Form.Get("path")
+		// Get the key of the part.
+		key := part.FormName()
+		logger.Debugw("Part", "part key", key)
+
+		if key == "file" {
+			_, err = io.Copy(file, part)
+			if err != nil {
+				part.Close()
+				logger.Error("Error copying file to temp file:", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+
+				return
+			}
+		} else if key == "path" {
+			buf := new(bytes.Buffer)
+			_, err = buf.ReadFrom(part)
+			if err != nil {
+				part.Close()
+				logger.Error("Error reading file path:", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+
+				return
+			}
+			filepath = buf.String()
+		}
+
+		part.Close()
+	}
 
 	var newFilePath string
 
@@ -61,46 +109,17 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		newFilePath = path.Join(homedir, fileHeader.Filename)
+		filename := path.Base(filepath)
+		newFilePath = path.Join(homedir, filename)
 	} else {
 		newFilePath = filepath
 	}
 
-	logger.Debugw(
-		"Starting file upload",
-		"path", newFilePath,
-	)
+	logger.Debugw("New file path", "path", newFilePath, "filepath", filepath)
 
-	dst, err := os.Create(newFilePath)
+	err = os.Rename(file.Name(), newFilePath+"/main.py")
 	if err != nil {
-		logger.Error("Error creating the file:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-
-	logger.Debugw("File created successfully",
-		"path", newFilePath,
-	)
-
-	logger.Debugw("File created successfully")
-
-	defer func() {
-		closeErr := dst.Close()
-		if closeErr != nil {
-			logger.Error("Error closing file:", closeErr)
-		}
-	}()
-
-	pr := &Progress{
-		TotalSize: fileHeader.Size,
-	}
-
-	// Copy the uploaded file to the filesystem
-	// at the specified destination
-	_, err = io.Copy(dst, io.TeeReader(file, pr))
-	if err != nil {
-		logger.Error("Error saving file to filesystem:", err)
+		logger.Error("Error renaming file:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
