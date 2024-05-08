@@ -318,6 +318,9 @@ importers:
       isomorphic-ws:
         specifier: ^5.0.0
         version: 5.0.0(ws@8.15.1)
+      isows:
+        specifier: ^1.0.4
+        version: 1.0.4(ws@8.15.1)
       normalize-path:
         specifier: ^3.0.0
         version: 3.0.0
@@ -6705,6 +6708,14 @@ packages:
 
   /isomorphic-ws@5.0.0(ws@8.15.1):
     resolution: {integrity: sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==}
+    peerDependencies:
+      ws: '*'
+    dependencies:
+      ws: 8.15.1(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+    dev: false
+
+  /isows@1.0.4(ws@8.15.1):
+    resolution: {integrity: sha512-hEzjY+x9u9hPmBom9IIAqdJCwNLax+xrPb51vEPpERoFlIxgmZcHzsT5jKG06nvInKOBGvReAVz80Umed5CczQ==}
     peerDependencies:
       ws: '*'
     dependencies:
