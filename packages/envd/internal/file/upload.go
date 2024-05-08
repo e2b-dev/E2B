@@ -1,6 +1,7 @@
 package file
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"net/http"
@@ -10,6 +11,10 @@ import (
 	"github.com/e2b-dev/infra/packages/envd/internal/user"
 
 	"go.uber.org/zap"
+)
+
+const (
+	uploadBuffer = 16 * 1024 * 1024
 )
 
 func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
@@ -52,10 +57,12 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	var filepath string
+	var filename string
 
 	for {
 		// Get the next part.
 		part, partErr := f.NextPart()
+
 		logger.Debugw("Part", "part", partErr)
 
 		if partErr == io.EOF {
@@ -73,7 +80,11 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 		logger.Debugw("Part", "part key", key)
 
 		if key == "file" {
-			_, err = io.Copy(file, part)
+			filename = part.FileName()
+
+			r := bufio.NewReaderSize(part, uploadBuffer)
+
+			_, err = r.WriteTo(file)
 			if err != nil {
 				part.Close()
 				logger.Error("Error copying file to temp file:", err)
@@ -109,7 +120,6 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		filename := path.Base(filepath)
 		newFilePath = path.Join(homedir, filename)
 	} else {
 		newFilePath = filepath
@@ -117,7 +127,7 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 
 	logger.Debugw("New file path", "path", newFilePath, "filepath", filepath)
 
-	err = os.Rename(file.Name(), newFilePath+"/main.py")
+	err = os.Rename(file.Name(), newFilePath)
 	if err != nil {
 		logger.Error("Error renaming file:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
