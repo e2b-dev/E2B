@@ -203,13 +203,9 @@ func main() {
 	// The /file route used for downloading and uploading files via SDK.
 	router.HandleFunc("/file", createFileHandler(logger.Named("file")))
 
-	// TODO: Right now the start cmd will be started during the build without access to the internet.
-	// Start the command passed via the -cmd flag.
 	if startCmdFlag != "" {
 		envVars := make(map[string]string)
 		_, err := processService.Start(startCmdID, startCmdFlag, &envVars, "/")
-		// TODO: Do we need to cache the process logs if they are not retrieved?
-		// TODO: Should we cache all process logs always?
 		if err != nil {
 			logger.Errorf(
 				"failed to start the command passed via the -cmd flag",
