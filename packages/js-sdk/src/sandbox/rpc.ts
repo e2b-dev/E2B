@@ -1,6 +1,6 @@
 // Based on https://github.com/radarsu/rpc-websocket-client
 
-import IWebSocket from 'isomorphic-ws'
+import IWebSocket, { WebSocket as WebS } from 'isows'
 
 import { id } from '../utils/id'
 
@@ -9,7 +9,7 @@ export type RpcEventFunction = (
   e: IWebSocket.OpenEvent | IWebSocket.ErrorEvent
 ) => void
 export type RpcMessageEventFunction = (e: IWebSocket.MessageEvent) => void
-export type RpcCloseEventFunction = (e: IWebSocket.CloseEvent) => void
+export type RpcCloseEventFunction = (e: any) => void
 
 export type RpcNotificationEvent = (data: IRpcNotification) => void
 export type RpcRequestEvent = (data: IRpcRequest) => void
@@ -69,7 +69,7 @@ export type RpcUnidentifiedMessage =
 export class RpcWebSocketClient {
   // native websocket
 
-  public ws: IWebSocket
+  public ws: any
 
   public onOpenHandlers: RpcEventFunction[] = []
   public onAnyMessageHandlers: RpcMessageEventFunction[] = []
@@ -108,7 +108,7 @@ export class RpcWebSocketClient {
    * @memberof RpcWebSocketClient
    */
   public connect(url: string, protocols?: string | string[]) {
-    this.ws = new IWebSocket(url, protocols)
+    this.ws = new WebS(url, protocols)
     return this.listen()
   }
 
@@ -280,7 +280,7 @@ export class RpcWebSocketClient {
    * @param {WebSocket} ws
    * @memberof RpcWebSocketClient
    */
-  public changeSocket(ws: IWebSocket) {
+  public changeSocket(ws: WebSocket) {
     this.ws = ws
   }
 
@@ -301,13 +301,13 @@ export class RpcWebSocketClient {
       this.listenMessages()
 
       // called before onclose
-      this.ws.onerror = (e: IWebSocket.ErrorEvent) => {
+      this.ws.onerror = (e: any) => {
         for (const handler of this.onErrorHandlers) {
           handler(e)
         }
       }
 
-      this.ws.onclose = (e: IWebSocket.CloseEvent) => {
+      this.ws.onclose = (e: any) => {
         for (const handler of this.onCloseHandlers) {
           handler(e)
         }
