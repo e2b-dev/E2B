@@ -113,7 +113,12 @@ export class SandboxConnection {
   // let's keep opts readonly, but public - for convenience, mainly when debugging
   protected constructor(readonly opts: SandboxConnectionOpts, protected createCalled: boolean) {
     if (!createCalled) {
-      throw new Error('Cannot instantiate Sandbox directly, use a `create()` method instead.')
+      throw new Error('Sandbox can\'t be instantiated directly, use a `.create()` method instead of calling `new` to get a new sandbox.\n\n' +
+          'Example of correct usage:\n' +
+          '```\n' +
+          'import { CodeInterpreter } from \'@e2b/code-interpreter\'\n' +
+          'const myCodeInterpreter = await CodeInterpreter.create()\n' +
+          '``')
     }
 
     this.sandbox = opts.__sandbox
