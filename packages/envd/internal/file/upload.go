@@ -1,21 +1,32 @@
 package file
 
 import (
-	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path"
+	"syscall"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/user"
 
 	"go.uber.org/zap"
 )
 
-const (
-	uploadBuffer = 16 * 1024 * 1024
-)
+func getFreeDiskSpace(path string) (uint64, error) {
+	var stat syscall.Statfs_t
+
+	err := syscall.Statfs(path, &stat)
+	if err != nil {
+		return 0, fmt.Errorf("error getting free disk space: %w", err)
+	}
+
+	// Available blocks * size per block = available space in bytes
+	freeSpace := stat.Bavail * uint64(stat.Bsize)
+
+	return freeSpace, nil
+}
 
 func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 	logger.Debug(
@@ -29,6 +40,22 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	defer r.Body.Close()
+
+	tmpFreeSpace, err := getFreeDiskSpace(os.TempDir())
+	if err != nil {
+		logger.Error("Error getting free disk space:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	if tmpFreeSpace < uint64(r.ContentLength) {
+		logger.Error("Not enough free disk space")
+		http.Error(w, "Not enough free disk space", http.StatusInternalServerError)
+
+		return
+	}
 
 	tmpFile, err := os.CreateTemp(os.TempDir(), "envd-upload")
 	if err != nil {
@@ -38,25 +65,10 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer os.Remove(tmpFile.Name())
-
-	closeErr := tmpFile.Close()
-	if closeErr != nil {
-		logger.Error("Error closing file:", closeErr)
-		http.Error(w, closeErr.Error(), http.StatusInternalServerError)
-
-		return
-	}
-
-	file, err := os.OpenFile(tmpFile.Name(), os.O_APPEND|os.O_WRONLY, 0o600)
-	if err != nil {
-		logger.Error("Error opening file:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-	defer file.Close()
+	defer tmpFile.Close()
 
 	var filepath string
+
 	var filename string
 
 	for {
@@ -82,13 +94,11 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 		if key == "file" {
 			filename = part.FileName()
 
-			r := bufio.NewReaderSize(part, uploadBuffer)
-
-			_, err = r.WriteTo(file)
-			if err != nil {
+			_, readErr := tmpFile.ReadFrom(part)
+			if readErr != nil {
 				part.Close()
-				logger.Error("Error copying file to temp file:", err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				logger.Error("Error reading file:", readErr)
+				http.Error(w, readErr.Error(), http.StatusInternalServerError)
 
 				return
 			}
@@ -103,6 +113,8 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			filepath = buf.String()
+		} else {
+			fmt.Printf("key not found: %s", key)
 		}
 
 		part.Close()
@@ -110,7 +122,7 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 
 	var newFilePath string
 
-	if filepath == "" {
+	if filename != "" {
 		// Create a new file in the user's homedir if no path in the form is specified
 		_, _, homedir, _, userErr := user.GetUser(user.DefaultUser)
 		if userErr != nil {
@@ -121,13 +133,18 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 		}
 
 		newFilePath = path.Join(homedir, filename)
-	} else {
+	} else if filepath != "" {
 		newFilePath = filepath
+	} else {
+		logger.Error("No file or path provided")
+		http.Error(w, "No file or path provided", http.StatusBadRequest)
+
+		return
 	}
 
 	logger.Debugw("New file path", "path", newFilePath, "filepath", filepath)
 
-	err = os.Rename(file.Name(), newFilePath)
+	err = os.Rename(tmpFile.Name(), newFilePath)
 	if err != nil {
 		logger.Error("Error renaming file:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -135,5 +152,13 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info("Upload complete ", "path", newFilePath)
+	err = os.Chmod(newFilePath, 0o666)
+	if err != nil {
+		logger.Error("Error setting file permissions:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	logger.Infow("Upload complete", "path", newFilePath)
 }
