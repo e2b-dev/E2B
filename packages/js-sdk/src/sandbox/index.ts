@@ -78,9 +78,9 @@ export class Sandbox extends SandboxConnection {
    * @internal
    * @access protected
    */
-  constructor(opts?: SandboxOpts) {
+  constructor(opts?: SandboxOpts, protected createCalled: boolean = false) {
     opts = opts || {}
-    super(opts)
+    super(opts, createCalled)
     this.onScanPorts = opts.onScanPorts
 
     // Init Filesystem handler
@@ -462,7 +462,7 @@ export class Sandbox extends SandboxConnection {
   static async create<S extends typeof Sandbox>(this: S, opts: SandboxOpts): Promise<InstanceType<S>>
   static async create(optsOrTemplate?: string | SandboxOpts) {
     const opts: SandboxOpts | undefined = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
-    const sandbox = new this(opts)
+    const sandbox = new this(opts, true)
     await sandbox._open({ timeout: opts?.timeout })
 
     return sandbox
@@ -520,7 +520,7 @@ export class Sandbox extends SandboxConnection {
     const clientID = sandboxIDAndClientID[1]
     opts.__sandbox = { sandboxID, clientID, templateID: 'unknown' }
 
-    const sandbox = new this(opts) as InstanceType<S>
+    const sandbox = new this(opts, true) as InstanceType<S>
     await sandbox._open({ timeout: opts?.timeout })
 
     return sandbox

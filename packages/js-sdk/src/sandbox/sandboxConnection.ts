@@ -111,7 +111,11 @@ export class SandboxConnection {
   private readonly client: APIClient
 
   // let's keep opts readonly, but public - for convenience, mainly when debugging
-  protected constructor(readonly opts: SandboxConnectionOpts) {
+  protected constructor(readonly opts: SandboxConnectionOpts, protected createCalled: boolean) {
+    if (!createCalled) {
+      throw new Error('Cannot instantiate Sandbox directly, use a `create()` method instead.')
+    }
+
     this.sandbox = opts.__sandbox
     this.apiKey = getApiKey(opts.apiKey)
 
