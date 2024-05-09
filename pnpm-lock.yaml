@@ -106,8 +106,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       e2b:
-        specifier: ^0.16.0
-        version: 0.16.0
+        specifier: ^0.16.1
+        version: 0.16.1
       fast-glob:
         specifier: ^3.3.0
         version: 3.3.1
@@ -232,7 +232,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: latest
-        version: 20.12.8
+        version: 20.12.11
       '@types/react':
         specifier: latest
         version: 18.3.1
@@ -2918,8 +2918,8 @@ packages:
   /@types/node@18.18.6:
     resolution: {integrity: sha512-wf3Vz+jCmOQ2HV1YUJuCWdL64adYxumkrxtc+H1VUQlnQI04+5HtH+qZCOE21lBE7gIrt+CwX2Wv8Acrw5Ak6w==}
 
-  /@types/node@20.12.8:
-    resolution: {integrity: sha512-NU0rJLJnshZWdE/097cdCBbyW1h4hEg0xpovcoAQYHl8dnEyp/NAOiE45pvc+Bd1Dt+2r94v2eGFpQJ4R7g+2w==}
+  /@types/node@20.12.11:
+    resolution: {integrity: sha512-vDg9PZ/zi+Nqp6boSOT7plNuthRugEKixDv5sFTIpkE89MmNtEArAShI4mxuX2+UrLEe9pxC1vm2cjm9YlWbJw==}
     dependencies:
       undici-types: 5.26.5
     dev: true
@@ -4823,6 +4823,21 @@ packages:
 
   /e2b@0.16.0:
     resolution: {integrity: sha512-ZPZ9tmbTduX8HVDKTVoA87vhZ9xIL3AZ3m1poh+9yErcF87GJuOJm6o4ZUrup8kP1rV2simWK7IMZMg/0U3pPQ==}
+    engines: {node: '>=18'}
+    dependencies:
+      isomorphic-ws: 5.0.0(ws@8.15.1)
+      normalize-path: 3.0.0
+      openapi-typescript-fetch: 1.1.3
+      path-browserify: 1.0.1
+      platform: 1.3.6
+      ws: 8.15.1(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+    optionalDependencies:
+      bufferutil: 4.0.8
+      utf-8-validate: 6.0.3
+    dev: false
+
+  /e2b@0.16.1:
+    resolution: {integrity: sha512-2L1R/REEB+EezD4Q4MmcXXNATjvCYov2lv/69+PY6V95+wl1PZblIMTYAe7USxX6P6sqANxNs+kXqZr6RvXkSw==}
     engines: {node: '>=18'}
     dependencies:
       isomorphic-ws: 5.0.0(ws@8.15.1)
