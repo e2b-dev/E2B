@@ -122,7 +122,9 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 
 	var newFilePath string
 
-	if filename != "" {
+	if filepath != "" {
+		newFilePath = filepath
+	} else if filename != "" {
 		// Create a new file in the user's homedir if no path in the form is specified
 		_, _, homedir, _, userErr := user.GetUser(user.DefaultUser)
 		if userErr != nil {
@@ -131,10 +133,7 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
-
 		newFilePath = path.Join(homedir, filename)
-	} else if filepath != "" {
-		newFilePath = filepath
 	} else {
 		logger.Error("No file or path provided")
 		http.Error(w, "No file or path provided", http.StatusBadRequest)
