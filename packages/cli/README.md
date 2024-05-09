@@ -26,7 +26,7 @@ e2b --help
 
 ## Getting started
 
-1. Authenticate with `e2b login`
+1. Authenticate with `e2b auth login`
 
 > To authenticate without the ability to open browser, you can provide
 > `E2B_ACCESS_TOKEN` as an environment variable. Get your `E2B_ACCESS_TOKEN`
