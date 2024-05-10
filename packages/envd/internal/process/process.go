@@ -21,12 +21,17 @@ type Process struct {
 	ID     ID
 }
 
-func New(id ID, shell, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
+func New(id ID, shell, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger, activeUser string) (*Process, error) {
 	cmd := exec.Command(shell, "-l", "-c", cmdToExecute)
 
-	uid, gid, homedir, username, err := user.GetUser(user.DefaultUser)
+	usedUser := user.DefaultUser
+	if activeUser != "" {
+		usedUser = activeUser
+	}
+
+	uid, gid, homedir, username, err := user.GetUser(usedUser)
 	if err != nil {
-		return nil, fmt.Errorf("error getting user '%s': %w", user.DefaultUser, err)
+		return nil, fmt.Errorf("error getting user '%s': %w", usedUser, err)
 	}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{}

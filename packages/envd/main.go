@@ -207,7 +207,7 @@ func main() {
 	// TODO: How to differentiate the start command from other running commands? Metadata? EnvVars?
 	if startCmdFlag != "" {
 		envVars := make(map[string]string)
-		_, err := processService.Start(startCmdID, startCmdFlag, &envVars, "/")
+		_, err := process.StartWithUser(processService, startCmdID, startCmdFlag, &envVars, "/", "root")
 		if err != nil {
 			logger.Errorf(
 				"failed to start the command passed via the -cmd flag",
