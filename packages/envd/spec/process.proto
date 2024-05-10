@@ -19,13 +19,13 @@ service Process {
     rpc ResizePTY(ResizePTYRequest) returns (google.protobuf.Empty);
 }
 
-message PTYSize {
-    uint32 cols = 1;
-    uint32 rows = 2;
-}
-
 message PTY {
-    PTYSize size = 1;
+    Size size = 1;
+
+    message Size {
+        uint32 cols = 1;
+        uint32 rows = 2;
+    }
 }
 
 message ProcessConfig {
@@ -54,30 +54,30 @@ message StartProcessRequest {
 message ResizePTYRequest {
     uint32 pid = 1;
 
-    PTYSize size = 2;
+    PTY.Size size = 2;
 
     permissions.AccessControl access = 3;
 }
 
-message StartEvent {
-    uint32 pid = 1;
-}
-
-message DataEvent {
-    optional bytes stdout = 1;
-    optional bytes stderr = 2;
-}
-
-message EndEvent {
-    sint32 exitCode = 1;
-    optional string error = 2;
-}
-
 message ProcessEvent {
     oneof event_type {
-        StartEvent start = 5;
-        DataEvent data = 6;
-        EndEvent end = 7;
+        StartEvent start = 1;
+        DataEvent data = 2;
+        EndEvent end = 3;
+    }
+    
+    message StartEvent {
+        uint32 pid = 5;
+    }
+    
+    message DataEvent {
+        optional bytes stdout = 6;
+        optional bytes stderr = 7;
+    }
+    
+    message EndEvent {
+        sint32 exitCode = 8;
+        optional string error = 9;
     }
 }
 

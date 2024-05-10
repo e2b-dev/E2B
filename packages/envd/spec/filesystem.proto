@@ -135,6 +135,14 @@ message EntryInfo {
     uint64 size = 4;
     uint64 last_modified = 5;
     permissions.AccessControl owner = 6;
+
+    enum FileType {
+        UNKNOWN_FileType = 0;
+        FILE = 1;
+        DIRECTORY = 2;
+        LINK = 3;
+        SYMLINK = 4;
+    }
 }
 
 message ReadDirRequest {
@@ -151,25 +159,20 @@ message WatchRequest {
     permissions.AccessControl access = 2;
 }
 
-enum FileType {
-    UNKNOWN_FileType = 0;
-    FILE = 1;
-    DIRECTORY = 2;
-    LINK = 3;
-    SYMLINK = 4;
-}
 
-enum EventType {
-    UNKNOWN_EventType = 0;
-    CREATE = 1;
-    WRITE = 2;
-    REMOVE = 3;
-    RENAME = 4;
-    CHMOD = 5;
-}
+
 
 message FilesystemEvent {
     string path = 1;
     EventType type = 2;
     EntryInfo entry = 3;
+
+    enum EventType {
+        UNKNOWN_EventType = 0;
+        CREATE = 1;
+        WRITE = 2;
+        REMOVE = 3;
+        RENAME = 4;
+        CHMOD = 5;
+    }
 }
