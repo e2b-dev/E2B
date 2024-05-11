@@ -148,8 +148,8 @@ server {
       return 400 "Unsupported session domain";
     }
 
-    grpc_pass $scheme://$dbk_session_id$dbk_port$request_uri;
-    # proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
+    proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
+    grpc_pass $dbk_session_id$dbk_port$request_uri;
   }
 }
 
