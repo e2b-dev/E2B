@@ -319,14 +319,14 @@ class Sandbox(SandboxConnection):
         """
         logger.info(f"Opening sandbox {self._template}")
         super()._open(metadata=metadata, timeout=timeout)
-        self._code_snippet._subscribe()
+        # self._code_snippet._subscribe()
         logger.info(f"Sandbox {self._template} opened")
 
-        if self.cwd:
-            self.filesystem.make_dir(self.cwd)
+        # if self.cwd:
+        #     self.filesystem.make_dir(self.cwd)
 
-        if self._on_stderr or self._on_stdout:
-            self._handle_start_cmd_logs()
+        # if self._on_stderr or self._on_stdout:
+        #     self._handle_start_cmd_logs()
 
     def file_url(self) -> str:
         """

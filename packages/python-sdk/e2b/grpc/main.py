@@ -7,14 +7,13 @@ import filesystem_pb2
 import filesystem_pb2_grpc
 
 
-def call_grpc():
+def call_grpc(url: str):
     print("Will try to greet world ...")
-    with grpc.insecure_channel("localhost:50051") as channel:
-
-        filesystem_pb2_grpc.Filesystem.ReadFile()
+    with grpc.insecure_channel(url) as channel:
         stub = filesystem_pb2_grpc.FilesystemStub(channel)
-        response = stub.ReadFile(filesystem_pb2.ReadFileRequest(path="/"))
-    print("Greeter client received: " + response.message)
+        responses = stub.ReadFile(filesystem_pb2.ReadFileRequest(path="/usr/bin/envd"))
+        for response in responses:
+            print("Received message", response)
 
 
 if __name__ == "__main__":

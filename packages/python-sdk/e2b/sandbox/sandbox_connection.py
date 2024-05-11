@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, CancelledError
 from time import sleep
 from typing import Any, Callable, List, Literal, Optional, Union, Dict
 from datetime import datetime
+from e2b.grpc.main import call_grpc
 from pydantic import BaseModel
 from urllib3.exceptions import ReadTimeoutError, MaxRetryError, ConnectTimeoutError
 
@@ -272,7 +273,11 @@ class SandboxConnection:
             self._start_refreshing()
 
         try:
-            self._connect_rpc(timeout)
+            url = self.get_hostname(self._debug_port or ENVD_PORT)
+            print(f"url: {url}")
+            call_grpc(url)
+
+            # self._connect_rpc(timeout)
         except Exception as e:
             logger.error(e)
             self._close()
@@ -423,9 +428,7 @@ class SandboxConnection:
             api = client.SandboxesApi(self._api_client)
             while True:
                 if not self._is_open:
-                    logger.debug(
-                        f"Cannot refresh sandbox - it was closed. {self.id}"
-                    )
+                    logger.debug(f"Cannot refresh sandbox - it was closed. {self.id}")
                     return
                 sleep(SANDBOX_REFRESH_PERIOD)
                 try:
@@ -459,7 +462,9 @@ class SandboxConnection:
             self._close()
 
     @staticmethod
-    def list(api_key: Optional[str] = None, domain: str = DOMAIN) -> List[RunningSandbox]:
+    def list(
+        api_key: Optional[str] = None, domain: str = DOMAIN
+    ) -> List[RunningSandbox]:
         """
         List all running sandboxes.
 
@@ -479,7 +484,9 @@ class SandboxConnection:
             ]
 
     @staticmethod
-    def kill(sandbox_id: str, api_key: Optional[str] = None, domain: str = DOMAIN) -> None:
+    def kill(
+        sandbox_id: str, api_key: Optional[str] = None, domain: str = DOMAIN
+    ) -> None:
         """
         Kill the running sandbox specified by the sandbox ID.
 
