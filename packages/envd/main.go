@@ -218,7 +218,7 @@ func main() {
 	// 	logger.Panicw("Failed to start the server", "error", err)
 	// }
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", serverPort))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", serverPort))
 	if err != nil {
 		logger.Panicw("failed to listen", "error", err)
 	}
