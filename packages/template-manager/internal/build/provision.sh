@@ -40,6 +40,8 @@ LimitCORE=infinity
 ExecStart=/bin/bash -l -c "/usr/bin/envd"
 OOMPolicy=continue
 OOMScoreAdjust=-1000
+Environment="GOMEMLIMIT={{ .MemoryLimit }}MiB"
+
 
 ExecStartPre=/bin/bash -c 'echo 0 > /proc/sys/vm/swappiness && swapon /swap/swapfile'
 

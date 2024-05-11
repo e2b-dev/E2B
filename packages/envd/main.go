@@ -31,6 +31,8 @@ const (
 	Version = "dev"
 
 	startCmdID = "_startCmd"
+
+	serverTimeout = 1 * time.Hour
 )
 
 var (
@@ -64,6 +66,19 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write([]byte("pong"))
 	if err != nil {
 		logger.Error("Error writing response:", err)
+	}
+}
+
+func createFileHandler(logger *zap.SugaredLogger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			file.Download(logger, w, r)
+		case http.MethodPost:
+			file.Upload(logger, w, r)
+		default:
+			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		}
 	}
 }
 
@@ -200,11 +215,11 @@ func main() {
 	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
 	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 	// The /file route used for downloading and uploading files via SDK.
-	router.HandleFunc("/file", fileHandler)
+	router.HandleFunc("/file", createFileHandler(logger.Named("file")))
 
 	server := &http.Server{
-		ReadTimeout:  300 * time.Second,
-		WriteTimeout: 300 * time.Second,
+		ReadTimeout:  serverTimeout,
+		WriteTimeout: serverTimeout,
 		Addr:         fmt.Sprintf("0.0.0.0:%d", serverPort),
 		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(router),
 	}

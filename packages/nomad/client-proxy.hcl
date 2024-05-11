@@ -140,7 +140,9 @@ server {
   proxy_cache_bypass 1;
   proxy_no_cache 1;
 
-  client_max_body_size 1024M;
+  client_max_body_size 0;
+  proxy_buffering off;
+  proxy_request_buffering off;
 
   location / {
     proxy_pass $scheme://[[ .Address ]]:[[ .Port ]]$request_uri;

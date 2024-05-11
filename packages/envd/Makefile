@@ -45,6 +45,7 @@ start-debug-docker:
 	-p 49982:49982 \
 	-p 2345:2345 \
 	-p 9999:9999 \
+	--rm \
 	-d envd-debug sh -l -c "/go/bin/dlv --listen=:2345 --headless=true --log=true --log-output=debugger,debuglineerr,gdbwire,lldbout,rpc --accept-multiclient --api-version=2 exec /usr/bin/envd"
 
 stop-debug-docker:

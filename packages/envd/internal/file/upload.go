@@ -1,57 +1,130 @@
 package file
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path"
+	"syscall"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/user"
 
 	"go.uber.org/zap"
 )
 
-const maxFileInMemory = 512 * 1024 * 1024 // 512MB
+func getFreeDiskSpace(path string) (uint64, error) {
+	var stat syscall.Statfs_t
+
+	err := syscall.Statfs(path, &stat)
+	if err != nil {
+		return 0, fmt.Errorf("error getting free disk space: %w", err)
+	}
+
+	// Available blocks * size per block = available space in bytes
+	freeSpace := stat.Bavail * uint64(stat.Bsize)
+
+	return freeSpace, nil
+}
 
 func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 	logger.Debug(
 		"Starting file upload",
 	)
 
-	if err := r.ParseMultipartForm(maxFileInMemory); err != nil {
-		logger.Error("Error parsing multipart form:", err)
-		http.Error(w, fmt.Sprintf("The uploaded file is too big. Please choose an file that's less than 100MB in size: %s", err.Error()), http.StatusBadRequest)
-
-		return
-	}
-
-	logger.Debug("Multipart form parsed successfully")
-
-	// The argument to FormFile must match the name attribute
-	// of the file input on the frontend
-	file, fileHeader, err := r.FormFile("file")
+	f, err := r.MultipartReader()
 	if err != nil {
-		logger.Error("Error retrieving the file from form-data:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		logger.Error("Error parsing multipart form:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+	defer r.Body.Close()
+
+	tmpFreeSpace, err := getFreeDiskSpace(os.TempDir())
+	if err != nil {
+		logger.Error("Error getting free disk space:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
 
-	logger.Debug("File retrieved successfully")
+	if tmpFreeSpace < uint64(r.ContentLength) {
+		logger.Error("Not enough free disk space")
+		http.Error(w, "Not enough free disk space", http.StatusInternalServerError)
 
-	defer func() {
-		closeErr := file.Close()
-		if closeErr != nil {
-			logger.Error("Error closing file:", closeErr)
+		return
+	}
+
+	tmpFile, err := os.CreateTemp(os.TempDir(), "envd-upload")
+	if err != nil {
+		logger.Error("Error creating temp file:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
+
+	var filepath string
+
+	var filename string
+
+	for {
+		// Get the next part.
+		part, partErr := f.NextPart()
+
+		logger.Debugw("Part", "part", partErr)
+
+		if partErr == io.EOF {
+			// We're done reading the parts.
+			break
+		} else if partErr != nil {
+			logger.Error("Error reading form:", partErr)
+			http.Error(w, partErr.Error(), http.StatusInternalServerError)
+
+			return
 		}
-	}()
 
-	filepath := r.Form.Get("path")
+		// Get the key of the part.
+		key := part.FormName()
+		logger.Debugw("Part", "part key", key)
+
+		if key == "file" {
+			filename = part.FileName()
+
+			_, readErr := tmpFile.ReadFrom(part)
+			if readErr != nil {
+				part.Close()
+				logger.Error("Error reading file:", readErr)
+				http.Error(w, readErr.Error(), http.StatusInternalServerError)
+
+				return
+			}
+		} else if key == "path" {
+			buf := new(bytes.Buffer)
+			_, err = buf.ReadFrom(part)
+			if err != nil {
+				part.Close()
+				logger.Error("Error reading file path:", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+
+				return
+			}
+			filepath = buf.String()
+		} else {
+			fmt.Printf("key not found: %s", key)
+		}
+
+		part.Close()
+	}
 
 	var newFilePath string
 
-	if filepath == "" {
+	if filepath != "" {
+		newFilePath = filepath
+	} else if filename != "" {
 		// Create a new file in the user's homedir if no path in the form is specified
 		_, _, homedir, _, userErr := user.GetUser(user.DefaultUser)
 		if userErr != nil {
@@ -60,51 +133,31 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
-
-		newFilePath = path.Join(homedir, fileHeader.Filename)
+		newFilePath = path.Join(homedir, filename)
 	} else {
-		newFilePath = filepath
+		logger.Error("No file or path provided")
+		http.Error(w, "No file or path provided", http.StatusBadRequest)
+
+		return
 	}
 
-	logger.Debugw(
-		"Starting file upload",
-		"path", newFilePath,
-	)
+	logger.Debugw("New file path", "path", newFilePath, "filepath", filepath)
 
-	dst, err := os.Create(newFilePath)
+	err = os.Rename(tmpFile.Name(), newFilePath)
 	if err != nil {
-		logger.Error("Error creating the file:", err)
+		logger.Error("Error renaming file:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
 
-	logger.Debugw("File created successfully",
-		"path", newFilePath,
-	)
-
-	logger.Debugw("File created successfully")
-
-	defer func() {
-		closeErr := dst.Close()
-		if closeErr != nil {
-			logger.Error("Error closing file:", closeErr)
-		}
-	}()
-
-	pr := &Progress{
-		TotalSize: fileHeader.Size,
-	}
-
-	// Copy the uploaded file to the filesystem
-	// at the specified destination
-	_, err = io.Copy(dst, io.TeeReader(file, pr))
+	err = os.Chmod(newFilePath, 0o666)
 	if err != nil {
-		logger.Error("Error saving file to filesystem:", err)
+		logger.Error("Error setting file permissions:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
 
-	logger.Info("Upload complete ", "path", newFilePath)
+	logger.Infow("Upload complete", "path", newFilePath)
 }
