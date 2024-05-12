@@ -11,11 +11,9 @@ service Filesystem {
     rpc Stat(StatRequest) returns (StatResponse);
     
     rpc CreateFile(CreateFileRequest) returns (google.protobuf.Empty);
-    rpc ReadFile(ReadFileRequest) returns (stream ReadFileResponse);
-    rpc WriteFile(WriteFileRequest) returns (google.protobuf.Empty);
 
-    rpc MakeDir(MakeDirRequest) returns (google.protobuf.Empty);
-    rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
+    rpc CreateDir(CreateDirRequest) returns (google.protobuf.Empty);
+    rpc ListDir(ListDirRequest) returns (ListDirResponse);
     
     rpc CreateLink(CreateLinkRequest) returns (google.protobuf.Empty);
     rpc CreateSymlink(CreateSymlinkRequest) returns (google.protobuf.Empty);
@@ -37,7 +35,7 @@ message CreateFileRequest {
     permissions.AccessControl access = 3;
 }
 
-message MakeDirRequest {
+message CreateDirRequest {
     string path = 1;
     bool create_parents = 2;
     uint32 mode = 3;
@@ -77,21 +75,6 @@ message ChownRequest {
     permissions.AccessControl access = 4;
 }
 
-message ReadFileRequest {
-    string path = 1;
-
-    // If specified, the file is read from the given byte offset.
-    optional uint64 offset = 3;
-    // If specified, the file is read up to this many bytes.
-    optional uint64 length = 4;
-
-    permissions.AccessControl access = 5;
-}
-
-message ReadFileResponse {
-    bytes data = 1;
-}
-
 message StatRequest {
     string path = 1;
     permissions.AccessControl access = 2;
@@ -99,21 +82,6 @@ message StatRequest {
 
 message StatResponse {
     EntryInfo entry = 1;
-}
-
-message WriteFileRequest {
-    string path = 1;
-    bytes data = 2;
-
-    bool create_if_not_exists = 3;
-    bool append = 4;
-
-    // If specified, the file is written at the given byte offset.
-    optional uint64 offset = 5;
-    // If specified, the new data overwrites the existing data with this length at the given byte offset.
-    optional uint64 length = 6;
-
-    permissions.AccessControl access = 7;
 }
 
 message RemoveRequest {
@@ -145,12 +113,12 @@ message EntryInfo {
     }
 }
 
-message ReadDirRequest {
+message ListDirRequest {
     string path = 1;
     permissions.AccessControl access = 2;
 }
 
-message ReadDirResponse {
+message ListDirResponse {
     repeated EntryInfo entries = 1;
 }
 
@@ -158,9 +126,6 @@ message WatchRequest {
     string path = 1;
     permissions.AccessControl access = 2;
 }
-
-
-
 
 message FilesystemEvent {
     string path = 1;

@@ -1,54 +1,95 @@
+# TODO: Way to auth read and write request for specific user+sandbox — system for generating signed upload urls?
+# TODO: Append
+# TODO: Add defaults
+# TODO: Basic auth also
+
 openapi: 3.0.0
 info:
   title: envd
   version: 0.1.0
-  description: API for managing file operations within the envd service sandbox
+  description: API for managing files content and controlling the envd
+
+servers:
+  - url: /v1
 
 paths:
-  /{path}:
+  /sync:
+    post:
+      summary: Ensure the time and metadata is synced with the host
+      responses:
+        204:
+          description: The time and metadata is synced with the host
+        500:
+          $ref: "#/components/responses/InternalServerError"
+
+  /health:
     get:
-      summary: Download a file or a specific byte range from the sandbox
+      summary: Check the health of the envd
+      responses:
+        204:
+          description: The envd is healthy
+        500:
+          $ref: "#/components/responses/InternalServerError"
+
+  /files:
+    get:
+      summary: Download a file or a specific byte range
       parameters:
         - $ref: "#/components/parameters/FilePath"
         - $ref: "#/components/parameters/Range"
       responses:
-        "200":
-          $ref: "#/components/responses/FileDownloadSuccess"
-        "206":
-          $ref: "#/components/responses/PartialContent"
-        "400":
+        200:
+          $ref: "#/components/responses/DownloadSuccess"
+        206:
+          $ref: "#/components/responses/RangeDownloadSuccess"
+        400:
           $ref: "#/components/responses/DirectoryPathError"
-        "416":
+        416:
           $ref: "#/components/responses/RangeNotSatisfiableError"
-    post:
-      summary: Upload a file to the sandbox
+    put:
+      summary: Upload a file or a specific byte range
       parameters:
         - $ref: "#/components/parameters/FilePath"
+        - $ref: "#/components/parameters/Range"
         - $ref: "#/components/parameters/User"
         - $ref: "#/components/parameters/Mode"
         - $ref: "#/components/parameters/Overwrite"
-        - $ref: "#/components/parameters/Range"
       requestBody:
-        $ref: "#/components/requestBodies/FileUpload"
+        $ref: "#/components/requestBodies/File"
       responses:
-        "200":
-          description: The file was uploaded successfully.
-        "409":
+        200:
+          $ref: "#/components/responses/ExistingFileUploadSuccess"
+        201:
+          $ref: "#/components/responses/NewFileUploadSuccess"
+        409:
           $ref: "#/components/responses/ConflictError"
-        "400":
+        400:
           $ref: "#/components/responses/DirectoryPathError"
-        "416":
+        416:
           $ref: "#/components/responses/RangeNotSatisfiableError"
 
 components:
   parameters:
+    Location:
+      name: Location
+      in: header
+      description: The URL of the uploaded file
+      schema:
+        type: string
+        format: uri
+    ContentRange:
+      name: Content-Range
+      in: header
+      description: The range of bytes returned up
+      schema:
+        type: string
+        pattern: '^bytes=\d*-\d*(,\d*-\d*)*|bytes \d*-\d*/\d+$'
     FilePath:
       name: path
       in: path
       required: true
-      allowReserved: true
       allowEmptyValue: false
-      description: Absolute path in the sandbox to the file, URL encoded.
+      description: Absolute path to the file, URL encoded.
       schema:
         type: string
     Range:
@@ -66,7 +107,6 @@ components:
       description: User owning the file
       schema:
         type: string
-        default: "root"
     Mode:
       name: Mode
       in: header
@@ -74,7 +114,6 @@ components:
       description: File permissions in octal format (e.g., 0755)
       schema:
         type: string
-        default: "0644"
         pattern: "^[0-7]{3,4}$"
     Overwrite:
       name: overwrite
@@ -83,9 +122,10 @@ components:
       description: Overwrite the file if it exists
       schema:
         type: boolean
-        default: false
+        default: true
+
   requestBodies:
-    FileUpload:
+    File:
       required: true
       content:
         multipart/form-data:
@@ -95,48 +135,76 @@ components:
               file:
                 type: string
                 format: binary
+
   responses:
-    FileDownloadSuccess:
+    ExistingFileUploadSuccess:
+      description: The file was updated successfully.
+      headers:
+        Content-Range:
+          required: false
+          $ref: "#/components/parameters/ContentRange"
+    NewFileUploadSuccess:
+      description: The file was created successfully.
+      headers:
+        Location:
+          $ref: "#/components/parameters/Location"
+        Content-Range:
+          required: false
+          $ref: "#/components/parameters/ContentRange"
+    DownloadSuccess:
       description: Entire file downloaded successfully.
       content:
         application/octet-stream:
           schema:
             type: string
             format: binary
-    PartialContent:
+            description: The file content
+    RangeDownloadSuccess:
       description: Specified byte range(s) of the file downloaded successfully.
+      headers:
+        Content-Range:
+          required: true
+          $ref: "#/components/parameters/ContentRange"
       content:
         application/octet-stream:
           schema:
             type: string
             format: binary
+            description: The file content
     DirectoryPathError:
       description: Bad Request - The specified path is a directory. Only files can be downloaded.
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-                example: "The specified path is a directory. Only files can be downloaded."
+            $ref: "#/components/schemas/Error"
     RangeNotSatisfiableError:
       description: Requested Range Not Satisfiable - The specified byte range is outside the size of the file, or the Range header is formatted incorrectly.
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-                example: "The specified byte range is outside the size of the file, or the Range header is formatted incorrectly."
+            $ref: "#/components/schemas/Error"
     ConflictError:
       description: Conflict - The file already exists and overwrite is false.
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-                example: "The file already exists and overwrite is false."
+            $ref: "#/components/schemas/Error"
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      required:
+        - message
+        - code
+      properties:
+        message:
+          type: string
+          description: Error message
+        code:
+          type: integer
+          description: Error code

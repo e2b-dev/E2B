@@ -1,3 +1,6 @@
+// TODO: How to connect/get output from special processes like startCmd that could already be running in envd
+// TODO: Make resize call more general
+
 syntax = "proto3";
 
 import "spec/permissions.proto";
