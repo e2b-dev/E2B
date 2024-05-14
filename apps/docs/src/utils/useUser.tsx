@@ -12,9 +12,6 @@ type Team = {
   tier: string
   is_default: boolean
   email: string
-  team_billing: {
-    credit_card_added: boolean
-  }[]
 }
 
 type UserContextType = {
@@ -104,7 +101,7 @@ export const CustomUserContextProvider = (props) => {
       // @ts-ignore
       const { data: userTeams, teamsError } = await supabase
         .from('users_teams')
-        .select('teams (id, name, is_default, tier, email, team_billing (credit_card_added))')
+        .select('teams (id, name, is_default, tier, email)')
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
 
       if (teamsError) Sentry.captureException(teamsError)
