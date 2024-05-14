@@ -80,14 +80,6 @@ function SwitchTierButton() {
             Switch to Pro
           </Button>
         )}
-
-        {(user.pricingTier.id === tiers.pro.id) && (
-          <Button
-            onClick={createCheckoutSession}
-          >
-            Add Credit Card
-          </Button>
-        )}
       </div>
 
       {error && (
