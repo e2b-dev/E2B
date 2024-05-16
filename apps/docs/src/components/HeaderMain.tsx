@@ -43,7 +43,9 @@ export const HeaderMain = forwardRef(function Header({ className }, ref) {
       
       <div className="flex items-center justify-center text-sm space-x-3 text-neutral-400">
         <p className='hover:text-white hover:cursor-pointer'>Changelog</p>
-        <p className='hover:text-white hover:cursor-pointer'>Docs</p>
+        <Link className='hover:text-white hover:cursor-pointer' href='/docs'>
+          Docs
+        </Link>
         <p className='hover:text-white hover:cursor-pointer'>Blog</p>
       </div>
 
