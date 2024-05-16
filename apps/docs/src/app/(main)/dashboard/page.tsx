@@ -6,6 +6,7 @@ import { ChevronRight, CreditCard, LayoutPanelTop, LucideIcon, Package, PlusCirc
 import { GeneralContent } from '@/components/Dashboard/General'
 import { BillingContent } from '@/components/Dashboard/Billing'
 import { SandboxesContent } from '@/components/Dashboard/Sandboxes'
+import { TeamContent } from '@/components/Dashboard/Team'
 
 import {
   DropdownMenu,
@@ -16,7 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 
-const menuLabels = ['General', 'Billing', 'Sandboxes', 'People', 'Templates'] as const
+const menuLabels = ['General', 'Billing', 'Sandboxes', 'Team', 'Templates'] as const
 type MenuLabel  = typeof menuLabels[number]
 
 export default function Dashboard() {
@@ -59,9 +60,9 @@ const Sidebar = ({ selectedItem, setSelectedItem }) => (
     />
     <MenuItem 
       icon={Users} 
-      label="People" 
-      selected={selectedItem === 'People'} 
-      onClick={() => setSelectedItem('People')} 
+      label="Team" 
+      selected={selectedItem === 'Team'}
+      onClick={() => setSelectedItem('Team')} 
     />
     <MenuItem 
       icon={LayoutPanelTop} 
@@ -111,7 +112,7 @@ const AccountSelectItem = () => {
   )
 }
 
-const MainContent = ({ selectedItem }) => {
+const MainContent = ({ selectedItem }: { selectedItem: MenuLabel }) => {
   switch (selectedItem) {
     case 'General':
       return <GeneralContent />
@@ -119,8 +120,8 @@ const MainContent = ({ selectedItem }) => {
       return <BillingContent />
     case 'Sandboxes':
       return <SandboxesContent />
-    case 'People':
-      return <PeopleContent />
+    case 'Team':
+      return <TeamContent />
     case 'Templates':
       return <TemplatesContent />
     default:
@@ -128,7 +129,6 @@ const MainContent = ({ selectedItem }) => {
   }
 }
 
-const PeopleContent = () => <div>People Content</div>
 const TemplatesContent = () => <div>Templates Content</div>
 const ErrorContent = () => <div>Error Content</div>
 

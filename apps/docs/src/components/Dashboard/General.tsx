@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useToast } from '../ui/use-toast'
-import uuidv4 from 'uuid'
+import { v4 as uuidv4 } from 'uuid'
 import { Copy, Delete } from 'lucide-react'
 import { Button } from '../Button'
 
