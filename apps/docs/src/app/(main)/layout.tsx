@@ -1,42 +1,34 @@
 import { Metadata } from 'next'
-import glob from 'fast-glob'
 import { Analytics } from '@vercel/analytics/react'
 
-import { Providers } from '@/app/providers'
-import { Layout } from '@/components/Layout'
+import { Providers } from '@/app/(docs)/docs/providers'
 
 import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'
-import { Section } from '@/components/SectionProvider'
 import Canonical from '@/components/Navigation/canonical'
+import { LayoutMain } from '@/components/LayoutMain'
+import { Toaster } from '@/components/ui/toaster'
 
 export const metadata: Metadata = {
   // TODO: Add metadataBase
   // metadataBase: ''
   title: {
-    template: '%s - E2B Docs',
-    default: 'E2B Docs - Code Interpreting for AI apps',
+    template: '%s - E2B',
+    default: 'E2B - Code Interpreting for AI apps',
   },
   description: 'Open-source secure sandboxes for AI code execution',
   twitter: {
-    title: 'E2B Docs - Code Interpreting for AI apps',
+    title: 'E2B - Code Interpreting for AI apps',
     description: 'Open-source secure sandboxes for AI code execution',
   },
   openGraph: {
-    title: 'E2B Docs - Code Interpreting for AI apps',
+    title: 'E2B - Code Interpreting for AI apps',
     description: 'Open-source secure sandboxes for AI code execution',
   },
 }
 
 export default async function RootLayout({ children }) {
-  const pages = await glob('**/*.mdx', { cwd: 'src/app' })
-  const allSectionsEntries = (await Promise.all(
-    pages.map(async filename => [
-      '/' + filename.replace(/(^|\/)page\.mdx$/, ''),
-      (await import(`./${filename}`)).sections,
-    ]),
-  )) as Array<[string, Array<Section>]>
-  const allSections = Object.fromEntries(allSectionsEntries)
+
 
   return (
     <html
@@ -50,11 +42,12 @@ export default async function RootLayout({ children }) {
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
           <div className="w-full">
-            <Layout allSections={allSections}>
+            <LayoutMain>
               {children}
+              <Toaster />
               <PostHogAnalytics />
               <Analytics />
-            </Layout>
+            </LayoutMain>
           </div>
         </Providers>
       </body>
