@@ -19,14 +19,13 @@ from .filesystem_watcher import (
     FilesystemOperation,
     FilesystemWatcher,
 )
-from .main import Sandbox, Action
+from .main import Sandbox
 from .process import (
     Process,
     ProcessManager,
     ProcessMessage,
     ProcessOutput,
 )
-from .run_code import run_code
 from .terminal import (
     Terminal,
     TerminalManager,

@@ -1,6 +1,6 @@
 from e2b import Sandbox
 
-sandbox = Sandbox.create(
+sandbox = Sandbox(
     template='base',
     metadata={"user_id": "uniqueID"},  # $HighlightLine
 )

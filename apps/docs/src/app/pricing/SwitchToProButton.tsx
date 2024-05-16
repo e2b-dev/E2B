@@ -30,6 +30,10 @@ function SwitchTierButton() {
   async function createCheckoutSession() {
     setError('')
 
+    if (!user) {
+      return setError('You must be logged in to switch to Pro.')
+    }
+
     const response = await createCheckout(tiers.pro.id, user.teams[0].id)
     const responseData = await response.json()
 
@@ -45,7 +49,7 @@ function SwitchTierButton() {
   }
 
 
-  if (!user && !isLoading) {
+  if (!user) {
     return (
       <Link href="/sign-in?view=sign-up">
         <Button>Sign Up</Button>
@@ -74,14 +78,6 @@ function SwitchTierButton() {
             onClick={createCheckoutSession}
           >
             Switch to Pro
-          </Button>
-        )}
-
-        {(user.pricingTier.id === tiers.pro.id && !user.teams[0].team_billing[0].credit_card_added) && (
-          <Button
-            onClick={createCheckoutSession}
-          >
-            Add Credit Card
           </Button>
         )}
       </div>

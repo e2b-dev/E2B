@@ -26,6 +26,11 @@ function Promo() {
     }
     setError('')
 
+    if (!user || user?.teams.length === 0) {
+      setError('You must be a member of a team to apply a promo code')
+      return
+    }
+
     // TODO: Actually apply the promo code
     const response = await sendPromoCode(code, user.teams[0].id)
     const responseData = await response.json()

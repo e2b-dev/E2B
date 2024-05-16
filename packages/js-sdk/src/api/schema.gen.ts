@@ -49,6 +49,33 @@ export interface paths {
       };
     };
   };
+  "/sandboxes/{sandboxID}/logs": {
+    /** Get sandbox logs */
+    get: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+        query: {
+          /** Starting timestamp of the logs that should be returned */
+          start?: number;
+          /** Maximum number of logs that should be returned */
+          limit?: number;
+        };
+      };
+      responses: {
+        /** Successfully returned the sandbox logs */
+        200: {
+          content: {
+            "application/json": components["schemas"]["SandboxLogs"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
   "/sandboxes/{sandboxID}": {
     /** Kill a sandbox */
     delete: {
@@ -236,6 +263,20 @@ export interface paths {
 export interface components {
   schemas: {
     SandboxMetadata: { [key: string]: string };
+    /** @description Log entry with timestamp and line */
+    SandboxLog: {
+      /**
+       * Format: date-time
+       * @description Timestamp of the log entry
+       */
+      timestamp: string;
+      /** @description Log line content */
+      line: string;
+    };
+    SandboxLogs: {
+      /** @description Logs of the sandbox */
+      logs: components["schemas"]["SandboxLog"][];
+    };
     Sandbox: {
       /** @description Identifier of the template from which is the sandbox created */
       templateID: string;

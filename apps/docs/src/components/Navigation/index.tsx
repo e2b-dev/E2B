@@ -29,9 +29,9 @@ function useInitialValue<T>(value: T, condition = true) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function TopLevelNavItem({
-                           href,
-                           children,
-                         }: {
+  href,
+  children,
+}: {
   href: string
   children: React.ReactNode
 }) {
@@ -48,15 +48,15 @@ function TopLevelNavItem({
 }
 
 function NavLink({
-                   className,
-                   href,
-                   children,
-                   tag,
-                   icon,
-                   active = false,
-                   isAnchorLink = false,
-                   isFontMono = false,
-                 }: {
+  className,
+  href,
+  children,
+  tag,
+  icon,
+  active = false,
+  isAnchorLink = false,
+  isFontMono = false,
+}: {
   className?: string
   href: string
   children: React.ReactNode
@@ -162,6 +162,11 @@ function NavigationGroup({ group, className }) {
     [initialPathname, useSectionStore(s => s.sections)],
     isInsideMobileNavigation,
   )
+
+  if (!pathname) {
+    return null
+  }
+
   const isActiveGroup = activeGroupIndex(group, pathname) !== -1
 
   return (
@@ -275,7 +280,7 @@ export function Navigation(props) {
           />
         ))}
         <li className="z-10 mt-6">
-          <Feedback className="w-full"/>
+          <Feedback className="w-full" />
         </li>
         <li
           /* -1.5rem to stretch outside the padding of the parent list */
@@ -285,7 +290,7 @@ export function Navigation(props) {
             min-[540px]:hidden
           "
         >
-          <Auth/>
+          <Auth />
         </li>
       </ul>
     </nav>

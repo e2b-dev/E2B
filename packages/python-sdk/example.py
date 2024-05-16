@@ -6,7 +6,7 @@ import time
 
 load_dotenv()
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
 
 start = time.time()
 

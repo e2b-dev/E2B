@@ -44,7 +44,7 @@ export function PostHogAnalytics() {
   useEffect(() => {
     if (pathname) {
       let url = window.origin + pathname
-      if (searchParams.toString()) url = url + `?${searchParams.toString()}`
+      if (searchParams?.toString()) url = url + `?${searchParams.toString()}`
       posthog?.capture('$pageview', { $current_url: url })
     }
   }, [pathname, searchParams])
@@ -53,7 +53,9 @@ export function PostHogAnalytics() {
     if (user) {
       posthog?.identify(user.id, { email: user.email })
       // TODO: When we add teams, make sure to change this
-      posthog?.group('team', defaultTeamId, {name: user?.teams?.[0]?.name })
+      if (!defaultTeamId) return
+
+      posthog?.group('team', defaultTeamId, { name: user?.teams?.[0]?.name })
     }
   }, [user, defaultTeamId])
 

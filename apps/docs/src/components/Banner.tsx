@@ -15,7 +15,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json())
 export function Banner() {
   const { user } = useUser()
 
-  const { data, error, isLoading } = useSWR<Promo>(`/docs/pricing/promo?${new URLSearchParams({ id: user?.pricingTier.id })}`, fetcher)
+  const { data, error, isLoading } = useSWR<Promo>(`/docs/pricing/promo?${new URLSearchParams({ id: user?.pricingTier.id ?? '' })}`, fetcher)
 
   if (isLoading) return null
 
@@ -25,6 +25,10 @@ export function Banner() {
   }
 
   if (!user?.pricingTier.isPromo) return null
+
+  if (!data) {
+    return null
+  }
 
   return (
     <div className="py-2 px-8 border-y border-zinc-700 flex flex-col md:flex-row gap-1 fixed inset-x-0 top-[55px] bg-zinc-800 z-40">

@@ -20,12 +20,12 @@ export function Layout({
 }) {
   const { user } = useUser()
   const pathname = usePathname()
-  const relativePathname = pathname.replace(new RegExp('^/docs'), '')
+  const relativePathname = pathname?.replace(new RegExp('^/docs'), '')
   const shouldShowBanner = user?.pricingTier.isPromo
-  const isAuth = relativePathname.startsWith('/sign-in')
+  const isAuth = relativePathname?.startsWith('/sign-in')
 
   return (
-    <SectionProvider sections={allSections[relativePathname] ?? []}>
+    <SectionProvider sections={relativePathname ? allSections[relativePathname] ?? [] : []}>
       <div className={clsx('h-full', { 'lg:ml-[var(--sidebar-nav-width)]': !isAuth })}>
         <motion.header
           layoutScroll

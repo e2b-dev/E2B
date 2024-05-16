@@ -12,9 +12,6 @@ type Team = {
   tier: string
   is_default: boolean
   email: string
-  team_billing: {
-    credit_card_added: boolean
-  }[]
 }
 
 type UserContextType = {
@@ -41,8 +38,8 @@ export const UserContext = createContext(undefined)
 export const CustomUserContextProvider = (props) => {
   const supabase = createPagesBrowserClient()
   const [session, setSession] = useState<Session | null>(null)
-  const [user, setUser] = useState(null)
-  const [error, setError] = useState(null)
+  const [user, setUser] = useState<any>()
+  const [error, setError] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const mounted = useRef<boolean>(false)
 
@@ -104,7 +101,7 @@ export const CustomUserContextProvider = (props) => {
       // @ts-ignore
       const { data: userTeams, teamsError } = await supabase
         .from('users_teams')
-        .select('teams (id, name, is_default, tier, email, team_billing (credit_card_added))')
+        .select('teams (id, name, is_default, tier, email)')
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
 
       if (teamsError) Sentry.captureException(teamsError)
@@ -137,7 +134,7 @@ export const CustomUserContextProvider = (props) => {
       const { data: apiKeys, error: apiKeysError } = await supabase
         .from('team_api_keys')
         .select('*')
-        .in('team_id', teams?.map((team) => team.id)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+        .in('team_id', (teams?.map((team) => team.id) as any)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (apiKeysError) Sentry.captureException(apiKeysError)
 
       const defaultTeamId = defaultTeam?.id // TODO: Adjust when user can be part of multiple teams
@@ -152,15 +149,15 @@ export const CustomUserContextProvider = (props) => {
 
       setUser({
         ...session?.user,
-        teams,
-        apiKeys,
+        teams: teams ?? [],
+        apiKeys: apiKeys ?? [],
         accessToken: accessToken?.access_token,
         defaultTeamId,
         error: teamsError || apiKeysError,
         pricingTier: {
           id: pricingTier,
           isPromo: isPromoTier,
-          endsAt: promoEndsAt,
+          ...(isPromoTier ? { endsAt: promoEndsAt } : {})
         },
       })
       setIsLoading(false)
@@ -213,7 +210,7 @@ export const useApiKey = (): string => {
   return user?.apiKeys?.[0]?.api_key
 }
 
-export const useAccessToken = (): string => {
+export const useAccessToken = () => {
   // for convenience
   const { user } = useUser()
   return user?.accessToken

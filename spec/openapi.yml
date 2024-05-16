@@ -70,6 +70,30 @@ components:
         type: string
         description: Metadata of the sandbox
 
+    SandboxLog:
+      description: Log entry with timestamp and line
+      required:
+        - timestamp
+        - line
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the log entry
+        line:
+          type: string
+          description: Log line content
+
+    SandboxLogs:
+      required:
+        - logs
+      properties:
+        logs:
+          description: Logs of the sandbox
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxLog"
+
     Sandbox:
       required:
         - templateID
@@ -167,23 +191,23 @@ components:
       required:
         - dockerfile
       properties:
-          alias:
-            description: Alias of the template
-            type: string
-          dockerfile:
-            description: Dockerfile for the template
-            type: string
-          startCmd:
-            description: Start command to execute in the template after the build
-            type: string
-          cpuCount:
-            description: CPU cores for the template
-            type: integer
-            minimum: 1
-          memoryMB:
-            description: Memory limit for the template in MB
-            type: integer
-            minimum: 128
+        alias:
+          description: Alias of the template
+          type: string
+        dockerfile:
+          description: Dockerfile for the template
+          type: string
+        startCmd:
+          description: Start command to execute in the template after the build
+          type: string
+        cpuCount:
+          description: CPU cores for the template
+          type: integer
+          minimum: 1
+        memoryMB:
+          description: Memory limit for the template in MB
+          type: integer
+          minimum: 128
 
     TemplateBuild:
       required:
@@ -283,6 +307,39 @@ paths:
           $ref: "#/components/responses/401"
         400:
           $ref: "#/components/responses/400"
+        500:
+          $ref: "#/components/responses/500"
+
+  /sandboxes/{sandboxID}/logs:
+    get:
+      description: Get sandbox logs
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+        - in: query
+          name: start
+          schema:
+            type: integer
+          description: Starting timestamp of the logs that should be returned in milliseconds
+        - in: query
+          name: limit
+          schema:
+            default: 1000
+            type: integer
+          description: Maximum number of logs that should be returned
+      responses:
+        200:
+          description: Successfully returned the sandbox logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SandboxLogs"
+        404:
+          $ref: "#/components/responses/404"
+        401:
+          $ref: "#/components/responses/401"
         500:
           $ref: "#/components/responses/500"
 
@@ -422,7 +479,7 @@ paths:
       description: Start the build
       tags: [templates]
       security:
-          - AccessTokenAuth: []
+        - AccessTokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
         - $ref: "#/components/parameters/buildID"
@@ -469,9 +526,9 @@ paths:
   /templates/{templateID}/builds/{buildID}/status:
     get:
       description: Get template build info
-      tags: [ templates ]
+      tags: [templates]
       security:
-        - AccessTokenAuth: [ ]
+        - AccessTokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
         - $ref: "#/components/parameters/buildID"
