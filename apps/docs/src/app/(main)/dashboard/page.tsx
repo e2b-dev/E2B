@@ -24,7 +24,7 @@ export default function Dashboard() {
   const [selectedItem, setSelectedItem] = useState<MenuLabel>('General')
 
   return (
-    <div className="flex flex-row m-32">
+    <div className="flex min-h-screen flex-row pt-32 px-32">
       <Sidebar selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
       <div className="flex-1 pl-10">
         <h2 className='text-2xl mb-2 font-bold'>{selectedItem}</h2>
