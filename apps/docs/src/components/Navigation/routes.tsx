@@ -41,19 +41,19 @@ export const routes = [
       },
       {
         title: 'helloWorld.[ts|js]',
-        href: '/hello-world/js',
+        href: '/docs/hello-world/js',
         icon: <Image src={logoNode} width={20} height={20} alt="Python logo" />,
         isFontMono: true,
       },
       {
         title: 'hello_world.py',
-        href: '/hello-world/py',
+        href: '/docs/hello-world/py',
         icon: <Image src={logoPython} width={20} height={20} alt="Python logo" />,
         isFontMono: true,
       },
       {
         title: 'Supported LLMs and AI frameworks',
-        href: '/supported',
+        href: '/docs/supported',
       },
       // {
       //   title: 'What\'s Code Interpreting?',
@@ -62,22 +62,22 @@ export const routes = [
       {
         icon: <KeyRound strokeWidth={1} size={20} />,
         title: 'API Key',
-        href: '/getting-started/api-key',
+        href: '/docs/getting-started/api-key',
       },
       {
         icon: <DollarSign strokeWidth={1} size={20} />,
         title: 'Pricing',
-        href: '/pricing',
+        href: '/docs/pricing',
       },
       {
         icon: <BarChart strokeWidth={1} size={20} />,
         title: 'Track usage',
-        href: '/usage',
+        href: '/docs/usage',
       },
       {
         icon: <ShieldQuestion strokeWidth={1} size={20} />,
         title: 'Getting help',
-        href: '/getting-help',
+        href: 'docs/getting-help',
       },
     ],
   },
@@ -141,12 +141,12 @@ export const routes = [
     links: [
       {
         title: 'Installation',
-        href: '/code-interpreter/installation',
+        href: 'docs/code-interpreter/installation',
       },
       {
         icon: <Terminal strokeWidth={1} size={20} />,
         title: 'AI Code Execution',
-        href: '/code-interpreter/execution',
+        href: 'docs/code-interpreter/execution',
       },
       // {
       //   icon: <Book strokeWidth={1} size={20} />,
@@ -166,12 +166,12 @@ export const routes = [
       {
         icon: <Wrench strokeWidth={1} size={20} />,
         title: 'Customization',
-        href: '/code-interpreter/template',
+        href: 'docs/code-interpreter/template',
       },
       {
         icon: <Cog strokeWidth={1} size={20} />,
         title: 'Kernels',
-        href: '/code-interpreter/kernels',
+        href: 'docs/code-interpreter/kernels',
       },
     ],
   },
@@ -180,67 +180,67 @@ export const routes = [
     links: [
       {
         title: 'Overview',
-        href: '/sandbox/overview',
+        href: 'docs/sandbox/overview',
       },
       {
         icon: <Cpu strokeWidth={1} size={20} />,
         title: 'Compute',
-        href: '/sandbox/compute',
+        href: 'docs/sandbox/compute',
       },
       {
         icon: <PencilRuler strokeWidth={1} size={20} />,
         title: 'Customization',
-        href: '/sandbox/custom',
+        href: 'docs/sandbox/custom',
       },
       {
         icon: <Variable strokeWidth={1} size={20} />,
         title: 'Environment Variables',
-        href: '/sandbox/api/envs',
+        href: 'docs/sandbox/api/envs',
       },
       {
         icon: <FolderTree strokeWidth={1} size={20} />,
         title: 'Filesystem',
-        href: '/sandbox/api/filesystem',
+        href: 'docs/sandbox/api/filesystem',
       },
       {
         icon: <ChevronRightSquare strokeWidth={1} size={20} />,
         title: 'Process',
-        href: '/sandbox/api/process',
+        href: 'docs/sandbox/api/process',
       },
       {
         icon: <Folder strokeWidth={1} size={20} />,
         title: 'Working Directory',
-        href: '/sandbox/api/cwd',
+        href: 'docs/sandbox/api/cwd',
       },
       {
         icon: <Link strokeWidth={1} size={20} />,
         title: 'Sandbox URL',
-        href: '/sandbox/api/url',
+        href: 'docs/sandbox/api/url',
       },
       {
         icon: <FileUp strokeWidth={1} size={20} />,
         title: 'Upload Files',
-        href: '/sandbox/api/upload',
+        href: 'docs/sandbox/api/upload',
       },
       {
         icon: <FileDown strokeWidth={1} size={20} />,
         title: 'Download Files',
-        href: '/sandbox/api/download',
+        href: 'docs/sandbox/api/download',
       },
       {
         icon: <Timer strokeWidth={1} size={20} />,
         title: 'Timeouts',
-        href: '/sandbox/api/timeouts',
+        href: 'docs/sandbox/api/timeouts',
       },
       {
         icon: <RefreshCw strokeWidth={1} size={20} />,
         title: 'Connect to running sandbox',
-        href: '/sandbox/api/reconnect',
+        href: 'docs/sandbox/api/reconnect',
       },
       {
         icon: <Braces strokeWidth={1} size={20} />,
         title: 'Sandbox metadata',
-        href: '/sandbox/api/metadata',
+        href: 'docs/sandbox/api/metadata',
       },
     ],
   },
@@ -250,12 +250,12 @@ export const routes = [
       {
         icon: <Settings strokeWidth={1} size={20} />,
         title: 'Installation',
-        href: '/cli/installation',
+        href: 'docs/cli/installation',
       },
       {
         icon: <TerminalSquare strokeWidth={1} size={20} />,
         title: 'Commands',
-        href: '/cli/commands',
+        href: 'docs/cli/commands',
       },
     ],
   },
@@ -264,27 +264,27 @@ export const routes = [
     links: [
       {
         title: 'Overview',
-        href: '/sandbox/templates/overview',
+        href: 'docs/sandbox/templates/overview',
       },
       {
         icon: <File strokeWidth={1} size={20} />,
         title: 'Template File',
-        href: '/sandbox/templates/template-file',
+        href: 'docs/sandbox/templates/template-file',
       },
       {
         icon: <PlaySquare strokeWidth={1} size={20} />,
         title: 'Start Command',
-        href: '/sandbox/templates/start-cmd',
+        href: 'docs/sandbox/templates/start-cmd',
       },
       {
         icon: <Hammer strokeWidth={1} size={20} />,
         title: 'Guide: Creating Custom Sandbox',
-        href: '/guide/custom-sandbox',
+        href: 'docs/guide/custom-sandbox',
       },
       {
         icon: <HardDrive strokeWidth={1} size={20} />,
         title: 'Connecting buckets to persist data',
-        href: '/guide/connect-bucket',
+        href: 'docs/guide/connect-bucket',
       },
     ],
   },
