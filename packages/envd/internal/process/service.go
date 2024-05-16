@@ -11,6 +11,7 @@ import (
 	"github.com/e2b-dev/infra/packages/envd/internal/env"
 	"github.com/e2b-dev/infra/packages/envd/internal/output"
 	"github.com/e2b-dev/infra/packages/envd/internal/subscriber"
+
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/rs/xid"
 	"go.uber.org/zap"
@@ -81,7 +82,7 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 				)
 			}
 
-			s.logger.Debugw("Stdout message",
+			s.logger.Infow("Process stdout",
 				"processID", process.ID,
 				"message", line,
 			)
@@ -96,7 +97,7 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 				)
 			}
 
-			s.logger.Debugw("Stderr message",
+			s.logger.Infow("Process stderr",
 				"processID", process.ID,
 				"message", line,
 			)
@@ -250,6 +251,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 
 			// We need to wait for all pipe closes to finish before we can wait for the process to exit (mentioned in the docs).
 			if waitErr := newProc.cmd.Wait(); waitErr != nil {
+				// TODO: We can get the exit error and message here
 				s.logger.Warnw("Failed waiting for process",
 					"processID", newProc.ID,
 					"error", err,
@@ -291,7 +293,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 }
 
 func (s *Service) Stdin(id ID, data string) error {
-	s.logger.Infow("Handle process stdin",
+	s.logger.Infow("Process stdin",
 		"processID", id,
 	)
 

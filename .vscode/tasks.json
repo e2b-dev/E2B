@@ -4,12 +4,12 @@
     {
       "type": "shell",
       "label": "prepare-debug",
-      "command": "make -C packages/devbookd run-debug",
+      "command": "make -C packages/envd run-debug",
     },
     {
       "type": "shell",
       "label": "stop-debug-docker",
-      "command": "make -C packages/devbookd stop-debug-docker",
+      "command": "make -C packages/envd stop-debug-docker",
     },
   ]
 }

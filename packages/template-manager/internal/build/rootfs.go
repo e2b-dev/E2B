@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 	"strings"
@@ -35,12 +36,10 @@ const (
 	cacheTimeout  = "48h"
 )
 
-var (
-	authConfig = registry.AuthConfig{
-		Username: "_json_key_base64",
-		Password: consts.GoogleServiceAccountSecret,
-	}
-)
+var authConfig = registry.AuthConfig{
+	Username: "_json_key_base64",
+	Password: consts.GoogleServiceAccountSecret,
+}
 
 type Rootfs struct {
 	client       *client.Client
@@ -216,13 +215,15 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	var scriptDef bytes.Buffer
 
 	err = EnvInstanceTemplate.Execute(&scriptDef, struct {
-		EnvID    string
-		BuildID  string
-		StartCmd string
+		EnvID       string
+		BuildID     string
+		StartCmd    string
+		MemoryLimit int
 	}{
-		EnvID:    r.env.EnvID,
-		BuildID:  r.env.BuildID,
-		StartCmd: strings.ReplaceAll(r.env.StartCmd, "\"", "\\\""),
+		EnvID:       r.env.EnvID,
+		BuildID:     r.env.BuildID,
+		StartCmd:    strings.ReplaceAll(r.env.StartCmd, "\"", "\\\""),
+		MemoryLimit: int(math.Min(float64(r.env.MemoryMB)/2, 512)),
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("error executing provision script: %w", err)

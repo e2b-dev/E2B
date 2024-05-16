@@ -88,6 +88,7 @@ job "orchestrator" {
         OTEL_TRACING_PRINT = var.otel_tracing_print
         LOGS_PROXY_ADDRESS = var.logs_proxy_address
         ENVIRONMENT        = var.environment
+        RUST_BACKTRACE     = 1
       }
 
       config {

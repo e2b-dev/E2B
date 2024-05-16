@@ -125,7 +125,9 @@ server {
   # See https://stackoverflow.com/questions/29980884/proxy-pass-does-not-resolve-dns-using-etc-hosts
   resolver 127.0.0.53;
 
-  client_max_body_size 100M;
+  client_max_body_size 0;
+  proxy_buffering off;
+  proxy_request_buffering off;
 
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;

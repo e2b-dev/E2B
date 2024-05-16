@@ -39,9 +39,9 @@ jobs:
           workload_identity_provider: ${{ secrets.workload_identity_provider }}
           service_account: ${{ secrets.service_account_email }}
 
-      - name: Upload orchestrator
+      - name: Upload template manager
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
-          path: "./packages/orchestrator/bin/template-manager"
+          path: "./packages/template-manager/bin/template-manager"
           destination: "${{ secrets.gcp_project_id }}-fc-env-pipeline"
           gzip: false

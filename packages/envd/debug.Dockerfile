@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM golang:1.21
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -8,6 +8,8 @@ RUN apt-get install systemd ca-certificates make python-is-python3 python3 nodej
 RUN update-ca-certificates
 
 RUN useradd -ms /bin/bash user
+
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 WORKDIR /
 

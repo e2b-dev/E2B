@@ -33,6 +33,8 @@ const (
 	Version = "dev"
 
 	startCmdID = "_startCmd"
+
+	serverTimeout = 1 * time.Hour
 )
 
 var (
@@ -66,6 +68,19 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write([]byte("pong"))
 	if err != nil {
 		logger.Error("Error writing response:", err)
+	}
+}
+
+func createFileHandler(logger *zap.SugaredLogger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			file.Download(logger, w, r)
+		case http.MethodPost:
+			file.Upload(logger, w, r)
+		default:
+			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		}
 	}
 }
 
@@ -130,11 +145,10 @@ func main() {
 
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Debugw("panic", r)
+			logger.Errorf("panic", r)
 		}
 	}()
 	defer logger.Sync()
-	logger.Debug("Logger and environment construction succeeded")
 
 	// This server is for the Websocket-RPC communication.
 	rpcServer := rpc.NewServer()
@@ -147,15 +161,15 @@ func main() {
 
 	go portScanner.ScanAndBroadcast()
 
-	clock := clock.NewService(logger.Named("clockSvc"))
+	clock := clock.NewService(logger.Named("clock"))
 
-	ports := ports.NewService(logger.Named("codeSnippetSvc"), portScanner)
+	ports := ports.NewService(logger.Named("network"), portScanner)
 	// WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK
 	if err := rpcServer.RegisterName("codeSnippet", ports); err != nil {
 		logger.Panicw("failed to register ports service", "error", err)
 	}
 
-	if filesystemService, err := filesystem.NewService(logger.Named("filesystemSvc")); err == nil {
+	if filesystemService, err := filesystem.NewService(logger.Named("filesystem")); err == nil {
 		if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
 			logger.Panicw("failed to register filesystem service", "error", err)
 		}
@@ -166,7 +180,7 @@ func main() {
 		)
 	}
 
-	processService := process.NewService(logger.Named("processSvc"), envConfig, clock)
+	processService := process.NewService(logger.Named("process"), envConfig, clock)
 	if err := rpcServer.RegisterName("process", processService); err != nil {
 		logger.Panicw("failed to register process service", "error", err)
 	}
@@ -185,7 +199,7 @@ func main() {
 		}
 	}
 
-	terminalService := terminal.NewService(logger.Named("terminalSvc"), envConfig, clock)
+	terminalService := terminal.NewService(logger.Named("terminal"), envConfig, clock)
 	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
 		logger.Panicw("failed to register terminal service", "error", err)
 	}
@@ -203,24 +217,13 @@ func main() {
 	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
 	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 	// The /file route used for downloading and uploading files via SDK.
-	router.HandleFunc("/file", fileHandler)
+	router.HandleFunc("/file", createFileHandler(logger.Named("file")))
 
-	// server := &http.Server{
-	// 	ReadTimeout:  300 * time.Second,
-	// 	WriteTimeout: 300 * time.Second,
-	// 	Addr:         fmt.Sprintf("0.0.0.0:%d", serverPort),
-	// 	Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(router),
-	// }
-
-	// logger.Debug("Starting server - port: ", serverPort)
-
-	// if err := server.ListenAndServe(); err != nil {
-	// 	logger.Panicw("Failed to start the server", "error", err)
-	// }
-
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", serverPort))
-	if err != nil {
-		logger.Panicw("failed to listen", "error", err)
+	server := &http.Server{
+		ReadTimeout:  serverTimeout,
+		WriteTimeout: serverTimeout,
+		Addr:         fmt.Sprintf("0.0.0.0:%d", serverPort),
+		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(router),
 	}
 
 	// Create an instance of our handler which satisfies the generated interface
