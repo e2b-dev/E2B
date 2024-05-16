@@ -38,6 +38,7 @@ export const GeneralContent = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [apiKeys, setApiKeys] = useState(fakeApiKeys)
   const [currentKeyId, setCurrentKeyId] = useState<string | null>(null)
+  const [hoveredKeyId, setHoveredKeyId] = useState<string | null>(null)
 
   const closeDialog = () => setIsDialogOpen(false)
   const openDialog = (id: string) => {
@@ -64,6 +65,21 @@ export const GeneralContent = () => {
     }
     setApiKeys([...apiKeys, newKey])
   }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    toast({
+      title: 'API Key copied to clipboard',
+    })
+  }
+
+  const maskApiKey = (key: string) => {
+    const firstFour = key.slice(0, 4)
+    const lastTwo = key.slice(-2)
+    const stars = '*'.repeat(key.length - 6) // Use '#' or another fixed-width character
+    return `${firstFour}${stars}${lastTwo}`
+  }
+
   return(
   <div className="flex flex-col w-full h-full">
     <div className="flex flex-col w-fit h-full">
@@ -75,10 +91,15 @@ export const GeneralContent = () => {
       <p className='text-neutral-300 pb-2'>Active keys:</p>
 
       {apiKeys.map((apiKey) => (
-        <div key={apiKey.id} className='flex w-full justify-between items-center border border-white/5 rounded-lg p-2 mb-4 space-x-4'>
-          <div>{apiKey.key}</div>
+        <div 
+          key={apiKey.id}
+          className='flex w-full justify-between items-center border border-white/5 rounded-lg p-2 mb-4 space-x-4'
+          onMouseEnter={() => setHoveredKeyId(apiKey.id)}
+          onMouseLeave={() => setHoveredKeyId(null)}
+          >
+          <div className="font-mono text-sm">{hoveredKeyId === apiKey.id ? apiKey.key : maskApiKey(apiKey.key)}</div> {/* Use a monospace font */}
           <div className='flex items-center space-x-2'>
-            <Copy className='hover:cursor-pointer' width={18} height={18} />
+            <Copy className='hover:cursor-pointer' width={18} height={18} onClick={() => copyToClipboard(apiKey.key)} />
             <Delete className='hover:cursor-pointer' color='red' width={20} height={20} onClick={() => openDialog(apiKey.id)} />
           </div>
         </div>
