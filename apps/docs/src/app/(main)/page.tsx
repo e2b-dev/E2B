@@ -3,6 +3,7 @@
 import { BentoCard, BentoGrid } from '@/components/BentoGrid'
 import { Button } from '@/components/Button'
 import RetroGrid from '@/components/RetroGrid'
+import Link from 'next/link'
 
 export default function Page() {
   return (
@@ -12,11 +13,19 @@ export default function Page() {
       <div className="w-full h-screen flex justify-center items-center">
         
         <div className="flex flex-col z-10 space-y-5 items-center justify-center">
-          <Button variant='outline'>We&apos;re hiring 👉</Button>
+          
+          <a href="https://e2bdev.notion.site/Careers-at-E2B-2163f176991f43f69b0984bf2a142920" target="_blank" rel="noreferrer noopener">
+            <Button variant='outline'>We&apos;re hiring 👉</Button>
+          </a>
+
           <h1 className="font-bold p-2 text-6xl bg-clip-text text-transparent bg-gradient-to-r from-white to-orange-500 via-white to-[95%]">Code Interpreting for AI Apps</h1>
           <div className='flex space-x-4'>
-            <Button variant='filled'>Sign Up</Button>
-            <Button>Docs</Button>
+            <Link href="/sign-in?view=sign-up">
+              <Button variant='filled'>Sign Up</Button>
+            </Link>
+            <Link href="/docs">
+              <Button>Docs</Button>
+            </Link>
           </div>
         </div>
 
