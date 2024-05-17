@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package permissions;
-
-option go_package = "github.com/e2b-dev/infra/packages/envd/spec";
-
-message AccessControl {
-  optional string user = 1;
-}

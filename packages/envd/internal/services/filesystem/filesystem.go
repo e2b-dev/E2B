@@ -1,62 +1,71 @@
 package filesystem
 
 import (
-	"io"
-	"log"
+	"context"
+	"net/http"
 	"os"
+	"time"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/services/spec"
-	"github.com/gogo/status"
-	"google.golang.org/grpc/codes"
+	spec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem/v1"
+	specconnect "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem/v1/filesystemv1connect"
+
+	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Service struct {
-	spec.UnimplementedFilesystemServer
+	specconnect.UnimplementedFilesystemServiceHandler
 }
 
-func New() *Service {
-	return &Service{}
+func Handle(server *http.ServeMux, opts ...connect.HandlerOption) {
+	path, handler := specconnect.NewFilesystemServiceHandler(Service{}, opts...)
+
+	server.Handle(path, handler)
 }
 
-func (s *Service) ReadFile(req *spec.ReadFileRequest, stream spec.Filesystem_ReadFileServer) error {
-	path := req.GetPath()
-	log.Printf("Received request for path: %s", path)
-
-	fileInfo, err := os.Stat(path)
+func (s Service) ListDir(ctx context.Context, req *connect.Request[spec.ListDirRequest]) (*connect.Response[spec.ListDirResponse], error) {
+	files, err := os.ReadDir(req.Msg.Path)
 	if err != nil {
-		return status.Errorf(codes.NotFound, "file not found")
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
-	if fileInfo.IsDir() {
-		return status.Errorf(codes.InvalidArgument, "file is a directory")
-	}
+	l := len(files)
+	entries := make([]*spec.EntryInfo, l, l)
 
-	file, err := os.Open(path)
-	if err != nil {
-		return status.Errorf(codes.NotFound, "file cannot be opened")
-	}
-	defer file.Close()
+	user := "user"
 
-	buffer := make([]byte, 2*1024*1024)
-
-	for {
-		bytesread, err := file.Read(buffer)
-		if err != nil {
-			if err != io.EOF {
-				return status.Errorf(codes.Internal, "error reading file")
-			}
-
-			break
-		}
-
-		err = stream.Send(&spec.ReadFileResponse{
-			Data: buffer[:bytesread],
-		})
-		if err != nil {
-			return status.Errorf(codes.Internal, "error sending line")
+	for i, file := range files {
+		entries[i] = &spec.EntryInfo{
+			Name:         file.Name(),
+			LastModified: timestamppb.New(time.Now()),
+			Size:         0,
+			Type:         spec.EntryInfo_FILE_TYPE_FILE,
+			Mode:         0,
+			Owner: &spec.AccessControl{
+				User: &user,
+			},
 		}
 	}
+
+	return connect.NewResponse(&spec.ListDirResponse{
+		Entries: entries,
+	}), nil
+}
+
+func (s Service) Watch(ctx context.Context, req *connect.Request[spec.WatchRequest], stream *connect.ServerStream[spec.FilesystemEvent]) error {
+	_ = stream.Send(&spec.FilesystemEvent{
+		Path: "path1",
+	})
+
+	_ = stream.Send(&spec.FilesystemEvent{
+		Path: "path2",
+	})
+
+	time.Sleep(time.Second * 2)
+
+	_ = stream.Send(&spec.FilesystemEvent{
+		Path: "path3",
+	})
 
 	return nil
-	// return status.Errorf(codes.Unimplemented, "method ReadFile not implemented")
 }

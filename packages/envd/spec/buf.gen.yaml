@@ -1,0 +1,14 @@
+version: v1
+plugins:
+  - plugin: go
+    out: ../internal/services/spec
+    opt: paths=source_relative
+  - plugin: connect-go
+    out: ../internal/services/spec
+    opt: paths=source_relative
+
+managed:
+  enabled: true
+  optimize_for: SPEED
+  go_package_prefix:
+    default: github.com/e2b-dev/infra/packages/envd/internal/services/spec

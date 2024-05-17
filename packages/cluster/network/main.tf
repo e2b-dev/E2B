@@ -18,7 +18,7 @@ provider "cloudflare" {
 locals {
   backends = {
     session = {
-      protocol                        = "HTTP2"
+      protocol                        = "HTTP"
       port                            = var.client_proxy_port.port
       port_name                       = var.client_proxy_port.name
       timeout_sec                     = 86400

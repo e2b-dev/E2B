@@ -144,8 +144,21 @@ server {
   proxy_buffering off;
   proxy_request_buffering off;
 
+  tcp_nodelay on;
+  tcp_nopush on;
+  sendfile on;
+
+  proxy_connect_timeout       10s;
+  send_timeout                10s;
+
+  keepalive_requests 99999;
+  keepalive_timeout 600;
+
+  proxy_next_upstream error timeout invalid_header http_502;
+  proxy_next_upstream_timeout 5s;
+  proxy_next_upstream_tries 3;
+
   location / {
-    grpc_pass [[ .Address ]]:[[ .Port ]]$request_uri;
     proxy_pass $scheme://[[ .Address ]]:[[ .Port ]]$request_uri;
   }
 }

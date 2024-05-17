@@ -1,38 +1,24 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
 
-	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/gorilla/mux"
+	"github.com/gorilla/handlers"
 	"go.uber.org/zap"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/clock"
 	"github.com/e2b-dev/infra/packages/envd/internal/env"
 	"github.com/e2b-dev/infra/packages/envd/internal/file"
-	"github.com/e2b-dev/infra/packages/envd/internal/filesystem"
-	"github.com/e2b-dev/infra/packages/envd/internal/port"
-	"github.com/e2b-dev/infra/packages/envd/internal/ports"
-	"github.com/e2b-dev/infra/packages/envd/internal/process"
-	"github.com/e2b-dev/infra/packages/envd/internal/services"
-	"github.com/e2b-dev/infra/packages/envd/internal/terminal"
+	connectFS "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 )
 
-// TODO: I'm not really sure if we're using RPC Notifier and Subscriber in the right way.
-// There isn't an explicit documentation, I'm using source code of tests as a reference:
-// https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
-
 const (
 	Version = "dev"
-
-	startCmdID = "_startCmd"
 
 	serverTimeout = 1 * time.Hour
 )
@@ -136,7 +122,7 @@ func main() {
 		return
 	}
 
-	envConfig, l, err := env.NewEnv(debug)
+	_, l, err := env.NewEnv(debug)
 	if err != nil {
 		panic(err)
 	}
@@ -150,90 +136,89 @@ func main() {
 	}()
 	defer logger.Sync()
 
-	// This server is for the Websocket-RPC communication.
-	rpcServer := rpc.NewServer()
+	// // This server is for the Websocket-RPC communication.
+	// rpcServer := rpc.NewServer()
 
-	portScanner := port.NewScanner(1000 * time.Millisecond)
-	defer portScanner.Destroy()
+	// portScanner := port.NewScanner(1000 * time.Millisecond)
+	// defer portScanner.Destroy()
 
-	portForwarder := port.NewForwarder(logger, envConfig, portScanner)
-	go portForwarder.StartForwarding()
+	// portForwarder := port.NewForwarder(logger, envConfig, portScanner)
+	// go portForwarder.StartForwarding()
 
-	go portScanner.ScanAndBroadcast()
+	// go portScanner.ScanAndBroadcast()
 
-	clock := clock.NewService(logger.Named("clock"))
+	// clock := clock.NewService(logger.Named("clockSvc"))
 
-	ports := ports.NewService(logger.Named("network"), portScanner)
-	// WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK
-	if err := rpcServer.RegisterName("codeSnippet", ports); err != nil {
-		logger.Panicw("failed to register ports service", "error", err)
-	}
+	// ports := ports.NewService(logger.Named("codeSnippetSvc"), portScanner)
+	// // WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK
+	// if err := rpcServer.RegisterName("codeSnippet", ports); err != nil {
+	// 	logger.Panicw("failed to register ports service", "error", err)
+	// }
 
-	if filesystemService, err := filesystem.NewService(logger.Named("filesystem")); err == nil {
-		if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
-			logger.Panicw("failed to register filesystem service", "error", err)
-		}
-	} else {
-		logger.Panicw(
-			"failed to create filesystem service",
-			"err", err,
-		)
-	}
+	// if filesystemService, err := filesystem.NewService(logger.Named("filesystemSvc")); err == nil {
+	// 	if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
+	// 		logger.Panicw("failed to register filesystem service", "error", err)
+	// 	}
+	// } else {
+	// 	logger.Panicw(
+	// 		"failed to create filesystem service",
+	// 		"err", err,
+	// 	)
+	// }
 
-	processService := process.NewService(logger.Named("process"), envConfig, clock)
-	if err := rpcServer.RegisterName("process", processService); err != nil {
-		logger.Panicw("failed to register process service", "error", err)
-	}
+	// processService := process.NewService(logger.Named("processSvc"), envConfig, clock)
+	// if err := rpcServer.RegisterName("process", processService); err != nil {
+	// 	logger.Panicw("failed to register process service", "error", err)
+	// }
 
-	// Start the command passed via the -cmd flag.
-	if startCmdFlag != "" {
-		_, err := processService.Start(startCmdID, startCmdFlag, nil, "/")
-		// TODO: Do we need to cache the process logs if they are not retrieved?
-		// TODO: Should we cache all process logs always?
-		if err != nil {
-			logger.Errorf(
-				"failed to start the command passed via the -cmd flag",
-				"cmd", startCmdFlag,
-				"err", err,
-			)
-		}
-	}
+	// // Start the command passed via the -cmd flag.
+	// if startCmdFlag != "" {
+	// 	_, err := processService.Start(startCmdID, startCmdFlag, nil, "/")
+	// 	// TODO: Do we need to cache the process logs if they are not retrieved?
+	// 	// TODO: Should we cache all process logs always?
+	// 	if err != nil {
+	// 		logger.Errorf(
+	// 			"failed to start the command passed via the -cmd flag",
+	// 			"cmd", startCmdFlag,
+	// 			"err", err,
+	// 		)
+	// 	}
+	// }
 
-	terminalService := terminal.NewService(logger.Named("terminal"), envConfig, clock)
-	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
-		logger.Panicw("failed to register terminal service", "error", err)
-	}
+	// terminalService := terminal.NewService(logger.Named("terminalSvc"), envConfig, clock)
+	// if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
+	// 	logger.Panicw("failed to register terminal service", "error", err)
+	// }
 
-	router := mux.NewRouter()
-	wsHandler = rpcServer.WebsocketHandler([]string{"*"})
+	// router := mux.NewRouter()
+	// wsHandler = rpcServer.WebsocketHandler([]string{"*"})
 
-	clockHandler := syncHandler(clock)
-	// The /sync route is used for syncing the clock.
-	router.HandleFunc("/sync", clockHandler)
+	// clockHandler := syncHandler(clock)
+	// // The /sync route is used for syncing the clock.
+	// router.HandleFunc("/sync", clockHandler)
 
-	router.HandleFunc("/ws", serveWs)
-	// The /ping route is used for the terminal extension to check if envd is running.
-	router.HandleFunc("/ping", pingHandler)
-	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
-	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
-	// The /file route used for downloading and uploading files via SDK.
-	router.HandleFunc("/file", createFileHandler(logger.Named("file")))
+	// router.HandleFunc("/ws", serveWs)
+	// // The /ping route is used for the terminal extension to check if envd is running.
+	// router.HandleFunc("/ping", pingHandler)
+	// // Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
+	// router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
+	// // The /file route used for downloading and uploading files via SDK.
+	// router.HandleFunc("/file", fileHandler)
+
+	mux := http.NewServeMux()
+
+	connectFS.Handle(mux)
 
 	server := &http.Server{
 		ReadTimeout:  serverTimeout,
 		WriteTimeout: serverTimeout,
 		Addr:         fmt.Sprintf("0.0.0.0:%d", serverPort),
-		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(router),
+		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(mux),
 	}
 
-	// Create an instance of our handler which satisfies the generated interface
-	s := services.NewServer(context.Background(), logger.Desugar())
-	defer s.Stop()
+	logger.Debug("Starting server - port: ", serverPort)
 
-	logger.Debugf("Starting server on port %d", serverPort)
-
-	// There is 15 sec keepalive by default
-	if err := s.Serve(lis); err != nil {
-		logger.Panicw("failed to serve", "error", err)
+	if err := server.ListenAndServe(); err != nil {
+		logger.Panicw("Failed to start the server", "error", err)
 	}
 }

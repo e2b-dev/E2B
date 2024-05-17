@@ -123,11 +123,21 @@ server {
   # By default, nginx won't use /etc/hosts for the name resolution.
   # We use the systemd nameserver to resolve against /etc/hosts.
   # See https://stackoverflow.com/questions/29980884/proxy-pass-does-not-resolve-dns-using-etc-hosts
-  resolver 127.0.0.53;
+  resolver 127.0.0.53 valid=30s;
 
   client_max_body_size 0;
   proxy_buffering off;
   proxy_request_buffering off;
+  
+  tcp_nodelay on;
+  tcp_nopush on;
+  sendfile on;
+
+  proxy_connect_timeout       10s;
+  send_timeout                10s;
+
+  keepalive_requests 99999;
+  keepalive_timeout 600;
 
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
@@ -151,7 +161,10 @@ server {
     }
 
     proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
-    grpc_pass $dbk_session_id$dbk_port$request_uri;
+
+    proxy_next_upstream error timeout invalid_header http_502;
+    proxy_next_upstream_timeout 5s;
+    proxy_next_upstream_tries 3;
   }
 }
 
