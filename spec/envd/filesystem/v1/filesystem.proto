@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+import "envd/permissions/v1/permissions.proto";
+
+package envd.filesystem.v1;
+
+service FilesystemService {
+    rpc Stat(StatRequest) returns (StatResponse);
+    
+    rpc CreateFile(CreateFileRequest) returns (CreateFileResponse);
+
+    rpc CreateDir(CreateDirRequest) returns (CreateDirResponse);
+    rpc ListDir(ListDirRequest) returns (ListDirResponse);
+    
+    rpc Watch(WatchRequest) returns (stream WatchResponse);
+    rpc Rename(RenameRequest) returns (RenameResponse);
+    rpc Remove(RemoveRequest) returns (RemoveResponse);
+
+    rpc Copy(CopyRequest) returns (CopyResponse);
+}
+
+message CreateFileRequest {
+    string path = 1;
+    bool create_parents = 2;
+
+    string mode = 3;
+
+    envd.permissions.v1.Credentials owner = 4;
+}
+
+message CreateFileResponse {}
+
+message CreateDirRequest {
+    string path = 1;
+    bool create_parents = 2;
+
+    string mode = 3;
+
+    envd.permissions.v1.Credentials owner = 4;
+}
+
+message CreateDirResponse {}
+
+message CopyRequest {
+    string source = 1;
+    string destination = 2;
+
+    bool recursive = 3;
+
+    envd.permissions.v1.Credentials owner = 4;
+}
+
+message CopyResponse {}
+
+message StatRequest {
+    string path = 1;
+}
+
+message StatResponse {
+    EntryInfo entry = 1;
+}
+
+message RemoveRequest {
+    string path = 1;
+
+    bool recursive = 2;
+}
+
+message RemoveResponse {}
+
+message RenameRequest {
+    string source = 1;
+    string destination = 2;
+
+    envd.permissions.v1.Credentials owner = 4;
+}
+
+message RenameResponse {}
+
+message EntryInfo {
+    string name = 1;
+    FileType type = 2;
+
+    envd.permissions.v1.Credentials owner = 6;
+}
+
+enum FileType {
+    FILE_TYPE_UNSPECIFIED = 0;
+    FILE_TYPE_FILE = 1;
+    FILE_TYPE_DIRECTORY = 2;
+    FILE_TYPE_LINK = 3;
+    FILE_TYPE_SYMLINK = 4;
+}
+
+message ListDirRequest {
+    string path = 1;
+}
+
+message ListDirResponse {
+    repeated EntryInfo entries = 1;
+}
+
+message WatchRequest {
+    string path = 1;
+}
+
+message WatchResponse {
+    FilesystemEvent event = 1;
+}
+
+message FilesystemEvent {
+    string path = 1;
+    EventType type = 2;
+    EntryInfo entry = 3;
+}
+
+enum EventType {
+    EVENT_TYPE_UNSPECIFIED = 0;
+    EVENT_TYPE_CREATE = 1;
+    EVENT_TYPE_WRITE = 2;
+    EVENT_TYPE_REMOVE = 3;
+    EVENT_TYPE_RENAME = 4;
+    EVENT_TYPE_CHMOD = 5;
+}

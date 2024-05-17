@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 homepage = "https://e2b.dev/"
 repository = "https://github.com/e2b-dev/e2b/tree/main/packages/python-sdk"
-packages = [{ include = "e2b" }]
+packages = [{ include = "e2b" }, { include = "envd" }, { include = "connect" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -21,7 +21,8 @@ websockets = ">=11.0.3"
 jsonrpcclient = ">=4.0.3"
 requests = ">=2.31.0"
 typing-extensions = ">=4.8.0"
-grpcio = "^1.62.2"
+httpcore = "^1.0.5"
+protobuf = "^5.26.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"

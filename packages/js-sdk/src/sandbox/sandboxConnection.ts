@@ -19,6 +19,7 @@ import { processService } from './process'
 import { terminalService } from './terminal'
 import { EnvVars } from './envVars'
 import { getApiKey } from '../utils/apiKey'
+import { watchDirect } from '../gen'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SubscriptionHandler = (result: any) => void
@@ -505,6 +506,9 @@ export class SandboxConnection {
         this.refresh(this.sandbox.sandboxID)
       }
 
+
+      console.log('Connecting >>')
+
       await this.connectRpc()
       return this
     }
@@ -524,6 +528,36 @@ export class SandboxConnection {
       this.opts.__debug_devEnv !== 'local',
     )
     const sandboxURL = `${protocol}://${hostname}${WS_ROUTE}`
+
+    console.log('url', sandboxURL)
+
+    const start = Date.now()
+
+
+    async function wait(ms: number) {
+      return new Promise(resolve => setTimeout(resolve, ms))
+    }
+
+    try {
+
+
+      const r = await watchDirect(`http://${hostname}`, {
+        path: '/',
+      })
+
+
+      for await (const event of r) {
+        console.log('dir event', event)
+      }
+
+      const end = Date.now()
+      console.log(`LIST - ${end - start}ms`)
+
+    } catch (err) {
+      console.log(err)
+    }
+
+    return
 
     let isFinished = false
     let resolveOpening: (() => void) | undefined

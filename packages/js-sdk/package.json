@@ -71,6 +71,9 @@
     "typescript"
   ],
   "dependencies": {
+    "@bufbuild/protobuf": "^1.9.0",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-web": "^1.4.0",
     "isomorphic-ws": "^5.0.0",
     "normalize-path": "^3.0.0",
     "openapi-typescript-fetch": "^1.1.3",

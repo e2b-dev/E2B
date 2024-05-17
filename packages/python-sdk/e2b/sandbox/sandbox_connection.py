@@ -275,7 +275,14 @@ class SandboxConnection:
         try:
             url = self.get_hostname(self._debug_port or ENVD_PORT)
             print(f"url: {url}")
-            call_grpc(url)
+
+            a = call_grpc(f"http://{url}")
+            b = call_grpc(f"http://{url}")
+
+            for i, j in zip(a, b):
+                print(i, j)
+
+            # print([e for e in r.entries])
 
             # self._connect_rpc(timeout)
         except Exception as e:

@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+import "envd/permissions/v1/permissions.proto";
+
+package envd.process.v1;
+
+service ProcessService {
+    rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse);
+
+    rpc ReconnectProcess(ReconnectProcessRequest) returns (stream ReconnectProcessResponse);
+    rpc StartProcess(StartProcessRequest) returns (stream StartProcessResponse);
+
+    rpc UpdateProcess(UpdateProcessRequest) returns (UpdateProcessResponse);
+
+    rpc SendProcessInput(SendProcessInputRequest) returns (SendProcessInputResponse);
+    rpc SendProcessSignal(SendProcessSignalRequest) returns (SendProcessSignalResponse);
+}
+
+message PTY {
+    Size size = 1;
+
+    message Size {
+        uint32 cols = 1;
+        uint32 rows = 2;
+    }
+}
+
+message ProcessConfig {
+    string cmd = 1;
+    repeated string args = 2;
+    
+    map<string, string> env = 3;
+    string cwd = 4;
+}
+
+message ListProcessesRequest {}
+
+message ListProcessesResponse {
+    repeated ProcessConfig processes = 1;
+}
+
+message StartProcessRequest {    
+    ProcessConfig process = 1;
+    optional PTY pty = 2;
+
+    envd.permissions.v1.Credentials owner = 3;
+}
+
+message UpdateProcessRequest {
+    ProcessSelector process = 1;
+
+    optional PTY pty = 2;
+}
+
+message UpdateProcessResponse {}
+
+message ProcessEvent {
+    oneof event_type {
+        StartEvent start = 1;
+        DataEvent data = 2;
+        EndEvent end = 3;
+    }
+    
+    message StartEvent {
+        uint32 pid = 5;
+    }
+    
+    message DataEvent {
+        optional bytes stdout = 6;
+        optional bytes stderr = 7;
+    }
+    
+    message EndEvent {
+        sint32 exit_code = 8;
+        optional string error = 9;
+    }
+}
+
+message StartProcessResponse {
+    ProcessEvent event = 1;
+}
+
+message ReconnectProcessResponse {
+    ProcessEvent event = 1;
+}
+
+message SendProcessInputRequest {
+    ProcessSelector process = 1;
+
+    ProcessInput input = 2;
+}
+
+message SendProcessInputResponse {}
+
+message ProcessInput {
+    oneof input {
+        bytes stdin = 1;
+    }
+}
+
+enum Signal {
+    SIGNAL_UNSPECIFIED = 0;
+    SIGNAL_SIGTERM = 1;
+    SIGNAL_SIGKILL = 2;
+}
+
+message SendProcessSignalRequest {
+    ProcessSelector process = 1;
+
+    Signal signal = 2;
+}
+
+message SendProcessSignalResponse {}
+
+message ReconnectProcessRequest {
+    ProcessSelector process = 1;
+}
+
+message ProcessSelector {
+    oneof selector {
+        uint32 pid = 1;
+    }
+}
