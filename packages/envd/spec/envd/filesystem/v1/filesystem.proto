@@ -74,7 +74,7 @@ message RenameRequest {
     string source = 1;
     string destination = 2;
 
-    envd.permissions.v1.Credentials owner = 4;
+    envd.permissions.v1.Credentials owner = 3;
 }
 
 message RenameResponse {}
@@ -83,7 +83,7 @@ message EntryInfo {
     string name = 1;
     FileType type = 2;
 
-    envd.permissions.v1.Credentials owner = 6;
+    envd.permissions.v1.Credentials owner = 3;
 }
 
 enum FileType {

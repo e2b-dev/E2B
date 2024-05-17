@@ -1,13 +1,8 @@
-# TODO: Way to auth read and write request for specific user+sandbox — system for generating signed upload urls?
-# TODO: Append
-# TODO: Add defaults
-# TODO: Basic auth also
-
 openapi: 3.0.0
 info:
   title: envd
   version: 0.1.0
-  description: API for managing files content and controlling the envd
+  description: API for managing files content and controlling envd
 
 servers:
   - url: /v1
@@ -33,24 +28,18 @@ paths:
 
   /files:
     get:
-      summary: Download a file or a specific byte range
+      summary: Download a file
       parameters:
         - $ref: "#/components/parameters/FilePath"
-        - $ref: "#/components/parameters/Range"
       responses:
         200:
           $ref: "#/components/responses/DownloadSuccess"
-        206:
-          $ref: "#/components/responses/RangeDownloadSuccess"
         400:
           $ref: "#/components/responses/DirectoryPathError"
-        416:
-          $ref: "#/components/responses/RangeNotSatisfiableError"
     put:
-      summary: Upload a file or a specific byte range
+      summary: Upload a file
       parameters:
         - $ref: "#/components/parameters/FilePath"
-        - $ref: "#/components/parameters/Range"
         - $ref: "#/components/parameters/User"
         - $ref: "#/components/parameters/Mode"
         - $ref: "#/components/parameters/Overwrite"
@@ -65,8 +54,6 @@ paths:
           $ref: "#/components/responses/ConflictError"
         400:
           $ref: "#/components/responses/DirectoryPathError"
-        416:
-          $ref: "#/components/responses/RangeNotSatisfiableError"
 
 components:
   parameters:
@@ -76,14 +63,7 @@ components:
       description: The URL of the uploaded file
       schema:
         type: string
-        format: uri
-    ContentRange:
-      name: Content-Range
-      in: header
-      description: The range of bytes returned up
-      schema:
-        type: string
-        pattern: '^bytes=\d*-\d*(,\d*-\d*)*|bytes \d*-\d*/\d+$'
+        format: path
     FilePath:
       name: path
       in: path
@@ -92,14 +72,6 @@ components:
       description: Absolute path to the file, URL encoded.
       schema:
         type: string
-    Range:
-      name: Range
-      in: header
-      required: false
-      description: Byte range for downloading or uploading a file, formatted as "bytes=start-end" for downloads and "bytes=start-end/total" for uploads.
-      schema:
-        type: string
-        pattern: '^bytes=\d*-\d*(,\d*-\d*)*|bytes \d*-\d*/\d+$'
     User:
       name: User
       in: header
@@ -107,6 +79,7 @@ components:
       description: User owning the file
       schema:
         type: string
+        default: "root"
     Mode:
       name: Mode
       in: header
@@ -115,6 +88,7 @@ components:
       schema:
         type: string
         pattern: "^[0-7]{3,4}$"
+        default: "0777"
     Overwrite:
       name: overwrite
       in: header
@@ -139,18 +113,11 @@ components:
   responses:
     ExistingFileUploadSuccess:
       description: The file was updated successfully.
-      headers:
-        Content-Range:
-          required: false
-          $ref: "#/components/parameters/ContentRange"
     NewFileUploadSuccess:
       description: The file was created successfully.
       headers:
         Location:
           $ref: "#/components/parameters/Location"
-        Content-Range:
-          required: false
-          $ref: "#/components/parameters/ContentRange"
     DownloadSuccess:
       description: Entire file downloaded successfully.
       content:
@@ -159,26 +126,8 @@ components:
             type: string
             format: binary
             description: The file content
-    RangeDownloadSuccess:
-      description: Specified byte range(s) of the file downloaded successfully.
-      headers:
-        Content-Range:
-          required: true
-          $ref: "#/components/parameters/ContentRange"
-      content:
-        application/octet-stream:
-          schema:
-            type: string
-            format: binary
-            description: The file content
     DirectoryPathError:
       description: Bad Request - The specified path is a directory. Only files can be downloaded.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-    RangeNotSatisfiableError:
-      description: Requested Range Not Satisfiable - The specified byte range is outside the size of the file, or the Range header is formatted incorrectly.
       content:
         application/json:
           schema:
