@@ -30,7 +30,7 @@ message ProcessConfig {
     repeated string args = 2;
     
     map<string, string> env = 3;
-    string cwd = 4;
+    string working_dir = 4;
 }
 
 message ListProcessesRequest {}
@@ -62,17 +62,17 @@ message ProcessEvent {
     }
     
     message StartEvent {
-        uint32 pid = 5;
+        uint32 pid = 1;
     }
     
     message DataEvent {
-        optional bytes stdout = 6;
-        optional bytes stderr = 7;
+        optional bytes stdout = 1;
+        optional bytes stderr = 2;
     }
     
     message EndEvent {
-        sint32 exit_code = 8;
-        optional string error = 9;
+        sint32 exit_code = 1;
+        optional string error = 2;
     }
 }
 
