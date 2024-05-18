@@ -271,31 +271,37 @@ func (Service) Copy(ctx context.Context, req *connect.Request[v1.CopyRequest]) (
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error statting source file: %w", err))
 	}
 
+	stat, ok := fileInfo.Sys().(*syscall.Stat_t)
+	if !ok {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get raw syscall.Stat_t data for '%s'", source))
+	}
+
 	mode, err := permissions.GetMode(req.Msg.GetMode())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid mode: %w", err))
 	}
 
-	if fileInfo.IsDir() {
+	switch fileInfo.Mode() & os.ModeType {
+	case os.ModeDir:
 		err = CopyDirectory(source, destination, mode)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying directory: %w", err))
 		}
-	} else {
+	case os.ModeSymlink:
+		err = CopySymLink(source, destination)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying symlink: %w", err))
+		}
+	default:
 		err = Copy(source, destination)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying file: %w", err))
 		}
+	}
 
-		stat, ok := fileInfo.Sys().(*syscall.Stat_t)
-		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get raw syscall.Stat_t data for '%s'", source))
-		}
-
-		err = os.Chown(destination, int(stat.Uid), int(stat.Gid))
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error setting owner: %w", err))
-		}
+	err = os.Chown(destination, int(stat.Uid), int(stat.Gid))
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error setting owner: %w", err))
 	}
 
 	return connect.NewResponse(&v1.CopyResponse{}), nil
