@@ -2,13 +2,13 @@ openapi: 3.0.0
 info:
   title: envd
   version: 0.1.0
-  description: API for managing files content and controlling envd
+  description: API for managing files' content and controlling envd
 
 servers:
   - url: /v1
 
 paths:
-  /sync:
+  /host/sync:
     post:
       summary: Ensure the time and metadata is synced with the host
       responses:
@@ -26,7 +26,7 @@ paths:
         500:
           $ref: "#/components/responses/InternalServerError"
 
-  /files:
+  /filesystem/files/{path}:
     get:
       summary: Download a file
       parameters:
@@ -57,13 +57,6 @@ paths:
 
 components:
   parameters:
-    Location:
-      name: Location
-      in: header
-      description: The URL of the uploaded file
-      schema:
-        type: string
-        format: path
     FilePath:
       name: path
       in: path
@@ -74,7 +67,7 @@ components:
         type: string
     User:
       name: User
-      in: header
+      in: query
       required: false
       description: User owning the file
       schema:
@@ -82,7 +75,7 @@ components:
         default: "root"
     Mode:
       name: Mode
-      in: header
+      in: query
       required: false
       description: File permissions in octal format (e.g., 0755)
       schema:
@@ -91,7 +84,7 @@ components:
         default: "0777"
     Overwrite:
       name: overwrite
-      in: header
+      in: query
       required: false
       description: Overwrite the file if it exists
       schema:
@@ -113,13 +106,30 @@ components:
   responses:
     ExistingFileUploadSuccess:
       description: The file was updated successfully.
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            example: "no-cache, no-store"
     NewFileUploadSuccess:
       description: The file was created successfully.
       headers:
+        Cache-Control:
+          schema:
+            type: string
+            example: "no-cache, no-store"
         Location:
-          $ref: "#/components/parameters/Location"
+          description: The URL of the uploaded file
+          schema:
+            type: string
+            format: path
     DownloadSuccess:
       description: Entire file downloaded successfully.
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            example: "no-cache, no-store"
       content:
         application/octet-stream:
           schema:

@@ -4,6 +4,6 @@ package envd.permissions.v1;
 
 message Credentials {
   oneof credentials {
-    string user = 1;
+    string username = 1;
   }
 }

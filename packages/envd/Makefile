@@ -2,6 +2,8 @@ ENV := $(shell cat ../../.last_used_env || echo "not-set")
 -include ../../.env.${ENV}
 
 client := gcloud compute instances list --format='csv(name)' --project $(GCP_PROJECT_ID) | grep "client"
+openapi := spec/envd/envd.yml
+codegen := go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 
 .PHONY: init
 init:
@@ -97,4 +99,7 @@ build-and-upload:
 
 .PHONY: generate
 generate:
+	$(codegen) -old-config-style -generate gin --package api $(openapi) > internal/api/api.gen.go
+	$(codegen) -old-config-style -generate types --package api $(openapi) > internal/api/types.gen.go
+	$(codegen) -old-config-style -generate spec --package api $(openapi) > internal/api/spec.gen.go
 	cd spec && buf generate

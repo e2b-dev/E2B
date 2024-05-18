@@ -29,7 +29,7 @@ message ProcessConfig {
     string cmd = 1;
     repeated string args = 2;
     
-    map<string, string> env = 3;
+    map<string, string> env_vars = 3;
     string working_dir = 4;
 }
 
@@ -95,6 +95,7 @@ message SendProcessInputResponse {}
 message ProcessInput {
     oneof input {
         bytes stdin = 1;
+        bytes tty = 2;
     }
 }
 

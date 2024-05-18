@@ -6,8 +6,6 @@ import (
 	"strconv"
 )
 
-const DefaultUser = "user"
-
 func GetUser(name string) (uid, gid int64, homedir, username string, err error) {
 	var u *user.User
 
