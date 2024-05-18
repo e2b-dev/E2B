@@ -34,8 +34,6 @@ message CopyRequest {
     string destination = 2;
 
     string mode = 3;
-
-    envd.permissions.v1.Credentials owner = 4;
 }
 
 message CopyResponse {}
@@ -59,8 +57,6 @@ message RemoveResponse {}
 message RenameRequest {
     string source = 1;
     string destination = 2;
-
-    envd.permissions.v1.Credentials owner = 4;
 }
 
 message RenameResponse {}

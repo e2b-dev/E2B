@@ -61,6 +61,7 @@ func CopyDirectory(scrDir, dest string, mode os.FileMode) error {
 			}
 		}
 	}
+
 	return nil
 }
 

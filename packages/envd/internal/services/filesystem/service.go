@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem/v1"
@@ -186,12 +187,15 @@ func (Service) Watch(ctx context.Context, req *connect.Request[v1.WatchRequest],
 			}
 
 			for _, op := range ops {
-				stream.Send(&v1.WatchResponse{
+				streamErr := stream.Send(&v1.WatchResponse{
 					Event: &v1.FilesystemEvent{
 						Path: filepath.Join(watchPath, e.Name),
 						Type: op,
 					},
 				})
+				if streamErr != nil {
+					return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending event: %w", streamErr))
+				}
 			}
 		}
 	}
@@ -201,9 +205,18 @@ func (Service) Rename(ctx context.Context, req *connect.Request[v1.RenameRequest
 	source := req.Msg.GetSource()
 	destination := req.Msg.GetDestination()
 
-	_, uid, gid, err := permissions.GetUserByUsername(req.Msg.GetOwner().GetUsername())
+	fileInfo, err := os.Stat(source)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid owner: %w", err))
+		if os.IsNotExist(err) {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("source file not found: %w", err))
+		}
+
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error statting source file: %w", err))
+	}
+
+	stat, ok := fileInfo.Sys().(*syscall.Stat_t)
+	if !ok {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get raw syscall.Stat_t data for '%s'", source))
 	}
 
 	err = os.Rename(source, destination)
@@ -215,7 +228,7 @@ func (Service) Rename(ctx context.Context, req *connect.Request[v1.RenameRequest
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error renaming file: %w", err))
 	}
 
-	err = os.Chown(destination, int(uid), int(gid))
+	err = os.Chown(destination, int(stat.Uid), int(stat.Gid))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error setting owner: %w", err))
 	}
@@ -249,28 +262,37 @@ func (Service) Copy(ctx context.Context, req *connect.Request[v1.CopyRequest]) (
 	source := req.Msg.GetSource()
 	destination := req.Msg.GetDestination()
 
+	fileInfo, err := os.Stat(source)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("source not found: %w", err))
+		}
+
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error statting source file: %w", err))
+	}
+
 	mode, err := permissions.GetMode(req.Msg.GetMode())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid mode: %w", err))
 	}
 
-	_, uid, gid, err := permissions.GetUserByUsername(req.Msg.GetOwner().GetUsername())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid owner: %w", err))
-	}
+	if fileInfo.IsDir() {
+		err = CopyDirectory(source, destination, mode)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying directory: %w", err))
+		}
+	} else {
+		err = Copy(source, destination)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying file: %w", err))
+		}
 
-	dirPaths, err := GetMissingDirectories(destination, mode)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error getting missing directories: %w", err))
-	}
+		stat, ok := fileInfo.Sys().(*syscall.Stat_t)
+		if !ok {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get raw syscall.Stat_t data for '%s'", source))
+		}
 
-	err = CopyDirectory(source, destination, mode)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying directory: %w", err))
-	}
-
-	for _, dirPath := range dirPaths {
-		err = os.Chown(dirPath, int(uid), int(gid))
+		err = os.Chown(destination, int(stat.Uid), int(stat.Gid))
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error setting owner: %w", err))
 		}
