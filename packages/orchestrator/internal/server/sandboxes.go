@@ -100,6 +100,10 @@ func (s *server) List(ctx context.Context, _ *emptypb.Empty) (*orchestrator.Sand
 func (s *server) Delete(ctx context.Context, in *orchestrator.SandboxRequest) (*emptypb.Empty, error) {
 	_, childSpan := s.tracer.Start(ctx, "sandbox-delete")
 	defer childSpan.End()
+	childSpan.SetAttributes(
+		attribute.String("instance.id", in.SandboxID),
+		attribute.String("client.id", constants.ClientID),
+	)
 
 	sbx, ok := s.sandboxes.Get(in.SandboxID)
 	if !ok {
@@ -108,6 +112,11 @@ func (s *server) Delete(ctx context.Context, in *orchestrator.SandboxRequest) (*
 
 		return nil, status.New(codes.NotFound, errMsg.Error()).Err()
 	}
+
+	childSpan.SetAttributes(
+		attribute.String("env.id", sbx.Sandbox.TemplateID),
+		attribute.String("env.kernel.version", sbx.Sandbox.KernelVersion),
+	)
 
 	sbx.Stop(ctx, s.tracer)
 
