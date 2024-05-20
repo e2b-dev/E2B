@@ -36,6 +36,9 @@ export const TeamContent = () => {
   const [currentKeyId, setCurrentUserId] = useState<string | null>(null)
   const [team, setTeam] = useState(fakeTeam)
 
+  // TODO: this logs just to make build work, remove it later
+  console.log(currentKeyId)
+
   const closeDialog = () => setIsDialogOpen(false) 
   const openDialog = (id: string) => {
     setCurrentUserId(id)

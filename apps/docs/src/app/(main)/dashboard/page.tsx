@@ -15,30 +15,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useUser } from '@/utils/useUser'
+import { User } from '@supabase/supabase-js'
 
 
 const menuLabels = ['General', 'Billing', 'Sandboxes', 'Team', 'Templates'] as const
 type MenuLabel  = typeof menuLabels[number]
 
 export default function Dashboard() {
-  const [selectedItem, setSelectedItem] = useState<MenuLabel>('General')
+  const { user, isLoading, error } = useUser()
+  const [selectedItem, setSelectedItem] = useState<MenuLabel>('Billing')
 
-  return (
-    <div className="flex min-h-screen flex-row pt-32 px-32">
-      <Sidebar selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
-      <div className="flex-1 pl-10">
-        <h2 className='text-2xl mb-2 font-bold'>{selectedItem}</h2>
-        <div className='border border-white/5 w-full h-[1px] mb-10'/>
-        <MainContent selectedItem={selectedItem} />
+  if (error)  {
+    return <div>Error: {error.message}</div>
+  }
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+  if (user) {
+    return (
+      <div className="flex min-h-screen flex-row pt-32 px-32">
+        <Sidebar selectedItem={selectedItem} setSelectedItem={setSelectedItem} user={user} />
+        <div className="flex-1 pl-10">
+          <h2 className='text-2xl mb-2 font-bold'>{selectedItem}</h2>
+          <div className='border border-white/5 w-full h-[1px] mb-10'/>
+          <MainContent selectedItem={selectedItem} user={user} />
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 }
 
-const Sidebar = ({ selectedItem, setSelectedItem }) => (
+const Sidebar = ({ selectedItem, setSelectedItem, user }) => (
   <div className="h-full w-48 space-y-2">
     
-    <AccountSelectItem />
+    <AccountSelectItem user={user} />
     
     <MenuItem 
       icon={Settings} 
@@ -83,25 +94,33 @@ const MenuItem = ({ icon: Icon, label , selected, onClick }: { icon: LucideIcon;
   </div>
 )
 
-const AccountSelectItem = () => {
+const AccountSelectItem = ({ user }) => { 
+
+  const teams = user?.teams.map((team: any) => ({
+    id: team.id,
+    name: team.name,
+    default: team.is_default,
+  }))
+
+  const defaultTeam = teams?.find((teams: any) => teams.default)
+
   return(
     <DropdownMenu>
     <DropdownMenuTrigger
       className='dropdown-trigger group outline-none flex w-full items-center justify-between rounded-lg p-2 mb-6 hover:bg-zinc-800 hover:cursor-pointer'
     >
       <div className='flex items-start flex-col'>
-        <h3 className='font-bold'>Default Team</h3>
-        <p className='text-sm'>Team account</p>
+        <h3 className='font-bold'>{defaultTeam.name}</h3>
+        {/* <p className='text-sm'>Team account</p> */}
       </div> 
       <ChevronRight className='transform transition-transform duration-300 group-hover:rotate-90' />
-
-
     </DropdownMenuTrigger>
     <DropdownMenuContent className='flex flex-col w-48 bg-zinc-900 border border-white/30'>
-      <DropdownMenuItem>Personal Account</DropdownMenuItem>
-      <DropdownMenuSeparator/>
-      <DropdownMenuItem>Default Team</DropdownMenuItem>
-      <DropdownMenuItem>Other Team</DropdownMenuItem>
+      {teams?.map((team: any) => (
+        <DropdownMenuItem key={team.id}>
+          {team.name}
+        </DropdownMenuItem>
+      ))}
       <DropdownMenuSeparator />
       <DropdownMenuItem className='flex items-center space-x-1'>
         <PlusCircle width={15} height={15} />
@@ -112,14 +131,14 @@ const AccountSelectItem = () => {
   )
 }
 
-const MainContent = ({ selectedItem }: { selectedItem: MenuLabel }) => {
+const MainContent = ({ selectedItem, user }: { selectedItem: MenuLabel, user: User }) => {
   switch (selectedItem) {
     case 'General':
-      return <GeneralContent />
+      return <GeneralContent user={user} />
     case 'Billing':
       return <BillingContent />
     case 'Sandboxes':
-      return <SandboxesContent />
+      return <SandboxesContent user={user} />
     case 'Team':
       return <TeamContent />
     case 'Templates':
