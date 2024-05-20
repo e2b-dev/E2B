@@ -19,9 +19,6 @@ const (
 	SigkillWaitCheck = 100 * time.Millisecond
 )
 
-// uffdCloseLock is used to prevent multiple uffd processes from being closed at the same time, we had a suspicion that this could have been the cause of the infra restarts.
-var uffdCloseLock sync.Mutex
-
 type uffd struct {
 	cmd            *exec.Cmd
 	uffdSocketPath *string
@@ -29,8 +26,7 @@ type uffd struct {
 
 	pid int
 
-	isBeingStopped bool
-	mu             sync.Mutex
+	mu sync.Mutex
 }
 
 func (u *uffd) start() error {
@@ -61,16 +57,6 @@ func (u *uffd) stop(ctx context.Context, tracer trace.Tracer) {
 	childCtx, childSpan := tracer.Start(ctx, "stop-uffd", trace.WithAttributes())
 	defer childSpan.End()
 
-	u.mu.Lock()
-	if u.isBeingStopped {
-		u.mu.Unlock()
-		return
-	}
-
-	u.isBeingStopped = true
-	u.mu.Unlock()
-
-	uffdCloseLock.Lock()
 	err := u.process.Signal(syscall.SIGTERM)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to send SIGTERM to uffd: %w", err)
@@ -78,7 +64,6 @@ func (u *uffd) stop(ctx context.Context, tracer trace.Tracer) {
 	} else {
 		telemetry.ReportEvent(childCtx, "uffd SIGTERM sent")
 	}
-	uffdCloseLock.Unlock()
 
 killWait:
 	for {
@@ -98,7 +83,6 @@ killWait:
 		}
 	}
 
-	uffdCloseLock.Lock()
 	err = u.process.Kill()
 	if err != nil {
 		errMsg := fmt.Errorf("failed to send SIGKILL (after SIGTERM) to uffd: %w", err)
@@ -106,7 +90,6 @@ killWait:
 	} else {
 		telemetry.ReportEvent(childCtx, "uffd SIGKILL sent")
 	}
-	uffdCloseLock.Unlock()
 }
 
 func newUFFD(

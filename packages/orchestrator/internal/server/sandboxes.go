@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -58,9 +57,6 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 			errMsg := fmt.Errorf("failed to wait for Sandbox: %w", err)
 			telemetry.ReportCriticalError(closeCtx, errMsg)
 		}
-
-		// Wait before removing all resources (see defers above)
-		time.Sleep(1 * time.Second)
 	}()
 
 	return &orchestrator.SandboxCreateResponse{
