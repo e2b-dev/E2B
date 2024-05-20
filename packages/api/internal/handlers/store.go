@@ -12,6 +12,7 @@ import (
 	loki "github.com/grafana/loki/pkg/logcli/client"
 	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -90,7 +91,7 @@ func NewAPIStore() *APIStore {
 	if env.IsLocal() {
 		logger.Info("Skipping loading sandboxes, running locally")
 	} else {
-		instances, instancesErr := orch.GetInstances(ctx)
+		instances, instancesErr := orch.GetInstances(ctx, tracer)
 		if instancesErr != nil {
 			logger.Errorf("Error loading current sandboxes\n: %w", instancesErr)
 		}
@@ -119,14 +120,14 @@ func NewAPIStore() *APIStore {
 
 	logger.Info("Initialized Analytics client")
 
-	instanceCache := instance.NewCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, orch, analytics, posthogClient, logger), initialInstances, instancesCounter)
+	instanceCache := instance.NewCache(analytics.Client, logger, getDeleteInstanceFunction(ctx, tracer, orch, analytics, posthogClient, logger), initialInstances, instancesCounter)
 
 	logger.Info("Initialized instance cache")
 
 	if env.IsLocal() {
 		logger.Info("Skipping syncing sandboxes, running locally")
 	} else {
-		go orch.KeepInSync(ctx, instanceCache)
+		go orch.KeepInSync(ctx, tracer, instanceCache)
 	}
 
 	var lokiClient *loki.DefaultClient
@@ -238,7 +239,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 		}
 	}
 
-	return deleteInstance(a.Ctx, a.orchestrator, a.analytics, a.posthog, a.logger, info)
+	return deleteInstance(a.Ctx, a.tracer, a.orchestrator, a.analytics, a.posthog, a.logger, info)
 }
 
 func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, build *models.EnvBuild, err error) {
@@ -254,23 +255,34 @@ func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, 
 	}, build, nil
 }
 
-func getDeleteInstanceFunction(ctx context.Context, orchestrator *orchestrator.Orchestrator, analytics *analyticscollector.Analytics, posthogClient *PosthogClient, logger *zap.SugaredLogger) func(info instance.InstanceInfo, purge bool) *api.APIError {
+func getDeleteInstanceFunction(ctx context.Context, tracer trace.Tracer, orchestrator *orchestrator.Orchestrator, analytics *analyticscollector.Analytics, posthogClient *PosthogClient, logger *zap.SugaredLogger) func(info instance.InstanceInfo, purge bool) *api.APIError {
 	return func(info instance.InstanceInfo, purge bool) *api.APIError {
-		return deleteInstance(ctx, orchestrator, analytics, posthogClient, logger, info)
+		return deleteInstance(ctx, tracer, orchestrator, analytics, posthogClient, logger, info)
 	}
 }
 
 func deleteInstance(
 	ctx context.Context,
+	tracer trace.Tracer,
 	orchestrator *orchestrator.Orchestrator,
 	analytics *analyticscollector.Analytics,
 	posthogClient *PosthogClient,
 	logger *zap.SugaredLogger,
 	info instance.InstanceInfo,
 ) *api.APIError {
+	childCtx, span := tracer.Start(ctx, "delete-instance")
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("instance.id", info.Instance.SandboxID),
+		attribute.String("client.id", info.Instance.ClientID),
+		attribute.String("env.id", info.Instance.TemplateID),
+		attribute.String("team.id", info.TeamID.String()),
+		attribute.String("build.id", info.BuildID.String()),
+	)
+
 	duration := time.Since(*info.StartTime).Seconds()
 
-	delErr := orchestrator.DeleteInstance(ctx, info.Instance.SandboxID)
+	delErr := orchestrator.DeleteInstance(childCtx, tracer, info.Instance.SandboxID)
 	if delErr != nil {
 		errMsg := fmt.Errorf("cannot delete instance '%s': %w", info.Instance.SandboxID, delErr)
 
@@ -282,7 +294,7 @@ func deleteInstance(
 	}
 
 	if info.TeamID != nil && info.StartTime != nil {
-		_, err := analytics.Client.InstanceStopped(ctx, &analyticscollector.InstanceStoppedEvent{
+		_, err := analytics.Client.InstanceStopped(childCtx, &analyticscollector.InstanceStoppedEvent{
 			TeamId:        info.TeamID.String(),
 			EnvironmentId: info.Instance.TemplateID,
 			InstanceId:    info.Instance.SandboxID,
