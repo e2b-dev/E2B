@@ -99,7 +99,7 @@ build-and-upload:
 
 .PHONY: generate
 generate:
-	$(codegen) -old-config-style -generate gin --package api $(openapi) > internal/api/api.gen.go
+	$(codegen) -old-config-style -generate server --package api $(openapi) > internal/api/api.gen.go
 	$(codegen) -old-config-style -generate types --package api $(openapi) > internal/api/types.gen.go
 	$(codegen) -old-config-style -generate spec --package api $(openapi) > internal/api/spec.gen.go
 	cd spec && buf generate

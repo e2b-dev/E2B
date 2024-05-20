@@ -1,6 +1,6 @@
 module github.com/e2b-dev/infra/packages/orchestrator
 
-go 1.21
+go 1.22
 
 require (
 	github.com/KarpelesLab/reflink v1.0.1
@@ -8,6 +8,7 @@ require (
 	github.com/e2b-dev/infra/packages/shared v0.0.0
 	github.com/firecracker-microvm/firecracker-go-sdk v1.0.0
 	github.com/go-openapi/strfmt v0.21.7
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/hashicorp/consul/api v1.26.1
 	github.com/txn2/txeh v1.5.5
@@ -16,6 +17,7 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.48.0
 	go.opentelemetry.io/otel v1.23.0
 	go.opentelemetry.io/otel/trace v1.23.0
+	go.uber.org/zap v1.18.1
 	google.golang.org/grpc v1.61.1
 	google.golang.org/protobuf v1.33.0
 )
@@ -70,6 +72,8 @@ require (
 	go.opentelemetry.io/otel/sdk v1.21.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.19.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect

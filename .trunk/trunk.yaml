@@ -8,7 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 runtimes:
   enabled:
-    - go@1.21.0
+    - go@1.22.0
 lint:
   ignore:
     - linters:
@@ -22,14 +22,14 @@ lint:
     - linters:
         - codespell
       paths:
-        - '**/go.work.sum'
-        - '**/go.sum'
+        - "**/go.work.sum"
+        - "**/go.sum"
     - linters:
         - gitleaks
         - trufflehog
       paths:
-        - '**/go.work.sum'
-        - '**/go.sum'
+        - "**/go.work.sum"
+        - "**/go.sum"
   enabled:
     - actionlint@1.6.25
     - gitleaks@8.18.0

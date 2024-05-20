@@ -66,8 +66,10 @@ message ProcessEvent {
     }
     
     message DataEvent {
-        optional bytes stdout = 1;
-        optional bytes stderr = 2;
+        oneof output {
+            bytes stdout = 1;
+            bytes stderr = 2;
+        }
     }
     
     message EndEvent {
@@ -101,8 +103,8 @@ message ProcessInput {
 
 enum Signal {
     SIGNAL_UNSPECIFIED = 0;
-    SIGNAL_SIGTERM = 1;
-    SIGNAL_SIGKILL = 2;
+    SIGNAL_SIGTERM = 15;
+    SIGNAL_SIGKILL = 9;
 }
 
 message SendProcessSignalRequest {

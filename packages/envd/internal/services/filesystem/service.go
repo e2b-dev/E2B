@@ -20,8 +20,14 @@ type Service struct {
 	specconnect.UnimplementedFilesystemServiceHandler
 }
 
+func newService() *Service {
+	return &Service{}
+}
+
 func Handle(server *http.ServeMux, opts ...connect.HandlerOption) {
-	path, handler := specconnect.NewFilesystemServiceHandler(Service{}, opts...)
+	service := newService()
+
+	path, handler := specconnect.NewFilesystemServiceHandler(service, opts...)
 
 	server.Handle(path, handler)
 }
@@ -45,14 +51,14 @@ func (Service) Stat(ctx context.Context, req *connect.Request[v1.StatRequest]) (
 		t = v1.FileType_FILE_TYPE_FILE
 	}
 
-	response := &v1.StatResponse{
-		Entry: &v1.EntryInfo{
-			Name: fileInfo.Name(),
-			Type: t,
+	return connect.NewResponse(
+		&v1.StatResponse{
+			Entry: &v1.EntryInfo{
+				Name: fileInfo.Name(),
+				Type: t,
+			},
 		},
-	}
-
-	return connect.NewResponse(response), nil
+	), nil
 }
 
 func (Service) CreateDir(ctx context.Context, req *connect.Request[v1.CreateDirRequest]) (*connect.Response[v1.CreateDirResponse], error) {
@@ -288,13 +294,11 @@ func (Service) Copy(ctx context.Context, req *connect.Request[v1.CopyRequest]) (
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying directory: %w", err))
 		}
 	case os.ModeSymlink:
-		err = CopySymLink(source, destination)
-		if err != nil {
+		if err = CopySymLink(source, destination); err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying symlink: %w", err))
 		}
 	default:
-		err = Copy(source, destination)
-		if err != nil {
+		if err := Copy(source, destination); err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying file: %w", err))
 		}
 	}

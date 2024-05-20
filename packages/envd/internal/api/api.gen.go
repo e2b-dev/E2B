@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/oapi-codegen/runtime"
 )
 
@@ -15,157 +15,127 @@ import (
 type ServerInterface interface {
 	// Download a file
 	// (GET /filesystem/files/{path})
-	GetFilesystemFilesPath(c *gin.Context, path FilePath)
+	GetFilesystemFilesPath(ctx echo.Context, path FilePath) error
 	// Upload a file
 	// (PUT /filesystem/files/{path})
-	PutFilesystemFilesPath(c *gin.Context, path FilePath, params PutFilesystemFilesPathParams)
+	PutFilesystemFilesPath(ctx echo.Context, path FilePath, params PutFilesystemFilesPathParams) error
 	// Check the health of the envd
 	// (GET /health)
-	GetHealth(c *gin.Context)
+	GetHealth(ctx echo.Context) error
 	// Ensure the time and metadata is synced with the host
 	// (POST /host/sync)
-	PostHostSync(c *gin.Context)
+	PostHostSync(ctx echo.Context) error
 }
 
-// ServerInterfaceWrapper converts contexts to parameters.
+// ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandler       func(*gin.Context, error, int)
+	Handler ServerInterface
 }
 
-type MiddlewareFunc func(c *gin.Context)
-
-// GetFilesystemFilesPath operation middleware
-func (siw *ServerInterfaceWrapper) GetFilesystemFilesPath(c *gin.Context) {
-
+// GetFilesystemFilesPath converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFilesystemFilesPath(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "path" -------------
 	var path FilePath
 
-	err = runtime.BindStyledParameter("simple", false, "path", c.Param("path"), &path)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "path", runtime.ParamLocationPath, ctx.Param("path"), &path)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter path: %w", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter path: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetFilesystemFilesPath(c, path)
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFilesystemFilesPath(ctx, path)
+	return err
 }
 
-// PutFilesystemFilesPath operation middleware
-func (siw *ServerInterfaceWrapper) PutFilesystemFilesPath(c *gin.Context) {
-
+// PutFilesystemFilesPath converts echo context to params.
+func (w *ServerInterfaceWrapper) PutFilesystemFilesPath(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "path" -------------
 	var path FilePath
 
-	err = runtime.BindStyledParameter("simple", false, "path", c.Param("path"), &path)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "path", runtime.ParamLocationPath, ctx.Param("path"), &path)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter path: %w", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter path: %s", err))
 	}
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PutFilesystemFilesPathParams
-
 	// ------------- Optional query parameter "User" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "User", c.Request.URL.Query(), &params.User)
+	err = runtime.BindQueryParameter("form", true, false, "User", ctx.QueryParams(), &params.User)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter User: %w", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter User: %s", err))
 	}
 
 	// ------------- Optional query parameter "Mode" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "Mode", c.Request.URL.Query(), &params.Mode)
+	err = runtime.BindQueryParameter("form", true, false, "Mode", ctx.QueryParams(), &params.Mode)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter Mode: %w", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter Mode: %s", err))
 	}
 
 	// ------------- Optional query parameter "overwrite" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "overwrite", c.Request.URL.Query(), &params.Overwrite)
+	err = runtime.BindQueryParameter("form", true, false, "overwrite", ctx.QueryParams(), &params.Overwrite)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter overwrite: %w", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter overwrite: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.PutFilesystemFilesPath(c, path, params)
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PutFilesystemFilesPath(ctx, path, params)
+	return err
 }
 
-// GetHealth operation middleware
-func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
+// GetHealth converts echo context to params.
+func (w *ServerInterfaceWrapper) GetHealth(ctx echo.Context) error {
+	var err error
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetHealth(c)
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetHealth(ctx)
+	return err
 }
 
-// PostHostSync operation middleware
-func (siw *ServerInterfaceWrapper) PostHostSync(c *gin.Context) {
+// PostHostSync converts echo context to params.
+func (w *ServerInterfaceWrapper) PostHostSync(ctx echo.Context) error {
+	var err error
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.PostHostSync(c)
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostHostSync(ctx)
+	return err
 }
 
-// GinServerOptions provides options for the Gin server.
-type GinServerOptions struct {
-	BaseURL      string
-	Middlewares  []MiddlewareFunc
-	ErrorHandler func(*gin.Context, error, int)
+// This is a simple interface which specifies echo.Route addition functions which
+// are present on both echo.Echo and echo.Group, since we want to allow using
+// either of them for path registration
+type EchoRouter interface {
+	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 }
 
-// RegisterHandlers creates http.Handler with routing matching OpenAPI spec.
-func RegisterHandlers(router gin.IRouter, si ServerInterface) {
-	RegisterHandlersWithOptions(router, si, GinServerOptions{})
+// RegisterHandlers adds each server route to the EchoRouter.
+func RegisterHandlers(router EchoRouter, si ServerInterface) {
+	RegisterHandlersWithBaseURL(router, si, "")
 }
 
-// RegisterHandlersWithOptions creates http.Handler with additional options
-func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options GinServerOptions) {
-	errorHandler := options.ErrorHandler
-	if errorHandler == nil {
-		errorHandler = func(c *gin.Context, err error, statusCode int) {
-			c.JSON(statusCode, gin.H{"msg": err.Error()})
-		}
-	}
+// Registers handlers, and prepends BaseURL to the paths, so that the paths
+// can be served under a prefix.
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandler:       errorHandler,
+		Handler: si,
 	}
 
-	router.GET(options.BaseURL+"/filesystem/files/:path", wrapper.GetFilesystemFilesPath)
-	router.PUT(options.BaseURL+"/filesystem/files/:path", wrapper.PutFilesystemFilesPath)
-	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
-	router.POST(options.BaseURL+"/host/sync", wrapper.PostHostSync)
+	router.GET(baseURL+"/filesystem/files/:path", wrapper.GetFilesystemFilesPath)
+	router.PUT(baseURL+"/filesystem/files/:path", wrapper.PutFilesystemFilesPath)
+	router.GET(baseURL+"/health", wrapper.GetHealth)
+	router.POST(baseURL+"/host/sync", wrapper.PostHostSync)
+
 }
