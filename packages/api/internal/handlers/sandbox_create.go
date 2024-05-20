@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"net/http"
 	"time"
 
@@ -26,6 +27,16 @@ var postSandboxParallelLimit = semaphore.NewWeighted(defaultRequestLimit)
 
 func (a *APIStore) PostSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
+	sandboxID := InstanceIDPrefix + utils.GenerateID()
+
+	// Get team from context, use TeamContextKey
+	team := c.Value(auth.TeamContextKey).(models.Team)
+
+	span := trace.SpanFromContext(ctx)
+	traceID := span.SpanContext().TraceID().String()
+	c.Set("traceID", traceID)
+
+	a.sandboxLogger.Info("Started creating sandbox", zap.String("instanceID", sandboxID), zap.String("teamID", team.ID.String()), zap.String("traceID", traceID))
 
 	telemetry.ReportEvent(ctx, "Parsed body")
 
@@ -39,9 +50,6 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		return
 	}
 
-	span := trace.SpanFromContext(ctx)
-	c.Set("traceID", span.SpanContext().TraceID().String())
-
 	cleanedAliasOrEnvID, err := utils.CleanEnvID(body.TemplateID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Invalid environment ID: %s", err))
@@ -53,9 +61,6 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 	}
 
 	telemetry.ReportEvent(ctx, "Cleaned sandbox ID")
-
-	// Get team from context, use TeamContextKey
-	team := c.Value(auth.TeamContextKey).(models.Team)
 
 	// Check if team has access to the environment
 	env, build, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
@@ -103,9 +108,6 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	// Check if team has reached max instances
 	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
-
-	sandboxID := InstanceIDPrefix + utils.GenerateID()
-
 	err, releaseTeamSandboxReservation := a.instanceCache.Reserve(sandboxID, team.ID, maxInstancesPerTeam)
 	if err != nil {
 		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, team.Edges.TeamTier.ConcurrentInstances)
@@ -194,7 +196,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		attribute.String("instance.id", sandbox.SandboxID),
 	)
 
-	a.logger.Infof("Created sandbox '%s' for team '%s'", sandbox.SandboxID, team.ID)
+	a.sandboxLogger.Info("Created sandbox", zap.String("instanceID", sandbox.SandboxID), zap.String("envID", env.TemplateID), zap.String("teamID", team.ID.String()), zap.String("traceID", traceID))
 
 	c.JSON(http.StatusCreated, &sandbox)
 }
