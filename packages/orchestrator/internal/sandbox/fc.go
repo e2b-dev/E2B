@@ -51,8 +51,7 @@ type fc struct {
 	socketPath string
 	envPath    string
 
-	pid            int
-	isBeingStopped bool
+	pid int
 }
 
 func (fc *fc) wait() error {
@@ -378,14 +377,6 @@ func (fc *fc) start(
 }
 
 func (fc *fc) stop(ctx context.Context, tracer trace.Tracer) {
-	fc.mu.Lock()
-	if fc.isBeingStopped {
-		fc.mu.Unlock()
-		return
-	}
-	fc.isBeingStopped = true
-	fc.mu.Unlock()
-
 	childCtx, childSpan := tracer.Start(ctx, "stop-fc", trace.WithAttributes(
 		attribute.String("instance.cmd", fc.cmd.String()),
 		attribute.String("instance.cmd.dir", fc.cmd.Dir),
