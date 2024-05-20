@@ -17,28 +17,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { User } from '@supabase/supabase-js'
+import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 
-const fakeApiKeys = [
-  {
-    id: '1',
-    key: '3728621b-10ca-4153-99f5-e8b7080117f7',
-    createdAt: '2022-10-04T04:45:00.000Z',
-    updatedAt: '2022-10-04T04:45:00.000Z',
-  },
-  {
-    id: '2',
-    key: '16eea788-3927-4501-b5c5-b3eeb170bc38',
-    createdAt: '2022-10-04T04:45:00.000Z',
-    updatedAt: '2022-10-04T04:45:00.000Z',
-  },
-]
 
-export const GeneralContent = () => {
+export const GeneralContent = ({user}: {user: User}) => {
   const { toast } = useToast()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [apiKeys, setApiKeys] = useState(fakeApiKeys)
   const [currentKeyId, setCurrentKeyId] = useState<string | null>(null)
   const [hoveredKeyId, setHoveredKeyId] = useState<string | null>(null)
+
+  //@ts-ignore
+  const [apiKeys, setApiKeys] = useState<{ id: string, key: string, createdAt: string }[]>(user?.apiKeys.map((apiKey: any, index: any) => ({
+    id: String(index + 1),
+    key: apiKey.api_key,
+    createdAt: apiKey.created_at,
+  })) || [])
 
   const closeDialog = () => setIsDialogOpen(false)
   const openDialog = (id: string) => {
@@ -51,8 +45,18 @@ export const GeneralContent = () => {
     closeDialog()
   }
 
-  const addApiKey = () => {
-    
+  const addApiKey = async() => {
+    const supabase = createPagesBrowserClient()
+    const res = await supabase
+      .from('team_api_keys')
+      .insert({
+        team_id: user.id,
+        api_key: uuidv4(),
+        created_at: new Date().toISOString(),
+      })
+      
+    console.log(res)
+
     toast({
       title: 'API key created',
     })
@@ -76,7 +80,7 @@ export const GeneralContent = () => {
   const maskApiKey = (key: string) => {
     const firstFour = key.slice(0, 4)
     const lastTwo = key.slice(-2)
-    const stars = '*'.repeat(key.length - 6) // Use '#' or another fixed-width character
+    const stars = '*'.repeat(key.length - 6) // use fixed-width character
     return `${firstFour}${stars}${lastTwo}`
   }
 
