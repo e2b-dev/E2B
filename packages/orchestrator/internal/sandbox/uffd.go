@@ -73,7 +73,7 @@ func (u *uffd) stop(ctx context.Context, tracer trace.Tracer) {
 	uffdCloseLock.Lock()
 	err := u.process.Signal(syscall.SIGTERM)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		errMsg := fmt.Errorf("failed to send SIGTERM to uffd: %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "uffd SIGTERM sent")
@@ -101,7 +101,7 @@ killWait:
 	uffdCloseLock.Lock()
 	err = u.process.Kill()
 	if err != nil {
-		errMsg := fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		errMsg := fmt.Errorf("failed to send SIGKILL (after SIGTERM) to uffd: %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "uffd SIGKILL sent")
