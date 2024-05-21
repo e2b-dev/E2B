@@ -22,7 +22,6 @@ const (
 type uffd struct {
 	cmd            *exec.Cmd
 	uffdSocketPath *string
-	process        *os.Process
 
 	pid int
 
@@ -36,7 +35,6 @@ func (u *uffd) start() error {
 	}
 
 	u.pid = u.cmd.Process.Pid
-	u.process = u.cmd.Process
 
 	return nil
 }
@@ -45,7 +43,7 @@ func (u *uffd) stop(ctx context.Context, tracer trace.Tracer) {
 	childCtx, childSpan := tracer.Start(ctx, "stop-uffd", trace.WithAttributes())
 	defer childSpan.End()
 
-	err := u.process.Signal(syscall.SIGTERM)
+	err := u.cmd.Process.Signal(syscall.SIGTERM)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to send SIGTERM to uffd: %w", err)
 		telemetry.ReportError(childCtx, errMsg)
@@ -61,7 +59,7 @@ killWait:
 		case <-ctx.Done():
 			break killWait
 		default:
-			isRunning, _ := checkIsRunning(u.process)
+			isRunning, _ := checkIsRunning(u.cmd.Process)
 
 			if !isRunning {
 				break killWait
@@ -71,7 +69,7 @@ killWait:
 		}
 	}
 
-	err = u.process.Kill()
+	err = u.cmd.Process.Kill()
 	if err != nil {
 		errMsg := fmt.Errorf("failed to send SIGKILL (after SIGTERM) to uffd: %w", err)
 		telemetry.ReportError(childCtx, errMsg)

@@ -181,7 +181,7 @@ func NewSandbox(
 			case <-childCtx.Done():
 				return nil, childCtx.Err()
 			default:
-				isRunning, _ := checkIsRunning(uffd.process)
+				isRunning, _ := checkIsRunning(uffd.cmd.Process)
 				fmt.Printf("uffd is running: %v", isRunning)
 				if isRunning {
 					break uffdWait
@@ -323,27 +323,17 @@ func (s *Sandbox) CleanupAfterFCStop(
 	}
 }
 
-func (s *Sandbox) waitWithUffd(ctx context.Context, tracer trace.Tracer) error {
+func (s *Sandbox) Wait(ctx context.Context, tracer trace.Tracer) (err error) {
 	defer s.Stop(ctx, tracer)
 
-	go func() {
-		err := s.uffd.wait()
-		fmt.Printf("uffd wait error: %v", err)
-	}()
-
-	return s.waitNoUffd(ctx, tracer)
-}
-
-func (s *Sandbox) waitNoUffd(_ context.Context, _ trace.Tracer) error {
-	return s.fc.wait()
-}
-
-func (s *Sandbox) Wait(ctx context.Context, tracer trace.Tracer) (err error) {
 	if s.uffd != nil {
-		return s.waitWithUffd(ctx, tracer)
+		go func() {
+			err := s.uffd.wait()
+			fmt.Printf("uffd wait error: %v", err)
+		}()
 	}
 
-	return s.waitNoUffd(ctx, tracer)
+	return s.fc.wait()
 }
 
 func (s *Sandbox) Stop(ctx context.Context, tracer trace.Tracer) {

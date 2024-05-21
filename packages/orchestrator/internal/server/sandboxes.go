@@ -55,7 +55,9 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 		err := sbx.Wait(context.Background(), tracer)
 		if err != nil {
 			errMsg := fmt.Errorf("failed to wait for Sandbox: %w", err)
-			telemetry.ReportCriticalError(closeCtx, errMsg)
+			fmt.Println(errMsg)
+		} else {
+			fmt.Printf("Sandbox %s wait finished", req.Sandbox.SandboxID)
 		}
 	}()
 

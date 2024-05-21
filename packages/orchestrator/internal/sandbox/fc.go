@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
@@ -35,8 +34,7 @@ type fc struct {
 
 	mu sync.Mutex
 
-	cmd     *exec.Cmd
-	process *os.Process
+	cmd *exec.Cmd
 
 	stdout *io.PipeReader
 	stderr *io.PipeReader
