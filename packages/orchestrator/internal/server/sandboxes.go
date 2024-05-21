@@ -116,5 +116,9 @@ func (s *server) Delete(ctx context.Context, in *orchestrator.SandboxRequest) (*
 
 	sbx.Stop(ctx, s.tracer)
 
+	// Ensure the sandbox is removed from cache.
+	// Ideally we would rely only on the goroutine defef.
+	s.sandboxes.Remove(in.SandboxID)
+
 	return nil, nil
 }
