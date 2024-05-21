@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/trace"
@@ -325,49 +324,14 @@ func (s *Sandbox) CleanupAfterFCStop(
 }
 
 func (s *Sandbox) waitWithUffd(ctx context.Context, tracer trace.Tracer) error {
-	fcChan := make(chan error)
-	uffdChan := make(chan error)
-
-	var wg sync.WaitGroup
-
-	wg.Add(1)
+	defer s.Stop(ctx, tracer)
 
 	go func() {
-		defer wg.Done()
-		fcChan <- s.fc.wait()
-		close(fcChan)
+		err := s.uffd.wait()
+		fmt.Printf("uffd wait error: %v", err)
 	}()
 
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		uffdChan <- s.uffd.wait()
-		close(uffdChan)
-	}()
-
-	select {
-	case <-ctx.Done():
-		s.Stop(ctx, tracer)
-
-		return ctx.Err()
-	case err := <-fcChan:
-		s.Stop(ctx, tracer)
-
-		if err != nil {
-			return err
-		}
-	case err := <-uffdChan:
-		s.Stop(ctx, tracer)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	wg.Wait()
-
-	return nil
+	return s.waitNoUffd(ctx, tracer)
 }
 
 func (s *Sandbox) waitNoUffd(_ context.Context, _ trace.Tracer) error {
