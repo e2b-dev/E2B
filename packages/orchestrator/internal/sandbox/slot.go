@@ -111,14 +111,6 @@ func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
-func RecoverSlot(instanceID string, slotIdx int) *IPSlot {
-	return &IPSlot{
-		InstanceID: instanceID,
-		SlotIdx:    slotIdx,
-		KVKey:      getKVKey(slotIdx),
-	}
-}
-
 func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Client, instanceID string) (*IPSlot, error) {
 	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
 	defer childSpan.End()

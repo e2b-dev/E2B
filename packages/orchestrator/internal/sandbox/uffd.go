@@ -41,18 +41,6 @@ func (u *uffd) start() error {
 	return nil
 }
 
-func (u *uffd) recover(pid int) error {
-	p, err := recoverProcess(pid)
-	if err != nil {
-		return fmt.Errorf("failed to recover process %d: %w", pid, err)
-	}
-
-	u.pid = pid
-	u.process = p
-
-	return nil
-}
-
 func (u *uffd) stop(ctx context.Context, tracer trace.Tracer) {
 	childCtx, childSpan := tracer.Start(ctx, "stop-uffd", trace.WithAttributes())
 	defer childSpan.End()
@@ -76,7 +64,7 @@ killWait:
 			isRunning, _ := checkIsRunning(u.process)
 
 			if !isRunning {
-				return
+				break killWait
 			}
 
 			time.Sleep(SigkillWaitCheck)
@@ -116,21 +104,5 @@ func newUFFD(
 }
 
 func (u *uffd) wait() error {
-	if u.cmd != nil {
-		return u.cmd.Wait()
-	}
-
-	if u.process == nil {
-		return fmt.Errorf("process is nil")
-	}
-
-	// When we recover process and the current process is not parent of that process .Wait will usually not work and throw an error.
-	for {
-		time.Sleep(processCheckInterval)
-
-		isRunning, err := checkIsRunning(u.process)
-		if !isRunning {
-			return err
-		}
-	}
+	return u.cmd.Wait()
 }

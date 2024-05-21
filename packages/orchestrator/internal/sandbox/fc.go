@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
@@ -55,35 +54,7 @@ type fc struct {
 }
 
 func (fc *fc) wait() error {
-	if fc.cmd != nil {
-		return fc.cmd.Wait()
-	}
-
-	if fc.process == nil {
-		return fmt.Errorf("process is nil")
-	}
-
-	// When we recover process and the current process is not parent of that process. Wait will usually not work and throw an error.
-	for {
-		time.Sleep(processCheckInterval)
-
-		isRunning, err := checkIsRunning(fc.process)
-		if !isRunning {
-			return err
-		}
-	}
-}
-
-func (fc *fc) recover(pid int) error {
-	p, err := recoverProcess(pid)
-	if err != nil {
-		return fmt.Errorf("failed to recover process %d: %w", pid, err)
-	}
-
-	fc.pid = pid
-	fc.process = p
-
-	return nil
+	return fc.cmd.Wait()
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
