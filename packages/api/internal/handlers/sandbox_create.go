@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"time"
 
@@ -36,7 +35,8 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 	traceID := span.SpanContext().TraceID().String()
 	c.Set("traceID", traceID)
 
-	a.sandboxLogger.Info("Started creating sandbox", zap.String("instanceID", sandboxID), zap.String("teamID", team.ID.String()), zap.String("traceID", traceID))
+	sandboxLogger := a.sandboxLogger.With("instanceID", sandboxID, "teamID", team.ID.String(), "traceID", traceID)
+	sandboxLogger.Info("Started creating sandbox")
 
 	telemetry.ReportEvent(ctx, "Parsed body")
 
@@ -196,7 +196,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		attribute.String("instance.id", sandbox.SandboxID),
 	)
 
-	a.sandboxLogger.Info("Created sandbox", zap.String("instanceID", sandbox.SandboxID), zap.String("envID", env.TemplateID), zap.String("teamID", team.ID.String()), zap.String("traceID", traceID))
+	sandboxLogger.With("envID", env.TemplateID).Info("Sandbox created")
 
 	c.JSON(http.StatusCreated, &sandbox)
 }

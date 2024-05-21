@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var vectorAddress = os.Getenv("VECTOR_ADDRESS")
+var vectorAddress = os.Getenv("LOGS_COLLECTOR_ADDRESS")
 
 type HTTPLogsExporter struct {
 	client   http.Client

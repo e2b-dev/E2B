@@ -3,8 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/shared/pkg/logging/exporter"
-	"go.uber.org/zap/zapcore"
 	"net/http"
 	"os"
 	"time"
@@ -156,6 +154,12 @@ func NewAPIStore() *APIStore {
 
 	buildCache := builds.NewBuildCache(buildCounter)
 
+	sandboxLogger, err := logging.NewCollectorLogger()
+	if err != nil {
+		logger.Errorf("Error initializing sandbox logger\n: %v", err)
+		panic(err)
+	}
+
 	return &APIStore{
 		Ctx:             ctx,
 		orchestrator:    orch,
@@ -168,6 +172,7 @@ func NewAPIStore() *APIStore {
 		buildCache:      buildCache,
 		logger:          logger,
 		lokiClient:      lokiClient,
+		sandboxLogger:   sandboxLogger,
 	}
 }
 
@@ -320,44 +325,4 @@ func deleteInstance(
 	logger.Infof("Closed sandbox '%s' after %f seconds", info.Instance.SandboxID, duration)
 
 	return nil
-}
-
-func NewSandboxLogger() (*zap.SugaredLogger, error) {
-	cfg := zap.Config{
-		Level:    zap.NewAtomicLevelAt(zap.DebugLevel),
-		Encoding: "json",
-		EncoderConfig: zapcore.EncoderConfig{
-			TimeKey:       "timestamp",
-			MessageKey:    "message",
-			LevelKey:      "level",
-			EncodeLevel:   zapcore.LowercaseLevelEncoder,
-			NameKey:       "logger",
-			StacktraceKey: "stacktrace",
-		},
-	}
-
-	cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(t.UTC().Format("2006-01-02T15:04:05Z0700"))
-		// 2019-08-13T04:39:11Z
-	})
-
-	l, err := cfg.Build()
-	if err != nil {
-		return nil, fmt.Errorf("error building logger: %w", err)
-	}
-
-	// mmds is enabled, create a logger that sends logs with info from the FC's MMDS
-	var combinedLogger *zap.Logger
-
-	level := zap.DebugLevel
-
-	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(cfg.EncoderConfig),
-		zapcore.AddSync(exporter.NewHTTPLogsExporter(env.IsLocal())),
-		level,
-	)
-
-	combinedLogger = zap.New(core)
-
-	return combinedLogger.Sugar(), nil
 }
