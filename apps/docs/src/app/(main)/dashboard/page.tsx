@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight, CreditCard, LayoutPanelTop, LucideIcon, Package, PlusCircle, Settings, Users } from 'lucide-react'
+import { ChevronRight, CreditCard, Key, LucideIcon, PlusCircle, Settings, Users } from 'lucide-react'
 
 import { GeneralContent } from '@/components/Dashboard/General'
 import { BillingContent } from '@/components/Dashboard/Billing'
-import { SandboxesContent } from '@/components/Dashboard/Sandboxes'
 import { TeamContent } from '@/components/Dashboard/Team'
 
 import {
@@ -17,14 +16,16 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useUser } from '@/utils/useUser'
 import { User } from '@supabase/supabase-js'
+import { KeysContent } from '@/components/Dashboard/Keys'
 
 
-const menuLabels = ['General', 'Billing', 'Sandboxes', 'Team', 'Templates'] as const
+// TODO: Sandbox and Templates tab deleted for now
+const menuLabels = ['General', 'Keys' ,'Billing', 'Team',] as const
 type MenuLabel  = typeof menuLabels[number]
 
 export default function Dashboard() {
   const { user, isLoading, error } = useUser()
-  const [selectedItem, setSelectedItem] = useState<MenuLabel>('Billing')
+  const [selectedItem, setSelectedItem] = useState<MenuLabel>('General')
 
   if (error)  {
     return <div>Error: {error.message}</div>
@@ -58,28 +59,22 @@ const Sidebar = ({ selectedItem, setSelectedItem, user }) => (
       onClick={() => setSelectedItem('General')} 
     />
     <MenuItem 
+      icon={Key} 
+      label="Keys" 
+      selected={selectedItem === 'Keys'}
+      onClick={() => setSelectedItem('Keys')} 
+    />
+    <MenuItem 
       icon={CreditCard} 
       label="Billing" 
       selected={selectedItem === 'Billing'}
       onClick={() => setSelectedItem('Billing')} 
     />
     <MenuItem 
-      icon={Package} 
-      label="Sandboxes" 
-      selected={selectedItem === 'Sandboxes'}
-      onClick={() => setSelectedItem('Sandboxes')} 
-    />
-    <MenuItem 
       icon={Users} 
       label="Team" 
       selected={selectedItem === 'Team'}
       onClick={() => setSelectedItem('Team')} 
-    />
-    <MenuItem 
-      icon={LayoutPanelTop} 
-      label="Templates" 
-      selected={selectedItem === 'Templates'} 
-      onClick={() => setSelectedItem('Templates')} 
     />
   </div>
 )
@@ -135,19 +130,16 @@ const MainContent = ({ selectedItem, user }: { selectedItem: MenuLabel, user: Us
   switch (selectedItem) {
     case 'General':
       return <GeneralContent user={user} />
+    case 'Keys':
+      return <KeysContent user={user} />
     case 'Billing':
       return <BillingContent />
-    case 'Sandboxes':
-      return <SandboxesContent user={user} />
     case 'Team':
       return <TeamContent />
-    case 'Templates':
-      return <TemplatesContent />
     default:
       return <ErrorContent />
   }
 }
 
-const TemplatesContent = () => <div>Templates Content</div>
 const ErrorContent = () => <div>Error Content</div>
 
