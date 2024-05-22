@@ -1,4 +1,3 @@
-import { ResponsiveBar } from '@nivo/bar'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useUser } from '@/utils/useUser'
@@ -14,6 +13,11 @@ export const BillingContent = () => {
 
   return (
     <div className="flex flex-col w-full h-full">
+      <div className='flex items-center space-x-4'>
+        <h2 className='font-bold text-xl'>Make changes to your billing</h2>
+        <ManageBilling />
+      </div>
+
       {credits && (
       <div className='flex flex-col space-y-2 pb-10'>
         <h2 className='font-bold text-xl'>Credits left</h2>
@@ -25,70 +29,10 @@ export const BillingContent = () => {
       <div>
         <h2 className='font-bold pb-10 text-xl'>Billing history</h2>
       </div>
-      <BarChart className="aspect-[6/3] w-2/3 pb-10"/>
       
-      <div className='flex items-center space-x-4'>
-        <h2 className='font-bold text-xl'>Make changes to your billing</h2>
-        <ManageBilling />
-      </div>
     </div>
   )
 }
-
-function BarChart(props: any) {
-  return (
-    <div {...props}>
-      <ResponsiveBar
-        data={[
-          { name: 'Jan', amount: 111 },
-          { name: 'Feb', amount: 157 },
-          { name: 'Mar', amount: 129 },
-          { name: 'Apr', amount: 150 },
-          { name: 'May', amount: 119 },
-          { name: 'Jun', amount: 72 },
-        ]}
-        keys={['amount']}
-        indexBy="name"
-        margin={{ top: 0, right: 0, bottom: 40, left: 40 }}
-        padding={0.2}
-        colors={['#FFAF78']}
-        axisBottom={{
-          tickSize: 0,
-          tickPadding: 16,
-        }}
-        axisLeft={{
-          tickSize: 0,
-          tickValues: 4,
-          tickPadding: 16,
-        }}
-        gridYValues={4}
-        theme={{
-          tooltip: {
-            chip: {
-              borderRadius: '9999px',
-            },
-            container: {
-              fontSize: '12px',
-              borderRadius: '6px',
-              color: 'black',
-            },
-          },
-          grid: {
-            line: {
-              stroke: '#f3f4f6',
-            },
-          },
-        }}
-        borderRadius={4} // Apply a border radius to the top corners of the bars
-        tooltipLabel={({ id }) => `${id}`}
-        enableLabel={false}
-        role="application"
-        ariaLabel="A bar chart showing data"
-      />
-    </div>
-  )
-}
-
 
 const ManageBilling = () => {
   const { user } = useUser()
