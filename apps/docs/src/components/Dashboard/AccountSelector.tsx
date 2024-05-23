@@ -23,8 +23,8 @@ export const AccountSelector = ({ user }) => {
       className='dropdown-trigger group outline-none flex w-full items-center justify-between rounded-lg p-2 mb-6 hover:bg-zinc-800 hover:cursor-pointer'
     >
       <div className='flex items-start flex-col'>
+        <p className='text-sm'>Current account</p>
         <h3 className='font-bold'>{defaultTeam.name}</h3>
-        {/* <p className='text-sm'>Team account</p> */}
       </div> 
       <ChevronRight className='transform transition-transform duration-300 group-hover:rotate-90' />
     </DropdownMenuTrigger>
