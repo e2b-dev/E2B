@@ -12,7 +12,7 @@ function formatCurrency(value: number) {
 }
 
 export const BillingContent = () => {
-  const { credits, usage  } = useUsage()
+  const { credits, usage, isLoading  } = useUsage()
   
   return (
     <div className="flex flex-col w-full h-full">
@@ -21,13 +21,14 @@ export const BillingContent = () => {
         <ManageBilling />
       </div>
 
-      {credits && (
       <div className='flex flex-col space-y-2 pb-10'>
         <h2 className='font-bold text-xl'>Credits left</h2>
         <span className="text-sm">Credits automatically are used to bill your team</span>
-        <span className="text-sm font-mono text-green-300/80">${formatCurrency(credits)}</span>
+        {credits && (
+          <span className="text-sm font-mono text-green-300/80">${formatCurrency(credits)}</span>
+        )}
+        {isLoading && <span className="text-sm font-mono text-neutral-400">Loading...</span>}
       </div>
-      )}
 
       <div className='flex items-center space-x-4 pb-4'>
         <h2 className='font-bold text-xl'>Change tier</h2>
