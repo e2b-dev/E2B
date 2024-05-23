@@ -48,7 +48,7 @@ export default function Dashboard() {
       <div className="flex min-h-screen flex-row pt-32 px-32">
         <Sidebar selectedItem={selectedItem} setSelectedItem={setSelectedItem} user={user} />
         <div className="flex-1 pl-10">
-          <h2 className='text-2xl mb-2 font-bold'>{selectedItem}</h2>
+          <h2 className='text-2xl mb-2 font-bold'>{selectedItem[0].toUpperCase() + selectedItem.slice(1)}</h2>
           <div className='border border-white/5 w-full h-[1px] mb-10'/>
           <MainContent selectedItem={selectedItem} user={user} />
         </div>
