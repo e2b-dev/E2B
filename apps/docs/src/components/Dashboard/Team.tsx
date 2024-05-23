@@ -64,6 +64,16 @@ export const TeamContent = () => {
         <Button variant='outline'>Save changes</Button>
       </div>
 
+      <h2 className="text-xl font-bold pb-4">Invite new members</h2>
+      <div className='flex items-center space-x-2 pb-10'>
+        <input
+          type="text"
+          className="w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
+          placeholder="agent@incloud.dev"
+        />
+        <Button variant='outline'>Send invite</Button>
+      </div>
+
       <h2 className="text-xl font-bold pb-4">Team members</h2>
       <Table>
       <TableHeader>
@@ -88,7 +98,6 @@ export const TeamContent = () => {
       </TableBody>
       </Table>
 
-      <h2 className="text-xl font-bold pt-10 pb-4">Invite new members</h2>
 
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogTrigger asChild>

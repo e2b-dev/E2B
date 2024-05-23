@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight, CreditCard, Key, LucideIcon, PlusCircle, Settings, Users } from 'lucide-react'
+import { BarChart, ChevronRight, CreditCard, Key, LucideIcon, PlusCircle, Settings, Users } from 'lucide-react'
 
 import { GeneralContent } from '@/components/Dashboard/General'
 import { BillingContent } from '@/components/Dashboard/Billing'
@@ -17,15 +17,16 @@ import {
 import { useUser } from '@/utils/useUser'
 import { User } from '@supabase/supabase-js'
 import { KeysContent } from '@/components/Dashboard/Keys'
+import { UsageContent } from '@/components/Dashboard/Usage'
 
 
 // TODO: Sandbox and Templates tab deleted for now
-const menuLabels = ['General', 'Keys' ,'Billing', 'Team',] as const
+const menuLabels = ['General', 'Keys', 'Usage' ,'Billing', 'Team',] as const
 type MenuLabel  = typeof menuLabels[number]
 
 export default function Dashboard() {
   const { user, isLoading, error } = useUser()
-  const [selectedItem, setSelectedItem] = useState<MenuLabel>('General')
+  const [selectedItem, setSelectedItem] = useState<MenuLabel>('Billing')
 
   if (error)  {
     return <div>Error: {error.message}</div>
@@ -63,6 +64,12 @@ const Sidebar = ({ selectedItem, setSelectedItem, user }) => (
       label="Keys" 
       selected={selectedItem === 'Keys'}
       onClick={() => setSelectedItem('Keys')} 
+    />
+    <MenuItem 
+      icon={BarChart} 
+      label="Usage"
+      selected={selectedItem === 'Usage'}
+      onClick={() => setSelectedItem('Usage')} 
     />
     <MenuItem 
       icon={CreditCard} 
@@ -132,6 +139,8 @@ const MainContent = ({ selectedItem, user }: { selectedItem: MenuLabel, user: Us
       return <GeneralContent user={user} />
     case 'Keys':
       return <KeysContent user={user} />
+    case 'Usage':
+      return <UsageContent />
     case 'Billing':
       return <BillingContent />
     case 'Team':
