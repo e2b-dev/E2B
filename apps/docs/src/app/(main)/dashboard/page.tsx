@@ -1,34 +1,43 @@
 'use client'
 
-import { useState } from 'react'
-import { BarChart, ChevronRight, CreditCard, Key, LucideIcon, PlusCircle, Settings, Users } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { BarChart, CreditCard, Key, LucideIcon, Settings, Users } from 'lucide-react'
 
 import { GeneralContent } from '@/components/Dashboard/General'
 import { BillingContent } from '@/components/Dashboard/Billing'
 import { TeamContent } from '@/components/Dashboard/Team'
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { useUser } from '@/utils/useUser'
 import { User } from '@supabase/supabase-js'
 import { KeysContent } from '@/components/Dashboard/Keys'
 import { UsageContent } from '@/components/Dashboard/Usage'
+import { AccountSelector } from '@/components/Dashboard/AccountSelector'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 
 // TODO: Sandbox and Templates tab deleted for now
-const menuLabels = ['General', 'Keys', 'Usage' ,'Billing', 'Team',] as const
+const menuLabels = ['general', 'keys', 'usage' ,'billing', 'team',] as const
 type MenuLabel  = typeof menuLabels[number]
 
 export default function Dashboard() {
   const { user, isLoading, error } = useUser()
-  const [selectedItem, setSelectedItem] = useState<MenuLabel>('Billing')
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
-  if (error)  {
+  const tab = searchParams!.get('tab')
+  const initialTab = tab && menuLabels.includes(tab as MenuLabel) ? (tab as MenuLabel) : 'general'
+  const [selectedItem, setSelectedItem] = useState<MenuLabel>(initialTab)
+
+  useEffect(() => {
+    if (tab !== selectedItem) {
+      const params = new URLSearchParams(window.location.search)
+      params.set('tab', selectedItem)
+      const newUrl = `${window.location.pathname}?${params.toString()}`
+      router.push(newUrl)
+    }
+  }, [selectedItem, tab, router])
+
+  if (error) {
     return <div>Error: {error.message}</div>
   }
   if (isLoading) {
@@ -50,41 +59,28 @@ export default function Dashboard() {
 
 const Sidebar = ({ selectedItem, setSelectedItem, user }) => (
   <div className="h-full w-48 space-y-2">
-    
-    <AccountSelectItem user={user} />
-    
-    <MenuItem 
-      icon={Settings} 
-      label="General"
-      selected={selectedItem === 'General'} 
-      onClick={() => setSelectedItem('General')} 
-    />
-    <MenuItem 
-      icon={Key} 
-      label="Keys" 
-      selected={selectedItem === 'Keys'}
-      onClick={() => setSelectedItem('Keys')} 
-    />
-    <MenuItem 
-      icon={BarChart} 
-      label="Usage"
-      selected={selectedItem === 'Usage'}
-      onClick={() => setSelectedItem('Usage')} 
-    />
-    <MenuItem 
-      icon={CreditCard} 
-      label="Billing" 
-      selected={selectedItem === 'Billing'}
-      onClick={() => setSelectedItem('Billing')} 
-    />
-    <MenuItem 
-      icon={Users} 
-      label="Team" 
-      selected={selectedItem === 'Team'}
-      onClick={() => setSelectedItem('Team')} 
-    />
+
+    <AccountSelector user={user} />
+
+    {menuLabels.map((label) => (
+      <MenuItem
+        key={label.toUpperCase()}
+        icon={iconMap[label]}
+        label={label}
+        selected={selectedItem === label}
+        onClick={() => setSelectedItem(label)}
+      />
+    ))}
   </div>
 )
+
+const iconMap: { [key in MenuLabel]: LucideIcon } = {
+  general: Settings,
+  keys: Key,
+  usage: BarChart,
+  billing: CreditCard,
+  team: Users,
+}
 
 const MenuItem = ({ icon: Icon, label , selected, onClick }: { icon: LucideIcon; label: MenuLabel; selected: boolean; onClick: () => void }) => (
   <div 
@@ -92,63 +88,28 @@ const MenuItem = ({ icon: Icon, label , selected, onClick }: { icon: LucideIcon;
     onClick={onClick}
   >
     <Icon width={20} height={20} />
-    <p>{label}</p>
+    <p>{label[0].toUpperCase()+label.slice(1)}</p>
   </div>
 )
 
-const AccountSelectItem = ({ user }) => { 
-
-  const teams = user?.teams.map((team: any) => ({
-    id: team.id,
-    name: team.name,
-    default: team.is_default,
-  }))
-
-  const defaultTeam = teams?.find((teams: any) => teams.default)
-
-  return(
-    <DropdownMenu>
-    <DropdownMenuTrigger
-      className='dropdown-trigger group outline-none flex w-full items-center justify-between rounded-lg p-2 mb-6 hover:bg-zinc-800 hover:cursor-pointer'
-    >
-      <div className='flex items-start flex-col'>
-        <h3 className='font-bold'>{defaultTeam.name}</h3>
-        {/* <p className='text-sm'>Team account</p> */}
-      </div> 
-      <ChevronRight className='transform transition-transform duration-300 group-hover:rotate-90' />
-    </DropdownMenuTrigger>
-    <DropdownMenuContent className='flex flex-col w-48 bg-zinc-900 border border-white/30'>
-      {teams?.map((team: any) => (
-        <DropdownMenuItem key={team.id}>
-          {team.name}
-        </DropdownMenuItem>
-      ))}
-      <DropdownMenuSeparator />
-      <DropdownMenuItem className='flex items-center space-x-1'>
-        <PlusCircle width={15} height={15} />
-        <p>Create Team</p>
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
 
 const MainContent = ({ selectedItem, user }: { selectedItem: MenuLabel, user: User }) => {
   switch (selectedItem) {
-    case 'General':
+    case 'general':
       return <GeneralContent user={user} />
-    case 'Keys':
+    case 'keys':
       return <KeysContent user={user} />
-    case 'Usage':
+    case 'usage':
       return <UsageContent />
-    case 'Billing':
+    case 'billing':
       return <BillingContent />
-    case 'Team':
+    case 'team':
       return <TeamContent />
     default:
       return <ErrorContent />
   }
 }
 
+// TODO send sentry error from this
 const ErrorContent = () => <div>Error Content</div>
 
