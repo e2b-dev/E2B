@@ -16,55 +16,69 @@ import { useState } from 'react'
 import { useToast } from '../ui/use-toast'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { User } from '@supabase/supabase-js'
-import { v4 as uuidv4 } from 'uuid'
 
 
 export const KeysContent = ({user}: {user: User}) => {
+  const supabase = createPagesBrowserClient()
+
   const { toast } = useToast()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [currentKeyId, setCurrentKeyId] = useState<string | null>(null)
-  const [hoveredKeyId, setHoveredKeyId] = useState<string | null>(null)
+  const [currentKey, setCurrentKey] = useState<string | null>(null)
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null)
 
   //@ts-ignore
-  const [apiKeys, setApiKeys] = useState<{ id: string, key: string, createdAt: string }[]>(user?.apiKeys.map((apiKey: any, index: any) => ({
-    id: String(index + 1),
+  const [apiKeys, setApiKeys] = useState<{ key: string, createdAt: string }[]>(user?.apiKeys.map((apiKey: any) => ({
     key: apiKey.api_key,
     createdAt: apiKey.created_at,
   })) || [])
+
   const closeDialog = () => setIsDialogOpen(false)
-  const openDialog = (id: string) => {
-    setCurrentKeyId(id)
+  const openDialog = (key: string) => {
+    setCurrentKey(key)
     setIsDialogOpen(true)
   }
 
-  const deleteApiKey = () => {
-    setApiKeys(apiKeys.filter(apiKey => apiKey.id !== currentKeyId))
+  const deleteApiKey = async() => {
+    
+    const { error } = await supabase
+      .from('team_api_keys')
+      .delete()
+      .eq('api_key', currentKey)
+
+    if (error) {
+      // TODO: Add sentry event here
+      console.log(error)
+      return
+    }
+    
+    setApiKeys(apiKeys.filter(apiKey => apiKey.key !== currentKey))
     closeDialog()
   }
 
   const addApiKey = async() => {
-    const supabase = createPagesBrowserClient()
-    const res = await supabase
-      .from('team_api_keys')
-      .insert({
-        team_id: user.id,
-        api_key: uuidv4(),
-        created_at: new Date().toISOString(),
-      })
-      
-    console.log(res)
+
+    // TODO, make team selection real
+    //@ts-ignore
+    const teamId = user?.teams[0].id as string
+
+    const res = await fetch('/api/create-api-key', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ teamId }),
+    })
+    if (!res.ok) {
+      return
+    } 
+
+    const newKey = await res.json()
 
     toast({
       title: 'API key created',
     })
     
-    const newKey = {
-      id: uuidv4(), 
-      key: uuidv4(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    setApiKeys([...apiKeys, newKey])
+    setApiKeys([...apiKeys, {key: newKey.api_key, createdAt: newKey.created_at}])
   }
 
   const copyToClipboard = (text: string) => {
@@ -91,17 +105,17 @@ export const KeysContent = ({user}: {user: User}) => {
     
     <p className='text-neutral-300 pb-2'>Active keys:</p>
 
-    {apiKeys.map((apiKey) => (
+    {apiKeys.map((apiKey, index) => (
     <div 
-      key={apiKey.id}
+      key={index}
       className='flex w-full justify-between items-center border border-white/5 rounded-lg p-2 mb-4 space-x-4'
-      onMouseEnter={() => setHoveredKeyId(apiKey.id)}
-      onMouseLeave={() => setHoveredKeyId(null)}
+      onMouseEnter={() => setHoveredKey(apiKey.key)}
+      onMouseLeave={() => setHoveredKey(null)}
       >
-      <div className="font-mono text-sm">{hoveredKeyId === apiKey.id ? apiKey.key : maskApiKey(apiKey.key)}</div> {/* Use a monospace font */}
+      <div className="font-mono text-sm">{hoveredKey === apiKey.key ? apiKey.key : maskApiKey(apiKey.key)}</div> {/* Use a monospace font */}
       <div className='flex items-center space-x-2'>
         <Copy className='hover:cursor-pointer' width={18} height={18} onClick={() => copyToClipboard(apiKey.key)} />
-        <Delete className='hover:cursor-pointer' color='red' width={20} height={20} onClick={() => openDialog(apiKey.id)} />
+        <Delete className='hover:cursor-pointer' color='red' width={20} height={20} onClick={() => openDialog(apiKey.key)} />
       </div>
     </div>
     ))}
