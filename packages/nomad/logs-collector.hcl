@@ -107,16 +107,6 @@ data_dir = "alloc/data/vector/"
 enabled = true
 address = "0.0.0.0:${var.logs_health_port_number}"
 
-[sources.vector]
-type = "internal_logs"
-
-[transforms.add_source_vector]
-type = "remap"
-inputs = ["vector"]
-source = """
-.service = "vector"
-"""
-
 [sources.envd]
 type = "http_server"
 address = "0.0.0.0:${var.logs_port_number}"
@@ -145,7 +135,7 @@ sandboxID = "{{ sandboxID }}"
 
 [sinks.grafana]
 type = "loki"
-inputs = [ "add_source_envd", "add_source_vector" ]
+inputs = [ "add_source_envd" ]
 endpoint = "${var.grafana_logs_endpoint}"
 encoding.codec = "json"
 auth.strategy = "basic"
