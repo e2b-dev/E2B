@@ -18,8 +18,8 @@ func NewMultiWriter(writers ...io.Writer) *MultiWriter {
 }
 
 func (mw *MultiWriter) Write(p []byte) (n int, err error) {
-	mw.mu.Lock()
-	defer mw.mu.Unlock()
+	mw.mu.RLock()
+	defer mw.mu.RUnlock()
 
 	for _, w := range mw.writers {
 		n, err = w.Write(p)
@@ -49,14 +49,12 @@ func (mw *MultiWriter) Remove(w io.Writer) {
 	mw.mu.Lock()
 	defer mw.mu.Unlock()
 
-	// TODO: Improve removing
-	var writers []io.Writer
-	for _, ew := range mw.writers {
-		if ew != w {
-			writers = append(writers, ew)
+	for i, c := range mw.writers {
+		if c == w {
+			mw.writers = append(mw.writers[:i], mw.writers[i+1:]...)
+			break
 		}
 	}
-	mw.writers = writers
 }
 
 func multiplexReader(wg *sync.WaitGroup, reader io.Reader) *MultiWriter {

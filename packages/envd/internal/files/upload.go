@@ -1,4 +1,4 @@
-package file
+package files
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ func getFreeDiskSpace(path string) (uint64, error) {
 	return freeSpace, nil
 }
 
-func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
+func HandleUpload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 	logger.Debug(
 		"Starting file upload",
 	)

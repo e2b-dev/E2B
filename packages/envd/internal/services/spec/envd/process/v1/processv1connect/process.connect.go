@@ -45,6 +45,9 @@ const (
 	// ProcessServiceUpdateProcessProcedure is the fully-qualified name of the ProcessService's
 	// UpdateProcess RPC.
 	ProcessServiceUpdateProcessProcedure = "/envd.process.v1.ProcessService/UpdateProcess"
+	// ProcessServiceSendProcessInputStreamProcedure is the fully-qualified name of the ProcessService's
+	// SendProcessInputStream RPC.
+	ProcessServiceSendProcessInputStreamProcedure = "/envd.process.v1.ProcessService/SendProcessInputStream"
 	// ProcessServiceSendProcessInputProcedure is the fully-qualified name of the ProcessService's
 	// SendProcessInput RPC.
 	ProcessServiceSendProcessInputProcedure = "/envd.process.v1.ProcessService/SendProcessInput"
@@ -55,13 +58,14 @@ const (
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	processServiceServiceDescriptor                 = v1.File_envd_process_v1_process_proto.Services().ByName("ProcessService")
-	processServiceListProcessesMethodDescriptor     = processServiceServiceDescriptor.Methods().ByName("ListProcesses")
-	processServiceReconnectProcessMethodDescriptor  = processServiceServiceDescriptor.Methods().ByName("ReconnectProcess")
-	processServiceStartProcessMethodDescriptor      = processServiceServiceDescriptor.Methods().ByName("StartProcess")
-	processServiceUpdateProcessMethodDescriptor     = processServiceServiceDescriptor.Methods().ByName("UpdateProcess")
-	processServiceSendProcessInputMethodDescriptor  = processServiceServiceDescriptor.Methods().ByName("SendProcessInput")
-	processServiceSendProcessSignalMethodDescriptor = processServiceServiceDescriptor.Methods().ByName("SendProcessSignal")
+	processServiceServiceDescriptor                      = v1.File_envd_process_v1_process_proto.Services().ByName("ProcessService")
+	processServiceListProcessesMethodDescriptor          = processServiceServiceDescriptor.Methods().ByName("ListProcesses")
+	processServiceReconnectProcessMethodDescriptor       = processServiceServiceDescriptor.Methods().ByName("ReconnectProcess")
+	processServiceStartProcessMethodDescriptor           = processServiceServiceDescriptor.Methods().ByName("StartProcess")
+	processServiceUpdateProcessMethodDescriptor          = processServiceServiceDescriptor.Methods().ByName("UpdateProcess")
+	processServiceSendProcessInputStreamMethodDescriptor = processServiceServiceDescriptor.Methods().ByName("SendProcessInputStream")
+	processServiceSendProcessInputMethodDescriptor       = processServiceServiceDescriptor.Methods().ByName("SendProcessInput")
+	processServiceSendProcessSignalMethodDescriptor      = processServiceServiceDescriptor.Methods().ByName("SendProcessSignal")
 )
 
 // ProcessServiceClient is a client for the envd.process.v1.ProcessService service.
@@ -70,6 +74,8 @@ type ProcessServiceClient interface {
 	ReconnectProcess(context.Context, *connect.Request[v1.ReconnectProcessRequest]) (*connect.ServerStreamForClient[v1.ReconnectProcessResponse], error)
 	StartProcess(context.Context, *connect.Request[v1.StartProcessRequest]) (*connect.ServerStreamForClient[v1.StartProcessResponse], error)
 	UpdateProcess(context.Context, *connect.Request[v1.UpdateProcessRequest]) (*connect.Response[v1.UpdateProcessResponse], error)
+	// Client input stream ensures ordering of messages
+	SendProcessInputStream(context.Context) *connect.ClientStreamForClient[v1.SendProcessInputStreamRequest, v1.SendProcessInputStreamResponse]
 	SendProcessInput(context.Context, *connect.Request[v1.SendProcessInputRequest]) (*connect.Response[v1.SendProcessInputResponse], error)
 	SendProcessSignal(context.Context, *connect.Request[v1.SendProcessSignalRequest]) (*connect.Response[v1.SendProcessSignalResponse], error)
 }
@@ -108,6 +114,12 @@ func NewProcessServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(processServiceUpdateProcessMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		sendProcessInputStream: connect.NewClient[v1.SendProcessInputStreamRequest, v1.SendProcessInputStreamResponse](
+			httpClient,
+			baseURL+ProcessServiceSendProcessInputStreamProcedure,
+			connect.WithSchema(processServiceSendProcessInputStreamMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 		sendProcessInput: connect.NewClient[v1.SendProcessInputRequest, v1.SendProcessInputResponse](
 			httpClient,
 			baseURL+ProcessServiceSendProcessInputProcedure,
@@ -125,12 +137,13 @@ func NewProcessServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 
 // processServiceClient implements ProcessServiceClient.
 type processServiceClient struct {
-	listProcesses     *connect.Client[v1.ListProcessesRequest, v1.ListProcessesResponse]
-	reconnectProcess  *connect.Client[v1.ReconnectProcessRequest, v1.ReconnectProcessResponse]
-	startProcess      *connect.Client[v1.StartProcessRequest, v1.StartProcessResponse]
-	updateProcess     *connect.Client[v1.UpdateProcessRequest, v1.UpdateProcessResponse]
-	sendProcessInput  *connect.Client[v1.SendProcessInputRequest, v1.SendProcessInputResponse]
-	sendProcessSignal *connect.Client[v1.SendProcessSignalRequest, v1.SendProcessSignalResponse]
+	listProcesses          *connect.Client[v1.ListProcessesRequest, v1.ListProcessesResponse]
+	reconnectProcess       *connect.Client[v1.ReconnectProcessRequest, v1.ReconnectProcessResponse]
+	startProcess           *connect.Client[v1.StartProcessRequest, v1.StartProcessResponse]
+	updateProcess          *connect.Client[v1.UpdateProcessRequest, v1.UpdateProcessResponse]
+	sendProcessInputStream *connect.Client[v1.SendProcessInputStreamRequest, v1.SendProcessInputStreamResponse]
+	sendProcessInput       *connect.Client[v1.SendProcessInputRequest, v1.SendProcessInputResponse]
+	sendProcessSignal      *connect.Client[v1.SendProcessSignalRequest, v1.SendProcessSignalResponse]
 }
 
 // ListProcesses calls envd.process.v1.ProcessService.ListProcesses.
@@ -153,6 +166,11 @@ func (c *processServiceClient) UpdateProcess(ctx context.Context, req *connect.R
 	return c.updateProcess.CallUnary(ctx, req)
 }
 
+// SendProcessInputStream calls envd.process.v1.ProcessService.SendProcessInputStream.
+func (c *processServiceClient) SendProcessInputStream(ctx context.Context) *connect.ClientStreamForClient[v1.SendProcessInputStreamRequest, v1.SendProcessInputStreamResponse] {
+	return c.sendProcessInputStream.CallClientStream(ctx)
+}
+
 // SendProcessInput calls envd.process.v1.ProcessService.SendProcessInput.
 func (c *processServiceClient) SendProcessInput(ctx context.Context, req *connect.Request[v1.SendProcessInputRequest]) (*connect.Response[v1.SendProcessInputResponse], error) {
 	return c.sendProcessInput.CallUnary(ctx, req)
@@ -169,6 +187,8 @@ type ProcessServiceHandler interface {
 	ReconnectProcess(context.Context, *connect.Request[v1.ReconnectProcessRequest], *connect.ServerStream[v1.ReconnectProcessResponse]) error
 	StartProcess(context.Context, *connect.Request[v1.StartProcessRequest], *connect.ServerStream[v1.StartProcessResponse]) error
 	UpdateProcess(context.Context, *connect.Request[v1.UpdateProcessRequest]) (*connect.Response[v1.UpdateProcessResponse], error)
+	// Client input stream ensures ordering of messages
+	SendProcessInputStream(context.Context, *connect.ClientStream[v1.SendProcessInputStreamRequest]) (*connect.Response[v1.SendProcessInputStreamResponse], error)
 	SendProcessInput(context.Context, *connect.Request[v1.SendProcessInputRequest]) (*connect.Response[v1.SendProcessInputResponse], error)
 	SendProcessSignal(context.Context, *connect.Request[v1.SendProcessSignalRequest]) (*connect.Response[v1.SendProcessSignalResponse], error)
 }
@@ -203,6 +223,12 @@ func NewProcessServiceHandler(svc ProcessServiceHandler, opts ...connect.Handler
 		connect.WithSchema(processServiceUpdateProcessMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	processServiceSendProcessInputStreamHandler := connect.NewClientStreamHandler(
+		ProcessServiceSendProcessInputStreamProcedure,
+		svc.SendProcessInputStream,
+		connect.WithSchema(processServiceSendProcessInputStreamMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	processServiceSendProcessInputHandler := connect.NewUnaryHandler(
 		ProcessServiceSendProcessInputProcedure,
 		svc.SendProcessInput,
@@ -225,6 +251,8 @@ func NewProcessServiceHandler(svc ProcessServiceHandler, opts ...connect.Handler
 			processServiceStartProcessHandler.ServeHTTP(w, r)
 		case ProcessServiceUpdateProcessProcedure:
 			processServiceUpdateProcessHandler.ServeHTTP(w, r)
+		case ProcessServiceSendProcessInputStreamProcedure:
+			processServiceSendProcessInputStreamHandler.ServeHTTP(w, r)
 		case ProcessServiceSendProcessInputProcedure:
 			processServiceSendProcessInputHandler.ServeHTTP(w, r)
 		case ProcessServiceSendProcessSignalProcedure:
@@ -252,6 +280,10 @@ func (UnimplementedProcessServiceHandler) StartProcess(context.Context, *connect
 
 func (UnimplementedProcessServiceHandler) UpdateProcess(context.Context, *connect.Request[v1.UpdateProcessRequest]) (*connect.Response[v1.UpdateProcessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.process.v1.ProcessService.UpdateProcess is not implemented"))
+}
+
+func (UnimplementedProcessServiceHandler) SendProcessInputStream(context.Context, *connect.ClientStream[v1.SendProcessInputStreamRequest]) (*connect.Response[v1.SendProcessInputStreamResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.process.v1.ProcessService.SendProcessInputStream is not implemented"))
 }
 
 func (UnimplementedProcessServiceHandler) SendProcessInput(context.Context, *connect.Request[v1.SendProcessInputRequest]) (*connect.Response[v1.SendProcessInputResponse], error) {

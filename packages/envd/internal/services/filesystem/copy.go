@@ -1,18 +1,25 @@
 package filesystem
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"syscall"
+
+	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
+	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem/v1"
+
+	"connectrpc.com/connect"
 )
 
-func CopyDirectory(scrDir, dest string, mode os.FileMode) error {
+func copyDirectory(scrDir, dest string, mode os.FileMode) error {
 	entries, err := os.ReadDir(scrDir)
 	if err != nil {
 		return err
 	}
+
 	for _, entry := range entries {
 		sourcePath := filepath.Join(scrDir, entry.Name())
 		destPath := filepath.Join(dest, entry.Name())
@@ -29,10 +36,10 @@ func CopyDirectory(scrDir, dest string, mode os.FileMode) error {
 
 		switch fileInfo.Mode() & os.ModeType {
 		case os.ModeDir:
-			if err := CreateIfNotExists(destPath, mode); err != nil {
+			if err := createIfNotExists(destPath, mode); err != nil {
 				return err
 			}
-			if err := CopyDirectory(sourcePath, destPath, mode); err != nil {
+			if err := copyDirectory(sourcePath, destPath, mode); err != nil {
 				return err
 			}
 		case os.ModeSymlink:
@@ -40,7 +47,7 @@ func CopyDirectory(scrDir, dest string, mode os.FileMode) error {
 				return err
 			}
 		default:
-			if err := Copy(sourcePath, destPath); err != nil {
+			if err := copy(sourcePath, destPath); err != nil {
 				return err
 			}
 		}
@@ -65,7 +72,7 @@ func CopyDirectory(scrDir, dest string, mode os.FileMode) error {
 	return nil
 }
 
-func Copy(srcFile, dstFile string) error {
+func copy(srcFile, dstFile string) error {
 	out, err := os.Create(dstFile)
 	if err != nil {
 		return err
@@ -88,7 +95,7 @@ func Copy(srcFile, dstFile string) error {
 	return nil
 }
 
-func Exists(filePath string) bool {
+func exists(filePath string) bool {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return false
 	}
@@ -96,8 +103,8 @@ func Exists(filePath string) bool {
 	return true
 }
 
-func CreateIfNotExists(dir string, perm os.FileMode) error {
-	if Exists(dir) {
+func createIfNotExists(dir string, perm os.FileMode) error {
+	if exists(dir) {
 		return nil
 	}
 
@@ -111,7 +118,55 @@ func CreateIfNotExists(dir string, perm os.FileMode) error {
 func CopySymLink(source, dest string) error {
 	link, err := os.Readlink(source)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read symlink: '%s', error: '%s'", source, err.Error())
 	}
+
 	return os.Symlink(link, dest)
+}
+
+func (Service) Copy(ctx context.Context, req *connect.Request[v1.CopyRequest]) (*connect.Response[v1.CopyResponse], error) {
+	source := req.Msg.GetSource()
+	destination := req.Msg.GetDestination()
+
+	fileInfo, err := os.Stat(source)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("source not found: %w", err))
+		}
+
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error statting source file: %w", err))
+	}
+
+	stat, ok := fileInfo.Sys().(*syscall.Stat_t)
+	if !ok {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get raw syscall.Stat_t data for '%s'", source))
+	}
+
+	mode, err := permissions.GetMode(req.Msg.GetMode())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid mode: %w", err))
+	}
+
+	switch fileInfo.Mode() & os.ModeType {
+	case os.ModeDir:
+		err = copyDirectory(source, destination, mode)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying directory: %w", err))
+		}
+	case os.ModeSymlink:
+		if err = CopySymLink(source, destination); err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying symlink: %w", err))
+		}
+	default:
+		if err := copy(source, destination); err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error copying file: %w", err))
+		}
+	}
+
+	err = os.Chown(destination, int(stat.Uid), int(stat.Gid))
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error setting owner: %w", err))
+	}
+
+	return connect.NewResponse(&v1.CopyResponse{}), nil
 }

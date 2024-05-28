@@ -3,22 +3,30 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 
-	handlers "github.com/e2b-dev/infra/packages/envd/internal/handlers"
 	connectFS "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/api"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 )
 
 const (
 	maxTimeout  = 0
 	defaultPort = 80
 )
+
+var (
+	defaultLogDir    = filepath.Join("/var", "log")
+	defaultGatewayIP = net.IPv4(169, 254, 0, 21)
+)
+
 
 func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *http.Server {
 	// Clear out the servers array in the swagger spec, that skips validating
@@ -70,6 +78,12 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 }
 
 func main() {
+	l, err := log.NewLogger(defaultLogDir, debug, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating a new logger: %w", err)
+
+
+
 	fmt.Println("Initializing...")
 
 	port := flag.Int("port", defaultPort, "Port for test HTTP server")
@@ -87,16 +101,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create an instance of our handler which satisfies the generated interface
-	apiStore := handlers.NewAPIStore()
-	defer apiStore.Close()
+	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
+	server := api.NewAPI()
 
-	s := NewGinServer(apiStore, swagger, *port)
+	r := http.NewServeMux()
 
-	fmt.Printf("Starting server on port %d\n", *port)
-	// And we serve HTTP until the world ends.
-	err = s.ListenAndServe()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
+	// get an `http.Handler` that we can use
+	h := api.HandlerFromMux(server, r)
+
+	s := &http.Server{
+		Handler:           h,
+		Addr:              fmt.Sprintf("0.0.0.0:%d", port),
+		ReadHeaderTimeout: maxTimeout,
+		ReadTimeout:       maxTimeout,
+		WriteTimeout:      maxTimeout,
+		IdleTimeout:       maxTimeout,
 	}
+
+	// And we serve HTTP until the world ends.
+	log.Fatal(s.ListenAndServe())
 }

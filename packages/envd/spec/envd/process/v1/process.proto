@@ -12,6 +12,8 @@ service ProcessService {
 
     rpc UpdateProcess(UpdateProcessRequest) returns (UpdateProcessResponse);
 
+    // Client input stream ensures ordering of messages
+    rpc SendProcessInputStream(stream SendProcessInputStreamRequest) returns (SendProcessInputStreamResponse);
     rpc SendProcessInput(SendProcessInputRequest) returns (SendProcessInputResponse);
     rpc SendProcessSignal(SendProcessSignalRequest) returns (SendProcessSignalResponse);
 }
@@ -29,8 +31,8 @@ message ProcessConfig {
     string cmd = 1;
     repeated string args = 2;
     
-    map<string, string> env_vars = 3;
-    string working_dir = 4;
+    map<string, string> envs = 3;
+    string cwd = 4;
 }
 
 message ListProcessesRequest {}
@@ -55,7 +57,7 @@ message UpdateProcessRequest {
 message UpdateProcessResponse {}
 
 message ProcessEvent {
-    oneof event_type {
+    oneof event {
         StartEvent start = 1;
         DataEvent data = 2;
         EndEvent end = 3;
@@ -74,7 +76,9 @@ message ProcessEvent {
     
     message EndEvent {
         sint32 exit_code = 1;
-        optional string error = 2;
+        bool terminated = 2;
+        string status = 3;
+        optional string error = 4;
     }
 }
 
@@ -100,6 +104,23 @@ message ProcessInput {
         bytes tty = 2;
     }
 }
+
+message SendProcessInputStreamRequest {
+    oneof event {
+        StartEvent start = 1;
+        DataEvent data = 2;
+    }
+
+    message StartEvent {
+        ProcessSelector process = 1;
+    }
+
+    message DataEvent {
+        ProcessInput input = 2;
+    }
+}
+
+message SendProcessInputStreamResponse {}
 
 enum Signal {
     SIGNAL_UNSPECIFIED = 0;

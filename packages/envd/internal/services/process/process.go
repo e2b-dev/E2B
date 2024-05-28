@@ -16,8 +16,10 @@ import (
 )
 
 type processExit struct {
-	Err  error
-	Code int
+	Err        error
+	Terminated bool
+	Code       int
+	Status     string
 }
 
 type process struct {
@@ -52,9 +54,9 @@ func newProcess(req *v1.StartProcessRequest) (*process, error) {
 		NoSetGroups: true,
 	}
 
-	cmd.Dir = req.GetProcess().GetWorkingDir()
+	cmd.Dir = req.GetProcess().GetCwd()
 
-	// We inherit the env vars from the root process, but we should handle this differently in the future.
+	// TODO: We inherit the env vars from the root process, but we should handle this differently in the future.
 	formattedVars := os.Environ()
 
 	formattedVars = append(formattedVars, "HOME="+u.HomeDir)
@@ -63,7 +65,7 @@ func newProcess(req *v1.StartProcessRequest) (*process, error) {
 	formattedVars = append(formattedVars, "TERM=xterm")
 
 	// Only the last values of the env vars are used - this allows for overwriting defaults
-	for key, value := range req.GetProcess().GetEnvVars() {
+	for key, value := range req.GetProcess().GetEnvs() {
 		formattedVars = append(formattedVars, key+"="+value)
 	}
 
@@ -176,9 +178,18 @@ func (p *process) Start() (uint32, error) {
 func (p *process) Wait() (*os.ProcessState, error) {
 	p.wg.Wait()
 
-	err := p.cmd.Wait()
-	if err != nil {
-		return nil, fmt.Errorf("error waiting for process '%s': %w", p.cmd, err)
+	waitErr := p.cmd.Wait()
+
+	var err error
+	if waitErr != nil {
+		err = fmt.Errorf("error waiting for process '%s': %w", p.cmd, waitErr)
+	}
+
+	p.exit <- processExit{
+		Err:        err,
+		Code:       p.cmd.ProcessState.ExitCode(),
+		Terminated: p.cmd.ProcessState.Exited(),
+		Status:     p.cmd.ProcessState.String(),
 	}
 
 	return p.cmd.ProcessState, nil

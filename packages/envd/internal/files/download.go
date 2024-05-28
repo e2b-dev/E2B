@@ -1,4 +1,4 @@
-package file
+package files
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 
 const FileHeaderByteSize = 512
 
-func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
+func HandleDownload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 	logger.Debug("Starting file download")
 
 	filePath := r.URL.Query().Get("path")

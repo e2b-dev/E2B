@@ -2,15 +2,12 @@ package process
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"sync"
-	"syscall"
 
-	"github.com/creack/pty"
 	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1"
 	specconnect "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1/processv1connect"
 
@@ -50,7 +47,9 @@ func (s *Service) StartProcess(ctx context.Context, req *connect.Request[v1.Star
 	streamMu.Lock()
 
 	startChan := make(chan uint32)
+
 	go func() {
+		defer wg.Done()
 		select {
 		case <-ctx.Done():
 			streamMu.Unlock()
@@ -71,14 +70,17 @@ func (s *Service) StartProcess(ctx context.Context, req *connect.Request[v1.Star
 			streamMu.Unlock()
 		}
 	}()
+	var wg sync.WaitGroup
 
 	stdoutWriter, stdoutReader := io.Pipe()
 	process.stdout.Add(stdoutReader)
+
+	wg.Add(1)
 	go func() {
 		defer process.stdout.Remove(stdoutReader)
 		defer stdoutWriter.Close()
 
-		_, err := io.Copy(stdoutWriter, stdoutReader)
+		_, err := io.Copy(stdoutReader, stdoutWriter)
 		if err != nil {
 			log.Println(err)
 		}
@@ -86,10 +88,19 @@ func (s *Service) StartProcess(ctx context.Context, req *connect.Request[v1.Star
 
 	stderrWriter, stderrReader := io.Pipe()
 	process.stderr.Add(stderrReader)
+
+	wg.Add(1)
 	go func() {
 		defer process.stderr.Remove(stderrReader)
 		defer stderrWriter.Close()
+
+		_, err := io.Copy(stderrReader, stderrWriter)
+		if err != nil {
+			log.Println(err)
+		}
 	}()
+
+	exitCh := make(chan processExit)
 
 	// All process handling independant to the stream should be in this goroutine
 	go func() {
@@ -116,91 +127,47 @@ func (s *Service) StartProcess(ctx context.Context, req *connect.Request[v1.Star
 		}
 	}()
 
+	wg.Wait()
+
+	select {
+	case <-ctx.Done():
+		log.Println("context done")
+	case exit := <-exitCh:
+		log.Println(exit)
+	}
+
 	return nil
 }
 
 func (s *Service) ReconnectProcess(ctx context.Context, req *connect.Request[v1.ReconnectProcessRequest], stream *connect.ServerStream[v1.ReconnectProcessResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("envd.process.v1.ProcessService.ReconnectProcess is not implemented"))
-}
-
-func (s *Service) ListProcesses(ctx context.Context, req *connect.Request[v1.ListProcessesRequest]) (*connect.Response[v1.ListProcessesResponse], error) {
-	processes := make([]*v1.ProcessConfig, 0)
-
-	s.processes.Range(func(_ uint32, value *process) bool {
-		processes = append(processes, value.config)
-		return true
-	})
-
-	return &connect.Response[v1.ListProcessesResponse]{
-		Msg: &v1.ListProcessesResponse{
-			Processes: processes,
-		},
-	}, nil
-}
-
-func (s *Service) UpdateProcess(ctx context.Context, req *connect.Request[v1.UpdateProcessRequest]) (*connect.Response[v1.UpdateProcessResponse], error) {
 	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
 	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
+		return connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
 	}
 
-	if req.Msg.GetPty() != nil {
-		err := process.ResizeTty(&pty.Winsize{
-			Rows: uint16(req.Msg.GetPty().GetSize().GetRows()),
-			Cols: uint16(req.Msg.GetPty().GetSize().GetCols()),
-		})
+	stdoutWriter, stdoutReader := io.Pipe()
+	process.stdout.Add(stdoutReader)
+	go func() {
+		defer process.stdout.Remove(stdoutReader)
+		defer stdoutWriter.Close()
+
+		_, err := io.Copy(stdoutReader, stdoutWriter)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error resizing tty: %w", err))
+			log.Println(err)
 		}
-	}
+	}()
 
-	return connect.NewResponse(&v1.UpdateProcessResponse{}), nil
-}
+	stderrWriter, stderrReader := io.Pipe()
+	process.stderr.Add(stderrReader)
+	go func() {
+		defer process.stderr.Remove(stderrReader)
+		defer stderrWriter.Close()
 
-func (s *Service) SendProcessInput(ctx context.Context, req *connect.Request[v1.SendProcessInputRequest]) (*connect.Response[v1.SendProcessInputResponse], error) {
-	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
-	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
-	}
-
-	switch req.Msg.GetInput().Input.(type) {
-	case *v1.ProcessInput_Tty:
-		err := process.WriteTty(req.Msg.GetInput().GetTty())
+		_, err := io.Copy(stderrReader, stderrWriter)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error writing to tty: %w", err))
+			log.Println(err)
 		}
-	case *v1.ProcessInput_Stdin:
-		err := process.WriteStdin(req.Msg.GetInput().GetStdin())
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error writing to stdin: %w", err))
-		}
-	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid input type %T", req.Msg.GetInput()))
-	}
+	}()
 
-	return connect.NewResponse(&v1.SendProcessInputResponse{}), nil
-}
-
-func (s *Service) SendProcessSignal(ctx context.Context, req *connect.Request[v1.SendProcessSignalRequest]) (*connect.Response[v1.SendProcessSignalResponse], error) {
-	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
-	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
-	}
-
-	var signal syscall.Signal
-	switch req.Msg.GetSignal() {
-	case *v1.Signal_SIGNAL_SIGKILL.Enum():
-		signal = syscall.SIGKILL
-	case *v1.Signal_SIGNAL_SIGTERM.Enum():
-		signal = syscall.SIGTERM
-	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid signal: %s", req.Msg.GetSignal()))
-	}
-
-	err := process.SendSignal(signal)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error sending signal: %w", err))
-	}
-
-	return connect.NewResponse(&v1.SendProcessSignalResponse{}), nil
+	return nil
 }
