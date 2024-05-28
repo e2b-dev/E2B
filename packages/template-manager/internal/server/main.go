@@ -10,6 +10,7 @@ import (
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc/filters"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -38,7 +39,7 @@ func New(logger *zap.Logger) *grpc.Server {
 	opts := []grpc_zap.Option{logging.WithoutHealthCheck()}
 
 	s := grpc.NewServer(
-		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		grpc.StatsHandler(otelgrpc.NewServerHandler(otelgrpc.WithInterceptorFilter(filters.Not(filters.HealthCheck())))),
 		grpc.ChainUnaryInterceptor(
 			grpc_zap.UnaryServerInterceptor(logger, opts...),
 			recovery.UnaryServerInterceptor(),
