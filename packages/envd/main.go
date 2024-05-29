@@ -203,7 +203,6 @@ func main() {
 	// The /file route used for downloading and uploading files via SDK.
 	router.HandleFunc("/file", createFileHandler(logger.Named("file")))
 
-	// TODO: Run the start command as root
 	// TODO: How to differentiate the start command from other running commands? Metadata? EnvVars?
 	if startCmdFlag != "" {
 		envVars := make(map[string]string)
