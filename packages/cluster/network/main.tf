@@ -21,7 +21,7 @@ locals {
       protocol                        = "HTTP"
       port                            = var.client_proxy_port.port
       port_name                       = var.client_proxy_port.name
-      timeout_sec                     = 86400
+      timeout_sec                     = 7200
       connection_draining_timeout_sec = 1
       http_health_check = {
         request_path = var.client_proxy_health_port.path

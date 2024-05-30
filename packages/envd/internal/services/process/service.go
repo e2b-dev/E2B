@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/host"
 	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1"
 	specconnect "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1/processv1connect"
 
@@ -36,6 +37,8 @@ func Handle(server *http.ServeMux, opts ...connect.HandlerOption) {
 }
 
 func (s *Service) StartProcess(ctx context.Context, req *connect.Request[v1.StartProcessRequest], stream *connect.ServerStream[v1.StartProcessResponse]) error {
+	host.WaitForHostSync()
+
 	process, err := newProcess(req.Msg)
 	if err != nil {
 		return connect.NewError(connect.CodeInvalidArgument, err)

@@ -68,8 +68,8 @@ job "client-proxy" {
 
       resources {
         memory_max = 2048
-        memory = 512
-        cpu    = 512
+        memory = 2048
+        cpu    = 2048
       }
 
       config {
@@ -134,13 +134,17 @@ server {
 
   proxy_http_version 1.1;
 
-  proxy_read_timeout 7d;
-  proxy_send_timeout 7d;
+  client_body_timeout 7200d;
+  client_header_timeout 30s;
+
+  proxy_read_timeout 7200s;
+  proxy_send_timeout 7200s;
 
   proxy_cache_bypass 1;
   proxy_no_cache 1;
 
-  client_max_body_size 0;
+  client_max_body_size 1024m;
+
   proxy_buffering off;
   proxy_request_buffering off;
 
@@ -148,15 +152,14 @@ server {
   tcp_nopush on;
   sendfile on;
 
-  proxy_connect_timeout       10s;
-  send_timeout                10s;
+  send_timeout                7200s;
 
-  keepalive_requests 99999;
-  keepalive_timeout 600;
+  proxy_connect_timeout       30s;
 
-  proxy_next_upstream error timeout invalid_header http_502;
-  proxy_next_upstream_timeout 5s;
-  proxy_next_upstream_tries 3;
+  keepalive_requests 65536;
+  keepalive_timeout 600s;
+
+  gzip off;
 
   location / {
     proxy_pass $scheme://[[ .Address ]]:[[ .Port ]]$request_uri;

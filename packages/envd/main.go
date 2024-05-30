@@ -8,25 +8,27 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	connectFS "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/golang/protobuf/ptypes/duration"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/api"
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
 const (
-	maxTimeout  = 0
-	defaultPort = 80
+	// We limit the timeout more in proxies
+	maxTimeout  = 24 * time.Hour
+	defaultPort = 49982
 )
 
 var (
 	defaultLogDir    = filepath.Join("/var", "log")
 	defaultGatewayIP = net.IPv4(169, 254, 0, 21)
 )
-
 
 func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *http.Server {
 	// Clear out the servers array in the swagger spec, that skips validating
@@ -65,7 +67,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	r.Handle(http.MethodGet, "/")
 
-	s := &http.Server{
+	return &http.Server{
 		Handler:           r,
 		Addr:              fmt.Sprintf("0.0.0.0:%d", port),
 		ReadHeaderTimeout: maxTimeout,
@@ -73,8 +75,6 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 		WriteTimeout:      maxTimeout,
 		IdleTimeout:       maxTimeout,
 	}
-
-	return s
 }
 
 func main() {
@@ -109,6 +109,7 @@ func main() {
 	// get an `http.Handler` that we can use
 	h := api.HandlerFromMux(server, r)
 
+	enable keepalives in server transport or client?
 	s := &http.Server{
 		Handler:           h,
 		Addr:              fmt.Sprintf("0.0.0.0:%d", port),

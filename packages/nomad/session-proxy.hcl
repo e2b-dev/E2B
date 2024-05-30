@@ -72,8 +72,8 @@ job "session-proxy" {
 
       resources {
         memory_max = 2048
-        memory = 512
-        cpu    = 512
+        memory = 1024
+        cpu    = 1024
       }
 
       template {
@@ -123,21 +123,7 @@ server {
   # By default, nginx won't use /etc/hosts for the name resolution.
   # We use the systemd nameserver to resolve against /etc/hosts.
   # See https://stackoverflow.com/questions/29980884/proxy-pass-does-not-resolve-dns-using-etc-hosts
-  resolver 127.0.0.53 valid=30s;
-
-  client_max_body_size 0;
-  proxy_buffering off;
-  proxy_request_buffering off;
-  
-  tcp_nodelay on;
-  tcp_nopush on;
-  sendfile on;
-
-  proxy_connect_timeout       10s;
-  send_timeout                10s;
-
-  keepalive_requests 99999;
-  keepalive_timeout 600;
+  resolver 127.0.0.53;
 
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
@@ -149,11 +135,32 @@ server {
 
   proxy_http_version 1.1;
 
-  proxy_read_timeout 7d;
-  proxy_send_timeout 7d;
+  client_body_timeout 7200d;
+  client_header_timeout 30s;
+
+  proxy_read_timeout 7200s;
+  proxy_send_timeout 7200s;
 
   proxy_cache_bypass 1;
   proxy_no_cache 1;
+
+  client_max_body_size 1024m;
+  
+  proxy_buffering off;
+  proxy_request_buffering off;
+
+  tcp_nodelay on;
+  tcp_nopush on;
+  sendfile on;
+
+  send_timeout                7200s;
+
+  proxy_connect_timeout       30s;
+
+  keepalive_requests 65536;
+  keepalive_timeout 600s;
+
+  gzip off;
 
   location / {
     if ($dbk_session_id = "") {

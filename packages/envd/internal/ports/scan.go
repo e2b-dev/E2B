@@ -1,4 +1,4 @@
-package port
+package ports
 
 import (
 	"time"

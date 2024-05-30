@@ -4,7 +4,7 @@
 
 // WARNING: portf isn't thread safe!
 
-package port
+package ports
 
 import (
 	"fmt"
@@ -12,8 +12,6 @@ import (
 	"os/exec"
 
 	"go.uber.org/zap"
-
-	"github.com/e2b-dev/infra/packages/envd/internal/env"
 )
 
 type PortState string

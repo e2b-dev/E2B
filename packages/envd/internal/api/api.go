@@ -2,9 +2,7 @@ package api
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/files"
 	"github.com/e2b-dev/infra/packages/envd/internal/host"
 )
 
