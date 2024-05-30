@@ -53,6 +53,8 @@ func printLog(logs []byte) {
 }
 
 func (w *HTTPLogsExporter) start() {
+	w.waitForMMDS()
+
 	for range w.triggers {
 		logs := w.getAllLogs()
 

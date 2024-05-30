@@ -68,7 +68,7 @@ func (w *HTTPLogsExporter) getMMDSToken() (string, error) {
 	return token, nil
 }
 
-func (w *HTTPLogsExporter) getMMDSOpts(token string) (*opts, error) {
+func (w *HTTPLogsExporter) doMmdsRequest(token string) (*opts, error) {
 	request, err := http.NewRequest("GET", "http://"+mmdsDefaultAddress, new(bytes.Buffer))
 	if err != nil {
 		return nil, err
@@ -96,6 +96,35 @@ func (w *HTTPLogsExporter) getMMDSOpts(token string) (*opts, error) {
 		return nil, err
 	}
 
+	return &opts, nil
+}
+
+func (w *HTTPLogsExporter) waitForMMDS() {
+	for {
+		token, err := w.getMMDSToken()
+		if err != nil {
+			fmt.Printf("error getting mmds token: %v\n", err)
+			continue
+		}
+
+		mmdsOpts, err := w.doMmdsRequest(token)
+		if err != nil {
+			fmt.Printf("error getting mmds opts: %v\n", err)
+			continue
+		}
+
+		if mmdsOpts.Address != "" {
+			return
+		}
+	}
+}
+
+func (w *HTTPLogsExporter) getMMDSOpts(token string) (opts *opts, err error) {
+	opts, err = w.doMmdsRequest(token)
+	if err != nil {
+		return nil, err
+	}
+
 	if opts.Address == "" {
 		return nil, fmt.Errorf("no 'address' in mmds opts")
 	}
@@ -108,5 +137,5 @@ func (w *HTTPLogsExporter) getMMDSOpts(token string) (*opts, error) {
 		return nil, fmt.Errorf("no 'instanceID' in mmds opts")
 	}
 
-	return &opts, nil
+	return opts, nil
 }
