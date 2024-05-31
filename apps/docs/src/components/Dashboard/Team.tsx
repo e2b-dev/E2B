@@ -1,45 +1,80 @@
 'use client'
 
-
-
-
-
-
-
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../Button'
 import { Team } from '@/utils/useUser'
 import { User, createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from '../ui/use-toast'
-import { Copy } from 'lucide-react'
+import { Copy, Delete } from 'lucide-react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog'
 
-// interface Member {
-//   id: string
-//   name: string
-// }
+interface TeamMember {
+  id: string
+  email: string
+}
 
 
 export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
   const supabase = createPagesBrowserClient()
 
-  // const [isDialogOpen, setIsDialogOpen] = useState(false)
-  // const [currentMemberId, setCurrentMemberId] = useState<string | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [currentMemberId, setCurrentMemberId] = useState<string | null>(null)
+  const [members, setMembers] = useState<TeamMember[]>([])
   const [teamName, setTeamName] = useState(team.name)
   const [userToAdd, setUserToAdd] = useState('')
 
-  console.log(team.name)
+  useEffect(() => {
+    const getTeamMembers = async () => {
+      console.log(team.id)
+      const { data: teamData, error: getTeamError } = await supabase
+        .from('users_teams')
+        .select('user_id')
+        .eq('team_id', team.id)
 
-  // const closeDialog = () => setIsDialogOpen(false) 
-  // const openDialog = (id: string) => {
-  //   setCurrentMemberId(id)
-  //   setIsDialogOpen(true)
-  // } 
+      if (getTeamError) {
+        console.log(getTeamError)
+        return
+      }
+
+      const userIds = teamData.map(({ user_id }) => user_id).filter(id => id !== user.id)
+
+      const res = await fetch('/api/get-user-info', {
+        method: 'POST',
+        body: JSON.stringify({ userIds }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      const members = await res.json()
+      setMembers(members)
+    }
+
+    getTeamMembers()
+  }, [supabase, team.id, user.id])
+
+  const closeDialog = () => setIsDialogOpen(false) 
+  const openDialog = (id: string) => {
+    setCurrentMemberId(id)
+    setIsDialogOpen(true)
+  } 
   
-  // const deleteUserFromTeam = () => {
-    // setApiKeys(apiKeys.filter(apiKey => apiKey.id !== currentKeyId))
-    // closeDialog()
-  // }
-  
+  const deleteUserFromTeam = async() => {
+    console.log(currentMemberId)
+    
+    const { error } = await supabase
+      .from('users_teams')
+      .delete()
+      .eq('user_id', currentMemberId)
+
+    if (error) {
+      // TODO: Add sentry event here
+      console.log(error)
+      return
+    }
+
+    closeDialog()
+  }
   
   const changeTeamName = async() => {
     const { error} = await supabase
@@ -77,7 +112,7 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
   }
   
   return (
-    <div className='flex flex-col justify-center'>
+    <div className='flex flex-col justify-center pb-10'>
       <h2 className="text-xl font-bold pb-4">Team name</h2>
       <div className='flex items-center space-x-2 pb-10'>
         <input
@@ -120,32 +155,38 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
         <Copy className='h-4 w-4'/>
       </span>
 
-      {/* <h2 className="text-xl font-bold pb-4">Team members</h2>
+      <h2 className="text-xl font-bold pb-4">Team members</h2>
       <Table>
       <TableHeader>
       <TableRow className='hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5 '>
-        <TableHead>Name</TableHead>
-        <TableHead>Role</TableHead>
+        <TableHead>Email</TableHead>
         <TableHead></TableHead>
       </TableRow>
       </TableHeader>
-      <TableBody> */}
-      {/* {team.users.map((user) => (
-        <TableRow 
-        className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
-        key={user.id}>
-          <TableCell>{user.name}</TableCell>
-          <TableCell>{user.role}</TableCell>
-          <TableCell>
-            <Delete className='hover:cursor-pointer' color='red' width={20} height={20} onClick={() => openDialog(user.id)} />
+      <TableBody>
+      {members.length === 0 ? (
+        <TableRow className='border-b border-white/5'>
+          <TableCell colSpan={2} className='text-center'>
+            No members found
           </TableCell>
         </TableRow>
-        ))} */}
-      {/* </TableBody>
-      </Table> */}
+      ) : (
+        members.map((user) => (
+          <TableRow 
+          className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
+          key={user.id}>
+            <TableCell>{user.email}</TableCell>
+            <TableCell>
+              <Delete className='hover:cursor-pointer' color='red' width={20} height={20} onClick={() => openDialog(user.id)} />
+            </TableCell>
+          </TableRow>
+        ))
+      )}
+      </TableBody>
+      </Table>
 
 
-      {/* <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogTrigger asChild>
           <Button variant="outline" style={{ display: 'none' }}>Show Dialog</Button>
         </AlertDialogTrigger>
@@ -159,10 +200,10 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className='border-white/10' onClick={closeDialog}>Cancel</AlertDialogCancel>
-            <AlertDialogAction className='bg-red-500 text-white hover:bg-red-600' onClick={deleteUserFromTeam}>Continue</AlertDialogAction>
+            <AlertDialogAction className='bg-red-500 text-white hover:bg-red-600' onClick={() => deleteUserFromTeam()}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog> */}
+      </AlertDialog>
 
     </div>
   )
