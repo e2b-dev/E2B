@@ -19,8 +19,9 @@ import json
 
 from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Optional
-from pydantic import BaseModel, StrictInt, StrictStr
+from pydantic import BaseModel, StrictStr
 from pydantic import Field
+from typing_extensions import Annotated
 
 try:
     from typing import Self
@@ -28,9 +29,9 @@ except ImportError:
     from typing_extensions import Self
 
 
-class RunningSandboxes(BaseModel):
+class RunningSandbox(BaseModel):
     """
-    RunningSandboxes
+    RunningSandbox
     """  # noqa: E501
 
     template_id: StrictStr = Field(
@@ -49,11 +50,11 @@ class RunningSandboxes(BaseModel):
     started_at: datetime = Field(
         description="Time when the sandbox was started", alias="startedAt"
     )
-    cpu_count: StrictInt = Field(
+    cpu_count: Annotated[int, Field(le=8, strict=True, ge=1)] = Field(
         description="CPU cores for the sandbox", alias="cpuCount"
     )
-    memory_mb: StrictInt = Field(
-        description="Memory limit for the sandbox in MB", alias="memoryMB"
+    memory_mb: Annotated[int, Field(le=8192, strict=True, ge=128)] = Field(
+        description="Memory for the sandbox in MB", alias="memoryMB"
     )
     metadata: Optional[Dict[str, StrictStr]] = None
     additional_properties: Dict[str, Any] = {}
@@ -81,7 +82,7 @@ class RunningSandboxes(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Self:
-        """Create an instance of RunningSandboxes from a JSON string"""
+        """Create an instance of RunningSandbox from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -111,7 +112,7 @@ class RunningSandboxes(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Dict) -> Self:
-        """Create an instance of RunningSandboxes from a dict"""
+        """Create an instance of RunningSandbox from a dict"""
         if obj is None:
             return None
 

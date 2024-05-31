@@ -33,16 +33,16 @@ from e2b.api.v2.client.exceptions import ApiException
 # import models into sdk package
 from e2b.api.v2.client.models.error import Error
 from e2b.api.v2.client.models.new_sandbox import NewSandbox
-from e2b.api.v2.client.models.running_sandboxes import RunningSandboxes
+from e2b.api.v2.client.models.running_sandbox import RunningSandbox
 from e2b.api.v2.client.models.sandbox import Sandbox
 from e2b.api.v2.client.models.sandbox_log import SandboxLog
 from e2b.api.v2.client.models.sandbox_logs import SandboxLogs
 from e2b.api.v2.client.models.sandboxes_sandbox_id_refreshes_post_request import (
     SandboxesSandboxIDRefreshesPostRequest,
 )
+from e2b.api.v2.client.models.sandboxes_sandbox_id_timeout_post_request import (
+    SandboxesSandboxIDTimeoutPostRequest,
+)
 from e2b.api.v2.client.models.template import Template
 from e2b.api.v2.client.models.template_build import TemplateBuild
 from e2b.api.v2.client.models.template_build_request import TemplateBuildRequest
-from e2b.api.v2.client.models.templates_template_id_builds_build_id_logs_post_request import (
-    TemplatesTemplateIDBuildsBuildIDLogsPostRequest,
-)

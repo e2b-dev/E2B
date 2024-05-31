@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from pydantic import BaseModel, Field, StrictStr, conlist, validator
 
 
@@ -34,16 +34,13 @@ class TemplateBuild(BaseModel):
     build_id: StrictStr = Field(
         ..., alias="buildID", description="Identifier of the build"
     )
-    status: Optional[StrictStr] = Field(None, description="Status of the template")
+    status: StrictStr = Field(..., description="Status of the template")
     additional_properties: Dict[str, Any] = {}
     __properties = ["logs", "templateID", "buildID", "status"]
 
     @validator("status")
     def status_validate_enum(cls, value):
         """Validates the enum"""
-        if value is None:
-            return value
-
         if value not in ("building", "ready", "error"):
             raise ValueError(
                 "must be one of enum values ('building', 'ready', 'error')"

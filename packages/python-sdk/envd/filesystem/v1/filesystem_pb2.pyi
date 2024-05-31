@@ -13,8 +13,6 @@ class FileType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     FILE_TYPE_UNSPECIFIED: _ClassVar[FileType]
     FILE_TYPE_FILE: _ClassVar[FileType]
     FILE_TYPE_DIRECTORY: _ClassVar[FileType]
-    FILE_TYPE_LINK: _ClassVar[FileType]
-    FILE_TYPE_SYMLINK: _ClassVar[FileType]
 
 class EventType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
@@ -27,8 +25,6 @@ class EventType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
 FILE_TYPE_UNSPECIFIED: FileType
 FILE_TYPE_FILE: FileType
 FILE_TYPE_DIRECTORY: FileType
-FILE_TYPE_LINK: FileType
-FILE_TYPE_SYMLINK: FileType
 EVENT_TYPE_UNSPECIFIED: EventType
 EVENT_TYPE_CREATE: EventType
 EVENT_TYPE_WRITE: EventType
@@ -36,49 +32,29 @@ EVENT_TYPE_REMOVE: EventType
 EVENT_TYPE_RENAME: EventType
 EVENT_TYPE_CHMOD: EventType
 
-class CreateFileRequest(_message.Message):
-    __slots__ = ("path", "create_parents", "mode", "owner")
-    PATH_FIELD_NUMBER: _ClassVar[int]
-    CREATE_PARENTS_FIELD_NUMBER: _ClassVar[int]
-    MODE_FIELD_NUMBER: _ClassVar[int]
-    OWNER_FIELD_NUMBER: _ClassVar[int]
-    path: str
-    create_parents: bool
-    mode: str
-    owner: _permissions_pb2.Credentials
-    def __init__(self, path: _Optional[str] = ..., create_parents: bool = ..., mode: _Optional[str] = ..., owner: _Optional[_Union[_permissions_pb2.Credentials, _Mapping]] = ...) -> None: ...
-
-class CreateFileResponse(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
-
 class CreateDirRequest(_message.Message):
-    __slots__ = ("path", "create_parents", "mode", "owner")
+    __slots__ = ("path", "mode", "owner")
     PATH_FIELD_NUMBER: _ClassVar[int]
-    CREATE_PARENTS_FIELD_NUMBER: _ClassVar[int]
     MODE_FIELD_NUMBER: _ClassVar[int]
     OWNER_FIELD_NUMBER: _ClassVar[int]
     path: str
-    create_parents: bool
     mode: str
     owner: _permissions_pb2.Credentials
-    def __init__(self, path: _Optional[str] = ..., create_parents: bool = ..., mode: _Optional[str] = ..., owner: _Optional[_Union[_permissions_pb2.Credentials, _Mapping]] = ...) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., mode: _Optional[str] = ..., owner: _Optional[_Union[_permissions_pb2.Credentials, _Mapping]] = ...) -> None: ...
 
 class CreateDirResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
 class CopyRequest(_message.Message):
-    __slots__ = ("source", "destination", "recursive", "owner")
+    __slots__ = ("source", "destination", "mode")
     SOURCE_FIELD_NUMBER: _ClassVar[int]
     DESTINATION_FIELD_NUMBER: _ClassVar[int]
-    RECURSIVE_FIELD_NUMBER: _ClassVar[int]
-    OWNER_FIELD_NUMBER: _ClassVar[int]
+    MODE_FIELD_NUMBER: _ClassVar[int]
     source: str
     destination: str
-    recursive: bool
-    owner: _permissions_pb2.Credentials
-    def __init__(self, source: _Optional[str] = ..., destination: _Optional[str] = ..., recursive: bool = ..., owner: _Optional[_Union[_permissions_pb2.Credentials, _Mapping]] = ...) -> None: ...
+    mode: str
+    def __init__(self, source: _Optional[str] = ..., destination: _Optional[str] = ..., mode: _Optional[str] = ...) -> None: ...
 
 class CopyResponse(_message.Message):
     __slots__ = ()
@@ -109,28 +85,24 @@ class RemoveResponse(_message.Message):
     def __init__(self) -> None: ...
 
 class RenameRequest(_message.Message):
-    __slots__ = ("source", "destination", "owner")
+    __slots__ = ("source", "destination")
     SOURCE_FIELD_NUMBER: _ClassVar[int]
     DESTINATION_FIELD_NUMBER: _ClassVar[int]
-    OWNER_FIELD_NUMBER: _ClassVar[int]
     source: str
     destination: str
-    owner: _permissions_pb2.Credentials
-    def __init__(self, source: _Optional[str] = ..., destination: _Optional[str] = ..., owner: _Optional[_Union[_permissions_pb2.Credentials, _Mapping]] = ...) -> None: ...
+    def __init__(self, source: _Optional[str] = ..., destination: _Optional[str] = ...) -> None: ...
 
 class RenameResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
 class EntryInfo(_message.Message):
-    __slots__ = ("name", "type", "owner")
+    __slots__ = ("name", "type")
     NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    OWNER_FIELD_NUMBER: _ClassVar[int]
     name: str
     type: FileType
-    owner: _permissions_pb2.Credentials
-    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[FileType, str]] = ..., owner: _Optional[_Union[_permissions_pb2.Credentials, _Mapping]] = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[FileType, str]] = ...) -> None: ...
 
 class ListDirRequest(_message.Message):
     __slots__ = ("path",)
@@ -157,11 +129,9 @@ class WatchResponse(_message.Message):
     def __init__(self, event: _Optional[_Union[FilesystemEvent, _Mapping]] = ...) -> None: ...
 
 class FilesystemEvent(_message.Message):
-    __slots__ = ("path", "type", "entry")
+    __slots__ = ("path", "type")
     PATH_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    ENTRY_FIELD_NUMBER: _ClassVar[int]
     path: str
     type: EventType
-    entry: EntryInfo
-    def __init__(self, path: _Optional[str] = ..., type: _Optional[_Union[EventType, str]] = ..., entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., type: _Optional[_Union[EventType, str]] = ...) -> None: ...

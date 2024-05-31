@@ -15,10 +15,10 @@ export class Credentials extends Message<Credentials> {
    */
   credentials: {
     /**
-     * @generated from field: string user = 1;
+     * @generated from field: string username = 1;
      */
     value: string;
-    case: "user";
+    case: "username";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<Credentials>) {
@@ -29,7 +29,7 @@ export class Credentials extends Message<Credentials> {
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "envd.permissions.v1.Credentials";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "user", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "credentials" },
+    { no: 1, name: "username", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "credentials" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Credentials {

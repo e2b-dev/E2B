@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ListProcessesRequest, ListProcessesResponse, ReconnectProcessRequest, ReconnectProcessResponse, SendProcessInputRequest, SendProcessInputResponse, SendProcessSignalRequest, SendProcessSignalResponse, StartProcessRequest, StartProcessResponse, UpdateProcessRequest, UpdateProcessResponse } from "./process_pb.js";
+import { ListProcessesRequest, ListProcessesResponse, ReconnectProcessRequest, ReconnectProcessResponse, SendProcessInputRequest, SendProcessInputResponse, SendProcessInputStreamRequest, SendProcessInputStreamResponse, SendProcessSignalRequest, SendProcessSignalResponse, StartProcessRequest, StartProcessResponse, UpdateProcessRequest, UpdateProcessResponse } from "./process_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -47,6 +47,17 @@ export const ProcessService = {
       I: UpdateProcessRequest,
       O: UpdateProcessResponse,
       kind: MethodKind.Unary,
+    },
+    /**
+     * Client input stream ensures ordering of messages
+     *
+     * @generated from rpc envd.process.v1.ProcessService.SendProcessInputStream
+     */
+    sendProcessInputStream: {
+      name: "SendProcessInputStream",
+      I: SendProcessInputStreamRequest,
+      O: SendProcessInputStreamResponse,
+      kind: MethodKind.ClientStreaming,
     },
     /**
      * @generated from rpc envd.process.v1.ProcessService.SendProcessInput

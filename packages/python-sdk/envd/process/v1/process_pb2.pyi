@@ -30,8 +30,8 @@ class PTY(_message.Message):
     def __init__(self, size: _Optional[_Union[PTY.Size, _Mapping]] = ...) -> None: ...
 
 class ProcessConfig(_message.Message):
-    __slots__ = ("cmd", "args", "env", "cwd")
-    class EnvEntry(_message.Message):
+    __slots__ = ("cmd", "args", "envs", "cwd")
+    class EnvsEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
         VALUE_FIELD_NUMBER: _ClassVar[int]
@@ -40,13 +40,13 @@ class ProcessConfig(_message.Message):
         def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
     CMD_FIELD_NUMBER: _ClassVar[int]
     ARGS_FIELD_NUMBER: _ClassVar[int]
-    ENV_FIELD_NUMBER: _ClassVar[int]
+    ENVS_FIELD_NUMBER: _ClassVar[int]
     CWD_FIELD_NUMBER: _ClassVar[int]
     cmd: str
     args: _containers.RepeatedScalarFieldContainer[str]
-    env: _containers.ScalarMap[str, str]
+    envs: _containers.ScalarMap[str, str]
     cwd: str
-    def __init__(self, cmd: _Optional[str] = ..., args: _Optional[_Iterable[str]] = ..., env: _Optional[_Mapping[str, str]] = ..., cwd: _Optional[str] = ...) -> None: ...
+    def __init__(self, cmd: _Optional[str] = ..., args: _Optional[_Iterable[str]] = ..., envs: _Optional[_Mapping[str, str]] = ..., cwd: _Optional[str] = ...) -> None: ...
 
 class ListProcessesRequest(_message.Message):
     __slots__ = ()
@@ -95,12 +95,16 @@ class ProcessEvent(_message.Message):
         stderr: bytes
         def __init__(self, stdout: _Optional[bytes] = ..., stderr: _Optional[bytes] = ...) -> None: ...
     class EndEvent(_message.Message):
-        __slots__ = ("exit_code", "error")
+        __slots__ = ("exit_code", "terminated", "status", "error")
         EXIT_CODE_FIELD_NUMBER: _ClassVar[int]
+        TERMINATED_FIELD_NUMBER: _ClassVar[int]
+        STATUS_FIELD_NUMBER: _ClassVar[int]
         ERROR_FIELD_NUMBER: _ClassVar[int]
         exit_code: int
+        terminated: bool
+        status: str
         error: str
-        def __init__(self, exit_code: _Optional[int] = ..., error: _Optional[str] = ...) -> None: ...
+        def __init__(self, exit_code: _Optional[int] = ..., terminated: bool = ..., status: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...
     START_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     END_FIELD_NUMBER: _ClassVar[int]
@@ -134,10 +138,34 @@ class SendProcessInputResponse(_message.Message):
     def __init__(self) -> None: ...
 
 class ProcessInput(_message.Message):
-    __slots__ = ("stdin",)
+    __slots__ = ("stdin", "tty")
     STDIN_FIELD_NUMBER: _ClassVar[int]
+    TTY_FIELD_NUMBER: _ClassVar[int]
     stdin: bytes
-    def __init__(self, stdin: _Optional[bytes] = ...) -> None: ...
+    tty: bytes
+    def __init__(self, stdin: _Optional[bytes] = ..., tty: _Optional[bytes] = ...) -> None: ...
+
+class SendProcessInputStreamRequest(_message.Message):
+    __slots__ = ("start", "data")
+    class StartEvent(_message.Message):
+        __slots__ = ("process",)
+        PROCESS_FIELD_NUMBER: _ClassVar[int]
+        process: ProcessSelector
+        def __init__(self, process: _Optional[_Union[ProcessSelector, _Mapping]] = ...) -> None: ...
+    class DataEvent(_message.Message):
+        __slots__ = ("input",)
+        INPUT_FIELD_NUMBER: _ClassVar[int]
+        input: ProcessInput
+        def __init__(self, input: _Optional[_Union[ProcessInput, _Mapping]] = ...) -> None: ...
+    START_FIELD_NUMBER: _ClassVar[int]
+    DATA_FIELD_NUMBER: _ClassVar[int]
+    start: SendProcessInputStreamRequest.StartEvent
+    data: SendProcessInputStreamRequest.DataEvent
+    def __init__(self, start: _Optional[_Union[SendProcessInputStreamRequest.StartEvent, _Mapping]] = ..., data: _Optional[_Union[SendProcessInputStreamRequest.DataEvent, _Mapping]] = ...) -> None: ...
+
+class SendProcessInputStreamResponse(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
 
 class SendProcessSignalRequest(_message.Message):
     __slots__ = ("process", "signal")

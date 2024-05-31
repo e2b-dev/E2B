@@ -19,7 +19,7 @@ import json
 
 
 from typing import Any, Dict, Optional
-from pydantic import BaseModel, Field, StrictStr
+from pydantic import BaseModel, Field, StrictStr, conint
 
 
 class NewSandbox(BaseModel):
@@ -30,9 +30,12 @@ class NewSandbox(BaseModel):
     template_id: StrictStr = Field(
         ..., alias="templateID", description="Identifier of the required template"
     )
+    timeout: Optional[conint(strict=True, ge=0)] = Field(
+        None, description="Time to live for the sandbox in seconds."
+    )
     metadata: Optional[Dict[str, StrictStr]] = None
     additional_properties: Dict[str, Any] = {}
-    __properties = ["templateID", "metadata"]
+    __properties = ["templateID", "timeout", "metadata"]
 
     class Config:
         """Pydantic configuration"""
@@ -75,7 +78,11 @@ class NewSandbox(BaseModel):
             return NewSandbox.parse_obj(obj)
 
         _obj = NewSandbox.parse_obj(
-            {"template_id": obj.get("templateID"), "metadata": obj.get("metadata")}
+            {
+                "template_id": obj.get("templateID"),
+                "timeout": obj.get("timeout"),
+                "metadata": obj.get("metadata"),
+            }
         )
         # store additional fields in additional_properties
         for _key in obj.keys():

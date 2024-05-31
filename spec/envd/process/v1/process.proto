@@ -12,6 +12,8 @@ service ProcessService {
 
     rpc UpdateProcess(UpdateProcessRequest) returns (UpdateProcessResponse);
 
+    // Client input stream ensures ordering of messages
+    rpc SendProcessInputStream(stream SendProcessInputStreamRequest) returns (SendProcessInputStreamResponse);
     rpc SendProcessInput(SendProcessInputRequest) returns (SendProcessInputResponse);
     rpc SendProcessSignal(SendProcessSignalRequest) returns (SendProcessSignalResponse);
 }
@@ -29,7 +31,7 @@ message ProcessConfig {
     string cmd = 1;
     repeated string args = 2;
     
-    map<string, string> env = 3;
+    map<string, string> envs = 3;
     string cwd = 4;
 }
 
@@ -55,24 +57,28 @@ message UpdateProcessRequest {
 message UpdateProcessResponse {}
 
 message ProcessEvent {
-    oneof event_type {
+    oneof event {
         StartEvent start = 1;
         DataEvent data = 2;
         EndEvent end = 3;
     }
     
     message StartEvent {
-        uint32 pid = 5;
+        uint32 pid = 1;
     }
     
     message DataEvent {
-        optional bytes stdout = 6;
-        optional bytes stderr = 7;
+        oneof output {
+            bytes stdout = 1;
+            bytes stderr = 2;
+        }
     }
     
     message EndEvent {
-        sint32 exit_code = 8;
-        optional string error = 9;
+        sint32 exit_code = 1;
+        bool terminated = 2;
+        string status = 3;
+        optional string error = 4;
     }
 }
 
@@ -95,13 +101,31 @@ message SendProcessInputResponse {}
 message ProcessInput {
     oneof input {
         bytes stdin = 1;
+        bytes tty = 2;
     }
 }
 
+message SendProcessInputStreamRequest {
+    oneof event {
+        StartEvent start = 1;
+        DataEvent data = 2;
+    }
+
+    message StartEvent {
+        ProcessSelector process = 1;
+    }
+
+    message DataEvent {
+        ProcessInput input = 2;
+    }
+}
+
+message SendProcessInputStreamResponse {}
+
 enum Signal {
     SIGNAL_UNSPECIFIED = 0;
-    SIGNAL_SIGTERM = 1;
-    SIGNAL_SIGKILL = 2;
+    SIGNAL_SIGTERM = 15;
+    SIGNAL_SIGKILL = 9;
 }
 
 message SendProcessSignalRequest {

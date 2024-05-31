@@ -16,7 +16,7 @@ class NetworkServiceClient:
             response_type=envd_dot_network_dot_v1_dot_network__pb2.ListPortsResponse,
             compressor=compressor,
             json=json,
-            **opts
+            **opts,
         )
         self._watch_ports = connect.Client(
             pool=pool,
@@ -24,11 +24,17 @@ class NetworkServiceClient:
             response_type=envd_dot_network_dot_v1_dot_network__pb2.WatchPortsResponse,
             compressor=compressor,
             json=json,
-            **opts
+            **opts,
         )
 
-    def list_ports(self, req: envd_dot_network_dot_v1_dot_network__pb2.ListPortsRequest, **opts) -> envd_dot_network_dot_v1_dot_network__pb2.ListPortsResponse:
+    def list_ports(
+        self, req: envd_dot_network_dot_v1_dot_network__pb2.ListPortsRequest, **opts
+    ) -> envd_dot_network_dot_v1_dot_network__pb2.ListPortsResponse:
         return self._list_ports.call_unary(req, **opts)
 
-    def watch_ports(self, req: envd_dot_network_dot_v1_dot_network__pb2.WatchPortsRequest , **opts) -> Generator[envd_dot_network_dot_v1_dot_network__pb2.WatchPortsResponse, Any, None]:
+    def watch_ports(
+        self, req: envd_dot_network_dot_v1_dot_network__pb2.WatchPortsRequest, **opts
+    ) -> Generator[
+        envd_dot_network_dot_v1_dot_network__pb2.WatchPortsResponse, Any, None
+    ]:
         return self._watch_ports.call_server_stream(req, **opts)

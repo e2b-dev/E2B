@@ -21,6 +21,7 @@ import json
 from typing import Any, ClassVar, Dict, List, Optional
 from pydantic import BaseModel, StrictStr
 from pydantic import Field
+from typing_extensions import Annotated
 
 try:
     from typing import Self
@@ -36,9 +37,12 @@ class NewSandbox(BaseModel):
     template_id: StrictStr = Field(
         description="Identifier of the required template", alias="templateID"
     )
+    timeout: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(
+        default=None, description="Time to live for the sandbox in seconds."
+    )
     metadata: Optional[Dict[str, StrictStr]] = None
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["templateID", "metadata"]
+    __properties: ClassVar[List[str]] = ["templateID", "timeout", "metadata"]
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
@@ -91,7 +95,11 @@ class NewSandbox(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate(
-            {"templateID": obj.get("templateID"), "metadata": obj.get("metadata")}
+            {
+                "templateID": obj.get("templateID"),
+                "timeout": obj.get("timeout"),
+                "metadata": obj.get("metadata"),
+            }
         )
         # store additional fields in additional_properties
         for _key in obj.keys():

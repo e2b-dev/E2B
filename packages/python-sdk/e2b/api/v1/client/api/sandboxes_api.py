@@ -19,16 +19,19 @@ import warnings
 from pydantic import validate_arguments, ValidationError
 
 from typing_extensions import Annotated
-from pydantic import Field, StrictInt, StrictStr
+from pydantic import Field, StrictStr, conint
 
 from typing import List, Optional
 
 from e2b.api.v1.client.models.new_sandbox import NewSandbox
-from e2b.api.v1.client.models.running_sandboxes import RunningSandboxes
+from e2b.api.v1.client.models.running_sandbox import RunningSandbox
 from e2b.api.v1.client.models.sandbox import Sandbox
 from e2b.api.v1.client.models.sandbox_logs import SandboxLogs
 from e2b.api.v1.client.models.sandboxes_sandbox_id_refreshes_post_request import (
     SandboxesSandboxIDRefreshesPostRequest,
+)
+from e2b.api.v1.client.models.sandboxes_sandbox_id_timeout_post_request import (
+    SandboxesSandboxIDTimeoutPostRequest,
 )
 
 from e2b.api.v1.client.api_client import ApiClient
@@ -49,7 +52,7 @@ class SandboxesApi:
         self.api_client = api_client
 
     @validate_arguments
-    def sandboxes_get(self, **kwargs) -> List[RunningSandboxes]:  # noqa: E501
+    def sandboxes_get(self, **kwargs) -> List[RunningSandbox]:  # noqa: E501
         """sandboxes_get  # noqa: E501
 
         List all running sandboxes  # noqa: E501
@@ -68,7 +71,7 @@ class SandboxesApi:
         :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
-        :rtype: List[RunningSandboxes]
+        :rtype: List[RunningSandbox]
         """
         kwargs["_return_http_data_only"] = True
         if "_preload_content" in kwargs:
@@ -109,7 +112,7 @@ class SandboxesApi:
         :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
-        :rtype: tuple(List[RunningSandboxes], status_code(int), headers(HTTPHeaderDict))
+        :rtype: tuple(List[RunningSandbox], status_code(int), headers(HTTPHeaderDict))
         """
 
         _params = locals()
@@ -160,7 +163,7 @@ class SandboxesApi:
         _auth_settings = ["ApiKeyAuth"]  # noqa: E501
 
         _response_types_map = {
-            "200": "List[RunningSandboxes]",
+            "200": "List[RunningSandbox]",
             "401": "Error",
             "400": "Error",
             "500": "Error",
@@ -490,11 +493,13 @@ class SandboxesApi:
         self,
         sandbox_id: StrictStr,
         start: Annotated[
-            Optional[StrictInt],
-            Field(description="Starting timestamp of the logs that should be returned"),
+            Optional[conint(strict=True, ge=0)],
+            Field(
+                description="Starting timestamp of the logs that should be returned in milliseconds"
+            ),
         ] = None,
         limit: Annotated[
-            Optional[StrictInt],
+            Optional[conint(strict=True, ge=0)],
             Field(description="Maximum number of logs that should be returned"),
         ] = None,
         **kwargs
@@ -510,7 +515,7 @@ class SandboxesApi:
 
         :param sandbox_id: (required)
         :type sandbox_id: str
-        :param start: Starting timestamp of the logs that should be returned
+        :param start: Starting timestamp of the logs that should be returned in milliseconds
         :type start: int
         :param limit: Maximum number of logs that should be returned
         :type limit: int
@@ -538,11 +543,13 @@ class SandboxesApi:
         self,
         sandbox_id: StrictStr,
         start: Annotated[
-            Optional[StrictInt],
-            Field(description="Starting timestamp of the logs that should be returned"),
+            Optional[conint(strict=True, ge=0)],
+            Field(
+                description="Starting timestamp of the logs that should be returned in milliseconds"
+            ),
         ] = None,
         limit: Annotated[
-            Optional[StrictInt],
+            Optional[conint(strict=True, ge=0)],
             Field(description="Maximum number of logs that should be returned"),
         ] = None,
         **kwargs
@@ -558,7 +565,7 @@ class SandboxesApi:
 
         :param sandbox_id: (required)
         :type sandbox_id: str
-        :param start: Starting timestamp of the logs that should be returned
+        :param start: Starting timestamp of the logs that should be returned in milliseconds
         :type start: int
         :param limit: Maximum number of logs that should be returned
         :type limit: int
@@ -820,6 +827,175 @@ class SandboxesApi:
 
         return self.api_client.call_api(
             "/sandboxes/{sandboxID}/refreshes",
+            "POST",
+            _path_params,
+            _query_params,
+            _header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            response_types_map=_response_types_map,
+            auth_settings=_auth_settings,
+            async_req=_params.get("async_req"),
+            _return_http_data_only=_params.get("_return_http_data_only"),  # noqa: E501
+            _preload_content=_params.get("_preload_content", True),
+            _request_timeout=_params.get("_request_timeout"),
+            collection_formats=_collection_formats,
+            _request_auth=_params.get("_request_auth"),
+        )
+
+    @validate_arguments
+    def sandboxes_sandbox_id_timeout_post(
+        self,
+        sandbox_id: StrictStr,
+        sandboxes_sandbox_id_timeout_post_request: Optional[
+            SandboxesSandboxIDTimeoutPostRequest
+        ] = None,
+        **kwargs
+    ) -> None:  # noqa: E501
+        """sandboxes_sandbox_id_timeout_post  # noqa: E501
+
+        Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.  # noqa: E501
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.sandboxes_sandbox_id_timeout_post(sandbox_id, sandboxes_sandbox_id_timeout_post_request, async_req=True)
+        >>> result = thread.get()
+
+        :param sandbox_id: (required)
+        :type sandbox_id: str
+        :param sandboxes_sandbox_id_timeout_post_request:
+        :type sandboxes_sandbox_id_timeout_post_request: SandboxesSandboxIDTimeoutPostRequest
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _request_timeout: timeout setting for this request.
+               If one number provided, it will be total request
+               timeout. It can also be a pair (tuple) of
+               (connection, read) timeouts.
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: None
+        """
+        kwargs["_return_http_data_only"] = True
+        if "_preload_content" in kwargs:
+            message = "Error! Please call the sandboxes_sandbox_id_timeout_post_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
+            raise ValueError(message)
+        return self.sandboxes_sandbox_id_timeout_post_with_http_info(
+            sandbox_id, sandboxes_sandbox_id_timeout_post_request, **kwargs
+        )  # noqa: E501
+
+    @validate_arguments
+    def sandboxes_sandbox_id_timeout_post_with_http_info(
+        self,
+        sandbox_id: StrictStr,
+        sandboxes_sandbox_id_timeout_post_request: Optional[
+            SandboxesSandboxIDTimeoutPostRequest
+        ] = None,
+        **kwargs
+    ) -> ApiResponse:  # noqa: E501
+        """sandboxes_sandbox_id_timeout_post  # noqa: E501
+
+        Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.  # noqa: E501
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.sandboxes_sandbox_id_timeout_post_with_http_info(sandbox_id, sandboxes_sandbox_id_timeout_post_request, async_req=True)
+        >>> result = thread.get()
+
+        :param sandbox_id: (required)
+        :type sandbox_id: str
+        :param sandboxes_sandbox_id_timeout_post_request:
+        :type sandboxes_sandbox_id_timeout_post_request: SandboxesSandboxIDTimeoutPostRequest
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _preload_content: if False, the ApiResponse.data will
+                                 be set to none and raw_data will store the
+                                 HTTP response body without reading/decoding.
+                                 Default is True.
+        :type _preload_content: bool, optional
+        :param _return_http_data_only: response data instead of ApiResponse
+                                       object with status code, headers, etc
+        :type _return_http_data_only: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :type _content_type: string, optional: force content-type for the request
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: None
+        """
+
+        _params = locals()
+
+        _all_params = ["sandbox_id", "sandboxes_sandbox_id_timeout_post_request"]
+        _all_params.extend(
+            [
+                "async_req",
+                "_return_http_data_only",
+                "_preload_content",
+                "_request_timeout",
+                "_request_auth",
+                "_content_type",
+                "_headers",
+            ]
+        )
+
+        # validate the arguments
+        for _key, _val in _params["kwargs"].items():
+            if _key not in _all_params:
+                raise ApiTypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method sandboxes_sandbox_id_timeout_post" % _key
+                )
+            _params[_key] = _val
+        del _params["kwargs"]
+
+        _collection_formats = {}
+
+        # process the path parameters
+        _path_params = {}
+        if _params["sandbox_id"] is not None:
+            _path_params["sandboxID"] = _params["sandbox_id"]
+
+        # process the query parameters
+        _query_params = []
+        # process the header parameters
+        _header_params = dict(_params.get("_headers", {}))
+        # process the form parameters
+        _form_params = []
+        _files = {}
+        # process the body parameter
+        _body_params = None
+        if _params["sandboxes_sandbox_id_timeout_post_request"] is not None:
+            _body_params = _params["sandboxes_sandbox_id_timeout_post_request"]
+
+        # set the HTTP header `Accept`
+        _header_params["Accept"] = self.api_client.select_header_accept(
+            ["application/json"]
+        )  # noqa: E501
+
+        # set the HTTP header `Content-Type`
+        _content_types_list = _params.get(
+            "_content_type",
+            self.api_client.select_header_content_type(["application/json"]),
+        )
+        if _content_types_list:
+            _header_params["Content-Type"] = _content_types_list
+
+        # authentication setting
+        _auth_settings = ["ApiKeyAuth"]  # noqa: E501
+
+        _response_types_map = {}
+
+        return self.api_client.call_api(
+            "/sandboxes/{sandboxID}/timeout",
             "POST",
             _path_params,
             _query_params,

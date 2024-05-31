@@ -7,36 +7,45 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-from envd.permissions.v1 import permissions_pb2 as envd_dot_permissions_dot_v1_dot_permissions__pb2
+from envd.permissions.v1 import (
+    permissions_pb2 as envd_dot_permissions_dot_v1_dot_permissions__pb2,
+)
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1d\x65nvd/network/v1/network.proto\x12\x0f\x65nvd.network.v1\x1a%envd/permissions/v1/permissions.proto\"\x12\n\x10ListPortsRequest\"@\n\x11ListPortsResponse\x12+\n\x05ports\x18\x01 \x03(\x0b\x32\x15.envd.network.v1.PortR\x05ports\"H\n\x11WatchPortsRequest\x12\x33\n\x06\x66ilter\x18\x01 \x01(\x0b\x32\x1b.envd.network.v1.PortFilterR\x06\x66ilter\"\"\n\nPortFilter\x12\x14\n\x05ports\x18\x01 \x03(\rR\x05ports\"A\n\x12WatchPortsResponse\x12+\n\x05\x65vent\x18\x01 \x01(\x0b\x32\x15.envd.network.v1.PortR\x05\x65vent\"L\n\x04Port\x12\x12\n\x04port\x18\x01 \x01(\rR\x04port\x12\x30\n\x05state\x18\x02 \x01(\x0e\x32\x1a.envd.network.v1.PortStateR\x05state*S\n\tPortState\x12\x1a\n\x16PORT_STATE_UNSPECIFIED\x10\x00\x12\x13\n\x0fPORT_STATE_OPEN\x10\x01\x12\x15\n\x11PORT_STATE_CLOSED\x10\x02\x32\xbd\x01\n\x0eNetworkService\x12R\n\tListPorts\x12!.envd.network.v1.ListPortsRequest\x1a\".envd.network.v1.ListPortsResponse\x12W\n\nWatchPorts\x12\".envd.network.v1.WatchPortsRequest\x1a#.envd.network.v1.WatchPortsResponse0\x01\x42\x81\x01\n\x13\x63om.envd.network.v1B\x0cNetworkProtoP\x01\xa2\x02\x03\x45NX\xaa\x02\x0f\x45nvd.Network.V1\xca\x02\x0f\x45nvd\\Network\\V1\xe2\x02\x1b\x45nvd\\Network\\V1\\GPBMetadata\xea\x02\x11\x45nvd::Network::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x1d\x65nvd/network/v1/network.proto\x12\x0f\x65nvd.network.v1\x1a%envd/permissions/v1/permissions.proto"\x12\n\x10ListPortsRequest"@\n\x11ListPortsResponse\x12+\n\x05ports\x18\x01 \x03(\x0b\x32\x15.envd.network.v1.PortR\x05ports"H\n\x11WatchPortsRequest\x12\x33\n\x06\x66ilter\x18\x01 \x01(\x0b\x32\x1b.envd.network.v1.PortFilterR\x06\x66ilter""\n\nPortFilter\x12\x14\n\x05ports\x18\x01 \x03(\rR\x05ports"A\n\x12WatchPortsResponse\x12+\n\x05\x65vent\x18\x01 \x01(\x0b\x32\x15.envd.network.v1.PortR\x05\x65vent"L\n\x04Port\x12\x12\n\x04port\x18\x01 \x01(\rR\x04port\x12\x30\n\x05state\x18\x02 \x01(\x0e\x32\x1a.envd.network.v1.PortStateR\x05state*S\n\tPortState\x12\x1a\n\x16PORT_STATE_UNSPECIFIED\x10\x00\x12\x13\n\x0fPORT_STATE_OPEN\x10\x01\x12\x15\n\x11PORT_STATE_CLOSED\x10\x02\x32\xbd\x01\n\x0eNetworkService\x12R\n\tListPorts\x12!.envd.network.v1.ListPortsRequest\x1a".envd.network.v1.ListPortsResponse\x12W\n\nWatchPorts\x12".envd.network.v1.WatchPortsRequest\x1a#.envd.network.v1.WatchPortsResponse0\x01\x42\x81\x01\n\x13\x63om.envd.network.v1B\x0cNetworkProtoP\x01\xa2\x02\x03\x45NX\xaa\x02\x0f\x45nvd.Network.V1\xca\x02\x0f\x45nvd\\Network\\V1\xe2\x02\x1b\x45nvd\\Network\\V1\\GPBMetadata\xea\x02\x11\x45nvd::Network::V1b\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envd.network.v1.network_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(
+    DESCRIPTOR, "envd.network.v1.network_pb2", _globals
+)
 if not _descriptor._USE_C_DESCRIPTORS:
-  _globals['DESCRIPTOR']._loaded_options = None
-  _globals['DESCRIPTOR']._serialized_options = b'\n\023com.envd.network.v1B\014NetworkProtoP\001\242\002\003ENX\252\002\017Envd.Network.V1\312\002\017Envd\\Network\\V1\342\002\033Envd\\Network\\V1\\GPBMetadata\352\002\021Envd::Network::V1'
-  _globals['_PORTSTATE']._serialized_start=430
-  _globals['_PORTSTATE']._serialized_end=513
-  _globals['_LISTPORTSREQUEST']._serialized_start=89
-  _globals['_LISTPORTSREQUEST']._serialized_end=107
-  _globals['_LISTPORTSRESPONSE']._serialized_start=109
-  _globals['_LISTPORTSRESPONSE']._serialized_end=173
-  _globals['_WATCHPORTSREQUEST']._serialized_start=175
-  _globals['_WATCHPORTSREQUEST']._serialized_end=247
-  _globals['_PORTFILTER']._serialized_start=249
-  _globals['_PORTFILTER']._serialized_end=283
-  _globals['_WATCHPORTSRESPONSE']._serialized_start=285
-  _globals['_WATCHPORTSRESPONSE']._serialized_end=350
-  _globals['_PORT']._serialized_start=352
-  _globals['_PORT']._serialized_end=428
-  _globals['_NETWORKSERVICE']._serialized_start=516
-  _globals['_NETWORKSERVICE']._serialized_end=705
+    _globals["DESCRIPTOR"]._loaded_options = None
+    _globals[
+        "DESCRIPTOR"
+    ]._serialized_options = b"\n\023com.envd.network.v1B\014NetworkProtoP\001\242\002\003ENX\252\002\017Envd.Network.V1\312\002\017Envd\\Network\\V1\342\002\033Envd\\Network\\V1\\GPBMetadata\352\002\021Envd::Network::V1"
+    _globals["_PORTSTATE"]._serialized_start = 430
+    _globals["_PORTSTATE"]._serialized_end = 513
+    _globals["_LISTPORTSREQUEST"]._serialized_start = 89
+    _globals["_LISTPORTSREQUEST"]._serialized_end = 107
+    _globals["_LISTPORTSRESPONSE"]._serialized_start = 109
+    _globals["_LISTPORTSRESPONSE"]._serialized_end = 173
+    _globals["_WATCHPORTSREQUEST"]._serialized_start = 175
+    _globals["_WATCHPORTSREQUEST"]._serialized_end = 247
+    _globals["_PORTFILTER"]._serialized_start = 249
+    _globals["_PORTFILTER"]._serialized_end = 283
+    _globals["_WATCHPORTSRESPONSE"]._serialized_start = 285
+    _globals["_WATCHPORTSRESPONSE"]._serialized_end = 350
+    _globals["_PORT"]._serialized_start = 352
+    _globals["_PORT"]._serialized_end = 428
+    _globals["_NETWORKSERVICE"]._serialized_start = 516
+    _globals["_NETWORKSERVICE"]._serialized_end = 705
 # @@protoc_insertion_point(module_scope)

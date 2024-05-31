@@ -25,16 +25,19 @@ except ImportError:
 
 from pydantic import Field
 from typing_extensions import Annotated
-from pydantic import StrictInt, StrictStr
+from pydantic import StrictStr
 
 from typing import List, Optional
 
 from e2b.api.v2.client.models.new_sandbox import NewSandbox
-from e2b.api.v2.client.models.running_sandboxes import RunningSandboxes
+from e2b.api.v2.client.models.running_sandbox import RunningSandbox
 from e2b.api.v2.client.models.sandbox import Sandbox
 from e2b.api.v2.client.models.sandbox_logs import SandboxLogs
 from e2b.api.v2.client.models.sandboxes_sandbox_id_refreshes_post_request import (
     SandboxesSandboxIDRefreshesPostRequest,
+)
+from e2b.api.v2.client.models.sandboxes_sandbox_id_timeout_post_request import (
+    SandboxesSandboxIDTimeoutPostRequest,
 )
 
 from e2b.api.v2.client.api_client import ApiClient
@@ -68,7 +71,7 @@ class SandboxesApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> List[RunningSandboxes]:
+    ) -> List[RunningSandbox]:
         """sandboxes_get
 
         List all running sandboxes
@@ -103,7 +106,7 @@ class SandboxesApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            "200": "List[RunningSandboxes]",
+            "200": "List[RunningSandbox]",
             "401": "Error",
             "400": "Error",
             "500": "Error",
@@ -131,7 +134,7 @@ class SandboxesApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[List[RunningSandboxes]]:
+    ) -> ApiResponse[List[RunningSandbox]]:
         """sandboxes_get
 
         List all running sandboxes
@@ -166,7 +169,7 @@ class SandboxesApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            "200": "List[RunningSandboxes]",
+            "200": "List[RunningSandbox]",
             "401": "Error",
             "400": "Error",
             "500": "Error",
@@ -229,7 +232,7 @@ class SandboxesApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            "200": "List[RunningSandboxes]",
+            "200": "List[RunningSandbox]",
             "401": "Error",
             "400": "Error",
             "500": "Error",
@@ -780,11 +783,13 @@ class SandboxesApi:
         self,
         sandbox_id: StrictStr,
         start: Annotated[
-            Optional[StrictInt],
-            Field(description="Starting timestamp of the logs that should be returned"),
+            Optional[Annotated[int, Field(strict=True, ge=0)]],
+            Field(
+                description="Starting timestamp of the logs that should be returned in milliseconds"
+            ),
         ] = None,
         limit: Annotated[
-            Optional[StrictInt],
+            Optional[Annotated[int, Field(strict=True, ge=0)]],
             Field(description="Maximum number of logs that should be returned"),
         ] = None,
         _request_timeout: Union[
@@ -805,7 +810,7 @@ class SandboxesApi:
 
         :param sandbox_id: (required)
         :type sandbox_id: str
-        :param start: Starting timestamp of the logs that should be returned
+        :param start: Starting timestamp of the logs that should be returned in milliseconds
         :type start: int
         :param limit: Maximum number of logs that should be returned
         :type limit: int
@@ -861,11 +866,13 @@ class SandboxesApi:
         self,
         sandbox_id: StrictStr,
         start: Annotated[
-            Optional[StrictInt],
-            Field(description="Starting timestamp of the logs that should be returned"),
+            Optional[Annotated[int, Field(strict=True, ge=0)]],
+            Field(
+                description="Starting timestamp of the logs that should be returned in milliseconds"
+            ),
         ] = None,
         limit: Annotated[
-            Optional[StrictInt],
+            Optional[Annotated[int, Field(strict=True, ge=0)]],
             Field(description="Maximum number of logs that should be returned"),
         ] = None,
         _request_timeout: Union[
@@ -886,7 +893,7 @@ class SandboxesApi:
 
         :param sandbox_id: (required)
         :type sandbox_id: str
-        :param start: Starting timestamp of the logs that should be returned
+        :param start: Starting timestamp of the logs that should be returned in milliseconds
         :type start: int
         :param limit: Maximum number of logs that should be returned
         :type limit: int
@@ -942,11 +949,13 @@ class SandboxesApi:
         self,
         sandbox_id: StrictStr,
         start: Annotated[
-            Optional[StrictInt],
-            Field(description="Starting timestamp of the logs that should be returned"),
+            Optional[Annotated[int, Field(strict=True, ge=0)]],
+            Field(
+                description="Starting timestamp of the logs that should be returned in milliseconds"
+            ),
         ] = None,
         limit: Annotated[
-            Optional[StrictInt],
+            Optional[Annotated[int, Field(strict=True, ge=0)]],
             Field(description="Maximum number of logs that should be returned"),
         ] = None,
         _request_timeout: Union[
@@ -967,7 +976,7 @@ class SandboxesApi:
 
         :param sandbox_id: (required)
         :type sandbox_id: str
-        :param start: Starting timestamp of the logs that should be returned
+        :param start: Starting timestamp of the logs that should be returned in milliseconds
         :type start: int
         :param limit: Maximum number of logs that should be returned
         :type limit: int
@@ -1323,6 +1332,269 @@ class SandboxesApi:
         return self.api_client.param_serialize(
             method="POST",
             resource_path="/sandboxes/{sandboxID}/refreshes",
+            path_params=_path_params,
+            query_params=_query_params,
+            header_params=_header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            auth_settings=_auth_settings,
+            collection_formats=_collection_formats,
+            _host=_host,
+            _request_auth=_request_auth,
+        )
+
+    @validate_call
+    def sandboxes_sandbox_id_timeout_post(
+        self,
+        sandbox_id: StrictStr,
+        sandboxes_sandbox_id_timeout_post_request: Optional[
+            SandboxesSandboxIDTimeoutPostRequest
+        ] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]
+            ],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> None:
+        """sandboxes_sandbox_id_timeout_post
+
+        Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.
+
+        :param sandbox_id: (required)
+        :type sandbox_id: str
+        :param sandboxes_sandbox_id_timeout_post_request:
+        :type sandboxes_sandbox_id_timeout_post_request: SandboxesSandboxIDTimeoutPostRequest
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """  # noqa: E501
+
+        _param = self._sandboxes_sandbox_id_timeout_post_serialize(
+            sandbox_id=sandbox_id,
+            sandboxes_sandbox_id_timeout_post_request=sandboxes_sandbox_id_timeout_post_request,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {}
+        response_data = self.api_client.call_api(
+            *_param, _request_timeout=_request_timeout
+        )
+        response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        ).data
+
+    @validate_call
+    def sandboxes_sandbox_id_timeout_post_with_http_info(
+        self,
+        sandbox_id: StrictStr,
+        sandboxes_sandbox_id_timeout_post_request: Optional[
+            SandboxesSandboxIDTimeoutPostRequest
+        ] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]
+            ],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> ApiResponse[None]:
+        """sandboxes_sandbox_id_timeout_post
+
+        Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.
+
+        :param sandbox_id: (required)
+        :type sandbox_id: str
+        :param sandboxes_sandbox_id_timeout_post_request:
+        :type sandboxes_sandbox_id_timeout_post_request: SandboxesSandboxIDTimeoutPostRequest
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """  # noqa: E501
+
+        _param = self._sandboxes_sandbox_id_timeout_post_serialize(
+            sandbox_id=sandbox_id,
+            sandboxes_sandbox_id_timeout_post_request=sandboxes_sandbox_id_timeout_post_request,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {}
+        response_data = self.api_client.call_api(
+            *_param, _request_timeout=_request_timeout
+        )
+        response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        )
+
+    @validate_call
+    def sandboxes_sandbox_id_timeout_post_without_preload_content(
+        self,
+        sandbox_id: StrictStr,
+        sandboxes_sandbox_id_timeout_post_request: Optional[
+            SandboxesSandboxIDTimeoutPostRequest
+        ] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]
+            ],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> RESTResponseType:
+        """sandboxes_sandbox_id_timeout_post
+
+        Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.
+
+        :param sandbox_id: (required)
+        :type sandbox_id: str
+        :param sandboxes_sandbox_id_timeout_post_request:
+        :type sandboxes_sandbox_id_timeout_post_request: SandboxesSandboxIDTimeoutPostRequest
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """  # noqa: E501
+
+        _param = self._sandboxes_sandbox_id_timeout_post_serialize(
+            sandbox_id=sandbox_id,
+            sandboxes_sandbox_id_timeout_post_request=sandboxes_sandbox_id_timeout_post_request,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {}
+        response_data = self.api_client.call_api(
+            *_param, _request_timeout=_request_timeout
+        )
+        return response_data.response
+
+    def _sandboxes_sandbox_id_timeout_post_serialize(
+        self,
+        sandbox_id,
+        sandboxes_sandbox_id_timeout_post_request,
+        _request_auth,
+        _content_type,
+        _headers,
+        _host_index,
+    ) -> Tuple:
+        _host = None
+
+        _collection_formats: Dict[str, str] = {}
+
+        _path_params: Dict[str, str] = {}
+        _query_params: List[Tuple[str, str]] = []
+        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _form_params: List[Tuple[str, str]] = []
+        _files: Dict[str, str] = {}
+        _body_params: Optional[bytes] = None
+
+        # process the path parameters
+        if sandbox_id is not None:
+            _path_params["sandboxID"] = sandbox_id
+        # process the query parameters
+        # process the header parameters
+        # process the form parameters
+        # process the body parameter
+        if sandboxes_sandbox_id_timeout_post_request is not None:
+            _body_params = sandboxes_sandbox_id_timeout_post_request
+
+        # set the HTTP header `Accept`
+        _header_params["Accept"] = self.api_client.select_header_accept(
+            ["application/json"]
+        )
+
+        # set the HTTP header `Content-Type`
+        if _content_type:
+            _header_params["Content-Type"] = _content_type
+        else:
+            _default_content_type = self.api_client.select_header_content_type(
+                ["application/json"]
+            )
+            if _default_content_type is not None:
+                _header_params["Content-Type"] = _default_content_type
+
+        # authentication setting
+        _auth_settings: List[str] = ["ApiKeyAuth"]
+
+        return self.api_client.param_serialize(
+            method="POST",
+            resource_path="/sandboxes/{sandboxID}/timeout",
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

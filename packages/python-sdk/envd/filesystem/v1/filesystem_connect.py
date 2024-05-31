@@ -18,14 +18,6 @@ class FilesystemServiceClient:
             json=json,
             **opts
         )
-        self._create_file = connect.Client(
-            pool=pool,
-            url=f"{base_url}/{FilesystemServiceName}/CreateFile",
-            response_type=envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CreateFileResponse,
-            compressor=compressor,
-            json=json,
-            **opts
-        )
         self._create_dir = connect.Client(
             pool=pool,
             url=f"{base_url}/{FilesystemServiceName}/CreateDir",
@@ -77,9 +69,6 @@ class FilesystemServiceClient:
 
     def stat(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.StatRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.StatResponse:
         return self._stat.call_unary(req, **opts)
-
-    def create_file(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CreateFileRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CreateFileResponse:
-        return self._create_file.call_unary(req, **opts)
 
     def create_dir(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CreateDirRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CreateDirResponse:
         return self._create_dir.call_unary(req, **opts)

@@ -5,7 +5,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Credentials(_message.Message):
-    __slots__ = ("user",)
-    USER_FIELD_NUMBER: _ClassVar[int]
-    user: str
-    def __init__(self, user: _Optional[str] = ...) -> None: ...
+    __slots__ = ("username",)
+    USERNAME_FIELD_NUMBER: _ClassVar[int]
+    username: str
+    def __init__(self, username: _Optional[str] = ...) -> None: ...

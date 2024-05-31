@@ -19,8 +19,9 @@ import json
 
 
 from typing import Any, ClassVar, Dict, List, Optional
-from pydantic import BaseModel, StrictBool, StrictInt, StrictStr
+from pydantic import BaseModel, StrictBool, StrictStr
 from pydantic import Field
+from typing_extensions import Annotated
 
 try:
     from typing import Self
@@ -40,11 +41,11 @@ class Template(BaseModel):
         description="Identifier of the last successful build for given template",
         alias="buildID",
     )
-    cpu_count: StrictInt = Field(
+    cpu_count: Annotated[int, Field(le=8, strict=True, ge=1)] = Field(
         description="CPU cores for the sandbox", alias="cpuCount"
     )
-    memory_mb: StrictInt = Field(
-        description="Memory limit for the sandbox in MB", alias="memoryMB"
+    memory_mb: Annotated[int, Field(le=8192, strict=True, ge=128)] = Field(
+        description="Memory for the sandbox in MB", alias="memoryMB"
     )
     public: StrictBool = Field(
         description="Whether the template is public or only accessible by the team"

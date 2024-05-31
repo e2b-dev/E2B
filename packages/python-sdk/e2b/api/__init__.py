@@ -16,8 +16,6 @@ else:
     import e2b.api.v2.client.exceptions as exceptions
 
 
-
-
 class E2BApiClient(client.ApiClient):
     def __init__(
         self,

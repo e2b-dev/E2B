@@ -25,24 +25,12 @@ export enum FileType {
    * @generated from enum value: FILE_TYPE_DIRECTORY = 2;
    */
   DIRECTORY = 2,
-
-  /**
-   * @generated from enum value: FILE_TYPE_LINK = 3;
-   */
-  LINK = 3,
-
-  /**
-   * @generated from enum value: FILE_TYPE_SYMLINK = 4;
-   */
-  SYMLINK = 4,
 }
 // Retrieve enum metadata with: proto3.getEnumType(FileType)
 proto3.util.setEnumType(FileType, "envd.filesystem.v1.FileType", [
   { no: 0, name: "FILE_TYPE_UNSPECIFIED" },
   { no: 1, name: "FILE_TYPE_FILE" },
   { no: 2, name: "FILE_TYPE_DIRECTORY" },
-  { no: 3, name: "FILE_TYPE_LINK" },
-  { no: 4, name: "FILE_TYPE_SYMLINK" },
 ]);
 
 /**
@@ -90,92 +78,6 @@ proto3.util.setEnumType(EventType, "envd.filesystem.v1.EventType", [
 ]);
 
 /**
- * @generated from message envd.filesystem.v1.CreateFileRequest
- */
-export class CreateFileRequest extends Message<CreateFileRequest> {
-  /**
-   * @generated from field: string path = 1;
-   */
-  path = "";
-
-  /**
-   * @generated from field: bool create_parents = 2;
-   */
-  createParents = false;
-
-  /**
-   * @generated from field: string mode = 3;
-   */
-  mode = "";
-
-  /**
-   * @generated from field: envd.permissions.v1.Credentials owner = 4;
-   */
-  owner?: Credentials;
-
-  constructor(data?: PartialMessage<CreateFileRequest>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.CreateFileRequest";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "create_parents", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 3, name: "mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "owner", kind: "message", T: Credentials },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateFileRequest {
-    return new CreateFileRequest().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateFileRequest {
-    return new CreateFileRequest().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateFileRequest {
-    return new CreateFileRequest().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: CreateFileRequest | PlainMessage<CreateFileRequest> | undefined, b: CreateFileRequest | PlainMessage<CreateFileRequest> | undefined): boolean {
-    return proto3.util.equals(CreateFileRequest, a, b);
-  }
-}
-
-/**
- * @generated from message envd.filesystem.v1.CreateFileResponse
- */
-export class CreateFileResponse extends Message<CreateFileResponse> {
-  constructor(data?: PartialMessage<CreateFileResponse>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.CreateFileResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateFileResponse {
-    return new CreateFileResponse().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateFileResponse {
-    return new CreateFileResponse().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateFileResponse {
-    return new CreateFileResponse().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: CreateFileResponse | PlainMessage<CreateFileResponse> | undefined, b: CreateFileResponse | PlainMessage<CreateFileResponse> | undefined): boolean {
-    return proto3.util.equals(CreateFileResponse, a, b);
-  }
-}
-
-/**
  * @generated from message envd.filesystem.v1.CreateDirRequest
  */
 export class CreateDirRequest extends Message<CreateDirRequest> {
@@ -183,11 +85,6 @@ export class CreateDirRequest extends Message<CreateDirRequest> {
    * @generated from field: string path = 1;
    */
   path = "";
-
-  /**
-   * @generated from field: bool create_parents = 2;
-   */
-  createParents = false;
 
   /**
    * @generated from field: string mode = 3;
@@ -208,7 +105,6 @@ export class CreateDirRequest extends Message<CreateDirRequest> {
   static readonly typeName = "envd.filesystem.v1.CreateDirRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "create_parents", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 3, name: "mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "owner", kind: "message", T: Credentials },
   ]);
@@ -276,14 +172,9 @@ export class CopyRequest extends Message<CopyRequest> {
   destination = "";
 
   /**
-   * @generated from field: bool recursive = 3;
+   * @generated from field: string mode = 3;
    */
-  recursive = false;
-
-  /**
-   * @generated from field: envd.permissions.v1.Credentials owner = 4;
-   */
-  owner?: Credentials;
+  mode = "";
 
   constructor(data?: PartialMessage<CopyRequest>) {
     super();
@@ -295,8 +186,7 @@ export class CopyRequest extends Message<CopyRequest> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "source", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "destination", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "recursive", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 4, name: "owner", kind: "message", T: Credentials },
+    { no: 3, name: "mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CopyRequest {
@@ -509,11 +399,6 @@ export class RenameRequest extends Message<RenameRequest> {
    */
   destination = "";
 
-  /**
-   * @generated from field: envd.permissions.v1.Credentials owner = 4;
-   */
-  owner?: Credentials;
-
   constructor(data?: PartialMessage<RenameRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -524,7 +409,6 @@ export class RenameRequest extends Message<RenameRequest> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "source", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "destination", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "owner", kind: "message", T: Credentials },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RenameRequest {
@@ -589,11 +473,6 @@ export class EntryInfo extends Message<EntryInfo> {
    */
   type = FileType.UNSPECIFIED;
 
-  /**
-   * @generated from field: envd.permissions.v1.Credentials owner = 6;
-   */
-  owner?: Credentials;
-
   constructor(data?: PartialMessage<EntryInfo>) {
     super();
     proto3.util.initPartial(data, this);
@@ -604,7 +483,6 @@ export class EntryInfo extends Message<EntryInfo> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "type", kind: "enum", T: proto3.getEnumType(FileType) },
-    { no: 6, name: "owner", kind: "message", T: Credentials },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): EntryInfo {
@@ -786,11 +664,6 @@ export class FilesystemEvent extends Message<FilesystemEvent> {
    */
   type = EventType.UNSPECIFIED;
 
-  /**
-   * @generated from field: envd.filesystem.v1.EntryInfo entry = 3;
-   */
-  entry?: EntryInfo;
-
   constructor(data?: PartialMessage<FilesystemEvent>) {
     super();
     proto3.util.initPartial(data, this);
@@ -801,7 +674,6 @@ export class FilesystemEvent extends Message<FilesystemEvent> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "type", kind: "enum", T: proto3.getEnumType(EventType) },
-    { no: 3, name: "entry", kind: "message", T: EntryInfo },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FilesystemEvent {

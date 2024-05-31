@@ -18,19 +18,21 @@ import re  # noqa: F401
 import json
 
 
-from typing import Any, Dict, List
-from pydantic import BaseModel, Field, StrictStr, conlist
+from typing import Any, Dict, Optional
+from pydantic import BaseModel, Field, conint
 
 
-class TemplatesTemplateIDBuildsBuildIDLogsPostRequest(BaseModel):
+class SandboxesSandboxIDTimeoutPostRequest(BaseModel):
     """
-    TemplatesTemplateIDBuildsBuildIDLogsPostRequest
+    SandboxesSandboxIDTimeoutPostRequest
     """
 
-    api_secret: StrictStr = Field(..., alias="apiSecret", description="API secret")
-    logs: conlist(StrictStr) = Field(...)
+    duration: Optional[conint(strict=True, ge=0)] = Field(
+        None,
+        description="Duration in seconds from the current time after which the sandbox should expire",
+    )
     additional_properties: Dict[str, Any] = {}
-    __properties = ["apiSecret", "logs"]
+    __properties = ["duration"]
 
     class Config:
         """Pydantic configuration"""
@@ -47,10 +49,8 @@ class TemplatesTemplateIDBuildsBuildIDLogsPostRequest(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(
-        cls, json_str: str
-    ) -> TemplatesTemplateIDBuildsBuildIDLogsPostRequest:
-        """Create an instance of TemplatesTemplateIDBuildsBuildIDLogsPostRequest from a JSON string"""
+    def from_json(cls, json_str: str) -> SandboxesSandboxIDTimeoutPostRequest:
+        """Create an instance of SandboxesSandboxIDTimeoutPostRequest from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self):
@@ -66,16 +66,16 @@ class TemplatesTemplateIDBuildsBuildIDLogsPostRequest(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> TemplatesTemplateIDBuildsBuildIDLogsPostRequest:
-        """Create an instance of TemplatesTemplateIDBuildsBuildIDLogsPostRequest from a dict"""
+    def from_dict(cls, obj: dict) -> SandboxesSandboxIDTimeoutPostRequest:
+        """Create an instance of SandboxesSandboxIDTimeoutPostRequest from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return TemplatesTemplateIDBuildsBuildIDLogsPostRequest.parse_obj(obj)
+            return SandboxesSandboxIDTimeoutPostRequest.parse_obj(obj)
 
-        _obj = TemplatesTemplateIDBuildsBuildIDLogsPostRequest.parse_obj(
-            {"api_secret": obj.get("apiSecret"), "logs": obj.get("logs")}
+        _obj = SandboxesSandboxIDTimeoutPostRequest.parse_obj(
+            {"duration": obj.get("duration")}
         )
         # store additional fields in additional_properties
         for _key in obj.keys():

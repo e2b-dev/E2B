@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { CopyRequest, CopyResponse, CreateDirRequest, CreateDirResponse, CreateFileRequest, CreateFileResponse, ListDirRequest, ListDirResponse, RemoveRequest, RemoveResponse, RenameRequest, RenameResponse, StatRequest, StatResponse, WatchRequest, WatchResponse } from "./filesystem_pb.js";
+import { CopyRequest, CopyResponse, CreateDirRequest, CreateDirResponse, ListDirRequest, ListDirResponse, RemoveRequest, RemoveResponse, RenameRequest, RenameResponse, StatRequest, StatResponse, WatchRequest, WatchResponse } from "./filesystem_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -19,15 +19,6 @@ export const FilesystemService = {
       name: "Stat",
       I: StatRequest,
       O: StatResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * @generated from rpc envd.filesystem.v1.FilesystemService.CreateFile
-     */
-    createFile: {
-      name: "CreateFile",
-      I: CreateFileRequest,
-      O: CreateFileResponse,
       kind: MethodKind.Unary,
     },
     /**

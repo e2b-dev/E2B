@@ -19,12 +19,12 @@ import json
 
 from datetime import datetime
 from typing import Any, Dict, Optional
-from pydantic import BaseModel, Field, StrictInt, StrictStr
+from pydantic import BaseModel, Field, StrictStr, conint
 
 
-class RunningSandboxes(BaseModel):
+class RunningSandbox(BaseModel):
     """
-    RunningSandboxes
+    RunningSandbox
     """
 
     template_id: StrictStr = Field(
@@ -42,11 +42,11 @@ class RunningSandboxes(BaseModel):
     started_at: datetime = Field(
         ..., alias="startedAt", description="Time when the sandbox was started"
     )
-    cpu_count: StrictInt = Field(
+    cpu_count: conint(strict=True, le=8, ge=1) = Field(
         ..., alias="cpuCount", description="CPU cores for the sandbox"
     )
-    memory_mb: StrictInt = Field(
-        ..., alias="memoryMB", description="Memory limit for the sandbox in MB"
+    memory_mb: conint(strict=True, le=8192, ge=128) = Field(
+        ..., alias="memoryMB", description="Memory for the sandbox in MB"
     )
     metadata: Optional[Dict[str, StrictStr]] = None
     additional_properties: Dict[str, Any] = {}
@@ -76,8 +76,8 @@ class RunningSandboxes(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> RunningSandboxes:
-        """Create an instance of RunningSandboxes from a JSON string"""
+    def from_json(cls, json_str: str) -> RunningSandbox:
+        """Create an instance of RunningSandbox from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self):
@@ -93,15 +93,15 @@ class RunningSandboxes(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> RunningSandboxes:
-        """Create an instance of RunningSandboxes from a dict"""
+    def from_dict(cls, obj: dict) -> RunningSandbox:
+        """Create an instance of RunningSandbox from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return RunningSandboxes.parse_obj(obj)
+            return RunningSandbox.parse_obj(obj)
 
-        _obj = RunningSandboxes.parse_obj(
+        _obj = RunningSandbox.parse_obj(
             {
                 "template_id": obj.get("templateID"),
                 "alias": obj.get("alias"),

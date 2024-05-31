@@ -42,6 +42,14 @@ class ProcessServiceClient:
             json=json,
             **opts
         )
+        self._send_process_input_stream = connect.Client(
+            pool=pool,
+            url=f"{base_url}/{ProcessServiceName}/SendProcessInputStream",
+            response_type=envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputStreamResponse,
+            compressor=compressor,
+            json=json,
+            **opts
+        )
         self._send_process_input = connect.Client(
             pool=pool,
             url=f"{base_url}/{ProcessServiceName}/SendProcessInput",
@@ -70,6 +78,9 @@ class ProcessServiceClient:
 
     def update_process(self, req: envd_dot_process_dot_v1_dot_process__pb2.UpdateProcessRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.UpdateProcessResponse:
         return self._update_process.call_unary(req, **opts)
+
+    def send_process_input_stream(self, req: envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputStreamRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputStreamResponse:
+        return self._send_process_input_stream.call_client_stream(req, **opts)
 
     def send_process_input(self, req: envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputResponse:
         return self._send_process_input.call_unary(req, **opts)
