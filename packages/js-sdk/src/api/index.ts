@@ -3,19 +3,19 @@ import type { OpArgType, TypedFetch } from 'openapi-typescript-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
-import { DEBUG, DOMAIN, SECURE } from '../constants'
+import { DOMAIN, DEBUG } from '../constants'
 
 const { Fetcher } = fetcher
+
+export interface APIOpts {
+  domain?: string
+  debug?: boolean
+}
 
 class APIClient {
   private client = Fetcher.for<paths>()
 
-  constructor(private opts?: {
-    secure?: boolean,
-    domain?: string,
-    debug?: boolean,
-  }
-  ) {
+  constructor(private opts?: APIOpts) {
     this.client.configure({
       baseUrl: this.apiHost,
       init: {
@@ -24,16 +24,13 @@ class APIClient {
     })
   }
 
-  get secure() {
-    return this.opts?.secure ?? SECURE
+
+  get debug() {
+    return this.opts?.debug ?? DEBUG
   }
 
   get domain() {
     return this.opts?.domain ?? DOMAIN
-  }
-
-  get debug() {
-    return this.opts?.debug ?? DEBUG
   }
 
   get apiDomain() {
@@ -41,7 +38,7 @@ class APIClient {
   }
 
   get apiHost() {
-    return `${this.secure && !this.debug ? 'https' : 'http'}://${this.apiDomain}`
+    return `${this.debug ? 'http' : 'https'}://${this.apiDomain}`
   }
 
   get api() {

@@ -7,7 +7,7 @@ export function getApiKey(apiKey?: string): string {
     throw new AuthenticationError(
       'API key is required, please visit https://e2b.dev/docs to get your API key. ' +
       'You can either set the environment variable `E2B_API_KEY` ' +
-      "or you can pass it directly to the sandbox like Sandbox.create({apiKey: 'e2b_...'})",
+      "or you can pass it directly to the sandbox like Sandbox.create({ apiKey: 'e2b_...' })",
     )
   }
 

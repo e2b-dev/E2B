@@ -20,12 +20,7 @@ export type DownloadFileFormat =
   | 'text'
 
 export interface SandboxOpts extends SandboxConnectionOpts {
-  onScanPorts?: ScanOpenPortsHandler;
-  /** Timeout for sandbox to start */
   timeout?: number;
-  onStdout?: (out: ProcessMessage) => Promise<void> | void;
-  onStderr?: (out: ProcessMessage) => Promise<void> | void;
-  onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
 }
 
 
@@ -54,7 +49,7 @@ export interface SandboxOpts extends SandboxConnectionOpts {
  * await sandbox.close()
  * ```
  */
-export class Sandbox extends SandboxConnection {
+export class Sandbox2 extends SandboxConnection {
   /**
    * Terminal manager used to create interactive terminals.
    */

@@ -1,4 +1,4 @@
-import { IRpcNotification, RpcWebSocketClient } from './rpc'
+import { IRpcNotification } from './sandboxRpc'
 
 import { APIClient, components, withAPIKey } from '../api'
 import {
@@ -21,20 +21,12 @@ import { EnvVars } from './envVars'
 import { getApiKey } from '../utils/apiKey'
 import { watchDirect } from '../gen'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SubscriptionHandler = (result: any) => void
-
 type Service =
   | typeof processService
   | typeof codeSnippetService
   | typeof filesystemService
   | typeof terminalService
 
-interface Subscriber {
-  service: Service
-  subID: string
-  handler: SubscriptionHandler
-}
 
 export interface Logger {
   debug?: (message: string, ...args: unknown[]) => void
@@ -43,7 +35,7 @@ export interface Logger {
   error?: (message: string, ...args: unknown[]) => void
 }
 
-export interface SandboxMetadata {
+export type SandboxMetadata = {
   [key: string]: string
 }
 
@@ -58,16 +50,8 @@ export interface RunningSandbox {
 export interface SandboxConnectionOpts {
   /**
    * Sandbox Template ID or name.
-   *
-   * If not specified, the 'base' template will be used.
    */
   template?: string
-  /**
-   * @deprecated Use `template` instead.
-   *
-   * Sandbox Template ID or name.
-   */
-  id?: string
   apiKey?: string
   /**
    * Domain to use for the API requests. If not provided, the `E2B_DOMAIN` environment variable will be used.
@@ -87,18 +71,13 @@ export interface SandboxConnectionOpts {
   __debug_devEnv?: 'remote' | 'local'
 }
 
-export interface CallOpts {
-  /** Timeout for the call in milliseconds */
-  timeout?: number
-}
-
 export class SandboxConnection {
   /**
    * Default working directory used in the sandbox.
    *
    * You can change the working directory by setting the `cwd` property.
    **/
-  cwd: string | undefined
+  cwd?: string
   /**
    * Default environment variables used in the sandbox.
    *
@@ -107,12 +86,9 @@ export class SandboxConnection {
   envVars: EnvVars
 
   protected readonly logger: Logger
-  protected sandbox?: components['schemas']['Sandbox']
-  protected isOpen = false
+  protected readonly sandbox?: components['schemas']['Sandbox']
 
   private readonly apiKey: string
-  private readonly rpc = new RpcWebSocketClient()
-  private subscribers: Subscriber[] = []
   private readonly client: APIClient
 
   // let's keep opts readonly, but public - for convenience, mainly when debugging
@@ -123,11 +99,11 @@ export class SandboxConnection {
     if (!createCalled) {
       throw new Error(
         "Sandbox can't be instantiated directly, use a `.create()` method instead of calling `new` to get a new sandbox.\n\n" +
-          'Example of correct usage:\n' +
-          '```\n' +
-          "import { CodeInterpreter } from '@e2b/code-interpreter'\n" +
-          'const myCodeInterpreter = await CodeInterpreter.create()\n' +
-          '``',
+        'Example of correct usage:\n' +
+        '```\n' +
+        "import { CodeInterpreter } from '@e2b/code-interpreter'\n" +
+        'const myCodeInterpreter = await CodeInterpreter.create()\n' +
+        '``',
       )
     }
 
@@ -181,94 +157,6 @@ export class SandboxConnection {
     return withAPIKey(
       this.client.api.path('/sandboxes').method('post').create(),
     )
-  }
-
-  /**
-   * List all running sandboxes
-   *
-   * @param apiKey API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
-   * @param domain Domain to use for the API requests. If not provided, the `E2B_DOMAIN` environment variable will be used.
-   */
-  static async list(
-    apiKey?: string,
-    domain?: string,
-  ): Promise<RunningSandbox[]> {
-    apiKey = getApiKey(apiKey)
-
-    const client = new APIClient({ domain })
-
-    const listSandboxes = withAPIKey(
-      client.api.path('/sandboxes').method('get').create(),
-    )
-
-    try {
-      const res = await listSandboxes(apiKey, {})
-
-      return res.data.map((sandbox) => ({
-        sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,
-        templateID: sandbox.templateID,
-        cpuCount: sandbox.cpuCount,
-        memoryMB: sandbox.memoryMB,
-        ...(sandbox.alias && { alias: sandbox.alias }),
-        ...(sandbox.metadata && { metadata: sandbox.metadata }),
-        startedAt: new Date(sandbox.startedAt),
-      }))
-    } catch (e) {
-      if (e instanceof listSandboxes.Error) {
-        const error = e.getActualType()
-        if (error.status === 401) {
-          throw new Error(
-            `Error listing sandboxes - (${error.status}) unauthenticated: ${error.data.message}`,
-          )
-        }
-        if (error.status === 500) {
-          throw new Error(
-            `Error listing sandboxes - (${error.status}) server error: ${error.data.message}`,
-          )
-        }
-      }
-      throw e
-    }
-  }
-
-  /**
-   * List all running sandboxes
-   * @param sandboxID ID of the sandbox to kill
-   * @param apiKey API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
-   * @param domain Domain to use for the API requests. If not provided, the `E2B_DOMAIN` environment variable will be used.
-   */
-  static async kill(
-    sandboxID: string,
-    apiKey?: string,
-    domain?: string,
-  ): Promise<void> {
-    apiKey = getApiKey(apiKey)
-
-    const shortID = sandboxID.split('-')[0]
-
-    const client = new APIClient({ domain })
-    const killSandbox = withAPIKey(
-      client.api.path('/sandboxes/{sandboxID}').method('delete').create(),
-    )
-
-    try {
-      await killSandbox(apiKey, { sandboxID: shortID })
-    } catch (e) {
-      if (e instanceof killSandbox.Error) {
-        const error = e.getActualType()
-        if (error.status === 401) {
-          throw new Error(
-            `Error killing sandbox (${sandboxID}) - (${error.status}) unauthenticated: ${error.data.message}`,
-          )
-        }
-        if (error.status === 500) {
-          throw new Error(
-            `Error killing sandbox (${sandboxID}) - (${error.status}) server error: ${error.data.message}`,
-          )
-        }
-      }
-      throw e
-    }
   }
 
   /**
@@ -394,8 +282,8 @@ export class SandboxConnection {
       return results.map((r) =>
         r.status === 'fulfilled' ? r.value : undefined,
       ) as {
-        [P in keyof T]: Awaited<T[P]>
-      }
+          [P in keyof T]: Awaited<T[P]>
+        }
     }
 
     await Promise.all(
@@ -432,8 +320,7 @@ export class SandboxConnection {
 
     if (typeof subID !== 'string') {
       throw new Error(
-        `Cannot subscribe to ${service}_${method}${
-          params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
+        `Cannot subscribe to ${service}_${method}${params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
         }. Expected response should have been a subscription ID, instead we got ${JSON.stringify(
           subID,
         )}`,
@@ -446,8 +333,7 @@ export class SandboxConnection {
       subID,
     })
     this.logger.debug?.(
-      `Subscribed to "${service}_${method}"${
-        params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
+      `Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
       } with id "${subID}"`,
     )
 
@@ -583,8 +469,7 @@ export class SandboxConnection {
 
     this.rpc.onError(async (err) => {
       this.logger.debug?.(
-        `Error in WebSocket of sandbox "${this.id}": ${
-          err.message ?? err.code ?? err.toString()
+        `Error in WebSocket of sandbox "${this.id}": ${err.message ?? err.code ?? err.toString()
         }. Trying to reconnect...`,
       )
 
@@ -601,8 +486,7 @@ export class SandboxConnection {
         } catch (err: any) {
           // not warn, because this is somewhat expected behaviour during initialization
           this.logger.debug?.(
-            `Failed reconnecting to sandbox "${this.id}": ${
-              err.message ?? err.code ?? err.toString()
+            `Failed reconnecting to sandbox "${this.id}": ${err.message ?? err.code ?? err.toString()
             }`,
           )
         }
@@ -617,72 +501,22 @@ export class SandboxConnection {
 
     this.rpc.onNotification.push(this.handleNotification.bind(this))
 
-    // We invoke the rpc.connect method in a separate promise because when using edge
-    // the rpc.connect does not throw or end on error.
-    ;(async () => {
-      try {
-        this.logger.debug?.(`Connecting to sandbox "${this.id}"`)
-        await this.rpc.connect(sandboxURL)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        // not warn, because this is somewhat expected behaviour during initialization
-        this.logger.debug?.(
-          `Error connecting to sandbox "${this.id}": ${
-            err.message ?? err.code ?? err.toString()
-          }`,
-        )
-      }
-    })()
+      // We invoke the rpc.connect method in a separate promise because when using edge
+      // the rpc.connect does not throw or end on error.
+      ; (async () => {
+        try {
+          this.logger.debug?.(`Connecting to sandbox "${this.id}"`)
+          await this.rpc.connect(sandboxURL)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+          // not warn, because this is somewhat expected behaviour during initialization
+          this.logger.debug?.(
+            `Error connecting to sandbox "${this.id}": ${err.message ?? err.code ?? err.toString()
+            }`,
+          )
+        }
+      })()
 
     await openingPromise
-  }
-
-  private handleNotification(data: IRpcNotification) {
-    this.logger.debug?.('Handling notification:', data)
-    this.subscribers
-      .filter((s) => s.subID === data.params?.subscription)
-      .forEach((s) => s.handler(data.params?.result))
-  }
-
-  private async refresh(sandboxID: string) {
-    this.logger.debug?.(`Started refreshing sandbox "${sandboxID}"`)
-
-    try {
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        if (!this.isOpen) {
-          this.logger.debug?.(
-            `Cannot refresh sandbox ${this.id} - it was closed`,
-          )
-          return
-        }
-
-        await wait(SANDBOX_REFRESH_PERIOD)
-
-        try {
-          await this.refreshSandbox(this.apiKey, {
-            sandboxID,
-            duration: 0,
-          })
-          this.logger.debug?.(`Refreshed sandbox "${sandboxID}"`)
-        } catch (e) {
-          if (e instanceof this.refreshSandbox.Error) {
-            const error = e.getActualType()
-            if (error.status === 404) {
-              this.logger.warn?.(
-                `Error refreshing sandbox - (${error.status}): ${error.data.message}`,
-              )
-              return
-            }
-            this.logger.warn?.(
-              `Refreshing sandbox "${sandboxID}" failed - (${error.status})`,
-            )
-          }
-        }
-      }
-    } finally {
-      this.logger.debug?.(`Stopped refreshing sandbox "${sandboxID}"`)
-      await this.close()
-    }
   }
 }
