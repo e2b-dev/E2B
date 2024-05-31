@@ -12,25 +12,30 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Copy, Delete } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useToast } from '../ui/use-toast'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { User } from '@supabase/supabase-js'
+import { Team } from '@/utils/useUser'
 
 
-export const KeysContent = ({user}: {user: User}) => {
+export const KeysContent = ({user, currentTeam}: {user: User, currentTeam: Team}) => {
   const supabase = createPagesBrowserClient()
 
   const { toast } = useToast()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentKey, setCurrentKey] = useState<string | null>(null)
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
+  const [apiKeys, setApiKeys] = useState<any[]>([])
 
-  //@ts-ignore
-  const [apiKeys, setApiKeys] = useState<{ key: string, createdAt: string }[]>(user?.apiKeys.map((apiKey: any) => ({
-    key: apiKey.api_key,
-    createdAt: apiKey.created_at,
-  })) || [])
+  useEffect(() => {
+    //@ts-ignore
+    const filteredApiKeys = user?.apiKeys.filter((apiKey: any) => apiKey.team_id === currentTeam.id).map((apiKey: any) => ({
+      key: apiKey.api_key,
+      createdAt: apiKey.created_at,
+    }))
+    setApiKeys(filteredApiKeys)
+  }, [currentTeam, user])
 
   const closeDialog = () => setIsDialogOpen(false)
   const openDialog = (key: string) => {
@@ -57,10 +62,8 @@ export const KeysContent = ({user}: {user: User}) => {
 
   const addApiKey = async() => {
 
-    // TODO, make team selection real
-    //@ts-ignore
-    const teamId = user?.teams[0].id as string
-
+    const teamId = currentTeam.id
+    
     const res = await fetch('/api/create-api-key', {
       method: 'POST',
       headers: {
@@ -78,7 +81,7 @@ export const KeysContent = ({user}: {user: User}) => {
       title: 'API key created',
     })
     
-    setApiKeys([...apiKeys, {key: newKey.api_key, createdAt: newKey.created_at}])
+    setApiKeys([...apiKeys, {key: newKey.api_key, team_id: teamId, createdAt: newKey.created_at}])
   }
 
   const copyToClipboard = (text: string) => {
@@ -90,9 +93,9 @@ export const KeysContent = ({user}: {user: User}) => {
 
   const maskApiKey = (key: string) => {
     const firstFour = key.slice(0, 4)
-    const lastTwo = key.slice(-2)
-    const stars = '*'.repeat(key.length - 6) // use fixed-width character
-    return `${firstFour}${stars}${lastTwo}`
+    const lastFour = key.slice(-4)
+    const stars = '*'.repeat(key.length - 8) // use fixed-width character
+    return `${firstFour}${stars}${lastFour}`
   }
 
   return (

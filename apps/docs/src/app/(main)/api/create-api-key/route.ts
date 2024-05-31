@@ -16,6 +16,7 @@ const generateApiKey = (): string => {
   return apiKey
 }
 
+// TODO this needs some auth
 export async function POST(request: Request) {
   
   const { teamId } = await request.json()
@@ -30,13 +31,11 @@ export async function POST(request: Request) {
     .from('team_api_keys')
     .insert(newKey)
 
-
   if (error) {
     // TODO: Add sentry event here
     console.log(error)
     return new Response('Failed creating new api key', { status: 503 })
   } 
-
 
   return new Response(JSON.stringify({ api_key: newKey.api_key, createdAt: newKey.created_at }), { status: 200 })
 

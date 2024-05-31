@@ -11,8 +11,33 @@ function formatCurrency(value: number) {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+const invoiceUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/invoices`
+
+interface Invoice {
+  cost: number
+  paid: boolean
+  url: string
+  date_created: string
+}
+
 export const BillingContent = () => {
-  const { credits, usage, isLoading  } = useUsage()
+  const { credits, isLoading  } = useUsage()
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+
+  useEffect(() => {
+    const getInvoices = async function getInvoices() {
+      const res = await fetch(invoiceUrl, {
+        headers: {
+          // TODO, figure out how data is passed here to get api key
+          'X-Team-API-Key': '',
+        },
+      })
+      const invoices = await res.json() as Invoice[]
+      setInvoices(invoices)
+    }
+    getInvoices()
+  }
+  , [])
   
   return (
     <div className="flex flex-col w-full h-full pb-10">
@@ -24,10 +49,11 @@ export const BillingContent = () => {
       <div className='flex flex-col space-y-2 pb-10'>
         <h2 className='font-bold text-xl'>Credits left</h2>
         <span className="text-sm">Credits automatically are used to bill your team</span>
-        {credits && (
-          <span className="text-sm font-mono text-green-300/80">${formatCurrency(credits)}</span>
+        {isLoading ? (
+          <span className="text-sm font-mono text-neutral-400">Loading...</span>
+        ) : (
+          <span className="text-sm font-mono text-green-300/80">${formatCurrency(credits ?? 0)}</span>
         )}
-        {isLoading && <span className="text-sm font-mono text-neutral-400">Loading...</span>}
       </div>
 
       <div className='flex items-center space-x-4 pb-4'>
@@ -69,17 +95,19 @@ export const BillingContent = () => {
       <TableRow className='hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5 '>
         <TableHead>Date</TableHead>
         <TableHead>Cost</TableHead>
-        <TableHead>Billed</TableHead>
+        <TableHead>Paid</TableHead>
+        <TableHead>Invoice url</TableHead>
       </TableRow>
       </TableHeader>
       <TableBody>
-      {usage.map((usageItem, index) => (
+      {invoices && invoices.length > 0 && invoices.map((item, index) => (
         <TableRow 
         className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
         key={index}>
-          <TableCell>{usageItem.month}/{usageItem.year}</TableCell>
-          <TableCell>{usageItem.total_cost}</TableCell>
-          <TableCell>{usageItem.unpaid_cost}</TableCell>
+          <TableCell>{new Date(item.date_created).toLocaleDateString()}</TableCell>
+          <TableCell>${item.cost.toFixed(2)}</TableCell>
+          <TableCell>{item.paid ? 'Paid' : 'Unpaid'}</TableCell>
+          <TableCell><a className='hover:cursor-pointer' href={item.url} target="_blank" rel="noreferrer noopener">View invoice</a></TableCell>
         </TableRow>
         ))}
       </TableBody>

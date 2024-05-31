@@ -6,7 +6,7 @@ import { User } from '@supabase/supabase-js'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 
 
-export const GeneralContent = ({user}: {user: User}) => {
+export const PersonalContent = ({user}: {user: User}) => {
   const { toast } = useToast()
 
   const updateUserEmail = async() => {
@@ -29,7 +29,7 @@ export const GeneralContent = ({user}: {user: User}) => {
     <div className="flex flex-col h-full">
 
       <h1 className="font-bold pb-10 text-xl">
-        Personal info
+        Personal settings
       </h1>
       <span className='text-neutral-300 pb-2'>Email:</span>
       <div className='flex w-full items-center space-x-2 pb-10'>

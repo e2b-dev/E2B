@@ -3,20 +3,20 @@
 import { useEffect, useState } from 'react'
 import { BarChart, CreditCard, Key, LucideIcon, Settings, Users } from 'lucide-react'
 
-import { GeneralContent } from '@/components/Dashboard/General'
 import { BillingContent } from '@/components/Dashboard/Billing'
 import { TeamContent } from '@/components/Dashboard/Team'
 
-import { useUser } from '@/utils/useUser'
+import { Team, useUser } from '@/utils/useUser'
 import { User } from '@supabase/supabase-js'
 import { KeysContent } from '@/components/Dashboard/Keys'
 import { UsageContent } from '@/components/Dashboard/Usage'
 import { AccountSelector } from '@/components/Dashboard/AccountSelector'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { PersonalContent } from '@/components/Dashboard/Personal'
 
 
 // TODO: Sandbox and Templates tab deleted for now
-const menuLabels = ['general', 'keys', 'usage' ,'billing', 'team',] as const
+const menuLabels = ['personal', 'keys', 'usage' ,'billing', 'team',] as const
 type MenuLabel  = typeof menuLabels[number]
 
 export default function Dashboard() {
@@ -25,8 +25,17 @@ export default function Dashboard() {
   const searchParams = useSearchParams()
 
   const tab = searchParams!.get('tab')
-  const initialTab = tab && menuLabels.includes(tab as MenuLabel) ? (tab as MenuLabel) : 'general'
+  const initialTab = tab && menuLabels.includes(tab as MenuLabel) ? (tab as MenuLabel) : 'personal'
   const [selectedItem, setSelectedItem] = useState<MenuLabel>(initialTab)
+  const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
+  const [teams, setTeams] = useState<Team[]>([])
+  
+  useEffect(() => {
+    if (user) {
+      setCurrentTeam(user.teams[0]) // seems like a sensible default
+      setTeams(user.teams)
+    }
+  }, [user])
 
   useEffect(() => {
     if (tab !== selectedItem) {
@@ -43,24 +52,24 @@ export default function Dashboard() {
   if (isLoading) {
     return <div>Loading...</div>
   }
-  if (user) {
+  if (user && currentTeam) {
     return (
       <div className="flex min-h-screen flex-row pt-32 px-32">
-        <Sidebar selectedItem={selectedItem} setSelectedItem={setSelectedItem} user={user} />
+        <Sidebar selectedItem={selectedItem} setSelectedItem={setSelectedItem} teams={teams} user={user} currentTeam={currentTeam} setCurrentTeam={setCurrentTeam} setTeams={setTeams} />
         <div className="flex-1 pl-10">
           <h2 className='text-2xl mb-2 font-bold'>{selectedItem[0].toUpperCase() + selectedItem.slice(1)}</h2>
           <div className='border border-white/5 w-full h-[1px] mb-10'/>
-          <MainContent selectedItem={selectedItem} user={user} />
+          <MainContent selectedItem={selectedItem} user={user} team={currentTeam} />
         </div>
       </div>
     )
   }
 }
 
-const Sidebar = ({ selectedItem, setSelectedItem, user }) => (
+const Sidebar = ({ selectedItem, setSelectedItem, teams, user ,currentTeam, setCurrentTeam, setTeams }) => (
   <div className="h-full w-48 space-y-2">
 
-    <AccountSelector user={user} />
+    <AccountSelector teams={teams} user={user} currentTeam={currentTeam} setCurrentTeam={setCurrentTeam} setTeams={setTeams} />
 
     {menuLabels.map((label) => (
       <MenuItem
@@ -75,7 +84,7 @@ const Sidebar = ({ selectedItem, setSelectedItem, user }) => (
 )
 
 const iconMap: { [key in MenuLabel]: LucideIcon } = {
-  general: Settings,
+  personal: Settings,
   keys: Key,
   usage: BarChart,
   billing: CreditCard,
@@ -93,18 +102,18 @@ const MenuItem = ({ icon: Icon, label , selected, onClick }: { icon: LucideIcon;
 )
 
 
-const MainContent = ({ selectedItem, user }: { selectedItem: MenuLabel, user: User }) => {
+const MainContent = ({ selectedItem, user, team }: { selectedItem: MenuLabel, user: User, team: Team}) => {
   switch (selectedItem) {
-    case 'general':
-      return <GeneralContent user={user} />
+    case 'personal':
+      return <PersonalContent user={user} />
     case 'keys':
-      return <KeysContent user={user} />
+      return <KeysContent user={user} currentTeam={team} />
     case 'usage':
       return <UsageContent />
     case 'billing':
       return <BillingContent />
     case 'team':
-      return <TeamContent />
+      return <TeamContent team={team} user={user} />
     default:
       return <ErrorContent />
   }
