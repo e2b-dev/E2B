@@ -100,16 +100,25 @@ export const BillingContent = () => {
       </TableRow>
       </TableHeader>
       <TableBody>
-      {invoices && invoices.length > 0 && invoices.map((item, index) => (
-        <TableRow 
-        className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
-        key={index}>
-          <TableCell>{new Date(item.date_created).toLocaleDateString()}</TableCell>
-          <TableCell>${item.cost.toFixed(2)}</TableCell>
-          <TableCell>{item.paid ? 'Paid' : 'Unpaid'}</TableCell>
-          <TableCell><a className='hover:cursor-pointer' href={item.url} target="_blank" rel="noreferrer noopener">View invoice</a></TableCell>
+      {invoices && invoices.length > 0 ? (
+        invoices.map((item, index) => (
+          <TableRow 
+            className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
+            key={index}
+          >
+            <TableCell>{new Date(item.date_created).toLocaleDateString()}</TableCell>
+            <TableCell>${item.cost.toFixed(2)}</TableCell>
+            <TableCell>{item.paid ? 'Paid' : 'Unpaid'}</TableCell>
+            <TableCell><a className='hover:cursor-pointer' href={item.url} target="_blank" rel="noreferrer noopener">View invoice</a></TableCell>
+          </TableRow>
+        ))
+      ) : (
+        <TableRow className='border-b border-white/5'>
+          <TableCell colSpan={4} className='text-center'>
+            No invoices found
+          </TableCell>
         </TableRow>
-        ))}
+      )}
       </TableBody>
       </Table>
       
