@@ -100,8 +100,7 @@ function SocialLink({
 
 function SmallPrint() {
   return (
-    <div
-      className="flex flex-col items-start items-center justify-between gap-5 border-t border-zinc-900/5 pt-8 dark:border-white/5 sm:flex-row">
+    <div className="flex flex-col w-full items-center px-10 justify-between gap-5 pt-8 dark:border-white/5 sm:flex-row">
       <div className="flex flex-col items-center justify-start lg:items-start">
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
           &copy; FoundryLabs, Inc. {new Date().getFullYear()}. All rights reserved.
@@ -139,6 +138,16 @@ export function Footer() {
     <footer className="mx-auto w-full max-w-2xl space-y-10 pb-16 lg:max-w-5xl">
       <PageNavigation/>
       <SmallPrint/>
+    </footer>
+  )
+}
+
+export function FooterMain() {
+  return (
+    <footer className="flex w-full space-y-10 pb-16">
+      <div className="flex flex-col w-full items-center justify-center border-t border-zinc-900/5 dark:border-white/5">
+        <SmallPrint/>
+      </div>
     </footer>
   )
 }

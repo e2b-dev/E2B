@@ -6,12 +6,15 @@ import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
 
-type Team = {
+export type Team = {
   id: string
   name: string
   tier: string
   is_default: boolean
   email: string
+  team_billing: {
+    credit_card_added: boolean
+  }[]
 }
 
 type UserContextType = {
@@ -98,12 +101,21 @@ export const CustomUserContextProvider = (props) => {
       if (!session) return
       if (!session.user.id) return
 
-      // @ts-ignore
-      const { data: userTeams, teamsError } = await supabase
+
+      const { data: userTeams } = await supabase
         .from('users_teams')
         .select('teams (id, name, is_default, tier, email)')
-        .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+        .eq('user_id', session?.user.id)
 
+        // console.log('info', info)
+
+      // @ts-ignore
+      // const { data: userTeams, teamsError } = await supabase
+      //   .from('users_teams')
+      //   .select('teams (id, name, is_default, tier, email, team_billing (credit_card_added))')
+      //   .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+      
+      const teamsError = null
       if (teamsError) Sentry.captureException(teamsError)
       // TODO: Adjust when user can be part of multiple teams
       // @ts-ignore
