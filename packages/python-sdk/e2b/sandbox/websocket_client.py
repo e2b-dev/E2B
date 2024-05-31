@@ -125,20 +125,20 @@ class WebSocket:
 
 class E2BConnect(Connect):
     async def __aiter__(self) -> AsyncIterator[WebSocketClientProtocol]:
-        tries = 0
-        max_tries = 10
-        backoff_delay = 0.2
+        retries = 0
+        max_retries = 12
+        backoff_delay = 0.1
         while True:
             try:
                 async with self as protocol:
                     yield protocol
             except Exception:
-                tries += 1
-                if tries >= max_tries:
+                retries += 1
+                if retries >= max_retries:
                     raise SandboxException("Failed to connect to the server")
                 # Add a random initial delay between 0 and 5 seconds.
                 # See 7.2.3. Recovering from Abnormal Closure in RFC 6544.
-                if backoff_delay == 0.2:
+                if backoff_delay == 0.1:
                     initial_delay = random.random()
                     self.logger.info(
                         "! connect failed; reconnecting in %.1f seconds",
@@ -154,9 +154,10 @@ class E2BConnect(Connect):
                     )
                     await asyncio.sleep(int(backoff_delay))
                 # Increase delay with truncated exponential backoff.
-                backoff_delay = backoff_delay * 1.1
+                if retries > 4:
+                    backoff_delay = backoff_delay * 1.2
                 backoff_delay = min(backoff_delay, 10)
                 continue
             else:
                 # Connection succeeded - reset backoff delay
-                backoff_delay = 0.2
+                backoff_delay = 0.1
