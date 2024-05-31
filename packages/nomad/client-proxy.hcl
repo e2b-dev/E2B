@@ -67,9 +67,9 @@ job "client-proxy" {
       driver = "docker"
 
       resources {
-        memory_max = 2048
-        memory = 512
-        cpu    = 512
+        memory_max = 4096
+        memory = 2048
+        cpu    = 1000
       }
 
       config {
