@@ -52,7 +52,7 @@ export class SandboxApi {
     }))
   }
 
-  protected static async spawn(
+  protected static async createSandbox(
     template: string,
     opts: APIOpts & {
       metadata?: SandboxMetadata,

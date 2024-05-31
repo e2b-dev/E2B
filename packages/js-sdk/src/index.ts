@@ -1,8 +1,8 @@
 export { APIClient, withAPIKey, withAccessToken } from './api'
 export type { components, paths } from './api'
 
-export { SANDBOX_DOMAIN, API_HOST } from './constants'
-export type { SandboxOpts, DownloadFileFormat } from './sandbox'
+export { DOMAIN, API_HOST } from './constants'
+export type { SandboxOpts, DownloadFileFormat } from './sandboxFile'
 export type { OpenPort } from './sandbox/codeSnippet'
 export { Terminal, TerminalOutput } from './sandbox/terminal'
 export type { TerminalManager } from './sandbox/terminal'
