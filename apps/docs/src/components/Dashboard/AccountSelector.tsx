@@ -6,17 +6,30 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ChevronRight, PlusCircle } from 'lucide-react'
+import { toast } from '../ui/use-toast'
 
-export const AccountSelector = ({ user }) => { 
+export const AccountSelector = ({ teams, user, currentTeam, setCurrentTeam, setTeams }) => {
 
-  const teams = user?.teams.map((team: any) => ({
-    id: team.id,
-    name: team.name,
-    default: team.is_default,
-  }))
+  const createNewTeam = async() => {
+    const res = await fetch('/api/create-new-team', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: user.email, user_id: user.id })
+    })
+    if (!res.ok) {
+      return
+    }
+    const data = await res.json()
 
-  const defaultTeam = teams?.find((teams: any) => teams.default)
-
+    toast({
+      title: `Team ${data.team.name} created`,
+    })
+    
+    setTeams([...teams, data.team])
+  }
+  
   return(
     <DropdownMenu>
     <DropdownMenuTrigger
@@ -24,20 +37,20 @@ export const AccountSelector = ({ user }) => {
     >
       <div className='flex items-start flex-col'>
         <p className='text-sm'>Current account</p>
-        <h3 className='font-bold'>{defaultTeam.name}</h3>
+        <h3 className='font-bold text-left'>{currentTeam.name}</h3>
       </div> 
       <ChevronRight className='transform transition-transform duration-300 group-hover:rotate-90' />
     </DropdownMenuTrigger>
     <DropdownMenuContent className='flex flex-col w-48 bg-zinc-900 border border-white/30'>
       {teams?.map((team: any) => (
-        <DropdownMenuItem key={team.id}>
+        <DropdownMenuItem key={team.id} onClick={() => setCurrentTeam(team)}>
           {team.name}
         </DropdownMenuItem>
       ))}
       <DropdownMenuSeparator />
       <DropdownMenuItem className='flex items-center space-x-1'>
         <PlusCircle width={15} height={15} />
-        <p>Create Team</p>
+        <p onClick={() => createNewTeam()}>Create Team</p>
       </DropdownMenuItem>
     </DropdownMenuContent>
     </DropdownMenu>

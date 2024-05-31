@@ -6,7 +6,7 @@ import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
 
-type Team = {
+export type Team = {
   id: string
   name: string
   tier: string

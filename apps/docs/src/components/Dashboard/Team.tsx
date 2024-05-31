@@ -1,54 +1,80 @@
 'use client'
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+
+
+
+
 
 import { useState } from 'react'
-import { Delete } from 'lucide-react'
 import { Button } from '../Button'
+import { Team } from '@/utils/useUser'
+import { User, createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
+import { toast } from '../ui/use-toast'
+import { Copy } from 'lucide-react'
 
-const fakeTeam = { 
-  id: '1',
-  name: 'Default Team',
-  users: [{ id: '1', name: 'User1', role: 'admin' }, { id: '2', name: 'User2', role: 'user' }]
-}
+// interface Member {
+//   id: string
+//   name: string
+// }
 
-export const TeamContent = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [currentKeyId, setCurrentUserId] = useState<string | null>(null)
-  const [team, setTeam] = useState(fakeTeam)
 
-  // TODO: this logs just to make build work, remove it later
-  console.log(currentKeyId)
+export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
+  const supabase = createPagesBrowserClient()
 
-  const closeDialog = () => setIsDialogOpen(false) 
-  const openDialog = (id: string) => {
-    setCurrentUserId(id)
-    setIsDialogOpen(true)
-  } 
+  // const [isDialogOpen, setIsDialogOpen] = useState(false)
+  // const [currentMemberId, setCurrentMemberId] = useState<string | null>(null)
+  const [teamName, setTeamName] = useState(team.name)
+  const [userToAdd, setUserToAdd] = useState('')
+
+  console.log(team.name)
+
+  // const closeDialog = () => setIsDialogOpen(false) 
+  // const openDialog = (id: string) => {
+  //   setCurrentMemberId(id)
+  //   setIsDialogOpen(true)
+  // } 
   
-  const deleteUserFromTeam = () => {
+  // const deleteUserFromTeam = () => {
     // setApiKeys(apiKeys.filter(apiKey => apiKey.id !== currentKeyId))
-    closeDialog()
-  } 
+    // closeDialog()
+  // }
+  
+  
+  const changeTeamName = async() => {
+    const { error} = await supabase
+      .from('teams')
+      .update({ name: teamName })
+      .eq('id', team.id)
+    
+    if (error) {
+      // TODO: Add sentry event here
+      console.log(error)
+      return
+    }
+    
+    toast({
+      title: 'Team name changed',
+    })
+    setTeamName(teamName)
+  }
+
+  const addUserToTeam = async() => {
+    const { error } = await supabase
+      .from('users_teams')
+      .insert({ user_id: userToAdd, team_id: team.id })
+    
+    if (error) {
+      // TODO: Add sentry event here
+      console.log(error)
+      return
+    }
+    
+    setUserToAdd('')
+    toast({
+      title: 'User added to team',
+    })
+  }
   
   return (
     <div className='flex flex-col justify-center'>
@@ -58,23 +84,43 @@ export const TeamContent = () => {
           type="text"
           className="w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
           placeholder={team.name}
-          value={team.name}
-          onChange={(e) => setTeam({ ...team, name: e.target.value })}
+          onChange={(e) => {
+            e.preventDefault()
+            setTeamName(e.target.value)
+          }}
         />
-        <Button variant='outline'>Save changes</Button>
+        <Button variant='outline' onClick={() => changeTeamName()}>Save changes</Button>
       </div>
 
-      <h2 className="text-xl font-bold pb-4">Invite new members</h2>
-      <div className='flex items-center space-x-2 pb-10'>
+      <h2 className="text-xl font-bold pb-4">Add new members</h2>
+      <div className='flex items-center space-x-2 pb-4'>
         <input
           type="text"
           className="w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
-          placeholder="agent@incloud.dev"
+          placeholder={"paste your friend's user id here"}
+          value={userToAdd}
+          onChange={(e) => {
+            e.preventDefault()
+            setUserToAdd(e.target.value)
+          }}
         />
-        <Button variant='outline'>Send invite</Button>
+        <Button variant='outline' onClick={() => addUserToTeam()}>Add user</Button>
       </div>
 
-      <h2 className="text-xl font-bold pb-4">Team members</h2>
+      <span
+        className='flex pb-10 w-fit text-sm text-orange-500 hover:cursor-pointer hover:text-orange-500/30 space-x-2 items-center'
+        onClick={() => {
+          navigator.clipboard.writeText(user.id)
+          toast({
+            title: 'User id copied to clipboard',
+          })
+        }}
+      >
+        <p>copy your user id</p>
+        <Copy className='h-4 w-4'/>
+      </span>
+
+      {/* <h2 className="text-xl font-bold pb-4">Team members</h2>
       <Table>
       <TableHeader>
       <TableRow className='hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5 '>
@@ -83,8 +129,8 @@ export const TeamContent = () => {
         <TableHead></TableHead>
       </TableRow>
       </TableHeader>
-      <TableBody>
-      {team.users.map((user) => (
+      <TableBody> */}
+      {/* {team.users.map((user) => (
         <TableRow 
         className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
         key={user.id}>
@@ -94,12 +140,12 @@ export const TeamContent = () => {
             <Delete className='hover:cursor-pointer' color='red' width={20} height={20} onClick={() => openDialog(user.id)} />
           </TableCell>
         </TableRow>
-        ))}
-      </TableBody>
-      </Table>
+        ))} */}
+      {/* </TableBody>
+      </Table> */}
 
 
-      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogTrigger asChild>
           <Button variant="outline" style={{ display: 'none' }}>Show Dialog</Button>
         </AlertDialogTrigger>
@@ -116,7 +162,7 @@ export const TeamContent = () => {
             <AlertDialogAction className='bg-red-500 text-white hover:bg-red-600' onClick={deleteUserFromTeam}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog> */}
 
     </div>
   )
