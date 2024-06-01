@@ -1,45 +1,85 @@
-import path from 'path-browserify'
+import { PlainMessage } from '@bufbuild/protobuf'
+import {
+  createPromiseClient,
+  Transport,
+  PromiseClient,
+} from '@connectrpc/connect'
 
-import { Logger } from './logger'
+import { FilesystemService } from '../envd/filesystem/v1/filesystem_connect'
+import {
+  FilesystemEvent as FsFilesystemEvent,
+  RemoveRequest,
+  StatRequest,
+  WatchRequest,
+  ListRequest,
+  EntryInfo as FsEntryInfo,
+} from '../envd/filesystem/v1/filesystem_pb'
 
-export const resolvePath = (
-  inputPath: string,
-  cwd: string | undefined,
-  logger: Logger,
-): string => {
-  let result: string
-  if (inputPath.startsWith('./')) {
-    result = path.posix.join(cwd || '/home/user', inputPath)
-    if (!cwd) {
-      logger.warn?.(
-        `Path starts with './' and cwd isn't set. The path '${inputPath}' will evaluate to '${result}', which may not be what you want.`,
-      )
+export type FilesystemEvent = PlainMessage<FsFilesystemEvent>
+export type EntryInfo = PlainMessage<FsEntryInfo>
+
+export interface WatchHandle {
+  stop: () => void
+}
+
+// TODO: Resolve cwd and provide sane defaults
+export class Filesystem {
+  private readonly service: PromiseClient<typeof FilesystemService> = createPromiseClient(FilesystemService, this.transport)
+
+  constructor(private readonly transport: Transport) { }
+
+  async list(path: string): Promise<EntryInfo[]> {
+    const params: PlainMessage<ListRequest> = {
+      path,
     }
-    return result
+
+    const res = await this.service.list(params)
+    return res.entries
   }
 
-  if (inputPath.startsWith('../')) {
-    result = path.posix.join(cwd || '/home/user', inputPath)
-    if (!cwd) {
-      logger.warn?.(
-        `Path starts with '../' and cwd isn't set. The path '${inputPath}' will evaluate to '${result}', which may not be what you want.`,
-      )
+  async remove(path: string): Promise<void> {
+    const params: PlainMessage<RemoveRequest> = {
+      path,
     }
-    return result
+
+    await this.service.remove(params)
   }
-  if (inputPath.startsWith('~/')) {
-    result = path.posix.join(cwd || '/home/user', inputPath.substring(2))
-    if (!cwd) {
-      logger.warn?.(
-        `Path starts with '~/' and cwd isn't set. The path '${inputPath}' will evaluate to '${result}', which may not be what you want.`,
-      )
+
+  async exists(path: string): Promise<EntryInfo> {
+    const params: PlainMessage<StatRequest> = {
+      path,
     }
-    return result
+
+    const res = await this.service.stat(params)
+    return res.entry!
   }
 
-  if (!inputPath.startsWith('/') && cwd) {
-    return path.posix.join(cwd, inputPath)
-  }
+  async watch(
+    path: string,
+    onEvent: (event: WatchEvent) => any,
+  ): Promise<WatchHandle> {
+    const params: PlainMessage<WatchRequest> = {
+      path,
+    }
 
-  return inputPath
+    const controller = new AbortController()
+
+    const req = this.service.watch(params, {
+      signal: controller.signal,
+    })
+
+    async function processStream() {
+      for await (const event of req) {
+        if (event.event) {
+          onEvent?.(event.event)
+        }
+      }
+    }
+
+    processStream()
+
+    return {
+      stop: () => controller.abort(),
+    }
+  }
 }

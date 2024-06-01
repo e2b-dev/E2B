@@ -75,6 +75,7 @@ message ProcessEvent {
         oneof output {
             bytes stdout = 1;
             bytes stderr = 2;
+            bytes pty = 3;
         }
     }
     
@@ -105,7 +106,7 @@ message SendInputResponse {}
 message ProcessInput {
     oneof input {
         bytes stdin = 1;
-        bytes tty = 2;
+        bytes pty = 2;
     }
 }
 

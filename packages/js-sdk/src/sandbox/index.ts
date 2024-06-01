@@ -1,8 +1,10 @@
 import { SandboxApi } from './sandboxApi'
-import { SandboxRpc } from './rpc'
 import { Logger } from './logger'
 import { SandboxFiles } from './sandboxFiles'
 import { ConnectionOpts, ConnectionConfig } from '../connectionConfig'
+import { createConnectTransport } from '@connectrpc/connect-web'
+import { Filesystem } from './filesystem'
+import { Process } from './process'
 
 export interface SandboxOpts extends ConnectionOpts {
   /**
@@ -20,9 +22,10 @@ const SANDBOX_SERVER_PORT = 49982
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate = 'base'
 
-  private readonly connectionConfig: ConnectionConfig
+  readonly filesystem: Filesystem
+  readonly process: Process
 
-  private readonly rpc: SandboxRpc
+  private readonly connectionConfig: ConnectionConfig
   private readonly files: SandboxFiles
 
   constructor(readonly sandboxID: string, opts: Omit<SandboxOpts, 'timeout' | 'metadata'> = {}) {
@@ -32,16 +35,11 @@ export class Sandbox extends SandboxApi {
 
     const sandboxServerUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHostname(SANDBOX_SERVER_PORT)}`
 
-    this.rpc = new SandboxRpc(sandboxServerUrl)
     this.files = new SandboxFiles(sandboxServerUrl)
-  }
 
-  get filesystem() {
-    return this.rpc.filesystem
-  }
-
-  get process() {
-    return this.rpc.process
+    const rpcTransport = createConnectTransport({ baseUrl: sandboxServerUrl })
+    this.filesystem = new Filesystem(rpcTransport)
+    this.process = new Process(rpcTransport)
   }
 
   /**

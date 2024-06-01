@@ -3,7 +3,9 @@ from typing import Any, Generator
 
 import connect
 
-from envd.filesystem.v1 import filesystem_pb2 as envd_dot_filesystem_dot_v1_dot_filesystem__pb2
+from envd.filesystem.v1 import (
+    filesystem_pb2 as envd_dot_filesystem_dot_v1_dot_filesystem__pb2,
+)
 
 FilesystemServiceName = "envd.filesystem.v1.FilesystemService"
 
@@ -16,7 +18,7 @@ class FilesystemServiceClient:
             response_type=envd_dot_filesystem_dot_v1_dot_filesystem__pb2.StatResponse,
             compressor=compressor,
             json=json,
-            **opts
+            **opts,
         )
         self._list = connect.Client(
             pool=pool,
@@ -24,7 +26,7 @@ class FilesystemServiceClient:
             response_type=envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListResponse,
             compressor=compressor,
             json=json,
-            **opts
+            **opts,
         )
         self._watch = connect.Client(
             pool=pool,
@@ -32,7 +34,7 @@ class FilesystemServiceClient:
             response_type=envd_dot_filesystem_dot_v1_dot_filesystem__pb2.WatchResponse,
             compressor=compressor,
             json=json,
-            **opts
+            **opts,
         )
         self._remove = connect.Client(
             pool=pool,
@@ -40,17 +42,27 @@ class FilesystemServiceClient:
             response_type=envd_dot_filesystem_dot_v1_dot_filesystem__pb2.RemoveResponse,
             compressor=compressor,
             json=json,
-            **opts
+            **opts,
         )
 
-    def stat(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.StatRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.StatResponse:
+    def stat(
+        self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.StatRequest, **opts
+    ) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.StatResponse:
         return self._stat.call_unary(req, **opts)
 
-    def list(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListResponse:
+    def list(
+        self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListRequest, **opts
+    ) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListResponse:
         return self._list.call_unary(req, **opts)
 
-    def watch(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.WatchRequest , **opts) -> Generator[envd_dot_filesystem_dot_v1_dot_filesystem__pb2.WatchResponse, Any, None]:
+    def watch(
+        self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.WatchRequest, **opts
+    ) -> Generator[
+        envd_dot_filesystem_dot_v1_dot_filesystem__pb2.WatchResponse, Any, None
+    ]:
         return self._watch.call_server_stream(req, **opts)
 
-    def remove(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.RemoveRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.RemoveResponse:
+    def remove(
+        self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.RemoveRequest, **opts
+    ) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.RemoveResponse:
         return self._remove.call_unary(req, **opts)

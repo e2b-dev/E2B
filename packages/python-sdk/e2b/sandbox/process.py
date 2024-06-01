@@ -1,429 +1,150 @@
-# from __future__ import annotations
+import logging
+import connect
 
-# import logging
-# import re
-# import inspect
-# import threading
-# import time
-# from concurrent.futures import Future
-# from typing import (
-#     Any,
-#     Callable,
-#     ClassVar,
-#     Dict,
-#     List,
-#     Optional,
-#     Union,
-# )
-# from pydantic import BaseModel
+from typing import Dict, Optional, Callable, Any, Generator, Union
 
-# from e2b.constants import TIMEOUT
-# from e2b.sandbox.env_vars import EnvVars
-# from e2b.exceptions import (
-#     MultipleExceptions,
-#     ProcessException,
-#     RpcException,
-#     CurrentWorkingDirectoryDoesntExistException,
-#     TimeoutException,
-# )
-# from e2b.sandbox.out import OutStderrResponse, OutStdoutResponse
-# from e2b.sandbox.sandbox_connection import SandboxConnection, SubscriptionArgs
-# from e2b.utils.id import create_id
+from envd.process.v1 import process_connect, process_pb2
 
-# logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
-# class ProcessMessage(BaseModel):
-#     """
-#     A message from a process.
-#     """
-
-#     line: str
-#     error: bool = False
-#     timestamp: int
-#     """
-#     Unix epoch in nanoseconds
-#     """
-
-#     def __str__(self):
-#         return self.line
+class ProcessOutput:
+    def __init__(self, stdout: Optional[bytes], stderr: Optional[bytes]) -> None:
+        self.stdout = str(stdout) if stdout else None
+        self.stderr = str(stderr) if stderr else None
 
 
-# class ProcessOutput(BaseModel):
-#     """
-#     Output from a process.
-#     """
+class ProcessHandle:
+    def __init__(
+        self,
+        pid: int,
+        kill: Callable[[], None],
+        events: Generator[
+            Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any, None
+        ],
+    ):
+        self.pid = pid
+        self.kill = kill
+        self._events = events
 
-#     delimiter: ClassVar[str] = "\n"
-#     messages: List[ProcessMessage] = []
+        self._stdout: bytes = b""
+        self._stderr: bytes = b""
 
-#     error: bool = False
-#     exit_code: Optional[int] = None
+        self._end_event: Union[process_pb2.ProcessEvent.EndEvent, None] = None
 
-#     @property
-#     def stdout(self) -> str:
-#         """
-#         The stdout from the process.
-#         """
-#         return self.delimiter.join(out.line for out in self.messages if not out.error)
+    def __next__(self):
+        event = next(self._events)
 
-#     @property
-#     def stderr(self) -> str:
-#         """
-#         The stderr from the process.
-#         """
-#         return self.delimiter.join(out.line for out in self.messages if out.error)
+        if event.HasField("data"):
+            if event.event.data.stdout:
+                self._stdout += event.event.data.stdout
+                return ProcessOutput(self._stdout, None)
+            if event.event.data.stderr:
+                self._stderr += event.event.data.stderr
+                return ProcessOutput(None, self._stderr)
+        if event.HasField("end"):
+            self._end_event = event.event.end
 
-#     def _insert_by_timestamp(self, message: ProcessMessage):
-#         """Insert an out based on its timestamp using insertion sort."""
-#         i = len(self.messages) - 1
-#         while i >= 0 and self.messages[i].timestamp > message.timestamp:
-#             i -= 1
-#         self.messages.insert(i + 1, message)
+        raise StopIteration
 
-#     def _add_stdout(self, message: ProcessMessage):
-#         self._insert_by_timestamp(message)
+    def __iter__(self):
+        return self
 
-#     def _add_stderr(self, message: ProcessMessage):
-#         self.error = True
-#         self._insert_by_timestamp(message)
+    def wait(self):
+        for _ in self:
+            pass
 
+        if self._end_event is None:
+            raise RuntimeError("Process has not ended")
 
-# class Process:
-#     """
-#     A process running in the sandbox.
-#     """
-
-#     def __init__(
-#         self,
-#         process_id: str,
-#         sandbox: SandboxConnection,
-#         trigger_exit: Callable[[], Any],
-#         finished: Future[ProcessOutput],
-#         output: ProcessOutput,
-#     ):
-#         self._process_id = process_id
-#         self._sandbox = sandbox
-#         self._trigger_exit = trigger_exit
-#         self._finished = finished
-#         self._output = output
-
-#     @property
-#     def exit_code(self) -> Optional[int]:
-#         """
-#         The exit code of the last process started by this manager.
-#         """
-#         if not self.finished:
-#             raise ProcessException("Process has not finished yet")
-#         return self.output.exit_code
-
-#     @property
-#     def output(self) -> ProcessOutput:
-#         """
-#         The output from the process.
-#         """
-#         return self._output
-
-#     @property
-#     def stdout(self) -> str:
-#         """
-#         The stdout from the process.
-#         """
-#         return self._output.stdout
-
-#     @property
-#     def stderr(self) -> str:
-#         """
-#         The stderr from the process.
-#         """
-#         return self._output.stderr
-
-#     @property
-#     def error(self) -> bool:
-#         """
-#         True if the process has written to stderr.
-#         """
-#         return self._output.error
-
-#     @property
-#     def output_messages(self) -> List[ProcessMessage]:
-#         """
-#         The output messages from the process.
-#         """
-#         return self._output.messages
-
-#     @property
-#     def finished(self):
-#         """
-#         A future that is resolved when the process exits.
-#         """
-#         return self._finished
-
-#     @property
-#     def process_id(self) -> str:
-#         """
-#         The process id used to identify the process in the sandbox.
-#         This is not the system process id of the process running in the sandbox.
-#         """
-#         return self._process_id
-
-#     def wait(self, timeout: Optional[float] = None) -> ProcessOutput:
-#         """
-#         Wait for the process to exit.
-
-#         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out. If set to None, the method will continue to wait until it completes, regardless of time
-#         """
-#         start_time = time.time()
-#         while timeout is None or time.time() - start_time < timeout:
-#             if self._finished.done():
-#                 return self._finished.result()
-#             time.sleep(0.1)
-#             if not self._sandbox.is_open:
-#                 break
-
-#         raise TimeoutException(f"Process did not finish within {timeout} seconds")
-
-#     def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
-#         """
-#         Send data to the process stdin.
-
-#         :param data: Data to send
-#         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-#         """
-#         try:
-#             self._sandbox._call(
-#                 ProcessManager._service_name,
-#                 "stdin",
-#                 [self.process_id, data],
-#                 timeout=timeout,
-#             )
-#         except RpcException as e:
-#             raise ProcessException(e.message) from e
-
-#     def kill(self, timeout: Optional[float] = TIMEOUT) -> None:
-#         """
-#         Kill the process.
-
-#         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-#         """
-#         try:
-#             self._sandbox._call(
-#                 ProcessManager._service_name, "kill", [self.process_id], timeout=timeout
-#             )
-#         except RpcException as e:
-#             raise ProcessException(e.message) from e
-#         self._trigger_exit()
+        return ProcessResult(
+            stdout=self._stdout,
+            stderr=self._stderr,
+            exit_code=self._end_event.exit_code,
+            error=self._end_event.error,
+        )
 
 
-# class ProcessManager:
-#     """
-#     Manager for starting and interacting with processes in the sandbox.
-#     """
+class ProcessResult(ProcessOutput):
+    def __init__(
+        self,
+        stdout: bytes,
+        stderr: bytes,
+        exit_code: int,
+        error: Optional[str] = None,
+    ) -> None:
+        super().__init__(stdout, stderr)
+        self.exit_code = exit_code
+        self.error = error
 
-#     _service_name = "process"
 
-#     def __init__(
-#         self,
-#         sandbox: SandboxConnection,
-#         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
-#         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-#         on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
-#     ):
-#         self._sandbox = sandbox
-#         self._process_cleanup: List[Callable[[], Any]] = []
-#         self._on_stdout = on_stdout
-#         self._on_stderr = on_stderr
-#         self._on_exit = on_exit
+# TODO: Add disconnect for process handle
+class Process:
+    def __init__(self, base_url: str) -> None:
+        self.base_url = base_url
 
-#     def start(
-#         self,
-#         cmd: str,
-#         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
-#         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-#         on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
-#         env_vars: Optional[EnvVars] = None,
-#         cwd: str = "",
-#         rootdir: str = "",  # DEPRECATED
-#         process_id: Optional[str] = None,
-#         timeout: Optional[float] = TIMEOUT,
-#     ) -> Process:
-#         logger.info(f"Starting process: {cmd}")
-#         env_vars = env_vars or {}
-#         env_vars = {**self._sandbox.env_vars, **env_vars}
+        self._service = process_connect.ProcessServiceClient(
+            self.base_url,
+            compressor=connect.GzipCompressor,
+        )
 
-#         on_stdout = on_stdout or self._on_stdout
-#         on_stderr = on_stderr or self._on_stderr
-#         on_exit = on_exit or self._on_exit
+    def list(self):
+        params = process_pb2.ListRequest()
 
-#         future_exit = Future()
-#         process_id = process_id or create_id(12)
+        res = self._service.list(params)
+        return [p for p in res.processes]
 
-#         unsub_all: Optional[Callable] = None
+    def kill(self, pid: int):
+        params = process_pb2.SendSignalRequest(
+            process=process_pb2.ProcessSelector(pid=pid),
+            signal=process_pb2.Signal.SIGNAL_SIGKILL,
+        )
 
-#         output = ProcessOutput()
+        self._service.send_signal(params)
 
-#         def handle_exit(exit_code: int):
-#             output.exit_code = exit_code
-#             logger.info(f"Process {process_id} exited with exit code {exit_code}")
-#             if not future_exit.done():
-#                 future_exit.set_result(True)
+    def sendStdin(self, pid: int, data: bytes):
+        params = process_pb2.SendInputRequest(
+            process=process_pb2.ProcessSelector(pid=pid),
+            input=process_pb2.ProcessInput(stdin=data),
+        )
 
-#         def handle_stdout(data: Dict[Any, Any]):
-#             out = OutStdoutResponse(**data)
+        self._service.send_input(params)
 
-#             message = ProcessMessage(
-#                 line=out.line,
-#                 timestamp=out.timestamp,
-#                 error=False,
-#             )
+    def start(
+        self,
+        cmd: str,
+        envs: Optional[Dict[str, str]] = {},
+        user: str = "user",
+        cwd: Optional[str] = None,
+    ):
+        params = process_pb2.StartRequest(
+            owner=process_pb2.Credential(username=user),
+            process=process_pb2.ProcessConfig(
+                cmd=cmd,
+                envs=envs,
+                cwd=cwd,
+            ),
+        )
 
-#             output._add_stdout(message)
-#             if on_stdout:
-#                 try:
-#                     on_stdout(message)
-#                 except TypeError as error:
-#                     logger.exception(f"Error in on_stdout callback: {error}")
+        events = self._service.start(params)
 
-#         def handle_stderr(data: Dict[Any, Any]):
-#             out = OutStderrResponse(**data)
+        start_event = next(events)
 
-#             message = ProcessMessage(
-#                 line=out.line,
-#                 timestamp=out.timestamp,
-#                 error=True,
-#             )
+        return ProcessHandle(
+            pid=start_event.event.start.pid,
+            kill=lambda: self.kill(start_event.event.start.pid),
+            events=events,
+        )
 
-#             output._add_stderr(message)
-#             if on_stderr:
-#                 try:
-#                     on_stderr(message)
-#                 except TypeError as error:
-#                     logger.exception(f"Error in on_stdout callback: {error}")
+    def connect(self, pid: int):
+        params = process_pb2.ConnectRequest(
+            process=process_pb2.ProcessSelector(pid=pid),
+        )
 
-#         try:
-#             subscription_args = [
-#                 SubscriptionArgs(
-#                     service=self._service_name,
-#                     handler=handle_exit,
-#                     method="onExit",
-#                     params=[process_id],
-#                 ),
-#                 SubscriptionArgs(
-#                     service=self._service_name,
-#                     handler=handle_stdout,
-#                     method="onStdout",
-#                     params=[process_id],
-#                 ),
-#                 SubscriptionArgs(
-#                     service=self._service_name,
-#                     handler=handle_stderr,
-#                     method="onStderr",
-#                     params=[process_id],
-#                 ),
-#             ]
-#             unsub_all = self._sandbox._handle_subscriptions(*subscription_args)
+        events = self._service.connect(params)
 
-#         except (RpcException, MultipleExceptions) as e:
-#             future_exit.cancel()
-
-#             if isinstance(e, RpcException):
-#                 raise ProcessException(e.message) from e
-#             elif isinstance(e, MultipleExceptions):
-#                 raise ProcessException(
-#                     "Failed to subscribe to RPC services necessary for starting process"
-#                 ) from e
-
-#         future_exit_handler_finish: Future[ProcessOutput] = Future()
-
-#         def exit_handler():
-#             future_exit.result()
-#             logger.info(f"Handling process exit (id: {process_id})")
-#             if unsub_all:
-#                 unsub_all()
-#             if on_exit:
-#                 sig = inspect.signature(on_exit)
-#                 params = sig.parameters.values()
-#                 try:
-#                     if len(params) == 0:
-#                         on_exit()
-#                     else:
-#                         on_exit(output.exit_code or 0)
-#                 except TypeError as error:
-#                     logger.exception(f"Error in on_exit callback: {error}")
-#             future_exit_handler_finish.set_result(output)
-
-#         threading.Thread(
-#             name="e2b-process-exit-handler", daemon=True, target=exit_handler
-#         ).start()
-
-#         def trigger_exit():
-#             logger.info(f"Exiting the process (id: {process_id})")
-#             if not future_exit.done():
-#                 future_exit.set_result(None)
-
-#             future_exit_handler_finish.result()
-#             logger.debug(f"Exited the process (id: {process_id})")
-
-#         try:
-#             if not cwd and rootdir:
-#                 cwd = rootdir
-#                 logger.warning("The rootdir parameter is deprecated, use cwd instead.")
-
-#             if not cwd and self._sandbox.cwd:
-#                 cwd = self._sandbox.cwd
-
-#             self._sandbox._call(
-#                 self._service_name,
-#                 "start",
-#                 [
-#                     process_id,
-#                     cmd,
-#                     env_vars,
-#                     cwd,
-#                 ],
-#                 timeout=timeout,
-#             )
-#             logger.info(f"Started process (id: {process_id})")
-#             return Process(
-#                 output=output,
-#                 sandbox=self._sandbox,
-#                 process_id=process_id,
-#                 trigger_exit=trigger_exit,
-#                 finished=future_exit_handler_finish,
-#             )
-#         except RpcException as e:
-#             trigger_exit()
-#             if re.match(
-#                 r"error starting process '\w+': fork/exec /bin/bash: no such file or directory",
-#                 e.message,
-#             ):
-#                 raise CurrentWorkingDirectoryDoesntExistException(
-#                     "Failed to start the process. You are trying set `cwd` to a directory that does not exist."
-#                 ) from e
-#             raise ProcessException(e.message) from e
-#         except TimeoutError as e:
-#             logger.error(f"Timeout error during starting the process: {cmd}")
-#             trigger_exit()
-#             raise e
-
-#     def start_and_wait(
-#         self,
-#         cmd: str,
-#         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
-#         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-#         on_exit: Optional[Callable[[int], Any]] = None,
-#         env_vars: Optional[EnvVars] = None,
-#         cwd: str = "",
-#         process_id: Optional[str] = None,
-#         timeout: Optional[float] = TIMEOUT,
-#     ) -> ProcessOutput:
-#         return self.start(
-#             cmd,
-#             on_stdout=on_stdout,
-#             on_stderr=on_stderr,
-#             on_exit=on_exit,
-#             env_vars=env_vars,
-#             cwd=cwd,
-#             process_id=process_id,
-#             timeout=timeout,
-#         ).wait()
+        return ProcessHandle(
+            pid=pid,
+            kill=lambda: self.kill(pid),
+            events=events,
+        )

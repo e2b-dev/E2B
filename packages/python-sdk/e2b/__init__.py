@@ -9,12 +9,12 @@ environments. In these environments, large language models can use the same
 tools as humans do.
 """
 
+from envd.filesystem.v1.filesystem_pb2 import FilesystemEvent, FileType, EntryInfo
 from .api import (
     E2BApiClient,
     client,
 )
 from .connection_config import ConnectionConfig
-from .sandbox import (
-    Sandbox,
-)
+from .sandbox.main import Sandbox
 from .sandbox.exceptions import SandboxException, AuthenticationException
+from .sandbox.process import ProcessHandle, ProcessOutput, ProcessResult

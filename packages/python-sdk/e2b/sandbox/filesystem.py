@@ -1,29 +1,47 @@
-import warnings
+import logging
+import connect
 
-from pathlib import PurePosixPath
-from typing import Optional
+from typing import List
+
+from envd.filesystem.v1 import filesystem_connect, filesystem_pb2
+
+logger = logging.getLogger(__name__)
 
 
-def resolve_path(path: str, cwd: Optional[str] = None) -> str:
-    warning = f"Path starts with {{0}} and cwd isn't set. The path {path} will evaluate to `{{1}}`, which may not be what you want."
-    if path.startswith("./"):
-        result = PurePosixPath(cwd or "/home/user", path).as_posix()
-        if not cwd:
-            warnings.warn(warning.format("./", result))
-        return result
+# TODO: Provide a way to cancel requests (watch)
+class Filesystem:
+    def __init__(self, base_url: str) -> None:
+        self.base_url = base_url
 
-    if path.startswith("../"):
-        result = PurePosixPath(cwd or "/home/user", path).as_posix()
-        if not cwd:
-            warnings.warn(warning.format("../", result))
-        return result
+        self._service = filesystem_connect.FilesystemServiceClient(
+            self.base_url,
+            compressor=connect.GzipCompressor,
+        )
 
-    if path.startswith("~/"):
-        result = PurePosixPath("/home/user", path[2:]).as_posix()
-        warnings.warn(warning.format("~/", result))
-        return result
+    def list(self, path: str) -> List[filesystem_pb2.EntryInfo]:
+        params = filesystem_pb2.ListRequest(path=path)
 
-    if not path.startswith("/") and cwd:
-        return PurePosixPath(cwd, path).as_posix()
+        res = self._service.list(params)
+        return [entry for entry in res.entries]
 
-    return path
+    def stat(self, path: str) -> filesystem_pb2.EntryInfo:
+        params = filesystem_pb2.StatRequest(path=path)
+
+        res = self._service.stat(params)
+        return res.entry
+
+    def remove(self, path: str) -> None:
+        params = filesystem_pb2.RemoveRequest(path=path)
+
+        self._service.remove(params)
+
+    def watch(self, path: str):
+        params = filesystem_pb2.WatchRequest(path=path)
+
+        events = self._service.watch(params)
+
+        def stream():
+            for event in events:
+                yield event.event
+
+        return stream()

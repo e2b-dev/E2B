@@ -1,8 +1,9 @@
 import logging
 
 from typing import Optional, Dict
+from e2b.sandbox.filesystem import Filesystem
+from e2b.sandbox.process import Process
 
-from e2b.sandbox.rpc.main import SandboxRpc
 from e2b.sandbox.sandbox_api import SandboxApi
 from e2b.sandbox.sandbox_files import SandboxFiles
 from e2b.connection_config import ConnectionConfig
@@ -47,16 +48,10 @@ class Sandbox(SandboxApi):
             f"{'http' if debug else 'https'}://{self.get_hostname(SANDBOX_SERVER_PORT)}"
         )
 
-        self._rpc = SandboxRpc(url=sandbox_server_url)
+        self.filesystem = Filesystem(sandbox_server_url)
+        self.process = Process(sandbox_server_url)
+
         self._files = SandboxFiles(sandbox_server_url)
-
-    @property
-    def filesystem(self):
-        return self._rpc.filesystem
-
-    @property
-    def process(self):
-        return self._rpc.process
 
     def get_hostname(self, port: int) -> str:
         if self._connection_config.debug:

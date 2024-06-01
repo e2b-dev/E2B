@@ -514,6 +514,12 @@ export class ProcessEvent_DataEvent extends Message<ProcessEvent_DataEvent> {
      */
     value: Uint8Array;
     case: "stderr";
+  } | {
+    /**
+     * @generated from field: bytes pty = 3;
+     */
+    value: Uint8Array;
+    case: "pty";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<ProcessEvent_DataEvent>) {
@@ -526,6 +532,7 @@ export class ProcessEvent_DataEvent extends Message<ProcessEvent_DataEvent> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "stdout", kind: "scalar", T: 12 /* ScalarType.BYTES */, oneof: "output" },
     { no: 2, name: "stderr", kind: "scalar", T: 12 /* ScalarType.BYTES */, oneof: "output" },
+    { no: 3, name: "pty", kind: "scalar", T: 12 /* ScalarType.BYTES */, oneof: "output" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ProcessEvent_DataEvent {
@@ -763,10 +770,10 @@ export class ProcessInput extends Message<ProcessInput> {
     case: "stdin";
   } | {
     /**
-     * @generated from field: bytes tty = 2;
+     * @generated from field: bytes pty = 2;
      */
     value: Uint8Array;
-    case: "tty";
+    case: "pty";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<ProcessInput>) {
@@ -778,7 +785,7 @@ export class ProcessInput extends Message<ProcessInput> {
   static readonly typeName = "envd.process.v1.ProcessInput";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "stdin", kind: "scalar", T: 12 /* ScalarType.BYTES */, oneof: "input" },
-    { no: 2, name: "tty", kind: "scalar", T: 12 /* ScalarType.BYTES */, oneof: "input" },
+    { no: 2, name: "pty", kind: "scalar", T: 12 /* ScalarType.BYTES */, oneof: "input" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ProcessInput {
