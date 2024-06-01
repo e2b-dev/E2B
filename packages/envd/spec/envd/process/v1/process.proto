@@ -75,6 +75,7 @@ message ProcessEvent {
         oneof output {
             bytes stdout = 1;
             bytes stderr = 2;
+            bytes pty = 3;
         }
     }
     
