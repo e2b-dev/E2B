@@ -105,7 +105,7 @@ message SendInputResponse {}
 message ProcessInput {
     oneof input {
         bytes stdin = 1;
-        bytes tty = 2;
+        bytes pty = 2;
     }
 }
 
