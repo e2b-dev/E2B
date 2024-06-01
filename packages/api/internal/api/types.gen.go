@@ -199,7 +199,7 @@ type PostSandboxesSandboxIDRefreshesJSONBody struct {
 // PostSandboxesSandboxIDTimeoutJSONBody defines parameters for PostSandboxesSandboxIDTimeout.
 type PostSandboxesSandboxIDTimeoutJSONBody struct {
 	// Duration Duration in seconds from the current time after which the sandbox should expire
-	Duration *int32 `json:"duration,omitempty"`
+	Duration int32 `json:"duration"`
 }
 
 // GetTemplatesTemplateIDBuildsBuildIDStatusParams defines parameters for GetTemplatesTemplateIDBuildsBuildIDStatus.

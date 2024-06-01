@@ -382,11 +382,12 @@ paths:
         - ApiKeyAuth: []
       tags: [sandboxes]
       requestBody:
-        required: false
         content:
           application/json:
             schema:
               type: object
+              required:
+                - duration
               properties:
                 duration:
                   description: Duration in seconds from the current time after which the sandbox should expire
