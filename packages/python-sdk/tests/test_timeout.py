@@ -3,7 +3,7 @@ from typing import Optional
 import pytest
 
 from e2b import Sandbox
-from e2b.sandbox.exception import TimeoutException
+from e2b.sandbox.exceptions import TimeoutException
 
 
 def test_create_sandbox_timeout():

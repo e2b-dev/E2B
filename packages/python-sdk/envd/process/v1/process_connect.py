@@ -10,80 +10,80 @@ ProcessServiceName = "envd.process.v1.ProcessService"
 
 class ProcessServiceClient:
     def __init__(self, base_url, *, pool=None, compressor=None, json=False, **opts):
-        self._list_processes = connect.Client(
+        self._list = connect.Client(
             pool=pool,
-            url=f"{base_url}/{ProcessServiceName}/ListProcesses",
-            response_type=envd_dot_process_dot_v1_dot_process__pb2.ListProcessesResponse,
+            url=f"{base_url}/{ProcessServiceName}/List",
+            response_type=envd_dot_process_dot_v1_dot_process__pb2.ListResponse,
             compressor=compressor,
             json=json,
             **opts
         )
-        self._reconnect_process = connect.Client(
+        self._connect = connect.Client(
             pool=pool,
-            url=f"{base_url}/{ProcessServiceName}/ReconnectProcess",
-            response_type=envd_dot_process_dot_v1_dot_process__pb2.ReconnectProcessResponse,
+            url=f"{base_url}/{ProcessServiceName}/Connect",
+            response_type=envd_dot_process_dot_v1_dot_process__pb2.ConnectResponse,
             compressor=compressor,
             json=json,
             **opts
         )
-        self._start_process = connect.Client(
+        self._start = connect.Client(
             pool=pool,
-            url=f"{base_url}/{ProcessServiceName}/StartProcess",
-            response_type=envd_dot_process_dot_v1_dot_process__pb2.StartProcessResponse,
+            url=f"{base_url}/{ProcessServiceName}/Start",
+            response_type=envd_dot_process_dot_v1_dot_process__pb2.StartResponse,
             compressor=compressor,
             json=json,
             **opts
         )
-        self._update_process = connect.Client(
+        self._update = connect.Client(
             pool=pool,
-            url=f"{base_url}/{ProcessServiceName}/UpdateProcess",
-            response_type=envd_dot_process_dot_v1_dot_process__pb2.UpdateProcessResponse,
+            url=f"{base_url}/{ProcessServiceName}/Update",
+            response_type=envd_dot_process_dot_v1_dot_process__pb2.UpdateResponse,
             compressor=compressor,
             json=json,
             **opts
         )
-        self._send_process_input_stream = connect.Client(
+        self._stream_input = connect.Client(
             pool=pool,
-            url=f"{base_url}/{ProcessServiceName}/SendProcessInputStream",
-            response_type=envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputStreamResponse,
+            url=f"{base_url}/{ProcessServiceName}/StreamInput",
+            response_type=envd_dot_process_dot_v1_dot_process__pb2.StreamInputResponse,
             compressor=compressor,
             json=json,
             **opts
         )
-        self._send_process_input = connect.Client(
+        self._send_input = connect.Client(
             pool=pool,
-            url=f"{base_url}/{ProcessServiceName}/SendProcessInput",
-            response_type=envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputResponse,
+            url=f"{base_url}/{ProcessServiceName}/SendInput",
+            response_type=envd_dot_process_dot_v1_dot_process__pb2.SendInputResponse,
             compressor=compressor,
             json=json,
             **opts
         )
-        self._send_process_signal = connect.Client(
+        self._send_signal = connect.Client(
             pool=pool,
-            url=f"{base_url}/{ProcessServiceName}/SendProcessSignal",
-            response_type=envd_dot_process_dot_v1_dot_process__pb2.SendProcessSignalResponse,
+            url=f"{base_url}/{ProcessServiceName}/SendSignal",
+            response_type=envd_dot_process_dot_v1_dot_process__pb2.SendSignalResponse,
             compressor=compressor,
             json=json,
             **opts
         )
 
-    def list_processes(self, req: envd_dot_process_dot_v1_dot_process__pb2.ListProcessesRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.ListProcessesResponse:
-        return self._list_processes.call_unary(req, **opts)
+    def list(self, req: envd_dot_process_dot_v1_dot_process__pb2.ListRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.ListResponse:
+        return self._list.call_unary(req, **opts)
 
-    def reconnect_process(self, req: envd_dot_process_dot_v1_dot_process__pb2.ReconnectProcessRequest , **opts) -> Generator[envd_dot_process_dot_v1_dot_process__pb2.ReconnectProcessResponse, Any, None]:
-        return self._reconnect_process.call_server_stream(req, **opts)
+    def connect(self, req: envd_dot_process_dot_v1_dot_process__pb2.ConnectRequest , **opts) -> Generator[envd_dot_process_dot_v1_dot_process__pb2.ConnectResponse, Any, None]:
+        return self._connect.call_server_stream(req, **opts)
 
-    def start_process(self, req: envd_dot_process_dot_v1_dot_process__pb2.StartProcessRequest , **opts) -> Generator[envd_dot_process_dot_v1_dot_process__pb2.StartProcessResponse, Any, None]:
-        return self._start_process.call_server_stream(req, **opts)
+    def start(self, req: envd_dot_process_dot_v1_dot_process__pb2.StartRequest , **opts) -> Generator[envd_dot_process_dot_v1_dot_process__pb2.StartResponse, Any, None]:
+        return self._start.call_server_stream(req, **opts)
 
-    def update_process(self, req: envd_dot_process_dot_v1_dot_process__pb2.UpdateProcessRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.UpdateProcessResponse:
-        return self._update_process.call_unary(req, **opts)
+    def update(self, req: envd_dot_process_dot_v1_dot_process__pb2.UpdateRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.UpdateResponse:
+        return self._update.call_unary(req, **opts)
 
-    def send_process_input_stream(self, req: envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputStreamRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputStreamResponse:
-        return self._send_process_input_stream.call_client_stream(req, **opts)
+    def stream_input(self, req: envd_dot_process_dot_v1_dot_process__pb2.StreamInputRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.StreamInputResponse:
+        return self._stream_input.call_client_stream(req, **opts)
 
-    def send_process_input(self, req: envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.SendProcessInputResponse:
-        return self._send_process_input.call_unary(req, **opts)
+    def send_input(self, req: envd_dot_process_dot_v1_dot_process__pb2.SendInputRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.SendInputResponse:
+        return self._send_input.call_unary(req, **opts)
 
-    def send_process_signal(self, req: envd_dot_process_dot_v1_dot_process__pb2.SendProcessSignalRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.SendProcessSignalResponse:
-        return self._send_process_signal.call_unary(req, **opts)
+    def send_signal(self, req: envd_dot_process_dot_v1_dot_process__pb2.SendSignalRequest, **opts) -> envd_dot_process_dot_v1_dot_process__pb2.SendSignalResponse:
+        return self._send_signal.call_unary(req, **opts)

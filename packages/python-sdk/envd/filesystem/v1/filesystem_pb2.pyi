@@ -1,5 +1,3 @@
-from google.protobuf import timestamp_pb2 as _timestamp_pb2
-from envd.permissions.v1 import permissions_pb2 as _permissions_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -32,31 +30,13 @@ EVENT_TYPE_REMOVE: EventType
 EVENT_TYPE_RENAME: EventType
 EVENT_TYPE_CHMOD: EventType
 
-class CreateDirRequest(_message.Message):
-    __slots__ = ("path", "mode", "owner")
+class RemoveRequest(_message.Message):
+    __slots__ = ("path",)
     PATH_FIELD_NUMBER: _ClassVar[int]
-    MODE_FIELD_NUMBER: _ClassVar[int]
-    OWNER_FIELD_NUMBER: _ClassVar[int]
     path: str
-    mode: str
-    owner: _permissions_pb2.Credentials
-    def __init__(self, path: _Optional[str] = ..., mode: _Optional[str] = ..., owner: _Optional[_Union[_permissions_pb2.Credentials, _Mapping]] = ...) -> None: ...
+    def __init__(self, path: _Optional[str] = ...) -> None: ...
 
-class CreateDirResponse(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
-
-class CopyRequest(_message.Message):
-    __slots__ = ("source", "destination", "mode")
-    SOURCE_FIELD_NUMBER: _ClassVar[int]
-    DESTINATION_FIELD_NUMBER: _ClassVar[int]
-    MODE_FIELD_NUMBER: _ClassVar[int]
-    source: str
-    destination: str
-    mode: str
-    def __init__(self, source: _Optional[str] = ..., destination: _Optional[str] = ..., mode: _Optional[str] = ...) -> None: ...
-
-class CopyResponse(_message.Message):
+class RemoveResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
@@ -72,30 +52,6 @@ class StatResponse(_message.Message):
     entry: EntryInfo
     def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
 
-class RemoveRequest(_message.Message):
-    __slots__ = ("path", "recursive")
-    PATH_FIELD_NUMBER: _ClassVar[int]
-    RECURSIVE_FIELD_NUMBER: _ClassVar[int]
-    path: str
-    recursive: bool
-    def __init__(self, path: _Optional[str] = ..., recursive: bool = ...) -> None: ...
-
-class RemoveResponse(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
-
-class RenameRequest(_message.Message):
-    __slots__ = ("source", "destination")
-    SOURCE_FIELD_NUMBER: _ClassVar[int]
-    DESTINATION_FIELD_NUMBER: _ClassVar[int]
-    source: str
-    destination: str
-    def __init__(self, source: _Optional[str] = ..., destination: _Optional[str] = ...) -> None: ...
-
-class RenameResponse(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
-
 class EntryInfo(_message.Message):
     __slots__ = ("name", "type")
     NAME_FIELD_NUMBER: _ClassVar[int]
@@ -104,13 +60,13 @@ class EntryInfo(_message.Message):
     type: FileType
     def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[FileType, str]] = ...) -> None: ...
 
-class ListDirRequest(_message.Message):
+class ListRequest(_message.Message):
     __slots__ = ("path",)
     PATH_FIELD_NUMBER: _ClassVar[int]
     path: str
     def __init__(self, path: _Optional[str] = ...) -> None: ...
 
-class ListDirResponse(_message.Message):
+class ListResponse(_message.Message):
     __slots__ = ("entries",)
     ENTRIES_FIELD_NUMBER: _ClassVar[int]
     entries: _containers.RepeatedCompositeFieldContainer[EntryInfo]

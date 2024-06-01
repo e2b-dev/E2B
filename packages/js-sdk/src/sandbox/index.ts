@@ -1,37 +1,39 @@
-import { APIOpts } from '../api'
-import { RPC_PORT, DEBUG, DOMAIN } from '../constants'
-import { getApiKey } from '../utils/apiKey'
 import { SandboxApi } from './sandboxApi'
 import { SandboxRpc } from './rpc'
 import { Logger } from './logger'
-import { SandboxMetadata } from './metadata'
+import { SandboxFiles } from './sandboxFiles'
+import { ConnectionOpts, ConnectionConfig } from '../connectionConfig'
 
-export interface SandboxOpts extends APIOpts {
-  apiKey?: string
-  /**
-   * Domain to use for the API requests. If not provided, the `E2B_DOMAIN` environment variable will be used.
-   */
-  domain?: string
+export interface SandboxOpts extends ConnectionOpts {
   /**
    * A dictionary of strings that is stored alongside the running sandbox.
    * You can see this metadata when you list running sandboxes.
    */
-  metadata?: SandboxMetadata
+  metadata?: { [key: string]: string }
   logger?: Logger
   timeout?: number
 }
 
+const SANDBOX_SERVER_PORT = 49982
+
+
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate = 'base'
 
-  private readonly rpc: SandboxRpc
+  private readonly connectionConfig: ConnectionConfig
 
-  constructor(readonly sandboxID: string, private readonly opts: Omit<SandboxOpts, 'timeout' | 'metadata' | 'template' | ''>) {
+  private readonly rpc: SandboxRpc
+  private readonly files: SandboxFiles
+
+  constructor(readonly sandboxID: string, opts: Omit<SandboxOpts, 'timeout' | 'metadata'> = {}) {
     super()
 
-    const rpcUrl = `${this.debug ? 'http' : 'https'}://${this.getHostname(RPC_PORT)}`
+    this.connectionConfig = new ConnectionConfig(opts)
 
-    this.rpc = new SandboxRpc(rpcUrl)
+    const sandboxServerUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHostname(SANDBOX_SERVER_PORT)}`
+
+    this.rpc = new SandboxRpc(sandboxServerUrl)
+    this.files = new SandboxFiles(sandboxServerUrl)
   }
 
   get filesystem() {
@@ -42,22 +44,10 @@ export class Sandbox extends SandboxApi {
     return this.rpc.process
   }
 
-  private get debug() {
-    return this.opts?.debug ?? DEBUG
-  }
-
-  private get domain() {
-    return this.opts?.domain ?? DOMAIN
-  }
-
-  private get apiKey() {
-    return getApiKey(this.opts?.apiKey)
-  }
-
   /**
    * Creates a new Sandbox from the specified options.
    */
-  static async spawn<S extends typeof Sandbox>(this: S, template = this.defaultTemplate, opts: SandboxOpts = {}): Promise<InstanceType<S>> {
+  static async spawn<S extends typeof Sandbox>(this: S, template = this.defaultTemplate, opts?: SandboxOpts): Promise<InstanceType<S>> {
     const sandboxID = await this.createSandbox(template, opts)
 
     return new this(sandboxID, opts) as InstanceType<S>
@@ -66,7 +56,7 @@ export class Sandbox extends SandboxApi {
   /**
    * Connects to an existing Sandbox.
    */
-  static async connect<S extends typeof Sandbox>(this: S, sandboxID: string, opts: Omit<SandboxOpts, 'id' | 'template'> = {}): Promise<InstanceType<S>> {
+  static async connect<S extends typeof Sandbox>(this: S, sandboxID: string, opts?: Omit<SandboxOpts, 'metadata' | 'timeout'>): Promise<InstanceType<S>> {
     return new this(sandboxID, opts) as InstanceType<S>
   }
 
@@ -79,35 +69,18 @@ export class Sandbox extends SandboxApi {
     * @returns Hostname of the sandbox or sandbox's port
     */
   getHostname(port: number) {
-    if (this.debug) {
-      if (port) {
-        return `localhost:${port}`
-      }
-
-      return 'localhost'
+    if (this.connectionConfig.debug) {
+      return `localhost:${port}`
     }
 
-    const hostname = `${this.sandboxID}.${this.domain}`
-    if (port) {
-      return `${port}-${hostname}`
-    }
-
-    return hostname
+    return `${port}-${this.sandboxID}.${this.connectionConfig.domain}`
   }
 
   async setTimeout(timeout: number) {
-    await SandboxApi.setTimeout(this.sandboxID, timeout, {
-      apiKey: this.apiKey,
-      domain: this.domain,
-      debug: this.debug,
-    })
+    await SandboxApi.setTimeout(this.sandboxID, timeout, this.connectionConfig)
   }
 
   async kill() {
-    await SandboxApi.kill(this.sandboxID, {
-      apiKey: this.apiKey,
-      domain: this.domain,
-      debug: this.debug,
-    })
+    await SandboxApi.kill(this.sandboxID, this.connectionConfig)
   }
 }

@@ -18,18 +18,10 @@ class FilesystemServiceClient:
             json=json,
             **opts
         )
-        self._create_dir = connect.Client(
+        self._list = connect.Client(
             pool=pool,
-            url=f"{base_url}/{FilesystemServiceName}/CreateDir",
-            response_type=envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CreateDirResponse,
-            compressor=compressor,
-            json=json,
-            **opts
-        )
-        self._list_dir = connect.Client(
-            pool=pool,
-            url=f"{base_url}/{FilesystemServiceName}/ListDir",
-            response_type=envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListDirResponse,
+            url=f"{base_url}/{FilesystemServiceName}/List",
+            response_type=envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListResponse,
             compressor=compressor,
             json=json,
             **opts
@@ -42,14 +34,6 @@ class FilesystemServiceClient:
             json=json,
             **opts
         )
-        self._rename = connect.Client(
-            pool=pool,
-            url=f"{base_url}/{FilesystemServiceName}/Rename",
-            response_type=envd_dot_filesystem_dot_v1_dot_filesystem__pb2.RenameResponse,
-            compressor=compressor,
-            json=json,
-            **opts
-        )
         self._remove = connect.Client(
             pool=pool,
             url=f"{base_url}/{FilesystemServiceName}/Remove",
@@ -58,32 +42,15 @@ class FilesystemServiceClient:
             json=json,
             **opts
         )
-        self._copy = connect.Client(
-            pool=pool,
-            url=f"{base_url}/{FilesystemServiceName}/Copy",
-            response_type=envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CopyResponse,
-            compressor=compressor,
-            json=json,
-            **opts
-        )
 
     def stat(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.StatRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.StatResponse:
         return self._stat.call_unary(req, **opts)
 
-    def create_dir(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CreateDirRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CreateDirResponse:
-        return self._create_dir.call_unary(req, **opts)
-
-    def list_dir(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListDirRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListDirResponse:
-        return self._list_dir.call_unary(req, **opts)
+    def list(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.ListResponse:
+        return self._list.call_unary(req, **opts)
 
     def watch(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.WatchRequest , **opts) -> Generator[envd_dot_filesystem_dot_v1_dot_filesystem__pb2.WatchResponse, Any, None]:
         return self._watch.call_server_stream(req, **opts)
 
-    def rename(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.RenameRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.RenameResponse:
-        return self._rename.call_unary(req, **opts)
-
     def remove(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.RemoveRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.RemoveResponse:
         return self._remove.call_unary(req, **opts)
-
-    def copy(self, req: envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CopyRequest, **opts) -> envd_dot_filesystem_dot_v1_dot_filesystem__pb2.CopyResponse:
-        return self._copy.call_unary(req, **opts)

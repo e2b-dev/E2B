@@ -7,14 +7,12 @@ import {
 
 import { FilesystemService } from '../../envd/filesystem/v1/filesystem_connect'
 import {
-  CopyRequest,
   FilesystemEvent,
-  ListDirRequest,
-  ListDirResponse,
   RemoveRequest,
-  RenameRequest,
   StatRequest,
   StatResponse,
+  ListRequest,
+  ListResponse,
   WatchRequest,
 } from '../../envd/filesystem/v1/filesystem_pb'
 
@@ -24,25 +22,13 @@ export class Filesystem {
 
   constructor(private readonly transport: Transport) { }
 
-  async copy(params: PlainMessage<CopyRequest>): Promise<void> {
-    await this.service.copy(params)
-  }
-
-  async createDir(params: PlainMessage<CopyRequest>): Promise<void> {
-    await this.service.createDir(params)
-  }
-
-  async listDir(params: PlainMessage<ListDirRequest>): Promise<ListDirResponse['entries']> {
-    const res = await this.service.listDir(params)
+  async list(params: PlainMessage<ListRequest>): Promise<ListResponse['entries']> {
+    const res = await this.service.list(params)
     return res.entries
   }
 
   async remove(params: PlainMessage<RemoveRequest>): Promise<void> {
     await this.service.remove(params)
-  }
-
-  async rename(params: PlainMessage<RenameRequest>): Promise<void> {
-    await this.service.rename(params)
   }
 
   async exists(params: PlainMessage<StatRequest>): Promise<StatResponse['entry']> {

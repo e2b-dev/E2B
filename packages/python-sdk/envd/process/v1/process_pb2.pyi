@@ -1,4 +1,3 @@
-from envd.permissions.v1 import permissions_pb2 as _permissions_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -48,27 +47,33 @@ class ProcessConfig(_message.Message):
     cwd: str
     def __init__(self, cmd: _Optional[str] = ..., args: _Optional[_Iterable[str]] = ..., envs: _Optional[_Mapping[str, str]] = ..., cwd: _Optional[str] = ...) -> None: ...
 
-class ListProcessesRequest(_message.Message):
+class ListRequest(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
-class ListProcessesResponse(_message.Message):
+class ListResponse(_message.Message):
     __slots__ = ("processes",)
     PROCESSES_FIELD_NUMBER: _ClassVar[int]
     processes: _containers.RepeatedCompositeFieldContainer[ProcessConfig]
     def __init__(self, processes: _Optional[_Iterable[_Union[ProcessConfig, _Mapping]]] = ...) -> None: ...
 
-class StartProcessRequest(_message.Message):
+class Credential(_message.Message):
+    __slots__ = ("username",)
+    USERNAME_FIELD_NUMBER: _ClassVar[int]
+    username: str
+    def __init__(self, username: _Optional[str] = ...) -> None: ...
+
+class StartRequest(_message.Message):
     __slots__ = ("process", "pty", "owner")
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     PTY_FIELD_NUMBER: _ClassVar[int]
     OWNER_FIELD_NUMBER: _ClassVar[int]
     process: ProcessConfig
     pty: PTY
-    owner: _permissions_pb2.Credentials
-    def __init__(self, process: _Optional[_Union[ProcessConfig, _Mapping]] = ..., pty: _Optional[_Union[PTY, _Mapping]] = ..., owner: _Optional[_Union[_permissions_pb2.Credentials, _Mapping]] = ...) -> None: ...
+    owner: Credential
+    def __init__(self, process: _Optional[_Union[ProcessConfig, _Mapping]] = ..., pty: _Optional[_Union[PTY, _Mapping]] = ..., owner: _Optional[_Union[Credential, _Mapping]] = ...) -> None: ...
 
-class UpdateProcessRequest(_message.Message):
+class UpdateRequest(_message.Message):
     __slots__ = ("process", "pty")
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     PTY_FIELD_NUMBER: _ClassVar[int]
@@ -76,7 +81,7 @@ class UpdateProcessRequest(_message.Message):
     pty: PTY
     def __init__(self, process: _Optional[_Union[ProcessSelector, _Mapping]] = ..., pty: _Optional[_Union[PTY, _Mapping]] = ...) -> None: ...
 
-class UpdateProcessResponse(_message.Message):
+class UpdateResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
@@ -113,19 +118,19 @@ class ProcessEvent(_message.Message):
     end: ProcessEvent.EndEvent
     def __init__(self, start: _Optional[_Union[ProcessEvent.StartEvent, _Mapping]] = ..., data: _Optional[_Union[ProcessEvent.DataEvent, _Mapping]] = ..., end: _Optional[_Union[ProcessEvent.EndEvent, _Mapping]] = ...) -> None: ...
 
-class StartProcessResponse(_message.Message):
+class StartResponse(_message.Message):
     __slots__ = ("event",)
     EVENT_FIELD_NUMBER: _ClassVar[int]
     event: ProcessEvent
     def __init__(self, event: _Optional[_Union[ProcessEvent, _Mapping]] = ...) -> None: ...
 
-class ReconnectProcessResponse(_message.Message):
+class ConnectResponse(_message.Message):
     __slots__ = ("event",)
     EVENT_FIELD_NUMBER: _ClassVar[int]
     event: ProcessEvent
     def __init__(self, event: _Optional[_Union[ProcessEvent, _Mapping]] = ...) -> None: ...
 
-class SendProcessInputRequest(_message.Message):
+class SendInputRequest(_message.Message):
     __slots__ = ("process", "input")
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     INPUT_FIELD_NUMBER: _ClassVar[int]
@@ -133,7 +138,7 @@ class SendProcessInputRequest(_message.Message):
     input: ProcessInput
     def __init__(self, process: _Optional[_Union[ProcessSelector, _Mapping]] = ..., input: _Optional[_Union[ProcessInput, _Mapping]] = ...) -> None: ...
 
-class SendProcessInputResponse(_message.Message):
+class SendInputResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
@@ -145,7 +150,7 @@ class ProcessInput(_message.Message):
     tty: bytes
     def __init__(self, stdin: _Optional[bytes] = ..., tty: _Optional[bytes] = ...) -> None: ...
 
-class SendProcessInputStreamRequest(_message.Message):
+class StreamInputRequest(_message.Message):
     __slots__ = ("start", "data")
     class StartEvent(_message.Message):
         __slots__ = ("process",)
@@ -159,15 +164,15 @@ class SendProcessInputStreamRequest(_message.Message):
         def __init__(self, input: _Optional[_Union[ProcessInput, _Mapping]] = ...) -> None: ...
     START_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
-    start: SendProcessInputStreamRequest.StartEvent
-    data: SendProcessInputStreamRequest.DataEvent
-    def __init__(self, start: _Optional[_Union[SendProcessInputStreamRequest.StartEvent, _Mapping]] = ..., data: _Optional[_Union[SendProcessInputStreamRequest.DataEvent, _Mapping]] = ...) -> None: ...
+    start: StreamInputRequest.StartEvent
+    data: StreamInputRequest.DataEvent
+    def __init__(self, start: _Optional[_Union[StreamInputRequest.StartEvent, _Mapping]] = ..., data: _Optional[_Union[StreamInputRequest.DataEvent, _Mapping]] = ...) -> None: ...
 
-class SendProcessInputStreamResponse(_message.Message):
+class StreamInputResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
-class SendProcessSignalRequest(_message.Message):
+class SendSignalRequest(_message.Message):
     __slots__ = ("process", "signal")
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     SIGNAL_FIELD_NUMBER: _ClassVar[int]
@@ -175,11 +180,11 @@ class SendProcessSignalRequest(_message.Message):
     signal: Signal
     def __init__(self, process: _Optional[_Union[ProcessSelector, _Mapping]] = ..., signal: _Optional[_Union[Signal, str]] = ...) -> None: ...
 
-class SendProcessSignalResponse(_message.Message):
+class SendSignalResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
-class ReconnectProcessRequest(_message.Message):
+class ConnectRequest(_message.Message):
     __slots__ = ("process",)
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     process: ProcessSelector

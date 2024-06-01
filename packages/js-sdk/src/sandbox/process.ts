@@ -1,6 +1,6 @@
 import { EnvVars } from './envVars'
 import { CallOpts, SandboxConnection } from './sandboxConnection'
-import { withTimeout } from '../utils/promise'
+import { withTimeout } from './promise'
 
 export const processService = 'process'
 

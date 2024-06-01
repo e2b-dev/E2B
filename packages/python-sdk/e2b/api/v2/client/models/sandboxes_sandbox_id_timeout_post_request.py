@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List
 from pydantic import BaseModel
 from pydantic import Field
 from typing_extensions import Annotated
@@ -34,12 +34,11 @@ class SandboxesSandboxIDTimeoutPostRequest(BaseModel):
     SandboxesSandboxIDTimeoutPostRequest
     """  # noqa: E501
 
-    duration: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(
-        default=None,
-        description="Duration in seconds from the current time after which the sandbox should expire",
+    timeout: Annotated[int, Field(strict=True, ge=0)] = Field(
+        description="Timeout in seconds from the current time after which the sandbox should expire"
     )
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["duration"]
+    __properties: ClassVar[List[str]] = ["timeout"]
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
@@ -91,7 +90,7 @@ class SandboxesSandboxIDTimeoutPostRequest(BaseModel):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({"duration": obj.get("duration")})
+        _obj = cls.model_validate({"timeout": obj.get("timeout")})
         # store additional fields in additional_properties
         for _key in obj.keys():
             if _key not in cls.__properties:

@@ -7,6 +7,7 @@ default_headers = {
     "lang_version": platform.python_version(),
     "machine": platform.machine(),
     "os": platform.platform(),
+    # TODO: Should this be disabled?
     # "package_version": metadata.version("e2b"),
     "processor": platform.processor(),
     "publisher": "e2b",

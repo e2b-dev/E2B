@@ -31,7 +31,7 @@ class NewSandbox(BaseModel):
         ..., alias="templateID", description="Identifier of the required template"
     )
     timeout: Optional[conint(strict=True, ge=0)] = Field(
-        None, description="Time to live for the sandbox in seconds."
+        15, description="Time to live for the sandbox in seconds."
     )
     metadata: Optional[Dict[str, StrictStr]] = None
     additional_properties: Dict[str, Any] = {}
@@ -80,7 +80,7 @@ class NewSandbox(BaseModel):
         _obj = NewSandbox.parse_obj(
             {
                 "template_id": obj.get("templateID"),
-                "timeout": obj.get("timeout"),
+                "timeout": obj.get("timeout") if obj.get("timeout") is not None else 15,
                 "metadata": obj.get("metadata"),
             }
         )

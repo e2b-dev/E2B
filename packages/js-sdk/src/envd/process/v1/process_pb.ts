@@ -5,7 +5,6 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { Credentials } from "../../permissions/v1/permissions_pb.js";
 
 /**
  * @generated from enum envd.process.v1.Signal
@@ -169,77 +168,120 @@ export class ProcessConfig extends Message<ProcessConfig> {
 }
 
 /**
- * @generated from message envd.process.v1.ListProcessesRequest
+ * @generated from message envd.process.v1.ListRequest
  */
-export class ListProcessesRequest extends Message<ListProcessesRequest> {
-  constructor(data?: PartialMessage<ListProcessesRequest>) {
+export class ListRequest extends Message<ListRequest> {
+  constructor(data?: PartialMessage<ListRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.ListProcessesRequest";
+  static readonly typeName = "envd.process.v1.ListRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListProcessesRequest {
-    return new ListProcessesRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListRequest {
+    return new ListRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListProcessesRequest {
-    return new ListProcessesRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListRequest {
+    return new ListRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListProcessesRequest {
-    return new ListProcessesRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListRequest {
+    return new ListRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ListProcessesRequest | PlainMessage<ListProcessesRequest> | undefined, b: ListProcessesRequest | PlainMessage<ListProcessesRequest> | undefined): boolean {
-    return proto3.util.equals(ListProcessesRequest, a, b);
+  static equals(a: ListRequest | PlainMessage<ListRequest> | undefined, b: ListRequest | PlainMessage<ListRequest> | undefined): boolean {
+    return proto3.util.equals(ListRequest, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.ListProcessesResponse
+ * @generated from message envd.process.v1.ListResponse
  */
-export class ListProcessesResponse extends Message<ListProcessesResponse> {
+export class ListResponse extends Message<ListResponse> {
   /**
    * @generated from field: repeated envd.process.v1.ProcessConfig processes = 1;
    */
   processes: ProcessConfig[] = [];
 
-  constructor(data?: PartialMessage<ListProcessesResponse>) {
+  constructor(data?: PartialMessage<ListResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.ListProcessesResponse";
+  static readonly typeName = "envd.process.v1.ListResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "processes", kind: "message", T: ProcessConfig, repeated: true },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListProcessesResponse {
-    return new ListProcessesResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListResponse {
+    return new ListResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListProcessesResponse {
-    return new ListProcessesResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListResponse {
+    return new ListResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListProcessesResponse {
-    return new ListProcessesResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListResponse {
+    return new ListResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ListProcessesResponse | PlainMessage<ListProcessesResponse> | undefined, b: ListProcessesResponse | PlainMessage<ListProcessesResponse> | undefined): boolean {
-    return proto3.util.equals(ListProcessesResponse, a, b);
+  static equals(a: ListResponse | PlainMessage<ListResponse> | undefined, b: ListResponse | PlainMessage<ListResponse> | undefined): boolean {
+    return proto3.util.equals(ListResponse, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.StartProcessRequest
+ * @generated from message envd.process.v1.Credential
  */
-export class StartProcessRequest extends Message<StartProcessRequest> {
+export class Credential extends Message<Credential> {
+  /**
+   * @generated from oneof envd.process.v1.Credential.credential
+   */
+  credential: {
+    /**
+     * @generated from field: string username = 1;
+     */
+    value: string;
+    case: "username";
+  } | { case: undefined; value?: undefined } = { case: undefined };
+
+  constructor(data?: PartialMessage<Credential>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "envd.process.v1.Credential";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "username", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "credential" },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Credential {
+    return new Credential().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Credential {
+    return new Credential().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Credential {
+    return new Credential().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Credential | PlainMessage<Credential> | undefined, b: Credential | PlainMessage<Credential> | undefined): boolean {
+    return proto3.util.equals(Credential, a, b);
+  }
+}
+
+/**
+ * @generated from message envd.process.v1.StartRequest
+ */
+export class StartRequest extends Message<StartRequest> {
   /**
    * @generated from field: envd.process.v1.ProcessConfig process = 1;
    */
@@ -251,44 +293,44 @@ export class StartProcessRequest extends Message<StartProcessRequest> {
   pty?: PTY;
 
   /**
-   * @generated from field: envd.permissions.v1.Credentials owner = 3;
+   * @generated from field: envd.process.v1.Credential owner = 3;
    */
-  owner?: Credentials;
+  owner?: Credential;
 
-  constructor(data?: PartialMessage<StartProcessRequest>) {
+  constructor(data?: PartialMessage<StartRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.StartProcessRequest";
+  static readonly typeName = "envd.process.v1.StartRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "process", kind: "message", T: ProcessConfig },
     { no: 2, name: "pty", kind: "message", T: PTY, opt: true },
-    { no: 3, name: "owner", kind: "message", T: Credentials },
+    { no: 3, name: "owner", kind: "message", T: Credential },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StartProcessRequest {
-    return new StartProcessRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StartRequest {
+    return new StartRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StartProcessRequest {
-    return new StartProcessRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StartRequest {
+    return new StartRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StartProcessRequest {
-    return new StartProcessRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StartRequest {
+    return new StartRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: StartProcessRequest | PlainMessage<StartProcessRequest> | undefined, b: StartProcessRequest | PlainMessage<StartProcessRequest> | undefined): boolean {
-    return proto3.util.equals(StartProcessRequest, a, b);
+  static equals(a: StartRequest | PlainMessage<StartRequest> | undefined, b: StartRequest | PlainMessage<StartRequest> | undefined): boolean {
+    return proto3.util.equals(StartRequest, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.UpdateProcessRequest
+ * @generated from message envd.process.v1.UpdateRequest
  */
-export class UpdateProcessRequest extends Message<UpdateProcessRequest> {
+export class UpdateRequest extends Message<UpdateRequest> {
   /**
    * @generated from field: envd.process.v1.ProcessSelector process = 1;
    */
@@ -299,63 +341,63 @@ export class UpdateProcessRequest extends Message<UpdateProcessRequest> {
    */
   pty?: PTY;
 
-  constructor(data?: PartialMessage<UpdateProcessRequest>) {
+  constructor(data?: PartialMessage<UpdateRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.UpdateProcessRequest";
+  static readonly typeName = "envd.process.v1.UpdateRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "process", kind: "message", T: ProcessSelector },
     { no: 2, name: "pty", kind: "message", T: PTY, opt: true },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateProcessRequest {
-    return new UpdateProcessRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateRequest {
+    return new UpdateRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateProcessRequest {
-    return new UpdateProcessRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateRequest {
+    return new UpdateRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateProcessRequest {
-    return new UpdateProcessRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateRequest {
+    return new UpdateRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: UpdateProcessRequest | PlainMessage<UpdateProcessRequest> | undefined, b: UpdateProcessRequest | PlainMessage<UpdateProcessRequest> | undefined): boolean {
-    return proto3.util.equals(UpdateProcessRequest, a, b);
+  static equals(a: UpdateRequest | PlainMessage<UpdateRequest> | undefined, b: UpdateRequest | PlainMessage<UpdateRequest> | undefined): boolean {
+    return proto3.util.equals(UpdateRequest, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.UpdateProcessResponse
+ * @generated from message envd.process.v1.UpdateResponse
  */
-export class UpdateProcessResponse extends Message<UpdateProcessResponse> {
-  constructor(data?: PartialMessage<UpdateProcessResponse>) {
+export class UpdateResponse extends Message<UpdateResponse> {
+  constructor(data?: PartialMessage<UpdateResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.UpdateProcessResponse";
+  static readonly typeName = "envd.process.v1.UpdateResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateProcessResponse {
-    return new UpdateProcessResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateResponse {
+    return new UpdateResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateProcessResponse {
-    return new UpdateProcessResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateResponse {
+    return new UpdateResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateProcessResponse {
-    return new UpdateProcessResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateResponse {
+    return new UpdateResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: UpdateProcessResponse | PlainMessage<UpdateProcessResponse> | undefined, b: UpdateProcessResponse | PlainMessage<UpdateProcessResponse> | undefined): boolean {
-    return proto3.util.equals(UpdateProcessResponse, a, b);
+  static equals(a: UpdateResponse | PlainMessage<UpdateResponse> | undefined, b: UpdateResponse | PlainMessage<UpdateResponse> | undefined): boolean {
+    return proto3.util.equals(UpdateResponse, a, b);
   }
 }
 
@@ -559,83 +601,83 @@ export class ProcessEvent_EndEvent extends Message<ProcessEvent_EndEvent> {
 }
 
 /**
- * @generated from message envd.process.v1.StartProcessResponse
+ * @generated from message envd.process.v1.StartResponse
  */
-export class StartProcessResponse extends Message<StartProcessResponse> {
+export class StartResponse extends Message<StartResponse> {
   /**
    * @generated from field: envd.process.v1.ProcessEvent event = 1;
    */
   event?: ProcessEvent;
 
-  constructor(data?: PartialMessage<StartProcessResponse>) {
+  constructor(data?: PartialMessage<StartResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.StartProcessResponse";
+  static readonly typeName = "envd.process.v1.StartResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "event", kind: "message", T: ProcessEvent },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StartProcessResponse {
-    return new StartProcessResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StartResponse {
+    return new StartResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StartProcessResponse {
-    return new StartProcessResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StartResponse {
+    return new StartResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StartProcessResponse {
-    return new StartProcessResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StartResponse {
+    return new StartResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: StartProcessResponse | PlainMessage<StartProcessResponse> | undefined, b: StartProcessResponse | PlainMessage<StartProcessResponse> | undefined): boolean {
-    return proto3.util.equals(StartProcessResponse, a, b);
+  static equals(a: StartResponse | PlainMessage<StartResponse> | undefined, b: StartResponse | PlainMessage<StartResponse> | undefined): boolean {
+    return proto3.util.equals(StartResponse, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.ReconnectProcessResponse
+ * @generated from message envd.process.v1.ConnectResponse
  */
-export class ReconnectProcessResponse extends Message<ReconnectProcessResponse> {
+export class ConnectResponse extends Message<ConnectResponse> {
   /**
    * @generated from field: envd.process.v1.ProcessEvent event = 1;
    */
   event?: ProcessEvent;
 
-  constructor(data?: PartialMessage<ReconnectProcessResponse>) {
+  constructor(data?: PartialMessage<ConnectResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.ReconnectProcessResponse";
+  static readonly typeName = "envd.process.v1.ConnectResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "event", kind: "message", T: ProcessEvent },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ReconnectProcessResponse {
-    return new ReconnectProcessResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ConnectResponse {
+    return new ConnectResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ReconnectProcessResponse {
-    return new ReconnectProcessResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ConnectResponse {
+    return new ConnectResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ReconnectProcessResponse {
-    return new ReconnectProcessResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ConnectResponse {
+    return new ConnectResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ReconnectProcessResponse | PlainMessage<ReconnectProcessResponse> | undefined, b: ReconnectProcessResponse | PlainMessage<ReconnectProcessResponse> | undefined): boolean {
-    return proto3.util.equals(ReconnectProcessResponse, a, b);
+  static equals(a: ConnectResponse | PlainMessage<ConnectResponse> | undefined, b: ConnectResponse | PlainMessage<ConnectResponse> | undefined): boolean {
+    return proto3.util.equals(ConnectResponse, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.SendProcessInputRequest
+ * @generated from message envd.process.v1.SendInputRequest
  */
-export class SendProcessInputRequest extends Message<SendProcessInputRequest> {
+export class SendInputRequest extends Message<SendInputRequest> {
   /**
    * @generated from field: envd.process.v1.ProcessSelector process = 1;
    */
@@ -646,63 +688,63 @@ export class SendProcessInputRequest extends Message<SendProcessInputRequest> {
    */
   input?: ProcessInput;
 
-  constructor(data?: PartialMessage<SendProcessInputRequest>) {
+  constructor(data?: PartialMessage<SendInputRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.SendProcessInputRequest";
+  static readonly typeName = "envd.process.v1.SendInputRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "process", kind: "message", T: ProcessSelector },
     { no: 2, name: "input", kind: "message", T: ProcessInput },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendProcessInputRequest {
-    return new SendProcessInputRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendInputRequest {
+    return new SendInputRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendProcessInputRequest {
-    return new SendProcessInputRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendInputRequest {
+    return new SendInputRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendProcessInputRequest {
-    return new SendProcessInputRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendInputRequest {
+    return new SendInputRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SendProcessInputRequest | PlainMessage<SendProcessInputRequest> | undefined, b: SendProcessInputRequest | PlainMessage<SendProcessInputRequest> | undefined): boolean {
-    return proto3.util.equals(SendProcessInputRequest, a, b);
+  static equals(a: SendInputRequest | PlainMessage<SendInputRequest> | undefined, b: SendInputRequest | PlainMessage<SendInputRequest> | undefined): boolean {
+    return proto3.util.equals(SendInputRequest, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.SendProcessInputResponse
+ * @generated from message envd.process.v1.SendInputResponse
  */
-export class SendProcessInputResponse extends Message<SendProcessInputResponse> {
-  constructor(data?: PartialMessage<SendProcessInputResponse>) {
+export class SendInputResponse extends Message<SendInputResponse> {
+  constructor(data?: PartialMessage<SendInputResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.SendProcessInputResponse";
+  static readonly typeName = "envd.process.v1.SendInputResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendProcessInputResponse {
-    return new SendProcessInputResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendInputResponse {
+    return new SendInputResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendProcessInputResponse {
-    return new SendProcessInputResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendInputResponse {
+    return new SendInputResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendProcessInputResponse {
-    return new SendProcessInputResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendInputResponse {
+    return new SendInputResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SendProcessInputResponse | PlainMessage<SendProcessInputResponse> | undefined, b: SendProcessInputResponse | PlainMessage<SendProcessInputResponse> | undefined): boolean {
-    return proto3.util.equals(SendProcessInputResponse, a, b);
+  static equals(a: SendInputResponse | PlainMessage<SendInputResponse> | undefined, b: SendInputResponse | PlainMessage<SendInputResponse> | undefined): boolean {
+    return proto3.util.equals(SendInputResponse, a, b);
   }
 }
 
@@ -757,164 +799,164 @@ export class ProcessInput extends Message<ProcessInput> {
 }
 
 /**
- * @generated from message envd.process.v1.SendProcessInputStreamRequest
+ * @generated from message envd.process.v1.StreamInputRequest
  */
-export class SendProcessInputStreamRequest extends Message<SendProcessInputStreamRequest> {
+export class StreamInputRequest extends Message<StreamInputRequest> {
   /**
-   * @generated from oneof envd.process.v1.SendProcessInputStreamRequest.event
+   * @generated from oneof envd.process.v1.StreamInputRequest.event
    */
   event: {
     /**
-     * @generated from field: envd.process.v1.SendProcessInputStreamRequest.StartEvent start = 1;
+     * @generated from field: envd.process.v1.StreamInputRequest.StartEvent start = 1;
      */
-    value: SendProcessInputStreamRequest_StartEvent;
+    value: StreamInputRequest_StartEvent;
     case: "start";
   } | {
     /**
-     * @generated from field: envd.process.v1.SendProcessInputStreamRequest.DataEvent data = 2;
+     * @generated from field: envd.process.v1.StreamInputRequest.DataEvent data = 2;
      */
-    value: SendProcessInputStreamRequest_DataEvent;
+    value: StreamInputRequest_DataEvent;
     case: "data";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
-  constructor(data?: PartialMessage<SendProcessInputStreamRequest>) {
+  constructor(data?: PartialMessage<StreamInputRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.SendProcessInputStreamRequest";
+  static readonly typeName = "envd.process.v1.StreamInputRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "start", kind: "message", T: SendProcessInputStreamRequest_StartEvent, oneof: "event" },
-    { no: 2, name: "data", kind: "message", T: SendProcessInputStreamRequest_DataEvent, oneof: "event" },
+    { no: 1, name: "start", kind: "message", T: StreamInputRequest_StartEvent, oneof: "event" },
+    { no: 2, name: "data", kind: "message", T: StreamInputRequest_DataEvent, oneof: "event" },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendProcessInputStreamRequest {
-    return new SendProcessInputStreamRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamInputRequest {
+    return new StreamInputRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendProcessInputStreamRequest {
-    return new SendProcessInputStreamRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StreamInputRequest {
+    return new StreamInputRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendProcessInputStreamRequest {
-    return new SendProcessInputStreamRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StreamInputRequest {
+    return new StreamInputRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SendProcessInputStreamRequest | PlainMessage<SendProcessInputStreamRequest> | undefined, b: SendProcessInputStreamRequest | PlainMessage<SendProcessInputStreamRequest> | undefined): boolean {
-    return proto3.util.equals(SendProcessInputStreamRequest, a, b);
+  static equals(a: StreamInputRequest | PlainMessage<StreamInputRequest> | undefined, b: StreamInputRequest | PlainMessage<StreamInputRequest> | undefined): boolean {
+    return proto3.util.equals(StreamInputRequest, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.SendProcessInputStreamRequest.StartEvent
+ * @generated from message envd.process.v1.StreamInputRequest.StartEvent
  */
-export class SendProcessInputStreamRequest_StartEvent extends Message<SendProcessInputStreamRequest_StartEvent> {
+export class StreamInputRequest_StartEvent extends Message<StreamInputRequest_StartEvent> {
   /**
    * @generated from field: envd.process.v1.ProcessSelector process = 1;
    */
   process?: ProcessSelector;
 
-  constructor(data?: PartialMessage<SendProcessInputStreamRequest_StartEvent>) {
+  constructor(data?: PartialMessage<StreamInputRequest_StartEvent>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.SendProcessInputStreamRequest.StartEvent";
+  static readonly typeName = "envd.process.v1.StreamInputRequest.StartEvent";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "process", kind: "message", T: ProcessSelector },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendProcessInputStreamRequest_StartEvent {
-    return new SendProcessInputStreamRequest_StartEvent().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamInputRequest_StartEvent {
+    return new StreamInputRequest_StartEvent().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendProcessInputStreamRequest_StartEvent {
-    return new SendProcessInputStreamRequest_StartEvent().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StreamInputRequest_StartEvent {
+    return new StreamInputRequest_StartEvent().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendProcessInputStreamRequest_StartEvent {
-    return new SendProcessInputStreamRequest_StartEvent().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StreamInputRequest_StartEvent {
+    return new StreamInputRequest_StartEvent().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SendProcessInputStreamRequest_StartEvent | PlainMessage<SendProcessInputStreamRequest_StartEvent> | undefined, b: SendProcessInputStreamRequest_StartEvent | PlainMessage<SendProcessInputStreamRequest_StartEvent> | undefined): boolean {
-    return proto3.util.equals(SendProcessInputStreamRequest_StartEvent, a, b);
+  static equals(a: StreamInputRequest_StartEvent | PlainMessage<StreamInputRequest_StartEvent> | undefined, b: StreamInputRequest_StartEvent | PlainMessage<StreamInputRequest_StartEvent> | undefined): boolean {
+    return proto3.util.equals(StreamInputRequest_StartEvent, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.SendProcessInputStreamRequest.DataEvent
+ * @generated from message envd.process.v1.StreamInputRequest.DataEvent
  */
-export class SendProcessInputStreamRequest_DataEvent extends Message<SendProcessInputStreamRequest_DataEvent> {
+export class StreamInputRequest_DataEvent extends Message<StreamInputRequest_DataEvent> {
   /**
    * @generated from field: envd.process.v1.ProcessInput input = 2;
    */
   input?: ProcessInput;
 
-  constructor(data?: PartialMessage<SendProcessInputStreamRequest_DataEvent>) {
+  constructor(data?: PartialMessage<StreamInputRequest_DataEvent>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.SendProcessInputStreamRequest.DataEvent";
+  static readonly typeName = "envd.process.v1.StreamInputRequest.DataEvent";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 2, name: "input", kind: "message", T: ProcessInput },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendProcessInputStreamRequest_DataEvent {
-    return new SendProcessInputStreamRequest_DataEvent().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamInputRequest_DataEvent {
+    return new StreamInputRequest_DataEvent().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendProcessInputStreamRequest_DataEvent {
-    return new SendProcessInputStreamRequest_DataEvent().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StreamInputRequest_DataEvent {
+    return new StreamInputRequest_DataEvent().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendProcessInputStreamRequest_DataEvent {
-    return new SendProcessInputStreamRequest_DataEvent().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StreamInputRequest_DataEvent {
+    return new StreamInputRequest_DataEvent().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SendProcessInputStreamRequest_DataEvent | PlainMessage<SendProcessInputStreamRequest_DataEvent> | undefined, b: SendProcessInputStreamRequest_DataEvent | PlainMessage<SendProcessInputStreamRequest_DataEvent> | undefined): boolean {
-    return proto3.util.equals(SendProcessInputStreamRequest_DataEvent, a, b);
+  static equals(a: StreamInputRequest_DataEvent | PlainMessage<StreamInputRequest_DataEvent> | undefined, b: StreamInputRequest_DataEvent | PlainMessage<StreamInputRequest_DataEvent> | undefined): boolean {
+    return proto3.util.equals(StreamInputRequest_DataEvent, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.SendProcessInputStreamResponse
+ * @generated from message envd.process.v1.StreamInputResponse
  */
-export class SendProcessInputStreamResponse extends Message<SendProcessInputStreamResponse> {
-  constructor(data?: PartialMessage<SendProcessInputStreamResponse>) {
+export class StreamInputResponse extends Message<StreamInputResponse> {
+  constructor(data?: PartialMessage<StreamInputResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.SendProcessInputStreamResponse";
+  static readonly typeName = "envd.process.v1.StreamInputResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendProcessInputStreamResponse {
-    return new SendProcessInputStreamResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamInputResponse {
+    return new StreamInputResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendProcessInputStreamResponse {
-    return new SendProcessInputStreamResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StreamInputResponse {
+    return new StreamInputResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendProcessInputStreamResponse {
-    return new SendProcessInputStreamResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StreamInputResponse {
+    return new StreamInputResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SendProcessInputStreamResponse | PlainMessage<SendProcessInputStreamResponse> | undefined, b: SendProcessInputStreamResponse | PlainMessage<SendProcessInputStreamResponse> | undefined): boolean {
-    return proto3.util.equals(SendProcessInputStreamResponse, a, b);
+  static equals(a: StreamInputResponse | PlainMessage<StreamInputResponse> | undefined, b: StreamInputResponse | PlainMessage<StreamInputResponse> | undefined): boolean {
+    return proto3.util.equals(StreamInputResponse, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.SendProcessSignalRequest
+ * @generated from message envd.process.v1.SendSignalRequest
  */
-export class SendProcessSignalRequest extends Message<SendProcessSignalRequest> {
+export class SendSignalRequest extends Message<SendSignalRequest> {
   /**
    * @generated from field: envd.process.v1.ProcessSelector process = 1;
    */
@@ -925,100 +967,100 @@ export class SendProcessSignalRequest extends Message<SendProcessSignalRequest> 
    */
   signal = Signal.UNSPECIFIED;
 
-  constructor(data?: PartialMessage<SendProcessSignalRequest>) {
+  constructor(data?: PartialMessage<SendSignalRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.SendProcessSignalRequest";
+  static readonly typeName = "envd.process.v1.SendSignalRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "process", kind: "message", T: ProcessSelector },
     { no: 2, name: "signal", kind: "enum", T: proto3.getEnumType(Signal) },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendProcessSignalRequest {
-    return new SendProcessSignalRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendSignalRequest {
+    return new SendSignalRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendProcessSignalRequest {
-    return new SendProcessSignalRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendSignalRequest {
+    return new SendSignalRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendProcessSignalRequest {
-    return new SendProcessSignalRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendSignalRequest {
+    return new SendSignalRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SendProcessSignalRequest | PlainMessage<SendProcessSignalRequest> | undefined, b: SendProcessSignalRequest | PlainMessage<SendProcessSignalRequest> | undefined): boolean {
-    return proto3.util.equals(SendProcessSignalRequest, a, b);
+  static equals(a: SendSignalRequest | PlainMessage<SendSignalRequest> | undefined, b: SendSignalRequest | PlainMessage<SendSignalRequest> | undefined): boolean {
+    return proto3.util.equals(SendSignalRequest, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.SendProcessSignalResponse
+ * @generated from message envd.process.v1.SendSignalResponse
  */
-export class SendProcessSignalResponse extends Message<SendProcessSignalResponse> {
-  constructor(data?: PartialMessage<SendProcessSignalResponse>) {
+export class SendSignalResponse extends Message<SendSignalResponse> {
+  constructor(data?: PartialMessage<SendSignalResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.SendProcessSignalResponse";
+  static readonly typeName = "envd.process.v1.SendSignalResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendProcessSignalResponse {
-    return new SendProcessSignalResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SendSignalResponse {
+    return new SendSignalResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendProcessSignalResponse {
-    return new SendProcessSignalResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SendSignalResponse {
+    return new SendSignalResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendProcessSignalResponse {
-    return new SendProcessSignalResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SendSignalResponse {
+    return new SendSignalResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SendProcessSignalResponse | PlainMessage<SendProcessSignalResponse> | undefined, b: SendProcessSignalResponse | PlainMessage<SendProcessSignalResponse> | undefined): boolean {
-    return proto3.util.equals(SendProcessSignalResponse, a, b);
+  static equals(a: SendSignalResponse | PlainMessage<SendSignalResponse> | undefined, b: SendSignalResponse | PlainMessage<SendSignalResponse> | undefined): boolean {
+    return proto3.util.equals(SendSignalResponse, a, b);
   }
 }
 
 /**
- * @generated from message envd.process.v1.ReconnectProcessRequest
+ * @generated from message envd.process.v1.ConnectRequest
  */
-export class ReconnectProcessRequest extends Message<ReconnectProcessRequest> {
+export class ConnectRequest extends Message<ConnectRequest> {
   /**
    * @generated from field: envd.process.v1.ProcessSelector process = 1;
    */
   process?: ProcessSelector;
 
-  constructor(data?: PartialMessage<ReconnectProcessRequest>) {
+  constructor(data?: PartialMessage<ConnectRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.process.v1.ReconnectProcessRequest";
+  static readonly typeName = "envd.process.v1.ConnectRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "process", kind: "message", T: ProcessSelector },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ReconnectProcessRequest {
-    return new ReconnectProcessRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ConnectRequest {
+    return new ConnectRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ReconnectProcessRequest {
-    return new ReconnectProcessRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ConnectRequest {
+    return new ConnectRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ReconnectProcessRequest {
-    return new ReconnectProcessRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ConnectRequest {
+    return new ConnectRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ReconnectProcessRequest | PlainMessage<ReconnectProcessRequest> | undefined, b: ReconnectProcessRequest | PlainMessage<ReconnectProcessRequest> | undefined): boolean {
-    return proto3.util.equals(ReconnectProcessRequest, a, b);
+  static equals(a: ConnectRequest | PlainMessage<ConnectRequest> | undefined, b: ConnectRequest | PlainMessage<ConnectRequest> | undefined): boolean {
+    return proto3.util.equals(ConnectRequest, a, b);
   }
 }
 

@@ -170,6 +170,7 @@ components:
           type: integer
           format: int32
           minimum: 0
+          default: 15
           description: Time to live for the sandbox in seconds.
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
@@ -382,14 +383,15 @@ paths:
         - ApiKeyAuth: []
       tags: [sandboxes]
       requestBody:
-        required: false
         content:
           application/json:
             schema:
               type: object
+              required:
+                - timeout
               properties:
-                duration:
-                  description: Duration in seconds from the current time after which the sandbox should expire
+                timeout:
+                  description: Timeout in seconds from the current time after which the sandbox should expire
                   type: integer
                   format: int32
                   minimum: 0

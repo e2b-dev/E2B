@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package envd.permissions.v1;
-
-message Credentials {
-  oneof credentials {
-    string username = 1;
-  }
-}

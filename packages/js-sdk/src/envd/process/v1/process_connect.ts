@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ListProcessesRequest, ListProcessesResponse, ReconnectProcessRequest, ReconnectProcessResponse, SendProcessInputRequest, SendProcessInputResponse, SendProcessInputStreamRequest, SendProcessInputStreamResponse, SendProcessSignalRequest, SendProcessSignalResponse, StartProcessRequest, StartProcessResponse, UpdateProcessRequest, UpdateProcessResponse } from "./process_pb.js";
+import { ConnectRequest, ConnectResponse, ListRequest, ListResponse, SendInputRequest, SendInputResponse, SendSignalRequest, SendSignalResponse, StartRequest, StartResponse, StreamInputRequest, StreamInputResponse, UpdateRequest, UpdateResponse } from "./process_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -13,68 +13,68 @@ export const ProcessService = {
   typeName: "envd.process.v1.ProcessService",
   methods: {
     /**
-     * @generated from rpc envd.process.v1.ProcessService.ListProcesses
+     * @generated from rpc envd.process.v1.ProcessService.List
      */
-    listProcesses: {
-      name: "ListProcesses",
-      I: ListProcessesRequest,
-      O: ListProcessesResponse,
+    list: {
+      name: "List",
+      I: ListRequest,
+      O: ListResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc envd.process.v1.ProcessService.ReconnectProcess
+     * @generated from rpc envd.process.v1.ProcessService.Connect
      */
-    reconnectProcess: {
-      name: "ReconnectProcess",
-      I: ReconnectProcessRequest,
-      O: ReconnectProcessResponse,
+    connect: {
+      name: "Connect",
+      I: ConnectRequest,
+      O: ConnectResponse,
       kind: MethodKind.ServerStreaming,
     },
     /**
-     * @generated from rpc envd.process.v1.ProcessService.StartProcess
+     * @generated from rpc envd.process.v1.ProcessService.Start
      */
-    startProcess: {
-      name: "StartProcess",
-      I: StartProcessRequest,
-      O: StartProcessResponse,
+    start: {
+      name: "Start",
+      I: StartRequest,
+      O: StartResponse,
       kind: MethodKind.ServerStreaming,
     },
     /**
-     * @generated from rpc envd.process.v1.ProcessService.UpdateProcess
+     * @generated from rpc envd.process.v1.ProcessService.Update
      */
-    updateProcess: {
-      name: "UpdateProcess",
-      I: UpdateProcessRequest,
-      O: UpdateProcessResponse,
+    update: {
+      name: "Update",
+      I: UpdateRequest,
+      O: UpdateResponse,
       kind: MethodKind.Unary,
     },
     /**
      * Client input stream ensures ordering of messages
      *
-     * @generated from rpc envd.process.v1.ProcessService.SendProcessInputStream
+     * @generated from rpc envd.process.v1.ProcessService.StreamInput
      */
-    sendProcessInputStream: {
-      name: "SendProcessInputStream",
-      I: SendProcessInputStreamRequest,
-      O: SendProcessInputStreamResponse,
+    streamInput: {
+      name: "StreamInput",
+      I: StreamInputRequest,
+      O: StreamInputResponse,
       kind: MethodKind.ClientStreaming,
     },
     /**
-     * @generated from rpc envd.process.v1.ProcessService.SendProcessInput
+     * @generated from rpc envd.process.v1.ProcessService.SendInput
      */
-    sendProcessInput: {
-      name: "SendProcessInput",
-      I: SendProcessInputRequest,
-      O: SendProcessInputResponse,
+    sendInput: {
+      name: "SendInput",
+      I: SendInputRequest,
+      O: SendInputResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc envd.process.v1.ProcessService.SendProcessSignal
+     * @generated from rpc envd.process.v1.ProcessService.SendSignal
      */
-    sendProcessSignal: {
-      name: "SendProcessSignal",
-      I: SendProcessSignalRequest,
-      O: SendProcessSignalResponse,
+    sendSignal: {
+      name: "SendSignal",
+      I: SendSignalRequest,
+      O: SendSignalResponse,
       kind: MethodKind.Unary,
     },
   }

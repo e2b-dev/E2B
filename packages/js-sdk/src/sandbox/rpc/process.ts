@@ -7,22 +7,22 @@ import {
 
 import { ProcessService } from '../../envd/process/v1/process_connect'
 import {
-  ListProcessesRequest,
-  ListProcessesResponse,
+  ListRequest,
+  ListResponse,
   ProcessEvent_EndEvent,
   ProcessEvent_StartEvent,
-  ReconnectProcessRequest,
-  ReconnectProcessResponse,
-  SendProcessInputRequest,
-  SendProcessInputStreamRequest,
-  SendProcessSignalRequest,
+  ConnectRequest,
+  ConnectResponse,
+  SendInputRequest,
+  StreamInputRequest,
+  SendSignalRequest,
   Signal,
-  StartProcessRequest,
-  StartProcessResponse,
-  UpdateProcessRequest,
+  StartRequest,
+  StartResponse,
+  UpdateRequest,
 } from '../../envd/process/v1/process_pb'
-import { concatUint8Arrays } from '../../utils/array'
-import { createDeferredPromise } from '../../utils/promise'
+import { concatUint8Arrays } from '../array'
+import { createDeferredPromise } from '../promise'
 
 // TODO: Sane defaults
 // TODO: Reconnect vs connect
@@ -34,13 +34,13 @@ export class Process {
 
   constructor(private readonly transport: Transport) { }
 
-  async list(params: PlainMessage<ListProcessesRequest>): Promise<ListProcessesResponse['processes']> {
-    const res = await this.service.listProcesses(params)
+  async list(params: PlainMessage<ListRequest>): Promise<ListResponse['processes']> {
+    const res = await this.service.list(params)
     return res.processes
   }
 
   async start(
-    params: PlainMessage<StartProcessRequest>,
+    params: PlainMessage<StartRequest>,
     {
       onStderr,
       onStdout,
@@ -51,7 +51,7 @@ export class Process {
   ) {
     const controller = new AbortController()
 
-    const res = this.service.startProcess(params, {
+    const res = this.service.start(params, {
       signal: controller.signal,
     })
 
@@ -82,7 +82,7 @@ export class Process {
   }
 
   private async handleProcessStream(
-    stream: AsyncIterable<StartProcessResponse | ReconnectProcessResponse>,
+    stream: AsyncIterable<StartResponse | ConnectResponse>,
     {
       onStderr,
       onStdout,
@@ -147,8 +147,8 @@ export class Process {
     }
   }
 
-  private async reconnect(
-    params: PlainMessage<ReconnectProcessRequest>,
+  private async connect(
+    params: PlainMessage<ConnectRequest>,
     {
       onStderr,
       onStdout,
@@ -165,7 +165,7 @@ export class Process {
 
     const controller = new AbortController()
 
-    const res = this.service.reconnectProcess(params, {
+    const res = this.service.connect(params, {
       signal: controller.signal,
     })
 
@@ -192,22 +192,22 @@ export class Process {
     }
   }
 
-  private async sendSignal(params: PlainMessage<SendProcessSignalRequest>): Promise<void> {
-    await this.service.sendProcessSignal(params)
+  private async sendSignal(params: PlainMessage<SendSignalRequest>): Promise<void> {
+    await this.service.sendSignal(params)
   }
 
-  private async sendInput(params: PlainMessage<SendProcessInputRequest>): Promise<void> {
-    await this.service.sendProcessInput(params)
+  private async sendInput(params: PlainMessage<SendInputRequest>): Promise<void> {
+    await this.service.sendInput(params)
   }
 
-  private async update(params: PlainMessage<UpdateProcessRequest>): Promise<void> {
-    await this.service.updateProcess(params)
+  private async update(params: PlainMessage<UpdateRequest>): Promise<void> {
+    await this.service.update(params)
   }
 
-  private async streamInput(params: AsyncIterable<PlainMessage<SendProcessInputStreamRequest>>) {
+  private async streamInput(params: AsyncIterable<PlainMessage<StreamInputRequest>>) {
     const controller = new AbortController()
 
-    this.service.sendProcessInputStream(params, {
+    this.service.streamInput(params, {
       signal: controller.signal,
     })
 

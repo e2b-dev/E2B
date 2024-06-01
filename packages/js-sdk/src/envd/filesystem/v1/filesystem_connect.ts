@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { CopyRequest, CopyResponse, CreateDirRequest, CreateDirResponse, ListDirRequest, ListDirResponse, RemoveRequest, RemoveResponse, RenameRequest, RenameResponse, StatRequest, StatResponse, WatchRequest, WatchResponse } from "./filesystem_pb.js";
+import { ListRequest, ListResponse, RemoveRequest, RemoveResponse, StatRequest, StatResponse, WatchRequest, WatchResponse } from "./filesystem_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -22,21 +22,12 @@ export const FilesystemService = {
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc envd.filesystem.v1.FilesystemService.CreateDir
+     * @generated from rpc envd.filesystem.v1.FilesystemService.List
      */
-    createDir: {
-      name: "CreateDir",
-      I: CreateDirRequest,
-      O: CreateDirResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * @generated from rpc envd.filesystem.v1.FilesystemService.ListDir
-     */
-    listDir: {
-      name: "ListDir",
-      I: ListDirRequest,
-      O: ListDirResponse,
+    list: {
+      name: "List",
+      I: ListRequest,
+      O: ListResponse,
       kind: MethodKind.Unary,
     },
     /**
@@ -49,30 +40,12 @@ export const FilesystemService = {
       kind: MethodKind.ServerStreaming,
     },
     /**
-     * @generated from rpc envd.filesystem.v1.FilesystemService.Rename
-     */
-    rename: {
-      name: "Rename",
-      I: RenameRequest,
-      O: RenameResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
      * @generated from rpc envd.filesystem.v1.FilesystemService.Remove
      */
     remove: {
       name: "Remove",
       I: RemoveRequest,
       O: RemoveResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * @generated from rpc envd.filesystem.v1.FilesystemService.Copy
-     */
-    copy: {
-      name: "Copy",
-      I: CopyRequest,
-      O: CopyResponse,
       kind: MethodKind.Unary,
     },
   }

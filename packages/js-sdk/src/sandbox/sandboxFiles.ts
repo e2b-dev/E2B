@@ -8,36 +8,28 @@ export type DownloadFileFormat =
 
 
 export class SandboxFiles {
-
-
-
-
-  constructor(private readonly url: string) {
+  constructor(private readonly file_server_url: string) {
 
   }
 
-
   /**
-* URL that can be used to download or upload file to the sandbox via a multipart/form-data POST request.
-* This is useful if you're uploading files directly from the browser.
-* The file will be uploaded to the user's home directory with the same name.
-* If a file with the same name already exists, it will be overwritten.
-*/
-  get fileURL() {
-    const protocol = this.getProtocol('http', this.opts.__debug_devEnv !== 'local')
-    const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
-    return `${protocol}://${hostname}${FILE_ROUTE}`
+  * URL that can be used to download or upload file to the sandbox via a multipart/form-data POST request.
+  * This is useful if you're uploading files directly from the browser.
+  * The file will be uploaded to the user's home directory with the same name.
+  * If a file with the same name already exists, it will be overwritten.
+  */
+  get fileUrl(): string {
+    // We need to handle the route without any query parameters
   }
 
-
   /**
- * Uploads a file to the sandbox.
- * The file will be uploaded to the user's home directory with the same name.
- * If a file with the same name already exists, it will be overwritten.
- *
- * **You can use the {@link Sandbox.fileURL} property and upload file directly via POST multipart/form-data**
- *
- */
+   * Uploads a file to the sandbox.
+   * The file will be uploaded to the user's home directory with the same name.
+   * If a file with the same name already exists, it will be overwritten.
+   *
+   * **You can use the {@link Sandbox.fileURL} property and upload file directly via POST multipart/form-data**
+   *
+   */
   async uploadFile(file: Buffer | Blob, filename: string) {
     const body = new FormData()
 

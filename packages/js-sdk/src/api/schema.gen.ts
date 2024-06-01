@@ -113,9 +113,9 @@ export interface paths {
           "application/json": {
             /**
              * Format: int32
-             * @description Duration in seconds from the current time after which the sandbox should expire
+             * @description Timeout in seconds from the current time after which the sandbox should expire
              */
-            duration?: number;
+            timeout: number;
           };
         };
       };
@@ -323,6 +323,7 @@ export interface components {
       /**
        * Format: int32
        * @description Time to live for the sandbox in seconds.
+       * @default 15
        */
       timeout?: number;
       metadata?: components["schemas"]["SandboxMetadata"];

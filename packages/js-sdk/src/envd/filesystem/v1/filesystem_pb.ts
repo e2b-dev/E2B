@@ -5,7 +5,6 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { Credentials } from "../../permissions/v1/permissions_pb.js";
 
 /**
  * @generated from enum envd.filesystem.v1.FileType
@@ -78,162 +77,70 @@ proto3.util.setEnumType(EventType, "envd.filesystem.v1.EventType", [
 ]);
 
 /**
- * @generated from message envd.filesystem.v1.CreateDirRequest
+ * @generated from message envd.filesystem.v1.RemoveRequest
  */
-export class CreateDirRequest extends Message<CreateDirRequest> {
+export class RemoveRequest extends Message<RemoveRequest> {
   /**
    * @generated from field: string path = 1;
    */
   path = "";
 
-  /**
-   * @generated from field: string mode = 3;
-   */
-  mode = "";
-
-  /**
-   * @generated from field: envd.permissions.v1.Credentials owner = 4;
-   */
-  owner?: Credentials;
-
-  constructor(data?: PartialMessage<CreateDirRequest>) {
+  constructor(data?: PartialMessage<RemoveRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.CreateDirRequest";
+  static readonly typeName = "envd.filesystem.v1.RemoveRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "owner", kind: "message", T: Credentials },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateDirRequest {
-    return new CreateDirRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveRequest {
+    return new RemoveRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateDirRequest {
-    return new CreateDirRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RemoveRequest {
+    return new RemoveRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateDirRequest {
-    return new CreateDirRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RemoveRequest {
+    return new RemoveRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: CreateDirRequest | PlainMessage<CreateDirRequest> | undefined, b: CreateDirRequest | PlainMessage<CreateDirRequest> | undefined): boolean {
-    return proto3.util.equals(CreateDirRequest, a, b);
+  static equals(a: RemoveRequest | PlainMessage<RemoveRequest> | undefined, b: RemoveRequest | PlainMessage<RemoveRequest> | undefined): boolean {
+    return proto3.util.equals(RemoveRequest, a, b);
   }
 }
 
 /**
- * @generated from message envd.filesystem.v1.CreateDirResponse
+ * @generated from message envd.filesystem.v1.RemoveResponse
  */
-export class CreateDirResponse extends Message<CreateDirResponse> {
-  constructor(data?: PartialMessage<CreateDirResponse>) {
+export class RemoveResponse extends Message<RemoveResponse> {
+  constructor(data?: PartialMessage<RemoveResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.CreateDirResponse";
+  static readonly typeName = "envd.filesystem.v1.RemoveResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateDirResponse {
-    return new CreateDirResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveResponse {
+    return new RemoveResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateDirResponse {
-    return new CreateDirResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RemoveResponse {
+    return new RemoveResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateDirResponse {
-    return new CreateDirResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RemoveResponse {
+    return new RemoveResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: CreateDirResponse | PlainMessage<CreateDirResponse> | undefined, b: CreateDirResponse | PlainMessage<CreateDirResponse> | undefined): boolean {
-    return proto3.util.equals(CreateDirResponse, a, b);
-  }
-}
-
-/**
- * @generated from message envd.filesystem.v1.CopyRequest
- */
-export class CopyRequest extends Message<CopyRequest> {
-  /**
-   * @generated from field: string source = 1;
-   */
-  source = "";
-
-  /**
-   * @generated from field: string destination = 2;
-   */
-  destination = "";
-
-  /**
-   * @generated from field: string mode = 3;
-   */
-  mode = "";
-
-  constructor(data?: PartialMessage<CopyRequest>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.CopyRequest";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "source", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "destination", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CopyRequest {
-    return new CopyRequest().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CopyRequest {
-    return new CopyRequest().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CopyRequest {
-    return new CopyRequest().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: CopyRequest | PlainMessage<CopyRequest> | undefined, b: CopyRequest | PlainMessage<CopyRequest> | undefined): boolean {
-    return proto3.util.equals(CopyRequest, a, b);
-  }
-}
-
-/**
- * @generated from message envd.filesystem.v1.CopyResponse
- */
-export class CopyResponse extends Message<CopyResponse> {
-  constructor(data?: PartialMessage<CopyResponse>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.CopyResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CopyResponse {
-    return new CopyResponse().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CopyResponse {
-    return new CopyResponse().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CopyResponse {
-    return new CopyResponse().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: CopyResponse | PlainMessage<CopyResponse> | undefined, b: CopyResponse | PlainMessage<CopyResponse> | undefined): boolean {
-    return proto3.util.equals(CopyResponse, a, b);
+  static equals(a: RemoveResponse | PlainMessage<RemoveResponse> | undefined, b: RemoveResponse | PlainMessage<RemoveResponse> | undefined): boolean {
+    return proto3.util.equals(RemoveResponse, a, b);
   }
 }
 
@@ -312,154 +219,6 @@ export class StatResponse extends Message<StatResponse> {
 }
 
 /**
- * @generated from message envd.filesystem.v1.RemoveRequest
- */
-export class RemoveRequest extends Message<RemoveRequest> {
-  /**
-   * @generated from field: string path = 1;
-   */
-  path = "";
-
-  /**
-   * @generated from field: bool recursive = 2;
-   */
-  recursive = false;
-
-  constructor(data?: PartialMessage<RemoveRequest>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.RemoveRequest";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "recursive", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveRequest {
-    return new RemoveRequest().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RemoveRequest {
-    return new RemoveRequest().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RemoveRequest {
-    return new RemoveRequest().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: RemoveRequest | PlainMessage<RemoveRequest> | undefined, b: RemoveRequest | PlainMessage<RemoveRequest> | undefined): boolean {
-    return proto3.util.equals(RemoveRequest, a, b);
-  }
-}
-
-/**
- * @generated from message envd.filesystem.v1.RemoveResponse
- */
-export class RemoveResponse extends Message<RemoveResponse> {
-  constructor(data?: PartialMessage<RemoveResponse>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.RemoveResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveResponse {
-    return new RemoveResponse().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RemoveResponse {
-    return new RemoveResponse().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RemoveResponse {
-    return new RemoveResponse().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: RemoveResponse | PlainMessage<RemoveResponse> | undefined, b: RemoveResponse | PlainMessage<RemoveResponse> | undefined): boolean {
-    return proto3.util.equals(RemoveResponse, a, b);
-  }
-}
-
-/**
- * @generated from message envd.filesystem.v1.RenameRequest
- */
-export class RenameRequest extends Message<RenameRequest> {
-  /**
-   * @generated from field: string source = 1;
-   */
-  source = "";
-
-  /**
-   * @generated from field: string destination = 2;
-   */
-  destination = "";
-
-  constructor(data?: PartialMessage<RenameRequest>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.RenameRequest";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "source", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "destination", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RenameRequest {
-    return new RenameRequest().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RenameRequest {
-    return new RenameRequest().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RenameRequest {
-    return new RenameRequest().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: RenameRequest | PlainMessage<RenameRequest> | undefined, b: RenameRequest | PlainMessage<RenameRequest> | undefined): boolean {
-    return proto3.util.equals(RenameRequest, a, b);
-  }
-}
-
-/**
- * @generated from message envd.filesystem.v1.RenameResponse
- */
-export class RenameResponse extends Message<RenameResponse> {
-  constructor(data?: PartialMessage<RenameResponse>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.RenameResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RenameResponse {
-    return new RenameResponse().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RenameResponse {
-    return new RenameResponse().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RenameResponse {
-    return new RenameResponse().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: RenameResponse | PlainMessage<RenameResponse> | undefined, b: RenameResponse | PlainMessage<RenameResponse> | undefined): boolean {
-    return proto3.util.equals(RenameResponse, a, b);
-  }
-}
-
-/**
  * @generated from message envd.filesystem.v1.EntryInfo
  */
 export class EntryInfo extends Message<EntryInfo> {
@@ -503,76 +262,76 @@ export class EntryInfo extends Message<EntryInfo> {
 }
 
 /**
- * @generated from message envd.filesystem.v1.ListDirRequest
+ * @generated from message envd.filesystem.v1.ListRequest
  */
-export class ListDirRequest extends Message<ListDirRequest> {
+export class ListRequest extends Message<ListRequest> {
   /**
    * @generated from field: string path = 1;
    */
   path = "";
 
-  constructor(data?: PartialMessage<ListDirRequest>) {
+  constructor(data?: PartialMessage<ListRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.ListDirRequest";
+  static readonly typeName = "envd.filesystem.v1.ListRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListDirRequest {
-    return new ListDirRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListRequest {
+    return new ListRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListDirRequest {
-    return new ListDirRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListRequest {
+    return new ListRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListDirRequest {
-    return new ListDirRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListRequest {
+    return new ListRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ListDirRequest | PlainMessage<ListDirRequest> | undefined, b: ListDirRequest | PlainMessage<ListDirRequest> | undefined): boolean {
-    return proto3.util.equals(ListDirRequest, a, b);
+  static equals(a: ListRequest | PlainMessage<ListRequest> | undefined, b: ListRequest | PlainMessage<ListRequest> | undefined): boolean {
+    return proto3.util.equals(ListRequest, a, b);
   }
 }
 
 /**
- * @generated from message envd.filesystem.v1.ListDirResponse
+ * @generated from message envd.filesystem.v1.ListResponse
  */
-export class ListDirResponse extends Message<ListDirResponse> {
+export class ListResponse extends Message<ListResponse> {
   /**
    * @generated from field: repeated envd.filesystem.v1.EntryInfo entries = 1;
    */
   entries: EntryInfo[] = [];
 
-  constructor(data?: PartialMessage<ListDirResponse>) {
+  constructor(data?: PartialMessage<ListResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "envd.filesystem.v1.ListDirResponse";
+  static readonly typeName = "envd.filesystem.v1.ListResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "entries", kind: "message", T: EntryInfo, repeated: true },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListDirResponse {
-    return new ListDirResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListResponse {
+    return new ListResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListDirResponse {
-    return new ListDirResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListResponse {
+    return new ListResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListDirResponse {
-    return new ListDirResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListResponse {
+    return new ListResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ListDirResponse | PlainMessage<ListDirResponse> | undefined, b: ListDirResponse | PlainMessage<ListDirResponse> | undefined): boolean {
-    return proto3.util.equals(ListDirResponse, a, b);
+  static equals(a: ListResponse | PlainMessage<ListResponse> | undefined, b: ListResponse | PlainMessage<ListResponse> | undefined): boolean {
+    return proto3.util.equals(ListResponse, a, b);
   }
 }
 

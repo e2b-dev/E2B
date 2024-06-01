@@ -4,9 +4,6 @@ info:
   version: 0.1.0
   description: API for managing files' content and controlling envd
 
-servers:
-  - url: /v1
-
 paths:
   /host/sync:
     post:
@@ -17,16 +14,7 @@ paths:
         500:
           $ref: "#/components/responses/InternalServerError"
 
-  /health:
-    get:
-      summary: Check the health of the envd
-      responses:
-        204:
-          description: The envd is healthy
-        500:
-          $ref: "#/components/responses/InternalServerError"
-
-  /filesystem/files/{path}:
+  /files/{path}:
     get:
       summary: Download a file
       parameters:
@@ -36,13 +24,14 @@ paths:
           $ref: "#/components/responses/DownloadSuccess"
         400:
           $ref: "#/components/responses/DirectoryPathError"
+        500:
+          $ref: "#/components/responses/InternalServerError"
     put:
-      summary: Upload a file
+      summary: Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
       parameters:
         - $ref: "#/components/parameters/FilePath"
         - $ref: "#/components/parameters/User"
         - $ref: "#/components/parameters/Mode"
-        - $ref: "#/components/parameters/Overwrite"
       requestBody:
         $ref: "#/components/requestBodies/File"
       responses:
@@ -50,10 +39,10 @@ paths:
           $ref: "#/components/responses/ExistingFileUploadSuccess"
         201:
           $ref: "#/components/responses/NewFileUploadSuccess"
-        409:
-          $ref: "#/components/responses/ConflictError"
         400:
           $ref: "#/components/responses/DirectoryPathError"
+        500:
+          $ref: "#/components/responses/InternalServerError"
 
 components:
   parameters:
@@ -82,14 +71,6 @@ components:
         type: string
         pattern: "^[0-7]{3,4}$"
         default: "0777"
-    Overwrite:
-      name: overwrite
-      in: query
-      required: false
-      description: Overwrite the file if it exists
-      schema:
-        type: boolean
-        default: true
 
   requestBodies:
     File:
@@ -137,13 +118,7 @@ components:
             format: binary
             description: The file content
     DirectoryPathError:
-      description: Bad Request - The specified path is a directory. Only files can be downloaded.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-    ConflictError:
-      description: Conflict - The file already exists and overwrite is false.
+      description: Bad Request - The specified path is a directory.
       content:
         application/json:
           schema:

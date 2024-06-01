@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from pydantic import BaseModel, Field, conint
 
 
@@ -27,12 +27,12 @@ class SandboxesSandboxIDTimeoutPostRequest(BaseModel):
     SandboxesSandboxIDTimeoutPostRequest
     """
 
-    duration: Optional[conint(strict=True, ge=0)] = Field(
-        None,
-        description="Duration in seconds from the current time after which the sandbox should expire",
+    timeout: conint(strict=True, ge=0) = Field(
+        ...,
+        description="Timeout in seconds from the current time after which the sandbox should expire",
     )
     additional_properties: Dict[str, Any] = {}
-    __properties = ["duration"]
+    __properties = ["timeout"]
 
     class Config:
         """Pydantic configuration"""
@@ -75,7 +75,7 @@ class SandboxesSandboxIDTimeoutPostRequest(BaseModel):
             return SandboxesSandboxIDTimeoutPostRequest.parse_obj(obj)
 
         _obj = SandboxesSandboxIDTimeoutPostRequest.parse_obj(
-            {"duration": obj.get("duration")}
+            {"timeout": obj.get("timeout")}
         )
         # store additional fields in additional_properties
         for _key in obj.keys():

@@ -13,4 +13,7 @@ const sandbox = await Sandbox.create({
 })
 console.log(sandbox.id)
 
+await sandbox.uploadFile(Buffer.from('hello world'), 'test.txt')
+
+
 await sandbox.close()
