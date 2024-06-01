@@ -10,16 +10,12 @@ logging.basicConfig(level=logging.INFO)
 
 start = time.time()
 
-with Sandbox(
-    # template="i32b48xtmbk9w5vfad1l",
-    _debug_hostname="localhost",
-    _debug_port=49982,
-    _debug_dev_env="local",
-) as sandbox:
-    # print(sandbox.id)
+sbx = Sandbox()
 
-    l = sandbox.filesystem.list("")
+process = sbx.process.start("echo 'hello, world'")
 
-    end = time.time()
+for event in process:
+    print(event.stderr)
 
-    print(f"Time taken: {end - start}")
+result = process.wait()
+

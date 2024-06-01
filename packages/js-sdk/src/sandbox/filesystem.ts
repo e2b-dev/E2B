@@ -23,6 +23,7 @@ export interface WatchHandle {
 }
 
 // TODO: Resolve cwd and provide sane defaults
+// TODO: Enable using watch as iterable
 export class Filesystem {
   private readonly service: PromiseClient<typeof FilesystemService> = createPromiseClient(FilesystemService, this.transport)
 
@@ -56,7 +57,7 @@ export class Filesystem {
 
   async watch(
     path: string,
-    onEvent: (event: WatchEvent) => any,
+    onEvent: (event: FilesystemEvent) => any,
   ): Promise<WatchHandle> {
     const params: PlainMessage<WatchRequest> = {
       path,

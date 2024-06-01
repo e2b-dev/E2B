@@ -35,7 +35,10 @@ class Filesystem:
 
         self._service.remove(params)
 
-    def watch(self, path: str):
+    def watch(
+        self,
+        path: str,
+    ):
         params = filesystem_pb2.WatchRequest(path=path)
 
         events = self._service.watch(params)

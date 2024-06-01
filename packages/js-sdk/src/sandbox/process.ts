@@ -22,6 +22,12 @@ import {
 import { concatUint8Arrays } from './array'
 import { createDeferredPromise } from './promise'
 
+
+export interface ProcessOutput {
+  stdout?: string
+  stderr?: string
+}
+
 export interface ProcessHandle {
   pid: number
   disconnect: () => void
@@ -29,9 +35,7 @@ export interface ProcessHandle {
   kill: () => Promise<void>
 }
 
-export interface ProcessResult {
-  stdout: string
-  stderr: string
+export interface ProcessResult extends ProcessOutput {
   exitCode: number
   error?: string
 }
@@ -45,6 +49,8 @@ export type ProcessConfig = PlainMessage<PsProcessConfig>
 // TODO: Should cwd be calculated in envd?
 // TODO: More optional fields?
 // TODO: Add req timeout
+// TODO: Enable using process handle as iterable
+// TODO: Solve stream input
 export class Process {
   private readonly service: PromiseClient<typeof ProcessService> = createPromiseClient(ProcessService, this.transport)
 
@@ -348,6 +354,12 @@ export class Process {
           },
         }
       },
+      // async *[Symbol.asyncIterator](): AsyncIterable<ProcessOutput> {
+      //   for (const delay of this.delays) {
+      //     await this.wait(delay)
+      //     yield `Delayed response for ${delay} milliseconds`
+      //   }
+      // },
     }
   }
 }

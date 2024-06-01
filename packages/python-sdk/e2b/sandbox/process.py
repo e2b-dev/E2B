@@ -4,14 +4,19 @@ import connect
 from typing import Dict, Optional, Callable, Any, Generator, Union
 
 from envd.process.v1 import process_connect, process_pb2
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
-class ProcessOutput:
-    def __init__(self, stdout: Optional[bytes], stderr: Optional[bytes]) -> None:
-        self.stdout = str(stdout) if stdout else None
-        self.stderr = str(stderr) if stderr else None
+class ProcessOutput(BaseModel):
+    stdout: Optional[str] = None
+    stderr: Optional[str] = None
+
+
+class ProcessResult(ProcessOutput):
+    exit_code: int
+    error: Optional[str]
 
 
 class ProcessHandle:
@@ -30,7 +35,7 @@ class ProcessHandle:
         self._stdout: bytes = b""
         self._stderr: bytes = b""
 
-        self._end_event: Union[process_pb2.ProcessEvent.EndEvent, None] = None
+        self.result: Optional[ProcessResult] = None
 
     def __next__(self):
         event = next(self._events)
@@ -38,12 +43,17 @@ class ProcessHandle:
         if event.HasField("data"):
             if event.event.data.stdout:
                 self._stdout += event.event.data.stdout
-                return ProcessOutput(self._stdout, None)
+                return ProcessOutput(stdout=self._stdout.decode())
             if event.event.data.stderr:
                 self._stderr += event.event.data.stderr
-                return ProcessOutput(None, self._stderr)
+                return ProcessOutput(stderr=self._stderr.decode())
         if event.HasField("end"):
-            self._end_event = event.event.end
+            self.result = ProcessResult(
+                stdout=self._stdout.decode(),
+                stderr=self._stderr.decode(),
+                exit_code=event.event.end.exit_code,
+                error=event.event.end.error,
+            )
 
         raise StopIteration
 
@@ -54,28 +64,10 @@ class ProcessHandle:
         for _ in self:
             pass
 
-        if self._end_event is None:
+        if self.result is None:
             raise RuntimeError("Process has not ended")
 
-        return ProcessResult(
-            stdout=self._stdout,
-            stderr=self._stderr,
-            exit_code=self._end_event.exit_code,
-            error=self._end_event.error,
-        )
-
-
-class ProcessResult(ProcessOutput):
-    def __init__(
-        self,
-        stdout: bytes,
-        stderr: bytes,
-        exit_code: int,
-        error: Optional[str] = None,
-    ) -> None:
-        super().__init__(stdout, stderr)
-        self.exit_code = exit_code
-        self.error = error
+        return self.result
 
 
 # TODO: Add disconnect for process handle
