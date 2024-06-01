@@ -134,7 +134,7 @@ server {
 
   proxy_http_version 1.1;
 
-  client_body_timeout 7200d;
+  client_body_timeout 7200s;
   client_header_timeout 30s;
 
   proxy_read_timeout 7200s;
