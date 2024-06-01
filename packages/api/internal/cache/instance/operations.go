@@ -80,7 +80,7 @@ func (c *InstanceCache) Add(instance InstanceInfo, timeout *int32) error {
 	}
 
 	// TODO: Handle the need to pass timeout when recovering sandboxes after orchestrator restart — we need to save the info about the timeout in the cache too.
-	t := ttlcache.DefaultTTL
+	t := InstanceExpiration
 	if timeout != nil {
 		t = time.Duration(*timeout) * time.Second
 	}

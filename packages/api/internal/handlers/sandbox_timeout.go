@@ -31,10 +31,10 @@ func (a *APIStore) PostSandboxesSandboxIDTimeout(
 		return
 	}
 
-	if body.Duration < 0 {
+	if body.Timeout < 0 {
 		duration = 0
 	} else {
-		duration = time.Duration(body.Duration) * time.Second
+		duration = time.Duration(body.Timeout) * time.Second
 	}
 
 	err = a.instanceCache.SetTimeout(sandboxID, duration)
