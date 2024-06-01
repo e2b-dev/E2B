@@ -8,7 +8,7 @@ import (
 	"connectrpc.com/connect"
 )
 
-func (s *Service) ListProcesses(ctx context.Context, req *connect.Request[v1.ListProcessesRequest]) (*connect.Response[v1.ListProcessesResponse], error) {
+func (s *Service) List(ctx context.Context, req *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
 	processes := make([]*v1.ProcessConfig, 0)
 
 	s.processes.Range(func(_ uint32, value *process) bool {
@@ -16,8 +16,8 @@ func (s *Service) ListProcesses(ctx context.Context, req *connect.Request[v1.Lis
 		return true
 	})
 
-	return &connect.Response[v1.ListProcessesResponse]{
-		Msg: &v1.ListProcessesResponse{
+	return &connect.Response[v1.ListResponse]{
+		Msg: &v1.ListResponse{
 			Processes: processes,
 		},
 	}, nil

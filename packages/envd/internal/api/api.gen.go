@@ -33,14 +33,8 @@ type FilePath = string
 // Mode defines model for Mode.
 type Mode = string
 
-// Overwrite defines model for Overwrite.
-type Overwrite = bool
-
 // User defines model for User.
 type User = string
-
-// ConflictError defines model for ConflictError.
-type ConflictError = Error
 
 // DirectoryPathError defines model for DirectoryPathError.
 type DirectoryPathError = Error
@@ -48,37 +42,31 @@ type DirectoryPathError = Error
 // InternalServerError defines model for InternalServerError.
 type InternalServerError = Error
 
-// PutFilesystemFilesPathMultipartBody defines parameters for PutFilesystemFilesPath.
-type PutFilesystemFilesPathMultipartBody struct {
+// PutFilesPathMultipartBody defines parameters for PutFilesPath.
+type PutFilesPathMultipartBody struct {
 	File *openapi_types.File `json:"file,omitempty"`
 }
 
-// PutFilesystemFilesPathParams defines parameters for PutFilesystemFilesPath.
-type PutFilesystemFilesPathParams struct {
+// PutFilesPathParams defines parameters for PutFilesPath.
+type PutFilesPathParams struct {
 	// User User owning the file
 	User *User `form:"User,omitempty" json:"User,omitempty"`
 
 	// Mode File permissions in octal format (e.g., 0755)
 	Mode *Mode `form:"Mode,omitempty" json:"Mode,omitempty"`
-
-	// Overwrite Overwrite the file if it exists
-	Overwrite *Overwrite `form:"overwrite,omitempty" json:"overwrite,omitempty"`
 }
 
-// PutFilesystemFilesPathMultipartRequestBody defines body for PutFilesystemFilesPath for multipart/form-data ContentType.
-type PutFilesystemFilesPathMultipartRequestBody PutFilesystemFilesPathMultipartBody
+// PutFilesPathMultipartRequestBody defines body for PutFilesPath for multipart/form-data ContentType.
+type PutFilesPathMultipartRequestBody PutFilesPathMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Download a file
-	// (GET /filesystem/files/{path})
-	GetFilesystemFilesPath(w http.ResponseWriter, r *http.Request, path FilePath)
-	// Upload a file
-	// (PUT /filesystem/files/{path})
-	PutFilesystemFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PutFilesystemFilesPathParams)
-	// Check the health of the envd
-	// (GET /health)
-	GetHealth(w http.ResponseWriter, r *http.Request)
+	// (GET /files/{path})
+	GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath)
+	// Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
+	// (PUT /files/{path})
+	PutFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PutFilesPathParams)
 	// Ensure the time and metadata is synced with the host
 	// (POST /host/sync)
 	PostHostSync(w http.ResponseWriter, r *http.Request)
@@ -93,8 +81,8 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// GetFilesystemFilesPath operation middleware
-func (siw *ServerInterfaceWrapper) GetFilesystemFilesPath(w http.ResponseWriter, r *http.Request) {
+// GetFilesPath operation middleware
+func (siw *ServerInterfaceWrapper) GetFilesPath(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
@@ -109,7 +97,7 @@ func (siw *ServerInterfaceWrapper) GetFilesystemFilesPath(w http.ResponseWriter,
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetFilesystemFilesPath(w, r, path)
+		siw.Handler.GetFilesPath(w, r, path)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -119,8 +107,8 @@ func (siw *ServerInterfaceWrapper) GetFilesystemFilesPath(w http.ResponseWriter,
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// PutFilesystemFilesPath operation middleware
-func (siw *ServerInterfaceWrapper) PutFilesystemFilesPath(w http.ResponseWriter, r *http.Request) {
+// PutFilesPath operation middleware
+func (siw *ServerInterfaceWrapper) PutFilesPath(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
@@ -135,7 +123,7 @@ func (siw *ServerInterfaceWrapper) PutFilesystemFilesPath(w http.ResponseWriter,
 	}
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params PutFilesystemFilesPathParams
+	var params PutFilesPathParams
 
 	// ------------- Optional query parameter "User" -------------
 
@@ -153,31 +141,8 @@ func (siw *ServerInterfaceWrapper) PutFilesystemFilesPath(w http.ResponseWriter,
 		return
 	}
 
-	// ------------- Optional query parameter "overwrite" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "overwrite", r.URL.Query(), &params.Overwrite)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "overwrite", Err: err})
-		return
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PutFilesystemFilesPath(w, r, path, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// GetHealth operation middleware
-func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetHealth(w, r)
+		siw.Handler.PutFilesPath(w, r, path, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -316,15 +281,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	m.HandleFunc("GET "+options.BaseURL+"/filesystem/files/{path}", wrapper.GetFilesystemFilesPath)
-	m.HandleFunc("PUT "+options.BaseURL+"/filesystem/files/{path}", wrapper.PutFilesystemFilesPath)
-	m.HandleFunc("GET "+options.BaseURL+"/health", wrapper.GetHealth)
+	m.HandleFunc("GET "+options.BaseURL+"/files/{path}", wrapper.GetFilesPath)
+	m.HandleFunc("PUT "+options.BaseURL+"/files/{path}", wrapper.PutFilesPath)
 	m.HandleFunc("POST "+options.BaseURL+"/host/sync", wrapper.PostHostSync)
 
 	return m
 }
-
-type ConflictErrorJSONResponse Error
 
 type DirectoryPathErrorJSONResponse Error
 
@@ -355,19 +317,19 @@ type NewFileUploadSuccessResponse struct {
 	Headers NewFileUploadSuccessResponseHeaders
 }
 
-type GetFilesystemFilesPathRequestObject struct {
+type GetFilesPathRequestObject struct {
 	Path FilePath `json:"path"`
 }
 
-type GetFilesystemFilesPathResponseObject interface {
-	VisitGetFilesystemFilesPathResponse(w http.ResponseWriter) error
+type GetFilesPathResponseObject interface {
+	VisitGetFilesPathResponse(w http.ResponseWriter) error
 }
 
-type GetFilesystemFilesPath200ApplicationoctetStreamResponse struct {
+type GetFilesPath200ApplicationoctetStreamResponse struct {
 	DownloadSuccessApplicationoctetStreamResponse
 }
 
-func (response GetFilesystemFilesPath200ApplicationoctetStreamResponse) VisitGetFilesystemFilesPathResponse(w http.ResponseWriter) error {
+func (response GetFilesPath200ApplicationoctetStreamResponse) VisitGetFilesPathResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	if response.ContentLength != 0 {
 		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
@@ -382,80 +344,67 @@ func (response GetFilesystemFilesPath200ApplicationoctetStreamResponse) VisitGet
 	return err
 }
 
-type GetFilesystemFilesPath400JSONResponse struct{ DirectoryPathErrorJSONResponse }
+type GetFilesPath400JSONResponse struct{ DirectoryPathErrorJSONResponse }
 
-func (response GetFilesystemFilesPath400JSONResponse) VisitGetFilesystemFilesPathResponse(w http.ResponseWriter) error {
+func (response GetFilesPath400JSONResponse) VisitGetFilesPathResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PutFilesystemFilesPathRequestObject struct {
+type GetFilesPath500JSONResponse struct {
+	InternalServerErrorJSONResponse
+}
+
+func (response GetFilesPath500JSONResponse) VisitGetFilesPathResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutFilesPathRequestObject struct {
 	Path   FilePath `json:"path"`
-	Params PutFilesystemFilesPathParams
+	Params PutFilesPathParams
 	Body   *multipart.Reader
 }
 
-type PutFilesystemFilesPathResponseObject interface {
-	VisitPutFilesystemFilesPathResponse(w http.ResponseWriter) error
+type PutFilesPathResponseObject interface {
+	VisitPutFilesPathResponse(w http.ResponseWriter) error
 }
 
-type PutFilesystemFilesPath200Response = ExistingFileUploadSuccessResponse
+type PutFilesPath200Response = ExistingFileUploadSuccessResponse
 
-func (response PutFilesystemFilesPath200Response) VisitPutFilesystemFilesPathResponse(w http.ResponseWriter) error {
+func (response PutFilesPath200Response) VisitPutFilesPathResponse(w http.ResponseWriter) error {
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
 	w.WriteHeader(200)
 	return nil
 }
 
-type PutFilesystemFilesPath201Response = NewFileUploadSuccessResponse
+type PutFilesPath201Response = NewFileUploadSuccessResponse
 
-func (response PutFilesystemFilesPath201Response) VisitPutFilesystemFilesPathResponse(w http.ResponseWriter) error {
+func (response PutFilesPath201Response) VisitPutFilesPathResponse(w http.ResponseWriter) error {
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
 	w.Header().Set("Location", fmt.Sprint(response.Headers.Location))
 	w.WriteHeader(201)
 	return nil
 }
 
-type PutFilesystemFilesPath400JSONResponse struct{ DirectoryPathErrorJSONResponse }
+type PutFilesPath400JSONResponse struct{ DirectoryPathErrorJSONResponse }
 
-func (response PutFilesystemFilesPath400JSONResponse) VisitPutFilesystemFilesPathResponse(w http.ResponseWriter) error {
+func (response PutFilesPath400JSONResponse) VisitPutFilesPathResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PutFilesystemFilesPath409JSONResponse struct{ ConflictErrorJSONResponse }
-
-func (response PutFilesystemFilesPath409JSONResponse) VisitPutFilesystemFilesPathResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(409)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetHealthRequestObject struct {
-}
-
-type GetHealthResponseObject interface {
-	VisitGetHealthResponse(w http.ResponseWriter) error
-}
-
-type GetHealth204Response struct {
-}
-
-func (response GetHealth204Response) VisitGetHealthResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type GetHealth500JSONResponse struct {
+type PutFilesPath500JSONResponse struct {
 	InternalServerErrorJSONResponse
 }
 
-func (response GetHealth500JSONResponse) VisitGetHealthResponse(w http.ResponseWriter) error {
+func (response PutFilesPath500JSONResponse) VisitPutFilesPathResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -491,14 +440,11 @@ func (response PostHostSync500JSONResponse) VisitPostHostSyncResponse(w http.Res
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Download a file
-	// (GET /filesystem/files/{path})
-	GetFilesystemFilesPath(ctx context.Context, request GetFilesystemFilesPathRequestObject) (GetFilesystemFilesPathResponseObject, error)
-	// Upload a file
-	// (PUT /filesystem/files/{path})
-	PutFilesystemFilesPath(ctx context.Context, request PutFilesystemFilesPathRequestObject) (PutFilesystemFilesPathResponseObject, error)
-	// Check the health of the envd
-	// (GET /health)
-	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
+	// (GET /files/{path})
+	GetFilesPath(ctx context.Context, request GetFilesPathRequestObject) (GetFilesPathResponseObject, error)
+	// Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
+	// (PUT /files/{path})
+	PutFilesPath(ctx context.Context, request PutFilesPathRequestObject) (PutFilesPathResponseObject, error)
 	// Ensure the time and metadata is synced with the host
 	// (POST /host/sync)
 	PostHostSync(ctx context.Context, request PostHostSyncRequestObject) (PostHostSyncResponseObject, error)
@@ -533,25 +479,25 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
-// GetFilesystemFilesPath operation middleware
-func (sh *strictHandler) GetFilesystemFilesPath(w http.ResponseWriter, r *http.Request, path FilePath) {
-	var request GetFilesystemFilesPathRequestObject
+// GetFilesPath operation middleware
+func (sh *strictHandler) GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath) {
+	var request GetFilesPathRequestObject
 
 	request.Path = path
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetFilesystemFilesPath(ctx, request.(GetFilesystemFilesPathRequestObject))
+		return sh.ssi.GetFilesPath(ctx, request.(GetFilesPathRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetFilesystemFilesPath")
+		handler = middleware(handler, "GetFilesPath")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetFilesystemFilesPathResponseObject); ok {
-		if err := validResponse.VisitGetFilesystemFilesPathResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetFilesPathResponseObject); ok {
+		if err := validResponse.VisitGetFilesPathResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -559,9 +505,9 @@ func (sh *strictHandler) GetFilesystemFilesPath(w http.ResponseWriter, r *http.R
 	}
 }
 
-// PutFilesystemFilesPath operation middleware
-func (sh *strictHandler) PutFilesystemFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PutFilesystemFilesPathParams) {
-	var request PutFilesystemFilesPathRequestObject
+// PutFilesPath operation middleware
+func (sh *strictHandler) PutFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PutFilesPathParams) {
+	var request PutFilesPathRequestObject
 
 	request.Path = path
 	request.Params = params
@@ -574,42 +520,18 @@ func (sh *strictHandler) PutFilesystemFilesPath(w http.ResponseWriter, r *http.R
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PutFilesystemFilesPath(ctx, request.(PutFilesystemFilesPathRequestObject))
+		return sh.ssi.PutFilesPath(ctx, request.(PutFilesPathRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutFilesystemFilesPath")
+		handler = middleware(handler, "PutFilesPath")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PutFilesystemFilesPathResponseObject); ok {
-		if err := validResponse.VisitPutFilesystemFilesPathResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetHealth operation middleware
-func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
-	var request GetHealthRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetHealth(ctx, request.(GetHealthRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetHealth")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetHealthResponseObject); ok {
-		if err := validResponse.VisitGetHealthResponse(w); err != nil {
+	} else if validResponse, ok := response.(PutFilesPathResponseObject); ok {
+		if err := validResponse.VisitPutFilesPathResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

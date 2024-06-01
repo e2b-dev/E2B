@@ -5,39 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem/v1"
 
 	"connectrpc.com/connect"
 )
 
-func (Service) CreateDir(ctx context.Context, req *connect.Request[v1.CreateDirRequest]) (*connect.Response[v1.CreateDirResponse], error) {
-	dirPath := req.Msg.GetPath()
-
-	mode, err := permissions.GetMode(req.Msg.GetMode())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid mode: %w", err))
-	}
-
-	_, uid, gid, err := permissions.GetUserByUsername(req.Msg.GetOwner().GetUsername())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid owner: %w", err))
-	}
-
-	err = os.MkdirAll(dirPath, mode)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error creating directory: %w", err))
-	}
-
-	err = os.Chown(dirPath, int(uid), int(gid))
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error setting owner: %w", err))
-	}
-
-	return connect.NewResponse(&v1.CreateDirResponse{}), nil
-}
-
-func (Service) ListDir(ctx context.Context, req *connect.Request[v1.ListDirRequest]) (*connect.Response[v1.ListDirResponse], error) {
+func (Service) ListDir(ctx context.Context, req *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
 	entries, err := os.ReadDir(req.Msg.GetPath())
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -63,7 +36,7 @@ func (Service) ListDir(ctx context.Context, req *connect.Request[v1.ListDirReque
 		}
 	}
 
-	return connect.NewResponse(&v1.ListDirResponse{
+	return connect.NewResponse(&v1.ListResponse{
 		Entries: e,
 	}), nil
 }

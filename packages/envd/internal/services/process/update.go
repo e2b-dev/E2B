@@ -10,7 +10,7 @@ import (
 	"connectrpc.com/connect"
 )
 
-func (s *Service) UpdateProcess(ctx context.Context, req *connect.Request[v1.UpdateProcessRequest]) (*connect.Response[v1.UpdateProcessResponse], error) {
+func (s *Service) Update(ctx context.Context, req *connect.Request[v1.UpdateRequest]) (*connect.Response[v1.UpdateResponse], error) {
 	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
 	if !ok {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
@@ -26,5 +26,5 @@ func (s *Service) UpdateProcess(ctx context.Context, req *connect.Request[v1.Upd
 		}
 	}
 
-	return connect.NewResponse(&v1.UpdateProcessResponse{}), nil
+	return connect.NewResponse(&v1.UpdateResponse{}), nil
 }

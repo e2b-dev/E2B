@@ -10,7 +10,7 @@ import (
 	"connectrpc.com/connect"
 )
 
-func (s *Service) SendProcessSignal(ctx context.Context, req *connect.Request[v1.SendProcessSignalRequest]) (*connect.Response[v1.SendProcessSignalResponse], error) {
+func (s *Service) SendSignal(ctx context.Context, req *connect.Request[v1.SendSignalRequest]) (*connect.Response[v1.SendSignalResponse], error) {
 	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
 	if !ok {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
@@ -31,5 +31,5 @@ func (s *Service) SendProcessSignal(ctx context.Context, req *connect.Request[v1
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error sending signal: %w", err))
 	}
 
-	return connect.NewResponse(&v1.SendProcessSignalResponse{}), nil
+	return connect.NewResponse(&v1.SendSignalResponse{}), nil
 }

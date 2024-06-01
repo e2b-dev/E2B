@@ -35,45 +35,30 @@ const (
 const (
 	// FilesystemServiceStatProcedure is the fully-qualified name of the FilesystemService's Stat RPC.
 	FilesystemServiceStatProcedure = "/envd.filesystem.v1.FilesystemService/Stat"
-	// FilesystemServiceCreateDirProcedure is the fully-qualified name of the FilesystemService's
-	// CreateDir RPC.
-	FilesystemServiceCreateDirProcedure = "/envd.filesystem.v1.FilesystemService/CreateDir"
-	// FilesystemServiceListDirProcedure is the fully-qualified name of the FilesystemService's ListDir
-	// RPC.
-	FilesystemServiceListDirProcedure = "/envd.filesystem.v1.FilesystemService/ListDir"
+	// FilesystemServiceListProcedure is the fully-qualified name of the FilesystemService's List RPC.
+	FilesystemServiceListProcedure = "/envd.filesystem.v1.FilesystemService/List"
 	// FilesystemServiceWatchProcedure is the fully-qualified name of the FilesystemService's Watch RPC.
 	FilesystemServiceWatchProcedure = "/envd.filesystem.v1.FilesystemService/Watch"
-	// FilesystemServiceRenameProcedure is the fully-qualified name of the FilesystemService's Rename
-	// RPC.
-	FilesystemServiceRenameProcedure = "/envd.filesystem.v1.FilesystemService/Rename"
 	// FilesystemServiceRemoveProcedure is the fully-qualified name of the FilesystemService's Remove
 	// RPC.
 	FilesystemServiceRemoveProcedure = "/envd.filesystem.v1.FilesystemService/Remove"
-	// FilesystemServiceCopyProcedure is the fully-qualified name of the FilesystemService's Copy RPC.
-	FilesystemServiceCopyProcedure = "/envd.filesystem.v1.FilesystemService/Copy"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	filesystemServiceServiceDescriptor         = v1.File_envd_filesystem_v1_filesystem_proto.Services().ByName("FilesystemService")
-	filesystemServiceStatMethodDescriptor      = filesystemServiceServiceDescriptor.Methods().ByName("Stat")
-	filesystemServiceCreateDirMethodDescriptor = filesystemServiceServiceDescriptor.Methods().ByName("CreateDir")
-	filesystemServiceListDirMethodDescriptor   = filesystemServiceServiceDescriptor.Methods().ByName("ListDir")
-	filesystemServiceWatchMethodDescriptor     = filesystemServiceServiceDescriptor.Methods().ByName("Watch")
-	filesystemServiceRenameMethodDescriptor    = filesystemServiceServiceDescriptor.Methods().ByName("Rename")
-	filesystemServiceRemoveMethodDescriptor    = filesystemServiceServiceDescriptor.Methods().ByName("Remove")
-	filesystemServiceCopyMethodDescriptor      = filesystemServiceServiceDescriptor.Methods().ByName("Copy")
+	filesystemServiceServiceDescriptor      = v1.File_envd_filesystem_v1_filesystem_proto.Services().ByName("FilesystemService")
+	filesystemServiceStatMethodDescriptor   = filesystemServiceServiceDescriptor.Methods().ByName("Stat")
+	filesystemServiceListMethodDescriptor   = filesystemServiceServiceDescriptor.Methods().ByName("List")
+	filesystemServiceWatchMethodDescriptor  = filesystemServiceServiceDescriptor.Methods().ByName("Watch")
+	filesystemServiceRemoveMethodDescriptor = filesystemServiceServiceDescriptor.Methods().ByName("Remove")
 )
 
 // FilesystemServiceClient is a client for the envd.filesystem.v1.FilesystemService service.
 type FilesystemServiceClient interface {
 	Stat(context.Context, *connect.Request[v1.StatRequest]) (*connect.Response[v1.StatResponse], error)
-	CreateDir(context.Context, *connect.Request[v1.CreateDirRequest]) (*connect.Response[v1.CreateDirResponse], error)
-	ListDir(context.Context, *connect.Request[v1.ListDirRequest]) (*connect.Response[v1.ListDirResponse], error)
+	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
 	Watch(context.Context, *connect.Request[v1.WatchRequest]) (*connect.ServerStreamForClient[v1.WatchResponse], error)
-	Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error)
 	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
-	Copy(context.Context, *connect.Request[v1.CopyRequest]) (*connect.Response[v1.CopyResponse], error)
 }
 
 // NewFilesystemServiceClient constructs a client for the envd.filesystem.v1.FilesystemService
@@ -92,16 +77,10 @@ func NewFilesystemServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(filesystemServiceStatMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		createDir: connect.NewClient[v1.CreateDirRequest, v1.CreateDirResponse](
+		list: connect.NewClient[v1.ListRequest, v1.ListResponse](
 			httpClient,
-			baseURL+FilesystemServiceCreateDirProcedure,
-			connect.WithSchema(filesystemServiceCreateDirMethodDescriptor),
-			connect.WithClientOptions(opts...),
-		),
-		listDir: connect.NewClient[v1.ListDirRequest, v1.ListDirResponse](
-			httpClient,
-			baseURL+FilesystemServiceListDirProcedure,
-			connect.WithSchema(filesystemServiceListDirMethodDescriptor),
+			baseURL+FilesystemServiceListProcedure,
+			connect.WithSchema(filesystemServiceListMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 		watch: connect.NewClient[v1.WatchRequest, v1.WatchResponse](
@@ -110,22 +89,10 @@ func NewFilesystemServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(filesystemServiceWatchMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		rename: connect.NewClient[v1.RenameRequest, v1.RenameResponse](
-			httpClient,
-			baseURL+FilesystemServiceRenameProcedure,
-			connect.WithSchema(filesystemServiceRenameMethodDescriptor),
-			connect.WithClientOptions(opts...),
-		),
 		remove: connect.NewClient[v1.RemoveRequest, v1.RemoveResponse](
 			httpClient,
 			baseURL+FilesystemServiceRemoveProcedure,
 			connect.WithSchema(filesystemServiceRemoveMethodDescriptor),
-			connect.WithClientOptions(opts...),
-		),
-		copy: connect.NewClient[v1.CopyRequest, v1.CopyResponse](
-			httpClient,
-			baseURL+FilesystemServiceCopyProcedure,
-			connect.WithSchema(filesystemServiceCopyMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -133,13 +100,10 @@ func NewFilesystemServiceClient(httpClient connect.HTTPClient, baseURL string, o
 
 // filesystemServiceClient implements FilesystemServiceClient.
 type filesystemServiceClient struct {
-	stat      *connect.Client[v1.StatRequest, v1.StatResponse]
-	createDir *connect.Client[v1.CreateDirRequest, v1.CreateDirResponse]
-	listDir   *connect.Client[v1.ListDirRequest, v1.ListDirResponse]
-	watch     *connect.Client[v1.WatchRequest, v1.WatchResponse]
-	rename    *connect.Client[v1.RenameRequest, v1.RenameResponse]
-	remove    *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
-	copy      *connect.Client[v1.CopyRequest, v1.CopyResponse]
+	stat   *connect.Client[v1.StatRequest, v1.StatResponse]
+	list   *connect.Client[v1.ListRequest, v1.ListResponse]
+	watch  *connect.Client[v1.WatchRequest, v1.WatchResponse]
+	remove *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
 }
 
 // Stat calls envd.filesystem.v1.FilesystemService.Stat.
@@ -147,14 +111,9 @@ func (c *filesystemServiceClient) Stat(ctx context.Context, req *connect.Request
 	return c.stat.CallUnary(ctx, req)
 }
 
-// CreateDir calls envd.filesystem.v1.FilesystemService.CreateDir.
-func (c *filesystemServiceClient) CreateDir(ctx context.Context, req *connect.Request[v1.CreateDirRequest]) (*connect.Response[v1.CreateDirResponse], error) {
-	return c.createDir.CallUnary(ctx, req)
-}
-
-// ListDir calls envd.filesystem.v1.FilesystemService.ListDir.
-func (c *filesystemServiceClient) ListDir(ctx context.Context, req *connect.Request[v1.ListDirRequest]) (*connect.Response[v1.ListDirResponse], error) {
-	return c.listDir.CallUnary(ctx, req)
+// List calls envd.filesystem.v1.FilesystemService.List.
+func (c *filesystemServiceClient) List(ctx context.Context, req *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
+	return c.list.CallUnary(ctx, req)
 }
 
 // Watch calls envd.filesystem.v1.FilesystemService.Watch.
@@ -162,31 +121,18 @@ func (c *filesystemServiceClient) Watch(ctx context.Context, req *connect.Reques
 	return c.watch.CallServerStream(ctx, req)
 }
 
-// Rename calls envd.filesystem.v1.FilesystemService.Rename.
-func (c *filesystemServiceClient) Rename(ctx context.Context, req *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error) {
-	return c.rename.CallUnary(ctx, req)
-}
-
 // Remove calls envd.filesystem.v1.FilesystemService.Remove.
 func (c *filesystemServiceClient) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
 	return c.remove.CallUnary(ctx, req)
-}
-
-// Copy calls envd.filesystem.v1.FilesystemService.Copy.
-func (c *filesystemServiceClient) Copy(ctx context.Context, req *connect.Request[v1.CopyRequest]) (*connect.Response[v1.CopyResponse], error) {
-	return c.copy.CallUnary(ctx, req)
 }
 
 // FilesystemServiceHandler is an implementation of the envd.filesystem.v1.FilesystemService
 // service.
 type FilesystemServiceHandler interface {
 	Stat(context.Context, *connect.Request[v1.StatRequest]) (*connect.Response[v1.StatResponse], error)
-	CreateDir(context.Context, *connect.Request[v1.CreateDirRequest]) (*connect.Response[v1.CreateDirResponse], error)
-	ListDir(context.Context, *connect.Request[v1.ListDirRequest]) (*connect.Response[v1.ListDirResponse], error)
+	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
 	Watch(context.Context, *connect.Request[v1.WatchRequest], *connect.ServerStream[v1.WatchResponse]) error
-	Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error)
 	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
-	Copy(context.Context, *connect.Request[v1.CopyRequest]) (*connect.Response[v1.CopyResponse], error)
 }
 
 // NewFilesystemServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -201,16 +147,10 @@ func NewFilesystemServiceHandler(svc FilesystemServiceHandler, opts ...connect.H
 		connect.WithSchema(filesystemServiceStatMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	filesystemServiceCreateDirHandler := connect.NewUnaryHandler(
-		FilesystemServiceCreateDirProcedure,
-		svc.CreateDir,
-		connect.WithSchema(filesystemServiceCreateDirMethodDescriptor),
-		connect.WithHandlerOptions(opts...),
-	)
-	filesystemServiceListDirHandler := connect.NewUnaryHandler(
-		FilesystemServiceListDirProcedure,
-		svc.ListDir,
-		connect.WithSchema(filesystemServiceListDirMethodDescriptor),
+	filesystemServiceListHandler := connect.NewUnaryHandler(
+		FilesystemServiceListProcedure,
+		svc.List,
+		connect.WithSchema(filesystemServiceListMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
 	filesystemServiceWatchHandler := connect.NewServerStreamHandler(
@@ -219,40 +159,22 @@ func NewFilesystemServiceHandler(svc FilesystemServiceHandler, opts ...connect.H
 		connect.WithSchema(filesystemServiceWatchMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	filesystemServiceRenameHandler := connect.NewUnaryHandler(
-		FilesystemServiceRenameProcedure,
-		svc.Rename,
-		connect.WithSchema(filesystemServiceRenameMethodDescriptor),
-		connect.WithHandlerOptions(opts...),
-	)
 	filesystemServiceRemoveHandler := connect.NewUnaryHandler(
 		FilesystemServiceRemoveProcedure,
 		svc.Remove,
 		connect.WithSchema(filesystemServiceRemoveMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	filesystemServiceCopyHandler := connect.NewUnaryHandler(
-		FilesystemServiceCopyProcedure,
-		svc.Copy,
-		connect.WithSchema(filesystemServiceCopyMethodDescriptor),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/envd.filesystem.v1.FilesystemService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case FilesystemServiceStatProcedure:
 			filesystemServiceStatHandler.ServeHTTP(w, r)
-		case FilesystemServiceCreateDirProcedure:
-			filesystemServiceCreateDirHandler.ServeHTTP(w, r)
-		case FilesystemServiceListDirProcedure:
-			filesystemServiceListDirHandler.ServeHTTP(w, r)
+		case FilesystemServiceListProcedure:
+			filesystemServiceListHandler.ServeHTTP(w, r)
 		case FilesystemServiceWatchProcedure:
 			filesystemServiceWatchHandler.ServeHTTP(w, r)
-		case FilesystemServiceRenameProcedure:
-			filesystemServiceRenameHandler.ServeHTTP(w, r)
 		case FilesystemServiceRemoveProcedure:
 			filesystemServiceRemoveHandler.ServeHTTP(w, r)
-		case FilesystemServiceCopyProcedure:
-			filesystemServiceCopyHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -266,26 +188,14 @@ func (UnimplementedFilesystemServiceHandler) Stat(context.Context, *connect.Requ
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.filesystem.v1.FilesystemService.Stat is not implemented"))
 }
 
-func (UnimplementedFilesystemServiceHandler) CreateDir(context.Context, *connect.Request[v1.CreateDirRequest]) (*connect.Response[v1.CreateDirResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.filesystem.v1.FilesystemService.CreateDir is not implemented"))
-}
-
-func (UnimplementedFilesystemServiceHandler) ListDir(context.Context, *connect.Request[v1.ListDirRequest]) (*connect.Response[v1.ListDirResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.filesystem.v1.FilesystemService.ListDir is not implemented"))
+func (UnimplementedFilesystemServiceHandler) List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.filesystem.v1.FilesystemService.List is not implemented"))
 }
 
 func (UnimplementedFilesystemServiceHandler) Watch(context.Context, *connect.Request[v1.WatchRequest], *connect.ServerStream[v1.WatchResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("envd.filesystem.v1.FilesystemService.Watch is not implemented"))
 }
 
-func (UnimplementedFilesystemServiceHandler) Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.filesystem.v1.FilesystemService.Rename is not implemented"))
-}
-
 func (UnimplementedFilesystemServiceHandler) Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.filesystem.v1.FilesystemService.Remove is not implemented"))
-}
-
-func (UnimplementedFilesystemServiceHandler) Copy(context.Context, *connect.Request[v1.CopyRequest]) (*connect.Response[v1.CopyResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.filesystem.v1.FilesystemService.Copy is not implemented"))
 }

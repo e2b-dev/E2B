@@ -1,42 +1,19 @@
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
-
-import "envd/permissions/v1/permissions.proto";
-
 package envd.filesystem.v1;
 
 service FilesystemService {
     rpc Stat(StatRequest) returns (StatResponse);
-    
-    rpc CreateDir(CreateDirRequest) returns (CreateDirResponse);
-    rpc ListDir(ListDirRequest) returns (ListDirResponse);
-    
+    rpc List(ListRequest) returns (ListResponse);
     rpc Watch(WatchRequest) returns (stream WatchResponse);
-    rpc Rename(RenameRequest) returns (RenameResponse);
     rpc Remove(RemoveRequest) returns (RemoveResponse);
-
-    rpc Copy(CopyRequest) returns (CopyResponse);
 }
 
-message CreateDirRequest {
+message RemoveRequest {
     string path = 1;
-
-    string mode = 3;
-
-    envd.permissions.v1.Credentials owner = 4;
 }
 
-message CreateDirResponse {}
-
-message CopyRequest {
-    string source = 1;
-    string destination = 2;
-
-    string mode = 3;
-}
-
-message CopyResponse {}
+message RemoveResponse {}
 
 message StatRequest {
     string path = 1;
@@ -45,21 +22,6 @@ message StatRequest {
 message StatResponse {
     EntryInfo entry = 1;
 }
-
-message RemoveRequest {
-    string path = 1;
-
-    bool recursive = 2;
-}
-
-message RemoveResponse {}
-
-message RenameRequest {
-    string source = 1;
-    string destination = 2;
-}
-
-message RenameResponse {}
 
 message EntryInfo {
     string name = 1;
@@ -72,11 +34,11 @@ enum FileType {
     FILE_TYPE_DIRECTORY = 2;
 }
 
-message ListDirRequest {
+message ListRequest {
     string path = 1;
 }
 
-message ListDirResponse {
+message ListResponse {
     repeated EntryInfo entries = 1;
 }
 

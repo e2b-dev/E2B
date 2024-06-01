@@ -12,15 +12,8 @@ import (
 
 func (Service) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
 	path := req.Msg.GetPath()
-	recursive := req.Msg.GetRecursive()
 
-	var err error
-	if recursive {
-		err = os.RemoveAll(path)
-	} else {
-		err = os.Remove(path)
-	}
-
+	err := os.RemoveAll(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("file or directory not found: %w", err))

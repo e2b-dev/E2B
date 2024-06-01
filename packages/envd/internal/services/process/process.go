@@ -9,7 +9,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
+	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
 	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1"
 
 	"github.com/creack/pty"
@@ -38,7 +38,8 @@ type process struct {
 	exit chan processExit
 }
 
-func newProcess(req *v1.StartProcessRequest) (*process, error) {
+// TODO: Set the oom policy
+func newProcess(req *v1.StartRequest) (*process, error) {
 	cmd := exec.Command(req.GetProcess().GetCmd(), req.GetProcess().GetArgs()...)
 
 	u, uid, gid, err := permissions.GetUserByUsername(req.GetOwner().GetUsername())

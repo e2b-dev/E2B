@@ -2,7 +2,6 @@ package process
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1"
@@ -29,7 +28,7 @@ func handleInput(process *process, in *v1.ProcessInput) error {
 	return nil
 }
 
-func (s *Service) SendProcessInput(ctx context.Context, req *connect.Request[v1.SendProcessInputRequest]) (*connect.Response[v1.SendProcessInputResponse], error) {
+func (s *Service) SendInput(ctx context.Context, req *connect.Request[v1.SendInputRequest]) (*connect.Response[v1.SendInputResponse], error) {
 	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
 	if !ok {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
@@ -40,24 +39,24 @@ func (s *Service) SendProcessInput(ctx context.Context, req *connect.Request[v1.
 		return nil, err
 	}
 
-	return connect.NewResponse(&v1.SendProcessInputResponse{}), nil
+	return connect.NewResponse(&v1.SendInputResponse{}), nil
 }
 
-func (s *Service) SendProcessInputStream(ctx context.Context, stream *connect.ClientStream[v1.SendProcessInputStreamRequest]) (*connect.Response[v1.SendProcessInputResponse], error) {
+func (s *Service) StreamInput(ctx context.Context, stream *connect.ClientStream[v1.StreamInputRequest]) (*connect.Response[v1.StreamInputResponse], error) {
 	var process *process
 
 	for stream.Receive() {
 		req := stream.Msg()
 
 		switch req.GetEvent().(type) {
-		case *v1.SendProcessInputStreamRequest_Start:
+		case *v1.StreamInputRequest_Start:
 			p, ok := s.processes.Load(req.GetStart().GetProcess().GetPid())
 			if !ok {
 				return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.GetStart().GetProcess().GetPid()))
 			}
 			process = p
 
-		case *v1.SendProcessInputStreamRequest_Data:
+		case *v1.StreamInputRequest_Data:
 			err := handleInput(process, req.GetData().GetInput())
 			if err != nil {
 				return nil, err
@@ -70,5 +69,5 @@ func (s *Service) SendProcessInputStream(ctx context.Context, stream *connect.Cl
 		return nil, connect.NewError(connect.CodeUnknown, err)
 	}
 
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.process.v1.ProcessService.SendProcessInputStream is not implemented"))
+	return connect.NewResponse(&v1.StreamInputResponse{}), nil
 }

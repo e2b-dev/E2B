@@ -36,7 +36,7 @@ func Handle(server *http.ServeMux, opts ...connect.HandlerOption) {
 	server.Handle(path, handler)
 }
 
-func (s *Service) StartProcess(ctx context.Context, req *connect.Request[v1.StartProcessRequest], stream *connect.ServerStream[v1.StartProcessResponse]) error {
+func (s *Service) Start(ctx context.Context, req *connect.Request[v1.StartRequest], stream *connect.ServerStream[v1.StartResponse]) error {
 	host.WaitForHostSync()
 
 	process, err := newProcess(req.Msg)
@@ -57,7 +57,7 @@ func (s *Service) StartProcess(ctx context.Context, req *connect.Request[v1.Star
 		case <-ctx.Done():
 			streamMu.Unlock()
 		case pid := <-startChan:
-			err = stream.Send(&v1.StartProcessResponse{
+			err = stream.Send(&v1.StartResponse{
 				Event: &v1.ProcessEvent{
 					EventType: &v1.ProcessEvent_Start{
 						Start: &v1.ProcessEvent_StartEvent{
@@ -142,7 +142,7 @@ func (s *Service) StartProcess(ctx context.Context, req *connect.Request[v1.Star
 	return nil
 }
 
-func (s *Service) ReconnectProcess(ctx context.Context, req *connect.Request[v1.ReconnectProcessRequest], stream *connect.ServerStream[v1.ReconnectProcessResponse]) error {
+func (s *Service) Connect(ctx context.Context, req *connect.Request[v1.ConnectRequest], stream *connect.ServerStream[v1.ConnectResponse]) error {
 	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
 	if !ok {
 		return connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))

@@ -1,21 +1,19 @@
 syntax = "proto3";
 
-import "envd/permissions/v1/permissions.proto";
-
 package envd.process.v1;
 
 service ProcessService {
-    rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse);
+    rpc List(ListRequest) returns (ListResponse);
 
-    rpc ReconnectProcess(ReconnectProcessRequest) returns (stream ReconnectProcessResponse);
-    rpc StartProcess(StartProcessRequest) returns (stream StartProcessResponse);
+    rpc Connect(ConnectRequest) returns (stream ConnectResponse);
+    rpc Start(StartRequest) returns (stream StartResponse);
 
-    rpc UpdateProcess(UpdateProcessRequest) returns (UpdateProcessResponse);
+    rpc Update(UpdateRequest) returns (UpdateResponse);
 
     // Client input stream ensures ordering of messages
-    rpc SendProcessInputStream(stream SendProcessInputStreamRequest) returns (SendProcessInputStreamResponse);
-    rpc SendProcessInput(SendProcessInputRequest) returns (SendProcessInputResponse);
-    rpc SendProcessSignal(SendProcessSignalRequest) returns (SendProcessSignalResponse);
+    rpc StreamInput(stream StreamInputRequest) returns (StreamInputResponse);
+    rpc SendInput(SendInputRequest) returns (SendInputResponse);
+    rpc SendSignal(SendSignalRequest) returns (SendSignalResponse);
 }
 
 message PTY {
@@ -35,26 +33,32 @@ message ProcessConfig {
     string cwd = 4;
 }
 
-message ListProcessesRequest {}
+message ListRequest {}
 
-message ListProcessesResponse {
+message ListResponse {
     repeated ProcessConfig processes = 1;
 }
 
-message StartProcessRequest {    
+message Credential {
+    oneof credential {
+        string username = 1;
+    }
+}
+
+message StartRequest {    
     ProcessConfig process = 1;
     optional PTY pty = 2;
 
-    envd.permissions.v1.Credentials owner = 3;
+    Credential owner = 3;
 }
 
-message UpdateProcessRequest {
+message UpdateRequest {
     ProcessSelector process = 1;
 
     optional PTY pty = 2;
 }
 
-message UpdateProcessResponse {}
+message UpdateResponse {}
 
 message ProcessEvent {
     oneof event {
@@ -82,21 +86,21 @@ message ProcessEvent {
     }
 }
 
-message StartProcessResponse {
+message StartResponse {
     ProcessEvent event = 1;
 }
 
-message ReconnectProcessResponse {
+message ConnectResponse {
     ProcessEvent event = 1;
 }
 
-message SendProcessInputRequest {
+message SendInputRequest {
     ProcessSelector process = 1;
 
     ProcessInput input = 2;
 }
 
-message SendProcessInputResponse {}
+message SendInputResponse {}
 
 message ProcessInput {
     oneof input {
@@ -105,7 +109,7 @@ message ProcessInput {
     }
 }
 
-message SendProcessInputStreamRequest {
+message StreamInputRequest {
     oneof event {
         StartEvent start = 1;
         DataEvent data = 2;
@@ -120,7 +124,7 @@ message SendProcessInputStreamRequest {
     }
 }
 
-message SendProcessInputStreamResponse {}
+message StreamInputResponse {}
 
 enum Signal {
     SIGNAL_UNSPECIFIED = 0;
@@ -128,15 +132,15 @@ enum Signal {
     SIGNAL_SIGKILL = 9;
 }
 
-message SendProcessSignalRequest {
+message SendSignalRequest {
     ProcessSelector process = 1;
 
     Signal signal = 2;
 }
 
-message SendProcessSignalResponse {}
+message SendSignalResponse {}
 
-message ReconnectProcessRequest {
+message ConnectRequest {
     ProcessSelector process = 1;
 }
 
