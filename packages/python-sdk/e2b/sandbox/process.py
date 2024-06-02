@@ -81,26 +81,26 @@ class Process:
         )
 
     def list(self):
-        params = process_pb2.ListRequest()
-
-        res = self._service.list(params)
+        res = self._service.list(
+            process_pb2.ListRequest(),
+        )
         return [p for p in res.processes]
 
     def kill(self, pid: int):
-        params = process_pb2.SendSignalRequest(
-            process=process_pb2.ProcessSelector(pid=pid),
-            signal=process_pb2.Signal.SIGNAL_SIGKILL,
+        self._service.send_signal(
+            process_pb2.SendSignalRequest(
+                process=process_pb2.ProcessSelector(pid=pid),
+                signal=process_pb2.Signal.SIGNAL_SIGKILL,
+            ),
         )
-
-        self._service.send_signal(params)
 
     def sendStdin(self, pid: int, data: bytes):
-        params = process_pb2.SendInputRequest(
-            process=process_pb2.ProcessSelector(pid=pid),
-            input=process_pb2.ProcessInput(stdin=data),
+        self._service.send_input(
+            process_pb2.SendInputRequest(
+                process=process_pb2.ProcessSelector(pid=pid),
+                input=process_pb2.ProcessInput(stdin=data),
+            ),
         )
-
-        self._service.send_input(params)
 
     def start(
         self,
@@ -109,17 +109,17 @@ class Process:
         user: Literal["root", "user"] = "user",
         cwd: Optional[str] = None,
     ):
-        params = process_pb2.StartRequest(
-            owner=process_pb2.Credential(username=user),
-            process=process_pb2.ProcessConfig(
-                cmd="/bin/bash",
-                envs=envs,
-                args=["-l", "-c", cmd],
-                cwd=cwd,
+        events = self._service.start(
+            process_pb2.StartRequest(
+                owner=process_pb2.Credential(username=user),
+                process=process_pb2.ProcessConfig(
+                    cmd="/bin/bash",
+                    envs=envs,
+                    args=["-l", "-c", cmd],
+                    cwd=cwd,
+                ),
             ),
         )
-
-        events = self._service.start(params)
 
         start_event = next(events)
 
@@ -130,11 +130,11 @@ class Process:
         )
 
     def connect(self, pid: int):
-        params = process_pb2.ConnectRequest(
-            process=process_pb2.ProcessSelector(pid=pid),
+        events = self._service.connect(
+            process_pb2.ConnectRequest(
+                process=process_pb2.ProcessSelector(pid=pid),
+            ),
         )
-
-        events = self._service.connect(params)
 
         return ProcessHandle(
             pid=pid,

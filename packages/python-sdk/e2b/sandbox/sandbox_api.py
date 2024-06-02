@@ -4,7 +4,7 @@ from typing import Optional, Dict, List
 from pydantic import BaseModel
 from datetime import datetime
 
-from e2b.api import E2BApiClient, models, client
+from e2b.api import ApiClient, models, client
 from e2b.connection_config import ConnectionConfig
 
 logger = logging.getLogger(__name__)
@@ -18,19 +18,22 @@ class RunningSandbox(BaseModel):
     started_at: datetime
 
 
-# TODO: Add requestTimeout
-
-
 class SandboxApi:
     @staticmethod
     def list(
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
     ) -> List[RunningSandbox]:
-        config = ConnectionConfig(api_key=api_key, domain=domain, debug=debug)
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
 
-        with E2BApiClient(config) as api_client:
+        with ApiClient(config) as api_client:
             return [
                 RunningSandbox(
                     sandbox_id=SandboxApi._get_sandbox_id(
@@ -42,7 +45,9 @@ class SandboxApi:
                     metadata=sandbox.metadata,
                     started_at=sandbox.started_at,
                 )
-                for sandbox in client.SandboxesApi(api_client).sandboxes_get()
+                for sandbox in client.SandboxesApi(api_client).sandboxes_get(
+                    _request_timeout=config.request_timeout,
+                )
             ]
 
     @staticmethod
@@ -51,14 +56,21 @@ class SandboxApi:
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
     ) -> None:
-        config = ConnectionConfig(api_key=api_key, domain=domain, debug=debug)
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
 
         # TODO: Ensure the short id/long id works with kill
 
-        with E2BApiClient(config) as api_client:
+        with ApiClient(config) as api_client:
             client.SandboxesApi(api_client).sandboxes_sandbox_id_delete(
                 sandbox_id,
+                _request_timeout=config.request_timeout,
             )
 
     @staticmethod
@@ -68,13 +80,20 @@ class SandboxApi:
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
     ) -> None:
-        config = ConnectionConfig(api_key=api_key, domain=domain, debug=debug)
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
 
-        with E2BApiClient(config) as api_client:
+        with ApiClient(config) as api_client:
             client.SandboxesApi(api_client).sandboxes_sandbox_id_timeout_post(
                 sandbox_id,
                 models.SandboxesSandboxIDTimeoutPostRequest(timeout=timeout),
+                _request_timeout=config.request_timeout,
             )
 
     @staticmethod
@@ -85,16 +104,23 @@ class SandboxApi:
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
     ) -> str:
-        config = ConnectionConfig(api_key=api_key, domain=domain, debug=debug)
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
 
-        with E2BApiClient(config) as api_client:
+        with ApiClient(config) as api_client:
             res = client.SandboxesApi(api_client).sandboxes_post(
                 models.NewSandbox(
                     templateID=template,
                     metadata=metadata,
                     timeout=timeout,
                 ),
+                _request_timeout=config.request_timeout,
             )
 
             return SandboxApi._get_sandbox_id(res.sandbox_id, res.client_id)

@@ -13,7 +13,7 @@ const sandbox = await Sandbox.create({
 })
 console.log(sandbox.id)
 
-await sandbox
+
 
 
 await sandbox.close()

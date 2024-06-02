@@ -3,7 +3,6 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import { ConnectionOpts, ConnectionConfig } from '../connectionConfig'
 import { Filesystem } from './filesystem'
 import { Process } from './process'
-import { EnvdApiClient } from '../envd/api'
 import { Terminal } from './terminal'
 import { SandboxApi } from './sandboxApi'
 
@@ -28,36 +27,41 @@ export interface SandboxOpts extends ConnectionOpts {
   timeoutMs?: number
 }
 
+// TODO: Pass loggers and add logging (interceptors?)
 export class Sandbox extends SandboxApi {
-  protected static readonly defaultTemplate = 'base'
+  protected static readonly defaultTemplate = 'base-v1'
 
-  readonly filesystem: Filesystem
+  readonly files: Filesystem
   readonly process: Process
   readonly terminal: Terminal
 
   protected readonly envdPort = 49982
 
   private readonly connectionConfig: ConnectionConfig
+  private readonly envdApiUrl: string
 
   constructor(readonly sandboxID: string, opts?: Omit<SandboxOpts, 'timeoutMs' | 'metadata'>) {
     super()
 
     this.connectionConfig = new ConnectionConfig(opts)
-    const sandboxServerUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHost(this.envdPort)}`
 
-    const rpcTransport = createConnectTransport({ baseUrl: sandboxServerUrl })
-    const envdApiClient = new EnvdApiClient({ apiUrl: sandboxServerUrl })
+    const rpcTransport = createConnectTransport({ baseUrl: this.envdApiUrl })
 
-    this.filesystem = new Filesystem(rpcTransport, envdApiClient)
-    this.process = new Process(rpcTransport)
-    this.terminal = new Terminal(rpcTransport)
+    this.files = new Filesystem(rpcTransport, this.envdApiUrl, this.connectionConfig)
+    this.process = new Process(rpcTransport, this.connectionConfig)
+    this.terminal = new Terminal(rpcTransport, this.connectionConfig)
   }
 
   get uploadUrl() {
-    const host = this.getHost(this.envdPort)
-    // TODO: Ensure all user, etc setting are applied here
     // TODO: Ensure envd handles this well
-    return `${this.connectionConfig.debug ? 'http' : 'https'}://${host}/upload`
+    // TODO: Ensure all user, etc setting are applied here and are escaped
+
+    const url = new URL('/files', this.envdApiUrl)
+    url.searchParams.set('user', 'user')
+    url.searchParams.set('mode', '0644')
+
+    return url.toString()
   }
 
   static async spawn<S extends typeof Sandbox>(this: S, template = this.defaultTemplate, opts?: SandboxOpts): Promise<InstanceType<S>> {
@@ -78,11 +82,11 @@ export class Sandbox extends SandboxApi {
     return `${port}-${this.sandboxID}.${this.connectionConfig.domain}`
   }
 
-  async setTimeout(timeout: number) {
-    await Sandbox.setTimeout(this.sandboxID, timeout, this.connectionConfig)
+  async setTimeout(timeout: number, opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    await Sandbox.setTimeout(this.sandboxID, timeout, { ...this.connectionConfig, ...opts })
   }
 
-  async kill() {
-    await Sandbox.kill(this.sandboxID, this.connectionConfig)
+  async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    await Sandbox.kill(this.sandboxID, { ...this.connectionConfig, ...opts })
   }
 }

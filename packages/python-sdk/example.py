@@ -18,4 +18,3 @@ for event in process:
     print(event.stderr)
 
 result = process.wait()
-

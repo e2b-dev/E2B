@@ -22,9 +22,8 @@ export interface paths {
     /** Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten. */
     put: {
       parameters: {
-        query?: {
-          User?: components["parameters"]["User"];
-          Mode?: components["parameters"]["Mode"];
+        query: {
+          User: components["parameters"]["User"];
         };
         path: {
           path: components["parameters"]["FilePath"];
@@ -106,10 +105,8 @@ export interface components {
   parameters: {
     /** @description Absolute path to the file, URL encoded. */
     FilePath: string;
-    /** @description File permissions in octal format (e.g., 0755) */
-    Mode?: string;
     /** @description User owning the file */
-    User?: string;
+    User: string;
   };
   requestBodies: {
     File: {

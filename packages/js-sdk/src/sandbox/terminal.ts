@@ -9,12 +9,10 @@ import { ProcessService } from '../envd/process/v1/process_connect'
 import {
   StreamInputRequest,
   Signal,
-  StartRequest,
   StartResponse,
-  UpdateRequest,
 } from '../envd/process/v1/process_pb'
-import { ConnectionOpts } from '../connectionConfig'
-import { ProcessHandle } from './process'
+import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import { ProcessHandle } from './process/processHandle'
 
 export interface StreamInputHandle {
   stop: () => void
@@ -23,14 +21,16 @@ export interface StreamInputHandle {
 export class Terminal {
   private readonly service: PromiseClient<typeof ProcessService> = createPromiseClient(ProcessService, this.transport)
 
-  constructor(private readonly transport: Transport) { }
+  constructor(private readonly transport: Transport, private readonly connectionConfig: ConnectionConfig) { }
 
   async start({ cols, rows, onData }: {
     cols: number,
     rows: number,
     onData: (data: Uint8Array) => void | Promise<void>,
   }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<ProcessHandle> {
-    const params: PlainMessage<StartRequest> = {
+    const controller = new AbortController()
+
+    const events = this.service.start({
       owner: {
         credential: {
           case: 'username',
@@ -39,7 +39,6 @@ export class Terminal {
       },
       process: {
         cmd: '/bin/bash',
-        envs: {},
         args: ['-i', '-l'],
       },
       pty: {
@@ -48,12 +47,8 @@ export class Terminal {
           rows,
         },
       },
-    }
-
-    const controller = new AbortController()
-
-    const events = this.service.start(params, {
-      timeoutMs: opts?.requestTimeoutMs,
+    }, {
+      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
       signal: controller.signal,
     })
 
@@ -81,7 +76,7 @@ export class Terminal {
 
     this.service.streamInput(params, {
       signal: controller.signal,
-      timeoutMs: opts?.requestTimeoutMs,
+      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
 
     return {
@@ -97,7 +92,7 @@ export class Terminal {
     },
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>,
   ): Promise<void> {
-    const params: PlainMessage<UpdateRequest> = {
+    await this.service.update({
       process: {
         selector: {
           case: 'pid',
@@ -107,14 +102,16 @@ export class Terminal {
       pty: {
         size,
       },
-    }
-
-    await this.service.update(params, {
-      timeoutMs: opts?.requestTimeoutMs,
+    }, {
+      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
   }
 
   async kill(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
+
+    // TODO: Replace opts.requestTimeout || <- with ?? because null coalest
+    // TODO: Maybe ither places also have this?
+    // TODO: Check python for the same problem
     await this.service.sendSignal({
       process: {
         selector: {
@@ -124,7 +121,7 @@ export class Terminal {
       },
       signal: Signal.SIGKILL,
     }, {
-      timeoutMs: opts?.requestTimeoutMs,
+      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
   }
 }

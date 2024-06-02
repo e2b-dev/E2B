@@ -7,10 +7,10 @@ export type { components, paths } from './api'
 export { ConnectionConfig } from './connectionConfig'
 export type { ConnectionOpts } from './connectionConfig'
 
+export { WatchHandle } from './sandbox/filesystem/watchHandle'
+export type { FilesystemEvent } from './sandbox/filesystem/watchHandle'
 export type {
-  FilesystemEvent,
   EntryInfo,
-  WatchHandle,
   FileFormat,
 } from './sandbox/filesystem'
 export {
@@ -18,9 +18,9 @@ export {
   FileType,
 } from './envd/filesystem/v1/filesystem_pb'
 
-export { ProcessHandle } from './sandbox/process'
+export { ProcessHandle } from './sandbox/process/processHandle'
+export type { ProcessOutput, ProcessResult } from './sandbox/process/processHandle'
 export type {
-  ProcessResult,
   ProcessConfig,
 } from './sandbox/process'
 
