@@ -71,9 +71,9 @@ job "session-proxy" {
       }
 
       resources {
-        memory_max = 4096
-        memory = 2048
-        cpu    = 1000
+        memory_max = 6000
+        memory = 6000
+        cpu    = 1024
       }
 
       template {
@@ -125,9 +125,14 @@ server {
   # See https://stackoverflow.com/questions/29980884/proxy-pass-does-not-resolve-dns-using-etc-hosts
   resolver 127.0.0.53;
 
-  client_max_body_size 0;
+  client_max_body_size 1024m;
+  
   proxy_buffering off;
   proxy_request_buffering off;
+
+  tcp_nodelay on;
+  tcp_nopush on;
+  sendfile on;
 
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
@@ -139,11 +144,13 @@ server {
 
   proxy_http_version 1.1;
 
-  proxy_read_timeout 7d;
-  proxy_send_timeout 7d;
+  proxy_read_timeout 1d;
+  proxy_send_timeout 1d;
 
   proxy_cache_bypass 1;
   proxy_no_cache 1;
+
+
 
   location / {
     if ($dbk_session_id = "") {

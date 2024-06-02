@@ -67,9 +67,9 @@ job "client-proxy" {
       driver = "docker"
 
       resources {
-        memory_max = 4096
-        memory = 2048
-        cpu    = 1000
+        memory_max = 6000
+        memory = 6000
+        cpu    = 2048
       }
 
       config {
@@ -134,15 +134,20 @@ server {
 
   proxy_http_version 1.1;
 
-  proxy_read_timeout 7d;
-  proxy_send_timeout 7d;
+  proxy_read_timeout 1d;
+  proxy_send_timeout 1d;
 
   proxy_cache_bypass 1;
   proxy_no_cache 1;
 
-  client_max_body_size 0;
   proxy_buffering off;
   proxy_request_buffering off;
+
+  client_max_body_size 1024m;
+  
+  tcp_nodelay on;
+  tcp_nopush on;
+  sendfile on;
 
   location / {
     proxy_pass $scheme://[[ .Address ]]:[[ .Port ]]$request_uri;
