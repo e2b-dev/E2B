@@ -3,11 +3,14 @@ package exporter
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"sync"
 	"time"
 )
+
+var vectorAddress = os.Getenv("LOGS_COLLECTOR_ADDRESS")
 
 type HTTPLogsExporter struct {
 	client   http.Client
@@ -48,13 +51,7 @@ func (w *HTTPLogsExporter) sendInstanceLogs(logs []byte, address string) error {
 	return nil
 }
 
-func printLog(logs []byte) {
-	fmt.Fprintf(os.Stdout, "%v", string(logs))
-}
-
 func (w *HTTPLogsExporter) start() {
-	w.waitForMMDS()
-
 	for range w.triggers {
 		logs := w.getAllLogs()
 
@@ -62,53 +59,16 @@ func (w *HTTPLogsExporter) start() {
 			continue
 		}
 
-		if w.debug {
-			for _, log := range logs {
-				fmt.Fprintf(os.Stdout, "%v", string(log))
-			}
-
-			continue
-		}
-
-		token, err := w.getMMDSToken()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error getting mmds token: %v\n", err)
-
-			for _, log := range logs {
-				printLog(log)
-			}
-
-			continue
-		}
-
-		mmdsOpts, err := w.getMMDSOpts(token)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error getting instance logging options from mmds (token %s): %v\n", token, err)
-
-			for _, log := range logs {
-				printLog(log)
-			}
-
-			continue
-		}
-
-		for _, log := range logs {
-			logsWithOpts, jsonErr := mmdsOpts.addOptsToJSON(log)
-			if jsonErr != nil {
-				fmt.Fprintf(os.Stderr, "error adding instance logging options (%+v) to JSON (%+v) with logs : %v\n", mmdsOpts, log, jsonErr)
-
-				printLog(log)
+		for _, logEntry := range logs {
+			if w.debug {
+				fmt.Printf("%v\n", string(logEntry))
 
 				continue
-			}
-
-			err = w.sendInstanceLogs(logsWithOpts, mmdsOpts.Address)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, fmt.Sprintf("error sending instance logs: %+v", err))
-
-				printLog(log)
-
-				continue
+			} else {
+				err := w.sendInstanceLogs(logs[0], vectorAddress)
+				if err != nil {
+					log.Fatalf("error sending logs: %v", err)
+				}
 			}
 		}
 	}

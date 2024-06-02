@@ -42,6 +42,7 @@ type APIStore struct {
 	db              *db.DB
 	lokiClient      *loki.DefaultClient
 	logger          *zap.SugaredLogger
+	sandboxLogger   *zap.SugaredLogger
 }
 
 var lokiAddress = os.Getenv("LOKI_ADDRESS")
@@ -153,6 +154,12 @@ func NewAPIStore() *APIStore {
 
 	buildCache := builds.NewBuildCache(buildCounter)
 
+	sandboxLogger, err := logging.NewCollectorLogger()
+	if err != nil {
+		logger.Errorf("Error initializing sandbox logger\n: %v", err)
+		panic(err)
+	}
+
 	return &APIStore{
 		Ctx:             ctx,
 		orchestrator:    orch,
@@ -165,6 +172,7 @@ func NewAPIStore() *APIStore {
 		buildCache:      buildCache,
 		logger:          logger,
 		lokiClient:      lokiClient,
+		sandboxLogger:   sandboxLogger,
 	}
 }
 

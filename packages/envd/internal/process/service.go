@@ -112,7 +112,7 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 	}
 }
 
-func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir string) (ID, error) {
+func StartWithUser(s *Service, id ID, cmd string, envVars *map[string]string, rootdir string, user string) (ID, error) {
 	s.logger.Infow("Start process",
 		"processID", id,
 		"cmd", cmd,
@@ -133,7 +133,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			id = xid.New().String()
 		}
 
-		newProc, err := s.processes.Add(id, s.env.Shell, cmd, envVars, rootdir)
+		newProc, err := s.processes.Add(id, s.env.Shell, cmd, envVars, rootdir, user)
 		if err != nil {
 			s.logger.Errorw("Failed to create new process",
 				"processID", id,
@@ -290,6 +290,10 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 	)
 
 	return proc.ID, nil
+}
+
+func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir string) (ID, error) {
+	return StartWithUser(s, id, cmd, envVars, rootdir, "")
 }
 
 func (s *Service) Stdin(id ID, data string) error {

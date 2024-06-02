@@ -183,20 +183,6 @@ func main() {
 		logger.Panicw("failed to register process service", "error", err)
 	}
 
-	// Start the command passed via the -cmd flag.
-	if startCmdFlag != "" {
-		_, err := processService.Start(startCmdID, startCmdFlag, nil, "/")
-		// TODO: Do we need to cache the process logs if they are not retrieved?
-		// TODO: Should we cache all process logs always?
-		if err != nil {
-			logger.Errorf(
-				"failed to start the command passed via the -cmd flag",
-				"cmd", startCmdFlag,
-				"err", err,
-			)
-		}
-	}
-
 	terminalService := terminal.NewService(logger.Named("terminal"), envConfig, clock)
 	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
 		logger.Panicw("failed to register terminal service", "error", err)
@@ -216,6 +202,19 @@ func main() {
 	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 	// The /file route used for downloading and uploading files via SDK.
 	router.HandleFunc("/file", createFileHandler(logger.Named("file")))
+
+	// TODO: How to differentiate the start command from other running commands? Metadata? EnvVars?
+	if startCmdFlag != "" {
+		envVars := make(map[string]string)
+		_, err := process.StartWithUser(processService, startCmdID, startCmdFlag, &envVars, "/", "root")
+		if err != nil {
+			logger.Errorf(
+				"failed to start the command passed via the -cmd flag",
+				"cmd", startCmdFlag,
+				"err", err,
+			)
+		}
+	}
 
 	server := &http.Server{
 		ReadTimeout:  serverTimeout,
