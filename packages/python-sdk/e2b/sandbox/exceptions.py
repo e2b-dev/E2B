@@ -1,6 +1,2 @@
-class SandboxException(Exception):
-    pass
-
-
-class AuthenticationException(SandboxException):
+class AuthenticationException(Exception):
     pass

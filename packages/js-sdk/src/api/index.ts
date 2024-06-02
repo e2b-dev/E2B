@@ -1,20 +1,48 @@
-import * as fetcher from 'openapi-typescript-fetch'
-import type { OpArgType, TypedFetch } from 'openapi-typescript-fetch'
+import createClient from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
 import { ConnectionConfig } from '../connectionConfig'
 
-const { Fetcher } = fetcher
+export class AuthenticationError extends Error {
+  constructor(message: any) {
+    super(message)
+    this.name = 'AuthenticationError'
+  }
+}
 
-class APIClient {
-  private client = Fetcher.for<paths>()
+class ApiClient {
+  private readonly client: ReturnType<typeof createClient<paths>>
 
-  constructor(private config: ConnectionConfig) {
-    this.client.configure({
-      baseUrl: this.config.apiUrl,
-      init: {
-        headers: defaultHeaders,
+  constructor(
+    config: ConnectionConfig,
+    opts?: {
+      requireAccessToken?: boolean
+      requireApiKey?: boolean
+    },
+  ) {
+    if (!opts?.requireApiKey && !config.apiKey) {
+      throw new AuthenticationError(
+        'API key is required, please visit https://e2b.dev/docs to get your API key. ' +
+        'You can either set the environment variable `E2B_API_KEY` ' +
+        "or you can pass it directly to the sandbox like Sandbox.create({ apiKey: 'e2b_...' })",
+      )
+    }
+
+    if (opts?.requireAccessToken && !config.accessToken) {
+      throw new AuthenticationError(
+        'Access token is required, please visit https://e2b.dev/docs to get your access token. ' +
+        'You can either set the environment variable `E2B_ACCESS_TOKEN`',
+      )
+    }
+
+    this.client = createClient<paths>({
+      baseUrl: config.apiUrl,
+      signal: config.requestTimeoutMs ? AbortSignal.timeout(config.requestTimeoutMs) : undefined,
+      headers: {
+        ...defaultHeaders,
+        ...config.apiKey && { 'X-API-KEY': config.apiKey },
+        ...config.accessToken && { Authorization: `Bearer ${config.accessToken}` },
       },
     })
   }
@@ -24,53 +52,5 @@ class APIClient {
   }
 }
 
-type WithAccessToken<T> = (
-  accessToken: string,
-  arg: OpArgType<T>,
-  init?: RequestInit,
-) => ReturnType<TypedFetch<T>>
-
-export function withAccessToken<T>(f: TypedFetch<T>) {
-  const wrapped = (accessToken: string, arg: OpArgType<T>, init?: RequestInit) => {
-    return f(arg, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        ...init?.headers,
-      },
-    })
-  }
-
-  wrapped.Error = f.Error
-
-  return wrapped as WithAccessToken<T> & {
-    Error: typeof f.Error
-  }
-}
-
-type WithAPIKey<T> = (
-  apiKey: string,
-  arg: OpArgType<T>,
-  init?: RequestInit,
-) => ReturnType<TypedFetch<T>>
-
-export function withAPIKey<T>(f: TypedFetch<T>) {
-  const wrapped = (apiKey: string, arg: OpArgType<T>, init?: RequestInit) => {
-    return f(arg, {
-      ...init,
-      headers: {
-        'X-API-KEY': apiKey,
-        ...init?.headers,
-      },
-    })
-  }
-
-  wrapped.Error = f.Error
-
-  return wrapped as WithAPIKey<T> & {
-    Error: typeof f.Error
-  }
-}
-
 export type { components, paths }
-export { APIClient }
+export { ApiClient }

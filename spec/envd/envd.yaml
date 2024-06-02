@@ -50,27 +50,23 @@ components:
       name: path
       in: path
       required: true
-      allowEmptyValue: false
+      allowEmptyValue: true
       description: Absolute path to the file, URL encoded.
       schema:
         type: string
     User:
       name: User
       in: query
-      required: false
       description: User owning the file
       schema:
         type: string
-        default: "root"
     Mode:
       name: Mode
       in: query
-      required: false
       description: File permissions in octal format (e.g., 0755)
       schema:
         type: string
         pattern: "^[0-7]{3,4}$"
-        default: "0777"
 
   requestBodies:
     File:
