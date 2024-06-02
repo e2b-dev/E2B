@@ -30,9 +30,6 @@ type Error struct {
 // FilePath defines model for FilePath.
 type FilePath = string
 
-// Mode defines model for Mode.
-type Mode = string
-
 // User defines model for User.
 type User = string
 
@@ -50,10 +47,7 @@ type PutFilesPathMultipartBody struct {
 // PutFilesPathParams defines parameters for PutFilesPath.
 type PutFilesPathParams struct {
 	// User User owning the file
-	User *User `form:"User,omitempty" json:"User,omitempty"`
-
-	// Mode File permissions in octal format (e.g., 0755)
-	Mode *Mode `form:"Mode,omitempty" json:"Mode,omitempty"`
+	User User `form:"User" json:"User"`
 }
 
 // PutFilesPathMultipartRequestBody defines body for PutFilesPath for multipart/form-data ContentType.
@@ -125,19 +119,18 @@ func (siw *ServerInterfaceWrapper) PutFilesPath(w http.ResponseWriter, r *http.R
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PutFilesPathParams
 
-	// ------------- Optional query parameter "User" -------------
+	// ------------- Required query parameter "User" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "User", r.URL.Query(), &params.User)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "User", Err: err})
+	if paramValue := r.URL.Query().Get("User"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "User"})
 		return
 	}
 
-	// ------------- Optional query parameter "Mode" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "Mode", r.URL.Query(), &params.Mode)
+	err = runtime.BindQueryParameter("form", true, true, "User", r.URL.Query(), &params.User)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Mode", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "User", Err: err})
 		return
 	}
 

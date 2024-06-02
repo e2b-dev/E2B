@@ -36,7 +36,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/FilePath"
         - $ref: "#/components/parameters/User"
-        - $ref: "#/components/parameters/Mode"
       requestBody:
         $ref: "#/components/requestBodies/File"
       responses:
@@ -66,14 +65,6 @@ components:
       description: User owning the file
       schema:
         type: string
-    Mode:
-      name: Mode
-      in: query
-      required: true
-      description: File permissions in octal format (e.g., 0755)
-      schema:
-        type: string
-        pattern: "^[0-7]{3,4}$"
 
   requestBodies:
     File:
