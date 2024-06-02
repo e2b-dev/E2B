@@ -5,6 +5,7 @@ import {
   PromiseClient,
 } from '@connectrpc/connect'
 
+import { ConnectionOpts } from '../connectionConfig'
 import { FilesystemService } from '../envd/filesystem/v1/filesystem_connect'
 import {
   FilesystemEvent as FsFilesystemEvent,
@@ -29,35 +30,42 @@ export class Filesystem {
 
   constructor(private readonly transport: Transport) { }
 
-  async list(path: string): Promise<EntryInfo[]> {
+  async list(path: string, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<EntryInfo[]> {
     const params: PlainMessage<ListRequest> = {
       path,
     }
 
-    const res = await this.service.list(params)
+    const res = await this.service.list(params, {
+      timeoutMs: opts?.requestTimeoutMs,
+    })
     return res.entries
   }
 
-  async remove(path: string): Promise<void> {
+  async remove(path: string, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
     const params: PlainMessage<RemoveRequest> = {
       path,
     }
 
-    await this.service.remove(params)
+    await this.service.remove(params, {
+      timeoutMs: opts?.requestTimeoutMs,
+    })
   }
 
-  async exists(path: string): Promise<EntryInfo> {
+  async exists(path: string, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<EntryInfo> {
     const params: PlainMessage<StatRequest> = {
       path,
     }
 
-    const res = await this.service.stat(params)
+    const res = await this.service.stat(params, {
+      timeoutMs: opts?.requestTimeoutMs,
+    })
     return res.entry!
   }
 
   async watch(
     path: string,
-    onEvent: (event: FilesystemEvent) => any,
+    onEvent: (event: FilesystemEvent) => void | Promise<void>,
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>,
   ): Promise<WatchHandle> {
     const params: PlainMessage<WatchRequest> = {
       path,
@@ -67,12 +75,13 @@ export class Filesystem {
 
     const req = this.service.watch(params, {
       signal: controller.signal,
+      timeoutMs: opts?.requestTimeoutMs,
     })
 
     async function processStream() {
       for await (const event of req) {
         if (event.event) {
-          onEvent?.(event.event)
+          await onEvent?.(event.event)
         }
       }
     }

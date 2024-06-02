@@ -45,7 +45,7 @@ class Sandbox(SandboxApi):
             self.sandbox_id = sandbox_id
 
         sandbox_server_url = (
-            f"{'http' if debug else 'https'}://{self.get_hostname(SANDBOX_SERVER_PORT)}"
+            f"{'http' if debug else 'https'}://{self.get_host(SANDBOX_SERVER_PORT)}"
         )
 
         self.filesystem = Filesystem(sandbox_server_url)
@@ -53,7 +53,7 @@ class Sandbox(SandboxApi):
 
         self._files = SandboxFiles(sandbox_server_url)
 
-    def get_hostname(self, port: int) -> str:
+    def get_host(self, port: int) -> str:
         if self._connection_config.debug:
             return f"localhost:{port}"
 

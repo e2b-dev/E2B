@@ -8,19 +8,22 @@ export interface ConnectionOpts {
   apiKey?: string
   domain?: string
   debug?: boolean
+  requestTimeoutMs?: number
 }
 
 export class ConnectionConfig {
   readonly debug: boolean
   readonly domain: string
   readonly apiUrl: string
+  readonly requestTimeoutMs?: number
 
   private readonly _apiKey?: string
 
-  constructor(opts: ConnectionOpts) {
-    this._apiKey = opts.apiKey || API_KEY
-    this.debug = opts.debug || DEBUG
-    this.domain = opts.domain || DOMAIN
+  constructor(opts?: ConnectionOpts) {
+    this._apiKey = opts?.apiKey || API_KEY
+    this.debug = opts?.debug || DEBUG
+    this.domain = opts?.domain || DOMAIN
+    this.requestTimeoutMs = opts?.requestTimeoutMs
 
     this.apiUrl = this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`
   }

@@ -9,12 +9,10 @@ export interface RunningSandbox {
   startedAt: Date
 }
 
-// TODO: Add requestTimeout
-
 export class SandboxApi {
   static async kill(
     sandboxID: string,
-    opts: ConnectionOpts = {}
+    opts?: ConnectionOpts,
   ): Promise<void> {
     const config = new ConnectionConfig(opts)
 
@@ -25,10 +23,12 @@ export class SandboxApi {
       client.api.path('/sandboxes/{sandboxID}').method('delete').create(),
     )
 
-    await killSandbox(config.apiKey, { sandboxID })
+    await killSandbox(config.apiKey, { sandboxID }, {
+      signal: config.requestTimeoutMs ? AbortSignal.timeout(config.requestTimeoutMs) : undefined,
+    })
   }
 
-  static async list(opts: ConnectionOpts = {}): Promise<RunningSandbox[]> {
+  static async list(opts?: ConnectionOpts): Promise<RunningSandbox[]> {
     const config = new ConnectionConfig(opts)
 
     const client = new APIClient(config)
@@ -37,7 +37,9 @@ export class SandboxApi {
       client.api.path('/sandboxes').method('get').create(),
     )
 
-    const res = await listSandboxes(config.apiKey, {})
+    const res = await listSandboxes(config.apiKey, {}, {
+      signal: config.requestTimeoutMs ? AbortSignal.timeout(config.requestTimeoutMs) : undefined,
+    })
 
     return res.data.map((sandbox) => ({
       sandboxID: this.getSandboxID(sandbox),
@@ -50,10 +52,10 @@ export class SandboxApi {
 
   protected static async createSandbox(
     template: string,
-    opts: ConnectionOpts & {
+    opts?: ConnectionOpts & {
       metadata?: Record<string, string>,
       timeout?: number,
-    } = {}): Promise<string> {
+    }): Promise<string> {
     const config = new ConnectionConfig(opts)
 
     const client = new APIClient(config)
@@ -64,8 +66,10 @@ export class SandboxApi {
 
     const res = await createSandbox(config.apiKey, {
       templateID: template,
-      metadata: opts.metadata,
-      timeout: opts.timeout,
+      metadata: opts?.metadata,
+      timeout: opts?.timeout,
+    }, {
+      signal: config.requestTimeoutMs ? AbortSignal.timeout(config.requestTimeoutMs) : undefined,
     })
 
     return this.getSandboxID(res.data)
@@ -74,7 +78,8 @@ export class SandboxApi {
   protected static async setTimeout(
     sandboxID: string,
     timeout: number,
-    opts: ConnectionOpts = {}): Promise<void> {
+    opts?: ConnectionOpts,
+  ): Promise<void> {
     const config = new ConnectionConfig(opts)
 
     const client = new APIClient(config)
@@ -86,6 +91,8 @@ export class SandboxApi {
     await setSandboxTimeout(config.apiKey, {
       sandboxID,
       timeout,
+    }, {
+      signal: config.requestTimeoutMs ? AbortSignal.timeout(config.requestTimeoutMs) : undefined,
     })
   }
 

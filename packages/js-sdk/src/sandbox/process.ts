@@ -9,7 +9,6 @@ import { ProcessService } from '../envd/process/v1/process_connect'
 import {
   ProcessConfig as PsProcessConfig,
   ProcessEvent_EndEvent,
-  ProcessEvent_StartEvent,
   ConnectResponse,
   ConnectRequest,
   SendInputRequest,
@@ -21,6 +20,7 @@ import {
 } from '../envd/process/v1/process_pb'
 import { concatUint8Arrays } from './array'
 import { createDeferredPromise } from './promise'
+import { ConnectionOpts } from '../connectionConfig'
 
 
 export interface ProcessOutput {
@@ -28,11 +28,79 @@ export interface ProcessOutput {
   stderr?: string
 }
 
-export interface ProcessHandle {
-  pid: number
-  disconnect: () => void
-  wait: () => Promise<ProcessResult>
-  kill: () => Promise<void>
+class ProcessHandle {
+  private readonly end = createDeferredPromise<{
+    exit: ProcessEvent_EndEvent,
+    stdout: Uint8Array[],
+    stderr: Uint8Array[],
+  }>()
+
+  constructor(
+    readonly pid: number,
+    readonly handleDisconnect: () => void,
+    private readonly handleKill: () => Promise<void>,
+    private readonly events: AsyncIterable<ConnectResponse | StartResponse>,
+    private readonly handleStdout?: ((data: string) => void | Promise<void>),
+    private readonly handleStderr?: ((data: string) => void | Promise<void>),
+    private readonly handlePtyData?: ((data: Uint8Array) => void | Promise<void>),
+  ) {
+    this.handleEvents()
+  }
+
+  disconnect() {
+    this.handleDisconnect()
+  }
+
+  async wait(): Promise<ProcessResult> {
+    const result = await this.end.promise
+    return {
+      exitCode: result.exit.exitCode,
+      error: result.exit.error,
+      stdout: concatUint8Arrays(result.stdout).toString(),
+      stderr: concatUint8Arrays(result.stderr).toString(),
+    }
+  }
+
+  async kill() {
+    this.disconnect()
+    await this.handleKill()
+  }
+
+  private async handleEvents() {
+    const stdout: Uint8Array[] = []
+    const stderr: Uint8Array[] = []
+
+    try {
+      for await (const event of this.events) {
+        switch (event.event?.event.case) {
+          case 'data':
+            switch (event.event.event.value.output.case) {
+              case 'stdout':
+                stdout.push(event.event.event.value.output.value)
+                await this.handleStdout?.(event.event.event.value.output.value.toString())
+                break
+              case 'stderr':
+                stderr.push(event.event.event.value.output.value)
+                await this.handleStderr?.(event.event.event.value.output.value.toString())
+                break
+              case 'pty':
+                await this.handlePtyData?.(event.event.event.value.output.value)
+                break
+            }
+            break
+          case 'end':
+            this.end.resolve({
+              exit: event.event.event.value,
+              stdout,
+              stderr,
+            })
+            break
+        }
+      }
+    } catch (error) {
+      this.end.reject(error)
+    }
+  }
 }
 
 export interface ProcessResult extends ProcessOutput {
@@ -51,43 +119,46 @@ export type ProcessConfig = PlainMessage<PsProcessConfig>
 // TODO: Add req timeout
 // TODO: Enable using process handle as iterable
 // TODO: Solve stream input
+// TODO: For watch and other stream ensure the timeout throw is handlable
+// TODO: Create class from process handler
+// TODO: Disconnect during kill
+// TODO: Add iterator returns (python too)
+// TODO: Passing timeout to envd context via metadata?
+// TODO: Finish requestTimeoutMs handling in normal API
+// TODO: Does the abort controller work when we specify the request timeout via connect rpc?
 export class Process {
   private readonly service: PromiseClient<typeof ProcessService> = createPromiseClient(ProcessService, this.transport)
 
   constructor(private readonly transport: Transport) { }
 
-  async list(): Promise<ProcessConfig[]> {
-    const res = await this.service.list({})
+  async list(opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<ProcessConfig[]> {
+    const res = await this.service.list({}, {
+      timeoutMs: opts?.requestTimeoutMs,
+    })
     return res.processes
   }
 
   async start(
     cmd: string,
-    {
-      cwd,
-      user,
-      envs,
-      onStderr,
-      onStdout,
-    }: {
-      cwd: string | undefined,
-      user: 'root' | 'user' | undefined,
-      envs: Record<string, string> | undefined,
-      onStdout: ((data: string) => any) | undefined,
-      onStderr: ((data: string) => any) | undefined,
-    }
+    opts: {
+      cwd?: string,
+      user?: 'root' | 'user',
+      envs?: Record<string, string>,
+      onStdout?: ((data: string) => void | Promise<void>),
+      onStderr?: ((data: string) => void | Promise<void>),
+    } & Pick<ConnectionOpts, 'requestTimeoutMs'> = {}
   ): Promise<ProcessHandle> {
     const params: PlainMessage<StartRequest> = {
       owner: {
         credential: {
           case: 'username',
-          value: user || 'user',
+          value: opts.user || 'user',
         },
       },
       process: {
         cmd: '/bin/bash',
-        cwd,
-        envs: envs || {},
+        cwd: opts.cwd,
+        envs: opts.envs || {},
         args: ['-l', '-c', cmd],
       },
     }
@@ -96,35 +167,33 @@ export class Process {
 
     const events = this.service.start(params, {
       signal: controller.signal,
+      timeoutMs: opts.requestTimeoutMs,
     })
 
-    const {
-      start,
-      wait,
-    } = await this.handleProcessEvents(events, {
-      onStdout,
-      onStderr,
-    })
+    const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
 
-    const startEvent = await start
-
-    return {
-      pid: startEvent.pid,
-      disconnect: () => controller.abort(),
-      wait,
-      kill: () => this.kill(startEvent.pid),
+    if (startEvent.event?.event.case !== 'start') {
+      throw new Error('Expected start event')
     }
+
+    const pid = startEvent.event.event.value.pid
+
+    return new ProcessHandle(
+      pid,
+      () => controller.abort(),
+      () => this.kill(pid),
+      events,
+      opts.onStdout,
+      opts.onStderr,
+    )
   }
 
   async connect(
     pid: number,
-    {
-      onStderr,
-      onStdout,
-    }: {
-      onStdout: ((data: string) => any) | undefined,
-      onStderr: ((data: string) => any) | undefined,
-    }
+    opts?: {
+      onStdout?: ((data: string) => void | Promise<void>),
+      onStderr?: ((data: string) => void | Promise<void>),
+    } & Pick<ConnectionOpts, 'requestTimeoutMs'>
   ): Promise<ProcessHandle> {
     const params: PlainMessage<ConnectRequest> = {
       process: {
@@ -138,24 +207,20 @@ export class Process {
 
     const events = this.service.connect(params, {
       signal: controller.signal,
+      timeoutMs: opts?.requestTimeoutMs,
     })
 
-    const {
-      wait,
-    } = await this.handleProcessEvents(events, {
-      onStdout,
-      onStderr,
-    })
-
-    return {
+    return new ProcessHandle(
       pid,
-      disconnect: () => controller.abort(),
-      wait,
-      kill: () => this.kill(pid),
-    }
+      () => controller.abort(),
+      () => this.kill(pid),
+      events,
+      opts?.onStdout,
+      opts?.onStderr,
+    )
   }
 
-  async kill(pid: number): Promise<void> {
+  async kill(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
     await this.service.sendSignal({
       process: {
         selector: {
@@ -164,10 +229,12 @@ export class Process {
         }
       },
       signal: Signal.SIGKILL,
+    }, {
+      timeoutMs: opts?.requestTimeoutMs,
     })
   }
 
-  async sendStdin(pid: number, data: Uint8Array): Promise<void> {
+  async sendStdin(pid: number, data: Uint8Array, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
     const params: PlainMessage<SendInputRequest> = {
       process: {
         selector: {
@@ -183,14 +250,16 @@ export class Process {
       },
     }
 
-    await this.service.sendInput(params)
+    await this.service.sendInput(params, {
+      timeoutMs: opts?.requestTimeoutMs,
+    })
   }
 
   async startTerminal({ cols, rows, onData }: {
     cols: number,
     rows: number,
-    onData: (data: Uint8Array) => any,
-  }): Promise<void> {
+    onData: (data: Uint8Array) => void | Promise<void>,
+  }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<ProcessHandle> {
     const params: PlainMessage<StartRequest> = {
       owner: {
         credential: {
@@ -200,7 +269,6 @@ export class Process {
       },
       process: {
         cmd: '/bin/bash',
-        cwd: '/',
         envs: {},
         args: ['-i', '-l'],
       },
@@ -212,50 +280,40 @@ export class Process {
       },
     }
 
-    const start = createDeferredPromise<ProcessEvent_StartEvent>()
-    const end = createDeferredPromise<ProcessEvent_EndEvent>()
+    const controller = new AbortController()
 
-    const stream = this.service.start(params)
+    const events = this.service.start(params, {
+      timeoutMs: opts?.requestTimeoutMs,
+      signal: controller.signal,
+    })
 
-    async function processStream() {
-      try {
-        for await (const event of stream) {
-          switch (event.event?.event.case) {
-            case 'start':
-              start.resolve(event.event.event.value)
-              break
-            case 'data':
-              switch (event.event.event.value.output.case) {
-                case 'pty':
-                  onData(event.event.event.value.output.value)
-                  break
-              }
-              break
-            case 'end':
-              end.resolve(event.event.event.value)
-              break
-          }
+    const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
 
-        }
-      } catch (error) {
-        start.reject(error)
-        end.reject(error)
-      }
+    if (startEvent.event?.event.case !== 'start') {
+      throw new Error('Expected start event')
     }
 
-    processStream()
+    const pid = startEvent.event.event.value.pid
 
-    const startEvent = await start.promise
-
-
-    return
-
+    return new ProcessHandle(
+      pid,
+      () => controller.abort(),
+      () => this.kill(pid),
+      events,
+      undefined,
+      undefined,
+      onData,
+    )
   }
 
-  private async resizeTerminal(pid: number, size: {
-    cols: number,
-    rows: number,
-  }): Promise<void> {
+  async resizeTerminal(
+    pid: number,
+    size: {
+      cols: number,
+      rows: number,
+    },
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>,
+  ): Promise<void> {
     const params: PlainMessage<UpdateRequest> = {
       process: {
         selector: {
@@ -268,98 +326,21 @@ export class Process {
       },
     }
 
-    await this.service.update(params)
+    await this.service.update(params, {
+      timeoutMs: opts?.requestTimeoutMs,
+    })
   }
 
-  private async streamTerminalInput(params: AsyncIterable<PlainMessage<StreamInputRequest>>) {
+  private async streamTerminalInput(params: AsyncIterable<PlainMessage<StreamInputRequest>>, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>) {
     const controller = new AbortController()
 
     this.service.streamInput(params, {
       signal: controller.signal,
+      timeoutMs: opts?.requestTimeoutMs,
     })
 
     return {
       stop: () => controller.abort(),
-    }
-  }
-
-  private async handleProcessEvents(
-    events: AsyncIterable<StartResponse | ConnectResponse>,
-    {
-      onStderr,
-      onStdout,
-    }: {
-      onStdout: ((data: string) => any) | undefined,
-      onStderr: ((data: string) => any) | undefined,
-    }
-  ) {
-    const start = createDeferredPromise<ProcessEvent_StartEvent>()
-    const end = createDeferredPromise<{
-      exit: ProcessEvent_EndEvent,
-      stdout: Uint8Array[],
-      stderr: Uint8Array[],
-    }>()
-
-    async function processStream() {
-      const stdout: Uint8Array[] = []
-      const stderr: Uint8Array[] = []
-
-      try {
-        for await (const event of events) {
-          switch (event.event?.event.case) {
-            case 'start':
-              start.resolve(event.event.event.value)
-              break
-            case 'data':
-              switch (event.event.event.value.output.case) {
-                case 'stdout':
-                  stdout.push(event.event.event.value.output.value)
-                  onStdout?.(event.event.event.value.output.value.toString())
-                  break
-                case 'stderr':
-                  stderr.push(event.event.event.value.output.value)
-                  onStderr?.(event.event.event.value.output.value.toString())
-                  break
-              }
-              break
-            case 'end':
-              end.resolve({
-                exit: event.event.event.value,
-                stdout,
-                stderr,
-              })
-              break
-          }
-
-        }
-      } catch (error) {
-        start.reject(error)
-        end.reject(error)
-      }
-    }
-
-    processStream()
-
-    return {
-      start: start.promise,
-      wait: async () => {
-        const { exit, stdout, stderr } = await end.promise
-        return {
-          ...exit,
-          get stdout() {
-            return concatUint8Arrays(stdout).toString()
-          },
-          get stderr() {
-            return concatUint8Arrays(stderr).toString()
-          },
-        }
-      },
-      // async *[Symbol.asyncIterator](): AsyncIterable<ProcessOutput> {
-      //   for (const delay of this.delays) {
-      //     await this.wait(delay)
-      //     yield `Delayed response for ${delay} milliseconds`
-      //   }
-      // },
     }
   }
 }

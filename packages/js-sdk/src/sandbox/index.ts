@@ -13,7 +13,7 @@ export interface SandboxOpts extends ConnectionOpts {
    */
   metadata?: Record<string, string>
   logger?: Logger
-  timeout?: number
+  timeoutMs?: number
 }
 
 const SANDBOX_SERVER_PORT = 49982
@@ -28,12 +28,12 @@ export class Sandbox extends SandboxApi {
   private readonly connectionConfig: ConnectionConfig
   private readonly files: SandboxFiles
 
-  constructor(readonly sandboxID: string, opts: Omit<SandboxOpts, 'timeout' | 'metadata'> = {}) {
+  constructor(readonly sandboxID: string, opts: Omit<SandboxOpts, 'timeoutMs' | 'metadata'> = {}) {
     super()
 
     this.connectionConfig = new ConnectionConfig(opts)
 
-    const sandboxServerUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHostname(SANDBOX_SERVER_PORT)}`
+    const sandboxServerUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHost(SANDBOX_SERVER_PORT)}`
 
     this.files = new SandboxFiles(sandboxServerUrl)
 
@@ -54,19 +54,11 @@ export class Sandbox extends SandboxApi {
   /**
    * Connects to an existing Sandbox.
    */
-  static async connect<S extends typeof Sandbox>(this: S, sandboxID: string, opts?: Omit<SandboxOpts, 'metadata' | 'timeout'>): Promise<InstanceType<S>> {
+  static async connect<S extends typeof Sandbox>(this: S, sandboxID: string, opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>): Promise<InstanceType<S>> {
     return new this(sandboxID, opts) as InstanceType<S>
   }
 
-  /**
-    * Get the hostname for the sandbox or for the specified sandbox's port.
-    *
-    * `getHostname` method requires `this` context - you may need to bind it.
-    *
-    * @param port Specify if you want to connect to a specific port of the sandbox
-    * @returns Hostname of the sandbox or sandbox's port
-    */
-  getHostname(port: number) {
+  getHost(port: number) {
     if (this.connectionConfig.debug) {
       return `localhost:${port}`
     }
