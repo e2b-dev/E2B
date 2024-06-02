@@ -32,7 +32,7 @@ class ApiClient {
     if (opts?.requireAccessToken && !config.accessToken) {
       throw new AuthenticationError(
         'Access token is required, please visit https://e2b.dev/docs to get your access token. ' +
-        'You can either set the environment variable `E2B_ACCESS_TOKEN`',
+        'You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `accessToken` in options.',
       )
     }
 
