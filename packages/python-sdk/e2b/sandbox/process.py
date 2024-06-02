@@ -1,7 +1,7 @@
 import logging
 import connect
 
-from typing import Dict, Optional, Callable, Any, Generator, Union
+from typing import Dict, Optional, Callable, Any, Generator, Union, Literal
 
 from envd.process.v1 import process_connect, process_pb2
 from pydantic import BaseModel
@@ -106,14 +106,15 @@ class Process:
         self,
         cmd: str,
         envs: Optional[Dict[str, str]] = {},
-        user: str = "user",
+        user: Literal["root", "user"] = "user",
         cwd: Optional[str] = None,
     ):
         params = process_pb2.StartRequest(
             owner=process_pb2.Credential(username=user),
             process=process_pb2.ProcessConfig(
-                cmd=cmd,
+                cmd="/bin/bash",
                 envs=envs,
+                args=["-l", "-c", cmd],
                 cwd=cwd,
             ),
         )

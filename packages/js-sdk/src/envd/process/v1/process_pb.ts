@@ -132,9 +132,9 @@ export class ProcessConfig extends Message<ProcessConfig> {
   envs: { [key: string]: string } = {};
 
   /**
-   * @generated from field: string cwd = 4;
+   * @generated from field: optional string cwd = 4;
    */
-  cwd = "";
+  cwd?: string;
 
   constructor(data?: PartialMessage<ProcessConfig>) {
     super();
@@ -147,7 +147,7 @@ export class ProcessConfig extends Message<ProcessConfig> {
     { no: 1, name: "cmd", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "args", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 3, name: "envs", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
-    { no: 4, name: "cwd", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "cwd", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ProcessConfig {

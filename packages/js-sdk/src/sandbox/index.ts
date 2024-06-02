@@ -11,7 +11,7 @@ export interface SandboxOpts extends ConnectionOpts {
    * A dictionary of strings that is stored alongside the running sandbox.
    * You can see this metadata when you list running sandboxes.
    */
-  metadata?: { [key: string]: string }
+  metadata?: Record<string, string>
   logger?: Logger
   timeout?: number
 }

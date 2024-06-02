@@ -5,7 +5,7 @@ export interface RunningSandbox {
   sandboxID: string
   templateID: string
   name?: string
-  metadata?: { [key: string]: string }
+  metadata?: Record<string, string>
   startedAt: Date
 }
 
@@ -51,7 +51,7 @@ export class SandboxApi {
   protected static async createSandbox(
     template: string,
     opts: ConnectionOpts & {
-      metadata?: { [key: string]: string },
+      metadata?: Record<string, string>,
       timeout?: number,
     } = {}): Promise<string> {
     const config = new ConnectionConfig(opts)

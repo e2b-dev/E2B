@@ -7,84 +7,79 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
-
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x1d\x65nvd/process/v1/process.proto\x12\x0f\x65nvd.process.v1"d\n\x03PTY\x12-\n\x04size\x18\x01 \x01(\x0b\x32\x19.envd.process.v1.PTY.SizeR\x04size\x1a.\n\x04Size\x12\x12\n\x04\x63ols\x18\x01 \x01(\rR\x04\x63ols\x12\x12\n\x04rows\x18\x02 \x01(\rR\x04rows"\xbe\x01\n\rProcessConfig\x12\x10\n\x03\x63md\x18\x01 \x01(\tR\x03\x63md\x12\x12\n\x04\x61rgs\x18\x02 \x03(\tR\x04\x61rgs\x12<\n\x04\x65nvs\x18\x03 \x03(\x0b\x32(.envd.process.v1.ProcessConfig.EnvsEntryR\x04\x65nvs\x12\x10\n\x03\x63wd\x18\x04 \x01(\tR\x03\x63wd\x1a\x37\n\tEnvsEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n\x05value\x18\x02 \x01(\tR\x05value:\x02\x38\x01"\r\n\x0bListRequest"L\n\x0cListResponse\x12<\n\tprocesses\x18\x01 \x03(\x0b\x32\x1e.envd.process.v1.ProcessConfigR\tprocesses"8\n\nCredential\x12\x1c\n\x08username\x18\x01 \x01(\tH\x00R\x08usernameB\x0c\n\ncredential"\xb0\x01\n\x0cStartRequest\x12\x38\n\x07process\x18\x01 \x01(\x0b\x32\x1e.envd.process.v1.ProcessConfigR\x07process\x12+\n\x03pty\x18\x02 \x01(\x0b\x32\x14.envd.process.v1.PTYH\x00R\x03pty\x88\x01\x01\x12\x31\n\x05owner\x18\x03 \x01(\x0b\x32\x1b.envd.process.v1.CredentialR\x05ownerB\x06\n\x04_pty"\x80\x01\n\rUpdateRequest\x12:\n\x07process\x18\x01 \x01(\x0b\x32 .envd.process.v1.ProcessSelectorR\x07process\x12+\n\x03pty\x18\x02 \x01(\x0b\x32\x14.envd.process.v1.PTYH\x00R\x03pty\x88\x01\x01\x42\x06\n\x04_pty"\x10\n\x0eUpdateResponse"\xda\x03\n\x0cProcessEvent\x12@\n\x05start\x18\x01 \x01(\x0b\x32(.envd.process.v1.ProcessEvent.StartEventH\x00R\x05start\x12=\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\'.envd.process.v1.ProcessEvent.DataEventH\x00R\x04\x64\x61ta\x12:\n\x03\x65nd\x18\x03 \x01(\x0b\x32&.envd.process.v1.ProcessEvent.EndEventH\x00R\x03\x65nd\x1a\x1e\n\nStartEvent\x12\x10\n\x03pid\x18\x01 \x01(\rR\x03pid\x1a]\n\tDataEvent\x12\x18\n\x06stdout\x18\x01 \x01(\x0cH\x00R\x06stdout\x12\x18\n\x06stderr\x18\x02 \x01(\x0cH\x00R\x06stderr\x12\x12\n\x03pty\x18\x03 \x01(\x0cH\x00R\x03ptyB\x08\n\x06output\x1a\x84\x01\n\x08\x45ndEvent\x12\x1b\n\texit_code\x18\x01 \x01(\x11R\x08\x65xitCode\x12\x1e\n\nterminated\x18\x02 \x01(\x08R\nterminated\x12\x16\n\x06status\x18\x03 \x01(\tR\x06status\x12\x19\n\x05\x65rror\x18\x04 \x01(\tH\x00R\x05\x65rror\x88\x01\x01\x42\x08\n\x06_errorB\x07\n\x05\x65vent"D\n\rStartResponse\x12\x33\n\x05\x65vent\x18\x01 \x01(\x0b\x32\x1d.envd.process.v1.ProcessEventR\x05\x65vent"F\n\x0f\x43onnectResponse\x12\x33\n\x05\x65vent\x18\x01 \x01(\x0b\x32\x1d.envd.process.v1.ProcessEventR\x05\x65vent"\x83\x01\n\x10SendInputRequest\x12:\n\x07process\x18\x01 \x01(\x0b\x32 .envd.process.v1.ProcessSelectorR\x07process\x12\x33\n\x05input\x18\x02 \x01(\x0b\x32\x1d.envd.process.v1.ProcessInputR\x05input"\x13\n\x11SendInputResponse"C\n\x0cProcessInput\x12\x16\n\x05stdin\x18\x01 \x01(\x0cH\x00R\x05stdin\x12\x12\n\x03pty\x18\x02 \x01(\x0cH\x00R\x03ptyB\x07\n\x05input"\xb6\x02\n\x12StreamInputRequest\x12\x46\n\x05start\x18\x01 \x01(\x0b\x32..envd.process.v1.StreamInputRequest.StartEventH\x00R\x05start\x12\x43\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32-.envd.process.v1.StreamInputRequest.DataEventH\x00R\x04\x64\x61ta\x1aH\n\nStartEvent\x12:\n\x07process\x18\x01 \x01(\x0b\x32 .envd.process.v1.ProcessSelectorR\x07process\x1a@\n\tDataEvent\x12\x33\n\x05input\x18\x02 \x01(\x0b\x32\x1d.envd.process.v1.ProcessInputR\x05inputB\x07\n\x05\x65vent"\x15\n\x13StreamInputResponse"\x80\x01\n\x11SendSignalRequest\x12:\n\x07process\x18\x01 \x01(\x0b\x32 .envd.process.v1.ProcessSelectorR\x07process\x12/\n\x06signal\x18\x02 \x01(\x0e\x32\x17.envd.process.v1.SignalR\x06signal"\x14\n\x12SendSignalResponse"L\n\x0e\x43onnectRequest\x12:\n\x07process\x18\x01 \x01(\x0b\x32 .envd.process.v1.ProcessSelectorR\x07process"1\n\x0fProcessSelector\x12\x12\n\x03pid\x18\x01 \x01(\rH\x00R\x03pidB\n\n\x08selector*H\n\x06Signal\x12\x16\n\x12SIGNAL_UNSPECIFIED\x10\x00\x12\x12\n\x0eSIGNAL_SIGTERM\x10\x0f\x12\x12\n\x0eSIGNAL_SIGKILL\x10\t2\xc1\x04\n\x0eProcessService\x12\x43\n\x04List\x12\x1c.envd.process.v1.ListRequest\x1a\x1d.envd.process.v1.ListResponse\x12N\n\x07\x43onnect\x12\x1f.envd.process.v1.ConnectRequest\x1a .envd.process.v1.ConnectResponse0\x01\x12H\n\x05Start\x12\x1d.envd.process.v1.StartRequest\x1a\x1e.envd.process.v1.StartResponse0\x01\x12I\n\x06Update\x12\x1e.envd.process.v1.UpdateRequest\x1a\x1f.envd.process.v1.UpdateResponse\x12Z\n\x0bStreamInput\x12#.envd.process.v1.StreamInputRequest\x1a$.envd.process.v1.StreamInputResponse(\x01\x12R\n\tSendInput\x12!.envd.process.v1.SendInputRequest\x1a".envd.process.v1.SendInputResponse\x12U\n\nSendSignal\x12".envd.process.v1.SendSignalRequest\x1a#.envd.process.v1.SendSignalResponseB\x81\x01\n\x13\x63om.envd.process.v1B\x0cProcessProtoP\x01\xa2\x02\x03\x45PX\xaa\x02\x0f\x45nvd.Process.V1\xca\x02\x0f\x45nvd\\Process\\V1\xe2\x02\x1b\x45nvd\\Process\\V1\\GPBMetadata\xea\x02\x11\x45nvd::Process::V1b\x06proto3'
-)
+
+
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1d\x65nvd/process/v1/process.proto\x12\x0f\x65nvd.process.v1\"d\n\x03PTY\x12-\n\x04size\x18\x01 \x01(\x0b\x32\x19.envd.process.v1.PTY.SizeR\x04size\x1a.\n\x04Size\x12\x12\n\x04\x63ols\x18\x01 \x01(\rR\x04\x63ols\x12\x12\n\x04rows\x18\x02 \x01(\rR\x04rows\"\xcb\x01\n\rProcessConfig\x12\x10\n\x03\x63md\x18\x01 \x01(\tR\x03\x63md\x12\x12\n\x04\x61rgs\x18\x02 \x03(\tR\x04\x61rgs\x12<\n\x04\x65nvs\x18\x03 \x03(\x0b\x32(.envd.process.v1.ProcessConfig.EnvsEntryR\x04\x65nvs\x12\x15\n\x03\x63wd\x18\x04 \x01(\tH\x00R\x03\x63wd\x88\x01\x01\x1a\x37\n\tEnvsEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n\x05value\x18\x02 \x01(\tR\x05value:\x02\x38\x01\x42\x06\n\x04_cwd\"\r\n\x0bListRequest\"L\n\x0cListResponse\x12<\n\tprocesses\x18\x01 \x03(\x0b\x32\x1e.envd.process.v1.ProcessConfigR\tprocesses\"8\n\nCredential\x12\x1c\n\x08username\x18\x01 \x01(\tH\x00R\x08usernameB\x0c\n\ncredential\"\xb0\x01\n\x0cStartRequest\x12\x38\n\x07process\x18\x01 \x01(\x0b\x32\x1e.envd.process.v1.ProcessConfigR\x07process\x12+\n\x03pty\x18\x02 \x01(\x0b\x32\x14.envd.process.v1.PTYH\x00R\x03pty\x88\x01\x01\x12\x31\n\x05owner\x18\x03 \x01(\x0b\x32\x1b.envd.process.v1.CredentialR\x05ownerB\x06\n\x04_pty\"\x80\x01\n\rUpdateRequest\x12:\n\x07process\x18\x01 \x01(\x0b\x32 .envd.process.v1.ProcessSelectorR\x07process\x12+\n\x03pty\x18\x02 \x01(\x0b\x32\x14.envd.process.v1.PTYH\x00R\x03pty\x88\x01\x01\x42\x06\n\x04_pty\"\x10\n\x0eUpdateResponse\"\xda\x03\n\x0cProcessEvent\x12@\n\x05start\x18\x01 \x01(\x0b\x32(.envd.process.v1.ProcessEvent.StartEventH\x00R\x05start\x12=\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\'.envd.process.v1.ProcessEvent.DataEventH\x00R\x04\x64\x61ta\x12:\n\x03\x65nd\x18\x03 \x01(\x0b\x32&.envd.process.v1.ProcessEvent.EndEventH\x00R\x03\x65nd\x1a\x1e\n\nStartEvent\x12\x10\n\x03pid\x18\x01 \x01(\rR\x03pid\x1a]\n\tDataEvent\x12\x18\n\x06stdout\x18\x01 \x01(\x0cH\x00R\x06stdout\x12\x18\n\x06stderr\x18\x02 \x01(\x0cH\x00R\x06stderr\x12\x12\n\x03pty\x18\x03 \x01(\x0cH\x00R\x03ptyB\x08\n\x06output\x1a\x84\x01\n\x08\x45ndEvent\x12\x1b\n\texit_code\x18\x01 \x01(\x11R\x08\x65xitCode\x12\x1e\n\nterminated\x18\x02 \x01(\x08R\nterminated\x12\x16\n\x06status\x18\x03 \x01(\tR\x06status\x12\x19\n\x05\x65rror\x18\x04 \x01(\tH\x00R\x05\x65rror\x88\x01\x01\x42\x08\n\x06_errorB\x07\n\x05\x65vent\"D\n\rStartResponse\x12\x33\n\x05\x65vent\x18\x01 \x01(\x0b\x32\x1d.envd.process.v1.ProcessEventR\x05\x65vent\"F\n\x0f\x43onnectResponse\x12\x33\n\x05\x65vent\x18\x01 \x01(\x0b\x32\x1d.envd.process.v1.ProcessEventR\x05\x65vent\"\x83\x01\n\x10SendInputRequest\x12:\n\x07process\x18\x01 \x01(\x0b\x32 .envd.process.v1.ProcessSelectorR\x07process\x12\x33\n\x05input\x18\x02 \x01(\x0b\x32\x1d.envd.process.v1.ProcessInputR\x05input\"\x13\n\x11SendInputResponse\"C\n\x0cProcessInput\x12\x16\n\x05stdin\x18\x01 \x01(\x0cH\x00R\x05stdin\x12\x12\n\x03pty\x18\x02 \x01(\x0cH\x00R\x03ptyB\x07\n\x05input\"\xb6\x02\n\x12StreamInputRequest\x12\x46\n\x05start\x18\x01 \x01(\x0b\x32..envd.process.v1.StreamInputRequest.StartEventH\x00R\x05start\x12\x43\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32-.envd.process.v1.StreamInputRequest.DataEventH\x00R\x04\x64\x61ta\x1aH\n\nStartEvent\x12:\n\x07process\x18\x01 \x01(\x0b\x32 .envd.process.v1.ProcessSelectorR\x07process\x1a@\n\tDataEvent\x12\x33\n\x05input\x18\x02 \x01(\x0b\x32\x1d.envd.process.v1.ProcessInputR\x05inputB\x07\n\x05\x65vent\"\x15\n\x13StreamInputResponse\"\x80\x01\n\x11SendSignalRequest\x12:\n\x07process\x18\x01 \x01(\x0b\x32 .envd.process.v1.ProcessSelectorR\x07process\x12/\n\x06signal\x18\x02 \x01(\x0e\x32\x17.envd.process.v1.SignalR\x06signal\"\x14\n\x12SendSignalResponse\"L\n\x0e\x43onnectRequest\x12:\n\x07process\x18\x01 \x01(\x0b\x32 .envd.process.v1.ProcessSelectorR\x07process\"1\n\x0fProcessSelector\x12\x12\n\x03pid\x18\x01 \x01(\rH\x00R\x03pidB\n\n\x08selector*H\n\x06Signal\x12\x16\n\x12SIGNAL_UNSPECIFIED\x10\x00\x12\x12\n\x0eSIGNAL_SIGTERM\x10\x0f\x12\x12\n\x0eSIGNAL_SIGKILL\x10\t2\xc1\x04\n\x0eProcessService\x12\x43\n\x04List\x12\x1c.envd.process.v1.ListRequest\x1a\x1d.envd.process.v1.ListResponse\x12N\n\x07\x43onnect\x12\x1f.envd.process.v1.ConnectRequest\x1a .envd.process.v1.ConnectResponse0\x01\x12H\n\x05Start\x12\x1d.envd.process.v1.StartRequest\x1a\x1e.envd.process.v1.StartResponse0\x01\x12I\n\x06Update\x12\x1e.envd.process.v1.UpdateRequest\x1a\x1f.envd.process.v1.UpdateResponse\x12Z\n\x0bStreamInput\x12#.envd.process.v1.StreamInputRequest\x1a$.envd.process.v1.StreamInputResponse(\x01\x12R\n\tSendInput\x12!.envd.process.v1.SendInputRequest\x1a\".envd.process.v1.SendInputResponse\x12U\n\nSendSignal\x12\".envd.process.v1.SendSignalRequest\x1a#.envd.process.v1.SendSignalResponseB\x81\x01\n\x13\x63om.envd.process.v1B\x0cProcessProtoP\x01\xa2\x02\x03\x45PX\xaa\x02\x0f\x45nvd.Process.V1\xca\x02\x0f\x45nvd\\Process\\V1\xe2\x02\x1b\x45nvd\\Process\\V1\\GPBMetadata\xea\x02\x11\x45nvd::Process::V1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(
-    DESCRIPTOR, "envd.process.v1.process_pb2", _globals
-)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envd.process.v1.process_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-    _globals["DESCRIPTOR"]._loaded_options = None
-    _globals[
-        "DESCRIPTOR"
-    ]._serialized_options = b"\n\023com.envd.process.v1B\014ProcessProtoP\001\242\002\003EPX\252\002\017Envd.Process.V1\312\002\017Envd\\Process\\V1\342\002\033Envd\\Process\\V1\\GPBMetadata\352\002\021Envd::Process::V1"
-    _globals["_PROCESSCONFIG_ENVSENTRY"]._loaded_options = None
-    _globals["_PROCESSCONFIG_ENVSENTRY"]._serialized_options = b"8\001"
-    _globals["_SIGNAL"]._serialized_start = 2285
-    _globals["_SIGNAL"]._serialized_end = 2357
-    _globals["_PTY"]._serialized_start = 50
-    _globals["_PTY"]._serialized_end = 150
-    _globals["_PTY_SIZE"]._serialized_start = 104
-    _globals["_PTY_SIZE"]._serialized_end = 150
-    _globals["_PROCESSCONFIG"]._serialized_start = 153
-    _globals["_PROCESSCONFIG"]._serialized_end = 343
-    _globals["_PROCESSCONFIG_ENVSENTRY"]._serialized_start = 288
-    _globals["_PROCESSCONFIG_ENVSENTRY"]._serialized_end = 343
-    _globals["_LISTREQUEST"]._serialized_start = 345
-    _globals["_LISTREQUEST"]._serialized_end = 358
-    _globals["_LISTRESPONSE"]._serialized_start = 360
-    _globals["_LISTRESPONSE"]._serialized_end = 436
-    _globals["_CREDENTIAL"]._serialized_start = 438
-    _globals["_CREDENTIAL"]._serialized_end = 494
-    _globals["_STARTREQUEST"]._serialized_start = 497
-    _globals["_STARTREQUEST"]._serialized_end = 673
-    _globals["_UPDATEREQUEST"]._serialized_start = 676
-    _globals["_UPDATEREQUEST"]._serialized_end = 804
-    _globals["_UPDATERESPONSE"]._serialized_start = 806
-    _globals["_UPDATERESPONSE"]._serialized_end = 822
-    _globals["_PROCESSEVENT"]._serialized_start = 825
-    _globals["_PROCESSEVENT"]._serialized_end = 1299
-    _globals["_PROCESSEVENT_STARTEVENT"]._serialized_start = 1030
-    _globals["_PROCESSEVENT_STARTEVENT"]._serialized_end = 1060
-    _globals["_PROCESSEVENT_DATAEVENT"]._serialized_start = 1062
-    _globals["_PROCESSEVENT_DATAEVENT"]._serialized_end = 1155
-    _globals["_PROCESSEVENT_ENDEVENT"]._serialized_start = 1158
-    _globals["_PROCESSEVENT_ENDEVENT"]._serialized_end = 1290
-    _globals["_STARTRESPONSE"]._serialized_start = 1301
-    _globals["_STARTRESPONSE"]._serialized_end = 1369
-    _globals["_CONNECTRESPONSE"]._serialized_start = 1371
-    _globals["_CONNECTRESPONSE"]._serialized_end = 1441
-    _globals["_SENDINPUTREQUEST"]._serialized_start = 1444
-    _globals["_SENDINPUTREQUEST"]._serialized_end = 1575
-    _globals["_SENDINPUTRESPONSE"]._serialized_start = 1577
-    _globals["_SENDINPUTRESPONSE"]._serialized_end = 1596
-    _globals["_PROCESSINPUT"]._serialized_start = 1598
-    _globals["_PROCESSINPUT"]._serialized_end = 1665
-    _globals["_STREAMINPUTREQUEST"]._serialized_start = 1668
-    _globals["_STREAMINPUTREQUEST"]._serialized_end = 1978
-    _globals["_STREAMINPUTREQUEST_STARTEVENT"]._serialized_start = 1831
-    _globals["_STREAMINPUTREQUEST_STARTEVENT"]._serialized_end = 1903
-    _globals["_STREAMINPUTREQUEST_DATAEVENT"]._serialized_start = 1905
-    _globals["_STREAMINPUTREQUEST_DATAEVENT"]._serialized_end = 1969
-    _globals["_STREAMINPUTRESPONSE"]._serialized_start = 1980
-    _globals["_STREAMINPUTRESPONSE"]._serialized_end = 2001
-    _globals["_SENDSIGNALREQUEST"]._serialized_start = 2004
-    _globals["_SENDSIGNALREQUEST"]._serialized_end = 2132
-    _globals["_SENDSIGNALRESPONSE"]._serialized_start = 2134
-    _globals["_SENDSIGNALRESPONSE"]._serialized_end = 2154
-    _globals["_CONNECTREQUEST"]._serialized_start = 2156
-    _globals["_CONNECTREQUEST"]._serialized_end = 2232
-    _globals["_PROCESSSELECTOR"]._serialized_start = 2234
-    _globals["_PROCESSSELECTOR"]._serialized_end = 2283
-    _globals["_PROCESSSERVICE"]._serialized_start = 2360
-    _globals["_PROCESSSERVICE"]._serialized_end = 2937
+  _globals['DESCRIPTOR']._loaded_options = None
+  _globals['DESCRIPTOR']._serialized_options = b'\n\023com.envd.process.v1B\014ProcessProtoP\001\242\002\003EPX\252\002\017Envd.Process.V1\312\002\017Envd\\Process\\V1\342\002\033Envd\\Process\\V1\\GPBMetadata\352\002\021Envd::Process::V1'
+  _globals['_PROCESSCONFIG_ENVSENTRY']._loaded_options = None
+  _globals['_PROCESSCONFIG_ENVSENTRY']._serialized_options = b'8\001'
+  _globals['_SIGNAL']._serialized_start=2298
+  _globals['_SIGNAL']._serialized_end=2370
+  _globals['_PTY']._serialized_start=50
+  _globals['_PTY']._serialized_end=150
+  _globals['_PTY_SIZE']._serialized_start=104
+  _globals['_PTY_SIZE']._serialized_end=150
+  _globals['_PROCESSCONFIG']._serialized_start=153
+  _globals['_PROCESSCONFIG']._serialized_end=356
+  _globals['_PROCESSCONFIG_ENVSENTRY']._serialized_start=293
+  _globals['_PROCESSCONFIG_ENVSENTRY']._serialized_end=348
+  _globals['_LISTREQUEST']._serialized_start=358
+  _globals['_LISTREQUEST']._serialized_end=371
+  _globals['_LISTRESPONSE']._serialized_start=373
+  _globals['_LISTRESPONSE']._serialized_end=449
+  _globals['_CREDENTIAL']._serialized_start=451
+  _globals['_CREDENTIAL']._serialized_end=507
+  _globals['_STARTREQUEST']._serialized_start=510
+  _globals['_STARTREQUEST']._serialized_end=686
+  _globals['_UPDATEREQUEST']._serialized_start=689
+  _globals['_UPDATEREQUEST']._serialized_end=817
+  _globals['_UPDATERESPONSE']._serialized_start=819
+  _globals['_UPDATERESPONSE']._serialized_end=835
+  _globals['_PROCESSEVENT']._serialized_start=838
+  _globals['_PROCESSEVENT']._serialized_end=1312
+  _globals['_PROCESSEVENT_STARTEVENT']._serialized_start=1043
+  _globals['_PROCESSEVENT_STARTEVENT']._serialized_end=1073
+  _globals['_PROCESSEVENT_DATAEVENT']._serialized_start=1075
+  _globals['_PROCESSEVENT_DATAEVENT']._serialized_end=1168
+  _globals['_PROCESSEVENT_ENDEVENT']._serialized_start=1171
+  _globals['_PROCESSEVENT_ENDEVENT']._serialized_end=1303
+  _globals['_STARTRESPONSE']._serialized_start=1314
+  _globals['_STARTRESPONSE']._serialized_end=1382
+  _globals['_CONNECTRESPONSE']._serialized_start=1384
+  _globals['_CONNECTRESPONSE']._serialized_end=1454
+  _globals['_SENDINPUTREQUEST']._serialized_start=1457
+  _globals['_SENDINPUTREQUEST']._serialized_end=1588
+  _globals['_SENDINPUTRESPONSE']._serialized_start=1590
+  _globals['_SENDINPUTRESPONSE']._serialized_end=1609
+  _globals['_PROCESSINPUT']._serialized_start=1611
+  _globals['_PROCESSINPUT']._serialized_end=1678
+  _globals['_STREAMINPUTREQUEST']._serialized_start=1681
+  _globals['_STREAMINPUTREQUEST']._serialized_end=1991
+  _globals['_STREAMINPUTREQUEST_STARTEVENT']._serialized_start=1844
+  _globals['_STREAMINPUTREQUEST_STARTEVENT']._serialized_end=1916
+  _globals['_STREAMINPUTREQUEST_DATAEVENT']._serialized_start=1918
+  _globals['_STREAMINPUTREQUEST_DATAEVENT']._serialized_end=1982
+  _globals['_STREAMINPUTRESPONSE']._serialized_start=1993
+  _globals['_STREAMINPUTRESPONSE']._serialized_end=2014
+  _globals['_SENDSIGNALREQUEST']._serialized_start=2017
+  _globals['_SENDSIGNALREQUEST']._serialized_end=2145
+  _globals['_SENDSIGNALRESPONSE']._serialized_start=2147
+  _globals['_SENDSIGNALRESPONSE']._serialized_end=2167
+  _globals['_CONNECTREQUEST']._serialized_start=2169
+  _globals['_CONNECTREQUEST']._serialized_end=2245
+  _globals['_PROCESSSELECTOR']._serialized_start=2247
+  _globals['_PROCESSSELECTOR']._serialized_end=2296
+  _globals['_PROCESSSERVICE']._serialized_start=2373
+  _globals['_PROCESSSERVICE']._serialized_end=2950
 # @@protoc_insertion_point(module_scope)

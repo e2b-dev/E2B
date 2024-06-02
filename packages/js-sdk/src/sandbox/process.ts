@@ -70,11 +70,11 @@ export class Process {
       onStderr,
       onStdout,
     }: {
-      cwd?: string,
-      user?: string,
-      envs?: Record<string, string>,
-      onStdout?: (data: string) => any,
-      onStderr?: (data: string) => any,
+      cwd: string | undefined,
+      user: 'root' | 'user' | undefined,
+      envs: Record<string, string> | undefined,
+      onStdout: ((data: string) => any) | undefined,
+      onStderr: ((data: string) => any) | undefined,
     }
   ): Promise<ProcessHandle> {
     const params: PlainMessage<StartRequest> = {
@@ -86,9 +86,9 @@ export class Process {
       },
       process: {
         cmd: '/bin/bash',
-        cwd: cwd || '/',
+        cwd,
         envs: envs || {},
-        args: ['-c', '-l', cmd],
+        args: ['-l', '-c', cmd],
       },
     }
 
@@ -122,8 +122,8 @@ export class Process {
       onStderr,
       onStdout,
     }: {
-      onStdout?: (data: string) => any,
-      onStderr?: (data: string) => any,
+      onStdout: ((data: string) => any) | undefined,
+      onStderr: ((data: string) => any) | undefined,
     }
   ): Promise<ProcessHandle> {
     const params: PlainMessage<ConnectRequest> = {
@@ -202,7 +202,7 @@ export class Process {
         cmd: '/bin/bash',
         cwd: '/',
         envs: {},
-        args: ['-l'],
+        args: ['-i', '-l'],
       },
       pty: {
         size: {
@@ -289,8 +289,8 @@ export class Process {
       onStderr,
       onStdout,
     }: {
-      onStdout?: (data: string) => any,
-      onStderr?: (data: string) => any,
+      onStdout: ((data: string) => any) | undefined,
+      onStderr: ((data: string) => any) | undefined,
     }
   ) {
     const start = createDeferredPromise<ProcessEvent_StartEvent>()
