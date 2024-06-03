@@ -1,21 +1,23 @@
-import logging
+import urllib.parse
 
 from typing import Optional, Dict
-from e2b.envd import EnvdApiClient
-from e2b.sandbox.filesystem import Filesystem
-from e2b.sandbox.process import Process
 
+from e2b.sandbox.filesystem.filesystem import Filesystem
+from e2b.sandbox.process.main import Process
 from e2b.sandbox.sandbox_api import SandboxApi
 from e2b.connection_config import ConnectionConfig
-
-logger = logging.getLogger(__name__)
-
-# TODO: Add requestTimeout
-# TODO: Add logging (interceptors?)
 
 
 class Sandbox(SandboxApi):
     _envd_port = 49982
+
+    @property
+    def files(self) -> Filesystem:
+        return self._filesystem
+
+    @property
+    def commands(self) -> Process:
+        return self._process
 
     def __init__(
         self,
@@ -50,14 +52,12 @@ class Sandbox(SandboxApi):
         else:
             self.sandbox_id = sandbox_id
 
-        sandbox_server_url = (
+        self._envd_api_url = (
             f"{'http' if debug else 'https'}://{self.get_host(self._envd_port)}"
         )
 
-        envd_api_client = EnvdApiClient(api_url=sandbox_server_url)
-
-        self.filesystem = Filesystem(sandbox_server_url, envd_api_client)
-        self.process = Process(sandbox_server_url)
+        self._filesystem = Filesystem(self._envd_api_url)
+        self._process = Process(self._envd_api_url)
 
     def get_host(self, port: int) -> str:
         if self._connection_config.debug:
@@ -85,8 +85,6 @@ class Sandbox(SandboxApi):
         timeout: int,
         request_timeout: Optional[float] = None,
     ) -> None:
-        # TODO: Ensure the ** works
-
         SandboxApi.set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
@@ -101,9 +99,21 @@ class Sandbox(SandboxApi):
             request_timeout=request_timeout,
         )
 
+    @property
     def upload_url(self) -> str:
-        host = self.get_host(self._envd_port)
+        url = urllib.parse.urljoin(self._envd_api_url, "/files?")
+        params = urllib.parse.urlencode(
+            {"user": "user"},
+        )
+        url = urllib.parse.urljoin(url, params)
 
-        # TODO: Finish url
+        return url
 
-        return f"{'http' if self._connection_config.debug else 'https'}://{host}/files"
+
+sbx = Sandbox()
+
+
+res = sbx.commands.run("ls -l", background=True)
+
+for r in res:
+    res.close()

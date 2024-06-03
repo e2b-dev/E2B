@@ -200,13 +200,62 @@ export class ListRequest extends Message<ListRequest> {
 }
 
 /**
+ * @generated from message envd.process.ProcessInfo
+ */
+export class ProcessInfo extends Message<ProcessInfo> {
+  /**
+   * @generated from field: envd.process.ProcessConfig config = 1;
+   */
+  config?: ProcessConfig;
+
+  /**
+   * @generated from field: uint32 pid = 2;
+   */
+  pid = 0;
+
+  /**
+   * @generated from field: optional string tag = 3;
+   */
+  tag?: string;
+
+  constructor(data?: PartialMessage<ProcessInfo>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "envd.process.ProcessInfo";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "config", kind: "message", T: ProcessConfig },
+    { no: 2, name: "pid", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 3, name: "tag", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ProcessInfo {
+    return new ProcessInfo().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ProcessInfo {
+    return new ProcessInfo().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ProcessInfo {
+    return new ProcessInfo().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ProcessInfo | PlainMessage<ProcessInfo> | undefined, b: ProcessInfo | PlainMessage<ProcessInfo> | undefined): boolean {
+    return proto3.util.equals(ProcessInfo, a, b);
+  }
+}
+
+/**
  * @generated from message envd.process.ListResponse
  */
 export class ListResponse extends Message<ListResponse> {
   /**
-   * @generated from field: repeated envd.process.ProcessConfig processes = 1;
+   * @generated from field: repeated envd.process.ProcessInfo processes = 1;
    */
-  processes: ProcessConfig[] = [];
+  processes: ProcessInfo[] = [];
 
   constructor(data?: PartialMessage<ListResponse>) {
     super();
@@ -216,7 +265,7 @@ export class ListResponse extends Message<ListResponse> {
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "envd.process.ListResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "processes", kind: "message", T: ProcessConfig, repeated: true },
+    { no: 1, name: "processes", kind: "message", T: ProcessInfo, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListResponse {
@@ -251,7 +300,12 @@ export class StartRequest extends Message<StartRequest> {
   pty?: PTY;
 
   /**
-   * @generated from field: envd.permissions.User user = 3;
+   * @generated from field: optional string tag = 3;
+   */
+  tag?: string;
+
+  /**
+   * @generated from field: envd.permissions.User user = 4;
    */
   user?: User;
 
@@ -265,7 +319,8 @@ export class StartRequest extends Message<StartRequest> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "process", kind: "message", T: ProcessConfig },
     { no: 2, name: "pty", kind: "message", T: PTY, opt: true },
-    { no: 3, name: "user", kind: "message", T: User },
+    { no: 3, name: "tag", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 4, name: "user", kind: "message", T: User },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StartRequest {
@@ -1042,6 +1097,12 @@ export class ProcessSelector extends Message<ProcessSelector> {
      */
     value: number;
     case: "pid";
+  } | {
+    /**
+     * @generated from field: string tag = 2;
+     */
+    value: string;
+    case: "tag";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<ProcessSelector>) {
@@ -1053,6 +1114,7 @@ export class ProcessSelector extends Message<ProcessSelector> {
   static readonly typeName = "envd.process.ProcessSelector";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "pid", kind: "scalar", T: 13 /* ScalarType.UINT32 */, oneof: "selector" },
+    { no: 2, name: "tag", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "selector" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ProcessSelector {

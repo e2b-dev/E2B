@@ -47,7 +47,7 @@ export class SandboxApi {
     template: string,
     opts?: ConnectionOpts & {
       metadata?: Record<string, string>,
-      timeout?: number,
+      timeoutMs?: number,
     }): Promise<string> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -56,7 +56,7 @@ export class SandboxApi {
       body: {
         templateID: template,
         metadata: opts?.metadata,
-        timeout: opts?.timeout,
+        timeout: opts?.timeoutMs ? this.timeoutToSeconds(opts.timeoutMs) : undefined,
       },
     })
 
@@ -78,9 +78,13 @@ export class SandboxApi {
         },
       },
       body: {
-        timeout: timeoutMs,
+        timeout: this.timeoutToSeconds(timeoutMs),
       },
     })
+  }
+
+  private static timeoutToSeconds(timeout: number): number {
+    return Math.ceil(timeout / 1000)
   }
 
   private static getSandboxID({ sandboxID, clientID }: { sandboxID: string, clientID: string }): string {

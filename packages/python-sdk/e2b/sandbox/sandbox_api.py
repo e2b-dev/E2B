@@ -1,13 +1,9 @@
-import logging
-
 from typing import Optional, Dict, List
 from pydantic import BaseModel
 from datetime import datetime
 
 from e2b.api import ApiClient, models, client
 from e2b.connection_config import ConnectionConfig
-
-logger = logging.getLogger(__name__)
 
 
 class RunningSandbox(BaseModel):
@@ -64,8 +60,6 @@ class SandboxApi:
             debug=debug,
             request_timeout=request_timeout,
         )
-
-        # TODO: Ensure the short id/long id works with kill
 
         with ApiClient(config) as api_client:
             client.SandboxesApi(api_client).sandboxes_sandbox_id_delete(

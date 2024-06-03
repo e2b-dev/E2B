@@ -1,6 +1,8 @@
 import gzip
 import json
 import struct
+import urllib3
+
 from enum import Flag, IntEnum
 
 from google.protobuf import json_format
@@ -45,16 +47,7 @@ _default_connection_pool = None
 def default_connection_pool():
     global _default_connection_pool
     if _default_connection_pool is None:
-        import httpcore
-
-        try:
-            import h2  # noqa: F401
-
-            http2 = True
-            del h2
-        except ModuleNotFoundError:
-            http2 = False
-        _default_connection_pool = httpcore.ConnectionPool(http2=http2)
+        _default_connection_pool = urllib3.PoolManager()
 
     return _default_connection_pool
 
@@ -165,7 +158,7 @@ class Client:
             raise error_for_response(http_resp)
 
         return self._codec.decode(
-            http_resp.content,
+            http_resp.data,
             msg_type=self._response_type,
         )
 
@@ -177,7 +170,7 @@ class Client:
             data = self._compressor.compress(data)
             flags |= EnvelopeFlags.compressed
 
-        with self.pool.stream(
+        with self.pool.request(
             "POST",
             self.url,
             content=encode_envelope(
@@ -202,36 +195,39 @@ class Client:
             needs_header = True
             flags, data_len = 0, 0
 
-            for chunk in http_resp.iter_stream():
-                buffer += chunk
+            try:
+                for chunk in http_resp.stream():
+                    buffer += chunk
 
-                if needs_header:
-                    header = buffer[:envelope_header_length]
-                    buffer = buffer[envelope_header_length:]
-                    flags, data_len = decode_envelope_header(header)
-                    needs_header = False
-                    end_stream = EnvelopeFlags.end_stream in flags
+                    if needs_header:
+                        header = buffer[:envelope_header_length]
+                        buffer = buffer[envelope_header_length:]
+                        flags, data_len = decode_envelope_header(header)
+                        needs_header = False
+                        end_stream = EnvelopeFlags.end_stream in flags
 
-                if len(buffer) >= data_len:
-                    buffer = buffer[:data_len]
+                    if len(buffer) >= data_len:
+                        buffer = buffer[:data_len]
 
-                    if end_stream:
-                        data = json.loads(buffer)
-                        if "error" in data:
-                            raise make_error(data["error"])
+                        if end_stream:
+                            data = json.loads(buffer)
+                            if "error" in data:
+                                raise make_error(data["error"])
 
-                        # TODO: Figure out what else might be possible
-                        return
+                            # TODO: Figure out what else might be possible
+                            return
 
-                    # TODO: handle server message compression
-                    # if EnvelopeFlags.compression in flags:
-                    # TODO: should the client potentially use a different codec
-                    # based on response header? Or can we assume they're always
-                    # the same and an error otherwise.
-                    yield self._codec.decode(buffer, msg_type=self._response_type)
+                        # TODO: handle server message compression
+                        # if EnvelopeFlags.compression in flags:
+                        # TODO: should the client potentially use a different codec
+                        # based on response header? Or can we assume they're always
+                        # the same and an error otherwise.
+                        yield self._codec.decode(buffer, msg_type=self._response_type)
 
-                    buffer = buffer[data_len:]
-                    needs_header = True
+                        buffer = buffer[data_len:]
+                        needs_header = True
+            finally:
+                http_resp.close()
 
     def call_client_stream(self, req, **opts):
         raise NotImplementedError("client stream not supported")

@@ -1,6 +1,6 @@
 import os
 
-from typing import Optional
+from typing import Literal, Optional
 
 
 DOMAIN = os.getenv("E2B_DOMAIN", "e2b.dev")
@@ -29,3 +29,6 @@ class ConnectionConfig:
         )
 
         self.api_url = "http://localhost:3000" if debug else f"https://api.{domain}"
+
+
+Username = Literal["root", "user"]

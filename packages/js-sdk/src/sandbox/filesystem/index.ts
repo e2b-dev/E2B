@@ -5,7 +5,7 @@ import {
   PromiseClient,
 } from '@connectrpc/connect'
 
-import { ConnectionOpts, Username } from '../../connectionConfig'
+import { ConnectionOpts, defaultUsername, Username } from '../../connectionConfig'
 import { EnvdApiClient } from '../../envd/api'
 import { FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import {
@@ -17,7 +17,7 @@ export type EntryInfo = PlainMessage<FsEntryInfo>
 
 export type FileFormat = 'text' | 'stream' | 'arrayBuffer' | 'blob'
 
-export interface WriteOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
+export interface FilesystemRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
   user?: Username
 }
 
@@ -34,17 +34,18 @@ export class Filesystem {
     this.rpc = createPromiseClient(FilesystemService, transport)
   }
 
-  async read(path: string, format: 'text', opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<string>
-  async read(path: string, format: 'arrayBuffer', opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<ArrayBuffer>
-  async read(path: string, format: 'blob', opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<Blob>
-  async read(path: string, format: 'stream', opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<ReadableStream>
-  async read(path: string, format: FileFormat = 'text', opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<unknown> {
+  async read(path: string, format: 'text', opts?: FilesystemRequestOpts): Promise<string>
+  async read(path: string, format: 'arrayBuffer', opts?: FilesystemRequestOpts): Promise<ArrayBuffer>
+  async read(path: string, format: 'blob', opts?: FilesystemRequestOpts): Promise<Blob>
+  async read(path: string, format: 'stream', opts?: FilesystemRequestOpts): Promise<ReadableStream<Uint8Array>>
+  async read(path: string, format: FileFormat = 'text', opts?: FilesystemRequestOpts): Promise<unknown> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const response = await this.envdApi.api.GET('/files/{path}', {
       params: {
         path: {
           path,
+          user: opts?.user ?? defaultUsername,
         },
       },
       parseAs: format,
@@ -54,11 +55,11 @@ export class Filesystem {
     return response.data
   }
 
-  async write(path: string, data: string, opts?: WriteOpts): Promise<void>
-  async write(path: string, data: ArrayBuffer, opts?: WriteOpts): Promise<void>
-  async write(path: string, data: Blob, opts?: WriteOpts): Promise<void>
-  async write(path: string, data: ReadableStream, opts?: WriteOpts): Promise<void>
-  async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream, opts?: WriteOpts): Promise<void> {
+  async write(path: string, data: string, opts?: FilesystemRequestOpts): Promise<void>
+  async write(path: string, data: ArrayBuffer, opts?: FilesystemRequestOpts): Promise<void>
+  async write(path: string, data: Blob, opts?: FilesystemRequestOpts): Promise<void>
+  async write(path: string, data: ReadableStream<Uint8Array>, opts?: FilesystemRequestOpts): Promise<void>
+  async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>, opts?: FilesystemRequestOpts): Promise<void> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     await this.envdApi.api.PUT('/files/{path}', {
@@ -67,7 +68,7 @@ export class Filesystem {
           path,
         },
         query: {
-          user: opts?.user ?? 'user',
+          user: opts?.user ?? defaultUsername,
         },
       },
       bodySerializer(body) {
@@ -82,26 +83,44 @@ export class Filesystem {
     })
   }
 
-  async list(path: string, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<EntryInfo[]> {
+  async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
     const res = await this.rpc.list({
       path,
+      user: {
+        selector: {
+          case: 'username',
+          value: opts?.user || defaultUsername,
+        },
+      },
     }, {
       timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
     return res.entries
   }
 
-  async remove(path: string, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
+  async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
     await this.rpc.remove({
       path,
+      user: {
+        selector: {
+          case: 'username',
+          value: opts?.user || defaultUsername,
+        },
+      },
     }, {
       timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
   }
 
-  async exists(path: string, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<EntryInfo> {
+  async exists(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
     const res = await this.rpc.stat({
-      path
+      path,
+      user: {
+        selector: {
+          case: 'username',
+          value: opts?.user || defaultUsername,
+        },
+      },
     }, {
       timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
@@ -111,12 +130,18 @@ export class Filesystem {
   async watch(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>,
+    opts?: FilesystemRequestOpts,
   ): Promise<WatchHandle> {
     const controller = new AbortController()
 
     const events = this.rpc.watch({
       path,
+      user: {
+        selector: {
+          case: 'username',
+          value: opts?.user || defaultUsername,
+        },
+      },
     }, {
       signal: controller.signal,
       timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,

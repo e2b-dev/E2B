@@ -1,4 +1,3 @@
-import { PlainMessage } from '@bufbuild/protobuf'
 import {
   createPromiseClient,
   PromiseClient,
@@ -7,34 +6,36 @@ import {
 
 import { ProcessService } from '../envd/process/process_connect'
 import {
-  StreamInputRequest,
   Signal,
   StartResponse,
+  StreamInputRequest,
 } from '../envd/process/process_pb'
-import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts, defaultUsername } from '../connectionConfig'
 import { ProcessHandle } from './process/processHandle'
+import { PartialMessage } from '@bufbuild/protobuf'
 
 export interface StreamInputHandle {
   stop: () => void
+  sendData: (data: Uint8Array) => void
 }
 
 export class Pty {
-  private readonly service: PromiseClient<typeof ProcessService> = createPromiseClient(ProcessService, this.transport)
+  private readonly rpc: PromiseClient<typeof ProcessService> = createPromiseClient(ProcessService, this.transport)
 
   constructor(private readonly transport: Transport, private readonly connectionConfig: ConnectionConfig) { }
 
-  async start({ cols, rows, onData }: {
+  async create({ cols, rows, onData }: {
     cols: number,
     rows: number,
     onData: (data: Uint8Array) => void | Promise<void>,
   }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<ProcessHandle> {
     const controller = new AbortController()
 
-    const events = this.service.start({
+    const events = this.rpc.start({
       user: {
         selector: {
           case: 'username',
-          value: 'user',
+          value: defaultUsername,
         },
       },
       process: {
@@ -74,16 +75,45 @@ export class Pty {
     )
   }
 
-  async streamInput(params: AsyncIterable<PlainMessage<StreamInputRequest>>, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<StreamInputHandle> {
+  async streamInput(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<StreamInputHandle> {
     const controller = new AbortController()
 
-    this.service.streamInput(params, {
+    const events = new AsyncQueue<PartialMessage<StreamInputRequest>>()
+
+    this.rpc.streamInput(events, {
       signal: controller.signal,
       timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
 
+    events.enqueue({
+      event: {
+        case: 'start',
+        value: {
+          process: {
+            selector: {
+              case: 'pid',
+              value: pid,
+            },
+          },
+        },
+      },
+    })
+
     return {
       stop: () => controller.abort(),
+      sendData: (data: Uint8Array) => events.enqueue({
+        event: {
+          case: 'data',
+          value: {
+            input: {
+              input: {
+                case: 'pty',
+                value: data,
+              },
+            },
+          },
+        },
+      }),
     }
   }
 
@@ -95,7 +125,7 @@ export class Pty {
     },
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>,
   ): Promise<void> {
-    await this.service.update({
+    await this.rpc.update({
       process: {
         selector: {
           case: 'pid',
@@ -110,8 +140,8 @@ export class Pty {
     })
   }
 
-  async kill(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
-    await this.service.sendSignal({
+  private async kill(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
+    await this.rpc.sendSignal({
       process: {
         selector: {
           case: 'pid',
@@ -122,5 +152,33 @@ export class Pty {
     }, {
       timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
+  }
+}
+
+class AsyncQueue<T> {
+  private readonly resolvers: ((value: T) => void)[] = []
+  private readonly promises: Promise<T>[] = []
+
+  enqueue(t: T) {
+    if (!this.resolvers.length) this.add()
+    this.resolvers.shift()!(t)
+  }
+
+  [Symbol.asyncIterator]() {
+    return {
+      next: () => this.dequeue()!.then(value => ({ done: false, value })),
+      [Symbol.asyncIterator]() { return this },
+    }
+  }
+
+  private dequeue() {
+    if (!this.promises.length) this.add()
+    return this.promises.shift()
+  }
+
+  private add() {
+    this.promises.push(new Promise(resolve => {
+      this.resolvers.push(resolve)
+    }))
   }
 }

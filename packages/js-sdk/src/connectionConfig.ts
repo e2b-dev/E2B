@@ -34,3 +34,5 @@ export class ConnectionConfig {
 }
 
 export type Username = 'root' | 'user'
+
+export const defaultUsername: Username = 'user'

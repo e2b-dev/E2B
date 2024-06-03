@@ -21,9 +21,10 @@ export {
 export { ProcessHandle } from './sandbox/process/processHandle'
 export type { ProcessOutput, ProcessResult } from './sandbox/process/processHandle'
 export type {
-  ProcessConfig,
+  ProcessInfo,
   ProcessBackgroundRunOpts,
   ProcessRunOpts,
+  ProcessRequestOpts,
 } from './sandbox/process'
 
 export type {

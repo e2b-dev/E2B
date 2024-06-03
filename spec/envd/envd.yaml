@@ -63,9 +63,10 @@ components:
       name: user
       in: query
       required: true
-      description: User owning the file
+      description: User used for setting the owner, or resolving relative paths.
       schema:
         type: string
+        pattern: "^(root|user)$"
 
   requestBodies:
     File:

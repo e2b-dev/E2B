@@ -37,15 +37,23 @@ message ProcessConfig {
 
 message ListRequest {}
 
+
+message ProcessInfo {
+    ProcessConfig config = 1;
+    uint32 pid = 2;
+    optional string tag = 3;
+}
+
 message ListResponse {
-    repeated ProcessConfig processes = 1;
+    repeated ProcessInfo processes = 1;
 }
 
 message StartRequest {    
     ProcessConfig process = 1;
     optional PTY pty = 2;
+    optional string tag = 3;
 
-    permissions.User user = 3;
+    permissions.User user = 4;
 }
 
 message UpdateRequest {
@@ -144,5 +152,6 @@ message ConnectRequest {
 message ProcessSelector {
     oneof selector {
         uint32 pid = 1;
+        string tag = 2;
     }
 }

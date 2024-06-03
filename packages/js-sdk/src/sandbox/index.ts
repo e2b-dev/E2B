@@ -1,6 +1,6 @@
 import { createConnectTransport } from '@connectrpc/connect-web'
 
-import { ConnectionOpts, ConnectionConfig } from '../connectionConfig'
+import { ConnectionOpts, ConnectionConfig, defaultUsername } from '../connectionConfig'
 import { Filesystem } from './filesystem'
 import { Process } from './process'
 import { Pty } from './pty'
@@ -47,7 +47,7 @@ export class Sandbox extends SandboxApi {
 
   get uploadUrl() {
     const url = new URL('/files', this.envdApiUrl)
-    url.searchParams.set('user', 'user')
+    url.searchParams.set('user', defaultUsername)
 
     return url.toString()
   }
@@ -70,17 +70,11 @@ export class Sandbox extends SandboxApi {
     return `${port}-${this.sandboxID}.${this.connectionConfig.domain}`
   }
 
-  async setTimeout(timeout: number, opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
-    await Sandbox.setTimeout(this.sandboxID, timeout, { ...this.connectionConfig, ...opts })
+  async setTimeout(timeoutMs: number, opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    await Sandbox.setTimeout(this.sandboxID, timeoutMs, { ...this.connectionConfig, ...opts })
   }
 
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     await Sandbox.kill(this.sandboxID, { ...this.connectionConfig, ...opts })
   }
-}
-
-async function name() {
-  const sbx = await Sandbox.spawn()
-
-  const res = await sbx.commands.run('clas', { background: false })
 }
