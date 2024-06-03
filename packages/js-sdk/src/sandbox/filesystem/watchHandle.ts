@@ -4,7 +4,7 @@ import {
   FilesystemEvent as FsFilesystemEvent,
   EntryInfo as FsEntryInfo,
   WatchResponse,
-} from '../../envd/filesystem/v1/filesystem_pb'
+} from '../../envd/filesystem/filesystem_pb'
 
 export type FilesystemEvent = PlainMessage<FsFilesystemEvent>
 export type EntryInfo = PlainMessage<FsEntryInfo>

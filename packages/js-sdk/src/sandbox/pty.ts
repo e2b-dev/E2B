@@ -5,12 +5,12 @@ import {
   Transport,
 } from '@connectrpc/connect'
 
-import { ProcessService } from '../envd/process/v1/process_connect'
+import { ProcessService } from '../envd/process/process_connect'
 import {
   StreamInputRequest,
   Signal,
   StartResponse,
-} from '../envd/process/v1/process_pb'
+} from '../envd/process/process_pb'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { ProcessHandle } from './process/processHandle'
 
@@ -18,7 +18,7 @@ export interface StreamInputHandle {
   stop: () => void
 }
 
-export class Terminal {
+export class Pty {
   private readonly service: PromiseClient<typeof ProcessService> = createPromiseClient(ProcessService, this.transport)
 
   constructor(private readonly transport: Transport, private readonly connectionConfig: ConnectionConfig) { }
@@ -31,8 +31,8 @@ export class Terminal {
     const controller = new AbortController()
 
     const events = this.service.start({
-      owner: {
-        credential: {
+      user: {
+        selector: {
           case: 'username',
           value: 'user',
         },
@@ -40,6 +40,9 @@ export class Terminal {
       process: {
         cmd: '/bin/bash',
         args: ['-i', '-l'],
+        envs: {
+          'TERM': 'xterm',
+        },
       },
       pty: {
         size: {
@@ -108,10 +111,6 @@ export class Terminal {
   }
 
   async kill(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
-
-    // TODO: Replace opts.requestTimeout || <- with ?? because null coalest
-    // TODO: Maybe ither places also have this?
-    // TODO: Check python for the same problem
     await this.service.sendSignal({
       process: {
         selector: {

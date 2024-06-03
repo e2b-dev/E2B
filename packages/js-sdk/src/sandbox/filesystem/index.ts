@@ -5,12 +5,12 @@ import {
   PromiseClient,
 } from '@connectrpc/connect'
 
-import { ConnectionOpts } from '../../connectionConfig'
+import { ConnectionOpts, Username } from '../../connectionConfig'
 import { EnvdApiClient } from '../../envd/api'
-import { FilesystemService } from '../../envd/filesystem/v1/filesystem_connect'
+import { FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import {
   EntryInfo as FsEntryInfo,
-} from '../../envd/filesystem/v1/filesystem_pb'
+} from '../../envd/filesystem/filesystem_pb'
 import { WatchHandle, FilesystemEvent } from './watchHandle'
 
 export type EntryInfo = PlainMessage<FsEntryInfo>
@@ -18,11 +18,9 @@ export type EntryInfo = PlainMessage<FsEntryInfo>
 export type FileFormat = 'text' | 'stream' | 'arrayBuffer' | 'blob'
 
 export interface WriteOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
-  username?: 'root' | 'user'
+  user?: Username
 }
 
-// TODO: Resolve cwd and provide sane defaults
-// TODO: Enable using watch as iterable
 export class Filesystem {
   private readonly rpc: PromiseClient<typeof FilesystemService>
   private readonly envdApi: EnvdApiClient
@@ -62,8 +60,6 @@ export class Filesystem {
   async write(path: string, data: ReadableStream, opts?: WriteOpts): Promise<void>
   async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream, opts?: WriteOpts): Promise<void> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-    // TODO: Hnadle the different input types
-    // TODO: Handle ?? -> or in python too
 
     await this.envdApi.api.PUT('/files/{path}', {
       params: {
@@ -71,7 +67,7 @@ export class Filesystem {
           path,
         },
         query: {
-          User: opts?.username ?? 'user',
+          user: opts?.user ?? 'user',
         },
       },
       bodySerializer(body) {

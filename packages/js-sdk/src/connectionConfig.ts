@@ -4,8 +4,6 @@ const API_KEY = process?.env?.E2B_API_KEY
 const ACCESS_TOKEN = process?.env?.E2B_ACCESS_TOKEN
 const REQUEST_TIMEOUT_MS = 30_000  // 30s
 
-// TODO: Add default request timeout that is centralized
-
 export interface ConnectionOpts {
   apiKey?: string
   accessToken?: string
@@ -34,3 +32,5 @@ export class ConnectionConfig {
     this.apiUrl = this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`
   }
 }
+
+export type Username = 'root' | 'user'

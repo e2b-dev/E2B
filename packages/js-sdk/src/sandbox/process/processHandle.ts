@@ -2,7 +2,7 @@ import {
   ProcessEvent_EndEvent,
   ConnectResponse,
   StartResponse,
-} from '../../envd/process/v1/process_pb'
+} from '../../envd/process/process_pb'
 
 export interface ProcessOutput {
   stdout?: string
@@ -41,10 +41,6 @@ export class ProcessHandle {
     return result
   }
 
-  disconnect() {
-    this.handleDisconnect()
-  }
-
   async wait(): Promise<ProcessResult> {
     const result = await this.end
 
@@ -57,7 +53,7 @@ export class ProcessHandle {
   }
 
   async kill() {
-    this.disconnect()
+    this.handleDisconnect()
     await this.handleKill()
   }
 

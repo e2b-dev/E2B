@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package envd.permissions;
+
+message User {
+  oneof selector {
+      string username = 1;
+  }
+}

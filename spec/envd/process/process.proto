@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-package envd.process.v1;
+import "envd/permissions/permissions.proto";
+
+package envd.process;
 
 service ProcessService {
     rpc List(ListRequest) returns (ListResponse);
@@ -39,17 +41,11 @@ message ListResponse {
     repeated ProcessConfig processes = 1;
 }
 
-message Credential {
-    oneof credential {
-        string username = 1;
-    }
-}
-
 message StartRequest {    
     ProcessConfig process = 1;
     optional PTY pty = 2;
 
-    Credential owner = 3;
+    permissions.User user = 3;
 }
 
 message UpdateRequest {

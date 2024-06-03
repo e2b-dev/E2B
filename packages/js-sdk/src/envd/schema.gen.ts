@@ -23,7 +23,7 @@ export interface paths {
     put: {
       parameters: {
         query: {
-          User: components["parameters"]["User"];
+          user: components["parameters"]["User"];
         };
         path: {
           path: components["parameters"]["FilePath"];

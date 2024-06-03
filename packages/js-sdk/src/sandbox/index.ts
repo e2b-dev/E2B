@@ -3,15 +3,9 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import { ConnectionOpts, ConnectionConfig } from '../connectionConfig'
 import { Filesystem } from './filesystem'
 import { Process } from './process'
-import { Terminal } from './terminal'
+import { Pty } from './pty'
 import { SandboxApi } from './sandboxApi'
 
-export interface Logger {
-  debug?: (...args: unknown[]) => void
-  info?: (...args: unknown[]) => void
-  warn?: (...args: unknown[]) => void
-  error?: (...args: unknown[]) => void
-}
 
 export interface RunningSandbox {
   sandboxID: string
@@ -23,17 +17,15 @@ export interface RunningSandbox {
 
 export interface SandboxOpts extends ConnectionOpts {
   metadata?: Record<string, string>
-  logger?: Logger
   timeoutMs?: number
 }
 
-// TODO: Pass loggers and add logging (interceptors?)
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate = 'base-v1'
 
   readonly files: Filesystem
-  readonly process: Process
-  readonly terminal: Terminal
+  readonly commands: Process
+  readonly pty: Pty
 
   protected readonly envdPort = 49982
 
@@ -49,17 +41,13 @@ export class Sandbox extends SandboxApi {
     const rpcTransport = createConnectTransport({ baseUrl: this.envdApiUrl })
 
     this.files = new Filesystem(rpcTransport, this.envdApiUrl, this.connectionConfig)
-    this.process = new Process(rpcTransport, this.connectionConfig)
-    this.terminal = new Terminal(rpcTransport, this.connectionConfig)
+    this.commands = new Process(rpcTransport, this.connectionConfig)
+    this.pty = new Pty(rpcTransport, this.connectionConfig)
   }
 
   get uploadUrl() {
-    // TODO: Ensure envd handles this well
-    // TODO: Ensure all user, etc setting are applied here and are escaped
-
     const url = new URL('/files', this.envdApiUrl)
     url.searchParams.set('user', 'user')
-    url.searchParams.set('mode', '0644')
 
     return url.toString()
   }
@@ -89,4 +77,10 @@ export class Sandbox extends SandboxApi {
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     await Sandbox.kill(this.sandboxID, { ...this.connectionConfig, ...opts })
   }
+}
+
+async function name() {
+  const sbx = await Sandbox.spawn()
+
+  const res = await sbx.commands.run('clas', { background: false })
 }

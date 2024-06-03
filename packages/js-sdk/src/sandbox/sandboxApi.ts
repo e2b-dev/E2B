@@ -19,9 +19,6 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    // TODO: Ensure the short id/long id works
-    // TODO: Check if the errors are thrown properly
-
     await client.api.DELETE('/sandboxes/{sandboxID}', {
       params: {
         path: {
@@ -73,8 +70,6 @@ export class SandboxApi {
   ): Promise<void> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
-
-    // TODO: Ensure the short id/long id works
 
     await client.api.POST('/sandboxes/{sandboxID}/timeout', {
       params: {

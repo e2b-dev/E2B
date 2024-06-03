@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-package envd.filesystem.v1;
+import "envd/permissions/permissions.proto";
+
+package envd.filesystem;
 
 service FilesystemService {
     rpc Stat(StatRequest) returns (StatResponse);
@@ -11,12 +13,16 @@ service FilesystemService {
 
 message RemoveRequest {
     string path = 1;
+
+    permissions.User user = 2;
 }
 
 message RemoveResponse {}
 
 message StatRequest {
     string path = 1;
+
+    permissions.User user = 2;
 }
 
 message StatResponse {
@@ -36,6 +42,8 @@ enum FileType {
 
 message ListRequest {
     string path = 1;
+
+    permissions.User user = 2;
 }
 
 message ListResponse {
@@ -44,6 +52,8 @@ message ListResponse {
 
 message WatchRequest {
     string path = 1;
+
+    permissions.User user = 2;
 }
 
 message WatchResponse {
