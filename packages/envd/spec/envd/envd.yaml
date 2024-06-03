@@ -8,7 +8,7 @@ tags:
   - name: files
 
 paths:
-  /host/sync:
+  /sync:
     post:
       summary: Ensure the time and metadata is synced with the host
       responses:
@@ -23,6 +23,7 @@ paths:
       tags: [files]
       parameters:
         - $ref: "#/components/parameters/FilePath"
+        - $ref: "#/components/parameters/User"
       responses:
         200:
           $ref: "#/components/responses/DownloadSuccess"
@@ -55,16 +56,17 @@ components:
       in: path
       required: true
       allowEmptyValue: true
-      description: Absolute path to the file, URL encoded.
+      description: Path to the file, URL encoded. Can be relative to user's home directory.
       schema:
         type: string
     User:
       name: user
       in: query
       required: true
-      description: User owning the file
+      description: User used for setting the owner, or resolving relative paths.
       schema:
         type: string
+        pattern: "^(root|user)$"
 
   requestBodies:
     File:

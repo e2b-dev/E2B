@@ -9,11 +9,14 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/files"
 	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
-	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
 
 	"github.com/creack/pty"
 )
+
+const defaultOomScore = 100
 
 type processExit struct {
 	Err        error
@@ -23,7 +26,7 @@ type processExit struct {
 }
 
 type process struct {
-	config *v1.ProcessConfig
+	config *rpc.ProcessConfig
 
 	cmd *exec.Cmd
 	tty *os.File
@@ -31,20 +34,20 @@ type process struct {
 	stdin   io.WriteCloser
 	stdinMu sync.Mutex
 
-	stdout *MultiWriter
-	stderr *MultiWriter
-	wg     *sync.WaitGroup
+	stdout    *MultiWriter
+	stderr    *MultiWriter
+	ttyOutput *MultiWriter
+	wg        *sync.WaitGroup
 
 	exit chan processExit
 }
 
-// TODO: Set the oom policy
-func newProcess(req *v1.StartRequest) (*process, error) {
+func newProcess(req *rpc.StartRequest) (*process, error) {
 	cmd := exec.Command(req.GetProcess().GetCmd(), req.GetProcess().GetArgs()...)
 
-	u, uid, gid, err := permissions.GetUserByUsername(req.GetOwner().GetUsername())
+	u, uid, gid, err := permissions.GetUserByUsername(req.GetUser().GetUsername())
 	if err != nil {
-		return nil, fmt.Errorf("error looking up user '%s': %w", req.GetOwner().GetUsername(), err)
+		return nil, fmt.Errorf("error looking up user '%s': %w", req.GetUser().GetUsername(), err)
 	}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
@@ -55,15 +58,18 @@ func newProcess(req *v1.StartRequest) (*process, error) {
 		NoSetGroups: true,
 	}
 
-	cmd.Dir = req.GetProcess().GetCwd()
+	resolvedPath, err := files.ExpandAndResolve(req.GetProcess().GetCwd(), u)
+	if err != nil {
+		return nil, fmt.Errorf("error resolving cwd for process '%s': %w", cmd, err)
+	}
 
-	// TODO: We inherit the env vars from the root process, but we should handle this differently in the future.
-	formattedVars := os.Environ()
+	cmd.Dir = resolvedPath
+
+	var formattedVars []string
 
 	formattedVars = append(formattedVars, "HOME="+u.HomeDir)
 	formattedVars = append(formattedVars, "USER="+u.Username)
 	formattedVars = append(formattedVars, "LOGNAME="+u.Username)
-	formattedVars = append(formattedVars, "TERM=xterm")
 
 	// Only the last values of the env vars are used - this allows for overwriting defaults
 	for key, value := range req.GetProcess().GetEnvs() {
@@ -110,15 +116,21 @@ func newProcess(req *v1.StartRequest) (*process, error) {
 	stdoutMultiplex := multiplexReader(&wg, stdout)
 	stderrMultiplex := multiplexReader(&wg, stderr)
 
+	var ttyMultiplex *MultiWriter
+	if tty != nil {
+		ttyMultiplex = multiplexReader(&wg, tty)
+	}
+
 	return &process{
-		config: req.GetProcess(),
-		cmd:    cmd,
-		tty:    tty,
-		stdin:  stdin,
-		exit:   make(chan processExit),
-		stdout: stdoutMultiplex,
-		stderr: stderrMultiplex,
-		wg:     &wg,
+		config:    req.GetProcess(),
+		cmd:       cmd,
+		tty:       tty,
+		stdin:     stdin,
+		exit:      make(chan processExit),
+		stdout:    stdoutMultiplex,
+		stderr:    stderrMultiplex,
+		ttyOutput: ttyMultiplex,
+		wg:        &wg,
 	}, nil
 }
 
@@ -171,6 +183,11 @@ func (p *process) Start() (uint32, error) {
 	err := p.cmd.Start()
 	if err != nil {
 		return 0, fmt.Errorf("error starting process '%s': %w", p.cmd, err)
+	}
+
+	adjustErr := adjustOomScore(p.cmd.Process.Pid, defaultOomScore)
+	if adjustErr != nil {
+		fmt.Fprintln(os.Stderr, "error adjusting oom score for process '%s': %s", p.cmd, adjustErr)
 	}
 
 	return uint32(p.cmd.Process.Pid), nil

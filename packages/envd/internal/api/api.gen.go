@@ -39,6 +39,12 @@ type DirectoryPathError = Error
 // InternalServerError defines model for InternalServerError.
 type InternalServerError = Error
 
+// GetFilesPathParams defines parameters for GetFilesPath.
+type GetFilesPathParams struct {
+	// User User owning the file
+	User User `form:"user" json:"user"`
+}
+
 // PutFilesPathMultipartBody defines parameters for PutFilesPath.
 type PutFilesPathMultipartBody struct {
 	File *openapi_types.File `json:"file,omitempty"`
@@ -57,13 +63,13 @@ type PutFilesPathMultipartRequestBody PutFilesPathMultipartBody
 type ServerInterface interface {
 	// Download a file
 	// (GET /files/{path})
-	GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath)
+	GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params GetFilesPathParams)
 	// Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
 	// (PUT /files/{path})
 	PutFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PutFilesPathParams)
 	// Ensure the time and metadata is synced with the host
-	// (POST /host/sync)
-	PostHostSync(w http.ResponseWriter, r *http.Request)
+	// (POST /sync)
+	PostSync(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -90,8 +96,26 @@ func (siw *ServerInterfaceWrapper) GetFilesPath(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFilesPathParams
+
+	// ------------- Required query parameter "user" -------------
+
+	if paramValue := r.URL.Query().Get("user"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "user", r.URL.Query(), &params.User)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetFilesPath(w, r, path)
+		siw.Handler.GetFilesPath(w, r, path, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -145,12 +169,12 @@ func (siw *ServerInterfaceWrapper) PutFilesPath(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// PostHostSync operation middleware
-func (siw *ServerInterfaceWrapper) PostHostSync(w http.ResponseWriter, r *http.Request) {
+// PostSync operation middleware
+func (siw *ServerInterfaceWrapper) PostSync(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostHostSync(w, r)
+		siw.Handler.PostSync(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -276,7 +300,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc("GET "+options.BaseURL+"/files/{path}", wrapper.GetFilesPath)
 	m.HandleFunc("PUT "+options.BaseURL+"/files/{path}", wrapper.PutFilesPath)
-	m.HandleFunc("POST "+options.BaseURL+"/host/sync", wrapper.PostHostSync)
+	m.HandleFunc("POST "+options.BaseURL+"/sync", wrapper.PostSync)
 
 	return m
 }
@@ -311,7 +335,8 @@ type NewFileUploadSuccessResponse struct {
 }
 
 type GetFilesPathRequestObject struct {
-	Path FilePath `json:"path"`
+	Path   FilePath `json:"path"`
+	Params GetFilesPathParams
 }
 
 type GetFilesPathResponseObject interface {
@@ -404,26 +429,26 @@ func (response PutFilesPath500JSONResponse) VisitPutFilesPathResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostHostSyncRequestObject struct {
+type PostSyncRequestObject struct {
 }
 
-type PostHostSyncResponseObject interface {
-	VisitPostHostSyncResponse(w http.ResponseWriter) error
+type PostSyncResponseObject interface {
+	VisitPostSyncResponse(w http.ResponseWriter) error
 }
 
-type PostHostSync204Response struct {
+type PostSync204Response struct {
 }
 
-func (response PostHostSync204Response) VisitPostHostSyncResponse(w http.ResponseWriter) error {
+func (response PostSync204Response) VisitPostSyncResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
 }
 
-type PostHostSync500JSONResponse struct {
+type PostSync500JSONResponse struct {
 	InternalServerErrorJSONResponse
 }
 
-func (response PostHostSync500JSONResponse) VisitPostHostSyncResponse(w http.ResponseWriter) error {
+func (response PostSync500JSONResponse) VisitPostSyncResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -439,8 +464,8 @@ type StrictServerInterface interface {
 	// (PUT /files/{path})
 	PutFilesPath(ctx context.Context, request PutFilesPathRequestObject) (PutFilesPathResponseObject, error)
 	// Ensure the time and metadata is synced with the host
-	// (POST /host/sync)
-	PostHostSync(ctx context.Context, request PostHostSyncRequestObject) (PostHostSyncResponseObject, error)
+	// (POST /sync)
+	PostSync(ctx context.Context, request PostSyncRequestObject) (PostSyncResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -473,10 +498,11 @@ type strictHandler struct {
 }
 
 // GetFilesPath operation middleware
-func (sh *strictHandler) GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath) {
+func (sh *strictHandler) GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params GetFilesPathParams) {
 	var request GetFilesPathRequestObject
 
 	request.Path = path
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetFilesPath(ctx, request.(GetFilesPathRequestObject))
@@ -532,23 +558,23 @@ func (sh *strictHandler) PutFilesPath(w http.ResponseWriter, r *http.Request, pa
 	}
 }
 
-// PostHostSync operation middleware
-func (sh *strictHandler) PostHostSync(w http.ResponseWriter, r *http.Request) {
-	var request PostHostSyncRequestObject
+// PostSync operation middleware
+func (sh *strictHandler) PostSync(w http.ResponseWriter, r *http.Request) {
+	var request PostSyncRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostHostSync(ctx, request.(PostHostSyncRequestObject))
+		return sh.ssi.PostSync(ctx, request.(PostSyncRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostHostSync")
+		handler = middleware(handler, "PostSync")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostHostSyncResponseObject); ok {
-		if err := validResponse.VisitPostHostSyncResponse(w); err != nil {
+	} else if validResponse, ok := response.(PostSyncResponseObject); ok {
+		if err := validResponse.VisitPostSyncResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

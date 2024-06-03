@@ -9,8 +9,8 @@ import (
 	"sync"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/host"
-	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1"
-	specconnect "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1/processv1connect"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
+	spec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/processconnect"
 
 	"connectrpc.com/connect"
 )
@@ -18,7 +18,7 @@ import (
 const defaultChunkSize = 32 * 1024 // 32KB
 
 type Service struct {
-	specconnect.UnimplementedProcessServiceHandler
+	spec.UnimplementedProcessServiceHandler
 	processes *Map[uint32, *process]
 }
 
@@ -31,12 +31,12 @@ func newService() *Service {
 func Handle(server *http.ServeMux, opts ...connect.HandlerOption) {
 	service := newService()
 
-	path, handler := specconnect.NewProcessServiceHandler(service, opts...)
+	path, handler := spec.NewProcessServiceHandler(service, opts...)
 
 	server.Handle(path, handler)
 }
 
-func (s *Service) Start(ctx context.Context, req *connect.Request[v1.StartRequest], stream *connect.ServerStream[v1.StartResponse]) error {
+func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartRequest], stream *connect.ServerStream[rpc.StartResponse]) error {
 	host.WaitForHostSync()
 
 	process, err := newProcess(req.Msg)
@@ -57,10 +57,10 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[v1.StartReques
 		case <-ctx.Done():
 			streamMu.Unlock()
 		case pid := <-startChan:
-			err = stream.Send(&v1.StartResponse{
-				Event: &v1.ProcessEvent{
-					EventType: &v1.ProcessEvent_Start{
-						Start: &v1.ProcessEvent_StartEvent{
+			err = stream.Send(&rpc.StartResponse{
+				Event: &rpc.ProcessEvent{
+					EventType: &rpc.ProcessEvent_Start{
+						Start: &rpc.ProcessEvent_StartEvent{
 							Pid: uint32(pid),
 						},
 					},
@@ -142,7 +142,7 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[v1.StartReques
 	return nil
 }
 
-func (s *Service) Connect(ctx context.Context, req *connect.Request[v1.ConnectRequest], stream *connect.ServerStream[v1.ConnectResponse]) error {
+func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectRequest], stream *connect.ServerStream[rpc.ConnectResponse]) error {
 	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
 	if !ok {
 		return connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
@@ -171,6 +171,8 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[v1.ConnectRe
 			log.Println(err)
 		}
 	}()
+
+	// TODO: add tty reader too
 
 	return nil
 }

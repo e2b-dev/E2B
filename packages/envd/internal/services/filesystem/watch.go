@@ -6,13 +6,13 @@ import (
 	"os"
 	"path/filepath"
 
-	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem/v1"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem"
 
 	"connectrpc.com/connect"
 	"github.com/fsnotify/fsnotify"
 )
 
-func (Service) Watch(ctx context.Context, req *connect.Request[v1.WatchRequest], stream *connect.ServerStream[v1.WatchResponse]) error {
+func (Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest], stream *connect.ServerStream[rpc.WatchResponse]) error {
 	watchPath := req.Msg.GetPath()
 
 	info, err := os.Stat(watchPath)
@@ -69,31 +69,31 @@ func (Service) Watch(ctx context.Context, req *connect.Request[v1.WatchRequest],
 			}
 
 			// One event can have multiple operations.
-			ops := []v1.EventType{}
+			ops := []rpc.EventType{}
 
 			if fsnotify.Create.Has(e.Op) {
-				ops = append(ops, v1.EventType_EVENT_TYPE_CREATE)
+				ops = append(ops, rpc.EventType_EVENT_TYPE_CREATE)
 			}
 
 			if fsnotify.Rename.Has(e.Op) {
-				ops = append(ops, v1.EventType_EVENT_TYPE_RENAME)
+				ops = append(ops, rpc.EventType_EVENT_TYPE_RENAME)
 			}
 
 			if fsnotify.Chmod.Has(e.Op) {
-				ops = append(ops, v1.EventType_EVENT_TYPE_CHMOD)
+				ops = append(ops, rpc.EventType_EVENT_TYPE_CHMOD)
 			}
 
 			if fsnotify.Write.Has(e.Op) {
-				ops = append(ops, v1.EventType_EVENT_TYPE_WRITE)
+				ops = append(ops, rpc.EventType_EVENT_TYPE_WRITE)
 			}
 
 			if fsnotify.Remove.Has(e.Op) {
-				ops = append(ops, v1.EventType_EVENT_TYPE_REMOVE)
+				ops = append(ops, rpc.EventType_EVENT_TYPE_REMOVE)
 			}
 
 			for _, op := range ops {
-				streamErr := stream.Send(&v1.WatchResponse{
-					Event: &v1.FilesystemEvent{
+				streamErr := stream.Send(&rpc.WatchResponse{
+					Event: &rpc.FilesystemEvent{
 						Path: filepath.Join(watchPath, e.Name),
 						Type: op,
 					},

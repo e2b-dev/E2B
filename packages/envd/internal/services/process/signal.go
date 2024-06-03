@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"syscall"
 
-	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
 
 	"connectrpc.com/connect"
 )
 
-func (s *Service) SendSignal(ctx context.Context, req *connect.Request[v1.SendSignalRequest]) (*connect.Response[v1.SendSignalResponse], error) {
+func (s *Service) SendSignal(ctx context.Context, req *connect.Request[rpc.SendSignalRequest]) (*connect.Response[rpc.SendSignalResponse], error) {
 	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
 	if !ok {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
@@ -18,9 +18,9 @@ func (s *Service) SendSignal(ctx context.Context, req *connect.Request[v1.SendSi
 
 	var signal syscall.Signal
 	switch req.Msg.GetSignal() {
-	case *v1.Signal_SIGNAL_SIGKILL.Enum():
+	case *rpc.Signal_SIGNAL_SIGKILL.Enum():
 		signal = syscall.SIGKILL
-	case *v1.Signal_SIGNAL_SIGTERM.Enum():
+	case *rpc.Signal_SIGNAL_SIGTERM.Enum():
 		signal = syscall.SIGTERM
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid signal: %s", req.Msg.GetSignal()))
@@ -31,5 +31,5 @@ func (s *Service) SendSignal(ctx context.Context, req *connect.Request[v1.SendSi
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error sending signal: %w", err))
 	}
 
-	return connect.NewResponse(&v1.SendSignalResponse{}), nil
+	return connect.NewResponse(&rpc.SendSignalResponse{}), nil
 }

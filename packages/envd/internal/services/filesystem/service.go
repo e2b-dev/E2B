@@ -3,13 +3,13 @@ package filesystem
 import (
 	"net/http"
 
-	specconnect "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem/v1/filesystemv1connect"
+	spec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem/filesystemconnect"
 
 	"connectrpc.com/connect"
 )
 
 type Service struct {
-	specconnect.UnimplementedFilesystemServiceHandler
+	spec.UnimplementedFilesystemServiceHandler
 }
 
 func newService() *Service {
@@ -19,7 +19,7 @@ func newService() *Service {
 func Handle(server *http.ServeMux, opts ...connect.HandlerOption) {
 	service := newService()
 
-	path, handler := specconnect.NewFilesystemServiceHandler(service, opts...)
+	path, handler := spec.NewFilesystemServiceHandler(service, opts...)
 
 	server.Handle(path, handler)
 }

@@ -5,13 +5,16 @@ import (
 	"fmt"
 	"os"
 
-	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem/v1"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem"
 
 	"connectrpc.com/connect"
 )
 
-func (Service) Stat(ctx context.Context, req *connect.Request[v1.StatRequest]) (*connect.Response[v1.StatResponse], error) {
+func (Service) Stat(ctx context.Context, req *connect.Request[rpc.StatRequest]) (*connect.Response[rpc.StatResponse], error) {
 	filePath := req.Msg.GetPath()
+
+	user := 
+
 
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
@@ -22,16 +25,16 @@ func (Service) Stat(ctx context.Context, req *connect.Request[v1.StatRequest]) (
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error statting file: %w", err))
 	}
 
-	var t v1.FileType
+	var t rpc.FileType
 	if fileInfo.IsDir() {
-		t = v1.FileType_FILE_TYPE_DIRECTORY
+		t = rpc.FileType_FILE_TYPE_DIRECTORY
 	} else {
-		t = v1.FileType_FILE_TYPE_FILE
+		t = rpc.FileType_FILE_TYPE_FILE
 	}
 
 	return connect.NewResponse(
-		&v1.StatResponse{
-			Entry: &v1.EntryInfo{
+		&rpc.StatResponse{
+			Entry: &rpc.EntryInfo{
 				Name: fileInfo.Name(),
 				Type: t,
 			},

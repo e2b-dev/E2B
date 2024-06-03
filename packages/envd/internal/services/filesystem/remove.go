@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem/v1"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem"
 
 	"connectrpc.com/connect"
 )
 
-func (Service) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
+func (Service) Remove(ctx context.Context, req *connect.Request[rpc.RemoveRequest]) (*connect.Response[rpc.RemoveResponse], error) {
 	path := req.Msg.GetPath()
 
 	err := os.RemoveAll(path)
@@ -22,5 +22,5 @@ func (Service) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error removing file or directory: %w", err))
 	}
 
-	return connect.NewResponse(&v1.RemoveResponse{}), nil
+	return connect.NewResponse(&rpc.RemoveResponse{}), nil
 }

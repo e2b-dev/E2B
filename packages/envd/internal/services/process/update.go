@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/creack/pty"
-	v1 "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/v1"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
 
 	"connectrpc.com/connect"
 )
 
-func (s *Service) Update(ctx context.Context, req *connect.Request[v1.UpdateRequest]) (*connect.Response[v1.UpdateResponse], error) {
+func (s *Service) Update(ctx context.Context, req *connect.Request[rpc.UpdateRequest]) (*connect.Response[rpc.UpdateResponse], error) {
 	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
 	if !ok {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
@@ -26,5 +26,5 @@ func (s *Service) Update(ctx context.Context, req *connect.Request[v1.UpdateRequ
 		}
 	}
 
-	return connect.NewResponse(&v1.UpdateResponse{}), nil
+	return connect.NewResponse(&rpc.UpdateResponse{}), nil
 }
