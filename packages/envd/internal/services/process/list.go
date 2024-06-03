@@ -12,16 +12,15 @@ func (s *Service) List(ctx context.Context, req *connect.Request[rpc.ListRequest
 	processes := make([]*rpc.ProcessInfo, 0)
 
 	s.processes.Range(func(_ uint32, value *process) bool {
-		if value.cmd.Process == nil {
-			// Process not started yet
-			return true
+		// Add only started processes
+		if value.cmd.Process != nil {
+			processes = append(processes, &rpc.ProcessInfo{
+				Pid:    uint32(value.cmd.Process.Pid),
+				Tag:    value.tag,
+				Config: value.config,
+			})
 		}
 
-		processes = append(processes, &rpc.ProcessInfo{
-			Pid:    uint32(value.cmd.Process.Pid),
-			Tag:    value.tag,
-			Config: value.config,
-		})
 		return true
 	})
 
