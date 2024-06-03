@@ -29,7 +29,7 @@ export const BillingContent = () => {
       const res = await fetch(invoiceUrl, {
         headers: {
           // TODO, figure out how data is passed here to get api key
-          'X-Team-API-Key': '',
+          'X-Team-API-Key': 'e2b_ee29899a1aab99d4955a78eae32078a5c8aeee9f',
         },
       })
       const invoices = await res.json() as Invoice[]
