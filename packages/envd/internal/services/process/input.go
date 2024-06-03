@@ -29,12 +29,12 @@ func handleInput(process *process, in *rpc.ProcessInput) error {
 }
 
 func (s *Service) SendInput(ctx context.Context, req *connect.Request[rpc.SendInputRequest]) (*connect.Response[rpc.SendInputResponse], error) {
-	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
-	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
+	proc, err := s.getProcess(req.Msg.GetProcess())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
-	err := handleInput(process, req.Msg.GetInput())
+	err = handleInput(proc, req.Msg.GetInput())
 	if err != nil {
 		return nil, err
 	}
@@ -43,21 +43,22 @@ func (s *Service) SendInput(ctx context.Context, req *connect.Request[rpc.SendIn
 }
 
 func (s *Service) StreamInput(ctx context.Context, stream *connect.ClientStream[rpc.StreamInputRequest]) (*connect.Response[rpc.StreamInputResponse], error) {
-	var process *process
+	var proc *process
 
 	for stream.Receive() {
 		req := stream.Msg()
 
 		switch req.GetEvent().(type) {
 		case *rpc.StreamInputRequest_Start:
-			p, ok := s.processes.Load(req.GetStart().GetProcess().GetPid())
-			if !ok {
-				return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.GetStart().GetProcess().GetPid()))
+			p, err := s.getProcess(req.GetStart().GetProcess())
+			if err != nil {
+				return nil, connect.NewError(connect.CodeNotFound, err)
 			}
-			process = p
+
+			proc = p
 
 		case *rpc.StreamInputRequest_Data:
-			err := handleInput(process, req.GetData().GetInput())
+			err := handleInput(proc, req.GetData().GetInput())
 			if err != nil {
 				return nil, err
 			}

@@ -41,7 +41,7 @@ type InternalServerError = Error
 
 // GetFilesPathParams defines parameters for GetFilesPath.
 type GetFilesPathParams struct {
-	// User User owning the file
+	// User User used for setting the owner, or resolving relative paths.
 	User User `form:"user" json:"user"`
 }
 
@@ -52,7 +52,7 @@ type PutFilesPathMultipartBody struct {
 
 // PutFilesPathParams defines parameters for PutFilesPath.
 type PutFilesPathParams struct {
-	// User User owning the file
+	// User User used for setting the owner, or resolving relative paths.
 	User User `form:"user" json:"user"`
 }
 

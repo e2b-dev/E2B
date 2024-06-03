@@ -40,9 +40,11 @@ type process struct {
 	wg        *sync.WaitGroup
 
 	exit chan processExit
+
+	tag *string
 }
 
-func newProcess(req *rpc.StartRequest) (*process, error) {
+func newProcess(req *rpc.StartRequest, tag *string) (*process, error) {
 	cmd := exec.Command(req.GetProcess().GetCmd(), req.GetProcess().GetArgs()...)
 
 	u, uid, gid, err := permissions.GetUserByUsername(req.GetUser().GetUsername())
@@ -131,6 +133,7 @@ func newProcess(req *rpc.StartRequest) (*process, error) {
 		stderr:    stderrMultiplex,
 		ttyOutput: ttyMultiplex,
 		wg:        &wg,
+		tag:       tag,
 	}, nil
 }
 

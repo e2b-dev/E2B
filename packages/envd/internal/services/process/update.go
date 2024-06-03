@@ -11,13 +11,13 @@ import (
 )
 
 func (s *Service) Update(ctx context.Context, req *connect.Request[rpc.UpdateRequest]) (*connect.Response[rpc.UpdateResponse], error) {
-	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
-	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
+	proc, err := s.getProcess(req.Msg.Process)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
 	if req.Msg.GetPty() != nil {
-		err := process.ResizeTty(&pty.Winsize{
+		err := proc.ResizeTty(&pty.Winsize{
 			Rows: uint16(req.Msg.GetPty().GetSize().GetRows()),
 			Cols: uint16(req.Msg.GetPty().GetSize().GetCols()),
 		})

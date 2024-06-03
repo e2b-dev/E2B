@@ -36,10 +36,46 @@ func Handle(server *http.ServeMux, opts ...connect.HandlerOption) {
 	server.Handle(path, handler)
 }
 
+func (s *Service) getProcess(selector *rpc.ProcessSelector) (*process, error) {
+	switch selector.GetSelector().(type) {
+	case *rpc.ProcessSelector_Pid:
+		proc, ok := s.processes.Load(selector.GetPid())
+		if !ok {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", selector.GetPid()))
+		}
+
+		return proc, nil
+	case *rpc.ProcessSelector_Tag:
+		tag := selector.GetTag()
+		var proc *process
+
+		s.processes.Range(func(key uint32, value *process) bool {
+			if value.tag == nil {
+				return true
+			}
+
+			if *value.tag == tag {
+				proc = value
+				return true
+			}
+
+			return false
+		})
+
+		if proc == nil {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with tag %s not found", tag))
+		}
+
+		return proc, nil
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid input type %T", selector))
+	}
+}
+
 func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartRequest], stream *connect.ServerStream[rpc.StartResponse]) error {
 	host.WaitForHostSync()
 
-	process, err := newProcess(req.Msg)
+	proc, err := newProcess(req.Msg, req.Msg.Tag)
 	if err != nil {
 		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -76,11 +112,11 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 	var wg sync.WaitGroup
 
 	stdoutWriter, stdoutReader := io.Pipe()
-	process.stdout.Add(stdoutReader)
+	proc.stdout.Add(stdoutReader)
 
 	wg.Add(1)
 	go func() {
-		defer process.stdout.Remove(stdoutReader)
+		defer proc.stdout.Remove(stdoutReader)
 		defer stdoutWriter.Close()
 
 		_, err := io.Copy(stdoutReader, stdoutWriter)
@@ -90,11 +126,11 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 	}()
 
 	stderrWriter, stderrReader := io.Pipe()
-	process.stderr.Add(stderrReader)
+	proc.stderr.Add(stderrReader)
 
 	wg.Add(1)
 	go func() {
-		defer process.stderr.Remove(stderrReader)
+		defer proc.stderr.Remove(stderrReader)
 		defer stderrWriter.Close()
 
 		_, err := io.Copy(stderrReader, stderrWriter)
@@ -107,7 +143,7 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 
 	// All process handling independant to the stream should be in this goroutine
 	go func() {
-		pid, err := process.Start()
+		pid, err := proc.Start()
 		if err != nil {
 			log.Println(err)
 
@@ -115,13 +151,13 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 			return
 		}
 
-		s.processes.Store(pid, process)
+		s.processes.Store(pid, proc)
 		defer s.processes.Delete(pid)
 
 		startChan <- pid
 		close(startChan)
 
-		exit, err := process.Wait()
+		exit, err := proc.Wait()
 		if err != nil {
 			log.Println(err)
 
@@ -143,15 +179,15 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 }
 
 func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectRequest], stream *connect.ServerStream[rpc.ConnectResponse]) error {
-	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
-	if !ok {
-		return connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
+	proc, err := s.getProcess(req.Msg.GetProcess())
+	if err != nil {
+		return connect.NewError(connect.CodeNotFound, err)
 	}
 
 	stdoutWriter, stdoutReader := io.Pipe()
-	process.stdout.Add(stdoutReader)
+	proc.stdout.Add(stdoutReader)
 	go func() {
-		defer process.stdout.Remove(stdoutReader)
+		defer proc.stdout.Remove(stdoutReader)
 		defer stdoutWriter.Close()
 
 		_, err := io.Copy(stdoutReader, stdoutWriter)
@@ -161,9 +197,9 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 	}()
 
 	stderrWriter, stderrReader := io.Pipe()
-	process.stderr.Add(stderrReader)
+	proc.stderr.Add(stderrReader)
 	go func() {
-		defer process.stderr.Remove(stderrReader)
+		defer proc.stderr.Remove(stderrReader)
 		defer stderrWriter.Close()
 
 		_, err := io.Copy(stderrReader, stderrWriter)

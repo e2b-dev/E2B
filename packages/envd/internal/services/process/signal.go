@@ -11,9 +11,9 @@ import (
 )
 
 func (s *Service) SendSignal(ctx context.Context, req *connect.Request[rpc.SendSignalRequest]) (*connect.Response[rpc.SendSignalResponse], error) {
-	process, ok := s.processes.Load(req.Msg.GetProcess().GetPid())
-	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", req.Msg.GetProcess().GetPid()))
+	proc, err := s.getProcess(req.Msg.Process)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
 	var signal syscall.Signal
@@ -26,7 +26,7 @@ func (s *Service) SendSignal(ctx context.Context, req *connect.Request[rpc.SendS
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid signal: %s", req.Msg.GetSignal()))
 	}
 
-	err := process.SendSignal(signal)
+	err = proc.SendSignal(signal)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error sending signal: %w", err))
 	}
