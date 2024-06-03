@@ -47,7 +47,7 @@ type PutFilesPathMultipartBody struct {
 // PutFilesPathParams defines parameters for PutFilesPath.
 type PutFilesPathParams struct {
 	// User User owning the file
-	User User `form:"User" json:"User"`
+	User User `form:"user" json:"user"`
 }
 
 // PutFilesPathMultipartRequestBody defines body for PutFilesPath for multipart/form-data ContentType.
@@ -119,18 +119,18 @@ func (siw *ServerInterfaceWrapper) PutFilesPath(w http.ResponseWriter, r *http.R
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PutFilesPathParams
 
-	// ------------- Required query parameter "User" -------------
+	// ------------- Required query parameter "user" -------------
 
-	if paramValue := r.URL.Query().Get("User"); paramValue != "" {
+	if paramValue := r.URL.Query().Get("user"); paramValue != "" {
 
 	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "User"})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user"})
 		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "User", r.URL.Query(), &params.User)
+	err = runtime.BindQueryParameter("form", true, true, "user", r.URL.Query(), &params.User)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "User", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
 		return
 	}
 
