@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem"
 
 	"connectrpc.com/connect"
 )
 
 func (Service) Stat(ctx context.Context, req *connect.Request[rpc.StatRequest]) (*connect.Response[rpc.StatResponse], error) {
-	filePath := req.Msg.GetPath()
-
-	user := 
-
+	filePath, err := permissions.ExpandAndResolveFromUsername(req.Msg.GetPath(), req.Msg.GetUser().GetUsername())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("failed to resolve path '%s' for user '%s': %w", req.Msg.GetPath(), req.Msg.GetUser().GetUsername(), err))
+	}
 
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {

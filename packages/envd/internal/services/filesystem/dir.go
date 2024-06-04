@@ -5,13 +5,19 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem"
 
 	"connectrpc.com/connect"
 )
 
 func (Service) ListDir(ctx context.Context, req *connect.Request[rpc.ListRequest]) (*connect.Response[rpc.ListResponse], error) {
-	entries, err := os.ReadDir(req.Msg.GetPath())
+	dirPath, err := permissions.ExpandAndResolveFromUsername(req.Msg.GetPath(), req.Msg.GetUser().GetUsername())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("failed to resolve path '%s' for user '%s': %w", req.Msg.GetPath(), req.Msg.GetUser().GetUsername(), err))
+	}
+
+	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("directory not found: %w", err))

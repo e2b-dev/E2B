@@ -1,7 +1,8 @@
-package files
+package permissions
 
 import (
 	"errors"
+	"fmt"
 	"os/user"
 	"path/filepath"
 )
@@ -28,5 +29,19 @@ func ExpandAndResolve(path string, user *user.User) (string, error) {
 		return "", err
 	}
 
-	return filepath.Abs(expanded)
+	abs, err := filepath.Abs(expanded)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve path: %w", err)
+	}
+
+	return abs, nil
+}
+
+func ExpandAndResolveFromUsername(path string, username string) (string, error) {
+	user, _, _, err := GetUserByUsername(username)
+	if err != nil {
+		return "", err
+	}
+
+	return ExpandAndResolve(path, user)
 }

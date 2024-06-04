@@ -9,7 +9,6 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/files"
 	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
 
@@ -60,9 +59,9 @@ func newProcess(req *rpc.StartRequest, tag *string) (*process, error) {
 		NoSetGroups: true,
 	}
 
-	resolvedPath, err := files.ExpandAndResolve(req.GetProcess().GetCwd(), u)
+	resolvedPath, err := permissions.ExpandAndResolve(req.GetProcess().GetCwd(), u)
 	if err != nil {
-		return nil, fmt.Errorf("error resolving cwd for process '%s': %w", cmd, err)
+		return nil, fmt.Errorf("error resolving cwd for process '%s' and user '%s': %w", cmd, req.GetUser().GetUsername(), err)
 	}
 
 	cmd.Dir = resolvedPath
