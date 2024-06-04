@@ -1,12 +1,13 @@
-from io import BytesIO, RawIOBase
+from io import BytesIO
 import connect
 
-from typing import IO, List, Optional, TextIO, overload, Literal, Union
+from typing import List, Optional, overload, Literal, Union
 
 from e2b.envd import EnvdApiClient, client
 from e2b.sandbox.filesystem.watch_handle import WatchHandle
 from e2b.connection_config import Username
 from envd.filesystem import filesystem_connect, filesystem_pb2
+from envd.permissions.permissions_pb2 import User
 
 
 FileFormat = Literal["text", "bytes", "stream"]
@@ -107,16 +108,28 @@ class Filesystem:
             _request_timeout=request_timeout,
         )
 
-    def list(self, path: str) -> List[filesystem_pb2.EntryInfo]:
+    def list(
+        self,
+        path: str,
+        request_timeout: Optional[float] = None,
+        user: Username = "user",
+    ) -> List[filesystem_pb2.EntryInfo]:
         res = self._rpc.list(
             filesystem_pb2.ListRequest(path=path),
+            user=User(username=user),
         )
         return [entry for entry in res.entries]
 
-    def exists(self, path: str) -> bool:
+    def exists(
+        self,
+        path: str,
+        request_timeout: Optional[float] = None,
+        user: Username = "user",
+    ) -> bool:
         try:
             self._rpc.stat(
                 filesystem_pb2.StatRequest(path=path),
+                user=User(username=user),
             )
             return True
 
@@ -125,18 +138,28 @@ class Filesystem:
                 return False
             raise
 
-    def remove(self, path: str) -> None:
+    def remove(
+        self,
+        path: str,
+        request_timeout: Optional[float] = None,
+        user: Username = "user",
+    ) -> None:
         self._rpc.remove(
-            filesystem_pb2.RemoveRequest(path=path),
+            filesystem_pb2.RemoveRequest(
+                path=path,
+                user=User(username=user),
+            ),
         )
 
     def watch(
         self,
         path: str,
         request_timeout: Optional[float],
+        user: Username = "user",
     ):
         events = self._rpc.watch(
             filesystem_pb2.WatchRequest(path=path),
+            user=User(username=user),
         )
 
         return WatchHandle(events=events)
