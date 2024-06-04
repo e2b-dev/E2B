@@ -9,7 +9,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
+	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
 
 	"github.com/creack/pty"
@@ -46,16 +46,21 @@ type process struct {
 func newProcess(req *rpc.StartRequest, tag *string) (*process, error) {
 	cmd := exec.Command(req.GetProcess().GetCmd(), req.GetProcess().GetArgs()...)
 
-	u, uid, gid, err := permissions.GetUserByUsername(req.GetUser().GetUsername())
+	u, err := permissions.GetUser(req.GetUser())
 	if err != nil {
 		return nil, fmt.Errorf("error looking up user '%s': %w", req.GetUser().GetUsername(), err)
 	}
 
+	uid, gid, err := permissions.GetUserIds(u)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing uid and gid for user '%s': %w", req.GetUser().GetUsername(), err)
+	}
+
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
 	cmd.SysProcAttr.Credential = &syscall.Credential{
-		Uid:         uint32(uid),
-		Gid:         uint32(gid),
-		Groups:      []uint32{uint32(gid)},
+		Uid:         uid,
+		Gid:         gid,
+		Groups:      []uint32{gid},
 		NoSetGroups: true,
 	}
 

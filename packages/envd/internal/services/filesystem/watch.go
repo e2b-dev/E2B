@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
+	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem"
 
 	"connectrpc.com/connect"
@@ -14,7 +14,12 @@ import (
 )
 
 func (Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest], stream *connect.ServerStream[rpc.WatchResponse]) error {
-	watchPath, err := permissions.ExpandAndResolveFromUsername(req.Msg.GetPath(), req.Msg.GetUser().GetUsername())
+	u, err := permissions.GetUser(req.Msg.GetUser())
+	if err != nil {
+		return fmt.Errorf("error looking up user '%s': %w", req.Msg.GetUser().GetUsername(), err)
+	}
+
+	watchPath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("failed to resolve path '%s' for user '%s': %w", req.Msg.GetPath(), req.Msg.GetUser().GetUsername(), err))
 	}
