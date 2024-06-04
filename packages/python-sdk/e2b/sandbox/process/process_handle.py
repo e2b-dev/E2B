@@ -5,11 +5,20 @@ from pydantic import BaseModel
 
 
 class ProcessOutput(BaseModel):
-    stdout: Optional[str] = None
-    stderr: Optional[str] = None
+    pass
 
 
-class ProcessResult(ProcessOutput):
+class ProcessStdout(ProcessOutput):
+    stdout: str
+
+
+class ProcessStderr(ProcessOutput):
+    stderr: str
+
+
+class ProcessResult(BaseModel):
+    stderr: str
+    stdout: str
     exit_code: int
     error: Optional[str]
 
@@ -42,10 +51,10 @@ class ProcessHandle(Generator):
         if event.HasField(field_name="data"):
             if event.event.data.stdout:
                 self._stdout += event.event.data.stdout
-                return ProcessOutput(stdout=self._stdout.decode())
+                return ProcessStdout(stdout=self._stdout.decode())
             if event.event.data.stderr:
                 self._stderr += event.event.data.stderr
-                return ProcessOutput(stderr=self._stderr.decode())
+                return ProcessStderr(stderr=self._stderr.decode())
         if event.HasField("end"):
             self._result = ProcessResult(
                 stdout=self._stdout.decode(),
@@ -68,9 +77,9 @@ class ProcessHandle(Generator):
         on_stderr: Optional[Callable[[str], None]] = None,
     ):
         for output in self:
-            if output.stdout and on_stdout:
+            if isinstance(output, ProcessStdout) and on_stdout:
                 on_stdout(output.stdout)
-            if output.stderr and on_stderr:
+            if isinstance(output, ProcessStderr) and on_stderr:
                 on_stderr(output.stderr)
 
         if self._result is None:

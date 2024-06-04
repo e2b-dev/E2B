@@ -1,6 +1,7 @@
+from io import BytesIO, RawIOBase
 import connect
 
-from typing import List, Optional, overload, Literal, Union
+from typing import IO, List, Optional, TextIO, overload, Literal, Union
 
 from e2b.envd import EnvdApiClient, client
 from e2b.sandbox.filesystem.watch_handle import WatchHandle
@@ -8,7 +9,7 @@ from e2b.connection_config import Username
 from envd.filesystem import filesystem_connect, filesystem_pb2
 
 
-FileFormat = Literal["text", "bytearray"]
+FileFormat = Literal["text", "bytes", "stream"]
 
 
 class Filesystem:
@@ -33,10 +34,19 @@ class Filesystem:
     def read(
         self,
         path: str,
-        format: Literal["bytearray"],
+        format: Literal["bytes"],
         request_timeout: Optional[float] = None,
         user: Username = "user",
     ) -> bytearray: ...
+
+    @overload
+    def read(
+        self,
+        path: str,
+        format: Literal["stream"],
+        request_timeout: Optional[float] = None,
+        user: Username = "user",
+    ) -> BytesIO: ...
 
     def read(
         self,
@@ -59,10 +69,10 @@ class Filesystem:
     def write(
         self,
         path: str,
-        data: bytearray,
+        data: str,
         request_timeout: Optional[float] = None,
         user: Username = "user",
-    ) -> str: ...
+    ) -> None: ...
 
     @overload
     def write(
@@ -71,21 +81,21 @@ class Filesystem:
         data: bytes,
         request_timeout: Optional[float] = None,
         user: Username = "user",
-    ) -> str: ...
+    ) -> None: ...
 
     @overload
     def write(
         self,
         path: str,
-        data: str,
+        data: BytesIO,
         request_timeout: Optional[float] = None,
         user: Username = "user",
-    ) -> bytearray: ...
+    ) -> None: ...
 
     def write(
         self,
         path: str,
-        data: Union[bytes, bytearray, str],
+        data: Union[bytes, str, BytesIO],
         request_timeout: Optional[float],
         user: Username = "user",
     ) -> None:

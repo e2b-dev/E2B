@@ -17,7 +17,7 @@ import { WatchHandle, FilesystemEvent } from './watchHandle'
 
 export type EntryInfo = PlainMessage<FsEntryInfo>
 
-export type FileFormat = 'text' | 'stream' | 'arrayBuffer' | 'blob'
+export type FileFormat = 'text' | 'stream' | 'bytes' | 'blob'
 
 export interface FilesystemRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
   user?: Username
@@ -37,7 +37,7 @@ export class Filesystem {
   }
 
   async read(path: string, format: 'text', opts?: FilesystemRequestOpts): Promise<string>
-  async read(path: string, format: 'arrayBuffer', opts?: FilesystemRequestOpts): Promise<ArrayBuffer>
+  async read(path: string, format: 'bytes', opts?: FilesystemRequestOpts): Promise<Uint8Array>
   async read(path: string, format: 'blob', opts?: FilesystemRequestOpts): Promise<Blob>
   async read(path: string, format: 'stream', opts?: FilesystemRequestOpts): Promise<ReadableStream<Uint8Array>>
   async read(path: string, format: FileFormat = 'text', opts?: FilesystemRequestOpts): Promise<unknown> {
@@ -50,9 +50,13 @@ export class Filesystem {
           user: opts?.user ?? defaultUsername,
         },
       },
-      parseAs: format,
+      parseAs: format === 'bytes' ? 'arrayBuffer' : format,
       signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
     })
+
+    if (format === 'bytes') {
+      return new Uint8Array(response.data as ArrayBuffer)
+    }
 
     return response.data
   }
@@ -60,8 +64,8 @@ export class Filesystem {
   async write(path: string, data: string, opts?: FilesystemRequestOpts): Promise<void>
   async write(path: string, data: ArrayBuffer, opts?: FilesystemRequestOpts): Promise<void>
   async write(path: string, data: Blob, opts?: FilesystemRequestOpts): Promise<void>
-  async write(path: string, data: ReadableStream<Uint8Array>, opts?: FilesystemRequestOpts): Promise<void>
-  async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>, opts?: FilesystemRequestOpts): Promise<void> {
+  async write(path: string, data: ReadableStream<ArrayBuffer> | ReadableStream<Uint8Array>, opts?: FilesystemRequestOpts): Promise<void>
+  async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream<ArrayBuffer> | ReadableStream<Uint8Array>, opts?: FilesystemRequestOpts): Promise<void> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     await this.envdApi.api.PUT('/files/{path}', {

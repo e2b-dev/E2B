@@ -4,10 +4,16 @@ import {
   StartResponse,
 } from '../../envd/process/process_pb'
 
-export interface ProcessOutput {
-  stdout?: string
-  stderr?: string
+
+interface ProcessStdout {
+  stdout: string
 }
+
+interface ProcessStderr {
+  stderr: string
+}
+
+export type ProcessOutput = ProcessStdout | ProcessStderr
 
 export class ProcessHandle {
   private readonly end: Promise<{
@@ -18,7 +24,7 @@ export class ProcessHandle {
 
   constructor(
     readonly pid: number,
-    readonly handleDisconnect: () => void,
+    private readonly handleDisconnect: () => void,
     private readonly handleKill: () => Promise<void>,
     events: AsyncIterable<ConnectResponse | StartResponse>,
     private readonly handleStdout?: ((data: string) => void | Promise<void>),
@@ -91,7 +97,9 @@ export class ProcessHandle {
   }
 }
 
-export interface ProcessResult extends Required<ProcessOutput> {
+export interface ProcessResult {
   exitCode: number
   error?: string
+  stdout: string
+  stderr: string
 }
