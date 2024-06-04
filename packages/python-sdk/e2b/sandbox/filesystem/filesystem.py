@@ -103,11 +103,17 @@ class Filesystem:
         )
         return [entry for entry in res.entries]
 
-    def exists(self, path: str) -> filesystem_pb2.EntryInfo:
-        res = self._rpc.stat(
-            filesystem_pb2.StatRequest(path=path),
-        )
-        return res.entry
+    def exists(self, path: str) -> bool:
+        try:
+            self._rpc.stat(
+                filesystem_pb2.StatRequest(path=path),
+            )
+            return True
+
+        except connect.Error as e:
+            if e.code == connect.Code.not_found:
+                return False
+            raise
 
     def remove(self, path: str) -> None:
         self._rpc.remove(

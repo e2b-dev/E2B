@@ -33,7 +33,7 @@ class Code(IntEnum):
 
 
 class Error(Exception):
-    def __init__(self, code, message):
+    def __init__(self, code: Code, message: str):
         self.code = code
         self.message = message
 
@@ -118,7 +118,14 @@ class ProtobufCodec:
 
 class Client:
     def __init__(
-        self, *, pool, url, response_type, compressor=None, json=False, headers=None
+        self,
+        *,
+        pool,
+        url,
+        response_type,
+        compressor=None,
+        json=False,
+        headers=None,
     ):
         if pool is None:
             pool = default_connection_pool()

@@ -3,6 +3,8 @@ import {
   createPromiseClient,
   Transport,
   PromiseClient,
+  ConnectError,
+  Code,
 } from '@connectrpc/connect'
 
 import { ConnectionOpts, defaultUsername, Username } from '../../connectionConfig'
@@ -112,19 +114,30 @@ export class Filesystem {
     })
   }
 
-  async exists(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
-    const res = await this.rpc.stat({
-      path,
-      user: {
-        selector: {
-          case: 'username',
-          value: opts?.user || defaultUsername,
+  async exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
+    try {
+      await this.rpc.stat({
+        path,
+        user: {
+          selector: {
+            case: 'username',
+            value: opts?.user || defaultUsername,
+          },
         },
-      },
-    }, {
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
-    })
-    return res.entry!
+      }, {
+        timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+      })
+
+      return true
+    } catch (err) {
+      const connectErr = ConnectError.from(err)
+
+      if (connectErr.code === Code.NotFound) {
+        return false
+      }
+
+      throw err
+    }
   }
 
   async watch(
