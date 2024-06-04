@@ -208,7 +208,17 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 		}
 	}()
 
-	// TODO: add tty reader too
+	ttyWriter, ttyReader := io.Pipe()
+	proc.ttyOutput.Add(ttyReader)
+	go func() {
+		defer proc.ttyOutput.Remove(ttyReader)
+		defer ttyWriter.Close()
+
+		_, err := io.Copy(ttyReader, ttyWriter)
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 
 	return nil
 }
