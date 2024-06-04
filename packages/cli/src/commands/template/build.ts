@@ -99,6 +99,11 @@ export const buildCommand = new commander.Command('build')
     'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.',
     parseInt,
   )
+  .option(
+    '--docker-build-args [args]',
+    'specify additional build arguments for the Docker build command. The format should be <varname>=<value>.',
+    parseInt,
+  )
   .alias('bd')
   .action(
     async (
@@ -111,6 +116,7 @@ export const buildCommand = new commander.Command('build')
         config?: string
         cpuCount?: number
         memoryMb?: number
+        dockerBuildArgs?: [string]
       },
     ) => {
       try {
@@ -120,6 +126,14 @@ export const buildCommand = new commander.Command('build')
             'Docker is required to build and push the sandbox template. Please install Docker and try again.',
           )
           process.exit(1)
+        }
+
+        const dockerBuildArgs: {[key: string]: string} = {}
+        if (opts.dockerBuildArgs) {
+            opts.dockerBuildArgs.forEach((arg) => {
+                const [key, value] = arg.split('=')
+                dockerBuildArgs[key] = value
+            })
         }
 
         const accessToken = ensureAccessToken()
@@ -265,7 +279,7 @@ export const buildCommand = new commander.Command('build')
 
         console.log('Building docker image...')
         child_process.execSync(
-          `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`,
+          `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(dockerBuildArgs).map(([key, value]) => `--build-arg ${key}=${value}`).join(' ')}`,
           {
             stdio: 'inherit',
             cwd: root,
@@ -502,7 +516,7 @@ function getDockerfile(root: string, file?: string) {
   throw new Error(
     `No ${asLocalRelative(defaultDockerfileRelativePath)} or ${asLocalRelative(
       fallbackDockerfileRelativeName,
-    )} found in the root directory.You can specify a custom Dockerfile with ${asBold(
+    )} found in the root directory (${root}). You can specify a custom Dockerfile with ${asBold(
       '--dockerfile <file>',
     )} option.`,
   )
