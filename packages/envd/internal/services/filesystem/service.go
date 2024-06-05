@@ -16,10 +16,12 @@ func newService() *Service {
 	return &Service{}
 }
 
-func Handle(server *http.ServeMux, opts ...connect.HandlerOption) {
+func Handle(server *http.ServeMux, opts ...connect.HandlerOption) *Service {
 	service := newService()
 
 	path, handler := spec.NewFilesystemServiceHandler(service, opts...)
 
 	server.Handle(path, handler)
+
+	return service
 }

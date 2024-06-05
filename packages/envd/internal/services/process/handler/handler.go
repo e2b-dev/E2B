@@ -1,4 +1,4 @@
-package process
+package handler
 
 import (
 	"errors"
@@ -17,33 +17,31 @@ import (
 
 const defaultOomScore = 100
 
-type processExit struct {
+type ProcessExit struct {
 	Err        error
-	Terminated bool
-	Code       int
 	Status     string
+	Terminated bool
+	Code       int32
 }
 
-type process struct {
-	config *rpc.ProcessConfig
+type Handler struct {
+	Config *rpc.ProcessConfig
 
+	Tag *string
 	cmd *exec.Cmd
 	tty *os.File
 
-	stdin   io.WriteCloser
+	Stdout    *MultiWriterCloser
+	Stderr    *MultiWriterCloser
+	TtyOutput *MultiWriterCloser
+
+	stdin io.WriteCloser
+	Exit  *multiExit
+
 	stdinMu sync.Mutex
-
-	stdout    *MultiWriter
-	stderr    *MultiWriter
-	ttyOutput *MultiWriter
-	wg        *sync.WaitGroup
-
-	exit chan processExit
-
-	tag *string
 }
 
-func newProcess(req *rpc.StartRequest, tag *string) (*process, error) {
+func New(req *rpc.StartRequest) (*Handler, error) {
 	cmd := exec.Command(req.GetProcess().GetCmd(), req.GetProcess().GetArgs()...)
 
 	u, err := permissions.GetUser(req.GetUser())
@@ -117,31 +115,27 @@ func newProcess(req *rpc.StartRequest, tag *string) (*process, error) {
 		return nil, errMsg
 	}
 
-	var wg sync.WaitGroup
+	stdoutMultiplex := NewMultiWriterCloser(stdout)
+	stderrMultiplex := NewMultiWriterCloser(stderr)
 
-	stdoutMultiplex := multiplexReader(&wg, stdout)
-	stderrMultiplex := multiplexReader(&wg, stderr)
-
-	var ttyMultiplex *MultiWriter
+	var ttyMultiplex *MultiWriterCloser
 	if tty != nil {
-		ttyMultiplex = multiplexReader(&wg, tty)
+		ttyMultiplex = NewMultiWriterCloser(tty)
 	}
 
-	return &process{
-		config:    req.GetProcess(),
+	return &Handler{
+		Config:    req.GetProcess(),
 		cmd:       cmd,
 		tty:       tty,
 		stdin:     stdin,
-		exit:      make(chan processExit),
-		stdout:    stdoutMultiplex,
-		stderr:    stderrMultiplex,
-		ttyOutput: ttyMultiplex,
-		wg:        &wg,
-		tag:       tag,
+		Stdout:    stdoutMultiplex,
+		Stderr:    stderrMultiplex,
+		TtyOutput: ttyMultiplex,
+		Tag:       req.Tag,
 	}, nil
 }
 
-func (p *process) SendSignal(signal syscall.Signal) error {
+func (p *Handler) SendSignal(signal syscall.Signal) error {
 	if p.cmd.Process == nil {
 		return fmt.Errorf("process not started")
 	}
@@ -149,7 +143,7 @@ func (p *process) SendSignal(signal syscall.Signal) error {
 	return p.cmd.Process.Signal(signal)
 }
 
-func (p *process) ResizeTty(size *pty.Winsize) error {
+func (p *Handler) ResizeTty(size *pty.Winsize) error {
 	if p.tty == nil {
 		return fmt.Errorf("tty not assigned to process")
 	}
@@ -157,7 +151,7 @@ func (p *process) ResizeTty(size *pty.Winsize) error {
 	return pty.Setsize(p.tty, size)
 }
 
-func (p *process) WriteStdin(data []byte) error {
+func (p *Handler) WriteStdin(data []byte) error {
 	p.stdinMu.Lock()
 	defer p.stdinMu.Unlock()
 
@@ -169,7 +163,7 @@ func (p *process) WriteStdin(data []byte) error {
 	return nil
 }
 
-func (p *process) WriteTty(data []byte) error {
+func (p *Handler) WriteTty(data []byte) error {
 	if p.tty == nil {
 		return fmt.Errorf("tty not assigned to process")
 	}
@@ -182,7 +176,7 @@ func (p *process) WriteTty(data []byte) error {
 	return nil
 }
 
-func (p *process) Start() (uint32, error) {
+func (p *Handler) Start() (uint32, error) {
 	if p.cmd.Process == nil {
 		return 0, fmt.Errorf("process not started")
 	}
@@ -200,8 +194,11 @@ func (p *process) Start() (uint32, error) {
 	return uint32(p.cmd.Process.Pid), nil
 }
 
-func (p *process) Wait() (*os.ProcessState, error) {
-	p.wg.Wait()
+func (p *Handler) Wait() *os.ProcessState {
+	defer p.tty.Close()
+
+	p.Stdout.Wait()
+	p.Stderr.Wait()
 
 	waitErr := p.cmd.Wait()
 
@@ -210,12 +207,12 @@ func (p *process) Wait() (*os.ProcessState, error) {
 		err = fmt.Errorf("error waiting for process '%s': %w", p.cmd, waitErr)
 	}
 
-	p.exit <- processExit{
+	p.Exit.Set(ProcessExit{
 		Err:        err,
-		Code:       p.cmd.ProcessState.ExitCode(),
-		Terminated: p.cmd.ProcessState.Exited(),
+		Code:       int32(p.cmd.ProcessState.ExitCode()),
+		Terminated: !p.cmd.ProcessState.Exited(),
 		Status:     p.cmd.ProcessState.String(),
-	}
+	})
 
-	return p.cmd.ProcessState, nil
+	return p.cmd.ProcessState
 }

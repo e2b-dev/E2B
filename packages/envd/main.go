@@ -1,117 +1,139 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
-	"os"
 	"path/filepath"
 	"time"
 
-	connectFS "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/protobuf/ptypes/duration"
-
 	"github.com/e2b-dev/infra/packages/envd/internal/api"
-	"github.com/getkin/kin-openapi/openapi3"
+	logging "github.com/e2b-dev/infra/packages/envd/internal/log"
+
+	filesystemRpc "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
+	processRpc "github.com/e2b-dev/infra/packages/envd/internal/services/process"
+	"github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/permissions"
+	processSpec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
+
+	connectcors "connectrpc.com/cors"
+	"github.com/rs/cors"
+	"go.uber.org/zap"
 )
 
 const (
+	Version = "dev"
+
 	// We limit the timeout more in proxies
-	maxTimeout  = 24 * time.Hour
+	maxTimeout = 24 * time.Hour
+	maxAge     = 2 * time.Hour
+
 	defaultPort = 49982
 )
 
 var (
-	defaultLogDir    = filepath.Join("/var", "log")
-	defaultGatewayIP = net.IPv4(169, 254, 0, 21)
+	logger    *zap.SugaredLogger
+	wsHandler http.Handler
+
+	debug bool
+	port  int64
+
+	versionFlag  bool
+	startCmdFlag string
+
+	logDir = filepath.Join("/var", "log")
 )
 
-func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *http.Server {
-	// Clear out the servers array in the swagger spec, that skips validating
-	// that server names match. We don't know how this thing will be run.
-	swagger.Servers = nil
-
-	r := gin.New()
-
-	r.Use(
-		gin.Recovery(),
+func parseFlags() {
+	flag.BoolVar(
+		&debug,
+		"debug",
+		false,
+		"debug mode prints all logs to stdout and stderr",
 	)
 
-	config := cors.DefaultConfig()
-	// Allow all origins
-	config.AllowAllOrigins = true
-	config.AllowHeaders = []string{
-		// Default headers
-		"Origin",
-		"Content-Length",
-		"Content-Type",
-		// API Key header
-		"Authorization",
-		"X-API-Key",
-		// Custom headers sent from SDK
-	}
-	r.Use(cors.New(config))
+	flag.BoolVar(
+		&versionFlag,
+		"version",
+		false,
+		"print envd version",
+	)
 
-	// We now register our store above as the handler for the interface
-	api.RegisterHandlers(r, apiStore)
+	flag.Int64Var(
+		&port,
+		"port",
+		defaultPort,
+		"a port on which the daemon should run",
+	)
 
-	connectFS.Handle(r)
+	flag.StringVar(
+		&startCmdFlag,
+		"cmd",
+		"",
+		"a command to run on the daemon start",
+	)
 
-	mux := http.NewServeMux()
+	flag.Parse()
+}
 
-	connectFS.Handle(mux)
-
-	r.Handle(http.MethodGet, "/")
-
-	return &http.Server{
-		Handler:           r,
-		Addr:              fmt.Sprintf("0.0.0.0:%d", port),
-		ReadHeaderTimeout: maxTimeout,
-		ReadTimeout:       maxTimeout,
-		WriteTimeout:      maxTimeout,
-		IdleTimeout:       maxTimeout,
-	}
+func withCORS(h http.Handler) http.Handler {
+	middleware := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{
+			"GET",
+			"POST",
+			"PUT",
+		},
+		AllowedHeaders: append(
+			connectcors.AllowedHeaders(),
+			"Origin",
+			"Accept",
+			"Content-Type",
+			"Cache-Control",
+			"X-Requested-With",
+			"X-Content-Type-Options",
+			"Access-Control-Request-Method",
+			"Access-Control-Request-Headers",
+			"Access-Control-Request-Private-Network",
+			"Access-Control-Expose-Headers",
+		),
+		ExposedHeaders: append(
+			connectcors.ExposedHeaders(),
+			"Location",
+			"Cache-Control",
+			"X-Content-Type-Options",
+		),
+		MaxAge: int(maxAge.Seconds()),
+	})
+	return middleware.Handler(h)
 }
 
 func main() {
-	l, err := log.NewLogger(defaultLogDir, debug, true)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating a new logger: %w", err)
+	parseFlags()
 
+	if versionFlag {
+		fmt.Println("envd version %s", Version)
 
-
-	fmt.Println("Initializing...")
-
-	port := flag.Int("port", defaultPort, "Port for test HTTP server")
-	flag.Parse()
-
-	debug := flag.String("true", "false", "is debug")
-
-	if *debug != "true" {
-		gin.SetMode(gin.ReleaseMode)
+		return
 	}
 
-	swagger, err := api.GetSwagger()
+	l, err := logging.NewLogger(logDir, debug, true)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %v\n", err)
-		os.Exit(1)
+		log.Fatalf("error creating a new logger: %v", err)
 	}
+	logger = l
+	defer l.Sync()
 
-	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
-	server := api.NewAPI()
+	m := http.NewServeMux()
 
-	r := http.NewServeMux()
+	filesystemRpc.Handle(m)
+	processService := processRpc.Handle(m)
 
-	// get an `http.Handler` that we can use
-	h := api.HandlerFromMux(server, r)
+	handler := api.HandlerFromMux(api.New(), m)
 
-	enable keepalives in server transport or client?
 	s := &http.Server{
-		Handler:           h,
+		Handler:           withCORS(handler),
 		Addr:              fmt.Sprintf("0.0.0.0:%d", port),
 		ReadHeaderTimeout: maxTimeout,
 		ReadTimeout:       maxTimeout,
@@ -119,6 +141,28 @@ func main() {
 		IdleTimeout:       maxTimeout,
 	}
 
-	// And we serve HTTP until the world ends.
-	log.Fatal(s.ListenAndServe())
+	if startCmdFlag != "" {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		tag := "startCmd"
+
+		processService.StartBackgroundProcess(ctx, &processSpec.StartRequest{
+			Tag: &tag,
+			User: &permissions.User{
+				Selector: &permissions.User_Username{
+					Username: "user",
+				},
+			},
+			Process: &processSpec.ProcessConfig{
+				Cmd:  "/bin/bash",
+				Args: []string{"-l", "-c", startCmdFlag},
+			},
+		})
+	}
+
+	err = s.ListenAndServe()
+	if err != nil {
+		logger.Fatalf("error starting server: %v", err)
+	}
 }

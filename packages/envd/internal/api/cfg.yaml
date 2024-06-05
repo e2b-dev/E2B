@@ -6,4 +6,3 @@ generate:
   models: true
   std-http-server: true
   client: false
-  strict-server: true

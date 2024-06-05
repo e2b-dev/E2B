@@ -21,6 +21,8 @@ const (
 	PortStateDelete  PortState = "DELETE"
 )
 
+var defaultGatewayIP = net.IPv4(169, 254, 0, 21)
+
 type PortToForward struct {
 	socat *exec.Cmd
 	// Process ID of the process that's listening on port.
@@ -39,7 +41,6 @@ type Forwarder struct {
 
 func NewForwarder(
 	logger *zap.SugaredLogger,
-	env *env.EnvConfig,
 	scanner *Scanner,
 ) *Forwarder {
 	scannerSub := scanner.AddSubscriber(
@@ -53,7 +54,7 @@ func NewForwarder(
 
 	return &Forwarder{
 		logger:            logger,
-		sourceIP:          env.GatewayIP,
+		sourceIP:          defaultGatewayIP,
 		ports:             make(map[string]*PortToForward),
 		scannerSubscriber: scannerSub,
 	}

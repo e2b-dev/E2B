@@ -5,10 +5,6 @@ import (
 	"fmt"
 	"os/user"
 	"path/filepath"
-
-	"connectrpc.com/connect"
-
-	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/permissions"
 )
 
 func expand(path, homedir string) (string, error) {
@@ -39,18 +35,4 @@ func ExpandAndResolve(path string, user *user.User) (string, error) {
 	}
 
 	return abs, nil
-}
-
-func GetUser(selector *rpc.User) (u *user.User, err error) {
-	switch selector.GetSelector().(type) {
-	case *rpc.User_Username:
-		u, err = user.Lookup(selector.GetUsername())
-		if err != nil {
-			return nil, fmt.Errorf("error looking up user '%s': %w", selector.GetUsername(), err)
-		}
-
-		return u, nil
-	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid input type %T", selector))
-	}
 }

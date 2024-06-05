@@ -6,15 +6,10 @@
 package api
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"mime/multipart"
 	"net/http"
 
 	"github.com/oapi-codegen/runtime"
-	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -33,16 +28,22 @@ type FilePath = string
 // User defines model for User.
 type User = string
 
+// BadRequest defines model for BadRequest.
+type BadRequest = Error
+
 // DirectoryPathError defines model for DirectoryPathError.
 type DirectoryPathError = Error
+
+// FileNotFound defines model for FileNotFound.
+type FileNotFound = Error
 
 // InternalServerError defines model for InternalServerError.
 type InternalServerError = Error
 
 // GetFilesPathParams defines parameters for GetFilesPath.
 type GetFilesPathParams struct {
-	// User User used for setting the owner, or resolving relative paths.
-	User User `form:"user" json:"user"`
+	// Username User used for setting the owner, or resolving relative paths.
+	Username User `form:"username" json:"username"`
 }
 
 // PutFilesPathMultipartBody defines parameters for PutFilesPath.
@@ -52,8 +53,8 @@ type PutFilesPathMultipartBody struct {
 
 // PutFilesPathParams defines parameters for PutFilesPath.
 type PutFilesPathParams struct {
-	// User User used for setting the owner, or resolving relative paths.
-	User User `form:"user" json:"user"`
+	// Username User used for setting the owner, or resolving relative paths.
+	Username User `form:"username" json:"username"`
 }
 
 // PutFilesPathMultipartRequestBody defines body for PutFilesPath for multipart/form-data ContentType.
@@ -99,18 +100,18 @@ func (siw *ServerInterfaceWrapper) GetFilesPath(w http.ResponseWriter, r *http.R
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetFilesPathParams
 
-	// ------------- Required query parameter "user" -------------
+	// ------------- Required query parameter "username" -------------
 
-	if paramValue := r.URL.Query().Get("user"); paramValue != "" {
+	if paramValue := r.URL.Query().Get("username"); paramValue != "" {
 
 	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user"})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "username"})
 		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "user", r.URL.Query(), &params.User)
+	err = runtime.BindQueryParameter("form", true, true, "username", r.URL.Query(), &params.Username)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "username", Err: err})
 		return
 	}
 
@@ -143,18 +144,18 @@ func (siw *ServerInterfaceWrapper) PutFilesPath(w http.ResponseWriter, r *http.R
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PutFilesPathParams
 
-	// ------------- Required query parameter "user" -------------
+	// ------------- Required query parameter "username" -------------
 
-	if paramValue := r.URL.Query().Get("user"); paramValue != "" {
+	if paramValue := r.URL.Query().Get("username"); paramValue != "" {
 
 	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user"})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "username"})
 		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "user", r.URL.Query(), &params.User)
+	err = runtime.BindQueryParameter("form", true, true, "username", r.URL.Query(), &params.Username)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "username", Err: err})
 		return
 	}
 
@@ -303,281 +304,4 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/sync", wrapper.PostSync)
 
 	return m
-}
-
-type DirectoryPathErrorJSONResponse Error
-
-type DownloadSuccessResponseHeaders struct {
-	CacheControl string
-}
-type DownloadSuccessApplicationoctetStreamResponse struct {
-	Body io.Reader
-
-	Headers       DownloadSuccessResponseHeaders
-	ContentLength int64
-}
-
-type ExistingFileUploadSuccessResponseHeaders struct {
-	CacheControl string
-}
-type ExistingFileUploadSuccessResponse struct {
-	Headers ExistingFileUploadSuccessResponseHeaders
-}
-
-type InternalServerErrorJSONResponse Error
-
-type NewFileUploadSuccessResponseHeaders struct {
-	CacheControl string
-	Location     string
-}
-type NewFileUploadSuccessResponse struct {
-	Headers NewFileUploadSuccessResponseHeaders
-}
-
-type GetFilesPathRequestObject struct {
-	Path   FilePath `json:"path"`
-	Params GetFilesPathParams
-}
-
-type GetFilesPathResponseObject interface {
-	VisitGetFilesPathResponse(w http.ResponseWriter) error
-}
-
-type GetFilesPath200ApplicationoctetStreamResponse struct {
-	DownloadSuccessApplicationoctetStreamResponse
-}
-
-func (response GetFilesPath200ApplicationoctetStreamResponse) VisitGetFilesPathResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/octet-stream")
-	if response.ContentLength != 0 {
-		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
-	}
-	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.WriteHeader(200)
-
-	if closer, ok := response.Body.(io.ReadCloser); ok {
-		defer closer.Close()
-	}
-	_, err := io.Copy(w, response.Body)
-	return err
-}
-
-type GetFilesPath400JSONResponse struct{ DirectoryPathErrorJSONResponse }
-
-func (response GetFilesPath400JSONResponse) VisitGetFilesPathResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetFilesPath500JSONResponse struct {
-	InternalServerErrorJSONResponse
-}
-
-func (response GetFilesPath500JSONResponse) VisitGetFilesPathResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PutFilesPathRequestObject struct {
-	Path   FilePath `json:"path"`
-	Params PutFilesPathParams
-	Body   *multipart.Reader
-}
-
-type PutFilesPathResponseObject interface {
-	VisitPutFilesPathResponse(w http.ResponseWriter) error
-}
-
-type PutFilesPath200Response = ExistingFileUploadSuccessResponse
-
-func (response PutFilesPath200Response) VisitPutFilesPathResponse(w http.ResponseWriter) error {
-	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.WriteHeader(200)
-	return nil
-}
-
-type PutFilesPath201Response = NewFileUploadSuccessResponse
-
-func (response PutFilesPath201Response) VisitPutFilesPathResponse(w http.ResponseWriter) error {
-	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.Header().Set("Location", fmt.Sprint(response.Headers.Location))
-	w.WriteHeader(201)
-	return nil
-}
-
-type PutFilesPath400JSONResponse struct{ DirectoryPathErrorJSONResponse }
-
-func (response PutFilesPath400JSONResponse) VisitPutFilesPathResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PutFilesPath500JSONResponse struct {
-	InternalServerErrorJSONResponse
-}
-
-func (response PutFilesPath500JSONResponse) VisitPutFilesPathResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostSyncRequestObject struct {
-}
-
-type PostSyncResponseObject interface {
-	VisitPostSyncResponse(w http.ResponseWriter) error
-}
-
-type PostSync204Response struct {
-}
-
-func (response PostSync204Response) VisitPostSyncResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type PostSync500JSONResponse struct {
-	InternalServerErrorJSONResponse
-}
-
-func (response PostSync500JSONResponse) VisitPostSyncResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
-	// Download a file
-	// (GET /files/{path})
-	GetFilesPath(ctx context.Context, request GetFilesPathRequestObject) (GetFilesPathResponseObject, error)
-	// Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
-	// (PUT /files/{path})
-	PutFilesPath(ctx context.Context, request PutFilesPathRequestObject) (PutFilesPathResponseObject, error)
-	// Ensure the time and metadata is synced with the host
-	// (POST /sync)
-	PostSync(ctx context.Context, request PostSyncRequestObject) (PostSyncResponseObject, error)
-}
-
-type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
-type StrictMiddlewareFunc = strictnethttp.StrictHTTPMiddlewareFunc
-
-type StrictHTTPServerOptions struct {
-	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
-	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
-		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		},
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		},
-	}}
-}
-
-func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
-}
-
-type strictHandler struct {
-	ssi         StrictServerInterface
-	middlewares []StrictMiddlewareFunc
-	options     StrictHTTPServerOptions
-}
-
-// GetFilesPath operation middleware
-func (sh *strictHandler) GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params GetFilesPathParams) {
-	var request GetFilesPathRequestObject
-
-	request.Path = path
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetFilesPath(ctx, request.(GetFilesPathRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetFilesPath")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetFilesPathResponseObject); ok {
-		if err := validResponse.VisitGetFilesPathResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// PutFilesPath operation middleware
-func (sh *strictHandler) PutFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PutFilesPathParams) {
-	var request PutFilesPathRequestObject
-
-	request.Path = path
-	request.Params = params
-
-	if reader, err := r.MultipartReader(); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
-		return
-	} else {
-		request.Body = reader
-	}
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PutFilesPath(ctx, request.(PutFilesPathRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutFilesPath")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PutFilesPathResponseObject); ok {
-		if err := validResponse.VisitPutFilesPathResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// PostSync operation middleware
-func (sh *strictHandler) PostSync(w http.ResponseWriter, r *http.Request) {
-	var request PostSyncRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostSync(ctx, request.(PostSyncRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostSync")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostSyncResponseObject); ok {
-		if err := validResponse.VisitPostSyncResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
 }

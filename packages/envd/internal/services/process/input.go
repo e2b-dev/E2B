@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
 
 	"connectrpc.com/connect"
 )
 
-func handleInput(process *process, in *rpc.ProcessInput) error {
+func handleInput(process *handler.Handler, in *rpc.ProcessInput) error {
 	switch in.GetInput().(type) {
 	case *rpc.ProcessInput_Pty:
 		err := process.WriteTty(in.GetPty())
@@ -43,7 +44,7 @@ func (s *Service) SendInput(ctx context.Context, req *connect.Request[rpc.SendIn
 }
 
 func (s *Service) StreamInput(ctx context.Context, stream *connect.ClientStream[rpc.StreamInputRequest]) (*connect.Response[rpc.StreamInputResponse], error) {
-	var proc *process
+	var proc *handler.Handler
 
 	for stream.Receive() {
 		req := stream.Msg()
