@@ -31,12 +31,12 @@ type Handler struct {
 	cmd *exec.Cmd
 	tty *os.File
 
-	Stdout    *MultiWriterCloser
-	Stderr    *MultiWriterCloser
-	TtyOutput *MultiWriterCloser
+	Stdout    *multiWriterCloser
+	Stderr    *multiWriterCloser
+	TtyOutput *multiWriterCloser
 
 	stdin io.WriteCloser
-	Exit  *multiExit
+	Exit  *multiResult[ProcessExit]
 
 	stdinMu sync.Mutex
 }
@@ -118,7 +118,7 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 	stdoutMultiplex := NewMultiWriterCloser(stdout)
 	stderrMultiplex := NewMultiWriterCloser(stderr)
 
-	var ttyMultiplex *MultiWriterCloser
+	var ttyMultiplex *multiWriterCloser
 	if tty != nil {
 		ttyMultiplex = NewMultiWriterCloser(tty)
 	}

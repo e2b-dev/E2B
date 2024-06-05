@@ -8,14 +8,14 @@ import (
 
 const DefaultChunkSize = 32 * 1024 // 32KB
 
-type MultiWriterCloser struct {
+type multiWriterCloser struct {
 	exit    chan struct{}
 	writers []io.WriteCloser
 	mu      sync.RWMutex
 }
 
-func NewMultiWriterCloser(reader io.Reader, writers ...io.WriteCloser) *MultiWriterCloser {
-	mw := &MultiWriterCloser{
+func NewMultiWriterCloser(reader io.Reader, writers ...io.WriteCloser) *multiWriterCloser {
+	mw := &multiWriterCloser{
 		writers: writers,
 		exit:    make(chan struct{}),
 	}
@@ -61,11 +61,11 @@ func NewMultiWriterCloser(reader io.Reader, writers ...io.WriteCloser) *MultiWri
 	return mw
 }
 
-func (mw *MultiWriterCloser) Wait() {
+func (mw *multiWriterCloser) Wait() {
 	<-mw.exit
 }
 
-func (mw *MultiWriterCloser) Write(p []byte) (n int, err error) {
+func (mw *multiWriterCloser) Write(p []byte) (n int, err error) {
 	mw.mu.RLock()
 	defer mw.mu.RUnlock()
 
@@ -86,7 +86,7 @@ func (mw *MultiWriterCloser) Write(p []byte) (n int, err error) {
 }
 
 // Add appends a writer to the list of writers this multiwriter writes to.
-func (mw *MultiWriterCloser) Add(w io.WriteCloser) {
+func (mw *multiWriterCloser) Add(w io.WriteCloser) {
 	mw.mu.Lock()
 	defer mw.mu.Unlock()
 
@@ -94,7 +94,7 @@ func (mw *MultiWriterCloser) Add(w io.WriteCloser) {
 }
 
 // Remove will remove a previously added writer from the list of writers.
-func (mw *MultiWriterCloser) Remove(w io.WriteCloser) {
+func (mw *multiWriterCloser) Remove(w io.WriteCloser) {
 	mw.mu.Lock()
 	defer mw.mu.Unlock()
 

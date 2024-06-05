@@ -2,14 +2,14 @@ package handler
 
 import "sync"
 
-type multiExit struct {
+type multiResult[T any] struct {
 	mu       sync.RWMutex
-	channels []chan ProcessExit
+	channels []chan T
 
-	value *ProcessExit
+	value *T
 }
 
-func (m *multiExit) Set(t ProcessExit) {
+func (m *multiResult[T]) Set(t T) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -22,8 +22,8 @@ func (m *multiExit) Set(t ProcessExit) {
 	}
 }
 
-func (m *multiExit) Subscribe() chan ProcessExit {
-	ch := make(chan ProcessExit)
+func (m *multiResult[T]) Subscribe() chan T {
+	ch := make(chan T)
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -40,7 +40,7 @@ func (m *multiExit) Subscribe() chan ProcessExit {
 	return ch
 }
 
-func (m *multiExit) Unsubscribe(ch chan ProcessExit) {
+func (m *multiResult[T]) Unsubscribe(ch chan T) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
