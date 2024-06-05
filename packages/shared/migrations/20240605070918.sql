@@ -56,6 +56,15 @@ CREATE OR REPLACE TRIGGER post_user_signup
     FOR EACH ROW EXECUTE FUNCTION post_user_signup();
 
 
+CREATE OR REPLACE FUNCTION is_member_of_team(_user_id uuid, _team_id uuid) RETURNS bool AS $$
+SELECT EXISTS (
+    SELECT 1
+    FROM public.users_teams ut
+    WHERE ut.user_id = _user_id
+      AND ut.team_id = _team_id
+);
+$$ LANGUAGE sql SECURITY DEFINER;
+
 -- Create RLS policies for user management
 DO $$
     BEGIN
@@ -87,7 +96,6 @@ DO $$
                 FROM users_teams
                 WHERE (users_teams.user_id = auth.uid())));
 
-
             CREATE POLICY "Allow update for users that are in the team"
                 ON "public"."teams"
                 AS PERMISSIVE
@@ -96,8 +104,13 @@ DO $$
                 USING ((auth.uid() IN ( SELECT users_teams.user_id
                 FROM users_teams
                 WHERE (users_teams.team_id = teams.id))));
-        EXCEPTION WHEN undefined_function
-            THEN RAISE NOTICE 'Policy were not created, probably because the function auth.uid() does not exist.';
+
+            ALTER POLICY "Enable select for users in relevant team"
+                on "public"."users_teams"
+                to authenticated
+                using (is_member_of_team(auth.uid(), team_id)
+            );
+
         END;
     END $$;
 ;
