@@ -155,6 +155,7 @@ func main() {
 				},
 			},
 			Process: &processSpec.ProcessConfig{
+				Envs: make(map[string]string),
 				Cmd:  "/bin/bash",
 				Args: []string{"-l", "-c", startCmdFlag},
 			},
