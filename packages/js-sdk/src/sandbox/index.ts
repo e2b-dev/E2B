@@ -38,7 +38,7 @@ export class Sandbox extends SandboxApi {
     this.connectionConfig = new ConnectionConfig(opts)
     this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHost(this.envdPort)}`
 
-    const rpcTransport = createConnectTransport({ baseUrl: this.envdApiUrl })
+    const rpcTransport = createConnectTransport({ baseUrl: this.envdApiUrl, useBinaryFormat: true })
 
     this.files = new Filesystem(rpcTransport, this.envdApiUrl, this.connectionConfig)
     this.commands = new Process(rpcTransport, this.connectionConfig)
