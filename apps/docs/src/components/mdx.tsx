@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import clsx from 'clsx'
 
-import { Feedback } from '@/components/Feedback'
 import { Heading } from '@/components/Heading'
 import { Prose } from '@/components/Prose'
 
@@ -14,9 +13,6 @@ export function wrapper({ children }: { children: React.ReactNode }) {
   return (
     <article className="mx-auto flex h-full max-w-6xl flex-col pb-10 pt-20 md:pt-18">
       <Prose className="flex-auto">{children}</Prose>
-      <footer className="mx-auto mt-10 w-full max-w-2xl lg:max-w-5xl">
-        <Feedback variant="textSubtle" />
-      </footer>
     </article>
   )
 }
