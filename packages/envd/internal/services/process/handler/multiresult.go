@@ -6,7 +6,7 @@ type multiResult[T any] struct {
 	value    *T
 	channels []chan T
 
-	mu sync.RWMutex
+	mu sync.Mutex
 }
 
 func (m *multiResult[T]) Set(t T) {
@@ -15,9 +15,9 @@ func (m *multiResult[T]) Set(t T) {
 
 	if m.value != nil {
 		return
-	} else {
-		m.value = &t
 	}
+
+	m.value = &t
 
 	for _, ch := range m.channels {
 		ch <- t
