@@ -86,15 +86,23 @@ func (mw *multiWriterCloser) Write(p []byte) (n int, err error) {
 }
 
 // Add appends a writer to the list of writers this multiwriter writes to.
-func (mw *multiWriterCloser) Add(w io.WriteCloser) {
+func (mw *multiWriterCloser) Add() (io.ReadCloser, func()) {
 	mw.mu.Lock()
 	defer mw.mu.Unlock()
 
+	r, w := io.Pipe()
+
 	mw.writers = append(mw.writers, w)
+
+	return r, func() {
+		w.Close()
+		r.Close()
+		mw.remove(w)
+	}
 }
 
 // Remove will remove a previously added writer from the list of writers.
-func (mw *multiWriterCloser) Remove(w io.WriteCloser) {
+func (mw *multiWriterCloser) remove(w io.WriteCloser) {
 	mw.mu.Lock()
 	defer mw.mu.Unlock()
 

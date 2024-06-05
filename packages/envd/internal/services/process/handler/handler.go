@@ -157,7 +157,7 @@ func (p *Handler) WriteStdin(data []byte) error {
 
 	_, err := p.stdin.Write(data)
 	if err != nil {
-		return fmt.Errorf("error writing to stdin of process '%s': %w", p.cmd.Process.Pid, err)
+		return fmt.Errorf("error writing to stdin of process '%d': %w", p.cmd.Process.Pid, err)
 	}
 
 	return nil
@@ -170,7 +170,7 @@ func (p *Handler) WriteTty(data []byte) error {
 
 	_, err := p.tty.Write(data)
 	if err != nil {
-		return fmt.Errorf("error writing to tty of process '%s': %w", p.cmd.Process.Pid, err)
+		return fmt.Errorf("error writing to tty of process '%d': %w", p.cmd.Process.Pid, err)
 	}
 
 	return nil
@@ -188,13 +188,13 @@ func (p *Handler) Start() (uint32, error) {
 
 	adjustErr := adjustOomScore(p.cmd.Process.Pid, defaultOomScore)
 	if adjustErr != nil {
-		fmt.Fprintln(os.Stderr, "error adjusting oom score for process '%s': %s", p.cmd, adjustErr)
+		fmt.Fprintf(os.Stderr, "error adjusting oom score for process '%s': %s\n", p.cmd, adjustErr)
 	}
 
 	return uint32(p.cmd.Process.Pid), nil
 }
 
-func (p *Handler) Wait() *os.ProcessState {
+func (p *Handler) Wait() {
 	defer p.tty.Close()
 
 	p.Stdout.Wait()
@@ -213,6 +213,4 @@ func (p *Handler) Wait() *os.ProcessState {
 		Terminated: !p.cmd.ProcessState.Exited(),
 		Status:     p.cmd.ProcessState.String(),
 	})
-
-	return p.cmd.ProcessState
 }

@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/host"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
 
 	"connectrpc.com/connect"
+	"golang.org/x/sync/semaphore"
 )
 
 func (s *Service) StartBackgroundProcess(ctx context.Context, req *rpc.StartRequest) error {
@@ -47,23 +47,34 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 	subscribeExit := make(chan struct{})
 	defer close(subscribeExit)
 
-	var streamMu sync.Mutex
-	streamMu.Lock()
+	streamSemaphore := semaphore.NewWeighted(1)
+
+	semErr := streamSemaphore.Acquire(ctx, 1)
+	if semErr != nil {
+		return connect.NewError(connect.CodeInternal, semErr)
+	}
 
 	go func() {
 		defer close(subscribeExit)
 
-		subscribeToProcessData(ctx, proc, func(data *rpc.ProcessEvent_Data) {
-			streamMu.Lock()
-			defer streamMu.Unlock()
+		subscribeToProcessData(ctx, proc, func(data *rpc.ProcessEvent_DataEvent) {
+			processSemErr := streamSemaphore.Acquire(ctx, 1)
+			if processSemErr != nil {
+				fmt.Fprintf(os.Stderr, "failed to acquire stream semaphore: %v\n", processSemErr)
+				return
+			}
+			defer streamSemaphore.Release(1)
 
-			err := stream.Send(&rpc.StartResponse{
+			streamErr := stream.Send(&rpc.StartResponse{
 				Event: &rpc.ProcessEvent{
-					Event: data,
+					Event: &rpc.ProcessEvent_Data{
+						Data: data,
+					},
 				},
 			})
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "failed to send process event: %v\n", err)
+			if streamErr != nil {
+				fmt.Fprintf(os.Stderr, "failed to send process event: %v\n", streamErr)
+				return
 			}
 		})
 	}()
@@ -93,6 +104,9 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 			},
 		},
 	})
+
+	streamSemaphore.Release(1)
+
 	if streamErr != nil {
 		return connect.NewError(connect.CodeInternal, streamErr)
 	}
@@ -104,6 +118,12 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 		<-subscribeExit
 
 		exitErr := exitInfo.Err.Error()
+
+		endSemErr := streamSemaphore.Acquire(ctx, 1)
+		if endSemErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to acquire stream semaphore: %v\n", endSemErr)
+			return connect.NewError(connect.CodeInternal, endSemErr)
+		}
 
 		streamErr = stream.Send(&rpc.StartResponse{
 			Event: &rpc.ProcessEvent{
@@ -117,6 +137,9 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 				},
 			},
 		})
+
+		streamSemaphore.Release(1)
+
 		if streamErr != nil {
 			return connect.NewError(connect.CodeInternal, streamErr)
 		}

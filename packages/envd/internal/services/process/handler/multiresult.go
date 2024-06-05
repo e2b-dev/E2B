@@ -3,10 +3,10 @@ package handler
 import "sync"
 
 type multiResult[T any] struct {
-	mu       sync.RWMutex
+	value    *T
 	channels []chan T
 
-	value *T
+	mu sync.RWMutex
 }
 
 func (m *multiResult[T]) Set(t T) {
@@ -15,6 +15,8 @@ func (m *multiResult[T]) Set(t T) {
 
 	if m.value != nil {
 		return
+	} else {
+		m.value = &t
 	}
 
 	for _, ch := range m.channels {
@@ -28,15 +30,14 @@ func (m *multiResult[T]) Subscribe() chan T {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	m.channels = append(m.channels, ch)
+
 	if m.value != nil {
 		go func() {
 			ch <- *m.value
 		}()
-
-		return ch
 	}
 
-	m.channels = append(m.channels, ch)
 	return ch
 }
 
@@ -47,6 +48,7 @@ func (m *multiResult[T]) Unsubscribe(ch chan T) {
 	for i, c := range m.channels {
 		if c == ch {
 			m.channels = append(m.channels[:i], m.channels[i+1:]...)
+
 			break
 		}
 	}
