@@ -69,12 +69,12 @@ $$ LANGUAGE sql SECURITY DEFINER;
 DO $$
     BEGIN
         BEGIN
-            CREATE POLICY "Allow users to create a new team api key"
+            CREATE POLICY "Allow users to delete a team api key"
                 ON "public"."team_api_keys"
                 AS PERMISSIVE
-                FOR INSERT
+                FOR DELETE
                 TO authenticated
-                WITH CHECK ((SELECT auth.uid()) IN ( SELECT users_teams.user_id
+                USING ((SELECT auth.uid()) IN ( SELECT users_teams.user_id
                     FROM users_teams
                     WHERE (users_teams.team_id = team_api_keys.team_id)));
 
