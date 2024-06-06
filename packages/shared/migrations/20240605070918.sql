@@ -15,7 +15,7 @@ END
 $extra_for_post_user_signup$ SECURITY DEFINER SET search_path = public;
 
 CREATE OR REPLACE FUNCTION public.generate_team_api_key()
-    RETURNS string
+    RETURNS TEXT
     LANGUAGE plpgsql
 AS $generate_team_api_key$
 DECLARE
@@ -31,7 +31,7 @@ $generate_team_api_key$ SECURITY DEFINER SET search_path = public;
 ALTER TABLE public.team_api_keys ALTER COLUMN api_key SET DEFAULT public.generate_team_api_key();
 
 CREATE OR REPLACE FUNCTION public.generate_access_token()
-    RETURNS string
+    RETURNS TEXT
     LANGUAGE plpgsql
 AS $extra_for_post_user_signup$
 DECLARE
@@ -46,7 +46,7 @@ $extra_for_post_user_signup$ SECURITY DEFINER SET search_path = public;
 
 ALTER TABLE public.access_tokens ALTER COLUMN access_token SET DEFAULT public.generate_access_token();
 
-ALTER FUNCTION public.extra_for_post_user_signup() OWNER TO trigger_user;
+ALTER FUNCTION public.extra_for_post_user_signup(uuid, uuid) OWNER TO trigger_user;
 
 CREATE OR REPLACE FUNCTION public.post_user_signup()
     RETURNS TRIGGER
