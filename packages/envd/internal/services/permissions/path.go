@@ -38,7 +38,7 @@ func ExpandAndResolve(path string, user *user.User) (string, error) {
 
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to resolve path '%s' for user '%s': %w", path, user.Username, err)
+		return "", fmt.Errorf("failed to resolve path '%s' for user '%s' with home dir '%s': %w", path, user.Username, user.HomeDir, err)
 	}
 
 	return abs, nil
