@@ -120,7 +120,7 @@ const MainContent = ({ selectedItem, user, team, currentApiKey }: { selectedItem
     case 'personal':
       return <PersonalContent user={user} />
     case 'keys':
-      return <KeysContent user={user} currentTeam={team} />
+      return <KeysContent user={user} currentTeam={team} currentApiKey={currentApiKey} />
     case 'usage':
       return <UsageContent currentApiKey={currentApiKey} />
     case 'billing':
