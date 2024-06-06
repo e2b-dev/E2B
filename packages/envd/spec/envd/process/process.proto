@@ -85,7 +85,7 @@ message ProcessEvent {
     
     message EndEvent {
         sint32 exit_code = 1;
-        bool terminated = 2;
+        bool exited = 2;
         string status = 3;
         optional string error = 4;
     }

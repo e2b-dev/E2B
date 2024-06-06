@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -8,20 +9,20 @@ import (
 	"sync"
 	"syscall"
 
-	"connectrpc.com/connect"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
 
+	"connectrpc.com/connect"
 	"github.com/creack/pty"
 )
 
 const defaultOomScore = 100
 
 type ProcessExit struct {
-	Err        error
-	Status     string
-	Terminated bool
-	Code       int32
+	Error  string
+	Status string
+	Exited bool
+	Code   int32
 }
 
 type Handler struct {
@@ -31,9 +32,9 @@ type Handler struct {
 	cmd *exec.Cmd
 	tty *os.File
 
-	Stdout    *multiWriterCloser
-	Stderr    *multiWriterCloser
-	TtyOutput *multiWriterCloser
+	Stdout    *multiReader
+	Stderr    *multiReader
+	TtyOutput *multiReader
 
 	stdin io.WriteCloser
 	Exit  *multiResult[ProcessExit]
@@ -108,12 +109,12 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error creating stderr pipe for command '%s': %w", cmd, err))
 	}
 
-	stdoutMultiplex := NewMultiWriterCloser(stdout)
-	stderrMultiplex := NewMultiWriterCloser(stderr)
+	stdoutMultiplex := NewMultiReader(stdout)
+	stderrMultiplex := NewMultiReader(stderr)
 
-	var ttyMultiplex *multiWriterCloser
+	var ttyMultiplex *multiReader
 	if tty != nil {
-		ttyMultiplex = NewMultiWriterCloser(tty)
+		ttyMultiplex = NewMultiReader(tty)
 	}
 
 	return &Handler{
@@ -186,20 +187,20 @@ func (p *Handler) Start() (uint32, error) {
 func (p *Handler) Wait() {
 	defer p.tty.Close()
 
-	p.Stdout.Wait()
-	p.Stderr.Wait()
+	stdoutErr := p.Stdout.Wait()
+	stderrErr := p.Stderr.Wait()
 
 	waitErr := p.cmd.Wait()
 
 	var err error
 	if waitErr != nil {
-		err = fmt.Errorf("error waiting for process '%s': %w", p.cmd, waitErr)
+		err = fmt.Errorf("error waiting for process '%s': %w", p.cmd, errors.Join(stdoutErr, stderrErr, waitErr))
 	}
 
 	p.Exit.Set(ProcessExit{
-		Err:        err,
-		Code:       int32(p.cmd.ProcessState.ExitCode()),
-		Terminated: !p.cmd.ProcessState.Exited(),
-		Status:     p.cmd.ProcessState.String(),
+		Error:  err.Error(),
+		Code:   int32(p.cmd.ProcessState.ExitCode()),
+		Exited: p.cmd.ProcessState.Exited(),
+		Status: p.cmd.ProcessState.String(),
 	})
 }

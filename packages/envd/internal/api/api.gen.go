@@ -40,6 +40,9 @@ type FileNotFound = Error
 // InternalServerError defines model for InternalServerError.
 type InternalServerError = Error
 
+// NotEnoughDiskSpace defines model for NotEnoughDiskSpace.
+type NotEnoughDiskSpace = Error
+
 // GetFilesPathParams defines parameters for GetFilesPath.
 type GetFilesPathParams struct {
 	// Username User used for setting the owner, or resolving relative paths.

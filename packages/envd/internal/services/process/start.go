@@ -89,8 +89,8 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 
 	s.processes.Store(pid, proc)
 
-	exitChan := proc.Exit.Subscribe()
-	defer proc.Exit.Unsubscribe(exitChan)
+	exitChan, unsubscribe := proc.Exit.Subscribe()
+	defer unsubscribe()
 
 	go func() {
 		defer s.processes.Delete(pid)
@@ -120,8 +120,6 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 	case exitInfo := <-exitChan:
 		<-subscribeExit
 
-		exitErr := exitInfo.Err.Error()
-
 		endSemErr := streamSemaphore.Acquire(ctx, 1)
 		if endSemErr != nil {
 			return connect.NewError(connect.CodeAborted, endSemErr)
@@ -131,10 +129,10 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 			Event: &rpc.ProcessEvent{
 				Event: &rpc.ProcessEvent_End{
 					End: &rpc.ProcessEvent_EndEvent{
-						ExitCode:   exitInfo.Code,
-						Terminated: exitInfo.Terminated,
-						Error:      &exitErr,
-						Status:     exitInfo.Status,
+						ExitCode: exitInfo.Code,
+						Exited:   exitInfo.Exited,
+						Error:    &exitInfo.Error,
+						Status:   exitInfo.Status,
 					},
 				},
 			},

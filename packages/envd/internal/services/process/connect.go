@@ -54,16 +54,14 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 		})
 	}()
 
-	exitChan := proc.Exit.Subscribe()
-	defer proc.Exit.Unsubscribe(exitChan)
+	exitChan, unsubscribe := proc.Exit.Subscribe()
+	defer unsubscribe()
 
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	case exitInfo := <-exitChan:
 		<-subscribeExit
-
-		exitErr := exitInfo.Err.Error()
 
 		endSemErr := streamSemaphore.Acquire(ctx, 1)
 		if endSemErr != nil {
@@ -74,10 +72,10 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 			Event: &rpc.ProcessEvent{
 				Event: &rpc.ProcessEvent_End{
 					End: &rpc.ProcessEvent_EndEvent{
-						ExitCode:   exitInfo.Code,
-						Terminated: exitInfo.Terminated,
-						Error:      &exitErr,
-						Status:     exitInfo.Status,
+						ExitCode: exitInfo.Code,
+						Exited:   exitInfo.Exited,
+						Error:    &exitInfo.Error,
+						Status:   exitInfo.Status,
 					},
 				},
 			},
