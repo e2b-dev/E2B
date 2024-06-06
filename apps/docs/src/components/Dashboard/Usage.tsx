@@ -13,7 +13,7 @@ export const UsageContent = () => {
     const getUsage = async () => {
       const response = await fetch(usageUrl, {
         headers: {
-          'X-Team-API-Key': ''
+          'X-Team-API-Key': 'e2b_ee29899a1aab99d4955a78eae32078a5c8aeee9f'
         }
       })
       const data = await response.json()
