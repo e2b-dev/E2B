@@ -57,11 +57,6 @@ start-debug-docker:
 stop-debug-docker:
 	docker kill `docker ps -a -q --filter ancestor=envd-debug`
 
-# You run the parametrized command like this:
-# make hostname=s3izkj4c-beba8075.ondevbook.com metric=heap interval=90 run-profiler
-run-profiler:
-	go tool pprof -http :9991 https://49982-$(hostname)/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
-
 install-profiler-deps:
 	sudo apt update && sudo apt install graphviz
 

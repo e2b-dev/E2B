@@ -33,19 +33,20 @@ func Handle(server *http.ServeMux, opts ...connect.HandlerOption) *Service {
 }
 
 func (s *Service) getProcess(selector *rpc.ProcessSelector) (*handler.Handler, error) {
+	var proc *handler.Handler
+
 	switch selector.GetSelector().(type) {
 	case *rpc.ProcessSelector_Pid:
-		proc, ok := s.processes.Load(selector.GetPid())
+		p, ok := s.processes.Load(selector.GetPid())
 		if !ok {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", selector.GetPid()))
 		}
 
-		return proc, nil
+		proc = p
 	case *rpc.ProcessSelector_Tag:
 		tag := selector.GetTag()
-		var proc *handler.Handler
 
-		s.processes.Range(func(key uint32, value *handler.Handler) bool {
+		s.processes.Range(func(_ uint32, value *handler.Handler) bool {
 			if value.Tag == nil {
 				return true
 			}
@@ -62,8 +63,9 @@ func (s *Service) getProcess(selector *rpc.ProcessSelector) (*handler.Handler, e
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with tag %s not found", tag))
 		}
 
-		return proc, nil
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid input type %T", selector))
 	}
+
+	return proc, nil
 }

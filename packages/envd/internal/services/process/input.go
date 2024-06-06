@@ -63,6 +63,8 @@ func (s *Service) StreamInput(ctx context.Context, stream *connect.ClientStream[
 			if err != nil {
 				return nil, err
 			}
+		default:
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid event type %T", req.Event))
 		}
 	}
 

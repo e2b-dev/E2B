@@ -121,7 +121,6 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 
 		endSemErr := streamSemaphore.Acquire(ctx, 1)
 		if endSemErr != nil {
-			fmt.Fprintf(os.Stderr, "failed to acquire stream semaphore: %v\n", endSemErr)
 			return connect.NewError(connect.CodeInternal, endSemErr)
 		}
 
