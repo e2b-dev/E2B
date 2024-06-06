@@ -118,6 +118,9 @@ inputs = ["envd"]
 source = """
 .service = "envd"
 .sandboxID = .instanceID
+if !exists(.envID) {
+  .envID = "unknown"
+}
 """
 
 [sinks.local_loki_logs]
