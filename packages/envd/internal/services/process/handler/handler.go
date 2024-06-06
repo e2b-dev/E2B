@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"sync"
 	"syscall"
 
+	"connectrpc.com/connect"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
 
@@ -46,12 +46,12 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 
 	u, err := permissions.GetUser(req.GetUser())
 	if err != nil {
-		return nil, fmt.Errorf("error looking up user '%s': %w", req.GetUser().GetUsername(), err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	uid, gid, err := permissions.GetUserIds(u)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing uid and gid for user '%s': %w", req.GetUser().GetUsername(), err)
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
@@ -64,7 +64,7 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 
 	resolvedPath, err := permissions.ExpandAndResolve(req.GetProcess().GetCwd(), u)
 	if err != nil {
-		return nil, fmt.Errorf("error resolving cwd for process '%s' and user '%s': %w", cmd, req.GetUser().GetUsername(), err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	cmd.Dir = resolvedPath
@@ -89,30 +89,23 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 			Rows: uint16(req.GetPty().GetSize().Rows),
 		})
 		if err != nil {
-			return nil, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %w", cmd, cmd.Dir, req.GetPty().GetSize().Cols, req.GetPty().GetSize().Rows, err)
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %w", cmd, cmd.Dir, req.GetPty().GetSize().Cols, req.GetPty().GetSize().Rows, err))
 		}
 	}
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, fmt.Errorf("error creating stdin pipe for command '%s': %w", cmd, err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error creating stdin pipe for command '%s': %w", cmd, err))
 	}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("error creating stdout pipe for command '%s': %w", cmd, err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error creating stdout pipe for command '%s': %w", cmd, err))
 	}
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		errMsg := fmt.Errorf("error creating stderr pipe for command '%s': %w", cmd, err)
-
-		closeErr := stdout.Close()
-		if closeErr != nil {
-			return nil, errors.Join(errMsg, fmt.Errorf("error closing stdout pipe for command '%s': %w", cmd, closeErr))
-		}
-
-		return nil, errMsg
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error creating stderr pipe for command '%s': %w", cmd, err))
 	}
 
 	stdoutMultiplex := NewMultiWriterCloser(stdout)
@@ -177,10 +170,6 @@ func (p *Handler) WriteTty(data []byte) error {
 }
 
 func (p *Handler) Start() (uint32, error) {
-	if p.cmd.Process == nil {
-		return 0, fmt.Errorf("process not started")
-	}
-
 	err := p.cmd.Start()
 	if err != nil {
 		return 0, fmt.Errorf("error starting process '%s': %w", p.cmd, err)

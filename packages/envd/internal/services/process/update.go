@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/creack/pty"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
 
 	"connectrpc.com/connect"
+	"github.com/creack/pty"
 )
 
 func (s *Service) Update(ctx context.Context, req *connect.Request[rpc.UpdateRequest]) (*connect.Response[rpc.UpdateResponse], error) {
 	proc, err := s.getProcess(req.Msg.Process)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, err
 	}
 
 	if req.Msg.GetPty() != nil {

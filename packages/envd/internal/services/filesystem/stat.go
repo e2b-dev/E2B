@@ -14,15 +14,15 @@ import (
 func (Service) Stat(ctx context.Context, req *connect.Request[rpc.StatRequest]) (*connect.Response[rpc.StatResponse], error) {
 	u, err := permissions.GetUser(req.Msg.GetUser())
 	if err != nil {
-		return nil, fmt.Errorf("error looking up user '%s': %w", req.Msg.GetUser().GetUsername(), err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
-	filePath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
+	path, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("failed to resolve path '%s' for user '%s': %w", req.Msg.GetPath(), req.Msg.GetUser().GetUsername(), err))
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
-	fileInfo, err := os.Stat(filePath)
+	fileInfo, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("file not found: %w", err))

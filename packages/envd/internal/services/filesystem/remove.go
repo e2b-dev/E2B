@@ -14,12 +14,12 @@ import (
 func (Service) Remove(ctx context.Context, req *connect.Request[rpc.RemoveRequest]) (*connect.Response[rpc.RemoveResponse], error) {
 	u, err := permissions.GetUser(req.Msg.GetUser())
 	if err != nil {
-		return nil, fmt.Errorf("error looking up user '%s': %w", req.Msg.GetUser().GetUsername(), err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	path, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("failed to resolve path '%s' for user '%s': %w", req.Msg.GetPath(), req.Msg.GetUser().GetUsername(), err))
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	err = os.RemoveAll(path)

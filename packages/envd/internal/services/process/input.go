@@ -32,7 +32,7 @@ func handleInput(process *handler.Handler, in *rpc.ProcessInput) error {
 func (s *Service) SendInput(ctx context.Context, req *connect.Request[rpc.SendInputRequest]) (*connect.Response[rpc.SendInputResponse], error) {
 	proc, err := s.getProcess(req.Msg.GetProcess())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, err
 	}
 
 	err = handleInput(proc, req.Msg.GetInput())
@@ -53,11 +53,10 @@ func (s *Service) StreamInput(ctx context.Context, stream *connect.ClientStream[
 		case *rpc.StreamInputRequest_Start:
 			p, err := s.getProcess(req.GetStart().GetProcess())
 			if err != nil {
-				return nil, connect.NewError(connect.CodeNotFound, err)
+				return nil, err
 			}
 
 			proc = p
-
 		case *rpc.StreamInputRequest_Data:
 			err := handleInput(proc, req.GetData().GetInput())
 			if err != nil {

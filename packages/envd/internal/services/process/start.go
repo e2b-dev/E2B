@@ -2,8 +2,6 @@ package process
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/host"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
@@ -37,11 +35,14 @@ func (s *Service) StartBackgroundProcess(ctx context.Context, req *rpc.StartRequ
 }
 
 func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartRequest], stream *connect.ServerStream[rpc.StartResponse]) error {
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+
 	host.WaitForHostSync()
 
 	proc, err := handler.New(req.Msg)
 	if err != nil {
-		return connect.NewError(connect.CodeInternal, err)
+		return err
 	}
 
 	subscribeExit := make(chan struct{})
@@ -51,16 +52,17 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 
 	semErr := streamSemaphore.Acquire(ctx, 1)
 	if semErr != nil {
-		return connect.NewError(connect.CodeInternal, semErr)
+		return connect.NewError(connect.CodeAborted, semErr)
 	}
 
 	go func() {
 		defer close(subscribeExit)
 
-		subscribeToProcessData(ctx, proc, func(data *rpc.ProcessEvent_DataEvent) {
+		subscribeToProcessData(ctx, cancel, proc, func(data *rpc.ProcessEvent_DataEvent) {
 			processSemErr := streamSemaphore.Acquire(ctx, 1)
 			if processSemErr != nil {
-				fmt.Fprintf(os.Stderr, "failed to acquire stream semaphore: %v\n", processSemErr)
+				cancel(connect.NewError(connect.CodeAborted, processSemErr))
+
 				return
 			}
 			defer streamSemaphore.Release(1)
@@ -73,7 +75,8 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 				},
 			})
 			if streamErr != nil {
-				fmt.Fprintf(os.Stderr, "failed to send process event: %v\n", streamErr)
+				cancel(connect.NewError(connect.CodeUnknown, streamErr))
+
 				return
 			}
 		})
@@ -81,7 +84,7 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 
 	pid, err := proc.Start()
 	if err != nil {
-		return connect.NewError(connect.CodeInternal, err)
+		return connect.NewError(connect.CodeUnknown, err)
 	}
 
 	s.processes.Store(pid, proc)
@@ -108,12 +111,12 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 	streamSemaphore.Release(1)
 
 	if streamErr != nil {
-		return connect.NewError(connect.CodeInternal, streamErr)
+		return connect.NewError(connect.CodeUnknown, streamErr)
 	}
 
 	select {
 	case <-ctx.Done():
-		return connect.NewError(connect.CodeCanceled, ctx.Err())
+		return ctx.Err()
 	case exitInfo := <-exitChan:
 		<-subscribeExit
 
@@ -121,7 +124,7 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 
 		endSemErr := streamSemaphore.Acquire(ctx, 1)
 		if endSemErr != nil {
-			return connect.NewError(connect.CodeInternal, endSemErr)
+			return connect.NewError(connect.CodeAborted, endSemErr)
 		}
 
 		streamErr = stream.Send(&rpc.StartResponse{
@@ -140,7 +143,7 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 		streamSemaphore.Release(1)
 
 		if streamErr != nil {
-			return connect.NewError(connect.CodeInternal, streamErr)
+			return connect.NewError(connect.CodeUnknown, streamErr)
 		}
 	}
 

@@ -3,7 +3,6 @@ package process
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
@@ -14,9 +13,12 @@ import (
 )
 
 func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectRequest], stream *connect.ServerStream[rpc.ConnectResponse]) error {
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+
 	proc, err := s.getProcess(req.Msg.GetProcess())
 	if err != nil {
-		return connect.NewError(connect.CodeNotFound, err)
+		return err
 	}
 
 	streamSemaphore := semaphore.NewWeighted(1)
@@ -27,10 +29,10 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 	go func() {
 		defer close(subscribeExit)
 
-		subscribeToProcessData(ctx, proc, func(data *rpc.ProcessEvent_DataEvent) {
+		subscribeToProcessData(ctx, cancel, proc, func(data *rpc.ProcessEvent_DataEvent) {
 			semErr := streamSemaphore.Acquire(ctx, 1)
 			if semErr != nil {
-				fmt.Fprintf(os.Stderr, "failed to acquire stream semaphore: %v\n", semErr)
+				cancel(connect.NewError(connect.CodeAborted, semErr))
 
 				return
 			}
@@ -45,7 +47,7 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 				},
 			})
 			if streamErr != nil {
-				fmt.Fprintf(os.Stderr, "failed to send process event: %v\n", streamErr)
+				cancel(connect.NewError(connect.CodeUnknown, streamErr))
 
 				return
 			}
@@ -57,7 +59,7 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 
 	select {
 	case <-ctx.Done():
-		return connect.NewError(connect.CodeCanceled, ctx.Err())
+		return ctx.Err()
 	case exitInfo := <-exitChan:
 		<-subscribeExit
 
@@ -65,9 +67,7 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 
 		endSemErr := streamSemaphore.Acquire(ctx, 1)
 		if endSemErr != nil {
-			fmt.Fprintf(os.Stderr, "failed to acquire stream semaphore: %v\n", endSemErr)
-
-			return connect.NewError(connect.CodeInternal, endSemErr)
+			return connect.NewError(connect.CodeAborted, endSemErr)
 		}
 
 		streamErr := stream.Send(&rpc.ConnectResponse{
@@ -86,22 +86,24 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 		streamSemaphore.Release(1)
 
 		if streamErr != nil {
-			return connect.NewError(connect.CodeInternal, streamErr)
+			return connect.NewError(connect.CodeUnknown, streamErr)
 		}
 	}
 
 	return nil
 }
 
-func subscribeToProcessData(ctx context.Context, proc *handler.Handler, handleData func(data *rpc.ProcessEvent_DataEvent)) {
+func subscribeToProcessData(ctx context.Context, cancel context.CancelCauseFunc, proc *handler.Handler, handleData func(data *rpc.ProcessEvent_DataEvent)) {
 	var wg sync.WaitGroup
 
 	stdoutReader, stdoutCleanup := proc.Stdout.Add()
 	defer stdoutCleanup()
 
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
+		defer cancel(nil)
 
 		buf := make([]byte, handler.DefaultChunkSize)
 
@@ -112,7 +114,7 @@ func subscribeToProcessData(ctx context.Context, proc *handler.Handler, handleDa
 			default:
 				n, err := stdoutReader.Read(buf)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "failed to read from stdout for process: %v\n", err)
+					cancel(connect.NewError(connect.CodeInternal, fmt.Errorf("failed to read from stdout for process: %w", err)))
 
 					return
 				}
@@ -130,8 +132,10 @@ func subscribeToProcessData(ctx context.Context, proc *handler.Handler, handleDa
 	defer stderrCleanup()
 
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
+		defer cancel(nil)
 
 		buf := make([]byte, handler.DefaultChunkSize)
 
@@ -142,7 +146,7 @@ func subscribeToProcessData(ctx context.Context, proc *handler.Handler, handleDa
 			default:
 				n, err := stderrReader.Read(buf)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "failed to read from stderr for process: %v\n", err)
+					cancel(connect.NewError(connect.CodeInternal, fmt.Errorf("failed to read from stderr for process: %w", err)))
 
 					return
 				}
@@ -156,35 +160,39 @@ func subscribeToProcessData(ctx context.Context, proc *handler.Handler, handleDa
 		}
 	}()
 
-	ttyReader, ttyCleanup := proc.TtyOutput.Add()
-	defer ttyCleanup()
+	if proc.TtyOutput != nil {
+		ttyReader, ttyCleanup := proc.TtyOutput.Add()
+		defer ttyCleanup()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+		wg.Add(1)
 
-		buf := make([]byte, handler.DefaultChunkSize)
+		go func() {
+			defer wg.Done()
+			defer cancel(nil)
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				n, err := ttyReader.Read(buf)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "failed to read from tty output for process: %v\n", err)
+			buf := make([]byte, handler.DefaultChunkSize)
 
+			for {
+				select {
+				case <-ctx.Done():
 					return
-				}
+				default:
+					n, err := ttyReader.Read(buf)
+					if err != nil {
+						cancel(connect.NewError(connect.CodeInternal, fmt.Errorf("failed to read from tty output for process: %w", err)))
 
-				handleData(&rpc.ProcessEvent_DataEvent{
-					Output: &rpc.ProcessEvent_DataEvent_Pty{
-						Pty: buf[:n],
-					},
-				})
+						return
+					}
+
+					handleData(&rpc.ProcessEvent_DataEvent{
+						Output: &rpc.ProcessEvent_DataEvent_Pty{
+							Pty: buf[:n],
+						},
+					})
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	wg.Wait()
 }

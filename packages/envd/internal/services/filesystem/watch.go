@@ -16,12 +16,12 @@ import (
 func (Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest], stream *connect.ServerStream[rpc.WatchResponse]) error {
 	u, err := permissions.GetUser(req.Msg.GetUser())
 	if err != nil {
-		return fmt.Errorf("error looking up user '%s': %w", req.Msg.GetUser().GetUsername(), err)
+		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	watchPath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("failed to resolve path '%s' for user '%s': %w", req.Msg.GetPath(), req.Msg.GetUser().GetUsername(), err))
+		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	info, err := os.Stat(watchPath)
@@ -34,11 +34,11 @@ func (Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest]
 
 		info, err = os.Stat(watchPath)
 		if err != nil {
-			return connect.NewError(connect.CodeNotFound, fmt.Errorf("parent path %s not found: %w", watchPath, err))
+			return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("parent path %s not found: %w", watchPath, err))
 		}
 
 		if !info.IsDir() {
-			return connect.NewError(connect.CodeNotFound, fmt.Errorf("parent path %s not a directory: %w", watchPath, err))
+			return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("parent path %s not a directory: %w", watchPath, err))
 		}
 	}
 
@@ -56,21 +56,16 @@ func (Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest]
 	for {
 		select {
 		case <-ctx.Done():
-			err = ctx.Err()
-			if err != nil {
-				return connect.NewError(connect.CodeCanceled, fmt.Errorf("context done: %w", err))
-			}
-
-			return nil
+			return ctx.Err()
 		case chErr, ok := <-w.Errors:
 			if !ok {
-				return connect.NewError(connect.CodeInternal, fmt.Errorf("watcher not ok error: %w", chErr))
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("watcher error channel closed"))
 			}
 
-			return connect.NewError(connect.CodeInternal, fmt.Errorf("watcher error: %w", err))
+			return connect.NewError(connect.CodeInternal, fmt.Errorf("watcher error: %w", chErr))
 		case e, ok := <-w.Events:
 			if !ok {
-				return connect.NewError(connect.CodeInternal, fmt.Errorf("watcher event not ok error: %w", err))
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("watcher event channel closed"))
 			}
 
 			if !info.IsDir() && e.Name != info.Name() {
@@ -108,7 +103,7 @@ func (Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest]
 					},
 				})
 				if streamErr != nil {
-					return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending event: %w", streamErr))
+					return connect.NewError(connect.CodeAborted, streamErr)
 				}
 			}
 		}

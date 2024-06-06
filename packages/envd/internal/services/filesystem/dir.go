@@ -14,12 +14,12 @@ import (
 func (Service) ListDir(ctx context.Context, req *connect.Request[rpc.ListRequest]) (*connect.Response[rpc.ListResponse], error) {
 	u, err := permissions.GetUser(req.Msg.GetUser())
 	if err != nil {
-		return nil, fmt.Errorf("error looking up user '%s': %w", req.Msg.GetUser().GetUsername(), err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	dirPath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("failed to resolve path '%s' for user '%s': %w", req.Msg.GetPath(), req.Msg.GetUser().GetUsername(), err))
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	entries, err := os.ReadDir(dirPath)

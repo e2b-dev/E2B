@@ -26,12 +26,12 @@ func expand(path, homedir string) (string, error) {
 func ExpandAndResolve(path string, user *user.User) (string, error) {
 	expanded, err := expand(path, user.HomeDir)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to expand path '%s' for user '%s': %w", path, user.Username, err)
 	}
 
 	abs, err := filepath.Abs(expanded)
 	if err != nil {
-		return "", fmt.Errorf("failed to resolve path: %w", err)
+		return "", fmt.Errorf("failed to resolve path '%s' for user '%s': %w", path, user.Username, err)
 	}
 
 	return abs, nil
