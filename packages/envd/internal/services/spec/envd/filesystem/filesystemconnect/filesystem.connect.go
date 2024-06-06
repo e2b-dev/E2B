@@ -35,6 +35,9 @@ const (
 const (
 	// FilesystemServiceStatProcedure is the fully-qualified name of the FilesystemService's Stat RPC.
 	FilesystemServiceStatProcedure = "/envd.filesystem.FilesystemService/Stat"
+	// FilesystemServiceMakeDirProcedure is the fully-qualified name of the FilesystemService's MakeDir
+	// RPC.
+	FilesystemServiceMakeDirProcedure = "/envd.filesystem.FilesystemService/MakeDir"
 	// FilesystemServiceListProcedure is the fully-qualified name of the FilesystemService's List RPC.
 	FilesystemServiceListProcedure = "/envd.filesystem.FilesystemService/List"
 	// FilesystemServiceWatchProcedure is the fully-qualified name of the FilesystemService's Watch RPC.
@@ -46,16 +49,18 @@ const (
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	filesystemServiceServiceDescriptor      = filesystem.File_envd_filesystem_filesystem_proto.Services().ByName("FilesystemService")
-	filesystemServiceStatMethodDescriptor   = filesystemServiceServiceDescriptor.Methods().ByName("Stat")
-	filesystemServiceListMethodDescriptor   = filesystemServiceServiceDescriptor.Methods().ByName("List")
-	filesystemServiceWatchMethodDescriptor  = filesystemServiceServiceDescriptor.Methods().ByName("Watch")
-	filesystemServiceRemoveMethodDescriptor = filesystemServiceServiceDescriptor.Methods().ByName("Remove")
+	filesystemServiceServiceDescriptor       = filesystem.File_envd_filesystem_filesystem_proto.Services().ByName("FilesystemService")
+	filesystemServiceStatMethodDescriptor    = filesystemServiceServiceDescriptor.Methods().ByName("Stat")
+	filesystemServiceMakeDirMethodDescriptor = filesystemServiceServiceDescriptor.Methods().ByName("MakeDir")
+	filesystemServiceListMethodDescriptor    = filesystemServiceServiceDescriptor.Methods().ByName("List")
+	filesystemServiceWatchMethodDescriptor   = filesystemServiceServiceDescriptor.Methods().ByName("Watch")
+	filesystemServiceRemoveMethodDescriptor  = filesystemServiceServiceDescriptor.Methods().ByName("Remove")
 )
 
 // FilesystemServiceClient is a client for the envd.filesystem.FilesystemService service.
 type FilesystemServiceClient interface {
 	Stat(context.Context, *connect.Request[filesystem.StatRequest]) (*connect.Response[filesystem.StatResponse], error)
+	MakeDir(context.Context, *connect.Request[filesystem.MakeDirRequest]) (*connect.Response[filesystem.MakeDirResponse], error)
 	List(context.Context, *connect.Request[filesystem.ListRequest]) (*connect.Response[filesystem.ListResponse], error)
 	Watch(context.Context, *connect.Request[filesystem.WatchRequest]) (*connect.ServerStreamForClient[filesystem.WatchResponse], error)
 	Remove(context.Context, *connect.Request[filesystem.RemoveRequest]) (*connect.Response[filesystem.RemoveResponse], error)
@@ -75,6 +80,12 @@ func NewFilesystemServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			httpClient,
 			baseURL+FilesystemServiceStatProcedure,
 			connect.WithSchema(filesystemServiceStatMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		makeDir: connect.NewClient[filesystem.MakeDirRequest, filesystem.MakeDirResponse](
+			httpClient,
+			baseURL+FilesystemServiceMakeDirProcedure,
+			connect.WithSchema(filesystemServiceMakeDirMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 		list: connect.NewClient[filesystem.ListRequest, filesystem.ListResponse](
@@ -100,15 +111,21 @@ func NewFilesystemServiceClient(httpClient connect.HTTPClient, baseURL string, o
 
 // filesystemServiceClient implements FilesystemServiceClient.
 type filesystemServiceClient struct {
-	stat   *connect.Client[filesystem.StatRequest, filesystem.StatResponse]
-	list   *connect.Client[filesystem.ListRequest, filesystem.ListResponse]
-	watch  *connect.Client[filesystem.WatchRequest, filesystem.WatchResponse]
-	remove *connect.Client[filesystem.RemoveRequest, filesystem.RemoveResponse]
+	stat    *connect.Client[filesystem.StatRequest, filesystem.StatResponse]
+	makeDir *connect.Client[filesystem.MakeDirRequest, filesystem.MakeDirResponse]
+	list    *connect.Client[filesystem.ListRequest, filesystem.ListResponse]
+	watch   *connect.Client[filesystem.WatchRequest, filesystem.WatchResponse]
+	remove  *connect.Client[filesystem.RemoveRequest, filesystem.RemoveResponse]
 }
 
 // Stat calls envd.filesystem.FilesystemService.Stat.
 func (c *filesystemServiceClient) Stat(ctx context.Context, req *connect.Request[filesystem.StatRequest]) (*connect.Response[filesystem.StatResponse], error) {
 	return c.stat.CallUnary(ctx, req)
+}
+
+// MakeDir calls envd.filesystem.FilesystemService.MakeDir.
+func (c *filesystemServiceClient) MakeDir(ctx context.Context, req *connect.Request[filesystem.MakeDirRequest]) (*connect.Response[filesystem.MakeDirResponse], error) {
+	return c.makeDir.CallUnary(ctx, req)
 }
 
 // List calls envd.filesystem.FilesystemService.List.
@@ -129,6 +146,7 @@ func (c *filesystemServiceClient) Remove(ctx context.Context, req *connect.Reque
 // FilesystemServiceHandler is an implementation of the envd.filesystem.FilesystemService service.
 type FilesystemServiceHandler interface {
 	Stat(context.Context, *connect.Request[filesystem.StatRequest]) (*connect.Response[filesystem.StatResponse], error)
+	MakeDir(context.Context, *connect.Request[filesystem.MakeDirRequest]) (*connect.Response[filesystem.MakeDirResponse], error)
 	List(context.Context, *connect.Request[filesystem.ListRequest]) (*connect.Response[filesystem.ListResponse], error)
 	Watch(context.Context, *connect.Request[filesystem.WatchRequest], *connect.ServerStream[filesystem.WatchResponse]) error
 	Remove(context.Context, *connect.Request[filesystem.RemoveRequest]) (*connect.Response[filesystem.RemoveResponse], error)
@@ -144,6 +162,12 @@ func NewFilesystemServiceHandler(svc FilesystemServiceHandler, opts ...connect.H
 		FilesystemServiceStatProcedure,
 		svc.Stat,
 		connect.WithSchema(filesystemServiceStatMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	filesystemServiceMakeDirHandler := connect.NewUnaryHandler(
+		FilesystemServiceMakeDirProcedure,
+		svc.MakeDir,
+		connect.WithSchema(filesystemServiceMakeDirMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
 	filesystemServiceListHandler := connect.NewUnaryHandler(
@@ -168,6 +192,8 @@ func NewFilesystemServiceHandler(svc FilesystemServiceHandler, opts ...connect.H
 		switch r.URL.Path {
 		case FilesystemServiceStatProcedure:
 			filesystemServiceStatHandler.ServeHTTP(w, r)
+		case FilesystemServiceMakeDirProcedure:
+			filesystemServiceMakeDirHandler.ServeHTTP(w, r)
 		case FilesystemServiceListProcedure:
 			filesystemServiceListHandler.ServeHTTP(w, r)
 		case FilesystemServiceWatchProcedure:
@@ -185,6 +211,10 @@ type UnimplementedFilesystemServiceHandler struct{}
 
 func (UnimplementedFilesystemServiceHandler) Stat(context.Context, *connect.Request[filesystem.StatRequest]) (*connect.Response[filesystem.StatResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.filesystem.FilesystemService.Stat is not implemented"))
+}
+
+func (UnimplementedFilesystemServiceHandler) MakeDir(context.Context, *connect.Request[filesystem.MakeDirRequest]) (*connect.Response[filesystem.MakeDirResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("envd.filesystem.FilesystemService.MakeDir is not implemented"))
 }
 
 func (UnimplementedFilesystemServiceHandler) List(context.Context, *connect.Request[filesystem.ListRequest]) (*connect.Response[filesystem.ListResponse], error) {
