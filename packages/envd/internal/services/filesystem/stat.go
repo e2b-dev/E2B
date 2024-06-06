@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
-	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/filesystem"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/filesystem"
 
 	"connectrpc.com/connect"
 )

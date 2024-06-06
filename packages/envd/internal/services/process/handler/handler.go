@@ -10,7 +10,7 @@ import (
 	"syscall"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
-	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	"connectrpc.com/connect"
 	"github.com/creack/pty"

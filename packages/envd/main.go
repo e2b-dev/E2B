@@ -14,8 +14,8 @@ import (
 
 	filesystemRpc "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
 	processRpc "github.com/e2b-dev/infra/packages/envd/internal/services/process"
-	"github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/permissions"
-	processSpec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
+	"github.com/e2b-dev/infra/packages/envd/internal/services/spec/permissions"
+	processSpec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	connectcors "connectrpc.com/cors"
 	"github.com/rs/cors"

@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-import "envd/permissions/permissions.proto";
+import "permissions/permissions.proto";
 
-package envd.filesystem;
+package filesystem;
 
-service FilesystemService {
+service Filesystem {
     rpc Stat(StatRequest) returns (StatResponse);
     rpc MakeDir(MakeDirRequest) returns (MakeDirResponse);
     rpc List(ListRequest) returns (ListResponse);

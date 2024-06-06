@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"syscall"
 
-	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	"connectrpc.com/connect"
 )

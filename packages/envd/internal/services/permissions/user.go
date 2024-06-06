@@ -5,7 +5,7 @@ import (
 	"os/user"
 	"strconv"
 
-	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/permissions"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/permissions"
 )
 
 func GetUserIds(u *user.User) (uid, gid uint32, err error) {

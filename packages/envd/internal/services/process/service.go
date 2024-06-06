@@ -5,14 +5,14 @@ import (
 	"net/http"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
-	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process"
-	spec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/envd/process/processconnect"
+	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
+	spec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process/processconnect"
 
 	"connectrpc.com/connect"
 )
 
 type Service struct {
-	spec.UnimplementedProcessServiceHandler
+	spec.UnimplementedProcessHandler
 	processes *Map[uint32, *handler.Handler]
 }
 
@@ -25,7 +25,7 @@ func newService() *Service {
 func Handle(server *http.ServeMux, opts ...connect.HandlerOption) *Service {
 	service := newService()
 
-	path, handler := spec.NewProcessServiceHandler(service, opts...)
+	path, handler := spec.NewProcessHandler(service, opts...)
 
 	server.Handle(path, handler)
 

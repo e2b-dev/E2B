@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-import "envd/permissions/permissions.proto";
+import "permissions/permissions.proto";
 
-package envd.process;
+package process;
 
-service ProcessService {
+service Process {
     rpc List(ListRequest) returns (ListResponse);
 
     rpc Connect(ConnectRequest) returns (stream ConnectResponse);
