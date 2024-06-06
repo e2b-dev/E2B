@@ -100,9 +100,8 @@ export const buildCommand = new commander.Command('build')
     parseInt,
   )
   .option(
-    '--docker-build-args [args]',
+    '--docker-build-args <args...>',
     'specify additional build arguments for the Docker build command. The format should be <varname>=<value>.',
-    parseInt,
   )
   .alias('bd')
   .action(
