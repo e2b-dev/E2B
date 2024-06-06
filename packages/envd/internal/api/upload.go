@@ -38,7 +38,7 @@ func (API) PutFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, p
 
 	u, err := user.Lookup(params.Username)
 	if err != nil {
-		errMsg := fmt.Errorf("error looking up user '%s': %v", params.Username, err)
+		errMsg := fmt.Errorf("error looking up user '%s': %w", params.Username, err)
 		jsonError(w, http.StatusBadRequest, errMsg)
 
 		return
@@ -70,7 +70,7 @@ func (API) PutFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, p
 
 				resolvedPath, err := permissions.ExpandAndResolve(pathToResolve, u)
 				if err != nil {
-					errMsg := fmt.Errorf("error resolving path: %v", err)
+					errMsg := fmt.Errorf("error resolving path: %w", err)
 					jsonError(w, http.StatusBadRequest, errMsg)
 
 					return
@@ -85,7 +85,7 @@ func (API) PutFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, p
 				}
 
 				if freeSpace < uint64(r.ContentLength) {
-					errMsg := fmt.Errorf("not enough disk space on %s: %d bytes required, %d bytes free", resolvedPath, r.ContentLength, freeSpace)
+					errMsg := fmt.Errorf("not enough disk space on '%s': %d bytes required, %d bytes free", resolvedPath, r.ContentLength, freeSpace)
 					jsonError(w, http.StatusInsufficientStorage, errMsg)
 
 					return
