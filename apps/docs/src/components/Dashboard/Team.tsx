@@ -26,7 +26,6 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
 
   useEffect(() => {
     const getTeamMembers = async () => {
-      console.log(team.id)
       const { data: teamData, error: getTeamError } = await supabase
         .from('users_teams')
         .select('user_id')

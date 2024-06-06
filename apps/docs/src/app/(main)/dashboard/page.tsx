@@ -28,6 +28,7 @@ export default function Dashboard() {
   const initialTab = tab && menuLabels.includes(tab as MenuLabel) ? (tab as MenuLabel) : 'personal'
   const [selectedItem, setSelectedItem] = useState<MenuLabel>(initialTab)
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
+  const [currentApiKey, setCurrentApiKey] = useState<string | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
   
   useEffect(() => {
@@ -36,6 +37,13 @@ export default function Dashboard() {
       setTeams(user.teams)
     }
   }, [user])
+
+  useEffect(() => {
+    if (user && currentTeam) {
+      const apiKey = user.apiKeys.find(key => key.team_id === currentTeam?.id)
+      setCurrentApiKey(apiKey?.api_key)
+    }
+  }, [currentApiKey, currentTeam, user])
 
   useEffect(() => {
     if (tab !== selectedItem) {
@@ -59,7 +67,7 @@ export default function Dashboard() {
         <div className="flex-1 pl-10">
           <h2 className='text-2xl mb-2 font-bold'>{selectedItem[0].toUpperCase() + selectedItem.slice(1)}</h2>
           <div className='border border-white/5 w-full h-[1px] mb-10'/>
-          <MainContent selectedItem={selectedItem} user={user} team={currentTeam} />
+          <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} />
         </div>
       </div>
     )
@@ -102,16 +110,16 @@ const MenuItem = ({ icon: Icon, label , selected, onClick }: { icon: LucideIcon;
 )
 
 
-const MainContent = ({ selectedItem, user, team }: { selectedItem: MenuLabel, user: User, team: Team}) => {
+const MainContent = ({ selectedItem, user, team, currentApiKey }: { selectedItem: MenuLabel, user: User, team: Team, currentApiKey: string | null}) => {
   switch (selectedItem) {
     case 'personal':
       return <PersonalContent user={user} />
     case 'keys':
       return <KeysContent user={user} currentTeam={team} />
     case 'usage':
-      return <UsageContent />
+      return <UsageContent currentApiKey={currentApiKey} />
     case 'billing':
-      return <BillingContent />
+      return <BillingContent currentApiKey={currentApiKey} />
     case 'team':
       return <TeamContent team={team} user={user} />
     default:
