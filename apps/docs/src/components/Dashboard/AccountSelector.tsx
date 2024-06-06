@@ -8,20 +8,24 @@ import {
 import { ChevronRight, PlusCircle } from 'lucide-react'
 import { toast } from '../ui/use-toast'
 
+const createTeamUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams`
+
 export const AccountSelector = ({ teams, user, currentTeam, setCurrentTeam, setTeams }) => {
 
   const createNewTeam = async() => {
-    const res = await fetch('/api/create-new-team', {
+    const res = await fetch(createTeamUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'X-User-Access-Token': user.accessToken,
       },
-      body: JSON.stringify({ email: user.email, user_id: user.id })
     })
     if (!res.ok) {
+      // TODO: Add sentry event here
       return
     }
+
     const data = await res.json()
+    console.log(data)
 
     toast({
       title: `Team ${data.team.name} created`,

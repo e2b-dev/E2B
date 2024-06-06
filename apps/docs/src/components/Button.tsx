@@ -38,7 +38,7 @@ const variantStyles = {
   textTernary:
     'text-yellow-500 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-500', // same as text, but gray-ish
   desctructive:
-    'rounded-full py-1 px-3 text-red-700 ring-1 ring-inset ring-red-900/50 hover:bg-red-900/90 hover:text-red-900 dark:text-red-400 dark:ring-red/10 dark:hover:bg-red/50 dark:hover:text-red',
+    'rounded-full py-1 px-3 text-red-700 ring-1 ring-inset ring-red-900/50 hover:bg-red-900/90 hover:ring-white/10 hover:text-red-900 dark:text-red-400 dark:ring-red/10 dark:hover:bg-red/50 dark:hover:text-red',
 }
 
 type ButtonProps = {

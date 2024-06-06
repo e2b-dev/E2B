@@ -18,8 +18,9 @@ import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { User } from '@supabase/supabase-js'
 import { Team } from '@/utils/useUser'
 
+const createApiKeyUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/api-keys`
 
-export const KeysContent = ({user, currentTeam}: {user: User, currentTeam: Team}) => {
+export const KeysContent = ({ user, currentTeam, currentApiKey }: { user: User, currentTeam: Team, currentApiKey: string | null}) => {
   const supabase = createPagesBrowserClient()
 
   const { toast } = useToast()
@@ -62,16 +63,21 @@ export const KeysContent = ({user, currentTeam}: {user: User, currentTeam: Team}
 
   const addApiKey = async() => {
 
+    if (!currentApiKey) {
+      return
+    }
+
     const teamId = currentTeam.id
     
-    const res = await fetch('/api/create-api-key', {
+    const res = await fetch(createApiKeyUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'X-Team-API-Key': currentApiKey,
       },
-      body: JSON.stringify({ teamId }),
     })
+    
     if (!res.ok) {
+      // TODO: Add sentry event here
       return
     } 
 
@@ -81,7 +87,7 @@ export const KeysContent = ({user, currentTeam}: {user: User, currentTeam: Team}
       title: 'API key created',
     })
     
-    setApiKeys([...apiKeys, {key: newKey.api_key, team_id: teamId, createdAt: newKey.created_at}])
+    setApiKeys([...apiKeys, {key: newKey.apiKey, team_id: teamId, createdAt: newKey.created_at}])
   }
 
   const copyToClipboard = (text: string) => {
