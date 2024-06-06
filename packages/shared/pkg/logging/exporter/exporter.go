@@ -67,7 +67,7 @@ func (w *HTTPLogsExporter) start() {
 			} else {
 				err := w.sendInstanceLogs(logs[0], vectorAddress)
 				if err != nil {
-					log.Fatalf("error sending logs: %v", err)
+					log.Printf("error sending logs: %v", err)
 				}
 			}
 		}
