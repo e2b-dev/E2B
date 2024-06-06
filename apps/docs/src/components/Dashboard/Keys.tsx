@@ -115,7 +115,7 @@ export const KeysContent = ({user, currentTeam}: {user: User, currentTeam: Team}
       onMouseEnter={() => setHoveredKey(apiKey.key)}
       onMouseLeave={() => setHoveredKey(null)}
       >
-      <div className="font-mono text-sm">{hoveredKey === apiKey.key ? apiKey.key : maskApiKey(apiKey.key)}</div> {/* Use a monospace font */}
+      <div className="font-mono text-xs md:text-sm">{hoveredKey === apiKey.key ? apiKey.key : maskApiKey(apiKey.key)}</div> {/* Use a monospace font */}
       <div className='flex items-center space-x-2'>
         <Copy className='hover:cursor-pointer' width={18} height={18} onClick={() => copyToClipboard(apiKey.key)} />
         <Delete className='hover:cursor-pointer' color='red' width={20} height={20} onClick={() => openDialog(apiKey.key)} />

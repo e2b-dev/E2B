@@ -62,9 +62,9 @@ export default function Dashboard() {
   }
   if (user && currentTeam) {
     return (
-      <div className="flex min-h-screen flex-row pt-32 px-32">
+      <div className="flex min-h-screen flex-col md:flex-row pt-16 md:pt-32 px-2 md:px-32">
         <Sidebar selectedItem={selectedItem} setSelectedItem={setSelectedItem} teams={teams} user={user} currentTeam={currentTeam} setCurrentTeam={setCurrentTeam} setTeams={setTeams} />
-        <div className="flex-1 pl-10">
+        <div className="flex-1 md:pl-10">
           <h2 className='text-2xl mb-2 font-bold'>{selectedItem[0].toUpperCase() + selectedItem.slice(1)}</h2>
           <div className='border border-white/5 w-full h-[1px] mb-10'/>
           <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} />
@@ -75,19 +75,22 @@ export default function Dashboard() {
 }
 
 const Sidebar = ({ selectedItem, setSelectedItem, teams, user ,currentTeam, setCurrentTeam, setTeams }) => (
-  <div className="h-full w-48 space-y-2">
+  <div className="md:h-full md:w-48 space-y-2 pb-10 md:pb-0">
 
     <AccountSelector teams={teams} user={user} currentTeam={currentTeam} setCurrentTeam={setCurrentTeam} setTeams={setTeams} />
 
-    {menuLabels.map((label) => (
-      <MenuItem
-        key={label.toUpperCase()}
-        icon={iconMap[label]}
-        label={label}
-        selected={selectedItem === label}
-        onClick={() => setSelectedItem(label)}
-      />
-    ))}
+    <div className="flex flex-row justify-center space-x-2 md:space-x-0 md:space-y-2 md:flex-col">
+      {menuLabels.map((label) => (
+        <MenuItem
+          key={label.toUpperCase()}
+          icon={iconMap[label]}
+          label={label}
+          selected={selectedItem === label}
+          onClick={() => setSelectedItem(label)}
+        />
+      ))}
+    </div>
+
   </div>
 )
 
@@ -101,11 +104,13 @@ const iconMap: { [key in MenuLabel]: LucideIcon } = {
 
 const MenuItem = ({ icon: Icon, label , selected, onClick }: { icon: LucideIcon; label: MenuLabel; selected: boolean; onClick: () => void }) => (
   <div 
-    className={`flex w-full hover:bg-orange-500/30 hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${selected ? 'bg-orange-500/30' : ''}`} 
+    className={`flex w-fit md:w-full hover:bg-orange-500/30 hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${selected ? 'bg-orange-500/30' : ''}`} 
     onClick={onClick}
   >
     <Icon width={20} height={20} />
-    <p>{label[0].toUpperCase()+label.slice(1)}</p>
+    <p className={`${!label || !window.matchMedia('(min-width: 768)').matches ? 'sr-only sm:not-sr-only' : ''}`}>
+      {label[0].toUpperCase()+label.slice(1)}
+    </p>
   </div>
 )
 

@@ -116,7 +116,7 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
       <div className='flex items-center space-x-2 pb-10'>
         <input
           type="text"
-          className="w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
+          className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
           placeholder={team.name}
           onChange={(e) => {
             e.preventDefault()
@@ -130,7 +130,7 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
       <div className='flex items-center space-x-2 pb-4'>
         <input
           type="text"
-          className="w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
+          className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
           placeholder={"paste your friend's user id here"}
           value={userToAdd}
           onChange={(e) => {
