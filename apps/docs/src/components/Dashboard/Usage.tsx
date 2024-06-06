@@ -5,7 +5,7 @@ import { LoaderIcon } from 'lucide-react'
 
 const usageUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/usage`
 
-export const UsageContent = () => {
+export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null}) => {
   const [vcpuData, setVcpuData] = useState<any>(null)
   const [ramData, setRamData] = useState<any>(null)
 
@@ -13,7 +13,7 @@ export const UsageContent = () => {
     const getUsage = async () => {
       const response = await fetch(usageUrl, {
         headers: {
-          'X-Team-API-Key': 'e2b_ee29899a1aab99d4955a78eae32078a5c8aeee9f'
+          'X-Team-API-Key': currentApiKey! 
         }
       })
       const data = await response.json()
@@ -30,8 +30,10 @@ export const UsageContent = () => {
       })
 
     }
-    getUsage()
-  }, [])
+    if (currentApiKey) {
+      getUsage()
+    }
+  }, [currentApiKey])
 
   return (
     <div className="flex flex-col w-full h-full pb-10">

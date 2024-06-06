@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useUser } from '@/utils/useUser'
 import { Button } from '../Button'
-import { useUsage } from '@/utils/useUsage'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 import SwitchToHobbyButton from '@/app/(docs)/docs/pricing/SwitchToHobbyButton'
 import SwitchToProButton from '@/app/(docs)/docs/pricing/SwitchToProButton'
@@ -12,6 +11,7 @@ function formatCurrency(value: number) {
 }
 
 const invoiceUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/invoices`
+const creditsUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/usage`
 
 interface Invoice {
   cost: number
@@ -20,24 +20,35 @@ interface Invoice {
   date_created: string
 }
 
-export const BillingContent = () => {
-  const { credits, isLoading  } = useUsage()
+export const BillingContent = ({currentApiKey}: {currentApiKey: string | null}) => {
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [credits, setCredits] = useState<number | null>(null)
 
   useEffect(() => {
     const getInvoices = async function getInvoices() {
+      setInvoices([])
       const res = await fetch(invoiceUrl, {
         headers: {
-          // TODO, figure out how data is passed here to get api key
-          'X-Team-API-Key': 'e2b_ee29899a1aab99d4955a78eae32078a5c8aeee9f',
+          'X-Team-API-Key': currentApiKey!,
         },
       })
       const invoices = await res.json() as Invoice[]
       setInvoices(invoices)
+
+      setCredits(null)
+      const creditsRes = await fetch(creditsUrl, {
+        headers: {
+          'X-Team-API-Key': currentApiKey!,
+        },
+      })
+      const credits = await creditsRes.json()
+      setCredits(credits.credits)
     }
-    getInvoices()
+    if (currentApiKey) {
+      getInvoices()
+    }
   }
-  , [])
+  , [currentApiKey])
   
   return (
     <div className="flex flex-col w-full h-full pb-10">
@@ -49,7 +60,7 @@ export const BillingContent = () => {
       <div className='flex flex-col space-y-2 pb-10'>
         <h2 className='font-bold text-xl'>Credits left</h2>
         <span className="text-sm">Credits automatically are used to bill your team</span>
-        {isLoading ? (
+        {credits === null ? (
           <span className="text-sm font-mono text-neutral-400">Loading...</span>
         ) : (
           <span className="text-sm font-mono text-green-300/80">${formatCurrency(credits ?? 0)}</span>
