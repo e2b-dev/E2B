@@ -89,30 +89,10 @@ components:
   responses:
     ExistingFileUploadSuccess:
       description: The file was updated successfully.
-      headers:
-        Cache-Control:
-          schema:
-            type: string
-            example: "no-cache, no-store"
     NewFileUploadSuccess:
       description: The file was created successfully.
-      headers:
-        Cache-Control:
-          schema:
-            type: string
-            example: "no-cache, no-store"
-        Location:
-          description: The URL of the uploaded file
-          schema:
-            type: string
-            format: path
     DownloadSuccess:
       description: Entire file downloaded successfully.
-      headers:
-        Cache-Control:
-          schema:
-            type: string
-            example: "no-cache, no-store"
       content:
         application/octet-stream:
           schema:

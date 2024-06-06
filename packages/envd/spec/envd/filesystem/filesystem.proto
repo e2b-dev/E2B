@@ -18,9 +18,7 @@ message MakeDirRequest {
     permissions.User user = 2;
 }
 
-message MakeDirResponse {
-    string path = 1;
-}
+message MakeDirResponse {}
 
 message RemoveRequest {
     string path = 1;

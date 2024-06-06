@@ -3,8 +3,10 @@ package permissions
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/user"
 	"path/filepath"
+	"slices"
 )
 
 func expand(path, homedir string) (string, error) {
@@ -42,4 +44,44 @@ func ExpandAndResolve(path string, user *user.User) (string, error) {
 	}
 
 	return abs, nil
+}
+
+func getSubpaths(path string) (subpaths []string) {
+	for {
+		subpaths = append(subpaths, path)
+
+		path = filepath.Dir(path)
+		if path == "/" {
+			break
+		}
+	}
+
+	slices.Reverse(subpaths)
+
+	return subpaths
+}
+
+func EnsureDirs(path string, uid, gid int) error {
+	subpaths := getSubpaths(path)
+	for _, subpath := range subpaths {
+		info, err := os.Stat(subpath)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to stat directory: %w", err)
+		}
+
+		if info != nil && !info.IsDir() {
+			return fmt.Errorf("path is a file: %s", subpath)
+		}
+
+		if err := os.Mkdir(subpath, 0o755); err != nil {
+			return fmt.Errorf("failed to create directory: %w", err)
+		}
+
+		err = os.Chown(subpath, uid, gid)
+		if err != nil {
+			return fmt.Errorf("failed to chown directory: %w", err)
+		}
+	}
+
+	return nil
 }

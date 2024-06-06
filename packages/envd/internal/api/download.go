@@ -61,7 +61,5 @@ func (API) GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, p
 	}
 	defer file.Close()
 
-	// TODO: Extra headers?
-
 	http.ServeContent(w, r, path, time.Now(), file)
 }
