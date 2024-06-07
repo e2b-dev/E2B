@@ -10,7 +10,7 @@ function formatCurrency(value: number) {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-const invoiceUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/invoices`
+const invoiceUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/invoices`
 const creditsUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/usage`
 
 interface Invoice {
