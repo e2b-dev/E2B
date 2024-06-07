@@ -9,7 +9,7 @@ import {
 
 import { ConnectionOpts, defaultUsername, Username } from '../../connectionConfig'
 import { EnvdApiClient } from '../../envd/api'
-import { FilesystemService } from '../../envd/filesystem/filesystem_connect'
+import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import {
   EntryInfo as FsEntryInfo,
 } from '../../envd/filesystem/filesystem_pb'
@@ -47,7 +47,9 @@ export class Filesystem {
       params: {
         path: {
           path,
-          user: opts?.user ?? defaultUsername,
+        },
+        query: {
+          username: opts?.user ?? defaultUsername,
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
@@ -74,7 +76,7 @@ export class Filesystem {
           path,
         },
         query: {
-          user: opts?.user ?? defaultUsername,
+          username: opts?.user ?? defaultUsername,
         },
       },
       bodySerializer(body) {
@@ -102,6 +104,20 @@ export class Filesystem {
       timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
     return res.entries
+  }
+
+  async makeDir(path: string, opts?: FilesystemRequestOpts): Promise<void> {
+    await this.rpc.makeDir({
+      path,
+      user: {
+        selector: {
+          case: 'username',
+          value: opts?.user || defaultUsername,
+        },
+      },
+    }, {
+      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+    })
   }
 
   async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {

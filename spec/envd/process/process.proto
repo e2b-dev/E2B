@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-import "envd/permissions/permissions.proto";
+import "permissions/permissions.proto";
 
-package envd.process;
+package process;
 
-service ProcessService {
+service Process {
     rpc List(ListRequest) returns (ListResponse);
 
     rpc Connect(ConnectRequest) returns (stream ConnectResponse);
@@ -85,7 +85,7 @@ message ProcessEvent {
     
     message EndEvent {
         sint32 exit_code = 1;
-        bool terminated = 2;
+        bool exited = 2;
         string status = 3;
         optional string error = 4;
     }

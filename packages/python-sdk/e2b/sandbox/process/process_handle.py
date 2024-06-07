@@ -1,7 +1,7 @@
 from typing import Optional, Callable, Any, Generator, Union
-
-from envd.process import process_pb2
 from pydantic import BaseModel
+
+from e2b.envd.process import process_pb2
 
 
 class ProcessOutput(BaseModel):

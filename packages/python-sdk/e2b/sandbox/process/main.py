@@ -1,16 +1,16 @@
 import connect
 
 from typing import Dict, List, Optional, Literal, overload, Union, Callable
-from envd.permissions import permissions_pb2
 
-from envd.process import process_connect, process_pb2
+from e2b.envd.permissions import permissions_pb2
+from e2b.envd.process import process_connect, process_pb2
 from e2b.sandbox.process.process_handle import ProcessHandle, ProcessResult
 from e2b.connection_config import Username
 
 
 class Process:
     def __init__(self, envd_api_url: str) -> None:
-        self._rpc = process_connect.ProcessServiceClient(
+        self._rpc = process_connect.ProcessClient(
             envd_api_url,
             compressor=connect.GzipCompressor,
         )

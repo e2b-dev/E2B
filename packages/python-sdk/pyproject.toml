@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 homepage = "https://e2b.dev/"
 repository = "https://github.com/e2b-dev/e2b/tree/main/packages/python-sdk"
-packages = [{ include = "e2b" }, { include = "envd" }, { include = "connect" }]
+packages = [{ include = "e2b" }, { include = "connect" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"

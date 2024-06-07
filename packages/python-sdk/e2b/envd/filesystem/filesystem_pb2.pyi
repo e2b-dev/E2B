@@ -1,4 +1,4 @@
-from envd.permissions import permissions_pb2 as _permissions_pb2
+from e2b.envd.permissions import permissions_pb2 as _permissions_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -30,6 +30,18 @@ EVENT_TYPE_WRITE: EventType
 EVENT_TYPE_REMOVE: EventType
 EVENT_TYPE_RENAME: EventType
 EVENT_TYPE_CHMOD: EventType
+
+class MakeDirRequest(_message.Message):
+    __slots__ = ("path", "user")
+    PATH_FIELD_NUMBER: _ClassVar[int]
+    USER_FIELD_NUMBER: _ClassVar[int]
+    path: str
+    user: _permissions_pb2.User
+    def __init__(self, path: _Optional[str] = ..., user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...) -> None: ...
+
+class MakeDirResponse(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
 
 class RemoveRequest(_message.Message):
     __slots__ = ("path", "user")

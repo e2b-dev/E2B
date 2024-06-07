@@ -13,5 +13,5 @@ from .sandbox.process.process_handle import (
     ProcessStdout,
 )
 from .sandbox.filesystem.watch_handle import WatchHandle
-from envd.filesystem.filesystem_pb2 import FilesystemEvent, FileType, EntryInfo
 from .sandbox.filesystem.filesystem import FileFormat
+from e2b.envd.filesystem.filesystem_pb2 import FilesystemEvent, FileType, EntryInfo

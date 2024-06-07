@@ -1,5 +1,4 @@
 import {
-  ProcessEvent_EndEvent,
   ConnectResponse,
   StartResponse,
 } from '../../envd/process/process_pb'
@@ -16,46 +15,31 @@ interface ProcessStderr {
 export type ProcessOutput = ProcessStdout | ProcessStderr
 
 export class ProcessHandle {
-  private readonly end: Promise<{
-    exit: ProcessEvent_EndEvent,
-    stdout: Uint8Array[],
-    stderr: Uint8Array[],
-  }>
+  private rawStdout = new Uint8Array()
+  private rawStderr = new Uint8Array()
+
+  private _result?: ProcessResult
 
   constructor(
     readonly pid: number,
     private readonly handleDisconnect: () => void,
     private readonly handleKill: () => Promise<void>,
-    events: AsyncIterable<ConnectResponse | StartResponse>,
-    private readonly handleStdout?: ((data: string) => void | Promise<void>),
-    private readonly handleStderr?: ((data: string) => void | Promise<void>),
-    private readonly handlePtyData?: ((data: Uint8Array) => void | Promise<void>),
-  ) {
-    this.end = this.handleEvents(events)
+    private readonly events: AsyncIterable<ConnectResponse | StartResponse>,
+  ) { }
+
+  get result() {
+    return this._result
   }
 
-  private static joinUint8Arrays(arrays: Uint8Array[]) {
-    const length = arrays.reduce((acc, cur) => acc + cur.length, 0)
-    const result = new Uint8Array(length)
-    let offset = 0
-
-    for (const array of arrays) {
-      result.set(array, offset)
-      offset += array.length
+  async wait(
+    onStdout?: ((data: string) => void | Promise<void>),
+    onStderr?: ((data: string) => void | Promise<void>),
+  ): Promise<ProcessResult> {
+    for await (const event of this) {
+      event
     }
 
-    return result
-  }
-
-  async wait(): Promise<ProcessResult> {
-    const result = await this.end
-
-    return {
-      exitCode: result.exit.exitCode,
-      error: result.exit.error,
-      stdout: ProcessHandle.joinUint8Arrays(result.stdout).toString(),
-      stderr: ProcessHandle.joinUint8Arrays(result.stderr).toString(),
-    }
+    return this.result
   }
 
   async kill() {
@@ -63,37 +47,60 @@ export class ProcessHandle {
     await this.handleKill()
   }
 
-  private async handleEvents(events: AsyncIterable<ConnectResponse | StartResponse>) {
-    const stdout: Uint8Array[] = []
-    const stderr: Uint8Array[] = []
+  [Symbol.asyncIterator]() {
+    return {
+      next: async (): Promise<IteratorResult<ProcessOutput, ProcessResult>> => {
+        const event = await this.events[Symbol.asyncIterator]().next()
 
-    for await (const event of events) {
-      switch (event.event?.event.case) {
-        case 'data':
-          switch (event.event.event.value.output.case) {
-            case 'stdout':
-              stdout.push(event.event.event.value.output.value)
-              await this.handleStdout?.(event.event.event.value.output.value.toString())
-              break
-            case 'stderr':
-              stderr.push(event.event.event.value.output.value)
-              await this.handleStderr?.(event.event.event.value.output.value.toString())
-              break
-            case 'pty':
-              await this.handlePtyData?.(event.event.event.value.output.value)
-              break
-          }
-          break
-        case 'end':
+        const value: ConnectResponse | StartResponse = event.value
+
+        switch (value.event?.event.case) {
+          case 'data':
+            switch (value.event.event.value.output.case) {
+              case 'stdout':
+                this.stdout += value.event.event.value.output.value.toString()
+                return {
+                  value: { stdout: value.event.event.value.output.value.toString() },
+                  done: false,
+                }
+              case 'stderr':
+                this.stderr += value.event.event.value.output.value.toString()
+                return {
+                  value: { stderr: value.event.event.value.output.value.toString() },
+                  done: false,
+                }
+            }
+            break
+          case 'end':
+            this._result = {
+              exitCode: event.value.exitCode,
+              error: event.value.error,
+              stdout: this.stdout,
+              stderr: this.stderr,
+            }
+            break
+        }
+
+        if (event.done && this.result) {
           return {
-            exit: event.event.event.value,
-            stdout,
-            stderr,
+            done: true,
+            value: this.result,
           }
-      }
-    }
+        }
 
-    throw new Error('Process ended without an end event')
+        throw new Error('Process ended without an end event')
+      },
+      return: async () => {
+        return { value: this.result, done: true }
+      },
+      // throw: async () => {
+
+
+
+
+      //   // throw new Error('Process ended without an end event')
+      // }
+    }
   }
 }
 

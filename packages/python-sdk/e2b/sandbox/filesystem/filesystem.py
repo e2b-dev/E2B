@@ -6,8 +6,8 @@ from typing import List, Optional, overload, Literal, Union
 from e2b.envd import EnvdApiClient, client
 from e2b.sandbox.filesystem.watch_handle import WatchHandle
 from e2b.connection_config import Username
-from envd.filesystem import filesystem_connect, filesystem_pb2
-from envd.permissions.permissions_pb2 import User
+from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
+from e2b.envd.permissions.permissions_pb2 import User
 
 
 FileFormat = Literal["text", "bytes", "stream"]
@@ -17,7 +17,7 @@ class Filesystem:
     def __init__(self, envd_api_url: str) -> None:
         self._envd_api = EnvdApiClient(api_url=envd_api_url)
 
-        self._rpc = filesystem_connect.FilesystemServiceClient(
+        self._rpc = filesystem_connect.FilesystemClient(
             envd_api_url,
             compressor=connect.GzipCompressor,
         )
@@ -58,6 +58,7 @@ class Filesystem:
     ):
         res = client.FilesApi(self._envd_api).files_path_get(
             path=path,
+            username=user,
             _request_timeout=request_timeout,
         )
 

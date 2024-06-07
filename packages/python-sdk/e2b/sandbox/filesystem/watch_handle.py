@@ -1,6 +1,6 @@
 from typing import Any, Generator
 
-from envd.filesystem.filesystem_pb2 import WatchResponse
+from e2b.envd.filesystem.filesystem_pb2 import WatchResponse
 
 
 class WatchHandle(Generator):

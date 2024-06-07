@@ -46,11 +46,12 @@ configuration = e2b.envd.v1.client.Configuration(
 with e2b.envd.v1.client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = e2b.envd.v1.client.FilesApi(api_client)
-    path = 'path_example' # str | Absolute path to the file, URL encoded.
+    path = 'path_example' # str | Path to the file, URL encoded. Can be relative to user's home directory.
+    username = 'username_example' # str | User used for setting the owner, or resolving relative paths.
 
     try:
         # Download a file
-        api_response = api_instance.files_path_get(path)
+        api_response = api_instance.files_path_get(path, username)
         print("The response of FilesApi->files_path_get:\n")
         pprint(api_response)
     except ApiException as e:

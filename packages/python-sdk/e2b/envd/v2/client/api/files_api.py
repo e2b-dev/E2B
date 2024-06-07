@@ -25,7 +25,7 @@ except ImportError:
 
 from pydantic import Field
 from typing_extensions import Annotated
-from pydantic import StrictStr
+from pydantic import StrictStr, field_validator
 
 from typing import Union
 
@@ -52,7 +52,17 @@ class FilesApi:
     def files_path_get(
         self,
         path: Annotated[
-            StrictStr, Field(description="Absolute path to the file, URL encoded.")
+            StrictStr,
+            Field(
+                description="Path to the file, URL encoded. Can be relative to user's home directory."
+            ),
+        ],
+        username: Annotated[
+            str,
+            Field(
+                strict=True,
+                description="User used for setting the owner, or resolving relative paths.",
+            ),
         ],
         _request_timeout: Union[
             None,
@@ -69,8 +79,10 @@ class FilesApi:
         """Download a file
 
 
-        :param path: Absolute path to the file, URL encoded. (required)
+        :param path: Path to the file, URL encoded. Can be relative to user's home directory. (required)
         :type path: str
+        :param username: User used for setting the owner, or resolving relative paths. (required)
+        :type username: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -95,6 +107,7 @@ class FilesApi:
 
         _param = self._files_path_get_serialize(
             path=path,
+            username=username,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -104,6 +117,8 @@ class FilesApi:
         _response_types_map: Dict[str, Optional[str]] = {
             "200": "bytearray",
             "400": "Error",
+            "403": "Error",
+            "404": "Error",
             "500": "Error",
         }
         response_data = self.api_client.call_api(
@@ -119,7 +134,17 @@ class FilesApi:
     def files_path_get_with_http_info(
         self,
         path: Annotated[
-            StrictStr, Field(description="Absolute path to the file, URL encoded.")
+            StrictStr,
+            Field(
+                description="Path to the file, URL encoded. Can be relative to user's home directory."
+            ),
+        ],
+        username: Annotated[
+            str,
+            Field(
+                strict=True,
+                description="User used for setting the owner, or resolving relative paths.",
+            ),
         ],
         _request_timeout: Union[
             None,
@@ -136,8 +161,10 @@ class FilesApi:
         """Download a file
 
 
-        :param path: Absolute path to the file, URL encoded. (required)
+        :param path: Path to the file, URL encoded. Can be relative to user's home directory. (required)
         :type path: str
+        :param username: User used for setting the owner, or resolving relative paths. (required)
+        :type username: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -162,6 +189,7 @@ class FilesApi:
 
         _param = self._files_path_get_serialize(
             path=path,
+            username=username,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -171,6 +199,8 @@ class FilesApi:
         _response_types_map: Dict[str, Optional[str]] = {
             "200": "bytearray",
             "400": "Error",
+            "403": "Error",
+            "404": "Error",
             "500": "Error",
         }
         response_data = self.api_client.call_api(
@@ -186,7 +216,17 @@ class FilesApi:
     def files_path_get_without_preload_content(
         self,
         path: Annotated[
-            StrictStr, Field(description="Absolute path to the file, URL encoded.")
+            StrictStr,
+            Field(
+                description="Path to the file, URL encoded. Can be relative to user's home directory."
+            ),
+        ],
+        username: Annotated[
+            str,
+            Field(
+                strict=True,
+                description="User used for setting the owner, or resolving relative paths.",
+            ),
         ],
         _request_timeout: Union[
             None,
@@ -203,8 +243,10 @@ class FilesApi:
         """Download a file
 
 
-        :param path: Absolute path to the file, URL encoded. (required)
+        :param path: Path to the file, URL encoded. Can be relative to user's home directory. (required)
         :type path: str
+        :param username: User used for setting the owner, or resolving relative paths. (required)
+        :type username: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -229,6 +271,7 @@ class FilesApi:
 
         _param = self._files_path_get_serialize(
             path=path,
+            username=username,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -238,6 +281,8 @@ class FilesApi:
         _response_types_map: Dict[str, Optional[str]] = {
             "200": "bytearray",
             "400": "Error",
+            "403": "Error",
+            "404": "Error",
             "500": "Error",
         }
         response_data = self.api_client.call_api(
@@ -248,6 +293,7 @@ class FilesApi:
     def _files_path_get_serialize(
         self,
         path,
+        username,
         _request_auth,
         _content_type,
         _headers,
@@ -268,6 +314,9 @@ class FilesApi:
         if path is not None:
             _path_params["path"] = path
         # process the query parameters
+        if username is not None:
+            _query_params.append(("username", username))
+
         # process the header parameters
         # process the form parameters
         # process the body parameter
@@ -299,9 +348,18 @@ class FilesApi:
     def files_path_put(
         self,
         path: Annotated[
-            StrictStr, Field(description="Absolute path to the file, URL encoded.")
+            StrictStr,
+            Field(
+                description="Path to the file, URL encoded. Can be relative to user's home directory."
+            ),
         ],
-        user: Annotated[StrictStr, Field(description="User owning the file")],
+        username: Annotated[
+            str,
+            Field(
+                strict=True,
+                description="User used for setting the owner, or resolving relative paths.",
+            ),
+        ],
         files_path_put_request: FilesPathPutRequest,
         _request_timeout: Union[
             None,
@@ -318,10 +376,10 @@ class FilesApi:
         """Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
 
 
-        :param path: Absolute path to the file, URL encoded. (required)
+        :param path: Path to the file, URL encoded. Can be relative to user's home directory. (required)
         :type path: str
-        :param user: User owning the file (required)
-        :type user: str
+        :param username: User used for setting the owner, or resolving relative paths. (required)
+        :type username: str
         :param files_path_put_request: (required)
         :type files_path_put_request: FilesPathPutRequest
         :param _request_timeout: timeout setting for this request. If one
@@ -348,7 +406,7 @@ class FilesApi:
 
         _param = self._files_path_put_serialize(
             path=path,
-            user=user,
+            username=username,
             files_path_put_request=files_path_put_request,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -370,9 +428,18 @@ class FilesApi:
     def files_path_put_with_http_info(
         self,
         path: Annotated[
-            StrictStr, Field(description="Absolute path to the file, URL encoded.")
+            StrictStr,
+            Field(
+                description="Path to the file, URL encoded. Can be relative to user's home directory."
+            ),
         ],
-        user: Annotated[StrictStr, Field(description="User owning the file")],
+        username: Annotated[
+            str,
+            Field(
+                strict=True,
+                description="User used for setting the owner, or resolving relative paths.",
+            ),
+        ],
         files_path_put_request: FilesPathPutRequest,
         _request_timeout: Union[
             None,
@@ -389,10 +456,10 @@ class FilesApi:
         """Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
 
 
-        :param path: Absolute path to the file, URL encoded. (required)
+        :param path: Path to the file, URL encoded. Can be relative to user's home directory. (required)
         :type path: str
-        :param user: User owning the file (required)
-        :type user: str
+        :param username: User used for setting the owner, or resolving relative paths. (required)
+        :type username: str
         :param files_path_put_request: (required)
         :type files_path_put_request: FilesPathPutRequest
         :param _request_timeout: timeout setting for this request. If one
@@ -419,7 +486,7 @@ class FilesApi:
 
         _param = self._files_path_put_serialize(
             path=path,
-            user=user,
+            username=username,
             files_path_put_request=files_path_put_request,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -441,9 +508,18 @@ class FilesApi:
     def files_path_put_without_preload_content(
         self,
         path: Annotated[
-            StrictStr, Field(description="Absolute path to the file, URL encoded.")
+            StrictStr,
+            Field(
+                description="Path to the file, URL encoded. Can be relative to user's home directory."
+            ),
         ],
-        user: Annotated[StrictStr, Field(description="User owning the file")],
+        username: Annotated[
+            str,
+            Field(
+                strict=True,
+                description="User used for setting the owner, or resolving relative paths.",
+            ),
+        ],
         files_path_put_request: FilesPathPutRequest,
         _request_timeout: Union[
             None,
@@ -460,10 +536,10 @@ class FilesApi:
         """Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
 
 
-        :param path: Absolute path to the file, URL encoded. (required)
+        :param path: Path to the file, URL encoded. Can be relative to user's home directory. (required)
         :type path: str
-        :param user: User owning the file (required)
-        :type user: str
+        :param username: User used for setting the owner, or resolving relative paths. (required)
+        :type username: str
         :param files_path_put_request: (required)
         :type files_path_put_request: FilesPathPutRequest
         :param _request_timeout: timeout setting for this request. If one
@@ -490,7 +566,7 @@ class FilesApi:
 
         _param = self._files_path_put_serialize(
             path=path,
-            user=user,
+            username=username,
             files_path_put_request=files_path_put_request,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -507,7 +583,7 @@ class FilesApi:
     def _files_path_put_serialize(
         self,
         path,
-        user,
+        username,
         files_path_put_request,
         _request_auth,
         _content_type,
@@ -529,8 +605,8 @@ class FilesApi:
         if path is not None:
             _path_params["path"] = path
         # process the query parameters
-        if user is not None:
-            _query_params.append(("User", user))
+        if username is not None:
+            _query_params.append(("username", username))
 
         # process the header parameters
         # process the form parameters

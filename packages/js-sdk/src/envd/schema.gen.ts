@@ -9,13 +9,18 @@ export interface paths {
     /** Download a file */
     get: {
       parameters: {
+        query: {
+          username: components["parameters"]["User"];
+        };
         path: {
           path: components["parameters"]["FilePath"];
         };
       };
       responses: {
         200: components["responses"]["DownloadSuccess"];
-        400: components["responses"]["DirectoryPathError"];
+        400: components["responses"]["BadRequest"];
+        403: components["responses"]["DirectoryPathError"];
+        404: components["responses"]["FileNotFound"];
         500: components["responses"]["InternalServerError"];
       };
     };
@@ -23,7 +28,7 @@ export interface paths {
     put: {
       parameters: {
         query: {
-          user: components["parameters"]["User"];
+          username: components["parameters"]["User"];
         };
         path: {
           path: components["parameters"]["FilePath"];
@@ -33,12 +38,14 @@ export interface paths {
       responses: {
         200: components["responses"]["ExistingFileUploadSuccess"];
         201: components["responses"]["NewFileUploadSuccess"];
-        400: components["responses"]["DirectoryPathError"];
+        400: components["responses"]["BadRequest"];
+        403: components["responses"]["DirectoryPathError"];
         500: components["responses"]["InternalServerError"];
+        507: components["responses"]["NotEnoughDiskSpace"];
       };
     };
   };
-  "/host/sync": {
+  "/sync": {
     /** Ensure the time and metadata is synced with the host */
     post: {
       responses: {
@@ -46,7 +53,6 @@ export interface paths {
         204: {
           content: never;
         };
-        500: components["responses"]["InternalServerError"];
       };
     };
   };
@@ -64,7 +70,13 @@ export interface components {
     };
   };
   responses: {
-    /** @description Bad Request - The specified path is a directory. */
+    /** @description Bad request */
+    BadRequest: {
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Directory path error */
     DirectoryPathError: {
       content: {
         "application/json": components["schemas"]["Error"];
@@ -86,6 +98,12 @@ export interface components {
       };
       content: never;
     };
+    /** @description File not found */
+    FileNotFound: {
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
     /** @description Internal server error */
     InternalServerError: {
       content: {
@@ -101,11 +119,17 @@ export interface components {
       };
       content: never;
     };
+    /** @description Not enough disk space */
+    NotEnoughDiskSpace: {
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
   };
   parameters: {
-    /** @description Absolute path to the file, URL encoded. */
+    /** @description Path to the file, URL encoded. Can be relative to user's home directory. */
     FilePath: string;
-    /** @description User owning the file */
+    /** @description User used for setting the owner, or resolving relative paths. */
     User: string;
   };
   requestBodies: {

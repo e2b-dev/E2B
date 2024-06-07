@@ -14,8 +14,6 @@ paths:
       responses:
         204:
           description: The time and metadata is synced with the host
-        500:
-          $ref: "#/components/responses/InternalServerError"
 
   /files/{path}:
     get:
@@ -28,7 +26,11 @@ paths:
         200:
           $ref: "#/components/responses/DownloadSuccess"
         400:
+          $ref: "#/components/responses/BadRequest"
+        403:
           $ref: "#/components/responses/DirectoryPathError"
+        404:
+          $ref: "#/components/responses/FileNotFound"
         500:
           $ref: "#/components/responses/InternalServerError"
     put:
@@ -45,9 +47,13 @@ paths:
         201:
           $ref: "#/components/responses/NewFileUploadSuccess"
         400:
+          $ref: "#/components/responses/BadRequest"
+        403:
           $ref: "#/components/responses/DirectoryPathError"
         500:
           $ref: "#/components/responses/InternalServerError"
+        507:
+          $ref: "#/components/responses/NotEnoughDiskSpace"
 
 components:
   parameters:
@@ -60,7 +66,7 @@ components:
       schema:
         type: string
     User:
-      name: user
+      name: username
       in: query
       required: true
       description: User used for setting the owner, or resolving relative paths.
@@ -83,30 +89,10 @@ components:
   responses:
     ExistingFileUploadSuccess:
       description: The file was updated successfully.
-      headers:
-        Cache-Control:
-          schema:
-            type: string
-            example: "no-cache, no-store"
     NewFileUploadSuccess:
       description: The file was created successfully.
-      headers:
-        Cache-Control:
-          schema:
-            type: string
-            example: "no-cache, no-store"
-        Location:
-          description: The URL of the uploaded file
-          schema:
-            type: string
-            format: path
     DownloadSuccess:
       description: Entire file downloaded successfully.
-      headers:
-        Cache-Control:
-          schema:
-            type: string
-            example: "no-cache, no-store"
       content:
         application/octet-stream:
           schema:
@@ -114,13 +100,31 @@ components:
             format: binary
             description: The file content
     DirectoryPathError:
-      description: Bad Request - The specified path is a directory.
+      description: Directory path error
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
     InternalServerError:
       description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    FileNotFound:
+      description: File not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotEnoughDiskSpace:
+      description: Not enough disk space
       content:
         application/json:
           schema:

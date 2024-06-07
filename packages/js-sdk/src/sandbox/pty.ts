@@ -4,19 +4,19 @@ import {
   Transport,
 } from '@connectrpc/connect'
 
-import { ProcessService } from '../envd/process/process_connect'
+import { Process as ProcessService } from '../envd/process/process_connect'
 import {
   Signal,
   StartResponse,
   StreamInputRequest,
 } from '../envd/process/process_pb'
 import { ConnectionConfig, ConnectionOpts, defaultUsername } from '../connectionConfig'
-import { ProcessHandle } from './process/processHandle'
 import { PartialMessage } from '@bufbuild/protobuf'
 
-export interface StreamInputHandle {
-  stop: () => void
-  sendData: (data: Uint8Array) => void
+export interface PtyHandle {
+  kill: () => void
+  resize: (size: { cols: number, rows: number }) => void
+  handleInput: (data: Uint8Array) => Promise<void> | void
 }
 
 export class Pty {
@@ -24,11 +24,10 @@ export class Pty {
 
   constructor(private readonly transport: Transport, private readonly connectionConfig: ConnectionConfig) { }
 
-  async create({ cols, rows, onData }: {
+  async create({ cols, rows }: {
     cols: number,
     rows: number,
-    onData: (data: Uint8Array) => void | Promise<void>,
-  }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<ProcessHandle> {
+  }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>) {
     const controller = new AbortController()
 
     const events = this.rpc.start({
@@ -64,18 +63,62 @@ export class Pty {
 
     const pid = startEvent.event.event.value.pid
 
-    return new ProcessHandle(
-      pid,
-      () => controller.abort(),
-      () => this.kill(pid),
-      events,
-      undefined,
-      undefined,
-      onData,
-    )
+    const input = await this.streamInput(pid, opts)
+
+    const kill = async () => {
+      input.stop()
+      controller.abort()
+      await this.kill(pid)
+    }
+
+    return {
+      kill,
+      resize: (size: { cols: number, rows: number }) => this.resize(pid, size),
+      sendInput: (data: Uint8Array) => input.sendData(data),
+      output: {
+        [Symbol.asyncIterator]() {
+          return {
+            next: async () => {
+              const event = await events[Symbol.asyncIterator]().next()
+
+              const value: StartResponse = event.value
+
+              switch (value.event?.event.case) {
+                case 'data':
+                  switch (value.event.event.value.output.case) {
+                    case 'pty':
+                      return {
+                        done: false,
+                        value: value.event.event.value.output.value,
+                      }
+                  }
+              }
+
+              try {
+                await kill()
+              } catch (e) {
+                console.error('Failed to kill process', e)
+              }
+
+              throw new Error('Process exited')
+            },
+            throw: async (e?: any) => {
+              try {
+                await kill()
+              } catch (e) {
+                console.error('Failed to kill process', e)
+              }
+
+              throw e
+            },
+            [Symbol.asyncIterator]() { return this },
+          }
+        },
+      }
+    }
   }
 
-  async streamInput(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<StreamInputHandle> {
+  private async streamInput(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>) {
     const controller = new AbortController()
 
     const events = new AsyncQueue<PartialMessage<StreamInputRequest>>()
@@ -117,7 +160,7 @@ export class Pty {
     }
   }
 
-  async resize(
+  private async resize(
     pid: number,
     size: {
       cols: number,

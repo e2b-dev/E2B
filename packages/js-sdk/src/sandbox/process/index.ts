@@ -5,7 +5,7 @@ import {
   Transport,
 } from '@connectrpc/connect'
 
-import { ProcessService } from '../../envd/process/process_connect'
+import { Process as ProcessService } from '../../envd/process/process_connect'
 import {
   ProcessInfo as PsProcessInfo,
   Signal,

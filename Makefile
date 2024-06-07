@@ -8,4 +8,4 @@ generate:
 	cd packages/python-sdk && make generate
 	cd packages/js-sdk && pnpm generate
 	cd packages/connect-python && make bin/protoc-gen-connect-python
-	cd spec && buf generate
+	cd spec/envd && buf generate && cd ../../packages/python-sdk && ./scripts/fix-python-pb.sh

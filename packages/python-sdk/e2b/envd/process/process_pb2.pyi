@@ -1,4 +1,4 @@
-from envd.permissions import permissions_pb2 as _permissions_pb2
+from e2b.envd.permissions import permissions_pb2 as _permissions_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -109,16 +109,16 @@ class ProcessEvent(_message.Message):
         pty: bytes
         def __init__(self, stdout: _Optional[bytes] = ..., stderr: _Optional[bytes] = ..., pty: _Optional[bytes] = ...) -> None: ...
     class EndEvent(_message.Message):
-        __slots__ = ("exit_code", "terminated", "status", "error")
+        __slots__ = ("exit_code", "exited", "status", "error")
         EXIT_CODE_FIELD_NUMBER: _ClassVar[int]
-        TERMINATED_FIELD_NUMBER: _ClassVar[int]
+        EXITED_FIELD_NUMBER: _ClassVar[int]
         STATUS_FIELD_NUMBER: _ClassVar[int]
         ERROR_FIELD_NUMBER: _ClassVar[int]
         exit_code: int
-        terminated: bool
+        exited: bool
         status: str
         error: str
-        def __init__(self, exit_code: _Optional[int] = ..., terminated: bool = ..., status: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...
+        def __init__(self, exit_code: _Optional[int] = ..., exited: bool = ..., status: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...
     START_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     END_FIELD_NUMBER: _ClassVar[int]

@@ -3,20 +3,20 @@
 version: v1
 plugins:
   - plugin: es
-    out: ../packages/js-sdk/src
+    out: ../../packages/js-sdk/src/envd
     opt:
       - target=ts
   - plugin: connect-es
-    out: ../packages/js-sdk/src
+    out: ../../packages/js-sdk/src/envd
     opt:
       - target=ts
   - plugin: python
-    out: ../packages/python-sdk
+    out: ../../packages/python-sdk/e2b/envd
     opt:
-      - pyi_out=../packages/python-sdk
+      - pyi_out=../../packages/python-sdk/e2b/envd
   - name: connect-python
-    out: ../packages/python-sdk
-    path: ../packages/connect-python/bin/protoc-gen-connect-python
+    out: ../../packages/python-sdk/e2b/envd
+    path: ../../packages/connect-python/bin/protoc-gen-connect-python
 
 managed:
   enabled: true

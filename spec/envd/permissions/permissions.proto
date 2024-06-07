@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package envd.permissions;
+package permissions;
 
 message User {
   oneof selector {

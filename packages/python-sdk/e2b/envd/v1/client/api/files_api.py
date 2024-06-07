@@ -19,7 +19,7 @@ import warnings
 from pydantic import validate_arguments, ValidationError
 
 from typing_extensions import Annotated
-from pydantic import Field, StrictStr
+from pydantic import Field, StrictStr, constr, validator
 
 from typing import Union
 
@@ -46,7 +46,18 @@ class FilesApi:
     def files_path_get(
         self,
         path: Annotated[
-            StrictStr, Field(..., description="Absolute path to the file, URL encoded.")
+            StrictStr,
+            Field(
+                ...,
+                description="Path to the file, URL encoded. Can be relative to user's home directory.",
+            ),
+        ],
+        username: Annotated[
+            constr(strict=True),
+            Field(
+                ...,
+                description="User used for setting the owner, or resolving relative paths.",
+            ),
         ],
         **kwargs
     ) -> bytearray:  # noqa: E501
@@ -55,11 +66,13 @@ class FilesApi:
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.files_path_get(path, async_req=True)
+        >>> thread = api.files_path_get(path, username, async_req=True)
         >>> result = thread.get()
 
-        :param path: Absolute path to the file, URL encoded. (required)
+        :param path: Path to the file, URL encoded. Can be relative to user's home directory. (required)
         :type path: str
+        :param username: User used for setting the owner, or resolving relative paths. (required)
+        :type username: str
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _request_timeout: timeout setting for this request.
@@ -75,13 +88,26 @@ class FilesApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the files_path_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        return self.files_path_get_with_http_info(path, **kwargs)  # noqa: E501
+        return self.files_path_get_with_http_info(
+            path, username, **kwargs
+        )  # noqa: E501
 
     @validate_arguments
     def files_path_get_with_http_info(
         self,
         path: Annotated[
-            StrictStr, Field(..., description="Absolute path to the file, URL encoded.")
+            StrictStr,
+            Field(
+                ...,
+                description="Path to the file, URL encoded. Can be relative to user's home directory.",
+            ),
+        ],
+        username: Annotated[
+            constr(strict=True),
+            Field(
+                ...,
+                description="User used for setting the owner, or resolving relative paths.",
+            ),
         ],
         **kwargs
     ) -> ApiResponse:  # noqa: E501
@@ -90,11 +116,13 @@ class FilesApi:
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.files_path_get_with_http_info(path, async_req=True)
+        >>> thread = api.files_path_get_with_http_info(path, username, async_req=True)
         >>> result = thread.get()
 
-        :param path: Absolute path to the file, URL encoded. (required)
+        :param path: Path to the file, URL encoded. Can be relative to user's home directory. (required)
         :type path: str
+        :param username: User used for setting the owner, or resolving relative paths. (required)
+        :type username: str
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _preload_content: if False, the ApiResponse.data will
@@ -122,7 +150,7 @@ class FilesApi:
 
         _params = locals()
 
-        _all_params = ["path"]
+        _all_params = ["path", "username"]
         _all_params.extend(
             [
                 "async_req",
@@ -154,6 +182,9 @@ class FilesApi:
 
         # process the query parameters
         _query_params = []
+        if _params.get("username") is not None:  # noqa: E501
+            _query_params.append(("username", _params["username"]))
+
         # process the header parameters
         _header_params = dict(_params.get("_headers", {}))
         # process the form parameters
@@ -172,6 +203,8 @@ class FilesApi:
         _response_types_map = {
             "200": "bytearray",
             "400": "Error",
+            "403": "Error",
+            "404": "Error",
             "500": "Error",
         }
 
@@ -198,9 +231,19 @@ class FilesApi:
     def files_path_put(
         self,
         path: Annotated[
-            StrictStr, Field(..., description="Absolute path to the file, URL encoded.")
+            StrictStr,
+            Field(
+                ...,
+                description="Path to the file, URL encoded. Can be relative to user's home directory.",
+            ),
         ],
-        user: Annotated[StrictStr, Field(..., description="User owning the file")],
+        username: Annotated[
+            constr(strict=True),
+            Field(
+                ...,
+                description="User used for setting the owner, or resolving relative paths.",
+            ),
+        ],
         files_path_put_request: FilesPathPutRequest,
         **kwargs
     ) -> None:  # noqa: E501
@@ -209,13 +252,13 @@ class FilesApi:
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.files_path_put(path, user, files_path_put_request, async_req=True)
+        >>> thread = api.files_path_put(path, username, files_path_put_request, async_req=True)
         >>> result = thread.get()
 
-        :param path: Absolute path to the file, URL encoded. (required)
+        :param path: Path to the file, URL encoded. Can be relative to user's home directory. (required)
         :type path: str
-        :param user: User owning the file (required)
-        :type user: str
+        :param username: User used for setting the owner, or resolving relative paths. (required)
+        :type username: str
         :param files_path_put_request: (required)
         :type files_path_put_request: FilesPathPutRequest
         :param async_req: Whether to execute the request asynchronously.
@@ -234,16 +277,26 @@ class FilesApi:
             message = "Error! Please call the files_path_put_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
         return self.files_path_put_with_http_info(
-            path, user, files_path_put_request, **kwargs
+            path, username, files_path_put_request, **kwargs
         )  # noqa: E501
 
     @validate_arguments
     def files_path_put_with_http_info(
         self,
         path: Annotated[
-            StrictStr, Field(..., description="Absolute path to the file, URL encoded.")
+            StrictStr,
+            Field(
+                ...,
+                description="Path to the file, URL encoded. Can be relative to user's home directory.",
+            ),
         ],
-        user: Annotated[StrictStr, Field(..., description="User owning the file")],
+        username: Annotated[
+            constr(strict=True),
+            Field(
+                ...,
+                description="User used for setting the owner, or resolving relative paths.",
+            ),
+        ],
         files_path_put_request: FilesPathPutRequest,
         **kwargs
     ) -> ApiResponse:  # noqa: E501
@@ -252,13 +305,13 @@ class FilesApi:
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.files_path_put_with_http_info(path, user, files_path_put_request, async_req=True)
+        >>> thread = api.files_path_put_with_http_info(path, username, files_path_put_request, async_req=True)
         >>> result = thread.get()
 
-        :param path: Absolute path to the file, URL encoded. (required)
+        :param path: Path to the file, URL encoded. Can be relative to user's home directory. (required)
         :type path: str
-        :param user: User owning the file (required)
-        :type user: str
+        :param username: User used for setting the owner, or resolving relative paths. (required)
+        :type username: str
         :param files_path_put_request: (required)
         :type files_path_put_request: FilesPathPutRequest
         :param async_req: Whether to execute the request asynchronously.
@@ -288,7 +341,7 @@ class FilesApi:
 
         _params = locals()
 
-        _all_params = ["path", "user", "files_path_put_request"]
+        _all_params = ["path", "username", "files_path_put_request"]
         _all_params.extend(
             [
                 "async_req",
@@ -320,8 +373,8 @@ class FilesApi:
 
         # process the query parameters
         _query_params = []
-        if _params.get("user") is not None:  # noqa: E501
-            _query_params.append(("User", _params["user"]))
+        if _params.get("username") is not None:  # noqa: E501
+            _query_params.append(("username", _params["username"]))
 
         # process the header parameters
         _header_params = dict(_params.get("_headers", {}))
