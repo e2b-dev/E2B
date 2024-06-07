@@ -11,13 +11,21 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
 
   useEffect(() => {
     const getUsage = async () => {
+      setVcpuData(null)
+      setRamData(null)
+
       const response = await fetch(usageUrl, {
         headers: {
           'X-Team-API-Key': currentApiKey! 
         }
       })
+      if (!response.ok) {
+        // TODO: Add sentry event here
+        console.log(response)
+        return
+      }
+
       const data = await response.json()
-      console.log(data)
       const { vcpuData, ramData, vcpuKeys, ramKeys } = transformData(data.usages)
       
       setVcpuData({
@@ -101,8 +109,6 @@ const transformData = (usages: any) => {
       ramKeys.add(`RAM_${template.alias}`)
     })
   })
-
-  console.log(vcpuData)
 
   return {
     vcpuData,
