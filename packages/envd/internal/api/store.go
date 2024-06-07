@@ -1,18 +1,19 @@
 package api
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/host"
+
+	"github.com/rs/zerolog"
 )
 
 type API struct {
-	l *slog.Logger
+	logger *zerolog.Logger
 }
 
-func New(l *slog.Logger) ServerInterface {
-	return API{l: l}
+func New(l *zerolog.Logger) ServerInterface {
+	return &API{logger: l}
 }
 
 func (API) PostSync(w http.ResponseWriter, r *http.Request) {

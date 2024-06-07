@@ -8,10 +8,9 @@ package ports
 
 import (
 	"fmt"
+	"log/slog"
 	"net"
 	"os/exec"
-
-	"go.uber.org/zap"
 )
 
 type PortState string
@@ -32,7 +31,7 @@ type PortToForward struct {
 }
 
 type Forwarder struct {
-	logger *zap.SugaredLogger
+	logger *slog.Logger
 	// Map of ports that are being currently forwarded.
 	ports             map[string]*PortToForward
 	scannerSubscriber *ScannerSubscriber
@@ -40,7 +39,7 @@ type Forwarder struct {
 }
 
 func NewForwarder(
-	logger *zap.SugaredLogger,
+	logger *slog.Logger,
 	scanner *Scanner,
 ) *Forwarder {
 	scannerSub := scanner.AddSubscriber(
@@ -91,7 +90,7 @@ func (f *Forwarder) StartForwarding() {
 					// The actual socat process that handles forwarding should be running from the last iteration.
 					val.state = PortStateForward
 				} else {
-					f.logger.Debugw("Detected new opened port on localhost that is not forwarded",
+					f.logger.Debug("Detected new opened port on localhost that is not forwarded",
 						"ip", p.Ip,
 						"port", p.Port,
 						"state", p.State,
@@ -128,7 +127,7 @@ func (f *Forwarder) starPortForwarding(p *PortToForward) {
 		p.port,
 	)
 
-	f.logger.Debugw("About to start port forwarding",
+	f.logger.Debug("About to start port forwarding",
 		"socatCmd", socatCmd,
 		"pid", p.pid,
 		"sourceIP", f.sourceIP.To4(),
@@ -137,7 +136,7 @@ func (f *Forwarder) starPortForwarding(p *PortToForward) {
 
 	cmd := exec.Command("sh", "-c", socatCmd)
 	if err := cmd.Start(); err != nil {
-		f.logger.Errorw("Failed to start port forwarding - failed to start socat",
+		f.logger.Error("Failed to start port forwarding - failed to start socat",
 			"socatCmd", socatCmd,
 			"error", err,
 		)
@@ -155,7 +154,7 @@ func (f *Forwarder) stopPortForwarding(p *PortToForward) {
 
 	defer func() { p.socat = nil }()
 
-	f.logger.Debugw("About to stop port forwarding",
+	f.logger.Debug("About to stop port forwarding",
 		"socatCmd", p.socat.String(),
 		"pid", p.pid,
 		"sourceIP", f.sourceIP.To4(),
@@ -163,7 +162,7 @@ func (f *Forwarder) stopPortForwarding(p *PortToForward) {
 	)
 
 	if err := p.socat.Process.Kill(); err != nil {
-		f.logger.Debugw("Error when stopping port forwarding",
+		f.logger.Debug("Error when stopping port forwarding",
 			"socatCmd", p.socat.String(),
 			"pid", p.pid,
 			"sourceIP", f.sourceIP.To4(),
@@ -174,7 +173,7 @@ func (f *Forwarder) stopPortForwarding(p *PortToForward) {
 		return
 	}
 
-	f.logger.Debugw("Stopped port forwarding",
+	f.logger.Debug("Stopped port forwarding",
 		"socatCmd", p.socat.String(),
 		"pid", p.pid,
 		"sourceIP", f.sourceIP.To4(),

@@ -31,8 +31,6 @@ const (
 )
 
 var (
-	wsHandler http.Handler
-
 	debug bool
 	port  int64
 
@@ -108,7 +106,7 @@ func main() {
 	parseFlags()
 
 	if versionFlag {
-		fmt.Println("envd version %s", Version)
+		fmt.Printf("envd %s\n", Version)
 
 		return
 	}
@@ -117,13 +115,13 @@ func main() {
 
 	m := http.NewServeMux()
 
-	fsLogger := l.With("service", "filesystem")
-	filesystemRpc.Handle(m, fsLogger)
+	fsLogger := l.With().Str("service", "filesystem").Logger()
+	filesystemRpc.Handle(m, &fsLogger)
 
-	processLogger := l.With("service", "process")
-	processService := processRpc.Handle(m, processLogger)
+	processLogger := l.With().Str("service", "process").Logger()
+	processService := processRpc.Handle(m, &processLogger)
 
-	handler := api.HandlerFromMux(api.New(), m)
+	handler := api.HandlerFromMux(api.New(fsLogger), m)
 
 	s := &http.Server{
 		Handler:           withCORS(handler),

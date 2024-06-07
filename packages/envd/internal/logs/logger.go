@@ -2,13 +2,14 @@ package logs
 
 import (
 	"io"
-	"log/slog"
 	"os"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs/exporter"
+
+	"github.com/rs/zerolog"
 )
 
-func NewLogger(debug bool) *slog.Logger {
+func NewLogger(debug bool) *zerolog.Logger {
 	var w io.Writer
 	if debug {
 		w = os.Stdout
@@ -16,11 +17,7 @@ func NewLogger(debug bool) *slog.Logger {
 		w = exporter.NewHTTPLogsExporter(false)
 	}
 
-	h := slog.NewJSONHandler(w, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	})
+	l := zerolog.New(w).Level(zerolog.DebugLevel)
 
-	l := slog.New(h)
-
-	return l
+	return &l
 }

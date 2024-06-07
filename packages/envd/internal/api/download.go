@@ -11,7 +11,7 @@ import (
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 )
 
-func (API) GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params GetFilesPathParams) {
+func (a *API) GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params GetFilesPathParams) {
 	defer r.Body.Close()
 
 	u, err := user.Lookup(params.Username)
