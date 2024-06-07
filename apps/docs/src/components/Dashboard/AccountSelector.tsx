@@ -12,6 +12,7 @@ const createTeamUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams`
 
 export const AccountSelector = ({ teams, user, currentTeam, setCurrentTeam, setTeams }) => {
 
+
   const createNewTeam = async() => {
     const res = await fetch(createTeamUrl, {
       method: 'POST',
