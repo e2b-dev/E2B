@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
 	"time"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/api"
-	logging "github.com/e2b-dev/infra/packages/envd/internal/log"
+	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 
 	filesystemRpc "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
 	processRpc "github.com/e2b-dev/infra/packages/envd/internal/services/process"
@@ -19,7 +18,6 @@ import (
 
 	connectcors "connectrpc.com/cors"
 	"github.com/rs/cors"
-	"go.uber.org/zap"
 )
 
 const (
@@ -33,7 +31,6 @@ const (
 )
 
 var (
-	logger    *zap.SugaredLogger
 	wsHandler http.Handler
 
 	debug bool
@@ -41,8 +38,6 @@ var (
 
 	versionFlag  bool
 	startCmdFlag string
-
-	logDir = filepath.Join("/var", "log")
 )
 
 func parseFlags() {
@@ -50,7 +45,7 @@ func parseFlags() {
 		&debug,
 		"debug",
 		false,
-		"debug mode prints all logs to stdout and stderr",
+		"debug mode prints all logs to stdout",
 	)
 
 	flag.BoolVar(
@@ -118,17 +113,15 @@ func main() {
 		return
 	}
 
-	l, err := logging.NewLogger(logDir, debug, true)
-	if err != nil {
-		log.Fatalf("error creating a new logger: %v", err)
-	}
-	logger = l
-	defer l.Sync()
+	l := logs.NewLogger(debug)
 
 	m := http.NewServeMux()
 
-	filesystemRpc.Handle(m)
-	processService := processRpc.Handle(m)
+	fsLogger := l.With("service", "filesystem")
+	filesystemRpc.Handle(m, fsLogger)
+
+	processLogger := l.With("service", "process")
+	processService := processRpc.Handle(m, processLogger)
 
 	handler := api.HandlerFromMux(api.New(), m)
 
@@ -162,8 +155,8 @@ func main() {
 		})
 	}
 
-	err = s.ListenAndServe()
+	err := s.ListenAndServe()
 	if err != nil {
-		logger.Fatalf("error starting server: %v", err)
+		log.Fatalf("error starting server: %v", err)
 	}
 }

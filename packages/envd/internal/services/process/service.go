@@ -2,6 +2,7 @@ package process
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
@@ -14,16 +15,18 @@ import (
 type Service struct {
 	spec.UnimplementedProcessHandler
 	processes *Map[uint32, *handler.Handler]
+	l         *slog.Logger
 }
 
-func newService() *Service {
+func newService(l *slog.Logger) *Service {
 	return &Service{
+		l:         l,
 		processes: newMap[uint32, *handler.Handler](),
 	}
 }
 
-func Handle(server *http.ServeMux, opts ...connect.HandlerOption) *Service {
-	service := newService()
+func Handle(server *http.ServeMux, l *slog.Logger, opts ...connect.HandlerOption) *Service {
+	service := newService(l)
 
 	path, handler := spec.NewProcessHandler(service, opts...)
 
