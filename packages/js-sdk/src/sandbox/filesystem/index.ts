@@ -23,6 +23,8 @@ export interface FilesystemRequestOpts extends Partial<Pick<ConnectionOpts, 'req
   user?: Username
 }
 
+type BodyData = string | ArrayBuffer | Blob | ReadableStream<ArrayBuffer> | ReadableStream<Uint8Array>
+
 export class Filesystem {
   private readonly rpc: PromiseClient<typeof FilesystemService>
   private readonly envdApi: EnvdApiClient
@@ -67,8 +69,9 @@ export class Filesystem {
   async write(path: string, data: ArrayBuffer, opts?: FilesystemRequestOpts): Promise<void>
   async write(path: string, data: Blob, opts?: FilesystemRequestOpts): Promise<void>
   async write(path: string, data: ReadableStream<ArrayBuffer> | ReadableStream<Uint8Array>, opts?: FilesystemRequestOpts): Promise<void>
-  async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream<ArrayBuffer> | ReadableStream<Uint8Array>, opts?: FilesystemRequestOpts): Promise<void> {
+  async write(path: string, data: BodyData, opts?: FilesystemRequestOpts): Promise<void> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+    const blob = await new Response(data).blob()
 
     await this.envdApi.api.PUT('/files/{path}', {
       params: {
@@ -79,14 +82,14 @@ export class Filesystem {
           username: opts?.user ?? defaultUsername,
         },
       },
-      bodySerializer(body) {
+      bodySerializer() {
         const fd = new FormData()
-        for (const name in body) {
-          fd.append(name, body[name])
-        }
+
+        fd.append('file', blob)
+
         return fd
       },
-      body,
+      body: undefined as any,
       signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
     })
   }
