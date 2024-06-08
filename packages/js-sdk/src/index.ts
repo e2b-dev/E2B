@@ -11,7 +11,6 @@ export { WatchHandle } from './sandbox/filesystem/watchHandle'
 export type { FilesystemEvent } from './sandbox/filesystem/watchHandle'
 export type {
   EntryInfo,
-  FileFormat,
 } from './sandbox/filesystem'
 export {
   EventType,

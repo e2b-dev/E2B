@@ -19,9 +19,6 @@ from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.permissions.permissions_pb2 import User
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 
-
-FileFormat = Literal["text", "bytes", "stream"]
-
 READ_CHUNK_SIZE = 2 << 16  # 64KiB
 
 
@@ -64,7 +61,7 @@ class Filesystem:
     def read(
         self,
         path: str,
-        format: FileFormat = "text",
+        format: Literal["text", "bytes", "stream"] = "text",
         request_timeout: Optional[float] = None,
         user: Username = "user",
     ):

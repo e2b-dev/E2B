@@ -17,8 +17,6 @@ import { WatchHandle, FilesystemEvent } from './watchHandle'
 
 export type EntryInfo = PlainMessage<FsEntryInfo>
 
-export type FileFormat = 'text' | 'stream' | 'bytes' | 'blob'
-
 export interface FilesystemRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
   user?: Username
 }
@@ -40,7 +38,7 @@ export class Filesystem {
   async read(path: string, opts?: FilesystemRequestOpts & { format: 'bytes' }): Promise<Uint8Array>
   async read(path: string, opts?: FilesystemRequestOpts & { format: 'blob' }): Promise<Blob>
   async read(path: string, opts?: FilesystemRequestOpts & { format: 'stream' }): Promise<ReadableStream<Uint8Array>>
-  async read(path: string, opts?: FilesystemRequestOpts & { format?: FileFormat }): Promise<unknown> {
+  async read(path: string, opts?: FilesystemRequestOpts & { format?: 'text' | 'stream' | 'bytes' | 'blob' }): Promise<unknown> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const format = opts?.format ?? 'text'
