@@ -17,6 +17,8 @@ import (
 // https://www.zupzup.org/go-port-forwarding/index.html
 // https://medium.com/@nathanpbrophy/write-a-sample-port-forwarder-in-golang-2748309c1e80
 
+// Even better, use ip tables to redirect.
+
 const (
 	scanPeriod  = 1 * time.Second
 	forwardedIP = "127.0.0.1"
