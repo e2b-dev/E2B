@@ -14,30 +14,90 @@ interface ProcessStderr {
 
 export type ProcessOutput = ProcessStdout | ProcessStderr
 
-export class ProcessHandle<T = ""> {
+
+export class ProcessError extends Error {
+  constructor(message: any) {
+    super(message)
+    this.name = 'ProcessError'
+  }
+}
+
+export class ProcessExitError extends ProcessError implements ProcessResult {
+  constructor(private readonly result: ProcessResult) {
+    super(result.error)
+    this.name = 'ProcessExitError'
+  }
+
+  get exitCode() {
+    return this.result.exitCode
+  }
+
+  get error() {
+    return this.result.error
+  }
+
+  get stdout() {
+    return this.result.stdout
+  }
+
+  get stderr() {
+    return this.result.stderr
+  }
+}
+
+
+export class ProcessHandle implements ProcessResult {
   private rawStdout = new Uint8Array()
   private rawStderr = new Uint8Array()
 
-  private _result?: ProcessResult
+  private result?: ProcessResult
 
   constructor(
     readonly pid: number,
     private readonly handleDisconnect: () => void,
     private readonly handleKill: () => Promise<void>,
-    private readonly outputs: OutputType[],
     private readonly events: AsyncIterable<ConnectResponse | StartResponse>,
   ) { }
 
-  get result() {
-    return this._result
+  get exitCode() {
+    return this.result?.exitCode
   }
 
-  async wait(
-    onStdout?: ((data: string) => void | Promise<void>),
-    onStderr?: ((data: string) => void | Promise<void>),
-  ): Promise<ProcessResult> {
+  get stderr() {
+    return this.rawStderr.toString()
+  }
+
+  get stdout() {
+    return this.rawStdout.toString()
+  }
+
+  private static isProcessStdout(event: ProcessOutput | ProcessResult | undefined): event is ProcessStdout {
+    return event !== undefined && 'stdout' in event
+  }
+
+  private static isProcessStderr(event: ProcessOutput | ProcessResult | undefined): event is ProcessStderr {
+    return event !== undefined && 'stderr' in event
+  }
+
+  async wait({ onStderr, onStdout }: {
+    onStdout?: (data: string) => void | Promise<void>,
+    onStderr?: (data: string) => void | Promise<void>,
+  } = {}): Promise<ProcessResult> {
     for await (const event of this) {
-      event
+      if (ProcessHandle.isProcessStdout(event)) {
+        onStdout?.(event.stdout)
+      } else if (ProcessHandle.isProcessStderr(event)) {
+        onStderr?.(event.stderr)
+      }
+    }
+
+    if (!this.result) {
+      throw new ProcessError('Process ended without an end event')
+    }
+
+
+    if (this.result.exitCode !== 0) {
+      throw new ProcessExitError(this.result)
     }
 
     return this.result
@@ -73,9 +133,9 @@ export class ProcessHandle<T = ""> {
             }
             break
           case 'end':
-            this._result = {
-              exitCode: event.value.exitCode,
-              error: event.value.error,
+            this.result = {
+              exitCode: value.event.event.value.exitCode,
+              error: value.event.event.value.error,
               stdout: this.stdout,
               stderr: this.stderr,
             }

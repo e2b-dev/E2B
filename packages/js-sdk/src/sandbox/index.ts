@@ -47,7 +47,7 @@ export class Sandbox extends SandboxApi {
 
   get uploadUrl() {
     const url = new URL('/files', this.envdApiUrl)
-    url.searchParams.set('user', defaultUsername)
+    url.searchParams.set('username', defaultUsername)
 
     return url.toString()
   }

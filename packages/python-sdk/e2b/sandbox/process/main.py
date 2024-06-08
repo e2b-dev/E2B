@@ -39,7 +39,8 @@ class Process:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-    ) -> ProcessResult: ...
+    ) -> ProcessResult:
+        ...
 
     @overload
     def run(
@@ -49,7 +50,8 @@ class Process:
         envs: Optional[Dict[str, str]] = {},
         user: Username = "user",
         cwd: Optional[str] = None,
-    ) -> ProcessHandle: ...
+    ) -> ProcessHandle:
+        ...
 
     def run(
         self,

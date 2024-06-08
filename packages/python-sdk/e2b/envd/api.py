@@ -1,0 +1,1 @@
+ENVD_API_FILES_ROUTE = "/files"

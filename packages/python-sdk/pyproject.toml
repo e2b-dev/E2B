@@ -18,6 +18,7 @@ pydantic = "*"
 aenum = ">=3.1.11"
 typing-extensions = ">=4.8.0"
 protobuf = "^5.26.1"
+requests = "^2.32.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"

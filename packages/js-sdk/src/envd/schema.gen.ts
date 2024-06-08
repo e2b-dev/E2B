@@ -25,7 +25,7 @@ export interface paths {
       };
     };
     /** Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten. */
-    put: {
+    post: {
       parameters: {
         query: {
           username: components["parameters"]["User"];
@@ -84,18 +84,12 @@ export interface components {
     };
     /** @description Entire file downloaded successfully. */
     DownloadSuccess: {
-      headers: {
-        "Cache-Control"?: string;
-      };
       content: {
         "application/octet-stream": string;
       };
     };
     /** @description The file was updated successfully. */
     ExistingFileUploadSuccess: {
-      headers: {
-        "Cache-Control"?: string;
-      };
       content: never;
     };
     /** @description File not found */
@@ -112,11 +106,6 @@ export interface components {
     };
     /** @description The file was created successfully. */
     NewFileUploadSuccess: {
-      headers: {
-        "Cache-Control"?: string;
-        /** @description The URL of the uploaded file */
-        Location?: string;
-      };
       content: never;
     };
     /** @description Not enough disk space */

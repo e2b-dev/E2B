@@ -23,6 +23,18 @@ class ProcessResult(BaseModel):
     error: Optional[str]
 
 
+class ProcessExitException(Exception, ProcessResult):
+    def __init__(self, result: ProcessResult):
+        self._result = result
+
+    def __str__(self):
+        return f"Process exited with code {self._result.exit_code} and error: {self._result.error}"
+
+    @property
+    def exit_code(self):
+        return self._result.exit_code
+
+
 class ProcessHandle(Generator):
     @property
     def pid(self):
@@ -79,11 +91,14 @@ class ProcessHandle(Generator):
         for output in self:
             if isinstance(output, ProcessStdout) and on_stdout:
                 on_stdout(output.stdout)
-            if isinstance(output, ProcessStderr) and on_stderr:
+            elif isinstance(output, ProcessStderr) and on_stderr:
                 on_stderr(output.stderr)
 
         if self._result is None:
-            raise RuntimeError("Process has not ended")
+            raise RuntimeError("Process ended without an end event")
+
+        if self._result.exit_code != 0:
+            raise ProcessExitException(self._result)
 
         return self._result
 

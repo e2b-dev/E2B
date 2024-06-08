@@ -107,7 +107,7 @@ export class Process {
   ): Promise<ProcessHandle>
   async run(
     cmd: string,
-    opts: ProcessStartOpts = {},
+    opts?: ProcessStartOpts,
   ): Promise<unknown> {
     const proc = await this.start(cmd, opts)
 

@@ -6,6 +6,7 @@ from e2b.sandbox.filesystem.filesystem import Filesystem
 from e2b.sandbox.process.main import Process
 from e2b.sandbox.sandbox_api import SandboxApi
 from e2b.connection_config import ConnectionConfig
+from e2b.envd.api import ENVD_API_FILES_ROUTE
 
 
 class Sandbox(SandboxApi):
@@ -101,9 +102,9 @@ class Sandbox(SandboxApi):
 
     @property
     def upload_url(self) -> str:
-        url = urllib.parse.urljoin(self._envd_api_url, "/files?")
+        url = urllib.parse.urljoin(self._envd_api_url, f"/{ENVD_API_FILES_ROUTE}?")
         params = urllib.parse.urlencode(
-            {"user": "user"},
+            {"username": "user"},
         )
         url = urllib.parse.urljoin(url, params)
 

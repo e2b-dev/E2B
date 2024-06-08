@@ -1,21 +1,33 @@
-from io import BytesIO
 import connect
+import requests
+import urllib.parse
 
-from typing import List, Optional, overload, Literal, Union
+from io import IOBase
+from typing import (
+    Iterator,
+    List,
+    Optional,
+    overload,
+    Literal,
+    Union,
+    IO,
+)
 
-from e2b.envd import EnvdApiClient, client
 from e2b.sandbox.filesystem.watch_handle import WatchHandle
 from e2b.connection_config import Username
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.permissions.permissions_pb2 import User
+from e2b.envd.api import ENVD_API_FILES_ROUTE
 
 
 FileFormat = Literal["text", "bytes", "stream"]
 
+READ_CHUNK_SIZE = 2 << 16  # 64KiB
+
 
 class Filesystem:
     def __init__(self, envd_api_url: str) -> None:
-        self._envd_api = EnvdApiClient(api_url=envd_api_url)
+        self._envd_api_url = envd_api_url
 
         self._rpc = filesystem_connect.FilesystemClient(
             envd_api_url,
@@ -47,7 +59,7 @@ class Filesystem:
         format: Literal["stream"],
         request_timeout: Optional[float] = None,
         user: Username = "user",
-    ) -> BytesIO: ...
+    ) -> Iterator[bytes]: ...
 
     def read(
         self,
@@ -56,57 +68,33 @@ class Filesystem:
         request_timeout: Optional[float] = None,
         user: Username = "user",
     ):
-        res = client.FilesApi(self._envd_api).files_path_get(
-            path=path,
-            username=user,
-            _request_timeout=request_timeout,
+        url = urllib.parse.urljoin(self._envd_api_url, f"/{ENVD_API_FILES_ROUTE}")
+        r = requests.get(
+            url,
+            params={"path": path, "username": user},
         )
 
         if format == "text":
-            return res.decode()
+            return r.text
+        elif format == "bytes":
+            return bytearray(r.content)
+        elif format == "stream":
+            iter: Iterator[bytes] = r.iter_content(chunk_size=READ_CHUNK_SIZE)
+            return iter
 
-        return res
-
-    @overload
     def write(
         self,
         path: str,
-        data: str,
+        data: Union[str, bytes, IOBase, IO],
         request_timeout: Optional[float] = None,
-        user: Username = "user",
-    ) -> None: ...
-
-    @overload
-    def write(
-        self,
-        path: str,
-        data: bytes,
-        request_timeout: Optional[float] = None,
-        user: Username = "user",
-    ) -> None: ...
-
-    @overload
-    def write(
-        self,
-        path: str,
-        data: BytesIO,
-        request_timeout: Optional[float] = None,
-        user: Username = "user",
-    ) -> None: ...
-
-    def write(
-        self,
-        path: str,
-        data: Union[bytes, str, BytesIO],
-        request_timeout: Optional[float],
         user: Username = "user",
     ) -> None:
-        client.FilesApi(self._envd_api).files_path_put(
-            path=path,
-            user=user,
-            mode=mode,
-            data=data,
-            _request_timeout=request_timeout,
+        url = urllib.parse.urljoin(self._envd_api_url, f"/{ENVD_API_FILES_ROUTE}")
+        files = {"file": data}
+        r = requests.post(
+            url,
+            files=files,
+            params={"path": path, "username": user},
         )
 
     def list(
@@ -164,39 +152,3 @@ class Filesystem:
         )
 
         return WatchHandle(events=events)
-
-    # def upload_file(self, file: IO, timeout: Optional[float] = TIMEOUT) -> str:
-    #     """
-    #     Upload a file to the sandbox.
-    #     The file will be uploaded to the user's home (`/home/user`) directory with the same name.
-    #     If a file with the same name already exists, it will be overwritten.
-
-    #     :param file: The file to upload
-    #     :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-    #     """
-    #     files = {"file": file}
-    #     r = requests.post(self.file_url(), files=files, timeout=timeout)
-    #     if r.status_code != 200:
-    #         raise Exception(f"Failed to upload file: {r.reason} {r.text}")
-
-    #     filename = path.basename(file.name)
-    #     return f"/home/user/{filename}"
-
-    # def download_file(
-    #     self, remote_path: str, timeout: Optional[float] = TIMEOUT
-    # ) -> bytes:
-    #     """
-    #     Download a file from the sandbox and returns it's content as bytes.
-
-    #     :param remote_path: The path of the file to download
-    #     :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-    #     """
-    #     encoded_path = urllib.parse.quote(remote_path)
-    #     url = f"{self.file_url()}?path={encoded_path}"
-    #     r = requests.get(url, timeout=timeout)
-
-    #     if r.status_code != 200:
-    #         raise Exception(
-    #             f"Failed to download file '{remote_path}'. {r.reason} {r.text}"
-    #         )
-    #     return r.content
