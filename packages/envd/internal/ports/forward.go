@@ -11,12 +11,7 @@ import (
 	psnet "github.com/shirou/gopsutil/v4/net"
 )
 
-type PortState string
-
 const (
-	PortStateForward PortState = "FORWARD"
-	PortStateDelete  PortState = "DELETE"
-
 	scanPeriod = 1 * time.Second
 )
 
@@ -29,8 +24,8 @@ type forwarding struct {
 	cmd *exec.Cmd
 }
 
-func (f *forwarding) Stop() error {
-	return f.cmd.Process.Kill()
+func (f *forwarding) Stop() {
+	f.cmd.Process.Kill()
 }
 
 type Forwarder struct {
@@ -67,7 +62,7 @@ func (f *Forwarder) Start() {
 				return
 			}
 
-			newForwarding := make(map[uint32]*forwarding)
+			newPorts := make(map[uint32]*forwarding)
 
 			for _, conn := range cs {
 				if conn.Laddr.IP != forwardedIP {
@@ -76,7 +71,7 @@ func (f *Forwarder) Start() {
 
 				forwarding, ok := f.ports[conn.Laddr.Port]
 				if ok {
-					newForwarding[conn.Laddr.Port] = forwarding
+					newPorts[conn.Laddr.Port] = forwarding
 
 					delete(f.ports, conn.Laddr.Port)
 
@@ -90,14 +85,14 @@ func (f *Forwarder) Start() {
 					continue
 				}
 
-				newForwarding[conn.Laddr.Port] = forwarding
+				newPorts[conn.Laddr.Port] = forwarding
 			}
 
-			for _, forwarding := range newForwarding {
+			for _, forwarding := range f.ports {
 				forwarding.Stop()
 			}
 
-			f.ports = newForwarding
+			f.ports = newPorts
 		}
 	}
 }
