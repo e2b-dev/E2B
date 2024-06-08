@@ -54,10 +54,16 @@ export class Sandbox extends SandboxApi {
     return url.toString()
   }
 
-  static async spawn<S extends typeof Sandbox>(this: S, template = this.defaultTemplate, opts?: SandboxOpts): Promise<InstanceType<S>> {
-    const sandboxID = await this.createSandbox(template, opts)
+  static async spawn<S extends typeof Sandbox>(this: S, opts?: SandboxOpts): Promise<InstanceType<S>>
+  static async spawn<S extends typeof Sandbox>(this: S, template: string, opts?: SandboxOpts): Promise<InstanceType<S>>
+  static async spawn<S extends typeof Sandbox>(this: S, templateOrOpts?: SandboxOpts | string, opts?: SandboxOpts): Promise<InstanceType<S>> {
+    const { template, sandboxOpts } = typeof templateOrOpts === 'string'
+      ? { template: templateOrOpts, sandboxOpts: opts }
+      : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
 
-    return new this(sandboxID, opts) as InstanceType<S>
+    const sandboxID = await this.createSandbox(template, sandboxOpts)
+
+    return new this(sandboxID, sandboxOpts) as InstanceType<S>
   }
 
   static async connect<S extends typeof Sandbox>(this: S, sandboxID: string, opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>): Promise<InstanceType<S>> {

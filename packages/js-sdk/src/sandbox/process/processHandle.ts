@@ -14,7 +14,7 @@ interface ProcessStderr {
 
 export type ProcessOutput = ProcessStdout | ProcessStderr
 
-export class ProcessHandle {
+export class ProcessHandle<T = ""> {
   private rawStdout = new Uint8Array()
   private rawStderr = new Uint8Array()
 
@@ -24,6 +24,7 @@ export class ProcessHandle {
     readonly pid: number,
     private readonly handleDisconnect: () => void,
     private readonly handleKill: () => Promise<void>,
+    private readonly outputs: OutputType[],
     private readonly events: AsyncIterable<ConnectResponse | StartResponse>,
   ) { }
 
