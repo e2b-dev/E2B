@@ -3,7 +3,6 @@ package ports
 import (
 	"context"
 	"fmt"
-	"net"
 	"os/exec"
 	"time"
 
@@ -12,12 +11,9 @@ import (
 )
 
 const (
-	scanPeriod = 1 * time.Second
-)
-
-var (
+	scanPeriod  = 1 * time.Second
 	forwardedIP = "127.0.0.1"
-	gatewayIP   = net.IPv4(169, 254, 0, 21)
+	gatewayIP   = "169.254.0.21"
 )
 
 type forwarding struct {
@@ -103,7 +99,7 @@ func (f *Forwarder) forwardPort(port uint32) (*forwarding, error) {
 	socatCmd := fmt.Sprintf(
 		"socat -d -d -d TCP4-LISTEN:%v,bind=%s,fork TCP4:localhost:%v",
 		port,
-		gatewayIP.String(),
+		gatewayIP,
 		port,
 	)
 
