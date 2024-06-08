@@ -19,7 +19,7 @@ func New(l *zerolog.Logger) ServerInterface {
 func (API) PostSync(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	host.SyncClock()
+	host.Sync()
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "")
 

@@ -38,7 +38,7 @@ func (s *Service) Start(ctx context.Context, req *connect.Request[rpc.StartReque
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
 
-	host.WaitForHostSync()
+	host.WaitForSync()
 
 	proc, err := handler.New(req.Msg)
 	if err != nil {

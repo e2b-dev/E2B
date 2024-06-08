@@ -10,6 +10,13 @@ import (
 	psnet "github.com/shirou/gopsutil/v4/net"
 )
 
+// TODO: Can we start the envd on the gateway and then forward the ports to the host directly?
+// This would avoid the need to forward the ports to the gateway separately.
+// With 0.0.0.0 does the envd automatically listen to the gateway traffic without socat invocations?
+
+// https://www.zupzup.org/go-port-forwarding/index.html
+// https://medium.com/@nathanpbrophy/write-a-sample-port-forwarder-in-golang-2748309c1e80
+
 const (
 	scanPeriod  = 1 * time.Second
 	forwardedIP = "127.0.0.1"

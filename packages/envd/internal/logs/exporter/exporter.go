@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type HTTPLogsExporter struct {
+type HTTPExporter struct {
 	ctx      context.Context
 	client   http.Client
 	triggers chan struct{}
@@ -19,8 +19,8 @@ type HTTPLogsExporter struct {
 	debug bool
 }
 
-func NewHTTPLogsExporter(ctx context.Context, debug bool) *HTTPLogsExporter {
-	exporter := &HTTPLogsExporter{
+func NewHTTPLogsExporter(ctx context.Context, debug bool) *HTTPExporter {
+	exporter := &HTTPExporter{
 		client: http.Client{
 			Timeout: 2 * time.Second,
 		},
@@ -34,7 +34,7 @@ func NewHTTPLogsExporter(ctx context.Context, debug bool) *HTTPLogsExporter {
 	return exporter
 }
 
-func (w *HTTPLogsExporter) sendInstanceLogs(logs []byte, address string) error {
+func (w *HTTPExporter) sendInstanceLogs(logs []byte, address string) error {
 	request, err := http.NewRequestWithContext(w.ctx, http.MethodPost, address, bytes.NewBuffer(logs))
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func printLog(logs []byte) {
 	fmt.Fprintf(os.Stdout, "%v", string(logs))
 }
 
-func (w *HTTPLogsExporter) start() {
+func (w *HTTPExporter) start() {
 	for range w.triggers {
 		logs := w.getAllLogs()
 
@@ -115,7 +115,7 @@ func (w *HTTPLogsExporter) start() {
 	}
 }
 
-func (w *HTTPLogsExporter) resumeProcessing() {
+func (w *HTTPExporter) resumeProcessing() {
 	select {
 	case w.triggers <- struct{}{}:
 	default:
@@ -124,7 +124,7 @@ func (w *HTTPLogsExporter) resumeProcessing() {
 	}
 }
 
-func (w *HTTPLogsExporter) Write(logs []byte) (int, error) {
+func (w *HTTPExporter) Write(logs []byte) (int, error) {
 	logsCopy := make([]byte, len(logs))
 	copy(logsCopy, logs)
 
@@ -133,7 +133,7 @@ func (w *HTTPLogsExporter) Write(logs []byte) (int, error) {
 	return len(logs), nil
 }
 
-func (w *HTTPLogsExporter) getAllLogs() [][]byte {
+func (w *HTTPExporter) getAllLogs() [][]byte {
 	w.Lock()
 	defer w.Unlock()
 
@@ -143,7 +143,7 @@ func (w *HTTPLogsExporter) getAllLogs() [][]byte {
 	return logs
 }
 
-func (w *HTTPLogsExporter) addLogs(logs []byte) {
+func (w *HTTPExporter) addLogs(logs []byte) {
 	w.Lock()
 	defer w.Unlock()
 
