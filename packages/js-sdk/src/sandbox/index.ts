@@ -48,8 +48,6 @@ export class Sandbox extends SandboxApi {
   get uploadUrl() {
     const url = new URL('/files', this.envdApiUrl)
     url.searchParams.set('user', defaultUsername)
-    // This makes it so that the filepath in the multipart form data is used.
-    url.searchParams.set('path', '')
 
     return url.toString()
   }

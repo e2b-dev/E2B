@@ -103,7 +103,7 @@ class Sandbox(SandboxApi):
     def upload_url(self) -> str:
         url = urllib.parse.urljoin(self._envd_api_url, "/files?")
         params = urllib.parse.urlencode(
-            {"user": "user", "path": ""},
+            {"user": "user"},
         )
         url = urllib.parse.urljoin(url, params)
 
