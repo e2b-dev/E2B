@@ -33,7 +33,7 @@ paths:
           $ref: "#/components/responses/FileNotFound"
         500:
           $ref: "#/components/responses/InternalServerError"
-    put:
+    post:
       summary: Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
       tags: [files]
       parameters:

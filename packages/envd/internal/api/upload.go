@@ -25,7 +25,7 @@ func freeDiskSpace(path string) (free uint64, err error) {
 	return freeSpace, nil
 }
 
-func (a *API) PutFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PutFilesPathParams) {
+func (a *API) PostFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PostFilesPathParams) {
 	defer r.Body.Close()
 
 	f, err := r.MultipartReader()

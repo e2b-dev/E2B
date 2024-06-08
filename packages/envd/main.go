@@ -77,7 +77,6 @@ func withCORS(h http.Handler) http.Handler {
 		AllowedMethods: []string{
 			"GET",
 			"POST",
-			"PUT",
 		},
 		AllowedHeaders: append(
 			connectcors.AllowedHeaders(),

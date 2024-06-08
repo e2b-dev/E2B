@@ -49,19 +49,19 @@ type GetFilesPathParams struct {
 	Username User `form:"username" json:"username"`
 }
 
-// PutFilesPathMultipartBody defines parameters for PutFilesPath.
-type PutFilesPathMultipartBody struct {
+// PostFilesPathMultipartBody defines parameters for PostFilesPath.
+type PostFilesPathMultipartBody struct {
 	File *openapi_types.File `json:"file,omitempty"`
 }
 
-// PutFilesPathParams defines parameters for PutFilesPath.
-type PutFilesPathParams struct {
+// PostFilesPathParams defines parameters for PostFilesPath.
+type PostFilesPathParams struct {
 	// Username User used for setting the owner, or resolving relative paths.
 	Username User `form:"username" json:"username"`
 }
 
-// PutFilesPathMultipartRequestBody defines body for PutFilesPath for multipart/form-data ContentType.
-type PutFilesPathMultipartRequestBody PutFilesPathMultipartBody
+// PostFilesPathMultipartRequestBody defines body for PostFilesPath for multipart/form-data ContentType.
+type PostFilesPathMultipartRequestBody PostFilesPathMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -69,8 +69,8 @@ type ServerInterface interface {
 	// (GET /files/{path})
 	GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params GetFilesPathParams)
 	// Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
-	// (PUT /files/{path})
-	PutFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PutFilesPathParams)
+	// (POST /files/{path})
+	PostFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PostFilesPathParams)
 	// Ensure the time and metadata is synced with the host
 	// (POST /sync)
 	PostSync(w http.ResponseWriter, r *http.Request)
@@ -129,8 +129,8 @@ func (siw *ServerInterfaceWrapper) GetFilesPath(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// PutFilesPath operation middleware
-func (siw *ServerInterfaceWrapper) PutFilesPath(w http.ResponseWriter, r *http.Request) {
+// PostFilesPath operation middleware
+func (siw *ServerInterfaceWrapper) PostFilesPath(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
@@ -145,7 +145,7 @@ func (siw *ServerInterfaceWrapper) PutFilesPath(w http.ResponseWriter, r *http.R
 	}
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params PutFilesPathParams
+	var params PostFilesPathParams
 
 	// ------------- Required query parameter "username" -------------
 
@@ -163,7 +163,7 @@ func (siw *ServerInterfaceWrapper) PutFilesPath(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PutFilesPath(w, r, path, params)
+		siw.Handler.PostFilesPath(w, r, path, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -303,7 +303,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("GET "+options.BaseURL+"/files/{path}", wrapper.GetFilesPath)
-	m.HandleFunc("PUT "+options.BaseURL+"/files/{path}", wrapper.PutFilesPath)
+	m.HandleFunc("POST "+options.BaseURL+"/files/{path}", wrapper.PostFilesPath)
 	m.HandleFunc("POST "+options.BaseURL+"/sync", wrapper.PostSync)
 
 	return m
