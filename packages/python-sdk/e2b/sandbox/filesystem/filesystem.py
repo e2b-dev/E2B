@@ -140,6 +140,19 @@ class Filesystem:
             ),
         )
 
+    def make_dir(
+        self,
+        path: str,
+        request_timeout: Optional[float] = None,
+        user: Username = "user",
+    ) -> None:
+        self._rpc.make_dir(
+            filesystem_pb2.MakeDirRequest(
+                path=path,
+                user=User(username=user),
+            ),
+        )
+
     def watch(
         self,
         path: str,
