@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"context"
 	"io"
 	"os"
 
@@ -9,12 +10,12 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func NewLogger(debug bool) *zerolog.Logger {
+func NewLogger(ctx context.Context, debug bool) *zerolog.Logger {
 	var w io.Writer
 	if debug {
 		w = os.Stdout
 	} else {
-		w = exporter.NewHTTPLogsExporter(false)
+		w = exporter.NewHTTPLogsExporter(ctx, false)
 	}
 
 	l := zerolog.New(w).Level(zerolog.DebugLevel)

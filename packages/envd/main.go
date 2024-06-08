@@ -10,6 +10,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/envd/internal/api"
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
+	"github.com/e2b-dev/infra/packages/envd/internal/ports"
 
 	filesystemRpc "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
 	processRpc "github.com/e2b-dev/infra/packages/envd/internal/services/process"
@@ -111,7 +112,13 @@ func main() {
 		return
 	}
 
-	l := logs.NewLogger(debug)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	l := logs.NewLogger(ctx, debug)
+
+	forwarder := ports.NewForwarder(ctx, l)
+	go forwarder.Start()
 
 	m := http.NewServeMux()
 
@@ -121,7 +128,7 @@ func main() {
 	processLogger := l.With().Str("service", "process").Logger()
 	processService := processRpc.Handle(m, &processLogger)
 
-	handler := api.HandlerFromMux(api.New(fsLogger), m)
+	handler := api.HandlerFromMux(api.New(&fsLogger), m)
 
 	s := &http.Server{
 		Handler:           withCORS(handler),
@@ -133,9 +140,6 @@ func main() {
 	}
 
 	if startCmdFlag != "" {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		tag := "startCmd"
 
 		processService.StartBackgroundProcess(ctx, &processSpec.StartRequest{

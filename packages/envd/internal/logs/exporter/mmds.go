@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -40,8 +41,8 @@ func (opts *opts) addOptsToJSON(jsonLogs []byte) ([]byte, error) {
 	return data, err
 }
 
-func (w *HTTPLogsExporter) getMMDSToken() (string, error) {
-	request, err := http.NewRequest("PUT", "http://"+mmdsDefaultAddress+"/latest/api/token", new(bytes.Buffer))
+func (w *HTTPLogsExporter) getMMDSToken(ctx context.Context) (string, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPut, "http://"+mmdsDefaultAddress+"/latest/api/token", new(bytes.Buffer))
 	if err != nil {
 		return "", err
 	}
@@ -68,8 +69,8 @@ func (w *HTTPLogsExporter) getMMDSToken() (string, error) {
 	return token, nil
 }
 
-func (w *HTTPLogsExporter) getMMDSOpts(token string) (*opts, error) {
-	request, err := http.NewRequest("GET", "http://"+mmdsDefaultAddress, new(bytes.Buffer))
+func (w *HTTPLogsExporter) getMMDSOpts(ctx context.Context, token string) (*opts, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+mmdsDefaultAddress, new(bytes.Buffer))
 	if err != nil {
 		return nil, err
 	}

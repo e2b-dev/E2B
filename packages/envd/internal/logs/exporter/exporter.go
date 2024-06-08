@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 )
 
 type HTTPLogsExporter struct {
+	ctx      context.Context
 	client   http.Client
 	triggers chan struct{}
 	logs     [][]byte
@@ -17,13 +19,14 @@ type HTTPLogsExporter struct {
 	debug bool
 }
 
-func NewHTTPLogsExporter(debug bool) *HTTPLogsExporter {
+func NewHTTPLogsExporter(ctx context.Context, debug bool) *HTTPLogsExporter {
 	exporter := &HTTPLogsExporter{
 		client: http.Client{
 			Timeout: 2 * time.Second,
 		},
 		triggers: make(chan struct{}, 1),
 		debug:    debug,
+		ctx:      ctx,
 	}
 
 	go exporter.start()
@@ -32,7 +35,7 @@ func NewHTTPLogsExporter(debug bool) *HTTPLogsExporter {
 }
 
 func (w *HTTPLogsExporter) sendInstanceLogs(logs []byte, address string) error {
-	request, err := http.NewRequest("POST", address, bytes.NewBuffer(logs))
+	request, err := http.NewRequestWithContext(w.ctx, http.MethodPost, address, bytes.NewBuffer(logs))
 	if err != nil {
 		return err
 	}
@@ -68,7 +71,7 @@ func (w *HTTPLogsExporter) start() {
 			continue
 		}
 
-		token, err := w.getMMDSToken()
+		token, err := w.getMMDSToken(w.ctx)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error getting mmds token: %v\n", err)
 
@@ -79,7 +82,7 @@ func (w *HTTPLogsExporter) start() {
 			continue
 		}
 
-		mmdsOpts, err := w.getMMDSOpts(token)
+		mmdsOpts, err := w.getMMDSOpts(w.ctx, token)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error getting instance logging options from mmds (token %s): %v\n", token, err)
 
