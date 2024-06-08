@@ -51,7 +51,7 @@ export class Filesystem {
           path,
         },
         query: {
-          username: opts?.user ?? defaultUsername,
+          username: opts?.user || defaultUsername,
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
@@ -79,7 +79,7 @@ export class Filesystem {
           path,
         },
         query: {
-          username: opts?.user ?? defaultUsername,
+          username: opts?.user || defaultUsername,
         },
       },
       bodySerializer() {
