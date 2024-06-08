@@ -36,12 +36,14 @@ export class Filesystem {
     this.rpc = createPromiseClient(FilesystemService, transport)
   }
 
-  async read(path: string, format: 'text', opts?: FilesystemRequestOpts): Promise<string>
-  async read(path: string, format: 'bytes', opts?: FilesystemRequestOpts): Promise<Uint8Array>
-  async read(path: string, format: 'blob', opts?: FilesystemRequestOpts): Promise<Blob>
-  async read(path: string, format: 'stream', opts?: FilesystemRequestOpts): Promise<ReadableStream<Uint8Array>>
-  async read(path: string, format: FileFormat = 'text', opts?: FilesystemRequestOpts): Promise<unknown> {
+  async read(path: string, opts?: FilesystemRequestOpts & { format?: 'text' }): Promise<string>
+  async read(path: string, opts?: FilesystemRequestOpts & { format: 'bytes' }): Promise<Uint8Array>
+  async read(path: string, opts?: FilesystemRequestOpts & { format: 'blob' }): Promise<Blob>
+  async read(path: string, opts?: FilesystemRequestOpts & { format: 'stream' }): Promise<ReadableStream<Uint8Array>>
+  async read(path: string, opts?: FilesystemRequestOpts & { format?: FileFormat }): Promise<unknown> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
+    const format = opts?.format ?? 'text'
 
     const response = await this.envdApi.api.GET('/files/{path}', {
       params: {
@@ -83,7 +85,7 @@ export class Filesystem {
 
         return fd
       },
-      body: undefined as any,
+      body: {},
       signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
     })
   }
@@ -100,6 +102,7 @@ export class Filesystem {
     }, {
       timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
+
     return res.entries
   }
 

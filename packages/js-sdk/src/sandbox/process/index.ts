@@ -27,14 +27,6 @@ interface ProcessStartOpts extends ProcessRequestOpts {
   onStderr?: ((data: string) => void | Promise<void>)
 }
 
-export type ProcessRunOpts = ProcessStartOpts & {
-  background?: false
-}
-
-export type ProcessBackgroundRunOpts = ProcessStartOpts & {
-  background: true
-}
-
 export class Process {
   protected readonly rpc: PromiseClient<typeof ProcessService>
 
@@ -87,6 +79,8 @@ export class Process {
       timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
 
+    const p = await this.run('cmd', {})
+
     return new ProcessHandle(
       pid,
       () => controller.abort(),
@@ -97,18 +91,9 @@ export class Process {
     )
   }
 
-  async run(
-    cmd: string,
-    opts?: ProcessRunOpts,
-  ): Promise<ProcessOutput>
-  async run(
-    cmd: string,
-    opts?: ProcessBackgroundRunOpts,
-  ): Promise<ProcessHandle>
-  async run(
-    cmd: string,
-    opts?: ProcessStartOpts,
-  ): Promise<unknown> {
+  async run(cmd: string, opts?: ProcessStartOpts & { background?: false }): Promise<ProcessOutput>
+  async run(cmd: string, opts?: ProcessStartOpts & { background: true }): Promise<ProcessHandle>
+  async run(cmd: string, opts?: ProcessStartOpts & { background?: boolean }): Promise<unknown> {
     const proc = await this.start(cmd, opts)
 
     return opts?.background

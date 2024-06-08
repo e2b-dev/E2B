@@ -22,14 +22,8 @@ export { ProcessHandle } from './sandbox/process/processHandle'
 export type { ProcessOutput, ProcessResult } from './sandbox/process/processHandle'
 export type {
   ProcessInfo,
-  ProcessBackgroundRunOpts,
-  ProcessRunOpts,
   ProcessRequestOpts,
 } from './sandbox/process'
-
-export type {
-  StreamInputHandle,
-} from './sandbox/pty'
 
 import { Sandbox } from './sandbox'
 export { Sandbox, }
