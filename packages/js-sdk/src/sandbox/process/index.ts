@@ -130,12 +130,6 @@ export class Process {
   async run(cmd: string, opts?: ProcessStartOpts & { background?: boolean }): Promise<unknown> {
     const proc = await this.start(cmd, opts)
 
-    for await (const [stdout] of proc) {
-      if (stdout) {
-        opts?.onStdout?.(stdout)
-      }
-    }
-
     return opts?.background
       ? proc
       : proc.wait()

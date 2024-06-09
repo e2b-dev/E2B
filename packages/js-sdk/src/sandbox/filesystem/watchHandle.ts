@@ -17,7 +17,7 @@ export class WatchHandle {
     iterator?: boolean,
   ) {
     if (!iterator) {
-      this.wait(this.onEvent)
+      this.handleEvents()
     }
   }
 
@@ -37,9 +37,9 @@ export class WatchHandle {
     }
   }
 
-  private async wait(onEvent?: (event: FilesystemEvent) => void | Promise<void>) {
+  private async handleEvents() {
     for await (const event of this) {
-      onEvent?.(event)
+      this.onEvent?.(event)
     }
   }
 }
