@@ -15,18 +15,27 @@ class Process:
             compressor=connect.GzipCompressor,
         )
 
-    def list(self) -> List[process_pb2.ProcessInfo]:
+    def list(
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> List[process_pb2.ProcessInfo]:
         res = self._rpc.list(
             process_pb2.ListRequest(),
+            timeout=request_timeout,
         )
         return [p for p in res.processes]
 
-    def kill(self, pid: int):
+    def kill(
+        self,
+        pid: int,
+        request_timeout: Optional[float] = None,
+    ):
         self._rpc.send_signal(
             process_pb2.SendSignalRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
                 signal=process_pb2.Signal.SIGNAL_SIGKILL,
             ),
+            timeout=request_timeout,
         )
 
     @overload
@@ -39,8 +48,9 @@ class Process:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-    ) -> ProcessResult:
-        ...
+        request_timeout: Optional[float] = None,
+        timeout: Optional[float] = None,
+    ) -> ProcessResult: ...
 
     @overload
     def run(
@@ -50,8 +60,11 @@ class Process:
         envs: Optional[Dict[str, str]] = {},
         user: Username = "user",
         cwd: Optional[str] = None,
-    ) -> ProcessHandle:
-        ...
+        on_stdout: Optional[Callable[[str], None]] = None,
+        on_stderr: Optional[Callable[[str], None]] = None,
+        request_timeout: Optional[float] = None,
+        timeout: Optional[float] = None,
+    ) -> ProcessHandle: ...
 
     def run(
         self,
@@ -62,8 +75,17 @@ class Process:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
+        request_timeout: Optional[float] = None,
+        timeout: Optional[float] = None,
     ):
-        proc = self._start(cmd, envs, user, cwd)
+        proc = self._start(
+            cmd,
+            envs,
+            user,
+            cwd,
+            request_timeout,
+            timeout,
+        )
 
         return (
             proc
@@ -80,6 +102,8 @@ class Process:
         envs: Optional[Dict[str, str]] = {},
         user: Username = "user",
         cwd: Optional[str] = None,
+        request_timeout: Optional[float] = None,
+        timeout: Optional[float] = None,
     ):
         events = self._rpc.start(
             process_pb2.StartRequest(
@@ -91,6 +115,7 @@ class Process:
                     cwd=cwd,
                 ),
             ),
+            timeout=(request_timeout, timeout),
         )
 
         start_event = next(events)

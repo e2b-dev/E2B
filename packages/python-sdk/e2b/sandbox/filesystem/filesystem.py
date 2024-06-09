@@ -69,6 +69,7 @@ class Filesystem:
         r = requests.get(
             url,
             params={"path": path, "username": user},
+            timeout=request_timeout,
         )
 
         if format == "text":
@@ -92,6 +93,7 @@ class Filesystem:
             url,
             files=files,
             params={"path": path, "username": user},
+            timeout=request_timeout,
         )
 
     def list(
@@ -103,6 +105,7 @@ class Filesystem:
         res = self._rpc.list(
             filesystem_pb2.ListRequest(path=path),
             user=User(username=user),
+            timeout=request_timeout,
         )
         return [entry for entry in res.entries]
 
@@ -116,6 +119,7 @@ class Filesystem:
             self._rpc.stat(
                 filesystem_pb2.StatRequest(path=path),
                 user=User(username=user),
+                timeout=request_timeout,
             )
             return True
 
@@ -135,6 +139,7 @@ class Filesystem:
                 path=path,
                 user=User(username=user),
             ),
+            timeout=request_timeout,
         )
 
     def make_dir(
@@ -148,17 +153,20 @@ class Filesystem:
                 path=path,
                 user=User(username=user),
             ),
+            timeout=request_timeout,
         )
 
     def watch(
         self,
         path: str,
-        request_timeout: Optional[float],
+        request_timeout: Optional[float] = None,
         user: Username = "user",
+        timeout: Optional[float] = None,
     ):
         events = self._rpc.watch(
             filesystem_pb2.WatchRequest(path=path),
             user=User(username=user),
+            timeout=(request_timeout, timeout),
         )
 
         return WatchHandle(events=events)
