@@ -133,9 +133,9 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
 
   private async handleEvents(): Promise<ProcessResult> {
     for await (const [stdout, stderr, pty] of this) {
-      if (stdout) {
+      if (stdout !== undefined) {
         this.onStdout?.(stdout)
-      } else if (stderr) {
+      } else if (stderr !== undefined) {
         this.onStderr?.(stderr)
       } else if (pty) {
         this.onPty?.(pty)

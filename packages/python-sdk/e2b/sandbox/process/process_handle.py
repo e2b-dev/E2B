@@ -89,11 +89,11 @@ class ProcessHandle(Generator):
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
     ):
-        for output in self:
-            if isinstance(output, ProcessStdout) and on_stdout:
-                on_stdout(output.stdout)
-            elif isinstance(output, ProcessStderr) and on_stderr:
-                on_stderr(output.stderr)
+        for stdout, stderr in self:
+            if stdout is not None and on_stdout:
+                on_stdout(stdout)
+            elif stderr is not None and on_stderr:
+                on_stderr(stderr)
 
         if self._result is None:
             raise RuntimeError("Process ended without an end event")
