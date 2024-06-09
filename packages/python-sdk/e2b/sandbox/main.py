@@ -104,7 +104,7 @@ class Sandbox(SandboxApi):
     def upload_url(self) -> str:
         url = urllib.parse.urljoin(self._envd_api_url, f"/{ENVD_API_FILES_ROUTE}?")
         params = urllib.parse.urlencode(
-            {"username": "user"},
+            {"username": urllib.parse.quote("user")},
         )
         url = urllib.parse.urljoin(url, params)
 
