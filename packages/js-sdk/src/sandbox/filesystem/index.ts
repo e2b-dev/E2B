@@ -189,17 +189,10 @@ export class Filesystem {
       },
     }, {
       signal: controller.signal,
+      timeoutMs: opts?.timeout,
     })
 
     clearTimeout(reqTimeout)
-
-    const timeout = opts?.timeout ?? requestTimeoutMs
-
-    if (timeout > 0) {
-      setTimeout(() => {
-        controller.abort()
-      }, timeout)
-    }
 
     return new WatchHandle(
       () => controller.abort(),

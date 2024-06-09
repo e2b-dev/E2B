@@ -88,17 +88,10 @@ export class Process {
       },
     }, {
       signal: controller.signal,
+      timeoutMs: opts?.timeout,
     })
 
     clearTimeout(reqTimeout)
-
-    const timeout = opts?.timeout ?? requestTimeoutMs
-
-    if (timeout > 0) {
-      setTimeout(() => {
-        controller.abort()
-      }, timeout)
-    }
 
     return new ProcessHandle(
       pid,
@@ -147,19 +140,12 @@ export class Process {
       },
     }, {
       signal: controller.signal,
+      timeoutMs: opts?.timeout,
     })
 
     const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
 
     clearTimeout(reqTimeout)
-
-    const timeout = opts?.timeout ?? requestTimeoutMs
-
-    if (timeout > 0) {
-      setTimeout(() => {
-        controller.abort()
-      }, timeout)
-    }
 
     if (startEvent.event?.event.case !== 'start') {
       throw new Error('Expected start event')

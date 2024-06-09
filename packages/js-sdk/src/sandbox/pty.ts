@@ -27,12 +27,12 @@ export class Pty {
   async create({ cols, rows }: {
     cols: number,
     rows: number,
-  }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>) {
+  }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'> & { timeout?: number }) {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
 
-    setTimeout(() => {
+    const reqTimeout = setTimeout(() => {
       controller.abort()
     }, requestTimeoutMs)
 
@@ -58,6 +58,7 @@ export class Pty {
       },
     }, {
       signal: controller.signal,
+      timeoutMs: opts?.timeout,
     })
 
     const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
@@ -65,6 +66,8 @@ export class Pty {
     if (startEvent.event?.event.case !== 'start') {
       throw new Error('Expected start event')
     }
+
+    clearTimeout(reqTimeout)
 
     const pid = startEvent.event.event.value.pid
 
@@ -123,12 +126,12 @@ export class Pty {
     }
   }
 
-  private async streamInput(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>) {
+  private async streamInput(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'> & { timeout?: number }) {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
 
-    setTimeout(() => {
+    const reqTimeout = setTimeout(() => {
       controller.abort()
     }, requestTimeoutMs)
 
@@ -136,7 +139,10 @@ export class Pty {
 
     this.rpc.streamInput(events, {
       signal: controller.signal,
+      timeoutMs: opts?.timeout,
     })
+
+    clearTimeout(reqTimeout)
 
     events.enqueue({
       event: {
