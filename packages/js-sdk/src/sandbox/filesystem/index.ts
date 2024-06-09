@@ -7,7 +7,7 @@ import {
   Code,
 } from '@connectrpc/connect'
 
-import { ConnectionOpts, defaultUsername, Username } from '../../connectionConfig'
+import { ConnectionConfig, defaultUsername, Username, ConnectionOpts } from '../../connectionConfig'
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import {
@@ -28,7 +28,7 @@ export class Filesystem {
   constructor(
     transport: Transport,
     envdApiUrl: string,
-    private readonly connectionConfig: ConnectionOpts,
+    private readonly connectionConfig: ConnectionConfig,
   ) {
     this.envdApi = new EnvdApiClient({ apiUrl: envdApiUrl })
     this.rpc = createPromiseClient(FilesystemService, transport)
@@ -51,7 +51,7 @@ export class Filesystem {
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
 
     if (format === 'bytes') {
@@ -81,7 +81,7 @@ export class Filesystem {
         return fd
       },
       body: {},
-      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
   }
 
@@ -95,7 +95,7 @@ export class Filesystem {
         },
       },
     }, {
-      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
 
     return res.entries
@@ -111,7 +111,7 @@ export class Filesystem {
         },
       },
     }, {
-      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
   }
 
@@ -125,7 +125,7 @@ export class Filesystem {
         },
       },
     }, {
-      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
   }
 
@@ -140,7 +140,7 @@ export class Filesystem {
           },
         },
       }, {
-        signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
+        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
 
       return true
@@ -164,9 +164,11 @@ export class Filesystem {
 
     const controller = new AbortController()
 
-    const reqTimeout = setTimeout(() => {
-      controller.abort()
-    }, requestTimeoutMs)
+    const reqTimeout = requestTimeoutMs
+      ? setTimeout(() => {
+        controller.abort()
+      }, requestTimeoutMs)
+      : undefined
 
     const events = this.rpc.watch({
       path,
@@ -178,7 +180,7 @@ export class Filesystem {
       },
     }, {
       signal: controller.signal,
-      timeoutMs: opts?.timeout,
+      timeoutMs: opts?.timeout ?? 60_000,
     })
 
     clearTimeout(reqTimeout)

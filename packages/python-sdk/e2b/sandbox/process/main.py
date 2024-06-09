@@ -5,11 +5,12 @@ from typing import Dict, List, Optional, Literal, overload, Union, Callable
 from e2b.envd.permissions import permissions_pb2
 from e2b.envd.process import process_connect, process_pb2
 from e2b.sandbox.process.process_handle import ProcessHandle, ProcessResult
-from e2b.connection_config import Username
+from e2b.connection_config import Username, ConnectionConfig
 
 
 class Process:
-    def __init__(self, envd_api_url: str) -> None:
+    def __init__(self, envd_api_url: str, connection_config: ConnectionConfig) -> None:
+        self._connection_config = connection_config
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
             compressor=connect.GzipCompressor,
@@ -21,7 +22,7 @@ class Process:
     ) -> List[process_pb2.ProcessInfo]:
         res = self._rpc.list(
             process_pb2.ListRequest(),
-            timeout=request_timeout,
+            timeout=self._connection_config.get_request_timeout(request_timeout),
         )
         return [p for p in res.processes]
 
@@ -35,7 +36,7 @@ class Process:
                 process=process_pb2.ProcessSelector(pid=pid),
                 signal=process_pb2.Signal.SIGNAL_SIGKILL,
             ),
-            timeout=request_timeout,
+            timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
     @overload
@@ -48,8 +49,8 @@ class Process:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-        request_timeout: Optional[float] = None,
         timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
     ) -> ProcessResult: ...
 
     @overload
@@ -62,8 +63,8 @@ class Process:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-        request_timeout: Optional[float] = None,
         timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
     ) -> ProcessHandle: ...
 
     def run(
@@ -75,16 +76,16 @@ class Process:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-        request_timeout: Optional[float] = None,
         timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
     ):
         proc = self._start(
             cmd,
             envs,
             user,
             cwd,
-            request_timeout,
             timeout,
+            request_timeout,
         )
 
         return (
@@ -102,8 +103,8 @@ class Process:
         envs: Optional[Dict[str, str]] = {},
         user: Username = "user",
         cwd: Optional[str] = None,
-        request_timeout: Optional[float] = None,
         timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
     ):
         events = self._rpc.start(
             process_pb2.StartRequest(
@@ -115,7 +116,10 @@ class Process:
                     cwd=cwd,
                 ),
             ),
-            timeout=(request_timeout, timeout),
+            timeout=(
+                self._connection_config.get_request_timeout(request_timeout),
+                timeout,
+            ),
         )
 
         start_event = next(events)

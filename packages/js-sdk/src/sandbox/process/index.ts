@@ -11,7 +11,7 @@ import {
   Signal,
   StartResponse,
 } from '../../envd/process/process_pb'
-import { ConnectionOpts, defaultUsername, Username } from '../../connectionConfig'
+import { ConnectionConfig, defaultUsername, Username, ConnectionOpts } from '../../connectionConfig'
 import { ProcessHandle, ProcessOutput } from './processHandle'
 
 export type ProcessInfo = PlainMessage<PsProcessInfo>
@@ -33,15 +33,16 @@ export class Process {
 
   constructor(
     transport: Transport,
-    private readonly connectionConfig: ConnectionOpts,
+    private readonly connectionConfig: ConnectionConfig,
   ) {
     this.rpc = createPromiseClient(ProcessService, transport)
   }
 
   async list(opts?: ProcessRequestOpts): Promise<ProcessInfo[]> {
     const res = await this.rpc.list({}, {
-      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
+
     return res.processes
   }
 
@@ -55,7 +56,7 @@ export class Process {
       },
       signal: Signal.SIGKILL,
     }, {
-      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
   }
 
@@ -71,9 +72,11 @@ export class Process {
 
     const controller = new AbortController()
 
-    const reqTimeout = setTimeout(() => {
-      controller.abort()
-    }, requestTimeoutMs)
+    const reqTimeout = requestTimeoutMs
+      ? setTimeout(() => {
+        controller.abort()
+      }, requestTimeoutMs)
+      : undefined
 
     const events = this.rpc.connect({
       process: {
@@ -84,7 +87,7 @@ export class Process {
       },
     }, {
       signal: controller.signal,
-      timeoutMs: opts?.timeout,
+      timeoutMs: opts?.timeout ?? 60_000,
     })
 
     clearTimeout(reqTimeout)
@@ -117,9 +120,11 @@ export class Process {
 
     const controller = new AbortController()
 
-    const reqTimeout = setTimeout(() => {
-      controller.abort()
-    }, requestTimeoutMs)
+    const reqTimeout = requestTimeoutMs
+      ? setTimeout(() => {
+        controller.abort()
+      }, requestTimeoutMs)
+      : undefined
 
     const events = this.rpc.start({
       user: {
@@ -136,7 +141,7 @@ export class Process {
       },
     }, {
       signal: controller.signal,
-      timeoutMs: opts?.timeout,
+      timeoutMs: opts?.timeout ?? 60_000,
     })
 
     const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value

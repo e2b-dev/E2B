@@ -24,11 +24,35 @@ class ConnectionConfig:
         self.debug = debug or DEBUG
         self.api_key = api_key or API_KEY
         self.access_token = access_token or ACCESS_TOKEN
-        self.request_timeout = (
-            request_timeout if request_timeout is not None else REQUEST_TIMEOUT
+
+        self.request_timeout = ConnectionConfig._get_request_timeout(
+            REQUEST_TIMEOUT,
+            request_timeout,
         )
 
+        if request_timeout == 0:
+            self.request_timeout = None
+        elif request_timeout is not None:
+            self.request_timeout = request_timeout
+        else:
+            self.request_timeout = REQUEST_TIMEOUT
+
         self.api_url = "http://localhost:3000" if debug else f"https://api.{domain}"
+
+    @staticmethod
+    def _get_request_timeout(
+        default_timeout: Optional[float],
+        request_timeout: Optional[float],
+    ):
+        if request_timeout == 0:
+            return None
+        elif request_timeout is not None:
+            return request_timeout
+        else:
+            return default_timeout
+
+    def get_request_timeout(self, request_timeout: Optional[float] = None):
+        return self._get_request_timeout(self.request_timeout, request_timeout)
 
 
 Username = Literal["root", "user"]

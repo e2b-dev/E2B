@@ -23,7 +23,7 @@ class Sandbox(SandboxApi):
     def __init__(
         self,
         template: str = "base-v1",
-        timeout: Optional[int] = None,
+        timeout: int = 60,
         metadata: Optional[Dict[str, str]] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
@@ -40,7 +40,11 @@ class Sandbox(SandboxApi):
             request_timeout=request_timeout,
         )
 
-        if sandbox_id is None:
+        if self._connection_config.debug:
+            self.sandbox_id = "debug_sandbox_id"
+        elif sandbox_id is not None:
+            self.sandbox_id = sandbox_id
+        else:
             self.sandbox_id = SandboxApi._create_sandbox(
                 template=template,
                 api_key=api_key,
@@ -50,15 +54,13 @@ class Sandbox(SandboxApi):
                 debug=debug,
                 request_timeout=request_timeout,
             )
-        else:
-            self.sandbox_id = sandbox_id
 
         self._envd_api_url = (
             f"{'http' if debug else 'https'}://{self.get_host(self._envd_port)}"
         )
 
-        self._filesystem = Filesystem(self._envd_api_url)
-        self._process = Process(self._envd_api_url)
+        self._filesystem = Filesystem(self._envd_api_url, self._connection_config)
+        self._process = Process(self._envd_api_url, self._connection_config)
 
     def get_host(self, port: int) -> str:
         if self._connection_config.debug:

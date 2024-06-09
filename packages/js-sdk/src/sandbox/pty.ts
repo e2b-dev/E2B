@@ -58,7 +58,7 @@ export class Pty {
       },
     }, {
       signal: controller.signal,
-      timeoutMs: opts?.timeout,
+      timeoutMs: opts?.timeout ?? 60_000,
     })
 
     const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
@@ -139,7 +139,7 @@ export class Pty {
 
     this.rpc.streamInput(events, {
       signal: controller.signal,
-      timeoutMs: opts?.timeout,
+      timeoutMs: opts?.timeout ?? 60_000,
     })
 
     clearTimeout(reqTimeout)

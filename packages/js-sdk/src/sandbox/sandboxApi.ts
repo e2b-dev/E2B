@@ -45,9 +45,9 @@ export class SandboxApi {
 
   protected static async createSandbox(
     template: string,
+    timeoutMs: number,
     opts?: ConnectionOpts & {
       metadata?: Record<string, string>,
-      timeoutMs?: number,
     }): Promise<string> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -56,7 +56,7 @@ export class SandboxApi {
       body: {
         templateID: template,
         metadata: opts?.metadata,
-        timeout: opts?.timeoutMs ? this.timeoutToSeconds(opts.timeoutMs) : undefined,
+        timeout: this.timeoutToSeconds(timeoutMs),
       },
     })
 

@@ -31,6 +31,12 @@ export class ConnectionConfig {
 
     this.apiUrl = this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`
   }
+
+  getSignal(requestTimeoutMs?: number) {
+    const timeout = requestTimeoutMs ?? this.requestTimeoutMs
+
+    return timeout ? AbortSignal.timeout(timeout) : undefined
+  }
 }
 
 export type Username = 'root' | 'user'
