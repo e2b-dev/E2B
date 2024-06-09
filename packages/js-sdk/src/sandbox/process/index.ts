@@ -145,11 +145,11 @@ export class Process {
 
     const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
 
-    clearTimeout(reqTimeout)
-
     if (startEvent.event?.event.case !== 'start') {
       throw new Error('Expected start event')
     }
+
+    clearTimeout(reqTimeout)
 
     const pid = startEvent.event.event.value.pid
 
