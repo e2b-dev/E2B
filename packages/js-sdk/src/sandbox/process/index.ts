@@ -39,17 +39,13 @@ export class Process {
   }
 
   async list(opts?: ProcessRequestOpts): Promise<ProcessInfo[]> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
     const res = await this.rpc.list({}, {
-      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
     })
     return res.processes
   }
 
   async kill(pid: number, opts?: ProcessRequestOpts): Promise<void> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
     await this.rpc.sendSignal({
       process: {
         selector: {
@@ -59,7 +55,7 @@ export class Process {
       },
       signal: Signal.SIGKILL,
     }, {
-      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
     })
   }
 

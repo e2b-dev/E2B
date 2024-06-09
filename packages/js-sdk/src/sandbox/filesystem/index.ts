@@ -39,8 +39,6 @@ export class Filesystem {
   async read(path: string, opts?: FilesystemRequestOpts & { format: 'blob' }): Promise<Blob>
   async read(path: string, opts?: FilesystemRequestOpts & { format: 'stream' }): Promise<ReadableStream<Uint8Array>>
   async read(path: string, opts?: FilesystemRequestOpts & { format?: 'text' | 'stream' | 'bytes' | 'blob' }): Promise<unknown> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
     const format = opts?.format ?? 'text'
 
     const response = await this.envdApi.api.GET('/files/{path}', {
@@ -53,7 +51,7 @@ export class Filesystem {
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
     })
 
     if (format === 'bytes') {
@@ -64,7 +62,6 @@ export class Filesystem {
   }
 
   async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream, opts?: FilesystemRequestOpts): Promise<void> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
     const blob = await new Response(data).blob()
 
     await this.envdApi.api.POST('/files/{path}', {
@@ -84,13 +81,11 @@ export class Filesystem {
         return fd
       },
       body: {},
-      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
     })
   }
 
   async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
     const res = await this.rpc.list({
       path,
       user: {
@@ -100,15 +95,13 @@ export class Filesystem {
         },
       },
     }, {
-      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
     })
 
     return res.entries
   }
 
   async makeDir(path: string, opts?: FilesystemRequestOpts): Promise<void> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
     await this.rpc.makeDir({
       path,
       user: {
@@ -118,13 +111,11 @@ export class Filesystem {
         },
       },
     }, {
-      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
     })
   }
 
   async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
     await this.rpc.remove({
       path,
       user: {
@@ -134,13 +125,11 @@ export class Filesystem {
         },
       },
     }, {
-      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+      signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
     })
   }
 
   async exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
     try {
       await this.rpc.stat({
         path,
@@ -151,7 +140,7 @@ export class Filesystem {
           },
         },
       }, {
-        signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+        signal: AbortSignal.timeout(opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs),
       })
 
       return true
