@@ -89,6 +89,8 @@ export class Filesystem {
   }
 
   async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     const res = await this.rpc.list({
       path,
       user: {
@@ -98,13 +100,15 @@ export class Filesystem {
         },
       },
     }, {
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
     })
 
     return res.entries
   }
 
   async makeDir(path: string, opts?: FilesystemRequestOpts): Promise<void> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     await this.rpc.makeDir({
       path,
       user: {
@@ -114,11 +118,13 @@ export class Filesystem {
         },
       },
     }, {
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
     })
   }
 
   async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     await this.rpc.remove({
       path,
       user: {
@@ -128,11 +134,13 @@ export class Filesystem {
         },
       },
     }, {
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
     })
   }
 
   async exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     try {
       await this.rpc.stat({
         path,
@@ -143,7 +151,7 @@ export class Filesystem {
           },
         },
       }, {
-        timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+        signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
       })
 
       return true
@@ -161,9 +169,15 @@ export class Filesystem {
   async watch(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: FilesystemRequestOpts,
+    opts?: FilesystemRequestOpts & { timeout?: number },
   ): Promise<WatchHandle> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     const controller = new AbortController()
+
+    const reqTimeout = setTimeout(() => {
+      controller.abort()
+    }, requestTimeoutMs)
 
     const events = this.rpc.watch({
       path,
@@ -175,8 +189,17 @@ export class Filesystem {
       },
     }, {
       signal: controller.signal,
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
+
+    clearTimeout(reqTimeout)
+
+    const timeout = opts?.timeout ?? requestTimeoutMs
+
+    if (timeout > 0) {
+      setTimeout(() => {
+        controller.abort()
+      }, timeout)
+    }
 
     return new WatchHandle(
       () => controller.abort(),

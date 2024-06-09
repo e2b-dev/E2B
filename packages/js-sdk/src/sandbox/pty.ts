@@ -28,7 +28,13 @@ export class Pty {
     cols: number,
     rows: number,
   }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>) {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     const controller = new AbortController()
+
+    setTimeout(() => {
+      controller.abort()
+    }, requestTimeoutMs)
 
     const events = this.rpc.start({
       user: {
@@ -51,7 +57,6 @@ export class Pty {
         },
       },
     }, {
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
       signal: controller.signal,
     })
 
@@ -119,13 +124,18 @@ export class Pty {
   }
 
   private async streamInput(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>) {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     const controller = new AbortController()
+
+    setTimeout(() => {
+      controller.abort()
+    }, requestTimeoutMs)
 
     const events = new AsyncQueue<PartialMessage<StreamInputRequest>>()
 
     this.rpc.streamInput(events, {
       signal: controller.signal,
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
 
     events.enqueue({
@@ -168,6 +178,8 @@ export class Pty {
     },
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>,
   ): Promise<void> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     await this.rpc.update({
       process: {
         selector: {
@@ -179,11 +191,13 @@ export class Pty {
         size,
       },
     }, {
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
     })
   }
 
   private async kill(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     await this.rpc.sendSignal({
       process: {
         selector: {
@@ -193,7 +207,7 @@ export class Pty {
       },
       signal: Signal.SIGKILL,
     }, {
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
     })
   }
 }

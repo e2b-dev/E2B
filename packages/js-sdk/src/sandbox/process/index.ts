@@ -25,6 +25,7 @@ interface ProcessStartOpts extends ProcessRequestOpts {
   envs?: Record<string, string>
   onStdout?: ((data: string) => void | Promise<void>)
   onStderr?: ((data: string) => void | Promise<void>)
+  timeout?: number
 }
 
 export class Process {
@@ -38,13 +39,17 @@ export class Process {
   }
 
   async list(opts?: ProcessRequestOpts): Promise<ProcessInfo[]> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     const res = await this.rpc.list({}, {
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
     })
     return res.processes
   }
 
   async kill(pid: number, opts?: ProcessRequestOpts): Promise<void> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     await this.rpc.sendSignal({
       process: {
         selector: {
@@ -54,7 +59,7 @@ export class Process {
       },
       signal: Signal.SIGKILL,
     }, {
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
     })
   }
 
@@ -63,9 +68,16 @@ export class Process {
     opts?: {
       onStdout?: ((data: string) => void | Promise<void>),
       onStderr?: ((data: string) => void | Promise<void>),
+      timeout?: number,
     } & Pick<ConnectionOpts, 'requestTimeoutMs'>
   ): Promise<ProcessHandle> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     const controller = new AbortController()
+
+    const reqTimeout = setTimeout(() => {
+      controller.abort()
+    }, requestTimeoutMs)
 
     const events = this.rpc.connect({
       process: {
@@ -76,10 +88,17 @@ export class Process {
       },
     }, {
       signal: controller.signal,
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
 
-    const p = await this.run('cmd', {})
+    clearTimeout(reqTimeout)
+
+    const timeout = opts?.timeout ?? requestTimeoutMs
+
+    if (timeout > 0) {
+      setTimeout(() => {
+        controller.abort()
+      }, timeout)
+    }
 
     return new ProcessHandle(
       pid,
@@ -105,7 +124,13 @@ export class Process {
     cmd: string,
     opts?: ProcessStartOpts,
   ): Promise<ProcessHandle> {
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
     const controller = new AbortController()
+
+    const reqTimeout = setTimeout(() => {
+      controller.abort()
+    }, requestTimeoutMs)
 
     const events = this.rpc.start({
       user: {
@@ -122,10 +147,19 @@ export class Process {
       },
     }, {
       signal: controller.signal,
-      timeoutMs: opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
     })
 
     const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
+
+    clearTimeout(reqTimeout)
+
+    const timeout = opts?.timeout ?? requestTimeoutMs
+
+    if (timeout > 0) {
+      setTimeout(() => {
+        controller.abort()
+      }, timeout)
+    }
 
     if (startEvent.event?.event.case !== 'start') {
       throw new Error('Expected start event')
