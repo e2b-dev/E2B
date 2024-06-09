@@ -6,6 +6,8 @@ import { Process } from './process'
 import { Pty } from './pty'
 import { SandboxApi } from './sandboxApi'
 
+// @ts-ignore
+Symbol.asyncDispose ??= Symbol('Symbol.asyncDispose')
 
 export interface RunningSandbox {
   sandboxID: string
@@ -82,5 +84,9 @@ export class Sandbox extends SandboxApi {
 
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     await Sandbox.kill(this.sandboxID, { ...this.connectionConfig, ...opts })
+  }
+
+  async [Symbol.asyncDispose]() {
+    await this.kill()
   }
 }
