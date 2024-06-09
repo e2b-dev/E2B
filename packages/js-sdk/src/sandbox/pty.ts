@@ -12,21 +12,17 @@ import {
 } from '../envd/process/process_pb'
 import { ConnectionConfig, ConnectionOpts, defaultUsername } from '../connectionConfig'
 import { PartialMessage } from '@bufbuild/protobuf'
-
-export interface PtyHandle {
-  kill: () => void
-  resize: (size: { cols: number, rows: number }) => void
-  handleInput: (data: Uint8Array) => Promise<void> | void
-}
+import { ProcessHandle } from './process/processHandle'
 
 export class Pty {
   private readonly rpc: PromiseClient<typeof ProcessService> = createPromiseClient(ProcessService, this.transport)
 
   constructor(private readonly transport: Transport, private readonly connectionConfig: ConnectionConfig) { }
 
-  async create({ cols, rows }: {
+  async create({ cols, rows, onData }: {
     cols: number,
     rows: number,
+    onData: (data: Uint8Array) => (void | Promise<void>),
   }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'> & { timeout?: number }) {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -71,62 +67,19 @@ export class Pty {
 
     const pid = startEvent.event.event.value.pid
 
-    const input = await this.streamInput(pid, opts)
-
-    const kill = async () => {
-      input.stop()
-      controller.abort()
-      await this.kill(pid)
-    }
-
-    return {
-      kill,
-      resize: (size: { cols: number, rows: number }) => this.resize(pid, size),
-      sendInput: (data: Uint8Array) => input.sendData(data),
-      output: {
-        [Symbol.asyncIterator]() {
-          return {
-            next: async () => {
-              const event = await events[Symbol.asyncIterator]().next()
-
-              const value: StartResponse = event.value
-
-              switch (value.event?.event.case) {
-                case 'data':
-                  switch (value.event.event.value.output.case) {
-                    case 'pty':
-                      return {
-                        done: false,
-                        value: value.event.event.value.output.value,
-                      }
-                  }
-              }
-
-              try {
-                await kill()
-              } catch (e) {
-                console.error('Failed to kill process', e)
-              }
-
-              throw new Error('Process exited')
-            },
-            throw: async (e?: any) => {
-              try {
-                await kill()
-              } catch (e) {
-                console.error('Failed to kill process', e)
-              }
-
-              throw e
-            },
-            [Symbol.asyncIterator]() { return this },
-          }
-        },
-      }
-    }
+    return new ProcessHandle(
+      pid,
+      () => controller.abort(),
+      () => this.kill(pid),
+      events,
+      undefined,
+      undefined,
+      onData,
+      false,
+    )
   }
 
-  private async streamInput(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'> & { timeout?: number }) {
+  async streamInput(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'> & { timeout?: number }) {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
@@ -159,7 +112,10 @@ export class Pty {
     })
 
     return {
-      stop: () => controller.abort(),
+      stop: () => {
+        controller.abort()
+        events.stop()
+      },
       sendData: (data: Uint8Array) => events.enqueue({
         event: {
           case: 'data',
@@ -176,7 +132,7 @@ export class Pty {
     }
   }
 
-  private async resize(
+  async resize(
     pid: number,
     size: {
       cols: number,
@@ -184,8 +140,6 @@ export class Pty {
     },
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>,
   ): Promise<void> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
     await this.rpc.update({
       process: {
         selector: {
@@ -197,13 +151,11 @@ export class Pty {
         size,
       },
     }, {
-      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
   }
 
   private async kill(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
     await this.rpc.sendSignal({
       process: {
         selector: {
@@ -213,7 +165,7 @@ export class Pty {
       },
       signal: Signal.SIGKILL,
     }, {
-      signal: requestTimeoutMs ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
   }
 }
@@ -222,15 +174,23 @@ class AsyncQueue<T> {
   private readonly resolvers: ((value: T) => void)[] = []
   private readonly promises: Promise<T>[] = []
 
+  private stopped = false
+
+  stop() {
+    this.stopped = true
+  }
+
   enqueue(t: T) {
     if (!this.resolvers.length) this.add()
     this.resolvers.shift()!(t)
   }
 
-  [Symbol.asyncIterator]() {
-    return {
-      next: () => this.dequeue()!.then(value => ({ done: false, value })),
-      [Symbol.asyncIterator]() { return this },
+  async *[Symbol.asyncIterator]() {
+    while (!this.stopped) {
+      const event = await this.dequeue()
+      if (event) {
+        yield event
+      }
     }
   }
 

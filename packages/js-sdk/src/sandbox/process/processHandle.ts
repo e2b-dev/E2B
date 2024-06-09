@@ -3,17 +3,11 @@ import {
   StartResponse,
 } from '../../envd/process/process_pb'
 
+type Brand<K, T> = K & { __brand: T }
 
-interface ProcessStdout {
-  stdout: string
-}
-
-interface ProcessStderr {
-  stderr: string
-}
-
-export type ProcessOutput = ProcessStdout | ProcessStderr
-
+export type Stdout = Brand<string, 'stdout'>
+export type Stderr = Brand<string, 'stderr'>
+export type Pty = Brand<Uint8Array, 'pty'>
 
 export class ProcessError extends Error {
   constructor(message: any) {
@@ -45,62 +39,51 @@ export class ProcessExitError extends ProcessError implements ProcessResult {
   }
 }
 
-
-export class ProcessHandle implements ProcessResult {
-  private rawStdout = new Uint8Array()
-  private rawStderr = new Uint8Array()
+export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>, Partial<Pick<ProcessResult, 'exitCode' | 'error'>> {
+  private _stdout = ''
+  private _stderr = ''
 
   private result?: ProcessResult
+
+  private _wait?: Promise<ProcessResult>
 
   constructor(
     readonly pid: number,
     private readonly handleDisconnect: () => void,
     private readonly handleKill: () => Promise<void>,
     private readonly events: AsyncIterable<ConnectResponse | StartResponse>,
-  ) { }
+    private readonly onStdout?: (stdout: string) => (void | Promise<void>),
+    private readonly onStderr?: (stderr: string) => (void | Promise<void>),
+    private readonly onPty?: (pty: Uint8Array) => (void | Promise<void>),
+    iterator?: boolean,
+  ) {
+    if (!iterator) {
+      this._wait = this.handleEvents()
+    }
+  }
 
   get exitCode() {
     return this.result?.exitCode
   }
 
+  get error() {
+    return this.result?.error
+  }
+
   get stderr() {
-    return this.rawStderr.toString()
+    return this._stderr
   }
 
   get stdout() {
-    return this.rawStdout.toString()
+    return this._stdout
   }
 
-  private static isProcessStdout(event: ProcessOutput | ProcessResult | undefined): event is ProcessStdout {
-    return event !== undefined && 'stdout' in event
-  }
-
-  private static isProcessStderr(event: ProcessOutput | ProcessResult | undefined): event is ProcessStderr {
-    return event !== undefined && 'stderr' in event
-  }
-
-  async wait({ onStderr, onStdout }: {
-    onStdout?: (data: string) => void | Promise<void>,
-    onStderr?: (data: string) => void | Promise<void>,
-  } = {}): Promise<ProcessResult> {
-    for await (const event of this) {
-      if (ProcessHandle.isProcessStdout(event)) {
-        onStdout?.(event.stdout)
-      } else if (ProcessHandle.isProcessStderr(event)) {
-        onStderr?.(event.stderr)
-      }
+  async wait() {
+    if (this._wait) {
+      return this._wait
     }
 
-    if (!this.result) {
-      throw new ProcessError('Process ended without an end event')
-    }
-
-
-    if (this.result.exitCode !== 0) {
-      throw new ProcessExitError(this.result)
-    }
-
-    return this.result
+    return this.handleEvents()
   }
 
   async kill() {
@@ -108,60 +91,66 @@ export class ProcessHandle implements ProcessResult {
     await this.handleKill()
   }
 
-  [Symbol.asyncIterator]() {
-    return {
-      next: async (): Promise<IteratorResult<ProcessOutput, ProcessResult>> => {
-        const event = await this.events[Symbol.asyncIterator]().next()
+  async *[Symbol.asyncIterator](): AsyncIterator<[Stdout, undefined, undefined] | [undefined, Stderr, undefined] | [undefined, undefined, Pty]> {
+    try {
+      for await (const event of this.events) {
+        const e = event?.event?.event
+        let out: string | undefined
 
-        const value: ConnectResponse | StartResponse = event.value
-
-        switch (value.event?.event.case) {
+        switch (e?.case) {
           case 'data':
-            switch (value.event.event.value.output.case) {
+            switch (e.value.output.case) {
               case 'stdout':
-                this.stdout += value.event.event.value.output.value.toString()
-                return {
-                  value: { stdout: value.event.event.value.output.value.toString() },
-                  done: false,
-                }
+                out = e.value.output.value.toString()
+                this._stdout += out
+                yield [out as Stdout, undefined, undefined]
+                break
               case 'stderr':
-                this.stderr += value.event.event.value.output.value.toString()
-                return {
-                  value: { stderr: value.event.event.value.output.value.toString() },
-                  done: false,
-                }
+                out = e.value.output.value.toString()
+                this._stderr += out
+                yield [undefined, out as Stderr, undefined]
+                break
+              case 'pty':
+                yield [undefined, undefined, e.value.output.value as Pty]
+                break
             }
             break
           case 'end':
             this.result = {
-              exitCode: value.event.event.value.exitCode,
-              error: value.event.event.value.error,
+              exitCode: e.value.exitCode,
+              error: e.value.error,
               stdout: this.stdout,
               stderr: this.stderr,
             }
-            break
+
+            return this.result
         }
-
-        if (event.done && this.result) {
-          return {
-            done: true,
-            value: this.result,
-          }
-        }
-
-        throw new Error('Process ended without an end event')
-      },
-      return: async () => {
-        return { value: this.result, done: true }
-      },
-      // throw: async () => {
-
-
-
-
-      //   // throw new Error('Process ended without an end event')
-      // }
+      }
+    } finally {
+      this.handleDisconnect()
     }
+  }
+
+  private async handleEvents(): Promise<ProcessResult> {
+    for await (const [stdout, stderr, pty] of this) {
+      if (stdout) {
+        this.onStdout?.(stdout)
+      } else if (stderr) {
+        this.onStderr?.(stderr)
+      } else if (pty) {
+        this.onPty?.(pty)
+      }
+    }
+
+    if (!this.result) {
+      throw new ProcessError('Process exited without a result')
+    }
+
+    if (this.result.exitCode !== 0) {
+      throw new ProcessExitError(this.result)
+    }
+
+    return this.result
   }
 }
 

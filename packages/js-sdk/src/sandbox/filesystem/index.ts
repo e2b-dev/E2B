@@ -155,11 +155,7 @@ export class Filesystem {
     }
   }
 
-  async watch(
-    path: string,
-    onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: FilesystemRequestOpts & { timeout?: number },
-  ): Promise<WatchHandle> {
+  async watch(path: string, onEvent: (event: FilesystemEvent) => void | Promise<void>, opts?: FilesystemRequestOpts & { timeout?: number, iterator?: boolean }): Promise<WatchHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
@@ -189,6 +185,7 @@ export class Filesystem {
       () => controller.abort(),
       events,
       onEvent,
+      opts?.iterator,
     )
   }
 }

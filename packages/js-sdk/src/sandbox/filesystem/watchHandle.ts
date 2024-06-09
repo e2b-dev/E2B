@@ -12,21 +12,34 @@ export type EntryInfo = PlainMessage<FsEntryInfo>
 export class WatchHandle {
   constructor(
     private readonly handleStop: () => void,
-    events: AsyncIterable<WatchResponse>,
-    private readonly onEvent: (event: FilesystemEvent) => void | Promise<void>,
+    private readonly events: AsyncIterable<WatchResponse>,
+    private readonly onEvent?: (event: FilesystemEvent) => void | Promise<void>,
+    iterator?: boolean,
   ) {
-    this.handleEvents(events)
+    if (!iterator) {
+      this.wait(this.onEvent)
+    }
   }
 
   stop() {
     this.handleStop()
   }
 
-  private async handleEvents(events: AsyncIterable<WatchResponse>) {
-    for await (const event of events) {
-      if (event.event) {
-        await this.onEvent?.(event.event)
+  async *[Symbol.asyncIterator]() {
+    try {
+      for await (const event of this.events) {
+        if (event.event) {
+          yield event.event
+        }
       }
+    } finally {
+      this.stop()
+    }
+  }
+
+  private async wait(onEvent?: (event: FilesystemEvent) => void | Promise<void>) {
+    for await (const event of this) {
+      onEvent?.(event)
     }
   }
 }

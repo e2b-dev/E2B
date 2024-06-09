@@ -39,6 +39,22 @@ class Process:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
+    def send_stdin(
+        self,
+        pid: int,
+        data: str,
+        request_timeout: Optional[float] = None,
+    ):
+        self._rpc.send_input(
+            process_pb2.SendInputRequest(
+                process=process_pb2.ProcessSelector(pid=pid),
+                input=process_pb2.ProcessInput(
+                    stdin=data.encode(),
+                ),
+            ),
+            timeout=self._connection_config.get_request_timeout(request_timeout),
+        )
+
     @overload
     def run(
         self,
@@ -127,5 +143,27 @@ class Process:
         return ProcessHandle(
             pid=start_event.event.start.pid,
             handle_kill=lambda: self.kill(start_event.event.start.pid),
+            events=events,
+        )
+
+    def connect(
+        self,
+        pid: int,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        events = self._rpc.connect(
+            process_pb2.ConnectRequest(
+                process=process_pb2.ProcessSelector(pid=pid),
+            ),
+            timeout=(
+                self._connection_config.get_request_timeout(request_timeout),
+                timeout,
+            ),
+        )
+
+        return ProcessHandle(
+            pid=pid,
+            handle_kill=lambda: self.kill(pid),
             events=events,
         )

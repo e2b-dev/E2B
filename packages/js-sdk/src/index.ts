@@ -18,7 +18,12 @@ export {
 } from './envd/filesystem/filesystem_pb'
 
 export { ProcessHandle } from './sandbox/process/processHandle'
-export type { ProcessOutput, ProcessResult } from './sandbox/process/processHandle'
+export type {
+  ProcessResult,
+  Stdout,
+  Stderr,
+  Pty,
+} from './sandbox/process/processHandle'
 export type {
   ProcessInfo,
   ProcessRequestOpts,

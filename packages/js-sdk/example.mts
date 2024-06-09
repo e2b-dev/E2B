@@ -1,19 +1,21 @@
-import { config } from 'dotenv'
+async function* iter() {
+  try {
 
-import { Sandbox } from './dist'
-
-config()
-
-const sandbox = await Sandbox.create({
-  logger: {
-    error: console.error,
-    warn: console.warn,
-    info: console.info,
-  },
-})
-console.log(sandbox.id)
+    for (let i = 0; i < 10; i++) {
+      console.log(i)
+      yield i
+    }
+  } finally {
+    console.log('done')
+  }
+}
 
 
+async function main() {
+  for await (const a of iter()) {
+    console.log(a)
+    throw new Error('test')
+  }
+}
 
-
-await sandbox.close()
+main()

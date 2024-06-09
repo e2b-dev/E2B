@@ -12,7 +12,7 @@ import {
   StartResponse,
 } from '../../envd/process/process_pb'
 import { ConnectionConfig, defaultUsername, Username, ConnectionOpts } from '../../connectionConfig'
-import { ProcessHandle, ProcessOutput } from './processHandle'
+import { ProcessHandle, ProcessResult } from './processHandle'
 
 export type ProcessInfo = PlainMessage<PsProcessInfo>
 
@@ -46,6 +46,25 @@ export class Process {
     return res.processes
   }
 
+  async sendStdin(pid: number, data: string, opts?: ProcessRequestOpts): Promise<void> {
+    await this.rpc.sendInput({
+      process: {
+        selector: {
+          case: 'pid',
+          value: pid,
+        }
+      },
+      input: {
+        input: {
+          case: 'stdin',
+          value: new TextEncoder().encode(data),
+        }
+      }
+    }, {
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+    })
+  }
+
   async kill(pid: number, opts?: ProcessRequestOpts): Promise<void> {
     await this.rpc.sendSignal({
       process: {
@@ -66,6 +85,7 @@ export class Process {
       onStdout?: ((data: string) => void | Promise<void>),
       onStderr?: ((data: string) => void | Promise<void>),
       timeout?: number,
+      iterator?: boolean,
     } & Pick<ConnectionOpts, 'requestTimeoutMs'>
   ): Promise<ProcessHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
@@ -99,13 +119,22 @@ export class Process {
       events,
       opts?.onStdout,
       opts?.onStderr,
+      undefined,
+      opts?.iterator,
     )
   }
 
-  async run(cmd: string, opts?: ProcessStartOpts & { background?: false }): Promise<ProcessOutput>
-  async run(cmd: string, opts?: ProcessStartOpts & { background: true }): Promise<ProcessHandle>
+  async run(cmd: string, opts?: ProcessStartOpts & { background?: false }): Promise<ProcessResult>
+  async run(cmd: string, opts?: ProcessStartOpts & { background: true, iterator?: false }): Promise<ProcessHandle>
+  async run(cmd: string, opts?: Omit<ProcessStartOpts, 'onStderr' | 'onStdout'> & { background: true, iterator: true }): Promise<ProcessHandle>
   async run(cmd: string, opts?: ProcessStartOpts & { background?: boolean }): Promise<unknown> {
     const proc = await this.start(cmd, opts)
+
+    for await (const [stdout] of proc) {
+      if (stdout) {
+        opts?.onStdout?.(stdout)
+      }
+    }
 
     return opts?.background
       ? proc

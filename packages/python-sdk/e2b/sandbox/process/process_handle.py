@@ -1,19 +1,10 @@
-from typing import Optional, Callable, Any, Generator, Union
+from typing import Optional, Callable, Any, Generator, Union, Tuple
 from pydantic import BaseModel
 
 from e2b.envd.process import process_pb2
 
-
-class ProcessOutput(BaseModel):
-    pass
-
-
-class ProcessStdout(ProcessOutput):
-    stdout: str
-
-
-class ProcessStderr(ProcessOutput):
-    stderr: str
+Stdout = str
+Stderr = str
 
 
 class ProcessResult(BaseModel):
@@ -40,6 +31,14 @@ class ProcessHandle(Generator):
     def pid(self):
         return self._pid
 
+    @property
+    def stdout(self):
+        return self._stdout
+
+    @property
+    def stderr(self):
+        return self._stderr
+
     def __init__(
         self,
         pid: int,
@@ -52,25 +51,27 @@ class ProcessHandle(Generator):
         self._handle_kill = handle_kill
         self._events = events
 
-        self._stdout: bytes = b""
-        self._stderr: bytes = b""
+        self._stdout: str = ""
+        self._stderr: str = ""
 
         self._result: Optional[ProcessResult] = None
 
-    def __next__(self):
+    def __next__(self) -> Union[Tuple[Stdout, None], Tuple[None, Stderr]]:
         event = next(self._events)
 
         if event.HasField(field_name="data"):
             if event.event.data.stdout:
-                self._stdout += event.event.data.stdout
-                return ProcessStdout(stdout=self._stdout.decode())
+                out = event.event.data.stdout.decode()
+                self._stdout += out
+                return out, None
             if event.event.data.stderr:
-                self._stderr += event.event.data.stderr
-                return ProcessStderr(stderr=self._stderr.decode())
+                out = event.event.data.stderr.decode()
+                self._stderr += out
+                return None, out
         if event.HasField("end"):
             self._result = ProcessResult(
-                stdout=self._stdout.decode(),
-                stderr=self._stderr.decode(),
+                stdout=self._stdout,
+                stderr=self._stderr,
                 exit_code=event.event.end.exit_code,
                 error=event.event.end.error,
             )
