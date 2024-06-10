@@ -125,8 +125,8 @@ export class Process {
   }
 
   async run(cmd: string, opts?: ProcessStartOpts & { background?: false }): Promise<ProcessResult>
-  async run(cmd: string, opts?: ProcessStartOpts & { background: true, iterator?: false }): Promise<ProcessHandle>
-  async run(cmd: string, opts?: Omit<ProcessStartOpts, 'onStderr' | 'onStdout'> & { background: true, iterator: true }): Promise<ProcessHandle>
+  async run(cmd: string, opts?: ProcessStartOpts & { background: true }): Promise<ProcessHandle>
+  async run(cmd: string, opts?: Omit<ProcessStartOpts, 'onStderr' | 'onStdout'> & { background?: boolean, iterator: true }): Promise<ProcessHandle>
   async run(cmd: string, opts?: ProcessStartOpts & { background?: boolean }): Promise<unknown> {
     const proc = await this.start(cmd, opts)
 
