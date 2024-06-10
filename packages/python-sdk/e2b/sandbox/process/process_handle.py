@@ -56,30 +56,41 @@ class ProcessHandle(Generator):
 
         self._result: Optional[ProcessResult] = None
 
-    def __next__(self) -> Union[Tuple[Stdout, None], Tuple[None, Stderr]]:
-        event = next(self._events)
-
-        if event.HasField(field_name="data"):
-            if event.event.data.stdout:
-                out = event.event.data.stdout.decode()
-                self._stdout += out
-                return out, None
-            if event.event.data.stderr:
-                out = event.event.data.stderr.decode()
-                self._stderr += out
-                return None, out
-        if event.HasField("end"):
-            self._result = ProcessResult(
-                stdout=self._stdout,
-                stderr=self._stderr,
-                exit_code=event.event.end.exit_code,
-                error=event.event.end.error,
-            )
-
-        raise StopIteration
-
     def __iter__(self):
-        return self
+        return self._handle_events()
+
+    def _handle_events(
+        self,
+    ) -> Generator[
+        Union[Tuple[Stdout, None], Tuple[None, Stderr]],
+        None,
+        ProcessResult,
+    ]:
+        try:
+            for event in self._events:
+                if event.HasField("data"):
+                    if event.event.data.stdout:
+                        out = event.event.data.stdout.decode()
+                        self._stdout += out
+                        yield out, None
+                    if event.event.data.stderr:
+                        out = event.event.data.stderr.decode()
+                        self._stderr += out
+                        yield None, out
+                if event.HasField("end"):
+                    self._result = ProcessResult(
+                        stdout=self._stdout,
+                        stderr=self._stderr,
+                        exit_code=event.event.end.exit_code,
+                        error=event.event.end.error,
+                    )
+        finally:
+            self.close()
+
+        if self._result is None:
+            raise RuntimeError("Process ended without an end event")
+
+        return self._result
 
     def close(self) -> None:
         self._events.close()

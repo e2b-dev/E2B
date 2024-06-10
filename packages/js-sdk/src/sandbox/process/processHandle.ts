@@ -86,6 +86,10 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     return this.handleEvents()
   }
 
+  disconnect() {
+    this.handleDisconnect()
+  }
+
   async kill() {
     this.handleDisconnect()
     await this.handleKill()

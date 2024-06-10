@@ -10,9 +10,15 @@ class WatchHandle(Generator):
     ):
         self._events = events
 
-    def __next__(self):
-        event = next(self._events)
-        return event.event
-
     def __iter__(self):
-        return self
+        return self._handle_events()
+
+    def close(self):
+        self._events.close()
+
+    def _handle_events(self):
+        try:
+            for event in self._events:
+                yield event.event
+        finally:
+            self.close()
