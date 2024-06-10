@@ -9,7 +9,7 @@ export interface ConnectionOpts {
   accessToken?: string
   domain?: string
   debug?: boolean
-  requestTimeoutMs: number
+  requestTimeoutMs?: number
 }
 
 export class ConnectionConfig {
