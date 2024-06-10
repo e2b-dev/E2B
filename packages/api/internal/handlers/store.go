@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -288,7 +287,8 @@ func deleteInstance(
 		attribute.String("build.id", info.BuildID.String()),
 	)
 
-	duration := time.Since(*info.StartTime).Seconds()
+	timestamp := timestamppb.Now()
+	duration := timestamp.AsTime().Sub(*info.StartTime).Seconds()
 
 	delErr := orchestrator.DeleteInstance(childCtx, tracer, info.Instance.SandboxID)
 	if delErr != nil {
@@ -306,7 +306,7 @@ func deleteInstance(
 			TeamId:        info.TeamID.String(),
 			EnvironmentId: info.Instance.TemplateID,
 			InstanceId:    info.Instance.SandboxID,
-			Timestamp:     timestamppb.Now(),
+			Timestamp:     timestamp,
 			Duration:      float32(duration),
 		})
 		if err != nil {
