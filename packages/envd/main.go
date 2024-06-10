@@ -10,7 +10,6 @@ import (
 
 	"github.com/e2b-dev/infra/packages/envd/internal/api"
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
-	"github.com/e2b-dev/infra/packages/envd/internal/ports"
 
 	filesystemRpc "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
 	processRpc "github.com/e2b-dev/infra/packages/envd/internal/services/process"
@@ -115,9 +114,6 @@ func main() {
 	defer cancel()
 
 	l := logs.NewLogger(ctx, debug)
-
-	forwarder := ports.NewForwarder(ctx, l)
-	go forwarder.Start()
 
 	m := http.NewServeMux()
 
