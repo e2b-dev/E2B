@@ -15,9 +15,11 @@ import { PartialMessage } from '@bufbuild/protobuf'
 import { ProcessHandle } from './process/processHandle'
 
 export class Pty {
-  private readonly rpc: PromiseClient<typeof ProcessService> = createPromiseClient(ProcessService, this.transport)
+  private readonly rpc: PromiseClient<typeof ProcessService>
 
-  constructor(private readonly transport: Transport, private readonly connectionConfig: ConnectionConfig) { }
+  constructor(private readonly transport: Transport, private readonly connectionConfig: ConnectionConfig) {
+    this.rpc = createPromiseClient(ProcessService, this.transport)
+  }
 
   async create({ cols, rows, onData }: {
     cols: number,
