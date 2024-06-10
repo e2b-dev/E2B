@@ -19,7 +19,7 @@ func (Service) Stat(ctx context.Context, req *connect.Request[rpc.StatRequest]) 
 
 	path, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
 	fileInfo, err := os.Stat(path)

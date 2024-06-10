@@ -19,15 +19,11 @@ func (Service) Remove(ctx context.Context, req *connect.Request[rpc.RemoveReques
 
 	path, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
 	err = os.RemoveAll(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("file or directory not found: %w", err))
-		}
-
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error removing file or directory: %w", err))
 	}
 

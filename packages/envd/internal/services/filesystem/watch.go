@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/filesystem"
 
@@ -13,7 +14,11 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-func (Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest], stream *connect.ServerStream[rpc.WatchResponse]) error {
+func (s Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest], stream *connect.ServerStream[rpc.WatchResponse]) error {
+	return logs.LogServerStreamWithoutEvents(ctx, s.logger, req, stream, s.watchHandler)
+}
+
+func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.WatchRequest], stream *connect.ServerStream[rpc.WatchResponse]) error {
 	u, err := permissions.GetUser(req.Msg.GetUser())
 	if err != nil {
 		return connect.NewError(connect.CodeInvalidArgument, err)
@@ -21,7 +26,7 @@ func (Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest]
 
 	watchPath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return connect.NewError(connect.CodeInvalidArgument, err)
+		return connect.NewError(connect.CodeNotFound, err)
 	}
 
 	info, err := os.Stat(watchPath)
@@ -34,11 +39,11 @@ func (Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest]
 
 		info, err = os.Stat(watchPath)
 		if err != nil {
-			return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("parent path %s not found: %w", watchPath, err))
+			return connect.NewError(connect.CodeNotFound, fmt.Errorf("parent path %s not found: %w", watchPath, err))
 		}
 
 		if !info.IsDir() {
-			return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("parent path %s not a directory: %w", watchPath, err))
+			return connect.NewError(connect.CodeNotFound, fmt.Errorf("parent path %s not a directory: %w", watchPath, err))
 		}
 	}
 
@@ -96,12 +101,17 @@ func (Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest]
 			}
 
 			for _, op := range ops {
-				streamErr := stream.Send(&rpc.WatchResponse{
+				event := &rpc.WatchResponse{
 					Event: &rpc.FilesystemEvent{
 						Path: filepath.Join(watchPath, e.Name),
 						Type: op,
 					},
-				})
+				}
+
+				streamErr := stream.Send(event)
+
+				logs.LogsServerEvent(ctx, s.logger, req, event)
+
 				if streamErr != nil {
 					return connect.NewError(connect.CodeAborted, streamErr)
 				}

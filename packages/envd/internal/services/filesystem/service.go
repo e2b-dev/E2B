@@ -3,6 +3,7 @@ package filesystem
 import (
 	"net/http"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	spec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/filesystem/filesystemconnect"
 
 	"connectrpc.com/connect"
@@ -10,16 +11,17 @@ import (
 )
 
 type Service struct {
-	spec.UnimplementedFilesystemHandler
 	logger *zerolog.Logger
 }
 
-func Handle(server *http.ServeMux, l *zerolog.Logger, opts ...connect.HandlerOption) {
+func Handle(server *http.ServeMux, l *zerolog.Logger) {
 	service := Service{
 		logger: l,
 	}
 
-	path, handler := spec.NewFilesystemHandler(service, opts...)
+	interceptors := connect.WithInterceptors(logs.NewUnaryLogInterceptor(l))
+
+	path, handler := spec.NewFilesystemHandler(service, interceptors)
 
 	server.Handle(path, handler)
 }

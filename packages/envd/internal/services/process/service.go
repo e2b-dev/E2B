@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 	spec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process/processconnect"
@@ -13,7 +14,6 @@ import (
 )
 
 type Service struct {
-	spec.UnimplementedProcessHandler
 	processes *Map[uint32, *handler.Handler]
 	logger    *zerolog.Logger
 }
@@ -25,10 +25,12 @@ func newService(l *zerolog.Logger) *Service {
 	}
 }
 
-func Handle(server *http.ServeMux, l *zerolog.Logger, opts ...connect.HandlerOption) *Service {
+func Handle(server *http.ServeMux, l *zerolog.Logger) *Service {
 	service := newService(l)
 
-	path, handler := spec.NewProcessHandler(service, opts...)
+	interceptors := connect.WithInterceptors(logs.NewUnaryLogInterceptor(l))
+
+	path, handler := spec.NewProcessHandler(service, interceptors)
 
 	server.Handle(path, handler)
 

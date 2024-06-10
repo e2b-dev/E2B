@@ -43,34 +43,40 @@ type InternalServerError = Error
 // NotEnoughDiskSpace defines model for NotEnoughDiskSpace.
 type NotEnoughDiskSpace = Error
 
-// GetFilesPathParams defines parameters for GetFilesPath.
-type GetFilesPathParams struct {
+// GetFilesParams defines parameters for GetFiles.
+type GetFilesParams struct {
+	// Path Path to the file, URL encoded. Can be relative to user's home directory.
+	Path *FilePath `form:"path,omitempty" json:"path,omitempty"`
+
 	// Username User used for setting the owner, or resolving relative paths.
 	Username User `form:"username" json:"username"`
 }
 
-// PostFilesPathMultipartBody defines parameters for PostFilesPath.
-type PostFilesPathMultipartBody struct {
+// PostFilesMultipartBody defines parameters for PostFiles.
+type PostFilesMultipartBody struct {
 	File *openapi_types.File `json:"file,omitempty"`
 }
 
-// PostFilesPathParams defines parameters for PostFilesPath.
-type PostFilesPathParams struct {
+// PostFilesParams defines parameters for PostFiles.
+type PostFilesParams struct {
+	// Path Path to the file, URL encoded. Can be relative to user's home directory.
+	Path *FilePath `form:"path,omitempty" json:"path,omitempty"`
+
 	// Username User used for setting the owner, or resolving relative paths.
 	Username User `form:"username" json:"username"`
 }
 
-// PostFilesPathMultipartRequestBody defines body for PostFilesPath for multipart/form-data ContentType.
-type PostFilesPathMultipartRequestBody PostFilesPathMultipartBody
+// PostFilesMultipartRequestBody defines body for PostFiles for multipart/form-data ContentType.
+type PostFilesMultipartRequestBody PostFilesMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Download a file
-	// (GET /files/{path})
-	GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params GetFilesPathParams)
+	// (GET /files)
+	GetFiles(w http.ResponseWriter, r *http.Request, params GetFilesParams)
 	// Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
-	// (POST /files/{path})
-	PostFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params PostFilesPathParams)
+	// (POST /files)
+	PostFiles(w http.ResponseWriter, r *http.Request, params PostFilesParams)
 	// Ensure the time and metadata is synced with the host
 	// (POST /sync)
 	PostSync(w http.ResponseWriter, r *http.Request)
@@ -85,23 +91,22 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// GetFilesPath operation middleware
-func (siw *ServerInterfaceWrapper) GetFilesPath(w http.ResponseWriter, r *http.Request) {
+// GetFiles operation middleware
+func (siw *ServerInterfaceWrapper) GetFiles(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
 
-	// ------------- Path parameter "path" -------------
-	var path FilePath
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFilesParams
 
-	err = runtime.BindStyledParameterWithOptions("simple", "path", r.PathValue("path"), &path, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	// ------------- Optional query parameter "path" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "path", r.URL.Query(), &params.Path)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "path", Err: err})
 		return
 	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetFilesPathParams
 
 	// ------------- Required query parameter "username" -------------
 
@@ -119,7 +124,7 @@ func (siw *ServerInterfaceWrapper) GetFilesPath(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetFilesPath(w, r, path, params)
+		siw.Handler.GetFiles(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -129,23 +134,22 @@ func (siw *ServerInterfaceWrapper) GetFilesPath(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// PostFilesPath operation middleware
-func (siw *ServerInterfaceWrapper) PostFilesPath(w http.ResponseWriter, r *http.Request) {
+// PostFiles operation middleware
+func (siw *ServerInterfaceWrapper) PostFiles(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
 
-	// ------------- Path parameter "path" -------------
-	var path FilePath
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostFilesParams
 
-	err = runtime.BindStyledParameterWithOptions("simple", "path", r.PathValue("path"), &path, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	// ------------- Optional query parameter "path" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "path", r.URL.Query(), &params.Path)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "path", Err: err})
 		return
 	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params PostFilesPathParams
 
 	// ------------- Required query parameter "username" -------------
 
@@ -163,7 +167,7 @@ func (siw *ServerInterfaceWrapper) PostFilesPath(w http.ResponseWriter, r *http.
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostFilesPath(w, r, path, params)
+		siw.Handler.PostFiles(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -302,8 +306,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	m.HandleFunc("GET "+options.BaseURL+"/files/{path}", wrapper.GetFilesPath)
-	m.HandleFunc("POST "+options.BaseURL+"/files/{path}", wrapper.PostFilesPath)
+	m.HandleFunc("GET "+options.BaseURL+"/files", wrapper.GetFiles)
+	m.HandleFunc("POST "+options.BaseURL+"/files", wrapper.PostFiles)
 	m.HandleFunc("POST "+options.BaseURL+"/sync", wrapper.PostSync)
 
 	return m

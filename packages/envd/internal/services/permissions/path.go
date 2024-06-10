@@ -74,7 +74,9 @@ func EnsureDirs(path string, uid, gid int) error {
 		}
 
 		if err := os.Mkdir(subpath, 0o755); err != nil {
-			return fmt.Errorf("failed to create directory: %w", err)
+			if !os.IsExist(err) {
+				return fmt.Errorf("failed to create directory: %w", err)
+			}
 		}
 
 		err = os.Chown(subpath, uid, gid)

@@ -11,20 +11,25 @@ import (
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 )
 
-func (a *API) GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath, params GetFilesPathParams) {
+func (a *API) GetFiles(w http.ResponseWriter, r *http.Request, params GetFilesParams) {
 	defer r.Body.Close()
 
 	u, err := user.Lookup(params.Username)
 	if err != nil {
-		errMsg := fmt.Errorf("error looking up user '%s': %v", params.Username, err)
+		errMsg := fmt.Errorf("error looking up user '%s': %w", params.Username, err)
 		jsonError(w, http.StatusBadRequest, errMsg)
 
 		return
 	}
 
+	var path string
+	if params.Path != nil {
+		path = *params.Path
+	}
+
 	resolvedPath, err := permissions.ExpandAndResolve(path, u)
 	if err != nil {
-		errMsg := fmt.Errorf("error expanding and resolving path '%s': %v", path, err)
+		errMsg := fmt.Errorf("error expanding and resolving path '%s': %w", path, err)
 		jsonError(w, http.StatusInternalServerError, errMsg)
 
 		return
@@ -39,7 +44,7 @@ func (a *API) GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath
 			return
 		}
 
-		errMsg := fmt.Errorf("error checking if path exists '%s': %v", resolvedPath, err)
+		errMsg := fmt.Errorf("error checking if path exists '%s': %w", resolvedPath, err)
 		jsonError(w, http.StatusInternalServerError, errMsg)
 
 		return
@@ -54,7 +59,7 @@ func (a *API) GetFilesPath(w http.ResponseWriter, r *http.Request, path FilePath
 
 	file, err := os.Open(resolvedPath)
 	if err != nil {
-		errMsg := fmt.Errorf("error opening file '%s': %v", resolvedPath, err)
+		errMsg := fmt.Errorf("error opening file '%s': %w", resolvedPath, err)
 		jsonError(w, http.StatusInternalServerError, errMsg)
 
 		return

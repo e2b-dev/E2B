@@ -11,7 +11,7 @@ import (
 	"connectrpc.com/connect"
 )
 
-func (Service) ListDir(ctx context.Context, req *connect.Request[rpc.ListRequest]) (*connect.Response[rpc.ListResponse], error) {
+func (Service) List(ctx context.Context, req *connect.Request[rpc.ListRequest]) (*connect.Response[rpc.ListResponse], error) {
 	u, err := permissions.GetUser(req.Msg.GetUser())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -19,15 +19,24 @@ func (Service) ListDir(ctx context.Context, req *connect.Request[rpc.ListRequest
 
 	dirPath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
-	entries, err := os.ReadDir(dirPath)
+	stat, err := os.Stat(dirPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("directory not found: %w", err))
 		}
 
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error getting file info: %w", err))
+	}
+
+	if !stat.IsDir() {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("path is not a directory: %s", dirPath))
+	}
+
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error reading directory: %w", err))
 	}
 
@@ -60,17 +69,30 @@ func (Service) MakeDir(ctx context.Context, req *connect.Request[rpc.MakeDirRequ
 
 	dirPath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
-	uid, gid, err := permissions.GetUserIds(u)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+	stat, err := os.Stat(dirPath)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error getting file info: %w", err))
 	}
 
-	err = permissions.EnsureDirs(dirPath, int(uid), int(gid))
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+	if err == nil {
+		if stat.IsDir() {
+			return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("directory already exists: %s", dirPath))
+		}
+
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("path already exists but it is not a directory: %s", dirPath))
+	}
+
+	uid, gid, userErr := permissions.GetUserIds(u)
+	if userErr != nil {
+		return nil, connect.NewError(connect.CodeInternal, userErr)
+	}
+
+	userErr = permissions.EnsureDirs(dirPath, int(uid), int(gid))
+	if userErr != nil {
+		return nil, connect.NewError(connect.CodeInternal, userErr)
 	}
 
 	return connect.NewResponse(&rpc.MakeDirResponse{}), nil
