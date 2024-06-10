@@ -55,9 +55,9 @@ export class Sandbox extends SandboxApi {
     return url.toString()
   }
 
-  static async spawn<S extends typeof Sandbox>(this: S, opts?: SandboxOpts): Promise<InstanceType<S>>
-  static async spawn<S extends typeof Sandbox>(this: S, template: string, opts?: SandboxOpts): Promise<InstanceType<S>>
-  static async spawn<S extends typeof Sandbox>(this: S, templateOrOpts?: SandboxOpts | string, opts?: SandboxOpts): Promise<InstanceType<S>> {
+  static async create<S extends typeof Sandbox>(this: S, opts?: SandboxOpts): Promise<InstanceType<S>>
+  static async create<S extends typeof Sandbox>(this: S, template: string, opts?: SandboxOpts): Promise<InstanceType<S>>
+  static async create<S extends typeof Sandbox>(this: S, templateOrOpts?: SandboxOpts | string, opts?: SandboxOpts): Promise<InstanceType<S>> {
     const { template, sandboxOpts } = typeof templateOrOpts === 'string'
       ? { template: templateOrOpts, sandboxOpts: opts }
       : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
