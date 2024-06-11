@@ -301,7 +301,7 @@ export class Filesystem {
   async watch(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: FilesystemRequestOpts & { timeout?: number, iterator?: boolean },
+    opts?: FilesystemRequestOpts & { timeout?: number, onExit?: () => void | Promise<void> },
   ): Promise<WatchHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
     const username = opts?.user || defaultUsername
@@ -335,7 +335,7 @@ export class Filesystem {
       path,
       username,
       onEvent,
-      opts?.iterator,
+      opts?.onExit,
     )
   }
 }

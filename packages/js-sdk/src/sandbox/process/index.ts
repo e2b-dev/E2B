@@ -25,10 +25,11 @@ export interface ProcessStartOpts extends ProcessRequestOpts {
   envs?: Record<string, string>
   onStdout?: ((data: string) => void | Promise<void>)
   onStderr?: ((data: string) => void | Promise<void>)
+  onExit?: ((err?: Error) => void | Promise<void>)
   timeout?: number
 }
 
-export type ProcessConnectOpts = Pick<ProcessStartOpts, 'onStderr' | 'onStdout' | 'timeout'> & ProcessRequestOpts & { iterator?: boolean }
+export type ProcessConnectOpts = Pick<ProcessStartOpts, 'onStderr' | 'onStdout' | 'onExit' | 'timeout'> & ProcessRequestOpts
 
 export class ProcessError extends SandboxError {
   constructor(message: string, public readonly pid: number) {
@@ -121,13 +122,12 @@ export class Process {
       opts?.onStdout,
       opts?.onStderr,
       undefined,
-      opts?.iterator,
+      opts?.onExit,
     )
   }
 
   async run(cmd: string, opts?: ProcessStartOpts & { background?: false }): Promise<ProcessResult>
   async run(cmd: string, opts?: ProcessStartOpts & { background: true }): Promise<ProcessHandle>
-  async run(cmd: string, opts?: Omit<ProcessStartOpts, 'onStderr' | 'onStdout'> & { iterator: true }): Promise<ProcessHandle>
   async run(cmd: string, opts?: ProcessStartOpts & { background?: boolean }): Promise<unknown> {
     const proc = await this.start(cmd, opts)
 

@@ -25,7 +25,7 @@ export class Pty {
     cols: number,
     rows: number,
     onData: (data: Uint8Array) => (void | Promise<void>),
-  }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'> & { timeout?: number }) {
+  }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'> & { timeout?: number, onExit?: (err?: Error) => (void | Promise<void>) }) {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
@@ -77,7 +77,7 @@ export class Pty {
       undefined,
       undefined,
       onData,
-      false,
+      opts?.onExit,
     )
   }
 

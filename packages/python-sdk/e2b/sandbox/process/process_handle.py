@@ -85,14 +85,14 @@ class ProcessHandle(Generator):
                         error=event.event.end.error,
                     )
         finally:
-            self.close()
+            self.disconnect()
 
         if self._result is None:
             raise RuntimeError("Process ended without an end event")
 
         return self._result
 
-    def close(self) -> None:
+    def disconnect(self) -> None:
         self._events.close()
 
     def wait(

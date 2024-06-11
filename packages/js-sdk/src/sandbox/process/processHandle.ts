@@ -45,7 +45,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
 
   private result?: ProcessResult
 
-  private _wait?: Promise<ProcessResult>
+  private readonly _wait: Promise<ProcessResult>
 
   constructor(
     readonly pid: number,
@@ -55,11 +55,9 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     private readonly onStdout?: (stdout: string) => (void | Promise<void>),
     private readonly onStderr?: (stderr: string) => (void | Promise<void>),
     private readonly onPty?: (pty: Uint8Array) => (void | Promise<void>),
-    iterator?: boolean,
+    private readonly onExit?: (err?: Error) => (void | Promise<void>),
   ) {
-    if (!iterator) {
-      this._wait = this.handleEvents()
-    }
+    this._wait = this.handleEvents()
   }
 
   get exitCode() {
@@ -79,11 +77,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
   }
 
   async wait() {
-    if (this._wait) {
-      return this._wait
-    }
-
-    return this.handleEvents()
+    return this._wait
   }
 
   disconnect() {
@@ -95,7 +89,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     await this.handleKill()
   }
 
-  async *[Symbol.asyncIterator](): AsyncIterator<[Stdout, undefined, undefined] | [undefined, Stderr, undefined] | [undefined, undefined, Pty]> {
+  private async *[Symbol.asyncIterator](): AsyncIterator<[Stdout, undefined, undefined] | [undefined, Stderr, undefined] | [undefined, undefined, Pty]> {
     try {
       for await (const event of this.events) {
         const e = event?.event?.event
@@ -105,12 +99,12 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
           case 'data':
             switch (e.value.output.case) {
               case 'stdout':
-                out = e.value.output.value.toString()
+                out = new TextDecoder().decode(e.value.output.value)
                 this._stdout += out
                 yield [out as Stdout, undefined, undefined]
                 break
               case 'stderr':
-                out = e.value.output.value.toString()
+                out = new TextDecoder().decode(e.value.output.value)
                 this._stderr += out
                 yield [undefined, out as Stderr, undefined]
                 break
