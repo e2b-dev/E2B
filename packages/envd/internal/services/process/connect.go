@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"errors"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
@@ -24,7 +25,7 @@ func (s *Service) handleConnect(ctx context.Context, req *connect.Request[rpc.Co
 
 	exitChan := make(chan struct{})
 
-	data, dataCancel := proc.OutputEvent.Fork()
+	data, dataCancel := proc.DataEvent.Fork()
 	defer dataCancel()
 
 	end, endCancel := proc.EndEvent.Fork()
@@ -38,11 +39,13 @@ func (s *Service) handleConnect(ctx context.Context, req *connect.Request[rpc.Co
 			select {
 			case <-ctx.Done():
 				cancel(ctx.Err())
+
 				return
 			case event, ok := <-data:
 				if !ok {
 					break dataLoop
 				}
+
 				err := stream.Send(&rpc.ConnectResponse{
 					Event: &rpc.ProcessEvent{
 						Event: &event,
@@ -50,6 +53,7 @@ func (s *Service) handleConnect(ctx context.Context, req *connect.Request[rpc.Co
 				})
 				if err != nil {
 					cancel(connect.NewError(connect.CodeUnknown, err))
+
 					return
 				}
 			}
@@ -60,7 +64,13 @@ func (s *Service) handleConnect(ctx context.Context, req *connect.Request[rpc.Co
 			cancel(ctx.Err())
 
 			return
-		case event := <-end:
+		case event, ok := <-end:
+			if !ok {
+				cancel(connect.NewError(connect.CodeUnknown, errors.New("end event channel closed before sending end event")))
+
+				return
+			}
+
 			err := stream.Send(&rpc.ConnectResponse{
 				Event: &rpc.ProcessEvent{
 					Event: &event,

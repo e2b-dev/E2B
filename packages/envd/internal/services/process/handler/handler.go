@@ -38,8 +38,8 @@ type Handler struct {
 
 	stdinMu sync.Mutex
 
-	OutputEvent *MultiplexedChannel[rpc.ProcessEvent_Data]
-	EndEvent    *MultiplexedChannel[rpc.ProcessEvent_End]
+	DataEvent *MultiplexedChannel[rpc.ProcessEvent_Data]
+	EndEvent  *MultiplexedChannel[rpc.ProcessEvent_End]
 }
 
 func New(req *rpc.StartRequest) (*Handler, error) {
@@ -119,12 +119,14 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 				break
 			}
 
-			outMultiplex.Source <- rpc.ProcessEvent_Data{
-				Data: &rpc.ProcessEvent_DataEvent{
-					Output: &rpc.ProcessEvent_DataEvent_Stdout{
-						Stdout: buf[:n],
+			if n > 0 {
+				outMultiplex.Source <- rpc.ProcessEvent_Data{
+					Data: &rpc.ProcessEvent_DataEvent{
+						Output: &rpc.ProcessEvent_DataEvent_Stdout{
+							Stdout: buf[:n],
+						},
 					},
-				},
+				}
 			}
 
 			if err == io.EOF || err == io.ErrUnexpectedEOF {
@@ -150,12 +152,14 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 				break
 			}
 
-			outMultiplex.Source <- rpc.ProcessEvent_Data{
-				Data: &rpc.ProcessEvent_DataEvent{
-					Output: &rpc.ProcessEvent_DataEvent_Stderr{
-						Stderr: buf[:n],
+			if n > 0 {
+				outMultiplex.Source <- rpc.ProcessEvent_Data{
+					Data: &rpc.ProcessEvent_DataEvent{
+						Output: &rpc.ProcessEvent_DataEvent_Stderr{
+							Stderr: buf[:n],
+						},
 					},
-				},
+				}
 			}
 
 			if err == io.EOF || err == io.ErrUnexpectedEOF {
@@ -177,12 +181,14 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 					break
 				}
 
-				outMultiplex.Source <- rpc.ProcessEvent_Data{
-					Data: &rpc.ProcessEvent_DataEvent{
-						Output: &rpc.ProcessEvent_DataEvent_Pty{
-							Pty: buf[:n],
+				if n > 0 {
+					outMultiplex.Source <- rpc.ProcessEvent_Data{
+						Data: &rpc.ProcessEvent_DataEvent{
+							Output: &rpc.ProcessEvent_DataEvent_Pty{
+								Pty: buf[:n],
+							},
 						},
-					},
+					}
 				}
 
 				if err == io.EOF || err == io.ErrUnexpectedEOF {
@@ -199,13 +205,13 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 	}()
 
 	return &Handler{
-		Config:      req.GetProcess(),
-		cmd:         cmd,
-		tty:         tty,
-		stdin:       stdin,
-		Tag:         req.Tag,
-		OutputEvent: outMultiplex,
-		EndEvent:    NewMultiplexedChannel[rpc.ProcessEvent_End](),
+		Config:    req.GetProcess(),
+		cmd:       cmd,
+		tty:       tty,
+		stdin:     stdin,
+		Tag:       req.Tag,
+		DataEvent: outMultiplex,
+		EndEvent:  NewMultiplexedChannel[rpc.ProcessEvent_End](),
 	}, nil
 }
 

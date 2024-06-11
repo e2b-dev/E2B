@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"errors"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/host"
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
@@ -59,7 +60,7 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 	start, startCancel := startMultiplexer.Fork()
 	defer startCancel()
 
-	data, dataCancel := proc.OutputEvent.Fork()
+	data, dataCancel := proc.DataEvent.Fork()
 	defer dataCancel()
 
 	end, endCancel := proc.EndEvent.Fork()
@@ -73,7 +74,13 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 			cancel(ctx.Err())
 
 			return
-		case event := <-start:
+		case event, ok := <-start:
+			if !ok {
+				cancel(connect.NewError(connect.CodeUnknown, errors.New("start event channel closed before sending start event")))
+
+				return
+			}
+
 			stream.Send(&rpc.StartResponse{
 				Event: &rpc.ProcessEvent{
 					Event: &event,
@@ -96,6 +103,7 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 				if !ok {
 					break dataLoop
 				}
+
 				err := stream.Send(&rpc.StartResponse{
 					Event: &rpc.ProcessEvent{
 						Event: &event,
@@ -113,7 +121,13 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 			cancel(ctx.Err())
 
 			return
-		case event := <-end:
+		case event, ok := <-end:
+			if !ok {
+				cancel(connect.NewError(connect.CodeUnknown, errors.New("end event channel closed before sending end event")))
+
+				return
+			}
+
 			err := stream.Send(&rpc.StartResponse{
 				Event: &rpc.ProcessEvent{
 					Event: &event,
