@@ -27,6 +27,40 @@ func Must[T any](obj T, err error) T {
 	return obj
 }
 
+var blockedRanges = []string{
+	"10.0.0.0/8",
+	"127.0.0.0/8",
+	"169.254.0.0/16",
+	"172.16.0.0/12",
+	"192.0.0.0/24",
+	"192.168.0.0/16",
+	"255.255.255.255/32",
+}
+
+func getBlockingRule(ips *IPSlot, ipRange string) []string {
+	return []string{"-i", ips.VethName(), "-d", ipRange, "-j", "DROP"}
+}
+
+func (ips *IPSlot) addBlockingRules(tables *iptables.IPTables) error {
+	for _, ipRange := range blockedRanges {
+		err := tables.Insert("filter", "FORWARD", 1, getBlockingRule(ips, ipRange)...)
+		if err != nil {
+			return fmt.Errorf("error adding blocking rule: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (ips *IPSlot) removeBlockingRules(tables *iptables.IPTables) {
+	for _, ipRange := range blockedRanges {
+		err := tables.Delete("filter", "FORWARD", getBlockingRule(ips, ipRange)...)
+		if err != nil {
+			fmt.Printf("error removing blocking rule: %w", err)
+		}
+	}
+}
+
 func getDefaultGateway() (string, error) {
 	routes, err := netlink.RouteList(nil, netlink.FAMILY_ALL)
 	if err != nil {
@@ -393,6 +427,15 @@ func (ips *IPSlot) CreateNetwork(
 	}
 	telemetry.ReportEvent(childCtx, "Created forwarding rule from default gateway")
 
+	err = ips.addBlockingRules(tables)
+	if err != nil {
+		errMsg := fmt.Errorf("error adding blocking rules: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+	telemetry.ReportEvent(childCtx, "Added blocking rules")
+
 	// Add host postrouting rules
 	err = tables.Append("nat", "POSTROUTING", "-s", ips.HostSnapshotCIDR(), "-o", hostDefaultGateway, "-j", "MASQUERADE")
 	if err != nil {
@@ -451,6 +494,8 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, dn
 		} else {
 			telemetry.ReportEvent(childCtx, "deleted host forwarding rule from default gateway")
 		}
+
+		ipSlot.removeBlockingRules(tables)
 
 		// Delete host postrouting rules
 		err = tables.Delete("nat", "POSTROUTING", "-s", ipSlot.HostSnapshotCIDR(), "-o", hostDefaultGateway, "-j", "MASQUERADE")
