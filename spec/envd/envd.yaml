@@ -15,7 +15,7 @@ paths:
         204:
           description: The time and metadata is synced with the host
 
-  /files/{path}:
+  /files:
     get:
       summary: Download a file
       tags: [files]
@@ -42,10 +42,8 @@ paths:
       requestBody:
         $ref: "#/components/requestBodies/File"
       responses:
-        200:
-          $ref: "#/components/responses/ExistingFileUploadSuccess"
-        201:
-          $ref: "#/components/responses/NewFileUploadSuccess"
+        204:
+          $ref: "#/components/responses/UploadSuccess"
         400:
           $ref: "#/components/responses/BadRequest"
         403:
@@ -59,9 +57,8 @@ components:
   parameters:
     FilePath:
       name: path
-      in: path
-      required: true
-      allowEmptyValue: true
+      in: query
+      required: false
       description: Path to the file, URL encoded. Can be relative to user's home directory.
       schema:
         type: string
@@ -87,10 +84,8 @@ components:
                 format: binary
 
   responses:
-    ExistingFileUploadSuccess:
-      description: The file was updated successfully.
-    NewFileUploadSuccess:
-      description: The file was created successfully.
+    UploadSuccess:
+      description: The file was uploaded successfully.
     DownloadSuccess:
       description: Entire file downloaded successfully.
       content:

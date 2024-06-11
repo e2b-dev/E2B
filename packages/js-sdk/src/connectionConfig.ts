@@ -12,6 +12,20 @@ export interface ConnectionOpts {
   requestTimeoutMs?: number
 }
 
+export class SandboxError extends Error {
+  constructor(message: any) {
+    super(message)
+    this.name = 'SandboxError'
+  }
+}
+
+export class TimeoutError extends SandboxError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'TimeoutError'
+  }
+}
+
 export class ConnectionConfig {
   readonly debug: boolean
   readonly domain: string

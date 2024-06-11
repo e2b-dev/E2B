@@ -2,9 +2,9 @@ import createClient from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
-import { ConnectionConfig } from '../connectionConfig'
+import { ConnectionConfig, SandboxError } from '../connectionConfig'
 
-export class AuthenticationError extends Error {
+export class AuthenticationError extends SandboxError {
   constructor(message: any) {
     super(message)
     this.name = 'AuthenticationError'

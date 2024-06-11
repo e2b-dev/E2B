@@ -11,14 +11,14 @@ import {
   Signal,
   StartResponse,
 } from '../../envd/process/process_pb'
-import { ConnectionConfig, defaultUsername, Username, ConnectionOpts } from '../../connectionConfig'
+import { ConnectionConfig, defaultUsername, Username, ConnectionOpts, SandboxError } from '../../connectionConfig'
 import { ProcessHandle, ProcessResult } from './processHandle'
 
 export type ProcessInfo = PlainMessage<PsProcessInfo>
 
 export interface ProcessRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
 
-interface ProcessStartOpts extends ProcessRequestOpts {
+export interface ProcessStartOpts extends ProcessRequestOpts {
   background?: boolean
   cwd?: string
   user?: Username
@@ -26,6 +26,15 @@ interface ProcessStartOpts extends ProcessRequestOpts {
   onStdout?: ((data: string) => void | Promise<void>)
   onStderr?: ((data: string) => void | Promise<void>)
   timeout?: number
+}
+
+export type ProcessConnectOpts = Pick<ProcessStartOpts, 'onStderr' | 'onStdout' | 'timeout'> & ProcessRequestOpts & { iterator?: boolean }
+
+export class ProcessError extends SandboxError {
+  constructor(message: string, public readonly pid: number) {
+    super(message)
+    this.name = 'ProcessError'
+  }
 }
 
 export class Process {
@@ -79,15 +88,7 @@ export class Process {
     })
   }
 
-  async connect(
-    pid: number,
-    opts?: {
-      onStdout?: ((data: string) => void | Promise<void>),
-      onStderr?: ((data: string) => void | Promise<void>),
-      timeout?: number,
-      iterator?: boolean,
-    } & Pick<ConnectionOpts, 'requestTimeoutMs'>
-  ): Promise<ProcessHandle> {
+  async connect(pid: number, opts?: ProcessConnectOpts): Promise<ProcessHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
@@ -126,7 +127,7 @@ export class Process {
 
   async run(cmd: string, opts?: ProcessStartOpts & { background?: false }): Promise<ProcessResult>
   async run(cmd: string, opts?: ProcessStartOpts & { background: true }): Promise<ProcessHandle>
-  async run(cmd: string, opts?: Omit<ProcessStartOpts, 'onStderr' | 'onStdout'> & { background?: boolean, iterator: true }): Promise<ProcessHandle>
+  async run(cmd: string, opts?: Omit<ProcessStartOpts, 'onStderr' | 'onStdout'> & { iterator: true }): Promise<ProcessHandle>
   async run(cmd: string, opts?: ProcessStartOpts & { background?: boolean }): Promise<unknown> {
     const proc = await this.start(cmd, opts)
 
@@ -135,10 +136,7 @@ export class Process {
       : proc.wait()
   }
 
-  private async start(
-    cmd: string,
-    opts?: ProcessStartOpts,
-  ): Promise<ProcessHandle> {
+  private async start(cmd: string, opts?: ProcessStartOpts): Promise<ProcessHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()

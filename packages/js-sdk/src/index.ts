@@ -4,30 +4,36 @@ export {
 } from './api'
 export type { components, paths } from './api'
 
-export { ConnectionConfig } from './connectionConfig'
+export { ConnectionConfig, SandboxError } from './connectionConfig'
 export type { ConnectionOpts, Username } from './connectionConfig'
 
-export { WatchHandle } from './sandbox/filesystem/watchHandle'
-export type { FilesystemEvent } from './sandbox/filesystem/watchHandle'
+export type { FilesystemEvent, WatchHandle } from './sandbox/filesystem/watchHandle'
 export type {
   EntryInfo,
 } from './sandbox/filesystem'
 export {
-  EventType,
+  NotEnoughDiskSpaceError,
+  InvalidUserError,
+  NotFoundError as FileNotFoundError,
+  FilesystemError,
+  InvalidPathError,
   FileType,
-} from './envd/filesystem/filesystem_pb'
+} from './sandbox/filesystem'
 
-export { ProcessHandle } from './sandbox/process/processHandle'
+export { ProcessError, ProcessExitError } from './sandbox/process/processHandle'
 export type {
   ProcessResult,
   Stdout,
   Stderr,
   Pty,
+  ProcessHandle,
 } from './sandbox/process/processHandle'
 
 export type {
   ProcessInfo,
   ProcessRequestOpts,
+  ProcessConnectOpts,
+  ProcessStartOpts,
 } from './sandbox/process'
 
 import { Sandbox } from './sandbox'

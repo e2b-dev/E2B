@@ -5,15 +5,13 @@
 
 
 export interface paths {
-  "/files/{path}": {
+  "/files": {
     /** Download a file */
     get: {
       parameters: {
         query: {
+          path?: components["parameters"]["FilePath"];
           username: components["parameters"]["User"];
-        };
-        path: {
-          path: components["parameters"]["FilePath"];
         };
       };
       responses: {
@@ -28,16 +26,13 @@ export interface paths {
     post: {
       parameters: {
         query: {
+          path?: components["parameters"]["FilePath"];
           username: components["parameters"]["User"];
-        };
-        path: {
-          path: components["parameters"]["FilePath"];
         };
       };
       requestBody: components["requestBodies"]["File"];
       responses: {
-        200: components["responses"]["ExistingFileUploadSuccess"];
-        201: components["responses"]["NewFileUploadSuccess"];
+        204: components["responses"]["UploadSuccess"];
         400: components["responses"]["BadRequest"];
         403: components["responses"]["DirectoryPathError"];
         500: components["responses"]["InternalServerError"];
@@ -88,10 +83,6 @@ export interface components {
         "application/octet-stream": string;
       };
     };
-    /** @description The file was updated successfully. */
-    ExistingFileUploadSuccess: {
-      content: never;
-    };
     /** @description File not found */
     FileNotFound: {
       content: {
@@ -104,20 +95,20 @@ export interface components {
         "application/json": components["schemas"]["Error"];
       };
     };
-    /** @description The file was created successfully. */
-    NewFileUploadSuccess: {
-      content: never;
-    };
     /** @description Not enough disk space */
     NotEnoughDiskSpace: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
     };
+    /** @description The file was uploaded successfully. */
+    UploadSuccess: {
+      content: never;
+    };
   };
   parameters: {
     /** @description Path to the file, URL encoded. Can be relative to user's home directory. */
-    FilePath: string;
+    FilePath?: string;
     /** @description User used for setting the owner, or resolving relative paths. */
     User: string;
   };

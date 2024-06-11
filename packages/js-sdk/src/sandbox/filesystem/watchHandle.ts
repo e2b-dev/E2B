@@ -1,4 +1,6 @@
 import { PlainMessage } from '@bufbuild/protobuf'
+import { ConnectError, Code } from '@connectrpc/connect'
+import { FilesystemError, InvalidUserError, NotFoundError } from '.'
 
 import {
   FilesystemEvent as FsFilesystemEvent,
@@ -13,6 +15,8 @@ export class WatchHandle {
   constructor(
     private readonly handleStop: () => void,
     private readonly events: AsyncIterable<WatchResponse>,
+    private readonly path: string,
+    private readonly username: string,
     private readonly onEvent?: (event: FilesystemEvent) => void | Promise<void>,
     iterator?: boolean,
   ) {
@@ -32,6 +36,18 @@ export class WatchHandle {
           yield event.event
         }
       }
+    } catch (err) {
+      if (err instanceof ConnectError) {
+        switch (err.code) {
+          case Code.InvalidArgument:
+            throw new InvalidUserError(err.message, this.username)
+          case Code.NotFound:
+            throw new NotFoundError(err.message, this.path)
+          default:
+            throw new FilesystemError(err.message)
+        }
+      }
+      throw err
     } finally {
       this.stop()
     }
