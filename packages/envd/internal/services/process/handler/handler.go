@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,7 +15,10 @@ import (
 	"github.com/creack/pty"
 )
 
-const defaultOomScore = 100
+const (
+	defaultOomScore  = 100
+	DefaultChunkSize = 2 << 15
+)
 
 type ProcessExit struct {
 	Error  *string
@@ -32,14 +34,12 @@ type Handler struct {
 	cmd *exec.Cmd
 	tty *os.File
 
-	Stdout    *multiReader
-	Stderr    *multiReader
-	TtyOutput *multiReader
-
 	stdin io.WriteCloser
-	Exit  *multiResult[ProcessExit]
 
 	stdinMu sync.Mutex
+
+	OutputEvent *MultiplexedChannel[rpc.ProcessEvent_Data]
+	EndEvent    *MultiplexedChannel[rpc.ProcessEvent_End]
 }
 
 func New(req *rpc.StartRequest) (*Handler, error) {
@@ -104,29 +104,108 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error creating stdout pipe for command '%s': %w", cmd, err))
 	}
 
+	outMultiplex := NewMultiplexedChannel[rpc.ProcessEvent_Data]()
+	var outWg sync.WaitGroup
+
+	outWg.Add(1)
+	go func() {
+		defer outWg.Done()
+
+		buf := make([]byte, DefaultChunkSize)
+
+		for {
+			n, err := stdout.Read(buf)
+			if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+				break
+			}
+
+			outMultiplex.Source <- rpc.ProcessEvent_Data{
+				Data: &rpc.ProcessEvent_DataEvent{
+					Output: &rpc.ProcessEvent_DataEvent_Stdout{
+						Stdout: buf[:n],
+					},
+				},
+			}
+
+			if err == io.EOF || err == io.ErrUnexpectedEOF {
+				break
+			}
+		}
+	}()
+
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error creating stderr pipe for command '%s': %w", cmd, err))
 	}
 
-	stdoutMultiplex := NewMultiReader(stdout)
-	stderrMultiplex := NewMultiReader(stderr)
+	outWg.Add(1)
+	go func() {
+		defer outWg.Done()
 
-	var ttyMultiplex *multiReader
+		buf := make([]byte, DefaultChunkSize)
+
+		for {
+			n, err := stderr.Read(buf)
+			if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+				break
+			}
+
+			outMultiplex.Source <- rpc.ProcessEvent_Data{
+				Data: &rpc.ProcessEvent_DataEvent{
+					Output: &rpc.ProcessEvent_DataEvent_Stderr{
+						Stderr: buf[:n],
+					},
+				},
+			}
+
+			if err == io.EOF || err == io.ErrUnexpectedEOF {
+				break
+			}
+		}
+	}()
+
 	if tty != nil {
-		ttyMultiplex = NewMultiReader(tty)
+		outWg.Add(1)
+		go func() {
+			defer outWg.Done()
+
+			buf := make([]byte, DefaultChunkSize)
+
+			for {
+				n, err := tty.Read(buf)
+				if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+					break
+				}
+
+				outMultiplex.Source <- rpc.ProcessEvent_Data{
+					Data: &rpc.ProcessEvent_DataEvent{
+						Output: &rpc.ProcessEvent_DataEvent_Pty{
+							Pty: buf[:n],
+						},
+					},
+				}
+
+				if err == io.EOF || err == io.ErrUnexpectedEOF {
+					break
+				}
+			}
+		}()
 	}
 
+	go func() {
+		outWg.Wait()
+
+		close(outMultiplex.Source)
+	}()
+
 	return &Handler{
-		Config:    req.GetProcess(),
-		cmd:       cmd,
-		tty:       tty,
-		stdin:     stdin,
-		Stdout:    stdoutMultiplex,
-		Stderr:    stderrMultiplex,
-		TtyOutput: ttyMultiplex,
-		Tag:       req.Tag,
-		Exit:      NewMultiResult[ProcessExit](),
+		Config:      req.GetProcess(),
+		cmd:         cmd,
+		tty:         tty,
+		stdin:       stdin,
+		Tag:         req.Tag,
+		OutputEvent: outMultiplex,
+		EndEvent:    NewMultiplexedChannel[rpc.ProcessEvent_End](),
 	}, nil
 }
 
@@ -188,28 +267,7 @@ func (p *Handler) Start() (uint32, error) {
 func (p *Handler) Wait() {
 	defer p.tty.Close()
 
-	fmt.Printf("waiting for process outputs  '%s' to exit\n", p.cmd)
-
-	stdoutErr := p.Stdout.Wait()
-	stderrErr := p.Stderr.Wait()
-
-	var outErrs []error
-
-	if stdoutErr != nil {
-		outErrs = append(outErrs, stdoutErr)
-	}
-
-	if stderrErr != nil {
-		outErrs = append(outErrs, stderrErr)
-	}
-
-	fmt.Printf("waiting for process '%s' to exit\n", p.cmd)
-	waitErr := p.cmd.Wait()
-
-	var err error
-	if waitErr != nil {
-		err = fmt.Errorf("error waiting for process '%s': %w", p.cmd, errors.Join(outErrs...))
-	}
+	err := p.cmd.Wait()
 
 	var errMsg *string
 
@@ -218,12 +276,12 @@ func (p *Handler) Wait() {
 		errMsg = &msg
 	}
 
-	fmt.Printf("process '%s' exited with code '%d' and status '%s'\n", p.cmd, p.cmd.ProcessState.ExitCode(), p.cmd.ProcessState.String())
-
-	p.Exit.Set(ProcessExit{
-		Error:  errMsg,
-		Code:   int32(p.cmd.ProcessState.ExitCode()),
-		Exited: p.cmd.ProcessState.Exited(),
-		Status: p.cmd.ProcessState.String(),
-	})
+	p.EndEvent.Source <- rpc.ProcessEvent_End{
+		End: &rpc.ProcessEvent_EndEvent{
+			Error:    errMsg,
+			ExitCode: int32(p.cmd.ProcessState.ExitCode()),
+			Exited:   p.cmd.ProcessState.Exited(),
+			Status:   p.cmd.ProcessState.String(),
+		},
+	}
 }

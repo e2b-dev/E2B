@@ -9,7 +9,6 @@ import (
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	"connectrpc.com/connect"
-	"golang.org/x/sync/semaphore"
 )
 
 func (s *Service) StartBackgroundProcess(ctx context.Context, req *rpc.StartRequest) error {
@@ -52,40 +51,80 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 		return err
 	}
 
-	streamSemaphore := semaphore.NewWeighted(1)
+	exitChan := make(chan struct{})
 
-	semErr := streamSemaphore.Acquire(ctx, 1)
-	if semErr != nil {
-		return connect.NewError(connect.CodeAborted, semErr)
-	}
+	startMultiplexer := handler.NewMultiplexedChannel[rpc.ProcessEvent_Start]()
+	defer close(startMultiplexer.Source)
 
-	subscribeExit := make(chan struct{})
+	start, startCancel := startMultiplexer.Fork()
+	defer startCancel()
+
+	data, dataCancel := proc.OutputEvent.Fork()
+	defer dataCancel()
+
+	end, endCancel := proc.EndEvent.Fork()
+	defer endCancel()
 
 	go func() {
-		defer close(subscribeExit)
+		defer close(exitChan)
 
-		subscribeToProcessData(ctx, cancel, proc, func(data *rpc.ProcessEvent_DataEvent) {
-			processSemErr := streamSemaphore.Acquire(ctx, 1)
-			if processSemErr != nil {
-				cancel(connect.NewError(connect.CodeAborted, processSemErr))
+		select {
+		case <-ctx.Done():
+			cancel(ctx.Err())
 
-				return
-			}
-			defer streamSemaphore.Release(1)
-
-			streamErr := stream.Send(&rpc.StartResponse{
+			return
+		case event := <-start:
+			stream.Send(&rpc.StartResponse{
 				Event: &rpc.ProcessEvent{
-					Event: &rpc.ProcessEvent_Data{
-						Data: data,
-					},
+					Event: &event,
 				},
 			})
-			if streamErr != nil {
-				cancel(connect.NewError(connect.CodeUnknown, streamErr))
+			if err != nil {
+				cancel(connect.NewError(connect.CodeUnknown, err))
 
 				return
 			}
-		})
+		}
+
+	dataLoop:
+		for {
+			select {
+			case <-ctx.Done():
+				cancel(ctx.Err())
+				return
+			case event, ok := <-data:
+				if !ok {
+					break dataLoop
+				}
+				err := stream.Send(&rpc.StartResponse{
+					Event: &rpc.ProcessEvent{
+						Event: &event,
+					},
+				})
+				if err != nil {
+					cancel(connect.NewError(connect.CodeUnknown, err))
+					return
+				}
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			cancel(ctx.Err())
+
+			return
+		case event := <-end:
+			err := stream.Send(&rpc.StartResponse{
+				Event: &rpc.ProcessEvent{
+					Event: &event,
+				},
+			})
+			if err != nil {
+				cancel(connect.NewError(connect.CodeUnknown, err))
+
+				return
+			}
+		}
 	}()
 
 	pid, err := proc.Start()
@@ -95,8 +134,11 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 
 	s.processes.Store(pid, proc)
 
-	exitChan, unsubscribe := proc.Exit.Subscribe()
-	defer unsubscribe()
+	start <- rpc.ProcessEvent_Start{
+		Start: &rpc.ProcessEvent_StartEvent{
+			Pid: pid,
+		},
+	}
 
 	go func() {
 		defer s.processes.Delete(pid)
@@ -104,56 +146,10 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 		proc.Wait()
 	}()
 
-	streamErr := stream.Send(&rpc.StartResponse{
-		Event: &rpc.ProcessEvent{
-			Event: &rpc.ProcessEvent_Start{
-				Start: &rpc.ProcessEvent_StartEvent{
-					Pid: pid,
-				},
-			},
-		},
-	})
-
-	streamSemaphore.Release(1)
-
-	if streamErr != nil {
-		return connect.NewError(connect.CodeUnknown, streamErr)
-	}
-
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case exitInfo := <-exitChan:
-		<-subscribeExit
-
-		endSemErr := streamSemaphore.Acquire(ctx, 1)
-		if endSemErr != nil {
-			return connect.NewError(connect.CodeAborted, endSemErr)
-		}
-
-		event := &rpc.ProcessEvent{
-			Event: &rpc.ProcessEvent_End{
-				End: &rpc.ProcessEvent_EndEvent{
-					ExitCode: exitInfo.Code,
-					Exited:   exitInfo.Exited,
-					Error:    exitInfo.Error,
-					Status:   exitInfo.Status,
-				},
-			},
-		}
-
-		streamErr = stream.Send(&rpc.StartResponse{
-			Event: event,
-		})
-
-		logs.LogStreamEvent(ctx, s.logger.Debug(), req.Spec().Procedure, event)
-
-		streamSemaphore.Release(1)
-
-		if streamErr != nil {
-			return connect.NewError(connect.CodeUnknown, streamErr)
-		}
+	case <-exitChan:
+		return nil
 	}
-
-	return nil
 }

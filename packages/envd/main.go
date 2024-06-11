@@ -102,6 +102,8 @@ func withCORS(h http.Handler) http.Handler {
 }
 
 func main() {
+	// runtime.GOMAXPROCS(1)
+
 	parseFlags()
 
 	if versionFlag {

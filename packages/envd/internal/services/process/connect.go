@@ -2,15 +2,11 @@ package process
 
 import (
 	"context"
-	"fmt"
-	"sync"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
-	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	"connectrpc.com/connect"
-	"golang.org/x/sync/semaphore"
 )
 
 func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectRequest], stream *connect.ServerStream[rpc.ConnectResponse]) error {
@@ -26,175 +22,62 @@ func (s *Service) handleConnect(ctx context.Context, req *connect.Request[rpc.Co
 		return err
 	}
 
-	streamSemaphore := semaphore.NewWeighted(1)
+	exitChan := make(chan struct{})
 
-	subscribeExit := make(chan struct{})
+	data, dataCancel := proc.OutputEvent.Fork()
+	defer dataCancel()
+
+	end, endCancel := proc.EndEvent.Fork()
+	defer endCancel()
 
 	go func() {
-		defer close(subscribeExit)
+		defer close(exitChan)
 
-		subscribeToProcessData(ctx, cancel, proc, func(data *rpc.ProcessEvent_DataEvent) {
-			semErr := streamSemaphore.Acquire(ctx, 1)
-			if semErr != nil {
-				cancel(connect.NewError(connect.CodeAborted, semErr))
-
+	dataLoop:
+		for {
+			select {
+			case <-ctx.Done():
+				cancel(ctx.Err())
 				return
-			}
-
-			defer streamSemaphore.Release(1)
-
-			streamErr := stream.Send(&rpc.ConnectResponse{
-				Event: &rpc.ProcessEvent{
-					Event: &rpc.ProcessEvent_Data{
-						Data: data,
+			case event, ok := <-data:
+				if !ok {
+					break dataLoop
+				}
+				err := stream.Send(&rpc.ConnectResponse{
+					Event: &rpc.ProcessEvent{
+						Event: &event,
 					},
+				})
+				if err != nil {
+					cancel(connect.NewError(connect.CodeUnknown, err))
+					return
+				}
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			cancel(ctx.Err())
+
+			return
+		case event := <-end:
+			err := stream.Send(&rpc.ConnectResponse{
+				Event: &rpc.ProcessEvent{
+					Event: &event,
 				},
 			})
-			if streamErr != nil {
-				cancel(connect.NewError(connect.CodeUnknown, streamErr))
+			if err != nil {
+				cancel(connect.NewError(connect.CodeUnknown, err))
 
 				return
 			}
-		})
+		}
 	}()
-
-	exitChan, unsubscribe := proc.Exit.Subscribe()
-	defer unsubscribe()
 
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case exitInfo := <-exitChan:
-		<-subscribeExit
-
-		endSemErr := streamSemaphore.Acquire(ctx, 1)
-		if endSemErr != nil {
-			return connect.NewError(connect.CodeAborted, endSemErr)
-		}
-
-		streamErr := stream.Send(&rpc.ConnectResponse{
-			Event: &rpc.ProcessEvent{
-				Event: &rpc.ProcessEvent_End{
-					End: &rpc.ProcessEvent_EndEvent{
-						ExitCode: exitInfo.Code,
-						Exited:   exitInfo.Exited,
-						Error:    exitInfo.Error,
-						Status:   exitInfo.Status,
-					},
-				},
-			},
-		})
-
-		streamSemaphore.Release(1)
-
-		if streamErr != nil {
-			return connect.NewError(connect.CodeUnknown, streamErr)
-		}
+	case <-exitChan:
+		return nil
 	}
-
-	return nil
-}
-
-func subscribeToProcessData(ctx context.Context, cancel context.CancelCauseFunc, proc *handler.Handler, handleData func(data *rpc.ProcessEvent_DataEvent)) {
-	var wg sync.WaitGroup
-
-	stdoutReader, stdoutCleanup := proc.Stdout.Add()
-	defer stdoutCleanup()
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		defer cancel(nil)
-
-		buf := make([]byte, handler.DefaultChunkSize)
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				n, err := stdoutReader.Read(buf)
-				if err != nil {
-					cancel(connect.NewError(connect.CodeInternal, fmt.Errorf("failed to read from stdout for process: %w", err)))
-
-					return
-				}
-
-				handleData(&rpc.ProcessEvent_DataEvent{
-					Output: &rpc.ProcessEvent_DataEvent_Stdout{
-						Stdout: buf[:n],
-					},
-				})
-			}
-		}
-	}()
-
-	stderrReader, stderrCleanup := proc.Stderr.Add()
-	defer stderrCleanup()
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		defer cancel(nil)
-
-		buf := make([]byte, handler.DefaultChunkSize)
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				n, err := stderrReader.Read(buf)
-				if err != nil {
-					cancel(connect.NewError(connect.CodeInternal, fmt.Errorf("failed to read from stderr for process: %w", err)))
-
-					return
-				}
-
-				handleData(&rpc.ProcessEvent_DataEvent{
-					Output: &rpc.ProcessEvent_DataEvent_Stderr{
-						Stderr: buf[:n],
-					},
-				})
-			}
-		}
-	}()
-
-	if proc.TtyOutput != nil {
-		ttyReader, ttyCleanup := proc.TtyOutput.Add()
-		defer ttyCleanup()
-
-		wg.Add(1)
-
-		go func() {
-			defer wg.Done()
-			defer cancel(nil)
-
-			buf := make([]byte, handler.DefaultChunkSize)
-
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				default:
-					n, err := ttyReader.Read(buf)
-					if err != nil {
-						cancel(connect.NewError(connect.CodeInternal, fmt.Errorf("failed to read from tty output for process: %w", err)))
-
-						return
-					}
-
-					handleData(&rpc.ProcessEvent_DataEvent{
-						Output: &rpc.ProcessEvent_DataEvent_Pty{
-							Pty: buf[:n],
-						},
-					})
-				}
-			}
-		}()
-	}
-
-	wg.Wait()
 }
