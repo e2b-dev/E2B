@@ -115,7 +115,7 @@ export const buildCommand = new commander.Command('build')
         config?: string
         cpuCount?: number
         memoryMb?: number
-        buildArgs?: [string]
+        dockerBuildArgs?: [string]
       },
     ) => {
       try {
@@ -127,10 +127,9 @@ export const buildCommand = new commander.Command('build')
           process.exit(1)
         }
 
-        // TODO: pass directly?
         const dockerBuildArgs: {[key: string]: string} = {}
-        if (opts.buildArgs) {
-            opts.buildArgs.forEach((arg) => {
+        if (opts.dockerBuildArgs) {
+            opts.dockerBuildArgs.forEach((arg) => {
                 const [key, value] = arg.split('=')
                 dockerBuildArgs[key] = value
             })
