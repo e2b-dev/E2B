@@ -115,7 +115,7 @@ export const buildCommand = new commander.Command('build')
         config?: string
         cpuCount?: number
         memoryMb?: number
-        buildArgs?: [string]
+        buildArg?: [string]
       },
     ) => {
       try {
@@ -127,12 +127,12 @@ export const buildCommand = new commander.Command('build')
           process.exit(1)
         }
 
-        const dockerBuildArgs: {[key: string]: string} = {}
-        if (opts.buildArgs) {
-            opts.buildArgs.forEach((arg) => {
-                const [key, value] = arg.split('=')
-                dockerBuildArgs[key] = value
-            })
+        const dockerBuildArgs: { [key: string]: string } = {}
+        if (opts.buildArg) {
+          opts.buildArg.forEach((arg) => {
+            const [key, value] = arg.split('=')
+            dockerBuildArgs[key] = value
+          })
         }
 
         const accessToken = ensureAccessToken()
@@ -277,17 +277,21 @@ export const buildCommand = new commander.Command('build')
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        child_process.execSync(
-          `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(dockerBuildArgs).map(([key, value]) => `--build-arg ${key}=${value}`).join(' ')}`,
-          {
-            stdio: 'inherit',
-            cwd: root,
-            env: {
-              ...process.env,
-              DOCKER_CLI_HINTS: 'false',
-            },
-          },
+        const cmd = `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${
+          e2b.SANDBOX_DOMAIN
+        }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
+          dockerBuildArgs,
         )
+          .map(([key, value]) => `--build-arg="${key}=${value}"`)
+          .join(' ')}`
+        child_process.execSync(cmd, {
+          stdio: 'inherit',
+          cwd: root,
+          env: {
+            ...process.env,
+            DOCKER_CLI_HINTS: 'false',
+          },
+        })
         console.log('Docker image built.\n')
 
         console.log('Pushing docker image...')
@@ -380,8 +384,9 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox
 
 # Start sandbox
-sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.templateID
-          }")
+sandbox = Sandbox(template="${
+          aliases?.length ? aliases[0] : template.data.templateID
+        }")
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview
@@ -392,8 +397,7 @@ sandbox.close()`)
         const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
 
 // Start sandbox
-const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.data.templateID
-          }' })
+const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.data.templateID}' })
 
 // Interact with sandbox. Learn more here:
 // https://e2b.dev/docs/sandbox/overview
@@ -548,21 +552,24 @@ async function requestBuildTemplate(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
+        `Authentication error: ${res.statusText}, ${
+          error.message ?? 'no message'
         }`,
       )
     }
 
     if (error.code === 404) {
       throw new Error(
-        `Sandbox template you want to build ${templateID ? `(${templateID})` : ''
-        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${hasConfig
-          ? `This could be caused by ${asLocalRelative(
-            configPath,
-          )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
-            configPath,
-          )} and start building the template again.`
-          : ''
+        `Sandbox template you want to build ${
+          templateID ? `(${templateID})` : ''
+        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${
+          hasConfig
+            ? `This could be caused by ${asLocalRelative(
+                configPath,
+              )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
+                configPath,
+              )} and start building the template again.`
+            : ''
         }`,
       )
     }
@@ -596,7 +603,8 @@ async function triggerBuild(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
+        `Authentication error: ${res.statusText}, ${
+          error.message ?? 'no message'
         }`,
       )
     }
