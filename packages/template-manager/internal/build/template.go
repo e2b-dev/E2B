@@ -69,9 +69,9 @@ func (e *Env) KernelDirPath() string {
 	return filepath.Join(consts.KernelsDir, e.KernelVersion)
 }
 
-// Path to the directory where the kernel is stored.
-func (e *Env) RootfsSize() int64 {
-	return e.rootfsSize
+// Real size in MB of rootfs after building the env
+func (e *Env) RootfsSizeMB() int64 {
+	return e.rootfsSize >> 20
 }
 
 // Path to the directory where the kernel can be accessed inside when the dirs are mounted.

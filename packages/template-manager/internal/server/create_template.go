@@ -55,7 +55,7 @@ func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateC
 		return err
 	}
 
-	trailerMetadata := metadata.Pairs(consts.RootfsSizeKey, strconv.FormatInt(template.RootfsSize(), 10))
+	trailerMetadata := metadata.Pairs(consts.RootfsSizeKey, strconv.FormatInt(template.RootfsSizeMB(), 10))
 	stream.SetTrailer(trailerMetadata)
 
 	telemetry.ReportEvent(childCtx, "Environment built")
