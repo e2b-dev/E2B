@@ -157,7 +157,7 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
       <h2 className="text-xl font-bold pb-4">Team members</h2>
       <Table>
       <TableHeader>
-      <TableRow className='hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5 '>
+      <TableRow className='hover:bg-inherit dark:hover:bg-inherit border-b border-white/5'>
         <TableHead>Email</TableHead>
         <TableHead></TableHead>
       </TableRow>
