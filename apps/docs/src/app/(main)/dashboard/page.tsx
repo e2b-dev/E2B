@@ -79,7 +79,7 @@ const Sidebar = ({ selectedItem, setSelectedItem, teams, user ,currentTeam, setC
 
     <AccountSelector teams={teams} user={user} currentTeam={currentTeam} setCurrentTeam={setCurrentTeam} setTeams={setTeams} />
 
-    <div className="flex flex-row justify-center space-x-2 md:space-x-0 md:space-y-2 md:flex-col">
+    <div className="flex flex-row justify-center space-x-4 md:space-x-0 md:space-y-2 md:flex-col">
       {menuLabels.map((label) => (
         <MenuItem
           key={label.toUpperCase()}
