@@ -45,7 +45,7 @@ job "loki" {
 
       config {
         network_mode = "host"
-        image = "grafana/loki:2.8.4"
+        image = "grafana/loki:2.9.8"
 
         args = [
           "-config.file",
@@ -136,10 +136,12 @@ compactor:
 # The bucket lifecycle policy should be set to delete objects after MORE than the specified retention period
 limits_config:
   retention_period: 168h
-  ingestion_rate_mb: 20
-  ingestion_burst_size_mb: 30
-  per_stream_rate_limit: "3MB"
-  per_stream_rate_limit_burst: "10MB"
+  ingestion_rate_mb: 100
+  ingestion_burst_size_mb: 200
+  per_stream_rate_limit: "48MB"
+  per_stream_rate_limit_burst: "120MB"
+  max_streams_per_user: 0
+  max_global_streams_per_user: 10000
 
 
 EOF
