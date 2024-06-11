@@ -100,8 +100,8 @@ export const buildCommand = new commander.Command('build')
     parseInt,
   )
   .option(
-    '--docker-build-arg <args...>',
-    'specify additional build arguments for the Docker build command. The format should be <varname>=<value>.',
+    '--build-arg <args...>',
+    'specify additional build arguments for the build command. The format should be <varname>=<value>.',
   )
   .alias('bd')
   .action(
@@ -115,7 +115,7 @@ export const buildCommand = new commander.Command('build')
         config?: string
         cpuCount?: number
         memoryMb?: number
-        dockerBuildArgs?: [string]
+        buildArgs?: [string]
       },
     ) => {
       try {
@@ -127,9 +127,10 @@ export const buildCommand = new commander.Command('build')
           process.exit(1)
         }
 
+        // TODO: pass directly?
         const dockerBuildArgs: {[key: string]: string} = {}
-        if (opts.dockerBuildArgs) {
-            opts.dockerBuildArgs.forEach((arg) => {
+        if (opts.buildArgs) {
+            opts.buildArgs.forEach((arg) => {
                 const [key, value] = arg.split('=')
                 dockerBuildArgs[key] = value
             })
