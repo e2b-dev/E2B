@@ -40,7 +40,7 @@ job "logs-collector" {
 
   priority = 85
 
-  group "collector" {
+  group "logs-collector" {
     network {
       port "health" {
         to = var.logs_health_port_number

@@ -44,7 +44,7 @@ job "otel-collector" {
 
   priority = 95
 
-  group "collector" {
+  group "otel-collector" {
     network {
       port "health" {
         to = 13133
