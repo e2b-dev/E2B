@@ -103,7 +103,7 @@ export const BillingContent = ({currentApiKey}: {currentApiKey: string | null}) 
 
       <Table>
       <TableHeader>
-      <TableRow className='hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5 '>
+      <TableRow className='hover:bg-inherit dark:hover:bg-inherit border-b border-white/5 '>
         <TableHead>Date</TableHead>
         <TableHead>Cost</TableHead>
         <TableHead>Paid</TableHead>
