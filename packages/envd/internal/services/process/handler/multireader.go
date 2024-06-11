@@ -1,12 +1,13 @@
 package handler
 
 import (
+	"fmt"
 	"io"
 	"sync"
 )
 
 // This is the capacity of pipe buffer on x86_64.
-const DefaultChunkSize = 2 << 16 // 64KB
+const DefaultChunkSize = 2 << 15 // 65KiB
 
 type multiReader struct {
 	exit    chan error
@@ -14,7 +15,7 @@ type multiReader struct {
 	mu      sync.RWMutex
 }
 
-func NewMultiReader(reader io.Reader) *multiReader {
+func NewMultiReader(reader io.ReadCloser) *multiReader {
 	m := &multiReader{
 		exit: make(chan error, 1),
 	}
@@ -28,11 +29,12 @@ func (m *multiReader) Wait() error {
 	return <-m.exit
 }
 
-func (m *multiReader) start(reader io.Reader) {
+func (m *multiReader) start(reader io.ReadCloser) {
 	buf := make([]byte, DefaultChunkSize)
 
 	for {
 		n, err := reader.Read(buf)
+		fmt.Println("read", n, "bytes")
 		if err != nil {
 			if err == io.EOF || err == io.ErrUnexpectedEOF {
 				m.write(buf[:n])

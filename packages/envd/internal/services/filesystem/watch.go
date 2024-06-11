@@ -110,7 +110,7 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 
 				streamErr := stream.Send(event)
 
-				logs.LogsServerEvent(ctx, s.logger, req, event)
+				logs.LogStreamEvent(ctx, s.logger.Debug(), req.Spec().Procedure, event)
 
 				if streamErr != nil {
 					return connect.NewError(connect.CodeAborted, streamErr)

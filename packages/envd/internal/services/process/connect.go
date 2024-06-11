@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
@@ -13,6 +14,10 @@ import (
 )
 
 func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectRequest], stream *connect.ServerStream[rpc.ConnectResponse]) error {
+	return logs.LogServerStreamWithoutEvents(ctx, s.logger, req, stream, s.handleConnect)
+}
+
+func (s *Service) handleConnect(ctx context.Context, req *connect.Request[rpc.ConnectRequest], stream *connect.ServerStream[rpc.ConnectResponse]) error {
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
 
@@ -24,7 +29,6 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 	streamSemaphore := semaphore.NewWeighted(1)
 
 	subscribeExit := make(chan struct{})
-	defer close(subscribeExit)
 
 	go func() {
 		defer close(subscribeExit)
@@ -74,7 +78,7 @@ func (s *Service) Connect(ctx context.Context, req *connect.Request[rpc.ConnectR
 					End: &rpc.ProcessEvent_EndEvent{
 						ExitCode: exitInfo.Code,
 						Exited:   exitInfo.Exited,
-						Error:    &exitInfo.Error,
+						Error:    exitInfo.Error,
 						Status:   exitInfo.Status,
 					},
 				},

@@ -19,7 +19,7 @@ import (
 const defaultOomScore = 100
 
 type ProcessExit struct {
-	Error  string
+	Error  *string
 	Status string
 	Exited bool
 	Code   int32
@@ -126,6 +126,7 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 		Stderr:    stderrMultiplex,
 		TtyOutput: ttyMultiplex,
 		Tag:       req.Tag,
+		Exit:      NewMultiResult[ProcessExit](),
 	}, nil
 }
 
@@ -187,18 +188,40 @@ func (p *Handler) Start() (uint32, error) {
 func (p *Handler) Wait() {
 	defer p.tty.Close()
 
+	fmt.Printf("waiting for process outputs  '%s' to exit\n", p.cmd)
+
 	stdoutErr := p.Stdout.Wait()
 	stderrErr := p.Stderr.Wait()
 
+	var outErrs []error
+
+	if stdoutErr != nil {
+		outErrs = append(outErrs, stdoutErr)
+	}
+
+	if stderrErr != nil {
+		outErrs = append(outErrs, stderrErr)
+	}
+
+	fmt.Printf("waiting for process '%s' to exit\n", p.cmd)
 	waitErr := p.cmd.Wait()
 
 	var err error
 	if waitErr != nil {
-		err = fmt.Errorf("error waiting for process '%s': %w", p.cmd, errors.Join(stdoutErr, stderrErr, waitErr))
+		err = fmt.Errorf("error waiting for process '%s': %w", p.cmd, errors.Join(outErrs...))
 	}
 
+	var errMsg *string
+
+	if err != nil {
+		msg := err.Error()
+		errMsg = &msg
+	}
+
+	fmt.Printf("process '%s' exited with code '%d' and status '%s'\n", p.cmd, p.cmd.ProcessState.ExitCode(), p.cmd.ProcessState.String())
+
 	p.Exit.Set(ProcessExit{
-		Error:  err.Error(),
+		Error:  errMsg,
 		Code:   int32(p.cmd.ProcessState.ExitCode()),
 		Exited: p.cmd.ProcessState.Exited(),
 		Status: p.cmd.ProcessState.String(),

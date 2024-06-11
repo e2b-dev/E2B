@@ -8,6 +8,12 @@ type multiResult[T any] struct {
 	mu sync.RWMutex
 }
 
+func NewMultiResult[T any]() *multiResult[T] {
+	return &multiResult[T]{
+		channels: make([]chan T, 0),
+	}
+}
+
 func (m *multiResult[T]) Set(t T) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

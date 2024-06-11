@@ -17,6 +17,7 @@ func handleInput(process *handler.Handler, in *rpc.ProcessInput) error {
 		if err != nil {
 			return connect.NewError(connect.CodeInternal, fmt.Errorf("error writing to tty: %w", err))
 		}
+
 	case *rpc.ProcessInput_Stdin:
 		err := process.WriteStdin(in.GetStdin())
 		if err != nil {

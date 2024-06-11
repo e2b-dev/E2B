@@ -9,16 +9,16 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type StreamID string
+type RequestID string
 
 const (
-	StreamIDKey StreamID = "stream_id"
+	RequestIDKey RequestID = "request_id"
 )
 
-var streamID = atomic.Int32{}
+var requestID = atomic.Int32{}
 
-func AssignStreamID() string {
-	id := streamID.Add(1)
+func AssignRequestID() string {
+	id := requestID.Add(1)
 
 	return strconv.Itoa(int(id))
 }
@@ -33,8 +33,9 @@ func NewUnaryLogInterceptor(logger *zerolog.Logger) connect.UnaryInterceptorFunc
 
 			logger.Err(err).
 				Str("method", req.Spec().Procedure).
-				Interface("request", req).
-				Interface("response", res).
+				Interface("request", req.Any()).
+				Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
+				Interface("response", res.Any()).
 				Send()
 
 			return res, err
@@ -51,33 +52,57 @@ func LogServerStreamWithoutEvents[T any, R any](
 	stream *connect.ServerStream[T],
 	handler func(ctx context.Context, req *connect.Request[R], stream *connect.ServerStream[T]) error,
 ) error {
-	ctx = context.WithValue(ctx, StreamIDKey, AssignStreamID())
+	ctx = context.WithValue(ctx, RequestIDKey, AssignRequestID())
 
 	logger.Info().
 		Str("method", req.Spec().Procedure).
-		Str("stream_id", ctx.Value(StreamIDKey).(string)).
-		Interface("request", req).
+		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
+		Interface("request", req.Any()).
 		Send()
 
 	err := handler(ctx, req, stream)
 	logger.Err(err).
 		Str("method", req.Spec().Procedure).
-		Str("stream_id", ctx.Value(StreamIDKey).(string)).
+		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
 		Interface("response", nil).
 		Send()
 
 	return err
 }
 
-func LogsServerEvent[T any](
+func LogStreamEvent(
 	ctx context.Context,
-	logger *zerolog.Logger,
-	req *connect.Request[T],
+	logger *zerolog.Event,
+	method string,
 	event interface{},
 ) {
-	logger.Info().
-		Str("method", req.Spec().Procedure).
-		Str("stream_id", ctx.Value(StreamIDKey).(string)).
+	logger.
+		Str("method", method).
+		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
 		Interface("event", event).
 		Send()
+}
+
+func LogClientStreamWithoutEvents[T any, R any](
+	ctx context.Context,
+	logger *zerolog.Logger,
+	stream *connect.ClientStream[T],
+	handler func(ctx context.Context, stream *connect.ClientStream[T]) (*connect.Response[R], error),
+) (*connect.Response[R], error) {
+	ctx = context.WithValue(ctx, RequestIDKey, AssignRequestID())
+
+	logger.Info().
+		Str("method", stream.Spec().Procedure).
+		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
+		Send()
+
+	res, err := handler(ctx, stream)
+
+	logger.Err(err).
+		Str("method", stream.Spec().Procedure).
+		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
+		Interface("response", res.Any()).
+		Send()
+
+	return res, err
 }
