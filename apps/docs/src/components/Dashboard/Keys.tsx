@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Copy, Delete } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useToast } from '../ui/use-toast'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
@@ -118,13 +118,20 @@ export const KeysContent = ({ user, currentTeam, currentApiKey }: { user: User, 
     <div 
       key={index}
       className='flex w-full justify-between items-center border border-white/5 rounded-lg p-2 mb-4 space-x-4'
-      onMouseEnter={() => setHoveredKey(apiKey.key)}
-      onMouseLeave={() => setHoveredKey(null)}
       >
-      <div className="font-mono text-xs md:text-sm">{hoveredKey === apiKey.key ? apiKey.key : maskApiKey(apiKey.key)}</div> {/* Use a monospace font */}
+      <div
+        className="font-mono text-xs md:text-sm"
+        onMouseEnter={() => setHoveredKey(apiKey.key)}
+        onMouseLeave={() => setHoveredKey(null)}
+        > 
+        {hoveredKey === apiKey.key ? apiKey.key : maskApiKey(apiKey.key)}
+      </div>
+
       <div className='flex items-center space-x-2'>
         <Copy className='hover:cursor-pointer' width={18} height={18} onClick={() => copyToClipboard(apiKey.key)} />
-        <Delete className='hover:cursor-pointer' color='red' width={20} height={20} onClick={() => openDialog(apiKey.key)} />
+        <Button className='text-sm' variant='desctructive' onClick={() => openDialog(apiKey.key)}>
+          Delete key 
+        </Button>
       </div>
     </div>
     ))}

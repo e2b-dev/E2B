@@ -5,7 +5,7 @@ import { Button } from '../Button'
 import { Team } from '@/utils/useUser'
 import { User, createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from '../ui/use-toast'
-import { Copy, Delete } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog'
 
@@ -150,7 +150,7 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
           })
         }}
       >
-        <p>copy your user id</p>
+        <p>Copy your user ID</p>
         <Copy className='h-4 w-4'/>
       </span>
 
@@ -176,7 +176,9 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
           key={user.id}>
             <TableCell>{user.email}</TableCell>
             <TableCell>
-              <Delete className='hover:cursor-pointer' color='red' width={20} height={20} onClick={() => openDialog(user.id)} />
+              <Button className='text-sm' variant='desctructive' onClick={() => openDialog(user.id)}>
+                Remove team member
+              </Button>
             </TableCell>
           </TableRow>
         ))

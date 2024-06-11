@@ -41,7 +41,7 @@ export const AccountSelector = ({ teams, user, currentTeam, setCurrentTeam, setT
       className='dropdown-trigger group outline-none flex w-full items-center justify-between rounded-lg p-2 mb-6 hover:bg-zinc-800 hover:cursor-pointer'
     >
       <div className='flex items-start flex-col'>
-        <p className='text-sm'>Current account</p>
+        <p className='text-sm'>Current team</p>
         <h3 className='font-bold text-left'>{currentTeam.name}</h3>
       </div> 
       <ChevronRight className='transform transition-transform duration-300 group-hover:rotate-90' />
