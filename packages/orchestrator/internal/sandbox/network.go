@@ -35,26 +35,53 @@ var blockedRanges = []string{
 	"192.0.0.0/24",
 	"192.168.0.0/16",
 	"255.255.255.255/32",
+	"172.17.0.1/16",
 }
 
 func getBlockingRule(ips *IPSlot, ipRange string) []string {
-	return []string{"-i", ips.VethName(), "-d", ipRange, "-j", "DROP"}
+	return []string{"-p", "all", "-i", ips.VethName(), "-d", ipRange, "-j", "DROP"}
+}
+
+func getAllowResponseRule(ips *IPSlot) []string {
+	return []string{"-p", "tcp", "-i", ips.VethName(), "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"}
 }
 
 func (ips *IPSlot) addBlockingRules(tables *iptables.IPTables) error {
 	for _, ipRange := range blockedRanges {
-		err := tables.Insert("filter", "FORWARD", 1, getBlockingRule(ips, ipRange)...)
+		rule := getBlockingRule(ips, ipRange)
+		err := tables.Insert("filter", "FORWARD", 2, rule...)
 		if err != nil {
 			return fmt.Errorf("error adding blocking rule: %w", err)
 		}
+		err = tables.Insert("filter", "INPUT", 2, rule...)
+		if err != nil {
+			return fmt.Errorf("error adding blocking rule: %w", err)
+		}
+	}
+
+	responseRule := getAllowResponseRule(ips)
+	err := tables.Insert("filter", "INPUT", 1, responseRule...)
+	if err != nil {
+		return fmt.Errorf("error adding response rule: %w", err)
 	}
 
 	return nil
 }
 
 func (ips *IPSlot) removeBlockingRules(tables *iptables.IPTables) {
+	responseRule := getAllowResponseRule(ips)
+	err := tables.Delete("filter", "INPUT", responseRule...)
+	if err != nil {
+		fmt.Printf("error removing response rule: %w", err)
+	}
+
 	for _, ipRange := range blockedRanges {
-		err := tables.Delete("filter", "FORWARD", getBlockingRule(ips, ipRange)...)
+		rule := getBlockingRule(ips, ipRange)
+		err := tables.Delete("filter", "FORWARD", rule...)
+		if err != nil {
+			fmt.Printf("error removing blocking rule: %w", err)
+		}
+		err = tables.Delete("filter", "INPUT", rule...)
 		if err != nil {
 			fmt.Printf("error removing blocking rule: %w", err)
 		}
