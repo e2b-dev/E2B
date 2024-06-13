@@ -8,6 +8,10 @@ import (
 	resolver "github.com/miekg/dns"
 )
 
+const (
+	averageRecordsSize = 4096
+)
+
 type DNS struct {
 	records map[string]string
 	mu      sync.RWMutex
@@ -15,7 +19,7 @@ type DNS struct {
 
 func New() *DNS {
 	return &DNS{
-		records: make(map[string]string),
+		records: make(map[string]string, averageRecordsSize),
 	}
 }
 
