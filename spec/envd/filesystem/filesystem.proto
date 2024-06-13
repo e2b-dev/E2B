@@ -66,12 +66,17 @@ message WatchDirRequest {
 }
 
 message WatchDirResponse {
-    FilesystemEvent event = 1;
-}
+    oneof event {
+        StartEvent start = 2;
+        FilesystemEvent filesystem = 1;
+    }
 
-message FilesystemEvent {
-    string name = 1;
-    EventType type = 2;
+    message StartEvent {}
+
+    message FilesystemEvent {
+        string name = 1;
+        EventType type = 2;
+    }
 }
 
 enum EventType {

@@ -7,6 +7,7 @@ export type { components, paths } from './api'
 export { ConnectionConfig, SandboxError } from './connectionConfig'
 export type { ConnectionOpts, Username } from './connectionConfig'
 
+export { EventType } from './envd/filesystem/filesystem_pb'
 export type { FilesystemEvent, WatchHandle } from './sandbox/filesystem/watchHandle'
 export type {
   EntryInfo,

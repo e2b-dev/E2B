@@ -3,6 +3,7 @@ import {
   createPromiseClient,
   PromiseClient,
   Transport,
+  ConnectError,
 } from '@connectrpc/connect'
 
 import { Process as ProcessService } from '../../envd/process/process_connect'
@@ -147,41 +148,47 @@ export class Process {
       }, requestTimeoutMs)
       : undefined
 
-    const events = this.rpc.start({
-      user: {
-        selector: {
-          case: 'username',
-          value: opts?.user || defaultUsername,
+    try {
+      const events = this.rpc.start({
+        user: {
+          selector: {
+            case: 'username',
+            value: opts?.user || defaultUsername,
+          },
         },
-      },
-      process: {
-        cmd: '/bin/bash',
-        cwd: opts?.cwd,
-        envs: opts?.envs,
-        args: ['-l', '-c', cmd],
-      },
-    }, {
-      signal: controller.signal,
-      timeoutMs: opts?.timeout ?? 60_000,
-    })
+        process: {
+          cmd: '/bin/bash',
+          cwd: opts?.cwd,
+          envs: opts?.envs,
+          args: ['-l', '-c', cmd],
+        },
+      }, {
+        signal: controller.signal,
+        timeoutMs: opts?.timeout ?? 60_000,
+      })
 
-    const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
+      const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
 
-    if (startEvent.event?.event.case !== 'start') {
-      throw new Error('Expected start event')
+      if (startEvent.event?.event.case !== 'start') {
+        throw new Error('Expected start event')
+      }
+
+      clearTimeout(reqTimeout)
+
+      const pid = startEvent.event.event.value.pid
+
+      return new ProcessHandle(
+        pid,
+        () => controller.abort(),
+        () => this.kill(pid),
+        events,
+        opts?.onStdout,
+        opts?.onStderr,
+      )
+    } catch (err) {
+      const connectErr = ConnectError.from(err)
+      console.log(connectErr)
+      throw err
     }
-
-    clearTimeout(reqTimeout)
-
-    const pid = startEvent.event.event.value.pid
-
-    return new ProcessHandle(
-      pid,
-      () => controller.abort(),
-      () => this.kill(pid),
-      events,
-      opts?.onStdout,
-      opts?.onStderr,
-    )
   }
 }

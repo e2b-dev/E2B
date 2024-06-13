@@ -100,15 +100,19 @@ class WatchDirRequest(_message.Message):
     def __init__(self, path: _Optional[str] = ..., user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...) -> None: ...
 
 class WatchDirResponse(_message.Message):
-    __slots__ = ("event",)
-    EVENT_FIELD_NUMBER: _ClassVar[int]
-    event: FilesystemEvent
-    def __init__(self, event: _Optional[_Union[FilesystemEvent, _Mapping]] = ...) -> None: ...
-
-class FilesystemEvent(_message.Message):
-    __slots__ = ("name", "type")
-    NAME_FIELD_NUMBER: _ClassVar[int]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    name: str
-    type: EventType
-    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[EventType, str]] = ...) -> None: ...
+    __slots__ = ("start", "filesystem")
+    class StartEvent(_message.Message):
+        __slots__ = ()
+        def __init__(self) -> None: ...
+    class FilesystemEvent(_message.Message):
+        __slots__ = ("name", "type")
+        NAME_FIELD_NUMBER: _ClassVar[int]
+        TYPE_FIELD_NUMBER: _ClassVar[int]
+        name: str
+        type: EventType
+        def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[EventType, str]] = ...) -> None: ...
+    START_FIELD_NUMBER: _ClassVar[int]
+    FILESYSTEM_FIELD_NUMBER: _ClassVar[int]
+    start: WatchDirResponse.StartEvent
+    filesystem: WatchDirResponse.FilesystemEvent
+    def __init__(self, start: _Optional[_Union[WatchDirResponse.StartEvent, _Mapping]] = ..., filesystem: _Optional[_Union[WatchDirResponse.FilesystemEvent, _Mapping]] = ...) -> None: ...

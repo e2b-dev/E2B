@@ -9,7 +9,7 @@ import {
 import { ConnectionConfig, defaultUsername, SandboxError, Username, ConnectionOpts, TimeoutError } from '../../connectionConfig'
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
-import { FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
+import { FileType as FsFileType, WatchDirResponse } from '../../envd/filesystem/filesystem_pb'
 
 import { WatchHandle, FilesystemEvent } from './watchHandle'
 
@@ -327,13 +327,31 @@ export class Filesystem {
       timeoutMs: opts?.timeout ?? 60_000,
     })
 
+    try {
+      const startEvent: WatchDirResponse = (await events[Symbol.asyncIterator]().next()).value
+
+      if (startEvent.event.case !== 'start') {
+        throw new Error('Expected start event')
+      }
+    } catch (err) {
+      if (err instanceof ConnectError) {
+        switch (err.code) {
+          case Code.InvalidArgument:
+            throw new InvalidUserError(err.message, username)
+          case Code.NotFound:
+            throw new InvalidPathError(err.message, path)
+          default:
+            throw new FilesystemError(err.message)
+        }
+      }
+      throw err
+    }
+
     clearTimeout(reqTimeout)
 
     return new WatchHandle(
       () => controller.abort(),
       events,
-      path,
-      username,
       onEvent,
       opts?.onExit,
     )

@@ -1,15 +1,12 @@
 import { PlainMessage } from '@bufbuild/protobuf'
-import { ConnectError, Code } from '@connectrpc/connect'
-import { FilesystemError, InvalidUserError, NotFoundError } from '.'
+import { ConnectError } from '@connectrpc/connect'
+import { FilesystemError } from '.'
 
 import {
-  FilesystemEvent as FsFilesystemEvent,
-  EntryInfo as FsEntryInfo,
-  WatchDirResponse,
+  WatchDirResponse, WatchDirResponse_FilesystemEvent,
 } from '../../envd/filesystem/filesystem_pb'
 
-export type FilesystemEvent = PlainMessage<FsFilesystemEvent>
-export type EntryInfo = PlainMessage<FsEntryInfo>
+export type FilesystemEvent = PlainMessage<WatchDirResponse_FilesystemEvent>
 
 export class WatchHandle {
   private readonly _wait: Promise<void>
@@ -17,50 +14,50 @@ export class WatchHandle {
   constructor(
     private readonly handleStop: () => void,
     private readonly events: AsyncIterable<WatchDirResponse>,
-    private readonly path: string,
-    private readonly username: string,
     private readonly onEvent?: (event: FilesystemEvent) => void | Promise<void>,
     private readonly onExit?: (err?: Error) => void | Promise<void>,
   ) {
     this._wait = this.handleEvents()
   }
 
-  stop() {
+  async stop() {
     this.handleStop()
-  }
 
-  async wait() {
     await this._wait
   }
 
-  private async *[Symbol.asyncIterator]() {
+  private async* iterateEvents() {
     try {
       for await (const event of this.events) {
-        if (event.event) {
-          yield event.event
+        switch (event.event.case) {
+          case 'filesystem':
+            yield event.event
+            break
+          default:
+            throw new Error(`Unknown event type: ${event.event.case}`)
         }
       }
     } catch (err) {
       if (err instanceof ConnectError) {
         switch (err.code) {
-          case Code.InvalidArgument:
-            throw new InvalidUserError(err.message, this.username)
-          case Code.NotFound:
-            throw new NotFoundError(err.message, this.path)
           default:
             throw new FilesystemError(err.message)
         }
       }
       throw err
     } finally {
-      this.onExit?.()
       this.stop()
     }
   }
 
   private async handleEvents() {
-    for await (const event of this) {
-      this.onEvent?.(event)
+    try {
+      for await (const event of this.iterateEvents()) {
+        this.onEvent?.(event.value)
+      }
+      this.onExit?.()
+    } catch (err) {
+      this.onExit?.(err as Error)
     }
   }
 }

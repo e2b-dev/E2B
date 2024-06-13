@@ -476,9 +476,21 @@ export class WatchDirRequest extends Message<WatchDirRequest> {
  */
 export class WatchDirResponse extends Message<WatchDirResponse> {
   /**
-   * @generated from field: filesystem.FilesystemEvent event = 1;
+   * @generated from oneof filesystem.WatchDirResponse.event
    */
-  event?: FilesystemEvent;
+  event: {
+    /**
+     * @generated from field: filesystem.WatchDirResponse.StartEvent start = 2;
+     */
+    value: WatchDirResponse_StartEvent;
+    case: "start";
+  } | {
+    /**
+     * @generated from field: filesystem.WatchDirResponse.FilesystemEvent filesystem = 1;
+     */
+    value: WatchDirResponse_FilesystemEvent;
+    case: "filesystem";
+  } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<WatchDirResponse>) {
     super();
@@ -488,7 +500,8 @@ export class WatchDirResponse extends Message<WatchDirResponse> {
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "filesystem.WatchDirResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "event", kind: "message", T: FilesystemEvent },
+    { no: 2, name: "start", kind: "message", T: WatchDirResponse_StartEvent, oneof: "event" },
+    { no: 1, name: "filesystem", kind: "message", T: WatchDirResponse_FilesystemEvent, oneof: "event" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): WatchDirResponse {
@@ -509,9 +522,40 @@ export class WatchDirResponse extends Message<WatchDirResponse> {
 }
 
 /**
- * @generated from message filesystem.FilesystemEvent
+ * @generated from message filesystem.WatchDirResponse.StartEvent
  */
-export class FilesystemEvent extends Message<FilesystemEvent> {
+export class WatchDirResponse_StartEvent extends Message<WatchDirResponse_StartEvent> {
+  constructor(data?: PartialMessage<WatchDirResponse_StartEvent>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.WatchDirResponse.StartEvent";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): WatchDirResponse_StartEvent {
+    return new WatchDirResponse_StartEvent().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): WatchDirResponse_StartEvent {
+    return new WatchDirResponse_StartEvent().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): WatchDirResponse_StartEvent {
+    return new WatchDirResponse_StartEvent().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: WatchDirResponse_StartEvent | PlainMessage<WatchDirResponse_StartEvent> | undefined, b: WatchDirResponse_StartEvent | PlainMessage<WatchDirResponse_StartEvent> | undefined): boolean {
+    return proto3.util.equals(WatchDirResponse_StartEvent, a, b);
+  }
+}
+
+/**
+ * @generated from message filesystem.WatchDirResponse.FilesystemEvent
+ */
+export class WatchDirResponse_FilesystemEvent extends Message<WatchDirResponse_FilesystemEvent> {
   /**
    * @generated from field: string name = 1;
    */
@@ -522,32 +566,32 @@ export class FilesystemEvent extends Message<FilesystemEvent> {
    */
   type = EventType.UNSPECIFIED;
 
-  constructor(data?: PartialMessage<FilesystemEvent>) {
+  constructor(data?: PartialMessage<WatchDirResponse_FilesystemEvent>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "filesystem.FilesystemEvent";
+  static readonly typeName = "filesystem.WatchDirResponse.FilesystemEvent";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "type", kind: "enum", T: proto3.getEnumType(EventType) },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FilesystemEvent {
-    return new FilesystemEvent().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): WatchDirResponse_FilesystemEvent {
+    return new WatchDirResponse_FilesystemEvent().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FilesystemEvent {
-    return new FilesystemEvent().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): WatchDirResponse_FilesystemEvent {
+    return new WatchDirResponse_FilesystemEvent().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FilesystemEvent {
-    return new FilesystemEvent().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): WatchDirResponse_FilesystemEvent {
+    return new WatchDirResponse_FilesystemEvent().fromJsonString(jsonString, options);
   }
 
-  static equals(a: FilesystemEvent | PlainMessage<FilesystemEvent> | undefined, b: FilesystemEvent | PlainMessage<FilesystemEvent> | undefined): boolean {
-    return proto3.util.equals(FilesystemEvent, a, b);
+  static equals(a: WatchDirResponse_FilesystemEvent | PlainMessage<WatchDirResponse_FilesystemEvent> | undefined, b: WatchDirResponse_FilesystemEvent | PlainMessage<WatchDirResponse_FilesystemEvent> | undefined): boolean {
+    return proto3.util.equals(WatchDirResponse_FilesystemEvent, a, b);
   }
 }
 
