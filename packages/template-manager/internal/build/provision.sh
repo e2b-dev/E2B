@@ -8,7 +8,7 @@ echo "BUILD_ID={{ .BuildID }}" >>/.e2b
 
 # We are downloading the packages manually
 apt-get update --download-only
-DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y openssh-server sudo systemd socat chrony linuxptp
+DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y openssh-server sudo systemd socat chrony linuxptp iptables
 
 # Set up autologin.
 mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
@@ -115,30 +115,21 @@ echo "nameserver 8.8.8.8" >/etc/resolv.conf
 systemctl enable envd
 systemctl enable chrony 2>&1
 
-# Add start command service if the start command is not empty.
-if [ -n "{{ .StartCmd }}" ]; then
-
-  cat <<EOF >/etc/systemd/system/start_cmd.service
+cat <<EOF >/etc/systemd/system/forward_ports.service
 [Unit]
-Description=Start Command Service
-After=multi-user.target network-online.target
-Wants=network-online.target
+Description=Forward Ports Service
 
 [Service]
 Type=simple
 Restart=no
-User=user
-Group=user
-OOMScoreAdjust=200
-ExecStart=/bin/bash -l -c "{{ .StartCmd }}"
-OOMPolicy=kill
+User=root
+Group=root
+ExecStart=/bin/bash -l -c "(echo 1 | tee /proc/sys/net/ipv4/ip_forward) && iptables-legacy -t nat -A POSTROUTING -s 127.0.0.1 -j SNAT --to-source {{ .FcAddress }} && iptables-legacy -t nat -A PREROUTING -d {{ .FcAddress }} -j DNAT --to-destination 127.0.0.1"
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-  systemctl enable start_cmd
-
-fi
+systemctl enable forward_ports
 
 echo "Finished provisioning script"
