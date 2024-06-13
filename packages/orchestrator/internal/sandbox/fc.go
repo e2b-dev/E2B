@@ -5,12 +5,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
@@ -36,8 +34,7 @@ type fc struct {
 
 	mu sync.Mutex
 
-	cmd     *exec.Cmd
-	process *os.Process
+	cmd *exec.Cmd
 
 	stdout *io.PipeReader
 	stderr *io.PipeReader
@@ -51,40 +48,11 @@ type fc struct {
 	socketPath string
 	envPath    string
 
-	pid            int
-	isBeingStopped bool
+	pid int
 }
 
 func (fc *fc) wait() error {
-	if fc.cmd != nil {
-		return fc.cmd.Wait()
-	}
-
-	if fc.process == nil {
-		return fmt.Errorf("process is nil")
-	}
-
-	// When we recover process and the current process is not parent of that process. Wait will usually not work and throw an error.
-	for {
-		time.Sleep(processCheckInterval)
-
-		isRunning, err := checkIsRunning(fc.process)
-		if !isRunning {
-			return err
-		}
-	}
-}
-
-func (fc *fc) recover(pid int) error {
-	p, err := recoverProcess(pid)
-	if err != nil {
-		return fmt.Errorf("failed to recover process %d: %w", pid, err)
-	}
-
-	fc.pid = pid
-	fc.process = p
-
-	return nil
+	return fc.cmd.Wait()
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -378,14 +346,6 @@ func (fc *fc) start(
 }
 
 func (fc *fc) stop(ctx context.Context, tracer trace.Tracer) {
-	fc.mu.Lock()
-	if fc.isBeingStopped {
-		fc.mu.Unlock()
-		return
-	}
-	fc.isBeingStopped = true
-	fc.mu.Unlock()
-
 	childCtx, childSpan := tracer.Start(ctx, "stop-fc", trace.WithAttributes(
 		attribute.String("instance.cmd", fc.cmd.String()),
 		attribute.String("instance.cmd.dir", fc.cmd.Dir),

@@ -69,7 +69,7 @@ func (w *HTTPExporter) getMMDSToken(ctx context.Context) (string, error) {
 	return token, nil
 }
 
-func (w *HTTPExporter) getMMDSOpts(ctx context.Context, token string) (*opts, error) {
+func (w *HTTPExporter) doMmdsRequest(ctx context.Context, token string) (*opts, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+mmdsDefaultAddress, new(bytes.Buffer))
 	if err != nil {
 		return nil, err
@@ -97,6 +97,43 @@ func (w *HTTPExporter) getMMDSOpts(ctx context.Context, token string) (*opts, er
 		return nil, err
 	}
 
+	return &opts, nil
+}
+
+func (w *HTTPExporter) waitForMMDS(ctx context.Context) {
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			token, err := w.getMMDSToken(ctx)
+			if err != nil {
+				fmt.Printf("error getting mmds token: %v\n", err)
+				continue
+			}
+
+			mmdsOpts, err := w.doMmdsRequest(ctx, token)
+			if err != nil {
+				fmt.Printf("error getting mmds opts: %v\n", err)
+				continue
+			}
+
+			if mmdsOpts.Address != "" {
+				return
+			}
+		}
+	}
+}
+
+func (w *HTTPExporter) getMMDSOpts(ctx context.Context, token string) (opts *opts, err error) {
+	opts, err = w.doMmdsRequest(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
 	if opts.Address == "" {
 		return nil, fmt.Errorf("no 'address' in mmds opts")
 	}
@@ -109,5 +146,5 @@ func (w *HTTPExporter) getMMDSOpts(ctx context.Context, token string) (*opts, er
 		return nil, fmt.Errorf("no 'instanceID' in mmds opts")
 	}
 
-	return &opts, nil
+	return opts, nil
 }

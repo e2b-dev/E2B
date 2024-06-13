@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/e2b-dev/infra/packages/api/internal/cache/instance"
 )
 
@@ -29,15 +31,18 @@ func (o *Orchestrator) Close() error {
 }
 
 // KeepInSync the cache with the actual instances in Orchestrator to handle instances that died.
-func (o *Orchestrator) KeepInSync(ctx context.Context, instanceCache *instance.InstanceCache) {
+func (o *Orchestrator) KeepInSync(ctx context.Context, tracer trace.Tracer, instanceCache *instance.InstanceCache) {
 	for {
 		time.Sleep(instance.CacheSyncTime)
 
-		activeInstances, err := o.GetInstances(ctx)
+		childCtx, childSpan := tracer.Start(ctx, "keep-in-sync")
+		activeInstances, err := o.GetInstances(childCtx, tracer)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error loading current sandboxes\n: %v", err)
 		} else {
 			instanceCache.Sync(activeInstances)
 		}
+
+		childSpan.End()
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/trace"
@@ -46,87 +45,6 @@ type Sandbox struct {
 	Sandbox   *orchestrator.SandboxConfig
 	StartedAt time.Time
 	TraceID   string
-}
-
-// This method should recover the sandbox based on slot idx and pids for uffd and fc
-func RecoverSandbox(
-	ctx context.Context,
-	tracer trace.Tracer,
-	consul *consul.Client,
-	dns *DNS,
-	config *orchestrator.SandboxConfig,
-	traceID string,
-	slotIdx,
-	fcPid int,
-	uffdPid *int,
-	startedAt time.Time,
-) (*Sandbox, error) {
-	ips := RecoverSlot(config.SandboxID, slotIdx)
-
-	fsEnv, err := newSandboxFiles(
-		ctx,
-		tracer,
-		ips,
-		config.TemplateID,
-		config.KernelVersion,
-		kernelsDir,
-		kernelMountDir,
-		kernelName,
-		fcBinaryPath(config.FirecrackerVersion),
-		uffdBinaryPath(config.FirecrackerVersion),
-		config.HugePages,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	var uffd *uffd
-	if fsEnv.UFFDSocketPath != nil && uffdPid != nil {
-		uffd = newUFFD(fsEnv)
-		uffdErr := uffd.recover(*uffdPid)
-		if uffdErr != nil {
-			errMsg := fmt.Errorf("failed to recover UFFD: %w", uffdErr)
-			telemetry.ReportCriticalError(ctx, errMsg)
-
-			return nil, errMsg
-		}
-	}
-
-	fc := newFC(
-		ctx,
-		tracer,
-		ips,
-		fsEnv,
-		&MmdsMetadata{
-			InstanceID: config.SandboxID,
-			EnvID:      config.TemplateID,
-			Address:    logsProxyAddress,
-			TraceID:    traceID,
-			TeamID:     config.TeamID,
-		},
-	)
-
-	err = fc.recover(fcPid)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to recover FC: %w", err)
-		telemetry.ReportCriticalError(ctx, errMsg)
-
-		return nil, errMsg
-	}
-
-	// Use the implemented Recovery methods from slot, uffd, fc + finish the recovery/Ensure method for sandboxFiles
-
-	// After returning the sandbox ensure that we start a goroutine that cleans up resources after the .Wait finishes, the same we have for when starting the sandbox.
-	return &Sandbox{
-		slot:  ips,
-		files: fsEnv,
-		uffd:  uffd,
-		fc:    fc,
-
-		StartedAt: startedAt,
-		Sandbox:   config,
-		TraceID:   traceID,
-	}, nil
 }
 
 func uffdBinaryPath(fcVersion string) string {
@@ -263,7 +181,7 @@ func NewSandbox(
 			case <-childCtx.Done():
 				return nil, childCtx.Err()
 			default:
-				isRunning, _ := checkIsRunning(uffd.process)
+				isRunning, _ := checkIsRunning(uffd.cmd.Process)
 				fmt.Printf("uffd is running: %v", isRunning)
 				if isRunning {
 					break uffdWait
@@ -405,62 +323,17 @@ func (s *Sandbox) CleanupAfterFCStop(
 	}
 }
 
-func (s *Sandbox) waitWithUffd(ctx context.Context, tracer trace.Tracer) error {
-	fcChan := make(chan error)
-	uffdChan := make(chan error)
-
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		fcChan <- s.fc.wait()
-		close(fcChan)
-	}()
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		uffdChan <- s.uffd.wait()
-		close(uffdChan)
-	}()
-
-	select {
-	case <-ctx.Done():
-		s.Stop(ctx, tracer)
-
-		return ctx.Err()
-	case err := <-fcChan:
-		s.Stop(ctx, tracer)
-
-		if err != nil {
-			return err
-		}
-	case err := <-uffdChan:
-		s.Stop(ctx, tracer)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	wg.Wait()
-
-	return nil
-}
-
-func (s *Sandbox) waitNoUffd(_ context.Context, _ trace.Tracer) error {
-	return s.fc.wait()
-}
-
 func (s *Sandbox) Wait(ctx context.Context, tracer trace.Tracer) (err error) {
+	defer s.Stop(ctx, tracer)
+
 	if s.uffd != nil {
-		return s.waitWithUffd(ctx, tracer)
+		go func() {
+			err := s.uffd.wait()
+			fmt.Printf("uffd wait error: %v", err)
+		}()
 	}
 
-	return s.waitNoUffd(ctx, tracer)
+	return s.fc.wait()
 }
 
 func (s *Sandbox) Stop(ctx context.Context, tracer trace.Tracer) {

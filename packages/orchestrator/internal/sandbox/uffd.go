@@ -19,18 +19,13 @@ const (
 	SigkillWaitCheck = 100 * time.Millisecond
 )
 
-// uffdCloseLock is used to prevent multiple uffd processes from being closed at the same time, we had a suspicion that this could have been the cause of the infra restarts.
-var uffdCloseLock sync.Mutex
-
 type uffd struct {
 	cmd            *exec.Cmd
 	uffdSocketPath *string
-	process        *os.Process
 
 	pid int
 
-	isBeingStopped bool
-	mu             sync.Mutex
+	mu sync.Mutex
 }
 
 func (u *uffd) start() error {
@@ -40,19 +35,6 @@ func (u *uffd) start() error {
 	}
 
 	u.pid = u.cmd.Process.Pid
-	u.process = u.cmd.Process
-
-	return nil
-}
-
-func (u *uffd) recover(pid int) error {
-	p, err := recoverProcess(pid)
-	if err != nil {
-		return fmt.Errorf("failed to recover process %d: %w", pid, err)
-	}
-
-	u.pid = pid
-	u.process = p
 
 	return nil
 }
@@ -61,24 +43,13 @@ func (u *uffd) stop(ctx context.Context, tracer trace.Tracer) {
 	childCtx, childSpan := tracer.Start(ctx, "stop-uffd", trace.WithAttributes())
 	defer childSpan.End()
 
-	u.mu.Lock()
-	if u.isBeingStopped {
-		u.mu.Unlock()
-		return
-	}
-
-	u.isBeingStopped = true
-	u.mu.Unlock()
-
-	uffdCloseLock.Lock()
-	err := u.process.Signal(syscall.SIGTERM)
+	err := u.cmd.Process.Signal(syscall.SIGTERM)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		errMsg := fmt.Errorf("failed to send SIGTERM to uffd: %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "uffd SIGTERM sent")
 	}
-	uffdCloseLock.Unlock()
 
 killWait:
 	for {
@@ -88,25 +59,23 @@ killWait:
 		case <-ctx.Done():
 			break killWait
 		default:
-			isRunning, _ := checkIsRunning(u.process)
+			isRunning, _ := checkIsRunning(u.cmd.Process)
 
 			if !isRunning {
-				return
+				break killWait
 			}
 
 			time.Sleep(SigkillWaitCheck)
 		}
 	}
 
-	uffdCloseLock.Lock()
-	err = u.process.Kill()
+	err = u.cmd.Process.Kill()
 	if err != nil {
-		errMsg := fmt.Errorf("failed to send SIGINT to uffd: %w", err)
+		errMsg := fmt.Errorf("failed to send SIGKILL (after SIGTERM) to uffd: %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "uffd SIGKILL sent")
 	}
-	uffdCloseLock.Unlock()
 }
 
 func newUFFD(
@@ -133,21 +102,5 @@ func newUFFD(
 }
 
 func (u *uffd) wait() error {
-	if u.cmd != nil {
-		return u.cmd.Wait()
-	}
-
-	if u.process == nil {
-		return fmt.Errorf("process is nil")
-	}
-
-	// When we recover process and the current process is not parent of that process .Wait will usually not work and throw an error.
-	for {
-		time.Sleep(processCheckInterval)
-
-		isRunning, err := checkIsRunning(u.process)
-		if !isRunning {
-			return err
-		}
-	}
+	return u.cmd.Wait()
 }

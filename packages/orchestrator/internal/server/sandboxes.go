@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -56,11 +55,10 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 		err := sbx.Wait(context.Background(), tracer)
 		if err != nil {
 			errMsg := fmt.Errorf("failed to wait for Sandbox: %w", err)
-			telemetry.ReportCriticalError(closeCtx, errMsg)
+			fmt.Println(errMsg)
+		} else {
+			fmt.Printf("Sandbox %s wait finished", req.Sandbox.SandboxID)
 		}
-
-		// Wait before removing all resources (see defers above)
-		time.Sleep(1 * time.Second)
 	}()
 
 	return &orchestrator.SandboxCreateResponse{
@@ -100,6 +98,10 @@ func (s *server) List(ctx context.Context, _ *emptypb.Empty) (*orchestrator.Sand
 func (s *server) Delete(ctx context.Context, in *orchestrator.SandboxRequest) (*emptypb.Empty, error) {
 	_, childSpan := s.tracer.Start(ctx, "sandbox-delete")
 	defer childSpan.End()
+	childSpan.SetAttributes(
+		attribute.String("instance.id", in.SandboxID),
+		attribute.String("client.id", constants.ClientID),
+	)
 
 	sbx, ok := s.sandboxes.Get(in.SandboxID)
 	if !ok {
@@ -109,7 +111,16 @@ func (s *server) Delete(ctx context.Context, in *orchestrator.SandboxRequest) (*
 		return nil, status.New(codes.NotFound, errMsg.Error()).Err()
 	}
 
+	childSpan.SetAttributes(
+		attribute.String("env.id", sbx.Sandbox.TemplateID),
+		attribute.String("env.kernel.version", sbx.Sandbox.KernelVersion),
+	)
+
 	sbx.Stop(ctx, s.tracer)
+
+	// Ensure the sandbox is removed from cache.
+	// Ideally we would rely only on the goroutine defef.
+	s.sandboxes.Remove(in.SandboxID)
 
 	return nil, nil
 }

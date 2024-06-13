@@ -40,7 +40,7 @@ job "logs-collector" {
 
   priority = 85
 
-  group "collector" {
+  group "logs-collector" {
     network {
       port "health" {
         to = var.logs_health_port_number
@@ -89,8 +89,8 @@ job "logs-collector" {
 
       resources {
         memory_max = 2048
-        memory = 512
-        cpu    = 512
+        memory = 1024
+        cpu    = 1024
       }
 
       template {
@@ -107,16 +107,6 @@ data_dir = "alloc/data/vector/"
 enabled = true
 address = "0.0.0.0:${var.logs_health_port_number}"
 
-[sources.vector]
-type = "internal_logs"
-
-[transforms.add_source_vector]
-type = "remap"
-inputs = ["vector"]
-source = """
-.service = "vector"
-"""
-
 [sources.envd]
 type = "http_server"
 address = "0.0.0.0:${var.logs_port_number}"
@@ -128,6 +118,9 @@ inputs = ["envd"]
 source = """
 .service = "envd"
 .sandboxID = .instanceID
+if !exists(.envID) {
+  .envID = "unknown"
+}
 """
 
 [sinks.local_loki_logs]
@@ -145,7 +138,7 @@ sandboxID = "{{ sandboxID }}"
 
 [sinks.grafana]
 type = "loki"
-inputs = [ "add_source_envd", "add_source_vector" ]
+inputs = [ "add_source_envd" ]
 endpoint = "${var.grafana_logs_endpoint}"
 encoding.codec = "json"
 auth.strategy = "basic"

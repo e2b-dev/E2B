@@ -222,7 +222,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}{
 		EnvID:       r.env.EnvID,
 		BuildID:     r.env.BuildID,
-		StartCmd:    strings.ReplaceAll(r.env.StartCmd, "\"", "\\\""),
+		StartCmd:    strings.ReplaceAll(r.env.StartCmd, "'", "\\'"),
 		MemoryLimit: int(math.Min(float64(r.env.MemoryMB)/2, 512)),
 	})
 	if err != nil {

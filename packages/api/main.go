@@ -44,7 +44,12 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	r.Use(
 		// We use custom otel gin middleware because we want to log 4xx errors in the otel
-		customMiddleware.ExcludeRoutes(tracingMiddleware.Middleware(serviceName), "/health"),
+		customMiddleware.ExcludeRoutes(tracingMiddleware.Middleware(serviceName),
+			"/health",
+			"/sandboxes/:sandboxID/refreshes",
+			"/templates/:templateID/builds/:buildID/logs",
+			"/templates/:templateID/builds/:buildID/status",
+		),
 		// customMiddleware.IncludeRoutes(metricsMiddleware.Middleware(serviceName), "/instances"),
 		customMiddleware.ExcludeRoutes(gin.LoggerWithWriter(gin.DefaultWriter),
 			"/health",

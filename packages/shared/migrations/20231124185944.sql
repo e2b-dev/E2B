@@ -120,7 +120,7 @@ BEGIN
             ON "public"."teams"
             AS PERMISSIVE
             FOR SELECT
-            TO public
+            TO authenticated
             USING ((auth.uid() IN ( SELECT users_teams.user_id
                                     FROM users_teams
                                     WHERE (users_teams.team_id = teams.id))));
@@ -144,7 +144,7 @@ BEGIN
             ON "public"."team_api_keys"
             AS PERMISSIVE
             FOR SELECT
-            TO public
+            TO authenticated
             USING ((auth.uid() IN ( SELECT users_teams.user_id
                                     FROM users_teams
                                     WHERE (users_teams.team_id = team_api_keys.team_id))));

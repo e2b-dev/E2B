@@ -7,15 +7,19 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
-	"github.com/google/uuid"
 )
 
-func (o *Orchestrator) GetInstances(ctx context.Context) ([]*instance.InstanceInfo, error) {
-	res, err := o.grpc.Sandbox.List(ctx, &empty.Empty{})
+func (o *Orchestrator) GetInstances(ctx context.Context, tracer trace.Tracer) ([]*instance.InstanceInfo, error) {
+	childCtx, childSpan := tracer.Start(ctx, "list-instances")
+	defer childSpan.End()
+
+	res, err := o.grpc.Sandbox.List(childCtx, &empty.Empty{})
 
 	err = utils.UnwrapGRPCError(err)
 	if err != nil {

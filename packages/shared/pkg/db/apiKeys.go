@@ -8,7 +8,6 @@ import (
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/accesstoken"
-	"github.com/e2b-dev/infra/packages/shared/pkg/models/team"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/teamapikey"
 )
 
@@ -20,7 +19,6 @@ func (db *DB) GetTeamAuth(ctx context.Context, apiKey string) (*models.Team, err
 		WithTeam().
 		Where(teamapikey.ID(apiKey)).
 		QueryTeam().
-		Where(team.IsDefault(true)).
 		WithTeamTier().
 		Only(ctx)
 
@@ -37,6 +35,12 @@ func (db *DB) GetTeamAuth(ctx context.Context, apiKey string) (*models.Team, err
 	}
 	//
 	if result.IsBlocked {
+		if result.BlockedReason == nil {
+			errMsg := fmt.Errorf("team was blocked")
+
+			return nil, errMsg
+		}
+
 		errMsg := fmt.Errorf("team was blocked - %s", *result.BlockedReason)
 
 		return nil, errMsg

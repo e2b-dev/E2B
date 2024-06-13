@@ -27,8 +27,12 @@ func (a *APIStore) GetTeam(c *gin.Context) (*models.Team, error) {
 	return team, nil
 }
 
-func (a *APIStore) GetUserAndTeam(c *gin.Context) (userID uuid.UUID, team *models.Team, tier *models.Tier, err error) {
-	team, err = a.GetTeam(c)
+func (a *APIStore) GetUserAndTeam(c *gin.Context) (*uuid.UUID, *models.Team, *models.Tier, error) {
+	team, err := a.GetTeam(c)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
-	return a.GetUserID(c), team, team.Edges.TeamTier, err
+	userID := a.GetUserID(c)
+	return &userID, team, team.Edges.TeamTier, err
 }
