@@ -14,6 +14,13 @@ import { ConnectionConfig, ConnectionOpts, defaultUsername } from '../connection
 import { PartialMessage } from '@bufbuild/protobuf'
 import { ProcessHandle } from './process/processHandle'
 
+export interface PtyCreateOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
+  cols: number
+  rows: number
+  onData: (data: Uint8Array) => (void | Promise<void>)
+  timeout?: number
+}
+
 export class Pty {
   private readonly rpc: PromiseClient<typeof ProcessService>
 
@@ -21,11 +28,7 @@ export class Pty {
     this.rpc = createPromiseClient(ProcessService, this.transport)
   }
 
-  async create({ cols, rows, onData }: {
-    cols: number,
-    rows: number,
-    onData: (data: Uint8Array) => (void | Promise<void>),
-  }, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'> & { timeout?: number, onExit?: (err?: Error) => (void | Promise<void>) }) {
+  async create(opts: PtyCreateOpts) {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
@@ -50,8 +53,8 @@ export class Pty {
       },
       pty: {
         size: {
-          cols,
-          rows,
+          cols: opts.cols,
+          rows: opts.rows,
         },
       },
     }, {
@@ -76,8 +79,7 @@ export class Pty {
       events,
       undefined,
       undefined,
-      onData,
-      opts?.onExit,
+      opts.onData,
     )
   }
 

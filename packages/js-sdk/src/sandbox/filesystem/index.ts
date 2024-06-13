@@ -29,7 +29,7 @@ export interface FilesystemRequestOpts extends Partial<Pick<ConnectionOpts, 'req
 
 export interface WatchOpts extends FilesystemRequestOpts {
   timeout?: number
-  onExit?: (err: SandboxError) => void
+  onExit?: (err: Error) => void
 }
 
 export class FilesystemError extends SandboxError {
@@ -301,7 +301,7 @@ export class Filesystem {
   async watch(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: FilesystemRequestOpts & { timeout?: number, onExit?: () => void | Promise<void> },
+    opts?: FilesystemRequestOpts & { timeout?: number, onExit?: (err?: Error) => void | Promise<void> },
   ): Promise<WatchHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
     const username = opts?.user || defaultUsername

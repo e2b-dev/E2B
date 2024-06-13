@@ -55,7 +55,6 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     private readonly onStdout?: (stdout: string) => (void | Promise<void>),
     private readonly onStderr?: (stderr: string) => (void | Promise<void>),
     private readonly onPty?: (pty: Uint8Array) => (void | Promise<void>),
-    private readonly onExit?: (err?: Error) => (void | Promise<void>),
   ) {
     this._wait = this.handleEvents()
   }
@@ -89,7 +88,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     await this.handleKill()
   }
 
-  private async *[Symbol.asyncIterator](): AsyncIterator<[Stdout, undefined, undefined] | [undefined, Stderr, undefined] | [undefined, undefined, Pty]> {
+  private async* iterateEvents(): AsyncGenerator<[Stdout, undefined, undefined] | [undefined, Stderr, undefined] | [undefined, undefined, Pty]> {
     try {
       for await (const event of this.events) {
         const e = event?.event?.event
@@ -130,7 +129,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
   }
 
   private async handleEvents(): Promise<ProcessResult> {
-    for await (const [stdout, stderr, pty] of this) {
+    for await (const [stdout, stderr, pty] of this.iterateEvents()) {
       if (stdout !== undefined) {
         this.onStdout?.(stdout)
       } else if (stderr !== undefined) {

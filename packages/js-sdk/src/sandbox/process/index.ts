@@ -26,11 +26,10 @@ export interface ProcessStartOpts extends ProcessRequestOpts {
   envs?: Record<string, string>
   onStdout?: ((data: string) => void | Promise<void>)
   onStderr?: ((data: string) => void | Promise<void>)
-  onExit?: ((err?: Error) => void | Promise<void>)
   timeout?: number
 }
 
-export type ProcessConnectOpts = Pick<ProcessStartOpts, 'onStderr' | 'onStdout' | 'onExit' | 'timeout'> & ProcessRequestOpts
+export type ProcessConnectOpts = Pick<ProcessStartOpts, 'onStderr' | 'onStdout' | 'timeout'> & ProcessRequestOpts
 
 export class ProcessError extends SandboxError {
   constructor(message: string, public readonly pid: number) {
@@ -123,7 +122,6 @@ export class Process {
       opts?.onStdout,
       opts?.onStderr,
       undefined,
-      opts?.onExit,
     )
   }
 
@@ -184,6 +182,7 @@ export class Process {
         events,
         opts?.onStdout,
         opts?.onStderr,
+        undefined,
       )
     } catch (err) {
       const connectErr = ConnectError.from(err)
