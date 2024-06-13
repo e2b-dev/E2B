@@ -24,7 +24,6 @@ func (s *Service) StartBackgroundProcess(ctx context.Context, req *rpc.StartRequ
 	}
 
 	s.processes.Store(pid, proc)
-	defer s.processes.Delete(pid)
 
 	go func() {
 		defer s.processes.Delete(pid)

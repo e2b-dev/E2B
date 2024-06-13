@@ -34,7 +34,6 @@ func NewUnaryLogInterceptor(logger *zerolog.Logger) connect.UnaryInterceptorFunc
 			logger.Err(err).
 				Str("method", req.Spec().Procedure).
 				Interface("request", req.Any()).
-				Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
 				Interface("response", res.Any()).
 				Send()
 

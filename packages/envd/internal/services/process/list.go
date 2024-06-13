@@ -22,9 +22,7 @@ func (s *Service) List(ctx context.Context, req *connect.Request[rpc.ListRequest
 		return true
 	})
 
-	return &connect.Response[rpc.ListResponse]{
-		Msg: &rpc.ListResponse{
-			Processes: processes,
-		},
-	}, nil
+	return connect.NewResponse(&rpc.ListResponse{
+		Processes: []*rpc.ProcessInfo{},
+	}), nil
 }

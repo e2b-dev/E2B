@@ -12,12 +12,14 @@ type API struct {
 	logger *zerolog.Logger
 }
 
-func New(l *zerolog.Logger) ServerInterface {
+func New(l *zerolog.Logger) *API {
 	return &API{logger: l}
 }
 
 func (a *API) PostSync(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
+	a.logger.Info().Msg("syncing host")
 
 	go func() {
 		err := host.Sync()

@@ -17,7 +17,7 @@ import (
 	processSpec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	connectcors "connectrpc.com/cors"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
 )
 
@@ -118,16 +118,14 @@ func main() {
 
 	l := logs.NewLogger(ctx, debug)
 
-	rpcMux := http.NewServeMux()
+	m := chi.NewRouter()
 
 	fsLogger := l.With().Str("service", "filesystem").Logger()
-	filesystemRpc.Handle(rpcMux, &fsLogger)
+	filesystemRpc.Handle(m, &fsLogger)
 
 	processLogger := l.With().Str("service", "process").Logger()
-	processService := processRpc.Handle(rpcMux, &processLogger)
+	processService := processRpc.Handle(m, &processLogger)
 
-	m := mux.NewRouter()
-	m.NotFoundHandler = rpcMux
 	handler := api.HandlerFromMux(api.New(&fsLogger), m)
 
 	s := &http.Server{

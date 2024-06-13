@@ -4,5 +4,5 @@ package: api
 output: api.gen.go
 generate:
   models: true
-  gorilla-server: true
+  chi-server: true
   client: false

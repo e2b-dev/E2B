@@ -2,7 +2,6 @@ package process
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
@@ -10,6 +9,7 @@ import (
 	spec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process/processconnect"
 
 	"connectrpc.com/connect"
+	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 )
 
@@ -25,14 +25,14 @@ func newService(l *zerolog.Logger) *Service {
 	}
 }
 
-func Handle(server *http.ServeMux, l *zerolog.Logger) *Service {
+func Handle(server *chi.Mux, l *zerolog.Logger) *Service {
 	service := newService(l)
 
 	interceptors := connect.WithInterceptors(logs.NewUnaryLogInterceptor(l))
 
 	path, handler := spec.NewProcessHandler(service, interceptors)
 
-	server.Handle(path, handler)
+	server.Mount(path, handler)
 
 	return service
 }
