@@ -18,6 +18,7 @@ import (
 const (
 	defaultOomScore  = 100
 	DefaultChunkSize = 2 << 15
+	outputBufferSize = 64
 )
 
 type ProcessExit struct {
@@ -104,7 +105,7 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error creating stdout pipe for command '%s': %w", cmd, err))
 	}
 
-	outMultiplex := NewMultiplexedChannel[rpc.ProcessEvent_Data]()
+	outMultiplex := NewMultiplexedChannel[rpc.ProcessEvent_Data](outputBufferSize)
 	var outWg sync.WaitGroup
 
 	outWg.Add(1)
@@ -211,7 +212,7 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 		stdin:     stdin,
 		Tag:       req.Tag,
 		DataEvent: outMultiplex,
-		EndEvent:  NewMultiplexedChannel[rpc.ProcessEvent_End](),
+		EndEvent:  NewMultiplexedChannel[rpc.ProcessEvent_End](0),
 	}, nil
 }
 

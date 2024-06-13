@@ -12,10 +12,10 @@ type MultiplexedChannel[T any] struct {
 	exited   atomic.Bool
 }
 
-func NewMultiplexedChannel[T any]() *MultiplexedChannel[T] {
+func NewMultiplexedChannel[T any](buffer int) *MultiplexedChannel[T] {
 	c := &MultiplexedChannel[T]{
 		channels: nil,
-		Source:   make(chan T),
+		Source:   make(chan T, buffer),
 	}
 
 	go func() {
