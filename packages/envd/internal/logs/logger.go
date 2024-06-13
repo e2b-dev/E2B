@@ -11,14 +11,17 @@ import (
 )
 
 func NewLogger(ctx context.Context, debug bool) *zerolog.Logger {
-	var w io.Writer
-	if debug {
-		w = os.Stdout
-	} else {
-		w = exporter.NewHTTPLogsExporter(ctx, false)
+	exporters := []io.Writer{
+		os.Stdout,
 	}
 
-	l := zerolog.New(w).Level(zerolog.DebugLevel)
+	if !debug {
+		exporters = append(exporters, exporter.NewHTTPLogsExporter(ctx, false))
+	}
+
+	l := zerolog.
+		New(io.MultiWriter(exporters...)).
+		Level(zerolog.DebugLevel)
 
 	return &l
 }
