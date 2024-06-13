@@ -8,7 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 runtimes:
   enabled:
-    - go@1.22.0
+    - go@1.21.0
 lint:
   ignore:
     - linters:
