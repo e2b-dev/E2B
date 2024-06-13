@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
@@ -100,10 +101,15 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 			}
 
 			for _, op := range ops {
+				name, nameErr := filepath.Rel(watchPath, e.Name)
+				if nameErr != nil {
+					return connect.NewError(connect.CodeInternal, fmt.Errorf("error getting relative path: %w", nameErr))
+				}
+
 				event := &rpc.WatchDirResponse{
 					Event: &rpc.WatchDirResponse_Filesystem{
 						Filesystem: &rpc.WatchDirResponse_FilesystemEvent{
-							Name: e.Name,
+							Name: name,
 							Type: op,
 						},
 					},
