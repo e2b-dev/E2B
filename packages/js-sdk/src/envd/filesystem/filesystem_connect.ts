@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ListRequest, ListResponse, MakeDirRequest, MakeDirResponse, RemoveRequest, RemoveResponse, StatRequest, StatResponse, WatchRequest, WatchResponse } from "./filesystem_pb.js";
+import { ListDirRequest, ListDirResponse, MakeDirRequest, MakeDirResponse, RemoveRequest, RemoveResponse, StatRequest, StatResponse, WatchDirRequest, WatchDirResponse } from "./filesystem_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -31,21 +31,21 @@ export const Filesystem = {
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc filesystem.Filesystem.List
+     * @generated from rpc filesystem.Filesystem.ListDir
      */
-    list: {
-      name: "List",
-      I: ListRequest,
-      O: ListResponse,
+    listDir: {
+      name: "ListDir",
+      I: ListDirRequest,
+      O: ListDirResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc filesystem.Filesystem.Watch
+     * @generated from rpc filesystem.Filesystem.WatchDir
      */
-    watch: {
-      name: "Watch",
-      I: WatchRequest,
-      O: WatchResponse,
+    watchDir: {
+      name: "WatchDir",
+      I: WatchDirRequest,
+      O: WatchDirResponse,
       kind: MethodKind.ServerStreaming,
     },
     /**

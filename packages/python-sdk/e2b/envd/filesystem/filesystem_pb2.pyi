@@ -3,13 +3,7 @@ from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import (
-    ClassVar as _ClassVar,
-    Iterable as _Iterable,
-    Mapping as _Mapping,
-    Optional as _Optional,
-    Union as _Union,
-)
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -27,7 +21,6 @@ class EventType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     EVENT_TYPE_REMOVE: _ClassVar[EventType]
     EVENT_TYPE_RENAME: _ClassVar[EventType]
     EVENT_TYPE_CHMOD: _ClassVar[EventType]
-
 FILE_TYPE_UNSPECIFIED: FileType
 FILE_TYPE_FILE: FileType
 FILE_TYPE_DIRECTORY: FileType
@@ -44,11 +37,7 @@ class MakeDirRequest(_message.Message):
     USER_FIELD_NUMBER: _ClassVar[int]
     path: str
     user: _permissions_pb2.User
-    def __init__(
-        self,
-        path: _Optional[str] = ...,
-        user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...) -> None: ...
 
 class MakeDirResponse(_message.Message):
     __slots__ = ()
@@ -60,11 +49,7 @@ class RemoveRequest(_message.Message):
     USER_FIELD_NUMBER: _ClassVar[int]
     path: str
     user: _permissions_pb2.User
-    def __init__(
-        self,
-        path: _Optional[str] = ...,
-        user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...) -> None: ...
 
 class RemoveResponse(_message.Message):
     __slots__ = ()
@@ -76,11 +61,7 @@ class StatRequest(_message.Message):
     USER_FIELD_NUMBER: _ClassVar[int]
     path: str
     user: _permissions_pb2.User
-    def __init__(
-        self,
-        path: _Optional[str] = ...,
-        user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...) -> None: ...
 
 class StatResponse(_message.Message):
     __slots__ = ("entry",)
@@ -94,56 +75,40 @@ class EntryInfo(_message.Message):
     TYPE_FIELD_NUMBER: _ClassVar[int]
     name: str
     type: FileType
-    def __init__(
-        self, name: _Optional[str] = ..., type: _Optional[_Union[FileType, str]] = ...
-    ) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[FileType, str]] = ...) -> None: ...
 
-class ListRequest(_message.Message):
+class ListDirRequest(_message.Message):
     __slots__ = ("path", "user")
     PATH_FIELD_NUMBER: _ClassVar[int]
     USER_FIELD_NUMBER: _ClassVar[int]
     path: str
     user: _permissions_pb2.User
-    def __init__(
-        self,
-        path: _Optional[str] = ...,
-        user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...) -> None: ...
 
-class ListResponse(_message.Message):
+class ListDirResponse(_message.Message):
     __slots__ = ("entries",)
     ENTRIES_FIELD_NUMBER: _ClassVar[int]
     entries: _containers.RepeatedCompositeFieldContainer[EntryInfo]
-    def __init__(
-        self, entries: _Optional[_Iterable[_Union[EntryInfo, _Mapping]]] = ...
-    ) -> None: ...
+    def __init__(self, entries: _Optional[_Iterable[_Union[EntryInfo, _Mapping]]] = ...) -> None: ...
 
-class WatchRequest(_message.Message):
+class WatchDirRequest(_message.Message):
     __slots__ = ("path", "user")
     PATH_FIELD_NUMBER: _ClassVar[int]
     USER_FIELD_NUMBER: _ClassVar[int]
     path: str
     user: _permissions_pb2.User
-    def __init__(
-        self,
-        path: _Optional[str] = ...,
-        user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...) -> None: ...
 
-class WatchResponse(_message.Message):
+class WatchDirResponse(_message.Message):
     __slots__ = ("event",)
     EVENT_FIELD_NUMBER: _ClassVar[int]
     event: FilesystemEvent
-    def __init__(
-        self, event: _Optional[_Union[FilesystemEvent, _Mapping]] = ...
-    ) -> None: ...
+    def __init__(self, event: _Optional[_Union[FilesystemEvent, _Mapping]] = ...) -> None: ...
 
 class FilesystemEvent(_message.Message):
-    __slots__ = ("path", "type")
-    PATH_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("name", "type")
+    NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    path: str
+    name: str
     type: EventType
-    def __init__(
-        self, path: _Optional[str] = ..., type: _Optional[_Union[EventType, str]] = ...
-    ) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[EventType, str]] = ...) -> None: ...

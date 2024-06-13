@@ -4,8 +4,12 @@ update-api-spec:
 	@echo "Done"
 
 
-generate:
+generate: generate-api generate-envd
+
+generate-api:
 	cd packages/python-sdk && make generate
 	cd packages/js-sdk && pnpm generate && pnpm generate-envd-api
-	cd packages/connect-python && make bin/protoc-gen-connect-python
+
+generate-envd:
+	cd packages/js-sdk && pnpm generate-envd-api
 	cd spec/envd && buf generate && cd ../../packages/python-sdk && ./scripts/fix-python-pb.sh

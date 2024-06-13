@@ -5,7 +5,7 @@ import { FilesystemError, InvalidUserError, NotFoundError } from '.'
 import {
   FilesystemEvent as FsFilesystemEvent,
   EntryInfo as FsEntryInfo,
-  WatchResponse,
+  WatchDirResponse,
 } from '../../envd/filesystem/filesystem_pb'
 
 export type FilesystemEvent = PlainMessage<FsFilesystemEvent>
@@ -16,7 +16,7 @@ export class WatchHandle {
 
   constructor(
     private readonly handleStop: () => void,
-    private readonly events: AsyncIterable<WatchResponse>,
+    private readonly events: AsyncIterable<WatchDirResponse>,
     private readonly path: string,
     private readonly username: string,
     private readonly onEvent?: (event: FilesystemEvent) => void | Promise<void>,

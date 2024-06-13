@@ -1,12 +1,12 @@
 from typing import Any, Generator
 
-from e2b.envd.filesystem.filesystem_pb2 import WatchResponse
+from e2b.envd.filesystem.filesystem_pb2 import WatchDirResponse
 
 
 class WatchHandle(Generator):
     def __init__(
         self,
-        events: Generator[WatchResponse, Any, None],
+        events: Generator[WatchDirResponse, Any, None],
     ):
         self._events = events
 

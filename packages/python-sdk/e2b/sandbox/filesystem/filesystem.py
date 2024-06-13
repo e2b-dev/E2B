@@ -103,8 +103,8 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> List[filesystem_pb2.EntryInfo]:
-        res = self._rpc.list(
-            filesystem_pb2.ListRequest(path=path),
+        res = self._rpc.list_dir(
+            filesystem_pb2.ListDirRequest(path=path),
             user=User(username=user),
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
@@ -165,10 +165,13 @@ class Filesystem:
         request_timeout: Optional[float] = None,
         timeout: Optional[float] = None,
     ):
-        events = self._rpc.watch(
-            filesystem_pb2.WatchRequest(path=path),
+        events = self._rpc.watch_dir(
+            filesystem_pb2.WatchDirRequest(path=path),
             user=User(username=user),
-            timeout=(self._connection_config.get_request_timeout(request_timeout), timeout),
+            timeout=(
+                self._connection_config.get_request_timeout(request_timeout),
+                timeout,
+            ),
         )
 
         return WatchHandle(events=events)

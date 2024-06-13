@@ -16,7 +16,7 @@ class FilesystemClient:
             response_type=filesystem_dot_filesystem__pb2.StatResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
         self._make_dir = connect.Client(
             pool=pool,
@@ -24,23 +24,23 @@ class FilesystemClient:
             response_type=filesystem_dot_filesystem__pb2.MakeDirResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
-        self._list = connect.Client(
+        self._list_dir = connect.Client(
             pool=pool,
-            url=f"{base_url}/{FilesystemName}/List",
-            response_type=filesystem_dot_filesystem__pb2.ListResponse,
+            url=f"{base_url}/{FilesystemName}/ListDir",
+            response_type=filesystem_dot_filesystem__pb2.ListDirResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
-        self._watch = connect.Client(
+        self._watch_dir = connect.Client(
             pool=pool,
-            url=f"{base_url}/{FilesystemName}/Watch",
-            response_type=filesystem_dot_filesystem__pb2.WatchResponse,
+            url=f"{base_url}/{FilesystemName}/WatchDir",
+            response_type=filesystem_dot_filesystem__pb2.WatchDirResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
         self._remove = connect.Client(
             pool=pool,
@@ -48,30 +48,20 @@ class FilesystemClient:
             response_type=filesystem_dot_filesystem__pb2.RemoveResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
 
-    def stat(
-        self, req: filesystem_dot_filesystem__pb2.StatRequest, **opts
-    ) -> filesystem_dot_filesystem__pb2.StatResponse:
+    def stat(self, req: filesystem_dot_filesystem__pb2.StatRequest, **opts) -> filesystem_dot_filesystem__pb2.StatResponse:
         return self._stat.call_unary(req, **opts)
 
-    def make_dir(
-        self, req: filesystem_dot_filesystem__pb2.MakeDirRequest, **opts
-    ) -> filesystem_dot_filesystem__pb2.MakeDirResponse:
+    def make_dir(self, req: filesystem_dot_filesystem__pb2.MakeDirRequest, **opts) -> filesystem_dot_filesystem__pb2.MakeDirResponse:
         return self._make_dir.call_unary(req, **opts)
 
-    def list(
-        self, req: filesystem_dot_filesystem__pb2.ListRequest, **opts
-    ) -> filesystem_dot_filesystem__pb2.ListResponse:
-        return self._list.call_unary(req, **opts)
+    def list_dir(self, req: filesystem_dot_filesystem__pb2.ListDirRequest, **opts) -> filesystem_dot_filesystem__pb2.ListDirResponse:
+        return self._list_dir.call_unary(req, **opts)
 
-    def watch(
-        self, req: filesystem_dot_filesystem__pb2.WatchRequest, **opts
-    ) -> Generator[filesystem_dot_filesystem__pb2.WatchResponse, Any, None]:
-        return self._watch.call_server_stream(req, **opts)
+    def watch_dir(self, req: filesystem_dot_filesystem__pb2.WatchDirRequest , **opts) -> Generator[filesystem_dot_filesystem__pb2.WatchDirResponse, Any, None]:
+        return self._watch_dir.call_server_stream(req, **opts)
 
-    def remove(
-        self, req: filesystem_dot_filesystem__pb2.RemoveRequest, **opts
-    ) -> filesystem_dot_filesystem__pb2.RemoveResponse:
+    def remove(self, req: filesystem_dot_filesystem__pb2.RemoveRequest, **opts) -> filesystem_dot_filesystem__pb2.RemoveResponse:
         return self._remove.call_unary(req, **opts)

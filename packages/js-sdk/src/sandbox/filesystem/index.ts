@@ -161,7 +161,7 @@ export class Filesystem {
     const username = opts?.user || defaultUsername
 
     try {
-      const res = await this.rpc.list({
+      const res = await this.rpc.listDir({
         path,
         user: {
           selector: {
@@ -314,7 +314,7 @@ export class Filesystem {
       }, requestTimeoutMs)
       : undefined
 
-    const events = this.rpc.watch({
+    const events = this.rpc.watchDir({
       path,
       user: {
         selector: {

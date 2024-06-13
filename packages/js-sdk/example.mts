@@ -5,12 +5,12 @@ const sbx = await Sandbox.create('', {
 })
 
 
-// const watcher = await sbx.files.watch('./', (e) => {
-//   console.log(e)
-// }, {
-//   user: 'user',
-//   timeout: 2,
-// })
+const watcher = await sbx.files.watch('./', (e) => {
+  e.path
+}, {
+  user: 'user',
+  timeout: 2,
+})
 
 
 // await sbx.files.write('test', 'hello world')
@@ -25,5 +25,4 @@ const sbx = await Sandbox.create('', {
 
 // watcher.stop()
 
-const res = await sbx.commands.run('ls')
-console.log(res)
+const res = await sbx.commands.run('ls -a', {})
