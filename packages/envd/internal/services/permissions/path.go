@@ -69,19 +69,22 @@ func EnsureDirs(path string, uid, gid int) error {
 			return fmt.Errorf("failed to stat directory: %w", err)
 		}
 
-		if info != nil && !info.IsDir() {
-			return fmt.Errorf("path is a file: %s", subpath)
-		}
-
-		if err := os.Mkdir(subpath, 0o755); err != nil {
-			if !os.IsExist(err) {
+		if err != nil && os.IsNotExist(err) {
+			err = os.Mkdir(subpath, 0o755)
+			if err != nil {
 				return fmt.Errorf("failed to create directory: %w", err)
 			}
+
+			err = os.Chown(subpath, uid, gid)
+			if err != nil {
+				return fmt.Errorf("failed to chown directory: %w", err)
+			}
+
+			continue
 		}
 
-		err = os.Chown(subpath, uid, gid)
-		if err != nil {
-			return fmt.Errorf("failed to chown directory: %w", err)
+		if !info.IsDir() {
+			return fmt.Errorf("path is a file: %s", subpath)
 		}
 	}
 
