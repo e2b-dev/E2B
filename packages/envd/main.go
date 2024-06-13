@@ -16,6 +16,9 @@ import (
 	"github.com/e2b-dev/infra/packages/envd/internal/services/spec/permissions"
 	processSpec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
+
+
+	"github.com/go-chi/chi/v5"
 	connectcors "connectrpc.com/cors"
 	"github.com/rs/cors"
 )
@@ -117,7 +120,7 @@ func main() {
 
 	l := logs.NewLogger(ctx, debug)
 
-	m := http.NewServeMux()
+	m := chi.NewMux()
 
 	fsLogger := l.With().Str("service", "filesystem").Logger()
 	filesystemRpc.Handle(m, &fsLogger)
