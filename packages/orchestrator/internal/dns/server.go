@@ -1,11 +1,11 @@
 package dns
 
 import (
-	"fmt"
 	"log"
+	"net"
 	"sync"
 
-	dnsHandler "github.com/miekg/dns"
+	resolver "github.com/miekg/dns"
 )
 
 type DNS struct {
@@ -13,7 +13,7 @@ type DNS struct {
 	mu      sync.RWMutex
 }
 
-func NewDNS() *DNS {
+func New() *DNS {
 	return &DNS{
 		records: make(map[string]string),
 	}
@@ -38,29 +38,36 @@ func (d *DNS) Remove(record Record) {
 	delete(d.records, record.HostName())
 }
 
-func (d *DNS) get(record Record) (string, bool) {
+func (d *DNS) get(hostname string) (string, bool) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	ip, found := d.records[record.HostName()]
+	ip, found := d.records[hostname]
 
 	return ip, found
 }
 
-func (d *DNS) handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
-	m := new(dns.Msg)
+func (d *DNS) handleDNSRequest(w resolver.ResponseWriter, r *resolver.Msg) {
+	m := new(resolver.Msg)
 	m.SetReply(r)
 	m.Compress = false
 
-	switch r.Opcode {
-	case dns.OpcodeQuery:
-		for _, q := range m.Question {
-			ip, found := d.Get(q.Name)
+	for _, q := range m.Question {
+		switch q.Qtype {
+		case resolver.TypeA:
+			ip, found := d.get(q.Name)
 			if found {
-				rr, err := dns.NewRR(q.Name + " A " + ip)
-				if err == nil {
-					m.Answer = append(m.Answer, rr)
+				a := &resolver.A{
+					Hdr: resolver.RR_Header{
+						Name:   q.Name,
+						Rrtype: resolver.TypeA,
+						Class:  resolver.ClassINET,
+						Ttl:    30,
+					},
+					A: net.ParseIP(ip).To4(),
 				}
+
+				m.Answer = append(m.Answer, a)
 			}
 		}
 	}
@@ -69,25 +76,12 @@ func (d *DNS) handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 }
 
 func (d *DNS) Start(address string) {
-	dns.HandleFunc(".", d.handleDNSRequest)
+	resolver.HandleFunc(".", d.handleDNSRequest)
 
-	server := &dns.Server{Addr: address, Net: "udp"}
+	server := &resolver.Server{Addr: address, Net: "udp"}
 
 	log.Printf("Starting DNS server at %s\n", server.Addr)
 
-	err := server.ListenAndServe()
-	if err != nil {
-		log.Fatalf("Failed to start server: %s\n", err.Error())
-	}
-}
-
-func main() {
-	// Attach request handler func
-	dns.HandleFunc(".", handleDNSRequest)
-
-	// Start server
-	server := &dns.Server{Addr: ":53", Net: "udp"}
-	log.Printf("Starting DNS server at %s\n", server.Addr)
 	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatalf("Failed to start server: %s\n", err.Error())
