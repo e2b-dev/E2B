@@ -52,6 +52,15 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 		return connect.NewError(connect.CodeInternal, fmt.Errorf("error adding path %s to watcher: %w", watchPath, err))
 	}
 
+	err = stream.Send(&rpc.WatchDirResponse{
+		Event: &rpc.WatchDirResponse_Start{
+			Start: &rpc.WatchDirResponse_StartEvent{},
+		},
+	})
+	if err != nil {
+		return connect.NewError(connect.CodeUnknown, fmt.Errorf("error sending start event: %w", err))
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -92,9 +101,11 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 
 			for _, op := range ops {
 				event := &rpc.WatchDirResponse{
-					Event: &rpc.FilesystemEvent{
-						Name: e.Name,
-						Type: op,
+					Event: &rpc.WatchDirResponse_Filesystem{
+						Filesystem: &rpc.WatchDirResponse_FilesystemEvent{
+							Name: e.Name,
+							Type: op,
+						},
 					},
 				}
 
@@ -103,7 +114,7 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 				logs.LogStreamEvent(ctx, s.logger.Debug(), req.Spec().Procedure, event)
 
 				if streamErr != nil {
-					return connect.NewError(connect.CodeAborted, streamErr)
+					return connect.NewError(connect.CodeUnknown, streamErr)
 				}
 			}
 		}
