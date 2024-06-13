@@ -117,9 +117,8 @@ access_log /var/log/nginx/access.log logger-json;
 
 server {
   listen 3003;
-  # The IP addresses of sessions are saved in the /etc/hosts like so:
-  # <session-id> <ip-address>
 
+  # DNS server resolved addreses as to <sandbox-id> <ip-address>
   resolver 127.0.0.1 valid=30s;
   resolver_timeout 5s;
 
