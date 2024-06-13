@@ -121,7 +121,7 @@ server {
   # <session-id> <ip-address>
 
   resolver 127.0.0.1 valid=30s;
-  resolve_timeout 5s;
+  resolver_timeout 5s;
 
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
