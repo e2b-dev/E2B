@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
@@ -14,11 +13,11 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-func (s Service) Watch(ctx context.Context, req *connect.Request[rpc.WatchRequest], stream *connect.ServerStream[rpc.WatchResponse]) error {
+func (s Service) WatchDir(ctx context.Context, req *connect.Request[rpc.WatchDirRequest], stream *connect.ServerStream[rpc.WatchDirResponse]) error {
 	return logs.LogServerStreamWithoutEvents(ctx, s.logger, req, stream, s.watchHandler)
 }
 
-func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.WatchRequest], stream *connect.ServerStream[rpc.WatchResponse]) error {
+func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.WatchDirRequest], stream *connect.ServerStream[rpc.WatchDirResponse]) error {
 	u, err := permissions.GetUser(req.Msg.GetUser())
 	if err != nil {
 		return connect.NewError(connect.CodeInvalidArgument, err)
@@ -30,21 +29,16 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 	}
 
 	info, err := os.Stat(watchPath)
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil {
+		if os.IsNotExist(err) {
+			return connect.NewError(connect.CodeNotFound, fmt.Errorf("path %s not found: %w", watchPath, err))
+		}
+
 		return connect.NewError(connect.CodeInternal, fmt.Errorf("error statting path %s: %w", watchPath, err))
 	}
 
-	if os.IsNotExist(err) {
-		watchPath = filepath.Dir(watchPath)
-
-		info, err = os.Stat(watchPath)
-		if err != nil {
-			return connect.NewError(connect.CodeNotFound, fmt.Errorf("parent path %s not found: %w", watchPath, err))
-		}
-
-		if !info.IsDir() {
-			return connect.NewError(connect.CodeNotFound, fmt.Errorf("parent path %s not a directory: %w", watchPath, err))
-		}
+	if !info.IsDir() {
+		return connect.NewError(connect.CodeNotFound, fmt.Errorf("path %s not a directory: %w", watchPath, err))
 	}
 
 	w, err := fsnotify.NewWatcher()
@@ -73,10 +67,6 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("watcher event channel closed"))
 			}
 
-			if !info.IsDir() && e.Name != info.Name() {
-				continue
-			}
-
 			// One event can have multiple operations.
 			ops := []rpc.EventType{}
 
@@ -101,9 +91,9 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 			}
 
 			for _, op := range ops {
-				event := &rpc.WatchResponse{
+				event := &rpc.WatchDirResponse{
 					Event: &rpc.FilesystemEvent{
-						Path: filepath.Join(watchPath, e.Name),
+						Name: e.Name,
 						Type: op,
 					},
 				}

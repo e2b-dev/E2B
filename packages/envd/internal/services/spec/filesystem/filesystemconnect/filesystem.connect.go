@@ -37,30 +37,30 @@ const (
 	FilesystemStatProcedure = "/filesystem.Filesystem/Stat"
 	// FilesystemMakeDirProcedure is the fully-qualified name of the Filesystem's MakeDir RPC.
 	FilesystemMakeDirProcedure = "/filesystem.Filesystem/MakeDir"
-	// FilesystemListProcedure is the fully-qualified name of the Filesystem's List RPC.
-	FilesystemListProcedure = "/filesystem.Filesystem/List"
-	// FilesystemWatchProcedure is the fully-qualified name of the Filesystem's Watch RPC.
-	FilesystemWatchProcedure = "/filesystem.Filesystem/Watch"
+	// FilesystemListDirProcedure is the fully-qualified name of the Filesystem's ListDir RPC.
+	FilesystemListDirProcedure = "/filesystem.Filesystem/ListDir"
+	// FilesystemWatchDirProcedure is the fully-qualified name of the Filesystem's WatchDir RPC.
+	FilesystemWatchDirProcedure = "/filesystem.Filesystem/WatchDir"
 	// FilesystemRemoveProcedure is the fully-qualified name of the Filesystem's Remove RPC.
 	FilesystemRemoveProcedure = "/filesystem.Filesystem/Remove"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	filesystemServiceDescriptor       = filesystem.File_filesystem_filesystem_proto.Services().ByName("Filesystem")
-	filesystemStatMethodDescriptor    = filesystemServiceDescriptor.Methods().ByName("Stat")
-	filesystemMakeDirMethodDescriptor = filesystemServiceDescriptor.Methods().ByName("MakeDir")
-	filesystemListMethodDescriptor    = filesystemServiceDescriptor.Methods().ByName("List")
-	filesystemWatchMethodDescriptor   = filesystemServiceDescriptor.Methods().ByName("Watch")
-	filesystemRemoveMethodDescriptor  = filesystemServiceDescriptor.Methods().ByName("Remove")
+	filesystemServiceDescriptor        = filesystem.File_filesystem_filesystem_proto.Services().ByName("Filesystem")
+	filesystemStatMethodDescriptor     = filesystemServiceDescriptor.Methods().ByName("Stat")
+	filesystemMakeDirMethodDescriptor  = filesystemServiceDescriptor.Methods().ByName("MakeDir")
+	filesystemListDirMethodDescriptor  = filesystemServiceDescriptor.Methods().ByName("ListDir")
+	filesystemWatchDirMethodDescriptor = filesystemServiceDescriptor.Methods().ByName("WatchDir")
+	filesystemRemoveMethodDescriptor   = filesystemServiceDescriptor.Methods().ByName("Remove")
 )
 
 // FilesystemClient is a client for the filesystem.Filesystem service.
 type FilesystemClient interface {
 	Stat(context.Context, *connect.Request[filesystem.StatRequest]) (*connect.Response[filesystem.StatResponse], error)
 	MakeDir(context.Context, *connect.Request[filesystem.MakeDirRequest]) (*connect.Response[filesystem.MakeDirResponse], error)
-	List(context.Context, *connect.Request[filesystem.ListRequest]) (*connect.Response[filesystem.ListResponse], error)
-	Watch(context.Context, *connect.Request[filesystem.WatchRequest]) (*connect.ServerStreamForClient[filesystem.WatchResponse], error)
+	ListDir(context.Context, *connect.Request[filesystem.ListDirRequest]) (*connect.Response[filesystem.ListDirResponse], error)
+	WatchDir(context.Context, *connect.Request[filesystem.WatchDirRequest]) (*connect.ServerStreamForClient[filesystem.WatchDirResponse], error)
 	Remove(context.Context, *connect.Request[filesystem.RemoveRequest]) (*connect.Response[filesystem.RemoveResponse], error)
 }
 
@@ -86,16 +86,16 @@ func NewFilesystemClient(httpClient connect.HTTPClient, baseURL string, opts ...
 			connect.WithSchema(filesystemMakeDirMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		list: connect.NewClient[filesystem.ListRequest, filesystem.ListResponse](
+		listDir: connect.NewClient[filesystem.ListDirRequest, filesystem.ListDirResponse](
 			httpClient,
-			baseURL+FilesystemListProcedure,
-			connect.WithSchema(filesystemListMethodDescriptor),
+			baseURL+FilesystemListDirProcedure,
+			connect.WithSchema(filesystemListDirMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		watch: connect.NewClient[filesystem.WatchRequest, filesystem.WatchResponse](
+		watchDir: connect.NewClient[filesystem.WatchDirRequest, filesystem.WatchDirResponse](
 			httpClient,
-			baseURL+FilesystemWatchProcedure,
-			connect.WithSchema(filesystemWatchMethodDescriptor),
+			baseURL+FilesystemWatchDirProcedure,
+			connect.WithSchema(filesystemWatchDirMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 		remove: connect.NewClient[filesystem.RemoveRequest, filesystem.RemoveResponse](
@@ -109,11 +109,11 @@ func NewFilesystemClient(httpClient connect.HTTPClient, baseURL string, opts ...
 
 // filesystemClient implements FilesystemClient.
 type filesystemClient struct {
-	stat    *connect.Client[filesystem.StatRequest, filesystem.StatResponse]
-	makeDir *connect.Client[filesystem.MakeDirRequest, filesystem.MakeDirResponse]
-	list    *connect.Client[filesystem.ListRequest, filesystem.ListResponse]
-	watch   *connect.Client[filesystem.WatchRequest, filesystem.WatchResponse]
-	remove  *connect.Client[filesystem.RemoveRequest, filesystem.RemoveResponse]
+	stat     *connect.Client[filesystem.StatRequest, filesystem.StatResponse]
+	makeDir  *connect.Client[filesystem.MakeDirRequest, filesystem.MakeDirResponse]
+	listDir  *connect.Client[filesystem.ListDirRequest, filesystem.ListDirResponse]
+	watchDir *connect.Client[filesystem.WatchDirRequest, filesystem.WatchDirResponse]
+	remove   *connect.Client[filesystem.RemoveRequest, filesystem.RemoveResponse]
 }
 
 // Stat calls filesystem.Filesystem.Stat.
@@ -126,14 +126,14 @@ func (c *filesystemClient) MakeDir(ctx context.Context, req *connect.Request[fil
 	return c.makeDir.CallUnary(ctx, req)
 }
 
-// List calls filesystem.Filesystem.List.
-func (c *filesystemClient) List(ctx context.Context, req *connect.Request[filesystem.ListRequest]) (*connect.Response[filesystem.ListResponse], error) {
-	return c.list.CallUnary(ctx, req)
+// ListDir calls filesystem.Filesystem.ListDir.
+func (c *filesystemClient) ListDir(ctx context.Context, req *connect.Request[filesystem.ListDirRequest]) (*connect.Response[filesystem.ListDirResponse], error) {
+	return c.listDir.CallUnary(ctx, req)
 }
 
-// Watch calls filesystem.Filesystem.Watch.
-func (c *filesystemClient) Watch(ctx context.Context, req *connect.Request[filesystem.WatchRequest]) (*connect.ServerStreamForClient[filesystem.WatchResponse], error) {
-	return c.watch.CallServerStream(ctx, req)
+// WatchDir calls filesystem.Filesystem.WatchDir.
+func (c *filesystemClient) WatchDir(ctx context.Context, req *connect.Request[filesystem.WatchDirRequest]) (*connect.ServerStreamForClient[filesystem.WatchDirResponse], error) {
+	return c.watchDir.CallServerStream(ctx, req)
 }
 
 // Remove calls filesystem.Filesystem.Remove.
@@ -145,8 +145,8 @@ func (c *filesystemClient) Remove(ctx context.Context, req *connect.Request[file
 type FilesystemHandler interface {
 	Stat(context.Context, *connect.Request[filesystem.StatRequest]) (*connect.Response[filesystem.StatResponse], error)
 	MakeDir(context.Context, *connect.Request[filesystem.MakeDirRequest]) (*connect.Response[filesystem.MakeDirResponse], error)
-	List(context.Context, *connect.Request[filesystem.ListRequest]) (*connect.Response[filesystem.ListResponse], error)
-	Watch(context.Context, *connect.Request[filesystem.WatchRequest], *connect.ServerStream[filesystem.WatchResponse]) error
+	ListDir(context.Context, *connect.Request[filesystem.ListDirRequest]) (*connect.Response[filesystem.ListDirResponse], error)
+	WatchDir(context.Context, *connect.Request[filesystem.WatchDirRequest], *connect.ServerStream[filesystem.WatchDirResponse]) error
 	Remove(context.Context, *connect.Request[filesystem.RemoveRequest]) (*connect.Response[filesystem.RemoveResponse], error)
 }
 
@@ -168,16 +168,16 @@ func NewFilesystemHandler(svc FilesystemHandler, opts ...connect.HandlerOption) 
 		connect.WithSchema(filesystemMakeDirMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	filesystemListHandler := connect.NewUnaryHandler(
-		FilesystemListProcedure,
-		svc.List,
-		connect.WithSchema(filesystemListMethodDescriptor),
+	filesystemListDirHandler := connect.NewUnaryHandler(
+		FilesystemListDirProcedure,
+		svc.ListDir,
+		connect.WithSchema(filesystemListDirMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	filesystemWatchHandler := connect.NewServerStreamHandler(
-		FilesystemWatchProcedure,
-		svc.Watch,
-		connect.WithSchema(filesystemWatchMethodDescriptor),
+	filesystemWatchDirHandler := connect.NewServerStreamHandler(
+		FilesystemWatchDirProcedure,
+		svc.WatchDir,
+		connect.WithSchema(filesystemWatchDirMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
 	filesystemRemoveHandler := connect.NewUnaryHandler(
@@ -192,10 +192,10 @@ func NewFilesystemHandler(svc FilesystemHandler, opts ...connect.HandlerOption) 
 			filesystemStatHandler.ServeHTTP(w, r)
 		case FilesystemMakeDirProcedure:
 			filesystemMakeDirHandler.ServeHTTP(w, r)
-		case FilesystemListProcedure:
-			filesystemListHandler.ServeHTTP(w, r)
-		case FilesystemWatchProcedure:
-			filesystemWatchHandler.ServeHTTP(w, r)
+		case FilesystemListDirProcedure:
+			filesystemListDirHandler.ServeHTTP(w, r)
+		case FilesystemWatchDirProcedure:
+			filesystemWatchDirHandler.ServeHTTP(w, r)
 		case FilesystemRemoveProcedure:
 			filesystemRemoveHandler.ServeHTTP(w, r)
 		default:
@@ -215,12 +215,12 @@ func (UnimplementedFilesystemHandler) MakeDir(context.Context, *connect.Request[
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("filesystem.Filesystem.MakeDir is not implemented"))
 }
 
-func (UnimplementedFilesystemHandler) List(context.Context, *connect.Request[filesystem.ListRequest]) (*connect.Response[filesystem.ListResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("filesystem.Filesystem.List is not implemented"))
+func (UnimplementedFilesystemHandler) ListDir(context.Context, *connect.Request[filesystem.ListDirRequest]) (*connect.Response[filesystem.ListDirResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("filesystem.Filesystem.ListDir is not implemented"))
 }
 
-func (UnimplementedFilesystemHandler) Watch(context.Context, *connect.Request[filesystem.WatchRequest], *connect.ServerStream[filesystem.WatchResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("filesystem.Filesystem.Watch is not implemented"))
+func (UnimplementedFilesystemHandler) WatchDir(context.Context, *connect.Request[filesystem.WatchDirRequest], *connect.ServerStream[filesystem.WatchDirResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("filesystem.Filesystem.WatchDir is not implemented"))
 }
 
 func (UnimplementedFilesystemHandler) Remove(context.Context, *connect.Request[filesystem.RemoveRequest]) (*connect.Response[filesystem.RemoveResponse], error) {

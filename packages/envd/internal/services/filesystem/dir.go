@@ -11,7 +11,7 @@ import (
 	"connectrpc.com/connect"
 )
 
-func (Service) List(ctx context.Context, req *connect.Request[rpc.ListRequest]) (*connect.Response[rpc.ListResponse], error) {
+func (Service) ListDir(ctx context.Context, req *connect.Request[rpc.ListDirRequest]) (*connect.Response[rpc.ListDirResponse], error) {
 	u, err := permissions.GetUser(req.Msg.GetUser())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -56,7 +56,7 @@ func (Service) List(ctx context.Context, req *connect.Request[rpc.ListRequest]) 
 		}
 	}
 
-	return connect.NewResponse(&rpc.ListResponse{
+	return connect.NewResponse(&rpc.ListDirResponse{
 		Entries: e,
 	}), nil
 }

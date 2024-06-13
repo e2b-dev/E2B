@@ -7,8 +7,8 @@ package filesystem;
 service Filesystem {
     rpc Stat(StatRequest) returns (StatResponse);
     rpc MakeDir(MakeDirRequest) returns (MakeDirResponse);
-    rpc List(ListRequest) returns (ListResponse);
-    rpc Watch(WatchRequest) returns (stream WatchResponse);
+    rpc ListDir(ListDirRequest) returns (ListDirResponse);
+    rpc WatchDir(WatchDirRequest) returns (stream WatchDirResponse);
     rpc Remove(RemoveRequest) returns (RemoveResponse);
 }
 
@@ -49,28 +49,28 @@ enum FileType {
     FILE_TYPE_DIRECTORY = 2;
 }
 
-message ListRequest {
+message ListDirRequest {
     string path = 1;
 
     permissions.User user = 2;
 }
 
-message ListResponse {
+message ListDirResponse {
     repeated EntryInfo entries = 1;
 }
 
-message WatchRequest {
+message WatchDirRequest {
     string path = 1;
 
     permissions.User user = 2;
 }
 
-message WatchResponse {
+message WatchDirResponse {
     FilesystemEvent event = 1;
 }
 
 message FilesystemEvent {
-    string path = 1;
+    string name = 1;
     EventType type = 2;
 }
 
