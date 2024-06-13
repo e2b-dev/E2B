@@ -474,7 +474,6 @@ func (ips *IPSlot) CreateNetwork(
 	}
 	telemetry.ReportEvent(childCtx, "Created postrouting rule")
 
-	// Add entry to etc hosts
 	dns.Add(ips)
 
 	telemetry.ReportEvent(childCtx, "Added env instance to dns")
