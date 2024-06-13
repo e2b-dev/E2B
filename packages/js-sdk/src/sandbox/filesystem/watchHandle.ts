@@ -1,12 +1,39 @@
-import { PlainMessage } from '@bufbuild/protobuf'
 import { ConnectError } from '@connectrpc/connect'
 import { FilesystemError } from '.'
 
 import {
-  WatchDirResponse, WatchDirResponse_FilesystemEvent,
+  EventType,
+  WatchDirResponse,
 } from '../../envd/filesystem/filesystem_pb'
 
-export type FilesystemEvent = PlainMessage<WatchDirResponse_FilesystemEvent>
+
+export enum FilesystemEventType {
+  CHMOD = 'chmod',
+  CREATE = 'create',
+  REMOVE = 'remove',
+  RENAME = 'rename',
+  WRITE = 'write',
+}
+
+function mapEventType(type: EventType) {
+  switch (type) {
+    case EventType.CHMOD:
+      return FilesystemEventType.CHMOD
+    case EventType.CREATE:
+      return FilesystemEventType.CREATE
+    case EventType.REMOVE:
+      return FilesystemEventType.REMOVE
+    case EventType.RENAME:
+      return FilesystemEventType.RENAME
+    case EventType.WRITE:
+      return FilesystemEventType.WRITE
+  }
+}
+
+export interface FilesystemEvent {
+  name: string
+  type: FilesystemEventType
+}
 
 export class WatchHandle {
   private readonly _wait: Promise<void>
@@ -53,7 +80,15 @@ export class WatchHandle {
   private async handleEvents() {
     try {
       for await (const event of this.iterateEvents()) {
-        this.onEvent?.(event.value)
+        const eventType = mapEventType(event.value.type)
+        if (eventType === undefined) {
+          continue
+        }
+
+        this.onEvent?.({
+          name: event.value.name,
+          type: eventType,
+        })
       }
       this.onExit?.()
     } catch (err) {
