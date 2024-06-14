@@ -3,23 +3,21 @@ package dns
 import (
 	"log"
 	"net"
-	"sync"
+
+	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
 
 	resolver "github.com/miekg/dns"
 )
 
-const (
-	averageRecordsSize = 4096
-)
+const ttl = 2
 
 type DNS struct {
-	records map[string]string
-	mu      sync.RWMutex
+	records *smap.Map[string]
 }
 
 func New() *DNS {
 	return &DNS{
-		records: make(map[string]string, averageRecordsSize),
+		records: smap.New[string](),
 	}
 }
 
@@ -29,36 +27,25 @@ type Record interface {
 }
 
 func (d *DNS) Add(record Record) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	d.records[record.HostName()] = record.HostIP()
+	d.records.Insert(record.HostName(), record.HostIP())
 }
 
 func (d *DNS) Remove(record Record) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	delete(d.records, record.HostName())
+	d.records.Remove(record.HostName())
 }
 
 func (d *DNS) get(hostname string) (string, bool) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-
-	ip, found := d.records[hostname]
-
-	return ip, found
+	return d.records.Get(hostname)
 }
 
 func (d *DNS) handleDNSRequest(w resolver.ResponseWriter, r *resolver.Msg) {
 	m := new(resolver.Msg)
 	m.SetReply(r)
 	m.Compress = false
+	m.Authoritative = true
 
 	for _, q := range m.Question {
-		switch q.Qtype {
-		case resolver.TypeA:
+		if q.Qtype == resolver.TypeA {
 			ip, found := d.get(q.Name)
 			if found {
 				a := &resolver.A{
@@ -66,7 +53,7 @@ func (d *DNS) handleDNSRequest(w resolver.ResponseWriter, r *resolver.Msg) {
 						Name:   q.Name,
 						Rrtype: resolver.TypeA,
 						Class:  resolver.ClassINET,
-						Ttl:    30,
+						Ttl:    ttl,
 					},
 					A: net.ParseIP(ip).To4(),
 				}
@@ -76,13 +63,18 @@ func (d *DNS) handleDNSRequest(w resolver.ResponseWriter, r *resolver.Msg) {
 		}
 	}
 
-	w.WriteMsg(m)
+	err := w.WriteMsg(m)
+	if err != nil {
+		log.Printf("Failed to write message: %s\n", err.Error())
+	}
 }
 
 func (d *DNS) Start(address string) {
-	resolver.HandleFunc(".", d.handleDNSRequest)
+	mux := resolver.NewServeMux()
 
-	server := &resolver.Server{Addr: address, Net: "udp"}
+	mux.HandleFunc(".", d.handleDNSRequest)
+
+	server := &resolver.Server{Addr: address, Net: "udp", Handler: mux}
 
 	log.Printf("Starting DNS server at %s\n", server.Addr)
 

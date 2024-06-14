@@ -119,7 +119,7 @@ server {
   listen 3003;
 
   # DNS server resolved addreses as to <sandbox-id> <ip-address>
-  resolver 127.0.0.1 valid=30s;
+  resolver 127.0.0.1 valid=2s;
   resolver_timeout 5s;
 
   proxy_set_header Host $host;

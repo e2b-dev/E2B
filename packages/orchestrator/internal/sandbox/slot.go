@@ -46,7 +46,8 @@ func (ips *IPSlot) getOctets() (int, int) {
 }
 
 func (ips *IPSlot) HostName() string {
-	return ips.InstanceID
+	// Creates fully qualified hostname.
+	return fmt.Sprintf("%s.", ips.InstanceID)
 }
 
 func (ips *IPSlot) HostIP() string {
