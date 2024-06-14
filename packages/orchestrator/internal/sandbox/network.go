@@ -50,11 +50,11 @@ func getAllowResponseRule(ips *IPSlot) []string {
 func (ips *IPSlot) addBlockingRules(tables *iptables.IPTables) error {
 	for _, ipRange := range blockedRanges {
 		rule := getBlockingRule(ips, ipRange)
-		err := tables.Insert("filter", "FORWARD", 2, rule...)
+		err := tables.Append("filter", "FORWARD", rule...)
 		if err != nil {
 			return fmt.Errorf("error adding blocking rule: %w", err)
 		}
-		err = tables.Insert("filter", "INPUT", 2, rule...)
+		err = tables.Append("filter", "INPUT", rule...)
 		if err != nil {
 			return fmt.Errorf("error adding blocking rule: %w", err)
 		}
