@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"fmt"
-	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
 	"net/http"
 
-	"github.com/e2b-dev/infra/packages/api/internal/auth"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/gin-gonic/gin"
+	"github.com/e2b-dev/infra/packages/api/internal/auth"
+	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 func (a *APIStore) DeleteSandboxesSandboxID(

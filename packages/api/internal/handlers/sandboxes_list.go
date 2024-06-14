@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/auth"
+	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
