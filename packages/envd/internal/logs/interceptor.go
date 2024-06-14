@@ -31,11 +31,24 @@ func NewUnaryLogInterceptor(logger *zerolog.Logger) connect.UnaryInterceptorFunc
 		) (connect.AnyResponse, error) {
 			res, err := next(ctx, req)
 
-			logger.Err(err).
+			l := logger.
+				Err(err).
 				Str("method", req.Spec().Procedure).
-				Interface("request", req.Any()).
-				Interface("response", res.Any()).
-				Send()
+				Str(string(RequestIDKey), AssignRequestID())
+
+			if err != nil {
+				l = l.Int("error_code", int(connect.CodeOf(err)))
+			}
+
+			if req != nil {
+				l = l.Interface("request", req.Any())
+			}
+
+			if res != nil && err == nil {
+				l = l.Interface("response", res.Any())
+			}
+
+			l.Send()
 
 			return res, err
 		})
@@ -53,18 +66,27 @@ func LogServerStreamWithoutEvents[T any, R any](
 ) error {
 	ctx = context.WithValue(ctx, RequestIDKey, AssignRequestID())
 
-	logger.Info().
+	l := logger.Info().
 		Str("method", req.Spec().Procedure).
-		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
-		Interface("request", req.Any()).
-		Send()
+		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string))
+
+	if req != nil {
+		l = l.Interface("request", req.Any())
+	}
+
+	l.Send()
 
 	err := handler(ctx, req, stream)
-	logger.Err(err).
+
+	errL := logger.Err(err).
 		Str("method", req.Spec().Procedure).
-		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
-		Interface("response", nil).
-		Send()
+		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string))
+
+	if err != nil {
+		errL = errL.Int("error_code", int(connect.CodeOf(err)))
+	}
+
+	errL.Send()
 
 	return err
 }
@@ -97,11 +119,19 @@ func LogClientStreamWithoutEvents[T any, R any](
 
 	res, err := handler(ctx, stream)
 
-	logger.Err(err).
+	l := logger.Err(err).
 		Str("method", stream.Spec().Procedure).
-		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
-		Interface("response", res.Any()).
-		Send()
+		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string))
+
+	if err != nil {
+		l = l.Int("error_code", int(connect.CodeOf(err)))
+	}
+
+	if res != nil && err == nil {
+		l = l.Interface("response", res.Any())
+	}
+
+	l.Send()
 
 	return res, err
 }
