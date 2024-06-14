@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
 	"net/http"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"github.com/e2b-dev/infra/packages/api/internal/cache/instance"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
-	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -29,7 +29,8 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 	sandboxID := InstanceIDPrefix + utils.GenerateID()
 
 	// Get team from context, use TeamContextKey
-	team := c.Value(auth.TeamContextKey).(models.Team)
+	teamInfo := c.Value(auth.TeamContextKey).(authcache.AuthTeamInfo)
+	team := teamInfo.Team
 
 	span := trace.SpanFromContext(ctx)
 	traceID := span.SpanContext().TraceID().String()
@@ -110,10 +111,10 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 	telemetry.ReportEvent(ctx, "create sandbox parallel limit semaphore slot acquired")
 
 	// Check if team has reached max instances
-	maxInstancesPerTeam := team.Edges.TeamTier.ConcurrentInstances
+	maxInstancesPerTeam := teamInfo.Tier.ConcurrentInstances
 	err, releaseTeamSandboxReservation := a.instanceCache.Reserve(sandboxID, team.ID, maxInstancesPerTeam)
 	if err != nil {
-		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, team.Edges.TeamTier.ConcurrentInstances)
+		errMsg := fmt.Errorf("team '%s' has reached the maximum number of instances (%d)", team.ID, teamInfo.Tier.ConcurrentInstances)
 		telemetry.ReportCriticalError(ctx, fmt.Errorf("%w (error: %w)", errMsg, err))
 
 		a.sendAPIStoreError(c, http.StatusForbidden, fmt.Sprintf(
@@ -133,7 +134,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		metadata = *body.Metadata
 	}
 
-	sandbox, instanceErr := a.orchestrator.CreateSandbox(a.Tracer, ctx, sandboxID, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
+	sandbox, instanceErr := a.orchestrator.CreateSandbox(a.Tracer, ctx, sandboxID, env.TemplateID, alias, team.ID.String(), build.ID.String(), teamInfo.Tier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -157,7 +158,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		BuildID:           &build.ID,
 		TeamID:            &team.ID,
 		Metadata:          metadata,
-		MaxInstanceLength: time.Duration(team.Edges.TeamTier.MaxLengthHours) * time.Hour,
+		MaxInstanceLength: time.Duration(teamInfo.Tier.MaxLengthHours) * time.Hour,
 	}); cacheErr != nil {
 		errMsg := fmt.Errorf("error when adding instance to cache: %w", cacheErr)
 		telemetry.ReportError(ctx, errMsg)

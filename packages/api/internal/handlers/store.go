@@ -19,6 +19,7 @@ import (
 
 	analyticscollector "github.com/e2b-dev/infra/packages/api/internal/analytics_collector"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
 	"github.com/e2b-dev/infra/packages/api/internal/cache/builds"
 	"github.com/e2b-dev/infra/packages/api/internal/cache/instance"
 	templatecache "github.com/e2b-dev/infra/packages/api/internal/cache/templates"
@@ -44,6 +45,7 @@ type APIStore struct {
 	logger          *zap.SugaredLogger
 	sandboxLogger   *zap.SugaredLogger
 	templateCache   *templatecache.TemplateCache
+	authCache       *authcache.TeamAuthCache
 }
 
 var lokiAddress = os.Getenv("LOKI_ADDRESS")
@@ -162,6 +164,7 @@ func NewAPIStore() *APIStore {
 	}
 
 	templateCache := templatecache.NewTemplateCache(dbClient)
+	authCache := authcache.NewTeamAuthCache(dbClient)
 
 	return &APIStore{
 		Ctx:             ctx,
@@ -177,6 +180,7 @@ func NewAPIStore() *APIStore {
 		lokiClient:      lokiClient,
 		sandboxLogger:   sandboxLogger,
 		templateCache:   templateCache,
+		authCache:       authCache,
 	}
 }
 
@@ -215,17 +219,20 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
 
-func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (models.Team, *api.APIError) {
-	team, err := a.db.GetTeamAuth(ctx, apiKey)
+func (a *APIStore) GetTeamFromAPIKey(ctx context.Context, apiKey string) (authcache.AuthTeamInfo, *api.APIError) {
+	team, tier, err := a.authCache.Get(ctx, apiKey)
 	if err != nil {
-		return models.Team{}, &api.APIError{
+		return authcache.AuthTeamInfo{}, &api.APIError{
 			Err:       fmt.Errorf("failed to get the team from db for an api key: %w", err),
 			ClientMsg: "Cannot get the team for the given API key",
 			Code:      http.StatusUnauthorized,
 		}
 	}
 
-	return *team, nil
+	return authcache.AuthTeamInfo{
+		Team: team,
+		Tier: tier,
+	}, nil
 }
 
 func (a *APIStore) GetUserFromAccessToken(ctx context.Context, accessToken string) (uuid.UUID, *api.APIError) {

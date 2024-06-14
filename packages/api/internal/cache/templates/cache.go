@@ -3,7 +3,6 @@ package templatecache
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,8 +23,6 @@ type TemplateInfo struct {
 
 type AliasCache struct {
 	cache *ttlcache.Cache[string, string]
-
-	mu sync.Mutex
 }
 
 func NewAliasCache() *AliasCache {
@@ -52,8 +49,6 @@ type TemplateCache struct {
 	cache      *ttlcache.Cache[string, *TemplateInfo]
 	db         *db.DB
 	aliasCache *AliasCache
-
-	mu sync.Mutex
 }
 
 func NewTemplateCache(db *db.DB) *TemplateCache {

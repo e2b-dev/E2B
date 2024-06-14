@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"fmt"
+	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
 	"net/http"
 
 	"github.com/e2b-dev/infra/packages/api/internal/auth"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
-	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -20,7 +20,7 @@ func (a *APIStore) DeleteSandboxesSandboxID(
 	ctx := c.Request.Context()
 	sandboxID = utils.ShortID(sandboxID)
 
-	teamID := c.Value(auth.TeamContextKey).(models.Team).ID
+	teamID := c.Value(auth.TeamContextKey).(authcache.AuthTeamInfo).Team.ID
 
 	telemetry.SetAttributes(ctx,
 		attribute.String("instance.id", sandboxID),

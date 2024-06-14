@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -83,8 +83,8 @@ func (a *authenticator[T]) Authenticate(ctx context.Context, input *openapi3filt
 	return nil
 }
 
-func CreateAuthenticationFunc(tracer trace.Tracer, teamValidationFunction func(context.Context, string) (models.Team, *api.APIError), userValidationFunction func(context.Context, string) (uuid.UUID, *api.APIError)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
-	apiKeyValidator := authenticator[models.Team]{
+func CreateAuthenticationFunc(tracer trace.Tracer, teamValidationFunction func(context.Context, string) (authcache.AuthTeamInfo, *api.APIError), userValidationFunction func(context.Context, string) (uuid.UUID, *api.APIError)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+	apiKeyValidator := authenticator[authcache.AuthTeamInfo]{
 		securitySchemeName: "ApiKeyAuth",
 		headerKey:          "X-API-Key",
 		prefix:             "e2b_",

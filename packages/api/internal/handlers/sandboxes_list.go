@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +17,8 @@ import (
 func (a *APIStore) GetSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	team := c.Value(auth.TeamContextKey).(models.Team)
+	teamInfo := c.Value(auth.TeamContextKey).(authcache.AuthTeamInfo)
+	team := teamInfo.Team
 
 	telemetry.ReportEvent(ctx, "list running instances")
 
