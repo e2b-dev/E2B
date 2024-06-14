@@ -49,8 +49,6 @@ export class WatchHandle {
 
   async stop() {
     this.handleStop()
-
-    await this._wait
   }
 
   private async* iterateEvents() {

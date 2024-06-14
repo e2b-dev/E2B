@@ -3,22 +3,21 @@ import * as commander from 'commander'
 import * as path from 'path'
 
 import { ensureAPIKey } from 'src/api'
-import { spawnConnectedTerminal } from 'src/terminal'
 import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { getRoot } from '../../utils/filesystem'
 import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
 import { configOption, pathOption } from '../../options'
 
-export const spawnCommand = new commander.Command('spawn')
-  .description('spawn sandbox and connect terminal to it')
+export const createCommand = new commander.Command('create')
+  .description('create sandbox and connect terminal to it')
   .argument(
     '[template]',
-    `spawn and connect to sandbox specified by ${asBold('[template]')}`,
+    `create and connect to sandbox specified by ${asBold('[template]')}`,
   )
   .addOption(pathOption)
   .addOption(configOption)
-  .alias('sp')
+  .alias('cr')
   .action(
     async (
       template: string | undefined,
@@ -62,7 +61,36 @@ export const spawnCommand = new commander.Command('spawn')
           process.exit(1)
         }
 
-        await connectSandbox({ apiKey, template: { templateID } })
+        const sandbox = await e2b.Sandbox.create(templateID, {
+          apiKey,
+          timeoutMs: 15_000,
+        })
+
+        const refresh = setInterval(async () => {
+          await sandbox.setTimeout(15_000)
+        }, 5_000)
+
+        console.log(
+          `Created sandbox with ID ${asBold(
+            `${sandbox.sandboxID}`,
+          )}`,
+        )
+
+        try {
+          await connectSandbox(sandbox)
+        } catch (err) {
+          await sandbox.kill()
+          throw err
+        } finally {
+          console.log(
+            `Closed sandbox with ID ${asBold(
+              `${sandbox.sandboxID}`,
+            )}`,
+          )
+
+          clearInterval(refresh)
+        }
+
         // We explicitly call exit because the sandbox is keeping the program alive.
         // We also don't want to call sandbox.close because that would disconnect other users from the edit session.
         process.exit(0)
@@ -73,38 +101,54 @@ export const spawnCommand = new commander.Command('spawn')
     },
   )
 
-export async function connectSandbox({
-  apiKey,
-  template,
-}: {
-  apiKey: string
-  template: Pick<e2b.components['schemas']['Template'], 'templateID'>
-}) {
-  const sandbox = await e2b.Sandbox.create({
-    apiKey,
-    template: template.templateID,
+export async function connectSandbox(sandbox: e2b.Sandbox) {
+  // Clear local terminal emulator before starting terminal
+  // process.stdout.write('\x1b[2J\x1b[0f')
+
+  process.stdin.setEncoding('binary')
+  process.stdin.setRawMode(true)
+
+  process.stdout.setEncoding('binary')
+
+  const { cols, rows } = getStdoutSize()
+
+  const terminal = await sandbox.pty.create({
+    cols,
+    rows,
+    onData: (data) => {
+      process.stdout.write(data)
+    },
+    timeout: 0,
   })
 
-  if (sandbox.terminal) {
-    const { exited } = await spawnConnectedTerminal(
-      sandbox.terminal,
-      `Terminal connected to sandbox ${asFormattedSandboxTemplate(
-        template,
-      )}\nwith sandbox URL ${asBold(
-        `${sandbox.getProtocol()}://${sandbox.getHostname()}`,
-      )}`,
-      `Disconnecting terminal from sandbox ${asFormattedSandboxTemplate(
-        template,
-      )}`,
-    )
+  const terminalInput = await sandbox.pty.streamInput(terminal.pid, {
+    timeout: 0,
+  })
 
-    await exited
-    console.log(
-      `Closing terminal connection to sandbox ${asFormattedSandboxTemplate(
-        template,
-      )}`,
+  const resizeListener = process.stdout.on('resize', () =>
+    sandbox.pty.resize(terminal.pid, getStdoutSize()),
+  )
+
+  const stdinListener = process.stdin.on('data', (data) =>
+    terminalInput.sendData(data),
+  )
+
+  await terminal.wait()
+
+  resizeListener.destroy()
+  stdinListener.destroy()
+
+  console.log(
+    `Disconnected terminal from sandbox with ID ${asBold(
+      `${sandbox.sandboxID}`,
     )
-  } else {
-    throw new Error('Cannot start terminal - no sandbox')
+    } `,
+  )
+}
+
+function getStdoutSize() {
+  return {
+    cols: process.stdout.columns,
+    rows: process.stdout.rows,
   }
 }

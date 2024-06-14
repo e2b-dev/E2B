@@ -10,7 +10,7 @@ import {
   StartResponse,
   StreamInputRequest,
 } from '../envd/process/process_pb'
-import { ConnectionConfig, ConnectionOpts, defaultUsername } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts, defaultUsername, Username } from '../connectionConfig'
 import { PartialMessage } from '@bufbuild/protobuf'
 import { ProcessHandle } from './process/processHandle'
 
@@ -19,6 +19,7 @@ export interface PtyCreateOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> 
   rows: number
   onData: (data: Uint8Array) => (void | Promise<void>)
   timeout?: number
+  username?: Username
 }
 
 export class Pty {
@@ -41,14 +42,14 @@ export class Pty {
       user: {
         selector: {
           case: 'username',
-          value: defaultUsername,
+          value: opts.username ?? defaultUsername,
         },
       },
       process: {
         cmd: '/bin/bash',
         args: ['-i', '-l'],
         envs: {
-          'TERM': 'xterm',
+          'TERM': 'xterm-256color',
         },
       },
       pty: {

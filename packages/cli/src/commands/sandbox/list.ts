@@ -2,11 +2,7 @@ import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import * as e2b from 'e2b'
 
-import { ensureAPIKey, client } from 'src/api'
-
-const listRunningSandboxes = e2b.withAPIKey(
-  client.api.path('/sandboxes').method('get').create(),
-)
+import { ensureAPIKey } from 'src/api'
 
 export const listCommand = new commander.Command('list')
   .description('list all running sandboxes')
@@ -14,7 +10,7 @@ export const listCommand = new commander.Command('list')
   .action(async () => {
     try {
       const apiKey = ensureAPIKey()
-      const sandboxes = await listSandboxes({ apiKey })
+      const sandboxes = await e2b.Sandbox.list({ apiKey })
 
       if (!sandboxes?.length) {
         console.log('No running sandboxes.')
@@ -31,7 +27,7 @@ export const listCommand = new commander.Command('list')
             { name: 'metadata', alignment: 'left', title: 'Metadata' },
           ],
           disabledColumns: ['clientID'],
-          rows: sandboxes.map((sandbox) => ({ ...sandbox, sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`, startedAt: new Date(sandbox.startedAt).toLocaleString(), metadata: JSON.stringify(sandbox.metadata) })).sort(
+          rows: sandboxes.map((sandbox) => ({ ...sandbox, sandboxID: `${sandbox.sandboxID}`, startedAt: new Date(sandbox.startedAt).toLocaleString(), metadata: JSON.stringify(sandbox.metadata) })).sort(
             (a, b) => a.startedAt.localeCompare(b.startedAt) || a.sandboxID.localeCompare(b.sandboxID)
           ),
           colorMap: {
@@ -47,10 +43,3 @@ export const listCommand = new commander.Command('list')
       process.exit(1)
     }
   })
-
-export async function listSandboxes({
-  apiKey,
-}: { apiKey: string }): Promise<e2b.components['schemas']['RunningSandboxes'][]> {
-  const response = await listRunningSandboxes(apiKey, {})
-  return response.data
-}

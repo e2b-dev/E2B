@@ -5,7 +5,7 @@ from typing import Optional, Dict
 from e2b.sandbox.filesystem.filesystem import Filesystem
 from e2b.sandbox.process.main import Process
 from e2b.sandbox.sandbox_api import SandboxApi
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, SandboxException
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 
 
@@ -23,7 +23,7 @@ class Sandbox(SandboxApi):
     def __init__(
         self,
         template: str = "base-v1",
-        timeout: int = 60,
+        timeout: int = 300,
         metadata: Optional[Dict[str, str]] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
@@ -32,6 +32,12 @@ class Sandbox(SandboxApi):
         request_timeout: Optional[float] = None,
     ):
         super().__init__()
+
+        if sandbox_id and (metadata or timeout is not None):
+            raise SandboxException(
+                "Cannot set metadata or timeout when connection to an existing sandbox. "
+                "Use Sandbox.connect method instead.",
+            )
 
         self._connection_config = ConnectionConfig(
             api_key=api_key,

@@ -1,5 +1,4 @@
 import * as boxen from 'boxen'
-import * as e2b from 'e2b'
 
 import { getUserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
@@ -51,5 +50,3 @@ export function ensureAccessToken() {
     return accessToken
   }
 }
-
-export const client = new e2b.APIClient()

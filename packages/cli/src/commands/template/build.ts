@@ -249,7 +249,7 @@ export const buildCommand = new commander.Command('build')
 
         try {
           child_process.execSync(
-            `echo "${accessToken}" | docker login docker.${e2b.SANDBOX_DOMAIN} -u _e2b_access_token --password-stdin`,
+            `echo "${accessToken}" | docker login docker.${e2b.DOMAIN} -u _e2b_access_token --password-stdin`,
             {
               stdio: 'inherit',
               cwd: root,
@@ -265,7 +265,7 @@ export const buildCommand = new commander.Command('build')
 
         console.log('Building docker image...')
         child_process.execSync(
-          `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`,
+          `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${e2b.DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`,
           {
             stdio: 'inherit',
             cwd: root,
@@ -279,7 +279,7 @@ export const buildCommand = new commander.Command('build')
 
         console.log('Pushing docker image...')
         child_process.execSync(
-          `docker push docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`,
+          `docker push docker.${e2b.DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`,
           {
             stdio: 'inherit',
             cwd: root,

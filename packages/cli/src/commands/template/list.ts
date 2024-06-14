@@ -7,10 +7,6 @@ import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
 import { client } from 'src/api'
 
-const listTemplates = e2b.withAccessToken(
-  client.api.path('/templates').method('get').create(),
-)
-
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
@@ -55,6 +51,10 @@ export const listCommand = new commander.Command('list')
 export async function listSandboxTemplates({
   accessToken,
 }: { accessToken: string }): Promise<e2b.components['schemas']['Template'][]> {
+
+  e2b.Sandbox.list()
+
+
   const templates = await listTemplates(accessToken, {})
   return templates.data
 }
