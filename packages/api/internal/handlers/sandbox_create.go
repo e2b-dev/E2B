@@ -32,6 +32,8 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 	team := c.Value(auth.TeamContextKey).(models.Team)
 
 	span := trace.SpanFromContext(ctx)
+	defer span.End()
+
 	traceID := span.SpanContext().TraceID().String()
 	c.Set("traceID", traceID)
 
@@ -62,8 +64,9 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	telemetry.ReportEvent(ctx, "Cleaned sandbox ID")
 
+	_, envSpan := a.Tracer.Start(ctx, "get-env")
 	// Check if team has access to the environment
-	env, build, checkErr := a.CheckTeamAccessEnv(ctx, cleanedAliasOrEnvID, team.ID, true)
+	env, build, checkErr := a.templateCache.Get(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
 		errMsg := fmt.Errorf("error when checking team access: %w", checkErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -72,6 +75,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 		return
 	}
+	envSpan.End()
 
 	telemetry.ReportEvent(ctx, "Checked team access")
 
@@ -93,6 +97,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	telemetry.ReportEvent(ctx, "waiting for create sandbox parallel limit semaphore slot")
 
+	_, rateSpan := a.Tracer.Start(ctx, "rate-limit")
 	limitErr := postSandboxParallelLimit.Acquire(ctx, 1)
 	if limitErr != nil {
 		errMsg := fmt.Errorf("error when acquiring parallel lock: %w", limitErr)
@@ -120,6 +125,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		return
 	}
 
+	rateSpan.End()
 	telemetry.ReportEvent(ctx, "Reserved team sandbox slot")
 
 	defer releaseTeamSandboxReservation()
@@ -129,7 +135,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		metadata = *body.Metadata
 	}
 
-	sandbox, instanceErr := a.orchestrator.CreateSandbox(a.tracer, ctx, sandboxID, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
+	sandbox, instanceErr := a.orchestrator.CreateSandbox(a.Tracer, ctx, sandboxID, env.TemplateID, alias, team.ID.String(), build.ID.String(), team.Edges.TeamTier.MaxLengthHours, metadata, build.KernelVersion, build.FirecrackerVersion)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr)
 		telemetry.ReportCriticalError(ctx, errMsg)
@@ -146,6 +152,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	telemetry.ReportEvent(ctx, "Created sandbox")
 
+	_, cacheSpan := a.Tracer.Start(ctx, "add-instance-to-cache")
 	if cacheErr := a.instanceCache.Add(instance.InstanceInfo{
 		StartTime:         nil,
 		Instance:          sandbox,
@@ -170,10 +177,13 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 		return
 	}
 
+	cacheSpan.End()
+
 	c.Set("instanceID", sandbox.SandboxID)
 
 	telemetry.ReportEvent(ctx, "Added sandbox to cache")
 
+	_, analyticsSpan := a.Tracer.Start(ctx, "analytics")
 	a.posthog.IdentifyAnalyticsTeam(team.ID.String(), team.Name)
 	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)
 	a.posthog.CreateAnalyticsTeamEvent(team.ID.String(), "created_instance",
@@ -182,6 +192,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 			Set("instance_id", sandbox.SandboxID).
 			Set("alias", alias),
 	)
+	analyticsSpan.End()
 
 	telemetry.ReportEvent(ctx, "Created analytics event")
 

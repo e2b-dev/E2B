@@ -21,6 +21,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/cache/builds"
 	"github.com/e2b-dev/infra/packages/api/internal/cache/instance"
+	templatecache "github.com/e2b-dev/infra/packages/api/internal/cache/templates"
 	"github.com/e2b-dev/infra/packages/api/internal/orchestrator"
 	"github.com/e2b-dev/infra/packages/api/internal/template-manager"
 	"github.com/e2b-dev/infra/packages/shared/pkg/db"
@@ -33,7 +34,7 @@ type APIStore struct {
 	Ctx             context.Context
 	analytics       *analyticscollector.Analytics
 	posthog         *PosthogClient
-	tracer          trace.Tracer
+	Tracer          trace.Tracer
 	instanceCache   *instance.InstanceCache
 	orchestrator    *orchestrator.Orchestrator
 	templateManager *template_manager.TemplateManager
@@ -42,6 +43,7 @@ type APIStore struct {
 	lokiClient      *loki.DefaultClient
 	logger          *zap.SugaredLogger
 	sandboxLogger   *zap.SugaredLogger
+	templateCache   *templatecache.TemplateCache
 }
 
 var lokiAddress = os.Getenv("LOKI_ADDRESS")
@@ -159,19 +161,22 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 
+	templateCache := templatecache.NewTemplateCache(dbClient)
+
 	return &APIStore{
 		Ctx:             ctx,
 		orchestrator:    orch,
 		templateManager: templateManager,
 		db:              dbClient,
 		instanceCache:   instanceCache,
-		tracer:          tracer,
+		Tracer:          tracer,
 		analytics:       analytics,
 		posthog:         posthogClient,
 		buildCache:      buildCache,
 		logger:          logger,
 		lokiClient:      lokiClient,
 		sandboxLogger:   sandboxLogger,
+		templateCache:   templateCache,
 	}
 }
 
@@ -246,7 +251,7 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 		}
 	}
 
-	return deleteInstance(a.Ctx, a.tracer, a.orchestrator, a.analytics, a.posthog, a.logger, info)
+	return deleteInstance(a.Ctx, a.Tracer, a.orchestrator, a.analytics, a.posthog, a.logger, info)
 }
 
 func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, build *models.EnvBuild, err error) {

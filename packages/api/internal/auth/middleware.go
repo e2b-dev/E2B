@@ -12,6 +12,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/google/uuid"
 	middleware "github.com/oapi-codegen/gin-middleware"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 )
@@ -81,7 +82,7 @@ func (a *authenticator[T]) Authenticate(ctx context.Context, input *openapi3filt
 	return nil
 }
 
-func CreateAuthenticationFunc(teamValidationFunction func(context.Context, string) (models.Team, *api.APIError), userValidationFunction func(context.Context, string) (uuid.UUID, *api.APIError)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+func CreateAuthenticationFunc(tracer trace.Tracer, teamValidationFunction func(context.Context, string) (models.Team, *api.APIError), userValidationFunction func(context.Context, string) (uuid.UUID, *api.APIError)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 	apiKeyValidator := authenticator[models.Team]{
 		securitySchemeName: "ApiKeyAuth",
 		headerKey:          "X-API-Key",
@@ -102,6 +103,9 @@ func CreateAuthenticationFunc(teamValidationFunction func(context.Context, strin
 	}
 
 	return func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+		_, span := tracer.Start(ctx, "authenticate")
+		defer span.End()
+
 		if input.SecuritySchemeName == apiKeyValidator.securitySchemeName {
 			return apiKeyValidator.Authenticate(ctx, input)
 		}
