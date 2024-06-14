@@ -74,6 +74,8 @@ func (a *APIStore) DeleteTemplatesTemplateID(c *gin.Context, aliasOrTemplateID a
 		return
 	}
 
+	a.templateCache.Invalidate(env.TemplateID)
+
 	telemetry.ReportEvent(ctx, "deleted env from db")
 
 	properties := a.posthog.GetPackageToPosthogProperties(&c.Request.Header)

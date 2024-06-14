@@ -88,6 +88,7 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	// Create a team API Key auth validator
 	AuthenticationFunc := auth.CreateAuthenticationFunc(
+		apiStore.Tracer,
 		apiStore.GetTeamFromAPIKey,
 		apiStore.GetUserFromAccessToken,
 	)
