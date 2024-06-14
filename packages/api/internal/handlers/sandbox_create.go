@@ -32,8 +32,6 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 	team := c.Value(auth.TeamContextKey).(models.Team)
 
 	span := trace.SpanFromContext(ctx)
-	defer span.End()
-
 	traceID := span.SpanContext().TraceID().String()
 	c.Set("traceID", traceID)
 
@@ -64,7 +62,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 	telemetry.ReportEvent(ctx, "Cleaned sandbox ID")
 
-	_, envSpan := a.Tracer.Start(ctx, "get-env")
+	_, templateSpan := a.Tracer.Start(ctx, "get-template")
 	// Check if team has access to the environment
 	env, build, checkErr := a.templateCache.Get(ctx, cleanedAliasOrEnvID, team.ID, true)
 	if checkErr != nil {
@@ -75,7 +73,7 @@ func (a *APIStore) PostSandboxes(c *gin.Context) {
 
 		return
 	}
-	envSpan.End()
+	templateSpan.End()
 
 	telemetry.ReportEvent(ctx, "Checked team access")
 

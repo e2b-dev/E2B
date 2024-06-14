@@ -7,14 +7,15 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	middleware "github.com/oapi-codegen/gin-middleware"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 var (
@@ -103,7 +104,9 @@ func CreateAuthenticationFunc(tracer trace.Tracer, teamValidationFunction func(c
 	}
 
 	return func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
-		_, span := tracer.Start(ctx, "authenticate")
+		ginContext := ctx.Value(middleware.GinContextKey).(*gin.Context)
+		requestContext := ginContext.Request.Context()
+		_, span := tracer.Start(requestContext, "authenticate")
 		defer span.End()
 
 		if input.SecuritySchemeName == apiKeyValidator.securitySchemeName {
