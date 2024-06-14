@@ -74,7 +74,7 @@ func (d *DNS) Start(address string) {
 
 	mux.HandleFunc(".", d.handleDNSRequest)
 
-	server := &resolver.Server{Addr: address, Net: "udp", Handler: mux}
+	server := resolver.Server{Addr: address, Net: "udp", Handler: mux}
 
 	log.Printf("Starting DNS server at %s\n", server.Addr)
 
