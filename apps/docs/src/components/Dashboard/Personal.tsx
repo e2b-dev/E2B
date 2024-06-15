@@ -4,7 +4,7 @@ import { useToast } from '../ui/use-toast'
 import { Button } from '../Button'
 import { User } from '@supabase/supabase-js'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
-
+import Link from 'next/link'
 
 export const PersonalContent = ({user}: {user: User}) => {
   const { toast } = useToast()
@@ -23,15 +23,6 @@ export const PersonalContent = ({user}: {user: User}) => {
       title: 'Email updated',
     })
   }
-
-  const resetPassword = async() => {
-    const supabase = createPagesBrowserClient()
-    await supabase.auth.resetPasswordForEmail('hello@example.com', {
-      redirectTo: 'http://example.com/account/update-password',
-    })
-  }
-
-  console.log(user.app_metadata.provider)
 
   return(
   <div className="flex flex-col w-full h-full">
@@ -62,7 +53,11 @@ export const PersonalContent = ({user}: {user: User}) => {
             The action cannot be undone.
           </span>
           <div className='flex items-center space-x-2 pb-10'>
-            <Button variant='desctructive' onClick={resetPassword}>Reset password</Button>
+            <Link href={'/sign-in?view=forgotten-password'}>
+              <Button variant='desctructive'>
+                Reset password
+              </Button>
+            </Link>
           </div>
         </>
       )}

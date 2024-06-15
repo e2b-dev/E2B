@@ -71,21 +71,11 @@ function SwitchTierButton() {
           <TierActiveTag />
         )}
 
-
-
         {user.pricingTier.id !== tiers.pro.id && (
           <Button
             onClick={createCheckoutSession}
           >
             Switch to Pro
-          </Button>
-        )}
-
-        {(user.pricingTier.id === tiers.pro.id && !user.teams[0].team_billing[0].credit_card_added) && (
-          <Button
-            onClick={createCheckoutSession}
-          >
-            Add Credit Card
           </Button>
         )}
       </div>
