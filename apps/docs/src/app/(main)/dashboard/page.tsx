@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { BarChart, CreditCard, Key, LucideIcon, Settings, Users } from 'lucide-react'
+import { BarChart, CreditCard, Key, LoaderIcon, LucideIcon, Settings, Users } from 'lucide-react'
 
 import { BillingContent } from '@/components/Dashboard/Billing'
 import { TeamContent } from '@/components/Dashboard/Team'
@@ -13,7 +13,19 @@ import { UsageContent } from '@/components/Dashboard/Usage'
 import { AccountSelector } from '@/components/Dashboard/AccountSelector'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { PersonalContent } from '@/components/Dashboard/Personal'
+import Link from 'next/link'
+import { Button } from '@/components/Button'
 
+function redirectToCurrentURL() {
+  const url = typeof window !== 'undefined' ? window.location.href : undefined
+
+  if (!url) {
+    return ''
+  }
+
+  const encodedURL = encodeURIComponent(url)
+  return `redirect_to=${encodedURL}`
+}
 
 // TODO: Sandbox and Templates tab deleted for now
 const menuLabels = ['personal', 'keys', 'usage' ,'billing', 'team',] as const
@@ -58,7 +70,12 @@ export default function Dashboard() {
     return <div>Error: {error.message}</div>
   }
   if (isLoading) {
-    return <div>Loading...</div>
+    return (
+      <div className='flex flex-col space-y-2 items-center justify-center w-full h-full'>
+        <div className="text-xl font-bold">Loading...</div>
+        <LoaderIcon className="animate-spin" />
+      </div>
+    )
   }
   if (user && currentTeam) {
     return (
@@ -69,6 +86,15 @@ export default function Dashboard() {
           <div className='border border-white/5 w-full h-[1px] mb-10'/>
           <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} />
         </div>
+      </div>
+    )
+  } else {
+    return (
+      <div className='flex flex-col space-y-2 items-center justify-center w-full h-full'>
+        <h2 className='text-xl font-bold'>You need to be signed in to use this page</h2>
+        <Link href={`/sign-in?${redirectToCurrentURL()}`}>
+          <Button>Sign In</Button>
+        </Link>
       </div>
     )
   }

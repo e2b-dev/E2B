@@ -32,6 +32,16 @@ export const BillingContent = ({currentApiKey}: {currentApiKey: string | null}) 
           'X-Team-API-Key': currentApiKey!,
         },
       })
+      if (!res.ok) {
+        // TODO: add sentry error
+        console.log(res)
+        return
+      }
+
+      //
+      // TODO, why does the json serde not work in some cases?
+      //
+
       const invoices = await res.json() as Invoice[]
       setInvoices(invoices)
 
