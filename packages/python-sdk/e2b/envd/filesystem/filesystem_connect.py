@@ -26,6 +26,14 @@ class FilesystemClient:
             json=json,
             **opts
         )
+        self._move = connect.Client(
+            pool=pool,
+            url=f"{base_url}/{FilesystemName}/Move",
+            response_type=filesystem_dot_filesystem__pb2.MoveResponse,
+            compressor=compressor,
+            json=json,
+            **opts
+        )
         self._list_dir = connect.Client(
             pool=pool,
             url=f"{base_url}/{FilesystemName}/ListDir",
@@ -56,6 +64,9 @@ class FilesystemClient:
 
     def make_dir(self, req: filesystem_dot_filesystem__pb2.MakeDirRequest, **opts) -> filesystem_dot_filesystem__pb2.MakeDirResponse:
         return self._make_dir.call_unary(req, **opts)
+
+    def move(self, req: filesystem_dot_filesystem__pb2.MoveRequest, **opts) -> filesystem_dot_filesystem__pb2.MoveResponse:
+        return self._move.call_unary(req, **opts)
 
     def list_dir(self, req: filesystem_dot_filesystem__pb2.ListDirRequest, **opts) -> filesystem_dot_filesystem__pb2.ListDirResponse:
         return self._list_dir.call_unary(req, **opts)

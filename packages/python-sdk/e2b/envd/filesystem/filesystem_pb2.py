@@ -15,7 +15,7 @@ _sym_db = _symbol_database.Default()
 from e2b.envd.permissions import permissions_pb2 as permissions_dot_permissions__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1b\x66ilesystem/filesystem.proto\x12\nfilesystem\x1a\x1dpermissions/permissions.proto\"K\n\x0eMakeDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12%\n\x04user\x18\x02 \x01(\x0b\x32\x11.permissions.UserR\x04user\"\x11\n\x0fMakeDirResponse\"J\n\rRemoveRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12%\n\x04user\x18\x02 \x01(\x0b\x32\x11.permissions.UserR\x04user\"\x10\n\x0eRemoveResponse\"H\n\x0bStatRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12%\n\x04user\x18\x02 \x01(\x0b\x32\x11.permissions.UserR\x04user\";\n\x0cStatResponse\x12+\n\x05\x65ntry\x18\x01 \x01(\x0b\x32\x15.filesystem.EntryInfoR\x05\x65ntry\"I\n\tEntryInfo\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12(\n\x04type\x18\x02 \x01(\x0e\x32\x14.filesystem.FileTypeR\x04type\"K\n\x0eListDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12%\n\x04user\x18\x02 \x01(\x0b\x32\x11.permissions.UserR\x04user\"B\n\x0fListDirResponse\x12/\n\x07\x65ntries\x18\x01 \x03(\x0b\x32\x15.filesystem.EntryInfoR\x07\x65ntries\"L\n\x0fWatchDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12%\n\x04user\x18\x02 \x01(\x0b\x32\x11.permissions.UserR\x04user\"\x8c\x02\n\x10WatchDirResponse\x12?\n\x05start\x18\x02 \x01(\x0b\x32\'.filesystem.WatchDirResponse.StartEventH\x00R\x05start\x12N\n\nfilesystem\x18\x01 \x01(\x0b\x32,.filesystem.WatchDirResponse.FilesystemEventH\x00R\nfilesystem\x1a\x0c\n\nStartEvent\x1aP\n\x0f\x46ilesystemEvent\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12)\n\x04type\x18\x02 \x01(\x0e\x32\x15.filesystem.EventTypeR\x04typeB\x07\n\x05\x65vent*R\n\x08\x46ileType\x12\x19\n\x15\x46ILE_TYPE_UNSPECIFIED\x10\x00\x12\x12\n\x0e\x46ILE_TYPE_FILE\x10\x01\x12\x17\n\x13\x46ILE_TYPE_DIRECTORY\x10\x02*\x98\x01\n\tEventType\x12\x1a\n\x16\x45VENT_TYPE_UNSPECIFIED\x10\x00\x12\x15\n\x11\x45VENT_TYPE_CREATE\x10\x01\x12\x14\n\x10\x45VENT_TYPE_WRITE\x10\x02\x12\x15\n\x11\x45VENT_TYPE_REMOVE\x10\x03\x12\x15\n\x11\x45VENT_TYPE_RENAME\x10\x04\x12\x14\n\x10\x45VENT_TYPE_CHMOD\x10\x05\x32\xd9\x02\n\nFilesystem\x12\x39\n\x04Stat\x12\x17.filesystem.StatRequest\x1a\x18.filesystem.StatResponse\x12\x42\n\x07MakeDir\x12\x1a.filesystem.MakeDirRequest\x1a\x1b.filesystem.MakeDirResponse\x12\x42\n\x07ListDir\x12\x1a.filesystem.ListDirRequest\x1a\x1b.filesystem.ListDirResponse\x12G\n\x08WatchDir\x12\x1b.filesystem.WatchDirRequest\x1a\x1c.filesystem.WatchDirResponse0\x01\x12?\n\x06Remove\x12\x19.filesystem.RemoveRequest\x1a\x1a.filesystem.RemoveResponseBi\n\x0e\x63om.filesystemB\x0f\x46ilesystemProtoP\x01\xa2\x02\x03\x46XX\xaa\x02\nFilesystem\xca\x02\nFilesystem\xe2\x02\x16\x46ilesystem\\GPBMetadata\xea\x02\nFilesystemb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1b\x66ilesystem/filesystem.proto\x12\nfilesystem\x1a\x1dpermissions/permissions.proto\"n\n\x0bMoveRequest\x12\x16\n\x06source\x18\x01 \x01(\tR\x06source\x12 \n\x0b\x64\x65stination\x18\x02 \x01(\tR\x0b\x64\x65stination\x12%\n\x04user\x18\x03 \x01(\x0b\x32\x11.permissions.UserR\x04user\"\x0e\n\x0cMoveResponse\"K\n\x0eMakeDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12%\n\x04user\x18\x02 \x01(\x0b\x32\x11.permissions.UserR\x04user\"\x11\n\x0fMakeDirResponse\"J\n\rRemoveRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12%\n\x04user\x18\x02 \x01(\x0b\x32\x11.permissions.UserR\x04user\"\x10\n\x0eRemoveResponse\"H\n\x0bStatRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12%\n\x04user\x18\x02 \x01(\x0b\x32\x11.permissions.UserR\x04user\";\n\x0cStatResponse\x12+\n\x05\x65ntry\x18\x01 \x01(\x0b\x32\x15.filesystem.EntryInfoR\x05\x65ntry\"I\n\tEntryInfo\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12(\n\x04type\x18\x02 \x01(\x0e\x32\x14.filesystem.FileTypeR\x04type\"K\n\x0eListDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12%\n\x04user\x18\x02 \x01(\x0b\x32\x11.permissions.UserR\x04user\"B\n\x0fListDirResponse\x12/\n\x07\x65ntries\x18\x01 \x03(\x0b\x32\x15.filesystem.EntryInfoR\x07\x65ntries\"L\n\x0fWatchDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12%\n\x04user\x18\x02 \x01(\x0b\x32\x11.permissions.UserR\x04user\"\x8c\x02\n\x10WatchDirResponse\x12?\n\x05start\x18\x02 \x01(\x0b\x32\'.filesystem.WatchDirResponse.StartEventH\x00R\x05start\x12N\n\nfilesystem\x18\x01 \x01(\x0b\x32,.filesystem.WatchDirResponse.FilesystemEventH\x00R\nfilesystem\x1a\x0c\n\nStartEvent\x1aP\n\x0f\x46ilesystemEvent\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12)\n\x04type\x18\x02 \x01(\x0e\x32\x15.filesystem.EventTypeR\x04typeB\x07\n\x05\x65vent*R\n\x08\x46ileType\x12\x19\n\x15\x46ILE_TYPE_UNSPECIFIED\x10\x00\x12\x12\n\x0e\x46ILE_TYPE_FILE\x10\x01\x12\x17\n\x13\x46ILE_TYPE_DIRECTORY\x10\x02*\x98\x01\n\tEventType\x12\x1a\n\x16\x45VENT_TYPE_UNSPECIFIED\x10\x00\x12\x15\n\x11\x45VENT_TYPE_CREATE\x10\x01\x12\x14\n\x10\x45VENT_TYPE_WRITE\x10\x02\x12\x15\n\x11\x45VENT_TYPE_REMOVE\x10\x03\x12\x15\n\x11\x45VENT_TYPE_RENAME\x10\x04\x12\x14\n\x10\x45VENT_TYPE_CHMOD\x10\x05\x32\x94\x03\n\nFilesystem\x12\x39\n\x04Stat\x12\x17.filesystem.StatRequest\x1a\x18.filesystem.StatResponse\x12\x42\n\x07MakeDir\x12\x1a.filesystem.MakeDirRequest\x1a\x1b.filesystem.MakeDirResponse\x12\x39\n\x04Move\x12\x17.filesystem.MoveRequest\x1a\x18.filesystem.MoveResponse\x12\x42\n\x07ListDir\x12\x1a.filesystem.ListDirRequest\x1a\x1b.filesystem.ListDirResponse\x12G\n\x08WatchDir\x12\x1b.filesystem.WatchDirRequest\x1a\x1c.filesystem.WatchDirResponse0\x01\x12?\n\x06Remove\x12\x19.filesystem.RemoveRequest\x1a\x1a.filesystem.RemoveResponseBi\n\x0e\x63om.filesystemB\x0f\x46ilesystemProtoP\x01\xa2\x02\x03\x46XX\xaa\x02\nFilesystem\xca\x02\nFilesystem\xe2\x02\x16\x46ilesystem\\GPBMetadata\xea\x02\nFilesystemb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -23,36 +23,40 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'filesystem.filesystem_pb2',
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\016com.filesystemB\017FilesystemProtoP\001\242\002\003FXX\252\002\nFilesystem\312\002\nFilesystem\342\002\026Filesystem\\GPBMetadata\352\002\nFilesystem'
-  _globals['_FILETYPE']._serialized_start=968
-  _globals['_FILETYPE']._serialized_end=1050
-  _globals['_EVENTTYPE']._serialized_start=1053
-  _globals['_EVENTTYPE']._serialized_end=1205
-  _globals['_MAKEDIRREQUEST']._serialized_start=74
-  _globals['_MAKEDIRREQUEST']._serialized_end=149
-  _globals['_MAKEDIRRESPONSE']._serialized_start=151
-  _globals['_MAKEDIRRESPONSE']._serialized_end=168
-  _globals['_REMOVEREQUEST']._serialized_start=170
-  _globals['_REMOVEREQUEST']._serialized_end=244
-  _globals['_REMOVERESPONSE']._serialized_start=246
-  _globals['_REMOVERESPONSE']._serialized_end=262
-  _globals['_STATREQUEST']._serialized_start=264
-  _globals['_STATREQUEST']._serialized_end=336
-  _globals['_STATRESPONSE']._serialized_start=338
-  _globals['_STATRESPONSE']._serialized_end=397
-  _globals['_ENTRYINFO']._serialized_start=399
-  _globals['_ENTRYINFO']._serialized_end=472
-  _globals['_LISTDIRREQUEST']._serialized_start=474
-  _globals['_LISTDIRREQUEST']._serialized_end=549
-  _globals['_LISTDIRRESPONSE']._serialized_start=551
-  _globals['_LISTDIRRESPONSE']._serialized_end=617
-  _globals['_WATCHDIRREQUEST']._serialized_start=619
-  _globals['_WATCHDIRREQUEST']._serialized_end=695
-  _globals['_WATCHDIRRESPONSE']._serialized_start=698
-  _globals['_WATCHDIRRESPONSE']._serialized_end=966
-  _globals['_WATCHDIRRESPONSE_STARTEVENT']._serialized_start=863
-  _globals['_WATCHDIRRESPONSE_STARTEVENT']._serialized_end=875
-  _globals['_WATCHDIRRESPONSE_FILESYSTEMEVENT']._serialized_start=877
-  _globals['_WATCHDIRRESPONSE_FILESYSTEMEVENT']._serialized_end=957
-  _globals['_FILESYSTEM']._serialized_start=1208
-  _globals['_FILESYSTEM']._serialized_end=1553
+  _globals['_FILETYPE']._serialized_start=1096
+  _globals['_FILETYPE']._serialized_end=1178
+  _globals['_EVENTTYPE']._serialized_start=1181
+  _globals['_EVENTTYPE']._serialized_end=1333
+  _globals['_MOVEREQUEST']._serialized_start=74
+  _globals['_MOVEREQUEST']._serialized_end=184
+  _globals['_MOVERESPONSE']._serialized_start=186
+  _globals['_MOVERESPONSE']._serialized_end=200
+  _globals['_MAKEDIRREQUEST']._serialized_start=202
+  _globals['_MAKEDIRREQUEST']._serialized_end=277
+  _globals['_MAKEDIRRESPONSE']._serialized_start=279
+  _globals['_MAKEDIRRESPONSE']._serialized_end=296
+  _globals['_REMOVEREQUEST']._serialized_start=298
+  _globals['_REMOVEREQUEST']._serialized_end=372
+  _globals['_REMOVERESPONSE']._serialized_start=374
+  _globals['_REMOVERESPONSE']._serialized_end=390
+  _globals['_STATREQUEST']._serialized_start=392
+  _globals['_STATREQUEST']._serialized_end=464
+  _globals['_STATRESPONSE']._serialized_start=466
+  _globals['_STATRESPONSE']._serialized_end=525
+  _globals['_ENTRYINFO']._serialized_start=527
+  _globals['_ENTRYINFO']._serialized_end=600
+  _globals['_LISTDIRREQUEST']._serialized_start=602
+  _globals['_LISTDIRREQUEST']._serialized_end=677
+  _globals['_LISTDIRRESPONSE']._serialized_start=679
+  _globals['_LISTDIRRESPONSE']._serialized_end=745
+  _globals['_WATCHDIRREQUEST']._serialized_start=747
+  _globals['_WATCHDIRREQUEST']._serialized_end=823
+  _globals['_WATCHDIRRESPONSE']._serialized_start=826
+  _globals['_WATCHDIRRESPONSE']._serialized_end=1094
+  _globals['_WATCHDIRRESPONSE_STARTEVENT']._serialized_start=991
+  _globals['_WATCHDIRRESPONSE_STARTEVENT']._serialized_end=1003
+  _globals['_WATCHDIRRESPONSE_FILESYSTEMEVENT']._serialized_start=1005
+  _globals['_WATCHDIRRESPONSE_FILESYSTEMEVENT']._serialized_end=1085
+  _globals['_FILESYSTEM']._serialized_start=1336
+  _globals['_FILESYSTEM']._serialized_end=1740
 # @@protoc_insertion_point(module_scope)

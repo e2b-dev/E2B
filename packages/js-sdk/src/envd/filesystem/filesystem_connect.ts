@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ListDirRequest, ListDirResponse, MakeDirRequest, MakeDirResponse, RemoveRequest, RemoveResponse, StatRequest, StatResponse, WatchDirRequest, WatchDirResponse } from "./filesystem_pb.js";
+import { ListDirRequest, ListDirResponse, MakeDirRequest, MakeDirResponse, MoveRequest, MoveResponse, RemoveRequest, RemoveResponse, StatRequest, StatResponse, WatchDirRequest, WatchDirResponse } from "./filesystem_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -28,6 +28,15 @@ export const Filesystem = {
       name: "MakeDir",
       I: MakeDirRequest,
       O: MakeDirResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc filesystem.Filesystem.Move
+     */
+    move: {
+      name: "Move",
+      I: MoveRequest,
+      O: MoveResponse,
       kind: MethodKind.Unary,
     },
     /**

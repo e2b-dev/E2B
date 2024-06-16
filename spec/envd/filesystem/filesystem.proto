@@ -7,10 +7,20 @@ package filesystem;
 service Filesystem {
     rpc Stat(StatRequest) returns (StatResponse);
     rpc MakeDir(MakeDirRequest) returns (MakeDirResponse);
+    rpc Move(MoveRequest) returns (MoveResponse);
     rpc ListDir(ListDirRequest) returns (ListDirResponse);
     rpc WatchDir(WatchDirRequest) returns (stream WatchDirResponse);
     rpc Remove(RemoveRequest) returns (RemoveResponse);
 }
+
+message MoveRequest {
+    string source = 1;
+    string destination = 2;
+
+    permissions.User user = 3;
+}
+
+message MoveResponse {}
 
 message MakeDirRequest {
     string path = 1;

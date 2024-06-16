@@ -31,6 +31,20 @@ EVENT_TYPE_REMOVE: EventType
 EVENT_TYPE_RENAME: EventType
 EVENT_TYPE_CHMOD: EventType
 
+class MoveRequest(_message.Message):
+    __slots__ = ("source", "destination", "user")
+    SOURCE_FIELD_NUMBER: _ClassVar[int]
+    DESTINATION_FIELD_NUMBER: _ClassVar[int]
+    USER_FIELD_NUMBER: _ClassVar[int]
+    source: str
+    destination: str
+    user: _permissions_pb2.User
+    def __init__(self, source: _Optional[str] = ..., destination: _Optional[str] = ..., user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...) -> None: ...
+
+class MoveResponse(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
 class MakeDirRequest(_message.Message):
     __slots__ = ("path", "user")
     PATH_FIELD_NUMBER: _ClassVar[int]

@@ -78,6 +78,86 @@ proto3.util.setEnumType(EventType, "filesystem.EventType", [
 ]);
 
 /**
+ * @generated from message filesystem.MoveRequest
+ */
+export class MoveRequest extends Message<MoveRequest> {
+  /**
+   * @generated from field: string source = 1;
+   */
+  source = "";
+
+  /**
+   * @generated from field: string destination = 2;
+   */
+  destination = "";
+
+  /**
+   * @generated from field: permissions.User user = 3;
+   */
+  user?: User;
+
+  constructor(data?: PartialMessage<MoveRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.MoveRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "source", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "destination", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "user", kind: "message", T: User },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MoveRequest {
+    return new MoveRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): MoveRequest {
+    return new MoveRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): MoveRequest {
+    return new MoveRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: MoveRequest | PlainMessage<MoveRequest> | undefined, b: MoveRequest | PlainMessage<MoveRequest> | undefined): boolean {
+    return proto3.util.equals(MoveRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message filesystem.MoveResponse
+ */
+export class MoveResponse extends Message<MoveResponse> {
+  constructor(data?: PartialMessage<MoveResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.MoveResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MoveResponse {
+    return new MoveResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): MoveResponse {
+    return new MoveResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): MoveResponse {
+    return new MoveResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: MoveResponse | PlainMessage<MoveResponse> | undefined, b: MoveResponse | PlainMessage<MoveResponse> | undefined): boolean {
+    return proto3.util.equals(MoveResponse, a, b);
+  }
+}
+
+/**
  * @generated from message filesystem.MakeDirRequest
  */
 export class MakeDirRequest extends Message<MakeDirRequest> {
