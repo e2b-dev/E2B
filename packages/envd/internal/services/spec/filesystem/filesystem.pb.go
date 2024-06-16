@@ -128,6 +128,107 @@ func (EventType) EnumDescriptor() ([]byte, []int) {
 	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{1}
 }
 
+type MoveRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Source      string            `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	Destination string            `protobuf:"bytes,2,opt,name=destination,proto3" json:"destination,omitempty"`
+	User        *permissions.User `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
+}
+
+func (x *MoveRequest) Reset() {
+	*x = MoveRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_filesystem_filesystem_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MoveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveRequest) ProtoMessage() {}
+
+func (x *MoveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_filesystem_filesystem_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveRequest.ProtoReflect.Descriptor instead.
+func (*MoveRequest) Descriptor() ([]byte, []int) {
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *MoveRequest) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *MoveRequest) GetDestination() string {
+	if x != nil {
+		return x.Destination
+	}
+	return ""
+}
+
+func (x *MoveRequest) GetUser() *permissions.User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+type MoveResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *MoveResponse) Reset() {
+	*x = MoveResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_filesystem_filesystem_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MoveResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveResponse) ProtoMessage() {}
+
+func (x *MoveResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_filesystem_filesystem_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveResponse.ProtoReflect.Descriptor instead.
+func (*MoveResponse) Descriptor() ([]byte, []int) {
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{1}
+}
+
 type MakeDirRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -140,7 +241,7 @@ type MakeDirRequest struct {
 func (x *MakeDirRequest) Reset() {
 	*x = MakeDirRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[0]
+		mi := &file_filesystem_filesystem_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -153,7 +254,7 @@ func (x *MakeDirRequest) String() string {
 func (*MakeDirRequest) ProtoMessage() {}
 
 func (x *MakeDirRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[0]
+	mi := &file_filesystem_filesystem_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -166,7 +267,7 @@ func (x *MakeDirRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MakeDirRequest.ProtoReflect.Descriptor instead.
 func (*MakeDirRequest) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{0}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MakeDirRequest) GetPath() string {
@@ -192,7 +293,7 @@ type MakeDirResponse struct {
 func (x *MakeDirResponse) Reset() {
 	*x = MakeDirResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[1]
+		mi := &file_filesystem_filesystem_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -205,7 +306,7 @@ func (x *MakeDirResponse) String() string {
 func (*MakeDirResponse) ProtoMessage() {}
 
 func (x *MakeDirResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[1]
+	mi := &file_filesystem_filesystem_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -218,7 +319,7 @@ func (x *MakeDirResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MakeDirResponse.ProtoReflect.Descriptor instead.
 func (*MakeDirResponse) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{1}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{3}
 }
 
 type RemoveRequest struct {
@@ -233,7 +334,7 @@ type RemoveRequest struct {
 func (x *RemoveRequest) Reset() {
 	*x = RemoveRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[2]
+		mi := &file_filesystem_filesystem_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -246,7 +347,7 @@ func (x *RemoveRequest) String() string {
 func (*RemoveRequest) ProtoMessage() {}
 
 func (x *RemoveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[2]
+	mi := &file_filesystem_filesystem_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -259,7 +360,7 @@ func (x *RemoveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveRequest.ProtoReflect.Descriptor instead.
 func (*RemoveRequest) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{2}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *RemoveRequest) GetPath() string {
@@ -285,7 +386,7 @@ type RemoveResponse struct {
 func (x *RemoveResponse) Reset() {
 	*x = RemoveResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[3]
+		mi := &file_filesystem_filesystem_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -298,7 +399,7 @@ func (x *RemoveResponse) String() string {
 func (*RemoveResponse) ProtoMessage() {}
 
 func (x *RemoveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[3]
+	mi := &file_filesystem_filesystem_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -311,7 +412,7 @@ func (x *RemoveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveResponse.ProtoReflect.Descriptor instead.
 func (*RemoveResponse) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{3}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{5}
 }
 
 type StatRequest struct {
@@ -326,7 +427,7 @@ type StatRequest struct {
 func (x *StatRequest) Reset() {
 	*x = StatRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[4]
+		mi := &file_filesystem_filesystem_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -339,7 +440,7 @@ func (x *StatRequest) String() string {
 func (*StatRequest) ProtoMessage() {}
 
 func (x *StatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[4]
+	mi := &file_filesystem_filesystem_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -352,7 +453,7 @@ func (x *StatRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatRequest.ProtoReflect.Descriptor instead.
 func (*StatRequest) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{4}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *StatRequest) GetPath() string {
@@ -380,7 +481,7 @@ type StatResponse struct {
 func (x *StatResponse) Reset() {
 	*x = StatResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[5]
+		mi := &file_filesystem_filesystem_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -393,7 +494,7 @@ func (x *StatResponse) String() string {
 func (*StatResponse) ProtoMessage() {}
 
 func (x *StatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[5]
+	mi := &file_filesystem_filesystem_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,7 +507,7 @@ func (x *StatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatResponse.ProtoReflect.Descriptor instead.
 func (*StatResponse) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{5}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *StatResponse) GetEntry() *EntryInfo {
@@ -428,7 +529,7 @@ type EntryInfo struct {
 func (x *EntryInfo) Reset() {
 	*x = EntryInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[6]
+		mi := &file_filesystem_filesystem_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -441,7 +542,7 @@ func (x *EntryInfo) String() string {
 func (*EntryInfo) ProtoMessage() {}
 
 func (x *EntryInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[6]
+	mi := &file_filesystem_filesystem_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -454,7 +555,7 @@ func (x *EntryInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EntryInfo.ProtoReflect.Descriptor instead.
 func (*EntryInfo) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{6}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *EntryInfo) GetName() string {
@@ -483,7 +584,7 @@ type ListDirRequest struct {
 func (x *ListDirRequest) Reset() {
 	*x = ListDirRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[7]
+		mi := &file_filesystem_filesystem_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -496,7 +597,7 @@ func (x *ListDirRequest) String() string {
 func (*ListDirRequest) ProtoMessage() {}
 
 func (x *ListDirRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[7]
+	mi := &file_filesystem_filesystem_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -509,7 +610,7 @@ func (x *ListDirRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDirRequest.ProtoReflect.Descriptor instead.
 func (*ListDirRequest) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{7}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListDirRequest) GetPath() string {
@@ -537,7 +638,7 @@ type ListDirResponse struct {
 func (x *ListDirResponse) Reset() {
 	*x = ListDirResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[8]
+		mi := &file_filesystem_filesystem_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -550,7 +651,7 @@ func (x *ListDirResponse) String() string {
 func (*ListDirResponse) ProtoMessage() {}
 
 func (x *ListDirResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[8]
+	mi := &file_filesystem_filesystem_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -563,7 +664,7 @@ func (x *ListDirResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDirResponse.ProtoReflect.Descriptor instead.
 func (*ListDirResponse) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{8}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListDirResponse) GetEntries() []*EntryInfo {
@@ -585,7 +686,7 @@ type WatchDirRequest struct {
 func (x *WatchDirRequest) Reset() {
 	*x = WatchDirRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[9]
+		mi := &file_filesystem_filesystem_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -598,7 +699,7 @@ func (x *WatchDirRequest) String() string {
 func (*WatchDirRequest) ProtoMessage() {}
 
 func (x *WatchDirRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[9]
+	mi := &file_filesystem_filesystem_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -611,7 +712,7 @@ func (x *WatchDirRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchDirRequest.ProtoReflect.Descriptor instead.
 func (*WatchDirRequest) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{9}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *WatchDirRequest) GetPath() string {
@@ -643,7 +744,7 @@ type WatchDirResponse struct {
 func (x *WatchDirResponse) Reset() {
 	*x = WatchDirResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[10]
+		mi := &file_filesystem_filesystem_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -656,7 +757,7 @@ func (x *WatchDirResponse) String() string {
 func (*WatchDirResponse) ProtoMessage() {}
 
 func (x *WatchDirResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[10]
+	mi := &file_filesystem_filesystem_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -669,7 +770,7 @@ func (x *WatchDirResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchDirResponse.ProtoReflect.Descriptor instead.
 func (*WatchDirResponse) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{10}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{12}
 }
 
 func (m *WatchDirResponse) GetEvent() isWatchDirResponse_Event {
@@ -718,7 +819,7 @@ type WatchDirResponse_StartEvent struct {
 func (x *WatchDirResponse_StartEvent) Reset() {
 	*x = WatchDirResponse_StartEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[11]
+		mi := &file_filesystem_filesystem_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -731,7 +832,7 @@ func (x *WatchDirResponse_StartEvent) String() string {
 func (*WatchDirResponse_StartEvent) ProtoMessage() {}
 
 func (x *WatchDirResponse_StartEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[11]
+	mi := &file_filesystem_filesystem_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -744,7 +845,7 @@ func (x *WatchDirResponse_StartEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchDirResponse_StartEvent.ProtoReflect.Descriptor instead.
 func (*WatchDirResponse_StartEvent) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{10, 0}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{12, 0}
 }
 
 type WatchDirResponse_FilesystemEvent struct {
@@ -759,7 +860,7 @@ type WatchDirResponse_FilesystemEvent struct {
 func (x *WatchDirResponse_FilesystemEvent) Reset() {
 	*x = WatchDirResponse_FilesystemEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_filesystem_filesystem_proto_msgTypes[12]
+		mi := &file_filesystem_filesystem_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -772,7 +873,7 @@ func (x *WatchDirResponse_FilesystemEvent) String() string {
 func (*WatchDirResponse_FilesystemEvent) ProtoMessage() {}
 
 func (x *WatchDirResponse_FilesystemEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_filesystem_filesystem_proto_msgTypes[12]
+	mi := &file_filesystem_filesystem_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -785,7 +886,7 @@ func (x *WatchDirResponse_FilesystemEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchDirResponse_FilesystemEvent.ProtoReflect.Descriptor instead.
 func (*WatchDirResponse_FilesystemEvent) Descriptor() ([]byte, []int) {
-	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{10, 1}
+	return file_filesystem_filesystem_proto_rawDescGZIP(), []int{12, 1}
 }
 
 func (x *WatchDirResponse_FilesystemEvent) GetName() string {
@@ -809,7 +910,15 @@ var file_filesystem_filesystem_proto_rawDesc = []byte{
 	0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0a, 0x66,
 	0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x1a, 0x1d, 0x70, 0x65, 0x72, 0x6d, 0x69,
 	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x2f, 0x70, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f,
-	0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x4b, 0x0a, 0x0e, 0x4d, 0x61, 0x6b, 0x65,
+	0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x6e, 0x0a, 0x0b, 0x4d, 0x6f, 0x76, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12,
+	0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x12, 0x25, 0x0a, 0x04, 0x75, 0x73, 0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x11, 0x2e, 0x70, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x55, 0x73,
+	0x65, 0x72, 0x52, 0x04, 0x75, 0x73, 0x65, 0x72, 0x22, 0x0e, 0x0a, 0x0c, 0x4d, 0x6f, 0x76, 0x65,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x4b, 0x0a, 0x0e, 0x4d, 0x61, 0x6b, 0x65,
 	0x44, 0x69, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61,
 	0x74, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74, 0x68, 0x12, 0x25,
 	0x0a, 0x04, 0x75, 0x73, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x70,
@@ -880,7 +989,7 @@ var file_filesystem_filesystem_proto_rawDesc = []byte{
 	0x52, 0x45, 0x4d, 0x4f, 0x56, 0x45, 0x10, 0x03, 0x12, 0x15, 0x0a, 0x11, 0x45, 0x56, 0x45, 0x4e,
 	0x54, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x52, 0x45, 0x4e, 0x41, 0x4d, 0x45, 0x10, 0x04, 0x12,
 	0x14, 0x0a, 0x10, 0x45, 0x56, 0x45, 0x4e, 0x54, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x43, 0x48,
-	0x4d, 0x4f, 0x44, 0x10, 0x05, 0x32, 0xd9, 0x02, 0x0a, 0x0a, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x79,
+	0x4d, 0x4f, 0x44, 0x10, 0x05, 0x32, 0x94, 0x03, 0x0a, 0x0a, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x79,
 	0x73, 0x74, 0x65, 0x6d, 0x12, 0x39, 0x0a, 0x04, 0x53, 0x74, 0x61, 0x74, 0x12, 0x17, 0x2e, 0x66,
 	0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74,
@@ -889,31 +998,35 @@ var file_filesystem_filesystem_proto_rawDesc = []byte{
 	0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x4d, 0x61, 0x6b, 0x65, 0x44, 0x69, 0x72, 0x52,
 	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73,
 	0x74, 0x65, 0x6d, 0x2e, 0x4d, 0x61, 0x6b, 0x65, 0x44, 0x69, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x12, 0x42, 0x0a, 0x07, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x12, 0x1a,
-	0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x4c, 0x69, 0x73, 0x74,
-	0x44, 0x69, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x66, 0x69, 0x6c,
-	0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x47, 0x0a, 0x08, 0x57, 0x61, 0x74, 0x63, 0x68,
-	0x44, 0x69, 0x72, 0x12, 0x1b, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d,
-	0x2e, 0x57, 0x61, 0x74, 0x63, 0x68, 0x44, 0x69, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x1c, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x57, 0x61,
-	0x74, 0x63, 0x68, 0x44, 0x69, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x30, 0x01,
-	0x12, 0x3f, 0x0a, 0x06, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x12, 0x19, 0x2e, 0x66, 0x69, 0x6c,
-	0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74,
-	0x65, 0x6d, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x42, 0xb3, 0x01, 0x0a, 0x0e, 0x63, 0x6f, 0x6d, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79,
-	0x73, 0x74, 0x65, 0x6d, 0x42, 0x0f, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d,
-	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x48, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
-	0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x32, 0x62, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x69, 0x6e, 0x66, 0x72,
-	0x61, 0x2f, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x2f, 0x65, 0x6e, 0x76, 0x64, 0x2f,
-	0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x73, 0x2f, 0x73, 0x70, 0x65, 0x63, 0x2f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65,
-	0x6d, 0xa2, 0x02, 0x03, 0x46, 0x58, 0x58, 0xaa, 0x02, 0x0a, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x79,
-	0x73, 0x74, 0x65, 0x6d, 0xca, 0x02, 0x0a, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65,
-	0x6d, 0xe2, 0x02, 0x16, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x5c, 0x47,
-	0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0a, 0x46, 0x69, 0x6c,
-	0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x73, 0x65, 0x12, 0x39, 0x0a, 0x04, 0x4d, 0x6f, 0x76, 0x65, 0x12, 0x17, 0x2e, 0x66, 0x69,
+	0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65,
+	0x6d, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x42,
+	0x0a, 0x07, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x12, 0x1a, 0x2e, 0x66, 0x69, 0x6c, 0x65,
+	0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74,
+	0x65, 0x6d, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x47, 0x0a, 0x08, 0x57, 0x61, 0x74, 0x63, 0x68, 0x44, 0x69, 0x72, 0x12, 0x1b,
+	0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x57, 0x61, 0x74, 0x63,
+	0x68, 0x44, 0x69, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x66, 0x69,
+	0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x57, 0x61, 0x74, 0x63, 0x68, 0x44, 0x69,
+	0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x30, 0x01, 0x12, 0x3f, 0x0a, 0x06, 0x52,
+	0x65, 0x6d, 0x6f, 0x76, 0x65, 0x12, 0x19, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74,
+	0x65, 0x6d, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x1a, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x52, 0x65,
+	0x6d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0xb3, 0x01, 0x0a,
+	0x0e, 0x63, 0x6f, 0x6d, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x42,
+	0x0f, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x50, 0x01, 0x5a, 0x48, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65,
+	0x32, 0x62, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x69, 0x6e, 0x66, 0x72, 0x61, 0x2f, 0x70, 0x61, 0x63,
+	0x6b, 0x61, 0x67, 0x65, 0x73, 0x2f, 0x65, 0x6e, 0x76, 0x64, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72,
+	0x6e, 0x61, 0x6c, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x2f, 0x73, 0x70, 0x65,
+	0x63, 0x2f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0xa2, 0x02, 0x03, 0x46,
+	0x58, 0x58, 0xaa, 0x02, 0x0a, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0xca,
+	0x02, 0x0a, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0xe2, 0x02, 0x16, 0x46,
+	0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74,
+	0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0a, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x79, 0x73, 0x74,
+	0x65, 0x6d, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -929,52 +1042,57 @@ func file_filesystem_filesystem_proto_rawDescGZIP() []byte {
 }
 
 var file_filesystem_filesystem_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_filesystem_filesystem_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_filesystem_filesystem_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_filesystem_filesystem_proto_goTypes = []interface{}{
 	(FileType)(0),                            // 0: filesystem.FileType
 	(EventType)(0),                           // 1: filesystem.EventType
-	(*MakeDirRequest)(nil),                   // 2: filesystem.MakeDirRequest
-	(*MakeDirResponse)(nil),                  // 3: filesystem.MakeDirResponse
-	(*RemoveRequest)(nil),                    // 4: filesystem.RemoveRequest
-	(*RemoveResponse)(nil),                   // 5: filesystem.RemoveResponse
-	(*StatRequest)(nil),                      // 6: filesystem.StatRequest
-	(*StatResponse)(nil),                     // 7: filesystem.StatResponse
-	(*EntryInfo)(nil),                        // 8: filesystem.EntryInfo
-	(*ListDirRequest)(nil),                   // 9: filesystem.ListDirRequest
-	(*ListDirResponse)(nil),                  // 10: filesystem.ListDirResponse
-	(*WatchDirRequest)(nil),                  // 11: filesystem.WatchDirRequest
-	(*WatchDirResponse)(nil),                 // 12: filesystem.WatchDirResponse
-	(*WatchDirResponse_StartEvent)(nil),      // 13: filesystem.WatchDirResponse.StartEvent
-	(*WatchDirResponse_FilesystemEvent)(nil), // 14: filesystem.WatchDirResponse.FilesystemEvent
-	(*permissions.User)(nil),                 // 15: permissions.User
+	(*MoveRequest)(nil),                      // 2: filesystem.MoveRequest
+	(*MoveResponse)(nil),                     // 3: filesystem.MoveResponse
+	(*MakeDirRequest)(nil),                   // 4: filesystem.MakeDirRequest
+	(*MakeDirResponse)(nil),                  // 5: filesystem.MakeDirResponse
+	(*RemoveRequest)(nil),                    // 6: filesystem.RemoveRequest
+	(*RemoveResponse)(nil),                   // 7: filesystem.RemoveResponse
+	(*StatRequest)(nil),                      // 8: filesystem.StatRequest
+	(*StatResponse)(nil),                     // 9: filesystem.StatResponse
+	(*EntryInfo)(nil),                        // 10: filesystem.EntryInfo
+	(*ListDirRequest)(nil),                   // 11: filesystem.ListDirRequest
+	(*ListDirResponse)(nil),                  // 12: filesystem.ListDirResponse
+	(*WatchDirRequest)(nil),                  // 13: filesystem.WatchDirRequest
+	(*WatchDirResponse)(nil),                 // 14: filesystem.WatchDirResponse
+	(*WatchDirResponse_StartEvent)(nil),      // 15: filesystem.WatchDirResponse.StartEvent
+	(*WatchDirResponse_FilesystemEvent)(nil), // 16: filesystem.WatchDirResponse.FilesystemEvent
+	(*permissions.User)(nil),                 // 17: permissions.User
 }
 var file_filesystem_filesystem_proto_depIdxs = []int32{
-	15, // 0: filesystem.MakeDirRequest.user:type_name -> permissions.User
-	15, // 1: filesystem.RemoveRequest.user:type_name -> permissions.User
-	15, // 2: filesystem.StatRequest.user:type_name -> permissions.User
-	8,  // 3: filesystem.StatResponse.entry:type_name -> filesystem.EntryInfo
-	0,  // 4: filesystem.EntryInfo.type:type_name -> filesystem.FileType
-	15, // 5: filesystem.ListDirRequest.user:type_name -> permissions.User
-	8,  // 6: filesystem.ListDirResponse.entries:type_name -> filesystem.EntryInfo
-	15, // 7: filesystem.WatchDirRequest.user:type_name -> permissions.User
-	13, // 8: filesystem.WatchDirResponse.start:type_name -> filesystem.WatchDirResponse.StartEvent
-	14, // 9: filesystem.WatchDirResponse.filesystem:type_name -> filesystem.WatchDirResponse.FilesystemEvent
-	1,  // 10: filesystem.WatchDirResponse.FilesystemEvent.type:type_name -> filesystem.EventType
-	6,  // 11: filesystem.Filesystem.Stat:input_type -> filesystem.StatRequest
-	2,  // 12: filesystem.Filesystem.MakeDir:input_type -> filesystem.MakeDirRequest
-	9,  // 13: filesystem.Filesystem.ListDir:input_type -> filesystem.ListDirRequest
-	11, // 14: filesystem.Filesystem.WatchDir:input_type -> filesystem.WatchDirRequest
-	4,  // 15: filesystem.Filesystem.Remove:input_type -> filesystem.RemoveRequest
-	7,  // 16: filesystem.Filesystem.Stat:output_type -> filesystem.StatResponse
-	3,  // 17: filesystem.Filesystem.MakeDir:output_type -> filesystem.MakeDirResponse
-	10, // 18: filesystem.Filesystem.ListDir:output_type -> filesystem.ListDirResponse
-	12, // 19: filesystem.Filesystem.WatchDir:output_type -> filesystem.WatchDirResponse
-	5,  // 20: filesystem.Filesystem.Remove:output_type -> filesystem.RemoveResponse
-	16, // [16:21] is the sub-list for method output_type
-	11, // [11:16] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	17, // 0: filesystem.MoveRequest.user:type_name -> permissions.User
+	17, // 1: filesystem.MakeDirRequest.user:type_name -> permissions.User
+	17, // 2: filesystem.RemoveRequest.user:type_name -> permissions.User
+	17, // 3: filesystem.StatRequest.user:type_name -> permissions.User
+	10, // 4: filesystem.StatResponse.entry:type_name -> filesystem.EntryInfo
+	0,  // 5: filesystem.EntryInfo.type:type_name -> filesystem.FileType
+	17, // 6: filesystem.ListDirRequest.user:type_name -> permissions.User
+	10, // 7: filesystem.ListDirResponse.entries:type_name -> filesystem.EntryInfo
+	17, // 8: filesystem.WatchDirRequest.user:type_name -> permissions.User
+	15, // 9: filesystem.WatchDirResponse.start:type_name -> filesystem.WatchDirResponse.StartEvent
+	16, // 10: filesystem.WatchDirResponse.filesystem:type_name -> filesystem.WatchDirResponse.FilesystemEvent
+	1,  // 11: filesystem.WatchDirResponse.FilesystemEvent.type:type_name -> filesystem.EventType
+	8,  // 12: filesystem.Filesystem.Stat:input_type -> filesystem.StatRequest
+	4,  // 13: filesystem.Filesystem.MakeDir:input_type -> filesystem.MakeDirRequest
+	2,  // 14: filesystem.Filesystem.Move:input_type -> filesystem.MoveRequest
+	11, // 15: filesystem.Filesystem.ListDir:input_type -> filesystem.ListDirRequest
+	13, // 16: filesystem.Filesystem.WatchDir:input_type -> filesystem.WatchDirRequest
+	6,  // 17: filesystem.Filesystem.Remove:input_type -> filesystem.RemoveRequest
+	9,  // 18: filesystem.Filesystem.Stat:output_type -> filesystem.StatResponse
+	5,  // 19: filesystem.Filesystem.MakeDir:output_type -> filesystem.MakeDirResponse
+	3,  // 20: filesystem.Filesystem.Move:output_type -> filesystem.MoveResponse
+	12, // 21: filesystem.Filesystem.ListDir:output_type -> filesystem.ListDirResponse
+	14, // 22: filesystem.Filesystem.WatchDir:output_type -> filesystem.WatchDirResponse
+	7,  // 23: filesystem.Filesystem.Remove:output_type -> filesystem.RemoveResponse
+	18, // [18:24] is the sub-list for method output_type
+	12, // [12:18] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_filesystem_filesystem_proto_init() }
@@ -984,7 +1102,7 @@ func file_filesystem_filesystem_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_filesystem_filesystem_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MakeDirRequest); i {
+			switch v := v.(*MoveRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -996,7 +1114,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MakeDirResponse); i {
+			switch v := v.(*MoveResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1008,7 +1126,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RemoveRequest); i {
+			switch v := v.(*MakeDirRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1020,7 +1138,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RemoveResponse); i {
+			switch v := v.(*MakeDirResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1032,7 +1150,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StatRequest); i {
+			switch v := v.(*RemoveRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1044,7 +1162,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StatResponse); i {
+			switch v := v.(*RemoveResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1056,7 +1174,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EntryInfo); i {
+			switch v := v.(*StatRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1068,7 +1186,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListDirRequest); i {
+			switch v := v.(*StatResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1080,7 +1198,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListDirResponse); i {
+			switch v := v.(*EntryInfo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1092,7 +1210,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*WatchDirRequest); i {
+			switch v := v.(*ListDirRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1104,7 +1222,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*WatchDirResponse); i {
+			switch v := v.(*ListDirResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1116,7 +1234,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*WatchDirResponse_StartEvent); i {
+			switch v := v.(*WatchDirRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1128,6 +1246,30 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 		file_filesystem_filesystem_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*WatchDirResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_filesystem_filesystem_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*WatchDirResponse_StartEvent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_filesystem_filesystem_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*WatchDirResponse_FilesystemEvent); i {
 			case 0:
 				return &v.state
@@ -1140,7 +1282,7 @@ func file_filesystem_filesystem_proto_init() {
 			}
 		}
 	}
-	file_filesystem_filesystem_proto_msgTypes[10].OneofWrappers = []interface{}{
+	file_filesystem_filesystem_proto_msgTypes[12].OneofWrappers = []interface{}{
 		(*WatchDirResponse_Start)(nil),
 		(*WatchDirResponse_Filesystem)(nil),
 	}
@@ -1150,7 +1292,7 @@ func file_filesystem_filesystem_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_filesystem_filesystem_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -37,6 +37,8 @@ const (
 	FilesystemStatProcedure = "/filesystem.Filesystem/Stat"
 	// FilesystemMakeDirProcedure is the fully-qualified name of the Filesystem's MakeDir RPC.
 	FilesystemMakeDirProcedure = "/filesystem.Filesystem/MakeDir"
+	// FilesystemMoveProcedure is the fully-qualified name of the Filesystem's Move RPC.
+	FilesystemMoveProcedure = "/filesystem.Filesystem/Move"
 	// FilesystemListDirProcedure is the fully-qualified name of the Filesystem's ListDir RPC.
 	FilesystemListDirProcedure = "/filesystem.Filesystem/ListDir"
 	// FilesystemWatchDirProcedure is the fully-qualified name of the Filesystem's WatchDir RPC.
@@ -50,6 +52,7 @@ var (
 	filesystemServiceDescriptor        = filesystem.File_filesystem_filesystem_proto.Services().ByName("Filesystem")
 	filesystemStatMethodDescriptor     = filesystemServiceDescriptor.Methods().ByName("Stat")
 	filesystemMakeDirMethodDescriptor  = filesystemServiceDescriptor.Methods().ByName("MakeDir")
+	filesystemMoveMethodDescriptor     = filesystemServiceDescriptor.Methods().ByName("Move")
 	filesystemListDirMethodDescriptor  = filesystemServiceDescriptor.Methods().ByName("ListDir")
 	filesystemWatchDirMethodDescriptor = filesystemServiceDescriptor.Methods().ByName("WatchDir")
 	filesystemRemoveMethodDescriptor   = filesystemServiceDescriptor.Methods().ByName("Remove")
@@ -59,6 +62,7 @@ var (
 type FilesystemClient interface {
 	Stat(context.Context, *connect.Request[filesystem.StatRequest]) (*connect.Response[filesystem.StatResponse], error)
 	MakeDir(context.Context, *connect.Request[filesystem.MakeDirRequest]) (*connect.Response[filesystem.MakeDirResponse], error)
+	Move(context.Context, *connect.Request[filesystem.MoveRequest]) (*connect.Response[filesystem.MoveResponse], error)
 	ListDir(context.Context, *connect.Request[filesystem.ListDirRequest]) (*connect.Response[filesystem.ListDirResponse], error)
 	WatchDir(context.Context, *connect.Request[filesystem.WatchDirRequest]) (*connect.ServerStreamForClient[filesystem.WatchDirResponse], error)
 	Remove(context.Context, *connect.Request[filesystem.RemoveRequest]) (*connect.Response[filesystem.RemoveResponse], error)
@@ -86,6 +90,12 @@ func NewFilesystemClient(httpClient connect.HTTPClient, baseURL string, opts ...
 			connect.WithSchema(filesystemMakeDirMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		move: connect.NewClient[filesystem.MoveRequest, filesystem.MoveResponse](
+			httpClient,
+			baseURL+FilesystemMoveProcedure,
+			connect.WithSchema(filesystemMoveMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 		listDir: connect.NewClient[filesystem.ListDirRequest, filesystem.ListDirResponse](
 			httpClient,
 			baseURL+FilesystemListDirProcedure,
@@ -111,6 +121,7 @@ func NewFilesystemClient(httpClient connect.HTTPClient, baseURL string, opts ...
 type filesystemClient struct {
 	stat     *connect.Client[filesystem.StatRequest, filesystem.StatResponse]
 	makeDir  *connect.Client[filesystem.MakeDirRequest, filesystem.MakeDirResponse]
+	move     *connect.Client[filesystem.MoveRequest, filesystem.MoveResponse]
 	listDir  *connect.Client[filesystem.ListDirRequest, filesystem.ListDirResponse]
 	watchDir *connect.Client[filesystem.WatchDirRequest, filesystem.WatchDirResponse]
 	remove   *connect.Client[filesystem.RemoveRequest, filesystem.RemoveResponse]
@@ -124,6 +135,11 @@ func (c *filesystemClient) Stat(ctx context.Context, req *connect.Request[filesy
 // MakeDir calls filesystem.Filesystem.MakeDir.
 func (c *filesystemClient) MakeDir(ctx context.Context, req *connect.Request[filesystem.MakeDirRequest]) (*connect.Response[filesystem.MakeDirResponse], error) {
 	return c.makeDir.CallUnary(ctx, req)
+}
+
+// Move calls filesystem.Filesystem.Move.
+func (c *filesystemClient) Move(ctx context.Context, req *connect.Request[filesystem.MoveRequest]) (*connect.Response[filesystem.MoveResponse], error) {
+	return c.move.CallUnary(ctx, req)
 }
 
 // ListDir calls filesystem.Filesystem.ListDir.
@@ -145,6 +161,7 @@ func (c *filesystemClient) Remove(ctx context.Context, req *connect.Request[file
 type FilesystemHandler interface {
 	Stat(context.Context, *connect.Request[filesystem.StatRequest]) (*connect.Response[filesystem.StatResponse], error)
 	MakeDir(context.Context, *connect.Request[filesystem.MakeDirRequest]) (*connect.Response[filesystem.MakeDirResponse], error)
+	Move(context.Context, *connect.Request[filesystem.MoveRequest]) (*connect.Response[filesystem.MoveResponse], error)
 	ListDir(context.Context, *connect.Request[filesystem.ListDirRequest]) (*connect.Response[filesystem.ListDirResponse], error)
 	WatchDir(context.Context, *connect.Request[filesystem.WatchDirRequest], *connect.ServerStream[filesystem.WatchDirResponse]) error
 	Remove(context.Context, *connect.Request[filesystem.RemoveRequest]) (*connect.Response[filesystem.RemoveResponse], error)
@@ -166,6 +183,12 @@ func NewFilesystemHandler(svc FilesystemHandler, opts ...connect.HandlerOption) 
 		FilesystemMakeDirProcedure,
 		svc.MakeDir,
 		connect.WithSchema(filesystemMakeDirMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	filesystemMoveHandler := connect.NewUnaryHandler(
+		FilesystemMoveProcedure,
+		svc.Move,
+		connect.WithSchema(filesystemMoveMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
 	filesystemListDirHandler := connect.NewUnaryHandler(
@@ -192,6 +215,8 @@ func NewFilesystemHandler(svc FilesystemHandler, opts ...connect.HandlerOption) 
 			filesystemStatHandler.ServeHTTP(w, r)
 		case FilesystemMakeDirProcedure:
 			filesystemMakeDirHandler.ServeHTTP(w, r)
+		case FilesystemMoveProcedure:
+			filesystemMoveHandler.ServeHTTP(w, r)
 		case FilesystemListDirProcedure:
 			filesystemListDirHandler.ServeHTTP(w, r)
 		case FilesystemWatchDirProcedure:
@@ -213,6 +238,10 @@ func (UnimplementedFilesystemHandler) Stat(context.Context, *connect.Request[fil
 
 func (UnimplementedFilesystemHandler) MakeDir(context.Context, *connect.Request[filesystem.MakeDirRequest]) (*connect.Response[filesystem.MakeDirResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("filesystem.Filesystem.MakeDir is not implemented"))
+}
+
+func (UnimplementedFilesystemHandler) Move(context.Context, *connect.Request[filesystem.MoveRequest]) (*connect.Response[filesystem.MoveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("filesystem.Filesystem.Move is not implemented"))
 }
 
 func (UnimplementedFilesystemHandler) ListDir(context.Context, *connect.Request[filesystem.ListDirRequest]) (*connect.Response[filesystem.ListDirResponse], error) {
