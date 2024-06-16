@@ -26,6 +26,13 @@ export class TimeoutError extends SandboxError {
   }
 }
 
+export class InvalidUserError extends SandboxError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'InvalidUsernameError'
+  }
+}
+
 export class ConnectionConfig {
   readonly debug: boolean
   readonly domain: string

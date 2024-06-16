@@ -6,7 +6,15 @@ import {
   Code,
 } from '@connectrpc/connect'
 
-import { ConnectionConfig, defaultUsername, SandboxError, Username, ConnectionOpts, TimeoutError } from '../../connectionConfig'
+import {
+  ConnectionConfig,
+  defaultUsername,
+  SandboxError,
+  Username,
+  ConnectionOpts,
+  TimeoutError,
+  InvalidUserError,
+} from '../../connectionConfig'
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import { FileType as FsFileType, WatchDirResponse } from '../../envd/filesystem/filesystem_pb'
@@ -39,15 +47,8 @@ export class FilesystemError extends SandboxError {
   }
 }
 
-export class InvalidUserError extends FilesystemError {
-  constructor(message: string, readonly username: string) {
-    super(message)
-    this.name = 'InvalidUsernameError'
-  }
-}
-
 export class InvalidPathError extends FilesystemError {
-  constructor(message: string, readonly path: string) {
+  constructor(message: string) {
     super(message)
     this.name = 'InvalidPathError'
   }
@@ -61,7 +62,7 @@ export class NotEnoughDiskSpaceError extends FilesystemError {
 }
 
 export class NotFoundError extends FilesystemError {
-  constructor(message: string, readonly path: string) {
+  constructor(message: string) {
     super(message)
     this.name = 'FileNotFoundError'
   }
@@ -102,11 +103,11 @@ export class Filesystem {
 
     switch (error?.code) {
       case 400:
-        throw new InvalidUserError(error.message, username)
+        throw new InvalidUserError(error.message)
       case 403:
-        throw new InvalidPathError(error.message, path)
+        throw new InvalidPathError(error.message)
       case 404:
-        throw new NotFoundError(error.message, path)
+        throw new NotFoundError(error.message)
       default:
         if (error) {
           throw new FilesystemError(error.message)
@@ -145,9 +146,9 @@ export class Filesystem {
 
     switch (error?.code) {
       case 400:
-        throw new InvalidUserError(error.message, username)
+        throw new InvalidUserError(error.message)
       case 403:
-        throw new InvalidPathError(error.message, path)
+        throw new InvalidPathError(error.message)
       case 507:
         throw new NotEnoughDiskSpaceError(error.message)
       default:
@@ -181,10 +182,11 @@ export class Filesystem {
       if (err instanceof ConnectError) {
         switch (err.code) {
           case Code.InvalidArgument:
-            throw new InvalidUserError(err.message, username)
+            throw new InvalidUserError(err.message)
           case Code.NotFound:
-            throw new InvalidPathError(err.message, path)
+            throw new InvalidPathError(err.message)
           case Code.DeadlineExceeded:
+          case Code.Canceled:
             throw new TimeoutError(err.message)
           default:
             throw new FilesystemError(err.message)
@@ -215,14 +217,51 @@ export class Filesystem {
       if (err instanceof ConnectError) {
         switch (err.code) {
           case Code.InvalidArgument:
-            throw new InvalidUserError(err.message, username)
+            throw new InvalidUserError(err.message)
           case Code.NotFound:
-            throw new InvalidPathError(err.message, path)
+            throw new InvalidPathError(err.message)
           case Code.AlreadyExists:
             return false
           case Code.FailedPrecondition:
-            throw new InvalidPathError(err.message, path)
+            throw new InvalidPathError(err.message)
           case Code.DeadlineExceeded:
+          case Code.Canceled:
+            throw new TimeoutError(err.message)
+          default:
+            throw new FilesystemError(err.message)
+        }
+      }
+      throw err
+    }
+  }
+
+  async move(from: string, to: string, opts?: FilesystemRequestOpts): Promise<boolean> {
+    const username = opts?.user || defaultUsername
+
+    try {
+      await this.rpc.move({
+        source: from,
+        destination: to,
+        user: {
+          selector: {
+            case: 'username',
+            value: username,
+          },
+        },
+      }, {
+        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      })
+
+      return true
+    } catch (err) {
+      if (err instanceof ConnectError) {
+        switch (err.code) {
+          case Code.InvalidArgument:
+            throw new InvalidUserError(err.message)
+          case Code.NotFound:
+            throw new InvalidPathError(err.message)
+          case Code.DeadlineExceeded:
+          case Code.Canceled:
             throw new TimeoutError(err.message)
           default:
             throw new FilesystemError(err.message)
@@ -251,10 +290,11 @@ export class Filesystem {
       if (err instanceof ConnectError) {
         switch (err.code) {
           case Code.InvalidArgument:
-            throw new InvalidUserError(err.message, username)
+            throw new InvalidUserError(err.message)
           case Code.NotFound:
-            throw new InvalidPathError(err.message, path)
+            throw new InvalidPathError(err.message)
           case Code.DeadlineExceeded:
+          case Code.Canceled:
             throw new TimeoutError(err.message)
           default:
             throw new FilesystemError(err.message)
@@ -285,10 +325,11 @@ export class Filesystem {
       if (err instanceof ConnectError) {
         switch (err.code) {
           case Code.InvalidArgument:
-            throw new InvalidUserError(err.message, username)
+            throw new InvalidUserError(err.message)
           case Code.NotFound:
             return false
           case Code.DeadlineExceeded:
+          case Code.Canceled:
             throw new TimeoutError(err.message)
           default:
             throw new FilesystemError(err.message)
@@ -337,9 +378,12 @@ export class Filesystem {
       if (err instanceof ConnectError) {
         switch (err.code) {
           case Code.InvalidArgument:
-            throw new InvalidUserError(err.message, username)
+            throw new InvalidUserError(err.message)
           case Code.NotFound:
-            throw new InvalidPathError(err.message, path)
+            throw new InvalidPathError(err.message)
+          case Code.DeadlineExceeded:
+          case Code.Canceled:
+            throw new TimeoutError(err.message)
           default:
             throw new FilesystemError(err.message)
         }

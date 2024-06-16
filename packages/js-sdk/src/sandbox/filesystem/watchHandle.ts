@@ -1,11 +1,12 @@
-import { ConnectError } from '@connectrpc/connect'
+import { ConnectError, Code } from '@connectrpc/connect'
+
 import { FilesystemError } from '.'
+import { TimeoutError } from '../../connectionConfig'
 
 import {
   EventType,
   WatchDirResponse,
 } from '../../envd/filesystem/filesystem_pb'
-
 
 export enum FilesystemEventType {
   CHMOD = 'chmod',
@@ -65,6 +66,9 @@ export class WatchHandle {
     } catch (err) {
       if (err instanceof ConnectError) {
         switch (err.code) {
+          case Code.Canceled:
+          case Code.DeadlineExceeded:
+            throw new TimeoutError(err.message)
           default:
             throw new FilesystemError(err.message)
         }
