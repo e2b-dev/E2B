@@ -24,7 +24,7 @@ export interface SandboxOpts extends ConnectionOpts {
 
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate = 'base-v1'
-  protected static readonly defaultSandboxTimeoutMs = 10_000
+  protected static readonly defaultSandboxTimeoutMs = 300_000
 
   readonly files: Filesystem
   readonly commands: Process
