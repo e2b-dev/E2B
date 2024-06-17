@@ -2,7 +2,6 @@ import { ConnectError, Code } from '@connectrpc/connect'
 
 import { FilesystemError } from '.'
 import { TimeoutError } from '../../connectionConfig'
-
 import {
   EventType,
   WatchDirResponse,

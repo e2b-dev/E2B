@@ -235,13 +235,13 @@ export class Filesystem {
     }
   }
 
-  async move(from: string, to: string, opts?: FilesystemRequestOpts): Promise<boolean> {
+  async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<boolean> {
     const username = opts?.user || defaultUsername
 
     try {
       await this.rpc.move({
-        source: from,
-        destination: to,
+        source: oldPath,
+        destination: newPath,
         user: {
           selector: {
             case: 'username',

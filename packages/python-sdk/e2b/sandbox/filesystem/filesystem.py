@@ -144,6 +144,22 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
+    def rename(
+        self,
+        old_path: str,
+        new_path: str,
+        user: Username = "user",
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        self._rpc.move(
+            filesystem_pb2.MoveRequest(
+                source=old_path,
+                destination=new_path,
+                user=User(username=user),
+            ),
+            timeout=self._connection_config.get_request_timeout(request_timeout),
+        )
+
     def make_dir(
         self,
         path: str,
