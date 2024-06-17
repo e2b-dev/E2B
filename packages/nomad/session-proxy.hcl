@@ -132,11 +132,11 @@ server {
 
   proxy_http_version 1.1;
 
-  client_body_timeout 7200s;
+  client_body_timeout 86400s;
   client_header_timeout 30s;
 
-  proxy_read_timeout 7200s;
-  proxy_send_timeout 7200s;
+  proxy_read_timeout 600s;
+  proxy_send_timeout 86400s;
 
   proxy_cache_bypass 1;
   proxy_no_cache 1;
@@ -150,12 +150,13 @@ server {
   tcp_nopush on;
   sendfile on;
 
-  send_timeout                7200s;
+  send_timeout                600s;
 
   proxy_connect_timeout       30s;
 
   keepalive_requests 65536;
   keepalive_timeout 600s;
+  keepalive_time: 86400s;
 
   gzip off;
 
@@ -165,10 +166,6 @@ server {
     }
 
     proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
-
-    proxy_next_upstream error timeout invalid_header http_502;
-    proxy_next_upstream_timeout 5s;
-    proxy_next_upstream_tries 3;
   }
 }
 

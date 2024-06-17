@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
+	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	"connectrpc.com/connect"
@@ -34,9 +35,25 @@ func (s *Service) handleConnect(ctx context.Context, req *connect.Request[rpc.Co
 	go func() {
 		defer close(exitChan)
 
+		keepaliveTicker, stopTicker := permissions.GetKeepAliveTicker(req)
+		defer stopTicker()
+
 	dataLoop:
 		for {
 			select {
+			case <-keepaliveTicker:
+				streamErr := stream.Send(&rpc.ConnectResponse{
+					Event: &rpc.ProcessEvent{
+						Event: &rpc.ProcessEvent_Keepalive{
+							Keepalive: &rpc.ProcessEvent_KeepAlive{},
+						},
+					},
+				})
+				if streamErr != nil {
+					cancel(connect.NewError(connect.CodeUnknown, streamErr))
+
+					return
+				}
 			case <-ctx.Done():
 				cancel(ctx.Err())
 
@@ -46,13 +63,13 @@ func (s *Service) handleConnect(ctx context.Context, req *connect.Request[rpc.Co
 					break dataLoop
 				}
 
-				err := stream.Send(&rpc.ConnectResponse{
+				streamErr := stream.Send(&rpc.ConnectResponse{
 					Event: &rpc.ProcessEvent{
 						Event: &event,
 					},
 				})
-				if err != nil {
-					cancel(connect.NewError(connect.CodeUnknown, err))
+				if streamErr != nil {
+					cancel(connect.NewError(connect.CodeUnknown, streamErr))
 
 					return
 				}
@@ -71,13 +88,13 @@ func (s *Service) handleConnect(ctx context.Context, req *connect.Request[rpc.Co
 				return
 			}
 
-			err := stream.Send(&rpc.ConnectResponse{
+			streamErr := stream.Send(&rpc.ConnectResponse{
 				Event: &rpc.ProcessEvent{
 					Event: &event,
 				},
 			})
-			if err != nil {
-				cancel(connect.NewError(connect.CodeUnknown, err))
+			if streamErr != nil {
+				cancel(connect.NewError(connect.CodeUnknown, streamErr))
 
 				return
 			}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/envd/internal/host"
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
+	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
@@ -90,21 +91,36 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 				return
 			}
 
-			stream.Send(&rpc.StartResponse{
+			streamErr := stream.Send(&rpc.StartResponse{
 				Event: &rpc.ProcessEvent{
 					Event: &event,
 				},
 			})
-			if err != nil {
-				cancel(connect.NewError(connect.CodeUnknown, err))
+			if streamErr != nil {
+				cancel(connect.NewError(connect.CodeUnknown, streamErr))
 
 				return
 			}
 		}
 
+		keepaliveTicker, stopTicker := permissions.GetKeepAliveTicker(req)
+		defer stopTicker()
+
 	dataLoop:
 		for {
 			select {
+			case <-keepaliveTicker:
+				streamErr := stream.Send(&rpc.StartResponse{
+					Event: &rpc.ProcessEvent{
+						Event: &rpc.ProcessEvent_Keepalive{
+							Keepalive: &rpc.ProcessEvent_KeepAlive{},
+						},
+					},
+				})
+				if streamErr != nil {
+					cancel(connect.NewError(connect.CodeUnknown, streamErr))
+					return
+				}
 			case <-ctx.Done():
 				cancel(ctx.Err())
 				return
@@ -113,13 +129,13 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 					break dataLoop
 				}
 
-				err := stream.Send(&rpc.StartResponse{
+				streamErr := stream.Send(&rpc.StartResponse{
 					Event: &rpc.ProcessEvent{
 						Event: &event,
 					},
 				})
-				if err != nil {
-					cancel(connect.NewError(connect.CodeUnknown, err))
+				if streamErr != nil {
+					cancel(connect.NewError(connect.CodeUnknown, streamErr))
 					return
 				}
 			}
@@ -137,13 +153,13 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 				return
 			}
 
-			err := stream.Send(&rpc.StartResponse{
+			streamErr := stream.Send(&rpc.StartResponse{
 				Event: &rpc.ProcessEvent{
 					Event: &event,
 				},
 			})
-			if err != nil {
-				cancel(connect.NewError(connect.CodeUnknown, err))
+			if streamErr != nil {
+				cancel(connect.NewError(connect.CodeUnknown, streamErr))
 
 				return
 			}

@@ -76,6 +76,8 @@ func (s *Service) streamInputHandler(ctx context.Context, stream *connect.Client
 			if err != nil {
 				return nil, err
 			}
+		case *rpc.StreamInputRequest_Keepalive:
+			break
 		default:
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid event type %T", req.Event))
 		}

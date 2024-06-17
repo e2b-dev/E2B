@@ -21,7 +21,7 @@ locals {
       protocol                        = "HTTP"
       port                            = var.client_proxy_port.port
       port_name                       = var.client_proxy_port.name
-      timeout_sec                     = 7200
+      timeout_sec                     = 86400
       connection_draining_timeout_sec = 1
       http_health_check = {
         request_path = var.client_proxy_health_port.path
@@ -252,6 +252,10 @@ resource "google_compute_global_forwarding_rule" "https" {
   name                  = "${var.prefix}forwarding-rule-https"
   target                = google_compute_target_https_proxy.default.self_link
   load_balancing_scheme = "EXTERNAL_MANAGED"
+
+  timeouts {
+    create = "value"
+  }
 
   port_range = "443"
   labels     = var.labels

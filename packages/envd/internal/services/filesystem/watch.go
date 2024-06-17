@@ -19,6 +19,8 @@ func (s Service) WatchDir(ctx context.Context, req *connect.Request[rpc.WatchDir
 }
 
 func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.WatchDirRequest], stream *connect.ServerStream[rpc.WatchDirResponse]) error {
+	fmt.Printf("watchHandler: %v\n", req.Header().Values("keepalive"))
+
 	u, err := permissions.GetUser(req.Msg.GetUser())
 	if err != nil {
 		return connect.NewError(connect.CodeInvalidArgument, err)
@@ -62,8 +64,20 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 		return connect.NewError(connect.CodeUnknown, fmt.Errorf("error sending start event: %w", err))
 	}
 
+	keepaliveTicker, stopTicker := permissions.GetKeepAliveTicker(req)
+	defer stopTicker()
+
 	for {
 		select {
+		case <-keepaliveTicker:
+			streamErr := stream.Send(&rpc.WatchDirResponse{
+				Event: &rpc.WatchDirResponse_Keepalive{
+					Keepalive: &rpc.WatchDirResponse_KeepAlive{},
+				},
+			})
+			if streamErr != nil {
+				return connect.NewError(connect.CodeUnknown, streamErr)
+			}
 		case <-ctx.Done():
 			return ctx.Err()
 		case chErr, ok := <-w.Errors:

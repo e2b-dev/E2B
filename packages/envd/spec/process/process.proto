@@ -69,6 +69,7 @@ message ProcessEvent {
         StartEvent start = 1;
         DataEvent data = 2;
         EndEvent end = 3;
+        KeepAlive keepalive = 4;
     }
     
     message StartEvent {
@@ -89,6 +90,8 @@ message ProcessEvent {
         string status = 3;
         optional string error = 4;
     }
+
+    message KeepAlive {}
 }
 
 message StartResponse {
@@ -118,6 +121,7 @@ message StreamInputRequest {
     oneof event {
         StartEvent start = 1;
         DataEvent data = 2;
+        KeepAlive keepalive = 3;
     }
 
     message StartEvent {
@@ -127,6 +131,8 @@ message StreamInputRequest {
     message DataEvent {
         ProcessInput input = 2;
     }
+
+    message KeepAlive {}
 }
 
 message StreamInputResponse {}
