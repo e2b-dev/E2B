@@ -4,17 +4,26 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	"connectrpc.com/connect"
+	"github.com/rs/zerolog"
 )
 
-func handleInput(process *handler.Handler, in *rpc.ProcessInput) error {
+func handleInput(process *handler.Handler, event *rpc.StreamInputRequest_DataEvent, method string, logger *zerolog.Logger) error {
+	in := event.GetInput()
+
 	switch in.GetInput().(type) {
 	case *rpc.ProcessInput_Pty:
 		err := process.WriteTty(in.GetPty())
 		if err != nil {
+			logger.
+				Error().
+				Err(err).
+				Send()
+
 			return connect.NewError(connect.CodeInternal, fmt.Errorf("error writing to tty: %w", err))
 		}
 
@@ -36,7 +45,7 @@ func (s *Service) SendInput(ctx context.Context, req *connect.Request[rpc.SendIn
 		return nil, err
 	}
 
-	err = handleInput(proc, req.Msg.GetInput())
+	err = handleInput(proc, req.Msg.GetInput(), s.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +54,10 @@ func (s *Service) SendInput(ctx context.Context, req *connect.Request[rpc.SendIn
 }
 
 func (s *Service) StreamInput(ctx context.Context, stream *connect.ClientStream[rpc.StreamInputRequest]) (*connect.Response[rpc.StreamInputResponse], error) {
+	return logs.LogClientStreamWithoutEvents(ctx, s.logger, stream, s.streamInputHandler)
+}
+
+func (s *Service) streamInputHandler(ctx context.Context, stream *connect.ClientStream[rpc.StreamInputRequest]) (*connect.Response[rpc.StreamInputResponse], error) {
 	var proc *handler.Handler
 
 	for stream.Receive() {
@@ -59,7 +72,7 @@ func (s *Service) StreamInput(ctx context.Context, stream *connect.ClientStream[
 
 			proc = p
 		case *rpc.StreamInputRequest_Data:
-			err := handleInput(proc, req.GetData().GetInput())
+			err := handleInput(proc, req.GetData(), s.logger)
 			if err != nil {
 				return nil, err
 			}

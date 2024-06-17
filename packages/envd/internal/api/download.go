@@ -8,29 +8,52 @@ import (
 	"os/user"
 	"time"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 )
 
 func (a *API) GetFiles(w http.ResponseWriter, r *http.Request, params GetFilesParams) {
 	defer r.Body.Close()
 
-	u, err := user.Lookup(params.Username)
-	if err != nil {
-		errMsg := fmt.Errorf("error looking up user '%s': %w", params.Username, err)
-		jsonError(w, http.StatusBadRequest, errMsg)
+	var errorCode int
 
-		return
-	}
+	var errMsg error
 
 	var path string
 	if params.Path != nil {
 		path = *params.Path
 	}
 
+	defer func() {
+		l := a.logger.
+			Err(errMsg).
+			Int("error_code", errorCode).
+			Str("method", r.Method+" "+r.URL.Path).
+			Str(string(logs.RequestIDKey), logs.AssignRequestID()).
+			Str("path", path).
+			Str("username", params.Username)
+
+		if errMsg != nil {
+			l = l.Int("error_code", errorCode)
+		}
+
+		l.Msg("download file")
+	}()
+
+	u, err := user.Lookup(params.Username)
+	if err != nil {
+		errMsg = fmt.Errorf("error looking up user '%s': %w", params.Username, err)
+		errorCode = http.StatusBadRequest
+		jsonError(w, errorCode, errMsg)
+
+		return
+	}
+
 	resolvedPath, err := permissions.ExpandAndResolve(path, u)
 	if err != nil {
-		errMsg := fmt.Errorf("error expanding and resolving path '%s': %w", path, err)
-		jsonError(w, http.StatusInternalServerError, errMsg)
+		errMsg = fmt.Errorf("error expanding and resolving path '%s': %w", path, err)
+		errorCode = http.StatusInternalServerError
+		jsonError(w, errorCode, errMsg)
 
 		return
 	}
@@ -38,29 +61,33 @@ func (a *API) GetFiles(w http.ResponseWriter, r *http.Request, params GetFilesPa
 	stat, err := os.Stat(resolvedPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			errMsg := fmt.Errorf("path '%s' does not exist", resolvedPath)
-			jsonError(w, http.StatusNotFound, errMsg)
+			errMsg = fmt.Errorf("path '%s' does not exist", resolvedPath)
+			errorCode = http.StatusNotFound
+			jsonError(w, errorCode, errMsg)
 
 			return
 		}
 
-		errMsg := fmt.Errorf("error checking if path exists '%s': %w", resolvedPath, err)
-		jsonError(w, http.StatusInternalServerError, errMsg)
+		errMsg = fmt.Errorf("error checking if path exists '%s': %w", resolvedPath, err)
+		errorCode = http.StatusInternalServerError
+		jsonError(w, errorCode, errMsg)
 
 		return
 	}
 
 	if stat.IsDir() {
-		errMsg := fmt.Errorf("path '%s' is a directory", resolvedPath)
-		jsonError(w, http.StatusForbidden, errMsg)
+		errMsg = fmt.Errorf("path '%s' is a directory", resolvedPath)
+		errorCode = http.StatusForbidden
+		jsonError(w, errorCode, errMsg)
 
 		return
 	}
 
 	file, err := os.Open(resolvedPath)
 	if err != nil {
-		errMsg := fmt.Errorf("error opening file '%s': %w", resolvedPath, err)
-		jsonError(w, http.StatusInternalServerError, errMsg)
+		errMsg = fmt.Errorf("error opening file '%s': %w", resolvedPath, err)
+		errorCode = http.StatusInternalServerError
+		jsonError(w, errorCode, errMsg)
 
 		return
 	}
