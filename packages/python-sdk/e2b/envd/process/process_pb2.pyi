@@ -93,7 +93,7 @@ class UpdateResponse(_message.Message):
     def __init__(self) -> None: ...
 
 class ProcessEvent(_message.Message):
-    __slots__ = ("start", "data", "end")
+    __slots__ = ("start", "data", "end", "keepalive")
     class StartEvent(_message.Message):
         __slots__ = ("pid",)
         PID_FIELD_NUMBER: _ClassVar[int]
@@ -119,13 +119,18 @@ class ProcessEvent(_message.Message):
         status: str
         error: str
         def __init__(self, exit_code: _Optional[int] = ..., exited: bool = ..., status: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...
+    class KeepAlive(_message.Message):
+        __slots__ = ()
+        def __init__(self) -> None: ...
     START_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     END_FIELD_NUMBER: _ClassVar[int]
+    KEEPALIVE_FIELD_NUMBER: _ClassVar[int]
     start: ProcessEvent.StartEvent
     data: ProcessEvent.DataEvent
     end: ProcessEvent.EndEvent
-    def __init__(self, start: _Optional[_Union[ProcessEvent.StartEvent, _Mapping]] = ..., data: _Optional[_Union[ProcessEvent.DataEvent, _Mapping]] = ..., end: _Optional[_Union[ProcessEvent.EndEvent, _Mapping]] = ...) -> None: ...
+    keepalive: ProcessEvent.KeepAlive
+    def __init__(self, start: _Optional[_Union[ProcessEvent.StartEvent, _Mapping]] = ..., data: _Optional[_Union[ProcessEvent.DataEvent, _Mapping]] = ..., end: _Optional[_Union[ProcessEvent.EndEvent, _Mapping]] = ..., keepalive: _Optional[_Union[ProcessEvent.KeepAlive, _Mapping]] = ...) -> None: ...
 
 class StartResponse(_message.Message):
     __slots__ = ("event",)
@@ -160,7 +165,7 @@ class ProcessInput(_message.Message):
     def __init__(self, stdin: _Optional[bytes] = ..., pty: _Optional[bytes] = ...) -> None: ...
 
 class StreamInputRequest(_message.Message):
-    __slots__ = ("start", "data")
+    __slots__ = ("start", "data", "keepalive")
     class StartEvent(_message.Message):
         __slots__ = ("process",)
         PROCESS_FIELD_NUMBER: _ClassVar[int]
@@ -171,11 +176,16 @@ class StreamInputRequest(_message.Message):
         INPUT_FIELD_NUMBER: _ClassVar[int]
         input: ProcessInput
         def __init__(self, input: _Optional[_Union[ProcessInput, _Mapping]] = ...) -> None: ...
+    class KeepAlive(_message.Message):
+        __slots__ = ()
+        def __init__(self) -> None: ...
     START_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
+    KEEPALIVE_FIELD_NUMBER: _ClassVar[int]
     start: StreamInputRequest.StartEvent
     data: StreamInputRequest.DataEvent
-    def __init__(self, start: _Optional[_Union[StreamInputRequest.StartEvent, _Mapping]] = ..., data: _Optional[_Union[StreamInputRequest.DataEvent, _Mapping]] = ...) -> None: ...
+    keepalive: StreamInputRequest.KeepAlive
+    def __init__(self, start: _Optional[_Union[StreamInputRequest.StartEvent, _Mapping]] = ..., data: _Optional[_Union[StreamInputRequest.DataEvent, _Mapping]] = ..., keepalive: _Optional[_Union[StreamInputRequest.KeepAlive, _Mapping]] = ...) -> None: ...
 
 class StreamInputResponse(_message.Message):
     __slots__ = ()

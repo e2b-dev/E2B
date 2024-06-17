@@ -8,7 +8,7 @@ DEBUG = os.getenv("E2B_DEBUG", "false") == "true"
 API_KEY = os.getenv("E2B_API_KEY")
 ACCESS_TOKEN = os.getenv("E2B_ACCESS_TOKEN")
 
-REQUEST_TIMEOUT: float = 15  # 15s
+REQUEST_TIMEOUT: float = 30  # 30s
 
 
 class SandboxException(Exception):

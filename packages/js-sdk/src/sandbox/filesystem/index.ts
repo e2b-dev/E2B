@@ -14,6 +14,7 @@ import {
   ConnectionOpts,
   TimeoutError,
   InvalidUserError,
+  KEEPALIVE_INTERVAL,
 } from '../../connectionConfig'
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
@@ -355,6 +356,9 @@ export class Filesystem {
       }, requestTimeoutMs)
       : undefined
 
+    const headers = new Headers()
+    headers.set('X-Keepalive-Interval', (KEEPALIVE_INTERVAL / 1000).toString())
+
     const events = this.rpc.watchDir({
       path,
       user: {
@@ -364,6 +368,7 @@ export class Filesystem {
         },
       },
     }, {
+      headers,
       signal: controller.signal,
       timeoutMs: opts?.timeout ?? 60_000,
     })

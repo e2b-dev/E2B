@@ -58,8 +58,6 @@ export class WatchHandle {
           case 'filesystem':
             yield event.event
             break
-          default:
-            throw new Error(`Unknown event type: ${event.event.case}`)
         }
       }
     } catch (err) {

@@ -439,6 +439,12 @@ export class ProcessEvent extends Message<ProcessEvent> {
      */
     value: ProcessEvent_EndEvent;
     case: "end";
+  } | {
+    /**
+     * @generated from field: process.ProcessEvent.KeepAlive keepalive = 4;
+     */
+    value: ProcessEvent_KeepAlive;
+    case: "keepalive";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<ProcessEvent>) {
@@ -452,6 +458,7 @@ export class ProcessEvent extends Message<ProcessEvent> {
     { no: 1, name: "start", kind: "message", T: ProcessEvent_StartEvent, oneof: "event" },
     { no: 2, name: "data", kind: "message", T: ProcessEvent_DataEvent, oneof: "event" },
     { no: 3, name: "end", kind: "message", T: ProcessEvent_EndEvent, oneof: "event" },
+    { no: 4, name: "keepalive", kind: "message", T: ProcessEvent_KeepAlive, oneof: "event" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ProcessEvent {
@@ -617,6 +624,37 @@ export class ProcessEvent_EndEvent extends Message<ProcessEvent_EndEvent> {
 
   static equals(a: ProcessEvent_EndEvent | PlainMessage<ProcessEvent_EndEvent> | undefined, b: ProcessEvent_EndEvent | PlainMessage<ProcessEvent_EndEvent> | undefined): boolean {
     return proto3.util.equals(ProcessEvent_EndEvent, a, b);
+  }
+}
+
+/**
+ * @generated from message process.ProcessEvent.KeepAlive
+ */
+export class ProcessEvent_KeepAlive extends Message<ProcessEvent_KeepAlive> {
+  constructor(data?: PartialMessage<ProcessEvent_KeepAlive>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "process.ProcessEvent.KeepAlive";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ProcessEvent_KeepAlive {
+    return new ProcessEvent_KeepAlive().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ProcessEvent_KeepAlive {
+    return new ProcessEvent_KeepAlive().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ProcessEvent_KeepAlive {
+    return new ProcessEvent_KeepAlive().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ProcessEvent_KeepAlive | PlainMessage<ProcessEvent_KeepAlive> | undefined, b: ProcessEvent_KeepAlive | PlainMessage<ProcessEvent_KeepAlive> | undefined): boolean {
+    return proto3.util.equals(ProcessEvent_KeepAlive, a, b);
   }
 }
 
@@ -837,6 +875,12 @@ export class StreamInputRequest extends Message<StreamInputRequest> {
      */
     value: StreamInputRequest_DataEvent;
     case: "data";
+  } | {
+    /**
+     * @generated from field: process.StreamInputRequest.KeepAlive keepalive = 3;
+     */
+    value: StreamInputRequest_KeepAlive;
+    case: "keepalive";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<StreamInputRequest>) {
@@ -849,6 +893,7 @@ export class StreamInputRequest extends Message<StreamInputRequest> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "start", kind: "message", T: StreamInputRequest_StartEvent, oneof: "event" },
     { no: 2, name: "data", kind: "message", T: StreamInputRequest_DataEvent, oneof: "event" },
+    { no: 3, name: "keepalive", kind: "message", T: StreamInputRequest_KeepAlive, oneof: "event" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamInputRequest {
@@ -939,6 +984,37 @@ export class StreamInputRequest_DataEvent extends Message<StreamInputRequest_Dat
 
   static equals(a: StreamInputRequest_DataEvent | PlainMessage<StreamInputRequest_DataEvent> | undefined, b: StreamInputRequest_DataEvent | PlainMessage<StreamInputRequest_DataEvent> | undefined): boolean {
     return proto3.util.equals(StreamInputRequest_DataEvent, a, b);
+  }
+}
+
+/**
+ * @generated from message process.StreamInputRequest.KeepAlive
+ */
+export class StreamInputRequest_KeepAlive extends Message<StreamInputRequest_KeepAlive> {
+  constructor(data?: PartialMessage<StreamInputRequest_KeepAlive>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "process.StreamInputRequest.KeepAlive";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamInputRequest_KeepAlive {
+    return new StreamInputRequest_KeepAlive().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StreamInputRequest_KeepAlive {
+    return new StreamInputRequest_KeepAlive().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StreamInputRequest_KeepAlive {
+    return new StreamInputRequest_KeepAlive().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: StreamInputRequest_KeepAlive | PlainMessage<StreamInputRequest_KeepAlive> | undefined, b: StreamInputRequest_KeepAlive | PlainMessage<StreamInputRequest_KeepAlive> | undefined): boolean {
+    return proto3.util.equals(StreamInputRequest_KeepAlive, a, b);
   }
 }
 

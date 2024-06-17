@@ -2,7 +2,8 @@ export const DOMAIN = process?.env?.E2B_DOMAIN || 'e2b.dev'
 const DEBUG = (process?.env?.E2B_DEBUG || 'false').toLowerCase() === 'true'
 const API_KEY = process?.env?.E2B_API_KEY
 const ACCESS_TOKEN = process?.env?.E2B_ACCESS_TOKEN
-const REQUEST_TIMEOUT_MS = 15_000  // 15s
+const REQUEST_TIMEOUT_MS = 30_000  // 30s
+export const KEEPALIVE_INTERVAL = 60_000 // 1m
 
 export interface ConnectionOpts {
   apiKey?: string

@@ -560,16 +560,22 @@ export class WatchDirResponse extends Message<WatchDirResponse> {
    */
   event: {
     /**
-     * @generated from field: filesystem.WatchDirResponse.StartEvent start = 2;
+     * @generated from field: filesystem.WatchDirResponse.StartEvent start = 1;
      */
     value: WatchDirResponse_StartEvent;
     case: "start";
   } | {
     /**
-     * @generated from field: filesystem.WatchDirResponse.FilesystemEvent filesystem = 1;
+     * @generated from field: filesystem.WatchDirResponse.FilesystemEvent filesystem = 2;
      */
     value: WatchDirResponse_FilesystemEvent;
     case: "filesystem";
+  } | {
+    /**
+     * @generated from field: filesystem.WatchDirResponse.KeepAlive keepalive = 3;
+     */
+    value: WatchDirResponse_KeepAlive;
+    case: "keepalive";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<WatchDirResponse>) {
@@ -580,8 +586,9 @@ export class WatchDirResponse extends Message<WatchDirResponse> {
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "filesystem.WatchDirResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 2, name: "start", kind: "message", T: WatchDirResponse_StartEvent, oneof: "event" },
-    { no: 1, name: "filesystem", kind: "message", T: WatchDirResponse_FilesystemEvent, oneof: "event" },
+    { no: 1, name: "start", kind: "message", T: WatchDirResponse_StartEvent, oneof: "event" },
+    { no: 2, name: "filesystem", kind: "message", T: WatchDirResponse_FilesystemEvent, oneof: "event" },
+    { no: 3, name: "keepalive", kind: "message", T: WatchDirResponse_KeepAlive, oneof: "event" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): WatchDirResponse {
@@ -672,6 +679,37 @@ export class WatchDirResponse_FilesystemEvent extends Message<WatchDirResponse_F
 
   static equals(a: WatchDirResponse_FilesystemEvent | PlainMessage<WatchDirResponse_FilesystemEvent> | undefined, b: WatchDirResponse_FilesystemEvent | PlainMessage<WatchDirResponse_FilesystemEvent> | undefined): boolean {
     return proto3.util.equals(WatchDirResponse_FilesystemEvent, a, b);
+  }
+}
+
+/**
+ * @generated from message filesystem.WatchDirResponse.KeepAlive
+ */
+export class WatchDirResponse_KeepAlive extends Message<WatchDirResponse_KeepAlive> {
+  constructor(data?: PartialMessage<WatchDirResponse_KeepAlive>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.WatchDirResponse.KeepAlive";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): WatchDirResponse_KeepAlive {
+    return new WatchDirResponse_KeepAlive().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): WatchDirResponse_KeepAlive {
+    return new WatchDirResponse_KeepAlive().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): WatchDirResponse_KeepAlive {
+    return new WatchDirResponse_KeepAlive().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: WatchDirResponse_KeepAlive | PlainMessage<WatchDirResponse_KeepAlive> | undefined, b: WatchDirResponse_KeepAlive | PlainMessage<WatchDirResponse_KeepAlive> | undefined): boolean {
+    return proto3.util.equals(WatchDirResponse_KeepAlive, a, b);
   }
 }
 

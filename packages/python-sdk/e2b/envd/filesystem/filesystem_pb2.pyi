@@ -114,7 +114,7 @@ class WatchDirRequest(_message.Message):
     def __init__(self, path: _Optional[str] = ..., user: _Optional[_Union[_permissions_pb2.User, _Mapping]] = ...) -> None: ...
 
 class WatchDirResponse(_message.Message):
-    __slots__ = ("start", "filesystem")
+    __slots__ = ("start", "filesystem", "keepalive")
     class StartEvent(_message.Message):
         __slots__ = ()
         def __init__(self) -> None: ...
@@ -125,8 +125,13 @@ class WatchDirResponse(_message.Message):
         name: str
         type: EventType
         def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[EventType, str]] = ...) -> None: ...
+    class KeepAlive(_message.Message):
+        __slots__ = ()
+        def __init__(self) -> None: ...
     START_FIELD_NUMBER: _ClassVar[int]
     FILESYSTEM_FIELD_NUMBER: _ClassVar[int]
+    KEEPALIVE_FIELD_NUMBER: _ClassVar[int]
     start: WatchDirResponse.StartEvent
     filesystem: WatchDirResponse.FilesystemEvent
-    def __init__(self, start: _Optional[_Union[WatchDirResponse.StartEvent, _Mapping]] = ..., filesystem: _Optional[_Union[WatchDirResponse.FilesystemEvent, _Mapping]] = ...) -> None: ...
+    keepalive: WatchDirResponse.KeepAlive
+    def __init__(self, start: _Optional[_Union[WatchDirResponse.StartEvent, _Mapping]] = ..., filesystem: _Optional[_Union[WatchDirResponse.FilesystemEvent, _Mapping]] = ..., keepalive: _Optional[_Union[WatchDirResponse.KeepAlive, _Mapping]] = ...) -> None: ...

@@ -24,7 +24,7 @@ export interface SandboxOpts extends ConnectionOpts {
 
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate = 'base-v1'
-  protected static readonly defaultSandboxTimeoutMs = 300_000
+  protected static readonly defaultSandboxTimeoutMs = 10_000
 
   readonly files: Filesystem
   readonly commands: Process
@@ -66,7 +66,7 @@ export class Sandbox extends SandboxApi {
 
     const sandboxID = config.debug
       ? 'debug_sandbox_id'
-      : await this.createSandbox(template, this.defaultSandboxTimeoutMs, sandboxOpts)
+      : await this.createSandbox(template, sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs, sandboxOpts)
 
     return new this(sandboxID, sandboxOpts) as InstanceType<S>
   }

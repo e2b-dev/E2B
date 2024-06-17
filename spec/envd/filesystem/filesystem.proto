@@ -77,8 +77,9 @@ message WatchDirRequest {
 
 message WatchDirResponse {
     oneof event {
-        StartEvent start = 2;
-        FilesystemEvent filesystem = 1;
+        StartEvent start = 1;
+        FilesystemEvent filesystem = 2;
+        KeepAlive keepalive = 3;
     }
 
     message StartEvent {}
@@ -87,6 +88,8 @@ message WatchDirResponse {
         string name = 1;
         EventType type = 2;
     }
+
+    message KeepAlive {}
 }
 
 enum EventType {

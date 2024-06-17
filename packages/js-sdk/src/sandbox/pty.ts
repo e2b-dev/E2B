@@ -10,7 +10,7 @@ import {
   StartResponse,
   StreamInputRequest,
 } from '../envd/process/process_pb'
-import { ConnectionConfig, ConnectionOpts, defaultUsername, Username } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts, defaultUsername, KEEPALIVE_INTERVAL, Username } from '../connectionConfig'
 import { PartialMessage } from '@bufbuild/protobuf'
 import { ProcessHandle } from './process/processHandle'
 
@@ -38,6 +38,9 @@ export class Pty {
       controller.abort()
     }, requestTimeoutMs)
 
+    const headers = new Headers()
+    headers.set('X-Keepalive-Interval', (KEEPALIVE_INTERVAL / 1000).toString())
+
     const events = this.rpc.start({
       user: {
         selector: {
@@ -59,6 +62,7 @@ export class Pty {
         },
       },
     }, {
+      headers,
       signal: controller.signal,
       timeoutMs: opts?.timeout ?? 60_000,
     })
@@ -116,10 +120,20 @@ export class Pty {
       },
     })
 
+    const keepaliveInterval = setInterval(() => {
+      events.enqueue({
+        event: {
+          case: 'keepalive',
+          value: {},
+        }
+      })
+    }, KEEPALIVE_INTERVAL)
+
     return {
       stop: () => {
         controller.abort()
         events.stop()
+        clearInterval(keepaliveInterval)
       },
       sendData: (data: Uint8Array) => events.enqueue({
         event: {
