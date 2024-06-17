@@ -40,7 +40,7 @@ func processFile(r *http.Request, params PostFilesParams, part *multipart.Part, 
 
 	logger.
 		Str("path", pathToResolve).
-		Msg("process file")
+		Msg("processing_file")
 
 	resolvedPath, err := permissions.ExpandAndResolve(pathToResolve, user)
 	if err != nil {
@@ -129,14 +129,13 @@ func (a *API) PostFiles(w http.ResponseWriter, r *http.Request, params PostFiles
 		path = *params.Path
 	}
 
-	requestID := logs.AssignRequestID()
+	operationID := logs.AssignOperationID()
 
 	defer func() {
 		l := a.logger.
 			Err(errMsg).
-			Int("error_code", errorCode).
 			Str("method", r.Method+" "+r.URL.Path).
-			Str(string(logs.RequestIDKey), logs.AssignRequestID()).
+			Str(string(logs.OperationIDKey), operationID).
 			Str("path", path).
 			Str("username", params.Username)
 
@@ -181,7 +180,7 @@ func (a *API) PostFiles(w http.ResponseWriter, r *http.Request, params PostFiles
 		}
 
 		if part.FormName() == "file" {
-			status, processErr := processFile(r, params, part, u, a.logger.Trace().Str(string(logs.RequestIDKey), requestID))
+			status, processErr := processFile(r, params, part, u, a.logger.Trace().Str(string(logs.OperationIDKey), operationID).Str("event_type", "file_processing"))
 			if processErr != nil {
 				errorCode = status
 				errMsg = processErr

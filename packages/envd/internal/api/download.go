@@ -27,9 +27,8 @@ func (a *API) GetFiles(w http.ResponseWriter, r *http.Request, params GetFilesPa
 	defer func() {
 		l := a.logger.
 			Err(errMsg).
-			Int("error_code", errorCode).
 			Str("method", r.Method+" "+r.URL.Path).
-			Str(string(logs.RequestIDKey), logs.AssignRequestID()).
+			Str(string(logs.OperationIDKey), logs.AssignOperationID()).
 			Str("path", path).
 			Str("username", params.Username)
 

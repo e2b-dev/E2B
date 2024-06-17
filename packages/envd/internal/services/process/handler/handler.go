@@ -8,11 +8,13 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	"connectrpc.com/connect"
 	"github.com/creack/pty"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -31,6 +33,8 @@ type ProcessExit struct {
 type Handler struct {
 	Config *rpc.ProcessConfig
 
+	logger *zerolog.Event
+
 	Tag *string
 	cmd *exec.Cmd
 	tty *os.File
@@ -43,7 +47,7 @@ type Handler struct {
 	EndEvent  *MultiplexedChannel[rpc.ProcessEvent_End]
 }
 
-func New(req *rpc.StartRequest) (*Handler, error) {
+func New(req *rpc.StartRequest, logger *zerolog.Event) (*Handler, error) {
 	cmd := exec.Command(req.GetProcess().GetCmd(), req.GetProcess().GetArgs()...)
 
 	u, err := permissions.GetUser(req.GetUser())
@@ -114,6 +118,11 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 
 		buf := make([]byte, DefaultChunkSize)
 
+		stdoutLogs := make(chan []byte, outputBufferSize)
+		defer close(stdoutLogs)
+
+		go logs.LogBufferedDataEvents(stdoutLogs, logger.Str("event_type", "stdout"), "stdout")
+
 		for {
 			n, err := stdout.Read(buf)
 			if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
@@ -147,6 +156,11 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 
 		buf := make([]byte, DefaultChunkSize)
 
+		stderrLogs := make(chan []byte, outputBufferSize)
+		defer close(stderrLogs)
+
+		go logs.LogBufferedDataEvents(stderrLogs, logger.Str("event_type", "stderr"), "stderr")
+
 		for {
 			n, err := stderr.Read(buf)
 			if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
@@ -161,6 +175,8 @@ func New(req *rpc.StartRequest) (*Handler, error) {
 						},
 					},
 				}
+
+				stderrLogs <- buf[:n]
 			}
 
 			if err == io.EOF || err == io.ErrUnexpectedEOF {
@@ -268,6 +284,11 @@ func (p *Handler) Start() (uint32, error) {
 		fmt.Fprintf(os.Stderr, "error adjusting oom score for process '%s': %s\n", p.cmd, adjustErr)
 	}
 
+	p.logger.
+		Str("event_type", "process_start").
+		Int("pid", p.cmd.Process.Pid).
+		Send()
+
 	return uint32(p.cmd.Process.Pid), nil
 }
 
@@ -283,12 +304,21 @@ func (p *Handler) Wait() {
 		errMsg = &msg
 	}
 
-	p.EndEvent.Source <- rpc.ProcessEvent_End{
-		End: &rpc.ProcessEvent_EndEvent{
-			Error:    errMsg,
-			ExitCode: int32(p.cmd.ProcessState.ExitCode()),
-			Exited:   p.cmd.ProcessState.Exited(),
-			Status:   p.cmd.ProcessState.String(),
-		},
+	endEvent := &rpc.ProcessEvent_EndEvent{
+		Error:    errMsg,
+		ExitCode: int32(p.cmd.ProcessState.ExitCode()),
+		Exited:   p.cmd.ProcessState.Exited(),
+		Status:   p.cmd.ProcessState.String(),
 	}
+
+	event := rpc.ProcessEvent_End{
+		End: endEvent,
+	}
+
+	p.EndEvent.Source <- event
+
+	p.logger.
+		Str("event_type", "process_end").
+		Interface("process_end", endEvent).
+		Send()
 }

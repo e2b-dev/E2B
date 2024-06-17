@@ -9,23 +9,23 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type RequestID string
+type OperationID string
 
 const (
-	RequestIDKey      RequestID = "request_id"
-	DefaultHTTPMethod string    = "POST"
+	OperationIDKey    OperationID = "operation_id"
+	DefaultHTTPMethod string      = "POST"
 )
 
-var requestID = atomic.Int32{}
+var operationID = atomic.Int32{}
 
-func AssignRequestID() string {
-	id := requestID.Add(1)
+func AssignOperationID() string {
+	id := operationID.Add(1)
 
 	return strconv.Itoa(int(id))
 }
 
 func AddRequestIDToContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, RequestIDKey, AssignRequestID())
+	return context.WithValue(ctx, OperationIDKey, AssignOperationID())
 }
 
 func NewUnaryLogInterceptor(logger *zerolog.Logger) connect.UnaryInterceptorFunc {
@@ -41,7 +41,7 @@ func NewUnaryLogInterceptor(logger *zerolog.Logger) connect.UnaryInterceptorFunc
 			l := logger.
 				Err(err).
 				Str("method", DefaultHTTPMethod+" "+req.Spec().Procedure).
-				Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string))
+				Str(string(OperationIDKey), ctx.Value(OperationIDKey).(string))
 
 			if err != nil {
 				l = l.Int("error_code", int(connect.CodeOf(err)))
@@ -75,7 +75,7 @@ func LogServerStreamWithoutEvents[T any, R any](
 
 	l := logger.Info().
 		Str("method", DefaultHTTPMethod+" "+req.Spec().Procedure).
-		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string))
+		Str(string(OperationIDKey), ctx.Value(OperationIDKey).(string))
 
 	if req != nil {
 		l = l.Interface("request", req.Any())
@@ -87,7 +87,7 @@ func LogServerStreamWithoutEvents[T any, R any](
 
 	errL := logger.Err(err).
 		Str("method", DefaultHTTPMethod+" "+req.Spec().Procedure).
-		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string))
+		Str(string(OperationIDKey), ctx.Value(OperationIDKey).(string))
 
 	if err != nil {
 		errL = errL.Int("error_code", int(connect.CodeOf(err)))
@@ -96,19 +96,6 @@ func LogServerStreamWithoutEvents[T any, R any](
 	errL.Send()
 
 	return err
-}
-
-func LogStreamEvent(
-	ctx context.Context,
-	logger *zerolog.Event,
-	method string,
-	event interface{},
-) {
-	logger.
-		Str("method", DefaultHTTPMethod+" "+method).
-		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
-		Interface("event", event).
-		Send()
 }
 
 func LogClientStreamWithoutEvents[T any, R any](
@@ -121,14 +108,14 @@ func LogClientStreamWithoutEvents[T any, R any](
 
 	logger.Info().
 		Str("method", DefaultHTTPMethod+" "+stream.Spec().Procedure).
-		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string)).
+		Str(string(OperationIDKey), ctx.Value(OperationIDKey).(string)).
 		Send()
 
 	res, err := handler(ctx, stream)
 
 	l := logger.Err(err).
 		Str("method", DefaultHTTPMethod+" "+stream.Spec().Procedure).
-		Str(string(RequestIDKey), ctx.Value(RequestIDKey).(string))
+		Str(string(OperationIDKey), ctx.Value(OperationIDKey).(string))
 
 	if err != nil {
 		l = l.Int("error_code", int(connect.CodeOf(err)))

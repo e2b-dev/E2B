@@ -106,18 +106,25 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 					return connect.NewError(connect.CodeInternal, fmt.Errorf("error getting relative path: %w", nameErr))
 				}
 
-				event := &rpc.WatchDirResponse{
-					Event: &rpc.WatchDirResponse_Filesystem{
-						Filesystem: &rpc.WatchDirResponse_FilesystemEvent{
-							Name: name,
-							Type: op,
-						},
+				filesystemEvent := &rpc.WatchDirResponse_Filesystem{
+					Filesystem: &rpc.WatchDirResponse_FilesystemEvent{
+						Name: name,
+						Type: op,
 					},
+				}
+
+				event := &rpc.WatchDirResponse{
+					Event: filesystemEvent,
 				}
 
 				streamErr := stream.Send(event)
 
-				logs.LogStreamEvent(ctx, s.logger.Debug(), req.Spec().Procedure, event)
+				s.logger.
+					Debug().
+					Str("event_type", "filesystem_event").
+					Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).
+					Interface("filesystem_event", event).
+					Send()
 
 				if streamErr != nil {
 					return connect.NewError(connect.CodeUnknown, streamErr)
