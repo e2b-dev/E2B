@@ -14,6 +14,10 @@ class Process:
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
             compressor=connect.GzipCompressor,
+            headers={
+                "user-agent": "connect-python",
+                "X-Keepalive-Interval": "30",
+            },
         )
 
     def list(
@@ -67,8 +71,7 @@ class Process:
         on_stderr: Optional[Callable[[str], None]] = None,
         timeout: Optional[float] = None,
         request_timeout: Optional[float] = None,
-    ) -> ProcessResult:
-        ...
+    ) -> ProcessResult: ...
 
     @overload
     def run(
@@ -82,8 +85,7 @@ class Process:
         on_stderr: Optional[Callable[[str], None]] = None,
         timeout: Optional[float] = None,
         request_timeout: Optional[float] = None,
-    ) -> ProcessHandle:
-        ...
+    ) -> ProcessHandle: ...
 
     def run(
         self,

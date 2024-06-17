@@ -19,6 +19,6 @@ class WatchHandle(Generator):
     def _handle_events(self):
         try:
             for event in self._events:
-                yield event.event
+                yield event.filesystem
         finally:
             self.close()
