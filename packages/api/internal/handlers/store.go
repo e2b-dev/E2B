@@ -264,8 +264,9 @@ func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 func (a *APIStore) CheckTeamAccessEnv(ctx context.Context, aliasOrEnvID string, teamID uuid.UUID, public bool) (env *api.Template, build *models.EnvBuild, err error) {
 	template, build, err := a.db.GetEnv(ctx, aliasOrEnvID, teamID, public)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("error getting env %s for team %s: %w", aliasOrEnvID, teamID, err)
 	}
+
 	return &api.Template{
 		TemplateID: template.TemplateID,
 		BuildID:    build.ID.String(),
