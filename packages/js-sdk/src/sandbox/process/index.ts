@@ -26,10 +26,10 @@ export interface ProcessStartOpts extends ProcessRequestOpts {
   envs?: Record<string, string>
   onStdout?: ((data: string) => void | Promise<void>)
   onStderr?: ((data: string) => void | Promise<void>)
-  timeout?: number
+  timeoutMs?: number
 }
 
-export type ProcessConnectOpts = Pick<ProcessStartOpts, 'onStderr' | 'onStdout' | 'timeout'> & ProcessRequestOpts
+export type ProcessConnectOpts = Pick<ProcessStartOpts, 'onStderr' | 'onStdout' | 'timeoutMs'> & ProcessRequestOpts
 
 export class ProcessError extends SandboxError {
   constructor(message: string, public readonly pid: number) {
@@ -113,7 +113,7 @@ export class Process {
     }, {
       headers,
       signal: controller.signal,
-      timeoutMs: opts?.timeout ?? 60_000,
+      timeoutMs: opts?.timeoutMs ?? 60_000,
     })
 
     clearTimeout(reqTimeout)
@@ -171,7 +171,7 @@ export class Process {
       }, {
         headers,
         signal: controller.signal,
-        timeoutMs: opts?.timeout ?? 60_000,
+        timeoutMs: opts?.timeoutMs ?? 60_000,
       })
 
       const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value

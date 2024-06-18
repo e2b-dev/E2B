@@ -64,8 +64,13 @@ export class WatchHandle {
       if (err instanceof ConnectError) {
         switch (err.code) {
           case Code.Canceled:
+            throw new TimeoutError(
+              `Error watching filesystem: ${err.message}. This is likely due to exceeding 'requestTimeoutMs' — that can be passed as options when watching filesystem. It can `,
+            )
           case Code.DeadlineExceeded:
-            throw new TimeoutError(err.message)
+            throw new TimeoutError(
+              `Error watching filesystem: ${err.message}. This is likely due to exceeding 'timeoutMs' — the total time the watching can be active. It can be modified by passing 'timeoutMs' to the watch function. Use '0' to disable the timeout.`,
+            )
           default:
             throw new FilesystemError(err.message)
         }

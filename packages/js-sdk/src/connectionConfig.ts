@@ -1,3 +1,5 @@
+import { Logger } from './logs'
+
 export const DOMAIN = process?.env?.E2B_DOMAIN || 'e2b.dev'
 const DEBUG = (process?.env?.E2B_DEBUG || 'false').toLowerCase() === 'true'
 const API_KEY = process?.env?.E2B_API_KEY
@@ -11,7 +13,29 @@ export interface ConnectionOpts {
   domain?: string
   debug?: boolean
   requestTimeoutMs?: number
+  logger?: Logger
 }
+
+// function handleError(err: Error) {
+//   if (err instanceof ConnectError) {
+//     switch (err.code) {
+//       case Code.InvalidArgument:
+//         return new InvalidUserError(err.message)
+//       case Code.NotFound:
+//         return new InvalidPathError(err.message)
+//       case Code.DeadlineExceeded:
+//         return new TimeoutError(err.message)
+//       case Code.Canceled:
+//         return new TimeoutError(err.message)
+//       default:
+//         return new FilesystemError(err.message)
+//     }
+//   }
+//   throw err
+
+
+// }
+
 
 export class SandboxError extends Error {
   constructor(message: any) {
@@ -20,6 +44,8 @@ export class SandboxError extends Error {
   }
 }
 
+// [canceled] is caused by exceeding request timeout
+// [deadline_exceeded] is caused by exceeding the timeout (for process handlers, watch, etc)
 export class TimeoutError extends SandboxError {
   constructor(message: string) {
     super(message)
@@ -38,6 +64,7 @@ export class ConnectionConfig {
   readonly debug: boolean
   readonly domain: string
   readonly apiUrl: string
+  readonly logger?: Logger
 
   readonly requestTimeoutMs: number
 
@@ -50,6 +77,7 @@ export class ConnectionConfig {
     this.domain = opts?.domain || DOMAIN
     this.accessToken = opts?.accessToken || ACCESS_TOKEN
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
+    this.logger = opts?.logger
 
     this.apiUrl = this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`
   }

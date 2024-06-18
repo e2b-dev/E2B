@@ -19,6 +19,7 @@ import {
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import { FileType as FsFileType, WatchDirResponse } from '../../envd/filesystem/filesystem_pb'
+import { Logger } from '../../logs'
 
 import { WatchHandle, FilesystemEvent } from './watchHandle'
 
@@ -77,8 +78,9 @@ export class Filesystem {
     transport: Transport,
     envdApiUrl: string,
     private readonly connectionConfig: ConnectionConfig,
+    logger?: Logger,
   ) {
-    this.envdApi = new EnvdApiClient({ apiUrl: envdApiUrl })
+    this.envdApi = new EnvdApiClient({ apiUrl: envdApiUrl, logger })
     this.rpc = createPromiseClient(FilesystemService, transport)
   }
 

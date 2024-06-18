@@ -14,7 +14,7 @@ class ProcessResult(BaseModel):
     error: Optional[str]
 
 
-class ProcessExitException(Exception, ProcessResult):
+class ProcessExitException(Exception):
     def __init__(self, result: ProcessResult):
         self._result = result
 

@@ -2,9 +2,25 @@ import io
 
 from e2b import Sandbox
 
-s = Sandbox()
+sbx = Sandbox(debug=True)
 
-input = io.StringIO("This goes into the read buffer.")
+print(sbx.sandbox_id)
 
-s.files.write("/tmp/test.txt", input)
+# const res = await sbx.commands.run('while true; do echo -n "Hello World"; sleep 1; done', {
+#   // requestTimeoutMs: 1,
+#   onStdout: (data) => {
+#     // TODO: print also the time elapsed
+#     console.log(`${(Date.now() - start) / 1000}s: ${data}`)
+#   },
+# })
 
+
+# input = io.StringIO("This goes into the read buffer.")
+
+# s.files.write("/tmp/test.txt", input)
+
+
+sbx.commands.run(
+    cmd='while true; do echo -n "Hello World"; sleep 1; done',
+    on_stdout=lambda x: print(x),
+)

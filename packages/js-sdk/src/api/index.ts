@@ -3,6 +3,7 @@ import createClient from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
 import { ConnectionConfig, SandboxError } from '../connectionConfig'
+import { createApiLogger } from '../logs'
 
 export class AuthenticationError extends SandboxError {
   constructor(message: any) {
@@ -45,6 +46,10 @@ class ApiClient {
         ...config.accessToken && { Authorization: `Bearer ${config.accessToken}` },
       },
     })
+
+    if (config.logger) {
+      this.client.use(createApiLogger(config.logger))
+    }
   }
 
   get api() {

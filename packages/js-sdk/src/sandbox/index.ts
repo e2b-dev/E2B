@@ -1,6 +1,7 @@
 import { createConnectTransport } from '@connectrpc/connect-web'
 
 import { ConnectionOpts, ConnectionConfig, defaultUsername } from '../connectionConfig'
+import { createRpcLogger } from '../logs'
 import { Filesystem } from './filesystem'
 import { Process } from './process'
 import { Pty } from './pty'
@@ -41,9 +42,13 @@ export class Sandbox extends SandboxApi {
     this.connectionConfig = new ConnectionConfig(opts)
     this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHost(this.envdPort)}`
 
-    const rpcTransport = createConnectTransport({ baseUrl: this.envdApiUrl, useBinaryFormat: true })
+    const rpcTransport = createConnectTransport({
+      baseUrl: this.envdApiUrl,
+      useBinaryFormat: true,
+      interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
+    })
 
-    this.files = new Filesystem(rpcTransport, this.envdApiUrl, this.connectionConfig)
+    this.files = new Filesystem(rpcTransport, this.envdApiUrl, this.connectionConfig, opts?.logger)
     this.commands = new Process(rpcTransport, this.connectionConfig)
     this.pty = new Pty(rpcTransport, this.connectionConfig)
   }

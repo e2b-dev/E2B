@@ -5,6 +5,7 @@ export {
 export type { components, paths } from './api'
 
 export { ConnectionConfig, SandboxError, DOMAIN, InvalidUserError } from './connectionConfig'
+export type { Logger } from './logs'
 export type { ConnectionOpts, Username } from './connectionConfig'
 
 export type { FilesystemEvent, WatchHandle, FilesystemEventType, } from './sandbox/filesystem/watchHandle'
@@ -36,5 +37,5 @@ export type {
 } from './sandbox/process'
 
 import { Sandbox } from './sandbox'
-export { Sandbox, }
+export { Sandbox }
 export default Sandbox
