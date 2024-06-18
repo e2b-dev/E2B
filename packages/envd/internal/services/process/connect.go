@@ -32,6 +32,19 @@ func (s *Service) handleConnect(ctx context.Context, req *connect.Request[rpc.Co
 	end, endCancel := proc.EndEvent.Fork()
 	defer endCancel()
 
+	streamErr := stream.Send(&rpc.ConnectResponse{
+		Event: &rpc.ProcessEvent{
+			Event: &rpc.ProcessEvent_Start{
+				Start: &rpc.ProcessEvent_StartEvent{
+					Pid: proc.Pid(),
+				},
+			},
+		},
+	})
+	if streamErr != nil {
+		return connect.NewError(connect.CodeUnknown, streamErr)
+	}
+
 	go func() {
 		defer close(exitChan)
 

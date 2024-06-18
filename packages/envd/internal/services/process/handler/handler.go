@@ -47,6 +47,11 @@ type Handler struct {
 	EndEvent  *MultiplexedChannel[rpc.ProcessEvent_End]
 }
 
+// This method must be called only after the process has been started
+func (p *Handler) Pid() uint32 {
+	return uint32(p.cmd.Process.Pid)
+}
+
 func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 	cmd := exec.Command(req.GetProcess().GetCmd(), req.GetProcess().GetArgs()...)
 

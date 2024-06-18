@@ -44,7 +44,7 @@ func (s *Service) getProcess(selector *rpc.ProcessSelector) (*handler.Handler, e
 	case *rpc.ProcessSelector_Pid:
 		p, ok := s.processes.Load(selector.GetPid())
 		if !ok {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with pid %d not found", selector.GetPid()))
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("process with pid %d not found", selector.GetPid()))
 		}
 
 		proc = p
@@ -65,7 +65,7 @@ func (s *Service) getProcess(selector *rpc.ProcessSelector) (*handler.Handler, e
 		})
 
 		if proc == nil {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("process with tag %s not found", tag))
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("process with tag %s not found", tag))
 		}
 
 	default:
