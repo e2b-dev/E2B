@@ -1,3 +1,4 @@
+import { SandboxError } from '../../connectionConfig'
 import {
   ConnectResponse,
   StartResponse,
@@ -140,7 +141,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     }
 
     if (!this.result) {
-      throw new ProcessError('Process exited without a result')
+      throw new SandboxError('Process exited without a result')
     }
 
     if (this.result.exitCode !== 0) {

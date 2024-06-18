@@ -9,11 +9,11 @@ import {
 import {
   ConnectionConfig,
   defaultUsername,
-  SandboxError,
   Username,
   ConnectionOpts,
-  TimeoutError,
-  InvalidUserError,
+  handleRpcError,
+  handleEnvdApiError,
+  SandboxError,
 } from '../../connectionConfig'
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
@@ -41,34 +41,6 @@ export interface WatchOpts extends FilesystemRequestOpts {
   onExit?: (err: Error) => void
 }
 
-export class FilesystemError extends SandboxError {
-  constructor(message: any) {
-    super(message)
-    this.name = 'FilesystemError'
-  }
-}
-
-export class InvalidPathError extends FilesystemError {
-  constructor(message: string) {
-    super(message)
-    this.name = 'InvalidPathError'
-  }
-}
-
-export class NotEnoughDiskSpaceError extends FilesystemError {
-  constructor(message: string) {
-    super(message)
-    this.name = 'NotEnoughDiskSpaceError'
-  }
-}
-
-export class NotFoundError extends FilesystemError {
-  constructor(message: string) {
-    super(message)
-    this.name = 'FileNotFoundError'
-  }
-}
-
 export class Filesystem {
   private readonly rpc: PromiseClient<typeof FilesystemService>
   private readonly envdApi: EnvdApiClient
@@ -90,30 +62,20 @@ export class Filesystem {
   async read(path: string, opts?: FilesystemRequestOpts & { format?: 'text' | 'stream' | 'bytes' | 'blob' }): Promise<unknown> {
     const format = opts?.format ?? 'text'
 
-    const username = opts?.user || defaultUsername
-
     const { data, error } = await this.envdApi.api.GET('/files', {
       params: {
         query: {
           path,
-          username,
+          username: opts?.user || defaultUsername,
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
 
-    switch (error?.code) {
-      case 400:
-        throw new InvalidUserError(error.message)
-      case 403:
-        throw new InvalidPathError(error.message)
-      case 404:
-        throw new NotFoundError(error.message)
-      default:
-        if (error) {
-          throw new FilesystemError(error.message)
-        }
+    const err = handleEnvdApiError(error)
+    if (err) {
+      throw err
     }
 
     if (format === 'bytes') {
@@ -126,13 +88,11 @@ export class Filesystem {
   async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream, opts?: FilesystemRequestOpts): Promise<void> {
     const blob = await new Response(data).blob()
 
-    const username = opts?.user || defaultUsername
-
     const { error } = await this.envdApi.api.POST('/files', {
       params: {
         query: {
           path,
-          username,
+          username: opts?.user || defaultUsername,
         },
       },
       bodySerializer() {
@@ -146,30 +106,20 @@ export class Filesystem {
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
 
-    switch (error?.code) {
-      case 400:
-        throw new InvalidUserError(error.message)
-      case 403:
-        throw new InvalidPathError(error.message)
-      case 507:
-        throw new NotEnoughDiskSpaceError(error.message)
-      default:
-        if (error) {
-          throw new FilesystemError(error.message)
-        }
+    const err = handleEnvdApiError(error)
+    if (err) {
+      throw err
     }
   }
 
   async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
-    const username = opts?.user || defaultUsername
-
     try {
       const res = await this.rpc.listDir({
         path,
         user: {
           selector: {
             case: 'username',
-            value: username,
+            value: opts?.user || defaultUsername,
           },
         },
       }, {
@@ -181,33 +131,18 @@ export class Filesystem {
         type: e.type === FsFileType.FILE ? FileType.FILE : FileType.DIR,
       }))
     } catch (err) {
-      if (err instanceof ConnectError) {
-        switch (err.code) {
-          case Code.InvalidArgument:
-            throw new InvalidUserError(err.message)
-          case Code.NotFound:
-            throw new InvalidPathError(err.message)
-          case Code.DeadlineExceeded:
-          case Code.Canceled:
-            throw new TimeoutError(err.message)
-          default:
-            throw new FilesystemError(err.message)
-        }
-      }
-      throw err
+      throw handleRpcError(err)
     }
   }
 
   async makeDir(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
-    const username = opts?.user || defaultUsername
-
     try {
       await this.rpc.makeDir({
         path,
         user: {
           selector: {
             case: 'username',
-            value: username,
+            value: opts?.user || defaultUsername,
           },
         },
       }, {
@@ -217,29 +152,16 @@ export class Filesystem {
       return true
     } catch (err) {
       if (err instanceof ConnectError) {
-        switch (err.code) {
-          case Code.InvalidArgument:
-            throw new InvalidUserError(err.message)
-          case Code.NotFound:
-            throw new InvalidPathError(err.message)
-          case Code.AlreadyExists:
-            return false
-          case Code.FailedPrecondition:
-            throw new InvalidPathError(err.message)
-          case Code.DeadlineExceeded:
-          case Code.Canceled:
-            throw new TimeoutError(err.message)
-          default:
-            throw new FilesystemError(err.message)
+        if (err.code === Code.AlreadyExists) {
+          return false
         }
       }
-      throw err
+
+      throw handleRpcError(err)
     }
   }
 
   async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<boolean> {
-    const username = opts?.user || defaultUsername
-
     try {
       await this.rpc.move({
         source: oldPath,
@@ -247,7 +169,7 @@ export class Filesystem {
         user: {
           selector: {
             case: 'username',
-            value: username,
+            value: opts?.user || defaultUsername,
           },
         },
       }, {
@@ -256,66 +178,36 @@ export class Filesystem {
 
       return true
     } catch (err) {
-      if (err instanceof ConnectError) {
-        switch (err.code) {
-          case Code.InvalidArgument:
-            throw new InvalidUserError(err.message)
-          case Code.NotFound:
-            throw new InvalidPathError(err.message)
-          case Code.DeadlineExceeded:
-          case Code.Canceled:
-            throw new TimeoutError(err.message)
-          default:
-            throw new FilesystemError(err.message)
-        }
-      }
-      throw err
+      throw handleRpcError(err)
     }
   }
 
   async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
-    const username = opts?.user || defaultUsername
-
     try {
       await this.rpc.remove({
         path,
         user: {
           selector: {
             case: 'username',
-            value: username,
+            value: opts?.user || defaultUsername,
           },
         },
       }, {
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
     } catch (err) {
-      if (err instanceof ConnectError) {
-        switch (err.code) {
-          case Code.InvalidArgument:
-            throw new InvalidUserError(err.message)
-          case Code.NotFound:
-            throw new InvalidPathError(err.message)
-          case Code.DeadlineExceeded:
-          case Code.Canceled:
-            throw new TimeoutError(err.message)
-          default:
-            throw new FilesystemError(err.message)
-        }
-      }
-      throw err
+      throw handleRpcError(err)
     }
   }
 
   async exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
-    const username = opts?.user || defaultUsername
-
     try {
       await this.rpc.stat({
         path,
         user: {
           selector: {
             case: 'username',
-            value: username,
+            value: opts?.user || defaultUsername,
           },
         },
       }, {
@@ -325,19 +217,12 @@ export class Filesystem {
       return true
     } catch (err) {
       if (err instanceof ConnectError) {
-        switch (err.code) {
-          case Code.InvalidArgument:
-            throw new InvalidUserError(err.message)
-          case Code.NotFound:
-            return false
-          case Code.DeadlineExceeded:
-          case Code.Canceled:
-            throw new TimeoutError(err.message)
-          default:
-            throw new FilesystemError(err.message)
+        if (err.code === Code.NotFound) {
+          return false
         }
       }
-      throw err
+
+      throw handleRpcError(err)
     }
   }
 
@@ -347,7 +232,6 @@ export class Filesystem {
     opts?: FilesystemRequestOpts & { timeout?: number, onExit?: (err?: Error) => void | Promise<void> },
   ): Promise<WatchHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-    const username = opts?.user || defaultUsername
 
     const controller = new AbortController()
 
@@ -362,7 +246,7 @@ export class Filesystem {
       user: {
         selector: {
           case: 'username',
-          value: username,
+          value: opts?.user || defaultUsername,
         },
       },
     }, {
@@ -374,32 +258,19 @@ export class Filesystem {
       const startEvent: WatchDirResponse = (await events[Symbol.asyncIterator]().next()).value
 
       if (startEvent.event.case !== 'start') {
-        throw new Error('Expected start event')
+        throw new SandboxError('Expected start event')
       }
+
+      clearTimeout(reqTimeout)
+
+      return new WatchHandle(
+        () => controller.abort(),
+        events,
+        onEvent,
+        opts?.onExit,
+      )
     } catch (err) {
-      if (err instanceof ConnectError) {
-        switch (err.code) {
-          case Code.InvalidArgument:
-            throw new InvalidUserError(err.message)
-          case Code.NotFound:
-            throw new InvalidPathError(err.message)
-          case Code.DeadlineExceeded:
-          case Code.Canceled:
-            throw new TimeoutError(err.message)
-          default:
-            throw new FilesystemError(err.message)
-        }
-      }
-      throw err
+      throw handleRpcError(err)
     }
-
-    clearTimeout(reqTimeout)
-
-    return new WatchHandle(
-      () => controller.abort(),
-      events,
-      onEvent,
-      opts?.onExit,
-    )
   }
 }

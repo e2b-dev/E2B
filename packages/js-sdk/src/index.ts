@@ -4,7 +4,16 @@ export {
 } from './api'
 export type { components, paths } from './api'
 
-export { ConnectionConfig, SandboxError, DOMAIN, InvalidUserError } from './connectionConfig'
+export {
+  ConnectionConfig,
+  SandboxError,
+  DOMAIN,
+  InvalidUserError,
+  NotEnoughDiskSpaceError,
+  NotFoundError,
+  InvalidPathError,
+  TimeoutError,
+} from './connectionConfig'
 export type { Logger } from './logs'
 export type { ConnectionOpts, Username } from './connectionConfig'
 
@@ -13,10 +22,6 @@ export type {
   EntryInfo,
 } from './sandbox/filesystem'
 export {
-  NotEnoughDiskSpaceError,
-  NotFoundError as FileNotFoundError,
-  FilesystemError,
-  InvalidPathError,
   FileType,
 } from './sandbox/filesystem'
 

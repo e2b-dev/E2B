@@ -1,7 +1,5 @@
-import { ConnectError, Code } from '@connectrpc/connect'
 
-import { FilesystemError } from '.'
-import { TimeoutError } from '../../connectionConfig'
+import { handleRpcError } from '../../connectionConfig'
 import {
   EventType,
   WatchDirResponse,
@@ -61,21 +59,7 @@ export class WatchHandle {
         }
       }
     } catch (err) {
-      if (err instanceof ConnectError) {
-        switch (err.code) {
-          case Code.Canceled:
-            throw new TimeoutError(
-              `Error watching filesystem: ${err.message}. This is likely due to exceeding 'requestTimeoutMs' — that can be passed as options when watching filesystem. It can `,
-            )
-          case Code.DeadlineExceeded:
-            throw new TimeoutError(
-              `Error watching filesystem: ${err.message}. This is likely due to exceeding 'timeoutMs' — the total time the watching can be active. It can be modified by passing 'timeoutMs' to the watch function. Use '0' to disable the timeout.`,
-            )
-          default:
-            throw new FilesystemError(err.message)
-        }
-      }
-      throw err
+      throw handleRpcError(err)
     } finally {
       this.stop()
     }

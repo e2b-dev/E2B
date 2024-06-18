@@ -1,5 +1,5 @@
 import { ApiClient } from '../api'
-import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts, handleApiError } from '../connectionConfig'
 
 export interface RunningSandbox {
   sandboxID: string
@@ -19,13 +19,18 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    await client.api.DELETE('/sandboxes/{sandboxID}', {
+    const res = await client.api.DELETE('/sandboxes/{sandboxID}', {
       params: {
         path: {
           sandboxID,
         },
       },
     })
+
+    const err = handleApiError(res.error)
+    if (err) {
+      throw err
+    }
   }
 
   static async list(opts?: ConnectionOpts): Promise<RunningSandbox[]> {
@@ -33,6 +38,11 @@ export class SandboxApi {
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/sandboxes')
+
+    const err = handleApiError(res.error)
+    if (err) {
+      throw err
+    }
 
     return res.data?.map((sandbox) => ({
       sandboxID: this.getSandboxID(sandbox),
@@ -60,6 +70,11 @@ export class SandboxApi {
       },
     })
 
+    const err = handleApiError(res.error)
+    if (err) {
+      throw err
+    }
+
     return this.getSandboxID(res.data!)
   }
 
@@ -71,7 +86,7 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    await client.api.POST('/sandboxes/{sandboxID}/timeout', {
+    const res = await client.api.POST('/sandboxes/{sandboxID}/timeout', {
       params: {
         path: {
           sandboxID,
@@ -81,6 +96,11 @@ export class SandboxApi {
         timeout: this.timeoutToSeconds(timeoutMs),
       },
     })
+
+    const err = handleApiError(res.error)
+    if (err) {
+      throw err
+    }
   }
 
   private static timeoutToSeconds(timeout: number): number {

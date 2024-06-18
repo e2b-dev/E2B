@@ -3,7 +3,6 @@ import {
   createPromiseClient,
   PromiseClient,
   Transport,
-  ConnectError,
 } from '@connectrpc/connect'
 
 import { Process as ProcessService } from '../../envd/process/process_connect'
@@ -12,7 +11,7 @@ import {
   Signal,
   StartResponse,
 } from '../../envd/process/process_pb'
-import { ConnectionConfig, defaultUsername, Username, ConnectionOpts, SandboxError } from '../../connectionConfig'
+import { ConnectionConfig, defaultUsername, Username, ConnectionOpts, SandboxError, handleRpcError } from '../../connectionConfig'
 import { ProcessHandle, ProcessResult } from './processHandle'
 
 export type ProcessInfo = PlainMessage<PsProcessInfo>
@@ -49,44 +48,56 @@ export class Process {
   }
 
   async list(opts?: ProcessRequestOpts): Promise<ProcessInfo[]> {
-    const res = await this.rpc.list({}, {
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-    })
+    try {
+      const res = await this.rpc.list({}, {
+        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      })
 
-    return res.processes
+      return res.processes
+    } catch (err) {
+      throw handleRpcError(err)
+    }
   }
 
   async sendStdin(pid: number, data: string, opts?: ProcessRequestOpts): Promise<void> {
-    await this.rpc.sendInput({
-      process: {
-        selector: {
-          case: 'pid',
-          value: pid,
-        }
-      },
-      input: {
+    try {
+      await this.rpc.sendInput({
+        process: {
+          selector: {
+            case: 'pid',
+            value: pid,
+          }
+        },
         input: {
-          case: 'stdin',
-          value: new TextEncoder().encode(data),
+          input: {
+            case: 'stdin',
+            value: new TextEncoder().encode(data),
+          }
         }
-      }
-    }, {
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-    })
+      }, {
+        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      })
+    } catch (err) {
+      throw handleRpcError(err)
+    }
   }
 
   async kill(pid: number, opts?: ProcessRequestOpts): Promise<void> {
-    await this.rpc.sendSignal({
-      process: {
-        selector: {
-          case: 'pid',
-          value: pid,
-        }
-      },
-      signal: Signal.SIGKILL,
-    }, {
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-    })
+    try {
+      await this.rpc.sendSignal({
+        process: {
+          selector: {
+            case: 'pid',
+            value: pid,
+          }
+        },
+        signal: Signal.SIGKILL,
+      }, {
+        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      })
+    } catch (err) {
+      throw handleRpcError(err)
+    }
   }
 
   async connect(pid: number, opts?: ProcessConnectOpts): Promise<ProcessHandle> {
@@ -112,17 +123,27 @@ export class Process {
       timeoutMs: opts?.timeoutMs ?? 60_000,
     })
 
-    clearTimeout(reqTimeout)
+    try {
+      const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
 
-    return new ProcessHandle(
-      pid,
-      () => controller.abort(),
-      () => this.kill(pid),
-      events,
-      opts?.onStdout,
-      opts?.onStderr,
-      undefined,
-    )
+      if (startEvent.event?.event.case !== 'start') {
+        throw new SandboxError('Expected start event')
+      }
+
+      clearTimeout(reqTimeout)
+
+      return new ProcessHandle(
+        pid,
+        () => controller.abort(),
+        () => this.kill(pid),
+        events,
+        opts?.onStdout,
+        opts?.onStderr,
+        undefined,
+      )
+    } catch (err) {
+      throw handleRpcError(err)
+    }
   }
 
   async run(cmd: string, opts?: ProcessStartOpts & { background?: false }): Promise<ProcessResult>
@@ -146,29 +167,29 @@ export class Process {
       }, requestTimeoutMs)
       : undefined
 
-    try {
-      const events = this.rpc.start({
-        user: {
-          selector: {
-            case: 'username',
-            value: opts?.user || defaultUsername,
-          },
+    const events = this.rpc.start({
+      user: {
+        selector: {
+          case: 'username',
+          value: opts?.user || defaultUsername,
         },
-        process: {
-          cmd: '/bin/bash',
-          cwd: opts?.cwd,
-          envs: opts?.envs,
-          args: ['-l', '-c', cmd],
-        },
-      }, {
-        signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? 60_000,
-      })
+      },
+      process: {
+        cmd: '/bin/bash',
+        cwd: opts?.cwd,
+        envs: opts?.envs,
+        args: ['-l', '-c', cmd],
+      },
+    }, {
+      signal: controller.signal,
+      timeoutMs: opts?.timeoutMs ?? 60_000,
+    })
 
+    try {
       const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
 
       if (startEvent.event?.event.case !== 'start') {
-        throw new Error('Expected start event')
+        throw new SandboxError('Expected start event')
       }
 
       clearTimeout(reqTimeout)
@@ -185,9 +206,7 @@ export class Process {
         undefined,
       )
     } catch (err) {
-      const connectErr = ConnectError.from(err)
-      console.log(connectErr)
-      throw err
+      throw handleRpcError(err)
     }
   }
 }
