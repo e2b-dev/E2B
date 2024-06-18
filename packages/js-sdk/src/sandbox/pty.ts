@@ -38,9 +38,6 @@ export class Pty {
       controller.abort()
     }, requestTimeoutMs)
 
-    const headers = new Headers()
-    headers.set('X-Keepalive-Interval', (KEEPALIVE_INTERVAL / 1000).toString())
-
     const events = this.rpc.start({
       user: {
         selector: {
@@ -62,7 +59,6 @@ export class Pty {
         },
       },
     }, {
-      headers,
       signal: controller.signal,
       timeoutMs: opts?.timeout ?? 60_000,
     })

@@ -14,10 +14,6 @@ class Process:
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
             compressor=connect.GzipCompressor,
-            headers={
-                "user-agent": "connect-python",
-                "X-Keepalive-Interval": "30",
-            },
         )
 
     def list(

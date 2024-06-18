@@ -30,10 +30,6 @@ class Filesystem:
         self._rpc = filesystem_connect.FilesystemClient(
             envd_api_url,
             compressor=connect.GzipCompressor,
-            headers={
-                "user-agent": "connect-python",
-                "X-Keepalive-Interval": "30",
-            },
         )
 
     @overload

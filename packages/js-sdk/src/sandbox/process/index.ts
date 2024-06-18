@@ -12,7 +12,7 @@ import {
   Signal,
   StartResponse,
 } from '../../envd/process/process_pb'
-import { ConnectionConfig, defaultUsername, Username, ConnectionOpts, SandboxError, KEEPALIVE_INTERVAL } from '../../connectionConfig'
+import { ConnectionConfig, defaultUsername, Username, ConnectionOpts, SandboxError } from '../../connectionConfig'
 import { ProcessHandle, ProcessResult } from './processHandle'
 
 export type ProcessInfo = PlainMessage<PsProcessInfo>
@@ -100,9 +100,6 @@ export class Process {
       }, requestTimeoutMs)
       : undefined
 
-    const headers = new Headers()
-    headers.set('X-Keepalive-Interval', (KEEPALIVE_INTERVAL / 1000).toString())
-
     const events = this.rpc.connect({
       process: {
         selector: {
@@ -111,7 +108,6 @@ export class Process {
         }
       },
     }, {
-      headers,
       signal: controller.signal,
       timeoutMs: opts?.timeoutMs ?? 60_000,
     })
@@ -150,10 +146,6 @@ export class Process {
       }, requestTimeoutMs)
       : undefined
 
-    const headers = new Headers()
-    headers.set('X-Keepalive-Interval', (KEEPALIVE_INTERVAL / 1000).toString())
-
-
     try {
       const events = this.rpc.start({
         user: {
@@ -169,7 +161,6 @@ export class Process {
           args: ['-l', '-c', cmd],
         },
       }, {
-        headers,
         signal: controller.signal,
         timeoutMs: opts?.timeoutMs ?? 60_000,
       })
