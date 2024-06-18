@@ -1,9 +1,6 @@
 package logs
 
 import (
-	"bufio"
-	"bytes"
-	"fmt"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -11,18 +8,22 @@ import (
 
 const (
 	defaultMaxBufferSize = 2 << 15
-	defaultTimeout       = 4 * time.Second
-	startScanCapacity    = 2 << 12
+	defaultTimeout       = 2 * time.Second
 )
 
-func LogBufferedDataEvents(dataCh <-chan []byte, logger *zerolog.Event, eventType string) {
-	timer := time.NewTimer(defaultTimeout)
+func LogBufferedDataEvents(dataCh <-chan []byte, logger *zerolog.Logger, eventType string) {
+	timer := time.NewTicker(defaultTimeout)
 	defer timer.Stop()
 
 	var buffer []byte
 
 	for {
 		select {
+		case <-timer.C:
+			if len(buffer) > 0 {
+				logger.Debug().Str(eventType, string(buffer)).Send()
+				buffer = nil
+			}
 		case data, ok := <-dataCh:
 			if !ok {
 				return
@@ -31,33 +32,10 @@ func LogBufferedDataEvents(dataCh <-chan []byte, logger *zerolog.Event, eventTyp
 			buffer = append(buffer, data...)
 
 			if len(buffer) >= defaultMaxBufferSize {
-				logger.Str(eventType, string(buffer)).Send()
+				logger.Debug().Str(eventType, string(buffer)).Send()
 				buffer = nil
 
 				continue
-			}
-
-			scanner := bufio.NewScanner(bytes.NewReader(buffer))
-
-			buf := make([]byte, 0, startScanCapacity)
-			scanner.Buffer(buf, defaultMaxBufferSize)
-
-			for scanner.Scan() {
-				line := scanner.Text()
-
-				logger.Str(eventType, line+"\n").Send()
-			}
-
-			if scanner.Err() == nil {
-				buffer = scanner.Bytes() // Remaining data that doesn't end with a newline
-			} else {
-				fmt.Println("error", scanner.Err())
-			}
-
-		case <-timer.C:
-			if len(buffer) > 0 {
-				logger.Str(eventType, string(buffer)).Send()
-				buffer = nil
 			}
 		}
 	}

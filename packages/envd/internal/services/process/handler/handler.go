@@ -33,7 +33,7 @@ type ProcessExit struct {
 type Handler struct {
 	Config *rpc.ProcessConfig
 
-	logger *zerolog.Event
+	logger *zerolog.Logger
 
 	Tag *string
 	cmd *exec.Cmd
@@ -47,7 +47,7 @@ type Handler struct {
 	EndEvent  *MultiplexedChannel[rpc.ProcessEvent_End]
 }
 
-func New(req *rpc.StartRequest, logger *zerolog.Event) (*Handler, error) {
+func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 	cmd := exec.Command(req.GetProcess().GetCmd(), req.GetProcess().GetArgs()...)
 
 	u, err := permissions.GetUser(req.GetUser())
@@ -121,7 +121,9 @@ func New(req *rpc.StartRequest, logger *zerolog.Event) (*Handler, error) {
 		stdoutLogs := make(chan []byte, outputBufferSize)
 		defer close(stdoutLogs)
 
-		go logs.LogBufferedDataEvents(stdoutLogs, logger.Str("event_type", "stdout"), "stdout")
+		stdoutLogger := logger.With().Str("event_type", "stdout").Logger()
+
+		go logs.LogBufferedDataEvents(stdoutLogs, &stdoutLogger, "data")
 
 		for {
 			n, err := stdout.Read(buf)
@@ -137,6 +139,8 @@ func New(req *rpc.StartRequest, logger *zerolog.Event) (*Handler, error) {
 						},
 					},
 				}
+
+				stdoutLogs <- buf[:n]
 			}
 
 			if err == io.EOF || err == io.ErrUnexpectedEOF {
@@ -159,7 +163,9 @@ func New(req *rpc.StartRequest, logger *zerolog.Event) (*Handler, error) {
 		stderrLogs := make(chan []byte, outputBufferSize)
 		defer close(stderrLogs)
 
-		go logs.LogBufferedDataEvents(stderrLogs, logger.Str("event_type", "stderr"), "stderr")
+		stderrLogger := logger.With().Str("event_type", "stderr").Logger()
+
+		go logs.LogBufferedDataEvents(stderrLogs, &stderrLogger, "data")
 
 		for {
 			n, err := stderr.Read(buf)
@@ -229,6 +235,7 @@ func New(req *rpc.StartRequest, logger *zerolog.Event) (*Handler, error) {
 		Tag:       req.Tag,
 		DataEvent: outMultiplex,
 		EndEvent:  NewMultiplexedChannel[rpc.ProcessEvent_End](0),
+		logger:    logger,
 	}, nil
 }
 
@@ -285,6 +292,7 @@ func (p *Handler) Start() (uint32, error) {
 	}
 
 	p.logger.
+		Info().
 		Str("event_type", "process_start").
 		Int("pid", p.cmd.Process.Pid).
 		Send()
@@ -318,7 +326,8 @@ func (p *Handler) Wait() {
 	p.EndEvent.Source <- event
 
 	p.logger.
+		Info().
 		Str("event_type", "process_end").
-		Interface("process_end", endEvent).
+		Interface("process_result", endEvent).
 		Send()
 }

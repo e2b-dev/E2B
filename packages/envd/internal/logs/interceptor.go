@@ -55,6 +55,10 @@ func NewUnaryLogInterceptor(logger *zerolog.Logger) connect.UnaryInterceptorFunc
 				l = l.Interface("response", res.Any())
 			}
 
+			if res == nil && err == nil {
+				l = l.Interface("response", nil)
+			}
+
 			l.Send()
 
 			return res, err
@@ -91,6 +95,8 @@ func LogServerStreamWithoutEvents[T any, R any](
 
 	if err != nil {
 		errL = errL.Int("error_code", int(connect.CodeOf(err)))
+	} else {
+		errL = errL.Interface("response", nil)
 	}
 
 	errL.Send()
@@ -123,6 +129,10 @@ func LogClientStreamWithoutEvents[T any, R any](
 
 	if res != nil && err == nil {
 		l = l.Interface("response", res.Any())
+	}
+
+	if res == nil && err == nil {
+		l = l.Interface("response", nil)
 	}
 
 	l.Send()

@@ -24,7 +24,9 @@ func (s *Service) StartBackgroundProcess(ctx context.Context, req *rpc.StartRequ
 		Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).
 		Msg("start background process")
 
-	proc, err := handler.New(req, s.logger.Debug().Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)))
+	handlerL := s.logger.With().Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).Logger()
+
+	proc, err := handler.New(req, &handlerL)
 	if err != nil {
 		return err
 	}
@@ -57,7 +59,9 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 	host.WaitForSync()
 	s.logger.Trace().Msg("clock synced")
 
-	proc, err := handler.New(req.Msg, s.logger.Debug().Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)))
+	handlerL := s.logger.With().Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).Logger()
+
+	proc, err := handler.New(req.Msg, &handlerL)
 	if err != nil {
 		return err
 	}

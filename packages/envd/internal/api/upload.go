@@ -29,7 +29,7 @@ func freeDiskSpace(path string) (free uint64, err error) {
 	return freeSpace, nil
 }
 
-func processFile(r *http.Request, params PostFilesParams, part *multipart.Part, user *user.User, logger *zerolog.Event) (int, error) {
+func processFile(r *http.Request, params PostFilesParams, part *multipart.Part, user *user.User, logger zerolog.Logger) (int, error) {
 	var pathToResolve string
 
 	if params.Path != nil {
@@ -38,7 +38,7 @@ func processFile(r *http.Request, params PostFilesParams, part *multipart.Part, 
 		pathToResolve = part.FileName()
 	}
 
-	logger.
+	logger.Debug().
 		Str("path", pathToResolve).
 		Msg("processing_file")
 
@@ -180,7 +180,7 @@ func (a *API) PostFiles(w http.ResponseWriter, r *http.Request, params PostFiles
 		}
 
 		if part.FormName() == "file" {
-			status, processErr := processFile(r, params, part, u, a.logger.Trace().Str(string(logs.OperationIDKey), operationID).Str("event_type", "file_processing"))
+			status, processErr := processFile(r, params, part, u, a.logger.With().Str(string(logs.OperationIDKey), operationID).Str("event_type", "file_processing").Logger())
 			if processErr != nil {
 				errorCode = status
 				errMsg = processErr
