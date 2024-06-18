@@ -143,7 +143,7 @@ func (a *API) PostFiles(w http.ResponseWriter, r *http.Request, params PostFiles
 			l = l.Int("error_code", errorCode)
 		}
 
-		l.Msg("upload file")
+		l.Msg("write file")
 	}()
 
 	f, err := r.MultipartReader()

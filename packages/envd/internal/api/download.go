@@ -36,7 +36,7 @@ func (a *API) GetFiles(w http.ResponseWriter, r *http.Request, params GetFilesPa
 			l = l.Int("error_code", errorCode)
 		}
 
-		l.Msg("download file")
+		l.Msg("read file")
 	}()
 
 	u, err := user.Lookup(params.Username)
