@@ -17,10 +17,7 @@ export interface ConnectionOpts {
   logger?: Logger
 }
 
-export function handleApiError(err?: {
-  code: number;
-  message: string;
-} | undefined) {
+export function handleApiError(err?: { code: number, message: string }) {
   if (!err) {
     return
   }
