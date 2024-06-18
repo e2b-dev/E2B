@@ -7,7 +7,7 @@ import (
 	"connectrpc.com/connect"
 )
 
-const defaultKeepAliveInterval = 1 * time.Minute
+const defaultKeepAliveInterval = 90 * time.Second
 
 func GetKeepAliveTicker[T any](req *connect.Request[T]) (<-chan time.Time, func()) {
 	keepAliveIntervalHeader := req.Header().Get("X-Keepalive-Interval")

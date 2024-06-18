@@ -37,7 +37,6 @@ message ProcessConfig {
 
 message ListRequest {}
 
-
 message ProcessInfo {
     ProcessConfig config = 1;
     uint32 pid = 2;
