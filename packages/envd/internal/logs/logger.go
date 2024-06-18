@@ -13,11 +13,11 @@ import (
 func NewLogger(ctx context.Context, debug bool) *zerolog.Logger {
 	zerolog.TimestampFieldName = "timestamp"
 
-	exporters := []io.Writer{
-		os.Stdout,
-	}
+	exporters := []io.Writer{}
 
-	if !debug {
+	if debug {
+		exporters = append(exporters, os.Stdout)
+	} else {
 		exporters = append(exporters, exporter.NewHTTPLogsExporter(ctx, false))
 	}
 

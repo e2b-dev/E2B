@@ -7,15 +7,21 @@ import (
 	"connectrpc.com/connect"
 )
 
+const defaultKeepAliveInterval = 1 * time.Minute
+
 func GetKeepAliveTicker[T any](req *connect.Request[T]) (<-chan time.Time, func()) {
 	keepAliveIntervalHeader := req.Header().Get("X-Keepalive-Interval")
 
+	var interval time.Duration
+
 	keepAliveIntervalInt, err := strconv.Atoi(keepAliveIntervalHeader)
 	if err != nil {
-		return nil, func() {}
+		interval = defaultKeepAliveInterval
+	} else {
+		interval = time.Duration(keepAliveIntervalInt) * time.Second
 	}
 
-	ticker := time.NewTicker(time.Duration(keepAliveIntervalInt) * time.Second)
+	ticker := time.NewTicker(interval)
 
 	return ticker.C, func() {
 		ticker.Stop()
