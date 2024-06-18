@@ -11,7 +11,7 @@ import (
 )
 
 func NewLogger(ctx context.Context, debug bool) *zerolog.Logger {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.TimestampFieldName = "timestamp"
 
 	exporters := []io.Writer{
 		os.Stdout,
@@ -23,6 +23,9 @@ func NewLogger(ctx context.Context, debug bool) *zerolog.Logger {
 
 	l := zerolog.
 		New(io.MultiWriter(exporters...)).
+		With().
+		Timestamp().
+		Logger().
 		Level(zerolog.DebugLevel)
 
 	return &l
