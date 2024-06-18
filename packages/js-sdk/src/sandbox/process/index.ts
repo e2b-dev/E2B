@@ -1,4 +1,3 @@
-import { PlainMessage } from '@bufbuild/protobuf'
 import {
   createPromiseClient,
   PromiseClient,
@@ -7,14 +6,13 @@ import {
 
 import { Process as ProcessService } from '../../envd/process/process_connect'
 import {
-  ProcessInfo as PsProcessInfo,
   Signal,
   StartResponse,
+  ProcessConfig,
 } from '../../envd/process/process_pb'
 import { ConnectionConfig, defaultUsername, Username, ConnectionOpts, SandboxError, handleRpcError } from '../../connectionConfig'
 import { ProcessHandle, ProcessResult } from './processHandle'
-
-export type ProcessInfo = PlainMessage<PsProcessInfo>
+import { PlainMessage } from '@bufbuild/protobuf'
 
 export interface ProcessRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
 
@@ -30,11 +28,9 @@ export interface ProcessStartOpts extends ProcessRequestOpts {
 
 export type ProcessConnectOpts = Pick<ProcessStartOpts, 'onStderr' | 'onStdout' | 'timeoutMs'> & ProcessRequestOpts
 
-export class ProcessError extends SandboxError {
-  constructor(message: string, public readonly pid: number) {
-    super(message)
-    this.name = 'ProcessError'
-  }
+export interface ProcessInfo extends PlainMessage<ProcessConfig> {
+  pid: number
+  tag?: string
 }
 
 export class Process {
@@ -53,7 +49,14 @@ export class Process {
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
 
-      return res.processes
+      return res.processes.map((p) => ({
+        pid: p.pid,
+        ...p.tag && { tag: p.tag },
+        args: p.config!.args,
+        envs: p.config!.envs,
+        cmd: p.config!.cmd,
+        ...p.config!.cwd && { cwd: p.config!.cwd },
+      }))
     } catch (err) {
       throw handleRpcError(err)
     }
