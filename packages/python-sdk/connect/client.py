@@ -1,6 +1,7 @@
 import gzip
 import json
 import struct
+import httpcore
 
 from enum import Flag, IntEnum
 
@@ -112,7 +113,14 @@ class ProtobufCodec:
 
 class Client:
     def __init__(
-        self, *, pool, url, response_type, compressor=None, json=False, headers=None
+        self,
+        *,
+        pool: httpcore.ConnectionPool,
+        url,
+        response_type,
+        compressor=None,
+        json=False,
+        headers=None,
     ):
         if headers is None:
             headers = {}
@@ -124,16 +132,21 @@ class Client:
         self._compressor = compressor
         self._headers = {"user-agent": "connect-python"} | headers
 
-    def call_unary(self, req, **opts):
+    def call_unary(self, req, timeout=None, **opts):
         data = self._codec.encode(req)
 
         if self._compressor is not None:
             data = self._compressor.compress(data)
 
+        # extensions = {}
+        # if timeout is not None:
+        #     extensions["timeout"] = timeout
+
         http_resp = self.pool.request(
             "POST",
             self.url,
             content=data,
+            # extensions=extensions,
             headers=self._headers
             | opts.get("headers", {})
             | {
@@ -161,6 +174,10 @@ class Client:
     def call_server_stream(self, req, **opts):
         data = self._codec.encode(req)
         flags = EnvelopeFlags(0)
+
+        # extensions = {}
+        # if timeout is not None:
+        #     extensions["timeout"] = timeout
 
         if self._compressor is not None:
             data = self._compressor.compress(data)
@@ -205,7 +222,14 @@ class Client:
                     buffer = buffer[:data_len]
 
                     if end_stream:
-                        data = json.loads(buffer)
+                        data = (
+                            buffer
+                            if self._compressor is None
+                            else self._compressor.decompress(buffer)
+                        )
+
+                        data = json.loads(data)
+
                         if "error" in data:
                             raise make_error(data["error"])
 
