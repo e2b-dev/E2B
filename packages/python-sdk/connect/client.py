@@ -1,7 +1,6 @@
 import gzip
 import json
 import struct
-import urllib3
 
 from enum import Flag, IntEnum
 
@@ -33,23 +32,13 @@ class Code(IntEnum):
 
 
 class Error(Exception):
-    def __init__(self, code: Code, message: str):
+    def __init__(self, code, message):
         self.code = code
         self.message = message
 
 
 envelope_header_length = 5
 envelope_header_pack = ">BI"
-
-_default_connection_pool = None
-
-
-def default_connection_pool():
-    global _default_connection_pool
-    if _default_connection_pool is None:
-        _default_connection_pool = urllib3.PoolManager()
-
-    return _default_connection_pool
 
 
 def encode_envelope(*, flags: EnvelopeFlags, data):
@@ -65,9 +54,14 @@ def decode_envelope_header(header):
     return EnvelopeFlags(flags), data_len
 
 
-def error_for_response(http_resp):
+def error_for_response(http_resp, compressor):
     try:
-        error = json.loads(http_resp.content)
+        data = (
+            http_resp.content
+            if compressor is None
+            else compressor.decompress(http_resp.content)
+        )
+        error = json.loads(data)
     except (json.decoder.JSONDecodeError, KeyError):
         return Error(Code(http_resp.status), http_resp.reason)
     else:
@@ -118,18 +112,8 @@ class ProtobufCodec:
 
 class Client:
     def __init__(
-        self,
-        *,
-        pool,
-        url,
-        response_type,
-        compressor=None,
-        json=False,
-        headers=None,
+        self, *, pool, url, response_type, compressor=None, json=False, headers=None
     ):
-        if pool is None:
-            pool = default_connection_pool()
-
         if headers is None:
             headers = {}
 
@@ -161,11 +145,16 @@ class Client:
             },
         )
 
+        content = http_resp.content
+
+        if self._compressor is not None:
+            content = self._compressor.decompress(content)
+
         if http_resp.status != 200:
-            raise error_for_response(http_resp)
+            raise error_for_response(http_resp, self._compressor)
 
         return self._codec.decode(
-            http_resp.data,
+            content,
             msg_type=self._response_type,
         )
 
@@ -177,7 +166,7 @@ class Client:
             data = self._compressor.compress(data)
             flags |= EnvelopeFlags.compressed
 
-        with self.pool.request(
+        with self.pool.stream(
             "POST",
             self.url,
             content=encode_envelope(
@@ -195,46 +184,46 @@ class Client:
             },
         ) as http_resp:
             if http_resp.status != 200:
-                raise error_for_response(http_resp)
+                raise error_for_response(http_resp, self._compressor)
 
             buffer = b""
             end_stream = False
             needs_header = True
             flags, data_len = 0, 0
 
-            try:
-                for chunk in http_resp.stream():
-                    buffer += chunk
+            for chunk in http_resp.iter_stream():
+                buffer += chunk
 
-                    if needs_header:
-                        header = buffer[:envelope_header_length]
-                        buffer = buffer[envelope_header_length:]
-                        flags, data_len = decode_envelope_header(header)
-                        needs_header = False
-                        end_stream = EnvelopeFlags.end_stream in flags
+                if needs_header:
+                    header = buffer[:envelope_header_length]
+                    buffer = buffer[envelope_header_length:]
+                    flags, data_len = decode_envelope_header(header)
+                    needs_header = False
+                    end_stream = EnvelopeFlags.end_stream in flags
 
-                    if len(buffer) >= data_len:
-                        buffer = buffer[:data_len]
+                if len(buffer) >= data_len:
+                    buffer = buffer[:data_len]
 
-                        if end_stream:
-                            data = json.loads(buffer)
-                            if "error" in data:
-                                raise make_error(data["error"])
+                    if end_stream:
+                        data = json.loads(buffer)
+                        if "error" in data:
+                            raise make_error(data["error"])
 
-                            # TODO: Figure out what else might be possible
-                            return
+                        # TODO: Figure out what else might be possible
+                        return
 
-                        # TODO: handle server message compression
-                        # if EnvelopeFlags.compression in flags:
-                        # TODO: should the client potentially use a different codec
-                        # based on response header? Or can we assume they're always
-                        # the same and an error otherwise.
-                        yield self._codec.decode(buffer, msg_type=self._response_type)
+                    if self._compressor is not None:
+                        buffer = self._compressor.decompress(buffer)
 
-                        buffer = buffer[data_len:]
-                        needs_header = True
-            finally:
-                http_resp.close()
+                    # TODO: handle server message compression
+                    # if EnvelopeFlags.compression in flags:
+                    # TODO: should the client potentially use a different codec
+                    # based on response header? Or can we assume they're always
+                    # the same and an error otherwise.
+                    yield self._codec.decode(buffer, msg_type=self._response_type)
+
+                    buffer = buffer[data_len:]
+                    needs_header = True
 
     def call_client_stream(self, req, **opts):
         raise NotImplementedError("client stream not supported")

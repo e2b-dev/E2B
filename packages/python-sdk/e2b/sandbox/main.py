@@ -1,4 +1,5 @@
 import urllib.parse
+import httpcore
 
 from typing import Optional, Dict
 
@@ -35,7 +36,7 @@ class Sandbox(SandboxApi):
 
         if sandbox_id and (metadata or timeout is not None):
             raise SandboxException(
-                "Cannot set metadata or timeout when connection to an existing sandbox. "
+                "Cannot set metadata or timeout when connecting to an existing sandbox. "
                 "Use Sandbox.connect method instead.",
             )
 
@@ -65,8 +66,10 @@ class Sandbox(SandboxApi):
             f"{'http' if debug else 'https'}://{self.get_host(self._envd_port)}"
         )
 
-        self._filesystem = Filesystem(self._envd_api_url, self._connection_config)
-        self._process = Process(self._envd_api_url, self._connection_config)
+        pool = httpcore.ConnectionPool(max_connections=25)
+
+        self._filesystem = Filesystem(self._envd_api_url, self._connection_config, pool)
+        self._process = Process(self._envd_api_url, self._connection_config, pool)
 
     def get_host(self, port: int) -> str:
         if self._connection_config.debug:

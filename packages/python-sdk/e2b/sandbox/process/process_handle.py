@@ -26,7 +26,7 @@ class ProcessExitException(Exception):
         return self._result.exit_code
 
 
-class ProcessHandle(Generator):
+class ProcessHandle:
     @property
     def pid(self):
         return self._pid
@@ -68,7 +68,7 @@ class ProcessHandle(Generator):
     ]:
         try:
             for event in self._events:
-                if event.HasField("data"):
+                if event.event.HasField("data"):
                     if event.event.data.stdout:
                         out = event.event.data.stdout.decode()
                         self._stdout += out
@@ -77,7 +77,7 @@ class ProcessHandle(Generator):
                         out = event.event.data.stderr.decode()
                         self._stderr += out
                         yield None, out
-                if event.HasField("end"):
+                if event.event.HasField("end"):
                     self._result = ProcessResult(
                         stdout=self._stdout,
                         stderr=self._stderr,
@@ -115,5 +115,5 @@ class ProcessHandle(Generator):
         return self._result
 
     def kill(self):
-        self.close()
+        self.disconnect()
         self._handle_kill()

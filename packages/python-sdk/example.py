@@ -1,10 +1,14 @@
 import io
+import asyncio
 
 from e2b import Sandbox
 
 sbx = Sandbox(debug=True)
 
 print(sbx.sandbox_id)
+
+f = sbx.files.list("/")
+print(f)
 
 # const res = await sbx.commands.run('while true; do echo -n "Hello World"; sleep 1; done', {
 #   // requestTimeoutMs: 1,

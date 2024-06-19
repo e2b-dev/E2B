@@ -1,6 +1,7 @@
 import connect
 import requests
 import urllib.parse
+import httpcore
 
 from io import IOBase
 from typing import (
@@ -23,13 +24,19 @@ READ_STREAM_CHUNK_SIZE = 2 << 16  # 64KiB
 
 
 class Filesystem:
-    def __init__(self, envd_api_url: str, connection_config: ConnectionConfig) -> None:
+    def __init__(
+        self,
+        envd_api_url: str,
+        connection_config: ConnectionConfig,
+        pool: httpcore.ConnectionPool,
+    ) -> None:
         self._envd_api_url = envd_api_url
         self._connection_config = connection_config
 
         self._rpc = filesystem_connect.FilesystemClient(
             envd_api_url,
             compressor=connect.GzipCompressor,
+            pool=pool,
         )
 
     @overload
@@ -104,8 +111,10 @@ class Filesystem:
         request_timeout: Optional[float] = None,
     ) -> List[filesystem_pb2.EntryInfo]:
         res = self._rpc.list_dir(
-            filesystem_pb2.ListDirRequest(path=path),
-            user=User(username=user),
+            filesystem_pb2.ListDirRequest(
+                path=path,
+                user=User(username=user),
+            ),
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
@@ -119,8 +128,10 @@ class Filesystem:
     ) -> bool:
         try:
             self._rpc.stat(
-                filesystem_pb2.StatRequest(path=path),
-                user=User(username=user),
+                filesystem_pb2.StatRequest(
+                    path=path,
+                    user=User(username=user),
+                ),
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )
             return True
@@ -182,8 +193,10 @@ class Filesystem:
         timeout: Optional[float] = None,
     ):
         events = self._rpc.watch_dir(
-            filesystem_pb2.WatchDirRequest(path=path),
-            user=User(username=user),
+            filesystem_pb2.WatchDirRequest(
+                path=path,
+                user=User(username=user),
+            ),
             timeout=(
                 self._connection_config.get_request_timeout(request_timeout),
                 timeout,

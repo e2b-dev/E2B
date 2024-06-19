@@ -19,6 +19,7 @@ class WatchHandle(Generator):
     def _handle_events(self):
         try:
             for event in self._events:
-                yield event.filesystem
+                if event.HasField("filesystem"):
+                    yield event.filesystem
         finally:
             self.close()

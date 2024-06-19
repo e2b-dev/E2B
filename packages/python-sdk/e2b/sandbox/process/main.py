@@ -1,4 +1,5 @@
 import connect
+import httpcore
 
 from typing import Dict, List, Optional, Literal, overload, Union, Callable
 
@@ -9,11 +10,17 @@ from e2b.connection_config import Username, ConnectionConfig
 
 
 class Process:
-    def __init__(self, envd_api_url: str, connection_config: ConnectionConfig) -> None:
+    def __init__(
+        self,
+        envd_api_url: str,
+        connection_config: ConnectionConfig,
+        pool: httpcore.ConnectionPool,
+    ) -> None:
         self._connection_config = connection_config
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
             compressor=connect.GzipCompressor,
+            pool=pool,
         )
 
     def list(
