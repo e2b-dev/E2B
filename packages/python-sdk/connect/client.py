@@ -55,14 +55,9 @@ def decode_envelope_header(header):
     return EnvelopeFlags(flags), data_len
 
 
-def error_for_response(http_resp, compressor):
+def error_for_response(http_resp):
     try:
-        data = (
-            http_resp.content
-            if compressor is None
-            else compressor.decompress(http_resp.content)
-        )
-        error = json.loads(data)
+        error = json.loads(http_resp.content)
     except (json.decoder.JSONDecodeError, KeyError):
         return Error(Code(http_resp.status), http_resp.reason)
     else:
@@ -158,20 +153,20 @@ class Client:
             },
         )
 
+        if http_resp.status != 200:
+            raise error_for_response(http_resp)
+
         content = http_resp.content
 
         if self._compressor is not None:
             content = self._compressor.decompress(content)
-
-        if http_resp.status != 200:
-            raise error_for_response(http_resp, self._compressor)
 
         return self._codec.decode(
             content,
             msg_type=self._response_type,
         )
 
-    def call_server_stream(self, req, **opts):
+    def call_server_stream(self, req, timeout=None, **opts):
         data = self._codec.encode(req)
         flags = EnvelopeFlags(0)
 
@@ -201,7 +196,7 @@ class Client:
             },
         ) as http_resp:
             if http_resp.status != 200:
-                raise error_for_response(http_resp, self._compressor)
+                raise error_for_response(http_resp)
 
             buffer = b""
             end_stream = False
