@@ -128,7 +128,7 @@ class Client:
         self._codec = JSONCodec if json else ProtobufCodec
         self._response_type = response_type
         self._compressor = compressor
-        self._headers = {"user-agent": "connect-python"} | headers
+        self._headers = {**{"user-agent": "connect-python"}, **headers}
 
     def call_unary(self, req, timeout=None, **opts):
         data = self._codec.encode(req)
@@ -145,9 +145,10 @@ class Client:
             self.url,
             content=data,
             # extensions=extensions,
-            headers=self._headers
-            | opts.get("headers", {})
-            | {
+            headers={
+                **self._headers,
+                **opts.get("headers", {}),
+                "connect-protocol-version": "1",
                 "connect-protocol-version": "1",
                 "content-encoding": (
                     "identity" if self._compressor is None else self._compressor.name
@@ -188,9 +189,9 @@ class Client:
                 flags=flags,
                 data=data,
             ),
-            headers=self._headers
-            | opts.get("headers", {})
-            | {
+            headers={
+                **self._headers,
+                **opts.get("headers", {}),
                 "connect-protocol-version": "1",
                 "connect-content-encoding": (
                     "identity" if self._compressor is None else self._compressor.name
