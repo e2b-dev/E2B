@@ -1,29 +1,25 @@
+from dataclasses import dataclass
 from typing import Optional, Callable, Any, Generator, Union, Tuple
-from pydantic import BaseModel
 
+from e2b.connection_config import SandboxException
 from e2b.envd.process import process_pb2
 
 Stdout = str
 Stderr = str
 
 
-class ProcessResult(BaseModel):
+@dataclass
+class ProcessResult:
     stderr: str
     stdout: str
     exit_code: int
     error: Optional[str]
 
 
-class ProcessExitException(Exception):
-    def __init__(self, result: ProcessResult):
-        self._result = result
-
+@dataclass
+class ProcessExitException(SandboxException, ProcessResult):
     def __str__(self):
-        return f"Process exited with code {self._result.exit_code} and error: {self._result.error}"
-
-    @property
-    def exit_code(self):
-        return self._result.exit_code
+        return f"Process exited with code {self.exit_code} and error: {self.error}"
 
 
 class ProcessHandle:
@@ -110,7 +106,12 @@ class ProcessHandle:
             raise RuntimeError("Process ended without an end event")
 
         if self._result.exit_code != 0:
-            raise ProcessExitException(self._result)
+            raise ProcessExitException(
+                stdout=self._stdout,
+                stderr=self._stderr,
+                exit_code=self._result.exit_code,
+                error=self._result.error,
+            )
 
         return self._result
 

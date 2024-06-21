@@ -3,7 +3,7 @@ import json
 import struct
 import httpcore
 
-from enum import Flag, IntEnum
+from enum import Flag, Enum
 
 from google.protobuf import json_format
 
@@ -13,28 +13,28 @@ class EnvelopeFlags(Flag):
     end_stream = 0b00000010
 
 
-class Code(IntEnum):
-    canceled = 408
-    unknown = 500
-    invalid_argument = 400
-    deadline_exceeded = 408
-    not_found = 404
-    already_exists = 409
-    permission_denied = 403
-    resource_exhausted = 429
-    failed_precondition = 412
-    aborted = 409
-    out_of_range = 400
-    unimplemented = 404
-    internal = 500
-    unavailable = 503
-    data_loss = 500
-    unauthenticated = 401
+class Code(Enum):
+    canceled = "canceled"
+    unknown = "unknown"
+    invalid_argument = "invalid_argument"
+    deadline_exceeded = "deadline_exceeded"
+    not_found = "not_found"
+    already_exists = "already_exists"
+    permission_denied = "permission_denied"
+    resource_exhausted = "resource_exhausted"
+    failed_precondition = "failed_precondition"
+    aborted = "aborted"
+    out_of_range = "out_of_range"
+    unimplemented = "unimplemented"
+    internal = "internal"
+    unavailable = "unavailable"
+    data_loss = "data_loss"
+    unauthenticated = "unauthenticated"
 
 
-class Error(Exception):
-    def __init__(self, code, message):
-        self.code = code
+class ConnectException(Exception):
+    def __init__(self, status: Code, message: str):
+        self.status = status
         self.message = message
 
 
@@ -59,17 +59,20 @@ def error_for_response(http_resp):
     try:
         error = json.loads(http_resp.content)
     except (json.decoder.JSONDecodeError, KeyError):
-        return Error(Code(http_resp.status), http_resp.reason)
+        return ConnectException(http_resp.status, http_resp.reason)
     else:
         return make_error(error)
 
 
 def make_error(error):
+    status = None
     try:
-        code = Code[error["code"]]
+        status = Code(error["code"])
     except KeyError:
-        code = Code.unknown
-    return Error(code, error.get("message", ""))
+        status = Code.unknown
+        pass
+
+    return ConnectException(status, error.get("message", ""))
 
 
 class GzipCompressor:

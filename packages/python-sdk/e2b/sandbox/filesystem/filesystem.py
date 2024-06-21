@@ -15,12 +15,10 @@ from typing import (
 )
 
 from e2b.sandbox.filesystem.watch_handle import WatchHandle
-from e2b.connection_config import Username, ConnectionConfig
+from e2b.connection_config import SandboxException, Username, ConnectionConfig
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.permissions.permissions_pb2 import User
 from e2b.envd.api import ENVD_API_FILES_ROUTE
-
-READ_STREAM_CHUNK_SIZE = 2 << 16  # 64KiB
 
 
 class Filesystem:
@@ -73,9 +71,10 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ):
-        url = urllib.parse.urljoin(self._envd_api_url, f"/{ENVD_API_FILES_ROUTE}")
+        url = urllib.parse.urljoin(self._envd_api_url, f"{ENVD_API_FILES_ROUTE}")
         r = requests.get(
             url,
+            stream=True if format == "stream" else False,
             params={"path": path, "username": user},
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
@@ -85,7 +84,7 @@ class Filesystem:
         elif format == "bytes":
             return bytearray(r.content)
         elif format == "stream":
-            iter: Iterator[bytes] = r.iter_content(chunk_size=READ_STREAM_CHUNK_SIZE)
+            iter: Iterator[bytes] = r.iter_content()
             return iter
 
     def write(
@@ -95,7 +94,8 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> None:
-        url = urllib.parse.urljoin(self._envd_api_url, f"/{ENVD_API_FILES_ROUTE}")
+        url = urllib.parse.urljoin(self._envd_api_url, f"{ENVD_API_FILES_ROUTE}")
+
         files = {"file": data}
         r = requests.post(
             url,
@@ -136,8 +136,8 @@ class Filesystem:
             )
             return True
 
-        except connect.Error as e:
-            if e.code == connect.Code.not_found:
+        except connect.ConnectException as e:
+            if e.status == connect.Code.already_exists:
                 return False
             raise
 
@@ -176,14 +176,21 @@ class Filesystem:
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> None:
-        self._rpc.make_dir(
-            filesystem_pb2.MakeDirRequest(
-                path=path,
-                user=User(username=user),
-            ),
-            timeout=self._connection_config.get_request_timeout(request_timeout),
-        )
+    ) -> bool:
+        try:
+            self._rpc.make_dir(
+                filesystem_pb2.MakeDirRequest(
+                    path=path,
+                    user=User(username=user),
+                ),
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
+
+            return True
+        except connect.ConnectException as e:
+            if e.status == connect.Code.already_exists:
+                return False
+            raise
 
     def watch(
         self,
@@ -203,4 +210,9 @@ class Filesystem:
             ),
         )
 
-        return WatchHandle(events=events)
+        try:
+            start_event = next(events)
+
+            return WatchHandle(events=events)
+        except Exception as e:
+            raise SandboxException(f"Failed to start watch: {e}")

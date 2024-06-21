@@ -2,6 +2,8 @@ from typing import Any, Generator
 
 from e2b.envd.filesystem.filesystem_pb2 import WatchDirResponse
 
+# TODO: Export custom types
+
 
 class WatchHandle(Generator):
     def __init__(

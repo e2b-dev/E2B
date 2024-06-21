@@ -10,14 +10,14 @@ export type Stdout = Brand<string, 'stdout'>
 export type Stderr = Brand<string, 'stderr'>
 export type Pty = Brand<Uint8Array, 'pty'>
 
-export class ProcessError extends Error {
-  constructor(message: any) {
-    super(message)
-    this.name = 'ProcessError'
-  }
+export interface ProcessResult {
+  exitCode: number
+  error?: string
+  stdout: string
+  stderr: string
 }
 
-export class ProcessExitError extends ProcessError implements ProcessResult {
+export class ProcessExitError extends SandboxError implements ProcessResult {
   constructor(private readonly result: ProcessResult) {
     super(result.error)
     this.name = 'ProcessExitError'
@@ -150,11 +150,4 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
 
     return this.result
   }
-}
-
-export interface ProcessResult {
-  exitCode: number
-  error?: string
-  stdout: string
-  stderr: string
 }

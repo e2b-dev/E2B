@@ -12,4 +12,3 @@ from .sandbox.process.process_handle import (
     Stdout,
 )
 from .sandbox.filesystem.watch_handle import WatchHandle
-from e2b.envd.filesystem.filesystem_pb2 import FileType, EntryInfo

@@ -1,12 +1,13 @@
+from dataclasses import dataclass
 from typing import Optional, Dict, List
-from pydantic import BaseModel
 from datetime import datetime
 
 from e2b.api import ApiClient, models, client
 from e2b.connection_config import ConnectionConfig
 
 
-class RunningSandbox(BaseModel):
+@dataclass
+class RunningSandbox:
     sandbox_id: str
     template_id: str
     name: Optional[str]

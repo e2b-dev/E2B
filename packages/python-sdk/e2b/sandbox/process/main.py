@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import connect
 import httpcore
 
@@ -6,7 +7,17 @@ from typing import Dict, List, Optional, Literal, overload, Union, Callable
 from e2b.envd.permissions import permissions_pb2
 from e2b.envd.process import process_connect, process_pb2
 from e2b.sandbox.process.process_handle import ProcessHandle, ProcessResult
-from e2b.connection_config import Username, ConnectionConfig
+from e2b.connection_config import SandboxException, Username, ConnectionConfig
+
+
+@dataclass
+class ProcessInfo:
+    pid: int
+    tag: Optional[str]
+    cmd: str
+    args: List[str]
+    envs: Dict[str, str]
+    cwd: Optional[str]
 
 
 class Process:
@@ -26,12 +37,22 @@ class Process:
     def list(
         self,
         request_timeout: Optional[float] = None,
-    ) -> List[process_pb2.ProcessInfo]:
+    ) -> List[ProcessInfo]:
         res = self._rpc.list(
             process_pb2.ListRequest(),
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
-        return [p for p in res.processes]
+        return [
+            ProcessInfo(
+                pid=p.pid,
+                tag=p.tag,
+                cmd=p.config.cmd,
+                args=list(p.config.args),
+                envs=dict(p.config.envs),
+                cwd=p.config.cwd,
+            )
+            for p in res.processes
+        ]
 
     def kill(
         self,
@@ -145,13 +166,16 @@ class Process:
             ),
         )
 
-        start_event = next(events)
+        try:
+            start_event = next(events)
 
-        return ProcessHandle(
-            pid=start_event.event.start.pid,
-            handle_kill=lambda: self.kill(start_event.event.start.pid),
-            events=events,
-        )
+            return ProcessHandle(
+                pid=start_event.event.start.pid,
+                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                events=events,
+            )
+        except Exception as e:
+            raise SandboxException(f"Failed to start process: {e}")
 
     def connect(
         self,
@@ -169,8 +193,13 @@ class Process:
             ),
         )
 
-        return ProcessHandle(
-            pid=pid,
-            handle_kill=lambda: self.kill(pid),
-            events=events,
-        )
+        try:
+            start_event = next(events)
+
+            return ProcessHandle(
+                pid=start_event.event.start.pid,
+                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                events=events,
+            )
+        except Exception as e:
+            raise SandboxException(f"Failed to start process: {e}")
