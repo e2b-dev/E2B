@@ -15,7 +15,15 @@ from typing import (
 )
 
 from e2b.sandbox.filesystem.watch_handle import WatchHandle
-from e2b.connection_config import SandboxException, Username, ConnectionConfig
+from e2b.connection_config import (
+    Username,
+    ConnectionConfig,
+)
+from e2b.exceptions import (
+    SandboxException,
+    handle_envd_api_exception,
+    handle_rpc_exception,
+)
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.permissions.permissions_pb2 import User
 from e2b.envd.api import ENVD_API_FILES_ROUTE
@@ -79,6 +87,10 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
+        err = handle_envd_api_exception(r)
+        if err:
+            raise err
+
         if format == "text":
             return r.text
         elif format == "bytes":
@@ -104,21 +116,28 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
+        err = handle_envd_api_exception(r)
+        if err:
+            raise err
+
     def list(
         self,
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> List[filesystem_pb2.EntryInfo]:
-        res = self._rpc.list_dir(
-            filesystem_pb2.ListDirRequest(
-                path=path,
-                user=User(username=user),
-            ),
-            timeout=self._connection_config.get_request_timeout(request_timeout),
-        )
+        try:
+            res = self._rpc.list_dir(
+                filesystem_pb2.ListDirRequest(
+                    path=path,
+                    user=User(username=user),
+                ),
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
 
-        return [entry for entry in res.entries]
+            return [entry for entry in res.entries]
+        except Exception as e:
+            raise handle_rpc_exception(e)
 
     def exists(
         self,
@@ -136,10 +155,11 @@ class Filesystem:
             )
             return True
 
-        except connect.ConnectException as e:
-            if e.status == connect.Code.already_exists:
-                return False
-            raise
+        except Exception as e:
+            if isinstance(e, connect.ConnectException):
+                if e.status == connect.Code.not_found:
+                    return False
+            raise handle_rpc_exception(e)
 
     def remove(
         self,
@@ -147,13 +167,16 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> None:
-        self._rpc.remove(
-            filesystem_pb2.RemoveRequest(
-                path=path,
-                user=User(username=user),
-            ),
-            timeout=self._connection_config.get_request_timeout(request_timeout),
-        )
+        try:
+            self._rpc.remove(
+                filesystem_pb2.RemoveRequest(
+                    path=path,
+                    user=User(username=user),
+                ),
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
+        except Exception as e:
+            raise handle_rpc_exception(e)
 
     def rename(
         self,
@@ -162,14 +185,17 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> None:
-        self._rpc.move(
-            filesystem_pb2.MoveRequest(
-                source=old_path,
-                destination=new_path,
-                user=User(username=user),
-            ),
-            timeout=self._connection_config.get_request_timeout(request_timeout),
-        )
+        try:
+            self._rpc.move(
+                filesystem_pb2.MoveRequest(
+                    source=old_path,
+                    destination=new_path,
+                    user=User(username=user),
+                ),
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
+        except Exception as e:
+            raise handle_rpc_exception(e)
 
     def make_dir(
         self,
@@ -187,10 +213,11 @@ class Filesystem:
             )
 
             return True
-        except connect.ConnectException as e:
-            if e.status == connect.Code.already_exists:
-                return False
-            raise
+        except Exception as e:
+            if isinstance(e, connect.ConnectException):
+                if e.status == connect.Code.already_exists:
+                    return False
+            raise handle_rpc_exception(e)
 
     def watch(
         self,
@@ -213,6 +240,9 @@ class Filesystem:
         try:
             start_event = next(events)
 
+            if not start_event.HasField("start"):
+                raise SandboxException("Failed to start watch: start event not found")
+
             return WatchHandle(events=events)
         except Exception as e:
-            raise SandboxException(f"Failed to start watch: {e}")
+            raise handle_rpc_exception(e)

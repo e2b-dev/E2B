@@ -1,11 +1,8 @@
 from importlib.metadata import version
 
-from e2b.connection_config import ConnectionConfig, SandboxException
+from e2b.connection_config import ConnectionConfig
 from e2b.api.metadata import default_headers
-
-
-class AuthenticationException(SandboxException):
-    pass
+from e2b.exceptions import AuthenticationException
 
 
 pydantic_version = version("pydantic")

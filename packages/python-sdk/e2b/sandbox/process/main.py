@@ -7,7 +7,11 @@ from typing import Dict, List, Optional, Literal, overload, Union, Callable
 from e2b.envd.permissions import permissions_pb2
 from e2b.envd.process import process_connect, process_pb2
 from e2b.sandbox.process.process_handle import ProcessHandle, ProcessResult
-from e2b.connection_config import SandboxException, Username, ConnectionConfig
+from e2b.connection_config import (
+    Username,
+    ConnectionConfig,
+)
+from e2b.exceptions import handle_rpc_exception, SandboxException
 
 
 @dataclass
@@ -38,34 +42,40 @@ class Process:
         self,
         request_timeout: Optional[float] = None,
     ) -> List[ProcessInfo]:
-        res = self._rpc.list(
-            process_pb2.ListRequest(),
-            timeout=self._connection_config.get_request_timeout(request_timeout),
-        )
-        return [
-            ProcessInfo(
-                pid=p.pid,
-                tag=p.tag,
-                cmd=p.config.cmd,
-                args=list(p.config.args),
-                envs=dict(p.config.envs),
-                cwd=p.config.cwd,
+        try:
+            res = self._rpc.list(
+                process_pb2.ListRequest(),
+                timeout=self._connection_config.get_request_timeout(request_timeout),
             )
-            for p in res.processes
-        ]
+            return [
+                ProcessInfo(
+                    pid=p.pid,
+                    tag=p.tag,
+                    cmd=p.config.cmd,
+                    args=list(p.config.args),
+                    envs=dict(p.config.envs),
+                    cwd=p.config.cwd,
+                )
+                for p in res.processes
+            ]
+        except Exception as e:
+            raise handle_rpc_exception(e)
 
     def kill(
         self,
         pid: int,
         request_timeout: Optional[float] = None,
     ):
-        self._rpc.send_signal(
-            process_pb2.SendSignalRequest(
-                process=process_pb2.ProcessSelector(pid=pid),
-                signal=process_pb2.Signal.SIGNAL_SIGKILL,
-            ),
-            timeout=self._connection_config.get_request_timeout(request_timeout),
-        )
+        try:
+            self._rpc.send_signal(
+                process_pb2.SendSignalRequest(
+                    process=process_pb2.ProcessSelector(pid=pid),
+                    signal=process_pb2.Signal.SIGNAL_SIGKILL,
+                ),
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
+        except Exception as e:
+            raise handle_rpc_exception(e)
 
     def send_stdin(
         self,
@@ -73,15 +83,18 @@ class Process:
         data: str,
         request_timeout: Optional[float] = None,
     ):
-        self._rpc.send_input(
-            process_pb2.SendInputRequest(
-                process=process_pb2.ProcessSelector(pid=pid),
-                input=process_pb2.ProcessInput(
-                    stdin=data.encode(),
+        try:
+            self._rpc.send_input(
+                process_pb2.SendInputRequest(
+                    process=process_pb2.ProcessSelector(pid=pid),
+                    input=process_pb2.ProcessInput(
+                        stdin=data.encode(),
+                    ),
                 ),
-            ),
-            timeout=self._connection_config.get_request_timeout(request_timeout),
-        )
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
+        except Exception as e:
+            raise handle_rpc_exception(e)
 
     @overload
     def run(
@@ -169,13 +182,16 @@ class Process:
         try:
             start_event = next(events)
 
+            if not start_event.HasField("event"):
+                raise SandboxException("Failed to start process: start event not found")
+
             return ProcessHandle(
                 pid=start_event.event.start.pid,
                 handle_kill=lambda: self.kill(start_event.event.start.pid),
                 events=events,
             )
         except Exception as e:
-            raise SandboxException(f"Failed to start process: {e}")
+            raise handle_rpc_exception(e)
 
     def connect(
         self,
@@ -196,10 +212,15 @@ class Process:
         try:
             start_event = next(events)
 
+            if not start_event.HasField("event"):
+                raise SandboxException(
+                    "Failed to connect to process: start event not found"
+                )
+
             return ProcessHandle(
                 pid=start_event.event.start.pid,
                 handle_kill=lambda: self.kill(start_event.event.start.pid),
                 events=events,
             )
         except Exception as e:
-            raise SandboxException(f"Failed to start process: {e}")
+            raise handle_rpc_exception(e)

@@ -1,4 +1,5 @@
 from typing import Any, Generator
+from e2b.exceptions import handle_rpc_exception
 
 from e2b.envd.filesystem.filesystem_pb2 import WatchDirResponse
 
@@ -23,5 +24,7 @@ class WatchHandle(Generator):
             for event in self._events:
                 if event.HasField("filesystem"):
                     yield event.filesystem
+        except Exception as e:
+            raise handle_rpc_exception(e)
         finally:
             self.close()

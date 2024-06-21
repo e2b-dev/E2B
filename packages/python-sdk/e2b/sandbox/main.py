@@ -6,8 +6,9 @@ from typing import Optional, Dict
 from e2b.sandbox.filesystem.filesystem import Filesystem
 from e2b.sandbox.process.main import Process
 from e2b.sandbox.sandbox_api import SandboxApi
-from e2b.connection_config import ConnectionConfig, SandboxException
+from e2b.connection_config import ConnectionConfig
 from e2b.envd.api import ENVD_API_FILES_ROUTE
+from e2b.exceptions import SandboxException
 
 
 class Sandbox(SandboxApi):

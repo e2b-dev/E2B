@@ -1,4 +1,4 @@
-import { SandboxError } from '../../connectionConfig'
+import { handleRpcError, SandboxError } from '../../connectionConfig'
 import {
   ConnectResponse,
   StartResponse,
@@ -124,6 +124,8 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
             return this.result
         }
       }
+    } catch (e) {
+      throw handleRpcError(e)
     } finally {
       this.handleDisconnect()
     }

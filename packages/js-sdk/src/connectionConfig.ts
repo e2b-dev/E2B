@@ -43,6 +43,8 @@ export function handleEnvdApiError(err: {
       return new InvalidPathError(err.message)
     case 404:
       return new NotFoundError(err.message)
+    case 412:
+      return new InvalidPathError(err.message)
     case 502:
       return formatSandboxTimeoutError(err.message)
     case 507:

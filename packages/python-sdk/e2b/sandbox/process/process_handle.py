@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Callable, Any, Generator, Union, Tuple
 
-from e2b.connection_config import SandboxException
+from e2b.exceptions import handle_rpc_exception, SandboxException
 from e2b.envd.process import process_pb2
 
 Stdout = str
@@ -80,6 +80,8 @@ class ProcessHandle:
                         exit_code=event.event.end.exit_code,
                         error=event.event.end.error,
                     )
+        except Exception as e:
+            raise handle_rpc_exception(e)
         finally:
             self.disconnect()
 
