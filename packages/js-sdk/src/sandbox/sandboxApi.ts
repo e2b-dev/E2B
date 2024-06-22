@@ -2,11 +2,33 @@ import { ApiClient, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 
 
-export interface RunningSandbox {
+/**
+ * Information about a sandbox.
+ */
+export interface SandboxInfo {
+  /**
+   * Sandbox ID.
+   */
   sandboxID: string
+
+  /**
+   * Template ID.
+   */
   templateID: string
+
+  /**
+   * Sandbox name.
+   */
   name?: string
+
+  /**
+   * Saved sandbox metadata.
+   */
   metadata?: Record<string, string>
+
+  /**
+   * Sandbox start time.
+   */
   startedAt: Date
 }
 
@@ -34,7 +56,7 @@ export class SandboxApi {
     }
   }
 
-  static async list(opts?: ConnectionOpts): Promise<RunningSandbox[]> {
+  static async list(opts?: ConnectionOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 

@@ -16,6 +16,7 @@ from .exceptions import (
     NotEnoughDiskSpaceException,
     AuthenticationException,
 )
+from .sandbox.sandbox_api import SandboxInfo
 from .sandbox.main import Sandbox
 from .sandbox.process.process_handle import (
     ProcessHandle,

@@ -44,6 +44,7 @@ export type {
   ProcessStartOpts,
 } from './sandbox/process'
 
+export type { SandboxInfo } from './sandbox/sandboxApi'
 import { Sandbox } from './sandbox'
 export { Sandbox }
 export default Sandbox

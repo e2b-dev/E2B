@@ -8,12 +8,19 @@ from e2b.api import handle_api_exception
 
 
 @dataclass
-class RunningSandbox:
+class SandboxInfo:
+    """Information about a sandbox."""
+
     sandbox_id: str
+    """Sandbox ID."""
     template_id: str
+    """Template ID."""
     name: Optional[str]
+    """Sandbox name."""
     metadata: Optional[Dict[str, str]]
+    """Saved sandbox metadata."""
     started_at: datetime
+    """Sandbox start time."""
 
 
 class SandboxApi:
@@ -23,7 +30,7 @@ class SandboxApi:
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> List[RunningSandbox]:
+    ) -> List[SandboxInfo]:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
@@ -34,7 +41,7 @@ class SandboxApi:
         with ApiClient(config) as api_client:
             try:
                 return [
-                    RunningSandbox(
+                    SandboxInfo(
                         sandbox_id=SandboxApi._get_sandbox_id(
                             sandbox.sandbox_id,
                             sandbox.client_id,
