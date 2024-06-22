@@ -4,7 +4,7 @@ import {
   WatchDirResponse,
 } from '../../envd/filesystem/filesystem_pb'
 
-export enum FilesystemEventType {
+export const enum FilesystemEventType {
   CHMOD = 'chmod',
   CREATE = 'create',
   REMOVE = 'remove',

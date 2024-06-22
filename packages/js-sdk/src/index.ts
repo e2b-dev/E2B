@@ -19,7 +19,8 @@ export {
 export type { Logger } from './logs'
 export type { ConnectionOpts, Username } from './connectionConfig'
 
-export type { FilesystemEvent, WatchHandle, FilesystemEventType } from './sandbox/filesystem/watchHandle'
+export { FilesystemEventType } from './sandbox/filesystem/watchHandle'
+export type { FilesystemEvent, WatchHandle } from './sandbox/filesystem/watchHandle'
 export type {
   EntryInfo,
 } from './sandbox/filesystem'
