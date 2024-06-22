@@ -8,6 +8,7 @@ import commandExists from 'command-exists'
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getRoot } from 'src/utils/filesystem'
+import {dockerBuild} from 'src/docker/daemon'
 import {
   asBold,
   asBuildLogs,
@@ -277,22 +278,7 @@ export const buildCommand = new commander.Command('build')
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${
-          e2b.SANDBOX_DOMAIN
-        }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
-          dockerBuildArgs,
-        )
-          .map(([key, value]) => `--build-arg="${key}=${value}"`)
-          .join(' ')}`
-        child_process.execSync(cmd, {
-          stdio: 'inherit',
-          cwd: root,
-          env: {
-            ...process.env,
-            DOCKER_CLI_HINTS: 'false',
-          },
-        })
-        console.log('Docker image built.\n')
+        await dockerBuild(dockerfileRelativePath, templateID, template.buildID, dockerBuildArgs, root)
 
         console.log('Pushing docker image...')
         child_process.execSync(
