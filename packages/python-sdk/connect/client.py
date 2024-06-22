@@ -4,7 +4,7 @@ import struct
 import httpcore
 
 from enum import Flag, Enum
-
+from typing import Optional
 from google.protobuf import json_format
 
 
@@ -119,6 +119,7 @@ class Client:
         compressor=None,
         json=False,
         headers=None,
+        timeout=None,
     ):
         if headers is None:
             headers = {}
@@ -130,21 +131,22 @@ class Client:
         self._compressor = compressor
         self._headers = {**{"user-agent": "connect-python"}, **headers}
 
-    def call_unary(self, req, timeout=None, **opts):
+    def call_unary(self, req, request_timeout=None, **opts):
         data = self._codec.encode(req)
 
         if self._compressor is not None:
             data = self._compressor.compress(data)
 
-        # extensions = {}
-        # if timeout is not None:
-        #     extensions["timeout"] = timeout
+        extensions = {}
+
+        if request_timeout is not None:
+            extensions = {"timeout": request_timeout}
 
         http_resp = self.pool.request(
             "POST",
             self.url,
             content=data,
-            # extensions=extensions,
+            extensions=extensions,
             headers={
                 **self._headers,
                 **opts.get("headers", {}),
@@ -170,17 +172,26 @@ class Client:
             msg_type=self._response_type,
         )
 
-    def call_server_stream(self, req, timeout=None, **opts):
+    def _create_stream_timeout(self, timeout: Optional[int]):
+        if timeout is not None:
+            return {"connect-timeout-ms": str(timeout * 1000)}
+        return {}
+
+    def call_server_stream(self, req, request_timeout=None, timeout=None, **opts):
         data = self._codec.encode(req)
         flags = EnvelopeFlags(0)
 
-        # extensions = {}
-        # if timeout is not None:
-        #     extensions["timeout"] = timeout
+        extensions = {}
+        if request_timeout is not None:
+            extensions = {
+                "timeout": {"connect": request_timeout, "pool": request_timeout}
+            }
 
         if self._compressor is not None:
             data = self._compressor.compress(data)
             flags |= EnvelopeFlags.compressed
+
+        stream_timeout = self._create_stream_timeout(timeout)
 
         with self.pool.stream(
             "POST",
@@ -189,9 +200,11 @@ class Client:
                 flags=flags,
                 data=data,
             ),
+            extensions=extensions,
             headers={
                 **self._headers,
                 **opts.get("headers", {}),
+                **stream_timeout,
                 "connect-protocol-version": "1",
                 "connect-content-encoding": (
                     "identity" if self._compressor is None else self._compressor.name

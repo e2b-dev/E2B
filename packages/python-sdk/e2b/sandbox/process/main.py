@@ -46,7 +46,9 @@ class Process:
         try:
             res = self._rpc.list(
                 process_pb2.ListRequest(),
-                timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
             )
             return [
                 ProcessInfo(
@@ -73,7 +75,9 @@ class Process:
                     process=process_pb2.ProcessSelector(pid=pid),
                     signal=process_pb2.Signal.SIGNAL_SIGKILL,
                 ),
-                timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -92,7 +96,9 @@ class Process:
                         stdin=data.encode(),
                     ),
                 ),
-                timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -107,7 +113,7 @@ class Process:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> ProcessResult: ...
 
@@ -121,7 +127,7 @@ class Process:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> ProcessHandle: ...
 
@@ -134,7 +140,7 @@ class Process:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
         proc = self._start(
@@ -161,7 +167,7 @@ class Process:
         envs: Optional[Dict[str, str]] = {},
         user: Username = "user",
         cwd: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
         events = self._rpc.start(
@@ -174,9 +180,9 @@ class Process:
                     cwd=cwd,
                 ),
             ),
-            timeout=(
-                self._connection_config.get_request_timeout(request_timeout),
-                timeout,
+            timeout=timeout,
+            request_timeout=self._connection_config.get_request_timeout(
+                request_timeout
             ),
         )
 
@@ -197,16 +203,16 @@ class Process:
     def connect(
         self,
         pid: int,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
         events = self._rpc.connect(
             process_pb2.ConnectRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
             ),
-            timeout=(
-                self._connection_config.get_request_timeout(request_timeout),
-                timeout,
+            timeout=timeout,
+            request_timeout=self._connection_config.get_request_timeout(
+                request_timeout
             ),
         )
 

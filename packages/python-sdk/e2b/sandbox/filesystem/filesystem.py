@@ -145,7 +145,7 @@ class Filesystem:
                     path=path,
                     user=User(username=user),
                 ),
-                timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
             )
 
             return [
@@ -167,7 +167,7 @@ class Filesystem:
                     path=path,
                     user=User(username=user),
                 ),
-                timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
             )
             return True
 
@@ -189,7 +189,7 @@ class Filesystem:
                     path=path,
                     user=User(username=user),
                 ),
-                timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -208,7 +208,7 @@ class Filesystem:
                     destination=new_path,
                     user=User(username=user),
                 ),
-                timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -225,7 +225,7 @@ class Filesystem:
                     path=path,
                     user=User(username=user),
                 ),
-                timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
             )
 
             return True
@@ -240,17 +240,15 @@ class Filesystem:
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 60,
     ):
         events = self._rpc.watch_dir(
             filesystem_pb2.WatchDirRequest(
                 path=path,
                 user=User(username=user),
             ),
-            timeout=(
-                self._connection_config.get_request_timeout(request_timeout),
-                timeout,
-            ),
+            request_timeout=self._connection_config.get_request_timeout(request_timeout),
+            timeout=timeout,
         )
 
         try:
