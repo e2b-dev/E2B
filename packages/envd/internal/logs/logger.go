@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"time"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs/exporter"
 
@@ -12,6 +13,7 @@ import (
 
 func NewLogger(ctx context.Context, debug bool) *zerolog.Logger {
 	zerolog.TimestampFieldName = "timestamp"
+	zerolog.TimeFieldFormat = time.RFC3339Nano
 
 	exporters := []io.Writer{}
 
