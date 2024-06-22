@@ -24,4 +24,13 @@ from .sandbox.process.process_handle import (
     Stdout,
     ProcessExitException,
 )
-from .sandbox.filesystem.watch_handle import WatchHandle
+from .sandbox.process.main import ProcessInfo
+
+from .sandbox.filesystem.watch_handle import (
+    WatchHandle,
+    FilesystemEvent,
+    FilesystemEventType,
+)
+from .sandbox.filesystem.filesystem import EntryInfo, FileType
+
+from .sandbox.main import Sandbox

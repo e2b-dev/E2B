@@ -1,4 +1,5 @@
 import requests
+
 from e2b.exceptions import (
     SandboxException,
     InvalidUserException,
@@ -12,7 +13,6 @@ from e2b.exceptions import (
 ENVD_API_FILES_ROUTE = "/files"
 
 
-# TODO: Improve the messages
 def handle_envd_api_exception(res: requests.Response):
     if res.status_code == 400:
         return InvalidUserException(res.json().get("message"))

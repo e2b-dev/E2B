@@ -3,6 +3,8 @@ import requests
 import urllib.parse
 import httpcore
 
+from enum import Enum
+from dataclasses import dataclass
 from io import IOBase
 from typing import (
     Iterator,
@@ -27,6 +29,17 @@ from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.permissions.permissions_pb2 import User
 from e2b.envd.api import ENVD_API_FILES_ROUTE
+
+
+class FileType(Enum):
+    FILE = "file"
+    DIR = "dir"
+
+
+@dataclass
+class EntryInfo:
+    name: str
+    type: FileType
 
 
 class Filesystem:
@@ -125,7 +138,7 @@ class Filesystem:
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> List[filesystem_pb2.EntryInfo]:
+    ) -> List[EntryInfo]:
         try:
             res = self._rpc.list_dir(
                 filesystem_pb2.ListDirRequest(
@@ -135,7 +148,10 @@ class Filesystem:
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )
 
-            return [entry for entry in res.entries]
+            return [
+                EntryInfo(name=entry.name, type=FileType(entry.name))
+                for entry in res.entries
+            ]
         except Exception as e:
             raise handle_rpc_exception(e)
 
