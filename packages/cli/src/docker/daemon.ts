@@ -59,20 +59,3 @@ export async function dockerBuild(dockerfileRelativePath: string, templateID:str
 
     console.log('Built docker image using SDK')
 }
-
-// console.log('Building docker image...')
-// const cmd = `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${
-//     e2b.SANDBOX_DOMAIN
-// }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
-//     dockerBuildArgs,
-// )
-//     .map(([key, value]) => `--build-arg="${key}=${value}"`)
-//     .join(' ')}`
-// child_process.execSync(cmd, {
-//     stdio: 'inherit',
-//     cwd: root,
-//     env: {
-//     ...process.env,
-//     DOCKER_CLI_HINTS: 'false',
-//     },
-// })
