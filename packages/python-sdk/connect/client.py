@@ -173,7 +173,7 @@ class Client:
         )
 
     def _create_stream_timeout(self, timeout: Optional[int]):
-        if timeout is not None:
+        if timeout:
             return {"connect-timeout-ms": str(timeout * 1000)}
         return {}
 
