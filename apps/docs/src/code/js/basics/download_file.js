@@ -5,6 +5,6 @@ const sandbox = await Sandbox.create({ template: 'base' })
 
 const buffer = await sandbox.downloadFile('path/to/remote/file/inside/sandbox') // $HighlightLine
 // Save file to local filesystem
-fs.writeFileSync('path/to/local/file', buffer)
+fs.writeFileSync('path/to/local/file', Buffer.from(buffer))
 
 await sandbox.close()
