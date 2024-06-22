@@ -21,9 +21,9 @@ from e2b.connection_config import (
 )
 from e2b.exceptions import (
     SandboxException,
-    handle_envd_api_exception,
-    handle_rpc_exception,
 )
+from e2b.envd.api import handle_envd_api_exception
+from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.permissions.permissions_pb2 import User
 from e2b.envd.api import ENVD_API_FILES_ROUTE

@@ -1,18 +1,20 @@
 export {
   ApiClient,
-  AuthenticationError,
 } from './api'
 export type { components, paths } from './api'
 
 export {
-  ConnectionConfig,
+  AuthenticationError,
   SandboxError,
-  DOMAIN,
-  InvalidUserError,
-  NotEnoughDiskSpaceError,
-  NotFoundError,
   InvalidPathError,
   TimeoutError,
+  NotFoundError,
+  NotEnoughDiskSpaceError,
+  InvalidUserError,
+} from './errors'
+export {
+  ConnectionConfig,
+  DOMAIN,
 } from './connectionConfig'
 export type { Logger } from './logs'
 export type { ConnectionOpts, Username } from './connectionConfig'
@@ -25,7 +27,7 @@ export {
   FileType,
 } from './sandbox/filesystem'
 
-export { ProcessError, ProcessExitError } from './sandbox/process/processHandle'
+export { ProcessExitError } from './sandbox/process/processHandle'
 export type {
   ProcessResult,
   Stdout,

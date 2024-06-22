@@ -3,6 +3,7 @@ import {
   PromiseClient,
   Transport,
 } from '@connectrpc/connect'
+import { PlainMessage } from '@bufbuild/protobuf'
 
 import { Process as ProcessService } from '../../envd/process/process_connect'
 import {
@@ -10,9 +11,10 @@ import {
   StartResponse,
   ProcessConfig,
 } from '../../envd/process/process_pb'
-import { ConnectionConfig, defaultUsername, Username, ConnectionOpts, SandboxError, handleRpcError } from '../../connectionConfig'
+import { ConnectionConfig, defaultUsername, Username, ConnectionOpts } from '../../connectionConfig'
+import { SandboxError } from '../../errors'
+import { handleRpcError } from '../../envd/rpc'
 import { ProcessHandle, ProcessResult } from './processHandle'
-import { PlainMessage } from '@bufbuild/protobuf'
 
 export interface ProcessRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
 

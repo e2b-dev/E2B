@@ -2,8 +2,9 @@ from dataclasses import dataclass
 from typing import Optional, Dict, List
 from datetime import datetime
 
-from e2b.api import ApiClient, models, client
+from e2b.api import ApiClient, models, client, exceptions
 from e2b.connection_config import ConnectionConfig
+from e2b.api import handle_api_exception
 
 
 @dataclass
@@ -31,21 +32,24 @@ class SandboxApi:
         )
 
         with ApiClient(config) as api_client:
-            return [
-                RunningSandbox(
-                    sandbox_id=SandboxApi._get_sandbox_id(
-                        sandbox.sandbox_id,
-                        sandbox.client_id,
-                    ),
-                    template_id=sandbox.template_id,
-                    name=sandbox.alias,
-                    metadata=sandbox.metadata,
-                    started_at=sandbox.started_at,
-                )
-                for sandbox in client.SandboxesApi(api_client).sandboxes_get(
-                    _request_timeout=config.request_timeout,
-                )
-            ]
+            try:
+                return [
+                    RunningSandbox(
+                        sandbox_id=SandboxApi._get_sandbox_id(
+                            sandbox.sandbox_id,
+                            sandbox.client_id,
+                        ),
+                        template_id=sandbox.template_id,
+                        name=sandbox.alias,
+                        metadata=sandbox.metadata,
+                        started_at=sandbox.started_at,
+                    )
+                    for sandbox in client.SandboxesApi(api_client).sandboxes_get(
+                        _request_timeout=config.request_timeout,
+                    )
+                ]
+            except exceptions.ApiException as e:
+                raise handle_api_exception(e)
 
     @staticmethod
     def kill(
@@ -63,10 +67,13 @@ class SandboxApi:
         )
 
         with ApiClient(config) as api_client:
-            client.SandboxesApi(api_client).sandboxes_sandbox_id_delete(
-                sandbox_id,
-                _request_timeout=config.request_timeout,
-            )
+            try:
+                client.SandboxesApi(api_client).sandboxes_sandbox_id_delete(
+                    sandbox_id,
+                    _request_timeout=config.request_timeout,
+                )
+            except exceptions.ApiException as e:
+                raise handle_api_exception(e)
 
     @staticmethod
     def set_timeout(
@@ -85,11 +92,14 @@ class SandboxApi:
         )
 
         with ApiClient(config) as api_client:
-            client.SandboxesApi(api_client).sandboxes_sandbox_id_timeout_post(
-                sandbox_id,
-                models.SandboxesSandboxIDTimeoutPostRequest(timeout=timeout),
-                _request_timeout=config.request_timeout,
-            )
+            try:
+                client.SandboxesApi(api_client).sandboxes_sandbox_id_timeout_post(
+                    sandbox_id,
+                    models.SandboxesSandboxIDTimeoutPostRequest(timeout=timeout),
+                    _request_timeout=config.request_timeout,
+                )
+            except exceptions.ApiException as e:
+                raise handle_api_exception(e)
 
     @staticmethod
     def _create_sandbox(
@@ -109,16 +119,18 @@ class SandboxApi:
         )
 
         with ApiClient(config) as api_client:
-            res = client.SandboxesApi(api_client).sandboxes_post(
-                models.NewSandbox(
-                    templateID=template,
-                    metadata=metadata,
-                    timeout=timeout,
-                ),
-                _request_timeout=config.request_timeout,
-            )
-
-            return SandboxApi._get_sandbox_id(res.sandbox_id, res.client_id)
+            try:
+                res = client.SandboxesApi(api_client).sandboxes_post(
+                    models.NewSandbox(
+                        templateID=template,
+                        metadata=metadata,
+                        timeout=timeout,
+                    ),
+                    _request_timeout=config.request_timeout,
+                )
+                return SandboxApi._get_sandbox_id(res.sandbox_id, res.client_id)
+            except exceptions.ApiException as e:
+                raise handle_api_exception(e)
 
     @staticmethod
     def _get_sandbox_id(sandbox_id: str, client_id: str) -> str:

@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional, Callable, Any, Generator, Union, Tuple
 
-from e2b.exceptions import handle_rpc_exception, SandboxException
+from e2b.exceptions import SandboxException
+from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.process import process_pb2
 
 Stdout = str

@@ -1,8 +1,10 @@
+import json
+
 from importlib.metadata import version
 
 from e2b.connection_config import ConnectionConfig
 from e2b.api.metadata import default_headers
-from e2b.exceptions import AuthenticationException
+from e2b.exceptions import AuthenticationException, SandboxException
 
 
 pydantic_version = version("pydantic")
@@ -16,11 +18,18 @@ else:
     import e2b.api.v2.client.exceptions as exceptions
 
 
+def handle_api_exception(e: exceptions.ApiException):
+    body = json.loads(e.body) if e.body else {}
+    if "message" in body:
+        return SandboxException(f"{e.status}: {body['message']}")
+    return SandboxException(f"{e.status}: {e.body}")
+
+
 class ApiClient(client.ApiClient):
     def __init__(
         self,
         config: ConnectionConfig,
-        require_api_key: bool = False,
+        require_api_key: bool = True,
         require_access_token: bool = False,
         *args,
         **kwargs,
@@ -42,11 +51,13 @@ class ApiClient(client.ApiClient):
         # See configuration.py for a list of all supported configuration parameters.
         configuration = client.Configuration(host=config.api_url)
 
-        configuration.api_key["ApiKeyAuth"] = config.api_key
-        configuration.access_token = config.access_token
+        if config.api_key:
+            configuration.api_key["ApiKeyAuth"] = config.api_key
+        if config.access_token:
+            configuration.access_token = config.access_token
 
         super().__init__(configuration, *args, **kwargs)
         self.default_headers = default_headers
 
 
-__all__ = ["ApiClient", "client", "models"]
+__all__ = ["ApiClient", "client", "models", "exceptions"]

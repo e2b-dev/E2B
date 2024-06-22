@@ -11,7 +11,8 @@ from e2b.connection_config import (
     Username,
     ConnectionConfig,
 )
-from e2b.exceptions import handle_rpc_exception, SandboxException
+from e2b.exceptions import SandboxException
+from e2b.envd.rpc import handle_rpc_exception
 
 
 @dataclass

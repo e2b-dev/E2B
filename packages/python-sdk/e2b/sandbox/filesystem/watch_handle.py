@@ -1,6 +1,6 @@
 from typing import Any, Generator
-from e2b.exceptions import handle_rpc_exception
 
+from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.filesystem.filesystem_pb2 import WatchDirResponse
 
 # TODO: Export custom types

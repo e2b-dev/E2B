@@ -11,10 +11,13 @@ import {
   defaultUsername,
   Username,
   ConnectionOpts,
-  handleRpcError,
-  handleEnvdApiError,
-  SandboxError,
 } from '../../connectionConfig'
+import {
+  SandboxError
+} from '../../errors'
+import { handleEnvdApiError } from '../../envd/api'
+import { handleRpcError } from '../../envd/rpc'
+
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import { FileType as FsFileType, WatchDirResponse } from '../../envd/filesystem/filesystem_pb'

@@ -10,6 +10,8 @@ from e2b.connection_config import ConnectionConfig
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 from e2b.exceptions import SandboxException
 
+# TODO: Add logs
+
 
 class Sandbox(SandboxApi):
     _envd_port = 49982
@@ -35,7 +37,9 @@ class Sandbox(SandboxApi):
     ):
         super().__init__()
 
-        if sandbox_id and (metadata or timeout is not None):
+        if sandbox_id and (
+            metadata is not None or timeout is not None or template is not None
+        ):
             raise SandboxException(
                 "Cannot set metadata or timeout when connecting to an existing sandbox. "
                 "Use Sandbox.connect method instead.",

@@ -22,5 +22,6 @@ from .sandbox.process.process_handle import (
     ProcessResult,
     Stderr,
     Stdout,
+    ProcessExitException,
 )
 from .sandbox.filesystem.watch_handle import WatchHandle

@@ -1,5 +1,4 @@
-
-import { handleRpcError } from '../../connectionConfig'
+import { handleRpcError } from '../../envd/rpc'
 import {
   EventType,
   WatchDirResponse,

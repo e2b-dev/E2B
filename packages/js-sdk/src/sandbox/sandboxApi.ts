@@ -1,5 +1,6 @@
-import { ApiClient } from '../api'
-import { ConnectionConfig, ConnectionOpts, handleApiError } from '../connectionConfig'
+import { ApiClient, handleApiError } from '../api'
+import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+
 
 export interface RunningSandbox {
   sandboxID: string

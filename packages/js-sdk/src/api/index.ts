@@ -2,14 +2,16 @@ import createClient from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
-import { ConnectionConfig, SandboxError } from '../connectionConfig'
+import { ConnectionConfig } from '../connectionConfig'
+import { AuthenticationError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
 
-export class AuthenticationError extends SandboxError {
-  constructor(message: any) {
-    super(message)
-    this.name = 'AuthenticationError'
+export function handleApiError(err?: { code: number; message: string; }) {
+  if (!err) {
+    return
   }
+
+  return new SandboxError(`${err.code}: ${err.message}`)
 }
 
 class ApiClient {
@@ -17,10 +19,10 @@ class ApiClient {
 
   constructor(
     config: ConnectionConfig,
-    opts?: {
+    opts: {
       requireAccessToken?: boolean
       requireApiKey?: boolean
-    },
+    } = { requireAccessToken: false, requireApiKey: true },
   ) {
     if (!opts?.requireApiKey && !config.apiKey) {
       throw new AuthenticationError(

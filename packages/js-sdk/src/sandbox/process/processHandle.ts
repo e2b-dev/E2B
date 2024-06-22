@@ -1,4 +1,5 @@
-import { handleRpcError, SandboxError } from '../../connectionConfig'
+import { handleRpcError } from '../../envd/rpc'
+import { SandboxError } from '../../errors'
 import {
   ConnectResponse,
   StartResponse,
