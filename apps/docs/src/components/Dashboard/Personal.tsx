@@ -11,13 +11,11 @@ export const PersonalContent = ({user}: {user: User}) => {
 
   const updateUserEmail = async() => {
     const supabase = createPagesBrowserClient()
-    const res = await supabase
+    await supabase
       .from('users')
       .update({
         email: user.email,
       })
-      
-    console.log(res)
 
     toast({
       title: 'Email updated',

@@ -26,7 +26,6 @@ export const AccountSelector = ({ teams, user, currentTeam, setCurrentTeam, setT
     }
 
     const data = await res.json()
-    console.log(data)
 
     toast({
       title: `Team ${data.team.name} created`,
