@@ -130,7 +130,7 @@ const iconMap: { [key in MenuLabel]: LucideIcon } = {
 
 const MenuItem = ({ icon: Icon, label , selected, onClick }: { icon: LucideIcon; label: MenuLabel; selected: boolean; onClick: () => void }) => (
   <div 
-    className={`flex w-fit md:w-full hover:bg-orange-500/30 hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${selected ? 'bg-orange-500/30' : ''}`} 
+    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${selected ? 'bg-[#995100]' : ''}`} 
     onClick={onClick}
   >
     <Icon width={20} height={20} />

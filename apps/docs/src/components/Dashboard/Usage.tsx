@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '../ui/card'
-import BarChart from './Chart'
 import { LoaderIcon } from 'lucide-react'
+import LineChart from './Chart'
 
 const usageUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/usage`
 
@@ -26,17 +26,11 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
       }
 
       const data = await response.json()
-      const { vcpuData, ramData, vcpuKeys, ramKeys } = transformData(data.usages)
-      
-      setVcpuData({
-        data: vcpuData,
-        keys: vcpuKeys,
-      })
-      setRamData({
-        data: ramData,
-        keys: ramKeys,
-      })
 
+      const { vcpuSeries, ramSeries } = transformData(data.usages)
+      
+      setVcpuData(vcpuSeries)
+      setRamData(ramSeries)
     }
     if (currentApiKey) {
       getUsage()
@@ -48,24 +42,23 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
       <div className='pb-10'>
         <h2 className='font-bold pb-4 text-xl'>Usage history</h2>
         <p>
-          The graphs shows monthly vCPU-hours and RAM-hours used by the team. <br/>
-          If you have several teamplates, the bar is broken down by the teamplate id.
+          The graphs show the total monthly vCPU-hours and RAM-hours used by the team. <br/>
         </p>
       </div>
 
       {vcpuData && ramData ? (
         <>
           <h2 className='font-bold pb-4 text-xl'>vCPU hours</h2>
-          <Card className="w-2/3 bg-inherit/10 border border-white/20 mb-10">
+          <Card className="w-full md:w-2/3 bg-inherit/10 border border-white/20 mb-10">
             <CardContent>
-              <BarChart className="aspect-[4/3]" usages={vcpuData} type="vCPU" />
+              <LineChart className="aspect-[4/3]" series={vcpuData} type="vCPU" />
             </CardContent>
           </Card>
 
           <h2 className='font-bold pb-4 text-xl'>RAM hours</h2>
-          <Card className="w-2/3 bg-inherit/10 border border-white/20 mb-10">
+          <Card className="w-full md:w-2/3 bg-inherit/10 border border-white/20 mb-10">
             <CardContent>
-              <BarChart className="aspect-[4/3]" usages={ramData} type="RAM" />
+              <LineChart className="aspect-[4/3]" series={ramData} type="RAM" />
             </CardContent>
           </Card>
         </>
@@ -80,41 +73,34 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
 
 
 const transformData = (usages: any) => {
-  const vcpuData = usages.map((usage: any) => {
-    const monthData = {
-      name: `${usage.month}/${usage.year}`,
-    }
-    usage.template_usage.forEach((template: any) => {
-      monthData[`vCPU_${template.alias}`] = template.vcpu_hours
-    })
-    return monthData
-  })
-
   const ramData = usages.map((usage: any) => {
-    const monthData = {
-      name: `${usage.month}/${usage.year}`,
+    return {
+      x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
+      y: usage.template_usage.reduce((acc: number, template: any) => acc + template.ram_gb_hours, 0),
     }
-    usage.template_usage.forEach((template: any) => {
-      monthData[`RAM_${template.alias}`] = template.ram_gb_hours
-    })
-    return monthData
   })
 
-  // Extract keys for the bar charts
-  const vcpuKeys = new Set()
-  const ramKeys = new Set()
-  usages.forEach((usage: any) => {
-    usage.template_usage.forEach((template: any) => {
-      vcpuKeys.add(`vCPU_${template.alias}`)
-      ramKeys.add(`RAM_${template.alias}`)
-    })
+  const vpcData = usages.map((usage: any) => {
+    return {
+      x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
+      y: usage.template_usage.reduce((acc: number, template: any) => acc + template.sandbox_hours, 0),
+    }
   })
 
   return {
-    vcpuData,
-    ramData,
-    vcpuKeys: Array.from(vcpuKeys),
-    ramKeys: Array.from(ramKeys),
+    vcpuSeries: [
+      {
+        id: 'vCPU Hours',
+        data: vpcData,
+      },
+    ],
+    ramSeries: [
+      {
+        id: 'RAM Usage',
+        data: ramData,
+      },
+    ],
   }
 }
+
 
