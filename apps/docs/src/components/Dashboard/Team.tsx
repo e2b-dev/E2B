@@ -59,7 +59,6 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
   } 
   
   const deleteUserFromTeam = async() => {
-    console.log(currentMemberId)
     
     const { error } = await supabase
       .from('users_teams')
