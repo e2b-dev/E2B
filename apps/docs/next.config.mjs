@@ -47,34 +47,35 @@ const codeSnippetsDir = path.resolve('./src/code')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
+  basePath: '/docs',
   webpack: config => {
     const codeFilesHash = getFilesHash(codeSnippetsDir)
     config.cache.version = config.cache.version + delimiter + codeFilesHash
     return config
   },
-  // async rewrites() {
-  //   return {
-  //     afterFiles: [
-  //       {
-  //         source: '/ingest/:path*',
-  //         destination: 'https://app.posthog.com/:path*',
-  //         // BEWARE: setting basePath will break the analytics proxy
-  //       },
-  //       { source: '/:path*', destination: '/_404/:path*' },
-  //     ]
-  //   }
+  async rewrites() {
+    return {
+      afterFiles: [
+        {
+          source: '/ingest/:path*',
+          destination: 'https://app.posthog.com/:path*',
+          // BEWARE: setting basePath will break the analytics proxy
+        },
+        { source: '/:path*', destination: '/_404/:path*' },
+      ]
+    }
 
-  // },
-  // async redirects() {
-  //   return [
-  //     {
-  //       source: '/',
-  //       destination: '/docs',
-  //       permanent: false,
-  //       basePath: false,
-  //     },
-  //   ]
-  // },
+  },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/docs',
+        permanent: false,
+        basePath: false,
+      },
+    ]
+  },
 }
 
 export default withSearch(

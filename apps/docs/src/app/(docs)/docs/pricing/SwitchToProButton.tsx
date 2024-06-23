@@ -71,6 +71,8 @@ function SwitchTierButton() {
           <TierActiveTag />
         )}
 
+
+
         {user.pricingTier.id !== tiers.pro.id && (
           <Button
             onClick={createCheckoutSession}
