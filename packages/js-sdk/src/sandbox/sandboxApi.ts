@@ -35,10 +35,13 @@ export interface SandboxInfo {
 export class SandboxApi {
   protected constructor() { }
 
-  static async kill(
-    sandboxID: string,
-    opts?: ConnectionOpts,
-  ): Promise<void> {
+  /**
+   * Kills sandbox specified by sandbox ID.
+   *
+   * @param sandboxID - Sandbox ID.
+   * @param opts - Connection options.
+   */
+  static async kill(sandboxID: string, opts?: ConnectionOpts): Promise<void> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -76,6 +79,27 @@ export class SandboxApi {
     })) ?? []
   }
 
+  static async setTimeout(sandboxID: string, timeoutMs: number, opts?: ConnectionOpts): Promise<void> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/timeout', {
+      params: {
+        path: {
+          sandboxID,
+        },
+      },
+      body: {
+        timeout: this.timeoutToSeconds(timeoutMs),
+      },
+    })
+
+    const err = handleApiError(res.error)
+    if (err) {
+      throw err
+    }
+  }
+
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
@@ -99,31 +123,6 @@ export class SandboxApi {
     }
 
     return this.getSandboxID(res.data!)
-  }
-
-  protected static async setTimeout(
-    sandboxID: string,
-    timeoutMs: number,
-    opts?: ConnectionOpts,
-  ): Promise<void> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.POST('/sandboxes/{sandboxID}/timeout', {
-      params: {
-        path: {
-          sandboxID,
-        },
-      },
-      body: {
-        timeout: this.timeoutToSeconds(timeoutMs),
-      },
-    })
-
-    const err = handleApiError(res.error)
-    if (err) {
-      throw err
-    }
   }
 
   private static timeoutToSeconds(timeout: number): number {

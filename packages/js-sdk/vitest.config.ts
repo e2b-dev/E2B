@@ -5,7 +5,7 @@ const env = config()
 
 export default defineConfig({
   test: {
-    threads: false,
+    maxWorkers: 5,
     globals: false,
     testTimeout: 20000,
     environment: 'node',

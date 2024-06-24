@@ -5,11 +5,13 @@ import {
   StartResponse,
 } from '../../envd/process/process_pb'
 
-type Brand<K, T> = K & { __brand: T }
+declare const __brand: unique symbol
+type Brand<B> = { [__brand]: B }
+export type Branded<T, B> = T & Brand<B>
 
-export type Stdout = Brand<string, 'stdout'>
-export type Stderr = Brand<string, 'stderr'>
-export type Pty = Brand<Uint8Array, 'pty'>
+export type Stdout = Branded<string, 'stdout'>
+export type Stderr = Branded<string, 'stderr'>
+export type Pty = Branded<Uint8Array, 'pty'>
 
 export interface ProcessResult {
   exitCode: number
