@@ -8,6 +8,13 @@ tags:
   - name: files
 
 paths:
+  /health:
+    get:
+      summary: Check the health of the service
+      responses:
+        204:
+          description: The service is healthy
+
   /sync:
     post:
       summary: Ensure the time and metadata is synced with the host

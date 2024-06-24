@@ -19,7 +19,7 @@ func New(l *zerolog.Logger) *API {
 func (a *API) PostSync(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	a.logger.Info().Msg("syncing host")
+	a.logger.Debug().Msg("syncing host")
 
 	go func() {
 		err := host.Sync()
@@ -29,6 +29,17 @@ func (a *API) PostSync(w http.ResponseWriter, r *http.Request) {
 			a.logger.Trace().Msg("clock synced")
 		}
 	}()
+
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Type", "")
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *API) GetHealth(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	a.logger.Debug().Msg("health check")
 
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "")

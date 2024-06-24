@@ -76,6 +76,9 @@ type ServerInterface interface {
 	// Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
 	// (POST /files)
 	PostFiles(w http.ResponseWriter, r *http.Request, params PostFilesParams)
+	// Check the health of the service
+	// (GET /health)
+	GetHealth(w http.ResponseWriter, r *http.Request)
 	// Ensure the time and metadata is synced with the host
 	// (POST /sync)
 	PostSync(w http.ResponseWriter, r *http.Request)
@@ -94,6 +97,12 @@ func (_ Unimplemented) GetFiles(w http.ResponseWriter, r *http.Request, params G
 // Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
 // (POST /files)
 func (_ Unimplemented) PostFiles(w http.ResponseWriter, r *http.Request, params PostFilesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Check the health of the service
+// (GET /health)
+func (_ Unimplemented) GetHealth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -189,6 +198,21 @@ func (siw *ServerInterfaceWrapper) PostFiles(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostFiles(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetHealth operation middleware
+func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetHealth(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -331,6 +355,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/files", wrapper.PostFiles)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/health", wrapper.GetHealth)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/sync", wrapper.PostSync)
