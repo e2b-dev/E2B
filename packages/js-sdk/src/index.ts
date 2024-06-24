@@ -36,6 +36,7 @@ export type {
   Pty,
   ProcessHandle,
 } from './sandbox/process/processHandle'
+export type { SandboxApiOpts } from './sandbox/sandboxApi'
 
 export type {
   ProcessInfo,

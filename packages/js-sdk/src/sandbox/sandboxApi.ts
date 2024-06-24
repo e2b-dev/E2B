@@ -1,6 +1,7 @@
 import { ApiClient, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 
+export interface SandboxApiOpts extends Partial<Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>> { }
 
 /**
  * Information about a sandbox.
@@ -41,7 +42,7 @@ export class SandboxApi {
    * @param sandboxID - Sandbox ID.
    * @param opts - Connection options.
    */
-  static async kill(sandboxID: string, opts?: ConnectionOpts): Promise<void> {
+  static async kill(sandboxID: string, opts?: SandboxApiOpts): Promise<void> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -59,7 +60,7 @@ export class SandboxApi {
     }
   }
 
-  static async list(opts?: ConnectionOpts): Promise<SandboxInfo[]> {
+  static async list(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -79,7 +80,7 @@ export class SandboxApi {
     })) ?? []
   }
 
-  static async setTimeout(sandboxID: string, timeoutMs: number, opts?: ConnectionOpts): Promise<void> {
+  static async setTimeout(sandboxID: string, timeoutMs: number, opts?: SandboxApiOpts): Promise<void> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -103,7 +104,7 @@ export class SandboxApi {
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
-    opts?: ConnectionOpts & {
+    opts?: SandboxApiOpts & {
       metadata?: Record<string, string>,
     }): Promise<string> {
     const config = new ConnectionConfig(opts)
