@@ -38,26 +38,26 @@ components:
         type: string
 
   responses:
-    400:
+    "400":
       description: Bad request
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-    401:
+    "401":
       description: Authentication error
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-    404:
+    "404":
       description: Not found
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
 
-    500:
+    "500":
       description: Server error
       content:
         application/json:
@@ -269,9 +269,9 @@ paths:
     get:
       description: Health check
       responses:
-        200:
+        "200":
           description: Request was successful
-        401:
+        "401":
           $ref: "#/components/responses/401"
 
   /sandboxes:
@@ -281,7 +281,7 @@ paths:
       security:
         - ApiKeyAuth: []
       responses:
-        200:
+        "200":
           description: Successfully returned all running sandboxes
           content:
             application/json:
@@ -290,11 +290,11 @@ paths:
                 items:
                   allOf:
                     - $ref: "#/components/schemas/RunningSandbox"
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        400:
+        "400":
           $ref: "#/components/responses/400"
-        500:
+        "500":
           $ref: "#/components/responses/500"
     post:
       description: Create a sandbox from the template
@@ -308,17 +308,17 @@ paths:
             schema:
               $ref: "#/components/schemas/NewSandbox"
       responses:
-        201:
+        "201":
           description: The sandbox was created successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Sandbox"
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        400:
+        "400":
           $ref: "#/components/responses/400"
-        500:
+        "500":
           $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}/logs:
@@ -345,17 +345,17 @@ paths:
             type: integer
           description: Maximum number of logs that should be returned
       responses:
-        200:
+        "200":
           description: Successfully returned the sandbox logs
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SandboxLogs"
-        404:
+        "404":
           $ref: "#/components/responses/404"
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        500:
+        "500":
           $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}:
@@ -367,13 +367,13 @@ paths:
       parameters:
         - $ref: "#/components/parameters/sandboxID"
       responses:
-        204:
+        "204":
           description: The sandbox was killed successfully
-        404:
+        "404":
           $ref: "#/components/responses/404"
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        500:
+        "500":
           $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}/timeout:
@@ -398,13 +398,13 @@ paths:
       parameters:
         - $ref: "#/components/parameters/sandboxID"
       responses:
-        204:
+        "204":
           description: Successfully set the sandbox timeout
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        404:
+        "404":
           $ref: "#/components/responses/404"
-        500:
+        "500":
           $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}/refreshes:
@@ -428,11 +428,11 @@ paths:
       parameters:
         - $ref: "#/components/parameters/sandboxID"
       responses:
-        204:
+        "204":
           description: Successfully refreshed the sandbox
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        404:
+        "404":
           $ref: "#/components/responses/404"
 
   /templates:
@@ -442,7 +442,7 @@ paths:
       security:
         - AccessTokenAuth: []
       responses:
-        200:
+        "200":
           description: Successfully returned all templates
           content:
             application/json:
@@ -451,9 +451,9 @@ paths:
                 items:
                   allOf:
                     - $ref: "#/components/schemas/Template"
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        500:
+        "500":
           $ref: "#/components/responses/500"
     post:
       description: Create a new template
@@ -468,15 +468,15 @@ paths:
               $ref: "#/components/schemas/TemplateBuildRequest"
 
       responses:
-        202:
+        "202":
           description: The build was accepted
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Template"
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        500:
+        "500":
           $ref: "#/components/responses/500"
 
   /templates/{templateID}:
@@ -495,15 +495,15 @@ paths:
               $ref: "#/components/schemas/TemplateBuildRequest"
 
       responses:
-        202:
+        "202":
           description: The build was accepted
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Template"
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        500:
+        "500":
           $ref: "#/components/responses/500"
     delete:
       description: Delete a template
@@ -513,11 +513,11 @@ paths:
       parameters:
         - $ref: "#/components/parameters/templateID"
       responses:
-        204:
+        "204":
           description: The template was deleted successfully
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        500:
+        "500":
           $ref: "#/components/responses/500"
 
   /templates/{templateID}/builds/{buildID}:
@@ -530,11 +530,11 @@ paths:
         - $ref: "#/components/parameters/templateID"
         - $ref: "#/components/parameters/buildID"
       responses:
-        202:
+        "202":
           description: The build has started
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        500:
+        "500":
           $ref: "#/components/responses/500"
 
   /templates/{templateID}/builds/{buildID}/status:
@@ -555,15 +555,15 @@ paths:
             minimum: 0
           description: Index of the starting build log that should be returned with the template
       responses:
-        200:
+        "200":
           description: Successfully returned the template
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TemplateBuild"
-        401:
+        "401":
           $ref: "#/components/responses/401"
-        404:
+        "404":
           $ref: "#/components/responses/404"
-        500:
+        "500":
           $ref: "#/components/responses/500"

@@ -12,14 +12,14 @@ paths:
     get:
       summary: Check the health of the service
       responses:
-        204:
+        "204":
           description: The service is healthy
 
   /sync:
     post:
       summary: Ensure the time and metadata is synced with the host
       responses:
-        204:
+        "204":
           description: The time and metadata is synced with the host
 
   /files:
@@ -30,15 +30,15 @@ paths:
         - $ref: "#/components/parameters/FilePath"
         - $ref: "#/components/parameters/User"
       responses:
-        200:
+        "200":
           $ref: "#/components/responses/DownloadSuccess"
-        400:
+        "400":
           $ref: "#/components/responses/InvalidUser"
-        403:
+        "403":
           $ref: "#/components/responses/DirectoryPathError"
-        404:
+        "404":
           $ref: "#/components/responses/FileNotFound"
-        500:
+        "500":
           $ref: "#/components/responses/InternalServerError"
     post:
       summary: Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
@@ -49,15 +49,15 @@ paths:
       requestBody:
         $ref: "#/components/requestBodies/File"
       responses:
-        204:
+        "204":
           $ref: "#/components/responses/UploadSuccess"
-        400:
+        "400":
           $ref: "#/components/responses/InvalidUser"
-        403:
+        "403":
           $ref: "#/components/responses/DirectoryPathError"
-        500:
+        "500":
           $ref: "#/components/responses/InternalServerError"
-        507:
+        "507":
           $ref: "#/components/responses/NotEnoughDiskSpace"
 
 components:
