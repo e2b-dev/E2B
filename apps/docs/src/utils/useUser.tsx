@@ -12,9 +12,6 @@ export type Team = {
   tier: string
   is_default: boolean
   email: string
-  team_billing: {
-    credit_card_added: boolean
-  }[]
 }
 
 type UserContextType = {
