@@ -107,13 +107,13 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 			}
 		}
 
-		keepaliveTicker, stopTicker := permissions.GetKeepAliveTicker(req)
-		defer stopTicker()
+		keepaliveTicker, resetKeepalive := permissions.GetKeepAliveTicker(req)
+		defer keepaliveTicker.Stop()
 
 	dataLoop:
 		for {
 			select {
-			case <-keepaliveTicker:
+			case <-keepaliveTicker.C:
 				streamErr := stream.Send(&rpc.StartResponse{
 					Event: &rpc.ProcessEvent{
 						Event: &rpc.ProcessEvent_Keepalive{
@@ -142,6 +142,8 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 					cancel(connect.NewError(connect.CodeUnknown, streamErr))
 					return
 				}
+
+				resetKeepalive()
 			}
 		}
 

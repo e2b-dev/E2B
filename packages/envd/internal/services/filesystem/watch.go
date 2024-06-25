@@ -64,12 +64,12 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 		return connect.NewError(connect.CodeUnknown, fmt.Errorf("error sending start event: %w", err))
 	}
 
-	keepaliveTicker, stopTicker := permissions.GetKeepAliveTicker(req)
-	defer stopTicker()
+	keepaliveTicker, resetKeepalive := permissions.GetKeepAliveTicker(req)
+	defer keepaliveTicker.Stop()
 
 	for {
 		select {
-		case <-keepaliveTicker:
+		case <-keepaliveTicker.C:
 			streamErr := stream.Send(&rpc.WatchDirResponse{
 				Event: &rpc.WatchDirResponse_Keepalive{
 					Keepalive: &rpc.WatchDirResponse_KeepAlive{},
@@ -143,6 +143,8 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 				if streamErr != nil {
 					return connect.NewError(connect.CodeUnknown, streamErr)
 				}
+
+				resetKeepalive()
 			}
 		}
 	}

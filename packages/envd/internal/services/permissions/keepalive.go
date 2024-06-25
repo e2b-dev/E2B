@@ -9,7 +9,7 @@ import (
 
 const defaultKeepAliveInterval = 90 * time.Second
 
-func GetKeepAliveTicker[T any](req *connect.Request[T]) (<-chan time.Time, func()) {
+func GetKeepAliveTicker[T any](req *connect.Request[T]) (*time.Ticker, func()) {
 	keepAliveIntervalHeader := req.Header().Get("X-Keepalive-Interval")
 
 	var interval time.Duration
@@ -23,7 +23,7 @@ func GetKeepAliveTicker[T any](req *connect.Request[T]) (<-chan time.Time, func(
 
 	ticker := time.NewTicker(interval)
 
-	return ticker.C, func() {
-		ticker.Stop()
+	return ticker, func() {
+		ticker.Reset(interval)
 	}
 }
