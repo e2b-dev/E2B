@@ -137,7 +137,7 @@ class Client:
         if self._compressor is not None:
             data = self._compressor.compress(data)
 
-        extensions = {}
+        extensions = None
 
         if request_timeout is not None:
             extensions = {"timeout": request_timeout}
@@ -146,7 +146,7 @@ class Client:
             "POST",
             self.url,
             content=data,
-            extensions=extensions,
+            # extensions=extensions,
             headers={
                 **self._headers,
                 **opts.get("headers", {}),
@@ -183,9 +183,7 @@ class Client:
 
         extensions = {}
         if request_timeout is not None:
-            extensions = {
-                "timeout": {"connect": request_timeout, "pool": request_timeout}
-            }
+            extensions = {"timeout": {"connect": request_timeout}}
 
         if self._compressor is not None:
             data = self._compressor.compress(data)

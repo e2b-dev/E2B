@@ -16,7 +16,7 @@ export interface paths {
       };
       responses: {
         200: components["responses"]["DownloadSuccess"];
-        400: components["responses"]["BadRequest"];
+        400: components["responses"]["InvalidUser"];
         403: components["responses"]["DirectoryPathError"];
         404: components["responses"]["FileNotFound"];
         500: components["responses"]["InternalServerError"];
@@ -33,10 +33,21 @@ export interface paths {
       requestBody: components["requestBodies"]["File"];
       responses: {
         204: components["responses"]["UploadSuccess"];
-        400: components["responses"]["BadRequest"];
+        400: components["responses"]["InvalidUser"];
         403: components["responses"]["DirectoryPathError"];
         500: components["responses"]["InternalServerError"];
         507: components["responses"]["NotEnoughDiskSpace"];
+      };
+    };
+  };
+  "/health": {
+    /** Check the health of the service */
+    get: {
+      responses: {
+        /** @description The service is healthy */
+        204: {
+          content: never;
+        };
       };
     };
   };
@@ -65,12 +76,6 @@ export interface components {
     };
   };
   responses: {
-    /** @description Bad request */
-    BadRequest: {
-      content: {
-        "application/json": components["schemas"]["Error"];
-      };
-    };
     /** @description Directory path error */
     DirectoryPathError: {
       content: {
@@ -91,6 +96,12 @@ export interface components {
     };
     /** @description Internal server error */
     InternalServerError: {
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Invalid user */
+    InvalidUser: {
       content: {
         "application/json": components["schemas"]["Error"];
       };

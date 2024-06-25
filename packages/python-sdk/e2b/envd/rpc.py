@@ -23,7 +23,7 @@ def handle_rpc_exception(e: Exception):
             )
         elif e.status == Code.deadline_exceeded:
             return TimeoutException(
-                f"{e.message}: This error is likely due to exceeding 'timeoutMs' — the total time a long running request can be active. It can be modified by passing 'timeoutMs' when making the request. Use '0' to disable the timeout."
+                f"{e.message}: This error is likely due to exceeding 'timeoutMs' — the total time a long running request (like process or directory watch) can be active. It can be modified by passing 'timeoutMs' when making the request. Use '0' to disable the timeout."
             )
         else:
             return SandboxException(f"{e.status}: {e.message}")

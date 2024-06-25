@@ -18,7 +18,7 @@ export function handleRpcError(err: unknown) {
         )
       case Code.DeadlineExceeded:
         return new TimeoutError(
-          `${err.message}: This error is likely due to exceeding 'timeoutMs' — the total time a long running request can be active. It can be modified by passing 'timeoutMs' when making the request. Use '0' to disable the timeout.`
+          `${err.message}: This error is likely due to exceeding 'timeoutMs' — the total time a long running request (like process or directory watch) can be active. It can be modified by passing 'timeoutMs' when making the request. Use '0' to disable the timeout.`
         )
       default:
         return new SandboxError(`${err.code}: ${err.message}`)

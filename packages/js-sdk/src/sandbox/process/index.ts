@@ -38,6 +38,8 @@ export interface ProcessInfo extends PlainMessage<ProcessConfig> {
 export class Process {
   protected readonly rpc: PromiseClient<typeof ProcessService>
 
+  private readonly defaultProcessConnectionTimeout = 60_000 // 60 seconds
+
   constructor(
     transport: Transport,
     private readonly connectionConfig: ConnectionConfig,
@@ -125,7 +127,7 @@ export class Process {
       },
     }, {
       signal: controller.signal,
-      timeoutMs: opts?.timeoutMs ?? 60_000,
+      timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
     })
 
     try {
@@ -187,7 +189,7 @@ export class Process {
       },
     }, {
       signal: controller.signal,
-      timeoutMs: opts?.timeoutMs ?? 60_000,
+      timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
     })
 
     try {

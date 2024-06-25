@@ -1,13 +1,19 @@
 import urllib.parse
 import httpcore
+import httpx
+import requests
 
-from typing import Optional, Dict
+from typing import Optional, Dict, Literal
 
 from e2b.sandbox.filesystem.filesystem import Filesystem
 from e2b.sandbox.process.main import Process
 from e2b.sandbox.sandbox_api import SandboxApi
 from e2b.connection_config import ConnectionConfig
-from e2b.envd.api import ENVD_API_FILES_ROUTE
+from e2b.envd.api import (
+    ENVD_API_FILES_ROUTE,
+    handle_envd_api_exception,
+    ENVD_API_HEALTH_ROUTE,
+)
 from e2b.exceptions import SandboxException
 
 # TODO: Add logs
@@ -26,7 +32,7 @@ class Sandbox(SandboxApi):
 
     def __init__(
         self,
-        template: str = "base-v1",
+        template: str = "base",
         timeout: int = 300,
         metadata: Optional[Dict[str, str]] = None,
         api_key: Optional[str] = None,
@@ -67,20 +73,38 @@ class Sandbox(SandboxApi):
                 request_timeout=request_timeout,
             )
 
-        self._envd_api_url = (
-            f"{'http' if debug else 'https'}://{self.get_host(self._envd_port)}"
+        self._envd_api_url = f"{'http' if self._connection_config.debug else 'https'}://{self.get_host(self._envd_port)}"
+
+        self._envd_rpc_pool = httpcore.ConnectionPool(max_connections=25)
+        self._envd_api = httpx.Client(base_url=self._envd_api_url)
+
+        self._filesystem = Filesystem(
+            self._envd_api_url,
+            self._connection_config,
+            self._envd_rpc_pool,
+            self._envd_api,
         )
-
-        pool = httpcore.ConnectionPool(max_connections=25)
-
-        self._filesystem = Filesystem(self._envd_api_url, self._connection_config, pool)
-        self._process = Process(self._envd_api_url, self._connection_config, pool)
+        self._process = Process(
+            self._envd_api_url, self._connection_config, self._envd_rpc_pool
+        )
 
     def get_host(self, port: int) -> str:
         if self._connection_config.debug:
             return f"localhost:{port}"
 
         return f"{port}-{self.sandbox_id}.{self._connection_config.domain}"
+
+    def is_running(self, request_timeout: Optional[float] = None) -> Literal[True]:
+        r = requests.get(
+            self._envd_api_url + ENVD_API_HEALTH_ROUTE,
+            timeout=self._connection_config.get_request_timeout(request_timeout),
+        )
+
+        err = handle_envd_api_exception(r)
+        if err:
+            raise err
+
+        return True
 
     @classmethod
     def connect(

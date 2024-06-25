@@ -5,6 +5,12 @@ const env = config()
 
 export default defineConfig({
   test: {
+    poolOptions: {
+      threads: {
+        minThreads: 1,
+        maxThreads: 5,
+      },
+    },
     maxWorkers: 5,
     globals: false,
     testTimeout: 20000,

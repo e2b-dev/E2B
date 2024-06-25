@@ -21,7 +21,6 @@ import { handleRpcError } from '../../envd/rpc'
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import { FileType as FsFileType, WatchDirResponse } from '../../envd/filesystem/filesystem_pb'
-import { Logger } from '../../logs'
 
 import { WatchHandle, FilesystemEvent } from './watchHandle'
 
@@ -35,6 +34,15 @@ export const enum FileType {
   DIR = 'dir',
 }
 
+function mapFileType(fileType: FsFileType) {
+  switch (fileType) {
+    case FsFileType.DIRECTORY:
+      return FileType.DIR
+    case FsFileType.FILE:
+      return FileType.FILE
+  }
+}
+
 export interface FilesystemRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
   user?: Username
 }
@@ -46,15 +54,14 @@ export interface WatchOpts extends FilesystemRequestOpts {
 
 export class Filesystem {
   private readonly rpc: PromiseClient<typeof FilesystemService>
-  private readonly envdApi: EnvdApiClient
+
+  private readonly defaultWatchTimeout = 60_000 // 60 seconds
 
   constructor(
     transport: Transport,
-    envdApiUrl: string,
+    private readonly envdApi: EnvdApiClient,
     private readonly connectionConfig: ConnectionConfig,
-    logger?: Logger,
   ) {
-    this.envdApi = new EnvdApiClient({ apiUrl: envdApiUrl, logger })
     this.rpc = createPromiseClient(FilesystemService, transport)
   }
 
@@ -129,10 +136,20 @@ export class Filesystem {
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
 
-      return res.entries.map(e => ({
-        name: e.name,
-        type: e.type === FsFileType.FILE ? FileType.FILE : FileType.DIR,
-      }))
+      const entries: EntryInfo[] = []
+
+      for (const e of res.entries) {
+        const type = mapFileType(e.type)
+
+        if (type) {
+          entries.push({
+            name: e.name,
+            type,
+          })
+        }
+      }
+
+      return entries
     } catch (err) {
       throw handleRpcError(err)
     }
@@ -254,7 +271,7 @@ export class Filesystem {
       },
     }, {
       signal: controller.signal,
-      timeoutMs: opts?.timeout ?? 60_000,
+      timeoutMs: opts?.timeout ?? this.defaultWatchTimeout,
     })
 
     try {

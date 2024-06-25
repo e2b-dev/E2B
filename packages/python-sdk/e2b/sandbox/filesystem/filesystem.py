@@ -1,11 +1,9 @@
 import connect
-import requests
-import urllib.parse
+import httpx
 import httpcore
 
 from enum import Enum
 from dataclasses import dataclass
-from io import IOBase
 from typing import (
     Iterator,
     List,
@@ -36,6 +34,13 @@ class FileType(Enum):
     DIR = "dir"
 
 
+def map_file_type(ft: filesystem_pb2.FileType):
+    if ft == filesystem_pb2.FileType.FILE_TYPE_FILE:
+        return FileType.FILE
+    elif ft == filesystem_pb2.FileType.FILE_TYPE_DIRECTORY:
+        return FileType.DIR
+
+
 @dataclass
 class EntryInfo:
     name: str
@@ -48,9 +53,12 @@ class Filesystem:
         envd_api_url: str,
         connection_config: ConnectionConfig,
         pool: httpcore.ConnectionPool,
+        envd_api: httpx.Client,
     ) -> None:
         self._envd_api_url = envd_api_url
         self._connection_config = connection_config
+        self._pool = pool
+        self._envd_api = envd_api
 
         self._rpc = filesystem_connect.FilesystemClient(
             envd_api_url,
@@ -92,10 +100,8 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ):
-        url = urllib.parse.urljoin(self._envd_api_url, f"{ENVD_API_FILES_ROUTE}")
-        r = requests.get(
-            url,
-            stream=True if format == "stream" else False,
+        r = self._envd_api.get(
+            ENVD_API_FILES_ROUTE,
             params={"path": path, "username": user},
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
@@ -109,22 +115,18 @@ class Filesystem:
         elif format == "bytes":
             return bytearray(r.content)
         elif format == "stream":
-            iter: Iterator[bytes] = r.iter_content()
-            return iter
+            return r.iter_bytes()
 
     def write(
         self,
         path: str,
-        data: Union[str, bytes, IOBase, IO],
+        data: Union[str, bytes, IO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> None:
-        url = urllib.parse.urljoin(self._envd_api_url, f"{ENVD_API_FILES_ROUTE}")
-
-        files = {"file": data}
-        r = requests.post(
-            url,
-            files=files,
+        r = self._envd_api.post(
+            ENVD_API_FILES_ROUTE,
+            files={"file": data},
             params={"path": path, "username": user},
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
@@ -145,13 +147,19 @@ class Filesystem:
                     path=path,
                     user=User(username=user),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
             )
 
-            return [
-                EntryInfo(name=entry.name, type=FileType(entry.name))
-                for entry in res.entries
-            ]
+            entries: List[EntryInfo] = []
+            for entry in res.entries:
+                event_type = map_file_type(entry.type)
+
+                if event_type:
+                    entries.append(EntryInfo(name=entry.name, type=event_type))
+
+            return entries
         except Exception as e:
             raise handle_rpc_exception(e)
 
@@ -167,7 +175,9 @@ class Filesystem:
                     path=path,
                     user=User(username=user),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
             )
             return True
 
@@ -189,7 +199,9 @@ class Filesystem:
                     path=path,
                     user=User(username=user),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -208,7 +220,9 @@ class Filesystem:
                     destination=new_path,
                     user=User(username=user),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -225,7 +239,9 @@ class Filesystem:
                     path=path,
                     user=User(username=user),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(request_timeout),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
             )
 
             return True
@@ -247,7 +263,9 @@ class Filesystem:
                 path=path,
                 user=User(username=user),
             ),
-            request_timeout=self._connection_config.get_request_timeout(request_timeout),
+            request_timeout=self._connection_config.get_request_timeout(
+                request_timeout
+            ),
             timeout=timeout,
         )
 

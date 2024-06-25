@@ -1,4 +1,5 @@
-import requests
+import httpx
+import json
 
 from e2b.exceptions import (
     SandboxException,
@@ -11,9 +12,10 @@ from e2b.exceptions import (
 
 
 ENVD_API_FILES_ROUTE = "/files"
+ENVD_API_HEALTH_ROUTE = "/health"
 
 
-def handle_envd_api_exception(res: requests.Response):
+def handle_envd_api_exception(res: httpx.Response):
     if res.status_code == 400:
         return InvalidUserException(res.json().get("message"))
     elif res.status_code == 403:

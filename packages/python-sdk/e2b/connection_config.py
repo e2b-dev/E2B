@@ -7,7 +7,7 @@ DEBUG = os.getenv("E2B_DEBUG", "false") == "true"
 API_KEY = os.getenv("E2B_API_KEY")
 ACCESS_TOKEN = os.getenv("E2B_ACCESS_TOKEN")
 
-REQUEST_TIMEOUT: float = 30  # 30s
+REQUEST_TIMEOUT: float = 30.0  # 30s
 
 
 class ConnectionConfig:
@@ -37,7 +37,7 @@ class ConnectionConfig:
             self.request_timeout = REQUEST_TIMEOUT
 
         self.api_url = (
-            "http://localhost:3000" if debug else f"https://api.{self.domain}"
+            "http://localhost:3000" if self.debug else f"https://api.{self.domain}"
         )
 
     @staticmethod

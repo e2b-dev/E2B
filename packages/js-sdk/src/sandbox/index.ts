@@ -6,6 +6,7 @@ import { Filesystem } from './filesystem'
 import { Process } from './process'
 import { Pty } from './pty'
 import { SandboxApi } from './sandboxApi'
+import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 
 // @ts-ignore
 Symbol.asyncDispose ??= Symbol('Symbol.asyncDispose')
@@ -24,7 +25,7 @@ export interface SandboxOpts extends ConnectionOpts {
 }
 
 export class Sandbox extends SandboxApi {
-  protected static readonly defaultTemplate = 'base-v1'
+  protected static readonly defaultTemplate = 'base'
   protected static readonly defaultSandboxTimeoutMs = 300_000
 
   readonly files: Filesystem
@@ -35,6 +36,7 @@ export class Sandbox extends SandboxApi {
 
   private readonly connectionConfig: ConnectionConfig
   private readonly envdApiUrl: string
+  private readonly envdApi: EnvdApiClient
 
   constructor(readonly sandboxID: string, opts?: Omit<SandboxOpts, 'timeoutMs' | 'metadata'>) {
     super()
@@ -48,7 +50,8 @@ export class Sandbox extends SandboxApi {
       interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
     })
 
-    this.files = new Filesystem(rpcTransport, this.envdApiUrl, this.connectionConfig, opts?.logger)
+    this.envdApi = new EnvdApiClient({ apiUrl: this.envdApiUrl, logger: opts?.logger })
+    this.files = new Filesystem(rpcTransport, this.envdApi, this.connectionConfig)
     this.commands = new Process(rpcTransport, this.connectionConfig)
     this.pty = new Pty(rpcTransport, this.connectionConfig)
   }
@@ -88,6 +91,19 @@ export class Sandbox extends SandboxApi {
     return `${port}-${this.sandboxID}.${this.connectionConfig.domain}`
   }
 
+  async isRunning(opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<true> {
+    const { error } = await this.envdApi.api.GET('/health', {
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+    })
+
+    const err = handleEnvdApiError(error)
+    if (err) {
+      throw err
+    }
+
+    return true
+  }
+
   async setTimeout(timeoutMs: number, opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     await Sandbox.setTimeout(this.sandboxID, timeoutMs, { ...this.connectionConfig, ...opts })
   }
@@ -96,7 +112,7 @@ export class Sandbox extends SandboxApi {
     await Sandbox.kill(this.sandboxID, { ...this.connectionConfig, ...opts })
   }
 
-  async [Symbol.asyncDispose]() {
+  async[Symbol.asyncDispose]() {
     await this.kill()
   }
 }
