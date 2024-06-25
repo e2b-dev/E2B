@@ -273,9 +273,6 @@ export async function listSandboxLogs({
   sandboxID,
   start,
 }: { apiKey: string, sandboxID: string, start?: number }): Promise<e2b.components['schemas']['SandboxLog'][]> {
-  const client = new e2b.ApiClient({})
-
-
   const response = await getSandboxLogs(apiKey, { sandboxID, start })
   return response.data.logs
 }
