@@ -57,7 +57,7 @@ func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateC
 		return err
 	}
 
-	cmd := exec.Command(consts.HostEnvdV2Path, "--version")
+	cmd := exec.Command(consts.HostEnvdV2Path, "--build")
 	out, err := cmd.Output()
 	if err != nil {
 		_, _ = logsWriter.Write([]byte(fmt.Sprintf("Error while getting envd version: %v", err)))

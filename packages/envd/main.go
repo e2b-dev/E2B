@@ -30,10 +30,13 @@ const (
 )
 
 var (
+	Version = "dev"
+
 	debug bool
 	port  int64
 
 	versionFlag  bool
+	buildFlag    bool
 	startCmdFlag string
 
 	build string
@@ -52,6 +55,13 @@ func parseFlags() {
 		"version",
 		false,
 		"print envd version",
+	)
+
+	flag.BoolVar(
+		&buildFlag,
+		"build",
+		false,
+		"print git commit hash of the build",
 	)
 
 	flag.Int64Var(
@@ -106,11 +116,16 @@ func main() {
 	parseFlags()
 
 	if versionFlag {
-		fmt.Println(build)
+		fmt.Printf("envd %s (git: %s) \n", Version, build)
 
 		return
 	}
 
+	if buildFlag {
+		fmt.Println(build)
+
+		return
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
