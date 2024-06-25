@@ -183,6 +183,20 @@ func (ebc *EnvBuildCreate) SetNillableFirecrackerVersion(s *string) *EnvBuildCre
 	return ebc
 }
 
+// SetEnvdVersion sets the "envd_version" field.
+func (ebc *EnvBuildCreate) SetEnvdVersion(s string) *EnvBuildCreate {
+	ebc.mutation.SetEnvdVersion(s)
+	return ebc
+}
+
+// SetNillableEnvdVersion sets the "envd_version" field if the given value is not nil.
+func (ebc *EnvBuildCreate) SetNillableEnvdVersion(s *string) *EnvBuildCreate {
+	if s != nil {
+		ebc.SetEnvdVersion(*s)
+	}
+	return ebc
+}
+
 // SetID sets the "id" field.
 func (ebc *EnvBuildCreate) SetID(u uuid.UUID) *EnvBuildCreate {
 	ebc.mutation.SetID(u)
@@ -366,6 +380,10 @@ func (ebc *EnvBuildCreate) createSpec() (*EnvBuild, *sqlgraph.CreateSpec) {
 	if value, ok := ebc.mutation.FirecrackerVersion(); ok {
 		_spec.SetField(envbuild.FieldFirecrackerVersion, field.TypeString, value)
 		_node.FirecrackerVersion = value
+	}
+	if value, ok := ebc.mutation.EnvdVersion(); ok {
+		_spec.SetField(envbuild.FieldEnvdVersion, field.TypeString, value)
+		_node.EnvdVersion = &value
 	}
 	if nodes := ebc.mutation.EnvIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -632,6 +650,24 @@ func (u *EnvBuildUpsert) SetFirecrackerVersion(v string) *EnvBuildUpsert {
 // UpdateFirecrackerVersion sets the "firecracker_version" field to the value that was provided on create.
 func (u *EnvBuildUpsert) UpdateFirecrackerVersion() *EnvBuildUpsert {
 	u.SetExcluded(envbuild.FieldFirecrackerVersion)
+	return u
+}
+
+// SetEnvdVersion sets the "envd_version" field.
+func (u *EnvBuildUpsert) SetEnvdVersion(v string) *EnvBuildUpsert {
+	u.Set(envbuild.FieldEnvdVersion, v)
+	return u
+}
+
+// UpdateEnvdVersion sets the "envd_version" field to the value that was provided on create.
+func (u *EnvBuildUpsert) UpdateEnvdVersion() *EnvBuildUpsert {
+	u.SetExcluded(envbuild.FieldEnvdVersion)
+	return u
+}
+
+// ClearEnvdVersion clears the value of the "envd_version" field.
+func (u *EnvBuildUpsert) ClearEnvdVersion() *EnvBuildUpsert {
+	u.SetNull(envbuild.FieldEnvdVersion)
 	return u
 }
 
@@ -914,6 +950,27 @@ func (u *EnvBuildUpsertOne) SetFirecrackerVersion(v string) *EnvBuildUpsertOne {
 func (u *EnvBuildUpsertOne) UpdateFirecrackerVersion() *EnvBuildUpsertOne {
 	return u.Update(func(s *EnvBuildUpsert) {
 		s.UpdateFirecrackerVersion()
+	})
+}
+
+// SetEnvdVersion sets the "envd_version" field.
+func (u *EnvBuildUpsertOne) SetEnvdVersion(v string) *EnvBuildUpsertOne {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.SetEnvdVersion(v)
+	})
+}
+
+// UpdateEnvdVersion sets the "envd_version" field to the value that was provided on create.
+func (u *EnvBuildUpsertOne) UpdateEnvdVersion() *EnvBuildUpsertOne {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.UpdateEnvdVersion()
+	})
+}
+
+// ClearEnvdVersion clears the value of the "envd_version" field.
+func (u *EnvBuildUpsertOne) ClearEnvdVersion() *EnvBuildUpsertOne {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.ClearEnvdVersion()
 	})
 }
 
@@ -1363,6 +1420,27 @@ func (u *EnvBuildUpsertBulk) SetFirecrackerVersion(v string) *EnvBuildUpsertBulk
 func (u *EnvBuildUpsertBulk) UpdateFirecrackerVersion() *EnvBuildUpsertBulk {
 	return u.Update(func(s *EnvBuildUpsert) {
 		s.UpdateFirecrackerVersion()
+	})
+}
+
+// SetEnvdVersion sets the "envd_version" field.
+func (u *EnvBuildUpsertBulk) SetEnvdVersion(v string) *EnvBuildUpsertBulk {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.SetEnvdVersion(v)
+	})
+}
+
+// UpdateEnvdVersion sets the "envd_version" field to the value that was provided on create.
+func (u *EnvBuildUpsertBulk) UpdateEnvdVersion() *EnvBuildUpsertBulk {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.UpdateEnvdVersion()
+	})
+}
+
+// ClearEnvdVersion clears the value of the "envd_version" field.
+func (u *EnvBuildUpsertBulk) ClearEnvdVersion() *EnvBuildUpsertBulk {
+	return u.Update(func(s *EnvBuildUpsert) {
+		s.ClearEnvdVersion()
 	})
 }
 

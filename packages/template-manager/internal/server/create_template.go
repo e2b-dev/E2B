@@ -2,8 +2,10 @@ package server
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/metadata"
@@ -55,7 +57,19 @@ func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateC
 		return err
 	}
 
-	trailerMetadata := metadata.Pairs(consts.RootfsSizeKey, strconv.FormatInt(template.RootfsSizeMB(), 10))
+	cmd := exec.Command(consts.HostEnvdV2Path, "--version")
+	out, err := cmd.Output()
+	if err != nil {
+		_, _ = logsWriter.Write([]byte(fmt.Sprintf("Error while getting envd version: %v", err)))
+		return err
+	}
+
+	version := strings.TrimSpace(string(out))
+	trailerMetadata := metadata.Pairs(
+		consts.RootfsSizeKey, strconv.FormatInt(template.RootfsSizeMB(), 10),
+		consts.EnvdVersionKey, "v2-"+version,
+	)
+
 	stream.SetTrailer(trailerMetadata)
 
 	telemetry.ReportEvent(childCtx, "Environment built")

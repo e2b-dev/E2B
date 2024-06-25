@@ -336,6 +336,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			localPath: consts.HostEnvdPath,
 			tarPath:   consts.GuestEnvdPath,
 		},
+		{
+			localPath: consts.HostEnvdV2Path,
+			tarPath:   consts.GuestEnvdV2Path,
+		},
 	}
 
 	pr, pw := io.Pipe()

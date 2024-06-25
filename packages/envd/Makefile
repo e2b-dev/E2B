@@ -1,6 +1,9 @@
 ENV := $(shell cat ../../.last_used_env || echo "not-set")
 -include ../../.env.${ENV}
 
+BUILD := $(shell git rev-parse --short HEAD)
+LDFLAGS=-ldflags "-X=main.build=$(BUILD)"
+
 client := gcloud compute instances list --format='csv(name)' --project $(GCP_PROJECT_ID) | grep "client"
 
 .PHONY: init
@@ -16,10 +19,10 @@ upload-local:
 	./upload-local.sh $(GCP_PROJECT_ID)
 
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/envd .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/envd ${LDFLAGS}
 
 build-debug:
-	CGO_ENABLED=1 go build -race -gcflags=all="-N -l" -o bin/debug/envd
+	CGO_ENABLED=1 go build -race -gcflags=all="-N -l" -o bin/debug/envd ${LDFLAGS}
 
 build-docker:
 	make build

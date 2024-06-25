@@ -28,7 +28,7 @@ mkswap /swap/swapfile
 mkdir -p /etc/systemd/system
 cat <<EOF >/etc/systemd/system/envd.service
 [Unit]
-Description=Env Daemon Service
+Description=Env v1 Daemon Service
 
 [Service]
 Type=simple
@@ -37,11 +37,31 @@ User=root
 Group=root
 Environment=GOTRACEBACK=all
 LimitCORE=infinity
-ExecStart=/bin/bash -l -c "/usr/bin/envd -cmd '{{ .StartCmd }}'"
+ExecStart=/bin/bash -l -c "/usr/bin/envd"
 OOMPolicy=continue
 OOMScoreAdjust=-1000
 Environment="GOMEMLIMIT={{ .MemoryLimit }}MiB"
 
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Set up e2bd service.
+cat <<EOF >/etc/systemd/system/envd-v2.service
+[Unit]
+Description=Env v2 Daemon Service
+
+[Service]
+Type=simple
+Restart=always
+User=root
+Group=root
+Environment=GOTRACEBACK=all
+LimitCORE=infinity
+ExecStart=/bin/bash -l -c "/usr/bin/envd-v2 -cmd '{{ .StartCmd }}'"
+OOMPolicy=continue
+OOMScoreAdjust=-1000
+Environment="GOMEMLIMIT={{ .MemoryLimit }}MiB"
 
 ExecStartPre=/bin/bash -c 'echo 0 > /proc/sys/vm/swappiness && swapon /swap/swapfile'
 
@@ -71,6 +91,7 @@ EOF
 # Containers don't run init daemons. We have to enable the runner service manually.
 mkdir -p /etc/systemd/system/multi-user.target.wants
 ln -s /etc/systemd/system/envd.service /etc/systemd/system/multi-user.target.wants/envd.service
+ln -s /etc/systemd/system/envd-v2.service /etc/systemd/system/multi-user.target.wants/envd-2.service
 
 # Set up shell.
 echo "export SHELL='/bin/bash'" >/etc/profile.d/shell.sh
@@ -113,6 +134,7 @@ echo "nameserver 8.8.8.8" >/etc/resolv.conf
 
 # Start systemd services
 systemctl enable envd
+systemctl enable envd-v2
 systemctl enable chrony 2>&1
 
 cat <<EOF >/etc/systemd/system/forward_ports.service

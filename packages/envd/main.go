@@ -22,8 +22,6 @@ import (
 )
 
 const (
-	Version = "dev"
-
 	// We limit the timeout more in proxies
 	maxTimeout = 24 * time.Hour
 	maxAge     = 2 * time.Hour
@@ -37,6 +35,8 @@ var (
 
 	versionFlag  bool
 	startCmdFlag string
+
+	build string
 )
 
 func parseFlags() {
@@ -106,7 +106,7 @@ func main() {
 	parseFlags()
 
 	if versionFlag {
-		fmt.Printf("envd %s\n", Version)
+		fmt.Println(build)
 
 		return
 	}
