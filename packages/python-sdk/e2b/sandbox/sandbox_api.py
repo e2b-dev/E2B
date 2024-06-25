@@ -24,8 +24,9 @@ class SandboxInfo:
 
 
 class SandboxApi:
-    @staticmethod
+    @classmethod
     def list(
+        cls,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -58,8 +59,9 @@ class SandboxApi:
             except exceptions.ApiException as e:
                 raise handle_api_exception(e)
 
-    @staticmethod
-    def kill(
+    @classmethod
+    def _cls_kill(
+        cls,
         sandbox_id: str,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
@@ -82,8 +84,9 @@ class SandboxApi:
             except exceptions.ApiException as e:
                 raise handle_api_exception(e)
 
-    @staticmethod
-    def set_timeout(
+    @classmethod
+    def _cls_set_timeout(
+        cls,
         sandbox_id: str,
         timeout: int,
         api_key: Optional[str] = None,
@@ -108,8 +111,9 @@ class SandboxApi:
             except exceptions.ApiException as e:
                 raise handle_api_exception(e)
 
-    @staticmethod
+    @classmethod
     def _create_sandbox(
+        cls,
         template: str,
         metadata: Optional[Dict[str, str]] = None,
         timeout: Optional[int] = None,

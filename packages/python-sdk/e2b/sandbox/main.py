@@ -1,9 +1,9 @@
 import urllib.parse
+from e2b.sandbox.utils import class_method_variant
 import httpcore
 import httpx
-import requests
 
-from typing import Optional, Dict, Literal
+from typing import Optional, Dict, Literal, overload
 
 from e2b.sandbox.filesystem.filesystem import Filesystem
 from e2b.sandbox.process.main import Process
@@ -95,8 +95,8 @@ class Sandbox(SandboxApi):
         return f"{port}-{self.sandbox_id}.{self._connection_config.domain}"
 
     def is_running(self, request_timeout: Optional[float] = None) -> Literal[True]:
-        r = requests.get(
-            self._envd_api_url + ENVD_API_HEALTH_ROUTE,
+        r = self._envd_api.get(
+            ENVD_API_HEALTH_ROUTE,
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
@@ -121,28 +121,9 @@ class Sandbox(SandboxApi):
             debug=debug,
         )
 
-    def set_timeout(
-        self,
-        timeout: int,
-        request_timeout: Optional[float] = None,
-    ) -> None:
-        SandboxApi.set_timeout(
-            sandbox_id=self.sandbox_id,
-            timeout=timeout,
-            **self._connection_config.__dict__,
-            request_timeout=request_timeout,
-        )
-
-    def kill(self, request_timeout: Optional[float] = None) -> None:
-        SandboxApi.kill(
-            sandbox_id=self.sandbox_id,
-            **self._connection_config.__dict__,
-            request_timeout=request_timeout,
-        )
-
     @property
     def upload_url(self) -> str:
-        url = urllib.parse.urljoin(self._envd_api_url, f"/{ENVD_API_FILES_ROUTE}?")
+        url = urllib.parse.urljoin(self._envd_api_url, f"{ENVD_API_FILES_ROUTE}?")
         params = urllib.parse.urlencode(
             {"username": urllib.parse.quote("user")},
         )
@@ -155,3 +136,55 @@ class Sandbox(SandboxApi):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.kill()
+
+    @overload
+    @staticmethod
+    def kill(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> None: ...
+
+    @overload
+    def kill(self, request_timeout: Optional[float] = None) -> None: ...
+
+    @class_method_variant("_cls_kill")
+    def kill(self, request_timeout: Optional[float] = None) -> None:  # type: ignore
+        SandboxApi._cls_kill(
+            sandbox_id=self.sandbox_id,
+            **self._connection_config.__dict__,
+            request_timeout=request_timeout,
+        )
+
+    @overload
+    @staticmethod
+    def set_timeout(
+        sandbox_id: str,
+        timeout: int,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> None: ...
+
+    @overload
+    def set_timeout(
+        self,
+        timeout: int,
+        request_timeout: Optional[float] = None,
+    ) -> None: ...
+
+    @class_method_variant("_cls_set_timeout")
+    def set_timeout(  # type: ignore
+        self,
+        timeout: int,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        SandboxApi._cls_set_timeout(
+            sandbox_id=self.sandbox_id,
+            timeout=timeout,
+            **self._connection_config.__dict__,
+            request_timeout=request_timeout,
+        )

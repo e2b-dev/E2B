@@ -1,5 +1,4 @@
 import httpx
-import json
 
 from e2b.exceptions import (
     SandboxException,
