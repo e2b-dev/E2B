@@ -10,13 +10,13 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
   const [ramData, setRamData] = useState<any>(null)
 
   useEffect(() => {
-    const getUsage = async () => {
+    const getUsage = async (apiKey: string) => {
       setVcpuData(null)
       setRamData(null)
 
       const response = await fetch(usageUrl, {
         headers: {
-          'X-Team-API-Key': currentApiKey! 
+          'X-Team-API-Key': apiKey 
         }
       })
       if (!response.ok) {
@@ -33,7 +33,7 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
       setRamData(ramSeries)
     }
     if (currentApiKey) {
-      getUsage()
+      getUsage(currentApiKey)
     }
   }, [currentApiKey])
 

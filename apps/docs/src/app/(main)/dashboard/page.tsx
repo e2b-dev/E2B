@@ -45,7 +45,8 @@ export default function Dashboard() {
   
   useEffect(() => {
     if (user) {
-      setCurrentTeam(user.teams[0]) // seems like a sensible default
+      const defaultTeam = user.teams.find(team => team.is_default)
+      setCurrentTeam(defaultTeam || user.teams[0]) // seems like a sensible default
       setTeams(user.teams)
     }
   }, [user])
