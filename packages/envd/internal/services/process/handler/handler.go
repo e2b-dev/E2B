@@ -288,11 +288,11 @@ func (p *Handler) Start() (uint32, error) {
 }
 
 func (p *Handler) Wait() {
-	defer p.tty.Close()
-
 	p.outWg.Wait()
 
 	close(p.DataEvent.Source)
+
+	p.tty.Close()
 
 	err := p.cmd.Wait()
 
