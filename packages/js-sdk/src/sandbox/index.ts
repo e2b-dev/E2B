@@ -56,13 +56,6 @@ export class Sandbox extends SandboxApi {
     this.pty = new Pty(rpcTransport, this.connectionConfig)
   }
 
-  get uploadUrl() {
-    const url = new URL('/files', this.envdApiUrl)
-    url.searchParams.set('username', defaultUsername)
-
-    return url.toString()
-  }
-
   static async create<S extends typeof Sandbox>(this: S, opts?: SandboxOpts): Promise<InstanceType<S>>
   static async create<S extends typeof Sandbox>(this: S, template: string, opts?: SandboxOpts): Promise<InstanceType<S>>
   static async create<S extends typeof Sandbox>(this: S, templateOrOpts?: SandboxOpts | string, opts?: SandboxOpts): Promise<InstanceType<S>> {
@@ -90,6 +83,17 @@ export class Sandbox extends SandboxApi {
 
     return `${port}-${this.sandboxID}.${this.connectionConfig.domain}`
   }
+
+  uploadUrl(path?: string) {
+    const url = new URL('/files', this.envdApiUrl)
+    url.searchParams.set('username', defaultUsername)
+    if (path) {
+      url.searchParams.set('path', path)
+    }
+
+    return url.toString()
+  }
+
 
   async isRunning(opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<true> {
     const { error } = await this.envdApi.api.GET('/health', {

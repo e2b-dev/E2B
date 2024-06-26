@@ -1,10 +1,10 @@
 import urllib.parse
-from e2b.sandbox.utils import class_method_variant
 import httpcore
 import httpx
 
 from typing import Optional, Dict, Literal, overload
 
+from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox.filesystem.filesystem import Filesystem
 from e2b.sandbox.process.main import Process
 from e2b.sandbox.sandbox_api import SandboxApi
@@ -121,11 +121,11 @@ class Sandbox(SandboxApi):
             debug=debug,
         )
 
-    @property
-    def upload_url(self) -> str:
+    def upload_url(self, path: Optional[str] = None) -> str:
         url = urllib.parse.urljoin(self._envd_api_url, f"{ENVD_API_FILES_ROUTE}?")
         params = urllib.parse.urlencode(
-            {"username": urllib.parse.quote("user")},
+            {"username": "user", "path": path},
+            quote_via=urllib.parse.quote,
         )
         url = urllib.parse.urljoin(url, params)
 
