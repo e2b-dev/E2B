@@ -113,7 +113,7 @@ components:
         - templateID
         - sandboxID
         - clientID
-        - envdVersion
+        - envdV2
       properties:
         templateID:
           type: string
@@ -127,9 +127,9 @@ components:
         clientID:
           type: string
           description: Identifier of the client
-        envdVersion:
-          type: string
-          description: Version of the envd running in the sandbox
+        envdV2:
+          type: boolean
+          description: Whether the template contains envd v2
 
     RunningSandbox:
       required:

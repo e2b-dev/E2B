@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -68,10 +69,10 @@ func (o *Orchestrator) CreateSandbox(
 	telemetry.ReportEvent(childCtx, "Created sandbox")
 
 	return &api.Sandbox{
-		ClientID:    res.ClientID,
-		SandboxID:   sandboxID,
-		TemplateID:  templateID,
-		Alias:       &alias,
-		EnvdVersion: *build.EnvdVersion,
+		ClientID:   res.ClientID,
+		SandboxID:  sandboxID,
+		TemplateID: templateID,
+		Alias:      &alias,
+		EnvdV2:     strings.HasPrefix(*build.EnvdVersion, "v2"),
 	}, nil
 }
