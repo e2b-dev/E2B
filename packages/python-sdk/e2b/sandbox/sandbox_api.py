@@ -7,6 +7,12 @@ from e2b.connection_config import ConnectionConfig
 from e2b.api import handle_api_exception
 
 
+class E2BUpdateTemplateException(Exception):
+    """
+    Exception raised when the template uses old envd version. It isn't compatible with the new SDK.
+    """
+
+
 @dataclass
 class SandboxInfo:
     """Information about a sandbox."""
@@ -139,6 +145,11 @@ class SandboxApi:
                     ),
                     _request_timeout=config.request_timeout,
                 )
+                if not res.envd_v2:
+                    raise E2BUpdateTemplateException(
+                        "You need to update the template to use the new SDK. "
+                        "You can do this by running `e2b template build` in the directory with the template."
+                    )
                 return SandboxApi._get_sandbox_id(res.sandbox_id, res.client_id)
             except exceptions.ApiException as e:
                 raise handle_api_exception(e)

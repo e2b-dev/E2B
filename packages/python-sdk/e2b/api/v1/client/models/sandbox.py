@@ -19,7 +19,7 @@ import json
 
 
 from typing import Any, Dict, Optional
-from pydantic import BaseModel, Field, StrictStr
+from pydantic import BaseModel, Field, StrictBool, StrictStr
 
 
 class Sandbox(BaseModel):
@@ -39,8 +39,11 @@ class Sandbox(BaseModel):
     client_id: StrictStr = Field(
         ..., alias="clientID", description="Identifier of the client"
     )
+    envd_v2: StrictBool = Field(
+        ..., alias="envdV2", description="Whether the template contains envd v2"
+    )
     additional_properties: Dict[str, Any] = {}
-    __properties = ["templateID", "sandboxID", "alias", "clientID"]
+    __properties = ["templateID", "sandboxID", "alias", "clientID", "envdV2"]
 
     class Config:
         """Pydantic configuration"""
@@ -88,6 +91,7 @@ class Sandbox(BaseModel):
                 "sandbox_id": obj.get("sandboxID"),
                 "alias": obj.get("alias"),
                 "client_id": obj.get("clientID"),
+                "envd_v2": obj.get("envdV2"),
             }
         )
         # store additional fields in additional_properties

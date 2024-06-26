@@ -123,6 +123,12 @@ export class SandboxApi {
       throw err
     }
 
+    if (!res.data!.envdV2) {
+        throw new Error(
+            'You need to update the template to use the new SDK. ' +
+            'You can do this by running `e2b template build` in the directory with the template.'
+        )
+    }
     return this.getSandboxID(res.data!)
   }
 
