@@ -32,7 +32,7 @@ export class Sandbox extends SandboxApi {
   readonly commands: Process
   readonly pty: Pty
 
-  protected readonly envdPort = 49982
+  protected readonly envdPort = 49983
 
   private readonly connectionConfig: ConnectionConfig
   private readonly envdApiUrl: string

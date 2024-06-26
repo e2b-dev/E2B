@@ -20,7 +20,7 @@ from e2b.exceptions import SandboxException
 
 
 class Sandbox(SandboxApi):
-    _envd_port = 49982
+    _envd_port = 49983
 
     @property
     def files(self) -> Filesystem:
@@ -32,7 +32,7 @@ class Sandbox(SandboxApi):
 
     def __init__(
         self,
-        template: str = None,
+        template: Optional[str] = None,
         timeout: int = 300,
         metadata: Optional[Dict[str, str]] = None,
         api_key: Optional[str] = None,
