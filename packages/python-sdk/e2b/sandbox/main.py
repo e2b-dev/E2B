@@ -32,7 +32,7 @@ class Sandbox(SandboxApi):
 
     def __init__(
         self,
-        template: str = "base",
+        template: str = None,
         timeout: int = 300,
         metadata: Optional[Dict[str, str]] = None,
         api_key: Optional[str] = None,
@@ -63,6 +63,7 @@ class Sandbox(SandboxApi):
         elif sandbox_id is not None:
             self.sandbox_id = sandbox_id
         else:
+            template = template or "base"
             self.sandbox_id = SandboxApi._create_sandbox(
                 template=template,
                 api_key=api_key,
