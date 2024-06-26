@@ -11,10 +11,14 @@ export interface Logger {
   error?: (...args: any[]) => void
 }
 
+function formatLog(log: any) {
+  return JSON.parse(JSON.stringify(log))
+}
+
 export function createRpcLogger(logger: Logger): Interceptor {
   async function* logEach(stream: AsyncIterable<any>) {
     for await (const m of stream) {
-      logger.debug?.('Response stream:', m)
+      logger.debug?.('Response stream:', formatLog(m))
       yield m
     }
   }
@@ -29,7 +33,7 @@ export function createRpcLogger(logger: Logger): Interceptor {
         message: logEach(res.message),
       }
     } else {
-      logger.info?.('Response:', res.message)
+      logger.info?.('Response:', formatLog(res.message))
     }
 
     return res
