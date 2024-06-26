@@ -28,7 +28,7 @@ build-docker:
 start-docker:
 	docker run \
 	--name envd \
-	-p 49982:49982 \
+	-p 49983:49983 \
 	-p 2345:2345 \
 	-p 9999:9999 \
 	--rm \
@@ -38,7 +38,7 @@ start-docker:
 start-envd-docker:
 	docker run \
 	--name envd \
-	-p 49982:49982 \
+	-p 49983:49983 \
 	-p 2345:2345 \
 	-p 9999:9999 \
 	--rm \
@@ -48,7 +48,7 @@ start-envd-docker:
 start-debug-docker:
 	docker run \
 	--name envd \
-	-p 49982:49982 \
+	-p 49983:49983 \
 	-p 2345:2345 \
 	-p 9999:9999 \
 	--rm \

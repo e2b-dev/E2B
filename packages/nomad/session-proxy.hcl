@@ -24,10 +24,6 @@ job "session-proxy" {
 
   priority = 80
 
-  constraint {
-    operator = "distinct_hosts"
-    value    = "true"
-  }
 
   group "session-proxy" {
     network {
@@ -61,7 +57,7 @@ job "session-proxy" {
       driver = "docker"
 
       config {
-        image        = "nginx"
+        image        = "nginx:1.27.0"
         network_mode = "host"
         ports        = [var.session_proxy_port_name, "status"]
         volumes = [
@@ -126,7 +122,7 @@ server {
   proxy_set_header X-Real-IP $remote_addr;
 
   proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection "Upgrade";
+  proxy_set_header Connection $conn_upgrade;
 
   proxy_hide_header x-frame-options;
 
@@ -156,7 +152,8 @@ server {
 
   keepalive_requests 65536;
   keepalive_timeout 600s;
-#   keepalive_time: 86400s;
+  # TODO: Fix the config file so we can defined this
+  # keepalive_time: 86400s;
 
   gzip off;
 
@@ -164,6 +161,7 @@ server {
     if ($dbk_session_id = "") {
       return 400 "Unsupported session domain";
     }
+
 
     proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
   }

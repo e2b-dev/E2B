@@ -7,7 +7,5 @@ To locally test the envd in the server mode:
 - https://golangforall.com/en/post/go-docker-delve-remote-debug.html
 - https://github.com/golang/vscode-go/blob/master/docs/debugging.md
 
-You can open the pprof for the session's envd at `https://49982-$(session-hostname)/debug/pprof/`.
-
 Run `make run-debug` and then connect to the port 2345 with a debugger or
 use the VSCode run/debug and run the "Debug in Docker" to build the envd, Docker and start the debugging.

@@ -73,7 +73,7 @@ job "client-proxy" {
       }
 
       config {
-        image        = "nginx"
+        image        = "nginx:1.27.0"
         network_mode = "host"
         ports        = [var.client_proxy_health_port_name, var.client_proxy_port_name]
         volumes = [
@@ -158,7 +158,8 @@ server {
 
   keepalive_requests 65536;
   keepalive_timeout 600s;
-#   keepalive_time: 86400s;
+  # TODO: Fix the config file so we can defined this
+  # keepalive_time: 86400s;
 
   gzip off;
 

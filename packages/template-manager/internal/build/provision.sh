@@ -130,6 +130,6 @@ ExecStart=/bin/bash -l -c "(echo 1 | tee /proc/sys/net/ipv4/ip_forward) && iptab
 WantedBy=multi-user.target
 EOF
 
-systemctl enable forward_ports
+# systemctl enable forward_ports
 
 echo "Finished provisioning script"
