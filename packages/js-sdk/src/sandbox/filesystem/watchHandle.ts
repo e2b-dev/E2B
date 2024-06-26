@@ -44,7 +44,7 @@ export class WatchHandle {
     this._wait = this.handleEvents()
   }
 
-  async stop() {
+  async close() {
     this.handleStop()
   }
 
@@ -60,7 +60,7 @@ export class WatchHandle {
     } catch (err) {
       throw handleRpcError(err)
     } finally {
-      this.stop()
+      this.close()
     }
   }
 

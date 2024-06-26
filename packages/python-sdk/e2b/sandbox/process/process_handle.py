@@ -119,5 +119,4 @@ class ProcessHandle:
         return self._result
 
     def kill(self):
-        self.disconnect()
         self._handle_kill()

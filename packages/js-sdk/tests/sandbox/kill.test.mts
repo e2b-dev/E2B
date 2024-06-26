@@ -1,8 +1,8 @@
 import { assert } from 'vitest'
 
-import { sandboxTest } from '../setup.mjs'
+import { sandboxTest, isDebug } from '../setup.mjs'
 
-sandboxTest('kill', async ({ sandbox }) => {
+sandboxTest.skipIf(isDebug)('kill', async ({ sandbox }) => {
   await sandbox.kill()
 
   assert.throws(() => sandbox.isRunning())

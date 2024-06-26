@@ -1,4 +1,5 @@
 import pytest
+import os
 
 from logging import warning
 
@@ -11,7 +12,7 @@ def template():
 
 
 @pytest.fixture()
-def sandbox(template):
+def sandbox(template, debug):
     sandbox = Sandbox(template)
 
     try:
@@ -20,6 +21,19 @@ def sandbox(template):
         try:
             sandbox.kill()
         except:
-            warning(
-                "Failed to kill sandbox — this is expected if the test runs with local envd."
-            )
+            if not debug:
+                warning(
+                    "Failed to kill sandbox — this is expected if the test runs with local envd."
+                )
+
+
+@pytest.fixture
+def debug():
+    return os.getenv("E2B_DEBUG") is not None
+
+
+@pytest.fixture(autouse=True)
+def skip_by_debug(request, debug):
+    if request.node.get_closest_marker("skip_debug"):
+        if debug:
+            pytest.skip("skipped because E2B_DEBUG is set")

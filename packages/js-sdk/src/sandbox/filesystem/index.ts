@@ -181,7 +181,7 @@ export class Filesystem {
     }
   }
 
-  async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<boolean> {
+  async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<void> {
     try {
       await this.rpc.move({
         source: oldPath,
@@ -195,8 +195,6 @@ export class Filesystem {
       }, {
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
-
-      return true
     } catch (err) {
       throw handleRpcError(err)
     }
