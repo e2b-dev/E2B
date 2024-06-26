@@ -39,9 +39,8 @@ type Handler struct {
 	cmd *exec.Cmd
 	tty *os.File
 
+	outWg *sync.WaitGroup
 	stdin io.WriteCloser
-
-	stdinMu sync.Mutex
 
 	DataEvent *MultiplexedChannel[rpc.ProcessEvent_Data]
 	EndEvent  *MultiplexedChannel[rpc.ProcessEvent_End]
@@ -217,12 +216,6 @@ func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 		}()
 	}
 
-	go func() {
-		outWg.Wait()
-
-		close(outMultiplex.Source)
-	}()
-
 	return &Handler{
 		Config:    req.GetProcess(),
 		cmd:       cmd,
@@ -230,6 +223,7 @@ func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 		stdin:     stdin,
 		Tag:       req.Tag,
 		DataEvent: outMultiplex,
+		outWg:     &outWg,
 		EndEvent:  NewMultiplexedChannel[rpc.ProcessEvent_End](0),
 		logger:    logger,
 	}, nil
@@ -252,9 +246,6 @@ func (p *Handler) ResizeTty(size *pty.Winsize) error {
 }
 
 func (p *Handler) WriteStdin(data []byte) error {
-	p.stdinMu.Lock()
-	defer p.stdinMu.Unlock()
-
 	_, err := p.stdin.Write(data)
 	if err != nil {
 		return fmt.Errorf("error writing to stdin of process '%d': %w", p.cmd.Process.Pid, err)
@@ -298,6 +289,10 @@ func (p *Handler) Start() (uint32, error) {
 
 func (p *Handler) Wait() {
 	defer p.tty.Close()
+
+	p.outWg.Wait()
+
+	close(p.DataEvent.Source)
 
 	err := p.cmd.Wait()
 
