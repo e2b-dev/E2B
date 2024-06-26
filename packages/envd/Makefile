@@ -82,7 +82,7 @@ update-envd:
 	make build
 	make upload-local
 	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) --zone $(GCP_ZONE) -- 'sudo rm -rf /fc-vm/envd-v2 && \
-	sudo cp /mnt/disks/envs-pipeline/envd-v2 /fc-vm/envd-v2'
+	sudo cp /mnt/disks/envs-pipeline/envd-v2 /fc-vm/envd-v2 && sudo chmod +x /fc-vm/envd-v2'
 
 update-envd-locally:
 	make build
