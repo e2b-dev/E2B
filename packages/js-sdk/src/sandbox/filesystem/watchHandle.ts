@@ -33,15 +33,13 @@ export interface FilesystemEvent {
 }
 
 export class WatchHandle {
-  private readonly _wait: Promise<void>
-
   constructor(
     private readonly handleStop: () => void,
     private readonly events: AsyncIterable<WatchDirResponse>,
     private readonly onEvent?: (event: FilesystemEvent) => void | Promise<void>,
     private readonly onExit?: (err?: Error) => void | Promise<void>,
   ) {
-    this._wait = this.handleEvents()
+    this.handleEvents()
   }
 
   async close() {
