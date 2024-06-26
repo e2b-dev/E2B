@@ -156,7 +156,7 @@ server {
 
   keepalive_requests 65536;
   keepalive_timeout 600s;
-  keepalive_time: 86400s;
+#   keepalive_time: 86400s;
 
   gzip off;
 
