@@ -131,10 +131,7 @@ func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 		go logs.LogBufferedDataEvents(stdoutLogs, &stdoutLogger, "data")
 
 		for {
-			n, err := stdout.Read(buf)
-			if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
-				break
-			}
+			n, readErr := stdout.Read(buf)
 
 			if n > 0 {
 				outMultiplex.Source <- rpc.ProcessEvent_Data{
@@ -148,7 +145,7 @@ func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 				stdoutLogs <- buf[:n]
 			}
 
-			if err == io.EOF || err == io.ErrUnexpectedEOF {
+			if readErr != nil {
 				break
 			}
 		}
@@ -173,10 +170,7 @@ func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 		go logs.LogBufferedDataEvents(stderrLogs, &stderrLogger, "data")
 
 		for {
-			n, err := stderr.Read(buf)
-			if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
-				break
-			}
+			n, readErr := stderr.Read(buf)
 
 			if n > 0 {
 				outMultiplex.Source <- rpc.ProcessEvent_Data{
@@ -190,7 +184,7 @@ func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 				stderrLogs <- buf[:n]
 			}
 
-			if err == io.EOF || err == io.ErrUnexpectedEOF {
+			if readErr != nil {
 				break
 			}
 		}
@@ -204,10 +198,7 @@ func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 			buf := make([]byte, DefaultChunkSize)
 
 			for {
-				n, err := tty.Read(buf)
-				if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
-					break
-				}
+				n, readErr := tty.Read(buf)
 
 				if n > 0 {
 					outMultiplex.Source <- rpc.ProcessEvent_Data{
@@ -219,7 +210,7 @@ func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 					}
 				}
 
-				if err == io.EOF || err == io.ErrUnexpectedEOF {
+				if readErr != nil {
 					break
 				}
 			}
