@@ -15,8 +15,6 @@ sandboxTest('run with special characters', async ({ sandbox }) => {
 
   const cmd = await sandbox.commands.run(`echo "${text}"`)
 
-  console.log('cmd', cmd)
-
   assert.equal(cmd.exitCode, 0)
   assert.equal(cmd.stdout, `${text}\n`)
 })
