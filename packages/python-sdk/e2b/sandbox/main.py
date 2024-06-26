@@ -146,10 +146,12 @@ class Sandbox(SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
-    def kill(self, request_timeout: Optional[float] = None) -> None: ...
+    def kill(self, request_timeout: Optional[float] = None) -> None:
+        ...
 
     @class_method_variant("_cls_kill")
     def kill(self, request_timeout: Optional[float] = None) -> None:  # type: ignore
@@ -168,14 +170,16 @@ class Sandbox(SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     def set_timeout(
         self,
         timeout: int,
         request_timeout: Optional[float] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @class_method_variant("_cls_set_timeout")
     def set_timeout(  # type: ignore
