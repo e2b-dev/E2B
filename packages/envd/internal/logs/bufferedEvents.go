@@ -16,6 +16,11 @@ func LogBufferedDataEvents(dataCh <-chan []byte, logger *zerolog.Logger, eventTy
 	defer timer.Stop()
 
 	var buffer []byte
+	defer func() {
+		if len(buffer) > 0 {
+			logger.Debug().Str(eventType, string(buffer)).Send()
+		}
+	}()
 
 	for {
 		select {
