@@ -19,8 +19,6 @@ func (s Service) WatchDir(ctx context.Context, req *connect.Request[rpc.WatchDir
 }
 
 func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.WatchDirRequest], stream *connect.ServerStream[rpc.WatchDirResponse]) error {
-	fmt.Printf("watchHandler: %v\n", req.Header().Values("keepalive"))
-
 	u, err := permissions.GetUser(req.Msg.GetUser())
 	if err != nil {
 		return connect.NewError(connect.CodeInvalidArgument, err)
