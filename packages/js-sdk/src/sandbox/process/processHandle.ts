@@ -60,7 +60,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     private readonly onStderr?: (stderr: string) => (void | Promise<void>),
     private readonly onPty?: (pty: Uint8Array) => (void | Promise<void>),
   ) {
-    this._wait = this.handleEvents()
+    this._wait = new Promise((res, rej) => this.handleEvents().then(res).catch(rej))
   }
 
   get exitCode() {
@@ -80,13 +80,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
   }
 
   async wait() {
-    const result = await this._wait
-
-    if (result.exitCode !== 0) {
-      throw new ProcessExitError(result)
-    }
-
-    return result
+    return this._wait
   }
 
   async disconnect() {
@@ -137,6 +131,16 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     } finally {
       this.handleDisconnect()
     }
+
+    if (!this.result) {
+      throw new SandboxError('Process exited without a result')
+    }
+
+    if (this.result.exitCode !== 0) {
+      throw new ProcessExitError(this.result)
+    }
+
+    return this.result
   }
 
   private async handleEvents(): Promise<ProcessResult> {
@@ -150,10 +154,6 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
       }
     }
 
-    if (!this.result) {
-      throw new SandboxError('Process exited without a result')
-    }
-
-    return this.result
+    return this.result!
   }
 }
