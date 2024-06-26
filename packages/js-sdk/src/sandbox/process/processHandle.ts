@@ -80,7 +80,13 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
   }
 
   async wait() {
-    return this._wait
+    const result = await this._wait
+
+    if (result.exitCode !== 0) {
+      throw new ProcessExitError(result)
+    }
+
+    return result
   }
 
   async disconnect() {
@@ -88,7 +94,6 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
   }
 
   async kill() {
-    await this.disconnect()
     await this.handleKill()
   }
 
@@ -147,10 +152,6 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
 
     if (!this.result) {
       throw new SandboxError('Process exited without a result')
-    }
-
-    if (this.result.exitCode !== 0) {
-      throw new ProcessExitError(this.result)
     }
 
     return this.result
