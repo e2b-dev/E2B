@@ -152,6 +152,8 @@ class Sandbox(SandboxApi):
     @class_method_variant("_cls_kill")
     def kill(self, request_timeout: Optional[float] = None) -> None:  # type: ignore
         config_dict = self._connection_config.__dict__
+        config_dict.pop("access_token", None)
+
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
 
@@ -185,6 +187,8 @@ class Sandbox(SandboxApi):
         request_timeout: Optional[float] = None,
     ) -> None:
         config_dict = self._connection_config.__dict__
+        config_dict.pop("access_token", None)
+
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
 
