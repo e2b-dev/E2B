@@ -45,7 +45,7 @@ export const HeaderMain = forwardRef(function Header({ className }, ref) {
         <Link className='hover:text-white hover:cursor-pointer' href='/docs'>
           Docs
         </Link>
-        <Link className='hover:text-white hover:cursor-pointer' href='/Dashboard'>
+        <Link className='hover:text-white hover:cursor-pointer' href='/dashboard'>
           Dashboard
         </Link>
       </div>
