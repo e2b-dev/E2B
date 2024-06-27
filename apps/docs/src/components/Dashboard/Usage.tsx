@@ -76,14 +76,18 @@ const transformData = (usages: any) => {
   const ramData = usages.map((usage: any) => {
     return {
       x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
-      y: usage.template_usage.reduce((acc: number, template: any) => acc + template.ram_gb_hours, 0),
+      y: usage.template_usage.length > 0 
+        ? usage.template_usage.reduce((acc: number, template: any) => acc + template.ram_gb_hours, 0)
+        : 0,
     }
   })
 
   const vpcData = usages.map((usage: any) => {
     return {
       x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
-      y: usage.template_usage.reduce((acc: number, template: any) => acc + template.sandbox_hours, 0),
+      y: usage.template_usage.length > 0 
+        ? usage.template_usage.reduce((acc: number, template: any) => acc + template.sandbox_hours, 0)
+        : 0,
     }
   })
 
@@ -102,5 +106,4 @@ const transformData = (usages: any) => {
     ],
   }
 }
-
 
