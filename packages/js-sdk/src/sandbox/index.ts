@@ -70,13 +70,13 @@ export class Sandbox extends SandboxApi {
       : await this.createSandbox(template, sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs, sandboxOpts)
 
     const sbx = new this(sandboxID, sandboxOpts) as InstanceType<S>
-    await sbx.onInit()
+    await sbx.onInit(opts)
     return sbx
   }
 
   static async connect<S extends typeof Sandbox>(this: S, sandboxID: string, opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>): Promise<InstanceType<S>> {
     const sbx = new this(sandboxID, opts) as InstanceType<S>
-    await sbx.onInit()
+    await sbx.onInit(opts)
     return sbx
   }
 
@@ -123,7 +123,5 @@ export class Sandbox extends SandboxApi {
     await this.kill()
   }
 
-  protected async onInit() {
-    console.log('initing')
-  }
+  protected async onInit(opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>) { }
 }
