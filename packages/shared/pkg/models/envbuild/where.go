@@ -117,6 +117,11 @@ func FirecrackerVersion(v string) predicate.EnvBuild {
 	return predicate.EnvBuild(sql.FieldEQ(FieldFirecrackerVersion, v))
 }
 
+// EnvdVersion applies equality check predicate on the "envd_version" field. It's identical to EnvdVersionEQ.
+func EnvdVersion(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldEQ(FieldEnvdVersion, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.EnvBuild {
 	return predicate.EnvBuild(sql.FieldEQ(FieldCreatedAt, v))
@@ -790,6 +795,81 @@ func FirecrackerVersionEqualFold(v string) predicate.EnvBuild {
 // FirecrackerVersionContainsFold applies the ContainsFold predicate on the "firecracker_version" field.
 func FirecrackerVersionContainsFold(v string) predicate.EnvBuild {
 	return predicate.EnvBuild(sql.FieldContainsFold(FieldFirecrackerVersion, v))
+}
+
+// EnvdVersionEQ applies the EQ predicate on the "envd_version" field.
+func EnvdVersionEQ(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldEQ(FieldEnvdVersion, v))
+}
+
+// EnvdVersionNEQ applies the NEQ predicate on the "envd_version" field.
+func EnvdVersionNEQ(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldNEQ(FieldEnvdVersion, v))
+}
+
+// EnvdVersionIn applies the In predicate on the "envd_version" field.
+func EnvdVersionIn(vs ...string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldIn(FieldEnvdVersion, vs...))
+}
+
+// EnvdVersionNotIn applies the NotIn predicate on the "envd_version" field.
+func EnvdVersionNotIn(vs ...string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldNotIn(FieldEnvdVersion, vs...))
+}
+
+// EnvdVersionGT applies the GT predicate on the "envd_version" field.
+func EnvdVersionGT(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldGT(FieldEnvdVersion, v))
+}
+
+// EnvdVersionGTE applies the GTE predicate on the "envd_version" field.
+func EnvdVersionGTE(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldGTE(FieldEnvdVersion, v))
+}
+
+// EnvdVersionLT applies the LT predicate on the "envd_version" field.
+func EnvdVersionLT(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldLT(FieldEnvdVersion, v))
+}
+
+// EnvdVersionLTE applies the LTE predicate on the "envd_version" field.
+func EnvdVersionLTE(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldLTE(FieldEnvdVersion, v))
+}
+
+// EnvdVersionContains applies the Contains predicate on the "envd_version" field.
+func EnvdVersionContains(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldContains(FieldEnvdVersion, v))
+}
+
+// EnvdVersionHasPrefix applies the HasPrefix predicate on the "envd_version" field.
+func EnvdVersionHasPrefix(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldHasPrefix(FieldEnvdVersion, v))
+}
+
+// EnvdVersionHasSuffix applies the HasSuffix predicate on the "envd_version" field.
+func EnvdVersionHasSuffix(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldHasSuffix(FieldEnvdVersion, v))
+}
+
+// EnvdVersionIsNil applies the IsNil predicate on the "envd_version" field.
+func EnvdVersionIsNil() predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldIsNull(FieldEnvdVersion))
+}
+
+// EnvdVersionNotNil applies the NotNil predicate on the "envd_version" field.
+func EnvdVersionNotNil() predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldNotNull(FieldEnvdVersion))
+}
+
+// EnvdVersionEqualFold applies the EqualFold predicate on the "envd_version" field.
+func EnvdVersionEqualFold(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldEqualFold(FieldEnvdVersion, v))
+}
+
+// EnvdVersionContainsFold applies the ContainsFold predicate on the "envd_version" field.
+func EnvdVersionContainsFold(v string) predicate.EnvBuild {
+	return predicate.EnvBuild(sql.FieldContainsFold(FieldEnvdVersion, v))
 }
 
 // HasEnv applies the HasEdge predicate on the "env" edge.

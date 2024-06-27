@@ -7,10 +7,13 @@ const (
 	KernelMountDir = "/fc-vm"
 	KernelName     = "vmlinux.bin"
 
-	HostEnvdPath  = "/fc-vm/envd"
-	GuestEnvdPath = "/usr/bin/envd"
+	HostEnvdPath    = "/fc-vm/envd"
+	HostEnvdV2Path  = "/fc-vm/envd-v2"
+	GuestEnvdPath   = "/usr/bin/envd"
+	GuestEnvdV2Path = "/usr/bin/envd-v2"
 
-	RootfsSizeKey = "rootfs_size"
+	EnvdVersionKey = "envd_version"
+	RootfsSizeKey  = "rootfs_size"
 
 	FirecrackerVersionsDir = "/fc-versions"
 	FirecrackerBinaryName  = "firecracker"

@@ -109,7 +109,15 @@ func (tm *TemplateManager) CreateTemplate(
 		return parseErr
 	}
 
-	err = db.FinishEnvBuild(childCtx, templateID, buildID, diskSize)
+	envdVersion, ok := trailer[consts.EnvdVersionKey]
+	if !ok {
+		errMsg := fmt.Errorf("envd version not found in trailer")
+		handleBuildErr(ctx, db, buildCache, templateID, buildID, errMsg)
+
+		return errMsg
+	}
+
+	err = db.FinishEnvBuild(childCtx, templateID, buildID, diskSize, envdVersion[0])
 	if err != nil {
 		err = fmt.Errorf("error when finishing build: %w", err)
 		handleBuildErr(ctx, db, buildCache, templateID, buildID, err)

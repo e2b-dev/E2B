@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -12,6 +13,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
+	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -21,8 +23,8 @@ func (o *Orchestrator) CreateSandbox(
 	sandboxID,
 	templateID,
 	alias,
-	teamID,
-	buildID string,
+	teamID string,
+	build *models.EnvBuild,
 	maxInstanceLengthHours int64,
 	metadata map[string]string,
 	kernelVersion,
@@ -49,7 +51,7 @@ func (o *Orchestrator) CreateSandbox(
 			TemplateID:         templateID,
 			Alias:              &alias,
 			TeamID:             teamID,
-			BuildID:            buildID,
+			BuildID:            build.ID.String(),
 			SandboxID:          sandboxID,
 			KernelVersion:      kernelVersion,
 			FirecrackerVersion: firecrackerVersion,
@@ -71,5 +73,6 @@ func (o *Orchestrator) CreateSandbox(
 		SandboxID:  sandboxID,
 		TemplateID: templateID,
 		Alias:      &alias,
+		EnvdV2:     strings.HasPrefix(*build.EnvdVersion, "v2"),
 	}, nil
 }

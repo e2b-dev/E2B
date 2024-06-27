@@ -1,6 +1,9 @@
 ENV := $(shell cat ../../.last_used_env || echo "not-set")
 -include ../../.env.${ENV}
 
+BUILD := $(shell git rev-parse --short HEAD)
+LDFLAGS=-ldflags "-X=main.build=$(BUILD)"
+
 client := gcloud compute instances list --format='csv(name)' --project $(GCP_PROJECT_ID) | grep "client"
 
 .PHONY: init
@@ -16,10 +19,10 @@ upload-local:
 	./upload-local.sh $(GCP_PROJECT_ID)
 
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/envd .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/envd ${LDFLAGS}
 
 build-debug:
-	CGO_ENABLED=1 go build -race -gcflags=all="-N -l" -o bin/debug/envd
+	CGO_ENABLED=1 go build -race -gcflags=all="-N -l" -o bin/debug/envd ${LDFLAGS}
 
 build-docker:
 	make build
@@ -52,7 +55,7 @@ start-debug-docker:
 	-p 2345:2345 \
 	-p 9999:9999 \
 	--rm \
-	-d envd-debug sh -l -c "/go/bin/dlv --listen=:2345 --headless=true --log=true --log-output=debugger,debuglineerr,gdbwire,lldbout,rpc --accept-multiclient --api-version=2 exec /usr/bin/envd"
+	-d envd-debug sh -l -c "/go/bin/dlv --listen=:2345 --headless=true --log=true --log-output=debugger,debuglineerr,gdbwire,lldbout,rpc --accept-multiclient --api-version=2 exec /usr/bin/envd-v2"
 
 stop-debug-docker:
 	docker kill `docker ps -a -q --filter ancestor=envd-debug`
@@ -78,8 +81,8 @@ run-env:
 update-envd:
 	make build
 	make upload-local
-	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) --zone $(GCP_ZONE) -- 'sudo rm -rf /fc-vm/envd && \
-	sudo cp /mnt/disks/envs-pipeline/envd /fc-vm/envd'
+	gcloud compute ssh $$($(client)) --project $(GCP_PROJECT_ID) --zone $(GCP_ZONE) -- 'sudo rm -rf /fc-vm/envd-v2 && \
+	sudo cp /mnt/disks/envs-pipeline/envd-v2 /fc-vm/envd-v2 && sudo chmod +x /fc-vm/envd-v2'
 
 update-envd-locally:
 	make build

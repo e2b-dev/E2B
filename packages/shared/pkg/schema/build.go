@@ -40,6 +40,7 @@ func (EnvBuild) Fields() []ent.Field {
 		field.Int64("total_disk_size_mb").Optional().Nillable(),
 		field.String("kernel_version").Default(DefaultKernelVersion).SchemaType(map[string]string{dialect.Postgres: "text"}),
 		field.String("firecracker_version").Default(DefaultFirecrackerVersion).SchemaType(map[string]string{dialect.Postgres: "text"}),
+		field.String("envd_version").SchemaType(map[string]string{dialect.Postgres: "text"}).Nillable().Optional(),
 	}
 }
 
