@@ -1,11 +1,16 @@
-from e2b import Sandbox
+class A:
+    template = 2
 
-sbx = Sandbox(debug=True)
+    def __init__(self) -> None:
+        print(self.template)
 
-print(sbx.is_running())
 
-res = sbx.files.list("/")
-print(res)
+class B(A):
+    template = 3
 
-# sbx.files.write("/tmp/test.txt", "Hello World")
-# print(sbx.files.read("/tmp/test.txt"))
+    def __init__(self) -> None:
+        super().__init__()
+        print(self.template)
+
+
+b = B()
