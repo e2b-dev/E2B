@@ -86,24 +86,14 @@ export const routes = [
     links: [
       {
         icon: <BookOpen strokeWidth={1} size={20} />,
-        title: 'E2B Cookbook',
-        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main',
-      },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Code Interpreter with Llama-3',
-        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/llama-3-code-interpreter',
+        title: 'Guides and examples in cookbook',
+        href: 'https://github.com/e2b-dev/e2b-cookbook',
       },
       // {
       //   icon: <Hammer strokeWidth={1} size={20} />,
       //   title: 'Guide: Code Interpreter with OpenAI models',
       //   href: '/guide/simple-gpt4-code-interpreter',
       // },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Code Interpreter with Claude 3 Opus',
-        href: 'https://github.com/e2b-dev/e2b-cookbook/blob/main/examples/claude-code-interpreter/claude_code_interpreter.ipynb',
-      },
       // {
       //   icon: <Hammer strokeWidth={1} size={20} />,
       //   title: 'Guide: Secure Sandbox for Devin-like agent',
@@ -114,16 +104,6 @@ export const routes = [
       //   title: 'Guide: Generative UI with Next.js',
       //   href: '/guide/simple-gpt4-code-interpreter',
       // },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Add code interpreter to LangChain',
-        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/langchain-python',
-      },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Add code interpreter to LangGraph',
-        href: 'https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/langgraph-python',
-      },
       // {
       //   icon: <Hammer strokeWidth={1} size={20} />,
       //   title: 'Guide: Upload and analyze CSV files with AI',
