@@ -11,7 +11,6 @@ import { useSectionStore } from '@/components/SectionProvider'
 import { Tag } from '@/components/Tag'
 import { remToPx } from '@/lib/remToPx'
 import { Auth } from '@/components/Auth'
-import { Feedback } from '@/components/Feedback'
 import { routes } from './routes'
 
 interface NavGroup {
@@ -279,9 +278,6 @@ export function Navigation(props) {
             className={groupIndex === 0 && 'md:mt-0'}
           />
         ))}
-        <li className="z-10 mt-6">
-          <Feedback className="w-full" />
-        </li>
         <li
           /* -1.5rem to stretch outside the padding of the parent list */
           className="

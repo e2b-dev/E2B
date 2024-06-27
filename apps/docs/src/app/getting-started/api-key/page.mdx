@@ -23,7 +23,7 @@ console.log(execution.text)  // outputs 2
 await sandbox.close()
 ```
 ```python {{ language: 'python' }}
-import CodeInterpreter from e2b_code_interpreter
+from e2b_code_interpreter import CodeInterpreter
 
 with CodeInterpreter(api_key="YOUR_API_KEY") as code_interpreter:
   sandbox.notebook.exec_cell("x = 1")
@@ -31,4 +31,3 @@ with CodeInterpreter(api_key="YOUR_API_KEY") as code_interpreter:
   print(execution.text)  # outputs 2
 ```
 </CodeGroup>
-

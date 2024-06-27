@@ -1,3 +1,4 @@
+import Script from 'next/script'
 import { Metadata } from 'next'
 import glob from 'fast-glob'
 import { Analytics } from '@vercel/analytics/react'
@@ -9,6 +10,15 @@ import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'
 import { Section } from '@/components/SectionProvider'
 import Canonical from '@/components/Navigation/canonical'
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'chatlio-widget': any;
+    }
+  }
+}
 
 export const metadata: Metadata = {
   // TODO: Add metadataBase
@@ -57,6 +67,9 @@ export default async function RootLayout({ children }) {
             </Layout>
           </div>
         </Providers>
+
+        <Script src="https://js.chatlio.com/widget.js" strategy="lazyOnload" />
+        <chatlio-widget widgetid={process.env.NEXT_PUBLIC_CHATLIO_WIDGET_ID} disable-favicon-badge></chatlio-widget>
       </body>
     </html>
   )

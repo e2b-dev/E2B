@@ -47,7 +47,7 @@ function Credits() {
       </div>
 
       <div className="flex flex-col justify-start items-start gap-1">
-        {usage.map((u, index) => (
+        {usage.reverse().map((u, index) => (
           <React.Fragment key={index}>
             <h3 className="text-xl">
               {new Date(u.year, u.month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}

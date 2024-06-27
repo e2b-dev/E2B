@@ -109,6 +109,9 @@ If there is no `e2b.toml` config a new template will be created.
   <Option type="--memory-mb" name="memory-mb">
     Specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.
   </Option>
+  <Option type="--build-arg" name="build-arg">
+    Specify a build argument for the Dockerfile. The format is `key=value`. You can use this option multiple times.
+  </Option>
 </Options>
 
 ## `template delete`
@@ -175,6 +178,56 @@ List your spawned sandboxes that are running right now.
 e2b sandbox list
 ```
 
+
+## `sandbox logs`
+Starts printing logs from the specified sandbox.
+If the sandbox is running new logs will be streamed to the terminal.
+
+The timestamps are in the UTC format.
+
+This command is useful if you need to debug a running sandbox or check logs from a sandbox that was already closed.
+
+```bash
+e2b sandbox logs <sandboxID>
+```
+
+<Note>
+You can use `e2b sandbox list` to get a list of running sandboxes and their IDs that can be used with `e2b sandbox logs <sandboxID>` command.
+</Note>
+
+#### **Arguments**
+
+<Options>
+  <Option type="<sandboxID>">
+    Specify the ID of the sandbox you want to get logs from.
+  </Option>
+</Options>
+
+#### **Options**
+
+<Options>
+  <Option name="level" type="--level">
+    Filter logs by level — allowed values are `DEBUG`, `INFO`, `WARN`, `ERROR`.
+     The logs with the higher levels will be also shown.
+
+    Default value is `DEBUG`.
+  </Option>
+  <Option type="-f, --follow">
+    Enable streaming logs until the sandbox is closed.
+  </Option>
+  <Option name="format" type="--format">
+    Specify format for printing logs — allowed values are `pretty`, `json`.
+
+    Default value is `pretty`.
+  </Option>
+  <Option name="loggers" type="--loggers">
+    Specify enabled loggers — allowed values are `process`, `filesystem`, `terminal`, `network` and `file`.
+    You can specify multiple loggers by separating them with a comma.
+
+    Default value is `process,filesystem`.
+  </Option>
+</Options>
+
 ## `sandbox connect`
 
 Connects your terminal to a running sandbox that you spawned via the E2B SDK.
@@ -240,52 +293,3 @@ Immediately kill a running sandbox.
 ```bash
 e2b sandbox kill <sandboxID>
 ```
-
-{/* ## `sandbox logs`
-Starts printing logs from the specified sandbox.
-If the sandbox is running new logs will be streamed to the terminal.
-
-The timestamps are in the UTC format.
-
-This command is useful if you need to debug a running sandbox or check logs from a sandbox that was already closed.
-
-```bash
-e2b sandbox logs <sandboxID>
-```
-
-<Note>
-You can use `e2b sandbox list` to get a list of running sandboxes and their IDs that can be used with `e2b sandbox logs <sandboxID>` command.
-</Note>
-
-#### **Arguments**
-
-<Options>
-  <Option type="<sandboxID>">
-    Specify the ID of the sandbox you want to get logs from.
-  </Option>
-</Options>
-
-#### **Options**
-
-<Options>
-  <Option name="level" type="--level">
-    Filter logs by level — allowed values are `DEBUG`, `INFO`, `WARN`, `ERROR`.
-     The logs with the higher levels will be also shown.
-
-    Default value is `DEBUG`.
-  </Option>
-  <Option type="-f, --follow">
-    Enable streaming logs until the sandbox is closed.
-  </Option>
-  <Option name="format" type="--format">
-    Specify format for printing logs — allowed values are `pretty`, `json`.
-
-    Default value is `pretty`.
-  </Option>
-  <Option name="loggers" type="--loggers">
-    Specify enabled loggers — allowed values are `process`, `filesystem`, `terminal`, `network` and `file`.
-    You can specify multiple loggers by separating them with a comma.
-
-    Default value is `process,filesystem`.
-  </Option>
-</Options> */}
