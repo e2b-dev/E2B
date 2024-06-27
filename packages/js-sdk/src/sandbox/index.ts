@@ -123,5 +123,7 @@ export class Sandbox extends SandboxApi {
     await this.kill()
   }
 
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected async onInit(opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>) { }
 }
