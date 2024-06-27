@@ -69,11 +69,15 @@ export class Sandbox extends SandboxApi {
       ? 'debug_sandbox_id'
       : await this.createSandbox(template, sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs, sandboxOpts)
 
-    return new this(sandboxID, sandboxOpts) as InstanceType<S>
+    const sbx = new this(sandboxID, sandboxOpts) as InstanceType<S>
+    await sbx.onInit()
+    return sbx
   }
 
   static async connect<S extends typeof Sandbox>(this: S, sandboxID: string, opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>): Promise<InstanceType<S>> {
-    return new this(sandboxID, opts) as InstanceType<S>
+    const sbx = new this(sandboxID, opts) as InstanceType<S>
+    await sbx.onInit()
+    return sbx
   }
 
   getHost(port: number) {
@@ -93,7 +97,6 @@ export class Sandbox extends SandboxApi {
 
     return url.toString()
   }
-
 
   async isRunning(opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<true> {
     const { error } = await this.envdApi.api.GET('/health', {
@@ -118,5 +121,9 @@ export class Sandbox extends SandboxApi {
 
   async[Symbol.asyncDispose]() {
     await this.kill()
+  }
+
+  protected async onInit() {
+    console.log('initing')
   }
 }
