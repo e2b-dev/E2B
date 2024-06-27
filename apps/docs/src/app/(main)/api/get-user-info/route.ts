@@ -8,8 +8,18 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
-// TODO this needs some auth
 export async function POST(request: Request) {
+
+  const { data, error } = await supabase.auth.getUser()  
+  if (error) {
+    console.log(error)
+    return new Response(error.message, { status: 500 })
+  }
+  if (!data) {
+    return new Response('Not logged in', { status: 401 })
+  }
+
+
   const { userIds }  = await request.json() // Expecting an array of user IDs
 
   const userPromises = userIds.map((userId: string) =>
