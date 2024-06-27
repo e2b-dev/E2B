@@ -22,6 +22,9 @@ from e2b.exceptions import SandboxException
 class Sandbox(SandboxApi):
     _envd_port = 49983
 
+    default_sandbox_timeout = 300
+    default_template = "base"
+
     @property
     def files(self) -> Filesystem:
         return self._filesystem
@@ -33,7 +36,7 @@ class Sandbox(SandboxApi):
     def __init__(
         self,
         template: Optional[str] = None,
-        timeout: int = 300,
+        timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
@@ -61,7 +64,8 @@ class Sandbox(SandboxApi):
         elif sandbox_id is not None:
             self.sandbox_id = sandbox_id
         else:
-            template = template or "base"
+            template = template or self.default_template
+            timeout = timeout or self.default_sandbox_timeout
             self.sandbox_id = SandboxApi._create_sandbox(
                 template=template,
                 api_key=api_key,
