@@ -1,6 +1,6 @@
 {
   "name": "e2b",
-  "version": "0.16.2-grpc.0",
+  "version": "0.16.2-grpc.1",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev",
   "license": "MIT",
