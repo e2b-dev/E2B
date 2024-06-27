@@ -151,10 +151,13 @@ class Sandbox(SandboxApi):
 
     @class_method_variant("_cls_kill")
     def kill(self, request_timeout: Optional[float] = None) -> None:  # type: ignore
+        config_dict = self._connection_config.__dict__
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
         SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
             **self._connection_config.__dict__,
-            request_timeout=request_timeout,
         )
 
     @overload
@@ -181,9 +184,12 @@ class Sandbox(SandboxApi):
         timeout: int,
         request_timeout: Optional[float] = None,
     ) -> None:
+        config_dict = self._connection_config.__dict__
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
         SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             **self._connection_config.__dict__,
-            request_timeout=request_timeout,
         )
