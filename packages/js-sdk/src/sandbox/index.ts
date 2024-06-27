@@ -34,7 +34,7 @@ export class Sandbox extends SandboxApi {
 
   protected readonly envdPort = 49983
 
-  private readonly connectionConfig: ConnectionConfig
+  protected readonly connectionConfig: ConnectionConfig
   private readonly envdApiUrl: string
   private readonly envdApi: EnvdApiClient
 
