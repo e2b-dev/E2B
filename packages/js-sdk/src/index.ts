@@ -46,6 +46,7 @@ export type {
 } from './sandbox/process'
 
 export type { SandboxInfo } from './sandbox/sandboxApi'
+export type { SandboxOpts } from './sandbox'
 import { Sandbox } from './sandbox'
 export { Sandbox }
 export default Sandbox
