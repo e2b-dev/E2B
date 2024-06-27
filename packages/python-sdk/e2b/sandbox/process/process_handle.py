@@ -52,6 +52,7 @@ class ProcessHandle:
         self._stderr: str = ""
 
         self._result: Optional[ProcessResult] = None
+        self._iteration_exception: Optional[Exception] = None
 
     def __iter__(self):
         return self._handle_events()
@@ -61,7 +62,7 @@ class ProcessHandle:
     ) -> Generator[
         Union[Tuple[Stdout, None], Tuple[None, Stderr]],
         None,
-        ProcessResult,
+        None,
     ]:
         try:
             for event in self._events:
@@ -81,15 +82,8 @@ class ProcessHandle:
                         exit_code=event.event.end.exit_code,
                         error=event.event.end.error,
                     )
-        except Exception as e:
-            raise handle_rpc_exception(e)
         finally:
             self.disconnect()
-
-        if self._result is None:
-            raise RuntimeError("Process ended without an end event")
-
-        return self._result
 
     def disconnect(self) -> None:
         self._events.close()
@@ -98,15 +92,23 @@ class ProcessHandle:
         self,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-    ):
-        for stdout, stderr in self:
-            if stdout is not None and on_stdout:
-                on_stdout(stdout)
-            elif stderr is not None and on_stderr:
-                on_stderr(stderr)
+    ) -> ProcessResult:
+        try:
+            for stdout, stderr in self:
+                if stdout is not None and on_stdout:
+                    on_stdout(stdout)
+                elif stderr is not None and on_stderr:
+                    on_stderr(stderr)
+        except StopIteration:
+            pass
+        except Exception as e:
+            self._iteration_exception = handle_rpc_exception(e)
+
+        if self._iteration_exception:
+            raise self._iteration_exception
 
         if self._result is None:
-            raise RuntimeError("Process ended without an end event")
+            raise Exception("Process ended without an end event")
 
         if self._result.exit_code != 0:
             raise ProcessExitException(

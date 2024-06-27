@@ -3,7 +3,7 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import { SandboxError, InvalidUserError, InvalidPathError, TimeoutError, formatSandboxTimeoutError } from '../errors'
 
 
-export function handleRpcError(err: unknown) {
+export function handleRpcError(err: unknown): Error {
   if (err instanceof ConnectError) {
     switch (err.code) {
       case Code.InvalidArgument:
@@ -25,5 +25,5 @@ export function handleRpcError(err: unknown) {
     }
   }
 
-  return err
+  return err as Error
 }

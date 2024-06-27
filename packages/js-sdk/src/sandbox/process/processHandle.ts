@@ -48,8 +48,9 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
   private _stderr = ''
 
   private result?: ProcessResult
+  private iterationError?: Error
 
-  private readonly _wait: Promise<ProcessResult>
+  private readonly _wait: Promise<void>
 
   constructor(
     readonly pid: number,
@@ -60,7 +61,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     private readonly onStderr?: (stderr: string) => (void | Promise<void>),
     private readonly onPty?: (pty: Uint8Array) => (void | Promise<void>),
   ) {
-    this._wait = new Promise((res, rej) => this.handleEvents().then(res).catch(rej))
+    this._wait = this.handleEvents()
   }
 
   get exitCode() {
@@ -80,7 +81,21 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
   }
 
   async wait() {
-    return this._wait
+    await this._wait
+
+    if (this.iterationError) {
+      throw this.iterationError
+    }
+
+    if (!this.result) {
+      throw new SandboxError('Process exited without a result')
+    }
+
+    if (this.result.exitCode !== 0) {
+      throw new ProcessExitError(this.result)
+    }
+
+    return this.result
   }
 
   async disconnect() {
@@ -122,38 +137,27 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
               stdout: this.stdout,
               stderr: this.stderr,
             }
+            break
+        }
+      }
+    } finally {
+      this.disconnect()
+    }
+  }
 
-            return this.result
+  private async handleEvents() {
+    try {
+      for await (const [stdout, stderr, pty] of this.iterateEvents()) {
+        if (stdout !== null) {
+          this.onStdout?.(stdout)
+        } else if (stderr !== null) {
+          this.onStderr?.(stderr)
+        } else if (pty) {
+          this.onPty?.(pty)
         }
       }
     } catch (e) {
-      throw handleRpcError(e)
-    } finally {
-      this.handleDisconnect()
+      this.iterationError = handleRpcError(e)
     }
-
-    if (!this.result) {
-      throw new SandboxError('Process exited without a result')
-    }
-
-    if (this.result.exitCode !== 0) {
-      throw new ProcessExitError(this.result)
-    }
-
-    return this.result
-  }
-
-  private async handleEvents(): Promise<ProcessResult> {
-    for await (const [stdout, stderr, pty] of this.iterateEvents()) {
-      if (stdout !== null) {
-        this.onStdout?.(stdout)
-      } else if (stderr !== null) {
-        this.onStderr?.(stderr)
-      } else if (pty) {
-        this.onPty?.(pty)
-      }
-    }
-
-    return this.result!
   }
 }
