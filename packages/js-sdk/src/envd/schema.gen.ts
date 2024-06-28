@@ -16,8 +16,8 @@ export interface paths {
       };
       responses: {
         200: components["responses"]["DownloadSuccess"];
-        400: components["responses"]["InvalidUser"];
-        403: components["responses"]["DirectoryPathError"];
+        400: components["responses"]["DirectoryPathError"];
+        401: components["responses"]["InvalidUser"];
         404: components["responses"]["FileNotFound"];
         500: components["responses"]["InternalServerError"];
       };
@@ -33,8 +33,8 @@ export interface paths {
       requestBody: components["requestBodies"]["File"];
       responses: {
         204: components["responses"]["UploadSuccess"];
-        400: components["responses"]["InvalidUser"];
-        403: components["responses"]["DirectoryPathError"];
+        400: components["responses"]["DirectoryPathError"];
+        401: components["responses"]["InvalidUser"];
         500: components["responses"]["InternalServerError"];
         507: components["responses"]["NotEnoughDiskSpace"];
       };

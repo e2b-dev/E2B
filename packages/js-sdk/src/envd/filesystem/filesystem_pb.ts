@@ -675,3 +675,4 @@ export class WatchDirResponse_KeepAlive extends Message<WatchDirResponse_KeepAli
     return proto3.util.equals(WatchDirResponse_KeepAlive, a, b);
   }
 }
+
