@@ -73,8 +73,7 @@ class Filesystem:
         format: Literal["text"] = "text",
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> str:
-        ...
+    ) -> str: ...
 
     @overload
     def read(
@@ -83,8 +82,7 @@ class Filesystem:
         format: Literal["bytes"],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> bytearray:
-        ...
+    ) -> bytearray: ...
 
     @overload
     def read(
@@ -93,8 +91,7 @@ class Filesystem:
         format: Literal["stream"],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> Iterator[bytes]:
-        ...
+    ) -> Iterator[bytes]: ...
 
     def read(
         self,
@@ -276,7 +273,9 @@ class Filesystem:
             start_event = next(events)
 
             if not start_event.HasField("start"):
-                raise SandboxException("Failed to start watch: start event not found")
+                raise SandboxException(
+                    f"Failed to start watch: expected start event, got {start_event}",
+                )
 
             return WatchHandle(events=events)
         except Exception as e:

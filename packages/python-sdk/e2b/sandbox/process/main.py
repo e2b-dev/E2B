@@ -115,8 +115,7 @@ class Process:
         on_stderr: Optional[Callable[[str], None]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessResult:
-        ...
+    ) -> ProcessResult: ...
 
     @overload
     def run(
@@ -130,8 +129,7 @@ class Process:
         on_stderr: Optional[Callable[[str], None]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessHandle:
-        ...
+    ) -> ProcessHandle: ...
 
     def run(
         self,
@@ -192,7 +190,9 @@ class Process:
             start_event = next(events)
 
             if not start_event.HasField("event"):
-                raise SandboxException("Failed to start process: start event not found")
+                raise SandboxException(
+                    f"Failed to start process: expected start event, got {start_event}"
+                )
 
             return ProcessHandle(
                 pid=start_event.event.start.pid,
@@ -223,7 +223,7 @@ class Process:
 
             if not start_event.HasField("event"):
                 raise SandboxException(
-                    "Failed to connect to process: start event not found"
+                    f"Failed to connect to process: expected start event, got {start_event}"
                 )
 
             return ProcessHandle(

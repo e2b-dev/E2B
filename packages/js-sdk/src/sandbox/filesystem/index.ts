@@ -276,7 +276,7 @@ export class Filesystem {
       const startEvent: WatchDirResponse = (await events[Symbol.asyncIterator]().next()).value
 
       if (startEvent.event.case !== 'start') {
-        throw new SandboxError('Expected start event')
+        throw new SandboxError(`Expected start event, got ${startEvent.event}`)
       }
 
       clearTimeout(reqTimeout)

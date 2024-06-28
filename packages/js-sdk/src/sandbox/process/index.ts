@@ -134,7 +134,7 @@ export class Process {
       const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
 
       if (startEvent.event?.event.case !== 'start') {
-        throw new SandboxError('Expected start event')
+        throw new SandboxError(`Expected start event, got ${startEvent.event?.event}`)
       }
 
       clearTimeout(reqTimeout)
@@ -196,7 +196,7 @@ export class Process {
       const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
 
       if (startEvent.event?.event.case !== 'start') {
-        throw new SandboxError('Expected start event')
+        throw new SandboxError(`Expected start event, got ${startEvent.event?.event}`)
       }
 
       clearTimeout(reqTimeout)
