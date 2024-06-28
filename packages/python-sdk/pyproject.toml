@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e2b"
-version = "0.17.2a13"
+version = "0.17.2a14"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
