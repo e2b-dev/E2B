@@ -333,12 +333,12 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	filesToTar := []fileToTar{
 		{
-			localPath: consts.HostEnvdPath,
-			tarPath:   consts.GuestEnvdPath,
+			localPath: consts.HostOldEnvdPath,
+			tarPath:   consts.GuestOldEnvdPath,
 		},
 		{
-			localPath: consts.HostEnvdV2Path,
-			tarPath:   consts.GuestEnvdV2Path,
+			localPath: consts.HostEnvdPath,
+			tarPath:   consts.GuestEnvdPath,
 		},
 	}
 

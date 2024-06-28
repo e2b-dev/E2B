@@ -30,7 +30,7 @@ const (
 )
 
 var (
-	Version = "dev"
+	Version = "0.1.0"
 
 	debug bool
 	port  int64
@@ -122,7 +122,7 @@ func main() {
 	}
 
 	if buildFlag {
-		fmt.Println(build)
+		fmt.Println(Version + build)
 
 		return
 	}

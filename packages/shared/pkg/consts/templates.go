@@ -7,10 +7,10 @@ const (
 	KernelMountDir = "/fc-vm"
 	KernelName     = "vmlinux.bin"
 
-	HostEnvdPath    = "/fc-vm/envd"
-	HostEnvdV2Path  = "/fc-vm/envd-v2"
-	GuestEnvdPath   = "/usr/bin/envd"
-	GuestEnvdV2Path = "/usr/bin/envd-v2"
+	HostOldEnvdPath  = "/fc-vm/envd-v0.0.1"
+	HostEnvdPath     = "/fc-vm/envd"
+	GuestOldEnvdPath = "/usr/bin/envd-v0.0.1"
+	GuestEnvdPath    = "/usr/bin/envd"
 
 	EnvdVersionKey = "envd_version"
 	RootfsSizeKey  = "rootfs_size"

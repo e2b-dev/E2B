@@ -78,8 +78,8 @@ type Sandbox struct {
 	// ClientID Identifier of the client
 	ClientID string `json:"clientID"`
 
-	// EnvdV2 Whether the template contains envd v2
-	EnvdV2 bool `json:"envdV2"`
+	// EnvdVersion Version of the envd running in the sandbox
+	EnvdVersion string `json:"envdVersion"`
 
 	// SandboxID Identifier of the sandbox
 	SandboxID string `json:"sandboxID"`
