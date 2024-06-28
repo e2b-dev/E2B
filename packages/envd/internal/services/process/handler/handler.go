@@ -88,15 +88,56 @@ func New(user *user.User, req *rpc.StartRequest, logger *zerolog.Logger) (*Handl
 
 	cmd.Env = formattedVars
 
-	var tty *os.File
+	outMultiplex := NewMultiplexedChannel[rpc.ProcessEvent_Data](outputBufferSize)
+	var outWg sync.WaitGroup
+
 	if req.GetPty() != nil {
-		tty, err = pty.StartWithSize(cmd, &pty.Winsize{
+		// The pty should ideally start only in the Start method, but the package does not support that and we would have to code it manually.
+		// The output of the pty should correctly passed though.
+		tty, err := pty.StartWithSize(cmd, &pty.Winsize{
 			Cols: uint16(req.GetPty().GetSize().Cols),
 			Rows: uint16(req.GetPty().GetSize().Rows),
 		})
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %w", cmd, cmd.Dir, req.GetPty().GetSize().Cols, req.GetPty().GetSize().Rows, err))
 		}
+
+		outWg.Add(1)
+
+		go func() {
+			defer outWg.Done()
+
+			buf := make([]byte, DefaultChunkSize)
+
+			for {
+				n, readErr := tty.Read(buf)
+
+				if n > 0 {
+					outMultiplex.Source <- rpc.ProcessEvent_Data{
+						Data: &rpc.ProcessEvent_DataEvent{
+							Output: &rpc.ProcessEvent_DataEvent_Pty{
+								Pty: buf[:n],
+							},
+						},
+					}
+				}
+
+				if readErr != nil {
+					break
+				}
+			}
+		}()
+
+		return &Handler{
+			Config:    req.GetProcess(),
+			cmd:       cmd,
+			tty:       tty,
+			Tag:       req.Tag,
+			DataEvent: outMultiplex,
+			outWg:     &outWg,
+			EndEvent:  NewMultiplexedChannel[rpc.ProcessEvent_End](0),
+			logger:    logger,
+		}, nil
 	}
 
 	stdin, err := cmd.StdinPipe()
@@ -108,9 +149,6 @@ func New(user *user.User, req *rpc.StartRequest, logger *zerolog.Logger) (*Handl
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error creating stdout pipe for command '%s': %w", cmd, err))
 	}
-
-	outMultiplex := NewMultiplexedChannel[rpc.ProcessEvent_Data](outputBufferSize)
-	var outWg sync.WaitGroup
 
 	outWg.Add(1)
 	go func() {
@@ -185,37 +223,9 @@ func New(user *user.User, req *rpc.StartRequest, logger *zerolog.Logger) (*Handl
 		}
 	}()
 
-	if tty != nil {
-		outWg.Add(1)
-		go func() {
-			defer outWg.Done()
-
-			buf := make([]byte, DefaultChunkSize)
-
-			for {
-				n, readErr := tty.Read(buf)
-
-				if n > 0 {
-					outMultiplex.Source <- rpc.ProcessEvent_Data{
-						Data: &rpc.ProcessEvent_DataEvent{
-							Output: &rpc.ProcessEvent_DataEvent_Pty{
-								Pty: buf[:n],
-							},
-						},
-					}
-				}
-
-				if readErr != nil {
-					break
-				}
-			}
-		}()
-	}
-
 	return &Handler{
 		Config:    req.GetProcess(),
 		cmd:       cmd,
-		tty:       tty,
 		stdin:     stdin,
 		Tag:       req.Tag,
 		DataEvent: outMultiplex,
@@ -242,6 +252,10 @@ func (p *Handler) ResizeTty(size *pty.Winsize) error {
 }
 
 func (p *Handler) WriteStdin(data []byte) error {
+	if p.tty != nil {
+		return fmt.Errorf("tty assigned to process — input should be written to the pty, not the stdin")
+	}
+
 	_, err := p.stdin.Write(data)
 	if err != nil {
 		return fmt.Errorf("error writing to stdin of process '%d': %w", p.cmd.Process.Pid, err)
@@ -252,7 +266,7 @@ func (p *Handler) WriteStdin(data []byte) error {
 
 func (p *Handler) WriteTty(data []byte) error {
 	if p.tty == nil {
-		return fmt.Errorf("tty not assigned to process")
+		return fmt.Errorf("tty not assigned to process — input should be written to the stdin, not the tty")
 	}
 
 	_, err := p.tty.Write(data)
