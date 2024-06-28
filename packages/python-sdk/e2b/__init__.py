@@ -8,13 +8,12 @@ from .connection_config import (
 )
 
 from .exceptions import (
-    InvalidPathException,
     SandboxException,
     TimeoutException,
     NotFoundException,
-    InvalidUserException,
-    NotEnoughDiskSpaceException,
     AuthenticationException,
+    InvalidArgumentException,
+    NotEnoughSpaceException,
 )
 from .sandbox.sandbox_api import SandboxInfo
 from .sandbox.main import Sandbox

@@ -36,32 +36,22 @@ export class TimeoutError extends SandboxError {
 }
 
 /**
- * Thrown when an invalid user is provided.
+ * Thrown when an invalid argument is provided.
  */
-export class InvalidUserError extends SandboxError {
+export class InvalidArgumentError extends SandboxError {
   constructor(message: string) {
     super(message)
-    this.name = 'InvalidUserError'
-  }
-}
-
-/**
- * Thrown when an invalid path is provided.
- */
-export class InvalidPathError extends SandboxError {
-  constructor(message: string) {
-    super(message)
-    this.name = 'InvalidPathError'
+    this.name = 'InvalidArgumentError'
   }
 }
 
 /**
  * Thrown when there is not enough disk space.
  */
-export class NotEnoughDiskSpaceError extends SandboxError {
+export class NotEnoughSpaceError extends SandboxError {
   constructor(message: string) {
     super(message)
-    this.name = 'NotEnoughDiskSpaceError'
+    this.name = 'NotEnoughSpaceError'
   }
 }
 

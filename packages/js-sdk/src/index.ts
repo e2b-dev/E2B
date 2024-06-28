@@ -6,11 +6,10 @@ export type { components, paths } from './api'
 export {
   AuthenticationError,
   SandboxError,
-  InvalidPathError,
   TimeoutError,
   NotFoundError,
-  NotEnoughDiskSpaceError,
-  InvalidUserError,
+  NotEnoughSpaceError,
+  InvalidArgumentError,
 } from './errors'
 export {
   ConnectionConfig,

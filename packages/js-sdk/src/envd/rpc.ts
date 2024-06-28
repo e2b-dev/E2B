@@ -1,16 +1,18 @@
 import { Code, ConnectError } from '@connectrpc/connect'
 import { defaultUsername } from '../connectionConfig'
 
-import { SandboxError, InvalidUserError, InvalidPathError, TimeoutError, formatSandboxTimeoutError } from '../errors'
+import { SandboxError, TimeoutError, formatSandboxTimeoutError, InvalidArgumentError, NotFoundError, AuthenticationError } from '../errors'
 
 
 export function handleRpcError(err: unknown): Error {
   if (err instanceof ConnectError) {
     switch (err.code) {
       case Code.InvalidArgument:
-        return new InvalidUserError(err.message)
+        return new InvalidArgumentError(err.message)
+      case Code.Unauthenticated:
+        return new AuthenticationError(err.message)
       case Code.NotFound:
-        return new InvalidPathError(err.message)
+        return new NotFoundError(err.message)
       case Code.Unavailable:
         return formatSandboxTimeoutError(err.message)
       case Code.Canceled:

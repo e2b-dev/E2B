@@ -1,6 +1,7 @@
 import gzip
 import json
 import struct
+from e2b.exceptions import SandboxException, format_sandbox_timeout_exception
 import httpcore
 
 from enum import Flag, Enum
@@ -55,11 +56,26 @@ def decode_envelope_header(header):
     return EnvelopeFlags(flags), data_len
 
 
-def error_for_response(http_resp):
+def error_for_response(http_resp: httpcore.Response):
     try:
         error = json.loads(http_resp.content)
     except (json.decoder.JSONDecodeError, KeyError):
-        return ConnectException(http_resp.status, http_resp.reason)
+
+        if http_resp.status == 429:
+            return ConnectException(
+                Code.resource_exhausted,
+                f"{http_resp.content.decode()} The requests are being rate limited.",
+            )
+        elif http_resp.status == 502:
+            return ConnectException(
+                Code.unavailable,
+                http_resp.content.decode(),
+            )
+        else:
+            return ConnectException(
+                Code.unknown,
+                f"{http_resp.status}: {http_resp.content.decode('utf-8')}",
+            )
     else:
         return make_error(error)
 

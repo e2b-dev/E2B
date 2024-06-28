@@ -1,16 +1,6 @@
-class A:
-    template = 2
+from e2b import Sandbox
 
-    def __init__(self) -> None:
-        print(self.template)
+sbx = Sandbox.connect("acas")
 
 
-class B(A):
-    template = 3
-
-    def __init__(self) -> None:
-        super().__init__()
-        print(self.template)
-
-
-b = B()
+sbx.files.list("/")

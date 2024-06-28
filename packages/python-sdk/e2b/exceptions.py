@@ -27,7 +27,7 @@ class TimeoutException(SandboxException):
     pass
 
 
-class NotEnoughDiskSpaceException(SandboxException):
+class NotEnoughSpaceException(SandboxException):
     """
     Raised when there is not enough disk space.
     """
@@ -43,17 +43,9 @@ class NotFoundException(SandboxException):
     pass
 
 
-class InvalidPathException(SandboxException):
+class InvalidArgumentException(SandboxException):
     """
-    Raised when an invalid path is provided.
-    """
-
-    pass
-
-
-class InvalidUserException(SandboxException):
-    """
-    Raised when an invalid user is provided.
+    Raised when an invalid argument is provided.
     """
 
     pass

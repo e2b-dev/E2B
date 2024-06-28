@@ -5,10 +5,11 @@ from connect.client import Code, ConnectException
 
 from e2b.exceptions import (
     SandboxException,
-    InvalidUserException,
+    InvalidArgumentException,
     NotFoundException,
     TimeoutException,
     format_sandbox_timeout_exception,
+    AuthenticationException,
 )
 from e2b.connection_config import Username, default_username
 
@@ -16,7 +17,9 @@ from e2b.connection_config import Username, default_username
 def handle_rpc_exception(e: Exception):
     if isinstance(e, ConnectException):
         if e.status == Code.invalid_argument:
-            return InvalidUserException(e.message)
+            return InvalidArgumentException(e.message)
+        elif e.status == Code.unauthenticated:
+            return AuthenticationException(e.message)
         elif e.status == Code.not_found:
             return NotFoundException(e.message)
         elif e.status == Code.unavailable:
