@@ -7,21 +7,26 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1dpermissions/permissions.proto\x12\x0bpermissions\"0\n\x04User\x12\x1c\n\x08username\x18\x01 \x01(\tH\x00R\x08usernameB\n\n\x08selectorBo\n\x0f\x63om.permissionsB\x10PermissionsProtoP\x01\xa2\x02\x03PXX\xaa\x02\x0bPermissions\xca\x02\x0bPermissions\xe2\x02\x17Permissions\\GPBMetadata\xea\x02\x0bPermissionsb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x1dpermissions/permissions.proto\x12\x0bpermissions"0\n\x04User\x12\x1c\n\x08username\x18\x01 \x01(\tH\x00R\x08usernameB\n\n\x08selectorBo\n\x0f\x63om.permissionsB\x10PermissionsProtoP\x01\xa2\x02\x03PXX\xaa\x02\x0bPermissions\xca\x02\x0bPermissions\xe2\x02\x17Permissions\\GPBMetadata\xea\x02\x0bPermissionsb\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'permissions.permissions_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(
+    DESCRIPTOR, "permissions.permissions_pb2", _globals
+)
 if not _descriptor._USE_C_DESCRIPTORS:
-  _globals['DESCRIPTOR']._loaded_options = None
-  _globals['DESCRIPTOR']._serialized_options = b'\n\017com.permissionsB\020PermissionsProtoP\001\242\002\003PXX\252\002\013Permissions\312\002\013Permissions\342\002\027Permissions\\GPBMetadata\352\002\013Permissions'
-  _globals['_USER']._serialized_start=46
-  _globals['_USER']._serialized_end=94
+    _globals["DESCRIPTOR"]._loaded_options = None
+    _globals[
+        "DESCRIPTOR"
+    ]._serialized_options = b"\n\017com.permissionsB\020PermissionsProtoP\001\242\002\003PXX\252\002\013Permissions\312\002\013Permissions\342\002\027Permissions\\GPBMetadata\352\002\013Permissions"
+    _globals["_USER"]._serialized_start = 46
+    _globals["_USER"]._serialized_end = 94
 # @@protoc_insertion_point(module_scope)

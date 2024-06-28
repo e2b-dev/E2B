@@ -1,3 +1,4 @@
+import logging
 import urllib.parse
 import httpcore
 import httpx
@@ -16,7 +17,20 @@ from e2b.envd.api import (
 )
 from e2b.exceptions import SandboxException
 
-# TODO: Add logs
+
+logger = logging.getLogger(__name__)
+
+
+class E2BConnectionPool(httpcore.ConnectionPool):
+    def handle_request(self, request):
+        url = f"{request.url.scheme.decode()}://{request.url.host.decode()}{request.url.target.decode()}"
+        logger.info(f"Request: {request.method.decode()} {url}")
+        response = super().handle_request(request)
+
+        # data = connect.GzipCompressor.decompress(response.read()).decode()
+        logger.info(f"Response: {response.status} {url}")
+
+        return response
 
 
 class Sandbox(SandboxApi):
@@ -78,7 +92,7 @@ class Sandbox(SandboxApi):
 
         self._envd_api_url = f"{'http' if self._connection_config.debug else 'https'}://{self.get_host(self._envd_port)}"
 
-        self._envd_rpc_pool = httpcore.ConnectionPool(max_connections=25)
+        self._envd_rpc_pool = E2BConnectionPool(max_connections=25)
         self._envd_api = httpx.Client(base_url=self._envd_api_url)
 
         self._filesystem = Filesystem(
@@ -141,7 +155,8 @@ class Sandbox(SandboxApi):
         self.kill()
 
     @overload
-    def kill(self, request_timeout: Optional[float] = None) -> None: ...
+    def kill(self, request_timeout: Optional[float] = None) -> None:
+        ...
 
     @overload
     @staticmethod
@@ -151,7 +166,8 @@ class Sandbox(SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @class_method_variant("_cls_kill")
     def kill(self, request_timeout: Optional[float] = None) -> None:  # type: ignore
@@ -172,7 +188,8 @@ class Sandbox(SandboxApi):
         self,
         timeout: int,
         request_timeout: Optional[float] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     @staticmethod
@@ -183,7 +200,8 @@ class Sandbox(SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @class_method_variant("_cls_set_timeout")
     def set_timeout(  # type: ignore

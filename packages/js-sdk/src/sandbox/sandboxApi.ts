@@ -1,5 +1,6 @@
 import { ApiClient, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import { compareVersions } from 'compare-versions'
 
 export interface SandboxApiOpts extends Partial<Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>> { }
 
@@ -123,7 +124,7 @@ export class SandboxApi {
       throw err
     }
 
-    if (!res.data!.envdV2) {
+    if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
         throw new Error(
             'You need to update the template to use the new SDK. ' +
             'You can do this by running `e2b template build` in the directory with the template.'

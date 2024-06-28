@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, List
 from datetime import datetime
+from packaging.version import Version
 
 from e2b.api import ApiClient, models, client, exceptions
 from e2b.connection_config import ConnectionConfig
@@ -145,7 +146,7 @@ class SandboxApi:
                     ),
                     _request_timeout=config.request_timeout,
                 )
-                if not res.envd_v2:
+                if Version(res.envd_version) < Version("0.1.0"):
                     raise E2BUpdateTemplateException(
                         "You need to update the template to use the new SDK. "
                         "You can do this by running `e2b template build` in the directory with the template."

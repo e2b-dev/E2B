@@ -59,11 +59,7 @@ class ProcessHandle:
 
     def _handle_events(
         self,
-    ) -> Generator[
-        Union[Tuple[Stdout, None], Tuple[None, Stderr]],
-        None,
-        None,
-    ]:
+    ) -> Generator[Union[Tuple[Stdout, None], Tuple[None, Stderr]], None, None,]:
         try:
             for event in self._events:
                 if event.event.HasField("data"):

@@ -1,4 +1,5 @@
 import json
+import logging
 
 from importlib.metadata import version
 
@@ -6,13 +7,16 @@ from e2b.connection_config import ConnectionConfig
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException, SandboxException
 
+logger = logging.getLogger(__name__)
 
 pydantic_version = version("pydantic")
 if pydantic_version < "2.0.0":
+    from e2b.api.v1.client import rest
     import e2b.api.v1.client as client
     import e2b.api.v1.client.models as models
     import e2b.api.v1.client.exceptions as exceptions
 else:
+    from e2b.api.v2.client import rest
     import e2b.api.v2.client as client
     import e2b.api.v2.client.models as models
     import e2b.api.v2.client.exceptions as exceptions
@@ -58,6 +62,17 @@ class ApiClient(client.ApiClient):
 
         super().__init__(configuration, *args, **kwargs)
         self.default_headers = default_headers
+
+    def call_api(self, method, url, *arg, **kwargs) -> rest.RESTResponse:
+        logger.info(f"Request {method} {url}")
+        response = super().call_api(method, url, *arg, **kwargs)
+
+        if response.status >= 400:
+            logger.error(f"Response {response.status} {response.data}")
+        else:
+            logger.info(f"Response {response.status} {response.data}")
+
+        return response
 
 
 __all__ = ["ApiClient", "client", "models", "exceptions"]
