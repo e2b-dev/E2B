@@ -32,9 +32,9 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/DownloadSuccess"
-        "400":
+        "401":
           $ref: "#/components/responses/InvalidUser"
-        "403":
+        "400":
           $ref: "#/components/responses/DirectoryPathError"
         "404":
           $ref: "#/components/responses/FileNotFound"
@@ -52,9 +52,9 @@ paths:
         "204":
           $ref: "#/components/responses/UploadSuccess"
         "400":
-          $ref: "#/components/responses/InvalidUser"
-        "403":
           $ref: "#/components/responses/DirectoryPathError"
+        "401":
+          $ref: "#/components/responses/InvalidUser"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "507":
