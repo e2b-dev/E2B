@@ -144,7 +144,7 @@ func main() {
 	s := &http.Server{
 		Handler:           withCORS(handler),
 		Addr:              fmt.Sprintf("0.0.0.0:%d", port),
-		ReadHeaderTimeout: maxTimeout,
+		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       maxTimeout,
 		WriteTimeout:      maxTimeout,
 		IdleTimeout:       maxTimeout,

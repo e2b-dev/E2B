@@ -129,7 +129,7 @@ server {
   proxy_http_version 1.1;
 
   client_body_timeout 86400s;
-  client_header_timeout 30s;
+  client_header_timeout 5s;
 
   proxy_read_timeout 600s;
   proxy_send_timeout 86400s;
