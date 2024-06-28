@@ -25,13 +25,13 @@ export const AccountSelector = ({ teams, user, currentTeam, setCurrentTeam, setT
       return
     }
 
-    const data = await res.json()
+    const team = await res.json()
 
     toast({
-      title: `Team ${data.team.name} created`,
+      title: `Team ${team.name} created`,
     })
     
-    setTeams([...teams, data.team])
+    setTeams([...teams, team])
   }
   
   return(
