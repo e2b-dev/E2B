@@ -37,6 +37,8 @@ export default function Dashboard() {
   const searchParams = useSearchParams()
 
   const tab = searchParams!.get('tab')
+  const teamParam = searchParams!.get('team')
+
   const initialTab = tab && menuLabels.includes(tab as MenuLabel) ? (tab as MenuLabel) : 'personal'
   const [selectedItem, setSelectedItem] = useState<MenuLabel>(initialTab)
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
@@ -45,11 +47,19 @@ export default function Dashboard() {
   
   useEffect(() => {
     if (user) {
-      const defaultTeam = user.teams.find(team => team.is_default)
-      setCurrentTeam(defaultTeam || user.teams[0]) // seems like a sensible default
-      setTeams(user.teams)
+      if (teamParam) {
+        const team = user.teams.find(team => team.id === teamParam)
+        if (team) {
+          setCurrentTeam(team)
+          setTeams(user.teams)
+        }
+      } else {
+        const defaultTeam = user.teams.find(team => team.is_default)
+        setCurrentTeam(defaultTeam || user.teams[0]) // seems like a sensible default
+        setTeams(user.teams)
+      }
     }
-  }, [user])
+  }, [user, teamParam])
 
   useEffect(() => {
     if (user && currentTeam) {
@@ -66,6 +76,19 @@ export default function Dashboard() {
       router.push(newUrl)
     }
   }, [selectedItem, tab, router])
+
+  useEffect(() => {
+    if (teamParam !== currentTeam?.id) {
+      const params = new URLSearchParams(window.location.search)
+      if (currentTeam) {
+        params.set('team', currentTeam.id)
+      } else {
+        params.delete('team')
+      }
+      const newUrl = `${window.location.pathname}?${params.toString()}`
+      router.push(newUrl)
+    }
+  }, [currentTeam, teamParam, router])
 
   if (error) {
     return <div>Error: {error.message}</div>
@@ -85,7 +108,7 @@ export default function Dashboard() {
         <div className="flex-1 md:pl-10">
           <h2 className='text-2xl mb-2 font-bold'>{selectedItem[0].toUpperCase() + selectedItem.slice(1)}</h2>
           <div className='border border-white/5 w-full h-[1px] mb-10'/>
-          <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} />
+          <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
         </div>
       </div>
     )
@@ -142,7 +165,7 @@ const MenuItem = ({ icon: Icon, label , selected, onClick }: { icon: LucideIcon;
 )
 
 
-const MainContent = ({ selectedItem, user, team, currentApiKey }: { selectedItem: MenuLabel, user: User, team: Team, currentApiKey: string | null}) => {
+const MainContent = ({ selectedItem, user, team, currentApiKey, teams, setTeams, setCurrentTeam }: { selectedItem: MenuLabel, user: User, team: Team, currentApiKey: string | null, teams: Team[], setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void}) => {
   switch (selectedItem) {
     case 'personal':
       return <PersonalContent user={user} />
@@ -153,7 +176,7 @@ const MainContent = ({ selectedItem, user, team, currentApiKey }: { selectedItem
     case 'billing':
       return <BillingContent currentApiKey={currentApiKey} />
     case 'team':
-      return <TeamContent team={team} user={user} />
+      return <TeamContent team={team} user={user} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
     default:
       return <ErrorContent />
   }
