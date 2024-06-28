@@ -28,11 +28,11 @@ func NewDNS() (*DNS, error) {
 	}, nil
 }
 
-func (d *DNS) Add(ips *IPSlot) error {
+func (d *DNS) Add(ips *IPSlot, instanceID string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	d.hosts.AddHost(ips.HostSnapshotIP(), ips.InstanceID)
+	d.hosts.AddHost(ips.HostSnapshotIP(), instanceID)
 
 	err := d.hosts.Save()
 	if err != nil {
@@ -42,11 +42,11 @@ func (d *DNS) Add(ips *IPSlot) error {
 	return nil
 }
 
-func (d *DNS) Remove(ips *IPSlot) error {
+func (d *DNS) Remove(instanceID string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	d.hosts.RemoveHost(ips.InstanceID)
+	d.hosts.RemoveHost(instanceID)
 
 	err := d.hosts.Save()
 	if err != nil {

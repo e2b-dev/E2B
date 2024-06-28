@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
-
 	"go.opentelemetry.io/otel"
 
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/pool"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
@@ -22,11 +22,17 @@ func MockInstance(envID, instanceID string, dns *DNS, keepAlive time.Duration) {
 
 	consulClient, err := consul.New(childCtx)
 
+	networkPool := pool.New[*IPSlot](1)
+	go networkPool.Populate(childCtx, 1, func() (*IPSlot, error) {
+		return NewSlot(childCtx, tracer, consulClient)
+	})
+
 	instance, err := NewSandbox(
 		childCtx,
 		tracer,
 		consulClient,
 		dns,
+		networkPool,
 		&orchestrator.SandboxConfig{
 			TemplateID:         envID,
 			FirecrackerVersion: "v1.7.0-dev_8bb88311",
@@ -47,7 +53,7 @@ func MockInstance(envID, instanceID string, dns *DNS, keepAlive time.Duration) {
 
 	time.Sleep(keepAlive)
 
-	defer instance.CleanupAfterFCStop(childCtx, tracer, consulClient, dns)
+	defer instance.CleanupAfterFCStop(childCtx, tracer, consulClient, dns, instanceID)
 
 	instance.Stop(childCtx, tracer)
 }

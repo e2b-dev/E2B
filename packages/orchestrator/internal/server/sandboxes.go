@@ -33,6 +33,7 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 		s.tracer,
 		s.consul,
 		s.dns,
+		s.networkPool,
 		req.Sandbox,
 		childSpan.SpanContext().TraceID().String(),
 	)
@@ -50,7 +51,7 @@ func (s *server) Create(ctx context.Context, req *orchestrator.SandboxCreateRequ
 		closeCtx, _ := tracer.Start(ctx, "close-sandbox")
 		defer telemetry.ReportEvent(closeCtx, "sandbox closed")
 		defer s.sandboxes.Remove(req.Sandbox.SandboxID)
-		defer sbx.CleanupAfterFCStop(context.Background(), tracer, s.consul, s.dns)
+		defer sbx.CleanupAfterFCStop(context.Background(), tracer, s.consul, s.dns, req.Sandbox.SandboxID)
 
 		err := sbx.Wait(context.Background(), tracer)
 		if err != nil {

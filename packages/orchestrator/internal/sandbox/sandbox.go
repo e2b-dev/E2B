@@ -11,6 +11,7 @@ import (
 
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/pool"
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -60,6 +61,7 @@ func NewSandbox(
 	tracer trace.Tracer,
 	consul *consul.Client,
 	dns *DNS,
+	networkPool *pool.Pool[*IPSlot],
 	config *orchestrator.SandboxConfig,
 	traceID string,
 ) (*Sandbox, error) {
@@ -67,19 +69,28 @@ func NewSandbox(
 	defer childSpan.End()
 
 	// Get slot from Consul KV
-	ips, err := NewSlot(
-		childCtx,
-		tracer,
-		consul,
-		config.SandboxID,
-	)
+	ips := networkPool.Get()
+	telemetry.ReportEvent(childCtx, "reserved ip slot")
+
+	err := dns.Add(ips, config.SandboxID)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to get IP slot: %w", err)
+		errMsg := fmt.Errorf("failed to add DNS record: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return nil, errMsg
 	}
 
-	telemetry.ReportEvent(childCtx, "reserved ip slot")
+	defer func() {
+		if err != nil {
+			err := dns.Remove(config.SandboxID)
+			if err != nil {
+				errMsg := fmt.Errorf("error removing env instance to etc hosts: %w", err)
+				telemetry.ReportCriticalError(childCtx, errMsg)
+			} else {
+				telemetry.ReportEvent(childCtx, "removed env instance to etc hosts")
+			}
+		}
+	}()
 
 	defer func() {
 		if err != nil {
@@ -95,7 +106,7 @@ func NewSandbox(
 
 	defer func() {
 		if err != nil {
-			ntErr := ips.RemoveNetwork(childCtx, tracer, dns)
+			ntErr := ips.RemoveNetwork(childCtx, tracer)
 			if ntErr != nil {
 				errMsg := fmt.Errorf("error removing network namespace after failed instance start: %w", ntErr)
 				telemetry.ReportError(childCtx, errMsg)
@@ -105,7 +116,7 @@ func NewSandbox(
 		}
 	}()
 
-	err = ips.CreateNetwork(childCtx, tracer, dns)
+	err = ips.CreateNetwork(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create namespaces: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -118,7 +129,7 @@ func NewSandbox(
 	fsEnv, err := newSandboxFiles(
 		childCtx,
 		tracer,
-		ips,
+		config.SandboxID,
 		config.TemplateID,
 		config.KernelVersion,
 		kernelsDir,
@@ -294,16 +305,25 @@ func (s *Sandbox) CleanupAfterFCStop(
 	tracer trace.Tracer,
 	consul *consul.Client,
 	dns *DNS,
+	sandboxID string,
 ) {
 	childCtx, childSpan := tracer.Start(ctx, "delete-instance")
 	defer childSpan.End()
 
-	err := s.slot.RemoveNetwork(childCtx, tracer, dns)
+	err := s.slot.RemoveNetwork(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot remove network when destroying task: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "removed network")
+	}
+
+	err = dns.Remove(sandboxID)
+	if err != nil {
+		errMsg := fmt.Errorf("error removing env instance to etc hosts: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "removed env instance to etc hosts")
 	}
 
 	err = s.files.Cleanup(childCtx, tracer)

@@ -29,9 +29,8 @@ const (
 type IPSlot struct {
 	ConsulToken string
 
-	InstanceID string
-	KVKey      string
-	SlotIdx    int
+	KVKey   string
+	SlotIdx int
 }
 
 func (ips *IPSlot) VpeerName() string {
@@ -111,7 +110,7 @@ func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
-func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Client, instanceID string) (*IPSlot, error) {
+func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Client) (*IPSlot, error) {
 	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
 	defer childSpan.End()
 
@@ -123,7 +122,6 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Clie
 		status, _, err := kv.CAS(&consul.KVPair{
 			Key:         key,
 			ModifyIndex: 0,
-			Value:       []byte(instanceID),
 		}, nil)
 		if err != nil {
 			errMsg := fmt.Errorf("failed to write to Consul KV: %w", err)
@@ -134,9 +132,8 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Clie
 
 		if status {
 			return &IPSlot{
-				InstanceID: instanceID,
-				SlotIdx:    slotIdx,
-				KVKey:      key,
+				SlotIdx: slotIdx,
+				KVKey:   key,
 			}, nil
 		}
 
@@ -201,7 +198,6 @@ func NewSlot(ctx context.Context, tracer trace.Tracer, consulClient *consul.Clie
 		childCtx,
 		attribute.String("instance.slot.kv.key", slot.KVKey),
 		attribute.String("instance.slot.node.short_id", constants.ClientID),
-		attribute.String("instance.id", slot.InstanceID),
 	)
 
 	return slot, nil
@@ -212,7 +208,6 @@ func (ips *IPSlot) Release(ctx context.Context, tracer trace.Tracer, consulClien
 		trace.WithAttributes(
 			attribute.String("instance.slot.kv.key", ips.KVKey),
 			attribute.String("instance.slot.node.short_id", constants.ClientID),
-			attribute.String("instance.id", ips.InstanceID),
 		),
 	)
 	defer childSpan.End()
@@ -229,14 +224,7 @@ func (ips *IPSlot) Release(ctx context.Context, tracer trace.Tracer, consulClien
 	}
 
 	if pair == nil {
-		errMsg := fmt.Errorf("IP slot %d for instance %s was already released", ips.SlotIdx, ips.InstanceID)
-		telemetry.ReportError(childCtx, errMsg)
-
-		return nil
-	}
-
-	if string(pair.Value) != ips.InstanceID {
-		errMsg := fmt.Errorf("IP slot %d for instance %s was already realocated to instance %s", ips.SlotIdx, ips.InstanceID, string(pair.Value))
+		errMsg := fmt.Errorf("IP slot %d was already released", ips.SlotIdx)
 		telemetry.ReportError(childCtx, errMsg)
 
 		return nil
@@ -254,7 +242,7 @@ func (ips *IPSlot) Release(ctx context.Context, tracer trace.Tracer, consulClien
 	}
 
 	if !status {
-		errMsg := fmt.Errorf("IP slot %d for instance %s was already realocated to instance %s", ips.SlotIdx, ips.InstanceID, string(pair.Value))
+		errMsg := fmt.Errorf("IP slot %d for was already realocated", ips.SlotIdx)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg

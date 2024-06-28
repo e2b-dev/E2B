@@ -72,7 +72,7 @@ func waitForSocket(socketPath string, timeout time.Duration) error {
 func newSandboxFiles(
 	ctx context.Context,
 	tracer trace.Tracer,
-	slot *IPSlot,
+	sandboxID,
 	envID,
 	kernelVersion,
 	kernelsDir,
@@ -91,7 +91,7 @@ func newSandboxFiles(
 	defer childSpan.End()
 
 	envPath := filepath.Join(envsDisk, envID)
-	envInstancePath := filepath.Join(envPath, EnvInstancesDirName, slot.InstanceID)
+	envInstancePath := filepath.Join(envPath, EnvInstancesDirName, sandboxID)
 
 	// Mount overlay
 	buildIDPath := filepath.Join(envPath, BuildIDName)
@@ -105,7 +105,7 @@ func newSandboxFiles(
 	buildDirPath := filepath.Join(envPath, BuildDirName, buildID)
 
 	// Assemble socket path
-	socketPath, sockErr := getSocketPath(slot.InstanceID)
+	socketPath, sockErr := getSocketPath(sandboxID)
 	if sockErr != nil {
 		errMsg := fmt.Errorf("error getting socket path: %w", sockErr)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -116,7 +116,7 @@ func newSandboxFiles(
 	var uffdSocketPath *string
 
 	if hugePages {
-		socketName := fmt.Sprintf("uffd-%s", slot.InstanceID)
+		socketName := fmt.Sprintf("uffd-%s", sandboxID)
 		socket, sockErr := getSocketPath(socketName)
 		if sockErr != nil {
 			errMsg := fmt.Errorf("error getting UFFD socket path: %w", sockErr)

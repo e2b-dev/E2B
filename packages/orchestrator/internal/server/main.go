@@ -18,18 +18,25 @@ import (
 
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/pool"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
 	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
 )
 
+const (
+	ipSlotConcurrency = 5
+	ipSlotPoolSize    = 300
+)
+
 type server struct {
 	orchestrator.UnimplementedSandboxServer
-	sandboxes *smap.Map[*sandbox.Sandbox]
-	dns       *sandbox.DNS
-	tracer    trace.Tracer
-	consul    *consulapi.Client
+	sandboxes   *smap.Map[*sandbox.Sandbox]
+	dns         *sandbox.DNS
+	tracer      trace.Tracer
+	consul      *consulapi.Client
+	networkPool *pool.Pool[*sandbox.IPSlot]
 }
 
 func New(logger *zap.Logger) *grpc.Server {
@@ -47,6 +54,7 @@ func New(logger *zap.Logger) *grpc.Server {
 
 	ctx := context.Background()
 
+	tracer := otel.Tracer(constants.ServiceName)
 	dns, err := sandbox.NewDNS()
 	if err != nil {
 		panic(err)
@@ -57,11 +65,30 @@ func New(logger *zap.Logger) *grpc.Server {
 		panic(err)
 	}
 
+	createNetwork := func() (*sandbox.IPSlot, error) {
+		return sandbox.NewSlot(ctx, tracer, consulClient)
+	}
+
+	networkPool := pool.New[*sandbox.IPSlot](ipSlotPoolSize)
+
+	go func() {
+		err := networkPool.Populate(
+			ctx,
+			ipSlotConcurrency,
+			createNetwork,
+		)
+		if err != nil {
+			logger.Fatal("failed to populate network pool", zap.Error(err))
+			panic(err)
+		}
+	}()
+
 	orchestrator.RegisterSandboxServer(s, &server{
-		tracer:    otel.Tracer(constants.ServiceName),
-		consul:    consulClient,
-		dns:       dns,
-		sandboxes: smap.New[*sandbox.Sandbox](),
+		tracer:      tracer,
+		consul:      consulClient,
+		dns:         dns,
+		sandboxes:   smap.New[*sandbox.Sandbox](),
+		networkPool: networkPool,
 	})
 
 	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
