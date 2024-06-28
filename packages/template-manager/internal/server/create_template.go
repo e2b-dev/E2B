@@ -57,7 +57,7 @@ func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateC
 		return err
 	}
 
-	cmd := exec.Command(consts.HostEnvdV2Path, "--build")
+	cmd := exec.Command(consts.HostEnvdPath, "--build")
 	out, err := cmd.Output()
 	if err != nil {
 		_, _ = logsWriter.Write([]byte(fmt.Sprintf("Error while getting envd version: %v", err)))
@@ -67,7 +67,7 @@ func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateC
 	version := strings.TrimSpace(string(out))
 	trailerMetadata := metadata.Pairs(
 		consts.RootfsSizeKey, strconv.FormatInt(template.RootfsSizeMB(), 10),
-		consts.EnvdVersionKey, "v2-"+version,
+		consts.EnvdVersionKey, version,
 	)
 
 	stream.SetTrailer(trailerMetadata)

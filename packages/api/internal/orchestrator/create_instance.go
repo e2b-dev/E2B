@@ -69,10 +69,10 @@ func (o *Orchestrator) CreateSandbox(
 	telemetry.ReportEvent(childCtx, "Created sandbox")
 
 	return &api.Sandbox{
-		ClientID:   res.ClientID,
-		SandboxID:  sandboxID,
-		TemplateID: templateID,
-		Alias:      &alias,
-		EnvdV2:     strings.HasPrefix(*build.EnvdVersion, "v2"),
+		ClientID:    res.ClientID,
+		SandboxID:   sandboxID,
+		TemplateID:  templateID,
+		Alias:       &alias,
+		EnvdVersion: strings.Split(*build.EnvdVersion, "-")[0],
 	}, nil
 }
