@@ -20,12 +20,12 @@ func (Service) Move(ctx context.Context, req *connect.Request[rpc.MoveRequest]) 
 
 	source, err := permissions.ExpandAndResolve(req.Msg.GetSource(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	destination, err := permissions.ExpandAndResolve(req.Msg.GetDestination(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	_, err = os.Stat(source)

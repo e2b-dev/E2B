@@ -95,7 +95,7 @@ func New(user *user.User, req *rpc.StartRequest, logger *zerolog.Logger) (*Handl
 			Rows: uint16(req.GetPty().GetSize().Rows),
 		})
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %w", cmd, cmd.Dir, req.GetPty().GetSize().Cols, req.GetPty().GetSize().Rows, err))
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %w", cmd, cmd.Dir, req.GetPty().GetSize().Cols, req.GetPty().GetSize().Rows, err))
 		}
 	}
 

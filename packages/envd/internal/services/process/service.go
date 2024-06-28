@@ -69,7 +69,7 @@ func (s *Service) getProcess(selector *rpc.ProcessSelector) (*handler.Handler, e
 		}
 
 	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid input type %T", selector))
+		return nil, connect.NewError(connect.CodeUnimplemented, fmt.Errorf("invalid input type %T", selector))
 	}
 
 	return proc, nil

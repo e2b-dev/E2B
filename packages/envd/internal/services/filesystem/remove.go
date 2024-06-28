@@ -19,7 +19,7 @@ func (Service) Remove(ctx context.Context, req *connect.Request[rpc.RemoveReques
 
 	path, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	err = os.RemoveAll(path)

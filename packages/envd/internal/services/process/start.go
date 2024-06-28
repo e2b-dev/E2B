@@ -180,7 +180,7 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 
 	pid, err := proc.Start()
 	if err != nil {
-		return connect.NewError(connect.CodeUnknown, err)
+		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	s.processes.Store(pid, proc)

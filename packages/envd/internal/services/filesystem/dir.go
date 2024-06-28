@@ -19,7 +19,7 @@ func (Service) ListDir(ctx context.Context, req *connect.Request[rpc.ListDirRequ
 
 	dirPath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	stat, err := os.Stat(dirPath)
@@ -32,7 +32,7 @@ func (Service) ListDir(ctx context.Context, req *connect.Request[rpc.ListDirRequ
 	}
 
 	if !stat.IsDir() {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("path is not a directory: %s", dirPath))
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path is not a directory: %s", dirPath))
 	}
 
 	entries, err := os.ReadDir(dirPath)
@@ -69,7 +69,7 @@ func (Service) MakeDir(ctx context.Context, req *connect.Request[rpc.MakeDirRequ
 
 	dirPath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	stat, err := os.Stat(dirPath)
@@ -82,7 +82,7 @@ func (Service) MakeDir(ctx context.Context, req *connect.Request[rpc.MakeDirRequ
 			return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("directory already exists: %s", dirPath))
 		}
 
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("path already exists but it is not a directory: %s", dirPath))
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path already exists but it is not a directory: %s", dirPath))
 	}
 
 	uid, gid, userErr := permissions.GetUserIds(u)

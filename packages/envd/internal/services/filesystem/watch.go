@@ -26,7 +26,7 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 
 	watchPath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)
 	if err != nil {
-		return connect.NewError(connect.CodeNotFound, err)
+		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	info, err := os.Stat(watchPath)
@@ -39,7 +39,7 @@ func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.Watc
 	}
 
 	if !info.IsDir() {
-		return connect.NewError(connect.CodeNotFound, fmt.Errorf("path %s not a directory: %w", watchPath, err))
+		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path %s not a directory: %w", watchPath, err))
 	}
 
 	w, err := fsnotify.NewWatcher()

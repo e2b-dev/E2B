@@ -23,7 +23,7 @@ func (s *Service) SendSignal(ctx context.Context, req *connect.Request[rpc.SendS
 	case rpc.Signal_SIGNAL_SIGTERM:
 		signal = syscall.SIGTERM
 	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid signal: %s", req.Msg.GetSignal()))
+		return nil, connect.NewError(connect.CodeUnimplemented, fmt.Errorf("invalid signal: %s", req.Msg.GetSignal()))
 	}
 
 	err = proc.SendSignal(signal)

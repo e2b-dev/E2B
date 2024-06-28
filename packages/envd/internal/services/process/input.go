@@ -33,7 +33,7 @@ func handleInput(ctx context.Context, process *handler.Handler, in *rpc.ProcessI
 			Send()
 
 	default:
-		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid input type %T", in.Input))
+		return connect.NewError(connect.CodeUnimplemented, fmt.Errorf("invalid input type %T", in.Input))
 	}
 
 	return nil
@@ -79,7 +79,7 @@ func (s *Service) streamInputHandler(ctx context.Context, stream *connect.Client
 		case *rpc.StreamInputRequest_Keepalive:
 			break
 		default:
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid event type %T", req.Event))
+			return nil, connect.NewError(connect.CodeUnimplemented, fmt.Errorf("invalid event type %T", req.Event))
 		}
 	}
 
