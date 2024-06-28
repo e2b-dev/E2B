@@ -140,23 +140,23 @@ export const KeysContent = ({ user, currentTeam, currentApiKey }: { user: User, 
     </div>
   
     <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" style={{ display: 'none' }}>Show Dialog</Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent className="bg-inherit text-white border-black">
-          <AlertDialogHeader>
-            <AlertDialogTitle>You are about to delete an API key</AlertDialogTitle>
-            <AlertDialogDescription className='text-white/90'>
-              This action cannot be undone. This will permanently delete the
-              API key with immediate effect.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className='border-white/10' onClick={closeDialog}>Cancel</AlertDialogCancel>
-            <AlertDialogAction className='bg-red-500 text-white hover:bg-red-600' onClick={deleteApiKey}>Continue</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline" style={{ display: 'none' }}>Show Dialog</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="bg-inherit text-white border-black">
+        <AlertDialogHeader>
+          <AlertDialogTitle>You are about to delete an API key</AlertDialogTitle>
+          <AlertDialogDescription className='text-white/90'>
+            This action cannot be undone. This will permanently delete the
+            API key with immediate effect.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className='border-white/10' onClick={closeDialog}>Cancel</AlertDialogCancel>
+          <AlertDialogAction className='bg-red-500 text-white hover:bg-red-600' onClick={deleteApiKey}>Continue</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     
     </div>
   )

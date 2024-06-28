@@ -15,7 +15,7 @@ interface TeamMember {
 }
 
 
-export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
+export const TeamContent = ({ team, user, teams, setTeams, setCurrentTeam }: { team: Team, user: User, teams: Team[] ,setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
   const supabase = createPagesBrowserClient()
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -23,6 +23,7 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
   const [members, setMembers] = useState<TeamMember[]>([])
   const [teamName, setTeamName] = useState(team.name)
   const [userToAdd, setUserToAdd] = useState('')
+  const [userAdded, setUserAdded] = useState(false)
 
   useEffect(() => {
     const getTeamMembers = async () => {
@@ -50,7 +51,7 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
     }
 
     getTeamMembers()
-  }, [supabase, team.id, user.id])
+  }, [supabase, team.id, user.id, userAdded])
 
   const closeDialog = () => setIsDialogOpen(false) 
   const openDialog = (id: string) => {
@@ -70,7 +71,7 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
       console.log(error)
       return
     }
-
+    setMembers(members.filter(member => member.id !== currentMemberId))
     closeDialog()
   }
   
@@ -90,6 +91,8 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
       title: 'Team name changed',
     })
     setTeamName(teamName)
+    setTeams(teams.map(t => t.id === team.id ? { ...t, name: teamName } : t))
+    setCurrentTeam({ ...team, name: teamName })
   }
 
   const addUserToTeam = async() => {
@@ -104,6 +107,7 @@ export const TeamContent = ({ team, user }: { team: Team, user: User }) => {
     }
     
     setUserToAdd('')
+    setUserAdded(!userAdded)
     toast({
       title: 'User added to team',
     })

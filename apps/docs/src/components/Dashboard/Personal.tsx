@@ -47,8 +47,7 @@ export const PersonalContent = ({user}: {user: User}) => {
             Reset password
           </h1>
           <span className='text-neutral-300 pb-4'>
-            Resetting the will send an email with a link to reset the password. <br/>
-            The action cannot be undone.
+            Resetting will send an email with a link to reset the password. <br/>
           </span>
           <div className='flex items-center space-x-2 pb-10'>
             <Link href={'/sign-in?view=forgotten-password'}>
