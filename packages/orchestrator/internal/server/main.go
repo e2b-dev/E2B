@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -23,6 +24,7 @@ import (
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
 	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const (
@@ -66,7 +68,17 @@ func New(logger *zap.Logger) *grpc.Server {
 	}
 
 	createNetwork := func() (*sandbox.IPSlot, error) {
-		return sandbox.NewSlot(ctx, tracer, consulClient)
+		ips, err := sandbox.NewSlot(ctx, tracer, consulClient)
+
+		err = ips.CreateNetwork(ctx, tracer)
+		if err != nil {
+			errMsg := fmt.Errorf("failed to create namespaces: %w", err)
+			telemetry.ReportCriticalError(ctx, errMsg)
+
+			return nil, errMsg
+		}
+
+		return ips, err
 	}
 
 	networkPool := pool.New[*sandbox.IPSlot](ipSlotPoolSize)

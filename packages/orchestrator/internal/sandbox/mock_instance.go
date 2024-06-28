@@ -24,7 +24,17 @@ func MockInstance(envID, instanceID string, dns *DNS, keepAlive time.Duration) {
 
 	networkPool := pool.New[*IPSlot](1)
 	go networkPool.Populate(childCtx, 1, func() (*IPSlot, error) {
-		return NewSlot(childCtx, tracer, consulClient)
+		ips, err := NewSlot(childCtx, tracer, consulClient)
+
+		err = ips.CreateNetwork(childCtx, tracer)
+		if err != nil {
+			errMsg := fmt.Errorf("failed to create namespaces: %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+
+			return nil, errMsg
+		}
+
+		return ips, err
 	})
 
 	instance, err := NewSandbox(

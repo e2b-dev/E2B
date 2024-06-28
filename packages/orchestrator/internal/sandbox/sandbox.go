@@ -68,10 +68,13 @@ func NewSandbox(
 	childCtx, childSpan := tracer.Start(ctx, "new-sandbox")
 	defer childSpan.End()
 
+	_, networkSpan := tracer.Start(ctx, "get-network-slot")
 	// Get slot from Consul KV
 	ips := networkPool.Get()
 	telemetry.ReportEvent(childCtx, "reserved ip slot")
+	networkSpan.End()
 
+	_, dnsSpan := tracer.Start(ctx, "setup-dns")
 	err := dns.Add(ips, config.SandboxID)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to add DNS record: %w", err)
@@ -79,6 +82,8 @@ func NewSandbox(
 
 		return nil, errMsg
 	}
+	telemetry.ReportEvent(childCtx, "added DNS record")
+	dnsSpan.End()
 
 	defer func() {
 		if err != nil {
@@ -115,16 +120,6 @@ func NewSandbox(
 			}
 		}
 	}()
-
-	err = ips.CreateNetwork(childCtx, tracer)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to create namespaces: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return nil, errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "created network")
 
 	fsEnv, err := newSandboxFiles(
 		childCtx,
