@@ -156,7 +156,7 @@ func newFC(
 	mmdsMetadata *MmdsMetadata,
 ) *fc {
 	childCtx, childSpan := tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
-		attribute.String("instance.id", slot.InstanceID),
+		attribute.String("instance.id", mmdsMetadata.InstanceID),
 		attribute.Int("instance.slot.index", slot.SlotIdx),
 	))
 	defer childSpan.End()
@@ -207,7 +207,7 @@ func newFC(
 	cmd.Stdout = cmdStderrWriter
 
 	return &fc{
-		id:             slot.InstanceID,
+		id:             mmdsMetadata.InstanceID,
 		cmd:            cmd,
 		stdout:         cmdStdoutReader,
 		stderr:         cmdStderrReader,
