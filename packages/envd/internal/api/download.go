@@ -42,7 +42,7 @@ func (a *API) GetFiles(w http.ResponseWriter, r *http.Request, params GetFilesPa
 	u, err := user.Lookup(params.Username)
 	if err != nil {
 		errMsg = fmt.Errorf("error looking up user '%s': %w", params.Username, err)
-		errorCode = http.StatusBadRequest
+		errorCode = http.StatusUnauthorized
 		jsonError(w, errorCode, errMsg)
 
 		return
@@ -51,7 +51,7 @@ func (a *API) GetFiles(w http.ResponseWriter, r *http.Request, params GetFilesPa
 	resolvedPath, err := permissions.ExpandAndResolve(path, u)
 	if err != nil {
 		errMsg = fmt.Errorf("error expanding and resolving path '%s': %w", path, err)
-		errorCode = http.StatusInternalServerError
+		errorCode = http.StatusBadRequest
 		jsonError(w, errorCode, errMsg)
 
 		return
@@ -76,7 +76,7 @@ func (a *API) GetFiles(w http.ResponseWriter, r *http.Request, params GetFilesPa
 
 	if stat.IsDir() {
 		errMsg = fmt.Errorf("path '%s' is a directory", resolvedPath)
-		errorCode = http.StatusForbidden
+		errorCode = http.StatusBadRequest
 		jsonError(w, errorCode, errMsg)
 
 		return

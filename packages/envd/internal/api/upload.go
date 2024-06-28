@@ -47,7 +47,7 @@ func processFile(r *http.Request, params PostFilesParams, part *multipart.Part, 
 	if err != nil {
 		errMsg := fmt.Errorf("error resolving path: %w", err)
 
-		return http.StatusNotFound, errMsg
+		return http.StatusBadRequest, errMsg
 	}
 
 	uid, gid, err := permissions.GetUserIds(user)
@@ -88,7 +88,7 @@ func processFile(r *http.Request, params PostFilesParams, part *multipart.Part, 
 		if stat.IsDir() {
 			errMsg := fmt.Errorf("path is a directory: %s", resolvedPath)
 
-			return http.StatusPreconditionFailed, errMsg
+			return http.StatusBadRequest, errMsg
 		}
 	}
 
@@ -159,7 +159,7 @@ func (a *API) PostFiles(w http.ResponseWriter, r *http.Request, params PostFiles
 	u, err := user.Lookup(params.Username)
 	if err != nil {
 		errMsg = fmt.Errorf("error looking up user '%s': %w", params.Username, err)
-		errorCode = http.StatusBadRequest
+		errorCode = http.StatusUnauthorized
 
 		jsonError(w, errorCode, errMsg)
 

@@ -35,7 +35,7 @@ paths:
         "401":
           $ref: "#/components/responses/InvalidUser"
         "400":
-          $ref: "#/components/responses/DirectoryPathError"
+          $ref: "#/components/responses/InvalidPath"
         "404":
           $ref: "#/components/responses/FileNotFound"
         "500":
@@ -52,7 +52,7 @@ paths:
         "204":
           $ref: "#/components/responses/UploadSuccess"
         "400":
-          $ref: "#/components/responses/DirectoryPathError"
+          $ref: "#/components/responses/InvalidPath"
         "401":
           $ref: "#/components/responses/InvalidUser"
         "500":
@@ -101,8 +101,8 @@ components:
             type: string
             format: binary
             description: The file content
-    DirectoryPathError:
-      description: Directory path error
+    InvalidPath:
+      description: Invalid path
       content:
         application/json:
           schema:
