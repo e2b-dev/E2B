@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
-	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
+	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/filesystem"
 
 	"connectrpc.com/connect"
@@ -19,9 +19,9 @@ func (s Service) WatchDir(ctx context.Context, req *connect.Request[rpc.WatchDir
 }
 
 func (s Service) watchHandler(ctx context.Context, req *connect.Request[rpc.WatchDirRequest], stream *connect.ServerStream[rpc.WatchDirResponse]) error {
-	u, err := permissions.GetUser(req.Msg.GetUser())
+	u, err := permissions.GetAuthUser(ctx)
 	if err != nil {
-		return connect.NewError(connect.CodeInvalidArgument, err)
+		return err
 	}
 
 	watchPath, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)

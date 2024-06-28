@@ -34,6 +34,7 @@ start-docker:
 	-p 49983:49983 \
 	-p 2345:2345 \
 	-p 9999:9999 \
+	-p 8000:8000 \
 	--rm \
 	-it envd-debug \
 	/bin/bash -l -i
@@ -44,6 +45,7 @@ start-envd-docker:
 	-p 49983:49983 \
 	-p 2345:2345 \
 	-p 9999:9999 \
+	-p 8000:8000 \
 	--rm \
 	-i envd-debug \
 	/usr/bin/envd -debug
@@ -54,6 +56,7 @@ start-debug-docker:
 	-p 49983:49983 \
 	-p 2345:2345 \
 	-p 9999:9999 \
+	-p 8000:8000 \
 	--rm \
 	-d envd-debug sh -l -c "/go/bin/dlv --listen=:2345 --headless=true --log=true --log-output=debugger,debuglineerr,gdbwire,lldbout,rpc --accept-multiclient --api-version=2 exec /usr/bin/envd"
 

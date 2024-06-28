@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
+	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/filesystem"
 
 	"connectrpc.com/connect"
 )
 
 func (Service) Stat(ctx context.Context, req *connect.Request[rpc.StatRequest]) (*connect.Response[rpc.StatResponse], error) {
-	u, err := permissions.GetUser(req.Msg.GetUser())
+	u, err := permissions.GetAuthUser(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, err
 	}
 
 	path, err := permissions.ExpandAndResolve(req.Msg.GetPath(), u)

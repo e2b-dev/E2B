@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package permissions;
-
-message User {
-  oneof selector {
-      string username = 1;
-  }
-}

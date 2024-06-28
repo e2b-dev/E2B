@@ -5,11 +5,12 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/user"
 	"sync"
 	"syscall"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
-	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
+	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	"connectrpc.com/connect"
@@ -51,15 +52,10 @@ func (p *Handler) Pid() uint32 {
 	return uint32(p.cmd.Process.Pid)
 }
 
-func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
+func New(user *user.User, req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 	cmd := exec.Command(req.GetProcess().GetCmd(), req.GetProcess().GetArgs()...)
 
-	u, err := permissions.GetUser(req.GetUser())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-
-	uid, gid, err := permissions.GetUserIds(u)
+	uid, gid, err := permissions.GetUserIds(user)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -72,7 +68,7 @@ func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 		NoSetGroups: true,
 	}
 
-	resolvedPath, err := permissions.ExpandAndResolve(req.GetProcess().GetCwd(), u)
+	resolvedPath, err := permissions.ExpandAndResolve(req.GetProcess().GetCwd(), user)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -81,9 +77,9 @@ func New(req *rpc.StartRequest, logger *zerolog.Logger) (*Handler, error) {
 
 	var formattedVars []string
 
-	formattedVars = append(formattedVars, "HOME="+u.HomeDir)
-	formattedVars = append(formattedVars, "USER="+u.Username)
-	formattedVars = append(formattedVars, "LOGNAME="+u.Username)
+	formattedVars = append(formattedVars, "HOME="+user.HomeDir)
+	formattedVars = append(formattedVars, "USER="+user.Username)
+	formattedVars = append(formattedVars, "LOGNAME="+user.Username)
 
 	// Only the last values of the env vars are used - this allows for overwriting defaults
 	for key, value := range req.GetProcess().GetEnvs() {

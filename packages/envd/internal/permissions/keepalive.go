@@ -10,7 +10,7 @@ import (
 const defaultKeepAliveInterval = 90 * time.Second
 
 func GetKeepAliveTicker[T any](req *connect.Request[T]) (*time.Ticker, func()) {
-	keepAliveIntervalHeader := req.Header().Get("X-Keepalive-Interval")
+	keepAliveIntervalHeader := req.Header().Get("Keepalive-Ping-Interval")
 
 	var interval time.Duration
 

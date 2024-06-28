@@ -11,11 +11,12 @@ import (
 	"github.com/e2b-dev/infra/packages/envd/internal/api"
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
 	filesystemRpc "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
 	processRpc "github.com/e2b-dev/infra/packages/envd/internal/services/process"
-	"github.com/e2b-dev/infra/packages/envd/internal/services/spec/permissions"
 	processSpec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
+	"connectrpc.com/authn"
 	connectcors "connectrpc.com/cors"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
@@ -141,8 +142,10 @@ func main() {
 
 	handler := api.HandlerFromMux(api.New(&fsLogger), m)
 
+	middleware := authn.NewMiddleware(permissions.AuthenticateUsername)
+
 	s := &http.Server{
-		Handler:           withCORS(handler),
+		Handler:           withCORS(middleware.Wrap(handler)),
 		Addr:              fmt.Sprintf("0.0.0.0:%d", port),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       maxTimeout,
@@ -153,13 +156,13 @@ func main() {
 	if startCmdFlag != "" {
 		tag := "startCmd"
 
-		processService.StartBackgroundProcess(ctx, &processSpec.StartRequest{
+		user, err := permissions.GetUser("user")
+		if err != nil {
+			log.Fatalf("error getting user: %v", err)
+		}
+
+		processService.StartBackgroundProcess(ctx, user, &processSpec.StartRequest{
 			Tag: &tag,
-			User: &permissions.User{
-				Selector: &permissions.User_Username{
-					Username: "user",
-				},
-			},
 			Process: &processSpec.ProcessConfig{
 				Envs: make(map[string]string),
 				Cmd:  "/bin/bash",

@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-import "permissions/permissions.proto";
-
 package process;
 
 service Process {
@@ -51,8 +49,6 @@ message StartRequest {
     ProcessConfig process = 1;
     optional PTY pty = 2;
     optional string tag = 3;
-
-    permissions.User user = 4;
 }
 
 message UpdateRequest {

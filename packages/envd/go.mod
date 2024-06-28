@@ -16,6 +16,7 @@ require (
 )
 
 require (
+	connectrpc.com/authn v0.1.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/getkin/kin-openapi v0.123.0 // indirect
 	github.com/go-openapi/jsonpointer v0.20.2 // indirect

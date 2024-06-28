@@ -11,7 +11,8 @@ import (
 	"syscall"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
-	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
+	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
+
 	"github.com/rs/zerolog"
 )
 

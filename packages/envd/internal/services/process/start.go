@@ -3,17 +3,18 @@ package process
 import (
 	"context"
 	"errors"
+	"os/user"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/host"
 	"github.com/e2b-dev/infra/packages/envd/internal/logs"
-	"github.com/e2b-dev/infra/packages/envd/internal/services/permissions"
+	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
 	"github.com/e2b-dev/infra/packages/envd/internal/services/process/handler"
 	rpc "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
 
 	"connectrpc.com/connect"
 )
 
-func (s *Service) StartBackgroundProcess(ctx context.Context, req *rpc.StartRequest) error {
+func (s *Service) StartBackgroundProcess(ctx context.Context, user *user.User, req *rpc.StartRequest) error {
 	var err error
 
 	ctx = logs.AddRequestIDToContext(ctx)
@@ -26,7 +27,7 @@ func (s *Service) StartBackgroundProcess(ctx context.Context, req *rpc.StartRequ
 
 	handlerL := s.logger.With().Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).Logger()
 
-	proc, err := handler.New(req, &handlerL)
+	proc, err := handler.New(user, req, &handlerL)
 	if err != nil {
 		return err
 	}
@@ -61,7 +62,12 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 
 	handlerL := s.logger.With().Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).Logger()
 
-	proc, err := handler.New(req.Msg, &handlerL)
+	u, err := permissions.GetAuthUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	proc, err := handler.New(u, req.Msg, &handlerL)
 	if err != nil {
 		return err
 	}
