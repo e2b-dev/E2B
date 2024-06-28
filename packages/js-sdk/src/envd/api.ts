@@ -32,7 +32,6 @@ export function handleEnvdApiError(err: {
 class EnvdApiClient {
   private readonly client: ReturnType<typeof createClient<paths>>
 
-  // TODO: Fix apiUrl vs domain
   constructor(config: Pick<ConnectionConfig, 'apiUrl' | 'logger'>) {
     this.client = createClient<paths>({
       baseUrl: config.apiUrl,

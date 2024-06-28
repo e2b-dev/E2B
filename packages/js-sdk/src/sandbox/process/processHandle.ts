@@ -106,7 +106,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     await this.handleKill()
   }
 
-  private async* iterateEvents(): AsyncGenerator<[Stdout] | [null, Stderr] | [null, null, Pty]> {
+  private async* iterateEvents(): AsyncGenerator<[Stdout, null, null] | [null, Stderr, null] | [null, null, Pty]> {
     try {
       for await (const event of this.events) {
         const e = event?.event?.event
@@ -118,12 +118,12 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
               case 'stdout':
                 out = new TextDecoder().decode(e.value.output.value)
                 this._stdout += out
-                yield [out as Stdout]
+                yield [out as Stdout, null, null]
                 break
               case 'stderr':
                 out = new TextDecoder().decode(e.value.output.value)
                 this._stderr += out
-                yield [null, out as Stderr]
+                yield [null, out as Stderr, null]
                 break
               case 'pty':
                 yield [null, null, e.value.output.value as Pty]
