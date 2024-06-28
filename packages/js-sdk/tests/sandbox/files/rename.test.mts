@@ -1,5 +1,6 @@
-import { assert } from 'vitest'
+import { assert, expect } from 'vitest'
 
+import { NotFoundError } from '../../../src'
 import { sandboxTest } from '../../setup.mjs'
 
 sandboxTest('rename file', async ({ sandbox }) => {
@@ -21,9 +22,5 @@ sandboxTest('rename non-existing file', async ({ sandbox }) => {
   const oldFilename = 'non_existing_file.txt'
   const newFilename = 'new_non_existing_file.txt'
 
-  try {
-    await sandbox.files.rename(oldFilename, newFilename)
-  } catch (error) {
-    assert.instanceOf(error, Error)
-  }
+  await expect(sandbox.files.rename(oldFilename, newFilename)).rejects.toThrowError(NotFoundError)
 })

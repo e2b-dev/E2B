@@ -1,7 +1,7 @@
-import { assert } from 'vitest'
+import { assert, expect } from 'vitest'
 
 import { sandboxTest } from '../../setup.mjs'
-import { FilesystemEventType } from '../../../src'
+import { FilesystemEventType, NotFoundError } from '../../../src'
 
 sandboxTest('watch directory changes', async ({ sandbox }) => {
   const dirname = 'test_watch_dir'
@@ -30,9 +30,5 @@ sandboxTest('watch directory changes', async ({ sandbox }) => {
 sandboxTest('watch non-existing directory', async ({ sandbox }) => {
   const dirname = 'non_existing_watch_dir'
 
-  try {
-    await sandbox.files.watch(dirname, () => { })
-  } catch (error) {
-    assert.instanceOf(error, Error)
-  }
+  await expect(sandbox.files.watch(dirname, () => { })).rejects.toThrowError(NotFoundError)
 })

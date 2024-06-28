@@ -1,4 +1,5 @@
 import { Code, ConnectError } from '@connectrpc/connect'
+import { defaultUsername } from '../connectionConfig'
 
 import { SandboxError, InvalidUserError, InvalidPathError, TimeoutError, formatSandboxTimeoutError } from '../errors'
 
@@ -26,4 +27,18 @@ export function handleRpcError(err: unknown): Error {
   }
 
   return err as Error
+}
+
+export function authenticationHeader(username?: string): Record<string, string> {
+  const value = `${username || defaultUsername}:`
+
+  const encoded = isBrowser() ? btoa(value) : Buffer.from(value).toString('base64')
+
+  return {
+    'Authorization': `Basic ${encoded}`
+  }
+}
+
+export function isBrowser() {
+  return typeof window !== 'undefined'
 }

@@ -10,16 +10,17 @@ import {
   StartResponse,
   StreamInputRequest,
 } from '../envd/process/process_pb'
-import { ConnectionConfig, ConnectionOpts, defaultUsername, KEEPALIVE_INTERVAL, Username } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts, KEEPALIVE_INTERVAL, Username } from '../connectionConfig'
 import { PartialMessage } from '@bufbuild/protobuf'
 import { ProcessHandle } from './process/processHandle'
+import { authenticationHeader } from '../envd/rpc'
 
 export interface PtyCreateOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
   cols: number
   rows: number
   onData: (data: Uint8Array) => (void | Promise<void>)
   timeout?: number
-  username?: Username
+  user?: Username
 }
 
 export class Pty {
@@ -39,12 +40,6 @@ export class Pty {
     }, requestTimeoutMs)
 
     const events = this.rpc.start({
-      user: {
-        selector: {
-          case: 'username',
-          value: opts.username ?? defaultUsername,
-        },
-      },
       process: {
         cmd: '/bin/bash',
         args: ['-i', '-l'],
@@ -59,6 +54,7 @@ export class Pty {
         },
       },
     }, {
+      headers: authenticationHeader(opts?.user),
       signal: controller.signal,
       timeoutMs: opts?.timeout ?? 60_000,
     })

@@ -1,4 +1,5 @@
-import { assert } from 'vitest'
+import { expect, assert } from 'vitest'
+
 import { sandboxTest } from '../../setup.mjs'
 
 sandboxTest('run', async ({ sandbox }) => {
@@ -26,4 +27,14 @@ sandboxTest('run with multiline string', async ({ sandbox }) => {
 
   assert.equal(cmd.exitCode, 0)
   assert.equal(cmd.stdout, `${text}\n`)
+})
+
+sandboxTest('run with timeout', async ({ sandbox }) => {
+  const cmd = await sandbox.commands.run('echo "Hello, World!"', { timeoutMs: 1000 })
+
+  assert.equal(cmd.exitCode, 0)
+})
+
+sandboxTest('run with too short timeout', async ({ sandbox }) => {
+  await expect(sandbox.commands.run('sleep 10', { timeoutMs: 1000 })).rejects.toThrow()
 })

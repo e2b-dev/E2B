@@ -1,5 +1,6 @@
-import { assert } from 'vitest'
+import { expect, assert } from 'vitest'
 
+import { NotFoundError } from '../../../src'
 import { sandboxTest } from '../../setup.mjs'
 
 sandboxTest('read file', async ({ sandbox }) => {
@@ -14,9 +15,5 @@ sandboxTest('read file', async ({ sandbox }) => {
 sandboxTest('read non-existing file', async ({ sandbox }) => {
   const filename = 'non_existing_file.txt'
 
-  try {
-    await sandbox.files.read(filename)
-  } catch (error) {
-    assert.instanceOf(error, Error)
-  }
+  await expect(sandbox.files.read(filename)).rejects.toThrowError(NotFoundError)
 })

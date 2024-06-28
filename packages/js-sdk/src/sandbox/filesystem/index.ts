@@ -16,7 +16,7 @@ import {
   SandboxError
 } from '../../errors'
 import { handleEnvdApiError } from '../../envd/api'
-import { handleRpcError } from '../../envd/rpc'
+import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
@@ -124,15 +124,8 @@ export class Filesystem {
 
   async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
     try {
-      const res = await this.rpc.listDir({
-        path,
-        user: {
-          selector: {
-            case: 'username',
-            value: opts?.user || defaultUsername,
-          },
-        },
-      }, {
+      const res = await this.rpc.listDir({ path }, {
+        headers: authenticationHeader(opts?.user),
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
 
@@ -157,15 +150,8 @@ export class Filesystem {
 
   async makeDir(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
     try {
-      await this.rpc.makeDir({
-        path,
-        user: {
-          selector: {
-            case: 'username',
-            value: opts?.user || defaultUsername,
-          },
-        },
-      }, {
+      await this.rpc.makeDir({ path }, {
+        headers: authenticationHeader(opts?.user),
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
 
@@ -186,13 +172,8 @@ export class Filesystem {
       await this.rpc.move({
         source: oldPath,
         destination: newPath,
-        user: {
-          selector: {
-            case: 'username',
-            value: opts?.user || defaultUsername,
-          },
-        },
       }, {
+        headers: authenticationHeader(opts?.user),
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
     } catch (err) {
@@ -202,15 +183,8 @@ export class Filesystem {
 
   async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
     try {
-      await this.rpc.remove({
-        path,
-        user: {
-          selector: {
-            case: 'username',
-            value: opts?.user || defaultUsername,
-          },
-        },
-      }, {
+      await this.rpc.remove({ path }, {
+        headers: authenticationHeader(opts?.user),
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
     } catch (err) {
@@ -220,15 +194,8 @@ export class Filesystem {
 
   async exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
     try {
-      await this.rpc.stat({
-        path,
-        user: {
-          selector: {
-            case: 'username',
-            value: opts?.user || defaultUsername,
-          },
-        },
-      }, {
+      await this.rpc.stat({ path }, {
+        headers: authenticationHeader(opts?.user),
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
 
@@ -259,15 +226,8 @@ export class Filesystem {
       }, requestTimeoutMs)
       : undefined
 
-    const events = this.rpc.watchDir({
-      path,
-      user: {
-        selector: {
-          case: 'username',
-          value: opts?.user || defaultUsername,
-        },
-      },
-    }, {
+    const events = this.rpc.watchDir({ path }, {
+      headers: authenticationHeader(opts?.user),
       signal: controller.signal,
       timeoutMs: opts?.timeout ?? this.defaultWatchTimeout,
     })

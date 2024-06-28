@@ -5,7 +5,6 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { User } from "../permissions/permissions_pb.js";
 
 /**
  * @generated from enum process.Signal
@@ -304,11 +303,6 @@ export class StartRequest extends Message<StartRequest> {
    */
   tag?: string;
 
-  /**
-   * @generated from field: permissions.User user = 4;
-   */
-  user?: User;
-
   constructor(data?: PartialMessage<StartRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -320,7 +314,6 @@ export class StartRequest extends Message<StartRequest> {
     { no: 1, name: "process", kind: "message", T: ProcessConfig },
     { no: 2, name: "pty", kind: "message", T: PTY, opt: true },
     { no: 3, name: "tag", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
-    { no: 4, name: "user", kind: "message", T: User },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StartRequest {

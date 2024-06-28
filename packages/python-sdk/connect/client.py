@@ -131,26 +131,36 @@ class Client:
         self._compressor = compressor
         self._headers = {**{"user-agent": "connect-python"}, **headers}
 
-    def call_unary(self, req, request_timeout=None, **opts):
+    def call_unary(self, req, request_timeout=None, headers={}, **opts):
         data = self._codec.encode(req)
 
         if self._compressor is not None:
             data = self._compressor.compress(data)
 
-        extensions = None
+        extensions = (
+            None
+            if request_timeout is None
+            else {
+                "timeout": {
+                    "connect": request_timeout,
+                    "pool": request_timeout,
+                    "read": request_timeout,
+                    "write": request_timeout,
+                }
+            }
+        )
 
-        if request_timeout is not None:
-            extensions = {"timeout": request_timeout}
+        print("headers", headers)
 
         http_resp = self.pool.request(
             "POST",
             self.url,
             content=data,
-            # extensions=extensions,
+            extensions=extensions,
             headers={
                 **self._headers,
+                **headers,
                 **opts.get("headers", {}),
-                "connect-protocol-version": "1",
                 "connect-protocol-version": "1",
                 "content-encoding": (
                     "identity" if self._compressor is None else self._compressor.name
@@ -177,13 +187,22 @@ class Client:
             return {"connect-timeout-ms": str(timeout * 1000)}
         return {}
 
-    def call_server_stream(self, req, request_timeout=None, timeout=None, **opts):
+    def call_server_stream(
+        self,
+        req,
+        request_timeout=None,
+        timeout=None,
+        headers={},
+        **opts,
+    ):
         data = self._codec.encode(req)
         flags = EnvelopeFlags(0)
 
-        extensions = {}
-        if request_timeout is not None:
-            extensions = {"timeout": {"connect": request_timeout}}
+        extensions = (
+            None
+            if request_timeout is None
+            else {"timeout": {"connect": request_timeout, "pool": request_timeout}}
+        )
 
         if self._compressor is not None:
             data = self._compressor.compress(data)
@@ -201,6 +220,7 @@ class Client:
             extensions=extensions,
             headers={
                 **self._headers,
+                **headers,
                 **opts.get("headers", {}),
                 **stream_timeout,
                 "connect-protocol-version": "1",

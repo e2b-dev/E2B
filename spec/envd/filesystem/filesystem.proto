@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-import "permissions/permissions.proto";
-
 package filesystem;
 
 service Filesystem {
@@ -16,32 +14,24 @@ service Filesystem {
 message MoveRequest {
     string source = 1;
     string destination = 2;
-
-    permissions.User user = 3;
 }
 
 message MoveResponse {}
 
 message MakeDirRequest {
     string path = 1;
-
-    permissions.User user = 2;
 }
 
 message MakeDirResponse {}
 
 message RemoveRequest {
     string path = 1;
-
-    permissions.User user = 2;
 }
 
 message RemoveResponse {}
 
 message StatRequest {
     string path = 1;
-
-    permissions.User user = 2;
 }
 
 message StatResponse {
@@ -61,8 +51,6 @@ enum FileType {
 
 message ListDirRequest {
     string path = 1;
-
-    permissions.User user = 2;
 }
 
 message ListDirResponse {
@@ -71,8 +59,6 @@ message ListDirResponse {
 
 message WatchDirRequest {
     string path = 1;
-
-    permissions.User user = 2;
 }
 
 message WatchDirResponse {

@@ -1,3 +1,6 @@
+import base64
+
+from typing import Optional
 from connect.client import Code, ConnectException
 
 from e2b.exceptions import (
@@ -7,6 +10,7 @@ from e2b.exceptions import (
     TimeoutException,
     format_sandbox_timeout_exception,
 )
+from e2b.connection_config import Username, default_username
 
 
 def handle_rpc_exception(e: Exception):
@@ -29,3 +33,11 @@ def handle_rpc_exception(e: Exception):
             return SandboxException(f"{e.status}: {e.message}")
     else:
         return e
+
+
+def authentication_header(user: Optional[Username] = None):
+    value = f"{user if user is not None else default_username}:"
+
+    encoded = base64.b64encode(value.encode("utf-8")).decode("utf-8")
+
+    return {"Authorization": f"Basic {encoded}"}

@@ -57,3 +57,5 @@ class ConnectionConfig:
 
 
 Username = Literal["root", "user"]
+
+default_username: Username = "user"

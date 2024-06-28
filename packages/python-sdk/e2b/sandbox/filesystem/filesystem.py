@@ -23,9 +23,8 @@ from e2b.exceptions import (
     SandboxException,
 )
 from e2b.envd.api import handle_envd_api_exception
-from e2b.envd.rpc import handle_rpc_exception
+from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
-from e2b.envd.permissions.permissions_pb2 import User
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 
 
@@ -145,11 +144,11 @@ class Filesystem:
             res = self._rpc.list_dir(
                 filesystem_pb2.ListDirRequest(
                     path=path,
-                    user=User(username=user),
                 ),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
+                headers=authentication_header(user),
             )
 
             entries: List[EntryInfo] = []
@@ -173,11 +172,11 @@ class Filesystem:
             self._rpc.stat(
                 filesystem_pb2.StatRequest(
                     path=path,
-                    user=User(username=user),
                 ),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
+                headers=authentication_header(user),
             )
             return True
 
@@ -197,11 +196,11 @@ class Filesystem:
             self._rpc.remove(
                 filesystem_pb2.RemoveRequest(
                     path=path,
-                    user=User(username=user),
                 ),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
+                headers=authentication_header(user),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -218,11 +217,11 @@ class Filesystem:
                 filesystem_pb2.MoveRequest(
                     source=old_path,
                     destination=new_path,
-                    user=User(username=user),
                 ),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
+                headers=authentication_header(user),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -237,11 +236,11 @@ class Filesystem:
             self._rpc.make_dir(
                 filesystem_pb2.MakeDirRequest(
                     path=path,
-                    user=User(username=user),
                 ),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
+                headers=authentication_header(user),
             )
 
             return True
@@ -261,12 +260,12 @@ class Filesystem:
         events = self._rpc.watch_dir(
             filesystem_pb2.WatchDirRequest(
                 path=path,
-                user=User(username=user),
             ),
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
             ),
             timeout=timeout,
+            headers=authentication_header(user),
         )
 
         try:

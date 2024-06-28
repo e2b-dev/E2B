@@ -4,7 +4,6 @@ import httpcore
 
 from typing import Dict, List, Optional, Literal, overload, Union, Callable
 
-from e2b.envd.permissions import permissions_pb2
 from e2b.envd.process import process_connect, process_pb2
 from e2b.sandbox.process.process_handle import ProcessHandle, ProcessResult
 from e2b.connection_config import (
@@ -12,7 +11,7 @@ from e2b.connection_config import (
     ConnectionConfig,
 )
 from e2b.exceptions import SandboxException
-from e2b.envd.rpc import handle_rpc_exception
+from e2b.envd.rpc import authentication_header, handle_rpc_exception
 
 
 @dataclass
@@ -172,7 +171,6 @@ class Process:
     ):
         events = self._rpc.start(
             process_pb2.StartRequest(
-                user=permissions_pb2.User(username=user),
                 process=process_pb2.ProcessConfig(
                     cmd="/bin/bash",
                     envs=envs,
@@ -180,6 +178,7 @@ class Process:
                     cwd=cwd,
                 ),
             ),
+            headers=authentication_header(user),
             timeout=timeout,
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout

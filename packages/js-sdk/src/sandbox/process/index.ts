@@ -11,9 +11,9 @@ import {
   StartResponse,
   ProcessConfig,
 } from '../../envd/process/process_pb'
-import { ConnectionConfig, defaultUsername, Username, ConnectionOpts } from '../../connectionConfig'
+import { ConnectionConfig, Username, ConnectionOpts } from '../../connectionConfig'
 import { SandboxError } from '../../errors'
-import { handleRpcError } from '../../envd/rpc'
+import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { ProcessHandle, ProcessResult } from './processHandle'
 
 export interface ProcessRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
@@ -175,12 +175,6 @@ export class Process {
       : undefined
 
     const events = this.rpc.start({
-      user: {
-        selector: {
-          case: 'username',
-          value: opts?.user || defaultUsername,
-        },
-      },
       process: {
         cmd: '/bin/bash',
         cwd: opts?.cwd,
@@ -188,6 +182,7 @@ export class Process {
         args: ['-l', '-c', cmd],
       },
     }, {
+      headers: authenticationHeader(opts?.user),
       signal: controller.signal,
       timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
     })

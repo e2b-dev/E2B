@@ -1,26 +1,14 @@
 import { Sandbox } from './dist'
 
-const start = Date.now()
-
 const sbx = await Sandbox.create('3pcmtxu6u8it5f6flpkk', {
   debug: true,
-  domain: 'e2b-staging.com',
-  timeoutMs: 5_000,
-  logger: console,
+  // domain: 'e2b-staging.com',
+  // timeoutMs: 5_000,
+  // logger: console,
 })
 
-console.log(sbx.sandboxID)
-
-const res = await sbx.commands.run('sleep 20', {
-  // requestTimeoutMs: 1,
-  // user: 'asdfasdf',
-  timeoutMs: 200000,
-  background: true,
-  onStdout: (data) => {
-    // TODO: print also the time elapsed
-    console.log(`${(Date.now() - start) / 1000}s: ${data}`)
-  },
-})
+const res = await sbx.files.list('/', { user: 'adada' })
+// console.log(res)
 
 // const l = await sbx.commands.list()
 

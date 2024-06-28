@@ -29,3 +29,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
 })
 
 export const isDebug = process.env.E2B_DEBUG !== undefined
+
+export async function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}

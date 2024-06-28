@@ -1,9 +1,9 @@
-import { assert } from 'vitest'
+import { expect } from 'vitest'
 
 import { sandboxTest, isDebug } from '../setup.mjs'
 
 sandboxTest.skipIf(isDebug)('kill', async ({ sandbox }) => {
   await sandbox.kill()
 
-  assert.throws(() => sandbox.isRunning())
+  await expect(sandbox.isRunning()).rejects.toThrowError()
 })

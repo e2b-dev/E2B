@@ -5,7 +5,6 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { User } from "../permissions/permissions_pb.js";
 
 /**
  * @generated from enum filesystem.FileType
@@ -91,11 +90,6 @@ export class MoveRequest extends Message<MoveRequest> {
    */
   destination = "";
 
-  /**
-   * @generated from field: permissions.User user = 3;
-   */
-  user?: User;
-
   constructor(data?: PartialMessage<MoveRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -106,7 +100,6 @@ export class MoveRequest extends Message<MoveRequest> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "source", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "destination", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "user", kind: "message", T: User },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MoveRequest {
@@ -166,11 +159,6 @@ export class MakeDirRequest extends Message<MakeDirRequest> {
    */
   path = "";
 
-  /**
-   * @generated from field: permissions.User user = 2;
-   */
-  user?: User;
-
   constructor(data?: PartialMessage<MakeDirRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -180,7 +168,6 @@ export class MakeDirRequest extends Message<MakeDirRequest> {
   static readonly typeName = "filesystem.MakeDirRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "user", kind: "message", T: User },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MakeDirRequest {
@@ -240,11 +227,6 @@ export class RemoveRequest extends Message<RemoveRequest> {
    */
   path = "";
 
-  /**
-   * @generated from field: permissions.User user = 2;
-   */
-  user?: User;
-
   constructor(data?: PartialMessage<RemoveRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -254,7 +236,6 @@ export class RemoveRequest extends Message<RemoveRequest> {
   static readonly typeName = "filesystem.RemoveRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "user", kind: "message", T: User },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveRequest {
@@ -314,11 +295,6 @@ export class StatRequest extends Message<StatRequest> {
    */
   path = "";
 
-  /**
-   * @generated from field: permissions.User user = 2;
-   */
-  user?: User;
-
   constructor(data?: PartialMessage<StatRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -328,7 +304,6 @@ export class StatRequest extends Message<StatRequest> {
   static readonly typeName = "filesystem.StatRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "user", kind: "message", T: User },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StatRequest {
@@ -437,11 +412,6 @@ export class ListDirRequest extends Message<ListDirRequest> {
    */
   path = "";
 
-  /**
-   * @generated from field: permissions.User user = 2;
-   */
-  user?: User;
-
   constructor(data?: PartialMessage<ListDirRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -451,7 +421,6 @@ export class ListDirRequest extends Message<ListDirRequest> {
   static readonly typeName = "filesystem.ListDirRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "user", kind: "message", T: User },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListDirRequest {
@@ -517,11 +486,6 @@ export class WatchDirRequest extends Message<WatchDirRequest> {
    */
   path = "";
 
-  /**
-   * @generated from field: permissions.User user = 2;
-   */
-  user?: User;
-
   constructor(data?: PartialMessage<WatchDirRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -531,7 +495,6 @@ export class WatchDirRequest extends Message<WatchDirRequest> {
   static readonly typeName = "filesystem.WatchDirRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "user", kind: "message", T: User },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): WatchDirRequest {
@@ -712,4 +675,3 @@ export class WatchDirResponse_KeepAlive extends Message<WatchDirResponse_KeepAli
     return proto3.util.equals(WatchDirResponse_KeepAlive, a, b);
   }
 }
-

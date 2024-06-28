@@ -1,4 +1,7 @@
-import { assert } from 'vitest'
+import { expect } from 'vitest'
+import { NotFoundError } from '../../../src/errors.js'
+import { ProcessExitError } from '../../../src/index.js'
+
 import { sandboxTest } from '../../setup.mjs'
 
 sandboxTest('kill process', async ({ sandbox }) => {
@@ -7,19 +10,11 @@ sandboxTest('kill process', async ({ sandbox }) => {
 
   await sandbox.commands.kill(pid)
 
-  try {
-    await sandbox.commands.run(`kill -0 ${pid}`)
-  } catch (error) {
-    assert.instanceOf(error, Error)
-  }
+  await expect(sandbox.commands.run(`kill -0 ${pid}`)).rejects.toThrowError(ProcessExitError)
 })
 
 sandboxTest('kill non-existing process', async ({ sandbox }) => {
   const nonExistingPid = 999999
 
-  try {
-    await sandbox.commands.kill(nonExistingPid)
-  } catch (error) {
-    assert.instanceOf(error, Error)
-  }
+  await expect(sandbox.commands.kill(nonExistingPid)).rejects.toThrowError(NotFoundError)
 })

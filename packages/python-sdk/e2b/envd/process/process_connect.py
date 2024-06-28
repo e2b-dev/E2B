@@ -16,7 +16,7 @@ class ProcessClient:
             response_type=process_dot_process__pb2.ListResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
         self._connect = connect.Client(
             pool=pool,
@@ -24,7 +24,7 @@ class ProcessClient:
             response_type=process_dot_process__pb2.ConnectResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
         self._start = connect.Client(
             pool=pool,
@@ -32,7 +32,7 @@ class ProcessClient:
             response_type=process_dot_process__pb2.StartResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
         self._update = connect.Client(
             pool=pool,
@@ -40,7 +40,7 @@ class ProcessClient:
             response_type=process_dot_process__pb2.UpdateResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
         self._stream_input = connect.Client(
             pool=pool,
@@ -48,7 +48,7 @@ class ProcessClient:
             response_type=process_dot_process__pb2.StreamInputResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
         self._send_input = connect.Client(
             pool=pool,
@@ -56,7 +56,7 @@ class ProcessClient:
             response_type=process_dot_process__pb2.SendInputResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
         self._send_signal = connect.Client(
             pool=pool,
@@ -64,40 +64,26 @@ class ProcessClient:
             response_type=process_dot_process__pb2.SendSignalResponse,
             compressor=compressor,
             json=json,
-            **opts,
+            **opts
         )
 
-    def list(
-        self, req: process_dot_process__pb2.ListRequest, **opts
-    ) -> process_dot_process__pb2.ListResponse:
+    def list(self, req: process_dot_process__pb2.ListRequest, **opts) -> process_dot_process__pb2.ListResponse:
         return self._list.call_unary(req, **opts)
 
-    def connect(
-        self, req: process_dot_process__pb2.ConnectRequest, **opts
-    ) -> Generator[process_dot_process__pb2.ConnectResponse, Any, None]:
+    def connect(self, req: process_dot_process__pb2.ConnectRequest , **opts) -> Generator[process_dot_process__pb2.ConnectResponse, Any, None]:
         return self._connect.call_server_stream(req, **opts)
 
-    def start(
-        self, req: process_dot_process__pb2.StartRequest, **opts
-    ) -> Generator[process_dot_process__pb2.StartResponse, Any, None]:
+    def start(self, req: process_dot_process__pb2.StartRequest , **opts) -> Generator[process_dot_process__pb2.StartResponse, Any, None]:
         return self._start.call_server_stream(req, **opts)
 
-    def update(
-        self, req: process_dot_process__pb2.UpdateRequest, **opts
-    ) -> process_dot_process__pb2.UpdateResponse:
+    def update(self, req: process_dot_process__pb2.UpdateRequest, **opts) -> process_dot_process__pb2.UpdateResponse:
         return self._update.call_unary(req, **opts)
 
-    def stream_input(
-        self, req: process_dot_process__pb2.StreamInputRequest, **opts
-    ) -> process_dot_process__pb2.StreamInputResponse:
+    def stream_input(self, req: process_dot_process__pb2.StreamInputRequest, **opts) -> process_dot_process__pb2.StreamInputResponse:
         return self._stream_input.call_client_stream(req, **opts)
 
-    def send_input(
-        self, req: process_dot_process__pb2.SendInputRequest, **opts
-    ) -> process_dot_process__pb2.SendInputResponse:
+    def send_input(self, req: process_dot_process__pb2.SendInputRequest, **opts) -> process_dot_process__pb2.SendInputResponse:
         return self._send_input.call_unary(req, **opts)
 
-    def send_signal(
-        self, req: process_dot_process__pb2.SendSignalRequest, **opts
-    ) -> process_dot_process__pb2.SendSignalResponse:
+    def send_signal(self, req: process_dot_process__pb2.SendSignalRequest, **opts) -> process_dot_process__pb2.SendSignalResponse:
         return self._send_signal.call_unary(req, **opts)

@@ -1,4 +1,4 @@
-import { assert } from 'vitest'
+import { assert, expect } from 'vitest'
 import { sandboxTest } from '../../setup.mjs'
 
 sandboxTest('connect to process', async ({ sandbox }) => {
@@ -14,9 +14,5 @@ sandboxTest('connect to process', async ({ sandbox }) => {
 sandboxTest('connect to non-existing process', async ({ sandbox }) => {
   const nonExistingPid = 999999
 
-  try {
-    await sandbox.commands.connect(nonExistingPid)
-  } catch (error) {
-    assert.instanceOf(error, Error)
-  }
+  await expect(sandbox.commands.connect(nonExistingPid)).rejects.toThrowError()
 })
