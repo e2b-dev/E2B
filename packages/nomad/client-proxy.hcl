@@ -115,7 +115,7 @@ server {
   listen 3002 default_server;
 
   server_name _;
-  return 400 "Unsupported domain";
+  return 502 "Cannot resolve domain";
 }
 [[ range service "session-proxy" ]]
 server {
