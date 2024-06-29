@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"fmt"
 	"log"
 	"net"
 
@@ -21,21 +22,20 @@ func New() *DNS {
 	}
 }
 
-type Record interface {
-	HostIP() string
-	HostName() string
+func (d *DNS) Add(sandboxID, ip string) {
+	d.records.Insert(d.hostname(sandboxID), ip)
 }
 
-func (d *DNS) Add(hostname, ip string) {
-	d.records.Insert(hostname, ip)
-}
-
-func (d *DNS) Remove(hostname string) {
-	d.records.Remove(hostname)
+func (d *DNS) Remove(sandboxID string) {
+	d.records.Remove(d.hostname(sandboxID))
 }
 
 func (d *DNS) get(hostname string) (string, bool) {
 	return d.records.Get(hostname)
+}
+
+func (*DNS) hostname(sandboxID string) string {
+	return fmt.Sprintf("%s.", sandboxID)
 }
 
 func (d *DNS) handleDNSRequest(w resolver.ResponseWriter, r *resolver.Msg) {
