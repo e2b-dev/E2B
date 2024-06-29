@@ -90,12 +90,10 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
 }
 
 const transformCostData = (costUsage: MonthlyCosts[]) => {
-  const costData = costUsage.map((usage: any) => {
+  const costData = costUsage.map((usage: MonthlyCosts) => {
     return {
       x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
-      y: usage.template_usage.length > 0 
-        ? usage.template_usage.reduce((acc: number, template: any) => acc + template.sandbox_hours, 0)
-        : 0,
+      y: usage.total_cost,
     }
   })
     
