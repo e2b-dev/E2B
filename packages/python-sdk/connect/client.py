@@ -166,8 +166,6 @@ class Client:
             }
         )
 
-        print("headers", headers)
-
         http_resp = self.pool.request(
             "POST",
             self.url,
