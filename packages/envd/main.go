@@ -143,7 +143,7 @@ func main() {
 	if startCmdFlag != "" {
 		tag := "startCmd"
 
-		user, err := permissions.GetUser("user")
+		user, err := permissions.GetUser("root")
 		if err != nil {
 			log.Fatalf("error getting user: %v", err)
 		}
