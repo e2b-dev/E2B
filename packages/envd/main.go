@@ -109,7 +109,7 @@ func main() {
 	parseFlags()
 
 	if versionFlag {
-		fmt.Printf("%s-%s\n", version, commit)
+		fmt.Printf("%s+%s\n", version, commit)
 
 		return
 	}
