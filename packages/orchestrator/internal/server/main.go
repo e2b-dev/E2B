@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -19,19 +20,26 @@ import (
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/dns"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/pool"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
 	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+)
+
+const (
+	ipSlotConcurrency = 5
+	ipSlotPoolSize    = 300
 )
 
 type server struct {
 	orchestrator.UnimplementedSandboxServer
-	sandboxes *smap.Map[*sandbox.Sandbox]
-	dns       *dns.DNS
-
-	tracer trace.Tracer
-	consul *consulapi.Client
+	sandboxes   *smap.Map[*sandbox.Sandbox]
+	dns         *dns.DNS
+	tracer      trace.Tracer
+	consul      *consulapi.Client
+	networkPool *pool.Pool[*sandbox.IPSlot]
 }
 
 func New(logger *zap.Logger) *grpc.Server {
@@ -52,16 +60,47 @@ func New(logger *zap.Logger) *grpc.Server {
 	dns := dns.New()
 	go dns.Start("127.0.0.1:53")
 
+	tracer := otel.Tracer(constants.ServiceName)
+
 	consulClient, err := consul.New(ctx)
 	if err != nil {
 		panic(err)
 	}
 
+	createNetwork := func() (*sandbox.IPSlot, error) {
+		ips, err := sandbox.NewSlot(ctx, tracer, consulClient)
+
+		err = ips.CreateNetwork(ctx, tracer)
+		if err != nil {
+			errMsg := fmt.Errorf("failed to create namespaces: %w", err)
+			telemetry.ReportCriticalError(ctx, errMsg)
+
+			return nil, errMsg
+		}
+
+		return ips, err
+	}
+
+	networkPool := pool.New[*sandbox.IPSlot](ipSlotPoolSize)
+
+	go func() {
+		err := networkPool.Populate(
+			ctx,
+			ipSlotConcurrency,
+			createNetwork,
+		)
+		if err != nil {
+			logger.Fatal("failed to populate network pool", zap.Error(err))
+			panic(err)
+		}
+	}()
+
 	orchestrator.RegisterSandboxServer(s, &server{
-		tracer:    otel.Tracer(constants.ServiceName),
-		consul:    consulClient,
-		dns:       dns,
-		sandboxes: smap.New[*sandbox.Sandbox](),
+		tracer:      tracer,
+		consul:      consulClient,
+		dns:         dns,
+		sandboxes:   smap.New[*sandbox.Sandbox](),
+		networkPool: networkPool,
 	})
 
 	grpc_health_v1.RegisterHealthServer(s, health.NewServer())

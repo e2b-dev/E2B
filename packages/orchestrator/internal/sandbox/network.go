@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/dns"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
@@ -112,7 +111,6 @@ func getDefaultGateway() (string, error) {
 func (ips *IPSlot) CreateNetwork(
 	ctx context.Context,
 	tracer trace.Tracer,
-	dns *dns.DNS,
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "create-network", trace.WithAttributes(
 		attribute.Int("instance.slot.index", ips.SlotIdx),
@@ -126,7 +124,6 @@ func (ips *IPSlot) CreateNetwork(
 		attribute.String("instance.slot.veth.name", ips.VethName()),
 		attribute.String("instance.slot.vpeer.name", ips.VpeerName()),
 		attribute.String("instance.slot.namespace.id", ips.NamespaceID()),
-		attribute.String("instance.id", ips.InstanceID),
 	))
 	defer childSpan.End()
 
@@ -474,19 +471,12 @@ func (ips *IPSlot) CreateNetwork(
 	}
 	telemetry.ReportEvent(childCtx, "Created postrouting rule")
 
-	dns.Add(ips)
-
-	telemetry.ReportEvent(childCtx, "Added env instance to dns")
-
 	return nil
 }
 
-func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer, dns *dns.DNS) error {
+func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "remove-network")
 	defer childSpan.End()
-
-	dns.Remove(ipSlot)
-	telemetry.ReportEvent(childCtx, "removed env instance from dns")
 
 	tables, err := iptables.New()
 	if err != nil {

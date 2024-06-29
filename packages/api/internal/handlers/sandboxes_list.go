@@ -8,6 +8,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/auth"
+	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models"
 	"github.com/e2b-dev/infra/packages/shared/pkg/models/envbuild"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -16,7 +17,8 @@ import (
 func (a *APIStore) GetSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	team := c.Value(auth.TeamContextKey).(models.Team)
+	teamInfo := c.Value(auth.TeamContextKey).(authcache.AuthTeamInfo)
+	team := teamInfo.Team
 
 	telemetry.ReportEvent(ctx, "list running instances")
 

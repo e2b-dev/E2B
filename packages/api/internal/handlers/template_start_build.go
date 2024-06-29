@@ -88,7 +88,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 
 	// Trigger the build in the background
 	go func() {
-		buildContext, childSpan := a.tracer.Start(
+		buildContext, childSpan := a.Tracer.Start(
 			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
 			"background-build-env",
 		)
@@ -103,7 +103,7 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 
 		// Call the Template Manager to build the environment
 		buildErr := a.templateManager.CreateTemplate(
-			a.tracer,
+			a.Tracer,
 			buildContext,
 			a.db,
 			a.buildCache,
@@ -122,6 +122,9 @@ func (a *APIStore) PostTemplatesTemplateIDBuildsBuildID(c *gin.Context, template
 
 			return
 		}
+
+		// Invalidate the cache
+		a.templateCache.Invalidate(templateID)
 
 		a.posthog.CreateAnalyticsUserEvent(userID.String(), team.ID.String(), "built environment", posthog.NewProperties().
 			Set("user_id", userID).

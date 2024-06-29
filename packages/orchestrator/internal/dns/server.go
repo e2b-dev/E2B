@@ -26,12 +26,12 @@ type Record interface {
 	HostName() string
 }
 
-func (d *DNS) Add(record Record) {
-	d.records.Insert(record.HostName(), record.HostIP())
+func (d *DNS) Add(hostname, ip string) {
+	d.records.Insert(hostname, ip)
 }
 
-func (d *DNS) Remove(record Record) {
-	d.records.Remove(record.HostName())
+func (d *DNS) Remove(hostname string) {
+	d.records.Remove(hostname)
 }
 
 func (d *DNS) get(hostname string) (string, bool) {

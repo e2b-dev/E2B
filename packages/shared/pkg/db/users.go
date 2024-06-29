@@ -46,20 +46,3 @@ func (db *DB) GetDefaultTeamAndTierFromUserID(ctx context.Context, userID uuid.U
 
 	return t, nil
 }
-
-func (db *DB) GetTeam(ctx context.Context, teamID uuid.UUID) (*models.Team, error) {
-	t, err := db.
-		Client.
-		Team.
-		Query().
-		Where(team.ID(teamID)).
-		Only(ctx)
-
-	if err != nil {
-		errMsg := fmt.Errorf("failed to get team: %w", err)
-
-		return nil, errMsg
-	}
-
-	return t, nil
-}

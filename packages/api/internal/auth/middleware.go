@@ -7,13 +7,15 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	middleware "github.com/oapi-codegen/gin-middleware"
+	"go.opentelemetry.io/otel/trace"
 
-	"github.com/e2b-dev/infra/packages/shared/pkg/models"
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	authcache "github.com/e2b-dev/infra/packages/api/internal/cache/auth"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 var (
@@ -81,8 +83,8 @@ func (a *authenticator[T]) Authenticate(ctx context.Context, input *openapi3filt
 	return nil
 }
 
-func CreateAuthenticationFunc(teamValidationFunction func(context.Context, string) (models.Team, *api.APIError), userValidationFunction func(context.Context, string) (uuid.UUID, *api.APIError)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
-	apiKeyValidator := authenticator[models.Team]{
+func CreateAuthenticationFunc(tracer trace.Tracer, teamValidationFunction func(context.Context, string) (authcache.AuthTeamInfo, *api.APIError), userValidationFunction func(context.Context, string) (uuid.UUID, *api.APIError)) func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+	apiKeyValidator := authenticator[authcache.AuthTeamInfo]{
 		securitySchemeName: "ApiKeyAuth",
 		headerKey:          "X-API-Key",
 		prefix:             "e2b_",
@@ -102,6 +104,11 @@ func CreateAuthenticationFunc(teamValidationFunction func(context.Context, strin
 	}
 
 	return func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+		ginContext := ctx.Value(middleware.GinContextKey).(*gin.Context)
+		requestContext := ginContext.Request.Context()
+		_, span := tracer.Start(requestContext, "authenticate")
+		defer span.End()
+
 		if input.SecuritySchemeName == apiKeyValidator.securitySchemeName {
 			return apiKeyValidator.Authenticate(ctx, input)
 		}

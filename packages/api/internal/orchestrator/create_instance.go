@@ -4,7 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -73,6 +72,6 @@ func (o *Orchestrator) CreateSandbox(
 		SandboxID:   sandboxID,
 		TemplateID:  templateID,
 		Alias:       &alias,
-		EnvdVersion: strings.Split(*build.EnvdVersion, "-")[0],
+		EnvdVersion: *build.EnvdVersion,
 	}, nil
 }
