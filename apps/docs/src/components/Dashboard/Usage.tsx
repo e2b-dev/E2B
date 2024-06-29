@@ -47,21 +47,27 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
       </div>
 
       {vcpuData && ramData ? (
-        <>
-          <h2 className='font-bold pb-4 text-xl'>vCPU hours</h2>
-          <Card className="w-full md:w-2/3 bg-inherit/10 border border-white/20 mb-10">
-            <CardContent>
-              <LineChart className="aspect-[4/3]" series={vcpuData} type="vCPU" />
-            </CardContent>
-          </Card>
+        <div className='flex flex-col 2xl:flex-row w-full space-y-4 2xl:space-y-0 2xl:space-x-4'>
+          
+          <div className='flex flex-col w-full md:w-2/3'>
+            <h2 className='font-bold pb-4 text-xl'>vCPU hours</h2>
+            <Card className="w-full bg-inherit/10 border border-white/20 mb-10">
+              <CardContent>
+                <LineChart className="aspect-[4/3]" series={vcpuData} type="vCPU" />
+              </CardContent>
+            </Card>
+          </div>
 
-          <h2 className='font-bold pb-4 text-xl'>RAM hours</h2>
-          <Card className="w-full md:w-2/3 bg-inherit/10 border border-white/20 mb-10">
-            <CardContent>
-              <LineChart className="aspect-[4/3]" series={ramData} type="RAM" />
-            </CardContent>
-          </Card>
-        </>
+          <div className='flex flex-col w-full md:w-2/3'>
+            <h2 className='font-bold pb-4 text-xl'>RAM hours</h2>
+            <Card className="w-full bg-inherit/10 border border-white/20 mb-10">
+              <CardContent>
+                <LineChart className="aspect-[4/3]" series={ramData} type="RAM" />
+              </CardContent>
+            </Card>
+          </div>
+
+        </div>
       ) : (
         <div className='flex items-center justify-center w-2/3'>
           <LoaderIcon className="animate-spin" />
