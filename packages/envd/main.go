@@ -142,20 +142,21 @@ func main() {
 
 	if startCmdFlag != "" {
 		tag := "startCmd"
-
+		cwd := "/home/user"
 		user, err := permissions.GetUser("root")
-		if err != nil {
+		if err == nil {
+			processService.StartBackgroundProcess(ctx, user, &processSpec.StartRequest{
+				Tag: &tag,
+				Process: &processSpec.ProcessConfig{
+					Envs: make(map[string]string),
+					Cmd:  "/bin/bash",
+					Args: []string{"-l", "-c", startCmdFlag},
+					Cwd:  &cwd,
+				},
+			})
+		} else {
 			log.Fatalf("error getting user: %v", err)
 		}
-
-		processService.StartBackgroundProcess(ctx, user, &processSpec.StartRequest{
-			Tag: &tag,
-			Process: &processSpec.ProcessConfig{
-				Envs: make(map[string]string),
-				Cmd:  "/bin/bash",
-				Args: []string{"-l", "-c", startCmdFlag},
-			},
-		})
 	}
 
 	err := s.ListenAndServe()
