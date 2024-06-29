@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	// We limit the timeout more in proxies
+	// We limit the timeout more in proxies.
 	maxTimeout = 24 * time.Hour
 	maxAge     = 2 * time.Hour
 
@@ -31,16 +31,15 @@ const (
 )
 
 var (
-	Version = "0.1.0"
+	// These vars are automatically set by goreleaser.
+	version = "0.1.0"
+	commit  string
 
 	debug bool
 	port  int64
 
 	versionFlag  bool
-	buildFlag    bool
 	startCmdFlag string
-
-	build string
 )
 
 func parseFlags() {
@@ -56,13 +55,6 @@ func parseFlags() {
 		"version",
 		false,
 		"print envd version",
-	)
-
-	flag.BoolVar(
-		&buildFlag,
-		"build",
-		false,
-		"print git commit hash of the build",
 	)
 
 	flag.Int64Var(
@@ -117,16 +109,11 @@ func main() {
 	parseFlags()
 
 	if versionFlag {
-		fmt.Printf("envd %s (git: %s) \n", Version, build)
+		fmt.Printf("%s-%s\n", version, commit)
 
 		return
 	}
 
-	if buildFlag {
-		fmt.Println(Version + build)
-
-		return
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

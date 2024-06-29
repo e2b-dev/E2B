@@ -2,7 +2,7 @@ ENV := $(shell cat ../../.last_used_env || echo "not-set")
 -include ../../.env.${ENV}
 
 BUILD := $(shell git rev-parse --short HEAD)
-LDFLAGS=-ldflags "-X=main.build=$(BUILD)"
+LDFLAGS=-ldflags "-X=main.commit=$(BUILD)"
 
 client := gcloud compute instances list --format='csv(name)' --project $(GCP_PROJECT_ID) | grep "client"
 
@@ -50,6 +50,17 @@ start-envd-docker:
 	-i envd-debug \
 	/usr/bin/envd -debug
 
+envd-version:
+	docker run \
+	--name envd \
+	-p 49983:49983 \
+	-p 2345:2345 \
+	-p 9999:9999 \
+	-p 8000:8000 \
+	--rm \
+	-i envd-debug \
+	/usr/bin/envd -version
+
 start-debug-docker:
 	docker run \
 	--name envd \
@@ -75,6 +86,11 @@ run-debug:
 run-envd:
 	make build-docker
 	make start-envd-docker
+
+# Build envd and print the version
+run-version:
+	make build-docker
+	make envd-version
 
 # Build envd and start a interactive container where you can start envd manually
 run-env:
