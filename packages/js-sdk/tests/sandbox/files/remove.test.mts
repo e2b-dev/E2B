@@ -1,6 +1,5 @@
-import { assert, expect } from 'vitest'
+import { assert } from 'vitest'
 
-import { NotFoundError } from '../../../src'
 import { sandboxTest } from '../../setup.mjs'
 
 sandboxTest('remove file', async ({ sandbox }) => {
@@ -16,5 +15,5 @@ sandboxTest('remove file', async ({ sandbox }) => {
 sandboxTest('remove non-existing file', async ({ sandbox }) => {
   const filename = 'non_existing_file.txt'
 
-  await expect(sandbox.files.remove(filename)).rejects.toThrowError(NotFoundError)
+  await sandbox.files.remove(filename)
 })

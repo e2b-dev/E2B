@@ -1,14 +1,18 @@
 import { Sandbox } from './dist'
 
-const sbx = await Sandbox.connect('3pcmtxu6u8it5f6flpkk', {
-  // debug: true,
-  // domain: 'e2b-staging.com',
-  // timeoutMs: 5_000,
-  // logger: console,
-})
+const start = Date.now()
+
+const sbx = await Sandbox.create()
+
+console.log('time', Date.now() - start)
+
+const list = Date.now()
 
 const res = await sbx.files.list('/')
-// console.log(res)
+
+console.log(res)
+
+console.log('time', Date.now() - list)
 
 // const l = await sbx.commands.list()
 

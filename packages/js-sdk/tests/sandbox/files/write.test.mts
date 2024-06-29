@@ -1,4 +1,4 @@
-import { assert, expect } from 'vitest'
+import { assert } from 'vitest'
 
 import { sandboxTest } from '../../setup.mjs'
 
@@ -26,7 +26,11 @@ sandboxTest('overwrite file', async ({ sandbox }) => {
 
 sandboxTest('write to non-existing directory', async ({ sandbox }) => {
   const filename = 'non_existing_dir/test_write.txt'
-  const content = 'This should fail.'
+  const content = 'This should succeed too.'
 
-  await expect(sandbox.files.write(filename, content)).rejects.toThrowError()
+  await sandbox.files.write(filename, content)
+  const exists = await sandbox.files.exists(filename)
+  assert.isTrue(exists)
+  const readContent = await sandbox.files.read(filename)
+  assert.equal(readContent, content)
 })
