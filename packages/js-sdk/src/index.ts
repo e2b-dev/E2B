@@ -13,7 +13,6 @@ export {
 } from './errors'
 export {
   ConnectionConfig,
-  DOMAIN,
 } from './connectionConfig'
 export type { Logger } from './logs'
 export type { ConnectionOpts, Username } from './connectionConfig'

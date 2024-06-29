@@ -4,7 +4,6 @@ from .api import (
 )
 from .connection_config import (
     ConnectionConfig,
-    DOMAIN,
 )
 
 from .exceptions import (

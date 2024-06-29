@@ -2,15 +2,26 @@ import os
 
 from typing import Literal, Optional
 
-DOMAIN = os.getenv("E2B_DOMAIN", "e2b.dev")
-DEBUG = os.getenv("E2B_DEBUG", "false") == "true"
-API_KEY = os.getenv("E2B_API_KEY")
-ACCESS_TOKEN = os.getenv("E2B_ACCESS_TOKEN")
-
 REQUEST_TIMEOUT: float = 30.0  # 30s
 
 
 class ConnectionConfig:
+    @staticmethod
+    def _domain():
+        return os.getenv("E2B_DOMAIN", "e2b.dev")
+
+    @staticmethod
+    def _debug():
+        return os.getenv("E2B_DEBUG", "false") == "true"
+
+    @staticmethod
+    def _api_key():
+        return os.getenv("E2B_API_KEY")
+
+    @staticmethod
+    def _access_token():
+        return os.getenv("E2B_ACCESS_TOKEN")
+
     def __init__(
         self,
         domain: Optional[str] = None,
@@ -19,10 +30,10 @@ class ConnectionConfig:
         access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
     ):
-        self.domain = domain or DOMAIN
-        self.debug = debug or DEBUG
-        self.api_key = api_key or API_KEY
-        self.access_token = access_token or ACCESS_TOKEN
+        self.domain = domain or ConnectionConfig._domain()
+        self.debug = debug or ConnectionConfig._debug()
+        self.api_key = api_key or ConnectionConfig._api_key()
+        self.access_token = access_token or ConnectionConfig._access_token()
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,

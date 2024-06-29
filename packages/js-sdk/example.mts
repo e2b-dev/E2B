@@ -1,8 +1,13 @@
 import { Sandbox } from './dist'
 
+import dotenv from 'dotenv'
+
+dotenv.config()
+
 const start = Date.now()
 
 const sbx = await Sandbox.create()
+console.log(sbx.sandboxID)
 
 console.log('time', Date.now() - start)
 
