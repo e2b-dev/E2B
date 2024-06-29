@@ -1,5 +1,5 @@
 import { assert } from 'vitest'
-import { sandboxTest } from '../../setup.mjs'
+import { sandboxTest } from '../../setup.js'
 
 sandboxTest('send stdin to process', async ({ sandbox }) => {
   const text = 'Hello, World!'

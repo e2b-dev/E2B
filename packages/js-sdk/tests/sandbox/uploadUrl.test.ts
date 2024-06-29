@@ -1,5 +1,5 @@
 
-import { sandboxTest } from '../setup.mjs'
+import { sandboxTest } from '../setup.js'
 
 sandboxTest('upload file via url', async ({ sandbox }) => {
   const url = sandbox.uploadUrl()

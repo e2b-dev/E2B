@@ -1,6 +1,6 @@
 import { expect, assert } from 'vitest'
 
-import { sandboxTest } from '../../setup.mjs'
+import { sandboxTest } from '../../setup.js'
 
 sandboxTest('run', async ({ sandbox }) => {
   const text = 'Hello, World!'

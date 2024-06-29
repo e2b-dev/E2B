@@ -1,6 +1,6 @@
 import { assert } from 'vitest'
 
-import { sandboxTest } from '../../setup.mjs'
+import { sandboxTest } from '../../setup.js'
 
 sandboxTest('make directory', async ({ sandbox }) => {
   const dirName = 'test_directory'

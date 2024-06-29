@@ -1,7 +1,7 @@
 import { assert } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { sandboxTest, isDebug } from '../setup.mjs'
+import { sandboxTest, isDebug } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)('list sandboxes', async ({ sandbox }) => {
   const sandboxes = await Sandbox.list()

@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 
-import { sandboxTest, isDebug } from '../setup.mjs'
+import { sandboxTest, isDebug } from '../setup.js'
 import { Sandbox } from '../../src'
 
 sandboxTest.skipIf(isDebug)('kill existing sandbox', async ({ sandbox }) => {

@@ -1,7 +1,7 @@
 import { test, assert } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { template } from '../setup.mjs'
+import { template } from '../setup.js'
 
 test('connect', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 10_000 })

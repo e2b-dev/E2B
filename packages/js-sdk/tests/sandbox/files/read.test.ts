@@ -1,7 +1,7 @@
 import { expect, assert } from 'vitest'
 
 import { NotFoundError } from '../../../src'
-import { sandboxTest } from '../../setup.mjs'
+import { sandboxTest } from '../../setup.js'
 
 sandboxTest('read file', async ({ sandbox }) => {
   const filename = 'test_read.txt'

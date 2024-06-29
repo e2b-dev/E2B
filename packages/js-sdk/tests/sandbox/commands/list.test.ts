@@ -1,5 +1,5 @@
 import { assert } from 'vitest'
-import { sandboxTest } from '../../setup.mjs'
+import { sandboxTest } from '../../setup.js'
 
 sandboxTest('list processes', async ({ sandbox }) => {
   // Start them firsts

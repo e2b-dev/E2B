@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 
-import { sandboxTest, isDebug, wait } from '../setup.mjs'
+import { sandboxTest, isDebug, wait } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)('shorten timeout', async ({ sandbox }) => {
   await sandbox.setTimeout(5000)

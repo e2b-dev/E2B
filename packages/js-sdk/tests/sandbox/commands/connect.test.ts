@@ -1,5 +1,5 @@
 import { assert, expect } from 'vitest'
-import { sandboxTest } from '../../setup.mjs'
+import { sandboxTest } from '../../setup.js'
 
 sandboxTest('connect to process', async ({ sandbox }) => {
   const cmd = await sandbox.commands.run('sleep 10', { background: true })

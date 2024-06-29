@@ -1,6 +1,6 @@
 import { assert, expect } from 'vitest'
 
-import { sandboxTest } from '../../setup.mjs'
+import { sandboxTest } from '../../setup.js'
 import { FilesystemEventType, NotFoundError } from '../../../src'
 
 sandboxTest('watch directory changes', async ({ sandbox }) => {

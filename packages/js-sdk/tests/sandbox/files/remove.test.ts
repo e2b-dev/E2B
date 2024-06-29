@@ -1,6 +1,6 @@
 import { assert } from 'vitest'
 
-import { sandboxTest } from '../../setup.mjs'
+import { sandboxTest } from '../../setup.js'
 
 sandboxTest('remove file', async ({ sandbox }) => {
   const filename = 'test_remove.txt'
