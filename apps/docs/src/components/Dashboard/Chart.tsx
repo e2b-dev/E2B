@@ -64,8 +64,11 @@ export default function LineChart({ series, ...props }) {
             },
           },
         }}
-        isInteractive={false}
+        isInteractive={true}
+        tooltip={CustomTooltip}
+        useMesh={true} 
         enableArea={true}
+        enableCrosshair={false}
         defs={[
           {
             id: 'gradientA',
@@ -81,3 +84,9 @@ export default function LineChart({ series, ...props }) {
     </div>
   )
 }
+
+const CustomTooltip = ({ point }) => (
+  <div className='bg-[#F5F5F5] text-black text-xs py-1 px-2 rounded-lg border'>
+    {point.data.y.toFixed(2)}
+  </div>
+)
