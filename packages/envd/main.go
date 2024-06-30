@@ -33,7 +33,6 @@ const (
 var (
 	// These vars are automatically set by goreleaser.
 	Version = "0.1.0"
-	commit  string
 
 	debug bool
 	port  int64
@@ -109,7 +108,7 @@ func main() {
 	parseFlags()
 
 	if versionFlag {
-		fmt.Printf("%s+%s\n", Version, commit)
+		fmt.Printf("%s\n", Version)
 
 		return
 	}

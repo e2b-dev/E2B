@@ -38,7 +38,7 @@ release:
   prerelease: auto
 
 snapshot:
-  name_template: "{{ .Branch }}-{{ .ShortCommit }}"
+  name_template: "{{ .Env.GORELEASER_CURRENT_TAG }}+{{ .ShortCommit }}"
 
 checksum:
   name_template: checksums.txt
