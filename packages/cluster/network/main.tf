@@ -23,7 +23,7 @@ locals {
       port_name                       = var.client_proxy_port.name
       timeout_sec                     = 86400
       connection_draining_timeout_sec = 1
-      health_check = {
+      http_health_check = {
         request_path = var.client_proxy_health_port.path
         port         = var.client_proxy_health_port.port
       }
@@ -35,7 +35,7 @@ locals {
       port_name                       = var.api_port.name
       timeout_sec                     = 30
       connection_draining_timeout_sec = 1
-      health_check = {
+      http_health_check = {
         request_path = var.api_port.health_path
         port         = var.api_port.port
       }
@@ -47,7 +47,7 @@ locals {
       port_name                       = var.docker_reverse_proxy_port.name
       timeout_sec                     = 30
       connection_draining_timeout_sec = 1
-      health_check = {
+      http_health_check = {
         request_path = var.docker_reverse_proxy_port.health_path
         port         = var.docker_reverse_proxy_port.port
       }
@@ -59,7 +59,7 @@ locals {
       port_name                       = "nomad"
       timeout_sec                     = 10
       connection_draining_timeout_sec = 1
-      health_check = {
+      http_health_check = {
         request_path = "/v1/status/peers"
         port         = var.nomad_port
       }
@@ -71,7 +71,7 @@ locals {
       port_name                       = "consul"
       timeout_sec                     = 10
       connection_draining_timeout_sec = 1
-      health_check = {
+      http_health_check = {
         request_path = "/v1/status/peers"
         port         = 8500
       }
@@ -253,6 +253,10 @@ resource "google_compute_global_forwarding_rule" "https" {
   target                = google_compute_target_https_proxy.default.self_link
   load_balancing_scheme = "EXTERNAL_MANAGED"
 
+  timeouts {
+    create = "value"
+  }
+
   port_range = "443"
   labels     = var.labels
 }
@@ -296,27 +300,37 @@ resource "google_compute_health_check" "default" {
   for_each = local.health_checked_backends
   name     = "${var.prefix}hc-${each.key}"
 
-  check_interval_sec  = lookup(each.value["health_check"], "check_interval_sec", 5)
-  timeout_sec         = lookup(each.value["health_check"], "timeout_sec", 5)
-  healthy_threshold   = lookup(each.value["health_check"], "healthy_threshold", 2)
-  unhealthy_threshold = lookup(each.value["health_check"], "unhealthy_threshold", 2)
+  check_interval_sec  = lookup(each.value["http_health_check"], "check_interval_sec", 5)
+  timeout_sec         = lookup(each.value["http_health_check"], "timeout_sec", 5)
+  healthy_threshold   = lookup(each.value["http_health_check"], "healthy_threshold", 2)
+  unhealthy_threshold = lookup(each.value["http_health_check"], "unhealthy_threshold", 2)
 
   log_config {
     enable = false
   }
 
   dynamic "http_health_check" {
-    for_each = coalesce(lookup(each.value["health_check"], "protocol", null), each.value["protocol"]) == "HTTP" ? [
+    for_each = coalesce(lookup(each.value["http_health_check"], "protocol", null), each.value["protocol"]) == "HTTP" ? [
       {
-        host               = lookup(each.value["health_check"], "host", null)
-        request_path       = lookup(each.value["health_check"], "request_path", null)
-        response           = lookup(each.value["health_check"], "response", null)
-        port               = lookup(each.value["health_check"], "port", null)
-        port_name          = lookup(each.value["health_check"], "port_name", null)
-        proxy_header       = lookup(each.value["health_check"], "proxy_header", null)
-        port_specification = lookup(each.value["health_check"], "port_specification", null)
+        host               = lookup(each.value["http_health_check"], "host", null)
+        request_path       = lookup(each.value["http_health_check"], "request_path", null)
+        response           = lookup(each.value["http_health_check"], "response", null)
+        port               = lookup(each.value["http_health_check"], "port", null)
+        port_name          = lookup(each.value["http_health_check"], "port_name", null)
+        proxy_header       = lookup(each.value["http_health_check"], "proxy_header", null)
+        port_specification = lookup(each.value["http_health_check"], "port_specification", null)
       }
-    ] : []
+      ] : [
+      {
+        host               = lookup(each.value["http_health_check"], "host", null)
+        request_path       = lookup(each.value["http_health_check"], "request_path", null)
+        response           = lookup(each.value["http_health_check"], "response", null)
+        port               = lookup(each.value["http_health_check"], "port", null)
+        port_name          = lookup(each.value["http_health_check"], "port_name", null)
+        proxy_header       = lookup(each.value["http_health_check"], "proxy_header", null)
+        port_specification = lookup(each.value["http_health_check"], "port_specification", null)
+      }
+    ]
 
     content {
       host               = lookup(http_health_check.value, "host", null)
@@ -345,7 +359,7 @@ resource "google_compute_firewall" "default-hc" {
     for_each = local.health_checked_backends
     content {
       protocol = "tcp"
-      ports    = [allow.value["health_check"].port]
+      ports    = [allow.value["http_health_check"].port]
     }
   }
 }

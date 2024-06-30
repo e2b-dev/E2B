@@ -19,6 +19,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/dns"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/pool"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
@@ -35,7 +36,7 @@ const (
 type server struct {
 	orchestrator.UnimplementedSandboxServer
 	sandboxes   *smap.Map[*sandbox.Sandbox]
-	dns         *sandbox.DNS
+	dns         *dns.DNS
 	tracer      trace.Tracer
 	consul      *consulapi.Client
 	networkPool *pool.Pool[*sandbox.IPSlot]
@@ -56,11 +57,10 @@ func New(logger *zap.Logger) *grpc.Server {
 
 	ctx := context.Background()
 
+	dns := dns.New()
+	go dns.Start("127.0.0.1:53")
+
 	tracer := otel.Tracer(constants.ServiceName)
-	dns, err := sandbox.NewDNS()
-	if err != nil {
-		panic(err)
-	}
 
 	consulClient, err := consul.New(ctx)
 	if err != nil {

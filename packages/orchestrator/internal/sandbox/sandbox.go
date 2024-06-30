@@ -9,13 +9,15 @@ import (
 	"path/filepath"
 	"time"
 
-	"go.opentelemetry.io/otel/trace"
-
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/dns"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/pool"
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+
 	consul "github.com/hashicorp/consul/api"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -60,7 +62,7 @@ func NewSandbox(
 	ctx context.Context,
 	tracer trace.Tracer,
 	consul *consul.Client,
-	dns *DNS,
+	dns *dns.DNS,
 	networkPool *pool.Pool[*IPSlot],
 	config *orchestrator.SandboxConfig,
 	traceID string,
@@ -68,34 +70,13 @@ func NewSandbox(
 	childCtx, childSpan := tracer.Start(ctx, "new-sandbox")
 	defer childSpan.End()
 
-	_, networkSpan := tracer.Start(ctx, "get-network-slot")
+	_, networkSpan := tracer.Start(childCtx, "get-network-slot")
 	// Get slot from Consul KV
 	ips := networkPool.Get()
 	telemetry.ReportEvent(childCtx, "reserved ip slot")
 	networkSpan.End()
 
-	_, dnsSpan := tracer.Start(ctx, "setup-dns")
-	err := dns.Add(ips, config.SandboxID)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to add DNS record: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return nil, errMsg
-	}
-	telemetry.ReportEvent(childCtx, "added DNS record")
-	dnsSpan.End()
-
-	defer func() {
-		if err != nil {
-			err := dns.Remove(config.SandboxID)
-			if err != nil {
-				errMsg := fmt.Errorf("error removing env instance to etc hosts: %w", err)
-				telemetry.ReportCriticalError(childCtx, errMsg)
-			} else {
-				telemetry.ReportEvent(childCtx, "removed env instance to etc hosts")
-			}
-		}
-	}()
+	var err error
 
 	defer func() {
 		if err != nil {
@@ -240,21 +221,35 @@ func NewSandbox(
 	go func() {
 		backgroundCtx := context.Background()
 
-		clockErr := instance.EnsureClockSync(backgroundCtx)
+		clockErr := instance.EnsureClockSync(backgroundCtx, consts.DefaultEnvdServerPort)
 		if clockErr != nil {
-			telemetry.ReportError(backgroundCtx, fmt.Errorf("failed to sync clock: %w", clockErr))
+			telemetry.ReportError(backgroundCtx, fmt.Errorf("failed to sync clock (new envd): %w", clockErr))
 		} else {
-			telemetry.ReportEvent(backgroundCtx, "clock synced")
+			telemetry.ReportEvent(backgroundCtx, "clock synced (new envd)")
+		}
+	}()
+
+	go func() {
+		backgroundCtx := context.Background()
+
+		clockErr := instance.EnsureClockSync(backgroundCtx, consts.OldEnvdServerPort)
+		if clockErr != nil {
+			telemetry.ReportError(backgroundCtx, fmt.Errorf("failed to sync clock (old envd): %w", clockErr))
+		} else {
+			telemetry.ReportEvent(backgroundCtx, "clock synced (old envd)")
 		}
 	}()
 
 	instance.StartedAt = time.Now()
 
+	dns.Add(config.SandboxID, ips.HostIP())
+	telemetry.ReportEvent(childCtx, "added DNS record", attribute.String("ip", ips.HostIP()), attribute.String("hostname", config.SandboxID))
+
 	return instance, nil
 }
 
-func (s *Sandbox) syncClock(ctx context.Context) error {
-	address := fmt.Sprintf("http://%s:%d/sync", s.slot.HostSnapshotIP(), consts.DefaultEnvdServerPort)
+func (s *Sandbox) syncClock(ctx context.Context, port int64) error {
+	address := fmt.Sprintf("http://%s:%d/sync", s.slot.HostSnapshotIP(), port)
 
 	request, err := http.NewRequestWithContext(ctx, "POST", address, nil)
 	if err != nil {
@@ -275,7 +270,7 @@ func (s *Sandbox) syncClock(ctx context.Context) error {
 	return nil
 }
 
-func (s *Sandbox) EnsureClockSync(ctx context.Context) error {
+func (s *Sandbox) EnsureClockSync(ctx context.Context, port int64) error {
 syncLoop:
 	for {
 		select {
@@ -283,7 +278,7 @@ syncLoop:
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			err := s.syncClock(ctx)
+			err := s.syncClock(ctx, port)
 			if err != nil {
 				telemetry.ReportError(ctx, fmt.Errorf("error syncing clock: %w", err))
 				continue
@@ -299,11 +294,14 @@ func (s *Sandbox) CleanupAfterFCStop(
 	ctx context.Context,
 	tracer trace.Tracer,
 	consul *consul.Client,
-	dns *DNS,
+	dns *dns.DNS,
 	sandboxID string,
 ) {
 	childCtx, childSpan := tracer.Start(ctx, "delete-instance")
 	defer childSpan.End()
+
+	dns.Remove(sandboxID)
+	telemetry.ReportEvent(childCtx, "removed env instance to etc hosts")
 
 	err := s.slot.RemoveNetwork(childCtx, tracer)
 	if err != nil {
@@ -311,14 +309,6 @@ func (s *Sandbox) CleanupAfterFCStop(
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		telemetry.ReportEvent(childCtx, "removed network")
-	}
-
-	err = dns.Remove(sandboxID)
-	if err != nil {
-		errMsg := fmt.Errorf("error removing env instance to etc hosts: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-	} else {
-		telemetry.ReportEvent(childCtx, "removed env instance to etc hosts")
 	}
 
 	err = s.files.Cleanup(childCtx, tracer)

@@ -29,6 +29,7 @@ type InstanceInfo struct {
 	Metadata          map[string]string
 	StartTime         *time.Time
 	MaxInstanceLength time.Duration
+	Timeout           *int64
 }
 
 type InstanceCache struct {
@@ -86,7 +87,7 @@ func NewCache(analytics analyticscollector.AnalyticsCollectorClient, logger *zap
 	})
 
 	for _, instance := range initialInstances {
-		err := instanceCache.Add(*instance)
+		err := instanceCache.Add(*instance, nil)
 		if err != nil {
 			fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
 		}

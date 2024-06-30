@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/dns"
+
 	"go.opentelemetry.io/otel"
 
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/pool"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
-func MockInstance(envID, instanceID string, dns *DNS, keepAlive time.Duration) {
+func MockInstance(envID, instanceID string, dns *dns.DNS, keepAlive time.Duration) {
 	ctx, cancel := context.WithTimeout(context.WithValue(context.Background(), telemetry.DebugID, instanceID), time.Second*10)
 	defer cancel()
 

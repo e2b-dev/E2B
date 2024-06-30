@@ -2,14 +2,16 @@ package server
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/metadata"
 
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
-	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
+	template_manager "github.com/e2b-dev/infra/packages/shared/pkg/grpc/template-manager"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/build"
 	"github.com/e2b-dev/infra/packages/template-manager/internal/build/writer"
@@ -55,7 +57,19 @@ func (s *serverStore) TemplateCreate(templateRequest *template_manager.TemplateC
 		return err
 	}
 
-	trailerMetadata := metadata.Pairs(consts.RootfsSizeKey, strconv.FormatInt(template.RootfsSizeMB(), 10))
+	cmd := exec.Command(consts.HostEnvdPath, "-version")
+	out, err := cmd.Output()
+	if err != nil {
+		_, _ = logsWriter.Write([]byte(fmt.Sprintf("Error while getting envd version: %v", err)))
+		return err
+	}
+
+	version := strings.TrimSpace(string(out))
+	trailerMetadata := metadata.Pairs(
+		consts.RootfsSizeKey, strconv.FormatInt(template.RootfsSizeMB(), 10),
+		consts.EnvdVersionKey, version,
+	)
+
 	stream.SetTrailer(trailerMetadata)
 
 	telemetry.ReportEvent(childCtx, "Environment built")

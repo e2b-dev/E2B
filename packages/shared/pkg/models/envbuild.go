@@ -45,6 +45,8 @@ type EnvBuild struct {
 	KernelVersion string `json:"kernel_version,omitempty"`
 	// FirecrackerVersion holds the value of the "firecracker_version" field.
 	FirecrackerVersion string `json:"firecracker_version,omitempty"`
+	// EnvdVersion holds the value of the "envd_version" field.
+	EnvdVersion *string `json:"envd_version,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvBuildQuery when eager-loading is set.
 	Edges        EnvBuildEdges `json:"edges"`
@@ -80,7 +82,7 @@ func (*EnvBuild) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case envbuild.FieldVcpu, envbuild.FieldRAMMB, envbuild.FieldFreeDiskSizeMB, envbuild.FieldTotalDiskSizeMB:
 			values[i] = new(sql.NullInt64)
-		case envbuild.FieldEnvID, envbuild.FieldStatus, envbuild.FieldDockerfile, envbuild.FieldStartCmd, envbuild.FieldKernelVersion, envbuild.FieldFirecrackerVersion:
+		case envbuild.FieldEnvID, envbuild.FieldStatus, envbuild.FieldDockerfile, envbuild.FieldStartCmd, envbuild.FieldKernelVersion, envbuild.FieldFirecrackerVersion, envbuild.FieldEnvdVersion:
 			values[i] = new(sql.NullString)
 		case envbuild.FieldCreatedAt, envbuild.FieldUpdatedAt, envbuild.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -190,6 +192,13 @@ func (eb *EnvBuild) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				eb.FirecrackerVersion = value.String
 			}
+		case envbuild.FieldEnvdVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field envd_version", values[i])
+			} else if value.Valid {
+				eb.EnvdVersion = new(string)
+				*eb.EnvdVersion = value.String
+			}
 		default:
 			eb.selectValues.Set(columns[i], values[i])
 		}
@@ -279,6 +288,11 @@ func (eb *EnvBuild) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("firecracker_version=")
 	builder.WriteString(eb.FirecrackerVersion)
+	builder.WriteString(", ")
+	if v := eb.EnvdVersion; v != nil {
+		builder.WriteString("envd_version=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

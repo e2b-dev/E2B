@@ -1,6 +1,6 @@
 go 1.21
 
-toolchain go1.21.0
+toolchain go1.21
 
 use (
 	./packages/api

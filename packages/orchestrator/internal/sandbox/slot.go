@@ -44,6 +44,10 @@ func (ips *IPSlot) getOctets() (int, int) {
 	return octet, rem
 }
 
+func (ips *IPSlot) HostIP() string {
+	return ips.HostSnapshotIP()
+}
+
 func (ips *IPSlot) VpeerIP() string {
 	firstOctet, secondOctet := ips.getOctets()
 

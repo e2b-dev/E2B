@@ -1,104 +1,53 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
-	_ "net/http/pprof"
 	"time"
 
-	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-	"go.uber.org/zap"
+	"github.com/e2b-dev/infra/packages/envd/internal/api"
+	"github.com/e2b-dev/infra/packages/envd/internal/logs"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/clock"
-	"github.com/e2b-dev/infra/packages/envd/internal/env"
-	"github.com/e2b-dev/infra/packages/envd/internal/file"
-	"github.com/e2b-dev/infra/packages/envd/internal/filesystem"
-	"github.com/e2b-dev/infra/packages/envd/internal/port"
-	"github.com/e2b-dev/infra/packages/envd/internal/ports"
-	"github.com/e2b-dev/infra/packages/envd/internal/process"
-	"github.com/e2b-dev/infra/packages/envd/internal/terminal"
-	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
+	"github.com/e2b-dev/infra/packages/envd/internal/permissions"
+	filesystemRpc "github.com/e2b-dev/infra/packages/envd/internal/services/filesystem"
+	processRpc "github.com/e2b-dev/infra/packages/envd/internal/services/process"
+	processSpec "github.com/e2b-dev/infra/packages/envd/internal/services/spec/process"
+
+	"connectrpc.com/authn"
+	connectcors "connectrpc.com/cors"
+	"github.com/go-chi/chi/v5"
+	"github.com/rs/cors"
 )
 
-// TODO: I'm not really sure if we're using RPC Notifier and Subscriber in the right way.
-// There isn't an explicit documentation, I'm using source code of tests as a reference:
-// https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
-
 const (
-	Version = "dev"
+	// We limit the timeout more in proxies.
+	maxTimeout = 24 * time.Hour
+	maxAge     = 2 * time.Hour
 
-	startCmdID = "_startCmd"
-
-	serverTimeout = 1 * time.Hour
+	defaultPort = 49983
 )
 
 var (
-	logger    *zap.SugaredLogger
-	wsHandler http.Handler
+	// These vars are automatically set by goreleaser.
+	version = "0.1.0"
+	commit  string
 
-	debug        bool
-	serverPort   int64
+	debug bool
+	port  int64
+
 	versionFlag  bool
 	startCmdFlag string
 )
-
-func serveWs(w http.ResponseWriter, r *http.Request) {
-	logger.Debug("WS connection started")
-	wsHandler.ServeHTTP(w, r)
-}
-
-func syncHandler(clock *clock.Service) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		logger.Debug("/sync request")
-		clock.Sync()
-
-		w.WriteHeader(http.StatusOK)
-	}
-}
-
-func pingHandler(w http.ResponseWriter, r *http.Request) {
-	logger.Debug("/ping request")
-	w.WriteHeader(http.StatusOK)
-
-	_, err := w.Write([]byte("pong"))
-	if err != nil {
-		logger.Error("Error writing response:", err)
-	}
-}
-
-func createFileHandler(logger *zap.SugaredLogger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			file.Download(logger, w, r)
-		case http.MethodPost:
-			file.Upload(logger, w, r)
-		default:
-			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		}
-	}
-}
-
-func fileHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		file.Download(logger, w, r)
-	case http.MethodPost:
-		file.Upload(logger, w, r)
-	default:
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-	}
-}
 
 func parseFlags() {
 	flag.BoolVar(
 		&debug,
 		"debug",
 		false,
-		"debug mode prints all logs to stdout and stderr",
+		"debug mode prints all logs to stdout",
 	)
 
 	flag.BoolVar(
@@ -109,9 +58,9 @@ func parseFlags() {
 	)
 
 	flag.Int64Var(
-		&serverPort,
+		&port,
 		"port",
-		consts.DefaultEnvdServerPort,
+		defaultPort,
 		"a port on which the daemon should run",
 	)
 
@@ -125,107 +74,93 @@ func parseFlags() {
 	flag.Parse()
 }
 
+func withCORS(h http.Handler) http.Handler {
+	middleware := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{
+			"GET",
+			"POST",
+		},
+		AllowedHeaders: append(
+			connectcors.AllowedHeaders(),
+			"Origin",
+			"Accept",
+			"Content-Type",
+			"Cache-Control",
+			"X-Requested-With",
+			"X-Content-Type-Options",
+			"Access-Control-Request-Method",
+			"Access-Control-Request-Headers",
+			"Access-Control-Request-Private-Network",
+			"Access-Control-Expose-Headers",
+		),
+		ExposedHeaders: append(
+			connectcors.ExposedHeaders(),
+			"Location",
+			"Cache-Control",
+			"X-Content-Type-Options",
+		),
+		MaxAge: int(maxAge.Seconds()),
+	})
+	return middleware.Handler(h)
+}
+
 func main() {
 	parseFlags()
 
 	if versionFlag {
-		fmt.Println("Version:\t", Version)
+		fmt.Printf("%s+%s\n", version, commit)
 
 		return
 	}
 
-	envConfig, l, err := env.NewEnv(debug)
-	if err != nil {
-		panic(err)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	l := logs.NewLogger(ctx, debug)
+
+	m := chi.NewRouter()
+
+	fsLogger := l.With().Str("service", "filesystem").Logger()
+	filesystemRpc.Handle(m, &fsLogger)
+
+	processLogger := l.With().Str("service", "process").Logger()
+	processService := processRpc.Handle(m, &processLogger)
+
+	handler := api.HandlerFromMux(api.New(&fsLogger), m)
+
+	middleware := authn.NewMiddleware(permissions.AuthenticateUsername)
+
+	s := &http.Server{
+		Handler:           withCORS(middleware.Wrap(handler)),
+		Addr:              fmt.Sprintf("0.0.0.0:%d", port),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       maxTimeout,
+		WriteTimeout:      maxTimeout,
+		IdleTimeout:       maxTimeout,
 	}
 
-	logger = l
-
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Errorf("panic", r)
-		}
-	}()
-	defer logger.Sync()
-
-	// This server is for the Websocket-RPC communication.
-	rpcServer := rpc.NewServer()
-
-	portScanner := port.NewScanner(1000 * time.Millisecond)
-	defer portScanner.Destroy()
-
-	portForwarder := port.NewForwarder(logger, envConfig, portScanner)
-	go portForwarder.StartForwarding()
-
-	go portScanner.ScanAndBroadcast()
-
-	clock := clock.NewService(logger.Named("clock"))
-
-	ports := ports.NewService(logger.Named("network"), portScanner)
-	// WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK
-	if err := rpcServer.RegisterName("codeSnippet", ports); err != nil {
-		logger.Panicw("failed to register ports service", "error", err)
-	}
-
-	if filesystemService, err := filesystem.NewService(logger.Named("filesystem")); err == nil {
-		if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
-			logger.Panicw("failed to register filesystem service", "error", err)
-		}
-	} else {
-		logger.Panicw(
-			"failed to create filesystem service",
-			"err", err,
-		)
-	}
-
-	processService := process.NewService(logger.Named("process"), envConfig, clock)
-	if err := rpcServer.RegisterName("process", processService); err != nil {
-		logger.Panicw("failed to register process service", "error", err)
-	}
-
-	terminalService := terminal.NewService(logger.Named("terminal"), envConfig, clock)
-	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
-		logger.Panicw("failed to register terminal service", "error", err)
-	}
-
-	router := mux.NewRouter()
-	wsHandler = rpcServer.WebsocketHandler([]string{"*"})
-
-	clockHandler := syncHandler(clock)
-	// The /sync route is used for syncing the clock.
-	router.HandleFunc("/sync", clockHandler)
-
-	router.HandleFunc("/ws", serveWs)
-	// The /ping route is used for the terminal extension to check if envd is running.
-	router.HandleFunc("/ping", pingHandler)
-	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
-	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
-	// The /file route used for downloading and uploading files via SDK.
-	router.HandleFunc("/file", createFileHandler(logger.Named("file")))
-
-	// TODO: How to differentiate the start command from other running commands? Metadata? EnvVars?
 	if startCmdFlag != "" {
-		envVars := make(map[string]string)
-		_, err := process.StartWithUser(processService, startCmdID, startCmdFlag, &envVars, "/", "root")
-		if err != nil {
-			logger.Errorf(
-				"failed to start the command passed via the -cmd flag",
-				"cmd", startCmdFlag,
-				"err", err,
-			)
+		tag := "startCmd"
+		cwd := "/home/user"
+		user, err := permissions.GetUser("root")
+		if err == nil {
+			processService.StartBackgroundProcess(ctx, user, &processSpec.StartRequest{
+				Tag: &tag,
+				Process: &processSpec.ProcessConfig{
+					Envs: make(map[string]string),
+					Cmd:  "/bin/bash",
+					Args: []string{"-l", "-c", startCmdFlag},
+					Cwd:  &cwd,
+				},
+			})
+		} else {
+			log.Fatalf("error getting user: %v", err)
 		}
 	}
 
-	server := &http.Server{
-		ReadTimeout:  serverTimeout,
-		WriteTimeout: serverTimeout,
-		Addr:         fmt.Sprintf("0.0.0.0:%d", serverPort),
-		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(router),
-	}
-
-	logger.Debug("Starting server - port: ", serverPort)
-
-	if err := server.ListenAndServe(); err != nil {
-		logger.Panicw("Failed to start the server", "error", err)
+	err := s.ListenAndServe()
+	if err != nil {
+		log.Fatalf("error starting server: %v", err)
 	}
 }

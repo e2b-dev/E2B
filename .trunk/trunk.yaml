@@ -22,14 +22,14 @@ lint:
     - linters:
         - codespell
       paths:
-        - '**/go.work.sum'
-        - '**/go.sum'
+        - "**/go.work.sum"
+        - "**/go.sum"
     - linters:
         - gitleaks
         - trufflehog
       paths:
-        - '**/go.work.sum'
-        - '**/go.sum'
+        - "**/go.work.sum"
+        - "**/go.sum"
   enabled:
     - actionlint@1.6.25
     - gitleaks@8.18.0

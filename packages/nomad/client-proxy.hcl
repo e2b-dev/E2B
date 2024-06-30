@@ -73,7 +73,7 @@ job "client-proxy" {
       }
 
       config {
-        image        = "nginx"
+        image        = "nginx:1.27.0"
         network_mode = "host"
         ports        = [var.client_proxy_health_port_name, var.client_proxy_port_name]
         volumes = [
@@ -115,7 +115,7 @@ server {
   listen 3002 default_server;
 
   server_name _;
-  return 400 "Unsupported domain";
+  return 502 "Cannot resolve domain";
 }
 [[ range service "session-proxy" ]]
 server {
@@ -134,20 +134,34 @@ server {
 
   proxy_http_version 1.1;
 
-  proxy_read_timeout 1d;
-  proxy_send_timeout 1d;
+  client_body_timeout 86400s;
+  client_header_timeout 5s;
+
+  proxy_read_timeout 600s;
+  proxy_send_timeout 86400s;
 
   proxy_cache_bypass 1;
   proxy_no_cache 1;
 
+  client_max_body_size 1024m;
+
   proxy_buffering off;
   proxy_request_buffering off;
 
-  client_max_body_size 1024m;
-  
   tcp_nodelay on;
   tcp_nopush on;
   sendfile on;
+
+  send_timeout                600s;
+
+  proxy_connect_timeout       30s;
+
+  keepalive_requests 65536;
+  keepalive_timeout 600s;
+  # TODO: Fix the config file so we can defined this
+  # keepalive_time: 86400s;
+
+  gzip off;
 
   location / {
     proxy_pass $scheme://[[ .Address ]]:[[ .Port ]]$request_uri;

@@ -5,15 +5,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/e2b-dev/infra/packages/orchestrator/internal/dns"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
 )
 
 func Run(envID, instanceID string, keepAlive, count *int) {
 	// Start of mock build for testing
-	dns, err := sandbox.NewDNS()
-	if err != nil {
-		panic(err)
-	}
+	dns := dns.New()
+	go dns.Start("127.0.0.1:53")
 
 	groupSize := 1
 

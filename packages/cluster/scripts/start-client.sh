@@ -38,6 +38,10 @@ mkdir -p $env_pipeline_local_dir
 sudo cp /mnt/disks/envs-pipeline/envd $env_pipeline_local_dir/envd
 sudo chmod +x $env_pipeline_local_dir/envd
 
+# Copy the envd-v0.0.1
+sudo cp /mnt/disks/envs-pipeline/envd-v0.0.1 $env_pipeline_local_dir/envd-v0.0.1
+sudo chmod +x $env_pipeline_local_dir/envd-v0.0.1
+
 # Copy kernels
 mkdir -p /mnt/disks/fc-kernels
 gcsfuse -o=allow_other --implicit-dirs "${FC_KERNELS_BUCKET_NAME}" /mnt/disks/fc-kernels

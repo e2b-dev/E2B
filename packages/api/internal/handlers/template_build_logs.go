@@ -74,7 +74,7 @@ func (a *APIStore) GetTemplatesTemplateIDBuildsBuildIDStatus(c *gin.Context, tem
 		Logs:       logs[*params.LogsOffset:],
 		TemplateID: templateID,
 		BuildID:    buildID,
-		Status:     &status,
+		Status:     status,
 	}
 
 	telemetry.ReportEvent(ctx, "got template build status")

@@ -218,8 +218,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		EnvID       string
 		BuildID     string
 		StartCmd    string
+		FcAddress   string
 		MemoryLimit int
 	}{
+		FcAddress:   fcAddr,
 		EnvID:       r.env.EnvID,
 		BuildID:     r.env.BuildID,
 		StartCmd:    strings.ReplaceAll(r.env.StartCmd, "'", "\\'"),
@@ -330,6 +332,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}()
 
 	filesToTar := []fileToTar{
+		{
+			localPath: consts.HostOldEnvdPath,
+			tarPath:   consts.GuestOldEnvdPath,
+		},
 		{
 			localPath: consts.HostEnvdPath,
 			tarPath:   consts.GuestEnvdPath,

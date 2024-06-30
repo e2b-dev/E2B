@@ -24,10 +24,6 @@ job "session-proxy" {
 
   priority = 80
 
-  constraint {
-    operator = "distinct_hosts"
-    value    = "true"
-  }
 
   group "session-proxy" {
     network {
@@ -61,7 +57,7 @@ job "session-proxy" {
       driver = "docker"
 
       config {
-        image        = "nginx"
+        image        = "nginx:1.27.0"
         network_mode = "host"
         ports        = [var.session_proxy_port_name, "status"]
         volumes = [
@@ -71,8 +67,8 @@ job "session-proxy" {
       }
 
       resources {
-        memory_max = 6000
-        memory = 6000
+        memory_max = 2048
+        memory = 1024
         cpu    = 1024
       }
 
@@ -117,13 +113,29 @@ access_log /var/log/nginx/access.log logger-json;
 
 server {
   listen 3003;
-  # The IP addresses of sessions are saved in the /etc/hosts like so:
-  # <session-id> <ip-address>
-  #
-  # By default, nginx won't use /etc/hosts for the name resolution.
-  # We use the systemd nameserver to resolve against /etc/hosts.
-  # See https://stackoverflow.com/questions/29980884/proxy-pass-does-not-resolve-dns-using-etc-hosts
-  resolver 127.0.0.53;
+
+  # DNS server resolved addreses as to <sandbox-id> <ip-address>
+  resolver 127.0.0.1;
+  resolver_timeout 5s;
+
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection $conn_upgrade;
+
+  proxy_hide_header x-frame-options;
+
+  proxy_http_version 1.1;
+
+  client_body_timeout 86400s;
+  client_header_timeout 5s;
+
+  proxy_read_timeout 600s;
+  proxy_send_timeout 86400s;
+
+  proxy_cache_bypass 1;
+  proxy_no_cache 1;
 
   client_max_body_size 1024m;
   
@@ -134,27 +146,20 @@ server {
   tcp_nopush on;
   sendfile on;
 
-  proxy_set_header Host $host;
-  proxy_set_header X-Real-IP $remote_addr;
+  send_timeout                600s;
 
-  proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection "Upgrade";
+  proxy_connect_timeout       30s;
 
-  proxy_hide_header x-frame-options;
+  keepalive_requests 65536;
+  keepalive_timeout 600s;
+  # TODO: Fix the config file so we can defined this
+  # keepalive_time: 86400s;
 
-  proxy_http_version 1.1;
-
-  proxy_read_timeout 1d;
-  proxy_send_timeout 1d;
-
-  proxy_cache_bypass 1;
-  proxy_no_cache 1;
-
-
+  gzip off;
 
   location / {
     if ($dbk_session_id = "") {
-      return 400 "Unsupported session domain";
+      return 502 "Missing sandbox domain";
     }
 
     proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
