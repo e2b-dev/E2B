@@ -6,11 +6,11 @@ import { MonthlyCosts, useUsage } from '@/utils/useUsage'
 
 const usageUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/usage`
 
-export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null}) => {
+export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null }) => {
   const [vcpuData, setVcpuData] = useState<any>(null)
   const [ramData, setRamData] = useState<any>(null)
   const { usage: costUsage } = useUsage()
-  
+
   useEffect(() => {
     const getUsage = async (apiKey: string) => {
       setVcpuData(null)
@@ -18,7 +18,7 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
 
       const response = await fetch(usageUrl, {
         headers: {
-          'X-Team-API-Key': apiKey 
+          'X-Team-API-Key': apiKey
         }
       })
       if (!response.ok) {
@@ -30,7 +30,7 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
       const data = await response.json()
 
       const { vcpuSeries, ramSeries } = transformData(data.usages)
-      
+
       setVcpuData(vcpuSeries)
       setRamData(ramSeries)
     }
@@ -45,13 +45,22 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
       <div className='pb-10'>
         <h2 className='font-bold pb-4 text-xl'>Usage history</h2>
         <p>
-          The graphs show the total monthly vCPU-hours and RAM-hours used by the team. <br/>
+          The graphs show the total monthly vCPU-hours and RAM-hours used by the team. <br />
         </p>
       </div>
 
       {vcpuData && ramData && costUsage ? (
         <div className='flex flex-col 2xl:flex-row w-full space-y-4 2xl:space-y-0 2xl:space-x-4'>
-          
+
+          <div className='flex flex-col w-full md:w-2/3'>
+            <h2 className='font-bold pb-4 text-xl'>Costs in USD</h2>
+            <Card className="w-full bg-inherit/10 border border-white/20 mb-10">
+              <CardContent>
+                <LineChart className="aspect-[4/3]" series={transformCostData(costUsage)} type="Cost" />
+              </CardContent>
+            </Card>
+          </div>
+
           <div className='flex flex-col w-full md:w-2/3'>
             <h2 className='font-bold pb-4 text-xl'>vCPU hours</h2>
             <Card className="w-full bg-inherit/10 border border-white/20 mb-10">
@@ -66,15 +75,6 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null})
             <Card className="w-full bg-inherit/10 border border-white/20 mb-10">
               <CardContent>
                 <LineChart className="aspect-[4/3]" series={ramData} type="RAM" />
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className='flex flex-col w-full md:w-2/3'>
-            <h2 className='font-bold pb-4 text-xl'>Cost</h2>
-            <Card className="w-full bg-inherit/10 border border-white/20 mb-10">
-              <CardContent>
-                <LineChart className="aspect-[4/3]" series={transformCostData(costUsage)} type="Cost" />
               </CardContent>
             </Card>
           </div>
@@ -96,7 +96,7 @@ const transformCostData = (costUsage: MonthlyCosts[]) => {
       y: usage.total_cost,
     }
   })
-    
+
   return [
     {
       id: 'Cost',
@@ -109,7 +109,7 @@ const transformData = (usages: any) => {
   const ramData = usages.map((usage: any) => {
     return {
       x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
-      y: usage.template_usage.length > 0 
+      y: usage.template_usage.length > 0
         ? usage.template_usage.reduce((acc: number, template: any) => acc + template.ram_gb_hours, 0)
         : 0,
     }
@@ -118,7 +118,7 @@ const transformData = (usages: any) => {
   const vpcData = usages.map((usage: any) => {
     return {
       x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
-      y: usage.template_usage.length > 0 
+      y: usage.template_usage.length > 0
         ? usage.template_usage.reduce((acc: number, template: any) => acc + template.sandbox_hours, 0)
         : 0,
     }
