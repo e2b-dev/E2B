@@ -30,10 +30,9 @@ func Must[T any](obj T, err error) T {
 var blockedRanges = []string{
 	"10.0.0.0/8",
 	"169.254.0.0/16",
-	"172.16.0.0/12",
 	"192.0.0.0/24",
 	"192.168.0.0/16",
-	"172.17.0.1/16",
+	"172.16.0.0/12",
 }
 
 func getBlockingRule(ips *IPSlot, ipRange string) []string {
