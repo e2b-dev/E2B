@@ -35,11 +35,11 @@ var blockedRanges = []string{
 }
 
 func getBlockingRule(ips *IPSlot, ipRange string) []string {
-	return []string{"-p", "all", "-i", ips.VethName(), "-d", ipRange, "-j", "DROP"}
+	return []string{"-p", "all", "-i", ips.TapName(), "-d", ipRange, "-j", "DROP"}
 }
 
-func getAllowResponseRule(ips *IPSlot) []string {
-	return []string{"-p", "tcp", "-i", ips.VethName(), "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"}
+func getAllowRule(ips *IPSlot) []string {
+	return []string{"-p", "tcp", "-i", ips.TapName(), "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"}
 }
 
 func (ips *IPSlot) addBlockingRules(tables *iptables.IPTables) error {
@@ -49,39 +49,15 @@ func (ips *IPSlot) addBlockingRules(tables *iptables.IPTables) error {
 		if err != nil {
 			return fmt.Errorf("error adding blocking rule: %w", err)
 		}
-		err = tables.Append("filter", "INPUT", rule...)
-		if err != nil {
-			return fmt.Errorf("error adding blocking rule: %w", err)
-		}
 	}
 
-	responseRule := getAllowResponseRule(ips)
-	err := tables.Insert("filter", "INPUT", 1, responseRule...)
+	allowRule := getAllowRule(ips)
+	err := tables.Insert("filter", "FORWARD", 1, allowRule...)
 	if err != nil {
 		return fmt.Errorf("error adding response rule: %w", err)
 	}
 
 	return nil
-}
-
-func (ips *IPSlot) removeBlockingRules(tables *iptables.IPTables) {
-	responseRule := getAllowResponseRule(ips)
-	err := tables.Delete("filter", "INPUT", responseRule...)
-	if err != nil {
-		fmt.Printf("error removing response rule: %w", err)
-	}
-
-	for _, ipRange := range blockedRanges {
-		rule := getBlockingRule(ips, ipRange)
-		err := tables.Delete("filter", "FORWARD", rule...)
-		if err != nil {
-			fmt.Printf("error removing blocking rule: %w", err)
-		}
-		err = tables.Delete("filter", "INPUT", rule...)
-		if err != nil {
-			fmt.Printf("error removing blocking rule: %w", err)
-		}
-	}
 }
 
 func getDefaultGateway() (string, error) {
@@ -397,6 +373,15 @@ func (ips *IPSlot) CreateNetwork(
 	}
 	telemetry.ReportEvent(childCtx, "Created postrouting rule from vpeer")
 
+	err = ips.addBlockingRules(tables)
+	if err != nil {
+		errMsg := fmt.Errorf("error adding blocking rules: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+	telemetry.ReportEvent(childCtx, "Added blocking rules")
+
 	// Go back to original namespace
 	err = netns.Set(hostNS)
 	if err != nil {
@@ -448,15 +433,6 @@ func (ips *IPSlot) CreateNetwork(
 	}
 	telemetry.ReportEvent(childCtx, "Created forwarding rule from default gateway")
 
-	err = ips.addBlockingRules(tables)
-	if err != nil {
-		errMsg := fmt.Errorf("error adding blocking rules: %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-	telemetry.ReportEvent(childCtx, "Added blocking rules")
-
 	// Add host postrouting rules
 	err = tables.Append("nat", "POSTROUTING", "-s", ips.HostSnapshotCIDR(), "-o", hostDefaultGateway, "-j", "MASQUERADE")
 	if err != nil {
@@ -497,8 +473,6 @@ func (ipSlot *IPSlot) RemoveNetwork(ctx context.Context, tracer trace.Tracer) er
 		} else {
 			telemetry.ReportEvent(childCtx, "deleted host forwarding rule from default gateway")
 		}
-
-		ipSlot.removeBlockingRules(tables)
 
 		// Delete host postrouting rules
 		err = tables.Delete("nat", "POSTROUTING", "-s", ipSlot.HostSnapshotCIDR(), "-o", hostDefaultGateway, "-j", "MASQUERADE")
