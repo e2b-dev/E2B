@@ -27,8 +27,8 @@ archives:
       {{- else }}{{ .Arch }}{{ end }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}
 
 changelog:
-  skip: true
   use: github-native
+  disable: true
 
 release:
   disable: true
