@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	ipSlotConcurrency = 5
-	ipSlotPoolSize    = 300
+	ipSlotConcurrency = 4
+	ipSlotPoolSize    = 25
 )
 
 type server struct {
