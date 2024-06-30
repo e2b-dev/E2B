@@ -4,7 +4,7 @@ import * as path from 'path'
 import * as e2b from 'e2b'
 import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
-import commandExists from 'command-exists'
+import Docker from 'dockerode'
 import { wait } from 'src/utils/wait'
 import { connectionConfig, ensureAccessToken } from 'src/api'
 import { getRoot } from 'src/utils/filesystem'
@@ -12,6 +12,7 @@ import {
   asBold,
   asBuildLogs,
   asFormattedSandboxTemplate,
+  prettyPrintDockerStream,
   asLocal,
   asLocalRelative,
   asPrimary,
@@ -25,7 +26,6 @@ import {
   fallbackDockerfileName,
 } from 'src/docker/constants'
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
-import * as child_process from 'child_process'
 
 import { client } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -170,10 +170,12 @@ export const buildCommand = new commander.Command('build')
       },
     ) => {
       try {
-        const dockerInstalled = commandExists.sync('docker')
-        if (!dockerInstalled) {
+        const docker = new Docker()
+        try {
+          await docker.ping()
+        } catch {
           console.error(
-            'Docker is required to build and push the sandbox template. Please install Docker and try again.',
+            'Docker has to be installed and running to build and push the sandbox template.'
           )
           process.exit(1)
         }
@@ -318,46 +320,53 @@ export const buildCommand = new commander.Command('build')
         )
 
         try {
-          child_process.execSync(
-            `echo "${accessToken}" | docker login docker.${connectionConfig.domain} -u _e2b_access_token --password-stdin`,
-            {
-              stdio: 'inherit',
-              cwd: root,
-            },
-          )
+          docker.checkAuth({
+            username: '_e2b_access_token',
+            password: accessToken,
+            serveraddress: `docker.${connectionConfig.domain}`,
+          })
         } catch (err: any) {
           console.error(
             'Docker login failed. Please try to log in with `e2b auth login` and try again.',
           )
           process.exit(1)
         }
+
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${connectionConfig.domain
-          }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
-            dockerBuildArgs,
-          )
-            .map(([key, value]) => `--build-arg="${key}=${value}"`)
-            .join(' ')}`
-        child_process.execSync(cmd, {
-          stdio: 'inherit',
-          cwd: root,
-          env: {
-            ...process.env,
-            DOCKER_CLI_HINTS: 'false',
-          },
+
+        const dockerImageTag = `docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`
+        const buildStream = await docker.buildImage({
+          context: root,
+          src: [dockerfileRelativePath],
+        }, {
+          t: dockerImageTag,
+          platform: 'linux/amd64',
+          buildargs: dockerBuildArgs,
         })
+
+        for await (const chunk of buildStream) {
+          prettyPrintDockerStream(chunk.toString('utf-8'), 'stream')
+        }
+
         console.log('Docker image built.\n')
 
         console.log('Pushing docker image...')
-        child_process.execSync(
-          `docker push docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`,
-          {
-            stdio: 'inherit',
-            cwd: root,
+
+        const img = docker.getImage(dockerImageTag)
+        const pushStream = await img.push({
+          authconfig: {
+            username: '_e2b_access_token',
+            password: accessToken,
+            serveraddress: `docker.${connectionConfig.domain}`,
           },
-        )
+        })
+
+        for await (const chunk of pushStream) {
+          prettyPrintDockerStream(chunk.toString('utf-8'), 'status')
+        }
+
         console.log('Docker image pushed.\n')
 
         console.log('Triggering build...')

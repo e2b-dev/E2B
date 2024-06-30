@@ -157,3 +157,16 @@ export function withDelimiter(
     },
   })
 }
+
+export function prettyPrintDockerStream(c: string, key: string = 'stream') {
+  c.split('\n').forEach((chunk) => {
+    try {
+      const line = JSON.parse(chunk)[key].trim()
+      if (line) {
+        process.stdout.write(asBuildLogs(line) + '\n')
+      }
+    } catch (e) {
+      // ignore
+    }
+  })
+}
