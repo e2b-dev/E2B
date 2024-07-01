@@ -60,7 +60,6 @@ def error_for_response(http_resp: httpcore.Response):
     try:
         error = json.loads(http_resp.content)
     except (json.decoder.JSONDecodeError, KeyError):
-
         if http_resp.status == 429:
             return ConnectException(
                 Code.resource_exhausted,

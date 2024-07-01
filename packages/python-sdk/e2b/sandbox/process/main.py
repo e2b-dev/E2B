@@ -114,7 +114,8 @@ class Process:
         on_stderr: Optional[Callable[[str], None]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessResult: ...
+    ) -> ProcessResult:
+        ...
 
     @overload
     def run(
@@ -128,7 +129,8 @@ class Process:
         on_stderr: Optional[Callable[[str], None]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessHandle: ...
+    ) -> ProcessHandle:
+        ...
 
     def run(
         self,
