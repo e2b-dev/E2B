@@ -104,7 +104,7 @@ export const CustomUserContextProvider = (props) => {
         .from('users_teams')
         .select('teams (id, name, is_default, tier, email)')
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
-      
+
       if (teamsError) Sentry.captureException(teamsError)
       // TODO: Adjust when user can be part of multiple teams
       // @ts-ignore
