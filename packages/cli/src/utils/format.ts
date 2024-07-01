@@ -158,12 +158,12 @@ export function withDelimiter(
   })
 }
 
-export function prettyPrintDockerStream(c: string, key: string = 'stream') {
+export function prettyPrintDockerLogs(c: string, key: string = 'stream') {
   c.split('\n').forEach((chunk) => {
     try {
-      const line = JSON.parse(chunk)[key].trim()
-      if (line) {
-        process.stdout.write(asBuildLogs(line) + '\n')
+      const line = JSON.parse(chunk)
+      if (line[key]) {
+        process.stdout.write(asBuildLogs(line.trim()) + '\n')
       }
     } catch (e) {
       // ignore
