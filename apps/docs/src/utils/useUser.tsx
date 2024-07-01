@@ -23,11 +23,6 @@ type UserContextType = {
     apiKeys: any[];
     accessToken: string;
     defaultTeamId: string;
-    pricingTier: {
-      id: string,
-      isPromo: boolean,
-      endsAt: string
-    }
   })
   | null;
   error: Error | null;
