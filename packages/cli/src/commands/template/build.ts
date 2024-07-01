@@ -338,10 +338,7 @@ export const buildCommand = new commander.Command('build')
         console.log('Building docker image...')
 
         const dockerImageTag = `docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`
-        const buildStream = await docker.buildImage({
-          context: root,
-          src: await prepareDockerContext(root)
-        }, {
+        const buildStream = await docker.buildImage(await prepareDockerContext(root), {
           t: dockerImageTag,
           platform: 'linux/amd64',
           buildargs: dockerBuildArgs,
