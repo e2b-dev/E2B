@@ -39,6 +39,7 @@
     "build": "tsc --noEmit --skipLibCheck && tsup --minify",
     "dev": "tsup --watch",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
+    "test:simple": "pnpm build && cd testground/demo-simple && ../../dist/index.js template build",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
     "generate-api-reference": "./scripts/generate_api_ref.sh"
@@ -66,6 +67,7 @@
     "e2b": "dist/index.js"
   },
   "dependencies": {
+    "@balena/dockerignore": "^1.0.2",
     "@iarna/toml": "^2.2.5",
     "async-listen": "^3.0.1",
     "boxen": "^7.1.1",

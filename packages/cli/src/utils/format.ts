@@ -161,8 +161,8 @@ export function withDelimiter(
 export function prettyPrintDockerLogs(c: string, key: string = 'stream') {
   c.split('\n').forEach((chunk) => {
     try {
-      const line = JSON.parse(chunk)
-      if (line[key]) {
+      const line = JSON.parse(chunk)[key]
+      if (line) {
         process.stdout.write(asBuildLogs(line.trim()) + '\n')
       }
     } catch (e) {

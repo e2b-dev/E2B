@@ -20,6 +20,7 @@ import {
   asTypescript,
   withDelimiter,
 } from 'src/utils/format'
+import { prepareDockerContext } from 'src/utils/docker'
 import { configOption, pathOption, teamOption } from 'src/options'
 import {
   defaultDockerfileName,
@@ -339,11 +340,12 @@ export const buildCommand = new commander.Command('build')
         const dockerImageTag = `docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`
         const buildStream = await docker.buildImage({
           context: root,
-          src: [dockerfileRelativePath],
+          src: await prepareDockerContext(root)
         }, {
           t: dockerImageTag,
           platform: 'linux/amd64',
           buildargs: dockerBuildArgs,
+          dockerfile: dockerfileRelativePath,
         })
 
         for await (const chunk of buildStream) {
