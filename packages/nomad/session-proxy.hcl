@@ -24,6 +24,11 @@ job "session-proxy" {
 
   priority = 80
 
+  // TODO: Removable
+  constraint {
+    operator = "distinct_hosts"
+    value    = "true"
+  }
 
   group "session-proxy" {
     network {
@@ -57,7 +62,8 @@ job "session-proxy" {
       driver = "docker"
 
       config {
-        image        = "nginx:1.27.0"
+        // TODO: Fixate version
+        image        = "nginx"
         network_mode = "host"
         ports        = [var.session_proxy_port_name, "status"]
         volumes = [
@@ -66,9 +72,10 @@ job "session-proxy" {
         ]
       }
 
+      // TODO: Saner resources
       resources {
-        memory_max = 2048
-        memory = 1024
+        memory_max = 6000
+        memory = 6000
         cpu    = 1024
       }
 
@@ -146,20 +153,17 @@ server {
   tcp_nopush on;
   sendfile on;
 
-  send_timeout                600s;
+  # send_timeout                600s;
 
-  proxy_connect_timeout       30s;
-
-  keepalive_requests 65536;
+  # proxy_connect_timeout       30s;
+  keepalive_requests 2048;
   keepalive_timeout 600s;
-  # TODO: Fix the config file so we can defined this
-  # keepalive_time: 86400s;
-
-  gzip off;
+  # keepalive_time 86400s;
+  # gzip off;
 
   location / {
     if ($dbk_session_id = "") {
-      return 502 "Missing sandbox domain";
+      return 400 "Unsupported session domain";
     }
 
     proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
