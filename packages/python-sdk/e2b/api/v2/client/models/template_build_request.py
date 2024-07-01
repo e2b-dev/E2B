@@ -43,13 +43,11 @@ class TemplateBuildRequest(BaseModel):
         description="Start command to execute in the template after the build",
         alias="startCmd",
     )
-    cpu_count: Optional[Annotated[int, Field(strict=True, ge=1)]] = Field(
-        default=None, description="CPU cores for the template", alias="cpuCount"
+    cpu_count: Optional[Annotated[int, Field(le=8, strict=True, ge=1)]] = Field(
+        default=None, description="CPU cores for the sandbox", alias="cpuCount"
     )
-    memory_mb: Optional[Annotated[int, Field(strict=True, ge=128)]] = Field(
-        default=None,
-        description="Memory limit for the template in MB",
-        alias="memoryMB",
+    memory_mb: Optional[Annotated[int, Field(le=8192, strict=True, ge=128)]] = Field(
+        default=None, description="Memory for the sandbox in MB", alias="memoryMB"
     )
     additional_properties: Dict[str, Any] = {}
     __properties: ClassVar[List[str]] = [

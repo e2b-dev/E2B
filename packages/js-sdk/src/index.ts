@@ -1,28 +1,50 @@
-export { APIClient, withAPIKey, withAccessToken } from './api'
+export {
+  ApiClient,
+} from './api'
 export type { components, paths } from './api'
 
-export { SANDBOX_DOMAIN, API_HOST } from './constants'
-export type { SandboxOpts, DownloadFileFormat } from './sandbox'
-export type { OpenPort } from './sandbox/codeSnippet'
-export { Terminal, TerminalOutput } from './sandbox/terminal'
-export type { TerminalManager } from './sandbox/terminal'
-export type { FilesystemManager, FileInfo } from './sandbox/filesystem'
 export {
-  default as FilesystemWatcher,
-  FilesystemOperation,
-} from './sandbox/filesystemWatcher'
+  AuthenticationError,
+  SandboxError,
+  TimeoutError,
+  NotFoundError,
+  NotEnoughSpaceError,
+  InvalidArgumentError,
+} from './errors'
+export {
+  ConnectionConfig,
+} from './connectionConfig'
+export type { Logger } from './logs'
+export type { ConnectionOpts, Username } from './connectionConfig'
+
+export { FilesystemEventType } from './sandbox/filesystem/watchHandle'
+export type { FilesystemEvent, WatchHandle } from './sandbox/filesystem/watchHandle'
 export type {
-  FilesystemEvent,
-  FilesystemEventListener,
-} from './sandbox/filesystemWatcher'
+  EntryInfo,
+} from './sandbox/filesystem'
+export {
+  FileType,
+} from './sandbox/filesystem'
 
-export { AuthenticationError, CurrentWorkingDirectoryDoesntExistError, TimeoutError } from './error'
-export { Process, ProcessMessage, ProcessOutput } from './sandbox/process'
-export type { ProcessManager } from './sandbox/process'
-export type { EnvVars } from './sandbox/envVars'
+export { ProcessExitError } from './sandbox/process/processHandle'
+export type {
+  ProcessResult,
+  Stdout,
+  Stderr,
+  Pty,
+  ProcessHandle,
+} from './sandbox/process/processHandle'
+export type { SandboxApiOpts } from './sandbox/sandboxApi'
+
+export type {
+  ProcessInfo,
+  ProcessRequestOpts,
+  ProcessConnectOpts,
+  ProcessStartOpts,
+} from './sandbox/process'
+
+export type { SandboxInfo } from './sandbox/sandboxApi'
+export type { SandboxOpts } from './sandbox'
 import { Sandbox } from './sandbox'
-
-export type { SandboxMetadata, RunningSandbox } from './sandbox/sandboxConnection'
-
 export { Sandbox }
 export default Sandbox

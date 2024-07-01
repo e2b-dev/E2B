@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package process;
+
+service Process {
+    rpc List(ListRequest) returns (ListResponse);
+
+    rpc Connect(ConnectRequest) returns (stream ConnectResponse);
+    rpc Start(StartRequest) returns (stream StartResponse);
+
+    rpc Update(UpdateRequest) returns (UpdateResponse);
+
+    // Client input stream ensures ordering of messages
+    rpc StreamInput(stream StreamInputRequest) returns (StreamInputResponse);
+    rpc SendInput(SendInputRequest) returns (SendInputResponse);
+    rpc SendSignal(SendSignalRequest) returns (SendSignalResponse);
+}
+
+message PTY {
+    Size size = 1;
+
+    message Size {
+        uint32 cols = 1;
+        uint32 rows = 2;
+    }
+}
+
+message ProcessConfig {
+    string cmd = 1;
+    repeated string args = 2;
+    
+    map<string, string> envs = 3;
+    optional string cwd = 4;
+}
+
+message ListRequest {}
+
+message ProcessInfo {
+    ProcessConfig config = 1;
+    uint32 pid = 2;
+    optional string tag = 3;
+}
+
+message ListResponse {
+    repeated ProcessInfo processes = 1;
+}
+
+message StartRequest {    
+    ProcessConfig process = 1;
+    optional PTY pty = 2;
+    optional string tag = 3;
+}
+
+message UpdateRequest {
+    ProcessSelector process = 1;
+
+    optional PTY pty = 2;
+}
+
+message UpdateResponse {}
+
+message ProcessEvent {
+    oneof event {
+        StartEvent start = 1;
+        DataEvent data = 2;
+        EndEvent end = 3;
+        KeepAlive keepalive = 4;
+    }
+    
+    message StartEvent {
+        uint32 pid = 1;
+    }
+    
+    message DataEvent {
+        oneof output {
+            bytes stdout = 1;
+            bytes stderr = 2;
+            bytes pty = 3;
+        }
+    }
+    
+    message EndEvent {
+        sint32 exit_code = 1;
+        bool exited = 2;
+        string status = 3;
+        optional string error = 4;
+    }
+
+    message KeepAlive {}
+}
+
+message StartResponse {
+    ProcessEvent event = 1;
+}
+
+message ConnectResponse {
+    ProcessEvent event = 1;
+}
+
+message SendInputRequest {
+    ProcessSelector process = 1;
+
+    ProcessInput input = 2;
+}
+
+message SendInputResponse {}
+
+message ProcessInput {
+    oneof input {
+        bytes stdin = 1;
+        bytes pty = 2;
+    }
+}
+
+message StreamInputRequest {
+    oneof event {
+        StartEvent start = 1;
+        DataEvent data = 2;
+        KeepAlive keepalive = 3;
+    }
+
+    message StartEvent {
+        ProcessSelector process = 1;
+    }
+
+    message DataEvent {
+        ProcessInput input = 2;
+    }
+
+    message KeepAlive {}
+}
+
+message StreamInputResponse {}
+
+enum Signal {
+    SIGNAL_UNSPECIFIED = 0;
+    SIGNAL_SIGTERM = 15;
+    SIGNAL_SIGKILL = 9;
+}
+
+message SendSignalRequest {
+    ProcessSelector process = 1;
+
+    Signal signal = 2;
+}
+
+message SendSignalResponse {}
+
+message ConnectRequest {
+    ProcessSelector process = 1;
+}
+
+message ProcessSelector {
+    oneof selector {
+        uint32 pid = 1;
+        string tag = 2;
+    }
+}

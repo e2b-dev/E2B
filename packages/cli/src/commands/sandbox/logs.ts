@@ -14,11 +14,8 @@ const getSandboxLogs = e2b.withAPIKey(
 
 const maxRuntime = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 
-function getLongID(sandboxID: string, clientID?: string) {
-  if (clientID) {
-    return `${sandboxID}-${clientID}`
-  }
-  return sandboxID
+function getShortID(sandboxID: string) {
+  return sandboxID.split('-')[0]
 }
 
 function waitForSandboxEnd(apiKey: string, sandboxID: string) {
@@ -38,7 +35,7 @@ function waitForSandboxEnd(apiKey: string, sandboxID: string) {
       }
 
       const response = await listSandboxes({ apiKey })
-      const sandbox = response.find(s => getLongID(s.sandboxID, s.clientID) === sandboxID)
+      const sandbox = response.find(s => s.sandboxID === getShortID(sandboxID))
       if (!sandbox) {
         isRunning = false
         break
@@ -149,7 +146,7 @@ export const logsCommand = new commander.Command('logs')
         console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
       }
 
-      const isRunningPromise = listSandboxes({ apiKey }).then(r => r.find(s => getLongID(s.sandboxID, s.clientID) === sandboxID)).then(s => !!s)
+      const isRunningPromise = listSandboxes({ apiKey }).then(r => r.find(s => s.sandboxID === getShortID(sandboxID))).then(s => !!s)
 
       do {
         try {

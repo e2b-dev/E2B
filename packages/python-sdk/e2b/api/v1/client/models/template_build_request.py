@@ -34,11 +34,11 @@ class TemplateBuildRequest(BaseModel):
         alias="startCmd",
         description="Start command to execute in the template after the build",
     )
-    cpu_count: Optional[conint(strict=True, ge=1)] = Field(
-        None, alias="cpuCount", description="CPU cores for the template"
+    cpu_count: Optional[conint(strict=True, le=8, ge=1)] = Field(
+        None, alias="cpuCount", description="CPU cores for the sandbox"
     )
-    memory_mb: Optional[conint(strict=True, ge=128)] = Field(
-        None, alias="memoryMB", description="Memory limit for the template in MB"
+    memory_mb: Optional[conint(strict=True, le=8192, ge=128)] = Field(
+        None, alias="memoryMB", description="Memory for the sandbox in MB"
     )
     additional_properties: Dict[str, Any] = {}
     __properties = ["alias", "dockerfile", "startCmd", "cpuCount", "memoryMB"]

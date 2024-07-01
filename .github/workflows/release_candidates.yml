@@ -49,7 +49,7 @@ jobs:
 
       - name: Release CLI Candidate
         working-directory: packages/cli
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
         run: |
           npm version prerelease --preid=${{ github.head_ref }}
           npm publish --tag rc

@@ -1,291 +1,223 @@
 import logging
 import urllib.parse
-import requests
-import threading
+import httpcore
+import httpx
 
-from os import path
-from typing import Any, Callable, Dict, List, Literal, Optional, IO, Union
+from typing import Optional, Dict, Literal, overload
 
-from e2b.api import models
-from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE, DOMAIN
-from e2b.sandbox.code_snippet import CodeSnippetManager, OpenPort
-from e2b.sandbox.env_vars import EnvVars
-from e2b.sandbox.filesystem import FilesystemManager
-from e2b.sandbox.process import ProcessManager, ProcessMessage
-from e2b.sandbox.sandbox_connection import SandboxConnection
-from e2b.sandbox.terminal import TerminalManager
+from e2b.sandbox.utils import class_method_variant
+from e2b.sandbox.filesystem.filesystem import Filesystem
+from e2b.sandbox.process.main import Process
+from e2b.sandbox.sandbox_api import SandboxApi
+from e2b.connection_config import ConnectionConfig
+from e2b.envd.api import (
+    ENVD_API_FILES_ROUTE,
+    handle_envd_api_exception,
+    ENVD_API_HEALTH_ROUTE,
+)
+from e2b.exceptions import SandboxException
+
 
 logger = logging.getLogger(__name__)
 
 
-class Sandbox(SandboxConnection):
-    """
-    E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
+class E2BConnectionPool(httpcore.ConnectionPool):
+    def handle_request(self, request):
+        url = f"{request.url.scheme.decode()}://{request.url.host.decode()}{request.url.target.decode()}"
+        logger.info(f"Request: {request.method.decode()} {url}")
+        response = super().handle_request(request)
 
-    That means:
-    - Access to Linux OS
-    - Using filesystem (create, list, and delete files and dirs)
-    - Run processes
-    - Sandboxed - you can run any code
-    - Access to the internet
+        # data = connect.GzipCompressor.decompress(response.read()).decode()
+        logger.info(f"Response: {response.status} {url}")
 
-    Check usage docs - https://e2b.dev/docs/sandbox/overview
+        return response
 
-    These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
-    """
 
-    @property
-    def process(self) -> ProcessManager:
-        """
-        Process manager used to run commands.
-        """
-        return self._process
+class Sandbox(SandboxApi):
+    _envd_port = 49983
+
+    default_sandbox_timeout = 300
+    default_template = "base"
 
     @property
-    def terminal(self) -> TerminalManager:
-        """
-        Terminal manager used to create interactive terminals.
-        """
-        return self._terminal
-
-    @property
-    def filesystem(self) -> FilesystemManager:
-        """
-        Filesystem manager used to manage files.
-        """
+    def files(self) -> Filesystem:
         return self._filesystem
+
+    @property
+    def commands(self) -> Process:
+        return self._process
 
     def __init__(
         self,
-        template: str = "base",
-        id: Optional[str] = None,
-        api_key: Optional[str] = None,
-        cwd: Optional[str] = None,
-        env_vars: Optional[EnvVars] = None,
-        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
+        template: Optional[str] = None,
+        timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
-        timeout: Optional[float] = TIMEOUT,
-        domain: str = DOMAIN,
-        _sandbox: Optional[models.Sandbox] = None,
-        _debug_hostname: Optional[str] = None,
-        _debug_port: Optional[int] = None,
-        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        sandbox_id: Optional[str] = None,
+        request_timeout: Optional[float] = None,
     ):
-        """
-        Create a new cloud sandbox.
+        super().__init__()
 
-        :param id: [Deprecated] Use `template` param instead.
-        :param template: ID of the sandbox template or the name of prepared template. If not specified a 'base' template will be used.
-        Can be one of the following premade sandbox templates or a custom sandbox template ID:
-        - `base` - A basic sandbox with a Linux environment
-
-        :param api_key: The API key to use, if not provided, the `E2B_API_KEY` environment variable is used
-        :param cwd: The current working directory to use
-        :param env_vars: A dictionary of environment variables to be used for all processes
-        :param on_scan_ports: A callback to handle opened ports
-        :param on_stdout: A default callback that is called when stdout with a newline is received from the process
-        :param on_stderr: A default callback that is called when stderr with a newline is received from the process
-        :param on_exit: A default callback that is called when the process exits
-        :param metadata: A dictionary of strings that is stored alongside the running sandbox. You can see this metadata when you list running sandboxes.
-        :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
-        :param domain: The domain to use for the API
-        """
-
-        template = id or template or "base"
-
-        if id:
-            logger.warning("The id parameter is deprecated, use template instead.")
-
-        logger.info(
-            f"Creating sandbox {template if isinstance(template, str) else type(template)}"
-        )
-        if cwd and cwd.startswith("~"):
-            cwd = cwd.replace("~", "/home/user")
-
-        self._code_snippet = CodeSnippetManager(
-            sandbox=self,
-            on_scan_ports=on_scan_ports,
-        )
-
-        self._on_stdout = on_stdout
-        self._on_stderr = on_stderr
-
-        default_env_vars = {"PYTHONUNBUFFERED": "1"}
-
-        self._terminal = TerminalManager(sandbox=self)
-        self._filesystem = FilesystemManager(sandbox=self)
-        self._process = ProcessManager(
-            sandbox=self,
-            on_stdout=on_stdout,
-            on_stderr=on_stderr,
-            on_exit=on_exit,
-        )
-        super().__init__(
-            template=template,
-            api_key=api_key,
-            cwd=cwd,
-            env_vars={
-                **default_env_vars,
-                **(env_vars or {}),
-            },
-            metadata=metadata,
-            _sandbox=_sandbox,
-            _debug_hostname=_debug_hostname,
-            _debug_port=_debug_port,
-            _debug_dev_env=_debug_dev_env,
-            timeout=timeout,
-            domain=domain,
-        )
-
-    def _handle_start_cmd_logs(self):
-        def run_in_thread():
-            self.process.start(
-                "sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service",
-                cwd="/",
-                env_vars={},
+        if sandbox_id and (metadata is not None or template is not None):
+            raise SandboxException(
+                "Cannot set metadata or timeout when connecting to an existing sandbox. "
+                "Use Sandbox.connect method instead.",
             )
 
-        thread = threading.Thread(target=run_in_thread)
-        thread.start()
+        self._connection_config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
+
+        if self._connection_config.debug:
+            self.sandbox_id = "debug_sandbox_id"
+        elif sandbox_id is not None:
+            self.sandbox_id = sandbox_id
+        else:
+            template = template or self.default_template
+            timeout = timeout or self.default_sandbox_timeout
+            self.sandbox_id = SandboxApi._create_sandbox(
+                template=template,
+                api_key=api_key,
+                timeout=timeout,
+                metadata=metadata,
+                domain=domain,
+                debug=debug,
+                request_timeout=request_timeout,
+            )
+
+        self._envd_api_url = f"{'http' if self._connection_config.debug else 'https'}://{self.get_host(self._envd_port)}"
+
+        self._envd_rpc_pool = E2BConnectionPool(max_connections=25)
+        self._envd_api = httpx.Client(base_url=self._envd_api_url)
+
+        self._filesystem = Filesystem(
+            self._envd_api_url,
+            self._connection_config,
+            self._envd_rpc_pool,
+            self._envd_api,
+        )
+        self._process = Process(
+            self._envd_api_url, self._connection_config, self._envd_rpc_pool
+        )
+
+    def get_host(self, port: int) -> str:
+        if self._connection_config.debug:
+            return f"localhost:{port}"
+
+        return f"{port}-{self.sandbox_id}.{self._connection_config.domain}"
+
+    def is_running(self, request_timeout: Optional[float] = None) -> Literal[True]:
+        r = self._envd_api.get(
+            ENVD_API_HEALTH_ROUTE,
+            timeout=self._connection_config.get_request_timeout(request_timeout),
+        )
+
+        err = handle_envd_api_exception(r)
+        if err:
+            raise err
+
+        return True
 
     @classmethod
-    def reconnect(
+    def connect(
         cls,
         sandbox_id: str,
-        cwd: Optional[str] = None,
-        env_vars: Optional[EnvVars] = None,
-        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Union[Callable[[int], Any], Callable[[], Any]]] = None,
-        timeout: Optional[float] = TIMEOUT,
         api_key: Optional[str] = None,
-        domain: str = DOMAIN,
-        _debug_hostname: Optional[str] = None,
-        _debug_port: Optional[int] = None,
-        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
     ):
-        """
-        Reconnects to a previously created sandbox.
-
-        :param sandbox_id: ID of the sandbox to reconnect to
-        :param cwd: The current working directory to use
-        :param env_vars: A dictionary of environment variables to be used for all processes
-        :param on_scan_ports: A callback to handle opened ports
-        :param on_stdout: A default callback that is called when stdout with a newline is received from the process
-        :param on_stderr: A default callback that is called when stderr with a newline is received from the process
-        :param on_exit: A default callback that is called when the process exits
-        :param timeout: Timeout for sandbox to initialize in seconds, default is 60 seconds
-        :param api_key: The API key to use, if not provided, the `E2B_API_KEY` environment variable is used
-        :param domain: The domain to use for the API
-
-        ```py
-        sandbox = Sandbox()
-        id = sandbox.id
-        sandbox.keep_alive(300)
-        sandbox.close()
-
-        # Reconnect to the sandbox
-        reconnected_sandbox = Sandbox.reconnect(id)
-        ```
-
-        """
-
-        logger.info(f"Reconnecting to sandbox {sandbox_id}")
-        sandbox_id, client_id = sandbox_id.split("-")
         return cls(
-            cwd=cwd,
-            env_vars=env_vars,
-            on_scan_ports=on_scan_ports,
-            on_stdout=on_stdout,
-            on_stderr=on_stderr,
-            on_exit=on_exit,
-            timeout=timeout,
+            sandbox_id=sandbox_id,
             api_key=api_key,
             domain=domain,
-            _sandbox=models.Sandbox(
-                sandbox_id=sandbox_id,
-                client_id=client_id,
-                template_id=getattr(cls, "sandbox_template_id", "unknown"),
-            ),
+            debug=debug,
         )
 
-    def _open(
-        self,
-        metadata: Optional[Dict[str, str]] = None,
-        timeout: Optional[float] = TIMEOUT,
-    ) -> None:
-        """
-        Open the sandbox.
+    def upload_url(self, path: Optional[str] = None) -> str:
+        url = urllib.parse.urljoin(self._envd_api_url, f"{ENVD_API_FILES_ROUTE}?")
+        params = urllib.parse.urlencode(
+            {"username": "user", "path": path},
+            quote_via=urllib.parse.quote,
+        )
+        url = urllib.parse.urljoin(url, params)
 
-        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-        """
-        logger.info(f"Opening sandbox {self._template}")
-        super()._open(metadata=metadata, timeout=timeout)
-        self._code_snippet._subscribe()
-        logger.info(f"Sandbox {self._template} opened")
-
-        if self.cwd:
-            self.filesystem.make_dir(self.cwd)
-
-        if self._on_stderr or self._on_stdout:
-            self._handle_start_cmd_logs()
-
-    def file_url(self) -> str:
-        """
-        Return a URL that can be used to upload files to the sandbox via a multipart/form-data POST request.
-        This is useful if you're uploading files directly from the browser.
-        The file will be uploaded to the user's home directory with the same name.
-        If a file with the same name already exists, it will be overwritten.
-        """
-        hostname = self.get_hostname(self._debug_port or ENVD_PORT)
-        protocol = self.get_protocol(secure=self._debug_dev_env != "local")
-
-        file_url = f"{protocol}://{hostname}{FILE_ROUTE}"
-
-        return file_url
-
-    def upload_file(self, file: IO, timeout: Optional[float] = TIMEOUT) -> str:
-        """
-        Upload a file to the sandbox.
-        The file will be uploaded to the user's home (`/home/user`) directory with the same name.
-        If a file with the same name already exists, it will be overwritten.
-
-        :param file: The file to upload
-        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-        """
-        files = {"file": file}
-        r = requests.post(self.file_url(), files=files, timeout=timeout)
-        if r.status_code != 200:
-            raise Exception(f"Failed to upload file: {r.reason} {r.text}")
-
-        filename = path.basename(file.name)
-        return f"/home/user/{filename}"
-
-    def download_file(
-        self, remote_path: str, timeout: Optional[float] = TIMEOUT
-    ) -> bytes:
-        """
-        Download a file from the sandbox and returns it's content as bytes.
-
-        :param remote_path: The path of the file to download
-        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-        """
-        encoded_path = urllib.parse.quote(remote_path)
-        url = f"{self.file_url()}?path={encoded_path}"
-        r = requests.get(url, timeout=timeout)
-
-        if r.status_code != 200:
-            raise Exception(
-                f"Failed to download file '{remote_path}'. {r.reason} {r.text}"
-            )
-        return r.content
+        return url
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
+        self.kill()
+
+    @overload
+    def kill(self, request_timeout: Optional[float] = None) -> None:
+        ...
+
+    @overload
+    @staticmethod
+    def kill(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        ...
+
+    @class_method_variant("_cls_kill")
+    def kill(self, request_timeout: Optional[float] = None) -> None:  # type: ignore
+        config_dict = self._connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
+        SandboxApi._cls_kill(
+            sandbox_id=self.sandbox_id,
+            **self._connection_config.__dict__,
+        )
+
+    @overload
+    def set_timeout(
+        self,
+        timeout: int,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        ...
+
+    @overload
+    @staticmethod
+    def set_timeout(
+        sandbox_id: str,
+        timeout: int,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        ...
+
+    @class_method_variant("_cls_set_timeout")
+    def set_timeout(  # type: ignore
+        self,
+        timeout: int,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        config_dict = self._connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
+        SandboxApi._cls_set_timeout(
+            sandbox_id=self.sandbox_id,
+            timeout=timeout,
+            **self._connection_config.__dict__,
+        )

@@ -1,11 +1,6 @@
-import logging
-
-from dotenv import load_dotenv
 from e2b import Sandbox
 
-load_dotenv()
+sbx = Sandbox()
 
-logging.basicConfig(level=logging.INFO)
 
-with Sandbox() as sandbox:
-    print(sandbox.id)
+sbx.files.list("/")

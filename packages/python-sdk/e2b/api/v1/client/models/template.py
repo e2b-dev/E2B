@@ -19,7 +19,7 @@ import json
 
 
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field, StrictBool, StrictInt, StrictStr, conlist
+from pydantic import BaseModel, Field, StrictBool, StrictStr, conint, conlist
 
 
 class Template(BaseModel):
@@ -35,11 +35,11 @@ class Template(BaseModel):
         alias="buildID",
         description="Identifier of the last successful build for given template",
     )
-    cpu_count: StrictInt = Field(
+    cpu_count: conint(strict=True, le=8, ge=1) = Field(
         ..., alias="cpuCount", description="CPU cores for the sandbox"
     )
-    memory_mb: StrictInt = Field(
-        ..., alias="memoryMB", description="Memory limit for the sandbox in MB"
+    memory_mb: conint(strict=True, le=8192, ge=128) = Field(
+        ..., alias="memoryMB", description="Memory for the sandbox in MB"
     )
     public: StrictBool = Field(
         ..., description="Whether the template is public or only accessible by the team"

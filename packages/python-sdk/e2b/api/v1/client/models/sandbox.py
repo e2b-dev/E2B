@@ -39,8 +39,13 @@ class Sandbox(BaseModel):
     client_id: StrictStr = Field(
         ..., alias="clientID", description="Identifier of the client"
     )
+    envd_version: StrictStr = Field(
+        ...,
+        alias="envdVersion",
+        description="Version of the envd running in the sandbox",
+    )
     additional_properties: Dict[str, Any] = {}
-    __properties = ["templateID", "sandboxID", "alias", "clientID"]
+    __properties = ["templateID", "sandboxID", "alias", "clientID", "envdVersion"]
 
     class Config:
         """Pydantic configuration"""
@@ -88,6 +93,7 @@ class Sandbox(BaseModel):
                 "sandbox_id": obj.get("sandboxID"),
                 "alias": obj.get("alias"),
                 "client_id": obj.get("clientID"),
+                "envd_version": obj.get("envdVersion"),
             }
         )
         # store additional fields in additional_properties

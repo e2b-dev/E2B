@@ -46,8 +46,17 @@ class Sandbox(BaseModel):
     client_id: StrictStr = Field(
         description="Identifier of the client", alias="clientID"
     )
+    envd_version: StrictStr = Field(
+        description="Version of the envd running in the sandbox", alias="envdVersion"
+    )
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["templateID", "sandboxID", "alias", "clientID"]
+    __properties: ClassVar[List[str]] = [
+        "templateID",
+        "sandboxID",
+        "alias",
+        "clientID",
+        "envdVersion",
+    ]
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
@@ -105,6 +114,7 @@ class Sandbox(BaseModel):
                 "sandboxID": obj.get("sandboxID"),
                 "alias": obj.get("alias"),
                 "clientID": obj.get("clientID"),
+                "envdVersion": obj.get("envdVersion"),
             }
         )
         # store additional fields in additional_properties
