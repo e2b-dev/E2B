@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/dns"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/pool"
 	"github.com/e2b-dev/infra/packages/shared/pkg/consts"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
@@ -39,7 +38,7 @@ var httpClient = http.Client{
 }
 
 type Sandbox struct {
-	slot  *IPSlot
+	slot  IPSlot
 	files *SandboxFiles
 
 	fc   *fc
@@ -63,7 +62,7 @@ func NewSandbox(
 	tracer trace.Tracer,
 	consul *consul.Client,
 	dns *dns.DNS,
-	networkPool *pool.Pool[*IPSlot],
+	networkPool chan IPSlot,
 	config *orchestrator.SandboxConfig,
 	traceID string,
 ) (*Sandbox, error) {
@@ -72,8 +71,15 @@ func NewSandbox(
 
 	_, networkSpan := tracer.Start(childCtx, "get-network-slot")
 	// Get slot from Consul KV
-	ips := networkPool.Get()
-	telemetry.ReportEvent(childCtx, "reserved ip slot")
+
+	var ips IPSlot
+	select {
+	case ips = <-networkPool:
+		telemetry.ReportEvent(childCtx, "reserved ip slot")
+	case <-childCtx.Done():
+		return nil, childCtx.Err()
+	}
+
 	networkSpan.End()
 
 	var err error
@@ -218,17 +224,7 @@ func NewSandbox(
 
 	telemetry.ReportEvent(childCtx, "ensuring clock sync")
 
-	go func() {
-		backgroundCtx := context.Background()
-
-		clockErr := instance.EnsureClockSync(backgroundCtx, consts.DefaultEnvdServerPort)
-		if clockErr != nil {
-			telemetry.ReportError(backgroundCtx, fmt.Errorf("failed to sync clock (new envd): %w", clockErr))
-		} else {
-			telemetry.ReportEvent(backgroundCtx, "clock synced (new envd)")
-		}
-	}()
-
+	// TODO: Switch to using the sync in the new envd
 	go func() {
 		backgroundCtx := context.Background()
 

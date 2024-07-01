@@ -125,12 +125,19 @@ func (fc *fc) loadSnapshot(
 		},
 	}
 
+	_, err := httpClient.Operations.LoadSnapshot(&snapshotConfig)
+	if err != nil {
+		telemetry.ReportCriticalError(childCtx, err)
+		return err
+	}
+	telemetry.ReportEvent(childCtx, "snapshot loaded")
+
 	mmdsConfig := operations.PutMmdsParams{
 		Context: childCtx,
 		Body:    metadata,
 	}
 
-	_, err := httpClient.Operations.PutMmds(&mmdsConfig)
+	_, err = httpClient.Operations.PutMmds(&mmdsConfig)
 	if err != nil {
 		telemetry.ReportCriticalError(childCtx, err)
 		return err
@@ -138,20 +145,13 @@ func (fc *fc) loadSnapshot(
 
 	telemetry.ReportEvent(childCtx, "mmds data set")
 
-	_, err = httpClient.Operations.LoadSnapshot(&snapshotConfig)
-	if err != nil {
-		telemetry.ReportCriticalError(childCtx, err)
-		return err
-	}
-	telemetry.ReportEvent(childCtx, "snapshot loaded")
-
 	return nil
 }
 
 func newFC(
 	ctx context.Context,
 	tracer trace.Tracer,
-	slot *IPSlot,
+	slot IPSlot,
 	fsEnv *SandboxFiles,
 	mmdsMetadata *MmdsMetadata,
 ) *fc {

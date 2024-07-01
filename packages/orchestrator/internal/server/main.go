@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -20,16 +19,14 @@ import (
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/constants"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/consul"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/dns"
-	"github.com/e2b-dev/infra/packages/orchestrator/internal/pool"
 	"github.com/e2b-dev/infra/packages/orchestrator/internal/sandbox"
 	"github.com/e2b-dev/infra/packages/shared/pkg/grpc/orchestrator"
 	"github.com/e2b-dev/infra/packages/shared/pkg/logging"
 	"github.com/e2b-dev/infra/packages/shared/pkg/smap"
-	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const (
-	ipSlotConcurrency = 4
+	ipSlotConcurrency = 1
 	ipSlotPoolSize    = 25
 )
 
@@ -39,7 +36,7 @@ type server struct {
 	dns         *dns.DNS
 	tracer      trace.Tracer
 	consul      *consulapi.Client
-	networkPool *pool.Pool[*sandbox.IPSlot]
+	networkPool chan sandbox.IPSlot
 }
 
 func New(logger *zap.Logger) *grpc.Server {
@@ -67,31 +64,32 @@ func New(logger *zap.Logger) *grpc.Server {
 		panic(err)
 	}
 
-	createNetwork := func() (*sandbox.IPSlot, error) {
-		ips, err := sandbox.NewSlot(ctx, tracer, consulClient)
-
-		err = ips.CreateNetwork(ctx, tracer)
-		if err != nil {
-			errMsg := fmt.Errorf("failed to create namespaces: %w", err)
-			telemetry.ReportCriticalError(ctx, errMsg)
-
-			return nil, errMsg
-		}
-
-		return ips, err
-	}
-
-	networkPool := pool.New[*sandbox.IPSlot](ipSlotPoolSize)
+	// Sandboxes waiting for the network slot can be passed and reschedulede
+	// so we should include a FIFO system for waiting.
+	networkPool := make(chan sandbox.IPSlot, ipSlotPoolSize)
 
 	go func() {
-		err := networkPool.Populate(
-			ctx,
-			ipSlotConcurrency,
-			createNetwork,
-		)
-		if err != nil {
-			logger.Fatal("failed to populate network pool", zap.Error(err))
-			panic(err)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				ips, err := sandbox.NewSlot(ctx, tracer, consulClient)
+				if err != nil {
+					logger.Error("failed to create network", zap.Error(err))
+					continue
+				}
+
+				err = ips.CreateNetwork(ctx, tracer)
+				if err != nil {
+					ips.Release(ctx, tracer, consulClient)
+
+					logger.Error("failed to create network", zap.Error(err))
+					continue
+				}
+
+				networkPool <- *ips
+			}
 		}
 	}()
 
