@@ -12,7 +12,7 @@ import {
   asBold,
   asBuildLogs,
   asFormattedSandboxTemplate,
-  prettyPrintDockerStream,
+  prettyPrintDockerLogs,
   asLocal,
   asLocalRelative,
   asPrimary,
@@ -290,7 +290,7 @@ export const buildCommand = new commander.Command('build')
         })
 
         for await (const chunk of buildStream) {
-          prettyPrintDockerStream(chunk.toString('utf-8'), 'stream')
+          prettyPrintDockerLogs(chunk.toString('utf-8'), 'stream')
         }
 
         console.log('Docker image built.\n')
@@ -307,7 +307,7 @@ export const buildCommand = new commander.Command('build')
         })
 
         for await (const chunk of pushStream) {
-          prettyPrintDockerStream(chunk.toString('utf-8'), 'status')
+          prettyPrintDockerLogs(chunk.toString('utf-8'), 'status')
         }
 
         console.log('Docker image pushed.\n')
