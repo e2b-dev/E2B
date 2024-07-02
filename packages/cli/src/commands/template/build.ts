@@ -345,8 +345,9 @@ export const buildCommand = new commander.Command('build')
           dockerfile: dockerfileRelativePath,
         })
 
+        const buildProgress = new Map()
         for await (const chunk of buildStream) {
-          prettyPrintDockerLogs(chunk.toString('utf-8'))
+          prettyPrintDockerLogs(chunk.toString('utf-8'), buildProgress)
         }
 
         console.log('Docker image built.\n')
@@ -362,8 +363,9 @@ export const buildCommand = new commander.Command('build')
           },
         })
 
+        const pushProgress = new Map()
         for await (const chunk of pushStream) {
-          prettyPrintDockerLogs(chunk.toString('utf-8'))
+          prettyPrintDockerLogs(chunk.toString('utf-8'), pushProgress)
         }
 
         console.log('Docker image pushed.\n')

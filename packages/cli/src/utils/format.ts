@@ -159,7 +159,14 @@ export function withDelimiter(
   })
 }
 
-export async function prettyPrintDockerLogs(c: string) {
+function clearLines (lines: number) {
+  for (let i = 0; i < lines; i++) {
+    process.stdout.moveCursor(0, -1)
+    process.stdout.clearLine(0)
+  }
+}
+
+export async function prettyPrintDockerLogs(c: string, progress: Map<string, any>) {
   c.split('\n').forEach((chunk) => {
     // parse the line
     let line
@@ -182,11 +189,14 @@ export async function prettyPrintDockerLogs(c: string) {
 
       if (line.status) {
         if (line.id) {
-          process.stdout.clearLine(0)
-          process.stdout.cursorTo(0)
-          process.stdout.write(chalk.default.greenBright(`${line.status}${line.id ? ': ' + line.id : ''} ${line.progress ? line.progress : ''}`))
+          clearLines(progress.size)
+          progress.set(line.id, line)
+
+          for (const l of progress.values()) {
+            process.stdout.write(asBuildLogs(`${l.status}: ${l.id} ${l.progress ? l.progress : ''}\n`))
+          }
         } else {
-          process.stdout.write('\n' + line.status + '\n')
+          process.stdout.write(asBuildLogs(line.status + '\n'))
         }
       }
     }
