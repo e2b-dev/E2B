@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useUser } from '@/utils/useUser'
+import { Team, useUser } from '@/utils/useUser'
 import { Button } from '../Button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 import SwitchToHobbyButton from '@/app/(docs)/docs/pricing/SwitchToHobbyButton'
@@ -20,7 +20,7 @@ interface Invoice {
   date_created: string
 }
 
-export const BillingContent = ({currentApiKey}: {currentApiKey: string | null}) => {
+export const BillingContent = ({ currentApiKey, team }: { currentApiKey: string | null, team: Team }) => {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [credits, setCredits] = useState<number | null>(null)
 
@@ -38,10 +38,6 @@ export const BillingContent = ({currentApiKey}: {currentApiKey: string | null}) 
         return
       }
 
-      //
-      // TODO, why does the json serde not work in some cases?
-      //
-
       const invoices = await res.json() as Invoice[]
       setInvoices(invoices)
 
@@ -58,8 +54,8 @@ export const BillingContent = ({currentApiKey}: {currentApiKey: string | null}) 
       getInvoices()
     }
   }
-  , [currentApiKey])
-  
+    , [currentApiKey])
+
   return (
     <div className="flex flex-col w-full h-full pb-10">
       <div className='flex items-center space-x-4 pb-10'>
@@ -80,11 +76,11 @@ export const BillingContent = ({currentApiKey}: {currentApiKey: string | null}) 
       <div className='flex items-center space-x-4 pb-4'>
         <h2 className='font-bold text-xl'>Change tier</h2>
       </div>
-      
+
       <div className='flex flex-col items-start justify-center pb-10'>
         <div className='flex items-center space-x-4'>
           <h2>Hobby tier</h2>
-          <SwitchToHobbyButton/>
+          <SwitchToHobbyButton team={team} />
         </div>
         <ul className='flex flex-col list-disc list-inside text-neutral-400'>
           <li>One-time $100 credits</li>
@@ -97,7 +93,7 @@ export const BillingContent = ({currentApiKey}: {currentApiKey: string | null}) 
       <div className='flex flex-col items-start justify-center pb-10'>
         <div className='flex items-center space-x-4'>
           <h2>Pro tier</h2>
-          <SwitchToProButton/>
+          <SwitchToProButton team={team} />
         </div>
         <ul className='flex flex-col list-disc list-inside text-neutral-400'>
           <li>One-time $100 credits</li>
@@ -112,37 +108,37 @@ export const BillingContent = ({currentApiKey}: {currentApiKey: string | null}) 
       </div>
 
       <Table>
-      <TableHeader>
-      <TableRow className='hover:bg-inherit dark:hover:bg-inherit border-b border-white/5 '>
-        <TableHead>Date</TableHead>
-        <TableHead>Cost</TableHead>
-        <TableHead>Paid</TableHead>
-        <TableHead>Invoice url</TableHead>
-      </TableRow>
-      </TableHeader>
-      <TableBody>
-      {invoices && invoices.length > 0 ? (
-        invoices.map((item, index) => (
-          <TableRow 
-            className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
-            key={index}
-          >
-            <TableCell>{new Date(item.date_created).toLocaleDateString()}</TableCell>
-            <TableCell>${item.cost.toFixed(2)}</TableCell>
-            <TableCell>{item.paid ? 'Paid' : 'Unpaid'}</TableCell>
-            <TableCell><a className='hover:cursor-pointer' href={item.url} target="_blank" rel="noreferrer noopener">View invoice</a></TableCell>
+        <TableHeader>
+          <TableRow className='hover:bg-inherit dark:hover:bg-inherit border-b border-white/5 '>
+            <TableHead>Date</TableHead>
+            <TableHead>Cost</TableHead>
+            <TableHead>Paid</TableHead>
+            <TableHead>Invoice url</TableHead>
           </TableRow>
-        ))
-      ) : (
-        <TableRow className='border-b border-white/5'>
-          <TableCell colSpan={4} className='text-center'>
-            No invoices found
-          </TableCell>
-        </TableRow>
-      )}
-      </TableBody>
+        </TableHeader>
+        <TableBody>
+          {invoices && invoices.length > 0 ? (
+            invoices.map((item, index) => (
+              <TableRow
+                className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
+                key={index}
+              >
+                <TableCell>{new Date(item.date_created).toLocaleDateString()}</TableCell>
+                <TableCell>${item.cost.toFixed(2)}</TableCell>
+                <TableCell>{item.paid ? 'Paid' : 'Unpaid'}</TableCell>
+                <TableCell><a className='hover:cursor-pointer' href={item.url} target="_blank" rel="noreferrer noopener">View invoice</a></TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow className='border-b border-white/5'>
+              <TableCell colSpan={4} className='text-center'>
+                No invoices found
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
       </Table>
-      
+
     </div>
   )
 }

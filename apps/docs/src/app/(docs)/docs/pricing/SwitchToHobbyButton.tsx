@@ -9,7 +9,7 @@ import Spinner from '@/components/Spinner'
 
 import { TierActiveTag } from './TierActiveTag'
 
-function SwitchToHobbyButton(team: Team) {
+function SwitchToHobbyButton({ team }: { team: Team }) {
   const { user, isLoading } = useUser()
   const [url, setURL] = useState('')
 

@@ -23,7 +23,7 @@ function createCheckout(tierID: string, teamID: string) {
   })
 }
 
-function SwitchTierButton(team: Team) {
+function SwitchTierButton({ team }: { team: Team }) {
   const { user, isLoading } = useUser()
   const [error, setError] = useState('')
 

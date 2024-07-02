@@ -28,8 +28,8 @@ function redirectToCurrentURL() {
 }
 
 // TODO: Sandbox and Templates tab deleted for now
-const menuLabels = ['personal', 'keys', 'usage' ,'billing', 'team',] as const
-type MenuLabel  = typeof menuLabels[number]
+const menuLabels = ['personal', 'keys', 'usage', 'billing', 'team',] as const
+type MenuLabel = typeof menuLabels[number]
 
 export default function Dashboard() {
   const { user, isLoading, error } = useUser()
@@ -44,7 +44,7 @@ export default function Dashboard() {
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
   const [currentApiKey, setCurrentApiKey] = useState<string | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
-  
+
   useEffect(() => {
     if (user) {
       if (teamParam) {
@@ -107,7 +107,7 @@ export default function Dashboard() {
         <Sidebar selectedItem={selectedItem} setSelectedItem={setSelectedItem} teams={teams} user={user} currentTeam={currentTeam} setCurrentTeam={setCurrentTeam} setTeams={setTeams} />
         <div className="flex-1 md:pl-10">
           <h2 className='text-2xl mb-2 font-bold'>{selectedItem[0].toUpperCase() + selectedItem.slice(1)}</h2>
-          <div className='border border-white/5 w-full h-[1px] mb-10'/>
+          <div className='border border-white/5 w-full h-[1px] mb-10' />
           <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function Dashboard() {
   }
 }
 
-const Sidebar = ({ selectedItem, setSelectedItem, teams, user ,currentTeam, setCurrentTeam, setTeams }) => (
+const Sidebar = ({ selectedItem, setSelectedItem, teams, user, currentTeam, setCurrentTeam, setTeams }) => (
   <div className="md:h-full md:w-48 space-y-2 pb-10 md:pb-0">
 
     <AccountSelector teams={teams} user={user} currentTeam={currentTeam} setCurrentTeam={setCurrentTeam} setTeams={setTeams} />
@@ -152,20 +152,20 @@ const iconMap: { [key in MenuLabel]: LucideIcon } = {
   team: Users,
 }
 
-const MenuItem = ({ icon: Icon, label , selected, onClick }: { icon: LucideIcon; label: MenuLabel; selected: boolean; onClick: () => void }) => (
-  <div 
-    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${selected ? 'bg-[#995100]' : ''}`} 
+const MenuItem = ({ icon: Icon, label, selected, onClick }: { icon: LucideIcon; label: MenuLabel; selected: boolean; onClick: () => void }) => (
+  <div
+    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${selected ? 'bg-[#995100]' : ''}`}
     onClick={onClick}
   >
     <Icon width={20} height={20} />
     <p className={`${!label || !window.matchMedia('(min-width: 768)').matches ? 'sr-only sm:not-sr-only' : ''}`}>
-      {label[0].toUpperCase()+label.slice(1)}
+      {label[0].toUpperCase() + label.slice(1)}
     </p>
   </div>
 )
 
 
-const MainContent = ({ selectedItem, user, team, currentApiKey, teams, setTeams, setCurrentTeam }: { selectedItem: MenuLabel, user: User, team: Team, currentApiKey: string | null, teams: Team[], setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void}) => {
+const MainContent = ({ selectedItem, user, team, currentApiKey, teams, setTeams, setCurrentTeam }: { selectedItem: MenuLabel, user: User, team: Team, currentApiKey: string | null, teams: Team[], setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
   switch (selectedItem) {
     case 'personal':
       return <PersonalContent user={user} />
@@ -174,7 +174,7 @@ const MainContent = ({ selectedItem, user, team, currentApiKey, teams, setTeams,
     case 'usage':
       return <UsageContent currentApiKey={currentApiKey} />
     case 'billing':
-      return <BillingContent currentApiKey={currentApiKey} />
+      return <BillingContent currentApiKey={currentApiKey} team={team} />
     case 'team':
       return <TeamContent team={team} user={user} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
     default:
