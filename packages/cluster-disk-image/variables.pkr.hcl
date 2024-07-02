@@ -1,9 +1,9 @@
 variable "gcp_project_id" {
-  type    = string
+  type = string
 }
 
 variable "gcp_zone" {
-  type    = string
+  type = string
 }
 
 variable "consul_version" {

@@ -65,7 +65,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq net-tools qemu-utils gcsfuse make build-essential",
+      "sudo apt-get install -y unzip jq net-tools qemu-utils gcsfuse make build-essential openssh-server", # TODO: openssh-server is updated to prevent security vulnerabilities
     ]
   }
 
