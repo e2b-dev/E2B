@@ -4,7 +4,7 @@ import * as path from 'path'
 import * as e2b from 'e2b'
 import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
-import commandExists from 'command-exists'
+import Docker from 'dockerode'
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getRoot } from 'src/utils/filesystem'
@@ -12,6 +12,7 @@ import {
   asBold,
   asBuildLogs,
   asFormattedSandboxTemplate,
+  prettyPrintDockerLogs,
   asLocal,
   asLocalRelative,
   asPrimary,
@@ -19,13 +20,13 @@ import {
   asTypescript,
   withDelimiter,
 } from 'src/utils/format'
+import { prepareDockerContext } from 'src/utils/docker'
 import { configOption, pathOption } from 'src/options'
 import {
   defaultDockerfileName,
   fallbackDockerfileName,
 } from 'src/docker/constants'
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
-import * as child_process from 'child_process'
 
 import { client } from 'src/api'
 
@@ -119,10 +120,12 @@ export const buildCommand = new commander.Command('build')
       },
     ) => {
       try {
-        const dockerInstalled = commandExists.sync('docker')
-        if (!dockerInstalled) {
+        const docker = new Docker()
+        try {
+          await docker.ping()
+        } catch {
           console.error(
-            'Docker is required to build and push the sandbox template. Please install Docker and try again.',
+            'Docker has to be installed and running to build and push the sandbox template.'
           )
           process.exit(1)
         }
@@ -261,47 +264,53 @@ export const buildCommand = new commander.Command('build')
         )
 
         try {
-          child_process.execSync(
-            `echo "${accessToken}" | docker login docker.${e2b.SANDBOX_DOMAIN} -u _e2b_access_token --password-stdin`,
-            {
-              stdio: 'inherit',
-              cwd: root,
-            },
-          )
+          docker.checkAuth({
+            username: '_e2b_access_token',
+            password: accessToken,
+            serveraddress: `docker.${e2b.SANDBOX_DOMAIN}`,
+          })
         } catch (err: any) {
           console.error(
-            'Docker login failed. Please try to login with `e2b auth login` and try again.',
+            'Docker login failed. Please try to login with `e2b auth login` and try again.'
           )
           process.exit(1)
         }
+
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${
-          e2b.SANDBOX_DOMAIN
-        }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
-          dockerBuildArgs,
-        )
-          .map(([key, value]) => `--build-arg="${key}=${value}"`)
-          .join(' ')}`
-        child_process.execSync(cmd, {
-          stdio: 'inherit',
-          cwd: root,
-          env: {
-            ...process.env,
-            DOCKER_CLI_HINTS: 'false',
-          },
+
+        const dockerImageTag = `docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`
+        const buildStream = await docker.buildImage(await prepareDockerContext(root), {
+          t: dockerImageTag,
+          platform: 'linux/amd64',
+          buildargs: dockerBuildArgs,
+          dockerfile: dockerfileRelativePath,
         })
+
+        const buildProgress = new Map()
+        for await (const chunk of buildStream) {
+          prettyPrintDockerLogs(chunk.toString('utf-8'), buildProgress)
+        }
+
         console.log('Docker image built.\n')
 
         console.log('Pushing docker image...')
-        child_process.execSync(
-          `docker push docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`,
-          {
-            stdio: 'inherit',
-            cwd: root,
+
+        const img = docker.getImage(dockerImageTag)
+        const pushStream = await img.push({
+          authconfig: {
+            username: '_e2b_access_token',
+            password: accessToken,
+            serveraddress: `docker.${e2b.SANDBOX_DOMAIN}`,
           },
-        )
+        })
+
+        const pushProgress = new Map()
+        for await (const chunk of pushStream) {
+          prettyPrintDockerLogs(chunk.toString('utf-8'), pushProgress)
+        }
+
         console.log('Docker image pushed.\n')
 
         console.log('Triggering build...')

@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup'
 
 import * as packageJSON from './package.json'
 
-const excludedPackages = ['update-notifier', 'inquirer']
+const excludedPackages = ['update-notifier', 'inquirer', 'dockerode']
 
 export default defineConfig({
   entry: ['src/index.ts'],
