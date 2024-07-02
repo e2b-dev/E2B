@@ -2,6 +2,7 @@ import * as chalk from 'chalk'
 import * as e2b from 'e2b'
 import * as highlight from 'cli-highlight'
 import * as boxen from 'boxen'
+import * as stripAnsi from 'strip-ansi'
 
 import { cwdRelative } from './filesystem'
 import { UserConfig } from '../user'
@@ -158,15 +159,36 @@ export function withDelimiter(
   })
 }
 
-export function prettyPrintDockerLogs(c: string, key: string = 'stream') {
+export async function prettyPrintDockerLogs(c: string) {
   c.split('\n').forEach((chunk) => {
+    // parse the line
+    let line
     try {
-      const line = JSON.parse(chunk)[key]
-      if (line) {
-        process.stdout.write(asBuildLogs(line.trim()) + '\n')
-      }
+      line = JSON.parse(chunk)
     } catch (e) {
       // ignore
+    }
+
+    // If line was parsed successfully
+    if (line) {
+      if (line.stream) {
+        process.stdout.write(asBuildLogs(stripAnsi.default(line.stream)))
+      }
+
+      if (line.error) {
+        console.error(line.error)
+        process.exit(1)
+      }
+
+      if (line.status) {
+        if (line.id) {
+          process.stdout.clearLine(0)
+          process.stdout.cursorTo(0)
+          process.stdout.write(chalk.default.greenBright(`${line.status}${line.id ? ': ' + line.id : ''} ${line.progress ? line.progress : ''}`))
+        } else {
+          process.stdout.write('\n' + line.status + '\n')
+        }
+      }
     }
   })
 }

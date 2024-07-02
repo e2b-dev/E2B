@@ -40,6 +40,7 @@
     "dev": "tsup --watch",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
     "test:simple": "pnpm build && cd testground/demo-simple && ../../dist/index.js template build",
+    "test:failing": "pnpm build && cd testground/demo-failing && ../../dist/index.js template build",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
     "generate-api-reference": "./scripts/generate_api_ref.sh"

@@ -346,7 +346,7 @@ export const buildCommand = new commander.Command('build')
         })
 
         for await (const chunk of buildStream) {
-          prettyPrintDockerLogs(chunk.toString('utf-8'), 'stream')
+          prettyPrintDockerLogs(chunk.toString('utf-8'))
         }
 
         console.log('Docker image built.\n')
@@ -363,7 +363,7 @@ export const buildCommand = new commander.Command('build')
         })
 
         for await (const chunk of pushStream) {
-          prettyPrintDockerLogs(chunk.toString('utf-8'), 'status')
+          prettyPrintDockerLogs(chunk.toString('utf-8'))
         }
 
         console.log('Docker image pushed.\n')
