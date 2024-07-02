@@ -25,9 +25,7 @@ export function Layout({
       <div className={clsx('h-full', { 'lg:ml-[var(--sidebar-nav-width)]': !isAuth })}>
         <motion.header
           layoutScroll
-          className={clsx(
-            'contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex',
-          )}
+          className='contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]'
         >
           <div
             id="sidebar"
