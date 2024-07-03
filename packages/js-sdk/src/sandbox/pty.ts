@@ -1,8 +1,11 @@
 import {
+  Code,
+  ConnectError,
   createPromiseClient,
   PromiseClient,
   Transport,
 } from '@connectrpc/connect'
+import { PartialMessage } from '@bufbuild/protobuf'
 
 import { Process as ProcessService } from '../envd/process/process_connect'
 import {
@@ -11,9 +14,8 @@ import {
   StreamInputRequest,
 } from '../envd/process/process_pb'
 import { ConnectionConfig, ConnectionOpts, KEEPALIVE_INTERVAL, Username } from '../connectionConfig'
-import { PartialMessage } from '@bufbuild/protobuf'
 import { ProcessHandle } from './process/processHandle'
-import { authenticationHeader } from '../envd/rpc'
+import { authenticationHeader, handleRpcError } from '../envd/rpc'
 
 export interface PtyCreateOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
   cols: number
@@ -166,18 +168,30 @@ export class Pty {
     })
   }
 
-  private async kill(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
-    await this.rpc.sendSignal({
-      process: {
-        selector: {
-          case: 'pid',
-          value: pid,
+  private async kill(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<boolean> {
+    try {
+      await this.rpc.sendSignal({
+        process: {
+          selector: {
+            case: 'pid',
+            value: pid,
+          }
+        },
+        signal: Signal.SIGKILL,
+      }, {
+        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      })
+
+      return true
+    } catch (err) {
+      if (err instanceof ConnectError) {
+        if (err.code === Code.NotFound) {
+          return false
         }
-      },
-      signal: Signal.SIGKILL,
-    }, {
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-    })
+      }
+
+      throw handleRpcError(err)
+    }
   }
 }
 
