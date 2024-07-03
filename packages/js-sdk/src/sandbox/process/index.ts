@@ -1,4 +1,6 @@
 import {
+  Code,
+  ConnectError,
   createPromiseClient,
   PromiseClient,
   Transport,
@@ -89,7 +91,7 @@ export class Process {
     }
   }
 
-  async kill(pid: number, opts?: ProcessRequestOpts): Promise<void> {
+  async kill(pid: number, opts?: ProcessRequestOpts): Promise<boolean> {
     try {
       await this.rpc.sendSignal({
         process: {
@@ -102,7 +104,15 @@ export class Process {
       }, {
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
+
+      return true
     } catch (err) {
+      if (err instanceof ConnectError) {
+        if (err.code === Code.NotFound) {
+          return false
+        }
+      }
+
       throw handleRpcError(err)
     }
   }

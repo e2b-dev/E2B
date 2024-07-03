@@ -3,15 +3,10 @@ from typing import Optional, Dict, List
 from datetime import datetime
 from packaging.version import Version
 
+from e2b.exceptions import TemplateException
 from e2b.api import ApiClient, models, client, exceptions
 from e2b.connection_config import ConnectionConfig
 from e2b.api import handle_api_exception
-
-
-class E2BUpdateTemplateException(Exception):
-    """
-    Exception raised when the template uses old envd version. It isn't compatible with the new SDK.
-    """
 
 
 @dataclass
@@ -74,7 +69,7 @@ class SandboxApi:
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> bool:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
@@ -88,7 +83,10 @@ class SandboxApi:
                     sandbox_id,
                     _request_timeout=config.request_timeout,
                 )
+                return True
             except exceptions.ApiException as e:
+                if e.status == 404:
+                    return False
                 raise handle_api_exception(e)
 
     @classmethod
@@ -147,7 +145,10 @@ class SandboxApi:
                     _request_timeout=config.request_timeout,
                 )
                 if Version(res.envd_version) < Version("0.1.0"):
-                    raise E2BUpdateTemplateException(
+                    SandboxApi._cls_kill(
+                        SandboxApi._get_sandbox_id(res.sandbox_id, res.client_id)
+                    )
+                    raise TemplateException(
                         "You need to update the template to use the new SDK. "
                         "You can do this by running `e2b template build` in the directory with the template."
                     )

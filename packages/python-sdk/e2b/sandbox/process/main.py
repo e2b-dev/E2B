@@ -34,7 +34,8 @@ class Process:
         self._connection_config = connection_config
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
-            compressor=connect.GzipCompressor,
+            # TODO: Fix and enable compression again — the headers compression is not solved.
+            # compressor=connect.GzipCompressor,
             pool=pool,
         )
 
@@ -67,7 +68,7 @@ class Process:
         self,
         pid: int,
         request_timeout: Optional[float] = None,
-    ):
+    ) -> bool:
         try:
             self._rpc.send_signal(
                 process_pb2.SendSignalRequest(
@@ -78,7 +79,11 @@ class Process:
                     request_timeout
                 ),
             )
+            return True
         except Exception as e:
+            if isinstance(e, connect.ConnectException):
+                if e.status == connect.Code.not_found:
+                    return False
             raise handle_rpc_exception(e)
 
     def send_stdin(
@@ -114,8 +119,7 @@ class Process:
         on_stderr: Optional[Callable[[str], None]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessResult:
-        ...
+    ) -> ProcessResult: ...
 
     @overload
     def run(
@@ -129,8 +133,7 @@ class Process:
         on_stderr: Optional[Callable[[str], None]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessHandle:
-        ...
+    ) -> ProcessHandle: ...
 
     def run(
         self,

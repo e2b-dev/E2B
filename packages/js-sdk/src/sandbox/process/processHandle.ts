@@ -55,7 +55,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
   constructor(
     readonly pid: number,
     private readonly handleDisconnect: () => void,
-    private readonly handleKill: () => Promise<void>,
+    private readonly handleKill: () => Promise<boolean>,
     private readonly events: AsyncIterable<ConnectResponse | StartResponse>,
     private readonly onStdout?: (stdout: string) => (void | Promise<void>),
     private readonly onStderr?: (stderr: string) => (void | Promise<void>),

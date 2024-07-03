@@ -1,5 +1,4 @@
 import { expect } from 'vitest'
-import { NotFoundError } from '../../../src/errors.js'
 import { ProcessExitError } from '../../../src/index.js'
 
 import { sandboxTest } from '../../setup.js'
@@ -16,5 +15,5 @@ sandboxTest('kill process', async ({ sandbox }) => {
 sandboxTest('kill non-existing process', async ({ sandbox }) => {
   const nonExistingPid = 999999
 
-  await expect(sandbox.commands.kill(nonExistingPid)).rejects.toThrowError(NotFoundError)
+  await expect(sandbox.commands.kill(nonExistingPid)).resolves.toBe(false)
 })

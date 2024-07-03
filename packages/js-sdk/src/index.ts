@@ -10,6 +10,7 @@ export {
   NotFoundError,
   NotEnoughSpaceError,
   InvalidArgumentError,
+  TemplateError,
 } from './errors'
 export {
   ConnectionConfig,

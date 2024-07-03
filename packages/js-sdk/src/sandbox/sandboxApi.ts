@@ -1,6 +1,7 @@
 import { ApiClient, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
+import { TemplateError } from '../errors'
 
 export interface SandboxApiOpts extends Partial<Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>> { }
 
@@ -43,7 +44,7 @@ export class SandboxApi {
    * @param sandboxID - Sandbox ID.
    * @param opts - Connection options.
    */
-  static async kill(sandboxID: string, opts?: SandboxApiOpts): Promise<void> {
+  static async kill(sandboxID: string, opts?: SandboxApiOpts): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -55,10 +56,16 @@ export class SandboxApi {
       },
     })
 
+    if (res.error?.code === 404) {
+      return false
+    }
+
     const err = handleApiError(res.error)
     if (err) {
       throw err
     }
+
+    return true
   }
 
   static async list(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
@@ -125,10 +132,11 @@ export class SandboxApi {
     }
 
     if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
-        throw new Error(
-            'You need to update the template to use the new SDK. ' +
-            'You can do this by running `e2b template build` in the directory with the template.'
-        )
+      await this.kill(this.getSandboxID(res.data!), opts)
+      throw new TemplateError(
+        'You need to update the template to use the new SDK. ' +
+        'You can do this by running `e2b template build` in the directory with the template.'
+      )
     }
     return this.getSandboxID(res.data!)
   }

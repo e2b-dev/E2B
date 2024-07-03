@@ -158,8 +158,7 @@ class Sandbox(SandboxApi):
         self.kill()
 
     @overload
-    def kill(self, request_timeout: Optional[float] = None) -> None:
-        ...
+    def kill(self, request_timeout: Optional[float] = None) -> bool: ...
 
     @overload
     @staticmethod
@@ -169,11 +168,10 @@ class Sandbox(SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None:
-        ...
+    ) -> bool: ...
 
     @class_method_variant("_cls_kill")
-    def kill(self, request_timeout: Optional[float] = None) -> None:  # type: ignore
+    def kill(self, request_timeout: Optional[float] = None) -> bool:  # type: ignore
         config_dict = self._connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)
@@ -191,8 +189,7 @@ class Sandbox(SandboxApi):
         self,
         timeout: int,
         request_timeout: Optional[float] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     @staticmethod
@@ -203,8 +200,7 @@ class Sandbox(SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @class_method_variant("_cls_set_timeout")
     def set_timeout(  # type: ignore

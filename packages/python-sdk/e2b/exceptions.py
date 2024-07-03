@@ -57,3 +57,9 @@ class AuthenticationException(SandboxException):
     """
 
     pass
+
+
+class TemplateException(SandboxException):
+    """
+    Exception raised when the template uses old envd version. It isn't compatible with the new SDK.
+    """

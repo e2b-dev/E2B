@@ -1,7 +1,9 @@
 import pytest
 
+from e2b import Sandbox
 
-def test_run(sandbox):
+
+def test_run(sandbox: Sandbox):
     text = "Hello, World!"
 
     cmd = sandbox.commands.run(f'echo "{text}"')
@@ -10,7 +12,7 @@ def test_run(sandbox):
     assert cmd.stdout == f"{text}\n"
 
 
-def test_run_with_special_characters(sandbox):
+def test_run_with_special_characters(sandbox: Sandbox):
     text = "!@#$%^&*()_+"
 
     cmd = sandbox.commands.run(f'echo "{text}"')

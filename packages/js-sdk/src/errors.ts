@@ -74,3 +74,13 @@ export class AuthenticationError extends SandboxError {
     this.name = 'AuthenticationError'
   }
 }
+
+/**
+ * Thrown when the template uses old envd version. It isn't compatible with the new SDK.
+ */
+export class TemplateError extends SandboxError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'TemplateError'
+  }
+}

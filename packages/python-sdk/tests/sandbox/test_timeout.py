@@ -1,4 +1,5 @@
 from time import sleep
+from e2b.exceptions import TimeoutException
 
 import pytest
 
@@ -9,7 +10,7 @@ from e2b import NotFoundException
 def test_shorten_timeout(sandbox):
     sandbox.set_timeout(5)
     sleep(6)
-    with pytest.raises(NotFoundException):
+    with pytest.raises(TimeoutException):
         sandbox.is_running()
 
 

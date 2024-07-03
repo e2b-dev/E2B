@@ -33,7 +33,7 @@ class FilesystemEvent:
     type: FilesystemEventType
 
 
-class WatchHandle(Generator):
+class WatchHandle:
     def __init__(
         self,
         events: Generator[WatchDirResponse, Any, None],

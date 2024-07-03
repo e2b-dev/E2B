@@ -28,18 +28,10 @@ class ProcessHandle:
     def pid(self):
         return self._pid
 
-    @property
-    def stdout(self):
-        return self._stdout
-
-    @property
-    def stderr(self):
-        return self._stderr
-
     def __init__(
         self,
         pid: int,
-        handle_kill: Callable[[], None],
+        handle_kill: Callable[[], bool],
         events: Generator[
             Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any, None
         ],
@@ -59,7 +51,11 @@ class ProcessHandle:
 
     def _handle_events(
         self,
-    ) -> Generator[Union[Tuple[Stdout, None], Tuple[None, Stderr]], None, None,]:
+    ) -> Generator[
+        Union[Tuple[Stdout, None], Tuple[None, Stderr]],
+        None,
+        None,
+    ]:
         try:
             for event in self._events:
                 if event.event.HasField("data"):
