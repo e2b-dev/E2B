@@ -120,10 +120,10 @@ func main() {
 
 	m := chi.NewRouter()
 
-	fsLogger := l.With().Str("service", "filesystem").Logger()
+	fsLogger := l.With().Str("logger", "filesystem").Logger()
 	filesystemRpc.Handle(m, &fsLogger)
 
-	processLogger := l.With().Str("service", "process").Logger()
+	processLogger := l.With().Str("logger", "process").Logger()
 	processService := processRpc.Handle(m, &processLogger)
 
 	handler := api.HandlerFromMux(api.New(&fsLogger), m)
