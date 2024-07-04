@@ -22,7 +22,7 @@ func (a *API) PostSync(w http.ResponseWriter, r *http.Request) {
 
 	operationID := logs.AssignOperationID()
 
-	a.logger.Debug().Str(string(logs.OperationIDKey), operationID).Msg("[POST /sync] — Syncing host")
+	a.logger.Debug().Str(string(logs.OperationIDKey), operationID).Msg("Syncing host")
 
 	go func() {
 		err := host.Sync()
@@ -42,7 +42,7 @@ func (a *API) PostSync(w http.ResponseWriter, r *http.Request) {
 func (a *API) GetHealth(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	a.logger.Debug().Msg("[GET /health] — Health check")
+	a.logger.Debug().Msg("Health check")
 
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "")

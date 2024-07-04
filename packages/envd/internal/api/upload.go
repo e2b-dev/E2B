@@ -41,7 +41,7 @@ func processFile(r *http.Request, params PostFilesParams, part *multipart.Part, 
 
 	logger.Debug().
 		Str("path", pathToResolve).
-		Msg("Processing file")
+		Msg("File processing")
 
 	resolvedPath, err := permissions.ExpandAndResolve(pathToResolve, user)
 	if err != nil {
@@ -144,7 +144,7 @@ func (a *API) PostFiles(w http.ResponseWriter, r *http.Request, params PostFiles
 			l = l.Int("error_code", errorCode)
 		}
 
-		l.Msg("[POST /files] — Uploading file")
+		l.Msg("File write")
 	}()
 
 	f, err := r.MultipartReader()

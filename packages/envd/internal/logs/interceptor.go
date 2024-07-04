@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync/atomic"
 
 	"connectrpc.com/connect"
@@ -27,6 +28,26 @@ func AssignOperationID() string {
 
 func AddRequestIDToContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, OperationIDKey, AssignOperationID())
+}
+
+func formatMethod(method string) string {
+	parts := strings.Split(method, ".")
+	if len(parts) < 2 {
+		return method
+	}
+
+	split := strings.Split(parts[1], "/")
+	if len(split) < 2 {
+		return method
+	}
+
+	servicePart := split[0]
+	servicePart = strings.ToUpper(servicePart[:1]) + servicePart[1:]
+
+	methodPart := split[1]
+	methodPart = strings.ToLower(methodPart[:1]) + methodPart[1:]
+
+	return fmt.Sprintf("%s %s", servicePart, methodPart)
 }
 
 func NewUnaryLogInterceptor(logger *zerolog.Logger) connect.UnaryInterceptorFunc {
@@ -60,7 +81,7 @@ func NewUnaryLogInterceptor(logger *zerolog.Logger) connect.UnaryInterceptorFunc
 				l = l.Interface("response", nil)
 			}
 
-			l.Msg(fmt.Sprintf("[%s %s]", DefaultHTTPMethod, req.Spec().Procedure))
+			l.Msg(formatMethod(req.Spec().Procedure))
 
 			return res, err
 		})
@@ -86,7 +107,7 @@ func LogServerStreamWithoutEvents[T any, R any](
 		l = l.Interface("request", req.Any())
 	}
 
-	l.Msg(fmt.Sprintf("[%s %s] (server stream start)", DefaultHTTPMethod, req.Spec().Procedure))
+	l.Msg(fmt.Sprintf("%s (server stream start)", formatMethod(req.Spec().Procedure)))
 
 	err := handler(ctx, req, stream)
 
@@ -100,7 +121,7 @@ func LogServerStreamWithoutEvents[T any, R any](
 		errL = errL.Interface("response", nil)
 	}
 
-	errL.Msg(fmt.Sprintf("[%s %s] (server stream end)", DefaultHTTPMethod, req.Spec().Procedure))
+	errL.Msg(fmt.Sprintf("%s (server stream end)", formatMethod(req.Spec().Procedure)))
 
 	return err
 }
@@ -116,7 +137,7 @@ func LogClientStreamWithoutEvents[T any, R any](
 	logger.Info().
 		Str("method", DefaultHTTPMethod+" "+stream.Spec().Procedure).
 		Str(string(OperationIDKey), ctx.Value(OperationIDKey).(string)).
-		Msg(fmt.Sprintf("[%s %s] (client stream start)", DefaultHTTPMethod, stream.Spec().Procedure))
+		Msg(fmt.Sprintf("%s (client stream start)", formatMethod(stream.Spec().Procedure)))
 
 	res, err := handler(ctx, stream)
 
@@ -136,7 +157,7 @@ func LogClientStreamWithoutEvents[T any, R any](
 		l = l.Interface("response", nil)
 	}
 
-	l.Msg(fmt.Sprintf("[%s %s] (client stream end)", DefaultHTTPMethod, stream.Spec().Procedure))
+	l.Msg(fmt.Sprintf("%s (client stream end)", formatMethod(stream.Spec().Procedure)))
 
 	return res, err
 }
