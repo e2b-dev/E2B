@@ -2,6 +2,7 @@ package logs
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"sync/atomic"
 
@@ -59,7 +60,7 @@ func NewUnaryLogInterceptor(logger *zerolog.Logger) connect.UnaryInterceptorFunc
 				l = l.Interface("response", nil)
 			}
 
-			l.Send()
+			l.Msg(fmt.Sprintf("[%s %s]", DefaultHTTPMethod, req.Spec().Procedure))
 
 			return res, err
 		})
@@ -85,7 +86,7 @@ func LogServerStreamWithoutEvents[T any, R any](
 		l = l.Interface("request", req.Any())
 	}
 
-	l.Send()
+	l.Msg(fmt.Sprintf("[%s %s] (server stream start)", DefaultHTTPMethod, req.Spec().Procedure))
 
 	err := handler(ctx, req, stream)
 
@@ -99,7 +100,7 @@ func LogServerStreamWithoutEvents[T any, R any](
 		errL = errL.Interface("response", nil)
 	}
 
-	errL.Send()
+	errL.Msg(fmt.Sprintf("[%s %s] (server stream end)", DefaultHTTPMethod, req.Spec().Procedure))
 
 	return err
 }
@@ -115,7 +116,7 @@ func LogClientStreamWithoutEvents[T any, R any](
 	logger.Info().
 		Str("method", DefaultHTTPMethod+" "+stream.Spec().Procedure).
 		Str(string(OperationIDKey), ctx.Value(OperationIDKey).(string)).
-		Send()
+		Msg(fmt.Sprintf("[%s %s] (client stream start)", DefaultHTTPMethod, stream.Spec().Procedure))
 
 	res, err := handler(ctx, stream)
 
@@ -135,7 +136,7 @@ func LogClientStreamWithoutEvents[T any, R any](
 		l = l.Interface("response", nil)
 	}
 
-	l.Send()
+	l.Msg(fmt.Sprintf("[%s %s] (client stream end)", DefaultHTTPMethod, stream.Spec().Procedure))
 
 	return res, err
 }

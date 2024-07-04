@@ -14,7 +14,7 @@ import (
 	"connectrpc.com/connect"
 )
 
-func (s *Service) StartBackgroundProcess(ctx context.Context, user *user.User, req *rpc.StartRequest) error {
+func (s *Service) InitializeStartProcess(ctx context.Context, user *user.User, req *rpc.StartRequest) error {
 	var err error
 
 	ctx = logs.AddRequestIDToContext(ctx)
@@ -23,7 +23,7 @@ func (s *Service) StartBackgroundProcess(ctx context.Context, user *user.User, r
 		Err(err).
 		Interface("request", req).
 		Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).
-		Msg("start background process")
+		Msg("Initialized startCmd")
 
 	handlerL := s.logger.With().Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).Logger()
 
@@ -56,9 +56,9 @@ func (s *Service) handleStart(ctx context.Context, req *connect.Request[rpc.Star
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
 
-	s.logger.Trace().Msg("waiting for clock to sync")
+	s.logger.Trace().Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).Msg("Process start: Waiting for clock to sync")
 	host.WaitForSync()
-	s.logger.Trace().Msg("clock synced")
+	s.logger.Trace().Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).Msg("Process start: Clock synced")
 
 	handlerL := s.logger.With().Str(string(logs.OperationIDKey), ctx.Value(logs.OperationIDKey).(string)).Logger()
 

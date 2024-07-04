@@ -144,7 +144,7 @@ func main() {
 		cwd := "/home/user"
 		user, err := permissions.GetUser("root")
 		if err == nil {
-			processService.StartBackgroundProcess(ctx, user, &processSpec.StartRequest{
+			processService.InitializeStartProcess(ctx, user, &processSpec.StartRequest{
 				Tag: &tag,
 				Process: &processSpec.ProcessConfig{
 					Envs: make(map[string]string),
