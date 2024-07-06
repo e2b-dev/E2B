@@ -1,35 +1,23 @@
 import json
 import logging
 
-from importlib.metadata import version
-
+from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException, SandboxException
+from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
 
-pydantic_version = version("pydantic")
-if pydantic_version < "2.0.0":
-    from e2b.api.v1.client import rest
-    import e2b.api.v1.client as client
-    import e2b.api.v1.client.models as models
-    import e2b.api.v1.client.exceptions as exceptions
-else:
-    from e2b.api.v2.client import rest
-    import e2b.api.v2.client as client
-    import e2b.api.v2.client.models as models
-    import e2b.api.v2.client.exceptions as exceptions
 
-
-def handle_api_exception(e: exceptions.ApiException):
-    body = json.loads(e.body) if e.body else {}
+def handle_api_exception(e: Response):
+    body = json.loads(e.content) if e.content else {}
     if "message" in body:
-        return SandboxException(f"{e.status}: {body['message']}")
-    return SandboxException(f"{e.status}: {e.body}")
+        return SandboxException(f"{e.status_code}: {body['message']}")
+    return SandboxException(f"{e.status_code}: {e.content}")
 
 
-class ApiClient(client.ApiClient):
+class ApiClient(AuthenticatedClient):
     def __init__(
         self,
         config: ConnectionConfig,
@@ -51,28 +39,36 @@ class ApiClient(client.ApiClient):
                 "You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `access_token` in options.",
             )
 
-        # Defining the host is optional and defaults to https://api.e2b.dev
-        # See configuration.py for a list of all supported configuration parameters.
-        configuration = client.Configuration(host=config.api_url)
+        token = config.access_token or config.api_key
+        if token is None:
+            raise Exception("API key or access token is required")
 
-        if config.api_key:
-            configuration.api_key["ApiKeyAuth"] = config.api_key
-        if config.access_token:
-            configuration.access_token = config.access_token
+        auth_header_name = "X-API-KEY" if config.api_key else "Authorization"
+        prefix = "Bearer" if config.access_token else ""
 
-        super().__init__(configuration, *args, **kwargs)
-        self.default_headers = default_headers
+        super().__init__(
+            base_url=config.api_url,
+            httpx_args={
+                "event_hooks": {
+                    "request": [self._log_request],
+                    "response": [self._log_response],
+                }
+            },
+            headers={
+                **default_headers,
+            },
+            token=token,
+            auth_header_name=auth_header_name,
+            prefix=prefix,
+            *args,
+            **kwargs,
+        )
 
-    def call_api(self, method, url, *arg, **kwargs) -> rest.RESTResponse:
-        logger.info(f"Request {method} {url}")
-        response = super().call_api(method, url, *arg, **kwargs)
+    def _log_request(self, request):
+        logger.info(f"Request {request.method} {request.url}")
 
-        if response.status >= 400:
-            logger.error(f"Response {response.status} {response.data}")
+    def _log_response(self, response: Response):
+        if response.status_code >= 400:
+            logger.error(f"Response {response.status_code}")
         else:
-            logger.info(f"Response {response.status} {response.data}")
-
-        return response
-
-
-__all__ = ["ApiClient", "client", "models", "exceptions"]
+            logger.info(f"Response {response.status_code}")

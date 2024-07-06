@@ -4,7 +4,14 @@ from datetime import datetime
 from packaging.version import Version
 
 from e2b.exceptions import TemplateException
-from e2b.api import ApiClient, models, client, exceptions
+from e2b.api import ApiClient
+from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
+from e2b.api.client.api.sandboxes import (
+    post_sandboxes_sandbox_id_timeout,
+    get_sandboxes,
+    delete_sandboxes_sandbox_id,
+    post_sandboxes,
+)
 from e2b.connection_config import ConnectionConfig
 from e2b.api import handle_api_exception
 
@@ -42,24 +49,32 @@ class SandboxApi:
         )
 
         with ApiClient(config) as api_client:
-            try:
-                return [
-                    SandboxInfo(
-                        sandbox_id=SandboxApi._get_sandbox_id(
-                            sandbox.sandbox_id,
-                            sandbox.client_id,
-                        ),
-                        template_id=sandbox.template_id,
-                        name=sandbox.alias,
-                        metadata=sandbox.metadata,
-                        started_at=sandbox.started_at,
-                    )
-                    for sandbox in client.SandboxesApi(api_client).sandboxes_get(
-                        _request_timeout=config.request_timeout,
-                    )
-                ]
-            except exceptions.ApiException as e:
-                raise handle_api_exception(e)
+            res = get_sandboxes.sync_detailed(
+                client=api_client,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                return []
+
+            return [
+                SandboxInfo(
+                    sandbox_id=SandboxApi._get_sandbox_id(
+                        sandbox.sandbox_id,
+                        sandbox.client_id,
+                    ),
+                    template_id=sandbox.template_id,
+                    name=sandbox.alias if isinstance(sandbox.alias, str) else None,
+                    metadata=(
+                        sandbox.metadata if isinstance(sandbox.metadata, dict) else None
+                    ),
+                    started_at=sandbox.started_at,
+                )
+                for sandbox in res.parsed
+                if sandbox is not None
+            ]
 
     @classmethod
     def _cls_kill(
@@ -78,16 +93,18 @@ class SandboxApi:
         )
 
         with ApiClient(config) as api_client:
-            try:
-                client.SandboxesApi(api_client).sandboxes_sandbox_id_delete(
-                    sandbox_id,
-                    _request_timeout=config.request_timeout,
-                )
-                return True
-            except exceptions.ApiException as e:
-                if e.status == 404:
-                    return False
-                raise handle_api_exception(e)
+            res = delete_sandboxes_sandbox_id.sync_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code == 404:
+                return False
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            return True
 
     @classmethod
     def _cls_set_timeout(
@@ -107,21 +124,21 @@ class SandboxApi:
         )
 
         with ApiClient(config) as api_client:
-            try:
-                client.SandboxesApi(api_client).sandboxes_sandbox_id_timeout_post(
-                    sandbox_id,
-                    models.SandboxesSandboxIDTimeoutPostRequest(timeout=timeout),
-                    _request_timeout=config.request_timeout,
-                )
-            except exceptions.ApiException as e:
-                raise handle_api_exception(e)
+            res = post_sandboxes_sandbox_id_timeout.sync_detailed(
+                sandbox_id,
+                client=api_client,
+                body=PostSandboxesSandboxIDTimeoutBody(timeout=timeout),
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
 
     @classmethod
     def _create_sandbox(
         cls,
         template: str,
+        timeout: int,
         metadata: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -135,26 +152,37 @@ class SandboxApi:
         )
 
         with ApiClient(config) as api_client:
-            try:
-                res = client.SandboxesApi(api_client).sandboxes_post(
-                    models.NewSandbox(
-                        templateID=template,
-                        metadata=metadata,
-                        timeout=timeout,
-                    ),
-                    _request_timeout=config.request_timeout,
+            res = post_sandboxes.sync_detailed(
+                body=NewSandbox(
+                    template_id=template,
+                    metadata=metadata or {},
+                    timeout=timeout,
+                ),
+                client=api_client,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                raise Exception("Body of the request is None")
+
+            if Version(res.parsed.envd_version) < Version("0.1.0"):
+                SandboxApi._cls_kill(
+                    SandboxApi._get_sandbox_id(
+                        res.parsed.sandbox_id,
+                        res.parsed.client_id,
+                    )
                 )
-                if Version(res.envd_version) < Version("0.1.0"):
-                    SandboxApi._cls_kill(
-                        SandboxApi._get_sandbox_id(res.sandbox_id, res.client_id)
-                    )
-                    raise TemplateException(
-                        "You need to update the template to use the new SDK. "
-                        "You can do this by running `e2b template build` in the directory with the template."
-                    )
-                return SandboxApi._get_sandbox_id(res.sandbox_id, res.client_id)
-            except exceptions.ApiException as e:
-                raise handle_api_exception(e)
+                raise TemplateException(
+                    "You need to update the template to use the new SDK. "
+                    "You can do this by running `e2b template build` in the directory with the template."
+                )
+
+            return SandboxApi._get_sandbox_id(
+                res.parsed.sandbox_id,
+                res.parsed.client_id,
+            )
 
     @staticmethod
     def _get_sandbox_id(sandbox_id: str, client_id: str) -> str:
