@@ -1,11 +1,10 @@
 import gzip
 import json
 import struct
-from e2b.exceptions import SandboxException, format_sandbox_timeout_exception
-import httpcore
 
+from httpcore import ConnectionPool, AsyncConnectionPool, Response
 from enum import Flag, Enum
-from typing import Optional
+from typing import Optional, Dict
 from google.protobuf import json_format
 
 
@@ -56,7 +55,7 @@ def decode_envelope_header(header):
     return EnvelopeFlags(flags), data_len
 
 
-def error_for_response(http_resp: httpcore.Response):
+def error_for_response(http_resp: Response):
     try:
         error = json.loads(http_resp.content)
     except (json.decoder.JSONDecodeError, KeyError):
@@ -128,25 +127,32 @@ class Client:
     def __init__(
         self,
         *,
-        pool: httpcore.ConnectionPool,
-        url,
+        pool: Optional[ConnectionPool] = None,
+        async_pool: Optional[AsyncConnectionPool] = None,
+        url: str,
         response_type,
         compressor=None,
-        json=False,
-        headers=None,
-        timeout=None,
+        json: Optional[bool] = False,
+        headers: Optional[Dict[str, str]] = None,
     ):
         if headers is None:
             headers = {}
 
         self.pool = pool
+        self.async_pool = async_pool
         self.url = url
         self._codec = JSONCodec if json else ProtobufCodec
         self._response_type = response_type
         self._compressor = compressor
         self._headers = {**{"user-agent": "connect-python"}, **headers}
 
-    def call_unary(self, req, request_timeout=None, headers={}, **opts):
+    def _prepare_unary_request(
+        self,
+        req,
+        request_timeout=None,
+        headers={},
+        **opts,
+    ):
         data = self._codec.encode(req)
 
         if self._compressor is not None:
@@ -165,12 +171,12 @@ class Client:
             }
         )
 
-        http_resp = self.pool.request(
-            "POST",
-            self.url,
-            content=data,
-            extensions=extensions,
-            headers={
+        return {
+            "method": "POST",
+            "url": self.url,
+            "content": data,
+            "extensions": extensions,
+            "headers": {
                 **self._headers,
                 **headers,
                 **opts.get("headers", {}),
@@ -180,8 +186,12 @@ class Client:
                 ),
                 "content-type": f"application/{self._codec.content_type}",
             },
-        )
+        }
 
+    def _process_unary_response(
+        self,
+        http_resp: Response,
+    ):
         if http_resp.status != 200:
             raise error_for_response(http_resp)
 
@@ -195,12 +205,48 @@ class Client:
             msg_type=self._response_type,
         )
 
+    async def acall_unary(
+        self,
+        req,
+        request_timeout=None,
+        headers={},
+        **opts,
+    ):
+        if self.async_pool is None:
+            raise ValueError("async_pool is required")
+
+        res = await self.async_pool.request(
+            **self._prepare_unary_request(
+                req,
+                request_timeout,
+                headers,
+                **opts,
+            )
+        )
+
+        return self._process_unary_response(res)
+
+    def call_unary(self, req, request_timeout=None, headers={}, **opts):
+        if self.pool is None:
+            raise ValueError("pool is required")
+
+        res = self.pool.request(
+            **self._prepare_unary_request(
+                req,
+                request_timeout,
+                headers,
+                **opts,
+            )
+        )
+
+        return self._process_unary_response(res)
+
     def _create_stream_timeout(self, timeout: Optional[int]):
         if timeout:
             return {"connect-timeout-ms": str(timeout * 1000)}
         return {}
 
-    def call_server_stream(
+    def _prepare_server_stream_request(
         self,
         req,
         request_timeout=None,
@@ -223,15 +269,15 @@ class Client:
 
         stream_timeout = self._create_stream_timeout(timeout)
 
-        with self.pool.stream(
-            "POST",
-            self.url,
-            content=encode_envelope(
+        return {
+            "method": "POST",
+            "url": self.url,
+            "content": encode_envelope(
                 flags=flags,
                 data=data,
             ),
-            extensions=extensions,
-            headers={
+            "extensions": extensions,
+            "headers": {
                 **self._headers,
                 **headers,
                 **opts.get("headers", {}),
@@ -242,6 +288,96 @@ class Client:
                 ),
                 "content-type": f"application/connect+{self._codec.content_type}",
             },
+        }
+
+    async def acall_server_stream(
+        self,
+        req,
+        request_timeout=None,
+        timeout=None,
+        headers={},
+        **opts,
+    ):
+        if self.async_pool is None:
+            raise ValueError("async_pool is required")
+
+        async with self.async_pool.stream(
+            **self._prepare_server_stream_request(
+                req,
+                request_timeout,
+                timeout,
+                headers,
+                **opts,
+            )
+        ) as http_resp:
+            if http_resp.status != 200:
+                raise error_for_response(http_resp)
+
+            buffer = b""
+            end_stream = False
+            needs_header = True
+            flags, data_len = 0, 0
+
+            async for chunk in http_resp.aiter_stream():
+                buffer += chunk
+
+                if needs_header:
+                    header = buffer[:envelope_header_length]
+                    buffer = buffer[envelope_header_length:]
+                    flags, data_len = decode_envelope_header(header)
+                    needs_header = False
+                    end_stream = EnvelopeFlags.end_stream in flags
+
+                if len(buffer) >= data_len:
+                    buffer = buffer[:data_len]
+
+                    if end_stream:
+                        data = (
+                            buffer
+                            if self._compressor is None
+                            else self._compressor.decompress(buffer)
+                        )
+
+                        data = json.loads(data)
+
+                        if "error" in data:
+                            raise make_error(data["error"])
+
+                        # TODO: Figure out what else might be possible
+                        return
+
+                    if self._compressor is not None:
+                        buffer = self._compressor.decompress(buffer)
+
+                    # TODO: handle server message compression
+                    # if EnvelopeFlags.compression in flags:
+                    # TODO: should the client potentially use a different codec
+                    # based on response header? Or can we assume they're always
+                    # the same and an error otherwise.
+                    yield self._codec.decode(buffer, msg_type=self._response_type)
+
+                    buffer = buffer[data_len:]
+                    needs_header = True
+
+    def call_server_stream(
+        self,
+        req,
+        request_timeout=None,
+        timeout=None,
+        headers={},
+        **opts,
+    ):
+        if self.pool is None:
+            raise ValueError("pool is required")
+
+        with self.pool.stream(
+            **self._prepare_server_stream_request(
+                req,
+                request_timeout,
+                timeout,
+                headers,
+                **opts,
+            )
         ) as http_resp:
             if http_resp.status != 200:
                 raise error_for_response(http_resp)
@@ -293,6 +429,9 @@ class Client:
                     needs_header = True
 
     def call_client_stream(self, req, **opts):
+        raise NotImplementedError("client stream not supported")
+
+    def acall_client_stream(self, req, **opts):
         raise NotImplementedError("client stream not supported")
 
     def call_bidi_stream(self, req, **opts):

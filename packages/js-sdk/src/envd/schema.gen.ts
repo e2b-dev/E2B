@@ -3,14 +3,30 @@
  * Do not make direct changes to the file.
  */
 
-
 export interface paths {
+  "/health": {
+    get: {
+      responses: {
+        /** The service is healthy */
+        204: never;
+      };
+    };
+  };
+  "/sync": {
+    post: {
+      responses: {
+        /** The time and metadata is synced with the host */
+        204: never;
+      };
+    };
+  };
   "/files": {
-    /** Download a file */
     get: {
       parameters: {
         query: {
+          /** Path to the file, URL encoded. Can be relative to user's home directory. */
           path?: components["parameters"]["FilePath"];
+          /** User used for setting the owner, or resolving relative paths. */
           username: components["parameters"]["User"];
         };
       };
@@ -22,15 +38,15 @@ export interface paths {
         500: components["responses"]["InternalServerError"];
       };
     };
-    /** Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten. */
     post: {
       parameters: {
         query: {
+          /** Path to the file, URL encoded. Can be relative to user's home directory. */
           path?: components["parameters"]["FilePath"];
+          /** User used for setting the owner, or resolving relative paths. */
           username: components["parameters"]["User"];
         };
       };
-      requestBody: components["requestBodies"]["File"];
       responses: {
         204: components["responses"]["UploadSuccess"];
         400: components["responses"]["DirectoryPathError"];
@@ -38,88 +54,63 @@ export interface paths {
         500: components["responses"]["InternalServerError"];
         507: components["responses"]["NotEnoughDiskSpace"];
       };
-    };
-  };
-  "/health": {
-    /** Check the health of the service */
-    get: {
-      responses: {
-        /** @description The service is healthy */
-        204: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/sync": {
-    /** Ensure the time and metadata is synced with the host */
-    post: {
-      responses: {
-        /** @description The time and metadata is synced with the host */
-        204: {
-          content: never;
-        };
-      };
+      requestBody: components["requestBodies"]["File"];
     };
   };
 }
 
-export type webhooks = Record<string, never>;
-
 export interface components {
   schemas: {
     Error: {
-      /** @description Error code */
-      code: number;
       /** @description Error message */
       message: string;
+      /** @description Error code */
+      code: number;
     };
   };
   responses: {
-    /** @description Directory path error */
-    DirectoryPathError: {
-      content: {
-        "application/json": components["schemas"]["Error"];
-      };
-    };
-    /** @description Entire file downloaded successfully. */
+    /** The file was uploaded successfully. */
+    UploadSuccess: unknown;
+    /** Entire file downloaded successfully. */
     DownloadSuccess: {
       content: {
         "application/octet-stream": string;
       };
     };
-    /** @description File not found */
-    FileNotFound: {
+    /** Directory path error */
+    DirectoryPathError: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
     };
-    /** @description Internal server error */
+    /** Internal server error */
     InternalServerError: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
     };
-    /** @description Invalid user */
+    /** File not found */
+    FileNotFound: {
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** Invalid user */
     InvalidUser: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
     };
-    /** @description Not enough disk space */
+    /** Not enough disk space */
     NotEnoughDiskSpace: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
     };
-    /** @description The file was uploaded successfully. */
-    UploadSuccess: {
-      content: never;
-    };
   };
   parameters: {
     /** @description Path to the file, URL encoded. Can be relative to user's home directory. */
-    FilePath?: string;
+    FilePath: string;
     /** @description User used for setting the owner, or resolving relative paths. */
     User: string;
   };
@@ -133,12 +124,8 @@ export interface components {
       };
     };
   };
-  headers: never;
-  pathItems: never;
 }
 
-export type $defs = Record<string, never>;
+export interface operations {}
 
-export type external = Record<string, never>;
-
-export type operations = Record<string, never>;
+export interface external {}
