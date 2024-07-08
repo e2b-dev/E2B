@@ -2,9 +2,9 @@ import * as chalk from 'chalk'
 import * as e2b from 'e2b'
 import * as highlight from 'cli-highlight'
 import * as boxen from 'boxen'
-import * as stripAnsi from 'strip-ansi'
 
 import { cwdRelative } from './filesystem'
+import prettyBytes from 'pretty-bytes'
 
 export const primaryColor = '#FFB766'
 
@@ -145,7 +145,7 @@ export async function prettyPrintDockerLogs(c: string, progress: Map<string, any
     // If line was parsed successfully
     if (line) {
       if (line.stream) {
-        process.stdout.write(asBuildLogs(stripAnsi.default(line.stream)))
+        process.stdout.write(line.stream)
       }
 
       if (line.error) {
@@ -158,11 +158,12 @@ export async function prettyPrintDockerLogs(c: string, progress: Map<string, any
           clearLines(progress.size)
           progress.set(line.id, line)
 
+          const isTerminalWide = process.stdout.columns && process.stdout.columns >= 115
           for (const l of progress.values()) {
-            process.stdout.write(asBuildLogs(`${l.status}: ${l.id} ${l.progress ? l.progress : ''}\n`))
+            process.stdout.write(`${l.status}: ${l.id} ${l.progress ? isTerminalWide ? l.progress : `[${prettyBytes(l.progressDetail.current)}/${prettyBytes(l.progressDetail.total)}]` : ''}\n`)
           }
         } else {
-          process.stdout.write(asBuildLogs(line.status + '\n'))
+          process.stdout.write(line.status + '\n')
         }
       }
     }

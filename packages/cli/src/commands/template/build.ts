@@ -20,7 +20,6 @@ import {
   asTypescript,
   withDelimiter,
 } from 'src/utils/format'
-import { prepareDockerContext } from 'src/utils/docker'
 import { configOption, pathOption } from 'src/options'
 import {
   defaultDockerfileName,
@@ -281,7 +280,10 @@ export const buildCommand = new commander.Command('build')
         console.log('Building docker image...')
 
         const dockerImageTag = `docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`
-        const buildStream = await docker.buildImage(await prepareDockerContext(root), {
+        const buildStream = await docker.buildImage({
+          context: root,
+          src: fs.readdirSync(root),
+        }, {
           t: dockerImageTag,
           platform: 'linux/amd64',
           buildargs: dockerBuildArgs,

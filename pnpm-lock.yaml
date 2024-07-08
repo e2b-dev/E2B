@@ -245,9 +245,6 @@ importers:
 
   packages/cli:
     dependencies:
-      '@balena/dockerignore':
-        specifier: ^1.0.2
-        version: 1.0.2
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
@@ -281,12 +278,12 @@ importers:
       open:
         specifier: ^9.1.0
         version: 9.1.0
+      pretty-bytes:
+        specifier: ^6.1.1
+        version: 6.1.1
       strip-ansi:
         specifier: ^7.1.0
         version: 7.1.0
-      tar-fs:
-        specifier: ^3.0.6
-        version: 3.0.6
       update-notifier:
         specifier: 5.1.0
         version: 5.1.0
@@ -294,9 +291,6 @@ importers:
         specifier: ^1.3.2
         version: 1.3.2
     devDependencies:
-      '@types/command-exists':
-        specifier: ^1.2.3
-        version: 1.2.3
       '@types/dockerode':
         specifier: ^3.3.29
         version: 3.3.29
@@ -306,9 +300,6 @@ importers:
       '@types/node':
         specifier: ^18.18.6
         version: 18.18.6
-      '@types/tar-fs':
-        specifier: ^2.0.4
-        version: 2.0.4
       '@types/update-notifier':
         specifier: 6.0.5
         version: 6.0.5
@@ -2838,10 +2829,6 @@ packages:
     resolution: {integrity: sha512-69TtiDzu0bcmKQv3yg1Zx409/Kd7r0b5F1PfpYJfSHzLGtB53547V4u+9iqKYsTu/O2ai6KTb0TInNpvuQ3qmg==}
     dev: true
 
-  /@types/command-exists@1.2.3:
-    resolution: {integrity: sha512-PpbaE2XWLaWYboXD6k70TcXO/OdOyyRFq5TVpmlUELNxdkkmXU9fkImNosmXU1DtsNrqdUgWd/nJQYXgwmtdXQ==}
-    dev: true
-
   /@types/configstore@6.0.1:
     resolution: {integrity: sha512-ML2U2xzN6PwCh1I6QgWI3TdzS7CRLsv5DSCLX4/Wfg+f30JF60WgS9ZbVOOrTk+N67WTCSUKm6Q7k6M/BjbXQw==}
     dev: true
@@ -3030,19 +3017,6 @@ packages:
 
   /@types/ssh2@1.15.0:
     resolution: {integrity: sha512-YcT8jP5F8NzWeevWvcyrrLB3zcneVjzYY9ZDSMAMboI+2zR1qYWFhwsyOFVzT7Jorn67vqxC0FRiw8YyG9P1ww==}
-    dependencies:
-      '@types/node': 18.18.6
-    dev: true
-
-  /@types/tar-fs@2.0.4:
-    resolution: {integrity: sha512-ipPec0CjTmVDWE+QKr9cTmIIoTl7dFG/yARCM5MqK8i6CNLIG1P8x4kwDsOQY1ChZOZjH0wO9nvfgBvWl4R3kA==}
-    dependencies:
-      '@types/node': 18.18.6
-      '@types/tar-stream': 3.1.3
-    dev: true
-
-  /@types/tar-stream@3.1.3:
-    resolution: {integrity: sha512-Zbnx4wpkWBMBSu5CytMbrT5ZpMiF55qgM+EpHzR4yIDu7mv52cej8hTkOc6K+LzpkOAbxwn/m7j3iO+/l42YkQ==}
     dependencies:
       '@types/node': 18.18.6
     dev: true
@@ -3957,6 +3931,7 @@ packages:
 
   /b4a@1.6.4:
     resolution: {integrity: sha512-fpWrvyVHEKyeEvbKZTVOeZF3VSKKWtJxFIxX/jaVPf+cLbGUSitjb49pHLqPV2BUNNZ0LcoeEGfE/YCpyDYHIw==}
+    dev: true
 
   /babylon@6.18.0:
     resolution: {integrity: sha512-q/UEjfGJ2Cm3oKV71DJz9d25TPnq5rhBVL2Q4fA5wcC3jcrdn7+SssEybFIxwAvvP+YCsCYNKughoF33GxgycQ==}
@@ -3969,44 +3944,6 @@ packages:
 
   /balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
-
-  /bare-events@2.4.2:
-    resolution: {integrity: sha512-qMKFd2qG/36aA4GwvKq8MxnPgCQAmBWmSyLWsJcbn8v03wvIPQ/hG1Ms8bPzndZxMDoHpxez5VOS+gC9Yi24/Q==}
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /bare-fs@2.3.1:
-    resolution: {integrity: sha512-W/Hfxc/6VehXlsgFtbB5B4xFcsCl+pAh30cYhoFyXErf6oGrwjh8SwiPAdHgpmWonKuYpZgGywN0SXt7dgsADA==}
-    requiresBuild: true
-    dependencies:
-      bare-events: 2.4.2
-      bare-path: 2.1.3
-      bare-stream: 2.1.3
-    dev: false
-    optional: true
-
-  /bare-os@2.4.0:
-    resolution: {integrity: sha512-v8DTT08AS/G0F9xrhyLtepoo9EJBJ85FRSMbu1pQUlAf6A8T0tEEQGMVObWeqpjhSPXsE0VGlluFBJu2fdoTNg==}
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /bare-path@2.1.3:
-    resolution: {integrity: sha512-lh/eITfU8hrj9Ru5quUp0Io1kJWIk1bTjzo7JH1P5dWmQ2EL4hFUlfI8FonAhSlgIfhn63p84CDY/x+PisgcXA==}
-    requiresBuild: true
-    dependencies:
-      bare-os: 2.4.0
-    dev: false
-    optional: true
-
-  /bare-stream@2.1.3:
-    resolution: {integrity: sha512-tiDAH9H/kP+tvNO5sczyn9ZAA7utrSMobyDchsnyyXBuUe2FSQWbxhtuHB8jwpHYYevVo2UJpcmvvjrbHboUUQ==}
-    requiresBuild: true
-    dependencies:
-      streamx: 2.18.0
-    dev: false
-    optional: true
 
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
@@ -5716,6 +5653,7 @@ packages:
 
   /fast-fifo@1.3.2:
     resolution: {integrity: sha512-/d9sfos4yxzpwkDkuN7k2SqFKtYNmCTzgfEpz82x34IM9/zc8KGxQoXg1liNC/izpRM/MBdt44Nmx41ZWqk+FQ==}
+    dev: true
 
   /fast-glob@3.3.1:
     resolution: {integrity: sha512-kNFPyjhh5cKjrUltxs+wFx+ZkbRaxxmZ+X0ZU31SOsxCEtP9VPgtq2teZw1DebupL5GmDaNQ6yKMMVcM41iqDg==}
@@ -9170,6 +9108,11 @@ packages:
     engines: {node: '>=10.13.0'}
     hasBin: true
 
+  /pretty-bytes@6.1.1:
+    resolution: {integrity: sha512-mQUvGU6aUFQ+rNvTIAcZuWGRT9a6f6Yrg9bHs4ImKF+HZCEK+plBvnAZYSIQztknZF2qnzNtr6F8s0+IuptdlQ==}
+    engines: {node: ^14.13.1 || >=16.0.0}
+    dev: false
+
   /pretty-format@29.7.0:
     resolution: {integrity: sha512-Pdlw/oPxN+aXdmM9R00JVC9WVFoCLTKJvDVLgmJ+qAffBMxsV85l/Lu7sNx4zSzPyoL2euImuEwHhOXdEgNFZQ==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -9276,6 +9219,7 @@ packages:
 
   /queue-tick@1.0.1:
     resolution: {integrity: sha512-kJt5qhMxoszgU/62PLP1CJytzd2NKetjSRnyuj31fDd3Rlcz3fzlFdFLD1SItunPwyqEOkca6GbV612BWfaBag==}
+    dev: true
 
   /quick-lru@4.0.1:
     resolution: {integrity: sha512-ARhCpm70fzdcvNQfPoy49IaanKkTlRWF2JMzqhcJbhSFRZv7nPTvZJdcY7301IPmvW+/p0RgIWnQDLJxifsQ7g==}
@@ -10152,18 +10096,7 @@ packages:
     dependencies:
       fast-fifo: 1.3.2
       queue-tick: 1.0.1
-
-  /streamx@2.18.0:
-    resolution: {integrity: sha512-LLUC1TWdjVdn1weXGcSxyTR3T4+acB6tVGXT95y0nGbca4t4o/ng1wKAGTljm9VicuCVLvRlqFYXYy5GwgM7sQ==}
-    requiresBuild: true
-    dependencies:
-      fast-fifo: 1.3.2
-      queue-tick: 1.0.1
-      text-decoder: 1.1.0
-    optionalDependencies:
-      bare-events: 2.4.2
-    dev: false
-    optional: true
+    dev: true
 
   /string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
@@ -10465,16 +10398,6 @@ packages:
       tar-stream: 3.1.6
     dev: true
 
-  /tar-fs@3.0.6:
-    resolution: {integrity: sha512-iokBDQQkUyeXhgPYaZxmczGPhnhXZ0CmrqI+MOb/WFGS9DW5wnfrLgtjUJBvz50vQ3qfRwJ62QVoCFu8mPVu5w==}
-    dependencies:
-      pump: 3.0.0
-      tar-stream: 3.1.6
-    optionalDependencies:
-      bare-fs: 2.3.1
-      bare-path: 2.1.3
-    dev: false
-
   /tar-stream@2.2.0:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
     engines: {node: '>=6'}
@@ -10491,6 +10414,7 @@ packages:
       b4a: 1.6.4
       fast-fifo: 1.3.2
       streamx: 2.15.1
+    dev: true
 
   /tar@6.2.0:
     resolution: {integrity: sha512-/Wo7DcT0u5HUV486xg675HtjNd3BXZ6xDbzsCUZPt5iw8bTQ63bP0Raut3mvro9u+CUyq7YQd8Cx55fsZXxqLQ==}
@@ -10543,14 +10467,6 @@ packages:
       commander: 2.20.3
       source-map-support: 0.5.21
     dev: false
-
-  /text-decoder@1.1.0:
-    resolution: {integrity: sha512-TmLJNj6UgX8xcUZo4UDStGQtDiTzF7BzWlzn9g7UWrjkpHr5uJTK1ld16wZ3LXb2vb6jH8qU89dW5whuMdXYdw==}
-    requiresBuild: true
-    dependencies:
-      b4a: 1.6.4
-    dev: false
-    optional: true
 
   /text-table@0.2.0:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
