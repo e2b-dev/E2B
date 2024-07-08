@@ -15,9 +15,7 @@ from .exceptions import (
     TemplateException,
 )
 from .sandbox.sandbox_api import SandboxInfo
-from .sandbox.main import Sandbox
 from .sandbox.process.process_handle import (
-    ProcessHandle,
     ProcessResult,
     Stderr,
     Stdout,
@@ -25,9 +23,11 @@ from .sandbox.process.process_handle import (
 )
 from .sandbox.process.main import ProcessInfo
 from .sandbox.filesystem.watch_handle import (
-    WatchHandle,
     FilesystemEvent,
     FilesystemEventType,
 )
 from .sandbox.filesystem.filesystem import EntryInfo, FileType
-from .sandbox.main import Sandbox
+
+from .sandbox.sync.main import Sandbox
+from .sandbox.sync.filesystem.watch_handle import WatchHandle
+from .sandbox.sync.process.process_handle import ProcessHandle
