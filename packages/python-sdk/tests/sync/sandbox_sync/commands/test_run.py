@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import Sandbox
+from e2b import Sandbox, TimeoutException
 
 
 def test_run(sandbox: Sandbox):
@@ -31,11 +31,11 @@ def test_run_with_multiline_string(sandbox):
 
 
 def test_run_with_timeout(sandbox):
-    cmd = sandbox.commands.run('echo "Hello, World!"', timeout=1000)
+    cmd = sandbox.commands.run('echo "Hello, World!"', timeout=10)
 
     assert cmd.exit_code == 0
 
 
 def test_run_with_too_short_timeout(sandbox):
-    with pytest.raises(Exception):
-        sandbox.commands.run("sleep 10", timeout_ms=1000)
+    with pytest.raises(TimeoutException):
+        sandbox.commands.run("sleep 10", timeout=2)

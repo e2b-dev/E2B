@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import AsyncSandbox
+from e2b import AsyncSandbox, TimeoutException
 
 
 @pytest.mark.asyncio
@@ -35,12 +35,12 @@ async def test_run_with_multiline_string(async_sandbox: AsyncSandbox):
 
 @pytest.mark.asyncio
 async def test_run_with_timeout(async_sandbox: AsyncSandbox):
-    cmd = await async_sandbox.commands.run('echo "Hello, World!"', timeout=1000)
+    cmd = await async_sandbox.commands.run('echo "Hello, World!"', timeout=10)
 
     assert cmd.exit_code == 0
 
 
 @pytest.mark.asyncio
 async def test_run_with_too_short_timeout(async_sandbox: AsyncSandbox):
-    with pytest.raises(Exception):
-        await async_sandbox.commands.run("sleep 10", timeout=1000)
+    with pytest.raises(TimeoutException):
+        await async_sandbox.commands.run("sleep 10", timeout=2)
