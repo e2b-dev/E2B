@@ -3,8 +3,6 @@ from e2b.exceptions import TimeoutException
 
 import pytest
 
-from e2b import NotFoundException
-
 
 @pytest.mark.skip_debug()
 def test_shorten_timeout(sandbox):

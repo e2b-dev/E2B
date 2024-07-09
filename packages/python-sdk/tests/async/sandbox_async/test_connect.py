@@ -3,7 +3,7 @@ import pytest
 from e2b import AsyncSandbox
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_connect(template):
     sbx = await AsyncSandbox.create(template, timeout=10)
     assert await sbx.is_running()

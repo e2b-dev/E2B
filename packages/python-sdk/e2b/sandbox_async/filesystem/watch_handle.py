@@ -1,4 +1,4 @@
-import asyncio
+import anyio
 import inspect
 
 from typing import Any, AsyncGenerator, Optional
@@ -19,10 +19,12 @@ class AsyncWatchHandle:
         self._events = events
         self._on_event = on_event
         self._on_exit = on_exit
-        self._task = asyncio.create_task(self._handle_events())
+
+        self._tg = anyio.create_task_group()
+        self._tg.start_soon(self._handle_events)
 
     async def close(self):
-        self._task.cancel()
+        self._tg.cancel_scope.cancel()
         await self._events.aclose()
 
     async def _iterate_events(self):

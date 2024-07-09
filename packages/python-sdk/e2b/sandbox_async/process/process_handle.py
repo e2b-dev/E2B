@@ -1,4 +1,4 @@
-import asyncio
+import anyio
 import inspect
 from typing import (
     Optional,
@@ -69,7 +69,14 @@ class AsyncProcessHandle:
         self._result: Optional[ProcessResult] = None
         self._iteration_exception: Optional[Exception] = None
 
-        self._wait = asyncio.create_task(self._handle_events())
+        self._tg = anyio.create_task_group()
+        self._wait = anyio.Event()
+
+        async def wait():
+            await self._handle_events()
+            self._wait.set()
+
+        self._tg.start_soon(wait)
 
     async def _iterate_events(
         self,
@@ -99,6 +106,7 @@ class AsyncProcessHandle:
             await self.disconnect()
 
     async def disconnect(self) -> None:
+        self._tg.cancel_scope.cancel()
         await self._events.aclose()
 
     async def _handle_events(self):
@@ -134,7 +142,7 @@ class AsyncProcessHandle:
         return self._result
 
     async def wait(self) -> ProcessResult:
-        await self._wait
+        await self._wait.wait()
 
         if self._iteration_exception:
             raise self._iteration_exception
@@ -153,4 +161,5 @@ class AsyncProcessHandle:
         return self._result
 
     async def kill(self):
+        self._tg.cancel_scope.cancel()
         await self._handle_kill()

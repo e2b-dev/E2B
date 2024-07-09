@@ -1,4 +1,4 @@
-import { assert, expect } from 'vitest'
+import { expect } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
 import { FilesystemEventType, NotFoundError } from '../../../src'
@@ -12,17 +12,23 @@ sandboxTest('watch directory changes', async ({ sandbox }) => {
   await sandbox.files.makeDir(dirname)
   await sandbox.files.write(`${dirname}/${filename}`, content)
 
-  let eventTriggered = false
+  let trigger: () => void
+
+  const eventPromise = new Promise<void>(resolve => {
+    trigger = resolve
+  })
+
+
   const handle = await sandbox.files.watch(dirname, async (event) => {
     if (event.type === FilesystemEventType.WRITE && event.name === filename) {
-      eventTriggered = true
+      trigger()
     }
   })
 
   await sandbox.files.write(`${dirname}/${filename}`, newContent)
   await new Promise(resolve => setTimeout(resolve, 1000)) // wait for the event to be triggered
 
-  assert.isTrue(eventTriggered)
+  await eventPromise
 
   await handle.close()
 })
