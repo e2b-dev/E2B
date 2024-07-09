@@ -3,7 +3,7 @@ import os
 
 from logging import warning
 
-from e2b import Sandbox
+from e2b import Sandbox, AsyncSandbox
 
 
 @pytest.fixture()
@@ -20,6 +20,22 @@ def sandbox(template, debug):
     finally:
         try:
             sandbox.kill()
+        except:
+            if not debug:
+                warning(
+                    "Failed to kill sandbox — this is expected if the test runs with local envd."
+                )
+
+
+@pytest.fixture()
+async def async_sandbox(template, debug):
+    sandbox = await AsyncSandbox.create(template)
+
+    try:
+        yield sandbox
+    finally:
+        try:
+            await sandbox.kill()
         except:
             if not debug:
                 warning(

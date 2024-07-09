@@ -1,9 +1,9 @@
-import connect
+import e2b_connect as connect
 import httpx
 import httpcore
 
 from typing import (
-    Iterator,
+    AsyncIterator,
     List,
     Optional,
     overload,
@@ -13,18 +13,15 @@ from typing import (
 )
 
 from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
-from e2b.sandbox.sync.filesystem.watch_handle import WatchHandle
-from e2b.connection_config import (
-    Username,
-    ConnectionConfig,
-)
-from e2b.exceptions import (
-    SandboxException,
-)
+from e2b.connection_config import Username, ConnectionConfig
+from e2b.exceptions import SandboxException
 from e2b.envd.api import handle_envd_api_exception
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.api import ENVD_API_FILES_ROUTE
+from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
+from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
+from e2b.sandbox_async.utilts import OutputHandler
 
 
 class Filesystem:
@@ -32,8 +29,8 @@ class Filesystem:
         self,
         envd_api_url: str,
         connection_config: ConnectionConfig,
-        pool: httpcore.ConnectionPool,
-        envd_api: httpx.Client,
+        pool: httpcore.AsyncConnectionPool,
+        envd_api: httpx.AsyncClient,
     ) -> None:
         self._envd_api_url = envd_api_url
         self._connection_config = connection_config
@@ -43,11 +40,11 @@ class Filesystem:
         self._rpc = filesystem_connect.FilesystemClient(
             envd_api_url,
             compressor=connect.GzipCompressor,
-            pool=pool,
+            async_pool=pool,
         )
 
     @overload
-    def read(
+    async def read(
         self,
         path: str,
         format: Literal["text"] = "text",
@@ -56,7 +53,7 @@ class Filesystem:
     ) -> str: ...
 
     @overload
-    def read(
+    async def read(
         self,
         path: str,
         format: Literal["bytes"],
@@ -65,22 +62,22 @@ class Filesystem:
     ) -> bytearray: ...
 
     @overload
-    def read(
+    async def read(
         self,
         path: str,
         format: Literal["stream"],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> Iterator[bytes]: ...
+    ) -> AsyncIterator[bytes]: ...
 
-    def read(
+    async def read(
         self,
         path: str,
         format: Literal["text", "bytes", "stream"] = "text",
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ):
-        r = self._envd_api.get(
+        r = await self._envd_api.get(
             ENVD_API_FILES_ROUTE,
             params={"path": path, "username": user},
             timeout=self._connection_config.get_request_timeout(request_timeout),
@@ -95,16 +92,16 @@ class Filesystem:
         elif format == "bytes":
             return bytearray(r.content)
         elif format == "stream":
-            return r.iter_bytes()
+            return r.aiter_bytes()
 
-    def write(
+    async def write(
         self,
         path: str,
         data: Union[str, bytes, IO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> None:
-        r = self._envd_api.post(
+        r = await self._envd_api.post(
             ENVD_API_FILES_ROUTE,
             files={"file": data},
             params={"path": path, "username": user},
@@ -115,17 +112,15 @@ class Filesystem:
         if err:
             raise err
 
-    def list(
+    async def list(
         self,
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> List[EntryInfo]:
         try:
-            res = self._rpc.list_dir(
-                filesystem_pb2.ListDirRequest(
-                    path=path,
-                ),
+            res = await self._rpc.alist_dir(
+                filesystem_pb2.ListDirRequest(path=path),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
@@ -143,22 +138,21 @@ class Filesystem:
         except Exception as e:
             raise handle_rpc_exception(e)
 
-    def exists(
+    async def exists(
         self,
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> bool:
         try:
-            self._rpc.stat(
-                filesystem_pb2.StatRequest(
-                    path=path,
-                ),
+            res = await self._rpc.astat(
+                filesystem_pb2.StatRequest(path=path),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
                 headers=authentication_header(user),
             )
+
             return True
 
         except Exception as e:
@@ -167,17 +161,15 @@ class Filesystem:
                     return False
             raise handle_rpc_exception(e)
 
-    def remove(
+    async def remove(
         self,
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> None:
         try:
-            self._rpc.remove(
-                filesystem_pb2.RemoveRequest(
-                    path=path,
-                ),
+            await self._rpc.aremove(
+                filesystem_pb2.RemoveRequest(path=path),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
@@ -186,7 +178,7 @@ class Filesystem:
         except Exception as e:
             raise handle_rpc_exception(e)
 
-    def rename(
+    async def rename(
         self,
         old_path: str,
         new_path: str,
@@ -194,7 +186,7 @@ class Filesystem:
         request_timeout: Optional[float] = None,
     ) -> None:
         try:
-            self._rpc.move(
+            await self._rpc.amove(
                 filesystem_pb2.MoveRequest(
                     source=old_path,
                     destination=new_path,
@@ -207,17 +199,15 @@ class Filesystem:
         except Exception as e:
             raise handle_rpc_exception(e)
 
-    def make_dir(
+    async def make_dir(
         self,
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> bool:
         try:
-            self._rpc.make_dir(
-                filesystem_pb2.MakeDirRequest(
-                    path=path,
-                ),
+            await self._rpc.amake_dir(
+                filesystem_pb2.MakeDirRequest(path=path),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
@@ -231,17 +221,17 @@ class Filesystem:
                     return False
             raise handle_rpc_exception(e)
 
-    def watch(
+    async def watch(
         self,
         path: str,
+        on_event: OutputHandler[FilesystemEvent],
+        on_exit: Optional[OutputHandler[Exception]] = None,
         user: Username = "user",
         request_timeout: Optional[float] = None,
         timeout: Optional[float] = 60,
     ):
-        events = self._rpc.watch_dir(
-            filesystem_pb2.WatchDirRequest(
-                path=path,
-            ),
+        events = self._rpc.awatch_dir(
+            filesystem_pb2.WatchDirRequest(path=path),
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
             ),
@@ -250,13 +240,13 @@ class Filesystem:
         )
 
         try:
-            start_event = next(events)
+            start_event = await events.__anext__()
 
             if not start_event.HasField("start"):
                 raise SandboxException(
                     f"Failed to start watch: expected start event, got {start_event}",
                 )
 
-            return WatchHandle(events=events)
+            return AsyncWatchHandle(events=events, on_event=on_event, on_exit=on_exit)
         except Exception as e:
             raise handle_rpc_exception(e)

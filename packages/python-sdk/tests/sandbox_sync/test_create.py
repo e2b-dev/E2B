@@ -1,6 +1,6 @@
 import pytest
 
-from e2b.sandbox.main import Sandbox
+from e2b import Sandbox
 
 
 @pytest.mark.skip_debug()
@@ -16,6 +16,7 @@ def test_metadata(template):
 
     for sbx_info in sbxs:
         if sbx.sandbox_id == sbx_info.sandbox_id:
+            assert sbx_info.metadata is not None
             assert sbx_info.metadata["test-key"] == "test-value"
             break
     else:

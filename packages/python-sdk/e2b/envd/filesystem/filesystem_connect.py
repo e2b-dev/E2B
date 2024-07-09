@@ -2,7 +2,7 @@
 from typing import Any, Generator, Coroutine, AsyncGenerator, Optional
 from httpcore import ConnectionPool, AsyncConnectionPool
 
-import connect
+import e2b_connect as connect
 
 from e2b.envd.filesystem import filesystem_pb2 as filesystem_dot_filesystem__pb2
 
@@ -69,35 +69,35 @@ class FilesystemClient:
     def stat(self, req: filesystem_dot_filesystem__pb2.StatRequest, **opts) -> filesystem_dot_filesystem__pb2.StatResponse:
         return self._stat.call_unary(req, **opts)
 
-    async def astat(self, req: filesystem_dot_filesystem__pb2.StatRequest, **opts) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.StatResponse]:
+    def astat(self, req: filesystem_dot_filesystem__pb2.StatRequest, **opts) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.StatResponse]:
         return self._stat.acall_unary(req, **opts)
 
     def make_dir(self, req: filesystem_dot_filesystem__pb2.MakeDirRequest, **opts) -> filesystem_dot_filesystem__pb2.MakeDirResponse:
         return self._make_dir.call_unary(req, **opts)
 
-    async def amake_dir(self, req: filesystem_dot_filesystem__pb2.MakeDirRequest, **opts) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.MakeDirResponse]:
+    def amake_dir(self, req: filesystem_dot_filesystem__pb2.MakeDirRequest, **opts) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.MakeDirResponse]:
         return self._make_dir.acall_unary(req, **opts)
 
     def move(self, req: filesystem_dot_filesystem__pb2.MoveRequest, **opts) -> filesystem_dot_filesystem__pb2.MoveResponse:
         return self._move.call_unary(req, **opts)
 
-    async def amove(self, req: filesystem_dot_filesystem__pb2.MoveRequest, **opts) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.MoveResponse]:
+    def amove(self, req: filesystem_dot_filesystem__pb2.MoveRequest, **opts) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.MoveResponse]:
         return self._move.acall_unary(req, **opts)
 
     def list_dir(self, req: filesystem_dot_filesystem__pb2.ListDirRequest, **opts) -> filesystem_dot_filesystem__pb2.ListDirResponse:
         return self._list_dir.call_unary(req, **opts)
 
-    async def alist_dir(self, req: filesystem_dot_filesystem__pb2.ListDirRequest, **opts) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.ListDirResponse]:
+    def alist_dir(self, req: filesystem_dot_filesystem__pb2.ListDirRequest, **opts) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.ListDirResponse]:
         return self._list_dir.acall_unary(req, **opts)
 
     def watch_dir(self, req: filesystem_dot_filesystem__pb2.WatchDirRequest , **opts) -> Generator[filesystem_dot_filesystem__pb2.WatchDirResponse, Any, None]:
         return self._watch_dir.call_server_stream(req, **opts)
 
-    async def awatch_dir(self, req: filesystem_dot_filesystem__pb2.WatchDirRequest , **opts) -> AsyncGenerator[filesystem_dot_filesystem__pb2.WatchDirResponse, Any]:
+    def awatch_dir(self, req: filesystem_dot_filesystem__pb2.WatchDirRequest , **opts) -> AsyncGenerator[filesystem_dot_filesystem__pb2.WatchDirResponse, Any]:
         return self._watch_dir.acall_server_stream(req, **opts)
 
     def remove(self, req: filesystem_dot_filesystem__pb2.RemoveRequest, **opts) -> filesystem_dot_filesystem__pb2.RemoveResponse:
         return self._remove.call_unary(req, **opts)
 
-    async def aremove(self, req: filesystem_dot_filesystem__pb2.RemoveRequest, **opts) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.RemoveResponse]:
+    def aremove(self, req: filesystem_dot_filesystem__pb2.RemoveRequest, **opts) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.RemoveResponse]:
         return self._remove.acall_unary(req, **opts)

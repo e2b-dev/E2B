@@ -1,27 +1,22 @@
-# from typing import Coroutine, Any
+import asyncio
+import time
+import logging
+from e2b import AsyncSandbox, Sandbox
 
 import dotenv
 
 dotenv.load_dotenv()
 
-from e2b import Sandbox
-
-sbx = Sandbox()
-
-r = sbx.list()
-
-print(r)
-
-f = sbx.files.list("/")
-
-print(f)
+logging.basicConfig(level=logging.ERROR)
 
 
-# sbx.files.list("/")
+async def main():
+    for _ in range(10):
+        start = time.time()
+        sbx = await AsyncSandbox.create(timeout=10)
+        end = time.time()
+        print(f"Time taken: {end - start}")
 
 
-# async def a():
-#     return "a"
-
-
-# x = a()
+if __name__ == "__main__":
+    asyncio.run(main())

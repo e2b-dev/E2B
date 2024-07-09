@@ -308,7 +308,7 @@ func generate(gen *Plugin, file *descriptor.FileDescriptorProto) {
 	print(b, "from httpcore import ConnectionPool, AsyncConnectionPool")
 	print(b, "")
 
-	print(b, "import connect")
+	print(b, "import e2b_connect as connect")
 	if len(deps) > 0 {
 		print(b, "")
 		for _, dep := range deps {
@@ -348,13 +348,13 @@ func generate(gen *Plugin, file *descriptor.FileDescriptorProto) {
 				print(b, "    def %s(self, req: %s , **opts) -> Generator[%s, Any, None]:", toSnakeCase(method.GetName()), getRequestType(gen, method), getResponseType(gen, method))
 				print(b, "        return self.%s.call_%s(req, **opts)", getMethodProperty(method), getMethodType(method))
 				print(b, "")
-				print(b, "    async def a%s(self, req: %s , **opts) -> AsyncGenerator[%s, Any]:", toSnakeCase(method.GetName()), getRequestType(gen, method), getResponseType(gen, method))
+				print(b, "    def a%s(self, req: %s , **opts) -> AsyncGenerator[%s, Any]:", toSnakeCase(method.GetName()), getRequestType(gen, method), getResponseType(gen, method))
 				print(b, "        return self.%s.acall_%s(req, **opts)", getMethodProperty(method), getMethodType(method))
 			} else {
 				print(b, "    def %s(self, req: %s, **opts) -> %s:", toSnakeCase(method.GetName()), getRequestType(gen, method), getResponseType(gen, method))
 				print(b, "        return self.%s.call_%s(req, **opts)", getMethodProperty(method), getMethodType(method))
 				print(b, "")
-				print(b, "    async def a%s(self, req: %s, **opts) -> Coroutine[Any, Any, %s]:", toSnakeCase(method.GetName()), getRequestType(gen, method), getResponseType(gen, method))
+				print(b, "    def a%s(self, req: %s, **opts) -> Coroutine[Any, Any, %s]:", toSnakeCase(method.GetName()), getRequestType(gen, method), getResponseType(gen, method))
 				print(b, "        return self.%s.acall_%s(req, **opts)", getMethodProperty(method), getMethodType(method))
 			}
 		}

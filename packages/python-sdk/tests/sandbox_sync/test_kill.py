@@ -1,6 +1,6 @@
 import pytest
 
-from e2b.sandbox.main import Sandbox
+from e2b import Sandbox
 
 
 @pytest.mark.skip_debug()

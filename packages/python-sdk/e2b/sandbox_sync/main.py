@@ -1,5 +1,4 @@
 import logging
-import urllib.parse
 import httpcore
 import httpx
 
@@ -8,28 +7,27 @@ from typing import Optional, Dict, Literal, overload
 from e2b.sandbox.utils import class_method_variant
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.api import (
-    ENVD_API_FILES_ROUTE,
     handle_envd_api_exception,
     ENVD_API_HEALTH_ROUTE,
 )
 from e2b.exceptions import SandboxException
-from e2b.sandbox.sync.filesystem.filesystem import Filesystem
-from e2b.sandbox.sync.process.main import Process
-from e2b.sandbox.sync.sandbox_api import SandboxApi
 from e2b.sandbox.main import SandboxSetup
+from e2b.sandbox_sync.filesystem.filesystem import Filesystem
+from e2b.sandbox_sync.process.main import Process
+from e2b.sandbox_sync.sandbox_api import SandboxApi
 
 
 logger = logging.getLogger(__name__)
 
 
-class E2BConnectionPool(httpcore.ConnectionPool):
+class TransportWithLogger(httpx.HTTPTransport):
     def handle_request(self, request):
-        url = f"{request.url.scheme.decode()}://{request.url.host.decode()}{request.url.target.decode()}"
-        logger.info(f"Request: {request.method.decode()} {url}")
+        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
+        logger.info(f"Request: {request.method} {url}")
         response = super().handle_request(request)
 
         # data = connect.GzipCompressor.decompress(response.read()).decode()
-        logger.info(f"Response: {response.status} {url}")
+        logger.info(f"Response: {response.status_code} {url}")
 
         return response
 
@@ -42,6 +40,18 @@ class Sandbox(SandboxSetup, SandboxApi):
     @property
     def commands(self) -> Process:
         return self._process
+
+    @property
+    def sandbox_id(self) -> str:
+        return self._sandbox_id
+
+    @property
+    def connection_config(self) -> ConnectionConfig:
+        return self._connection_config
+
+    @property
+    def envd_api_url(self) -> str:
+        return self._envd_api_url
 
     def __init__(
         self,
@@ -69,14 +79,14 @@ class Sandbox(SandboxSetup, SandboxApi):
             request_timeout=request_timeout,
         )
 
-        if self._connection_config.debug:
-            self.sandbox_id = "debug_sandbox_id"
+        if self.connection_config.debug:
+            self._sandbox_id = "debug_sandbox_id"
         elif sandbox_id is not None:
-            self.sandbox_id = sandbox_id
+            self._sandbox_id = sandbox_id
         else:
             template = template or self.default_template
             timeout = timeout or self.default_sandbox_timeout
-            self.sandbox_id = SandboxApi._create_sandbox(
+            self._sandbox_id = SandboxApi._create_sandbox(
                 template=template,
                 api_key=api_key,
                 timeout=timeout,
@@ -86,31 +96,30 @@ class Sandbox(SandboxSetup, SandboxApi):
                 request_timeout=request_timeout,
             )
 
-        self._envd_api_url = f"{'http' if self._connection_config.debug else 'https'}://{self.get_host(self._envd_port)}"
+        self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
 
-        self._envd_rpc_pool = E2BConnectionPool(max_connections=25)
-        self._envd_api = httpx.Client(base_url=self._envd_api_url)
+        self._transport = TransportWithLogger(limits=self._limits)
+        self._envd_api = httpx.Client(
+            base_url=self.envd_api_url,
+            transport=self._transport,
+        )
 
         self._filesystem = Filesystem(
-            self._envd_api_url,
-            self._connection_config,
-            self._envd_rpc_pool,
+            self.envd_api_url,
+            self.connection_config,
+            self._transport._pool,
             self._envd_api,
         )
         self._process = Process(
-            self._envd_api_url, self._connection_config, self._envd_rpc_pool
+            self.envd_api_url,
+            self.connection_config,
+            self._transport._pool,
         )
-
-    def get_host(self, port: int) -> str:
-        if self._connection_config.debug:
-            return f"localhost:{port}"
-
-        return f"{port}-{self.sandbox_id}.{self._connection_config.domain}"
 
     def is_running(self, request_timeout: Optional[float] = None) -> Literal[True]:
         r = self._envd_api.get(
             ENVD_API_HEALTH_ROUTE,
-            timeout=self._connection_config.get_request_timeout(request_timeout),
+            timeout=self.connection_config.get_request_timeout(request_timeout),
         )
 
         err = handle_envd_api_exception(r)
@@ -134,19 +143,6 @@ class Sandbox(SandboxSetup, SandboxApi):
             debug=debug,
         )
 
-    def upload_url(self, path: Optional[str] = None) -> str:
-        url = urllib.parse.urljoin(self._envd_api_url, ENVD_API_FILES_ROUTE)
-        query = {"path": path} if path else {}
-        query = {**query, "username": "user"}
-
-        params = urllib.parse.urlencode(
-            query,
-            quote_via=urllib.parse.quote,
-        )
-        url = urllib.parse.urljoin(url, f"?{params}")
-
-        return url
-
     def __enter__(self):
         return self
 
@@ -168,7 +164,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
     @class_method_variant("_cls_kill")
     def kill(self, request_timeout: Optional[float] = None) -> bool:  # type: ignore
-        config_dict = self._connection_config.__dict__
+        config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)
 
@@ -177,7 +173,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
-            **self._connection_config.__dict__,
+            **self.connection_config.__dict__,
         )
 
     @overload
@@ -204,7 +200,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         timeout: int,
         request_timeout: Optional[float] = None,
     ) -> None:
-        config_dict = self._connection_config.__dict__
+        config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)
 
@@ -214,5 +210,5 @@ class Sandbox(SandboxSetup, SandboxApi):
         SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
-            **self._connection_config.__dict__,
+            **self.connection_config.__dict__,
         )

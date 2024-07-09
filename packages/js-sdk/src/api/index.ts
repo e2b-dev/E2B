@@ -41,6 +41,7 @@ class ApiClient {
 
     this.client = createClient<paths>({
       baseUrl: config.apiUrl,
+      keepalive: true,
       signal: config.requestTimeoutMs ? AbortSignal.timeout(config.requestTimeoutMs) : undefined,
       headers: {
         ...defaultHeaders,

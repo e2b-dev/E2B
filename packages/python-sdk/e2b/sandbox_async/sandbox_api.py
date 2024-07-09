@@ -1,9 +1,10 @@
 from typing import Optional, Dict, List
+from httpx import AsyncHTTPTransport
 from packaging.version import Version
 
-from e2b.sandbox.sandbox_api import SandboxInfo
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
 from e2b.exceptions import TemplateException
-from e2b.api import ApiClient
+from e2b.api import AsyncApiClient
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
 from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_timeout,
@@ -15,9 +16,11 @@ from e2b.connection_config import ConnectionConfig
 from e2b.api import handle_api_exception
 
 
-class SandboxApi:
+class SandboxApi(SandboxApiBase):
+    _transport = AsyncHTTPTransport(limits=SandboxApiBase._limits)
+
     @classmethod
-    def list(
+    async def list(
         cls,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
@@ -31,8 +34,8 @@ class SandboxApi:
             request_timeout=request_timeout,
         )
 
-        with ApiClient(config) as api_client:
-            res = get_sandboxes.sync_detailed(
+        async with AsyncApiClient(config, transport=cls._transport) as api_client:
+            res = await get_sandboxes.asyncio_detailed(
                 client=api_client,
             )
 
@@ -56,11 +59,10 @@ class SandboxApi:
                     started_at=sandbox.started_at,
                 )
                 for sandbox in res.parsed
-                if sandbox is not None
             ]
 
     @classmethod
-    def _cls_kill(
+    async def _cls_kill(
         cls,
         sandbox_id: str,
         api_key: Optional[str] = None,
@@ -75,8 +77,8 @@ class SandboxApi:
             request_timeout=request_timeout,
         )
 
-        with ApiClient(config) as api_client:
-            res = delete_sandboxes_sandbox_id.sync_detailed(
+        async with AsyncApiClient(config, transport=cls._transport) as api_client:
+            res = await delete_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
                 client=api_client,
             )
@@ -90,7 +92,7 @@ class SandboxApi:
             return True
 
     @classmethod
-    def _cls_set_timeout(
+    async def _cls_set_timeout(
         cls,
         sandbox_id: str,
         timeout: int,
@@ -106,8 +108,8 @@ class SandboxApi:
             request_timeout=request_timeout,
         )
 
-        with ApiClient(config) as api_client:
-            res = post_sandboxes_sandbox_id_timeout.sync_detailed(
+        async with AsyncApiClient(config, transport=cls._transport) as api_client:
+            res = await post_sandboxes_sandbox_id_timeout.asyncio_detailed(
                 sandbox_id,
                 client=api_client,
                 body=PostSandboxesSandboxIDTimeoutBody(timeout=timeout),
@@ -117,7 +119,7 @@ class SandboxApi:
                 raise handle_api_exception(res)
 
     @classmethod
-    def _create_sandbox(
+    async def _create_sandbox(
         cls,
         template: str,
         timeout: int,
@@ -134,8 +136,8 @@ class SandboxApi:
             request_timeout=request_timeout,
         )
 
-        with ApiClient(config) as api_client:
-            res = post_sandboxes.sync_detailed(
+        async with AsyncApiClient(config, transport=cls._transport) as api_client:
+            res = await post_sandboxes.asyncio_detailed(
                 body=NewSandbox(
                     template_id=template,
                     metadata=metadata or {},
@@ -151,7 +153,7 @@ class SandboxApi:
                 raise Exception("Body of the request is None")
 
             if Version(res.parsed.envd_version) < Version("0.1.0"):
-                SandboxApi._cls_kill(
+                await SandboxApi._cls_kill(
                     SandboxApi._get_sandbox_id(
                         res.parsed.sandbox_id,
                         res.parsed.client_id,

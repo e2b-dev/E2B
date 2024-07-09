@@ -1,4 +1,4 @@
-from e2b.sandbox.main import Sandbox
+from e2b import Sandbox
 
 
 def test_connect(template):

@@ -1,7 +1,6 @@
-from time import sleep
+import httpx
 
-import pytest
-import requests
+from time import sleep
 
 
 def test_ping_server(sandbox, debug):
@@ -10,7 +9,7 @@ def test_ping_server(sandbox, debug):
     try:
         sleep(1)
         host = sandbox.get_host(8000)
-        res = requests.get(f"{'http' if debug else 'https'}://{host}")
+        res = httpx.get(f"{'http' if debug else 'https'}://{host}")
         assert res.status_code == 200
 
     finally:

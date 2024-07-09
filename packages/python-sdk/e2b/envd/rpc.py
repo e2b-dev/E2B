@@ -1,7 +1,7 @@
 import base64
 
 from typing import Optional
-from connect.client import Code, ConnectException
+from e2b_connect.client import Code, ConnectException
 
 from e2b.exceptions import (
     SandboxException,

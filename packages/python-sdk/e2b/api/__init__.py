@@ -1,6 +1,9 @@
 import json
 import logging
 
+from typing import Optional, Union
+from httpx import HTTPTransport, AsyncHTTPTransport
+
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
 from e2b.api.metadata import default_headers
@@ -23,6 +26,7 @@ class ApiClient(AuthenticatedClient):
         config: ConnectionConfig,
         require_api_key: bool = True,
         require_access_token: bool = False,
+        transport: Optional[Union[HTTPTransport, AsyncHTTPTransport]] = None,
         *args,
         **kwargs,
     ):
@@ -46,13 +50,14 @@ class ApiClient(AuthenticatedClient):
         auth_header_name = "X-API-KEY" if config.api_key else "Authorization"
         prefix = "Bearer" if config.access_token else ""
 
-        super().__init__(
+        c = super().__init__(
             base_url=config.api_url,
             httpx_args={
                 "event_hooks": {
                     "request": [self._log_request],
                     "response": [self._log_response],
-                }
+                },
+                "transport": transport,
             },
             headers={
                 **default_headers,
@@ -68,6 +73,18 @@ class ApiClient(AuthenticatedClient):
         logger.info(f"Request {request.method} {request.url}")
 
     def _log_response(self, response: Response):
+        if response.status_code >= 400:
+            logger.error(f"Response {response.status_code}")
+        else:
+            logger.info(f"Response {response.status_code}")
+
+
+# We need to override the logging hooks for the async usage
+class AsyncApiClient(ApiClient):
+    async def _log_request(self, request):
+        logger.info(f"Request {request.method} {request.url}")
+
+    async def _log_response(self, response: Response):
         if response.status_code >= 400:
             logger.error(f"Response {response.status_code}")
         else:

@@ -17,7 +17,7 @@ export function handleEnvdApiError(err: {
     case 404:
       return new NotFoundError(err.message)
     case 429:
-      return new SandboxError(`${err.code}: ${err.message}: The requests are being rate limited.`)      
+      return new SandboxError(`${err.code}: ${err.message}: The requests are being rate limited.`)
     case 502:
       return formatSandboxTimeoutError(err.message)
     case 507:
@@ -35,6 +35,7 @@ class EnvdApiClient {
   constructor(config: Pick<ConnectionConfig, 'apiUrl' | 'logger'>) {
     this.client = createClient<paths>({
       baseUrl: config.apiUrl,
+      keepalive: true,
     })
 
     if (config.logger) {
