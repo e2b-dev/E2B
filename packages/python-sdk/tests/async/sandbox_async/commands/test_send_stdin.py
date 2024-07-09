@@ -1,34 +1,61 @@
 import pytest
-import anyio
+import asyncio
 
 from e2b import AsyncSandbox
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_send_stdin_to_process(async_sandbox: AsyncSandbox):
-    cmd = await async_sandbox.commands.run("cat", background=True)
+    ev = asyncio.Event()
+
+    def handle_event(stdout: str):
+        ev.set()
+
+    cmd = await async_sandbox.commands.run(
+        "cat",
+        background=True,
+        on_stdout=handle_event,
+    )
     await async_sandbox.commands.send_stdin(cmd.pid, "Hello, World!")
 
-    await anyio.sleep(2)
+    await ev.wait()
 
     assert cmd.stdout == "Hello, World!"
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_send_special_characters_to_process(async_sandbox: AsyncSandbox):
-    cmd = await async_sandbox.commands.run("cat", background=True)
+    ev = asyncio.Event()
+
+    def handle_event(stdout: str):
+        ev.set()
+
+    cmd = await async_sandbox.commands.run(
+        "cat",
+        background=True,
+        on_stdout=handle_event,
+    )
     await async_sandbox.commands.send_stdin(cmd.pid, "!@#$%^&*()_+")
 
-    await anyio.sleep(2)
+    await ev.wait()
 
     assert cmd.stdout == "!@#$%^&*()_+"
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_send_multiline_string_to_process(async_sandbox: AsyncSandbox):
-    cmd = await async_sandbox.commands.run("cat", background=True)
+    ev = asyncio.Event()
+
+    def handle_event(stdout: str):
+        ev.set()
+
+    cmd = await async_sandbox.commands.run(
+        "cat",
+        background=True,
+        on_stdout=handle_event,
+    )
     await async_sandbox.commands.send_stdin(cmd.pid, "Hello,\nWorld!")
 
-    await anyio.sleep(2)
+    await ev.wait()
 
     assert cmd.stdout == "Hello,\nWorld!"

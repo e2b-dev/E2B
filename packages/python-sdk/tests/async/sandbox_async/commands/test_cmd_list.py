@@ -3,7 +3,7 @@ import pytest
 from e2b import AsyncSandbox
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_kill_process(async_sandbox: AsyncSandbox):
     c1 = await async_sandbox.commands.run("sleep 10", background=True)
     c2 = await async_sandbox.commands.run("sleep 10", background=True)

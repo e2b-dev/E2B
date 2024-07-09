@@ -4,7 +4,7 @@ from e2b import AsyncSandbox
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_list_sandboxes(async_sandbox: AsyncSandbox):
     sandboxes = await AsyncSandbox.list()
     assert len(sandboxes) > 0

@@ -3,7 +3,7 @@ import pytest
 from e2b import AsyncSandbox, FileType
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_list_directory(async_sandbox: AsyncSandbox):
     dir_name = "test_directory"
 

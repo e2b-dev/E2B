@@ -1,4 +1,4 @@
-import anyio
+import asyncio
 import inspect
 from typing import (
     Optional,
@@ -69,14 +69,7 @@ class AsyncProcessHandle:
         self._result: Optional[ProcessResult] = None
         self._iteration_exception: Optional[Exception] = None
 
-        self._tg = anyio.create_task_group()
-        self._wait = anyio.Event()
-
-        async def wait():
-            await self._handle_events()
-            self._wait.set()
-
-        self._tg.start_soon(wait)
+        self._wait = asyncio.create_task(self._handle_events())
 
     async def _iterate_events(
         self,
@@ -84,30 +77,28 @@ class AsyncProcessHandle:
         Union[Tuple[Stdout, None], Tuple[None, Stderr]],
         None,
     ]:
-        try:
-            async for event in self._events:
-                if event.event.HasField("data"):
-                    if event.event.data.stdout:
-                        out = event.event.data.stdout.decode()
-                        self._stdout += out
-                        yield out, None
-                    if event.event.data.stderr:
-                        out = event.event.data.stderr.decode()
-                        self._stderr += out
-                        yield None, out
-                if event.event.HasField("end"):
-                    self._result = ProcessResult(
-                        stdout=self._stdout,
-                        stderr=self._stderr,
-                        exit_code=event.event.end.exit_code,
-                        error=event.event.end.error,
-                    )
-        finally:
-            await self.disconnect()
+        async for event in self._events:
+            if event.event.HasField("data"):
+                if event.event.data.stdout:
+                    out = event.event.data.stdout.decode()
+                    self._stdout += out
+                    yield out, None
+                if event.event.data.stderr:
+                    out = event.event.data.stderr.decode()
+                    self._stderr += out
+                    yield None, out
+            if event.event.HasField("end"):
+                self._result = ProcessResult(
+                    stdout=self._stdout,
+                    stderr=self._stderr,
+                    exit_code=event.event.end.exit_code,
+                    error=event.event.end.error,
+                )
 
     async def disconnect(self) -> None:
-        self._tg.cancel_scope.cancel()
-        await self._events.aclose()
+        self._wait.cancel()
+        # BUG: In Python 3.8 closing async generator can throw RuntimeError.
+        # await self._events.aclose()
 
     async def _handle_events(self):
         try:
@@ -120,7 +111,7 @@ class AsyncProcessHandle:
                     cb = self._on_stderr(stderr)
                     if inspect.isawaitable(cb):
                         await cb
-        except StopIteration:
+        except StopAsyncIteration:
             pass
         except Exception as e:
             self._iteration_exception = handle_rpc_exception(e)
@@ -142,8 +133,7 @@ class AsyncProcessHandle:
         return self._result
 
     async def wait(self) -> ProcessResult:
-        await self._wait.wait()
-
+        await self._wait
         if self._iteration_exception:
             raise self._iteration_exception
 
@@ -161,5 +151,5 @@ class AsyncProcessHandle:
         return self._result
 
     async def kill(self):
-        self._tg.cancel_scope.cancel()
+        # self._wait.cancel()
         await self._handle_kill()

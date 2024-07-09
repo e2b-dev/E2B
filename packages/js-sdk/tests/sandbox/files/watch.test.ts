@@ -26,7 +26,6 @@ sandboxTest('watch directory changes', async ({ sandbox }) => {
   })
 
   await sandbox.files.write(`${dirname}/${filename}`, newContent)
-  await new Promise(resolve => setTimeout(resolve, 1000)) // wait for the event to be triggered
 
   await eventPromise
 

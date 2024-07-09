@@ -5,7 +5,7 @@ from asyncio import Event
 from e2b import NotFoundException, AsyncSandbox, FilesystemEvent, FilesystemEventType
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_watch_directory_changes(async_sandbox: AsyncSandbox):
     dirname = "test_watch_dir"
     filename = "test_watch.txt"
@@ -30,7 +30,7 @@ async def test_watch_directory_changes(async_sandbox: AsyncSandbox):
     await handle.close()
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_watch_non_existing_directory(async_sandbox: AsyncSandbox):
     dirname = "non_existing_watch_dir"
 

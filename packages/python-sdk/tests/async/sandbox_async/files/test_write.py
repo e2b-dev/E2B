@@ -3,7 +3,7 @@ import pytest
 from e2b import AsyncSandbox
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_write_file(async_sandbox: AsyncSandbox):
     filename = "test_write.txt"
     content = "This is a test file."
@@ -16,7 +16,7 @@ async def test_write_file(async_sandbox: AsyncSandbox):
     assert read_content == content
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_overwrite_file(async_sandbox: AsyncSandbox):
     filename = "test_overwrite.txt"
     initial_content = "Initial content."
@@ -28,7 +28,7 @@ async def test_overwrite_file(async_sandbox: AsyncSandbox):
     assert read_content == new_content
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_write_to_non_existing_directory(async_sandbox: AsyncSandbox):
     filename = "non_existing_dir/test_write.txt"
     content = "This should succeed too."

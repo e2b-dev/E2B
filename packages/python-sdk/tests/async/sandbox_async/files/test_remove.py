@@ -3,7 +3,7 @@ import pytest
 from e2b import AsyncSandbox
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_remove_file(async_sandbox: AsyncSandbox):
     filename = "test_remove.txt"
     content = "This file will be removed."
@@ -14,7 +14,7 @@ async def test_remove_file(async_sandbox: AsyncSandbox):
     assert not exists
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_remove_non_existing_file(async_sandbox: AsyncSandbox):
     filename = "non_existing_file.txt"
     await async_sandbox.files.remove(filename)

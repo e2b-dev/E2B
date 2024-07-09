@@ -1,4 +1,4 @@
-import anyio
+import asyncio
 import inspect
 
 from typing import Any, AsyncGenerator, Optional
@@ -20,12 +20,12 @@ class AsyncWatchHandle:
         self._on_event = on_event
         self._on_exit = on_exit
 
-        self._tg = anyio.create_task_group()
-        self._tg.start_soon(self._handle_events)
+        self._wait = asyncio.create_task(self._handle_events())
 
     async def close(self):
-        self._tg.cancel_scope.cancel()
-        await self._events.aclose()
+        self._wait.cancel()
+        # BUG: In Python 3.8 closing async generator can throw RuntimeError.
+        # await self._events.aclose()
 
     async def _iterate_events(self):
         try:

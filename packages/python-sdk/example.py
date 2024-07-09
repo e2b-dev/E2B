@@ -11,11 +11,12 @@ logging.basicConfig(level=logging.ERROR)
 
 
 async def main():
-    for _ in range(10):
-        start = time.time()
-        sbx = await AsyncSandbox.create(timeout=10)
-        end = time.time()
-        print(f"Time taken: {end - start}")
+    sbx = await AsyncSandbox.create(timeout=10)
+    await sbx.commands.run("sleep 10", timeout=1000)
+    # for _ in range(10):
+    #     start = time.time()
+    #     end = time.time()
+    #     print(f"Time taken: {end - start}")
 
 
 if __name__ == "__main__":

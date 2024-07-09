@@ -3,7 +3,7 @@ import pytest
 from e2b import NotFoundException, AsyncSandbox
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_connect_to_process(async_sandbox: AsyncSandbox):
     cmd = await async_sandbox.commands.run("sleep 10", background=True)
     pid = cmd.pid
@@ -12,7 +12,7 @@ async def test_connect_to_process(async_sandbox: AsyncSandbox):
     assert process_info.pid == pid
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_connect_to_non_existing_process(async_sandbox: AsyncSandbox):
     non_existing_pid = 999999
 

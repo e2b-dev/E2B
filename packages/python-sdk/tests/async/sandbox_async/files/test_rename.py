@@ -3,7 +3,7 @@ import pytest
 from e2b import NotFoundException, AsyncSandbox
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_rename_file(async_sandbox: AsyncSandbox):
     old_filename = "test_rename_old.txt"
     new_filename = "test_rename_new.txt"
@@ -19,7 +19,7 @@ async def test_rename_file(async_sandbox: AsyncSandbox):
     assert read_content == content
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_rename_non_existing_file(async_sandbox: AsyncSandbox):
     old_filename = "non_existing_file.txt"
     new_filename = "new_non_existing_file.txt"
