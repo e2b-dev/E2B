@@ -107,41 +107,37 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
   }
 
   private async* iterateEvents(): AsyncGenerator<[Stdout, null, null] | [null, Stderr, null] | [null, null, Pty]> {
-    try {
-      for await (const event of this.events) {
-        const e = event?.event?.event
-        let out: string | undefined
+    for await (const event of this.events) {
+      const e = event?.event?.event
+      let out: string | undefined
 
-        switch (e?.case) {
-          case 'data':
-            switch (e.value.output.case) {
-              case 'stdout':
-                out = new TextDecoder().decode(e.value.output.value)
-                this._stdout += out
-                yield [out as Stdout, null, null]
-                break
-              case 'stderr':
-                out = new TextDecoder().decode(e.value.output.value)
-                this._stderr += out
-                yield [null, out as Stderr, null]
-                break
-              case 'pty':
-                yield [null, null, e.value.output.value as Pty]
-                break
-            }
-            break
-          case 'end':
-            this.result = {
-              exitCode: e.value.exitCode,
-              error: e.value.error,
-              stdout: this.stdout,
-              stderr: this.stderr,
-            }
-            break
-        }
+      switch (e?.case) {
+        case 'data':
+          switch (e.value.output.case) {
+            case 'stdout':
+              out = new TextDecoder().decode(e.value.output.value)
+              this._stdout += out
+              yield [out as Stdout, null, null]
+              break
+            case 'stderr':
+              out = new TextDecoder().decode(e.value.output.value)
+              this._stderr += out
+              yield [null, out as Stderr, null]
+              break
+            case 'pty':
+              yield [null, null, e.value.output.value as Pty]
+              break
+          }
+          break
+        case 'end':
+          this.result = {
+            exitCode: e.value.exitCode,
+            error: e.value.error,
+            stdout: this.stdout,
+            stderr: this.stderr,
+          }
+          break
       }
-    } finally {
-      this.disconnect()
     }
   }
 

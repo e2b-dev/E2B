@@ -57,8 +57,6 @@ export class WatchHandle {
       }
     } catch (err) {
       throw handleRpcError(err)
-    } finally {
-      this.close()
     }
   }
 
