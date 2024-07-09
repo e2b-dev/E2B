@@ -30,5 +30,3 @@ class WatchHandle:
                         )
         except Exception as e:
             raise handle_rpc_exception(e)
-        finally:
-            self.close()

@@ -43,26 +43,23 @@ class ProcessHandle:
         None,
         None,
     ]:
-        try:
-            for event in self._events:
-                if event.event.HasField("data"):
-                    if event.event.data.stdout:
-                        out = event.event.data.stdout.decode()
-                        self._stdout += out
-                        yield out, None
-                    if event.event.data.stderr:
-                        out = event.event.data.stderr.decode()
-                        self._stderr += out
-                        yield None, out
-                if event.event.HasField("end"):
-                    self._result = ProcessResult(
-                        stdout=self._stdout,
-                        stderr=self._stderr,
-                        exit_code=event.event.end.exit_code,
-                        error=event.event.end.error,
-                    )
-        finally:
-            self.disconnect()
+        for event in self._events:
+            if event.event.HasField("data"):
+                if event.event.data.stdout:
+                    out = event.event.data.stdout.decode()
+                    self._stdout += out
+                    yield out, None
+                if event.event.data.stderr:
+                    out = event.event.data.stderr.decode()
+                    self._stderr += out
+                    yield None, out
+            if event.event.HasField("end"):
+                self._result = ProcessResult(
+                    stdout=self._stdout,
+                    stderr=self._stderr,
+                    exit_code=event.event.end.exit_code,
+                    error=event.event.end.error,
+                )
 
     def disconnect(self) -> None:
         self._events.close()

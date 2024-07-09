@@ -182,7 +182,7 @@ class Process:
         )
 
         try:
-            start_event = next(events)
+            start_event = events.__next__()
 
             if not start_event.HasField("event"):
                 raise SandboxException(
@@ -214,7 +214,7 @@ class Process:
         )
 
         try:
-            start_event = next(events)
+            start_event = events.__next__()
 
             if not start_event.HasField("event"):
                 raise SandboxException(
