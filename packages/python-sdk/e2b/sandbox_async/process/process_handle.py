@@ -116,22 +116,6 @@ class AsyncProcessHandle:
         except Exception as e:
             self._iteration_exception = handle_rpc_exception(e)
 
-        if self._iteration_exception:
-            raise self._iteration_exception
-
-        if self._result is None:
-            raise Exception("Process ended without an end event")
-
-        if self._result.exit_code != 0:
-            raise ProcessExitException(
-                stdout=self._stdout,
-                stderr=self._stderr,
-                exit_code=self._result.exit_code,
-                error=self._result.error,
-            )
-
-        return self._result
-
     async def wait(self) -> ProcessResult:
         await self._wait
         if self._iteration_exception:
@@ -151,5 +135,4 @@ class AsyncProcessHandle:
         return self._result
 
     async def kill(self):
-        # self._wait.cancel()
         await self._handle_kill()

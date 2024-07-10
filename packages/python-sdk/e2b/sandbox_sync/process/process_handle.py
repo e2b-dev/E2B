@@ -44,7 +44,6 @@ class ProcessHandle:
         None,
     ]:
         for event in self._events:
-            print("event ->>>>", event)
             if event.event.HasField("data"):
                 if event.event.data.stdout:
                     out = event.event.data.stdout.decode()

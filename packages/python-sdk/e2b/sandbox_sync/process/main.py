@@ -25,8 +25,8 @@ class Process:
         self._connection_config = connection_config
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
-            # TODO: Fix and enable compression again — the headers compression is not solved.
-            # compressor=connect.GzipCompressor,
+            # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
+            # compressor=e2b_connect.GzipCompressor,
             pool=pool,
         )
 

@@ -39,8 +39,6 @@ class AsyncWatchHandle:
                         )
         except Exception as e:
             raise handle_rpc_exception(e)
-        finally:
-            await self.close()
 
     async def _handle_events(self):
         try:
