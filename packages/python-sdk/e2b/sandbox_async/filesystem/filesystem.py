@@ -39,7 +39,8 @@ class Filesystem:
 
         self._rpc = filesystem_connect.FilesystemClient(
             envd_api_url,
-            compressor=connect.GzipCompressor,
+            # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
+            # compressor=e2b_connect.GzipCompressor,
             async_pool=pool,
         )
 
