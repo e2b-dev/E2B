@@ -6,7 +6,7 @@ import { Providers } from '@/app/(docs)/docs/providers'
 import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'
 import Canonical from '@/components/Navigation/canonical'
-import { LayoutMain } from '@/components/LayoutMain'
+import { LayoutDashboard } from '@/components/LayoutDashboard'
 import { Toaster } from '@/components/ui/toaster'
 
 export const metadata: Metadata = {
@@ -28,8 +28,6 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }) {
-
-
   return (
     <html
       lang="en"
@@ -42,12 +40,12 @@ export default async function RootLayout({ children }) {
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
           <div className="w-full">
-            <LayoutMain>
+            <LayoutDashboard>
               {children}
               <Toaster />
               <PostHogAnalytics />
               <Analytics />
-            </LayoutMain>
+            </LayoutDashboard>
           </div>
         </Providers>
       </body>

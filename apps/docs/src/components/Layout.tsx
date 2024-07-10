@@ -8,8 +8,6 @@ import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { Navigation } from '@/components/Navigation'
 import { Section, SectionProvider } from '@/components/SectionProvider'
-import { Banner } from '@/components/Banner'
-import { useUser } from '@/utils/useUser'
 
 export function Layout({
   children,
@@ -18,10 +16,8 @@ export function Layout({
   children: React.ReactNode
   allSections: Record<string, Array<Section>>
 }) {
-  const { user } = useUser()
   const pathname = usePathname()
   const relativePathname = pathname?.replace(new RegExp('^/docs'), '')
-  const shouldShowBanner = user?.pricingTier.isPromo
   const isAuth = relativePathname?.startsWith('/sign-in')
 
   return (
@@ -31,7 +27,6 @@ export function Layout({
           layoutScroll
           className={clsx(
             'contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex',
-            shouldShowBanner ? 'lg:top-[110px]' : 'lg:top-[60px]',
           )}
         >
           <div
@@ -53,7 +48,6 @@ export function Layout({
             {!isAuth && <Navigation className="hidden lg:my-4 lg:block" />}
           </div>
         </motion.header>
-        {shouldShowBanner && <Banner />}
         {!isAuth && (
           <div
             className="

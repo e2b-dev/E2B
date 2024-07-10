@@ -44,7 +44,7 @@ function getFilesHash(rootPath) {
 
 const codeSnippetsDir = path.resolve('./src/code')
 
-/** @type {import('next').NextConfig} */
+/** @type {import('next').NextCofig} */
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   // basePath: '/docs',
@@ -52,6 +52,16 @@ const nextConfig = {
     const codeFilesHash = getFilesHash(codeSnippetsDir)
     config.cache.version = config.cache.version + delimiter + codeFilesHash
     return config
+  },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/dashboard',
+        permanent: false,
+        basePath: false,
+      },
+    ]
   },
 }
 
