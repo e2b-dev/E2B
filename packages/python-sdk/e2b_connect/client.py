@@ -4,7 +4,7 @@ import struct
 
 from httpcore import ConnectionPool, AsyncConnectionPool, Response
 from enum import Flag, Enum
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Any, Generator, Tuple
 from google.protobuf import json_format
 
 
@@ -313,51 +313,15 @@ class Client:
             if http_resp.status != 200:
                 raise error_for_response(http_resp)
 
-            buffer = b""
-            end_stream = False
-            needs_header = True
-            flags, data_len = 0, 0
+            parser = ServerStreamParser(
+                codec=self._codec,
+                compressor=self._compressor,
+                response_type=self._response_type,
+            )
 
             async for chunk in http_resp.aiter_stream():
-                buffer += chunk
-
-                if needs_header:
-                    header = buffer[:envelope_header_length]
-                    buffer = buffer[envelope_header_length:]
-                    flags, data_len = decode_envelope_header(header)
-                    needs_header = False
-                    end_stream = EnvelopeFlags.end_stream in flags
-
-                if len(buffer) >= data_len:
-                    buffer = buffer[:data_len]
-
-                    if end_stream:
-                        data = (
-                            buffer
-                            if self._compressor is None
-                            else self._compressor.decompress(buffer)
-                        )
-
-                        data = json.loads(data)
-
-                        if "error" in data:
-                            raise make_error(data["error"])
-
-                        # TODO: Figure out what else might be possible
-                        return
-
-                    if self._compressor is not None:
-                        buffer = self._compressor.decompress(buffer)
-
-                    # TODO: handle server message compression
-                    # if EnvelopeFlags.compression in flags:
-                    # TODO: should the client potentially use a different codec
-                    # based on response header? Or can we assume they're always
-                    # the same and an error otherwise.
-                    yield self._codec.decode(buffer, msg_type=self._response_type)
-
-                    buffer = buffer[data_len:]
-                    needs_header = True
+                for chunk in parser.parse(chunk):
+                    yield chunk
 
     def call_server_stream(
         self,
@@ -382,51 +346,14 @@ class Client:
             if http_resp.status != 200:
                 raise error_for_response(http_resp)
 
-            buffer = b""
-            end_stream = False
-            needs_header = True
-            flags, data_len = 0, 0
+            parser = ServerStreamParser(
+                codec=self._codec,
+                compressor=self._compressor,
+                response_type=self._response_type,
+            )
 
             for chunk in http_resp.iter_stream():
-                buffer += chunk
-
-                if needs_header:
-                    header = buffer[:envelope_header_length]
-                    buffer = buffer[envelope_header_length:]
-                    flags, data_len = decode_envelope_header(header)
-                    needs_header = False
-                    end_stream = EnvelopeFlags.end_stream in flags
-
-                if len(buffer) >= data_len:
-                    buffer = buffer[:data_len]
-
-                    if end_stream:
-                        data = (
-                            buffer
-                            if self._compressor is None
-                            else self._compressor.decompress(buffer)
-                        )
-
-                        data = json.loads(data)
-
-                        if "error" in data:
-                            raise make_error(data["error"])
-
-                        # TODO: Figure out what else might be possible
-                        return
-
-                    if self._compressor is not None:
-                        buffer = self._compressor.decompress(buffer)
-
-                    # TODO: handle server message compression
-                    # if EnvelopeFlags.compression in flags:
-                    # TODO: should the client potentially use a different codec
-                    # based on response header? Or can we assume they're always
-                    # the same and an error otherwise.
-                    yield self._codec.decode(buffer, msg_type=self._response_type)
-
-                    buffer = buffer[data_len:]
-                    needs_header = True
+                yield from parser.parse(chunk)
 
     def call_client_stream(self, req, **opts):
         raise NotImplementedError("client stream not supported")
@@ -436,3 +363,63 @@ class Client:
 
     def call_bidi_stream(self, req, **opts):
         raise NotImplementedError("bidi stream not supported")
+
+
+DataLen = int
+
+
+class ServerStreamParser:
+
+    def __init__(
+        self,
+        codec: type[JSONCodec] | type[ProtobufCodec],
+        compressor: type[GzipCompressor] | None,
+        response_type: Any,
+    ):
+        self.codec = codec
+        self.compressor = compressor
+        self.response_type = response_type
+
+        self.buffer: bytes = b""
+        self._header: Optional[tuple[EnvelopeFlags, DataLen]] = None
+
+    def shift_buffer(self, size: int):
+        buffer = self.buffer[:size]
+        self.buffer = self.buffer[size:]
+        return buffer
+
+    @property
+    def header(self) -> tuple[EnvelopeFlags, DataLen]:
+        if self._header:
+            return self._header
+
+        header_data = self.shift_buffer(envelope_header_length)
+        self._header = decode_envelope_header(header_data)
+
+        return self._header
+
+    @header.deleter
+    def header(self):
+        self._header = None
+
+    def parse(self, chunk: bytes) -> Generator[Any, None, None]:
+        self.buffer += chunk
+
+        while len(self.buffer) >= envelope_header_length:
+            flags, data_len = self.header
+
+            if data_len > len(self.buffer):
+                break
+
+            data = self.shift_buffer(data_len)
+
+            if EnvelopeFlags.end_stream in flags:
+                data = json.loads(data)
+
+                if "error" in data:
+                    raise make_error(data["error"])
+
+                return
+
+            yield self.codec.decode(data, msg_type=self.response_type)
+            del self.header
