@@ -40,7 +40,7 @@ export const Auth = function () {
         <span className="text-sm text-red-500" title={error?.message}>
           Something went wrong
         </span>
-        <Link href={`/sign-in?${redirectToCurrentURL()}`}>
+        <Link href={`/dashboard/sign-in?${redirectToCurrentURL()}`}>
           <Button>Sign In</Button>
         </Link>
       </div>
@@ -73,16 +73,7 @@ export const Auth = function () {
         </div>
       ) : (
         <div className="flex items-center justify-center gap-3">
-          <Link href={`/sign-in?view=sign-up&${redirectToCurrentURL()}`}>
-            <Button
-              variant="textTernary"
-              className="whitespace-nowrap text-xs"
-            >
-              Sign up to get your API key
-            </Button>
-          </Link>
-
-          <Link href={`/sign-in?${redirectToCurrentURL()}`}>
+          <Link href={`/dashboard/sign-in?${redirectToCurrentURL()}`}>
             <Button>Sign In</Button>
           </Link>
         </div>

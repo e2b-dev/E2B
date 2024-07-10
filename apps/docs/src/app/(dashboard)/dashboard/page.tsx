@@ -27,7 +27,6 @@ function redirectToCurrentURL() {
   return `redirect_to=${encodedURL}`
 }
 
-// TODO: Sandbox and Templates tab deleted for now
 const menuLabels = ['personal', 'keys', 'usage', 'billing', 'team',] as const
 type MenuLabel = typeof menuLabels[number]
 
@@ -116,7 +115,7 @@ export default function Dashboard() {
     return (
       <div className='flex flex-col space-y-2 items-center justify-center w-full h-full'>
         <h2 className='text-xl font-bold'>You need to be signed in to use this page</h2>
-        <Link href={`/sign-in?${redirectToCurrentURL()}`}>
+        <Link href={`/dashboard/sign-in?${redirectToCurrentURL()}`}>
           <Button>Sign In</Button>
         </Link>
       </div>

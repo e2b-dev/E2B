@@ -7,8 +7,6 @@ import { Logo } from '@/components/Logo'
 import { MobileSearch, Search } from '@/components/Search'
 import { Auth } from '@/components/Auth'
 import { HeaderSeparator } from '@/components/HeaderUtils'
-import { DiscordIcon } from '@/components/icons/DiscordIcon'
-import { TwitterIcon } from '@/components/icons/TwitterIcon'
 import { useLocalStorage } from 'usehooks-ts'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
 
@@ -26,12 +24,6 @@ export const Header = forwardRef(function Header({ className, isAuth }, ref) {
   const isInsideMobileNavigation = useIsInsideMobileNavigation()
 
   const [githubStars, setGithubStars] = useLocalStorage('github-stars', null)
-  const [discordUsers, setDiscordUsers] = useLocalStorage('discord-users', null)
-  // TODO: Maybe add Twitter followers count?
-  // const [twitterFollowers, setTwitterFollowers] = useLocalStorage(
-  //   'twitter-followers',
-  //   null,
-  // )
 
   const { scrollY } = useScroll()
   const bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9])
@@ -44,29 +36,13 @@ export const Header = forwardRef(function Header({ className, isAuth }, ref) {
       .catch(() => setGithubStars(null))
   }, [setGithubStars])
 
-  useEffect(() => {
-    fetch(config.discord.api)
-      .then(response => response.json())
-      .then(async data => setDiscordUsers(data.presence_count))
-      .catch(() => setDiscordUsers(null))
-  }, [setDiscordUsers])
-
-  // TODO: Maybe add Twitter followers count?
-  // useEffect(() => {
-  //   fetch(config.twitter.api)
-  //     .then((response) => response.json())
-  //     .then(async (data) => setTwitterFollowers(data.followers_count))
-  //     .catch(() => setTwitterFollowers(false))
-  //   setTwitterFollowers(155)
-  // }, [])
-
   return (
     <motion.div
       // @ts-ignore
       ref={ref}
       className={clsx(
         className,
-        'fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-8 bg-green-500',
+        'fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-8',
         !isInsideMobileNavigation && 'backdrop-blur-sm dark:backdrop-blur',
       )}
       style={
@@ -108,26 +84,19 @@ export const Header = forwardRef(function Header({ className, isAuth }, ref) {
             className="flex items-center gap-4"
           >
             <TopLevelNavItem
-              href={`https://discord.gg/${config.discord.slug}`}
-              stat={discordUsers}
-              statType="discordUsers"
-              icon={<DiscordIcon className="h-5 w-5 fill-current" />}
-            />
-            <TopLevelNavItem
               href={config.github.url}
               stat={githubStars}
               statType="githubStars"
               icon={<GitHubIcon className="h-5 w-5 fill-current" />}
-            />
-            <TopLevelNavItem
-              href={config.twitter.url}
-              icon={<TwitterIcon className="h-5 w-5 fill-current" />}
             />
           </ul>
         </nav>
         <HeaderSeparator />
         <MobileSearch />
         <div className="hidden min-[540px]:contents">
+          <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/dashboard'>
+            Dashboard
+          </Link>
           <Auth />
         </div>
       </div>

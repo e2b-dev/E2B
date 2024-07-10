@@ -25,7 +25,7 @@ function SwitchToHobbyButton({ team }: { team: Team }) {
 
   if (!user) {
     return (
-      <Link href="/sign-in?view=sign-up">
+      <Link href="/dashboard/sign-up">
         <Button>Sign Up</Button>
       </Link>
     )
