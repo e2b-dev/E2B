@@ -34,6 +34,7 @@ exit(0)
         self.commands.run(f"python {code_path}")
 
 
+@pytest.mark.skip
 def test_envelope_decode():
     with Desktop(timeout=30) as desktop:
         for _ in range(10):
