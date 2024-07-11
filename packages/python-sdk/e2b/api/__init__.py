@@ -4,7 +4,7 @@ import logging
 from typing import Optional, Union
 from httpx import HTTPTransport, AsyncHTTPTransport
 
-from e2b.api.client.client import Client
+from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException, SandboxException
@@ -20,7 +20,7 @@ def handle_api_exception(e: Response):
     return SandboxException(f"{e.status_code}: {e.content}")
 
 
-class ApiClient(Client):
+class ApiClient(AuthenticatedClient):
     def __init__(
         self,
         config: ConnectionConfig,
@@ -30,25 +30,36 @@ class ApiClient(Client):
         *args,
         **kwargs,
     ):
-        if require_api_key and config.api_key is None:
+        if require_api_key and require_access_token:
             raise AuthenticationException(
-                "API key is required, please visit https://e2b.dev/docs to get your API key. "
-                "You can either set the environment variable `E2B_API_KEY` "
-                'or you can pass it directly to the sandbox like Sandbox(api_key="e2b_...")',
+                "Only one of api_key or access_token can be required, not both",
             )
 
-        if require_access_token and config.access_token is None:
+        if not require_api_key and not require_access_token:
             raise AuthenticationException(
-                "Access token is required, please visit https://e2b.dev/docs to get your access token. "
-                "You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `access_token` in options.",
+                "Either api_key or access_token is required",
             )
 
-        headers = {}
-        if config.api_key:
-            headers["X-API-KEY"] = config.api_key
+        token = None
+        if require_api_key:
+            if config.api_key is None:
+                raise AuthenticationException(
+                    "API key is required, please visit https://e2b.dev/docs to get your API key. "
+                    "You can either set the environment variable `E2B_API_KEY` "
+                    'or you can pass it directly to the sandbox like Sandbox(api_key="e2b_...")',
+                )
+            token = config.api_key
 
-        if config.access_token:
-            headers["Authorization"] = f"Bearer {config.access_token}"
+        if require_access_token:
+            if config.access_token is None:
+                raise AuthenticationException(
+                    "Access token is required, please visit https://e2b.dev/docs to get your access token. "
+                    "You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `access_token` in options.",
+                )
+            token = config.access_token
+
+        auth_header_name = "X-API-KEY" if config.api_key else "Authorization"
+        prefix = "Bearer" if config.access_token else ""
 
         super().__init__(
             base_url=config.api_url,
@@ -61,8 +72,10 @@ class ApiClient(Client):
             },
             headers={
                 **default_headers,
-                **headers,
             },
+            token=token,
+            auth_header_name=auth_header_name,
+            prefix=prefix,
             *args,
             **kwargs,
         )
