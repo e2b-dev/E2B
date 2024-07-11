@@ -77,6 +77,9 @@ func New(user *user.User, req *rpc.StartRequest, logger *zerolog.Logger) (*Handl
 
 	var formattedVars []string
 
+	// Take only 'PATH' variable from the current environment
+	// The 'PATH' should ideally be set in the environment
+	formattedVars = append(formattedVars, "PATH="+os.Getenv("PATH"))
 	formattedVars = append(formattedVars, "HOME="+user.HomeDir)
 	formattedVars = append(formattedVars, "USER="+user.Username)
 	formattedVars = append(formattedVars, "LOGNAME="+user.Username)
