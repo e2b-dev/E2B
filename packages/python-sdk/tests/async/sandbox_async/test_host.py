@@ -6,7 +6,6 @@ from time import sleep
 from e2b import AsyncSandbox
 
 
-@pytest.mark.asyncio
 async def test_ping_server(async_sandbox: AsyncSandbox, debug):
     cmd = await async_sandbox.commands.run(
         "python -m http.server 8000",

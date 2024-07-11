@@ -4,7 +4,6 @@ from e2b import AsyncSandbox
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.asyncio
 async def test_kill_existing_sandbox(async_sandbox: AsyncSandbox):
     assert await AsyncSandbox.kill(async_sandbox.sandbox_id) == True
 
@@ -13,6 +12,5 @@ async def test_kill_existing_sandbox(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.asyncio
 async def test_kill_non_existing_sandbox():
     assert await AsyncSandbox.kill("non-existing-sandbox") == False

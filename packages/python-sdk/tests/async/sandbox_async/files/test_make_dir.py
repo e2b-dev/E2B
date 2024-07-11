@@ -3,7 +3,6 @@ import pytest
 from e2b import AsyncSandbox
 
 
-@pytest.mark.asyncio
 async def test_make_directory(async_sandbox: AsyncSandbox):
     dir_name = "test_directory"
 
@@ -12,7 +11,6 @@ async def test_make_directory(async_sandbox: AsyncSandbox):
     assert exists
 
 
-@pytest.mark.asyncio
 async def test_make_nested_directory(async_sandbox: AsyncSandbox):
     nested_dir_name = "test_directory/nested_directory"
 

@@ -4,7 +4,6 @@ import asyncio
 from e2b import AsyncSandbox
 
 
-@pytest.mark.asyncio
 async def test_send_stdin_to_process(async_sandbox: AsyncSandbox):
     ev = asyncio.Event()
 
@@ -23,7 +22,6 @@ async def test_send_stdin_to_process(async_sandbox: AsyncSandbox):
     assert cmd.stdout == "Hello, World!"
 
 
-@pytest.mark.asyncio
 async def test_send_special_characters_to_process(async_sandbox: AsyncSandbox):
     ev = asyncio.Event()
 
@@ -42,7 +40,6 @@ async def test_send_special_characters_to_process(async_sandbox: AsyncSandbox):
     assert cmd.stdout == "!@#$%^&*()_+"
 
 
-@pytest.mark.asyncio
 async def test_send_multiline_string_to_process(async_sandbox: AsyncSandbox):
     ev = asyncio.Event()
 

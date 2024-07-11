@@ -3,7 +3,6 @@ import pytest
 from e2b import AsyncSandbox, TimeoutException
 
 
-@pytest.mark.asyncio
 async def test_run(async_sandbox: AsyncSandbox):
     text = "Hello, World!"
 
@@ -13,7 +12,6 @@ async def test_run(async_sandbox: AsyncSandbox):
     assert cmd.stdout == f"{text}\n"
 
 
-@pytest.mark.asyncio
 async def test_run_with_special_characters(async_sandbox: AsyncSandbox):
     text = "!@#$%^&*()_+"
 
@@ -23,7 +21,6 @@ async def test_run_with_special_characters(async_sandbox: AsyncSandbox):
     assert cmd.stdout == f"{text}\n"
 
 
-@pytest.mark.asyncio
 async def test_run_with_multiline_string(async_sandbox: AsyncSandbox):
     text = "Hello,\nWorld!"
 
@@ -33,14 +30,12 @@ async def test_run_with_multiline_string(async_sandbox: AsyncSandbox):
     assert cmd.stdout == f"{text}\n"
 
 
-@pytest.mark.asyncio
 async def test_run_with_timeout(async_sandbox: AsyncSandbox):
     cmd = await async_sandbox.commands.run('echo "Hello, World!"', timeout=10)
 
     assert cmd.exit_code == 0
 
 
-@pytest.mark.asyncio
 async def test_run_with_too_short_timeout(async_sandbox: AsyncSandbox):
     with pytest.raises(TimeoutException):
         await async_sandbox.commands.run("sleep 10", timeout=2)

@@ -3,7 +3,6 @@ import pytest
 from e2b import NotFoundException, AsyncSandbox
 
 
-@pytest.mark.asyncio
 async def test_read_file(async_sandbox: AsyncSandbox):
     filename = "test_read.txt"
     content = "Hello, world!"
@@ -13,7 +12,6 @@ async def test_read_file(async_sandbox: AsyncSandbox):
     assert read_content == content
 
 
-@pytest.mark.asyncio
 async def test_read_non_existing_file(async_sandbox: AsyncSandbox):
     filename = "non_existing_file.txt"
 

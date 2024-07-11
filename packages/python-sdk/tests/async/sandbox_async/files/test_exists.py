@@ -3,7 +3,6 @@ import pytest
 from e2b import AsyncSandbox
 
 
-@pytest.mark.asyncio
 async def test_exists(async_sandbox: AsyncSandbox):
     filename = "test_exists.txt"
 

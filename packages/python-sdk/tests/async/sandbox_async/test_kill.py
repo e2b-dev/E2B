@@ -4,7 +4,6 @@ from e2b import AsyncSandbox
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.asyncio
 async def test_kill(async_sandbox: AsyncSandbox):
     await async_sandbox.kill()
 
