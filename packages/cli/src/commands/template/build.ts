@@ -107,7 +107,6 @@ export const buildCommand = new commander.Command('build')
     try {
       const docker = new Docker();
 
-      // Check Docker is running
       try {
         await docker.ping();
       } catch (error) {
@@ -118,7 +117,6 @@ export const buildCommand = new commander.Command('build')
       const accessToken = ensureAccessToken();
       process.stdout.write('\n');
 
-      // Validate template name
       const newName = opts.name?.trim();
       if (newName && !/^[a-z0-9-_]+$/.test(newName)) {
         console.error(
@@ -129,7 +127,6 @@ export const buildCommand = new commander.Command('build')
         process.exit(1);
       }
 
-      // Initialize variables
       let dockerfile = opts.dockerfile;
       let startCmd = opts.cmd;
       let cpuCount = opts.cpuCount;
@@ -138,7 +135,6 @@ export const buildCommand = new commander.Command('build')
       const root = getRoot(opts.path);
       const configPath = getConfigPath(root, opts.config);
 
-      // Load or create config
       const config = fs.existsSync(configPath)
         ? await loadConfig(configPath)
         : undefined;
@@ -162,7 +158,6 @@ export const buildCommand = new commander.Command('build')
         memoryMB = opts.memoryMb || config.memory_mb;
       }
 
-      // Validate templateID
       if (config && templateID && config.template_id !== templateID) {
         console.error(
           "You can't specify different ID than the one in config. If you want to build a new sandbox template remove the config file.",
@@ -170,7 +165,6 @@ export const buildCommand = new commander.Command('build')
         process.exit(1);
       }
 
-      // Handle name changes
       if (newName && config?.template_name && newName !== config?.template_name) {
         console.log(
           `The sandbox template name will be changed from ${asLocal(
@@ -179,25 +173,18 @@ export const buildCommand = new commander.Command('build')
         );
       }
       const name = newName || config?.template_name;
-      console.log(`root: ${root}`)
-      console.log(`dockerfile: ${dockerfile}`)
-      let dockerfiles = fs.readdirSync(root).filter(file => file.endsWith('Dockerfile'))
-      let newdockerfilePath = path.join(root, dockerfile || dockerfiles.pop() as string);
-      let newdockerfileContent = loadFile(newdockerfilePath) as string;
-      let newdockerfileBasename = path.basename(newdockerfilePath);
 
-      const { dockerfilePath, dockerfileContent, dockerfileRelativePath } = getDockerfile(
-        root,
-        dockerfile,
-      );
-      console.log(`new dockerfilePath: ${newdockerfilePath}`)
-      console.log(`old dockerfilePath: ${dockerfilePath}\n`)
-      console.log(`new dockerfileContent: ${newdockerfileContent}`)
-      console.log(`old dockerfileContent: ${dockerfileContent}\n`)
-      console.log(`new dockerfileBasename: ${newdockerfileBasename}`)
-      console.log(`old dockerfileBasename: ${dockerfileRelativePath}\n`)
+      // If dockerfile is not specified, we'll use the first Dockerfile in the root directory
+      // If it is, we'll use the specified dockerfile, and it'll be referenced correctly relative to the root directory
+      let dockerfiles = fs.readdirSync(root).filter(file => file.endsWith('Dockerfile'))
+      const dockerfilePath = path.join(root, dockerfile || dockerfiles.pop() as string);
+      const dockerfileContent = loadFile(dockerfilePath) as string;
+      const dockerfileRelativePath = path.relative(root, dockerfilePath);
+
+
+
       console.log(
-        `Found ${asLocalRelative(newdockerfilePath)} that will be used to build the sandbox template.`,
+        `Found ${asLocalRelative(dockerfilePath)} that will be used to build the sandbox template.`,
       );
 
       const body = {
@@ -205,7 +192,7 @@ export const buildCommand = new commander.Command('build')
         startCmd: startCmd,
         cpuCount: cpuCount,
         memoryMB: memoryMB,
-        dockerfile: newdockerfileContent,
+        dockerfile: dockerfileContent,
       };
 
       if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
@@ -232,12 +219,11 @@ export const buildCommand = new commander.Command('build')
         )} `,
       );
 
-      // Save config
       await saveConfig(
         configPath,
         {
           template_id: template.templateID,
-          dockerfile: newdockerfileBasename,
+          dockerfile: dockerfileRelativePath,
           template_name: name,
           start_cmd: startCmd,
           cpu_count: cpuCount,
@@ -246,31 +232,30 @@ export const buildCommand = new commander.Command('build')
         true,
       );
 
-      const identityToken = await docker.checkAuth({
+      await docker.checkAuth({
         username: '_e2b_access_token',
         password: accessToken,
         serveraddress: `docker.${e2b.SANDBOX_DOMAIN}`,
       }).then((data: any) => {
         console.log(`Status: ${data['Status']}`)
-        return data['IdentityToken']
-      })
-        .catch((err: any) => {
-          console.error(err)
-          process.exit(1)
-        })
+        console.log(`IdentityToken: ${data['IdentityToken']}`)
+        // Why is IdentityToken not returned in the response?
+        // If you run an identity token, you can use that instead of sending the same set of credentials when pushing the image.
+      }).catch((err: any) => {
+        console.error(err)
+        process.exit(1)
+      });
 
       const imageTag = `docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`
-
       let stream = await docker.buildImage(
         {
           context: root,
-          src: [newdockerfileBasename],
+          src: [dockerfileRelativePath],
         },
         {
           t: imageTag,
           buildargs: opts.buildArg ? Object.fromEntries(opts.buildArg.map((arg: string) => arg.split('='))) : undefined,
-          platform: 'linux/amd64',
-          //dockerfile: dockerfileBasename,
+          platform: 'linux/amd64'
         }
       );
 
@@ -280,8 +265,7 @@ export const buildCommand = new commander.Command('build')
 
       console.log('Docker image built.\n');
 
-
-      console.log('Pushing docker image...');
+      console.log(`Pushing docker image ${imageTag}...`);
       const image = docker.getImage(imageTag);
       const pushStream = await image.push({
         authconfig: {
@@ -289,6 +273,11 @@ export const buildCommand = new commander.Command('build')
           password: accessToken,
           serveraddress: `docker.${e2b.SANDBOX_DOMAIN}`
         },
+        /*
+        authconfig: {
+          identitytoken: identityToken
+        },
+        */
       });
 
       await new Promise((resolve, reject) => {
@@ -316,7 +305,6 @@ export const buildCommand = new commander.Command('build')
       process.exit(1);
     }
   });
-
 
 async function waitForBuildFinish(
   accessToken: string,
@@ -452,65 +440,6 @@ function loadFile(filePath: string) {
   }
 
   return fs.readFileSync(filePath, 'utf-8')
-}
-
-function getDockerfile(root: string, file?: string) {
-  // Check if user specified custom Dockerfile exists
-  if (file) {
-    const dockerfilePath = path.join(root, file)
-    const dockerfileContent = loadFile(dockerfilePath)
-    const dockerfileRelativePath = path.relative(root, dockerfilePath)
-
-    if (dockerfileContent === undefined) {
-      throw new Error(
-        `No ${asLocalRelative(
-          dockerfileRelativePath,
-        )} found in the root directory.`,
-      )
-    }
-
-    return {
-      dockerfilePath,
-      dockerfileContent,
-      dockerfileRelativePath,
-    }
-  }
-
-  // Check if default dockerfile e2b.Dockerfile exists
-  let dockerfilePath = path.join(root, defaultDockerfileName)
-  let dockerfileContent = loadFile(dockerfilePath)
-  const defaultDockerfileRelativePath = path.relative(root, dockerfilePath)
-  let dockerfileRelativePath = defaultDockerfileRelativePath
-
-  if (dockerfileContent !== undefined) {
-    return {
-      dockerfilePath,
-      dockerfileContent,
-      dockerfileRelativePath,
-    }
-  }
-
-  // Check if fallback Dockerfile exists
-  dockerfilePath = path.join(root, fallbackDockerfileName)
-  dockerfileContent = loadFile(dockerfilePath)
-  const fallbackDockerfileRelativeName = path.relative(root, dockerfilePath)
-  dockerfileRelativePath = fallbackDockerfileRelativeName
-
-  if (dockerfileContent !== undefined) {
-    return {
-      dockerfilePath,
-      dockerfileContent,
-      dockerfileRelativePath,
-    }
-  }
-
-  throw new Error(
-    `No ${asLocalRelative(defaultDockerfileRelativePath)} or ${asLocalRelative(
-      fallbackDockerfileRelativeName,
-    )} found in the root directory (${root}). You can specify a custom Dockerfile with ${asBold(
-      '--dockerfile <file>',
-    )} option.`,
-  )
 }
 
 async function requestBuildTemplate(
