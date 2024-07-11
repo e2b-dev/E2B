@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@types/command-exists": "^1.2.3",
+    "@types/dockerode": "^3.3.29",
     "@types/inquirer": "^9.0.7",
     "@types/node": "^18.18.6",
     "@types/update-notifier": "6.0.5",
@@ -55,6 +56,7 @@
     "command-exists": "^1.2.9",
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
+    "dockerode": "^4.0.2",
     "e2b": "^0.16.0",
     "inquirer": "^9.2.12",
     "open": "^9.1.0",
