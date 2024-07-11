@@ -13,8 +13,6 @@ import { UsageContent } from '@/components/Dashboard/Usage'
 import { AccountSelector } from '@/components/Dashboard/AccountSelector'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { PersonalContent } from '@/components/Dashboard/Personal'
-import Link from 'next/link'
-import { Button } from '@/components/Button'
 
 function redirectToCurrentURL() {
   const url = typeof window !== 'undefined' ? window.location.href : undefined
@@ -89,9 +87,19 @@ export default function Dashboard() {
     }
   }, [currentTeam, teamParam, router])
 
+
+  useEffect(() => {
+    if (isLoading) { return }
+    if (!user) {
+      router.push(`/sign-in?${redirectToCurrentURL()}`)
+    }
+  }, [isLoading, user, router])
+
+
   if (error) {
     return <div>Error: {error.message}</div>
   }
+
   if (isLoading) {
     return (
       <div className='flex flex-col space-y-2 items-center justify-center w-full h-full'>
@@ -100,6 +108,7 @@ export default function Dashboard() {
       </div>
     )
   }
+
   if (user && currentTeam) {
     return (
       <div className="flex min-h-screen flex-col md:flex-row pt-16 md:pt-32 px-2 md:px-32">
@@ -109,15 +118,6 @@ export default function Dashboard() {
           <div className='border border-white/5 w-full h-[1px] mb-10' />
           <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
         </div>
-      </div>
-    )
-  } else {
-    return (
-      <div className='flex flex-col space-y-2 items-center justify-center w-full h-full'>
-        <h2 className='text-xl font-bold'>You need to be signed in to use this page</h2>
-        <Link href={`/dashboard/sign-in?${redirectToCurrentURL()}`}>
-          <Button>Sign In</Button>
-        </Link>
       </div>
     )
   }
