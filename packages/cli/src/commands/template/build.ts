@@ -4,6 +4,7 @@ import * as path from 'path'
 import * as e2b from 'e2b'
 import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
+import * as cliProgress from 'cli-progress';
 
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
@@ -115,9 +116,8 @@ export const buildCommand = new commander.Command('build')
       }
 
       const docker = new Docker();
-      docker.ping().then((data: any) => {
-        console.log(`Pinging docker daemon... ${data}.\n
-          Node Docker API instance is running and is ready to use.\n`)
+      await docker.ping().then((data: any) => {
+        console.log(`Pinging docker daemon... ${data}.\nNode Docker API instance is running and is ready to use.\n`)
       })
 
       process.stdout.write('\n');
@@ -179,13 +179,15 @@ export const buildCommand = new commander.Command('build')
       }
       const name = newName || config?.template_name;
 
-      // If dockerfile is not specified, we'll use the first Dockerfile in the root directory
-      // If it is, we'll use the specified dockerfile, and it'll be referenced correctly relative to the root directory
       const dockerfiles = fs.readdirSync(root).filter(file => file.endsWith('Dockerfile'))
-      //If neither dockerfile nor dockerfiles are specified, and there are no dockerfiles in the root directory, throw an error.
-      let df = dockerfiles.pop() as string;
-      const dfPath = path.join(root, dockerfile || df);
-      const dfContent = loadFile(dfPath) as string;
+      //const dockerfiles = fs.readdirSync(root).filter(file => file.toLowerCase().includes('dockerfile'))
+      let df = dockerfile || dockerfiles[0];
+      if (!df) {
+        console.error("No Dockerfile given and no dockerfiles found in the root directory. Please specify a Dockerfile or a dockerfile in the root directory.");
+        process.exit(1);
+      }
+      const dfPath = path.join(root, df);
+      const dfContent = fs.readFileSync(dfPath, 'utf-8');
       const dfRelativePath = path.relative(root, dfPath);
 
       console.log(
@@ -237,15 +239,23 @@ export const buildCommand = new commander.Command('build')
         true,
       );
 
-
-      await docker.checkAuth(accessTokenCreds).then((data: Record<string, any>) => {
-        console.log(`Status: ${data['Status']}`)
-        console.log(`IdentityToken: ${data['IdentityToken']}`)
-        // Why is IdentityToken not returned in the response?
-        // Sending same set of creds twice for same 
+      /*
+      interface DockerAuthResponse {
+        Status: string;
+        IdentityToken: string;
+      }
+      IdentityToken is not returned in the response. Can be used in authConfig for pushing the image.
+      */
+      await docker.checkAuth(accessTokenCreds).then((data: { Status: string, IdentityToken: string }) => {
+        console.log(`Status: ${data.Status}`)
+        console.log(`IdentityToken: ${data.IdentityToken}`)
       });
 
-      //consider user_id having ten slots offDockerfiles for automatically buildding various startup templates.
+      const multiBar = new cliProgress.MultiBar({
+        clearOnComplete: true,
+        hideCursor: true,
+        format: ' {bar} | {percentage}% | {value}/{total} | {task}',
+      }, cliProgress.Presets.shades_grey);
 
       const imageTag = `docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`
       let buildStream = await docker.buildImage(
@@ -261,32 +271,17 @@ export const buildCommand = new commander.Command('build')
       );
 
       console.log(`Building docker image ${imageTag}...\n`);
-      await new Promise((resolve, reject) => {
-        docker.modem.followProgress(buildStream, (err: any, res: any) => err ? reject(err) : resolve(res),
-          (event: any) => {
-            console.log(event)
-            if (event.id && event.progressDetail) {
-              console.log(`Progress: ${event.id}: ${event.progressDetail.current}/${event.progressDetail.total}`)
-            }
-          });
-      })
+      await handleDockerProgress(buildStream, 'Building', multiBar, docker);
       console.log('Docker image built.\n');
+
       const image = docker.getImage(imageTag);
       let pushStream = await image.push({ authconfig: accessTokenCreds });
 
-      console.log(`Pushing docker image..\n`);
-      await new Promise((resolve, reject) => {
-        docker.modem.followProgress(pushStream, (err: any, res: any) => err ? reject(err) : resolve(res),
-          (event: any) => {
-            console.log(event)
-            if (event.id && event.progressDetail) {
-              console.log(`Progress: ${event.id}: ${event.progressDetail.current}/${event.progressDetail.total}`)
-            }
-          });
-      })
-      console.log('Docker image pushed.\n');
+      await handleDockerProgress(pushStream, 'Pushing', multiBar, docker);
+      console.log('\nDocker image pushed.\n');
 
-      console.log('Triggering build...');
+      multiBar.stop();
+
       await triggerBuild(accessToken, templateID, template.buildID);
 
       console.log(
@@ -296,7 +291,6 @@ export const buildCommand = new commander.Command('build')
       );
 
       console.log('Waiting for build to finish...');
-      console.log('Access token:', accessToken)
       await waitForBuildFinish(accessToken, templateID, template.buildID, name);
 
       process.exit(0);
@@ -305,6 +299,48 @@ export const buildCommand = new commander.Command('build')
       process.exit(1);
     }
   });
+
+function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string, multiBar: cliProgress.MultiBar, docker: Docker): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const progressBars: { [key: string]: cliProgress.SingleBar } = {};
+
+    docker.modem.followProgress(
+      stream,
+      (err: Error | null, res: any[] | null) => {
+        if (err) {
+          Object.values(progressBars).forEach(bar => bar.stop());
+          reject(err);
+        } else {
+          Object.values(progressBars).forEach(bar => bar.stop());
+          resolve();
+        }
+      },
+      (event: any) => {
+        if (event.stream) {
+          process.stdout.write(event.stream);
+        }
+
+        let id = event.id || 'unknown';
+        let statusText = event.status || '';
+
+        if (event.progress) {
+          statusText += ' ' + event.progress;
+        }
+
+        if (!progressBars[id]) {
+          progressBars[id] = multiBar.create(100, 0, { task: `${processName} ${id}` });
+        }
+
+        if (event.progressDetail && typeof event.progressDetail.current === 'number' && typeof event.progressDetail.total === 'number') {
+          const percent = Math.floor((event.progressDetail.current / event.progressDetail.total) * 100);
+          progressBars[id].update(percent, { task: `${processName} ${id}: ${statusText}` });
+        } else {
+          progressBars[id].update(100, { task: `${processName} ${id}: ${statusText}` });
+        }
+      }
+    );
+  });
+}
 
 async function waitForBuildFinish(
   accessToken: string,
@@ -432,14 +468,6 @@ Find more here - ${asPrimary(
         )
     }
   } while (template.data.status === 'building')
-}
-
-function loadFile(filePath: string) {
-  if (!fs.existsSync(filePath)) {
-    return undefined
-  }
-
-  return fs.readFileSync(filePath, 'utf-8')
 }
 
 async function requestBuildTemplate(
