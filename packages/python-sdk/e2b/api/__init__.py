@@ -4,7 +4,7 @@ import logging
 from typing import Optional, Union
 from httpx import HTTPTransport, AsyncHTTPTransport
 
-from e2b.api.client.client import AuthenticatedClient
+from e2b.api.client.client import Client
 from e2b.connection_config import ConnectionConfig
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException, SandboxException
@@ -20,7 +20,7 @@ def handle_api_exception(e: Response):
     return SandboxException(f"{e.status_code}: {e.content}")
 
 
-class ApiClient(AuthenticatedClient):
+class ApiClient(Client):
     def __init__(
         self,
         config: ConnectionConfig,
@@ -43,14 +43,14 @@ class ApiClient(AuthenticatedClient):
                 "You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `access_token` in options.",
             )
 
-        token = config.access_token or config.api_key
-        if token is None:
-            raise Exception("API key or access token is required")
+        headers = {}
+        if config.api_key:
+            headers["X-API-KEY"] = config.api_key
 
-        auth_header_name = "X-API-KEY" if config.api_key else "Authorization"
-        prefix = "Bearer" if config.access_token else ""
+        if config.access_token:
+            headers["Authorization"] = f"Bearer {config.access_token}"
 
-        c = super().__init__(
+        super().__init__(
             base_url=config.api_url,
             httpx_args={
                 "event_hooks": {
@@ -61,10 +61,8 @@ class ApiClient(AuthenticatedClient):
             },
             headers={
                 **default_headers,
+                **headers,
             },
-            token=token,
-            auth_header_name=auth_header_name,
-            prefix=prefix,
             *args,
             **kwargs,
         )
