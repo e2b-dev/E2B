@@ -4,7 +4,7 @@ import struct
 
 from httpcore import ConnectionPool, AsyncConnectionPool, Response
 from enum import Flag, Enum
-from typing import Optional, Dict, List, Any, Generator, Tuple
+from typing import Callable, Optional, Dict, List, Any, Generator, Tuple
 from google.protobuf import json_format
 
 
@@ -314,8 +314,7 @@ class Client:
                 raise error_for_response(http_resp)
 
             parser = ServerStreamParser(
-                codec=self._codec,
-                compressor=self._compressor,
+                decode=self._codec.decode,
                 response_type=self._response_type,
             )
 
@@ -347,8 +346,7 @@ class Client:
                 raise error_for_response(http_resp)
 
             parser = ServerStreamParser(
-                codec=self._codec,
-                compressor=self._compressor,
+                decode=self._codec.decode,
                 response_type=self._response_type,
             )
 
@@ -372,12 +370,10 @@ class ServerStreamParser:
 
     def __init__(
         self,
-        codec: type[JSONCodec] | type[ProtobufCodec],
-        compressor: type[GzipCompressor] | None,
+        decode: Callable,
         response_type: Any,
     ):
-        self.codec = codec
-        self.compressor = compressor
+        self.decode = decode
         self.response_type = response_type
 
         self.buffer: bytes = b""
@@ -389,7 +385,7 @@ class ServerStreamParser:
         return buffer
 
     @property
-    def header(self) -> tuple[EnvelopeFlags, DataLen]:
+    def header(self) -> Tuple[EnvelopeFlags, DataLen]:
         if self._header:
             return self._header
 
@@ -421,5 +417,5 @@ class ServerStreamParser:
 
                 return
 
-            yield self.codec.decode(data, msg_type=self.response_type)
+            yield self.decode(data, msg_type=self.response_type)
             del self.header

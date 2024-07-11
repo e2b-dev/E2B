@@ -7,7 +7,7 @@ sandboxTest.skipIf(isDebug)('shorten timeout', async ({ sandbox }) => {
 
   await wait(6000)
 
-  await expect(sandbox.isRunning()).rejects.toThrowError()
+  await expect(sandbox.isRunning({ requestTimeoutMs: 1000 })).rejects.toThrowError()
 })
 
 sandboxTest.skipIf(isDebug)('shorten then lenghten timeout', async ({ sandbox }) => {

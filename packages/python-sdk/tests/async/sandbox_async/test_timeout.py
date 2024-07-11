@@ -12,7 +12,7 @@ async def test_shorten_timeout(async_sandbox: AsyncSandbox):
     await async_sandbox.set_timeout(5)
     sleep(6)
     with pytest.raises(TimeoutException):
-        await async_sandbox.is_running()
+        await async_sandbox.is_running(request_timeout=1)
 
 
 @pytest.mark.skip_debug()
