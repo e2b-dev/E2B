@@ -4,7 +4,7 @@ import * as path from 'path'
 import * as e2b from 'e2b'
 import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
-import commandExists from 'command-exists'
+
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getRoot } from 'src/utils/filesystem'
@@ -27,7 +27,9 @@ import {
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 
 import { client } from 'src/api'
+
 import Docker from 'dockerode'
+
 const templateCheckInterval = 500 // 0.5 sec
 
 const getTemplate = e2b.withAccessToken(
@@ -105,16 +107,19 @@ export const buildCommand = new commander.Command('build')
   .alias('bd')
   .action(async (templateID, opts) => {
     try {
-      const docker = new Docker();
-
-      try {
-        await docker.ping();
-      } catch (error) {
-        console.error('Docker is not running or not installed. Please start Docker and try again.');
-        process.exit(1);
+      const accessToken = ensureAccessToken();
+      const accessTokenCreds = {
+        username: '_e2b_access_token',
+        password: accessToken,
+        serveraddress: `docker.${e2b.SANDBOX_DOMAIN}`
       }
 
-      const accessToken = ensureAccessToken();
+      const docker = new Docker();
+      docker.ping().then((data: any) => {
+        console.log(`Pinging docker daemon... ${data}.\n
+          Node Docker API instance is running and is ready to use.\n`)
+      })
+
       process.stdout.write('\n');
 
       const newName = opts.name?.trim();
@@ -176,15 +181,15 @@ export const buildCommand = new commander.Command('build')
 
       // If dockerfile is not specified, we'll use the first Dockerfile in the root directory
       // If it is, we'll use the specified dockerfile, and it'll be referenced correctly relative to the root directory
-      let dockerfiles = fs.readdirSync(root).filter(file => file.endsWith('Dockerfile'))
-      const dockerfilePath = path.join(root, dockerfile || dockerfiles.pop() as string);
-      const dockerfileContent = loadFile(dockerfilePath) as string;
-      const dockerfileRelativePath = path.relative(root, dockerfilePath);
-
-
+      const dockerfiles = fs.readdirSync(root).filter(file => file.endsWith('Dockerfile'))
+      //If neither dockerfile nor dockerfiles are specified, and there are no dockerfiles in the root directory, throw an error.
+      let df = dockerfiles.pop() as string;
+      const dfPath = path.join(root, dockerfile || df);
+      const dfContent = loadFile(dfPath) as string;
+      const dfRelativePath = path.relative(root, dfPath);
 
       console.log(
-        `Found ${asLocalRelative(dockerfilePath)} that will be used to build the sandbox template.`,
+        `Found ${asLocalRelative(dfRelativePath)} that will be used to build the sandbox template.`,
       );
 
       const body = {
@@ -192,7 +197,7 @@ export const buildCommand = new commander.Command('build')
         startCmd: startCmd,
         cpuCount: cpuCount,
         memoryMB: memoryMB,
-        dockerfile: dockerfileContent,
+        dockerfile: dfContent,
       };
 
       if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
@@ -222,8 +227,8 @@ export const buildCommand = new commander.Command('build')
       await saveConfig(
         configPath,
         {
-          template_id: template.templateID,
-          dockerfile: dockerfileRelativePath,
+          template_id: templateID,
+          dockerfile: dfRelativePath,
           template_name: name,
           start_cmd: startCmd,
           cpu_count: cpuCount,
@@ -232,25 +237,21 @@ export const buildCommand = new commander.Command('build')
         true,
       );
 
-      await docker.checkAuth({
-        username: '_e2b_access_token',
-        password: accessToken,
-        serveraddress: `docker.${e2b.SANDBOX_DOMAIN}`,
-      }).then((data: any) => {
+
+      await docker.checkAuth(accessTokenCreds).then((data: Record<string, any>) => {
         console.log(`Status: ${data['Status']}`)
         console.log(`IdentityToken: ${data['IdentityToken']}`)
         // Why is IdentityToken not returned in the response?
-        // If you run an identity token, you can use that instead of sending the same set of credentials when pushing the image.
-      }).catch((err: any) => {
-        console.error(err)
-        process.exit(1)
+        // Sending same set of creds twice for same 
       });
 
+      //consider user_id having ten slots offDockerfiles for automatically buildding various startup templates.
+
       const imageTag = `docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`
-      let stream = await docker.buildImage(
+      let buildStream = await docker.buildImage(
         {
           context: root,
-          src: [dockerfileRelativePath],
+          src: [dfRelativePath],
         },
         {
           t: imageTag,
@@ -259,31 +260,30 @@ export const buildCommand = new commander.Command('build')
         }
       );
 
+      console.log(`Building docker image ${imageTag}...\n`);
       await new Promise((resolve, reject) => {
-        docker.modem.followProgress(stream, (err: any, res: any) => err ? reject(err) : resolve(res));
-      });
-
+        docker.modem.followProgress(buildStream, (err: any, res: any) => err ? reject(err) : resolve(res),
+          (event: any) => {
+            console.log(event)
+            if (event.id && event.progressDetail) {
+              console.log(`Progress: ${event.id}: ${event.progressDetail.current}/${event.progressDetail.total}`)
+            }
+          });
+      })
       console.log('Docker image built.\n');
-
-      console.log(`Pushing docker image ${imageTag}...`);
       const image = docker.getImage(imageTag);
-      const pushStream = await image.push({
-        authconfig: {
-          username: '_e2b_access_token',
-          password: accessToken,
-          serveraddress: `docker.${e2b.SANDBOX_DOMAIN}`
-        },
-        /*
-        authconfig: {
-          identitytoken: identityToken
-        },
-        */
-      });
+      let pushStream = await image.push({ authconfig: accessTokenCreds });
 
+      console.log(`Pushing docker image..\n`);
       await new Promise((resolve, reject) => {
-        docker.modem.followProgress(pushStream, (err: any, res: any) => err ? reject(err) : resolve(res));
-      });
-
+        docker.modem.followProgress(pushStream, (err: any, res: any) => err ? reject(err) : resolve(res),
+          (event: any) => {
+            console.log(event)
+            if (event.id && event.progressDetail) {
+              console.log(`Progress: ${event.id}: ${event.progressDetail.current}/${event.progressDetail.total}`)
+            }
+          });
+      })
       console.log('Docker image pushed.\n');
 
       console.log('Triggering build...');
