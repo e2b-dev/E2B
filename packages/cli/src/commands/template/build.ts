@@ -119,9 +119,6 @@ export const buildCommand = new commander.Command('build')
       await docker.ping().then((data: any) => {
         console.log(`Pinging docker daemon... ${data}.\nNode Docker API instance is running and is ready to use.\n`)
       })
-
-      process.stdout.write('\n');
-
       const newName = opts.name?.trim();
       if (newName && !/^[a-z0-9-_]+$/.test(newName)) {
         console.error(
@@ -248,14 +245,18 @@ export const buildCommand = new commander.Command('build')
       */
       await docker.checkAuth(accessTokenCreds).then((data: { Status: string, IdentityToken: string }) => {
         console.log(`Status: ${data.Status}`)
-        console.log(`IdentityToken: ${data.IdentityToken}`)
+        console.log(`IdentityToken: ${data.IdentityToken || 'No identity token provided.'}\n`)
       });
 
       const multiBar = new cliProgress.MultiBar({
-        clearOnComplete: true,
+        clearOnComplete: false,
         hideCursor: true,
         format: ' {bar} | {percentage}% | {value}/{total} | {task}',
+        autopadding: true,
+        barCompleteChar: '\u2588',
+        barIncompleteChar: '\u2591'
       }, cliProgress.Presets.shades_grey);
+
 
       const imageTag = `docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`
       let buildStream = await docker.buildImage(
@@ -270,24 +271,21 @@ export const buildCommand = new commander.Command('build')
         }
       );
 
-      console.log(`Building docker image ${imageTag}...\n`);
+      console.log(`Building docker image ${imageTag}:\n`);
       await handleDockerProgress(buildStream, 'Building', multiBar, docker);
-      console.log('Docker image built.\n');
+      process.stdout.write('\n');
 
       const image = docker.getImage(imageTag);
       let pushStream = await image.push({ authconfig: accessTokenCreds });
-
       await handleDockerProgress(pushStream, 'Pushing', multiBar, docker);
-      console.log('\nDocker image pushed.\n');
 
       multiBar.stop();
 
       await triggerBuild(accessToken, templateID, template.buildID);
-
       console.log(
-        `Triggered build for the sandbox template ${asFormattedSandboxTemplate(
+        `\nTriggered build for the sandbox template ${asFormattedSandboxTemplate(
           template,
-        )} `,
+        )}`,
       );
 
       console.log('Waiting for build to finish...');
@@ -300,42 +298,74 @@ export const buildCommand = new commander.Command('build')
     }
   });
 
+interface ProgressBarInfo {
+  bar: cliProgress.SingleBar;
+  id: string;
+}
+
 function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string, multiBar: cliProgress.MultiBar, docker: Docker): Promise<void> {
   return new Promise((resolve, reject) => {
-    const progressBars: { [key: string]: cliProgress.SingleBar } = {};
+    const progressBars: { [key: string]: ProgressBarInfo } = {};
+    let generalBar = multiBar.create(100, 0, { task: `${processName}: Overall Progress` });
+    let generalProgress = 0;
 
     docker.modem.followProgress(
       stream,
       (err: Error | null, res: any[] | null) => {
         if (err) {
-          Object.values(progressBars).forEach(bar => bar.stop());
+          Object.values(progressBars).forEach(({ bar }) => bar.stop());
+          generalBar.stop();
           reject(err);
         } else {
-          Object.values(progressBars).forEach(bar => bar.stop());
+          Object.values(progressBars).forEach(({ bar }) => bar.stop());
+          generalBar.update(100, { task: `${processName} completed` });
+          generalBar.stop();
           resolve();
         }
       },
       (event: any) => {
         if (event.stream) {
           process.stdout.write(event.stream);
-        }
+          const message = stripAnsi.default(event.stream.trim());
+          generalProgress = Math.min(generalProgress + 1, 99);
+          generalBar.update(generalProgress, { task: `${processName}: ${message}` });
+        } else if (event.status) {
+          let id = event.id;
+          if (!id || id === 'general') return; // skip general updates
 
-        let id = event.id || 'unknown';
-        let statusText = event.status || '';
+          let statusText = event.status;
 
-        if (event.progress) {
-          statusText += ' ' + event.progress;
-        }
+          if (event.progress) {
+            statusText += ' ' + event.progress;
+          }
 
-        if (!progressBars[id]) {
-          progressBars[id] = multiBar.create(100, 0, { task: `${processName} ${id}` });
-        }
+          if (!progressBars[id]) {
+            const bar = multiBar.create(100, 0, { task: `${id}: Waiting` });
+            progressBars[id] = { bar, id };
+          }
 
-        if (event.progressDetail && typeof event.progressDetail.current === 'number' && typeof event.progressDetail.total === 'number') {
-          const percent = Math.floor((event.progressDetail.current / event.progressDetail.total) * 100);
-          progressBars[id].update(percent, { task: `${processName} ${id}: ${statusText}` });
-        } else {
-          progressBars[id].update(100, { task: `${processName} ${id}: ${statusText}` });
+          const { bar } = progressBars[id];
+
+          if (event.progressDetail && typeof event.progressDetail.current === 'number' && typeof event.progressDetail.total === 'number') {
+            const percent = Math.floor((event.progressDetail.current / event.progressDetail.total) * 100);
+            bar.update(percent, { task: `${id}: ${statusText}` });
+          } else {
+            const currentValue = bar.getProgress();
+            bar.update(Math.min(currentValue + 5, 99), { task: `${id}: ${statusText}` });
+          }
+
+          if (statusText.includes('Layer already exists') || statusText.includes('Mounted from') || statusText.includes('Pushed')) {
+            bar.update(100, { task: `${id}: ${statusText}` });
+            bar.stop();
+            delete progressBars[id];
+          }
+
+          const activeBars = Object.values(progressBars);
+          const totalProgress = activeBars.reduce((sum, { bar }) => sum + bar.getProgress(), 0);
+          generalProgress = Math.floor(totalProgress / (activeBars.length || 1));
+          generalBar.update(generalProgress, { task: `${processName}: Overall Progress` });
+        } else if (event.aux) {
+          generalBar.update(100, { task: `${processName} completed` });
         }
       }
     );
