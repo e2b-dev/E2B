@@ -5,6 +5,7 @@ import * as e2b from 'e2b'
 import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
 import * as cliProgress from 'cli-progress';
+import chalk from 'chalk';
 
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
@@ -271,13 +272,12 @@ export const buildCommand = new commander.Command('build')
         }
       );
 
-      console.log(`Building docker image ${imageTag}:\n`);
-      await handleDockerProgress(buildStream, 'Building', multiBar, docker);
+      await handleDockerProgress(buildStream, 'Building', docker);
       process.stdout.write('\n');
 
       const image = docker.getImage(imageTag);
       let pushStream = await image.push({ authconfig: accessTokenCreds });
-      await handleDockerProgress(pushStream, 'Pushing', multiBar, docker);
+      await handleDockerProgress(pushStream, 'Pushing', docker);
 
       multiBar.stop();
 
@@ -303,67 +303,91 @@ interface ProgressBarInfo {
   id: string;
 }
 
-function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string, multiBar: cliProgress.MultiBar, docker: Docker): Promise<void> {
+function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string, docker: Docker): Promise<void> {
   return new Promise((resolve, reject) => {
+    const multiBar = new cliProgress.MultiBar({
+      clearOnComplete: false,
+      hideCursor: true,
+      format: ' {bar} | {percentage}% | {task}'
+    }, cliProgress.Presets.shades_classic);
+
     const progressBars: { [key: string]: ProgressBarInfo } = {};
     let generalBar = multiBar.create(100, 0, { task: `${processName}: Overall Progress` });
     let generalProgress = 0;
+    let errorOccurred = false;
+
+    console.log(chalk.cyan(`\n=== ${processName} Docker Image ===\n`));
 
     docker.modem.followProgress(
       stream,
       (err: Error | null, res: any[] | null) => {
-        if (err) {
+        if (err || errorOccurred) {
           Object.values(progressBars).forEach(({ bar }) => bar.stop());
           generalBar.stop();
-          reject(err);
+          multiBar.stop();
+          reject(err || new Error('An error occurred during the Docker operation'));
         } else {
           Object.values(progressBars).forEach(({ bar }) => bar.stop());
-          generalBar.update(100, { task: `${processName} completed` });
+          generalBar.update(100, { task: `${processName} completed successfully` });
           generalBar.stop();
+          multiBar.stop();
+          console.log(chalk.green(`\n✔ ${processName} completed successfully.\n`));
           resolve();
         }
       },
       (event: any) => {
-        if (event.stream) {
-          process.stdout.write(event.stream);
-          const message = stripAnsi.default(event.stream.trim());
-          generalProgress = Math.min(generalProgress + 1, 99);
-          generalBar.update(generalProgress, { task: `${processName}: ${message}` });
-        } else if (event.status) {
-          let id = event.id;
-          if (!id || id === 'general') return; // skip general updates
+        if (event.error) {
+          errorOccurred = true;
+          console.error(chalk.red(`\n✘ Error during ${processName.toLowerCase()}: ${event.error}`));
+          return;
+        }
 
+        if (event.stream) {
+          const message = stripAnsi.default(event.stream.trim());
+          if (message) {
+            generalProgress = Math.min(generalProgress + 1, 99);
+            generalBar.update(generalProgress, { task: `${processName}: ${message}` });
+            if (message.toLowerCase().includes('error')) {
+              console.error(chalk.red(message));
+            } else {
+              console.log(chalk.dim(message));
+            }
+          }
+        } else if (event.status) {
+          let id = event.id || 'general';
           let statusText = event.status;
 
           if (event.progress) {
             statusText += ' ' + event.progress;
           }
 
-          if (!progressBars[id]) {
-            const bar = multiBar.create(100, 0, { task: `${id}: Waiting` });
-            progressBars[id] = { bar, id };
+          if (id !== 'general') {
+            if (!progressBars[id]) {
+              const bar = multiBar.create(100, 0, { task: `${id}: Waiting` });
+              progressBars[id] = { bar, id };
+            }
+
+            const { bar } = progressBars[id];
+
+            if (event.progressDetail && typeof event.progressDetail.current === 'number' && typeof event.progressDetail.total === 'number') {
+              const percent = Math.floor((event.progressDetail.current / event.progressDetail.total) * 100);
+              bar.update(percent, { task: `${id}: ${statusText}` });
+            } else {
+              const currentValue = bar.getProgress();
+              bar.update(Math.min(currentValue + 5, 99), { task: `${id}: ${statusText}` });
+            }
+
+            if (statusText.includes('Layer already exists') || statusText.includes('Mounted from') || statusText.includes('Pushed')) {
+              bar.update(100, { task: `${id}: ${statusText}` });
+              bar.stop();
+              delete progressBars[id];
+            }
+
+            const activeBars = Object.values(progressBars);
+            const totalProgress = activeBars.reduce((sum, { bar }) => sum + bar.getProgress(), 0);
+            generalProgress = Math.floor(totalProgress / (activeBars.length || 1));
+            generalBar.update(generalProgress, { task: `${processName}: Overall Progress` });
           }
-
-          const { bar } = progressBars[id];
-
-          if (event.progressDetail && typeof event.progressDetail.current === 'number' && typeof event.progressDetail.total === 'number') {
-            const percent = Math.floor((event.progressDetail.current / event.progressDetail.total) * 100);
-            bar.update(percent, { task: `${id}: ${statusText}` });
-          } else {
-            const currentValue = bar.getProgress();
-            bar.update(Math.min(currentValue + 5, 99), { task: `${id}: ${statusText}` });
-          }
-
-          if (statusText.includes('Layer already exists') || statusText.includes('Mounted from') || statusText.includes('Pushed')) {
-            bar.update(100, { task: `${id}: ${statusText}` });
-            bar.stop();
-            delete progressBars[id];
-          }
-
-          const activeBars = Object.values(progressBars);
-          const totalProgress = activeBars.reduce((sum, { bar }) => sum + bar.getProgress(), 0);
-          generalProgress = Math.floor(totalProgress / (activeBars.length || 1));
-          generalBar.update(generalProgress, { task: `${processName}: Overall Progress` });
         } else if (event.aux) {
           generalBar.update(100, { task: `${processName} completed` });
         }
@@ -371,6 +395,7 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
     );
   });
 }
+
 
 async function waitForBuildFinish(
   accessToken: string,
