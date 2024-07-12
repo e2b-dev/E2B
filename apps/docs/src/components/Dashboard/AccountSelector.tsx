@@ -32,6 +32,7 @@ export const AccountSelector = ({ teams, user, currentTeam, setCurrentTeam, setT
     const res = await fetch(createTeamUrl, {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'X-User-Access-Token': user.accessToken,
       },
       body: JSON.stringify({
@@ -40,6 +41,10 @@ export const AccountSelector = ({ teams, user, currentTeam, setCurrentTeam, setT
     })
     if (!res.ok) {
       // TODO: Add sentry event here
+      toast({
+        title: 'An error occurred',
+        description: 'We were unable to create the team',
+      })
       return
     }
 
@@ -51,6 +56,7 @@ export const AccountSelector = ({ teams, user, currentTeam, setCurrentTeam, setT
     
     setTeams([...teams, team])
     setCurrentTeam(team)
+    setTeamName('')
   }
   
   return(

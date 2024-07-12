@@ -68,6 +68,10 @@ export const TeamContent = ({ team, user, teams, setTeams, setCurrentTeam }: { t
 
     if (error) {
       // TODO: Add sentry event here
+      toast({
+        title: 'An error occurred',
+        description: 'We were unable to delete the member from the team',
+      })
       console.log(error)
       return
     }
@@ -83,6 +87,10 @@ export const TeamContent = ({ team, user, teams, setTeams, setCurrentTeam }: { t
     
     if (error) {
       // TODO: Add sentry event here
+      toast({
+        title: 'An error occurred',
+        description: 'We were unable to change the team name',
+      })
       console.log(error)
       return
     }
@@ -102,6 +110,10 @@ export const TeamContent = ({ team, user, teams, setTeams, setCurrentTeam }: { t
     
     if (error) {
       // TODO: Add sentry event here
+      toast({
+        title: 'There was an error adding the user to the team',
+        description: 'Please make sure the user id is correct.',
+      })
       console.log(error)
       return
     }

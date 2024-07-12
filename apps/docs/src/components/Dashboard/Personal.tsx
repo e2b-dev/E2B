@@ -3,19 +3,37 @@
 import { useToast } from '../ui/use-toast'
 import { Button } from '../Button'
 import { User } from '@supabase/supabase-js'
-import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import Link from 'next/link'
+import { useState } from 'react'
 
-export const PersonalContent = ({user}: {user: User}) => {
+
+const updateUserUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/users`
+
+export const PersonalContent = ({user, accessToken}: {user: User, accessToken: string}) => {
   const { toast } = useToast()
+  const [email, setEmail] = useState(user.email)
 
   const updateUserEmail = async() => {
-    const supabase = createPagesBrowserClient()
-    await supabase
-      .from('users')
-      .update({
-        email: user.email,
+    if (!accessToken) {
+      return
+    }
+
+
+    const res = await fetch(updateUserUrl, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+
+    if (!res.ok) {
+      toast({
+        title: 'An error occurred',
+        description: 'We were unable to update the email',
       })
+      return
+    }
 
     toast({
       title: 'Email updated',
@@ -35,7 +53,8 @@ export const PersonalContent = ({user}: {user: User}) => {
           type="text"
           className="w-1/2 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
           placeholder={user.email}
-          value={user.email}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           onSubmit={updateUserEmail}
         />
         <Button variant='outline'>Save changes</Button>

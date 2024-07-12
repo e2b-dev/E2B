@@ -65,7 +65,7 @@ export const BillingContent = ({ currentApiKey, team }: { currentApiKey: string 
 
       <div className='flex flex-col space-y-2 pb-10'>
         <h2 className='font-bold text-xl'>Credits left</h2>
-        <span className="text-sm">Credits automatically are used to bill your team</span>
+        <span className="text-sm">Credits are used to bill your team automatically</span>
         {credits === null ? (
           <span className="text-sm font-mono text-neutral-400">Loading...</span>
         ) : (
