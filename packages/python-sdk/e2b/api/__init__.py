@@ -14,7 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 def handle_api_exception(e: Response):
-    body = json.loads(e.content) if e.content else {}
+    try:
+        body = json.loads(e.content) if e.content else {}
+    except json.JSONDecodeError:
+        body = {}
+
     if "message" in body:
         return SandboxException(f"{e.status_code}: {body['message']}")
     return SandboxException(f"{e.status_code}: {e.content}")

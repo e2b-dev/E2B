@@ -6,7 +6,7 @@ from typing import Optional, Dict, Literal, overload
 from e2b.sandbox.utils import class_method_variant
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.api import (
-    handle_envd_api_exception,
+    ahandle_envd_api_exception,
     ENVD_API_HEALTH_ROUTE,
 )
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
@@ -85,7 +85,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             timeout=self.connection_config.get_request_timeout(request_timeout),
         )
 
-        err = handle_envd_api_exception(r)
+        err = await ahandle_envd_api_exception(r)
         if err:
             raise err
 

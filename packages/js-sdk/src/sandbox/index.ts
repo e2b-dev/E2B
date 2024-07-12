@@ -101,11 +101,11 @@ export class Sandbox extends SandboxApi {
   }
 
   async isRunning(opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<true> {
-    const { error } = await this.envdApi.api.GET('/health', {
+    const res = await this.envdApi.api.GET('/health', {
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
 
-    const err = handleEnvdApiError(error)
+    const err = await handleEnvdApiError(res)
     if (err) {
       throw err
     }

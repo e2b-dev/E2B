@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.17.1",
   "scripts": {
+    "example": "poetry run python example.py",
     "test": "poetry run pytest -n 4 --verbose -x",
     "postVersion": "poetry version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
     "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing",

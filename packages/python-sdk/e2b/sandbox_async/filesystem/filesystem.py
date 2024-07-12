@@ -15,7 +15,7 @@ from typing import (
 from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
 from e2b.connection_config import Username, ConnectionConfig
 from e2b.exceptions import SandboxException
-from e2b.envd.api import handle_envd_api_exception
+from e2b.envd.api import ahandle_envd_api_exception
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.api import ENVD_API_FILES_ROUTE
@@ -84,7 +84,7 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
-        err = handle_envd_api_exception(r)
+        err = await ahandle_envd_api_exception(r)
         if err:
             raise err
 
@@ -109,7 +109,7 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
-        err = handle_envd_api_exception(r)
+        err = await ahandle_envd_api_exception(r)
         if err:
             raise err
 
@@ -146,7 +146,7 @@ class Filesystem:
         request_timeout: Optional[float] = None,
     ) -> bool:
         try:
-            res = await self._rpc.astat(
+            await self._rpc.astat(
                 filesystem_pb2.StatRequest(path=path),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout

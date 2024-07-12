@@ -72,7 +72,7 @@ export class Filesystem {
   async read(path: string, opts?: FilesystemRequestOpts & { format?: 'text' | 'stream' | 'bytes' | 'blob' }): Promise<unknown> {
     const format = opts?.format ?? 'text'
 
-    const { data, error } = await this.envdApi.api.GET('/files', {
+    const res = await this.envdApi.api.GET('/files', {
       params: {
         query: {
           path,
@@ -83,22 +83,22 @@ export class Filesystem {
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
 
-    const err = handleEnvdApiError(error)
+    const err = await handleEnvdApiError(res)
     if (err) {
       throw err
     }
 
     if (format === 'bytes') {
-      return new Uint8Array(data as ArrayBuffer)
+      return new Uint8Array(res.data as ArrayBuffer)
     }
 
-    return data
+    return res.data
   }
 
   async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream, opts?: FilesystemRequestOpts): Promise<void> {
     const blob = await new Response(data).blob()
 
-    const { error } = await this.envdApi.api.POST('/files', {
+    const res = await this.envdApi.api.POST('/files', {
       params: {
         query: {
           path,
@@ -116,7 +116,7 @@ export class Filesystem {
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
 
-    const err = handleEnvdApiError(error)
+    const err = await handleEnvdApiError(res)
     if (err) {
       throw err
     }
