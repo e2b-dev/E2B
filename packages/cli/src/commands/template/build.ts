@@ -346,7 +346,6 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
           generalBar.update(100, { task: `${processName} completed successfully` });
           generalBar.stop();
           multiBar.stop();
-          console.log(chalk.green(`\n✔ ${processName} completed successfully.\n`));
           resolve();
         }
       },
@@ -360,13 +359,9 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
         if (event.stream) {
           const message = stripAnsi.default(event.stream.trim());
           if (message) {
-            generalProgress = Math.min(generalProgress + 1, 99);
-            generalBar.update(generalProgress, { task: `${processName}: ${message}` });
-            if (message.toLowerCase().includes('error')) {
-              console.error(chalk.red(message));
-            } else {
-              console.log(chalk.dim(message));
-            }
+            console.log(chalk.dim(message));
+            generalProgress = Math.min(generalProgress + 1, 98);
+            generalBar.update(generalProgress, { task: `${processName}: Processing` });
           }
         } else if (event.status) {
           let id = event.id || 'general';
@@ -404,7 +399,7 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
             generalBar.update(generalProgress, { task: `${processName}: Overall Progress` });
           }
         } else if (event.aux) {
-          generalBar.update(100, { task: `${processName} completed` });
+          generalBar.update(99, { task: `${processName}: Finalizing` });
         }
       }
     );
