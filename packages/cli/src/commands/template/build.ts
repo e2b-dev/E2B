@@ -308,7 +308,21 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
     const multiBar = new cliProgress.MultiBar({
       clearOnComplete: false,
       hideCursor: true,
-      format: ' {bar} | {percentage}% | {task}'
+      format: (options, params, payload) => {
+        const percentage = Math.round(params.progress * 100);
+        const width = options.barsize || 40;
+        const completeSize = Math.round(width * params.progress);
+        const incompleteSize = width - completeSize;
+
+        const completeBar = '█'.repeat(completeSize);
+        const incompleteBar = '░'.repeat(incompleteSize);
+
+        if (percentage === 100) {
+          return chalk.green(`✓ ${chalk.bold(payload.task)} | ${chalk.bold('100%')} | ${chalk.dim('Completed')}`);
+        }
+
+        return `${chalk.green(completeBar)}${chalk.gray(incompleteBar)} | ${chalk.yellow(`${percentage}%`)} | ${chalk.cyan(payload.task)}`;
+      },
     }, cliProgress.Presets.shades_classic);
 
     const progressBars: { [key: string]: ProgressBarInfo } = {};
@@ -325,6 +339,7 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
           Object.values(progressBars).forEach(({ bar }) => bar.stop());
           generalBar.stop();
           multiBar.stop();
+          console.error(chalk.red(`\n✘ Error during ${processName.toLowerCase()}: ${err?.message || 'An unknown error occurred'}`));
           reject(err || new Error('An error occurred during the Docker operation'));
         } else {
           Object.values(progressBars).forEach(({ bar }) => bar.stop());
@@ -395,7 +410,6 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
     );
   });
 }
-
 
 async function waitForBuildFinish(
   accessToken: string,
