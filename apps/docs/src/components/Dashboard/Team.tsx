@@ -8,6 +8,8 @@ import { toast } from '../ui/use-toast'
 import { Copy } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog'
+import {Simulate} from "react-dom/test-utils";
+import error = Simulate.error;
 
 interface TeamMember {
   id: string
@@ -39,10 +41,17 @@ export const TeamContent = ({ team, user, teams, setTeams, setCurrentTeam }: { t
 
       const userIds = teamData.map(({ user_id }) => user_id).filter(id => id !== user.id)
 
+      const { data, error } = await supabase.auth.getSession()
+      if (error) {
+          console.log(error)
+          return
+      }
       const res = await fetch('/api/get-user-info', {
         method: 'POST',
         body: JSON.stringify({ userIds }),
         headers: {
+          'Supabase-Auth-Token': data.session!.access_token,
+          'Supabase-Refresh-Token': data.session!.refresh_token,
           'Content-Type': 'application/json',
         },
       })

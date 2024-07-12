@@ -9,13 +9,13 @@ const supabase = createClient(
 )
 
 export async function POST(request: Request) {
-
-  const { data: { user }, error } = await supabase.auth.getUser()
+  await supabase.auth.api.getUserByCookie(request)
+  const { data: { session }, error } = await supabase.auth.getSession()
   if (error) {
     console.log(error)
     return new Response(error.message, { status: 500 })
   }
-  if (!user) {
+  if (!session) {
     return new Response('Not logged in', { status: 401 })
   }
 
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
   const usersResults = await Promise.all(userPromises)
 
-  if (!usersResults.some(({data}) => data.user.id === user.id)) {
+  if (!usersResults.some(({data}) => data.user.id === session.user.id)) {
     return new Response('Unauthorized', { status: 401 })
   }
 

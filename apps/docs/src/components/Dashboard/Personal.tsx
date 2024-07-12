@@ -9,7 +9,7 @@ import { useState } from 'react'
 
 const updateUserUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/users`
 
-export const PersonalContent = ({user, accessToken}: {user: User, accessToken: string}) => {
+export const PersonalContent = ({user, accessToken}: {user: User, accessToken: string | null}) => {
   const { toast } = useToast()
   const [email, setEmail] = useState(user.email)
 
@@ -17,7 +17,6 @@ export const PersonalContent = ({user, accessToken}: {user: User, accessToken: s
     if (!accessToken) {
       return
     }
-
 
     const res = await fetch(updateUserUrl, {
       method: 'PATCH',
