@@ -59,9 +59,7 @@ const triggerTemplateBuild = e2b.withAccessToken(
 export const buildCommand = new commander.Command('build')
   .description(
     `build sandbox template defined by ${asLocalRelative(
-      defaultDockerfileName,
-    )} or ${asLocalRelative(
-      fallbackDockerfileName,
+      'e2b.Dockerfile',
     )} in root directory. By default the root directory is the current working directory. This command also creates ${asLocal(
       configName,
     )} config.`,
@@ -79,9 +77,9 @@ export const buildCommand = new commander.Command('build')
   .addOption(pathOption)
   .option(
     '-d, --dockerfile <file>',
-    `specify path to Dockerfile. By default E2B tries to find ${asLocal(
-      defaultDockerfileName,
-    )} or ${asLocal(fallbackDockerfileName)} in root directory.`,
+    `specify path to Dockerfile. By default E2B looks for ${asLocal(
+      'e2b.Dockerfile',
+    )} in root directory.`,
   )
   .option(
     '-n, --name <template-name>',
@@ -114,20 +112,16 @@ export const buildCommand = new commander.Command('build')
         username: '_e2b_access_token',
         password: accessToken,
         serveraddress: `docker.${e2b.SANDBOX_DOMAIN}`
-      }
+      };
 
       const docker = new Docker();
       await docker.ping().then((data: any) => {
-        console.log(`Pinging docker daemon... ${data}.\nNode Docker API instance is running and is ready to use.\n`)
-      })
+        console.log(`Pinging docker daemon... ${data}.\nNode Docker API instance is running and is ready to use.\n`);
+      });
+
       const newName = opts.name?.trim();
       if (newName && !/^[a-z0-9-_]+$/.test(newName)) {
-        console.error(
-          `Name ${asLocal(
-            newName,
-          )} is not valid. Name can only contain lowercase letters, numbers, dashes and underscores.`,
-        );
-        process.exit(1);
+        throw new Error(`Name ${asLocal(newName)} is not valid. Name can only contain lowercase letters, numbers, dashes and underscores.`);
       }
 
       let dockerfile = opts.dockerfile;
@@ -162,10 +156,7 @@ export const buildCommand = new commander.Command('build')
       }
 
       if (config && templateID && config.template_id !== templateID) {
-        console.error(
-          "You can't specify different ID than the one in config. If you want to build a new sandbox template remove the config file.",
-        );
-        process.exit(1);
+        throw new Error("You can't specify different ID than the one in config. If you want to build a new sandbox template remove the config file.");
       }
 
       if (newName && config?.template_name && newName !== config?.template_name) {
@@ -177,20 +168,19 @@ export const buildCommand = new commander.Command('build')
       }
       const name = newName || config?.template_name;
 
-      const dockerfiles = fs.readdirSync(root).filter(file => file.endsWith('Dockerfile'))
-      //const dockerfiles = fs.readdirSync(root).filter(file => file.toLowerCase().includes('dockerfile'))
-      let df = dockerfile || dockerfiles[0];
-      if (!df) {
-        console.error("No Dockerfile given and no dockerfiles found in the root directory. Please specify a Dockerfile or a dockerfile in the root directory.");
-        process.exit(1);
-      }
-      const dfPath = path.join(root, df);
-      const dfContent = fs.readFileSync(dfPath, 'utf-8');
-      const dfRelativePath = path.relative(root, dfPath);
+      const { name: dfName, path: dfPath, content: dfContent, relativePath: dfRelativePath } = getDockerfile(root, dockerfile);
+      console.log(`dfName: ${dfName}`);
+      console.log(`dfPath: ${dfPath}`);
+      console.log(`dfContent: ${dfContent}`);
+      console.log(`dfRelativePath: ${dfRelativePath}`);
 
       console.log(
         `Found ${asLocalRelative(dfRelativePath)} that will be used to build the sandbox template.`,
       );
+
+      if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
+        throw new Error(`The memory in megabytes must be an even number. You provided ${asLocal(opts.memoryMb.toFixed(0))}.`);
+      }
 
       const body = {
         alias: name,
@@ -199,15 +189,6 @@ export const buildCommand = new commander.Command('build')
         memoryMB: memoryMB,
         dockerfile: dfContent,
       };
-
-      if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
-        console.error(
-          `The memory in megabytes must be an even number. You provided ${asLocal(
-            opts.memoryMb.toFixed(0),
-          )}.`,
-        );
-        process.exit(1);
-      }
 
       const template = await requestBuildTemplate(
         accessToken,
@@ -237,16 +218,9 @@ export const buildCommand = new commander.Command('build')
         true,
       );
 
-      /*
-      interface DockerAuthResponse {
-        Status: string;
-        IdentityToken: string;
-      }
-      IdentityToken is not returned in the response. Can be used in authConfig for pushing the image.
-      */
       await docker.checkAuth(accessTokenCreds).then((data: { Status: string, IdentityToken: string }) => {
-        console.log(`Status: ${data.Status}`)
-        console.log(`IdentityToken: ${data.IdentityToken || 'No identity token provided.'}\n`)
+        console.log(`Status: ${data.Status}`);
+        console.log(`IdentityToken: ${data.IdentityToken || 'No identity token provided.'}\n`);
       });
 
       const multiBar = new cliProgress.MultiBar({
@@ -258,16 +232,18 @@ export const buildCommand = new commander.Command('build')
         barIncompleteChar: '\u2591'
       }, cliProgress.Presets.shades_grey);
 
+      const imageTag = `docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`;
+      const buildArgs = opts.buildArg ? Object.fromEntries(opts.buildArg.map((arg: string) => arg.split('='))) : undefined;
 
-      const imageTag = `docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`
       let buildStream = await docker.buildImage(
         {
           context: root,
-          src: [dfRelativePath],
+          src: [dfRelativePath]
         },
         {
           t: imageTag,
-          buildargs: opts.buildArg ? Object.fromEntries(opts.buildArg.map((arg: string) => arg.split('='))) : undefined,
+          dockerfile: dfName,
+          buildargs: buildArgs,
           platform: 'linux/amd64'
         }
       );
@@ -292,11 +268,16 @@ export const buildCommand = new commander.Command('build')
       await waitForBuildFinish(accessToken, templateID, template.buildID, name);
 
       process.exit(0);
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(`Error: ${err.message}`);
+      } else {
+        console.error('An unknown error occurred');
+      }
       process.exit(1);
     }
   });
+
 
 interface ProgressBarInfo {
   bar: cliProgress.SingleBar;
@@ -405,6 +386,38 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
     );
   });
 }
+
+function getDockerfile(root: string, specifiedDockerfile?: string): {
+  name: string,
+  path: string,
+  content: string,
+  relativePath: string
+} {
+  let dockerfileName = specifiedDockerfile;
+  if (!dockerfileName) {
+    if (fs.existsSync(path.join(root, 'e2b.Dockerfile'))) {
+      dockerfileName = 'e2b.Dockerfile';
+    } else {
+      throw new Error("No Dockerfile specified and 'e2b.Dockerfile' not found in the root directory. Please create an 'e2b.Dockerfile' in the root directory or specify a custom Dockerfile using the '-d' option.");
+    }
+  }
+
+  const fullPath = path.join(root, dockerfileName);
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`Specified Dockerfile '${dockerfileName}' not found. Please check the path and try again.`);
+  }
+
+  const content = fs.readFileSync(fullPath, 'utf-8');
+  const relativePath = path.relative(root, fullPath);
+
+  return {
+    name: dockerfileName,
+    path: fullPath,
+    content,
+    relativePath
+  };
+}
+
 
 async function waitForBuildFinish(
   accessToken: string,
