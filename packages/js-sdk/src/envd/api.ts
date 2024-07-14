@@ -13,7 +13,7 @@ export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
   const message: string = res.error?.message || await res.response.text()
 
   switch (res.response.status) {
-    case 4000:
+    case 400:
       return new InvalidArgumentError(message)
     case 401:
       return new AuthenticationError(message)
