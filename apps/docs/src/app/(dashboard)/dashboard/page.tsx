@@ -182,7 +182,7 @@ const MainContent = ({ selectedItem, user, team, accessToken, currentApiKey, tea
     case 'billing':
       return <BillingContent currentApiKey={currentApiKey} team={team} />
     case 'team':
-      return <TeamContent team={team} user={user} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
+      return <TeamContent team={team} user={user} teams={teams} currentApiKey={currentApiKey} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
     default:
       return <ErrorContent />
   }
