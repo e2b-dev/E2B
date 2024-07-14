@@ -22,10 +22,7 @@ import {
   withDelimiter,
 } from 'src/utils/format'
 import { configOption, pathOption } from 'src/options'
-import {
-  defaultDockerfileName,
-  fallbackDockerfileName,
-} from 'src/docker/constants'
+
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 
 import { client } from 'src/api'
@@ -55,6 +52,32 @@ const triggerTemplateBuild = e2b.withAccessToken(
     .method('post')
     .create(),
 )
+
+function prettyError(error: Error | unknown, context?: string): void {
+  const errorBox = boxen.default(
+    chalk.red.bold('Error Occurred') +
+    (context ? chalk.yellow(`\n\nContext: ${context}`) : '') +
+    chalk.white(`\n\n${error instanceof Error ? error.message : String(error)}`),
+    {
+      padding: 1,
+      margin: 1,
+      borderStyle: 'double',
+      borderColor: 'red',
+    }
+  );
+
+  console.error(errorBox);
+
+  if (error instanceof Error && error.stack) {
+    console.error(chalk.gray('\nStack Trace:'));
+    console.error(chalk.gray(error.stack));
+  }
+
+  console.error(chalk.yellow('\nNeed help? Check out our documentation:'));
+  console.error(chalk.blue.underline('https://e2b.dev/docs'));
+  console.error(chalk.yellow('Or join our community for support:'));
+  console.error(chalk.blue.underline('https://discord.gg/U7KEcGErtQ'));
+}
 
 export const buildCommand = new commander.Command('build')
   .description(
@@ -115,9 +138,8 @@ export const buildCommand = new commander.Command('build')
       };
 
       const docker = new Docker();
-      await docker.ping().then((data: any) => {
-        console.log(`Pinging docker daemon... ${data}.\nNode Docker API instance is running and is ready to use.\n`);
-      });
+      const pingResponse = await docker.ping();
+      console.log(`Pinging docker daemon... ${pingResponse}.\nNode Docker API instance is running and is ready to use.\n`);
 
       const newName = opts.name?.trim();
       if (newName && !/^[a-z0-9-_]+$/.test(newName)) {
@@ -169,10 +191,6 @@ export const buildCommand = new commander.Command('build')
       const name = newName || config?.template_name;
 
       const { name: dfName, path: dfPath, content: dfContent, relativePath: dfRelativePath } = getDockerfile(root, dockerfile);
-      console.log(`dfName: ${dfName}`);
-      console.log(`dfPath: ${dfPath}`);
-      console.log(`dfContent: ${dfContent}`);
-      console.log(`dfRelativePath: ${dfRelativePath}`);
 
       console.log(
         `Found ${asLocalRelative(dfRelativePath)} that will be used to build the sandbox template.`,
@@ -269,11 +287,7 @@ export const buildCommand = new commander.Command('build')
 
       process.exit(0);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error(`Error: ${err.message}`);
-      } else {
-        console.error('An unknown error occurred');
-      }
+      prettyError(err, 'An error occurred during the build process.');
       process.exit(1);
     }
   });
@@ -313,6 +327,8 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
 
     console.log(chalk.cyan(`\n=== ${processName} Docker Image ===\n`));
 
+    const logConsole = new console.Console(process.stdout, process.stderr);
+
     docker.modem.followProgress(
       stream,
       (err: Error | null, res: any[] | null) => {
@@ -320,7 +336,7 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
           Object.values(progressBars).forEach(({ bar }) => bar.stop());
           generalBar.stop();
           multiBar.stop();
-          console.error(chalk.red(`\n✘ Error during ${processName.toLowerCase()}: ${err?.message || 'An unknown error occurred'}`));
+          logConsole.error(chalk.red(`\n✘ Error during ${processName.toLowerCase()}: ${err?.message || 'An unknown error occurred'}`));
           reject(err || new Error('An error occurred during the Docker operation'));
         } else {
           Object.values(progressBars).forEach(({ bar }) => bar.stop());
@@ -332,15 +348,13 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
       },
       (event: any) => {
         if (event.error) {
-          errorOccurred = true;
-          console.error(chalk.red(`\n✘ Error during ${processName.toLowerCase()}: ${event.error}`));
-          return;
+          throw new Error(`Error during ${processName.toLowerCase()}: ${event.error}`);
         }
 
         if (event.stream) {
           const message = stripAnsi.default(event.stream.trim());
           if (message) {
-            console.log(chalk.dim(message));
+            logConsole.log(chalk.dim(message));
             generalProgress = Math.min(generalProgress + 1, 98);
             generalBar.update(generalProgress, { task: `${processName}: Processing` });
           }
@@ -381,6 +395,11 @@ function handleDockerProgress(stream: NodeJS.ReadableStream, processName: string
           }
         } else if (event.aux) {
           generalBar.update(99, { task: `${processName}: Finalizing` });
+        }
+
+        if (processName === 'Pushing') {
+          generalProgress = Math.min(generalProgress + 1, 99);
+          generalBar.update(generalProgress, { task: `${processName}: Overall Progress` });
         }
       }
     );
