@@ -22,8 +22,12 @@ export const PersonalContent = ({user, accessToken}: {user: User, accessToken: s
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
+        'X-User-Access-Token': `Bearer ${accessToken}`,
       },
+      body: JSON.stringify({
+            email,
+          }
+      )
     })
 
     if (!res.ok) {
@@ -54,9 +58,8 @@ export const PersonalContent = ({user, accessToken}: {user: User, accessToken: s
           placeholder={user.email}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          onSubmit={updateUserEmail}
         />
-        <Button variant='outline'>Save changes</Button>
+        <Button variant='outline' onClick={updateUserEmail}>Save changes</Button>
       </div>
       
       {user.app_metadata.provider === 'email' && (
