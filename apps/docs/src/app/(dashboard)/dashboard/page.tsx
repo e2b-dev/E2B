@@ -98,7 +98,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (isLoading) { return }
     if (!user) {
-      router.push(`/sign-in?${redirectToCurrentURL()}`)
+      router.push(`/dashboard/sign-in?${redirectToCurrentURL()}`)
     }
   }, [isLoading, user, router])
 
