@@ -72,7 +72,7 @@ export const routes = [
       {
         icon: <BarChart strokeWidth={1} size={20} />,
         title: 'Track usage',
-        href: '/docs/usage',
+        href: '/dashboard?tab=usage',
       },
       {
         icon: <ShieldQuestion strokeWidth={1} size={20} />,
