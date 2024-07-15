@@ -45,7 +45,14 @@ export const KeysContent = ({ user, currentTeam, currentApiKey }: { user: User, 
   }
 
   const deleteApiKey = async() => {
-    
+    if (apiKeys.length === 1) {
+        toast({
+            title: 'Cannot delete the last API key',
+            description: 'You must have at least one API key',
+        })
+        return
+    }
+
     const { error } = await supabase
       .from('team_api_keys')
       .delete()
