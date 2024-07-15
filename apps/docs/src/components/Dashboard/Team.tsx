@@ -64,6 +64,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
       .from('users_teams')
       .delete()
       .eq('user_id', currentMemberId)
+      .eq('team_id', team.id)
 
     if (error) {
       // TODO: Add sentry event here
