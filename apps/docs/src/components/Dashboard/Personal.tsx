@@ -50,6 +50,8 @@ export const PersonalContent = ({user, accessToken}: {user: User, accessToken: s
         title: 'An error occurred',
         description: 'We were unable to update the email',
       })
+      console.log(res.status, res.statusText)
+      // TODO: Add sentry event here
       return
     }
 

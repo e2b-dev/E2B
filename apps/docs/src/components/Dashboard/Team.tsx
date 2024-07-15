@@ -40,7 +40,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
                 description: 'We were unable to fetch the team members',
             })
             console.log(res.statusText)
-
+            // TODO: Add sentry event here
             return
         }
       const members = (await res.json()).filter((member: TeamMember) => member.id !== user.id)

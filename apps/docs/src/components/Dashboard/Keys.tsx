@@ -15,28 +15,22 @@ import { Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useToast } from '../ui/use-toast'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
-import { User } from '@supabase/supabase-js'
 import { Team } from '@/utils/useUser'
 
 const createApiKeyUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/api-keys`
 
-export const KeysContent = ({ user, currentTeam, currentApiKey }: { user: User, currentTeam: Team, currentApiKey: string | null}) => {
+export const KeysContent = ({ currentTeam }: { currentTeam: Team }) => {
   const supabase = createPagesBrowserClient()
 
   const { toast } = useToast()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentKey, setCurrentKey] = useState<string | null>(null)
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
-  const [apiKeys, setApiKeys] = useState<any[]>([])
+  const [apiKeys, setApiKeys] = useState<string[]>([])
 
   useEffect(() => {
-    //@ts-ignore
-    const filteredApiKeys = user?.apiKeys.filter((apiKey: any) => apiKey.team_id === currentTeam.id).map((apiKey: any) => ({
-      key: apiKey.api_key,
-      createdAt: apiKey.created_at,
-    }))
-    setApiKeys(filteredApiKeys)
-  }, [currentTeam, user])
+    setApiKeys(currentTeam.apiKeys)
+  }, [currentTeam])
 
   const closeDialog = () => setIsDialogOpen(false)
   const openDialog = (key: string) => {
@@ -71,22 +65,22 @@ export const KeysContent = ({ user, currentTeam, currentApiKey }: { user: User, 
       return
     }
     
-    setApiKeys(apiKeys.filter(apiKey => apiKey.key !== currentKey))
+    setApiKeys(apiKeys.filter(apiKey => apiKey !== currentKey))
     closeDialog()
   }
 
   const addApiKey = async() => {
-
-    if (!currentApiKey) {
-      return
+    if (currentTeam === null) {
+      toast({
+          title: 'An error occurred',
+          description: 'We were unable to create the API key',
+      })
     }
 
-    const teamId = currentTeam.id
-    
     const res = await fetch(createApiKeyUrl, {
       method: 'POST',
       headers: {
-        'X-Team-API-Key': currentApiKey,
+        'X-Team-API-Key': currentTeam.apiKeys[0],
       },
     })
     
@@ -95,6 +89,7 @@ export const KeysContent = ({ user, currentTeam, currentApiKey }: { user: User, 
         title: 'An error occurred',
         description: 'We were unable to create the API key',
       })
+      console.log(res.status, res.statusText)
       // TODO: Add sentry event here
       return
     } 
@@ -105,7 +100,7 @@ export const KeysContent = ({ user, currentTeam, currentApiKey }: { user: User, 
       title: 'API key created',
     })
     
-    setApiKeys([...apiKeys, {key: newKey.apiKey, team_id: teamId, createdAt: newKey.created_at}])
+    setApiKeys([...apiKeys, newKey.apiKey])
   }
 
   const copyToClipboard = (text: string) => {
@@ -139,15 +134,15 @@ export const KeysContent = ({ user, currentTeam, currentApiKey }: { user: User, 
       >
       <div
         className="font-mono text-xs md:text-sm"
-        onMouseEnter={() => setHoveredKey(apiKey.key)}
+        onMouseEnter={() => setHoveredKey(apiKey)}
         onMouseLeave={() => setHoveredKey(null)}
         > 
-        {hoveredKey === apiKey.key ? apiKey.key : maskApiKey(apiKey.key)}
+        {hoveredKey === apiKey ? apiKey : maskApiKey(apiKey)}
       </div>
 
       <div className='flex items-center space-x-2'>
-        <Copy className='hover:cursor-pointer' width={18} height={18} onClick={() => copyToClipboard(apiKey.key)} />
-        <Button className='text-sm' variant='desctructive' onClick={() => openDialog(apiKey.key)}>
+        <Copy className='hover:cursor-pointer' width={18} height={18} onClick={() => copyToClipboard(apiKey)} />
+        <Button className='text-sm' variant='desctructive' onClick={() => openDialog(apiKey)}>
           Delete key 
         </Button>
       </div>

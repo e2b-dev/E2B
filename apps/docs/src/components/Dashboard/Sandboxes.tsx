@@ -9,6 +9,7 @@ import {
 
 import { useState } from 'react'
 import { useEffect } from 'react'
+import { Team}  from '@/utils/useUser'
 
 interface Sandbox {
   sandboxID: string
@@ -19,12 +20,12 @@ interface Sandbox {
   clientID: string
 }
 
-export const SandboxesContent = ({ user }) => {
+export const SandboxesContent = ({ team } : { team: Team }) => {
   const [runningSandboxes, setRunningSandboxes] = useState<Sandbox[]>([])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const apiKey = user?.apiKeys[0]?.api_key
+      const apiKey = team.apiKeys[0]
       if (apiKey) {
         fetchSandboxes(apiKey).then((newSandboxes) => {
           if (newSandboxes) {
@@ -36,7 +37,7 @@ export const SandboxesContent = ({ user }) => {
 
     // Cleanup interval on component unmount
     return () => clearInterval(interval)
-  }, [user])
+  }, [team])
 
   return (
     <div className="flex flex-col justify-center">

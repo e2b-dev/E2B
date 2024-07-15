@@ -41,6 +41,7 @@ export const AccountSelector = ({ teams, user, currentTeam, setCurrentTeam, setT
     })
     if (!res.ok) {
       // TODO: Add sentry event here
+      console.log(res.status, res.statusText)
       toast({
         title: 'An error occurred',
         description: 'We were unable to create the team',

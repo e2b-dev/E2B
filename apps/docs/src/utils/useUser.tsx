@@ -12,6 +12,16 @@ export type Team = {
   tier: string
   is_default: boolean
   email: string
+  apiKeys: string[]
+}
+
+interface UserTeam {
+  id: string;
+  name: string;
+  is_default: boolean;
+  tier: string;
+  email: string;
+  team_api_keys: { api_key: string; }[];
 }
 
 type UserContextType = {
@@ -20,7 +30,6 @@ type UserContextType = {
   user:
   | (User & {
     teams: Team[];
-    apiKeys: any[];
     accessToken: string;
     defaultTeamId: string;
     pricingTier: {
@@ -102,13 +111,16 @@ export const CustomUserContextProvider = (props) => {
       // @ts-ignore
       const { data: userTeams, teamsError } = await supabase
         .from('users_teams')
-        .select('teams (id, name, is_default, tier, email)')
+        .select('teams (id, name, is_default, tier, email, team_api_keys (api_key))')
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
 
       if (teamsError) Sentry.captureException(teamsError)
       // TODO: Adjust when user can be part of multiple teams
       // @ts-ignore
-      const teams = userTeams?.map(userTeam => userTeam.teams as Team)
+      const teams = userTeams?.map(userTeam => userTeam.teams).map((team: UserTeam) => ({
+        ...team,
+        apiKeys: team.team_api_keys.map(apiKey => apiKey.api_key)
+      } as Team))
 
       const defaultTeam = teams?.find(team => team.is_default)
 
@@ -132,11 +144,11 @@ export const CustomUserContextProvider = (props) => {
         promoEndsAt = promoData?.[0]?.promo_ends_at
       }
 
-      const { data: apiKeys, error: apiKeysError } = await supabase
-        .from('team_api_keys')
-        .select('*')
-        .in('team_id', (teams?.map((team) => team.id) as any)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
-      if (apiKeysError) Sentry.captureException(apiKeysError)
+      // const { data: apiKeys, error: apiKeysError } = await supabase
+      //   .from('team_api_keys')
+      //   .select('*')
+      //   .in('team_id', (teams?.map((team) => team.id) as any)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+      // if (apiKeysError) Sentry.captureException(apiKeysError)
 
       const defaultTeamId = defaultTeam?.id // TODO: Adjust when user can be part of multiple teams
 
@@ -148,13 +160,13 @@ export const CustomUserContextProvider = (props) => {
         .single()
       if (accessTokenError) Sentry.captureException(accessTokenError)
 
+      console.log('teams', teams)
       setUser({
         ...session?.user,
         teams: teams ?? [],
-        apiKeys: apiKeys ?? [],
         accessToken: accessToken?.access_token,
         defaultTeamId,
-        error: teamsError || apiKeysError,
+        error: teamsError,
         pricingTier: {
           id: pricingTier,
           isPromo: isPromoTier,
@@ -208,7 +220,7 @@ export const useUser = (): UserContextType => {
 export const useApiKey = (): string => {
   // for convenience
   const { user } = useUser()
-  return user?.apiKeys?.[0]?.api_key
+  return user ? user?.teams[0].apiKeys[0] : ''
 }
 
 export const useAccessToken = () => {

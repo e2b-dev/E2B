@@ -61,8 +61,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user && currentTeam) {
-      const apiKey = user.apiKeys.find(key => key.team_id === currentTeam?.id)
-      setCurrentApiKey(apiKey?.api_key)
+      const apiKey = currentTeam.apiKeys[0]
+      setCurrentApiKey(apiKey)
     }
   }, [currentApiKey, currentTeam, user])
 
@@ -176,7 +176,7 @@ const MainContent = ({ selectedItem, user, team, accessToken, currentApiKey, tea
     case 'personal':
       return <PersonalContent user={user} accessToken={accessToken} />
     case 'keys':
-      return <KeysContent user={user} currentTeam={team} currentApiKey={currentApiKey} />
+      return <KeysContent currentTeam={team} />
     case 'usage':
       return <UsageContent currentApiKey={currentApiKey} />
     case 'billing':
