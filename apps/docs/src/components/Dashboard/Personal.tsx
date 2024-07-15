@@ -5,7 +5,6 @@ import { Button } from '../Button'
 import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useState } from 'react'
-import {Copy} from "lucide-react";
 
 
 const updateUserUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/users`

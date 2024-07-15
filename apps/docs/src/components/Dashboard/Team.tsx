@@ -50,7 +50,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
     if (currentApiKey) {
         getTeamMembers()
     }
-  }, [currentApiKey, userAdded])
+  }, [currentApiKey, user, userAdded])
 
   const closeDialog = () => setIsDialogOpen(false) 
   const openDialog = (id: string) => {
