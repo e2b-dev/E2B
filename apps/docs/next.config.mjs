@@ -65,16 +65,16 @@ const nextConfig = {
       ]
     }
   },
-  // async redirects() {
-  //   return [
-  //     {
-  //       source: '/',
-  //       destination: '/dashboard',
-  //       permanent: false,
-  //       basePath: false,
-  //     },
-  //   ]
-  // },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/dashboard',
+        permanent: false,
+        basePath: false,
+      },
+    ]
+  },
 }
 
 export default withSearch(
