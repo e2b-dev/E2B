@@ -123,7 +123,7 @@ export default function Dashboard() {
         <div className="flex-1 md:pl-10">
           <h2 className='text-2xl mb-2 font-bold'>{selectedItem[0].toUpperCase() + selectedItem.slice(1)}</h2>
           <div className='border border-white/5 w-full h-[1px] mb-10' />
-          <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} accessToken={accessToken} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
+          <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} accessToken={user.accessToken} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
         </div>
       </div>
     )
@@ -171,7 +171,7 @@ const MenuItem = ({ icon: Icon, label, selected, onClick }: { icon: LucideIcon; 
 )
 
 
-const MainContent = ({ selectedItem, user, team, accessToken, currentApiKey, teams, setTeams, setCurrentTeam }: { selectedItem: MenuLabel, user: User, team: Team, accessToken: string | null, currentApiKey: string | null, teams: Team[], setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
+const MainContent = ({ selectedItem, user, team, accessToken, currentApiKey, teams, setTeams, setCurrentTeam }: { selectedItem: MenuLabel, user: User, team: Team, accessToken: string, currentApiKey: string | null, teams: Team[], setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
   switch (selectedItem) {
     case 'personal':
       return <PersonalContent user={user} accessToken={accessToken} />
