@@ -81,7 +81,7 @@ export const PersonalContent = ({user, accessToken}: {user: User, accessToken: s
 
       <span className='font-bold text-neutral-300 pb-2'>Access token:</span>
       <span className='text-sm text-neutral-300 pb-4'>
-        This is your personal access token. It is used in CLI (e.g. for building new templates). You may need it for GitHub Actions or other CI/CD tools.
+        This is your personal access token. It is used in CLI (e.g. for building new templates). You can find more information in the <Link className='text-brand-500' href={'docs/getting-started/api-key'}>documentation</Link>.
       </span>
       <div className='flex w-full justify-between items-center border border-white/5 rounded-lg p-2 mb-4 space-x-4'>
         <div

@@ -94,9 +94,13 @@ export const Header = forwardRef(function Header({ className, isAuth }, ref) {
         <HeaderSeparator />
         <MobileSearch />
         <div className="hidden min-[540px]:contents">
+          <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/docs'>
+            Docs
+          </Link>
           <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/dashboard'>
             Dashboard
           </Link>
+          <HeaderSeparator />
           <Auth />
         </div>
       </div>
