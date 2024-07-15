@@ -82,7 +82,7 @@ export default function Dashboard() {
   }, [selectedItem, tab, router])
 
   useEffect(() => {
-    if (teamParam !== currentTeam?.id) {
+    if (currentTeam && teamParam !== currentTeam?.id) {
       const params = new URLSearchParams(window.location.search)
       if (currentTeam) {
         params.set('team', currentTeam.id)
