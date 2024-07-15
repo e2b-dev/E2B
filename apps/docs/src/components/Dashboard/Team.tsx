@@ -133,6 +133,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
           type="text"
           className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
           placeholder={team.name}
+          value={teamName}
           onChange={(e) => {
             e.preventDefault()
             setTeamName(e.target.value)
