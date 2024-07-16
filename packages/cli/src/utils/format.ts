@@ -4,6 +4,7 @@ import * as highlight from 'cli-highlight'
 import * as boxen from 'boxen'
 
 import { cwdRelative } from './filesystem'
+import prettyBytes from 'pretty-bytes'
 
 export const primaryColor = '#FFB766'
 
@@ -121,5 +122,50 @@ export function withDelimiter(content: string, title: string, isLast?: boolean) 
       right: horizontalPadding,
       top: verticalPadding,
     },
+  })
+}
+
+function clearLines (lines: number) {
+  for (let i = 0; i < lines; i++) {
+    process.stdout.moveCursor(0, -1)
+    process.stdout.clearLine(0)
+  }
+}
+
+export async function prettyPrintDockerLogs(c: string, progress: Map<string, any>) {
+  c.split('\n').forEach((chunk) => {
+    // parse the line
+    let line
+    try {
+      line = JSON.parse(chunk)
+    } catch (e) {
+      // ignore
+    }
+
+    // If line was parsed successfully
+    if (line) {
+      if (line.stream) {
+        process.stdout.write(line.stream)
+      }
+
+      if (line.error) {
+        console.error(line.error)
+        process.exit(1)
+      }
+
+      if (line.status) {
+        if (line.id) {
+          clearLines(progress.size)
+          progress.set(line.id, line)
+
+          const isTerminalWide = process.stdout.columns && process.stdout.columns >= 115
+          for (const l of progress.values()) {
+            process.stdout.write(`${l.status}: ${l.id} ${l.progress ? isTerminalWide ? l.progress : `[${prettyBytes(l.progressDetail.current)}/${prettyBytes(l.progressDetail.total)}]` : ''}\n`)
+          }
+        } else {
+          process.stdout.write(line.status + '\n')
+        }
+      }
+    }
   })
 }
