@@ -55,6 +55,16 @@
       ]
     },
     {
+      "source": "/api(\\/)?",
+      "destination": "https://e2b-docs-e2b.vercel.app/api",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    }
+    {
       "source": "/api/:path*",
       "destination": "https://e2b-docs-e2b.vercel.app/api/:path*",
       "has": [
