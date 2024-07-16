@@ -24,7 +24,7 @@ export function getPageForSitemap(
          pathname = ''
       }
 
-      const url = new URL(pathname, urlPrefix).href
+      const url = new URL(pathname, urlPrefix).href.replace(/\/$/, '')
       const lastModified = fs.statSync(filePath).mtime
       return {
         url,
