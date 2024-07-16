@@ -35,6 +35,16 @@
       ]
     },
     {
+      "source": "/docs/api/cli",
+      "destination": "https://e2b-docs.vercel.app/docs",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
       "source": "/docs/:path*",
       "destination": "https://e2b-docs.vercel.app/docs/:path*",
       "has": [
@@ -57,26 +67,6 @@
     {
       "source": "/dashboard/:path*",
       "destination": "https://e2b-docs.vercel.app/dashboard/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "e2b.dev"
-        }
-      ]
-    },
-    {
-      "source": "/api(\\/)?",
-      "destination": "https://e2b-docs.vercel.app/api",
-      "has": [
-        {
-          "type": "host",
-          "value": "e2b.dev"
-        }
-      ]
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "https://e2b-docs.vercel.app/api/:path*",
       "has": [
         {
           "type": "host",
