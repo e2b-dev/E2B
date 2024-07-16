@@ -46,7 +46,7 @@ const codeSnippetsDir = path.resolve('./src/code')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  assetPrefix: process.env.ENV === 'production' ? '/assets' : '',
+  assetPrefix: '/assets',
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '',
   webpack: config => {
