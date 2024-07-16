@@ -16,7 +16,7 @@ interface TeamMember {
 
 const teamUsersUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/users`
 
-export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCurrentTeam }: { team: Team, user: User, teams: Team[] ,currentApiKey: string | null, setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
+export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCurrentTeam }: { team: Team, user: User, teams: Team[], currentApiKey: string | null, setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
   const supabase = createPagesBrowserClient()
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -34,32 +34,32 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
         },
       })
 
-        if (!res.ok) {
-            toast({
-                title: 'An error occurred',
-                description: 'We were unable to fetch the team members',
-            })
-            console.log(res.statusText)
-            // TODO: Add sentry event here
-            return
-        }
+      if (!res.ok) {
+        toast({
+          title: 'An error occurred',
+          description: 'We were unable to fetch the team members',
+        })
+        console.log(res.statusText)
+        // TODO: Add sentry event here
+        return
+      }
       const members = (await res.json()).filter((member: TeamMember) => member.id !== user.id)
       setMembers(members)
     }
 
     if (currentApiKey) {
-        getTeamMembers()
+      getTeamMembers()
     }
   }, [currentApiKey, user, userAdded])
 
-  const closeDialog = () => setIsDialogOpen(false) 
+  const closeDialog = () => setIsDialogOpen(false)
   const openDialog = (id: string) => {
     setCurrentMemberId(id)
     setIsDialogOpen(true)
-  } 
-  
-  const deleteUserFromTeam = async() => {
-    
+  }
+
+  const deleteUserFromTeam = async () => {
+
     const { error } = await supabase
       .from('users_teams')
       .delete()
@@ -78,13 +78,13 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
     setMembers(members.filter(member => member.id !== currentMemberId))
     closeDialog()
   }
-  
-  const changeTeamName = async() => {
-    const { error} = await supabase
+
+  const changeTeamName = async () => {
+    const { error } = await supabase
       .from('teams')
       .update({ name: teamName })
       .eq('id', team.id)
-    
+
     if (error) {
       // TODO: Add sentry event here
       toast({
@@ -94,7 +94,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
       console.log(error)
       return
     }
-    
+
     toast({
       title: 'Team name changed',
     })
@@ -103,11 +103,11 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
     setCurrentTeam({ ...team, name: teamName })
   }
 
-  const addUserToTeam = async() => {
+  const addUserToTeam = async () => {
     const { error } = await supabase
       .from('users_teams')
       .insert({ user_id: userToAdd, team_id: team.id })
-    
+
     if (error) {
       // TODO: Add sentry event here
       toast({
@@ -117,14 +117,14 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
       console.log(error)
       return
     }
-    
+
     setUserToAdd('')
     setUserAdded(!userAdded)
     toast({
       title: 'User added to team',
     })
   }
-  
+
   return (
     <div className='flex flex-col justify-center pb-10'>
       <h2 className="text-xl font-bold pb-4">Team name</h2>
@@ -147,7 +147,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
         <input
           type="text"
           className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
-          placeholder={"paste your friend's user id here"}
+          placeholder={"Paste your other user's ID here"}
           value={userToAdd}
           onChange={(e) => {
             e.preventDefault()
@@ -162,44 +162,44 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
         onClick={() => {
           navigator.clipboard.writeText(user.id)
           toast({
-            title: 'User id copied to clipboard',
+            title: 'User ID copied to clipboard',
           })
         }}
       >
         <p>Copy your user ID</p>
-        <Copy className='h-4 w-4'/>
+        <Copy className='h-4 w-4' />
       </span>
 
       <h2 className="text-xl font-bold pb-4">Team members</h2>
       <Table>
-      <TableHeader>
-      <TableRow className='hover:bg-inherit dark:hover:bg-inherit border-b border-white/5'>
-        <TableHead>Email</TableHead>
-        <TableHead></TableHead>
-      </TableRow>
-      </TableHeader>
-      <TableBody>
-      {members.length === 0 ? (
-        <TableRow className='border-b border-white/5'>
-          <TableCell colSpan={2} className='text-center'>
-            No members found
-          </TableCell>
-        </TableRow>
-      ) : (
-        members.map((user) => (
-          <TableRow 
-          className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
-          key={user.id}>
-            <TableCell>{user.email}</TableCell>
-            <TableCell>
-              <Button className='text-sm' variant='desctructive' onClick={() => openDialog(user.id)}>
-                Remove team member
-              </Button>
-            </TableCell>
+        <TableHeader>
+          <TableRow className='hover:bg-inherit dark:hover:bg-inherit border-b border-white/5'>
+            <TableHead>Email</TableHead>
+            <TableHead></TableHead>
           </TableRow>
-        ))
-      )}
-      </TableBody>
+        </TableHeader>
+        <TableBody>
+          {members.length === 0 ? (
+            <TableRow className='border-b border-white/5'>
+              <TableCell colSpan={2} className='text-center'>
+                No members found
+              </TableCell>
+            </TableRow>
+          ) : (
+            members.map((user) => (
+              <TableRow
+                className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
+                key={user.id}>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>
+                  <Button className='text-sm' variant='desctructive' onClick={() => openDialog(user.id)}>
+                    Remove team member
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
       </Table>
 
 
