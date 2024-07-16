@@ -47,7 +47,7 @@ const codeSnippetsDir = path.resolve('./src/code')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
-  basePath: '/docs',
+  basePath: '',
   webpack: config => {
     const codeFilesHash = getFilesHash(codeSnippetsDir)
     config.cache.version = config.cache.version + delimiter + codeFilesHash
@@ -64,13 +64,12 @@ const nextConfig = {
         { source: '/:path*', destination: '/_404/:path*' },
       ]
     }
-
   },
   async redirects() {
     return [
       {
         source: '/',
-        destination: '/docs',
+        destination: '/dashboard',
         permanent: false,
         basePath: false,
       },

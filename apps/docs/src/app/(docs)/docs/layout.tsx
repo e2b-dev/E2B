@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 import glob from 'fast-glob'
 import { Analytics } from '@vercel/analytics/react'
 
-import { Providers } from '@/app/providers'
+import { Providers } from '@/app/(docs)/docs/providers'
 import { Layout } from '@/components/Layout'
 
 import '@/styles/tailwind.css'
@@ -39,15 +39,15 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }) {
-  const pages = await glob('**/*.mdx', { cwd: 'src/app' })
+  const pages = await glob('**/*.mdx', { cwd: 'src/app/(docs)/docs' })
   const allSectionsEntries = (await Promise.all(
     pages.map(async filename => [
-      '/' + filename.replace(/(^|\/)page\.mdx$/, ''),
+      '/docs/' + filename.replace(/\(docs\)\/?|(^|\/)page\.mdx$/, ''),
       (await import(`./${filename}`)).sections,
     ]),
   )) as Array<[string, Array<Section>]>
   const allSections = Object.fromEntries(allSectionsEntries)
-
+    
   return (
     <html
       lang="en"

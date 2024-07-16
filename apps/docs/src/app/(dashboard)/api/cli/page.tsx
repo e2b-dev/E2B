@@ -93,7 +93,7 @@ export default function Page() {
       content = <span className="text-gray-300">Loading, please wait</span>
     } else if (!user) {
       content = (
-        <Link href="/sign-in">
+        <Link href="/dashboard/sign-in">
           <Button>Sign In to continue</Button>
         </Link>
       )
