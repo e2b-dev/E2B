@@ -15,10 +15,15 @@ export function getPageForSitemap(
 
   return files
     .map((filePath) => {
-      const pathname = path
+      let pathname = path
         .relative(directory, filePath)
         .replace(/\/page\.mdx$/, '')
         .replace(/\/page\.tsx$/, '')
+
+      if (pathname == 'page.tsx' || pathname == 'page.mdx') {
+         pathname = '/'
+      }
+
       const url = new URL(pathname, urlPrefix).href
       const lastModified = fs.statSync(filePath).mtime
       return {
