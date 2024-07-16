@@ -33,6 +33,26 @@
           "value": "e2b.dev"
         }
       ]
+    },
+    {
+      "source": "/dashboard(\\/)?",
+      "destination": "https://e2b-docs-e2b.vercel.app/dashboard",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
+      "source": "/dashboard/:path*",
+      "destination": "https://e2b-docs-e2b.vercel.app/dashboard/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
     }
   ],
   "redirects": [
