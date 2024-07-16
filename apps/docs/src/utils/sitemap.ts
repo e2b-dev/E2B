@@ -21,7 +21,7 @@ export function getPageForSitemap(
         .replace(/\/page\.tsx$/, '')
 
       if (pathname == 'page.tsx' || pathname == 'page.mdx') {
-         pathname = '/'
+         pathname = ''
       }
 
       const url = new URL(pathname, urlPrefix).href
