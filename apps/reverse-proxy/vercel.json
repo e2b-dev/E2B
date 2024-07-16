@@ -63,7 +63,7 @@
           "value": "e2b.dev"
         }
       ]
-    }
+    },
     {
       "source": "/api/:path*",
       "destination": "https://e2b-docs-e2b.vercel.app/api/:path*",
