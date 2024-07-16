@@ -15,6 +15,16 @@
       ]
     },
     {
+      "source": "/_next/:path*",
+      "destination": "https://e2b-docs-e2b.vercel.app/_next/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
       "source": "/docs(\\/)?",
       "destination": "https://e2b-docs.vercel.app/docs",
       "has": [
