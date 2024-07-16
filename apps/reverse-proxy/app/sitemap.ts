@@ -35,6 +35,11 @@ const sites: Site[] = [
     changeFrequency: 'weekly',
   },
   {
+    sitemapUrl: 'https://e2b.dev/dashboard/sitemap.xml',
+    priority: 0.5,
+    changeFrequency: 'weekly',
+  },
+  {
     sitemapUrl: 'https://e2b-changelog.framer.website/sitemap.xml',
     priority: 0.2,
     changeFrequency: 'weekly',
