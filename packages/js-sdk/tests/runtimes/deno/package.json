@@ -1,0 +1,13 @@
+{
+  "name": "deno",
+  "version": "0.0.1",
+  "description": "Deno tests",
+  "scripts": {
+    "test": "deno test test.ts --allow-net --allow-read --allow-env"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/e2b-dev/e2b"
+  },
+  "private": true
+}
