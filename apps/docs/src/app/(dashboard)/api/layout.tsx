@@ -1,4 +1,3 @@
-import { headers } from 'next/headers'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -22,14 +21,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
- const heads = headers()
-
- const pathname = heads.get('next-url')
-
   return (
     <html lang="en">
       <body>
-        <span>URL: {pathname}</span>
         {children}
       </body>
     </html>
