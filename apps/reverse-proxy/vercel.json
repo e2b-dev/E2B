@@ -15,8 +15,8 @@
       ]
     },
     {
-      "source": "/assets/:path*",
-      "destination": "https://e2b-docs.vercel.app/:path*",
+      "source": "/_next/:path*",
+      "destination": "https://e2b-docs.vercel.app/_next/:path*",
       "has": [
         {
           "type": "host",

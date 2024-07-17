@@ -44,11 +44,8 @@ function getFilesHash(rootPath) {
 
 const codeSnippetsDir = path.resolve('./src/code')
 
-const isProd = process.env.NODE_ENV === 'production'
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  assetPrefix: isProd ? '/assets' : '',
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '',
   webpack: config => {
