@@ -18,7 +18,7 @@
           "value": "sdk-missing-api-key"
         }
       ],
-      "destination": "https://e2b.dev/docs?ref=sdk-missing-api-key&reason=",
+      "destination": "/docs?ref=sdk-missing-api-key&reason=",
       "permanent": true
     },
     {
