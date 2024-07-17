@@ -41,7 +41,7 @@ export const mdLangToLangShort: Record<string, LangShort> = {
 
 export const languageNames: Record<string, string> = {
   js: 'JavaScript & TypeScript',
-  ts: '⚠️ FIXME See note in apps/docs/src/utils/consts.ts', // Please avoid using `ts`, see note above
+  ts: '⚠️ FIXME See note in apps/web/src/utils/consts.ts', // Please avoid using `ts`, see note above
   javascript: 'JavaScript',
   typescript: 'TypeScript',
 

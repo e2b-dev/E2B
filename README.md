@@ -109,4 +109,4 @@ This repository is a monorepo containing:
 1. [Python SDK](/packages/python-sdk)
 1. [JS SDK](/packages/js-sdk)
 1. [CLI](/packages/cli)
-1. [Documentation](/apps/docs/)
+1. [Documentation](/apps/web/)
