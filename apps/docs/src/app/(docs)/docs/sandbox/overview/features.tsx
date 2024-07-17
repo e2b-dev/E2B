@@ -9,22 +9,22 @@ export const features = [
   'No need for orchestration or infrastructure management',
   'Ability to give each user of your AI app their own isolated environment',
   <span>
-    <Link href="/getting-started/installation">
-    Python & Node.js SDK
+    <Link href="/docs/getting-started/installation">
+      Python & Node.js SDK
     </Link>
     {' '}for controling the sandbox&apos;s{' '}
-    <Link href="/sandbox/api/filesystem">
-    filesystem
+    <Link href="/docs/sandbox/api/filesystem">
+      filesystem
     </Link>
     ,{' '}
-    <Link href="/sandbox/api/process">
-    processes
+    <Link href="/docs/sandbox/api/process">
+      processes
     </Link>
     , and more.
   </span>,
   'Support for up to 24h long-running sandbox sessions',
   <span>
-    Ability to <Link href="/sandbox/api/upload">upload files</Link> to the sandbox and <Link href="/sandbox/api/download">download files </Link>from the sandbox,
+    Ability to <Link href="/docs/sandbox/api/upload">upload files</Link> to the sandbox and <Link href="/docs/sandbox/api/download">download files </Link>from the sandbox,
   </span>,
   // "Premade sandbox for the Code Interpreter / Advanced Data Analysis and AI-powered browsers",
 ]
