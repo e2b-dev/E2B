@@ -107,7 +107,6 @@ export const CustomUserContextProvider = (props) => {
       if (!session) return
       if (!session.user.id) return
 
-
       // @ts-ignore
       const { data: userTeams, teamsError } = await supabase
         .from('users_teams')
@@ -130,26 +129,6 @@ export const CustomUserContextProvider = (props) => {
       }
 
       const pricingTier = defaultTeam.tier
-      const isPromoTier = pricingTier.startsWith('promo')
-      let promoEndsAt: string | null = null
-      // Fetch promo end date
-      if (isPromoTier) {
-        console.log('pricingTier', pricingTier)
-        const { data: promoData, error: promoError } = await supabase
-          .from('tiers')
-          .select('promo_ends_at')
-          .eq('id', pricingTier)
-        if (promoError) Sentry.captureException(promoError)
-        console.log('promoData', promoData)
-        promoEndsAt = promoData?.[0]?.promo_ends_at
-      }
-
-      // const { data: apiKeys, error: apiKeysError } = await supabase
-      //   .from('team_api_keys')
-      //   .select('*')
-      //   .in('team_id', (teams?.map((team) => team.id) as any)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
-      // if (apiKeysError) Sentry.captureException(apiKeysError)
-
       const defaultTeamId = defaultTeam?.id // TODO: Adjust when user can be part of multiple teams
 
       const { data: accessToken, error: accessTokenError } = await supabase
@@ -160,7 +139,6 @@ export const CustomUserContextProvider = (props) => {
         .single()
       if (accessTokenError) Sentry.captureException(accessTokenError)
 
-      console.log('teams', teams)
       setUser({
         ...session?.user,
         teams: teams ?? [],
@@ -169,8 +147,6 @@ export const CustomUserContextProvider = (props) => {
         error: teamsError,
         pricingTier: {
           id: pricingTier,
-          isPromo: isPromoTier,
-          ...(isPromoTier ? { endsAt: promoEndsAt } : {})
         },
       })
       setIsLoading(false)

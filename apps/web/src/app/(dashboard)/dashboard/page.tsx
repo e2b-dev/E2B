@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { BarChart, CreditCard, Key, LoaderIcon, LucideIcon, Settings, Users } from 'lucide-react'
+import { BarChart, CreditCard, Key, LucideIcon, Settings, Users } from 'lucide-react'
 
 import { BillingContent } from '@/components/Dashboard/Billing'
 import { TeamContent } from '@/components/Dashboard/Team'
@@ -105,15 +105,6 @@ export default function Dashboard() {
 
   if (error) {
     return <div>Error: {error.message}</div>
-  }
-
-  if (isLoading) {
-    return (
-      <div className='flex flex-col space-y-2 items-center justify-center w-full h-full'>
-        <div className="text-xl font-bold">Loading...</div>
-        <LoaderIcon className="animate-spin" />
-      </div>
-    )
   }
 
   if (user && currentTeam) {
