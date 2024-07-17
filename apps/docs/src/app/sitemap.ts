@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next'
 import { XMLParser } from 'fast-xml-parser'
 import { replaceUrls } from '@/utils/replaceUrls'
+import path from 'path'
+import { getPageForSitemap } from '@/utils/sitemap'
 
 type ChangeFrequency =
   | 'always'
@@ -28,16 +30,6 @@ const sites: Site[] = [
     sitemapUrl: 'https://e2b-blog.framer.website/sitemap.xml',
     priority: 0.9,
     changeFrequency: 'daily',
-  },
-  {
-    sitemapUrl: 'https://e2b.dev/docs/sitemap.xml',
-    priority: 0.5,
-    changeFrequency: 'weekly',
-  },
-  {
-    sitemapUrl: 'https://e2b.dev/dashboard/sitemap.xml',
-    priority: 0.5,
-    changeFrequency: 'weekly',
   },
   {
     sitemapUrl: 'https://e2b-changelog.framer.website/sitemap.xml',
@@ -86,8 +78,8 @@ async function getSitemap(
       const url = new URL(line.loc)
       return {
         url: replaceUrls(line.loc, url.pathname),
-        priority: line?.priority || site.priority,
-        changeFrequency: line?.changefreq || site.changeFrequency,
+        // priority: line?.priority || site.priority,
+        // changeFrequency: line?.changefreq || site.changeFrequency,
       }
     })
   } else {
@@ -95,8 +87,8 @@ async function getSitemap(
     return [
       {
         url: replaceUrls(data.urlset.url.loc, url.pathname),
-        priority: data.urlset.url?.priority || site.priority,
-        changeFrequency: data.urlset.url?.changefreq || site.changeFrequency,
+        // priority: data.urlset.url?.priority || site.priority,
+        // changeFrequency: data.urlset.url?.changefreq || site.changeFrequency,
       },
     ]
   }
@@ -104,6 +96,17 @@ async function getSitemap(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let mergedSitemap: MetadataRoute.Sitemap = []
+
+
+  const dashboardPath = path.join(process.cwd(), 'src', 'app', '(dashboard)', 'dashboard')
+  const dashboardPages =  getPageForSitemap(dashboardPath, 'https://e2b.dev/dashboard/', 0.5)
+
+  const docsDirectory = path.join(process.cwd(), 'src', 'app', '(docs)', 'docs')
+  const docsPages = getPageForSitemap(docsDirectory, 'https://e2b.dev/docs/', 0.5).filter(
+    (page) => !page.url.startsWith('https://e2b.dev/docs/api/'),
+  )
+
+  mergedSitemap = mergedSitemap.concat(dashboardPages, docsPages)
 
   for (const site of sites) {
     const urls = await getSitemap(site)

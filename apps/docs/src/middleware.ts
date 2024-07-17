@@ -61,3 +61,4 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 export const config = {
   matcher: ['/', '/blog/:path*', '/changelog/:path*', '/ai-agents/:path*', '/privacy/:path*', '/terms/:path*'],
 }
+
