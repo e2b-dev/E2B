@@ -64,17 +64,7 @@ const nextConfig = {
         { source: '/:path*', destination: '/_404/:path*' },
       ]
     }
-  },
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/dashboard',
-        permanent: false,
-        basePath: false,
-      },
-    ]
-  },
+  }
 }
 
 export default withSearch(
