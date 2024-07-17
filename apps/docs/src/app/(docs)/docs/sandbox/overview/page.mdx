@@ -55,10 +55,10 @@ E2B Sandboxes are made exactly to solve these challenges. The sandbox is like an
 ## How sandboxes work under the hood
 When you create a new sandbox session, we start a small VM in our cloud. This VM is running a Ubuntu OS and it takes about 400-600ms to start it.
 
-Inside this sandbox, your AI app can [run code and start any programs](/sandbox/api/process), access the internet to download or upload data, use the [filesystem](/sandbox/api/filesystem), start long running processes such as web servers, and more.
-You can also [upload](/sandbox/api/upload) to sandbox and [download](/sandbox/api/upload) from sandbox any file you want.
+Inside this sandbox, your AI app can [run code and start any programs](/docs/sandbox/api/process), access the internet to download or upload data, use the [filesystem](/docs/sandbox/api/filesystem), start long running processes such as web servers, and more.
+You can also [upload](/docs/sandbox/api/upload) to sandbox and [download](/docs/sandbox/api/upload) from sandbox any file you want.
 
-To start and control the sandbox, use the [E2B SDK](/getting-started/installation) for Python or JavaScript.
+To start and control the sandbox, use the [E2B SDK](/docs/getting-started/installation) for Python or JavaScript.
 
 <CodeGroupAutoload
   title="Starting Sandbox"
@@ -66,5 +66,5 @@ To start and control the sandbox, use the [E2B SDK](/getting-started/installatio
 />
 
 <Note>
-Make sure you have the `E2B_API_KEY` environment variable set with your [API key](/getting-started/api-key).
+Make sure you have the `E2B_API_KEY` environment variable set with your [API key](/docs/getting-started/api-key).
 </Note>
