@@ -7,7 +7,7 @@ Once the sandbox is built, we'll show how to spawn and control it with our SDK.
 
 ## Prerequisites
 1. [Node.js](https://nodejs.org/) 18.0.0 or later
-1. [E2B CLI](/cli/installation)
+1. [E2B CLI](/docs/cli/installation)
 1. Running Docker instance
 
 ## 1. Install E2B CLI
@@ -32,12 +32,12 @@ e2b auth login
 </CodeGroup>
 
 <Note>
-You need to have an existing E2B account to login. Sign up [here](/getting-started/api-key).
+You need to have an existing E2B account to login. Sign up [here](/docs/getting-started/api-key).
 </Note>
 
 ## 3. Create `e2b.Dockerfile`
 To describe how your custom sandbox will look like, create a new Dockerfile and name it `e2b.Dockerfile`.
-We use this Dockerfile as the [template file](/sandbox/templates/template-file).
+We use this Dockerfile as the [template file](/docs/sandbox/templates/template-file).
 
 <Note>
 Run `e2b template init` to create `e2b.Dockerfile` in the current directory.
@@ -65,8 +65,8 @@ Now it's time to create your custom sandbox based on the sandbox template file (
 
 Run the following command inside the template file directory in your terminal.
 <Note>
-[Pro users](/pricing) can use the `--cpu-count=` ([docs](/cli/commands#template-build)) and `--memory-mb=` ([docs](/cli/commands#template-build)) flags to customize the sandbox compute.
-Read more about the compute [here](/sandbox/compute).
+[Pro users](/docs/pricing) can use the `--cpu-count=` ([docs](/docs/cli/commands#template-build)) and `--memory-mb=` ([docs](/docs/cli/commands#template-build)) flags to customize the sandbox compute.
+Read more about the compute [here](/docs/sandbox/compute).
 </Note>
 
 <CodeGroup isTerminalCommand title="Build sandbox template" isRunnable={false}>
@@ -161,7 +161,7 @@ e2b template build
 
 ## 5. Spawn and control your sandbox
 
-Now you can use the [E2B SDK](/getting-started/installation) to spawn & control your new custom sandbox.
+Now you can use the [E2B SDK](/docs/getting-started/installation) to spawn & control your new custom sandbox.
 
 The sandbox template name is `my-agent-sandbox`. We'll use it as an unique identifier and pass it to the SDK as the `template` parameter.
 This way, we'll be able to spawn our custom sandbox and control it with the SDK.
