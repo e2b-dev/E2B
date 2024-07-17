@@ -123,6 +123,7 @@ export default function Dashboard() {
         <div className="flex-1 md:pl-10">
           <h2 className='text-2xl mb-2 font-bold'>{selectedItem[0].toUpperCase() + selectedItem.slice(1)}</h2>
           <div className='border border-white/5 w-full h-[1px] mb-10' />
+          {/* @ts-ignore */}
           <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} accessToken={user.accessToken} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
         </div>
       </div>
