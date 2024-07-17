@@ -113,5 +113,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     mergedSitemap = mergedSitemap.concat(...urls)
   }
 
-  return mergedSitemap
+  return mergedSitemap.sort((a, b) => a.url.localeCompare(b.url))
 }
