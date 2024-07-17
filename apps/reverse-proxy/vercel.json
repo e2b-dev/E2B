@@ -15,7 +15,27 @@
       ]
     },
     {
+      "source": "/assets/:path*",
+      "destination": "https://e2b-docs.vercel.app/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
       "source": "/docs(\\/)?",
+      "destination": "https://e2b-docs.vercel.app/docs",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
+      "source": "/docs/api/cli",
       "destination": "https://e2b-docs.vercel.app/docs",
       "has": [
         {
@@ -27,6 +47,26 @@
     {
       "source": "/docs/:path*",
       "destination": "https://e2b-docs.vercel.app/docs/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
+      "source": "/dashboard(\\/)?",
+      "destination": "https://e2b-docs.vercel.app/dashboard",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
+      "source": "/dashboard/:path*",
+      "destination": "https://e2b-docs.vercel.app/dashboard/:path*",
       "has": [
         {
           "type": "host",

@@ -44,10 +44,13 @@ function getFilesHash(rootPath) {
 
 const codeSnippetsDir = path.resolve('./src/code')
 
+const isProd = process.env.NODE_ENV === 'production'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  assetPrefix: isProd ? '/assets' : '',
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
-  basePath: '/docs',
+  basePath: '',
   webpack: config => {
     const codeFilesHash = getFilesHash(codeSnippetsDir)
     config.cache.version = config.cache.version + delimiter + codeFilesHash
@@ -64,13 +67,12 @@ const nextConfig = {
         { source: '/:path*', destination: '/_404/:path*' },
       ]
     }
-
   },
   async redirects() {
     return [
       {
         source: '/',
-        destination: '/docs',
+        destination: '/dashboard',
         permanent: false,
         basePath: false,
       },
