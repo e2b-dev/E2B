@@ -171,7 +171,16 @@ const MenuItem = ({ icon: Icon, label, selected, onClick }: { icon: LucideIcon; 
 )
 
 
-const MainContent = ({ selectedItem, user, team, accessToken, currentApiKey, teams, setTeams, setCurrentTeam }: { selectedItem: MenuLabel, user: User, team: Team, accessToken: string, currentApiKey: string | null, teams: Team[], setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
+function MainContent({ selectedItem, user, team, accessToken, currentApiKey, teams, setTeams, setCurrentTeam }: {
+  selectedItem: MenuLabel,
+  user: User,
+  team: Team,
+  accessToken: string,
+  currentApiKey: string | null,
+  teams: Team[],
+  setTeams: (teams: Team[]) => void,
+  setCurrentTeam: (team: Team) => void
+}) {
   switch (selectedItem) {
     case 'personal':
       return <PersonalContent user={user} accessToken={accessToken} />

@@ -15,7 +15,7 @@ const usageUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/usage`
 export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null }) => {
   const [vcpuData, setVcpuData] = useState<any>(null)
   const [ramData, setRamData] = useState<any>(null)
-  const [ costUsage, setUsage ] = useState<Usage[]>([])
+  const [costUsage, setUsage] = useState<Usage[]>([])
 
   useEffect(() => {
     const getUsage = async (apiKey: string) => {
@@ -31,8 +31,8 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null }
       if (!response.ok) {
         // TODO: Add sentry event here
         toast({
-            title: 'An error occurred',
-            description: 'We were unable to fetch the usage data',
+          title: 'An error occurred',
+          description: 'We were unable to fetch the usage data',
         })
         console.log(response)
         return
@@ -106,7 +106,7 @@ const transformCostData = (usage: any) => {
     return {
       x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
       y: usage.template_usage.length > 0
-        ? usage.template_usage.reduce((acc: number, template: any) => acc + template.ram_gb_hours, 0)
+        ? usage.template_usage.reduce((acc: number, template: any) => acc + template.total_cost, 0)
         : 0,
     }
   })
