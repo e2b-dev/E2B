@@ -103,7 +103,7 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null }
 
         <div className='flex flex-col w-full md:w-2/3'>
           <h2 className='font-bold pb-4 text-xl'>vCPU hours</h2>
-          {vcpuData ?
+          {vcpuData && vcpuData.length > 0  ?
             <div className="flex flex-col space-y-2">
               <span className='text-sm text-white/50'>Total vCPU hours this month: <b>{vcpuHoursThisMonth?.toFixed(2)}</b></span>
               <Card className='w-full bg-inherit/10 border border-white/20 mb-10'>
@@ -121,7 +121,7 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null }
 
         <div className='flex flex-col w-full md:w-2/3'>
           <h2 className='font-bold pb-4 text-xl'>RAM hours</h2>
-          {ramData ?
+          {ramData && ramData.length > 0  ?
             <div className="flex flex-col space-y-2">
               <span className='text-sm text-white/50'>Total RAM hours this month: <b>{ramHoursThisMonth?.toFixed(2)}</b></span>
               <Card className='w-full bg-inherit/10 border border-white/20 mb-10'>
