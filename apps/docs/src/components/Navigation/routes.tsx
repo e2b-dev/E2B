@@ -37,7 +37,7 @@ export const routes = [
     links: [
       {
         title: 'Installation',
-        href: '/',
+        href: '/docs',
       },
       {
         title: 'helloWorld.[ts|js]',
