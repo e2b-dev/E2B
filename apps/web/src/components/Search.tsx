@@ -36,6 +36,7 @@ function useAutocomplete({ close }: { close: () => void }) {
       return
     }
 
+    itemUrl = itemUrl.replace('(docs)/', '')
     router.push(itemUrl)
 
     if (
