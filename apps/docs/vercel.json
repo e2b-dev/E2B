@@ -13,10 +13,6 @@
       "source": "/docs",
       "has": [
         {
-          "type": "host",
-          "value": "e2b.dev"
-        },
-        {
           "type": "query",
           "key": "reason",
           "value": "sdk-missing-api-key"
@@ -50,23 +46,11 @@
     {
       "source": "/log/:path*",
       "destination": "https://e2b.dev/blog/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "e2b.dev"
-        }
-      ],
       "permanent": true
     },
     {
       "source": "/blog/log/:path*",
       "destination": "https://e2b.dev/blog/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "e2b.dev"
-        }
-      ],
       "permanent": true
     },
     {
