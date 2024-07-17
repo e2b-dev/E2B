@@ -4,12 +4,6 @@ import LineChart from '@/components/Dashboard/Chart'
 import Spinner from '@/components/Spinner'
 import { toast } from '@/components/ui/use-toast'
 
-type Usage = {
-  month: number
-  year: number
-  unpaid_cost: number
-}
-
 const usageUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/usage`
 
 export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null }) => {
