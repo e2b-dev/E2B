@@ -87,8 +87,8 @@ async function getSitemap(
     return [
       {
         url: replaceUrls(data.urlset.url.loc, url.pathname),
-        // priority: data.urlset.url?.priority || site.priority,
-        // changeFrequency: data.urlset.url?.changefreq || site.changeFrequency,
+        priority: data.urlset.url?.priority || site.priority,
+        changeFrequency: data.urlset.url?.changefreq || site.changeFrequency,
       },
     ]
   }
