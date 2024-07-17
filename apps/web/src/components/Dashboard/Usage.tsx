@@ -6,18 +6,35 @@ import { toast } from '@/components/ui/use-toast'
 
 const usageUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/usage`
 
+
+type Usage = {
+  month: number
+  year: number
+  unpaid_cost: number
+}
+
+type PlotData = {
+  x: string
+  y: number
+}
+
+type Series = {
+  id: string
+  data: PlotData[]
+}
+
 export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null }) => {
-  const [vcpuData, setVcpuData] = useState<any>(null)
+  const [vcpuData, setVcpuData] = useState<Series[]>([])
   const [vcpuHoursThisMonth, setVcpuHoursThisMonth] = useState<number | undefined>()
-  const [ramData, setRamData] = useState<any>(null)
+  const [ramData, setRamData] = useState<Series[]>([])
   const [ramHoursThisMonth, setRamHoursThisMonth] = useState<number | undefined>()
-  const [costUsage, setCostUsage] = useState<{ id: string; data: any }[]>([])
+  const [costUsage, setCostUsage] = useState<Series[]>([])
   const [costThisMonth, setCostMonth] = useState<number | undefined>()
 
   useEffect(() => {
     const getUsage = async (apiKey: string) => {
-      setVcpuData(null)
-      setRamData(null)
+      setVcpuData([])
+      setRamData([])
       setCostUsage([])
 
       const response = await fetch(usageUrl, {
@@ -125,7 +142,7 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null }
   )
 }
 
-const transformCostData = (usage: any) => {
+const transformCostData = (usage: Usage[]): Series[] => {
   const costData = usage.map((usage: any) => {
     return {
       x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
@@ -143,7 +160,7 @@ const transformCostData = (usage: any) => {
   ]
 }
 
-const transformData = (usages: any) => {
+const transformData = (usages: any): { vcpuSeries: Series[], ramSeries: Series[] } => {
   const ramData = usages.map((usage: any) => {
     return {
       x: `${String(usage.month).padStart(2, '0')}/${usage.year}`,
