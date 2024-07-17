@@ -8,6 +8,7 @@ import { toast } from '../ui/use-toast'
 import { Copy } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog'
+import Spinner from "@/components/Spinner";
 
 interface TeamMember {
   id: string
@@ -21,6 +22,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentMemberId, setCurrentMemberId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   const [members, setMembers] = useState<TeamMember[]>([])
   const [teamName, setTeamName] = useState(team.name)
   const [userToAdd, setUserToAdd] = useState('')
@@ -45,6 +47,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
       }
       const members = (await res.json()).filter((member: TeamMember) => member.id !== user.id)
       setMembers(members)
+      setIsLoading(false)
     }
 
     if (currentApiKey) {
@@ -171,41 +174,44 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
       </span>
 
       <h2 className="text-xl font-bold pb-4">Team members</h2>
-      <Table>
-        <TableHeader>
-          <TableRow className='hover:bg-inherit dark:hover:bg-inherit border-b border-white/5'>
-            <TableHead>Email</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.length === 0 ? (
-            <TableRow className='border-b border-white/5'>
-              <TableCell colSpan={2} className='text-center'>
-                No members found
-              </TableCell>
-            </TableRow>
-          ) : (
-            members.map((user) => (
-              <TableRow
-                className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
-                key={user.id}>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Button className='text-sm' variant='desctructive' onClick={() => openDialog(user.id)}>
-                    Remove team member
-                  </Button>
-                </TableCell>
+      {isLoading ? (<div className="flex items-center w-full pl-4 p-2">
+        <Spinner size="24px"/>
+      </div>) : (
+          <Table>
+            <TableHeader>
+              <TableRow className='hover:bg-inherit dark:hover:bg-inherit border-b border-white/5'>
+                <TableHead>Email</TableHead>
+                <TableHead></TableHead>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            <TableBody>
+              {members.length === 0 ? (
+                  <TableRow className='border-b border-white/5'>
+                    <TableCell colSpan={2} className='text-center'>
+                      No members found
+                    </TableCell>
+                  </TableRow>
+              ) : (
+                  members.map((user) => (
+                      <TableRow
+                          className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
+                          key={user.id}>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Button className='text-sm' variant='desctructive' onClick={() => openDialog(user.id)}>
+                            Remove team member
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                  ))
+              )}
+            </TableBody>
+          </Table>)}
 
 
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" style={{ display: 'none' }}>Show Dialog</Button>
+        <Button variant="outline" style={{ display: 'none' }}>Show Dialog</Button>
         </AlertDialogTrigger>
         <AlertDialogContent className="bg-inherit text-white border-black">
           <AlertDialogHeader>
