@@ -163,7 +163,7 @@ server {
 
   location / {
     if ($dbk_session_id = "") {
-      return 400 "Unsupported session domain";
+      return 502 "Cannot connect to sandbox";
     }
 
     proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;

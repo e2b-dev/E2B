@@ -116,7 +116,7 @@ server {
   listen 3002 default_server;
 
   server_name _;
-  return 400 "Unsupported domain";
+  return 502 "Cannot connect to sandbox";
 }
 [[ range service "session-proxy" ]]
 server {
