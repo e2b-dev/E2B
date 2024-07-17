@@ -78,8 +78,8 @@ async function getSitemap(
       const url = new URL(line.loc)
       return {
         url: replaceUrls(line.loc, url.pathname),
-        // priority: line?.priority || site.priority,
-        // changeFrequency: line?.changefreq || site.changeFrequency,
+        priority: line?.priority || site.priority,
+        changeFrequency: line?.changefreq || site.changeFrequency,
       }
     })
   } else {
