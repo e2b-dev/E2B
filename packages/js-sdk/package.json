@@ -1,6 +1,6 @@
 {
   "name": "e2b",
-  "version": "0.13.2",
+  "version": "0.16.1",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -27,16 +27,13 @@
     "build": "tsc --noEmit && tsup",
     "dev": "tsup --watch",
     "measure": "node test/performance.mjs",
-    "run": "node test/run.mjs",
+    "example": "tsx example.mts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "generate": "openapi-typescript ../../spec/openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
     "postPublish": "./scripts/post-publish.sh || true"
-  },
-  "peerDependencies": {
-    "openai": "^4.17.4"
   },
   "devDependencies": {
     "@types/node": "^18.18.6",
@@ -46,8 +43,8 @@
     "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^6.8.0",
     "@typescript-eslint/parser": "^6.8.0",
+    "dotenv": "^16.4.5",
     "knip": "^2.34.0",
-    "markdown-it": "^13.0.2",
     "npm-check-updates": "^16.14.6",
     "openapi-typescript": "^5.4.1",
     "tsup": "^6.7.0",

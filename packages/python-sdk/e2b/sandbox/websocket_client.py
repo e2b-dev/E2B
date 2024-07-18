@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import random
 
 from queue import Queue
 from threading import Event
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, AsyncIterator
 
-from websockets.legacy.client import WebSocketClientProtocol, connect
+from websockets.legacy.client import WebSocketClientProtocol, Connect
 from websockets.exceptions import ConnectionClosed
 from websockets.typing import Data
+
+from e2b.sandbox.exception import SandboxException
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +76,7 @@ class WebSocket:
         ws_logger = logger.getChild("websockets.client")
         ws_logger.setLevel(logging.ERROR)
 
-        websocket_connector = connect(
+        websocket_connector = E2BConnect(
             self.url,
             max_size=None,
             max_queue=None,
@@ -118,3 +121,43 @@ class WebSocket:
 
         if self._ws:
             await self._ws.close()
+
+
+class E2BConnect(Connect):
+    async def __aiter__(self) -> AsyncIterator[WebSocketClientProtocol]:
+        retries = 0
+        max_retries = 12
+        backoff_delay = 0.1
+        while True:
+            try:
+                async with self as protocol:
+                    yield protocol
+            except Exception:
+                retries += 1
+                if retries >= max_retries:
+                    raise SandboxException("Failed to connect to the server")
+                # Add a random initial delay between 0 and 5 seconds.
+                # See 7.2.3. Recovering from Abnormal Closure in RFC 6544.
+                if backoff_delay == 0.1:
+                    initial_delay = random.random()
+                    self.logger.info(
+                        "! connect failed; reconnecting in %.1f seconds",
+                        initial_delay,
+                        exc_info=True,
+                    )
+                    await asyncio.sleep(initial_delay)
+                else:
+                    self.logger.info(
+                        "! connect failed again; retrying in %d seconds",
+                        int(backoff_delay),
+                        exc_info=True,
+                    )
+                    await asyncio.sleep(int(backoff_delay))
+                # Increase delay with truncated exponential backoff.
+                if retries > 4:
+                    backoff_delay = backoff_delay * 1.2
+                backoff_delay = min(backoff_delay, 10)
+                continue
+            else:
+                # Connection succeeded - reset backoff delay
+                backoff_delay = 0.1

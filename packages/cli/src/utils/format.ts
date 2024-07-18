@@ -41,6 +41,10 @@ export function asPrimary(content: string) {
   return chalk.default.hex(primaryColor)(content)
 }
 
+export function asTimestamp(content: string) {
+  return chalk.default.blue(content)
+}
+
 export function asSandboxTemplate(pathInTemplate?: string) {
   return chalk.default.green(pathInTemplate)
 }
@@ -60,6 +64,11 @@ export function asBuildLogs(content: string) {
 
 export function asHeadline(content: string) {
   return chalk.default.underline(asPrimary(asBold(content)))
+}
+
+export function withUnderline(content: string) {
+  return chalk.default.underline(content)
+
 }
 
 export function listAliases(aliases: string[] | undefined) {

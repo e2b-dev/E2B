@@ -1,4 +1,7 @@
 import { defineConfig } from 'vitest/config'
+import { config } from 'dotenv'
+
+const env = config()
 
 export default defineConfig({
   test: {
@@ -10,6 +13,10 @@ export default defineConfig({
     server: {},
     deps: {
       interopDefault: true,
+    },
+    env: {
+      ...process.env as Record<string, string>,
+      ...env.parsed,
     },
   },
 })

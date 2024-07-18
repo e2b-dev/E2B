@@ -1,7 +1,7 @@
 /.next/
 
 # imporatant to keep // $HighlightLine comments at the end of the line
-apps/docs/src/code/
+apps/web/src/code/
 
 
 **/*.mdx
