@@ -72,7 +72,7 @@ function AuthForm({ view }: Props) {
         {(view === 'sign_up' || view === 'forgotten_password') &&
           <div className="flex items-center justify-start gap-2">
             <span className="text-zinc-400">Already have an account?</span>
-            <Link className="flex items-center justify-center" href="/dashboard/sign-in">
+            <Link className="flex items-center justify-center" href="/auth/sign-in">
               <Button
                 variant="textLink"
               >
@@ -83,7 +83,7 @@ function AuthForm({ view }: Props) {
         }
 
         {view === 'sign_in' &&
-          <Link className="text-center" href="/dashboard/reset-password">
+          <Link className="text-center" href="/auth/reset-password">
             <Button
               variant="textSubtle"
             >
@@ -95,7 +95,7 @@ function AuthForm({ view }: Props) {
         {view === 'sign_in' &&
           <div className="flex items-center justify-start gap-2">
             <span className="text-zinc-400">{'Don\'t have an account?'}</span>
-            <Link href="/dashboard/sign-up">
+            <Link href="/auth/sign-up">
               <Button
                 variant="textLink"
               >

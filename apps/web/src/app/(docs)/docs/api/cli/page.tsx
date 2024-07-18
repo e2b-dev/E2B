@@ -7,19 +7,75 @@ import { DialogAnimated } from '@/components/DialogAnimated'
 import { CloudIcon, LaptopIcon, Link2Icon } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { usePostHog } from 'posthog-js/react'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 
 type UserConfig = {
-  email: string
-  accessToken: string
-  defaultTeamApiKey: string
-  defaultTeamId: string
+  email: string;
+  accessToken: string;
+  defaultTeamApiKey: string;
+  defaultTeamId: string;
 }
 
 export default function Page() {
   const posthog = usePostHog()
   const { user, isLoading: userIsLoading } = useUser()
   const apiKey = useApiKey()
+
+  useEffect(
+    function sendAuthorizationStartAnalytics() {
+      posthog?.capture('opened CLI authorization page')
+    },
+    [posthog]
+  )
+
+  return (
+    <div>
+      {/* It's not easy to override RootLayout without grouping everything into `(root)` dir */}
+      {/* So I'm hacking a custom layout with full modal overlay */}
+      {/* https://github.com/vercel/next.js/issues/50591 */}
+      <DialogAnimated
+        open={true}
+        setOpen={() => {}} // intentionally prevent closing
+      >
+        <div className="py-6 sm:py-12">
+          <div className="mx-auto px-6 lg:px-8">
+            <div className="mx-auto sm:text-center">
+              <p
+                className="
+                flex items-center justify-center gap-4
+                text-3xl font-bold tracking-tight sm:text-4xl
+              "
+              >
+                <span className="text-gray-200">
+                  <LaptopIcon size={60} />
+                </span>
+                <span className="text-gray-400">
+                  <Link2Icon size={30} />
+                </span>
+                <span className="text-gray-200">
+                  <CloudIcon size={60} />
+                </span>
+              </p>
+              <h2 className="mt-6 text-base font-semibold leading-7">
+                Linking CLI with your account
+              </h2>
+              <Suspense>
+                <AuthState
+                  user={user}
+                  apiKey={apiKey}
+                  posthog={posthog}
+                  userIsLoading={userIsLoading}
+                />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      </DialogAnimated>
+    </div>
+  )
+}
+
+function AuthState({ user, apiKey, posthog, userIsLoading }) {
   const searchParams = useSearchParams()
   const searchParamsObj = searchParams ? Object.fromEntries(searchParams) : {}
   const { next, state } = searchParamsObj
@@ -44,13 +100,6 @@ export default function Page() {
   }
 
   useEffect(
-    function sendAuthorizationStartAnalytics() {
-      posthog?.capture('opened CLI authorization page')
-    },
-    [posthog],
-  )
-
-  useEffect(
     function sendAuthorizationAnalytics() {
       if (state === 'success') {
         posthog?.capture('successfully authorized CLI')
@@ -60,7 +109,7 @@ export default function Page() {
         })
       }
     },
-    [state, posthog, searchParamsObj.error],
+    [state, posthog, searchParamsObj.error]
   )
 
   let content
@@ -93,7 +142,7 @@ export default function Page() {
       content = <span className="text-gray-300">Loading, please wait</span>
     } else if (!user) {
       content = (
-        <Link href="/dashboard/sign-in">
+        <Link href="/auth/sign-in">
           <Button>Sign In to continue</Button>
         </Link>
       )
@@ -108,43 +157,5 @@ export default function Page() {
     }
   }
 
-  return (
-    <div>
-      {/* It's not easy to override RootLayout without grouping everything into `(root)` dir */}
-      {/* So I'm hacking a custom layout with full modal overlay */}
-      {/* https://github.com/vercel/next.js/issues/50591 */}
-      <DialogAnimated
-        open={true}
-        setOpen={() => {
-        }} // intentionally prevent closing
-      >
-        <div className="py-6 sm:py-12">
-          <div className="mx-auto px-6 lg:px-8">
-            <div className="mx-auto sm:text-center">
-              <p
-                className="
-                flex items-center justify-center gap-4
-                text-3xl font-bold tracking-tight sm:text-4xl
-              "
-              >
-                <span className="text-gray-200">
-                  <LaptopIcon size={60} />
-                </span>
-                <span className="text-gray-400">
-                  <Link2Icon size={30} />
-                </span>
-                <span className="text-gray-200">
-                  <CloudIcon size={60} />
-                </span>
-              </p>
-              <h2 className="mt-6 text-base font-semibold leading-7">
-                Linking CLI with your account
-              </h2>
-              <p className="mt-12 leading-8">{content}</p>
-            </div>
-          </div>
-        </div>
-      </DialogAnimated>
-    </div>
-  )
+  return <p className="mt-12 leading-8">{content}</p>
 }

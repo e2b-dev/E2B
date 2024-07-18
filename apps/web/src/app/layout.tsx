@@ -1,13 +1,14 @@
+import Script from 'next/script'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
 
-import { Providers } from '@/app/(docs)/docs/providers'
+import { Providers } from '@/app/providers'
 
 import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'
 import Canonical from '@/components/Navigation/canonical'
-import { LayoutDashboard } from '@/components/LayoutDashboard'
-import { Toaster } from '@/components/ui/toaster'
+import { Suspense } from 'react'
+import { Header } from '@/components/Header'
 
 export const metadata: Metadata = {
   // TODO: Add metadataBase
@@ -40,14 +41,17 @@ export default async function RootLayout({ children }) {
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
           <div className="w-full">
-            <LayoutDashboard>
-              {children}
-              <Toaster />
-              <PostHogAnalytics />
-              <Analytics />
-            </LayoutDashboard>
+            <Header />
+            {children}
           </div>
+          <Suspense>
+            <PostHogAnalytics />
+          </Suspense>
+          <Analytics />
         </Providers>
+
+        <Script src="https://js.chatlio.com/widget.js" strategy="lazyOnload" />
+        <chatlio-widget widgetid={process.env.NEXT_PUBLIC_CHATLIO_WIDGET_ID} disable-favicon-badge></chatlio-widget>
       </body>
     </html>
   )
