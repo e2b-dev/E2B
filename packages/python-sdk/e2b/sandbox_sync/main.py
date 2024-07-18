@@ -1,5 +1,4 @@
 import logging
-import httpcore
 import httpx
 
 from typing import Optional, Dict, Literal, overload
@@ -10,7 +9,7 @@ from e2b.envd.api import (
     handle_envd_api_exception,
     ENVD_API_HEALTH_ROUTE,
 )
-from e2b.exceptions import SandboxException
+from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.process.main import Process
@@ -117,14 +116,19 @@ class Sandbox(SandboxSetup, SandboxApi):
         )
 
     def is_running(self, request_timeout: Optional[float] = None) -> Literal[True]:
-        r = self._envd_api.get(
-            ENVD_API_HEALTH_ROUTE,
-            timeout=self.connection_config.get_request_timeout(request_timeout),
-        )
+        try:
+            r = self._envd_api.get(
+                ENVD_API_HEALTH_ROUTE,
+                timeout=self.connection_config.get_request_timeout(request_timeout),
+            )
 
-        err = handle_envd_api_exception(r)
-        if err:
-            raise err
+            err = handle_envd_api_exception(r)
+
+            if err:
+                raise err
+
+        except httpx.TimeoutException:
+            raise format_request_timeout_error()
 
         return True
 
