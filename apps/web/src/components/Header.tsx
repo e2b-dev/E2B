@@ -1,3 +1,5 @@
+'use client'
+
 import { forwardRef, useEffect } from 'react'
 import Link from 'next/link'
 import clsx from 'clsx'
