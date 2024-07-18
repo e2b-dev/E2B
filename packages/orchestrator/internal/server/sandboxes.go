@@ -117,10 +117,13 @@ func (s *server) Delete(ctx context.Context, in *orchestrator.SandboxRequest) (*
 		attribute.String("env.kernel.version", sbx.Sandbox.KernelVersion),
 	)
 
+	// Don't allow connecting to the sandbox anymore.
+	s.dns.Remove(in.SandboxID)
+
 	sbx.Stop(ctx, s.tracer)
 
 	// Ensure the sandbox is removed from cache.
-	// Ideally we would rely only on the goroutine defef.
+	// Ideally we would rely only on the goroutine defer.
 	s.sandboxes.Remove(in.SandboxID)
 
 	return nil, nil
