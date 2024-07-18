@@ -1,7 +1,7 @@
 import logging
 import httpx
 
-from typing import Optional, Dict, Literal, overload
+from typing import Optional, Dict, overload
 
 from e2b.exceptions import format_request_timeout_error
 from e2b.sandbox.utils import class_method_variant
@@ -80,12 +80,15 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
     async def is_running(
         self, request_timeout: Optional[float] = None
-    ) -> Literal[True]:
+    ) -> bool:
         try:
             r = await self._envd_api.get(
                 ENVD_API_HEALTH_ROUTE,
                 timeout=self.connection_config.get_request_timeout(request_timeout),
             )
+
+            if r.status_code == 502:
+                return False
 
             err = await ahandle_envd_api_exception(r)
 

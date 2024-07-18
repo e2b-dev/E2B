@@ -1,7 +1,7 @@
 import logging
 import httpx
 
-from typing import Optional, Dict, Literal, overload
+from typing import Optional, Dict, overload
 
 from e2b.sandbox.utils import class_method_variant
 from e2b.connection_config import ConnectionConfig
@@ -115,12 +115,15 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._transport._pool,
         )
 
-    def is_running(self, request_timeout: Optional[float] = None) -> Literal[True]:
+    def is_running(self, request_timeout: Optional[float] = None) -> bool:
         try:
             r = self._envd_api.get(
                 ENVD_API_HEALTH_ROUTE,
                 timeout=self.connection_config.get_request_timeout(request_timeout),
             )
+
+            if r.status_code == 502:
+                return False
 
             err = handle_envd_api_exception(r)
 
