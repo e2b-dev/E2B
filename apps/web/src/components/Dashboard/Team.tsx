@@ -8,7 +8,7 @@ import { toast } from '../ui/use-toast'
 import { Copy } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog'
-import Spinner from "@/components/Spinner";
+import Spinner from '@/components/Spinner'
 
 interface TeamMember {
   id: string
