@@ -18,6 +18,14 @@ variable "session_proxy_service_name" {
   type = string
 }
 
+variable "load_balancer_conf" {
+  type = string
+}
+
+variable "nginx_conf" {
+  type = string
+}
+
 job "session-proxy" {
   type = "system"
   datacenters = [var.gcp_zone]
@@ -75,6 +83,7 @@ job "session-proxy" {
       template {
         left_delimiter  = "[["
         right_delimiter = "]]"
+        data            = var.load_balancer_conf
         destination     = "local/conf.d/load-balancer.conf"
         change_mode     = "signal"
         change_signal   = "SIGHUP"
@@ -185,43 +194,10 @@ EOF
       template {
         left_delimiter  = "[["
         right_delimiter = "]]"
+        data            = var.nginx_conf
         destination     = "local/nginx.conf"
         change_mode     = "signal"
         change_signal   = "SIGHUP"
-        data            = <<EOF
-
-user  nginx;
-worker_processes  auto;
-
-error_log  /var/log/nginx/error.log notice;
-pid        /var/run/nginx.pid;
-
-
-events {
-    worker_connections  1024;
-}
-
-
-http {
-    default_type  application/octet-stream;
-
-    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                      '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
-
-    access_log  /var/log/nginx/access.log  main;
-
-    sendfile        on;
-    #tcp_nopush     on;
-
-    keepalive_timeout  65;
-    keepalive_time     86400s;
-
-    #gzip  on;
-
-    include /etc/nginx/conf.d/*.conf;
-}
-EOF
       }
     }
   }
