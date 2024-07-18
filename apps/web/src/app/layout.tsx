@@ -14,16 +14,16 @@ export const metadata: Metadata = {
   // TODO: Add metadataBase
   // metadataBase: ''
   title: {
-    template: '%s - E2B Docs',
-    default: 'E2B Docs - Code Interpreting for AI apps',
+    template: '%s - E2B',
+    default: 'E2B - Code Interpreting for AI apps',
   },
   description: 'Open-source secure sandboxes for AI code execution',
   twitter: {
-    title: 'E2B Docs - Code Interpreting for AI apps',
+    title: 'E2B - Code Interpreting for AI apps',
     description: 'Open-source secure sandboxes for AI code execution',
   },
   openGraph: {
-    title: 'E2B Docs - Code Interpreting for AI apps',
+    title: 'E2B - Code Interpreting for AI apps',
     description: 'Open-source secure sandboxes for AI code execution',
   },
 }
