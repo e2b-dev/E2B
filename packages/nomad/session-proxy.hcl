@@ -24,11 +24,6 @@ job "session-proxy" {
 
   priority = 80
 
-  // TODO: Removable
-  constraint {
-    operator = "distinct_hosts"
-    value    = "true"
-  }
 
   group "session-proxy" {
     network {
@@ -62,8 +57,7 @@ job "session-proxy" {
       driver = "docker"
 
       config {
-        // TODO: Fixate version
-        image        = "nginx"
+        image        = "nginx:1.27.0"
         network_mode = "host"
         ports        = [var.session_proxy_port_name, "status"]
         volumes = [
@@ -72,10 +66,9 @@ job "session-proxy" {
         ]
       }
 
-      // TODO: Saner resources
       resources {
-        memory_max = 6000
-        memory = 6000
+        memory_max = 2048
+        memory = 1024
         cpu    = 1024
       }
 
@@ -145,7 +138,7 @@ server {
   proxy_no_cache 1;
 
   client_max_body_size 1024m;
-  
+
   proxy_buffering off;
   proxy_request_buffering off;
 
@@ -153,10 +146,11 @@ server {
   tcp_nopush on;
   sendfile on;
 
-  # send_timeout                600s;
+  send_timeout                600s;
 
-  # proxy_connect_timeout       30s;
-  keepalive_requests 2048;
+  proxy_connect_timeout       3s;
+
+  keepalive_requests 65536;
   keepalive_timeout 600s;
   # keepalive_time 86400s;
   # gzip off;
