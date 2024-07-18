@@ -8,12 +8,12 @@ from e2b import AsyncSandbox
 
 @pytest.mark.skip_debug()
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="is_running takes too long if the sandbox was just killed")
 async def test_shorten_timeout(async_sandbox: AsyncSandbox):
     await async_sandbox.set_timeout(5)
     sleep(6)
-    with pytest.raises(TimeoutException):
-        await async_sandbox.is_running(request_timeout=5)
+
+    is_running = await async_sandbox.is_running()
+    assert is_running is False
 
 
 @pytest.mark.skip_debug()
