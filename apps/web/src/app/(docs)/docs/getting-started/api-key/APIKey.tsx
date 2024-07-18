@@ -117,7 +117,7 @@ function APIKey() {
       ) : (
         <div className="flex flex-col items-start justiy-start gap-4 mt-6">
           <span>You can get your API key by signing up.</span>
-          <Link href="/dashboard/sign-up">
+          <Link href="/auth/sign-up">
             <Button>Sign up to get your API key</Button>
           </Link>
         </div>

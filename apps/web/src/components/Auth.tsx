@@ -40,7 +40,7 @@ export const Auth = function () {
         <span className="text-sm text-red-500" title={error?.message}>
           Something went wrong
         </span>
-        <Link href={`/dashboard/sign-in?${redirectToCurrentURL()}`}>
+        <Link href={`/auth/sign-in?${redirectToCurrentURL()}`}>
           <Button>Sign In</Button>
         </Link>
       </div>
@@ -73,7 +73,7 @@ export const Auth = function () {
         </div>
       ) : (
         <div className="flex items-center justify-center gap-3">
-          <Link href={`/dashboard/sign-in?${redirectToCurrentURL()}`}>
+          <Link href={`/auth/sign-in?${redirectToCurrentURL()}`}>
             <Button>Sign In</Button>
           </Link>
         </div>
