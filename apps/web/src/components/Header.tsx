@@ -12,6 +12,7 @@ import { GitHubIcon } from '@/components/icons/GitHubIcon'
 
 import dynamic from 'next/dynamic'
 import { config } from '../../config'
+import { usePathname } from 'next/navigation'
 
 // No SSR to avoid hydration mismatch
 const TopLevelNavItem = dynamic(() => import('@/components/TopLevelNavItem'), {
@@ -19,7 +20,7 @@ const TopLevelNavItem = dynamic(() => import('@/components/TopLevelNavItem'), {
 })
 
 // @ts-ignore
-export const Header = forwardRef(function Header({ className, isAuth }, ref) {
+export const Header = forwardRef(function Header({ className }, ref) {
   const { isOpen: mobileNavIsOpen } = useMobileNavigationStore()
   const isInsideMobileNavigation = useIsInsideMobileNavigation()
 
@@ -28,6 +29,11 @@ export const Header = forwardRef(function Header({ className, isAuth }, ref) {
   const { scrollY } = useScroll()
   const bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9])
   const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8])
+
+  const pathname = usePathname()
+  const isDocs = pathname?.startsWith('/docs')
+  const isAuth = pathname?.startsWith('/auth')
+
 
   useEffect(() => {
     fetch(config.github.api)
@@ -67,7 +73,7 @@ export const Header = forwardRef(function Header({ className, isAuth }, ref) {
           <Logo className="h-6" />
         </Link>
       </div>
-      {!isAuth && <Search />}
+      {isDocs && <Search />}
       <div className="flex items-center gap-5 lg:hidden">
         <MobileNavigation />
         <Link

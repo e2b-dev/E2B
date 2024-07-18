@@ -7,7 +7,8 @@ import { Providers } from '@/app/providers'
 import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'
 import Canonical from '@/components/Navigation/canonical'
-import {Suspense} from 'react'
+import { Suspense } from 'react'
+import { Header } from '@/components/Header'
 
 export const metadata: Metadata = {
   // TODO: Add metadataBase
@@ -40,6 +41,7 @@ export default async function RootLayout({ children }) {
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
           <div className="w-full">
+            <Header />
             {children}
           </div>
           <Suspense>

@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 
 import { Footer } from '@/components/Footer'
-import { Header } from '@/components/Header'
 import { Navigation } from '@/components/Navigation'
 import { Section, SectionProvider } from '@/components/SectionProvider'
 
@@ -18,11 +17,11 @@ export function Layout({
 }) {
   const pathname = usePathname()
   const relativePathname = pathname?.replace(new RegExp('^/docs'), '')
-  const isAuth = relativePathname?.startsWith('/sign-in')
+  const isDocs = pathname?.startsWith('/docs')
 
   return (
     <SectionProvider sections={relativePathname ? allSections[relativePathname] ?? [] : []}>
-      <div className={clsx('h-full', { 'lg:ml-[var(--sidebar-nav-width)]': !isAuth })}>
+      <div className={clsx('h-full', { 'lg:ml-[var(--sidebar-nav-width)]': isDocs })}>
         <motion.header
           layoutScroll
           className='contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]'
@@ -41,12 +40,10 @@ export function Layout({
               lg:pb-8
             "
           >
-            {/* @ts-ignore */}
-            <Header isAuth={isAuth} />
-            {!isAuth && <Navigation className="hidden lg:my-4 lg:block" />}
+            {isDocs && <Navigation className="hidden lg:my-4 lg:block" />}
           </div>
         </motion.header>
-        {!isAuth && (
+        {isDocs && (
           <div
             className="
           relative
@@ -70,7 +67,7 @@ export function Layout({
             <Footer />
           </div>
         )}
-        {isAuth && (
+        {!isDocs && (
           <div
             className="
           relative
