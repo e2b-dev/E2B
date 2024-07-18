@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
 
-import { Providers } from '@/app/(docs)/docs/providers'
+import { Providers } from '@/app/providers'
 
 import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'

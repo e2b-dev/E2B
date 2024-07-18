@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 import glob from 'fast-glob'
 import { Analytics } from '@vercel/analytics/react'
 
-import { Providers } from '@/app/(docs)/docs/providers'
+import { Providers } from '@/app/providers'
 import { Layout } from '@/components/Layout'
 
 import '@/styles/tailwind.css'
