@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { BarChart, CreditCard, Key, LucideIcon, Settings, Users } from 'lucide-react'
 
 import { BillingContent } from '@/components/Dashboard/Billing'
@@ -28,36 +28,56 @@ function redirectToCurrentURL() {
 const menuLabels = ['personal', 'keys', 'usage', 'billing', 'team',] as const
 type MenuLabel = typeof menuLabels[number]
 
-export default function Dashboard() {
+export default function Page() {
   const { user, isLoading, error } = useUser()
   const router = useRouter()
+
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (user) {
+      setAccessToken(user.accessToken)
+    }
+  }, [accessToken, user])
+
+
+  useEffect(() => {
+    if (isLoading) { return }
+    if (!user) {
+      router.push(`/auth/sign-in?${redirectToCurrentURL()}`)
+    }
+  }, [isLoading, user, router])
+
+
+  if (error) {
+    return <div>Error: {error.message}</div>
+  }
+
+  if (user) {
+    return (
+      <div className="flex min-h-screen flex-col md:flex-row pt-16 md:pt-32 px-2 md:px-32">
+        <Suspense>
+          <Dashboard user={user} />
+        </Suspense>
+      </div>
+    )
+  }
+}
+
+const Dashboard = ({ user }) => {
   const searchParams = useSearchParams()
 
   const tab = searchParams!.get('tab')
   const teamParam = searchParams!.get('team')
+  const [teams, setTeams] = useState<Team[]>([])
+  const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
+  const [currentApiKey, setCurrentApiKey] = useState<string | null>(null)
 
   const initialTab = tab && menuLabels.includes(tab as MenuLabel) ? (tab as MenuLabel) : 'personal'
   const [selectedItem, setSelectedItem] = useState<MenuLabel>(initialTab)
-  const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
-  const [currentApiKey, setCurrentApiKey] = useState<string | null>(null)
-  const [accessToken, setAccessToken] = useState<string | null>(null)
-  const [teams, setTeams] = useState<Team[]>([])
 
-  useEffect(() => {
-    if (user) {
-      if (teamParam) {
-        const team = user.teams.find(team => team.id === teamParam)
-        if (team) {
-          setCurrentTeam(team)
-          setTeams(user.teams)
-        }
-      } else {
-        const defaultTeam = user.teams.find(team => team.is_default)
-        setCurrentTeam(defaultTeam || user.teams[0]) // seems like a sensible default
-        setTeams(user.teams)
-      }
-    }
-  }, [user, teamParam])
+  const router = useRouter()
+
 
   useEffect(() => {
     if (user && currentTeam) {
@@ -66,11 +86,23 @@ export default function Dashboard() {
     }
   }, [currentApiKey, currentTeam, user])
 
+
   useEffect(() => {
     if (user) {
-      setAccessToken(user.accessToken)
+      if (teamParam) {
+        const team = user.teams.find((team: Team) => team.id === teamParam)
+        if (team) {
+          setCurrentTeam(team)
+          setTeams(user.teams)
+        }
+      } else {
+        const defaultTeam = user.teams.find((team: Team) => team.is_default)
+        setCurrentTeam(defaultTeam || user.teams[0]) // seems like a sensible default
+        setTeams(user.teams)
+      }
     }
-  }, [accessToken, user])
+  }, [user, teamParam, setCurrentTeam, setTeams])
+
 
   useEffect(() => {
     if (tab !== selectedItem) {
@@ -94,32 +126,20 @@ export default function Dashboard() {
     }
   }, [currentTeam, teamParam, router])
 
-
-  useEffect(() => {
-    if (isLoading) { return }
-    if (!user) {
-      router.push(`/dashboard/sign-in?${redirectToCurrentURL()}`)
-    }
-  }, [isLoading, user, router])
-
-
-  if (error) {
-    return <div>Error: {error.message}</div>
-  }
-
-  if (user && currentTeam) {
+  if (currentTeam) {
     return (
-      <div className="flex min-h-screen flex-col md:flex-row pt-16 md:pt-32 px-2 md:px-32">
+      <>
         <Sidebar selectedItem={selectedItem} setSelectedItem={setSelectedItem} teams={teams} user={user} currentTeam={currentTeam} setCurrentTeam={setCurrentTeam} setTeams={setTeams} />
         <div className="flex-1 md:pl-10">
           <h2 className='text-2xl mb-2 font-bold'>{selectedItem[0].toUpperCase() + selectedItem.slice(1)}</h2>
           <div className='border border-white/5 w-full h-[1px] mb-10' />
           <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} accessToken={user.accessToken} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
         </div>
-      </div>
+      </>
     )
   }
 }
+
 
 const Sidebar = ({ selectedItem, setSelectedItem, teams, user, currentTeam, setCurrentTeam, setTeams }) => (
   <div className="md:h-full md:w-48 space-y-2 pb-10 md:pb-0">
@@ -190,4 +210,3 @@ function MainContent({ selectedItem, user, team, accessToken, currentApiKey, tea
 
 // TODO send sentry error from this
 const ErrorContent = () => <div>Error Content</div>
-

@@ -1,9 +1,12 @@
 'use client'
 
 import AuthForm from '@/components/AuthForm'
+import { Suspense } from 'react'
 
 export default function Sign() {
   return (
-    <AuthForm view="forgotten_password" />
+    <Suspense>
+      <AuthForm view="sign_in" />
+    </Suspense>
   )
 }
