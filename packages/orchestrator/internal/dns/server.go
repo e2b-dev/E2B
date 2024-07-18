@@ -10,7 +10,7 @@ import (
 	resolver "github.com/miekg/dns"
 )
 
-const ttl = 2
+const ttl = 0
 
 type DNS struct {
 	records *smap.Map[string]
