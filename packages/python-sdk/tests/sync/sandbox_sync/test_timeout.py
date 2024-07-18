@@ -1,5 +1,4 @@
 from time import sleep
-from e2b.exceptions import TimeoutException
 
 import pytest
 
