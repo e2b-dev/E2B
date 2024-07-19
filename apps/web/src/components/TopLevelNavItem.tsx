@@ -11,7 +11,7 @@ export default function TopLevelNavItem({
   statType?: string
   icon: React.ReactNode
 }) {
-  const statFormatted = stat
+  const statFormatted = stat?.toLocaleString() || '6,300+'
   let statText = ''
   if (statType === 'discordUsers') statText = 'online'
   else if (statType === 'githubStars') statText = '⭐️'
@@ -37,7 +37,7 @@ export default function TopLevelNavItem({
         >
           {icon}
           <div className="overflow-hidden font-medium">
-            GitHub ({statFormatted?.toLocaleString()} {statText})
+            GitHub ({statFormatted} {statText})
           </div>
         </div>
       </Link>
