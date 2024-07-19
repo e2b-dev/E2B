@@ -74,9 +74,10 @@ job "session-proxy" {
         ]
       }
 
+      // TODO: Saner resources
       resources {
-        memory_max = 2048
-        memory = 1024
+        memory_max = 6000
+        memory = 6000
         cpu    = 1024
       }
 
