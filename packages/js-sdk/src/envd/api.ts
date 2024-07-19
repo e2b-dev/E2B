@@ -10,7 +10,7 @@ export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
     return
   }
 
-  const message: string = res.error?.message || await res.response.text()
+  const message: string = typeof res.error  == 'string' ? res.error : res.error?.message || await res.response.text()
 
   switch (res.response.status) {
     case 400:
