@@ -1,0 +1,219 @@
+# SDK Beta Migration Guide
+
+### Create sandbox
+
+<CodeGroup isRunnable={false}>
+```js
+import { Sandbox } from 'e2b'
+
+// Before
+const sandbox = await Sandbox.create({ template: 'my-template'})
+await sandbox.close()
+
+// Now
+const sandbox = await Sandbox.create('my-template', { timeoutMs: 5*60*1000 })
+```
+
+```python
+from e2b import Sandbox
+
+# Before
+sandbox = Sandbox(template='my-template')
+sandbox.close()
+
+# Now
+sandbox = Sandbox(template='my-template', timeout=10*60*1000)
+```
+</CodeGroup>
+
+### Extend sandbox lifetime
+<CodeGroup isRunnable={false}>
+```js
+// Before
+const sandbox = await Sandbox.create({ timeoutMs: 5*60*1000 })
+
+await sandbox.keepAlive(10 * 60 * 1000)
+await sandbox.close()
+
+// Now
+const sandbox = await Sandbox.create()
+await sandbox.setTimeout(10 * 60 * 1000)
+```
+```python
+# Before
+sandbox = Sandbox(timeout)
+
+# Now
+sandbox = Sandbox(timeout=5*60)
+sandbox.set_timeout(10 * 60)
+```
+</CodeGroup>
+
+### Reconnecting
+<CodeGroup isRunnable={false}>
+```js
+// Before
+const sandbox = await Sandbox.create()
+await sandbox.keepAlive(10 * 60 * 1000)
+await sandbox.close()
+
+const existingSandbox = await Sandbox.reconnect(sandbox.id)
+
+// Now
+const sandbox = await Sandbox.create()
+await sandbox.setTimeout(10 * 60 * 1000)
+
+const existingSandbox = await Sandbox.connect(sandbox.sandboxID)
+```
+```python
+sandbox = Sandbox()
+sandbox.set_timeout(10 * 60)
+
+existing_sandbox = Sandbox.connect(sandbox.sandbox_id)
+```
+</CodeGroup>
+
+### Python Async
+<CodeGroup isRunnable={false}>
+```python
+# Sync
+from e2b import Sandbox
+from e2b_code_interpreter import CodeInterpreter
+
+sandbox = Sandbox()
+sandbox = CodeInterpreter()
+
+# Async
+from e2b import AsyncSandbox
+from e2b_code_interpreter import AsyncCodeInterpreter
+
+sandbox = await AsyncSandbox.create()
+sandbox = await AsyncCodeInterpreter.create()
+```
+</CodeGroup>
+
+### Running process
+<CodeGroup isRunnable={false}>
+```js
+// Before
+const sandbox = await Sandbox.create()
+const result = await sandbox.process.startAndWait({
+	cmd: 'echo "Hello, world!"',
+	onStderr: (msg) => console.log(msg.line),
+	onStdout: (msg) => console.log(msg.line),
+})
+
+// Now
+const result = await sandbox.commands.run('echo "Hello, World!"', {
+	onStderr(output) { console.log(output) },
+	onStdout(output) { console.log(output) },
+})
+```
+```python
+# Before
+sandbox = Sandbox()
+result = sandbox.process.start_and_wait(
+	cmd='echo "Hello, world!"',
+	on_stderr=lambda msg: print(msg.line),
+	on_stdout=lambda msg: print(msg.line),
+)
+
+# Now
+result = sandbox.commands.run(
+	cmd='echo "Hello, World!"',
+	on_stdout=lambda output: print(output),
+	on_stderr=lambda output: print(output),
+)
+```
+</CodeGroup>
+
+### Running process in the background
+<CodeGroup isRunnable={false}>
+```js
+// Before
+const sandbox = await Sandbox.create()
+const process = await sandbox.process.start({
+	cmd: 'sleep 10; echo "Hello, world!"',
+	onStderr: (msg) => console.log(msg.line),
+	onStdout: (msg) => console.log(msg.line),
+})
+
+const result = await process.wait()
+// Now
+const command = await sandbox.commands.run('sleep 10; echo "Hello, world!"', {
+	onStderr(output) { console.log(output) },
+	onStdout(output) { console.log(output) },
+	background: true,
+})
+
+const result = await command.wait()
+```
+```python
+# Before
+sandbox = Sandbox()
+process = sandbox.process.start(
+	cmd='echo "Hello, world!"',
+	on_stderr=lambda msg: print(msg.line),
+	on_stdout=lambda msg: print(msg.line),
+)
+
+result = process.wait()
+
+# Now
+command = sandbox.commands.run(
+	cmd='echo "Hello, World!"',
+	background=True,
+)
+
+result = command.wait(
+	on_stderr=lambda output: print(output),
+	on_stdout=lambda output: print(output),
+)
+```
+</CodeGroup>
+
+### Uploading files
+<CodeGroup isRunnable={false}>
+```js
+// Before
+await sandbox.uploadFile(
+	Buffer.from('Hello, world!'),
+	'path-in-sandbox',
+)
+
+// Now
+const content = await sandbox.files.write(
+'/path-in-sandbox', )
+```
+```python
+# Before
+content = sandbox.download_file('/path-in-sandbox')
+
+# Now
+content = sandbox.files.read("/path-in-sandbox")
+```
+</CodeGroup>
+
+### Downloading files
+<CodeGroup isRunnable={false}>
+```js
+// Before
+const content = await sandbox.downloadFile('/path-in-sandbox')
+
+// Now
+const content = await sandbox.files.read('/path-in-sandbox')
+```
+```python
+# Before
+content = sandbox.download_file('/path-in-sandbox')
+
+# Now
+content = sandbox.files.read("/path-in-sandbox")
+```
+</CodeGroup>
+
+### Timeouts
+
+### Custom sandbox templates
+
+### Sandbox file upload

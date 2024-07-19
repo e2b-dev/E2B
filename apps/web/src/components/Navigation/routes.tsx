@@ -89,6 +89,11 @@ export const routes = [
         title: 'Guides and examples in cookbook',
         href: 'https://github.com/e2b-dev/e2b-cookbook',
       },
+      {
+        icon: <Hammer strokeWidth={1} size={20} />,
+        title: 'Beta SDK Migration',
+        href: '/docs/guide/beta-migration',
+      },
       // {
       //   icon: <Hammer strokeWidth={1} size={20} />,
       //   title: 'Guide: Code Interpreter with OpenAI models',
