@@ -14,7 +14,7 @@ export default function TopLevelNavItem({
   const statFormatted = stat
   let statText = ''
   if (statType === 'discordUsers') statText = 'online'
-  else if (statType === 'githubStars') statText = 'stars'
+  else if (statType === 'githubStars') statText = '⭐️'
   return (
     <li>
       <Link
@@ -25,24 +25,21 @@ export default function TopLevelNavItem({
           dark:text-zinc-400 dark:hover:text-white
         "
       >
-        <span
+        <div
           className="
-            grid
-            whitespace-nowrap text-xs
-            font-medium
-            dark:text-white
+            flex
+            items-center
+            gap-1
+            whitespace-nowrap
+            text-xs
+            text-white
           "
-          style={{
-            gridTemplateColumns: stat ? '1fr' : '0fr',
-            marginRight: stat ? '0.4rem' : '0',
-          }}
         >
-          <div className="overflow-hidden">
-            <strong>{statFormatted?.toLocaleString()}</strong> {statText}
+          {icon}
+          <div className="overflow-hidden font-medium">
+            GitHub ({statFormatted?.toLocaleString()} {statText})
           </div>
-        </span>
-
-        {icon}
+        </div>
       </Link>
     </li>
   )
