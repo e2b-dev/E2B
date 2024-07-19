@@ -2,13 +2,12 @@ import { expect } from 'vitest'
 
 import { sandboxTest, isDebug, wait } from '../setup.js'
 
-// SKIPPED: isRunning takes too long if the sandbox was just killed
-sandboxTest.skipIf(isDebug).skip('shorten timeout', async ({ sandbox }) => {
+sandboxTest.skipIf(isDebug)('shorten timeout', async ({ sandbox }) => {
   await sandbox.setTimeout(5000)
 
   await wait(6000)
 
-  await expect(sandbox.isRunning({ requestTimeoutMs: 1000 })).rejects.toThrowError()
+  expect(await sandbox.isRunning({ requestTimeoutMs: 1000 })).toBeFalsy()
 })
 
 sandboxTest.skipIf(isDebug)('shorten then lenghten timeout', async ({ sandbox }) => {

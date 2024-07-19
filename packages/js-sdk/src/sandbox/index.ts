@@ -100,10 +100,14 @@ export class Sandbox extends SandboxApi {
     return url.toString()
   }
 
-  async isRunning(opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<true> {
+  async isRunning(opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<boolean> {
     const res = await this.envdApi.api.GET('/health', {
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
+
+     if (res.response.status == 502) {
+       return false
+     }
 
     const err = await handleEnvdApiError(res)
     if (err) {
