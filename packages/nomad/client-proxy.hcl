@@ -26,20 +26,12 @@ variable "session_proxy_service_name" {
   type = string
 }
 
-variable "domain_name" {
-  type = string
-}
-
 variable "load_balancer_conf" {
   type = string
 }
 
 variable "nginx_conf" {
   type = string
-}
-
-locals {
-  domain_name_escaped = replace(var.domain_name, ".", "\\.")
 }
 
 job "client-proxy" {
@@ -85,7 +77,7 @@ job "client-proxy" {
         network_mode = "host"
         ports        = [var.client_proxy_health_port_name, var.client_proxy_port_name]
         volumes = [
-          "local:/etc/nginx",
+          "local:/etc/nginx/",
           "/var/log/client-proxy:/var/log/nginx"
         ]
       }
