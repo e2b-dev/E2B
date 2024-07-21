@@ -26,12 +26,12 @@ variable "session_proxy_service_name" {
   type = string
 }
 
-variable "domain_name" {
+variable "load_balancer_conf" {
   type = string
 }
 
-locals {
-  domain_name_escaped = replace(var.domain_name, ".", "\\.")
+variable "nginx_conf" {
+  type = string
 }
 
 job "client-proxy" {
@@ -73,12 +73,11 @@ job "client-proxy" {
       }
 
       config {
-        // TODO: Fixate versionx
-        image        = "nginx"
+        image        = "nginx:1.27.0"
         network_mode = "host"
         ports        = [var.client_proxy_health_port_name, var.client_proxy_port_name]
         volumes = [
-          "local:/etc/nginx/conf.d",
+          "local:/etc/nginx/",
           "/var/log/client-proxy:/var/log/nginx"
         ]
       }
@@ -86,101 +85,19 @@ job "client-proxy" {
       template {
         left_delimiter  = "[["
         right_delimiter = "]]"
-        destination     = "local/load-balancer.conf"
+        data            = var.load_balancer_conf
+        destination     = "local/conf.d/load-balancer.conf"
         change_mode     = "signal"
         change_signal   = "SIGHUP"
-        data            = <<EOF
-map $http_upgrade $conn_upgrade {
-  default     "";
-  "websocket" "Upgrade";
-}
+      }
 
-log_format logger-json escape=json
-'{'
-'"source": "client-proxy",'
-'"time": "$time_iso8601",'
-'"resp_body_size": $body_bytes_sent,'
-'"host": "$http_host",'
-'"address": "$remote_addr",'
-'"request_length": $request_length,'
-'"method": "$request_method",'
-'"uri": "$request_uri",'
-'"status": $status,'
-'"user_agent": "$http_user_agent",'
-'"resp_time": $request_time,'
-'"upstream_addr": "$upstream_addr"'
-'}';
-access_log /var/log/nginx/access.log logger-json;
-
-server {
-  listen 3002 default_server;
-
-  server_name _;
-  return 502 "Cannot connect to sandbox";
-}
-[[ range service "session-proxy" ]]
-server {
-  listen 3002;
-  access_log /var/log/nginx/access.log logger-json;
-
-  server_name ~^(.+)-[[ index .ServiceMeta "Client" | sprig_substr 0 8 ]]\.${local.domain_name_escaped}$;
-
-  proxy_set_header Host $host;
-  proxy_set_header X-Real-IP $remote_addr;
-
-  proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection $conn_upgrade;
-
-  proxy_hide_header x-frame-options;
-
-  proxy_http_version 1.1;
-
-  client_body_timeout 86400s;
-  client_header_timeout 5s;
-
-  # proxy_read_timeout 600s;
-  proxy_read_timeout 1d;
-  proxy_send_timeout 86400s;
-
-  proxy_cache_bypass 1;
-  proxy_no_cache 1;
-
-  client_max_body_size 1024m;
-
-  proxy_buffering off;
-  proxy_request_buffering off;
-  
-  tcp_nodelay on;
-  tcp_nopush on;
-  sendfile on;
-  # send_timeout                600s;
-  # proxy_connect_timeout       30s;
-
-  keepalive_timeout 600s;
-  keepalive_requests 2048;
-  # keepalive_time 86400s;
-
-  # gzip off;
-  location / {
-    proxy_pass $scheme://[[ .Address ]]:[[ .Port ]]$request_uri;
-  }
-}
-[[ end ]]
-server {
-  listen 3001;
-  location /health {
-    access_log off;
-    add_header 'Content-Type' 'application/json';
-    return 200 '{"status":"UP"}';
-  }
-
-  location /status {
-    access_log off;
-    stub_status;
-    allow all;
-  }
-}
-EOF
+      template {
+        left_delimiter  = "[["
+        right_delimiter = "]]"
+        data            = var.nginx_conf
+        destination     = "local/nginx.conf"
+        change_mode     = "signal"
+        change_signal   = "SIGHUP"
       }
     }
   }

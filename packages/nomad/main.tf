@@ -110,7 +110,10 @@ resource "nomad_job" "client_proxy" {
       client_proxy_health_port_name   = var.client_proxy_health_port.name
       client_proxy_health_port_path   = var.client_proxy_health_port.path
       session_proxy_service_name      = var.session_proxy_service_name
-      domain_name                     = var.domain_name
+      load_balancer_conf              = templatefile("${path.module}/proxies/client.conf", {
+        domain_name_escaped = replace(var.domain_name, ".", "\\.")
+      })
+      nginx_conf                      = file("${path.module}/proxies/nginx.conf")
     }
   }
 }
@@ -125,6 +128,8 @@ resource "nomad_job" "session_proxy" {
       session_proxy_port_number  = var.session_proxy_port.port
       session_proxy_port_name    = var.session_proxy_port.name
       session_proxy_service_name = var.session_proxy_service_name
+      load_balancer_conf         = file("${path.module}/proxies/session.conf")
+      nginx_conf                 = file("${path.module}/proxies/nginx.conf")
     }
   }
 }
