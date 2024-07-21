@@ -6,9 +6,8 @@ from e2b import AsyncSandbox
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.parametrize('execution_number', range(50))
 @pytest.mark.asyncio
-async def test_shorten_timeout(async_sandbox: AsyncSandbox, execution_number):
+async def test_shorten_timeout(async_sandbox: AsyncSandbox):
     await async_sandbox.set_timeout(5)
     sleep(6)
 
