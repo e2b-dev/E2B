@@ -1,7 +1,8 @@
 import logging
 import httpx
 
-from typing import Optional, Dict, overload
+from typing_extensions import Unpack
+from typing import Optional, Dict, TypedDict, overload
 
 from e2b.exceptions import format_request_timeout_error
 from e2b.sandbox.utils import class_method_variant
@@ -31,6 +32,11 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         return response
 
 
+class AsyncSandboxOpts(TypedDict):
+    sandbox_id: str
+    connection_config: ConnectionConfig
+
+
 class AsyncSandbox(SandboxSetup, SandboxApi):
     @property
     def files(self) -> Filesystem:
@@ -52,11 +58,11 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
     def connection_config(self) -> ConnectionConfig:
         return self._connection_config
 
-    def __init__(self, sandbox_id: str, connection_config: ConnectionConfig):
+    def __init__(self, **opts: Unpack[AsyncSandboxOpts]):
         super().__init__()
 
-        self._sandbox_id = sandbox_id
-        self._connection_config = connection_config
+        self._sandbox_id = opts["sandbox_id"]
+        self._connection_config = opts["connection_config"]
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
 
@@ -78,9 +84,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             self._transport._pool,
         )
 
-    async def is_running(
-        self, request_timeout: Optional[float] = None
-    ) -> bool:
+    async def is_running(self, request_timeout: Optional[float] = None) -> bool:
         try:
             r = await self._envd_api.get(
                 ENVD_API_HEALTH_ROUTE,
