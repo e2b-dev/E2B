@@ -7,5 +7,5 @@ sandboxTest.skipIf(isDebug)('kill', async ({ sandbox }) => {
   await sandbox.kill()
 
   const list = await Sandbox.list()
-  expect(list.map(s => s.sandboxID)).not.toContain(sandbox.sandboxID)
+  expect(list.map(s => s.sandboxId)).not.toContain(sandbox.sandboxId)
 })

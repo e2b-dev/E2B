@@ -22,7 +22,7 @@ test.skipIf(isDebug)('metadata', async () => {
 
   try {
     const sbxs = await Sandbox.list()
-    const sbxInfo = sbxs.find((s) => s.sandboxID === sbx.sandboxID)
+    const sbxInfo = sbxs.find((s) => s.sandboxId === sbx.sandboxId)
 
     assert.deepEqual(sbxInfo?.metadata, metadata)
   } finally {

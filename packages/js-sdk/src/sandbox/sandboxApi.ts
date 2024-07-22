@@ -80,7 +80,7 @@ export class SandboxApi {
     }
 
     return res.data?.map((sandbox) => ({
-      sandboxId: this.getSandboxId({sandboxId: sandbox.sandboxID, clientId: sandbox.clientID}),
+      sandboxId: this.getSandboxId({ sandboxId: sandbox.sandboxID, clientId: sandbox.clientID }),
       templateId: sandbox.templateID,
       ...(sandbox.alias && { name: sandbox.alias }),
       ...(sandbox.metadata && { metadata: sandbox.metadata }),
@@ -132,13 +132,13 @@ export class SandboxApi {
     }
 
     if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
-      await this.kill(this.getSandboxId({sandboxId: res.data!.sandboxID, clientId: res.data!.clientID}), opts)
+      await this.kill(this.getSandboxId({ sandboxId: res.data!.sandboxID, clientId: res.data!.clientID }), opts)
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
         'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
-    return this.getSandboxId({sandboxId: res.data!.sandboxID, clientId: res.data!.clientID})
+    return this.getSandboxId({ sandboxId: res.data!.sandboxID, clientId: res.data!.clientID })
   }
 
   private static timeoutToSeconds(timeout: number): number {

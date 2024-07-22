@@ -10,7 +10,7 @@ test('connect', async () => {
     const isRunning = await sbx.isRunning()
     assert.isTrue(isRunning)
 
-    const sbxConnection = await Sandbox.connect(sbx.sandboxID)
+    const sbxConnection = await Sandbox.connect(sbx.sandboxId)
     const isRunning2 = await sbxConnection.isRunning()
     assert.isTrue(isRunning2)
   } finally {

@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test";
-import { Sandbox } from "../../../src";
+import { expect, test } from 'bun:test'
+import { Sandbox } from '../../../src'
 
-test("Bun test", async () => {
-  const sbx = await Sandbox.create("base", { timeoutMs: 5_000 })
+test('Bun test', async () => {
+  const sbx = await Sandbox.create('base', { timeoutMs: 5_000 })
   try {
     const isRunning = await sbx.isRunning()
     expect(isRunning).toBeTruthy()
@@ -15,4 +15,5 @@ test("Bun test", async () => {
     expect(cmd.stdout).toEqual(`${text}\n`)
   } finally {
     await sbx.kill()
-  }});
+  }
+})
