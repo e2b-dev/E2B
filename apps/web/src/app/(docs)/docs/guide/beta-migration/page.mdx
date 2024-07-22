@@ -54,11 +54,11 @@ If you need to use a custom sandbox template you pass the template as the first 
 import Sandbox from 'e2b'
 
 // Before
-// const sandbox = await Sandbox.create({ template: 'my-template' })
+// const sandbox = await Sandbox.create({ template: 'template-name-or-id' })
 // await sandbox.close()
 
 // Now
-const sandbox = await Sandbox.create('my-template', {
+const sandbox = await Sandbox.create('template-name-or-id', {
 	timeoutMs: 300_000,
 })
 ```
@@ -66,11 +66,11 @@ const sandbox = await Sandbox.create('my-template', {
 from e2b import Sandbox
 
 # Before
-# sandbox = Sandbox(template='my-template')
+# sandbox = Sandbox(template='template-name-or-id')
 # sandbox.close()
 
 # Now
-sandbox = Sandbox(template='my-template', timeout=300)
+sandbox = Sandbox(template='template-name-or-id', timeout=300)
 ```
 </CodeGroup>
 
