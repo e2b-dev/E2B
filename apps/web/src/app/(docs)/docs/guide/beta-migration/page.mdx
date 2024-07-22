@@ -458,8 +458,26 @@ execution = sandbox.notebook.exec_cell('print("Hello, world!")', timeout=2)
 </CodeGroup>
 
 ## Custom template
-If you are using a custom template you need to rebuild it with `"/root/.jupyter/start-up.sh"` as the start command while using the latest `FROM e2bdev/code-interpreter:latest`
-or including all relevant files in the [Beta template](https://github.com/e2b-dev/code-interpreter/tree/beta/template) directory.
+If you are using a custom template for the Code Interpreter you need to rebuild it.
+
+
+You can rebuild the template by either calling
+```sh
+e2b template build -c "/root/.jupyter/start-up.sh"
+```
+if you use the E2B Docker image as base in your `e2b.Dockerfile`
+```docker
+FROM e2bdev/code-interpreter:latest
+
+# You custom Dockerfile content here
+```
+
+Or if you are using custom base you need to copy all files excluding the `e2b.toml` from [beta template](https://github.com/e2b-dev/code-interpreter/tree/beta/template)
+to the directory with your template and then run `e2b template build -c "/root/.jupyter/start-up.sh"`.
+
+<Note>
+Check of the [Code Interpreter custom template](/docs/code-interpreter/template) page for more info.
+</Note>
 
 ## <h1>Python Async</h1>
 Python Core SDK and Code Interpter SDK now support async.
