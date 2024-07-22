@@ -1,8 +1,8 @@
 # SDK Beta Migration Guide
-The following guide shows how to migrate your code from the current core SDKs (`e2b`) and Code Interpreter SDKs (`@e2b/code-interpreter`/`e2b-code-interpreter`) to the beta versions.
+The following guide shows how to migrate your code from the current Core SDKs (`e2b`) and Code Interpreter SDKs (`@e2b/code-interpreter`/`e2b-code-interpreter`) to the beta versions.
 
 The latest beta versions you should install can be found in NPM/PyPi release history:
-- JavaScript/TypeScript
+- JavaScript & TypeScript
 	- Latest release with *rc* tag for [`e2b`](https://www.npmjs.com/package/e2b?activeTab=versions)
 	- Latest release with *rc* tag for [`@e2b/code-interpreter`](https://www.npmjs.com/package/@e2b/code-interpreter?activeTab=versions)
 - Python
@@ -15,7 +15,7 @@ or including all relevant files in the [Beta template](https://github.com/e2b-de
 </Note>
 
 ## Core Sandbox SDK changes
-These changes affect both the `e2b` core SDKs and Code Interpreter SDKs (`@e2b/code-interpreter`/`e2b-code-interpreter`) because the Code Interpreter uses the core SDK.
+These changes affect both the `e2b` Core SDKs and Code Interpreter SDKs (`@e2b/code-interpreter`/`e2b-code-interpreter`) because the Code Interpreter uses the Core SDK.
 
 ### Creating sandbox
 
@@ -23,7 +23,7 @@ When creating a sandbox you now **specify the sandbox timeout — how long the s
 
 You also no longer call the `.close()` method when you are done with the sandbox. Sandbox will be automatically closed and killed after the timeout.
 
-You can still use `.kill()` to kill the sandbox immediately if you are sure you won't need it anymore.
+You can use `.kill()` to kill the sandbox immediately if you are sure you won't need it anymore.
 
 <CodeGroup isRunnable={false}>
 ```js
@@ -123,7 +123,7 @@ import Sandbox from 'e2b'
 // Now
 const sandbox = await Sandbox.create({ timeoutMs: 600_000 })
 
-const existingSandbox = await Sandbox.connect(sandbox.sandboxID)
+const existingSandbox = await Sandbox.connect(sandbox.sandboxId)
 ```
 ```python
 from e2b import Sandbox
@@ -298,7 +298,7 @@ result = command.wait(
 </CodeGroup>
 
 
-### Watching files changes
+### Watching for files' changes
 
 <CodeGroup isRunnable={false}>
 ```js
@@ -334,17 +334,17 @@ for event in watcher:
 </CodeGroup>
 
 ### Accessing sandbox ID
-The `id` property on the sandbox/code interpreter instance is now named `sandboxID`/`sandbox_id`.
+The `id` property on the sandbox/code interpreter instance is now named `sandboxId`/`sandbox_id`.
 
 <CodeGroup isRunnable={false}>
 ```js
 import Sandbox from 'e2b'
 
 // Before
-// const sandboxID = await sandbox.id
+// const sandboxId = await sandbox.id
 
 // Now
-const sandboxID = await sandbox.sandboxID
+const sandboxId = await sandbox.sandboxId
 ```
 ```python
 from e2b import Sandbox
@@ -389,7 +389,7 @@ Right now this is not supported because it leads to subtle bugs especially when 
 
 
 ## Code Interpreter SDK changes
-All the previously mentioned changes to the core SDK also apply to the Code Interpreter SDK.
+All the previously mentioned changes to the Core SDK also apply to the Code Interpreter SDK.
 Apart from them, the changes to the Code Interpreter SDK are very minimal:
 
 ### Executing code
@@ -431,7 +431,7 @@ execution = sandbox.notebook.exec_cell('print("Hello, world!")', timeout=2)
 
 
 ## Python Async
-Python core SDK and Code Interpter SDK now support async.
+Python Core SDK and Code Interpter SDK now support async.
 
 If you need to use async import `AsyncSandbox`/`AsyncCodeInterpreter` instead of `Sandbox`/`CodeInterpreter`.
 
