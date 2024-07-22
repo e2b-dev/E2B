@@ -9,15 +9,35 @@ The latest beta versions you should install can be found in NPM/PyPi release his
 	- Latest *PRE-RELEASE* for [`e2b`](https://pypi.org/project/e2b/#history)
 	- Latest *PRE-RELEASE* for [`e2b-code-interpreter`](https://pypi.org/project/e2b-code-interpreter/#history)
 
-<Note>
-If you are using a custom template you need to rebuild it with `"/root/.jupyter/start-up.sh"` as the start command while using the latest `FROM e2bdev/code-interpreter:latest`
-or including all relevant files in the [Beta template](https://github.com/e2b-dev/code-interpreter/tree/beta/template) directory.
-</Note>
+## Table of contents
+- [Core Sandbox SDK changes](#core-sandbox-sdk-changes)
+	- [Creating sandbox](#creating-sandbox)
+	- [Modifying sandbox timeout](#modifying-sandbox-timeout)
+	- [Reconnecting](#reconnecting)
+	- [Uploading data and creating files in sandbox](#uploading-data-and-creating-files-in-sandbox)
+	- [Downloading files](#downloading-files)
+	- [Running processes](#running-processes)
+	- [Watching for files' changes](#watching-for-files-changes)
+	- [Accessing sandbox ID](#accessing-sandbox-id)
+	- [Getting sandbox upload URL](#getting-sandbox-upload-url)
+	- [Configuring sandbox `cwd`](#configuring-sandbox-cwd)
+	- [Timeouts](#timeouts)
+- [Code Interpreter SDK changes](#code-interpreter-sdk-changes)
+	- [Executing code](#executing-code)
+	- [Custom template](#custom-template)
+- [Python Async](#python-async)
+	- [Watching for files' changes in async Python SDK](#watching-for-files-changes-in-async-python-sdk)
+	- [Running background commands in async Python SDK](#running-background-commands-in-async-python-sdk)
 
-## Core Sandbox SDK changes
+
+## <h1>Core Sandbox SDK changes</h1>
 These changes affect both the `e2b` Core SDKs and Code Interpreter SDKs (`@e2b/code-interpreter`/`e2b-code-interpreter`) because the Code Interpreter uses the Core SDK.
 
-### Creating sandbox
+<Note>
+If you are using a custom template you need to rebuild it by calling `e2b template build` in the directory with the template.
+</Note>
+
+## Creating sandbox
 
 When creating a sandbox you now **specify the sandbox timeout — how long the sandbox will exist**. If you don't specify the timeout the sandbox will be closed after 5 minutes.
 
@@ -48,7 +68,7 @@ sandbox = Sandbox(timeout=300)
 ```
 </CodeGroup>
 
-If you need to use a custom sandbox template you pass the template as the first parameter:
+If you need to use a [custom sandbox template](/docs/guide/custom-sandbox) you pass the template as the first parameter:
 <CodeGroup isRunnable={false}>
 ```js
 import Sandbox from 'e2b'
@@ -74,9 +94,9 @@ sandbox = Sandbox(template='template-name-or-id', timeout=300)
 ```
 </CodeGroup>
 
-### Changing sandbox timeout
-If you need to modify the sandbox timeout after creating it you can use `.setTimeout()`/`.set_timeout()` method.
-It will set the timeout to the specified value regardless of the current timeout value.
+## Modifying sandbox timeout
+If you need to change how long the sandbox should stay alive after it was created, you can use `.setTimeout()`/`.set_timeout()` method.
+It will modify the timeout of the sandbox.
 
 <CodeGroup isRunnable={false}>
 ```js
@@ -103,7 +123,7 @@ sandbox.set_timeout(600)
 ```
 </CodeGroup>
 
-### Reconnecting
+## Reconnecting
 When connection to an existing sandbox use `.connect()`/`.connect()` method instead of `.reconnect()`/`.reconnect()`.
 
 Instead of using `.keepAlive()`/`.keep_alive()` method to prevent the sandbox from closing until you reconnect use `.setTimeout()`/`.set_timeout()` method.
@@ -142,7 +162,7 @@ existing_sandbox = Sandbox.connect(sandbox.sandbox_id)
 ```
 </CodeGroup>
 
-### Uploading data and creating file in sandbox
+## Uploading data and creating files in sandbox
 Use `.files.write()` method to upload files to the sandbox.
 
 The method accepts `path` in the sandbox as the first argument and the `data` as the second argument.
@@ -172,7 +192,7 @@ with open("path/to/local/file", "rb") as file:
 ```
 </CodeGroup>
 
-### Downloading files
+## Downloading files
 Use `.files.read()` method to download files from the sandbox.
 
 The method accepts `path` in the sandbox as the first argument and optional `format` as the second argument.
@@ -199,7 +219,7 @@ content = sandbox.files.read("/path/in/sandbox")
 </CodeGroup>
 
 
-### Running process
+## Running processes
 You execute processes by calling `.commands.run()` method. By default, the method waits for the command to finish.
 
 You can specify the timeout for the command execution by passing `timeoutMs`/`timeout` option. The default timeout is 60 seconds.
@@ -298,7 +318,7 @@ result = command.wait(
 </CodeGroup>
 
 
-### Watching for files' changes
+## Watching for files' changes
 
 <CodeGroup isRunnable={false}>
 ```js
@@ -333,7 +353,7 @@ for event in watcher:
 ```
 </CodeGroup>
 
-### Accessing sandbox ID
+## Accessing sandbox ID
 The `id` property on the sandbox/code interpreter instance is now named `sandboxId`/`sandbox_id`.
 
 <CodeGroup isRunnable={false}>
@@ -357,7 +377,7 @@ sandbox_id = sandbox.sandbox_id
 ```
 </CodeGroup>
 
-### Getting sandbox upload URL
+## Getting sandbox upload URL
 The `.fileURL`/`.file_url()` is now `.uploadURL`/`.upload_url()` method that takes an optional argument that specifies the path in the sandbox where the file will be uploaded.
 
 If the path is not specified the file will be uploaded to the home dir — `/home/user`.
@@ -383,16 +403,24 @@ url = sandbox.upload_url('/path/in/sandbox')
 ```
 </CodeGroup>
 
-### Configuring sandbox `cwd`
+## Configuring sandbox `cwd`
 Previously you could set the sandbox working directory by passing `cwd` option when creating the sandbox.
 Right now this is not supported because it leads to subtle bugs especially when reconnecting to an existing sandbox.
 
+If you need this feature please reach out to us on [Discord](https://discord.com/invite/U7KEcGErtQ) or [GitHub](https://github.com/e2b-dev/e2b) so we can prioritize it.
 
-## Code Interpreter SDK changes
+## Timeouts
+There are now two types of timeouts that you can pass as parameters:
+1. `request_timeout`/`requestTimeoutMs` sets how long the operation should wait for connection/processing.
+This is useful for ensuring that none of the sandbox operations hang indefinitely.
+2. `timeout`/`timeoutMs` which is used for setting the maximum length of long-running operations like executing code, running processes, or the sandbox itself.
+
+
+## <h1>Code Interpreter SDK changes</h1>
 All the previously mentioned changes to the Core SDK also apply to the Code Interpreter SDK.
 Apart from them, the changes to the Code Interpreter SDK are very minimal:
 
-### Executing code
+## Executing code
 When executing code via JS/TS Code Interpreter SDK you now pass the `timeoutMs` option to the `execCell` method instead of `timeout`.
 
 The default timeout for the code execution is now 300 seconds.
@@ -429,13 +457,14 @@ execution = sandbox.notebook.exec_cell('print("Hello, world!")', timeout=2)
 ```
 </CodeGroup>
 
+## Custom template
+If you are using a custom template you need to rebuild it with `"/root/.jupyter/start-up.sh"` as the start command while using the latest `FROM e2bdev/code-interpreter:latest`
+or including all relevant files in the [Beta template](https://github.com/e2b-dev/code-interpreter/tree/beta/template) directory.
 
-## Python Async
+## <h1>Python Async</h1>
 Python Core SDK and Code Interpter SDK now support async.
 
 If you need to use async import `AsyncSandbox`/`AsyncCodeInterpreter` instead of `Sandbox`/`CodeInterpreter`.
-
-Most methods behave the same in the async and sync versions.
 
 <CodeGroup isRunnable={false}>
 ```python
@@ -455,8 +484,54 @@ sandbox = await AsyncCodeInterpreter.create()
 ```
 </CodeGroup>
 
-## Timeouts
-There are now two types of timeouts that you can pass as parameters:
-1. `request_timeout`/`requestTimeoutMs` sets how long the operation should wait for connection/processing.
-This is useful for ensuring that none of the sandbox operations hang indefinitely.
-2. `timeout`/`timeoutMs` which is used for setting the maximum length of long-running operations like executing code, running processes, or the sandbox itself.
+The async versions of methods for watching for files' changes and running commands in the background are slightly different:
+
+## Watching for files' changes in async Python SDK
+
+<CodeGroup isRunnable={false}>
+```python
+from e2b import Sandbox
+
+# Sync
+# sandbox = Sandbox()
+# watcher = sandbox.files.watch("/path/in/sandbox")
+
+# for event in watcher:
+#     print(event)
+
+# Async
+sandbox = await AsyncSandbox.create()
+
+await sandbox.files.watch("/path/in/sandbox", lambda event: print(event))
+```
+</CodeGroup>
+
+## Running background commands in async Python SDK
+<CodeGroup isRunnable={false}>
+```python
+from e2b import Sandbox
+
+# Sync
+# sandbox = Sandbox()
+# command = sandbox.commands.run(
+# 	cmd='echo "Hello, World!"',
+# 	background=True,
+# )
+
+# result = command.wait(
+# 	on_stderr=lambda output: print(output),
+# 	on_stdout=lambda output: print(output),
+# )
+
+# Async
+sandbox = await AsyncSandbox.create()
+command = await sandbox.commands.run(
+	cmd='echo "Hello, World!"',
+	on_stderr=lambda output: print(output),
+	on_stdout=lambda output: print(output),
+	background=True,
+)
+
+result = await command.wait()
+```
+</CodeGroup>
