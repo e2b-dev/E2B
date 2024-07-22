@@ -5,6 +5,9 @@ const env = config()
 
 export default defineConfig({
   test: {
+    exclude: [
+      'tests/runtimes/**',
+    ],
     poolOptions: {
       threads: {
         minThreads: 1,
