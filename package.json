@@ -5,7 +5,7 @@
     "version": "changeset version && pnpm run -r postVersion",
     "publish": "changeset publish && pnpm run -r postPublish",
     "test": "pnpm test --recursive --if-present",
-    "dev:docs": "pnpm --prefix apps/docs run dev",
+    "dev:web": "pnpm --prefix apps/web run dev",
     "rm-node-modules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
     "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json"
   },

@@ -4,8 +4,7 @@
   "commit": false,
   "fixed": [],
   "ignore": [
-    "e2b-docs",
-    "reverse-proxy"
+    "e2b-docs"
   ],
   "linked": [],
   "access": "public",
