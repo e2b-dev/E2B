@@ -1,8 +1,8 @@
 # SDK Beta Migration Guide
-The following guide shows how to migrate your code from the current core SDKs (`e2b`) and Code Interpreter SDKs (`@e2b/code-interpreter`/`e2b-code-interpreter`) to the Beta versions.
+The following guide shows how to migrate your code from the current core SDKs (`e2b`) and Code Interpreter SDKs (`@e2b/code-interpreter`/`e2b-code-interpreter`) to the beta versions.
 
 The latest beta versions you should install can be found in NPM/PyPi release history:
-- JS/TS
+- JavaScript/TypeScript
 	- Latest release with *rc* tag for [`e2b`](https://www.npmjs.com/package/e2b?activeTab=versions)
 	- Latest release with *rc* tag for [`@e2b/code-interpreter`](https://www.npmjs.com/package/@e2b/code-interpreter?activeTab=versions)
 - Python
@@ -19,7 +19,7 @@ These changes affect both the `e2b` core SDKs and Code Interpreter SDKs (`@e2b/c
 
 ### Creating sandbox
 
-When creating a sandbox you now **specify the sandbox timeout** — that is how long the sandbox will exist. If you don't specify the timeout the sandbox will be closed after 5 minutes.
+When creating a sandbox you now **specify the sandbox timeout — how long the sandbox will exist**. If you don't specify the timeout the sandbox will be closed after 5 minutes.
 
 You also no longer call the `.close()` method when you are done with the sandbox. Sandbox will be automatically closed and killed after the timeout.
 
@@ -30,8 +30,8 @@ You can still use `.kill()` to kill the sandbox immediately if you are sure you 
 import Sandbox from 'e2b'
 
 // Before
-const sandbox = await Sandbox.create()
-await sandbox.close()
+// const sandbox = await Sandbox.create()
+// await sandbox.close()
 
 // Now
 const sandbox = await Sandbox.create({ timeoutMs: 300_000 })
@@ -40,8 +40,8 @@ const sandbox = await Sandbox.create({ timeoutMs: 300_000 })
 from e2b import Sandbox
 
 # Before
-sandbox = Sandbox()
-sandbox.close()
+# sandbox = Sandbox()
+# sandbox.close()
 
 # Now
 sandbox = Sandbox(timeout=300)
@@ -54,8 +54,8 @@ If you need to use a custom sandbox template you pass the template as the first 
 import Sandbox from 'e2b'
 
 // Before
-const sandbox = await Sandbox.create({ template: 'my-template' })
-await sandbox.close()
+// const sandbox = await Sandbox.create({ template: 'my-template' })
+// await sandbox.close()
 
 // Now
 const sandbox = await Sandbox.create('my-template', {
@@ -66,8 +66,8 @@ const sandbox = await Sandbox.create('my-template', {
 from e2b import Sandbox
 
 # Before
-sandbox = Sandbox(template='my-template')
-sandbox.close()
+# sandbox = Sandbox(template='my-template')
+# sandbox.close()
 
 # Now
 sandbox = Sandbox(template='my-template', timeout=300)
@@ -83,8 +83,8 @@ It will set the timeout to the specified value regardless of the current timeout
 import Sandbox from 'e2b'
 
 // Before
-const sandbox = await Sandbox.create()
-await sandbox.keepAlive(600_000)
+// const sandbox = await Sandbox.create()
+// await sandbox.keepAlive(600_000)
 
 // Now
 const sandbox = await Sandbox.create({ timeoutMs: 300_000 })
@@ -94,8 +94,8 @@ await sandbox.setTimeout(600_000)
 from e2b import Sandbox
 
 # Before
-sandbox = Sandbox()
-sandbox.keep_alive(600)
+# sandbox = Sandbox()
+# sandbox.keep_alive(600)
 
 # Now
 sandbox = Sandbox(timeout=300)
@@ -114,11 +114,11 @@ Because the timeout is set when the sandbox is created, you may not need to set 
 import Sandbox from 'e2b'
 
 // Before
-const sandbox = await Sandbox.create()
-await sandbox.keepAlive(600_000)
-await sandbox.close()
+// const sandbox = await Sandbox.create()
+// await sandbox.keepAlive(600_000)
+// await sandbox.close()
 
-const existingSandbox = await Sandbox.reconnect(sandbox.id)
+// const existingSandbox = await Sandbox.reconnect(sandbox.id)
 
 // Now
 const sandbox = await Sandbox.create({ timeoutMs: 600_000 })
@@ -129,11 +129,11 @@ const existingSandbox = await Sandbox.connect(sandbox.sandboxID)
 from e2b import Sandbox
 
 # Before
-sandbox = Sandbox()
-sandbox.keep_alive(600)
-sandbox.close()
+# sandbox = Sandbox()
+# sandbox.keep_alive(600)
+# sandbox.close()
 
-existing_sandbox = Sandbox.reconnect(sandbox.id)
+# existing_sandbox = Sandbox.reconnect(sandbox.id)
 
 # Now
 sandbox = Sandbox(timeout=600)
@@ -142,7 +142,7 @@ existing_sandbox = Sandbox.connect(sandbox.sandbox_id)
 ```
 </CodeGroup>
 
-### Uploading files or data
+### Uploading data and creating file in sandbox
 Use `.files.write()` method to upload files to the sandbox.
 
 The method accepts `path` in the sandbox as the first argument and the `data` as the second argument.
@@ -152,8 +152,8 @@ The method accepts `path` in the sandbox as the first argument and the `data` as
 import Sandbox from 'e2b'
 
 // Before
-const content = fs.readFileSync('local-path')
-await sandbox.uploadFile(content, 'path-in-sandbox') 
+// const content = fs.readFileSync('local-path')
+// await sandbox.uploadFile(content, 'path-in-sandbox') 
 
 // Now
 const content = fs.readFileSync('local-path')
@@ -163,8 +163,8 @@ await sandbox.files.write('path-in-sandbox', content)
 from e2b import Sandbox
 
 # Before
-with open("path/to/local/file", "rb") as file:
-	sandbox.upload_file(file)
+# with open("path/to/local/file", "rb") as file:
+#	sandbox.upload_file(file)
 
 # Now
 with open("path/to/local/file", "rb") as file:
@@ -182,7 +182,7 @@ The method accepts `path` in the sandbox as the first argument and optional `for
 import Sandbox from 'e2b'
 
 // Before
-const content = await sandbox.downloadFile('path-in-sandbox')
+//const content = await sandbox.downloadFile('path-in-sandbox')
 
 // Now
 const content = await sandbox.files.read('path-in-sandbox')
@@ -191,7 +191,7 @@ const content = await sandbox.files.read('path-in-sandbox')
 from e2b import Sandbox
 
 # Before
-content = sandbox.download_file('path-in-sandbox')
+# content = sandbox.download_file('path-in-sandbox')
 
 # Now
 content = sandbox.files.read("path-in-sandbox")
@@ -211,12 +211,12 @@ If the command fails with a non-zero exit a `ProcessExitError`/`ProcessExitExcep
 import Sandbox from 'e2b'
 
 // Before
-const sandbox = await Sandbox.create()
-const result = await sandbox.process.startAndWait({
-	cmd: 'echo "Hello, world!"',
-	onStderr: (msg) => console.log(msg.line),
-	onStdout: (msg) => console.log(msg.line),
-})
+// const sandbox = await Sandbox.create()
+// const result = await sandbox.process.startAndWait({
+// 	cmd: 'echo "Hello, world!"',
+// 	onStderr: (msg) => console.log(msg.line),
+// 	onStdout: (msg) => console.log(msg.line),
+// })
 
 // Now
 const result = await sandbox.commands.run('echo "Hello, World!"', {
@@ -229,12 +229,12 @@ const result = await sandbox.commands.run('echo "Hello, World!"', {
 from e2b import Sandbox
 
 # Before
-sandbox = Sandbox()
-result = sandbox.process.start_and_wait(
-	cmd='echo "Hello, world!"',
-	on_stderr=lambda msg: print(msg.line),
-	on_stdout=lambda msg: print(msg.line),
-)
+# sandbox = Sandbox()
+# result = sandbox.process.start_and_wait(
+# 	cmd='echo "Hello, world!"',
+# 	on_stderr=lambda msg: print(msg.line),
+# 	on_stdout=lambda msg: print(msg.line),
+# )
 
 # Now
 result = sandbox.commands.run(
@@ -253,14 +253,15 @@ You can then use `.wait()` method to wait for the command to finish.
 import Sandbox from 'e2b'
 
 // Before
-const sandbox = await Sandbox.create()
-const process = await sandbox.process.start({
-	cmd: 'sleep 10; echo "Hello, world!"',
-	onStderr: (msg) => console.log(msg.line),
-	onStdout: (msg) => console.log(msg.line),
-})
+// const sandbox = await Sandbox.create()
+// const process = await sandbox.process.start({
+// 	cmd: 'sleep 10; echo "Hello, world!"',
+// 	onStderr: (msg) => console.log(msg.line),
+// 	onStdout: (msg) => console.log(msg.line),
+// })
 
-const result = await process.wait()
+// const result = await process.wait()
+
 // Now
 const command = await sandbox.commands.run('sleep 10; echo "Hello, world!"', {
 	onStderr(output) { console.log(output) },
@@ -274,14 +275,14 @@ const result = await command.wait()
 from e2b import Sandbox
 
 # Before
-sandbox = Sandbox()
-process = sandbox.process.start(
-	cmd='echo "Hello, world!"',
-	on_stderr=lambda msg: print(msg.line),
-	on_stdout=lambda msg: print(msg.line),
-)
+# sandbox = Sandbox()
+# process = sandbox.process.start(
+# 	cmd='echo "Hello, world!"',
+# 	on_stderr=lambda msg: print(msg.line),
+# 	on_stdout=lambda msg: print(msg.line),
+# )
 
-result = process.wait()
+# result = process.wait()
 
 # Now
 command = sandbox.commands.run(
@@ -304,10 +305,10 @@ result = command.wait(
 import Sandbox from 'e2b'
 
 // Before
-const sandbox = await Sandbox.create()
-const watcher = sandbox.filesystem.watchDir('path-in-sandbox')
-watcher.addEventListener((event) => console.log(event))
-await watcher.start()
+// const sandbox = await Sandbox.create()
+// const watcher = sandbox.filesystem.watchDir('path-in-sandbox')
+// watcher.addEventListener((event) => console.log(event))
+// await watcher.start()
 
 // Now
 const sandbox = await Sandbox.create()
@@ -317,11 +318,11 @@ await sandbox.files.watch('path-in-sandbox', (event) => console.log(event))
 from e2b import Sandbox
 
 # Before
-sandbox = Sandbox()
+# sandbox = Sandbox()
 
-watcher = sandbox.filesystem.watch_dir("path-in-sandbox")
-watcher.add_event_listener(lambda event: print(event))
-watcher.start()
+# watcher = sandbox.filesystem.watch_dir("path-in-sandbox")
+# watcher.add_event_listener(lambda event: print(event))
+# watcher.start()
 
 # Now
 sandbox = Sandbox()
@@ -340,7 +341,7 @@ The `id` property on the sandbox/code interpreter instance is now named `sandbox
 import Sandbox from 'e2b'
 
 // Before
-const sandboxID = await sandbox.id
+// const sandboxID = await sandbox.id
 
 // Now
 const sandboxID = await sandbox.sandboxID
@@ -349,7 +350,7 @@ const sandboxID = await sandbox.sandboxID
 from e2b import Sandbox
 
 # Before
-sandbox_id = sandbox.id
+# sandbox_id = sandbox.id
 
 # Now
 sandbox_id = sandbox.sandbox_id
@@ -366,7 +367,7 @@ If the path is not specified the file will be uploaded to the home dir — `/hom
 import Sandbox from 'e2b'
 
 // Before
-const url = await sandbox.fileURL
+// const url = await sandbox.fileURL
 
 // Now
 const url = await sandbox.uploadUrl('path-in-sandbox')
@@ -375,7 +376,7 @@ const url = await sandbox.uploadUrl('path-in-sandbox')
 from e2b import Sandbox
 
 # Before
-url = sandbox.file_url()
+# url = sandbox.file_url()
 
 # Now
 url = sandbox.upload_url('path-in-sandbox')
@@ -401,11 +402,11 @@ The default timeout for the code execution is now 300 seconds.
 import CodeInterpreter from '@e2b/code-interpreter'
 
 // Before
-const sandbox = await CodeInterpreter.create()
-const execution = await sandbox.notebook.execCell('print("Hello, world!")', {
-  timeout: 2000,
-})
-await sandbox.close()
+// const sandbox = await CodeInterpreter.create()
+// const execution = await sandbox.notebook.execCell('print("Hello, world!")', {
+//   timeout: 2000,
+// })
+// await sandbox.close()
 
 // Now
 const sandbox = await CodeInterpreter.create({ timeoutMs: 300_000 })
@@ -418,9 +419,9 @@ const execution = await sandbox.notebook.execCell('print("Hello, world!")', {
 from e2b_code_interpreter import CodeInterpreter
 
 # Before
-sandbox = CodeInterpreter()
-execution = sandbox.notebook.exec_cell('print("Hello, world!")', timeout=2)
-sandbox.close()
+# sandbox = CodeInterpreter()
+# execution = sandbox.notebook.exec_cell('print("Hello, world!")', timeout=2)
+# sandbox.close()
 
 # Now
 sandbox = CodeInterpreter(timeout=300)
@@ -439,11 +440,11 @@ Most methods behave the same in the async and sync versions.
 <CodeGroup isRunnable={false}>
 ```python
 # Sync
-from e2b import Sandbox
-sandbox = Sandbox()
+# from e2b import Sandbox
+# sandbox = Sandbox()
 
-from e2b_code_interpreter import CodeInterpreter
-sandbox = CodeInterpreter()
+# from e2b_code_interpreter import CodeInterpreter
+# sandbox = CodeInterpreter()
 
 # Async
 from e2b import AsyncSandbox
