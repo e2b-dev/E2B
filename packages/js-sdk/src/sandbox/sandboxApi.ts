@@ -12,12 +12,12 @@ export interface SandboxInfo {
   /**
    * Sandbox ID.
    */
-  sandboxID: string
+  sandboxId: string
 
   /**
    * Template ID.
    */
-  templateID: string
+  templateId: string
 
   /**
    * Sandbox name.
@@ -41,17 +41,17 @@ export class SandboxApi {
   /**
    * Kills sandbox specified by sandbox ID.
    *
-   * @param sandboxID - Sandbox ID.
+   * @param sandboxId - Sandbox ID.
    * @param opts - Connection options.
    */
-  static async kill(sandboxID: string, opts?: SandboxApiOpts): Promise<boolean> {
+  static async kill(sandboxId: string, opts?: SandboxApiOpts): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
     const res = await client.api.DELETE('/sandboxes/{sandboxID}', {
       params: {
         path: {
-          sandboxID,
+          sandboxID: sandboxId,
         },
       },
     })
@@ -80,22 +80,22 @@ export class SandboxApi {
     }
 
     return res.data?.map((sandbox) => ({
-      sandboxID: this.getSandboxID(sandbox),
-      templateID: sandbox.templateID,
+      sandboxId: this.getSandboxId({sandboxId: sandbox.sandboxID, clientId: sandbox.clientID}),
+      templateId: sandbox.templateID,
       ...(sandbox.alias && { name: sandbox.alias }),
       ...(sandbox.metadata && { metadata: sandbox.metadata }),
       startedAt: new Date(sandbox.startedAt),
     })) ?? []
   }
 
-  static async setTimeout(sandboxID: string, timeoutMs: number, opts?: SandboxApiOpts): Promise<void> {
+  static async setTimeout(sandboxId: string, timeoutMs: number, opts?: SandboxApiOpts): Promise<void> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/timeout', {
       params: {
         path: {
-          sandboxID,
+          sandboxID: sandboxId,
         },
       },
       body: {
@@ -132,20 +132,20 @@ export class SandboxApi {
     }
 
     if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
-      await this.kill(this.getSandboxID(res.data!), opts)
+      await this.kill(this.getSandboxId({sandboxId: res.data!.sandboxID, clientId: res.data!.clientID}), opts)
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
         'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
-    return this.getSandboxID(res.data!)
+    return this.getSandboxId({sandboxId: res.data!.sandboxID, clientId: res.data!.clientID})
   }
 
   private static timeoutToSeconds(timeout: number): number {
     return Math.ceil(timeout / 1000)
   }
 
-  private static getSandboxID({ sandboxID, clientID }: { sandboxID: string, clientID: string }): string {
-    return `${sandboxID}-${clientID}`
+  private static getSandboxId({ sandboxId, clientId }: { sandboxId: string, clientId: string }): string {
+    return `${sandboxId}-${clientId}`
   }
 }

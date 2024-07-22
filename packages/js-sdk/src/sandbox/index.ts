@@ -11,13 +11,6 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 // @ts-ignore
 Symbol.asyncDispose ??= Symbol('Symbol.asyncDispose')
 
-export interface RunningSandbox {
-  sandboxID: string
-  templateID: string
-  name?: string
-  metadata?: Record<string, string>
-  startedAt: Date
-}
 
 export interface SandboxOpts extends ConnectionOpts {
   metadata?: Record<string, string>
@@ -38,7 +31,7 @@ export class Sandbox extends SandboxApi {
   private readonly envdApiUrl: string
   private readonly envdApi: EnvdApiClient
 
-  constructor(readonly sandboxID: string, opts?: Omit<SandboxOpts, 'timeoutMs' | 'metadata'>) {
+  constructor(readonly sandboxId: string, opts?: Omit<SandboxOpts, 'timeoutMs' | 'metadata'>) {
     super()
 
     this.connectionConfig = new ConnectionConfig(opts)
@@ -65,19 +58,19 @@ export class Sandbox extends SandboxApi {
 
     const config = new ConnectionConfig(sandboxOpts)
 
-    const sandboxID = config.debug
+    const sandboxId = config.debug
       ? 'debug_sandbox_id'
       : await this.createSandbox(template, sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs, sandboxOpts)
 
-    const sbx = new this(sandboxID, config) as InstanceType<S>
+    const sbx = new this(sandboxId, config) as InstanceType<S>
     await sbx.onInit(config)
     return sbx
   }
 
-  static async connect<S extends typeof Sandbox>(this: S, sandboxID: string, opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>): Promise<InstanceType<S>> {
+  static async connect<S extends typeof Sandbox>(this: S, sandboxId: string, opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>): Promise<InstanceType<S>> {
     const config = new ConnectionConfig(opts)
 
-    const sbx = new this(sandboxID, config) as InstanceType<S>
+    const sbx = new this(sandboxId, config) as InstanceType<S>
     await sbx.onInit(config)
     return sbx
   }
@@ -87,7 +80,7 @@ export class Sandbox extends SandboxApi {
       return `localhost:${port}`
     }
 
-    return `${port}-${this.sandboxID}.${this.connectionConfig.domain}`
+    return `${port}-${this.sandboxId}.${this.connectionConfig.domain}`
   }
 
   uploadUrl(path?: string) {
@@ -118,11 +111,11 @@ export class Sandbox extends SandboxApi {
   }
 
   async setTimeout(timeoutMs: number, opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
-    await Sandbox.setTimeout(this.sandboxID, timeoutMs, { ...this.connectionConfig, ...opts })
+    await Sandbox.setTimeout(this.sandboxId, timeoutMs, { ...this.connectionConfig, ...opts })
   }
 
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
-    await Sandbox.kill(this.sandboxID, { ...this.connectionConfig, ...opts })
+    await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
   }
 
   async[Symbol.asyncDispose]() {
