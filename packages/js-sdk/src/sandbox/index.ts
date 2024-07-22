@@ -8,10 +8,6 @@ import { Pty } from './pty'
 import { SandboxApi } from './sandboxApi'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 
-// @ts-ignore
-Symbol.asyncDispose ??= Symbol('Symbol.asyncDispose')
-
-
 export interface SandboxOpts extends ConnectionOpts {
   metadata?: Record<string, string>
   timeoutMs?: number
@@ -25,15 +21,18 @@ export class Sandbox extends SandboxApi {
   readonly commands: Process
   readonly pty: Pty
 
+  readonly sandboxId: string
+
   protected readonly envdPort = 49983
 
   protected readonly connectionConfig: ConnectionConfig
   private readonly envdApiUrl: string
   private readonly envdApi: EnvdApiClient
 
-  constructor(readonly sandboxId: string, opts?: Omit<SandboxOpts, 'timeoutMs' | 'metadata'>) {
+  constructor(opts: Omit<SandboxOpts, 'timeoutMs' | 'metadata'> & { sandboxId: string }) {
     super()
 
+    this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
     this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHost(this.envdPort)}`
 
@@ -62,16 +61,14 @@ export class Sandbox extends SandboxApi {
       ? 'debug_sandbox_id'
       : await this.createSandbox(template, sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs, sandboxOpts)
 
-    const sbx = new this(sandboxId, config) as InstanceType<S>
-    await sbx.onInit(config)
+    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
     return sbx
   }
 
   static async connect<S extends typeof Sandbox>(this: S, sandboxId: string, opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>): Promise<InstanceType<S>> {
     const config = new ConnectionConfig(opts)
 
-    const sbx = new this(sandboxId, config) as InstanceType<S>
-    await sbx.onInit(config)
+    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
     return sbx
   }
 
@@ -98,9 +95,9 @@ export class Sandbox extends SandboxApi {
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
 
-     if (res.response.status == 502) {
-       return false
-     }
+    if (res.response.status == 502) {
+      return false
+    }
 
     const err = await handleEnvdApiError(res)
     if (err) {
@@ -117,12 +114,4 @@ export class Sandbox extends SandboxApi {
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
   }
-
-  async[Symbol.asyncDispose]() {
-    await this.kill()
-  }
-
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected async onInit(opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>) { }
 }
