@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  test:
     defaults:
       run:
         working-directory: ./packages/js-sdk
@@ -45,7 +45,25 @@ jobs:
       - name: Test build
         run: pnpm build
 
-      - name: Run node tests
-        run: pnpm run test
+      - name: Run Node tests
+        run: pnpm test
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Run Bun tests
+        run: pnpm test:bun
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+      - name: Install Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Run Deno tests
+        run: pnpm test:deno
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
