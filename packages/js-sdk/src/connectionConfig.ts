@@ -1,4 +1,5 @@
 import { Logger } from './logs'
+import { getEnvVar } from './api/metadata'
 
 const REQUEST_TIMEOUT_MS = 30_000  // 30s
 export const KEEPALIVE_INTERVAL = 90_000 // 90s
@@ -23,7 +24,6 @@ export class ConnectionConfig {
   readonly apiKey?: string
   readonly accessToken?: string
 
-
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.debug = opts?.debug || ConnectionConfig.debug
@@ -36,19 +36,19 @@ export class ConnectionConfig {
   }
 
   private static get domain() {
-    return process?.env?.E2B_DOMAIN || 'e2b.dev'
+    return getEnvVar('E2B_DOMAIN') || 'e2b.dev'
   }
 
   private static get debug() {
-    return (process?.env?.E2B_DEBUG || 'false').toLowerCase() === 'true'
+    return (getEnvVar('E2B_DEBUG') || 'false').toLowerCase() === 'true'
   }
 
   private static get apiKey() {
-    return process?.env?.E2B_API_KEY
+    return getEnvVar('E2B_API_KEY')
   }
 
   private static get accessToken() {
-    return process?.env?.E2B_ACCESS_TOKEN
+    return getEnvVar('E2B_ACCESS_TOKEN')
   }
 
   getSignal(requestTimeoutMs?: number) {

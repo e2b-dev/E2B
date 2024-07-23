@@ -15,7 +15,7 @@ export function handleApiError(err?: { code: number; message: string; }) {
 }
 
 class ApiClient {
-  private readonly client: ReturnType<typeof createClient<paths>>
+  readonly api: ReturnType<typeof createClient<paths>>
 
   constructor(
     config: ConnectionConfig,
@@ -39,10 +39,9 @@ class ApiClient {
       )
     }
 
-    this.client = createClient<paths>({
+    this.api = createClient<paths>({
       baseUrl: config.apiUrl,
       keepalive: true,
-      signal: config.requestTimeoutMs ? AbortSignal.timeout(config.requestTimeoutMs) : undefined,
       headers: {
         ...defaultHeaders,
         ...config.apiKey && { 'X-API-KEY': config.apiKey },
@@ -51,12 +50,8 @@ class ApiClient {
     })
 
     if (config.logger) {
-      this.client.use(createApiLogger(config.logger))
+      this.api.use(createApiLogger(config.logger))
     }
-  }
-
-  get api() {
-    return this.client
   }
 }
 

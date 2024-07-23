@@ -5,6 +5,9 @@ const env = config()
 
 export default defineConfig({
   test: {
+    include: [
+      'tests/**/*.test.ts',
+    ],
     exclude: [
       'tests/runtimes/**',
     ],

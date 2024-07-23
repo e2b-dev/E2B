@@ -10,7 +10,7 @@ export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
     return
   }
 
-  const message: string = typeof res.error  == 'string' ? res.error : res.error?.message || await res.response.text()
+  const message: string = typeof res.error == 'string' ? res.error : res.error?.message || await res.response.text()
 
   switch (res.response.status) {
     case 400:
@@ -31,21 +31,17 @@ export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
 }
 
 class EnvdApiClient {
-  private readonly client: ReturnType<typeof createClient<paths>>
+  readonly api: ReturnType<typeof createClient<paths>>
 
   constructor(config: Pick<ConnectionConfig, 'apiUrl' | 'logger'>) {
-    this.client = createClient<paths>({
+    this.api = createClient({
       baseUrl: config.apiUrl,
       keepalive: true,
     })
 
     if (config.logger) {
-      this.client.use(createApiLogger(config.logger))
+      this.api.use(createApiLogger(config.logger))
     }
-  }
-
-  get api() {
-    return this.client
   }
 }
 

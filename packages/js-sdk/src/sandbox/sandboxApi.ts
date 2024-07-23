@@ -54,6 +54,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
+      signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
     if (res.error?.code === 404) {
@@ -72,7 +73,9 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    const res = await client.api.GET('/sandboxes')
+    const res = await client.api.GET('/sandboxes', {
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
 
     const err = handleApiError(res.error)
     if (err) {
@@ -101,6 +104,7 @@ export class SandboxApi {
       body: {
         timeout: this.timeoutToSeconds(timeoutMs),
       },
+      signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
     const err = handleApiError(res.error)
@@ -124,6 +128,7 @@ export class SandboxApi {
         metadata: opts?.metadata,
         timeout: this.timeoutToSeconds(timeoutMs),
       },
+      signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
     const err = handleApiError(res.error)

@@ -32,7 +32,9 @@
     "generate-envd-api": "openapi-typescript ../../spec/envd/envd.yaml -x api_key --support-array-length --alphabetize --output src/envd/schema.gen.ts",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
-    "postPublish": "./scripts/post-publish.sh || true"
+    "postPublish": "./scripts/post-publish.sh || true",
+    "test:bun": "bun test tests/runtimes/bun --env-file=.env",
+    "test:deno": "deno test tests/runtimes/deno/ --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks"
   },
   "devDependencies": {
     "@types/node": "^18.18.6",

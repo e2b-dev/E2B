@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+
 import { Sandbox } from '../../../src'
 
 test('Bun test', async () => {
