@@ -7,6 +7,54 @@ permissions:
   contents: write
 
 jobs:
+  changes:
+    name: Repository changes
+    runs-on: ubuntu-latest
+    outputs:
+      js-sdk: ${{ steps.filter.outputs.js-sdk }}
+      python-sdk: ${{ steps.filter.outputs.python-sdk }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get the last release
+        id: last_release
+        uses: cardinalby/git-get-release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          latest: true
+          prerelease: false
+          draft: false
+
+      - name: Find changes since the last release
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          base: ${{ steps.last_release.outputs.tag_name }}
+          filters: |
+            js-sdk:
+              - 'packages/js-sdk/**'
+            python-sdk:
+              - 'packages/python-sdk/**'
+
+  python-tests:
+    name: Python SDK Tests
+    needs: [changes]
+    if: needs.changes.outputs.python-sdk == 'true'
+    uses: ./.github/workflows/python_sdk_tests.yml
+    secrets: inherit
+
+  js-tests:
+    name: JS SDK Tests
+    needs: [changes]
+    if: needs.changes.outputs.js-sdk == 'true'
+    uses: ./.github/workflows/js_sdk_tests.yml
+    secrets: inherit
+
+
   release:
     name: Release Candidate
     runs-on: ubuntu-latest
