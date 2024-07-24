@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package filesystem;
+
+service Filesystem {
+    rpc Stat(StatRequest) returns (StatResponse);
+    rpc MakeDir(MakeDirRequest) returns (MakeDirResponse);
+    rpc Move(MoveRequest) returns (MoveResponse);
+    rpc ListDir(ListDirRequest) returns (ListDirResponse);
+    rpc WatchDir(WatchDirRequest) returns (stream WatchDirResponse);
+    rpc Remove(RemoveRequest) returns (RemoveResponse);
+}
+
+message MoveRequest {
+    string source = 1;
+    string destination = 2;
+}
+
+message MoveResponse {}
+
+message MakeDirRequest {
+    string path = 1;
+}
+
+message MakeDirResponse {}
+
+message RemoveRequest {
+    string path = 1;
+}
+
+message RemoveResponse {}
+
+message StatRequest {
+    string path = 1;
+}
+
+message StatResponse {
+    EntryInfo entry = 1;
+}
+
+message EntryInfo {
+    string name = 1;
+    FileType type = 2;
+}
+
+enum FileType {
+    FILE_TYPE_UNSPECIFIED = 0;
+    FILE_TYPE_FILE = 1;
+    FILE_TYPE_DIRECTORY = 2;
+}
+
+message ListDirRequest {
+    string path = 1;
+}
+
+message ListDirResponse {
+    repeated EntryInfo entries = 1;
+}
+
+message WatchDirRequest {
+    string path = 1;
+}
+
+message WatchDirResponse {
+    oneof event {
+        StartEvent start = 1;
+        FilesystemEvent filesystem = 2;
+        KeepAlive keepalive = 3;
+    }
+
+    message StartEvent {}
+
+    message FilesystemEvent {
+        string name = 1;
+        EventType type = 2;
+    }
+
+    message KeepAlive {}
+}
+
+enum EventType {
+    EVENT_TYPE_UNSPECIFIED = 0;
+    EVENT_TYPE_CREATE = 1;
+    EVENT_TYPE_WRITE = 2;
+    EVENT_TYPE_REMOVE = 3;
+    EVENT_TYPE_RENAME = 4;
+    EVENT_TYPE_CHMOD = 5;
+}

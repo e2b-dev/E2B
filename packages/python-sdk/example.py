@@ -1,11 +1,23 @@
+import asyncio
+import time
 import logging
+from e2b import AsyncSandbox, Sandbox
 
-from dotenv import load_dotenv
-from e2b import Sandbox
+import dotenv
 
-load_dotenv()
+dotenv.load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.ERROR)
 
-with Sandbox() as sandbox:
-    print(sandbox.id)
+
+async def main():
+    sbx = await AsyncSandbox.create(timeout=10)
+    await sbx.commands.run("sleep 10", timeout=1000)
+    # for _ in range(10):
+    #     start = time.time()
+    #     end = time.time()
+    #     print(f"Time taken: {end - start}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

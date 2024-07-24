@@ -1,53 +1,39 @@
-"""
-Secure sandboxed cloud environments made for AI agents and AI apps
-
-Check usage docs - https://e2b.dev/docs/sandbox/overview
-
-E2B Sandbox is a secure sandboxed cloud environment made for AI agents and AI
-apps. Sandboxes allow AI agents and apps to have long running cloud secure
-environments. In these environments, large language models can use the same
-tools as humans do.
-
-
-```py
-from e2b import Sandbox
-
-# Create sandbox
-sandbox = Sandbox()
-
-# Let an LLM use the sandbox here
-
-# Close sandbox once done
-sandbox.close()
-```
-"""
-
 from .api import (
-    E2BApiClient,
+    ApiClient,
     client,
 )
-from .constants import DOMAIN
-from .sandbox import (
-    Sandbox,
-    FilesystemOperation,
-    FilesystemWatcher,
-    FileInfo,
-    FilesystemEvent,
-    FilesystemManager,
-    TerminalManager,
-    Terminal,
-    ProcessManager,
-    Process,
-    OpenPort,
-    EnvVars,
-    SandboxException,
-    TerminalException,
-    ProcessException,
-    CurrentWorkingDirectoryDoesntExistException,
-    FilesystemException,
-    RpcException,
-    ProcessMessage,
-    ProcessOutput,
-    TerminalOutput,
-    RunningSandbox,
+from .connection_config import (
+    ConnectionConfig,
 )
+from .exceptions import (
+    SandboxException,
+    TimeoutException,
+    NotFoundException,
+    AuthenticationException,
+    InvalidArgumentException,
+    NotEnoughSpaceException,
+    TemplateException,
+)
+from .sandbox.sandbox_api import SandboxInfo
+from .sandbox.process.process_handle import (
+    ProcessResult,
+    Stderr,
+    Stdout,
+    ProcessExitException,
+)
+from .sandbox.process.main import ProcessInfo
+from .sandbox.filesystem.watch_handle import (
+    FilesystemEvent,
+    FilesystemEventType,
+)
+from .sandbox.filesystem.filesystem import EntryInfo, FileType
+
+from .sandbox_sync.main import Sandbox
+from .sandbox_sync.filesystem.watch_handle import WatchHandle
+from .sandbox_sync.process.process_handle import ProcessHandle
+
+from .sandbox_async.utilts import OutputHandler
+from .sandbox_async.main import AsyncSandbox
+from .sandbox_async.main import AsyncSandbox
+from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
+from .sandbox_async.process.process_handle import AsyncProcessHandle
