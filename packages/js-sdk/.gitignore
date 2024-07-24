@@ -39,3 +39,4 @@ build/Release
 
 /test.md
 logs.txt
+deno.lock
