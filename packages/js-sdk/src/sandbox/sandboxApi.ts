@@ -27,7 +27,7 @@ export interface SandboxInfo {
   /**
    * Saved sandbox metadata.
    */
-  metadata?: Record<string, string>
+  metadata: Record<string, string>
 
   /**
    * Sandbox start time.
@@ -86,7 +86,7 @@ export class SandboxApi {
       sandboxId: this.getSandboxId({ sandboxId: sandbox.sandboxID, clientId: sandbox.clientID }),
       templateId: sandbox.templateID,
       ...(sandbox.alias && { name: sandbox.alias }),
-      ...(sandbox.metadata && { metadata: sandbox.metadata }),
+      metadata: sandbox.metadata ?? {},
       startedAt: new Date(sandbox.startedAt),
     })) ?? []
   }

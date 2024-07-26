@@ -15,7 +15,7 @@ class SandboxInfo:
     """Template ID."""
     name: Optional[str]
     """Sandbox name."""
-    metadata: Optional[Dict[str, str]]
+    metadata: Dict[str, str]
     """Saved sandbox metadata."""
     started_at: datetime
     """Sandbox start time."""

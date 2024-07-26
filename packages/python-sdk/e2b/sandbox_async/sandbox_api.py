@@ -51,7 +51,7 @@ class SandboxApi(SandboxApiBase):
                     template_id=sandbox.template_id,
                     name=sandbox.alias if isinstance(sandbox.alias, str) else None,
                     metadata=(
-                        sandbox.metadata if isinstance(sandbox.metadata, dict) else None
+                        sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
                     ),
                     started_at=sandbox.started_at,
                 )
