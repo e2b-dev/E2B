@@ -97,9 +97,11 @@ export const BillingContent = ({ currentApiKey, team }: { currentApiKey: string 
         </div>
         <ul className='flex flex-col list-disc list-inside text-neutral-400'>
           <li>One-time $100 credits</li>
-          <li>Community support</li>
-          <li>Up to 1 hour sandbox session length</li>
-          <li>Up to 20 concurrently running sandboxes</li>
+          <li>Dedicated Slack channel with live Pro support from our team</li>
+          <li>Prioritized features</li>
+          <li>Customize your <Link className="text-[#ff8800] underline" href="/docs/sandbox/compute">sandbox compute</Link></li>
+          <li>Up to 24 hours sandbox session length</li>
+          <li>Up to 100 concurrently running sandboxes</li>
         </ul>
       </div>
 
