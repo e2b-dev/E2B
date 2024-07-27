@@ -277,13 +277,12 @@ export const buildCommand = new commander.Command('build')
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${
-          e2b.SANDBOX_DOMAIN
-        }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
-          dockerBuildArgs,
-        )
-          .map(([key, value]) => `--build-arg="${key}=${value}"`)
-          .join(' ')}`
+        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${e2b.SANDBOX_DOMAIN
+          }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
+            dockerBuildArgs,
+          )
+            .map(([key, value]) => `--build-arg="${key}=${value}"`)
+            .join(' ')}`
         child_process.execSync(cmd, {
           stdio: 'inherit',
           cwd: root,
@@ -384,9 +383,8 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox
 
 # Start sandbox
-sandbox = Sandbox(template="${
-          aliases?.length ? aliases[0] : template.data.templateID
-        }")
+sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.templateID
+          }")
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview
@@ -552,24 +550,21 @@ async function requestBuildTemplate(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${
-          error.message ?? 'no message'
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
         }`,
       )
     }
 
     if (error.code === 404) {
       throw new Error(
-        `Sandbox template you want to build ${
-          templateID ? `(${templateID})` : ''
-        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${
-          hasConfig
-            ? `This could be caused by ${asLocalRelative(
-                configPath,
-              )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
-                configPath,
-              )} and start building the template again.`
-            : ''
+        `Sandbox template you want to build ${templateID ? `(${templateID})` : ''
+        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${hasConfig
+          ? `This could be caused by ${asLocalRelative(
+            configPath,
+          )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
+            configPath,
+          )} and start building the template again.`
+          : ''
         }`,
       )
     }
@@ -603,8 +598,7 @@ async function triggerBuild(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${
-          error.message ?? 'no message'
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
         }`,
       )
     }

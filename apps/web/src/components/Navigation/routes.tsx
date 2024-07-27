@@ -25,6 +25,7 @@ import {
   Variable,
   Wrench,
   BookOpen,
+  List,
 } from 'lucide-react'
 
 import Image from 'next/image'
@@ -88,6 +89,11 @@ export const routes = [
         icon: <BookOpen strokeWidth={1} size={20} />,
         title: 'Guides and examples in cookbook',
         href: 'https://github.com/e2b-dev/e2b-cookbook',
+      },
+      {
+        icon: <List strokeWidth={1} size={20} />,
+        title: 'SDK Beta Migration',
+        href: '/docs/guide/beta-migration',
       },
       // {
       //   icon: <Hammer strokeWidth={1} size={20} />,

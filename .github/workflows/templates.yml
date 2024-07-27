@@ -36,6 +36,6 @@ jobs:
         run: |
           docker buildx build \
             --file e2b.Dockerfile \
-            --platform linux/amd64,linux/arm64 \
+            --platform linux/amd64 \
             --push \
             --tag ${{ secrets.DOCKERHUB_USERNAME }}/base:latest .
