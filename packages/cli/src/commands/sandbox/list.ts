@@ -50,7 +50,7 @@ export const listCommand = new commander.Command('list')
 
 export async function listSandboxes({
   apiKey,
-}: { apiKey: string }): Promise<e2b.components['schemas']['RunningSandboxes'][]> {
+}: { apiKey: string }): Promise<e2b.components['schemas']['RunningSandbox'][]> {
   const response = await listRunningSandboxes(apiKey, {})
   return response.data
 }

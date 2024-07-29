@@ -4,8 +4,27 @@ import * as highlight from 'cli-highlight'
 import * as boxen from 'boxen'
 
 import { cwdRelative } from './filesystem'
+import { UserConfig } from '../user'
 
 export const primaryColor = '#FFB766'
+
+export function asFormattedConfig(
+  config: UserConfig,
+) {
+  const email = asBold(config.email)
+  const team = config.teamName ? asBold(config.teamName) : asRed('Log out and log in to get team name')
+  const teamId = asBold(config.teamId || config.defaultTeamId!)
+  return `You are logged in as ${email},\nSelected team: ${team} (${teamId})`
+}
+
+export function asFormattedTeam(
+  team: e2b.components['schemas']['Team'],
+) {
+  const name = asBold(team.name)
+  const id = asBold(team.teamID)
+  const isDefault = team.isDefault ? asPrimary(' (default team)') : ''
+  return `${name} (${id})${isDefault}`
+}
 
 export function asFormattedSandboxTemplate(
   template: Pick<e2b.components['schemas']['Template'], 'templateID' | 'aliases'>,
@@ -21,6 +40,11 @@ export function asFormattedSandboxTemplate(
   const id = `${template.templateID} `
 
   return `${id}${name}${configPath}`.trim()
+}
+
+
+export function asRed(text: string) {
+  return chalk.default.redBright(text)
 }
 
 export function asFormattedError(text: string | undefined, err?: any) {

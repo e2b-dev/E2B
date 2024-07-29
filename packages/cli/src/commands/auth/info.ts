@@ -1,7 +1,7 @@
 import * as commander from 'commander'
 
 import { getUserConfig } from 'src/user'
-import { asBold, asFormattedError } from 'src/utils/format'
+import { asFormattedConfig, asFormattedError} from 'src/utils/format'
 
 export const infoCommand = new commander.Command('info')
   .description('get information about the current user')
@@ -18,6 +18,6 @@ export const infoCommand = new commander.Command('info')
       return
     }
 
-    console.log(`Logged in as ${asBold(userConfig.email)}`)
+    console.log(asFormattedConfig(userConfig))
     process.exit(0)
   })

@@ -163,6 +163,11 @@ export interface paths {
   "/templates": {
     /** List all templates */
     get: {
+      parameters: {
+        query: {
+          teamID?: string;
+        };
+      };
       responses: {
         /** Successfully returned all templates */
         200: {
@@ -172,11 +177,6 @@ export interface paths {
         };
         401: components["responses"]["401"];
         500: components["responses"]["500"];
-      };
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["TemplatesListRequest"];
-        };
       };
     };
     /** Create a new template */
@@ -383,10 +383,6 @@ export interface components {
       startCmd?: string;
       cpuCount?: components["schemas"]["CPUCount"];
       memoryMB?: components["schemas"]["MemoryMB"];
-    };
-    TemplatesListRequest: {
-      /** @description Identifier of the team */
-      teamID: string;
     };
     TemplateBuild: {
       /**

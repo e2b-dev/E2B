@@ -82,8 +82,8 @@ components:
           type: string
           description: API key for the team
         isDefault:
-            type: boolean
-            description: Whether the team is the default team
+          type: boolean
+          description: Whether the team is the default team
 
     CPUCount:
       type: integer
@@ -246,14 +246,6 @@ components:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
-
-    TemplatesListRequest:
-      required:
-        - teamID
-      properties:
-        teamID:
-          type: string
-          description: Identifier of the team
 
     TemplateBuild:
       required:
@@ -497,13 +489,13 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TemplatesListRequest"
-
+      parameters:
+        - in: query
+          required: false
+          name: teamID
+          schema:
+            type: string
+            description: Identifier of the team
       responses:
         "200":
           description: Successfully returned all templates

@@ -3,7 +3,7 @@ import * as chalk from 'chalk'
 import * as e2b from 'e2b'
 import * as fs from 'fs'
 
-import { ensureAccessToken } from 'src/api'
+import { ensureAccessToken, ensureUserConfig } from 'src/api'
 
 import {
   asBold,
@@ -12,7 +12,7 @@ import {
   asLocal,
   asLocalRelative,
 } from 'src/utils/format'
-import { configOption, pathOption, selectMultipleOption } from 'src/options'
+import { configOption, pathOption, selectMultipleOption, teamOption } from 'src/options'
 import {
   E2BConfig,
   configName,
@@ -43,6 +43,7 @@ export const deleteCommand = new commander.Command('delete')
   .addOption(pathOption)
   .addOption(configOption)
   .addOption(selectMultipleOption)
+  .addOption(teamOption)
   .alias('dl')
   .option('-y, --yes', 'skip manual delete confirmation')
   .action(
@@ -53,11 +54,12 @@ export const deleteCommand = new commander.Command('delete')
         config?: string
         yes?: boolean
         select?: boolean
+        teamID?: string
       },
     ) => {
       try {
+        const userConfig = ensureUserConfig()
         const accessToken = ensureAccessToken()
-
         const root = getRoot(opts.path)
 
         const templates: (Pick<E2BConfig, 'template_id'> & {
@@ -69,7 +71,10 @@ export const deleteCommand = new commander.Command('delete')
             template_id: template,
           })
         } else if (opts.select) {
-          const allTemplates = await listSandboxTemplates({ accessToken })
+          const allTemplates = await listSandboxTemplates({
+            accessToken: accessToken,
+            teamID: opts.teamID || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
+          })
           const selectedTemplates = await getPromptTemplates(
             allTemplates,
             'Select sandbox templates to delete',
