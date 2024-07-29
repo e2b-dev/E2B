@@ -14,6 +14,21 @@ export interface paths {
       };
     };
   };
+  "/teams": {
+    /** List all teams */
+    get: {
+      responses: {
+        /** Successfully returned all teams */
+        200: {
+          content: {
+            "application/json": components["schemas"]["Team"][];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
   "/sandboxes": {
     /** List all running sandboxes */
     get: {
@@ -21,7 +36,7 @@ export interface paths {
         /** Successfully returned all running sandboxes */
         200: {
           content: {
-            "application/json": components["schemas"]["RunningSandboxes"][];
+            "application/json": components["schemas"]["RunningSandbox"][];
           };
         };
         400: components["responses"]["400"];
@@ -57,7 +72,7 @@ export interface paths {
           sandboxID: components["parameters"]["sandboxID"];
         };
         query: {
-          /** Starting timestamp of the logs that should be returned */
+          /** Starting timestamp of the logs that should be returned in milliseconds */
           start?: number;
           /** Maximum number of logs that should be returned */
           limit?: number;
@@ -90,6 +105,34 @@ export interface paths {
         401: components["responses"]["401"];
         404: components["responses"]["404"];
         500: components["responses"]["500"];
+      };
+    };
+  };
+  "/sandboxes/{sandboxID}/timeout": {
+    /** Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration. */
+    post: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      responses: {
+        /** Successfully set the sandbox timeout */
+        204: never;
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /**
+             * Format: int32
+             * @description Timeout in seconds from the current time after which the sandbox should expire
+             */
+            timeout: number;
+          };
+        };
       };
     };
   };
@@ -129,6 +172,11 @@ export interface paths {
         };
         401: components["responses"]["401"];
         500: components["responses"]["500"];
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["TemplatesListRequest"];
+        };
       };
     };
     /** Create a new template */
@@ -206,32 +254,6 @@ export interface paths {
       };
     };
   };
-  "/templates/{templateID}/builds/{buildID}/logs": {
-    /** Add a build log */
-    post: {
-      parameters: {
-        path: {
-          templateID: components["parameters"]["templateID"];
-          buildID: components["parameters"]["buildID"];
-        };
-      };
-      responses: {
-        /** Successfully added log */
-        201: unknown;
-        401: components["responses"]["401"];
-        404: components["responses"]["404"];
-      };
-      requestBody: {
-        content: {
-          "application/json": {
-            /** @description API secret */
-            apiSecret: string;
-            logs: string[];
-          };
-        };
-      };
-    };
-  };
   "/templates/{templateID}/builds/{buildID}/status": {
     /** Get template build info */
     get: {
@@ -262,6 +284,26 @@ export interface paths {
 
 export interface components {
   schemas: {
+    Team: {
+      /** @description Identifier of the team */
+      teamID: string;
+      /** @description Name of the team */
+      name: string;
+      /** @description API key for the team */
+      apiKey: string;
+      /** @description Whether the team is the default team */
+      isDefault: boolean;
+    };
+    /**
+     * Format: int32
+     * @description CPU cores for the sandbox
+     */
+    CPUCount: number;
+    /**
+     * Format: int32
+     * @description Memory for the sandbox in MB
+     */
+    MemoryMB: number;
     SandboxMetadata: { [key: string]: string };
     /** @description Log entry with timestamp and line */
     SandboxLog: {
@@ -286,8 +328,10 @@ export interface components {
       alias?: string;
       /** @description Identifier of the client */
       clientID: string;
+      /** @description Version of the envd running in the sandbox */
+      envdVersion: string;
     };
-    RunningSandboxes: {
+    RunningSandbox: {
       /** @description Identifier of the template from which is the sandbox created */
       templateID: string;
       /** @description Alias of the template */
@@ -301,15 +345,19 @@ export interface components {
        * @description Time when the sandbox was started
        */
       startedAt: string;
-      /** @description CPU cores for the sandbox */
-      cpuCount: number;
-      /** @description Memory limit for the sandbox in MB */
-      memoryMB: number;
+      cpuCount: components["schemas"]["CPUCount"];
+      memoryMB: components["schemas"]["MemoryMB"];
       metadata?: components["schemas"]["SandboxMetadata"];
     };
     NewSandbox: {
       /** @description Identifier of the required template */
       templateID: string;
+      /**
+       * Format: int32
+       * @description Time to live for the sandbox in seconds.
+       * @default 15
+       */
+      timeout?: number;
       metadata?: components["schemas"]["SandboxMetadata"];
     };
     Template: {
@@ -317,28 +365,28 @@ export interface components {
       templateID: string;
       /** @description Identifier of the last successful build for given template */
       buildID: string;
-      /** @description CPU cores for the sandbox */
-      cpuCount: number;
-      /** @description Memory limit for the sandbox in MB */
-      memoryMB: number;
+      cpuCount: components["schemas"]["CPUCount"];
+      memoryMB: components["schemas"]["MemoryMB"];
       /** @description Whether the template is public or only accessible by the team */
       public: boolean;
       /** @description Aliases of the template */
       aliases?: string[];
-    } & {
-      storageGB: unknown;
     };
     TemplateBuildRequest: {
       /** @description Alias of the template */
       alias?: string;
       /** @description Dockerfile for the template */
       dockerfile: string;
+      /** @description Identifier of the team */
+      teamID?: string;
       /** @description Start command to execute in the template after the build */
       startCmd?: string;
-      /** @description CPU cores for the template */
-      cpuCount?: number;
-      /** @description Memory limit for the template in MB */
-      memoryMB?: number;
+      cpuCount?: components["schemas"]["CPUCount"];
+      memoryMB?: components["schemas"]["MemoryMB"];
+    };
+    TemplatesListRequest: {
+      /** @description Identifier of the team */
+      teamID: string;
     };
     TemplateBuild: {
       /**
@@ -354,9 +402,7 @@ export interface components {
        * @description Status of the template
        * @enum {string}
        */
-      status?: "building" | "ready" | "error";
-    } & {
-      finished: unknown;
+      status: "building" | "ready" | "error";
     };
     Error: {
       /**

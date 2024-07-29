@@ -518,7 +518,7 @@ export class Sandbox extends SandboxConnection {
     const sandboxIDAndClientID = id.split('-')
     const sandboxID = sandboxIDAndClientID[0]
     const clientID = sandboxIDAndClientID[1]
-    opts.__sandbox = { sandboxID, clientID, templateID: 'unknown' }
+    opts.__sandbox = { sandboxID, clientID, templateID: 'unknown', envdVersion: 'unknown' }
 
     const sandbox = new this(opts, true) as InstanceType<S>
     await sandbox._open({ timeout: opts?.timeout })
