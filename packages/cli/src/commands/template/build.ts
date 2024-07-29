@@ -88,6 +88,10 @@ export const buildCommand = new commander.Command('build')
     '-c, --cmd <start-command>',
     'specify command that will be executed when the sandbox is started.',
   )
+  .option(
+    '-t, --team <team-id>',
+    'specify the team ID that the sandbox template will be associated with. You can find it in the team settings in the E2B dashboard.',
+  )
   .addOption(configOption)
   .option(
     '--cpu-count <cpu-count>',
@@ -112,6 +116,7 @@ export const buildCommand = new commander.Command('build')
         dockerfile?: string
         name?: string
         cmd?: string
+        team?: string
         config?: string
         cpuCount?: number
         memoryMb?: number
@@ -152,6 +157,7 @@ export const buildCommand = new commander.Command('build')
         let startCmd = opts.cmd
         let cpuCount = opts.cpuCount
         let memoryMB = opts.memoryMb
+        let teamID = opts.team
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
@@ -179,6 +185,7 @@ export const buildCommand = new commander.Command('build')
           startCmd = opts.cmd || config.start_cmd
           cpuCount = opts.cpuCount || config.cpu_count
           memoryMB = opts.memoryMb || config.memory_mb
+          teamID = opts.team || config.team_id
         }
 
         if (config && templateID && config.template_id !== templateID) {
@@ -219,6 +226,7 @@ export const buildCommand = new commander.Command('build')
           cpuCount: cpuCount,
           memoryMB: memoryMB,
           dockerfile: dockerfileContent,
+          teamID: teamID,
         }
 
         if (opts.memoryMb) {
@@ -256,6 +264,7 @@ export const buildCommand = new commander.Command('build')
             start_cmd: startCmd,
             cpu_count: cpuCount,
             memory_mb: memoryMB,
+            team_id: teamID,
           },
           true,
         )
