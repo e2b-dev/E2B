@@ -131,7 +131,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
   return (
     <div className='flex flex-col justify-center pb-10'>
       <h2 className="text-xl font-bold pb-4">Team name</h2>
-      <div className='flex items-center space-x-2 pb-10'>
+      <div className='flex items-center space-x-2 pb-6'>
         <input
           type="text"
           className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
@@ -144,6 +144,9 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
         />
         <Button variant='outline' onClick={() => changeTeamName()}>Save changes</Button>
       </div>
+
+      <h2 className="text-xl font-bold pb-4">Team ID</h2>
+      <p className='text-sm pb-10'>{team.id}</p>
 
       <h2 className="text-xl font-bold pb-4">Add new members</h2>
       <div className='flex items-center space-x-2 pb-4'>
