@@ -32,11 +32,6 @@ type UserContextType = {
     teams: Team[];
     accessToken: string;
     defaultTeamId: string;
-    pricingTier: {
-      id: string,
-      isPromo: boolean,
-      endsAt: string
-    }
   })
   | null;
   error: Error | null;
@@ -128,7 +123,6 @@ export const CustomUserContextProvider = (props) => {
         return
       }
 
-      const pricingTier = defaultTeam.tier
       const defaultTeamId = defaultTeam?.id // TODO: Adjust when user can be part of multiple teams
 
       const { data: accessToken, error: accessTokenError } = await supabase
@@ -145,9 +139,6 @@ export const CustomUserContextProvider = (props) => {
         accessToken: accessToken?.access_token,
         defaultTeamId,
         error: teamsError,
-        pricingTier: {
-          id: pricingTier,
-        },
       })
       setIsLoading(false)
     }
