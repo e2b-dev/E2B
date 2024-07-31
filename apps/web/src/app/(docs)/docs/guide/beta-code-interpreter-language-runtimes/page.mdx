@@ -25,18 +25,23 @@ Each of the supported language runtimes has its own kernel.
 
 **Python**
 ```python
-with CodeInterpreter() as sandbox:
-    # 1. Set JS kernel - available kernel names: 'r', 'javascript', 'java', 'bash'
-    js_id = sandbox.notebook.create_kernel(kernel_name="javascript")
-    # 2. Run JS code inside code interpreter!
-    execution = sandbox.notebook.exec_cell("console.log('Hello World!')", kernel_id=js_id)
-    print(execution)
-    # 3. Use Python again
-    sandbox.notebook.exec_cell("print('Hello World!')")
+from e2b_code_interpreter import CodeInterpreter
+
+sandbox = CodeInterpreter()
+
+# 1. Set JS kernel - available kernel names: 'r', 'javascript', 'java', 'bash'
+js_id = sandbox.notebook.create_kernel(kernel_name="javascript")
+# 2. Run JS code inside code interpreter!
+execution = sandbox.notebook.exec_cell("console.log('Hello World!')", kernel_id=js_id)
+print(execution)
+# 3. Use Python again
+sandbox.notebook.exec_cell("print('Hello World!')")
 ```
 
 **JavaScript / TypeScript**
 ```js
+import { CodeInterpreter } from '@e2b/code-interpreter'
+
 const sandbox = await CodeInterpreter.create()
 
 // 1. Set JS kernel - available kernel names: 'r', 'javascript', 'java', 'bash'
@@ -46,6 +51,4 @@ const execution = await sandbox.notebook.execCell("console.log('Hello World!')",
 console.log(execution)
 // 3. Use Python again
 await sandbox.notebook.execCell('print("Hello World!")')
-
-await sandbox.close()
 ```
