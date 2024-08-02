@@ -113,7 +113,7 @@ export const buildCommand = new commander.Command('build')
         dockerfile?: string
         name?: string
         cmd?: string
-        teamID?: string
+        team?: string
         config?: string
         cpuCount?: number
         memoryMb?: number
@@ -154,7 +154,7 @@ export const buildCommand = new commander.Command('build')
         let startCmd = opts.cmd
         let cpuCount = opts.cpuCount
         let memoryMB = opts.memoryMb
-        let teamID = opts.teamID
+        let teamID = opts.team
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
@@ -182,7 +182,7 @@ export const buildCommand = new commander.Command('build')
           startCmd = opts.cmd || config.start_cmd
           cpuCount = opts.cpuCount || config.cpu_count
           memoryMB = opts.memoryMb || config.memory_mb
-          teamID = opts.teamID || config.team_id
+          teamID = opts.team || config.team_id
         }
 
         if (config && templateID && config.template_id !== templateID) {

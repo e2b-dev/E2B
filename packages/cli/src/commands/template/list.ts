@@ -17,7 +17,7 @@ export const listCommand = new commander.Command('list')
   .addOption(teamOption)
   .action(async (
     opts: {
-      teamID: string
+      team: string
     },
   ) => {
     try {
@@ -27,7 +27,7 @@ export const listCommand = new commander.Command('list')
 
       const templates = await listSandboxTemplates({
         accessToken: accessToken,
-        teamID: opts.teamID || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
+        teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
       })
 
       for (const template of templates) {

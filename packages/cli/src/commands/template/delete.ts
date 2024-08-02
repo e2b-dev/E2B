@@ -54,7 +54,7 @@ export const deleteCommand = new commander.Command('delete')
         config?: string
         yes?: boolean
         select?: boolean
-        teamID?: string
+        team?: string
       },
     ) => {
       try {
@@ -73,7 +73,7 @@ export const deleteCommand = new commander.Command('delete')
         } else if (opts.select) {
           const allTemplates = await listSandboxTemplates({
             accessToken: accessToken,
-            teamID: opts.teamID || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
+            teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
           })
           const selectedTemplates = await getPromptTemplates(
             allTemplates,
