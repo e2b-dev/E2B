@@ -9,6 +9,9 @@ import { PostHogAnalytics } from '@/utils/usePostHog'
 import Canonical from '@/components/Navigation/canonical'
 import { Suspense } from 'react'
 import { Header } from '@/components/Header'
+import glob from 'fast-glob'
+import { Section } from '@/components/SectionProvider'
+import { Layout } from '@/components/Layout'
 
 export const metadata: Metadata = {
   // TODO: Add metadataBase
@@ -28,7 +31,27 @@ export const metadata: Metadata = {
   },
 }
 
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'chatlio-widget': any;
+    }
+  }
+}
+
+
 export default async function RootLayout({ children }) {
+  const pages = await glob('**/*.mdx', { cwd: 'src/app/(docs)/docs' })
+  const allSectionsEntries = (await Promise.all(
+    pages.map(async filename => [
+      '/docs/' + filename.replace(/\(docs\)\/?|(^|\/)page\.mdx$/, ''),
+      (await import(`./(docs)/docs/${filename}`)).sections,
+    ]),
+  )) as Array<[string, Array<Section>]>
+  const allSections = Object.fromEntries(allSectionsEntries)
+
+
   return (
     <html
       lang="en"
@@ -40,10 +63,10 @@ export default async function RootLayout({ children }) {
       </head>
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
-          <div className="w-full">
+          <Layout allSections={allSections}>
             <Header />
             {children}
-          </div>
+          </Layout>
           <Suspense>
             <PostHogAnalytics />
           </Suspense>
