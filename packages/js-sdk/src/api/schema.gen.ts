@@ -345,6 +345,11 @@ export interface components {
        * @description Time when the sandbox was started
        */
       startedAt: string;
+      /**
+       * Format: date-time
+       * @description Time when the sandbox will expire
+       */
+      endAt: string;
       cpuCount: components["schemas"]["CPUCount"];
       memoryMB: components["schemas"]["MemoryMB"];
       metadata?: components["schemas"]["SandboxMetadata"];

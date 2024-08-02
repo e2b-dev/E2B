@@ -159,6 +159,7 @@ components:
         - startedAt
         - cpuCount
         - memoryMB
+        - endAt
       properties:
         templateID:
           type: string
@@ -176,6 +177,10 @@ components:
           type: string
           format: date-time
           description: Time when the sandbox was started
+        endAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox will expire
         cpuCount:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
