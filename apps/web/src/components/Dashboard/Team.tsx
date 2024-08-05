@@ -55,6 +55,10 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
     }
   }, [currentApiKey, user, userAdded])
 
+  useEffect(() => {
+    setTeamName(team.name)
+  }, [team])
+
   const closeDialog = () => setIsDialogOpen(false)
   const openDialog = (id: string) => {
     setCurrentMemberId(id)
