@@ -2,10 +2,10 @@ import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import * as e2b from 'e2b'
 
-import { ensureAccessToken } from 'src/api'
 import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
-import { client } from 'src/api'
+import { client, ensureAccessToken, ensureUserConfig } from 'src/api'
+import { teamOption } from '../../options'
 
 const listTemplates = e2b.withAccessToken(
   client.api.path('/templates').method('get').create(),
@@ -14,12 +14,21 @@ const listTemplates = e2b.withAccessToken(
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
-  .action(async () => {
+  .addOption(teamOption)
+  .action(async (
+    opts: {
+      team: string
+    },
+  ) => {
     try {
+      const userConfig = ensureUserConfig()
       const accessToken = ensureAccessToken()
       process.stdout.write('\n')
 
-      const templates = await listSandboxTemplates({ accessToken })
+      const templates = await listSandboxTemplates({
+        accessToken: accessToken,
+        teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
+      })
 
       for (const template of templates) {
         sortTemplatesAliases(template.aliases)
@@ -53,8 +62,8 @@ export const listCommand = new commander.Command('list')
   })
 
 export async function listSandboxTemplates({
-  accessToken,
-}: { accessToken: string }): Promise<e2b.components['schemas']['Template'][]> {
-  const templates = await listTemplates(accessToken, {})
+  accessToken, teamID
+}: { accessToken: string, teamID: string }): Promise<e2b.components['schemas']['Template'][]> {
+  const templates = await listTemplates(accessToken, {teamID})
   return templates.data
 }

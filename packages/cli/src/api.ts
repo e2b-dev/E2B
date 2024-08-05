@@ -26,7 +26,7 @@ export function ensureAPIKey() {
   // If apiKey is not already set (either from env var or from user config), try to get it from config file
   if (!apiKey) {
     const userConfig = getUserConfig()
-    apiKey = userConfig?.defaultTeamApiKey
+    apiKey = userConfig?.teamApiKey || userConfig?.defaultTeamApiKey
   }
 
   if (!apiKey) {
@@ -35,6 +35,15 @@ export function ensureAPIKey() {
   } else {
     return apiKey
   }
+}
+
+export function ensureUserConfig() {
+    const userConfig = getUserConfig()
+    if (!userConfig) {
+        console.error('No user config found, run `e2b auth login` to log in first.')
+        process.exit(1)
+    }
+    return userConfig
 }
 
 export function ensureAccessToken() {

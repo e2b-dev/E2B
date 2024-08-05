@@ -85,7 +85,6 @@ export function Layout({
           ">
               {children}
             </main>
-            <Footer />
           </div>
         )}
       </div>

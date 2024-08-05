@@ -5,8 +5,11 @@ import * as fs from 'fs'
 export interface UserConfig {
   email: string
   accessToken: string
-  defaultTeamApiKey: string
-  defaultTeamId: string
+  defaultTeamApiKey?: string
+  defaultTeamId?: string
+  teamName: string
+  teamId: string
+  teamApiKey: string
 }
 
 export const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') // TODO: Keep in Keychain

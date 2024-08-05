@@ -19,7 +19,7 @@ import {
   asTypescript,
   withDelimiter,
 } from 'src/utils/format'
-import { configOption, pathOption } from 'src/options'
+import { configOption, pathOption, teamOption } from 'src/options'
 import {
   defaultDockerfileName,
   fallbackDockerfileName,
@@ -88,6 +88,7 @@ export const buildCommand = new commander.Command('build')
     '-c, --cmd <start-command>',
     'specify command that will be executed when the sandbox is started.',
   )
+  .addOption(teamOption)
   .addOption(configOption)
   .option(
     '--cpu-count <cpu-count>',
@@ -112,6 +113,7 @@ export const buildCommand = new commander.Command('build')
         dockerfile?: string
         name?: string
         cmd?: string
+        team?: string
         config?: string
         cpuCount?: number
         memoryMb?: number
@@ -152,6 +154,7 @@ export const buildCommand = new commander.Command('build')
         let startCmd = opts.cmd
         let cpuCount = opts.cpuCount
         let memoryMB = opts.memoryMb
+        let teamID = opts.team
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
@@ -179,6 +182,7 @@ export const buildCommand = new commander.Command('build')
           startCmd = opts.cmd || config.start_cmd
           cpuCount = opts.cpuCount || config.cpu_count
           memoryMB = opts.memoryMb || config.memory_mb
+          teamID = opts.team || config.team_id
         }
 
         if (config && templateID && config.template_id !== templateID) {
@@ -219,6 +223,7 @@ export const buildCommand = new commander.Command('build')
           cpuCount: cpuCount,
           memoryMB: memoryMB,
           dockerfile: dockerfileContent,
+          teamID: teamID,
         }
 
         if (opts.memoryMb) {
@@ -256,6 +261,7 @@ export const buildCommand = new commander.Command('build')
             start_cmd: startCmd,
             cpu_count: cpuCount,
             memory_mb: memoryMB,
+            team_id: teamID,
           },
           true,
         )
@@ -270,7 +276,7 @@ export const buildCommand = new commander.Command('build')
           )
         } catch (err: any) {
           console.error(
-            'Docker login failed. Please try to login with `e2b auth login` and try again.',
+            'Docker login failed. Please try to log in with `e2b auth login` and try again.',
           )
           process.exit(1)
         }
