@@ -131,7 +131,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
   return (
     <div className='flex flex-col justify-center pb-10'>
       <h2 className="text-xl font-bold pb-4">Team name</h2>
-      <div className='flex items-center space-x-2 pb-6'>
+      <div className='flex items-center space-x-2 pb-4'>
         <input
           type="text"
           className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
@@ -145,8 +145,18 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
         <Button variant='outline' onClick={() => changeTeamName()}>Save changes</Button>
       </div>
 
-      <h2 className="text-xl font-bold pb-4">Team ID</h2>
-      <p className='text-sm pb-10'>{team.id}</p>
+      <span
+        className='flex pb-10 w-fit text-sm text-orange-500 hover:cursor-pointer hover:text-orange-500/30 space-x-2 items-center'
+        onClick={() => {
+          navigator.clipboard.writeText(team.id)
+          toast({
+            title: 'Team ID copied to clipboard',
+          })
+        }}
+      >
+        <p>Copy your team ID</p>
+        <Copy className='h-4 w-4'/>
+      </span>
 
       <h2 className="text-xl font-bold pb-4">Add new members</h2>
       <div className='flex items-center space-x-2 pb-4'>
@@ -173,48 +183,48 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
         }}
       >
         <p>Copy your user ID</p>
-        <Copy className='h-4 w-4' />
+        <Copy className='h-4 w-4'/>
       </span>
 
       <h2 className="text-xl font-bold pb-4">Team members</h2>
       {isLoading ? (<div className="flex items-center w-full pl-4 p-2">
         <Spinner size="24px"/>
       </div>) : (
-          <Table>
-            <TableHeader>
-              <TableRow className='hover:bg-inherit dark:hover:bg-inherit border-b border-white/5'>
-                <TableHead>Email</TableHead>
-                <TableHead></TableHead>
+        <Table>
+          <TableHeader>
+            <TableRow className='hover:bg-inherit dark:hover:bg-inherit border-b border-white/5'>
+              <TableHead>Email</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {members.length === 0 ? (
+              <TableRow className='border-b border-white/5'>
+                <TableCell colSpan={2} className='text-center'>
+                  No members found
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.length === 0 ? (
-                  <TableRow className='border-b border-white/5'>
-                    <TableCell colSpan={2} className='text-center'>
-                      No members found
-                    </TableCell>
-                  </TableRow>
-              ) : (
-                  members.map((user) => (
-                      <TableRow
-                          className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
-                          key={user.id}>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Button className='text-sm' variant='desctructive' onClick={() => openDialog(user.id)}>
-                            Remove team member
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                  ))
-              )}
-            </TableBody>
-          </Table>)}
+            ) : (
+              members.map((user) => (
+                <TableRow
+                  className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
+                  key={user.id}>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Button className='text-sm' variant='desctructive' onClick={() => openDialog(user.id)}>
+                      Remove team member
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>)}
 
 
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogTrigger asChild>
-        <Button variant="outline" style={{ display: 'none' }}>Show Dialog</Button>
+          <Button variant="outline" style={{display: 'none'}}>Show Dialog</Button>
         </AlertDialogTrigger>
         <AlertDialogContent className="bg-inherit text-white border-black">
           <AlertDialogHeader>
@@ -226,7 +236,8 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className='border-white/10' onClick={closeDialog}>Cancel</AlertDialogCancel>
-            <AlertDialogAction className='bg-red-500 text-white hover:bg-red-600' onClick={() => deleteUserFromTeam()}>Continue</AlertDialogAction>
+            <AlertDialogAction className='bg-red-500 text-white hover:bg-red-600'
+                               onClick={() => deleteUserFromTeam()}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
