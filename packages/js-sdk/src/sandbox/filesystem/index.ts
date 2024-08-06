@@ -126,11 +126,7 @@ export class Filesystem {
       throw new Error('Expected to receive information about written file')
     }
 
-    return {
-      name: files[0].name,
-      type: FileType.FILE,
-      path: files[0].path,
-    }
+    return files[0] as EntryInfo
   }
 
   async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
