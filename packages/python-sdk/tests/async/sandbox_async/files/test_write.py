@@ -1,5 +1,3 @@
-import pytest
-
 from e2b import AsyncSandbox
 
 
@@ -7,7 +5,9 @@ async def test_write_file(async_sandbox: AsyncSandbox):
     filename = "test_write.txt"
     content = "This is a test file."
 
-    await async_sandbox.files.write(filename, content)
+    info = await async_sandbox.files.write(filename, content)
+    assert info.path == f"/home/user/{filename}"
+
     exists = await async_sandbox.files.exists(filename)
     assert exists
 

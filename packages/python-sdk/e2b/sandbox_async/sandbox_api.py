@@ -74,6 +74,9 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
+        if config.debug:
+            return True
+
         async with AsyncApiClient(config) as api_client:
             res = await delete_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,

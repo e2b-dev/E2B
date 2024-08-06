@@ -39,8 +39,10 @@ class MoveRequest(_message.Message):
     def __init__(self, source: _Optional[str] = ..., destination: _Optional[str] = ...) -> None: ...
 
 class MoveResponse(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
+    __slots__ = ("entry",)
+    ENTRY_FIELD_NUMBER: _ClassVar[int]
+    entry: EntryInfo
+    def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
 
 class MakeDirRequest(_message.Message):
     __slots__ = ("path",)
@@ -49,8 +51,10 @@ class MakeDirRequest(_message.Message):
     def __init__(self, path: _Optional[str] = ...) -> None: ...
 
 class MakeDirResponse(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
+    __slots__ = ("entry",)
+    ENTRY_FIELD_NUMBER: _ClassVar[int]
+    entry: EntryInfo
+    def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
 
 class RemoveRequest(_message.Message):
     __slots__ = ("path",)
@@ -75,12 +79,14 @@ class StatResponse(_message.Message):
     def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
 
 class EntryInfo(_message.Message):
-    __slots__ = ("name", "type")
+    __slots__ = ("name", "type", "path")
     NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
+    PATH_FIELD_NUMBER: _ClassVar[int]
     name: str
     type: FileType
-    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[FileType, str]] = ...) -> None: ...
+    path: str
+    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[FileType, str]] = ..., path: _Optional[str] = ...) -> None: ...
 
 class ListDirRequest(_message.Message):
     __slots__ = ("path",)

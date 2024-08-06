@@ -1,5 +1,3 @@
-import pytest
-
 from e2b import AsyncSandbox
 
 
@@ -9,6 +7,16 @@ async def test_make_directory(async_sandbox: AsyncSandbox):
     await async_sandbox.files.make_dir(dir_name)
     exists = await async_sandbox.files.exists(dir_name)
     assert exists
+
+
+async def test_make_directory_already_exists(async_sandbox: AsyncSandbox):
+    dir_name = "test_directory"
+
+    created = await async_sandbox.files.make_dir(dir_name)
+    assert created
+
+    created = await async_sandbox.files.make_dir(dir_name)
+    assert not created
 
 
 async def test_make_nested_directory(async_sandbox: AsyncSandbox):

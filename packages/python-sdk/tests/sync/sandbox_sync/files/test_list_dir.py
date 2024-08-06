@@ -13,3 +13,4 @@ def test_list_directory(sandbox: Sandbox):
     assert len(files1) == 1
     assert files1[0].name == "test_file"
     assert files1[0].type == FileType.FILE
+    assert files1[0].path == f"/home/user/{dir_name}/test_file"

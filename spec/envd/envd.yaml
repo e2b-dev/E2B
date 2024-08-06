@@ -35,7 +35,7 @@ paths:
         "401":
           $ref: "#/components/responses/InvalidUser"
         "400":
-          $ref: "#/components/responses/DirectoryPathError"
+          $ref: "#/components/responses/InvalidPath"
         "404":
           $ref: "#/components/responses/FileNotFound"
         "500":
@@ -49,10 +49,10 @@ paths:
       requestBody:
         $ref: "#/components/requestBodies/File"
       responses:
-        "204":
+        "200":
           $ref: "#/components/responses/UploadSuccess"
         "400":
-          $ref: "#/components/responses/DirectoryPathError"
+          $ref: "#/components/responses/InvalidPath"
         "401":
           $ref: "#/components/responses/InvalidUser"
         "500":
@@ -93,6 +93,14 @@ components:
   responses:
     UploadSuccess:
       description: The file was uploaded successfully.
+      content:
+        application/json:
+          schema:
+            required:
+            type: array
+            items:
+              $ref: "#/components/schemas/EntryInfo"
+
     DownloadSuccess:
       description: Entire file downloaded successfully.
       content:
@@ -101,8 +109,8 @@ components:
             type: string
             format: binary
             description: The file content
-    DirectoryPathError:
-      description: Directory path error
+    InvalidPath:
+      description: Invalid path
       content:
         application/json:
           schema:
@@ -144,3 +152,20 @@ components:
         code:
           type: integer
           description: Error code
+    EntryInfo:
+      required:
+        - path
+        - name
+        - type
+      properties:
+        path:
+          type: string
+          description: Path to the file
+        name:
+          type: string
+          description: Name of the file
+        type:
+          type: string
+          description: Type of the file
+          enum:
+              - file

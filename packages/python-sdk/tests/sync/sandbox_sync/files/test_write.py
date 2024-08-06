@@ -2,7 +2,9 @@ def test_write_file(sandbox):
     filename = "test_write.txt"
     content = "This is a test file."
 
-    sandbox.files.write(filename, content)
+    info = sandbox.files.write(filename, content)
+    assert info.path == f"/home/user/{filename}"
+
     exists = sandbox.files.exists(filename)
     assert exists
 

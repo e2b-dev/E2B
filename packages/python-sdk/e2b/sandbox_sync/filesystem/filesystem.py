@@ -1,6 +1,7 @@
 import e2b_connect
 import httpx
 import httpcore
+from io import TextIOBase
 
 from typing import (
     Iterator,
@@ -104,7 +105,10 @@ class Filesystem:
         data: Union[str, bytes, IO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> EntryInfo:
+        if isinstance(data, TextIOBase):
+            data = data.read().encode()
+
         r = self._envd_api.post(
             ENVD_API_FILES_ROUTE,
             files={"file": data},
@@ -115,6 +119,14 @@ class Filesystem:
         err = handle_envd_api_exception(r)
         if err:
             raise err
+
+        files = r.json()
+
+        if not isinstance(files, list) or len(files) == 0:
+            raise Exception("Expected to receive information about written file")
+
+        file = files[0]
+        return EntryInfo(**file)
 
     def list(
         self,
@@ -136,7 +148,7 @@ class Filesystem:
                 event_type = map_file_type(entry.type)
 
                 if event_type:
-                    entries.append(EntryInfo(name=entry.name, type=event_type))
+                    entries.append(EntryInfo(name=entry.name, type=event_type, path=entry.path))
 
             return entries
         except Exception as e:
@@ -187,9 +199,9 @@ class Filesystem:
         new_path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> EntryInfo:
         try:
-            self._rpc.move(
+            r = self._rpc.move(
                 filesystem_pb2.MoveRequest(
                     source=old_path,
                     destination=new_path,
@@ -199,6 +211,8 @@ class Filesystem:
                 ),
                 headers=authentication_header(user),
             )
+
+            return r.entry
         except Exception as e:
             raise handle_rpc_exception(e)
 

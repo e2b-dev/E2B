@@ -16,13 +16,17 @@ message MoveRequest {
     string destination = 2;
 }
 
-message MoveResponse {}
+message MoveResponse {
+    EntryInfo entry = 1;
+}
 
 message MakeDirRequest {
     string path = 1;
 }
 
-message MakeDirResponse {}
+message MakeDirResponse {
+    EntryInfo entry = 1;
+}
 
 message RemoveRequest {
     string path = 1;
@@ -41,6 +45,7 @@ message StatResponse {
 message EntryInfo {
     string name = 1;
     FileType type = 2;
+    string path = 3;
 }
 
 enum FileType {

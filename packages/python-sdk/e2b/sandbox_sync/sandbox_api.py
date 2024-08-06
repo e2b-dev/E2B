@@ -77,6 +77,9 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
+        if config.debug:
+            return True
+
         with ApiClient(config, transport=cls._transport) as api_client:
             res = delete_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,

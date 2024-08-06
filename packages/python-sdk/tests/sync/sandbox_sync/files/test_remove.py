@@ -1,9 +1,14 @@
-def test_remove_file(sandbox):
+from e2b import Sandbox
+
+
+def test_remove_file(sandbox: Sandbox):
     filename = "test_remove.txt"
     content = "This file will be removed."
 
     sandbox.files.write(filename, content)
+
     sandbox.files.remove(filename)
+
     exists = sandbox.files.exists(filename)
     assert not exists
 

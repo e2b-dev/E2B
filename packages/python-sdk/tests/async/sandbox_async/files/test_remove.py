@@ -8,7 +8,9 @@ async def test_remove_file(async_sandbox: AsyncSandbox):
     content = "This file will be removed."
 
     await async_sandbox.files.write(filename, content)
+
     await async_sandbox.files.remove(filename)
+
     exists = await async_sandbox.files.exists(filename)
     assert not exists
 

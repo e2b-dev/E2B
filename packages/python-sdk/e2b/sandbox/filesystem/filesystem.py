@@ -20,3 +20,4 @@ def map_file_type(ft: filesystem_pb2.FileType):
 class EntryInfo:
     name: str
     type: FileType
+    path: str

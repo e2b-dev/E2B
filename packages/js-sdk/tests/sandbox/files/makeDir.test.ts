@@ -10,6 +10,17 @@ sandboxTest('make directory', async ({ sandbox }) => {
   assert.isTrue(exists)
 })
 
+sandboxTest('make existing directory', async ({ sandbox }) => {
+  const dirName = 'test_directory'
+
+  await sandbox.files.makeDir(dirName)
+  const exists = await sandbox.files.exists(dirName)
+  assert.isTrue(exists)
+
+  const exists2 = await sandbox.files.makeDir(dirName)
+  assert.isFalse(exists2)
+})
+
 sandboxTest('make nested directory', async ({ sandbox }) => {
   const nestedDirName = 'test_directory/nested_directory'
 
