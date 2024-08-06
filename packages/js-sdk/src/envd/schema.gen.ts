@@ -77,7 +77,7 @@ export interface components {
        * @description Type of the file
        * @enum {string}
        */
-      type: "file" | "directory" | "unspecified";
+      type: "file";
     };
     Error: {
       /** @description Error code */

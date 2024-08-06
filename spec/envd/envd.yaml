@@ -96,6 +96,7 @@ components:
       content:
         application/json:
           schema:
+            required:
             type: array
             items:
               $ref: "#/components/schemas/EntryInfo"
@@ -168,5 +169,3 @@ components:
           description: Type of the file
           enum:
               - file
-              - directory
-              - unspecified
