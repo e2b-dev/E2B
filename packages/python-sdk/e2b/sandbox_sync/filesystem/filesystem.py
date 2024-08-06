@@ -120,9 +120,13 @@ class Filesystem:
         if err:
             raise err
 
-        data = r.json()
+        files = r.json()
 
-        return EntryInfo(**data[0])
+        if not isinstance(files, list) or len(files) == 0:
+            raise Exception("Expected to receive information about written file")
+
+        file = files[0]
+        return EntryInfo(**file)
 
     def list(
         self,
