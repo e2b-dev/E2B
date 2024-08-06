@@ -6,7 +6,11 @@ sandboxTest('write file', async ({ sandbox }) => {
   const filename = 'test_write.txt'
   const content = 'This is a test file.'
 
-  await sandbox.files.write(filename, content)
+  const info = await sandbox.files.write(filename, content)
+  assert.equal(info.name, filename)
+  assert.equal(info.type, 'file')
+  assert.equal(info.path, `/home/user/${filename}`)
+
   const exists = await sandbox.files.exists(filename)
   assert.isTrue(exists)
   const readContent = await sandbox.files.read(filename)

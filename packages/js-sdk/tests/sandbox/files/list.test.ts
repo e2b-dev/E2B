@@ -16,6 +16,7 @@ sandboxTest('list directory', async ({ sandbox }) => {
   assert.equal(files1.length, 1)
   assert.equal(files1[0].name, 'test_file')
   assert.equal(files1[0].type, 'file')
+  assert.equal(files1[0].path, `/home/user/${dirName}/test_file`)
 
   const exists = await sandbox.files.exists(dirName)
   assert.isTrue(exists)

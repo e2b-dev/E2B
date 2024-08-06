@@ -5,7 +5,6 @@ import {
   ConnectError,
   Code,
 } from '@connectrpc/connect'
-
 import {
   ConnectionConfig,
   defaultUsername,
@@ -27,6 +26,7 @@ import { WatchHandle, FilesystemEvent } from './watchHandle'
 export interface EntryInfo {
   name: string
   type: FileType
+  path: string
 }
 
 export const enum FileType {
@@ -95,7 +95,7 @@ export class Filesystem {
     return res.data
   }
 
-  async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream, opts?: FilesystemRequestOpts): Promise<void> {
+  async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
     const blob = await new Response(data).blob()
 
     const res = await this.envdApi.api.POST('/files', {
@@ -120,6 +120,17 @@ export class Filesystem {
     if (err) {
       throw err
     }
+
+    const files = res.data
+    if (!files || files.length === 0) {
+      throw new SandboxError('Write response did not contain required information')
+    }
+
+    return {
+      name: files[0].name,
+      type: FileType.FILE,
+      path: files[0].path,
+    }
   }
 
   async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
@@ -138,6 +149,7 @@ export class Filesystem {
           entries.push({
             name: e.name,
             type,
+            path: e.path,
           })
         }
       }
@@ -167,26 +179,49 @@ export class Filesystem {
     }
   }
 
-  async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<void> {
+  async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
     try {
-      await this.rpc.move({
+      const res = await this.rpc.move({
         source: oldPath,
         destination: newPath,
       }, {
         headers: authenticationHeader(opts?.user),
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
+
+      const entry = res.entry
+      if (!entry) {
+        throw new SandboxError('Move response did not contain required information')
+      }
+
+      return {
+        name: entry.name,
+        type: mapFileType(entry.type)!,
+        path: entry.path,
+      }
     } catch (err) {
       throw handleRpcError(err)
     }
   }
 
-  async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
+  async remove(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
     try {
-      await this.rpc.remove({ path }, {
+      const res = await this.rpc.remove({ path }, {
         headers: authenticationHeader(opts?.user),
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
+
+      const entry = res.entry
+
+      if (!entry) {
+        throw new SandboxError('Remove response did not contain required information')
+      }
+
+      return {
+        path: entry.path,
+        name: entry.name,
+        type: mapFileType(entry.type)!,
+      }
     } catch (err) {
       throw handleRpcError(err)
     }

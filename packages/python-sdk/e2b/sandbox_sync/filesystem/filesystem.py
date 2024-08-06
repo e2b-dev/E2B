@@ -104,7 +104,7 @@ class Filesystem:
         data: Union[str, bytes, IO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> EntryInfo:
         r = self._envd_api.post(
             ENVD_API_FILES_ROUTE,
             files={"file": data},
@@ -115,6 +115,10 @@ class Filesystem:
         err = handle_envd_api_exception(r)
         if err:
             raise err
+
+        data = r.json()
+
+        return EntryInfo(**data[0])
 
     def list(
         self,
@@ -136,7 +140,7 @@ class Filesystem:
                 event_type = map_file_type(entry.type)
 
                 if event_type:
-                    entries.append(EntryInfo(name=entry.name, type=event_type))
+                    entries.append(EntryInfo(name=entry.name, type=event_type, path=entry.path))
 
             return entries
         except Exception as e:
@@ -169,15 +173,17 @@ class Filesystem:
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> EntryInfo:
         try:
-            self._rpc.remove(
+            r = self._rpc.remove(
                 filesystem_pb2.RemoveRequest(path=path),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
                 headers=authentication_header(user),
             )
+
+            return r.entry
         except Exception as e:
             raise handle_rpc_exception(e)
 
@@ -187,9 +193,9 @@ class Filesystem:
         new_path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> EntryInfo:
         try:
-            self._rpc.move(
+            r = self._rpc.move(
                 filesystem_pb2.MoveRequest(
                     source=old_path,
                     destination=new_path,
@@ -199,6 +205,8 @@ class Filesystem:
                 ),
                 headers=authentication_header(user),
             )
+
+            return r.entry
         except Exception as e:
             raise handle_rpc_exception(e)
 

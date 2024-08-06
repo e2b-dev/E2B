@@ -7,7 +7,11 @@ sandboxTest('remove file', async ({ sandbox }) => {
   const content = 'This file will be removed.'
 
   await sandbox.files.write(filename, content)
-  await sandbox.files.remove(filename)
+  const info = await sandbox.files.remove(filename)
+  assert.equal(info.name, filename)
+  assert.equal(info.type, 'file')
+  assert.equal(info.path, `/home/user/${filename}`)
+
   const exists = await sandbox.files.exists(filename)
   assert.isFalse(exists)
 })

@@ -9,7 +9,7 @@ from typing import (
     overload,
     Literal,
     Union,
-    IO,
+    BinaryIO,
 )
 
 from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
@@ -98,10 +98,10 @@ class Filesystem:
     async def write(
         self,
         path: str,
-        data: Union[str, bytes, IO],
+        data: Union[str, bytes, BinaryIO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> EntryInfo:
         r = await self._envd_api.post(
             ENVD_API_FILES_ROUTE,
             files={"file": data},
@@ -112,6 +112,8 @@ class Filesystem:
         err = await ahandle_envd_api_exception(r)
         if err:
             raise err
+
+        return EntryInfo(**r.json()[0])
 
     async def list(
         self,
@@ -133,7 +135,7 @@ class Filesystem:
                 event_type = map_file_type(entry.type)
 
                 if event_type:
-                    entries.append(EntryInfo(name=entry.name, type=event_type))
+                    entries.append(EntryInfo(name=entry.name, type=event_type, path=entry.path))
 
             return entries
         except Exception as e:
@@ -167,15 +169,16 @@ class Filesystem:
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> EntryInfo:
         try:
-            await self._rpc.aremove(
+            r = await self._rpc.aremove(
                 filesystem_pb2.RemoveRequest(path=path),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
                 headers=authentication_header(user),
             )
+            return r.entry
         except Exception as e:
             raise handle_rpc_exception(e)
 
@@ -185,9 +188,9 @@ class Filesystem:
         new_path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> EntryInfo:
         try:
-            await self._rpc.amove(
+            r = await self._rpc.amove(
                 filesystem_pb2.MoveRequest(
                     source=old_path,
                     destination=new_path,
@@ -197,6 +200,7 @@ class Filesystem:
                 ),
                 headers=authentication_header(user),
             )
+            return r.entry
         except Exception as e:
             raise handle_rpc_exception(e)
 

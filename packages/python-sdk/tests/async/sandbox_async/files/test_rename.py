@@ -9,11 +9,14 @@ async def test_rename_file(async_sandbox: AsyncSandbox):
     content = "This file will be renamed."
 
     await async_sandbox.files.write(old_filename, content)
-    await async_sandbox.files.rename(old_filename, new_filename)
+    info = await async_sandbox.files.rename(old_filename, new_filename)
+    assert info.path == f"/home/user/{new_filename}"
+
     exists_old = await async_sandbox.files.exists(old_filename)
     exists_new = await async_sandbox.files.exists(new_filename)
     assert not exists_old
     assert exists_new
+
     read_content = await async_sandbox.files.read(new_filename)
     assert read_content == content
 

@@ -1,4 +1,7 @@
-def test_make_directory(sandbox):
+from e2b import Sandbox
+
+
+def test_make_directory(sandbox: Sandbox):
     dir_name = "test_directory"
 
     sandbox.files.make_dir(dir_name)
@@ -6,7 +9,17 @@ def test_make_directory(sandbox):
     assert exists
 
 
-def test_make_nested_directory(sandbox):
+async def test_make_directory_already_exists(sandbox: Sandbox):
+    dir_name = "test_directory"
+
+    created = sandbox.files.make_dir(dir_name)
+    assert created
+
+    created = sandbox.files.make_dir(dir_name)
+    assert not created
+
+
+def test_make_nested_directory(sandbox: Sandbox):
     nested_dir_name = "test_directory/nested_directory"
 
     sandbox.files.make_dir(nested_dir_name)
