@@ -311,6 +311,7 @@ class Client:
             )
         ) as http_resp:
             if http_resp.status != 200:
+                await http_resp.aread()
                 raise error_for_response(http_resp)
 
             parser = ServerStreamParser(
