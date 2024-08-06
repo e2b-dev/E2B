@@ -1,6 +1,7 @@
 import e2b_connect as connect
 import httpx
 import httpcore
+from io import TextIOBase
 
 from typing import (
     AsyncIterator,
@@ -9,7 +10,7 @@ from typing import (
     overload,
     Literal,
     Union,
-    BinaryIO,
+    IO,
 )
 
 from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
@@ -98,10 +99,13 @@ class Filesystem:
     async def write(
         self,
         path: str,
-        data: Union[str, bytes, BinaryIO],
+        data: Union[str, bytes, IO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
+        if isinstance(data, TextIOBase):
+            data = data.read().encode()
+
         r = await self._envd_api.post(
             ENVD_API_FILES_ROUTE,
             files={"file": data},

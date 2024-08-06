@@ -1,6 +1,7 @@
 import e2b_connect
 import httpx
 import httpcore
+from io import TextIOBase
 
 from typing import (
     Iterator,
@@ -105,6 +106,9 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
+        if isinstance(data, TextIOBase):
+            data = data.read().encode()
+
         r = self._envd_api.post(
             ENVD_API_FILES_ROUTE,
             files={"file": data},
