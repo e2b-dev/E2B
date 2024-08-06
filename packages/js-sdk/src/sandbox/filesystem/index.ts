@@ -204,24 +204,12 @@ export class Filesystem {
     }
   }
 
-  async remove(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
+  async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
     try {
-      const res = await this.rpc.remove({ path }, {
+      await this.rpc.remove({ path }, {
         headers: authenticationHeader(opts?.user),
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
-
-      const entry = res.entry
-
-      if (!entry) {
-        throw new SandboxError('Remove response did not contain required information')
-      }
-
-      return {
-        path: entry.path,
-        name: entry.name,
-        type: mapFileType(entry.type)!,
-      }
     } catch (err) {
       throw handleRpcError(err)
     }

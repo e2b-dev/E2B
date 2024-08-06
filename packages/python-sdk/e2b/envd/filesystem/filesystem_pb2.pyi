@@ -63,10 +63,8 @@ class RemoveRequest(_message.Message):
     def __init__(self, path: _Optional[str] = ...) -> None: ...
 
 class RemoveResponse(_message.Message):
-    __slots__ = ("entry",)
-    ENTRY_FIELD_NUMBER: _ClassVar[int]
-    entry: EntryInfo
-    def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
+    __slots__ = ()
+    def __init__(self) -> None: ...
 
 class StatRequest(_message.Message):
     __slots__ = ("path",)

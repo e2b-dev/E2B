@@ -173,17 +173,15 @@ class Filesystem:
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> EntryInfo:
+    ) -> None:
         try:
-            r = self._rpc.remove(
+            self._rpc.remove(
                 filesystem_pb2.RemoveRequest(path=path),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
                 headers=authentication_header(user),
             )
-
-            return r.entry
         except Exception as e:
             raise handle_rpc_exception(e)
 

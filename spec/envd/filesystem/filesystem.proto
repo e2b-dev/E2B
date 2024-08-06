@@ -32,9 +32,7 @@ message RemoveRequest {
     string path = 1;
 }
 
-message RemoveResponse {
-    EntryInfo entry = 1;
-}
+message RemoveResponse {}
 
 message StatRequest {
     string path = 1;

@@ -271,11 +271,6 @@ export class RemoveRequest extends Message<RemoveRequest> {
  * @generated from message filesystem.RemoveResponse
  */
 export class RemoveResponse extends Message<RemoveResponse> {
-  /**
-   * @generated from field: filesystem.EntryInfo entry = 1;
-   */
-  entry?: EntryInfo;
-
   constructor(data?: PartialMessage<RemoveResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -284,7 +279,6 @@ export class RemoveResponse extends Message<RemoveResponse> {
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "filesystem.RemoveResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "entry", kind: "message", T: EntryInfo },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveResponse {

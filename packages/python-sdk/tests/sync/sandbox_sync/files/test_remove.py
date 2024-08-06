@@ -7,8 +7,7 @@ def test_remove_file(sandbox: Sandbox):
 
     sandbox.files.write(filename, content)
 
-    info = sandbox.files.remove(filename)
-    assert info.path == f"/home/user/{filename}"
+    sandbox.files.remove(filename)
 
     exists = sandbox.files.exists(filename)
     assert not exists
