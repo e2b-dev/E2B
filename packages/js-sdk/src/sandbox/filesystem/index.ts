@@ -123,7 +123,7 @@ export class Filesystem {
 
     const files = res.data
     if (!files || files.length === 0) {
-      throw new SandboxError('Write response did not contain required information')
+      throw new Error('Expected to receive information about written file')
     }
 
     return {
@@ -191,7 +191,7 @@ export class Filesystem {
 
       const entry = res.entry
       if (!entry) {
-        throw new SandboxError('Move response did not contain required information')
+        throw new Error('Expected to receive information about moved object')
       }
 
       return {
