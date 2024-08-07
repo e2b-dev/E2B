@@ -134,7 +134,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
 
   return (
     <div className='flex flex-col justify-center pb-10'>
-      <h2 className="text-xl font-bold pb-4">Team name</h2>
+      <h3 className="text-lg font-medium pb-4">Team name</h3>
       <div className='flex items-center space-x-2 pb-4'>
         <input
           type="text"
@@ -148,6 +148,15 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
         />
         <Button variant='outline' onClick={() => changeTeamName()}>Save changes</Button>
       </div>
+      <h3 className="text-lg font-medium pb-4">Team ID</h3>
+      <div className='flex items-center space-x-2 pb-4'>
+        <input
+          readOnly
+          type="text"
+          className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
+          value={team.id}
+        />
+      </div>
 
       <span
         className='flex pb-10 w-fit text-sm text-orange-500 hover:cursor-pointer hover:text-orange-500/30 space-x-2 items-center'
@@ -159,15 +168,15 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
         }}
       >
         <p>Copy your team ID</p>
-        <Copy className='h-4 w-4'/>
+        <Copy className='h-4 w-4' />
       </span>
 
-      <h2 className="text-xl font-bold pb-4">Add new members</h2>
+      <h2 className="text-xl font-bold pb-4">Add members to your team</h2>
       <div className='flex items-center space-x-2 pb-4'>
         <input
           type="text"
           className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
-          placeholder={"Paste your other user's ID here"}
+          placeholder="Paste ID of the user you want to add here"
           value={userToAdd}
           onChange={(e) => {
             e.preventDefault()
@@ -175,6 +184,16 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
           }}
         />
         <Button variant='outline' onClick={() => addUserToTeam()}>Add user</Button>
+      </div>
+
+      <h3 className="text-lg font-medium pb-4">Your user ID</h3>
+      <div className='flex items-center space-x-2 pb-4'>
+        <input
+          readOnly
+          type="text"
+          className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
+          value={user.id}
+        />
       </div>
 
       <span
@@ -187,12 +206,12 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
         }}
       >
         <p>Copy your user ID</p>
-        <Copy className='h-4 w-4'/>
+        <Copy className='h-4 w-4' />
       </span>
 
       <h2 className="text-xl font-bold pb-4">Team members</h2>
       {isLoading ? (<div className="flex items-center w-full pl-4 p-2">
-        <Spinner size="24px"/>
+        <Spinner size="24px" />
       </div>) : (
         <Table>
           <TableHeader>
@@ -228,7 +247,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
 
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" style={{display: 'none'}}>Show Dialog</Button>
+          <Button variant="outline" style={{ display: 'none' }}>Show Dialog</Button>
         </AlertDialogTrigger>
         <AlertDialogContent className="bg-inherit text-white border-black">
           <AlertDialogHeader>
@@ -241,7 +260,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
           <AlertDialogFooter>
             <AlertDialogCancel className='border-white/10' onClick={closeDialog}>Cancel</AlertDialogCancel>
             <AlertDialogAction className='bg-red-500 text-white hover:bg-red-600'
-                               onClick={() => deleteUserFromTeam()}>Continue</AlertDialogAction>
+              onClick={() => deleteUserFromTeam()}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
