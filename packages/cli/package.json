@@ -55,6 +55,7 @@
     "command-exists": "^1.2.9",
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
+    "dockerode": "^4.0.2",
     "e2b": "^0.16.2",
     "inquirer": "^9.2.12",
     "open": "^9.1.0",
