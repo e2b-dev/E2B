@@ -9,7 +9,7 @@ import * as e2b from 'e2b'
 import { pkg } from 'src'
 import { DOCS_BASE, getUserConfig, USER_CONFIG_PATH, UserConfig } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
-import { client, ensureAccessToken } from 'src/api'
+import { client } from 'src/api'
 
 const getTeams = e2b.withAccessToken(client.api.path('/teams').method('get').create())
 
@@ -35,7 +35,7 @@ export const loginCommand = new commander.Command('login')
         return
       }
 
-      const accessToken = ensureAccessToken()
+      const accessToken = userConfig.accessToken
       const res = await getTeams(accessToken, {})
       if (!res.ok) {
         const error: e2b.paths['/teams']['get']['responses']['500']['content']['application/json'] = res.data as any
