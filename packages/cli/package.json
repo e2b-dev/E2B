@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@types/command-exists": "^1.2.3",
+    "@types/dockerode": "^3.3.31",
     "@types/inquirer": "^9.0.7",
     "@types/node": "^18.18.6",
     "@types/update-notifier": "6.0.5",

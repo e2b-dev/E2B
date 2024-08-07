@@ -290,6 +290,9 @@ importers:
       '@types/command-exists':
         specifier: ^1.2.3
         version: 1.2.3
+      '@types/dockerode':
+        specifier: ^3.3.31
+        version: 3.3.31
       '@types/inquirer':
         specifier: ^9.0.7
         version: 9.0.7
@@ -2185,6 +2188,12 @@ packages:
   '@types/debug@4.1.8':
     resolution: {integrity: sha512-/vPO1EPOs306Cvhwv7KfVfYvOJqA/S/AXjaHQiJboCZzcNDb+TIJFN9/2C9DZ//ijSKWioNyUxD792QmDJ+HKQ==}
 
+  '@types/docker-modem@3.0.6':
+    resolution: {integrity: sha512-yKpAGEuKRSS8wwx0joknWxsmLha78wNMe9R2S3UNsVOkZded8UqOrV8KoeDXoXsjndxwyF3eIhyClGbO1SEhEg==}
+
+  '@types/dockerode@3.3.31':
+    resolution: {integrity: sha512-42R9eoVqJDSvVspV89g7RwRqfNExgievLNWoHkg7NoWIqAmavIbgQBb4oc0qRtHkxE+I3Xxvqv7qVXFABKPBTg==}
+
   '@types/eslint-scope@3.7.5':
     resolution: {integrity: sha512-JNvhIEyxVW6EoMIFIvj93ZOywYFatlpu9deeH6eSx6PE3WHYvHaQtmHmQeNw7aA81bYGBPPQqdtBm6b1SsQMmA==}
 
@@ -2286,6 +2295,9 @@ packages:
 
   '@types/shimmer@1.2.0':
     resolution: {integrity: sha512-UE7oxhQLLd9gub6JKIAhDq06T0F6FnztwMNRvYgjeQSBeMc1ZG/tA47EwfduvkuQS8apbkM/lpLpWsaCeYsXVg==}
+
+  '@types/ssh2@1.15.0':
+    resolution: {integrity: sha512-YcT8jP5F8NzWeevWvcyrrLB3zcneVjzYY9ZDSMAMboI+2zR1qYWFhwsyOFVzT7Jorn67vqxC0FRiw8YyG9P1ww==}
 
   '@types/through@0.0.33':
     resolution: {integrity: sha512-HsJ+z3QuETzP3cswwtzt2vEIiHBk/dCcHGhbmG5X3ecnwFD/lPrMpliGXxSCg03L9AhrdwA4Oz/qfspkDW+xGQ==}
@@ -9224,6 +9236,17 @@ snapshots:
     dependencies:
       '@types/ms': 0.7.31
 
+  '@types/docker-modem@3.0.6':
+    dependencies:
+      '@types/node': 18.18.6
+      '@types/ssh2': 1.15.0
+
+  '@types/dockerode@3.3.31':
+    dependencies:
+      '@types/docker-modem': 3.0.6
+      '@types/node': 18.18.6
+      '@types/ssh2': 1.15.0
+
   '@types/eslint-scope@3.7.5':
     dependencies:
       '@types/eslint': 8.56.2
@@ -9328,6 +9351,10 @@ snapshots:
   '@types/semver@7.5.2': {}
 
   '@types/shimmer@1.2.0': {}
+
+  '@types/ssh2@1.15.0':
+    dependencies:
+      '@types/node': 18.18.6
 
   '@types/through@0.0.33':
     dependencies:
