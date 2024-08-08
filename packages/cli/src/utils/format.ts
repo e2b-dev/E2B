@@ -147,3 +147,19 @@ export function withDelimiter(content: string, title: string, isLast?: boolean) 
     },
   })
 }
+
+export function printDockerApiStream(stream: string) {
+  stream.split('\r\n').slice(0, -1).forEach((lineStr: string) => {
+    const line = JSON.parse(lineStr);
+    if (line) {
+      if (line.stream) {
+        process.stdout.write(asBuildLogs(line.stream))
+      } else if (line.status) {
+        process.stdout.write(asBuildLogs(`${line.status}\n`))
+      } else if (line.error) {
+        console.error(line.error)
+        process.exit(1)
+      }
+    }
+  })
+}
