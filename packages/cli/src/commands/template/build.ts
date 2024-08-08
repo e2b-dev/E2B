@@ -18,6 +18,7 @@ import {
   asPrimary,
   asPython,
   asTypescript,
+  printDockerApiStream,
   withDelimiter,
 } from 'src/utils/format'
 import { configOption, pathOption, teamOption } from 'src/options'
@@ -285,7 +286,7 @@ export const buildCommand = new commander.Command('build')
 
         console.log('Building docker image...')
         const dockerImageTag = `docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`
-        const buildStream = await docker.buildImage({
+        const buildImageStream = await docker.buildImage({
           context: root,
           src: fs.readdirSync(root),
         }, {
@@ -294,23 +295,23 @@ export const buildCommand = new commander.Command('build')
           buildargs: dockerBuildArgs,
           dockerfile: dockerfileRelativePath,
         })
-        await new Promise((resolve, reject) => {
-          docker.modem.followProgress(buildStream, (err: Error | null, res: any) => err ? reject(err) : resolve(res));
-        })
+        for await (const chunk of buildImageStream) {
+          printDockerApiStream(chunk.toString());
+        }
         console.log('Docker image built.\n')
 
         console.log('Pushing docker image...')
-        const img = docker.getImage(dockerImageTag)
-        const pushStream = await img.push({
+        const dockerImage = docker.getImage(dockerImageTag)
+        const pushImageStream = await dockerImage.push({
           authconfig: {
             username: '_e2b_access_token',
             password: accessToken,
             serveraddress: `docker.${e2b.SANDBOX_DOMAIN}`,
           },
         })
-        await new Promise((resolve, reject) => {
-          docker.modem.followProgress(pushStream, (err: Error | null, res: any) => err ? reject(err) : resolve(res));
-        })
+        for await (const chunk of pushImageStream) {
+          printDockerApiStream(chunk.toString());
+        }
         console.log('Docker image pushed.\n')
 
         console.log('Triggering build...')
