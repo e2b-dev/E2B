@@ -294,6 +294,7 @@ export const buildCommand = new commander.Command('build')
           platform: 'linux/amd64',
           buildargs: dockerBuildArgs,
           dockerfile: dockerfileRelativePath,
+          pull: 'true',
         })
         for await (const chunk of buildImageStream) {
           printDockerApiStream(chunk.toString());
