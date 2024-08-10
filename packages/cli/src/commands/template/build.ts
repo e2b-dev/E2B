@@ -127,7 +127,7 @@ export const buildCommand = new commander.Command('build')
           await docker.ping()
         } catch {
           console.error(
-            'Docker is required to build and push the sandbox template. Please install Docker and try again.',
+            'Docker has to be installed and running to build and push the sandbox template.',
           )
           process.exit(1)
         }
