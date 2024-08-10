@@ -296,7 +296,7 @@ export const buildCommand = new commander.Command('build')
           pull: 'true',
         })
         for await (const chunk of buildImageStream) {
-          printDockerApiStream(chunk.toString());
+          printDockerApiStream(chunk.toString())
         }
         console.log('Docker image built.\n')
 
@@ -310,7 +310,7 @@ export const buildCommand = new commander.Command('build')
           },
         })
         for await (const chunk of pushImageStream) {
-          printDockerApiStream(chunk.toString());
+          printDockerApiStream(chunk.toString())
         }
         console.log('Docker image pushed.\n')
 
