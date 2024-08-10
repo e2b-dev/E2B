@@ -53,7 +53,6 @@
     "boxen": "^7.1.1",
     "chalk": "^5.3.0",
     "cli-highlight": "^2.1.11",
-    "command-exists": "^1.2.9",
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
     "dockerode": "^4.0.2",
