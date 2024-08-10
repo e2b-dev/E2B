@@ -150,7 +150,7 @@ export function withDelimiter(content: string, title: string, isLast?: boolean) 
 
 export function printDockerApiStream (stream: string) {
   stream.split('\r\n').slice(0, -1).forEach((lineStr: string) => {
-    let line = JSON.parse(lineStr)
+    const line = JSON.parse(lineStr)
 
     if (line) {
       if (line.stream) {
