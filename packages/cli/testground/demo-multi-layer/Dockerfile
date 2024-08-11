@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
-WORKDIR /app
-
 COPY . .
+
+COPY test.txt /test.txt
 
 CMD [ "npm", "start" ]
