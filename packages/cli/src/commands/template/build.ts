@@ -26,7 +26,6 @@ import {
   fallbackDockerfileName,
 } from 'src/docker/constants'
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
-import * as child_process from 'child_process'
 
 import { client } from 'src/api'
 
