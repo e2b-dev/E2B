@@ -4,10 +4,14 @@ import * as fs from 'fs'
 import * as http from 'http'
 import * as open from 'open'
 import * as path from 'path'
+import * as e2b from 'e2b'
 
 import { pkg } from 'src'
 import { DOCS_BASE, getUserConfig, USER_CONFIG_PATH, UserConfig } from 'src/user'
-import { asBold, asFormattedError } from 'src/utils/format'
+import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
+import { client } from 'src/api'
+
+const getTeams = e2b.withAccessToken(client.api.path('/teams').method('get').create())
 
 export const loginCommand = new commander.Command('login')
   .description('log in to CLI')
@@ -20,22 +24,44 @@ export const loginCommand = new commander.Command('login')
     }
     if (userConfig) {
       console.log(
-        `Already logged in as ${asBold(
-          userConfig.email,
-        )}, if you want to login as a different user, logout first by running 'e2b auth logout'.`,
+        `\nAlready logged in. ${asFormattedConfig(userConfig)}.\n\nIf you want to log in as a different user, log out first by running 'e2b auth logout'.\nTo change the team, run 'e2b auth configure'.\n`,
       )
       return
     } else if (!userConfig) {
-      console.log('Attempting to login...')
+      console.log('Attempting to log in...')
       userConfig = await signInWithBrowser()
       if (!userConfig) {
         console.info('Login aborted')
         return
       }
-      fs.mkdirSync(path.dirname(USER_CONFIG_PATH), { recursive: true })
+
+      const accessToken = userConfig.accessToken
+      const res = await getTeams(accessToken, {})
+      if (!res.ok) {
+        const error: e2b.paths['/teams']['get']['responses']['500']['content']['application/json'] = res.data as any
+
+        throw new Error(
+          `Error getting user teams: ${res.statusText}, ${error.message ?? 'no message'
+          }`,
+        )
+      }
+
+      const defaultTeam = res.data.find((team) => team.isDefault)
+      if (!defaultTeam) {
+        console.error(asFormattedError('No default team found, please contact support'))
+        process.exit(1)
+      }
+
+      userConfig.teamName = defaultTeam.name
+      userConfig.teamId = defaultTeam.teamID
+      userConfig.teamApiKey = defaultTeam.apiKey
+      fs.mkdirSync(path.dirname(USER_CONFIG_PATH), {recursive: true})
       fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
     }
-    console.log(`Logged in as ${asBold(userConfig.email)}`)
+
+
+
+    console.log(`Logged in as ${asBold(userConfig.email)} with default team ${asBold(userConfig.teamName)}`)
     process.exit(0)
   })
 

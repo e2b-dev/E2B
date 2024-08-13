@@ -18,31 +18,34 @@ export function Layout({
   const pathname = usePathname()
   const relativePathname = pathname?.replace(new RegExp('^/docs'), '')
   const isDocs = pathname?.startsWith('/docs')
+  const isDashboard = pathname?.startsWith('/dashboard')
 
   return (
     <SectionProvider sections={relativePathname ? allSections[relativePathname] ?? [] : []}>
-      <div className={clsx('h-full', { 'lg:ml-[var(--sidebar-nav-width)]': isDocs })}>
-        <motion.header
-          layoutScroll
-          className='contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]'
-        >
-          <div
-            id="sidebar"
-            className="
-              scrollbar-thin
-              scrollbar-thumb-scrollbar
-              contents
-              lg:pointer-events-auto
-              lg:block
-              lg:w-[var(--sidebar-nav-width)]
-              lg:overflow-y-auto
-              lg:px-6
-              lg:pb-8
-            "
+      <div className={clsx('h-full w-full', { 'lg:ml-[var(--sidebar-nav-width)]': isDocs })}>
+        {!isDashboard && (
+          <motion.header
+            layoutScroll
+            className='contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]'
           >
-            {isDocs && <Navigation className="hidden lg:my-4 lg:block" />}
-          </div>
-        </motion.header>
+            <div
+              id="sidebar"
+              className="
+                lg:pointer-events-auto
+                scrollbar-thin
+                scrollbar-thumb-scrollbar
+                contents
+                lg:block
+                lg:w-[var(--sidebar-nav-width)]
+                lg:overflow-y-auto
+                lg:px-6
+                lg:pb-8
+              "
+            >
+              {isDocs && <Navigation className="hidden lg:my-4 lg:block" />}
+            </div>
+          </motion.header>
+        )}
         {isDocs && (
           <div
             className="
@@ -78,12 +81,10 @@ export function Layout({
           "
           >
             <main className="
-            flex
-            flex-1
+            flex-auto
           ">
               {children}
             </main>
-            <Footer />
           </div>
         )}
       </div>

@@ -13,7 +13,6 @@ import { useUser } from '@/utils/useUser'
 
 const supabase = createClientComponentClient()
 
-
 export interface Props {
   view: 'sign_in' | 'sign_up' | 'forgotten_password'
 }
@@ -72,7 +71,7 @@ function AuthForm({ view }: Props) {
         {(view === 'sign_up' || view === 'forgotten_password') &&
           <div className="flex items-center justify-start gap-2">
             <span className="text-zinc-400">Already have an account?</span>
-            <Link className="flex items-center justify-center" href="/auth/sign-in">
+            <Link className="flex items-center justify-center" href={`/auth/sign-in?redirect_to=${redirectTo}`}>
               <Button
                 variant="textLink"
               >
@@ -95,7 +94,7 @@ function AuthForm({ view }: Props) {
         {view === 'sign_in' &&
           <div className="flex items-center justify-start gap-2">
             <span className="text-zinc-400">{'Don\'t have an account?'}</span>
-            <Link href="/auth/sign-up">
+            <Link href={`/auth/sign-up?redirect_to=${redirectTo}`}>
               <Button
                 variant="textLink"
               >

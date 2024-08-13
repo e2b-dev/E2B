@@ -10,7 +10,11 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   url.port = ''
 
   if (url.pathname === '' || url.pathname === '/') {
-    url.hostname = 'e2b-landing-page.framer.website'
+    if (process.env.NODE_ENV === 'production') {
+      url.hostname = 'e2b-landing-page.framer.website'
+    } else {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
+    }
   }
 
   if (url.pathname.startsWith('/terms')) {

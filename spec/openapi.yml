@@ -65,6 +65,26 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
+    Team:
+      required:
+        - teamID
+        - name
+        - apiKey
+        - isDefault
+      properties:
+        teamID:
+          type: string
+          description: Identifier of the team
+        name:
+          type: string
+          description: Name of the team
+        apiKey:
+          type: string
+          description: API key for the team
+        isDefault:
+          type: boolean
+          description: Whether the team is the default team
+
     CPUCount:
       type: integer
       format: int32
@@ -139,6 +159,7 @@ components:
         - startedAt
         - cpuCount
         - memoryMB
+        - endAt
       properties:
         templateID:
           type: string
@@ -156,6 +177,10 @@ components:
           type: string
           format: date-time
           description: Time when the sandbox was started
+        endAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox will expire
         cpuCount:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
@@ -216,6 +241,9 @@ components:
         dockerfile:
           description: Dockerfile for the template
           type: string
+        teamID:
+          type: string
+          description: Identifier of the team
         startCmd:
           description: Start command to execute in the template after the build
           type: string
@@ -267,6 +295,7 @@ components:
 tags:
   - name: templates
   - name: sandboxes
+  - name: auth
 
 paths:
   /health:
@@ -277,6 +306,27 @@ paths:
           description: Request was successful
         "401":
           $ref: "#/components/responses/401"
+
+  /teams:
+    get:
+      description: List all teams
+      tags: [auth]
+      security:
+        - AccessTokenAuth: []
+      responses:
+        "200":
+          description: Successfully returned all teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Team"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /sandboxes:
     get:
@@ -418,7 +468,6 @@ paths:
         - ApiKeyAuth: []
       tags: [sandboxes]
       requestBody:
-        required: false
         content:
           application/json:
             schema:
@@ -445,6 +494,13 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+      parameters:
+        - in: query
+          required: false
+          name: teamID
+          schema:
+            type: string
+            description: Identifier of the team
       responses:
         "200":
           description: Successfully returned all templates

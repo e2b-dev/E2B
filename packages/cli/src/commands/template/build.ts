@@ -19,7 +19,7 @@ import {
   asTypescript,
   withDelimiter,
 } from 'src/utils/format'
-import { configOption, pathOption } from 'src/options'
+import { configOption, pathOption, teamOption } from 'src/options'
 import {
   defaultDockerfileName,
   fallbackDockerfileName,
@@ -88,6 +88,7 @@ export const buildCommand = new commander.Command('build')
     '-c, --cmd <start-command>',
     'specify command that will be executed when the sandbox is started.',
   )
+  .addOption(teamOption)
   .addOption(configOption)
   .option(
     '--cpu-count <cpu-count>',
@@ -112,6 +113,7 @@ export const buildCommand = new commander.Command('build')
         dockerfile?: string
         name?: string
         cmd?: string
+        team?: string
         config?: string
         cpuCount?: number
         memoryMb?: number
@@ -152,6 +154,7 @@ export const buildCommand = new commander.Command('build')
         let startCmd = opts.cmd
         let cpuCount = opts.cpuCount
         let memoryMB = opts.memoryMb
+        let teamID = opts.team
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
@@ -179,6 +182,7 @@ export const buildCommand = new commander.Command('build')
           startCmd = opts.cmd || config.start_cmd
           cpuCount = opts.cpuCount || config.cpu_count
           memoryMB = opts.memoryMb || config.memory_mb
+          teamID = opts.team || config.team_id
         }
 
         if (config && templateID && config.template_id !== templateID) {
@@ -219,6 +223,7 @@ export const buildCommand = new commander.Command('build')
           cpuCount: cpuCount,
           memoryMB: memoryMB,
           dockerfile: dockerfileContent,
+          teamID: teamID,
         }
 
         if (opts.memoryMb) {
@@ -256,6 +261,7 @@ export const buildCommand = new commander.Command('build')
             start_cmd: startCmd,
             cpu_count: cpuCount,
             memory_mb: memoryMB,
+            team_id: teamID,
           },
           true,
         )
@@ -270,20 +276,19 @@ export const buildCommand = new commander.Command('build')
           )
         } catch (err: any) {
           console.error(
-            'Docker login failed. Please try to login with `e2b auth login` and try again.',
+            'Docker login failed. Please try to log in with `e2b auth login` and try again.',
           )
           process.exit(1)
         }
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --platform linux/amd64 -t docker.${
-          e2b.SANDBOX_DOMAIN
-        }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
-          dockerBuildArgs,
-        )
-          .map(([key, value]) => `--build-arg="${key}=${value}"`)
-          .join(' ')}`
+        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${e2b.SANDBOX_DOMAIN
+          }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
+            dockerBuildArgs,
+          )
+            .map(([key, value]) => `--build-arg="${key}=${value}"`)
+            .join(' ')}`
         child_process.execSync(cmd, {
           stdio: 'inherit',
           cwd: root,
@@ -384,9 +389,8 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox
 
 # Start sandbox
-sandbox = Sandbox(template="${
-          aliases?.length ? aliases[0] : template.data.templateID
-        }")
+sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.templateID
+          }")
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview
@@ -552,24 +556,21 @@ async function requestBuildTemplate(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${
-          error.message ?? 'no message'
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
         }`,
       )
     }
 
     if (error.code === 404) {
       throw new Error(
-        `Sandbox template you want to build ${
-          templateID ? `(${templateID})` : ''
-        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${
-          hasConfig
-            ? `This could be caused by ${asLocalRelative(
-                configPath,
-              )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
-                configPath,
-              )} and start building the template again.`
-            : ''
+        `Sandbox template you want to build ${templateID ? `(${templateID})` : ''
+        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${hasConfig
+          ? `This could be caused by ${asLocalRelative(
+            configPath,
+          )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
+            configPath,
+          )} and start building the template again.`
+          : ''
         }`,
       )
     }
@@ -603,8 +604,7 @@ async function triggerBuild(
 
     if (error.code === 401) {
       throw new Error(
-        `Authentication error: ${res.statusText}, ${
-          error.message ?? 'no message'
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
         }`,
       )
     }

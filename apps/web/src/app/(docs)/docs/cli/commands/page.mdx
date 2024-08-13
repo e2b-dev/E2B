@@ -28,6 +28,14 @@ Log out of the CLI. It will remove your access token from `~/.e2b` file.
 e2b auth logout
 ```
 
+## `auth configure`
+
+Configure the default team for the CLI. It will be used for all commands that require a team.
+
+```bash
+e2b auth configure
+```
+
 ## `auth info`
 
 Get info about your current user.
@@ -103,6 +111,9 @@ If there is no `e2b.toml` config a new template will be created.
   <Option type="-d, --dockerfile" name="dockerfile">
     Specify the path to Dockerfile. By default E2B tries to find `e2b.Dockerfile` or `Dockerfile` in the root directory.
   </Option>
+  <Option type="-t, --team" name="team">
+    Specify the team that will be used for the sandbox template. You can find team ID in the team settings in the [E2B dashboard](https://e2b.dev/dashboard?tab=team).
+  </Option>
   <Option type="--cpu-count" name="cpu-count">
     Specify the number of CPUs that will be used to run the sandbox. The default value is 2.
   </Option>
@@ -153,6 +164,9 @@ Running `e2b template delete` without specifying a template with the `[template]
   <Option type="-y, --yes">
     Don't ask for confirmation before deleting the sandbox template.
   </Option>
+  <Option type="-t, --team" name="team">
+    Specify the team that will be used for the sandbox template. You can find team ID in the team settings in the [E2B dashboard](https://e2b.dev/dashboard?tab=team).
+  </Option>
 </Options>
 
 
@@ -163,6 +177,15 @@ List your sandbox templates.
 ```bash
 e2b template list
 ```
+
+#### **Options**
+
+<Options>
+  <Option type="-t, --team" name="team">
+    Specify the team that will be used for the sandbox template. You can find team ID in the team settings in the [E2B dashboard](https://e2b.dev/dashboard?tab=team).
+  </Option>
+</Options>
+
 
 ---
 
