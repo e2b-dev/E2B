@@ -32,7 +32,7 @@ class SandboxSetup(ABC):
     @abstractmethod
     def sandbox_id(self) -> str: ...
 
-    def upload_url(self, path: Optional[str] = None) -> str:
+    def _file_url(self, path: Optional[str] = None) -> str:
         url = urllib.parse.urljoin(self.envd_api_url, ENVD_API_FILES_ROUTE)
         query = {"path": path} if path else {}
         query = {**query, "username": "user"}
@@ -44,6 +44,12 @@ class SandboxSetup(ABC):
         url = urllib.parse.urljoin(url, f"?{params}")
 
         return url
+
+    def download_url(self, path: str) -> str:
+        return self._file_url(path)
+
+    def upload_url(self, path: Optional[str] = None) -> str:
+        return self._file_url(path)
 
     def get_host(self, port: int) -> str:
         if self.connection_config.debug:
