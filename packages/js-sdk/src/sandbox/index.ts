@@ -80,16 +80,6 @@ export class Sandbox extends SandboxApi {
     return `${port}-${this.sandboxId}.${this.connectionConfig.domain}`
   }
 
-  uploadUrl(path?: string) {
-    const url = new URL('/files', this.envdApiUrl)
-    url.searchParams.set('username', defaultUsername)
-    if (path) {
-      url.searchParams.set('path', path)
-    }
-
-    return url.toString()
-  }
-
   async isRunning(opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<boolean> {
     const signal = this.connectionConfig.getSignal(opts?.requestTimeoutMs)
 
@@ -115,5 +105,23 @@ export class Sandbox extends SandboxApi {
 
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
+  }
+
+  uploadUrl(path?: string) {
+    return this.fileUrl(path)
+  }
+
+  downloadUrl(path: string) {
+    return this.fileUrl(path)
+  }
+
+  private fileUrl(path?: string) {
+    const url = new URL('/files', this.envdApiUrl)
+    url.searchParams.set('username', defaultUsername)
+    if (path) {
+      url.searchParams.set('path', path)
+    }
+
+    return url.toString()
   }
 }
