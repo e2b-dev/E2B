@@ -14,6 +14,7 @@ class TemplateBuildRequest:
     Attributes:
         dockerfile (str): Dockerfile for the template
         alias (Union[Unset, str]): Alias of the template
+        team_id (Union[Unset, str]): Identifier of the team
         start_cmd (Union[Unset, str]): Start command to execute in the template after the build
         cpu_count (Union[Unset, int]): CPU cores for the sandbox
         memory_mb (Union[Unset, int]): Memory for the sandbox in MB
@@ -21,6 +22,7 @@ class TemplateBuildRequest:
 
     dockerfile: str
     alias: Union[Unset, str] = UNSET
+    team_id: Union[Unset, str] = UNSET
     start_cmd: Union[Unset, str] = UNSET
     cpu_count: Union[Unset, int] = UNSET
     memory_mb: Union[Unset, int] = UNSET
@@ -30,6 +32,8 @@ class TemplateBuildRequest:
         dockerfile = self.dockerfile
 
         alias = self.alias
+
+        team_id = self.team_id
 
         start_cmd = self.start_cmd
 
@@ -46,6 +50,8 @@ class TemplateBuildRequest:
         )
         if alias is not UNSET:
             field_dict["alias"] = alias
+        if team_id is not UNSET:
+            field_dict["teamID"] = team_id
         if start_cmd is not UNSET:
             field_dict["startCmd"] = start_cmd
         if cpu_count is not UNSET:
@@ -62,6 +68,8 @@ class TemplateBuildRequest:
 
         alias = d.pop("alias", UNSET)
 
+        team_id = d.pop("teamID", UNSET)
+
         start_cmd = d.pop("startCmd", UNSET)
 
         cpu_count = d.pop("cpuCount", UNSET)
@@ -71,6 +79,7 @@ class TemplateBuildRequest:
         template_build_request = cls(
             dockerfile=dockerfile,
             alias=alias,
+            team_id=team_id,
             start_cmd=start_cmd,
             cpu_count=cpu_count,
             memory_mb=memory_mb,

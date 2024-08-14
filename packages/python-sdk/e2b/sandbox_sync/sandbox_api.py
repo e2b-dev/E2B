@@ -127,6 +127,7 @@ class SandboxApi(SandboxApiBase):
         template: str,
         timeout: int,
         metadata: Optional[Dict[str, str]] = None,
+        env_vars: Optional[Dict[str, str]] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -145,6 +146,7 @@ class SandboxApi(SandboxApiBase):
                     template_id=template,
                     metadata=metadata or {},
                     timeout=timeout,
+                    env_vars=env_vars or {},
                 ),
                 client=api_client,
             )

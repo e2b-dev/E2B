@@ -7,7 +7,7 @@ update-api-spec:
 generate: generate-api generate-envd
 
 generate-api:
-	cd packages/python-sdk && make generate
+	cd packages/python-sdk && make generate-api
 	cd packages/js-sdk && pnpm generate && pnpm generate-envd-api
 
 generate-envd:

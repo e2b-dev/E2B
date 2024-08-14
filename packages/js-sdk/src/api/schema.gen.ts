@@ -154,9 +154,29 @@ export interface paths {
       };
     };
   };
+  "/teams": {
+    /** @description List all teams */
+    get: {
+      responses: {
+        /** @description Successfully returned all teams */
+        200: {
+          content: {
+            "application/json": components["schemas"]["Team"][];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
   "/templates": {
     /** @description List all templates */
     get: {
+      parameters: {
+        query?: {
+          teamID?: string;
+        };
+      };
       responses: {
         /** @description Successfully returned all templates */
         200: {
@@ -284,6 +304,9 @@ export interface components {
      * @description CPU cores for the sandbox
      */
     CPUCount: number;
+    EnvVars: {
+      [key: string]: string;
+    };
     Error: {
       /**
        * Format: int32
@@ -299,6 +322,7 @@ export interface components {
      */
     MemoryMB: number;
     NewSandbox: {
+      envVars?: components["schemas"]["SandboxMetadata"];
       metadata?: components["schemas"]["SandboxMetadata"];
       /** @description Identifier of the required template */
       templateID: string;
@@ -315,6 +339,11 @@ export interface components {
       /** @description Identifier of the client */
       clientID: string;
       cpuCount: components["schemas"]["CPUCount"];
+      /**
+       * Format: date-time
+       * @description Time when the sandbox will expire
+       */
+      endAt: string;
       memoryMB: components["schemas"]["MemoryMB"];
       metadata?: components["schemas"]["SandboxMetadata"];
       /** @description Identifier of the sandbox */
@@ -356,6 +385,16 @@ export interface components {
     SandboxMetadata: {
       [key: string]: string;
     };
+    Team: {
+      /** @description API key for the team */
+      apiKey: string;
+      /** @description Whether the team is the default team */
+      isDefault: boolean;
+      /** @description Name of the team */
+      name: string;
+      /** @description Identifier of the team */
+      teamID: string;
+    };
     Template: {
       /** @description Aliases of the template */
       aliases?: string[];
@@ -393,6 +432,8 @@ export interface components {
       memoryMB?: components["schemas"]["MemoryMB"];
       /** @description Start command to execute in the template after the build */
       startCmd?: string;
+      /** @description Identifier of the team */
+      teamID?: string;
     };
   };
   responses: {

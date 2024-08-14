@@ -110,6 +110,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         template: Optional[str] = None,
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
+        env_vars: Optional[Dict[str, str]] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -123,9 +124,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         )
 
         sandbox_id = (
-            "debug_sandbox_id"
-            if connection_config.debug
-            else await SandboxApi._create_sandbox(
+             await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
                 api_key=api_key,
                 timeout=timeout or cls.default_sandbox_timeout,
@@ -133,6 +132,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
                 domain=domain,
                 debug=debug,
                 request_timeout=request_timeout,
+                env_vars=env_vars,
             )
         )
 

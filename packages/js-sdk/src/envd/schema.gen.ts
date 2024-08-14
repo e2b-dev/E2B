@@ -51,11 +51,18 @@ export interface paths {
       };
     };
   };
-  "/sync": {
-    /** Ensure the time and metadata is synced with the host */
+  "/init": {
+    /** Set env vars, ensure the time and metadata is synced with the host */
     post: {
+      requestBody?: {
+        content: {
+          "application/json": {
+            envVars?: components["schemas"]["EnvVars"];
+          };
+        };
+      };
       responses: {
-        /** @description The time and metadata is synced with the host */
+        /** @description Env vars set, the time and metadata is synced with the host */
         204: {
           content: never;
         };
@@ -78,6 +85,10 @@ export interface components {
        * @enum {string}
        */
       type: "file";
+    };
+    /** @description Environment variables to set */
+    EnvVars: {
+      [key: string]: string;
     };
     Error: {
       /** @description Error code */
