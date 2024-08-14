@@ -107,7 +107,7 @@ components:
     EnvVars:
       additionalProperties:
         type: string
-        description: Metadata of the sandbox
+        description: Environment variables for the sandbox
 
     SandboxLog:
       description: Log entry with timestamp and line
@@ -209,7 +209,7 @@ components:
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
         envVars:
-          $ref: "#/components/schemas/SandboxMetadata"
+          $ref: "#/components/schemas/EnvVars"
 
     Template:
       required:
