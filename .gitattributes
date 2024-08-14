@@ -1,3 +1,2 @@
-packages/python-sdk/e2b/api/v1/** linguist-generated=true
-packages/python-sdk/e2b/api/v2/** linguist-generated=true
-packages/js-sdk/src/api/schema.gen.ts linguist-generated=true
+packages/python-sdk/e2b/api/client/** linguist-generated=true
+**/*.gen.ts linguist-generated=true

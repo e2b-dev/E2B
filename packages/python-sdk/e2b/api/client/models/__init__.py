@@ -8,6 +8,7 @@ from .running_sandbox import RunningSandbox
 from .sandbox import Sandbox
 from .sandbox_log import SandboxLog
 from .sandbox_logs import SandboxLogs
+from .team import Team
 from .template import Template
 from .template_build import TemplateBuild
 from .template_build_request import TemplateBuildRequest
@@ -22,6 +23,7 @@ __all__ = (
     "Sandbox",
     "SandboxLog",
     "SandboxLogs",
+    "Team",
     "Template",
     "TemplateBuild",
     "TemplateBuildRequest",

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: envd
-  version: 0.1.0
+  version: 0.1.1
   description: API for managing files' content and controlling envd
 
 tags:
@@ -15,12 +15,20 @@ paths:
         "204":
           description: The service is healthy
 
-  /sync:
+  /init:
     post:
-      summary: Ensure the time and metadata is synced with the host
+      summary: Set env vars, ensure the time and metadata is synced with the host
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                envVars:
+                  $ref: "#/components/schemas/EnvVars"
       responses:
         "204":
-          description: The time and metadata is synced with the host
+          description: Env vars set, the time and metadata is synced with the host
 
   /files:
     get:
@@ -96,7 +104,6 @@ components:
       content:
         application/json:
           schema:
-            required:
             type: array
             items:
               $ref: "#/components/schemas/EntryInfo"
@@ -169,3 +176,8 @@ components:
           description: Type of the file
           enum:
               - file
+    EnvVars:
+      type: object
+      description: Environment variables to set
+      additionalProperties:
+          type: string

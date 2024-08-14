@@ -18,6 +18,7 @@ class RunningSandbox:
         sandbox_id (str): Identifier of the sandbox
         client_id (str): Identifier of the client
         started_at (datetime.datetime): Time when the sandbox was started
+        end_at (datetime.datetime): Time when the sandbox will expire
         cpu_count (int): CPU cores for the sandbox
         memory_mb (int): Memory for the sandbox in MB
         alias (Union[Unset, str]): Alias of the template
@@ -28,6 +29,7 @@ class RunningSandbox:
     sandbox_id: str
     client_id: str
     started_at: datetime.datetime
+    end_at: datetime.datetime
     cpu_count: int
     memory_mb: int
     alias: Union[Unset, str] = UNSET
@@ -42,6 +44,8 @@ class RunningSandbox:
         client_id = self.client_id
 
         started_at = self.started_at.isoformat()
+
+        end_at = self.end_at.isoformat()
 
         cpu_count = self.cpu_count
 
@@ -59,6 +63,7 @@ class RunningSandbox:
                 "sandboxID": sandbox_id,
                 "clientID": client_id,
                 "startedAt": started_at,
+                "endAt": end_at,
                 "cpuCount": cpu_count,
                 "memoryMB": memory_mb,
             }
@@ -81,6 +86,8 @@ class RunningSandbox:
 
         started_at = isoparse(d.pop("startedAt"))
 
+        end_at = isoparse(d.pop("endAt"))
+
         cpu_count = d.pop("cpuCount")
 
         memory_mb = d.pop("memoryMB")
@@ -94,6 +101,7 @@ class RunningSandbox:
             sandbox_id=sandbox_id,
             client_id=client_id,
             started_at=started_at,
+            end_at=end_at,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
             alias=alias,

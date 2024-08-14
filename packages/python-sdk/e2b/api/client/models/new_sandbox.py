@@ -15,11 +15,13 @@ class NewSandbox:
         template_id (str): Identifier of the required template
         timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
         metadata (Union[Unset, Any]):
+        env_vars (Union[Unset, Any]):
     """
 
     template_id: str
     timeout: Union[Unset, int] = 15
     metadata: Union[Unset, Any] = UNSET
+    env_vars: Union[Unset, Any] = UNSET
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -28,6 +30,8 @@ class NewSandbox:
         timeout = self.timeout
 
         metadata = self.metadata
+
+        env_vars = self.env_vars
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -40,6 +44,8 @@ class NewSandbox:
             field_dict["timeout"] = timeout
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
+        if env_vars is not UNSET:
+            field_dict["envVars"] = env_vars
 
         return field_dict
 
@@ -52,10 +58,13 @@ class NewSandbox:
 
         metadata = d.pop("metadata", UNSET)
 
+        env_vars = d.pop("envVars", UNSET)
+
         new_sandbox = cls(
             template_id=template_id,
             timeout=timeout,
             metadata=metadata,
+            env_vars=env_vars,
         )
 
         new_sandbox.additional_properties = d
