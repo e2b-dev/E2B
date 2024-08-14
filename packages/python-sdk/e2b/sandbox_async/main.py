@@ -124,7 +124,9 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         )
 
         sandbox_id = (
-             await SandboxApi._create_sandbox(
+            "debug_sandbox_id"
+            if connection_config.debug
+            else await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
                 api_key=api_key,
                 timeout=timeout or cls.default_sandbox_timeout,
