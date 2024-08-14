@@ -110,7 +110,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         template: Optional[str] = None,
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
-        env_vars: Optional[Dict[str, str]] = None,
+        envs: Optional[Dict[str, str]] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -132,7 +132,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
                 domain=domain,
                 debug=debug,
                 request_timeout=request_timeout,
-                env_vars=env_vars,
+                env_vars=envs,
             )
         )
 

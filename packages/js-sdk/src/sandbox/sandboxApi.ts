@@ -118,6 +118,7 @@ export class SandboxApi {
     timeoutMs: number,
     opts?: SandboxApiOpts & {
       metadata?: Record<string, string>,
+      envs?: Record<string, string>,
     }): Promise<string> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -126,6 +127,7 @@ export class SandboxApi {
       body: {
         templateID: template,
         metadata: opts?.metadata,
+        envVars: opts?.envs,
         timeout: this.timeoutToSeconds(timeoutMs),
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
