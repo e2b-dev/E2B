@@ -10,6 +10,7 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 
 export interface SandboxOpts extends ConnectionOpts {
   metadata?: Record<string, string>
+  envs?: Record<string, string>
   timeoutMs?: number
 }
 
@@ -29,7 +30,7 @@ export class Sandbox extends SandboxApi {
   private readonly envdApiUrl: string
   private readonly envdApi: EnvdApiClient
 
-  constructor(opts: Omit<SandboxOpts, 'timeoutMs' | 'metadata'> & { sandboxId: string }) {
+  constructor(opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & { sandboxId: string }) {
     super()
 
     this.sandboxId = opts.sandboxId
@@ -65,7 +66,7 @@ export class Sandbox extends SandboxApi {
     return sbx
   }
 
-  static async connect<S extends typeof Sandbox>(this: S, sandboxId: string, opts?: Omit<SandboxOpts, 'metadata' | 'timeoutMs'>): Promise<InstanceType<S>> {
+  static async connect<S extends typeof Sandbox>(this: S, sandboxId: string, opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>): Promise<InstanceType<S>> {
     const config = new ConnectionConfig(opts)
 
     const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
