@@ -36,7 +36,7 @@ class EnvdApiClient {
   constructor(config: Pick<ConnectionConfig, 'apiUrl' | 'logger'>) {
     this.api = createClient({
       baseUrl: config.apiUrl,
-      keepalive: true,
+      // keepalive: true, // TODO: Return keepalive
     })
 
     if (config.logger) {

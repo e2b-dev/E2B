@@ -41,7 +41,7 @@ class ApiClient {
 
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      keepalive: true,
+      // keepalive: true, // TODO: Return keepalive
       headers: {
         ...defaultHeaders,
         ...config.apiKey && { 'X-API-KEY': config.apiKey },
