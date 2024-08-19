@@ -62,8 +62,8 @@ class ApiClient(AuthenticatedClient):
                 )
             token = config.access_token
 
-        auth_header_name = "X-API-KEY" if config.api_key else "Authorization"
-        prefix = "Bearer" if config.access_token else ""
+        auth_header_name = "X-API-KEY" if require_api_key else "Authorization"
+        prefix = "" if require_api_key else "Bearer"
 
         super().__init__(
             base_url=config.api_url,
