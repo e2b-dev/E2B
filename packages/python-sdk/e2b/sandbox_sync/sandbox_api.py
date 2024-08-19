@@ -17,7 +17,6 @@ from e2b.api import handle_api_exception
 
 
 class SandboxApi(SandboxApiBase):
-    _transport = HTTPTransport(limits=SandboxApiBase._limits)
 
     @classmethod
     def list(
@@ -34,7 +33,7 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
-        with ApiClient(config, transport=cls._transport) as api_client:
+        with ApiClient(config, transport=HTTPTransport(limits=SandboxApiBase._limits)) as api_client:
             res = get_sandboxes.sync_detailed(
                 client=api_client,
             )
@@ -80,7 +79,7 @@ class SandboxApi(SandboxApiBase):
         if config.debug:
             return True
 
-        with ApiClient(config, transport=cls._transport) as api_client:
+        with ApiClient(config, transport=HTTPTransport(limits=SandboxApiBase._limits)) as api_client:
             res = delete_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
                 client=api_client,
@@ -111,7 +110,7 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
-        with ApiClient(config, transport=cls._transport) as api_client:
+        with ApiClient(config, transport=HTTPTransport(limits=SandboxApiBase._limits)) as api_client:
             res = post_sandboxes_sandbox_id_timeout.sync_detailed(
                 sandbox_id,
                 client=api_client,
@@ -140,7 +139,7 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
-        with ApiClient(config, transport=cls._transport) as api_client:
+        with ApiClient(config, transport=HTTPTransport(limits=SandboxApiBase._limits)) as api_client:
             res = post_sandboxes.sync_detailed(
                 body=NewSandbox(
                     template_id=template,
