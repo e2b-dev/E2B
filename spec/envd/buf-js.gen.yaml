@@ -10,13 +10,6 @@ plugins:
     out: ../../packages/js-sdk/src/envd
     opt:
       - target=ts
-  - plugin: python
-    out: ../../packages/python-sdk/e2b/envd
-    opt:
-      - pyi_out=../../packages/python-sdk/e2b/envd
-  - name: connect-python
-    out: ../../packages/python-sdk/e2b/envd
-    path: ../../packages/connect-python/bin/protoc-gen-connect-python
 
 managed:
   enabled: true

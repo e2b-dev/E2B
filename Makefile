@@ -4,12 +4,14 @@ update-api-spec:
 	@echo "Done"
 
 
-generate: generate-api generate-envd
+generate: generate-js generate-python
 
-generate-api:
-	cd packages/python-sdk && make generate-api
-	cd packages/js-sdk && pnpm generate && pnpm generate-envd-api
-
-generate-envd:
+generate-js:
+	cd packages/js-sdk && pnpm generate
 	cd packages/js-sdk && pnpm generate-envd-api
-	cd spec/envd && buf generate && cd ../../packages/python-sdk && ./scripts/fix-python-pb.sh
+	buf generate --template spec/envd/buf-js.gen.yaml
+
+generate-python:
+	cd packages/python-sdk && make generate-api
+	buf generate --template spec/envd/buf-python.gen.yaml
+	cd packages/python-sdk && ./scripts/fix-python-pb.sh
