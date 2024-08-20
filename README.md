@@ -48,6 +48,7 @@ tools as humans do. For example:
 ---
 
 ### Code interpreter SDK
+
 We have built a [dedicated SDK](https://github.com/e2b-dev/code-interpreter) for building custom code interpreters in your AI apps. It's build on top of E2B and our core E2B SDK.
 
 ### Getting started & documentation
@@ -110,3 +111,40 @@ This repository is a monorepo containing:
 1. [JS SDK](/packages/js-sdk)
 1. [CLI](/packages/cli)
 1. [Documentation](/apps/web/)
+
+## Development
+
+### Generating API clients used by SDKs
+
+Install the following dependencies:
+
+- [Buf CLI](https://buf.build/docs/installation)
+- `npm i @connectrpc/protoc-gen-connect-es @bufbuild/protoc-gen-es -g`
+
+#### Generating clients
+
+To generate clients from the [API definitions](./spec/) run the commands from the top level [`Makefile`](./Makefile) after updating the API definitions according to the changes in the definitions from the [infra repo](https://github.com/e2b-dev/infra).
+
+To generate JS & TS clients run:
+
+```bash
+make generate-js
+```
+
+To generate Python clients run:
+
+```bash
+make generate-python
+```
+
+This will generate clients for both SDKs from the following specs:
+
+- E2B OpenAPI spec (used for managing sandboxes)
+  - [Location in infra repo](https://github.com/e2b-dev/infra/blob/main/spec/openapi.yml)
+  - [Location in E2B repo](./spec/openapi.yml)
+- E2B envd [ConnectRPC API](https://connectrpc.com/) spec (used for interacting with the sandbox)
+  - [Location in infra repo](https://github.com/e2b-dev/infra/blob/main/packages/envd/spec)
+  - [Location in E2B repo](./spec/envd)
+- E2B envd REST API (used for specific interactions with the sandbox like file upload/download)
+  - [Location in infra repo](https://github.com/e2b-dev/infra/blob/main/packages/envd/spec/envd.yaml)
+  - [Location in E2B repo](./spec/envd/envd.yaml)
