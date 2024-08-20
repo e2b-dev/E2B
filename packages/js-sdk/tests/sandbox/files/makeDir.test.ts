@@ -3,7 +3,7 @@ import { assert } from 'vitest'
 import { sandboxTest } from '../../setup.js'
 
 sandboxTest('make directory', async ({ sandbox }) => {
-  const dirName = 'test_directory'
+  const dirName = 'test_directory1'
 
   await sandbox.files.makeDir(dirName)
   const exists = await sandbox.files.exists(dirName)
@@ -11,7 +11,7 @@ sandboxTest('make directory', async ({ sandbox }) => {
 })
 
 sandboxTest('make existing directory', async ({ sandbox }) => {
-  const dirName = 'test_directory'
+  const dirName = 'test_directory2'
 
   await sandbox.files.makeDir(dirName)
   const exists = await sandbox.files.exists(dirName)
@@ -22,7 +22,7 @@ sandboxTest('make existing directory', async ({ sandbox }) => {
 })
 
 sandboxTest('make nested directory', async ({ sandbox }) => {
-  const nestedDirName = 'test_directory/nested_directory'
+  const nestedDirName = 'test_directory3/nested_directory'
 
   await sandbox.files.makeDir(nestedDirName)
   const exists = await sandbox.files.exists(nestedDirName)

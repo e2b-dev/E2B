@@ -322,7 +322,7 @@ export interface components {
      */
     MemoryMB: number;
     NewSandbox: {
-      envVars?: components["schemas"]["SandboxMetadata"];
+      envVars?: components["schemas"]["EnvVars"];
       metadata?: components["schemas"]["SandboxMetadata"];
       /** @description Identifier of the required template */
       templateID: string;
