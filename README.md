@@ -116,7 +116,10 @@ This repository is a monorepo containing:
 
 ### Generating API clients used by SDKs
 
-Install the following dependencies:
+E2B SDKs use several API clients generated from OpenAPI and Protobuf specs to manage and interact with sandboxes.
+The specs are originally localized in the [infra repo](https://github.com/e2b-dev/infra/) and copied to this repo (./spec) for generating the clients.
+
+To prepare for generating the clients install the following dependencies:
 
 - [Buf CLI](https://buf.build/docs/installation)
 - `npm i @connectrpc/protoc-gen-connect-es @bufbuild/protoc-gen-es -g`
@@ -148,3 +151,5 @@ This will generate clients for both SDKs from the following specs:
 - E2B envd REST API (used for specific interactions with the sandbox like file upload/download)
   - [Location in infra repo](https://github.com/e2b-dev/infra/blob/main/packages/envd/spec/envd.yaml)
   - [Location in E2B repo](./spec/envd/envd.yaml)
+
+> The API clients are not automatically publicly accessible from the SDK — we are doing some additional work to make the experience of using the APIs better by providing a more user-friendly interface.

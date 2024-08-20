@@ -84,13 +84,11 @@ pnpm install
 
 ### Generating API clients used by SDK
 
-Check out top-level [README](../../README.md#generating-clients).
-
-The API clients are not automatically publicly accessible from the SDK — we are doing some additional work to make the experience of using the APIs better by providing a more user-friendly interface.
+Check out top-level [README](../../README.md#generating-api-clients-used-by-sdks) for more information.
 
 ### Building
 
-For development, you can run the following command to build the SDK on every change:
+For development, you can run the following command to rebuild the SDK on every change:
 
 ```bash
 pnpm dev
