@@ -1,0 +1,27 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`template > should snapshot the --help output 1`] = `
+"Usage: template [options] [command]
+
+Options:
+  -h, --help      display help for command
+
+Commands:
+  template|tpl    manage sandbox templates
+  help [command]  display help for command
+"
+`;
+
+exports[`template > template build > should shapshot help on the build command 1`] = `
+"Usage: build [options] [command]
+
+Options:
+  -h, --help                     display help for command
+
+Commands:
+  build|bd [options] [template]  build sandbox template defined by ./e2b.Dockerfile or ./Dockerfile
+                                 in root directory. By default the root directory is the current working directory. This
+                                 command also creates e2b.toml config.
+  help [command]                 display help for command
+"
+`;

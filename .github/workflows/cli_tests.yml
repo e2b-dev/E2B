@@ -26,8 +26,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
@@ -41,3 +41,8 @@ jobs:
 
       - name: Test build
         run: pnpm build
+
+      - name: Run node tests
+        run: pnpm run test
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

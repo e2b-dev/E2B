@@ -24,6 +24,7 @@
     "build": "tsc --noEmit --skipLibCheck && tsup --minify",
     "dev": "tsup --watch",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
+    "test:unit": "vitest run",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i"
   },
@@ -35,7 +36,9 @@
     "knip": "^2.33.4",
     "npm-check-updates": "^16.14.6",
     "tsup": "^7.2.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6",
+    "dotenv": "^16.4.5"
   },
   "files": [
     "dist",
