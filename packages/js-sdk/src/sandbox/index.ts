@@ -1,17 +1,19 @@
 import { createConnectTransport } from '@connectrpc/connect-web'
 
-import { ConnectionOpts, ConnectionConfig, defaultUsername } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts, defaultUsername } from '../connectionConfig'
+import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
 import { Filesystem } from './filesystem'
+import { FilesystemEvent } from './filesystem/watchHandle'
 import { Process } from './process'
 import { Pty } from './pty'
 import { SandboxApi } from './sandboxApi'
-import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 
 export interface SandboxOpts extends ConnectionOpts {
   metadata?: Record<string, string>
   envs?: Record<string, string>
   timeoutMs?: number
+  onFileCreation?: (event: FilesystemEvent) => void | Promise<void>
 }
 
 export class Sandbox extends SandboxApi {
@@ -45,6 +47,7 @@ export class Sandbox extends SandboxApi {
 
     this.envdApi = new EnvdApiClient({ apiUrl: this.envdApiUrl, logger: opts?.logger })
     this.files = new Filesystem(rpcTransport, this.envdApi, this.connectionConfig)
+
     this.commands = new Process(rpcTransport, this.connectionConfig)
     this.pty = new Pty(rpcTransport, this.connectionConfig)
   }
@@ -63,6 +66,9 @@ export class Sandbox extends SandboxApi {
       : await this.createSandbox(template, sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs, sandboxOpts)
 
     const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
+
+    if (sandboxOpts?.onFileCreation) await sbx.files.watch('/', sandboxOpts.onFileCreation)
+
     return sbx
   }
 
@@ -70,6 +76,9 @@ export class Sandbox extends SandboxApi {
     const config = new ConnectionConfig(opts)
 
     const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
+
+    if (opts?.onFileCreation) await sbx.files.watch('/', opts.onFileCreation)
+
     return sbx
   }
 

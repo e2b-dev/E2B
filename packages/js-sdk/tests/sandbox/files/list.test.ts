@@ -1,9 +1,10 @@
-import { assert } from 'vitest'
+import { assert, onTestFinished } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
 
 sandboxTest('list directory', async ({ sandbox }) => {
   const dirName = 'test_directory4'
+  onTestFinished(() =>  sandbox.files.remove(dirName))
 
   await sandbox.files.makeDir(dirName)
 

@@ -1,7 +1,7 @@
-import { test, assert } from 'vitest'
+import { assert, onTestFinished, test } from 'vitest'
 
-import { Sandbox } from '../../src'
-import { template, isDebug } from '../setup.js'
+import { FilesystemEvent, FilesystemEventType, Sandbox } from '../../src'
+import { isDebug, template } from '../setup.js'
 
 test.skipIf(isDebug)('create', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000 })
@@ -13,7 +13,7 @@ test.skipIf(isDebug)('create', async () => {
   }
 })
 
-test.skipIf(isDebug)('metadata', async () => {
+test.skipIf(isDebug)('create with metadata', async () => {
   const metadata = {
     'test-key': 'test-value',
   }
@@ -28,4 +28,27 @@ test.skipIf(isDebug)('metadata', async () => {
   } finally {
     await sbx.kill()
   }
+})
+
+test.skipIf(isDebug)('create with file creation handler', async () => {
+  const dirPath = '/new-dir'
+
+  let trigger: () => void
+
+  const eventPromise = new Promise<void>((resolve) => {
+    trigger = resolve
+  })
+
+  const onFileCreation = async (e: FilesystemEvent) => {
+    if (e.type === FilesystemEventType.CREATE && e.name === dirPath) {
+      trigger()
+    }
+  }
+  const sbx = await Sandbox.create(template, { timeoutMs: 5_000, onFileCreation })
+  onTestFinished(() =>  sbx.files.remove(dirPath))
+
+  const ok = await sbx.files.makeDir(dirPath)
+  assert.isTrue(ok)
+
+  await eventPromise
 })
