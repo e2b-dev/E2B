@@ -1,4 +1,4 @@
-import { test, expect, describe, vi } from 'vitest'
+import { test, expect, describe, vi, afterEach } from 'vitest'
 import { templateCommand } from '../src/commands/template'
 import { runCommandWithOutput } from './run-command'
 import { buildCommand } from 'src/commands/template/build'
@@ -16,6 +16,19 @@ describe('template', () => {
   })
 
   describe('template build', () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {})
+
+    const processExitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation(() => {})
+
+    afterEach(() => {
+      consoleErrorSpy.mockClear()
+      processExitSpy.mockClear()
+    })
+
     test('should shapshot help on the build command', async () => {
       const output = await runCommandWithOutput(buildCommand, [
         'build',
@@ -28,37 +41,20 @@ describe('template', () => {
     test('should print an error and exit if Docker is not installed', async () => {
       vi.spyOn(commandExists, 'sync').mockReturnValue(false)
 
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {})
+      try {
+        await buildCommand.parseAsync(['build'])
 
-      const processExitSpy = vi
-        .spyOn(process, 'exit')
-        .mockImplementation(() => {})
-
-      await buildCommand.parseAsync(['build'])
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Docker is required to build and push the sandbox template. Please install Docker and try again.'
-      )
-      expect(processExitSpy).toHaveBeenCalledWith(1)
-
-      consoleErrorSpy.mockRestore()
-      processExitSpy.mockRestore()
-
-      vi.spyOn(commandExists, 'sync').mockReturnValue(true)
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'Docker is required to build and push the sandbox template. Please install Docker and try again.'
+        )
+        expect(processExitSpy).toHaveBeenCalledWith(1)
+      } finally {
+        vi.spyOn(commandExists, 'sync').mockReturnValue(true)
+      }
     })
 
     test('should print an error and exit if the name is invalid', async () => {
       const invalidName = '$$%%**'
-
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {})
-
-      const processExitSpy = vi
-        .spyOn(process, 'exit')
-        .mockImplementation(() => {})
 
       await buildCommand.parseAsync(['build', '--name', invalidName], {
         from: 'user',
@@ -71,21 +67,10 @@ describe('template', () => {
       )
 
       expect(processExitSpy).toHaveBeenCalledWith(1)
-
-      consoleErrorSpy.mockRestore()
-      processExitSpy.mockRestore()
     })
 
     test('should throw if access token not found', async () => {
       const oldEnv = process.env.E2B_ACCESS_TOKEN
-
-      const processExitSpy = vi
-        .spyOn(process, 'exit')
-        .mockImplementation(() => {})
-
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {})
 
       try {
         delete process.env.E2B_ACCESS_TOKEN
@@ -103,9 +88,26 @@ describe('template', () => {
         )
       } finally {
         process.env.E2B_ACCESS_TOKEN = oldEnv
-        processExitSpy.mockRestore()
-        consoleErrorSpy.mockRestore()
       }
+    })
+
+    test('should throw if docker file not found', async () => {
+      const name = 'somevalidname'
+      const invalidPath = '/path/to/Dockerfile'
+
+      await buildCommand.parseAsync(
+        ['build', '--name', name, '--dockerfile', invalidPath],
+        {
+          from: 'user',
+        }
+      )
+
+      const errorCalls = consoleErrorSpy.mock.calls
+      const call = errorCalls[0][0]
+      const error = call as Error
+      expect(stripAnsi(error.message)).toMatchInlineSnapshot('"No ./path/to/Dockerfile found in the root directory."')
+
+      expect(processExitSpy).toHaveBeenCalledWith(1)
     })
   })
 })
