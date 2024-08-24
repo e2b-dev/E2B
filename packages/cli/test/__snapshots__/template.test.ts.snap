@@ -19,9 +19,22 @@ Options:
   -h, --help                     display help for command
 
 Commands:
-  build|bd [options] [template]  build sandbox template defined by ./e2b.Dockerfile or ./Dockerfile
-                                 in root directory. By default the root directory is the current working directory. This
-                                 command also creates e2b.toml config.
+  build|bd [options] [template]  build sandbox template defined by ./e2b.Dockerfile or
+                                 ./Dockerfile in root directory. By default the root directory is the
+                                 current working directory. This command also creates e2b.toml config.
   help [command]                 display help for command
+"
+`;
+
+exports[`template > template build > should throw if access token not found 1`] = `
+"
+                       ╭────────────────────────────────────────────────────────────────────╮
+                       │ You must be logged in to use this command. Run e2b auth login.     │
+                       │                                                                    │
+                       │ If you are seeing this message in CI/CD you may need to set the    │
+                       │ E2B_ACCESS_TOKEN environment variable.                             │
+                       │ Visit https://e2b.dev/docs/getting-started/api-key to get the      │
+                       │ access token.                                                      │
+                       ╰────────────────────────────────────────────────────────────────────╯
 "
 `;

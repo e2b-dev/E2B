@@ -75,5 +75,37 @@ describe('template', () => {
       consoleErrorSpy.mockRestore()
       processExitSpy.mockRestore()
     })
+
+    test('should throw if access token not found', async () => {
+      const oldEnv = process.env.E2B_ACCESS_TOKEN
+
+      const processExitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => {})
+
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
+
+      try {
+        delete process.env.E2B_ACCESS_TOKEN
+
+        const { ensureAccessToken } = await import('../src/api')
+        ensureAccessToken()
+
+        const errorCalls = consoleErrorSpy.mock.calls
+        const call = stripAnsi(errorCalls[0][0])
+
+        expect(call).toMatchSnapshot()
+
+        expect(call).toContain(
+          'You must be logged in to use this command. Run e2b auth login.'
+        )
+      } finally {
+        process.env.E2B_ACCESS_TOKEN = oldEnv
+        processExitSpy.mockRestore()
+        consoleErrorSpy.mockRestore()
+      }
+    })
   })
 })
