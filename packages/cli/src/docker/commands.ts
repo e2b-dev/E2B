@@ -1,22 +1,38 @@
 import * as e2b from 'e2b'
 import * as child_process from 'child_process'
+import Docker from 'dockerode'
 
-export function dockerConnect(accessToken: string, root: string) {
-  try {
-    child_process.execSync(
-      `echo "${accessToken}" | docker login docker.${e2b.SANDBOX_DOMAIN} -u _e2b_access_token --password-stdin`,
+const docker = new Docker()
+
+export function dockerConnect(accessToken: string) {
+  return new Promise<void>((resolve) => {
+    docker.checkAuth(
       {
-        stdio: 'inherit',
-        cwd: root,
+        registry: `docker.${e2b.SANDBOX_DOMAIN}`,
+        authconfig: {
+          username: '_e2b_access_token',
+          password: accessToken,
+        },
+      },
+      (err, res) => {
+        if (err) {
+          console.error(
+            'Docker login failed. Please try to log in with `e2b auth login` and try again.'
+          )
+          console.error(err)
+          process.exit(1)
+        } else {
+          if (res.Status === 'Login Succeeded') {
+            console.log('Docker login successful.')
+            resolve()
+          } else {
+            console.error(`Docker login failed. ${res.Status}`)
+            process.exit(1)
+          }
+        }
       }
     )
-  } catch (err: any) {
-    console.error(
-      'Docker login failed. Please try to log in with `e2b auth login` and try again.'
-    )
-    process.exit(1)
-  }
-  process.stdout.write('\n')
+  })
 }
 
 export function dockerBuild(

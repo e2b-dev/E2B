@@ -255,7 +255,7 @@ export const buildCommand = new commander.Command('build')
           true
         )
 
-        dockerConnect(accessToken, root)
+        await dockerConnect(accessToken)
 
         dockerBuild(
           dockerfileRelativePath,

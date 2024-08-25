@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup'
 
 import * as packageJSON from './package.json'
 
-const excludedPackages = ['update-notifier', 'inquirer']
+const excludedPackages = ['update-notifier', 'inquirer', 'ssh2']
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -13,7 +13,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   noExternal: Object.keys(packageJSON.dependencies).filter(
-    f => !excludedPackages.includes(f)
+    (f) => !excludedPackages.includes(f)
   ),
   esbuildOptions: (options) => {
     options.legalComments = 'none'
