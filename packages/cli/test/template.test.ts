@@ -147,11 +147,16 @@ describe('template build', () => {
 
     expect(saveConfigMock).toHaveBeenCalled()
 
-    expect(dockerConnectMock).toHaveBeenCalled()
+    expect(dockerConnectMock).toHaveBeenCalledWith({
+      accessToken: process.env.E2B_ACCESS_TOKEN,
+    })
 
     expect(dockerBuildMock).toHaveBeenCalled()
 
-    expect(pushDockerImageMock).toHaveBeenCalled()
+    expect(pushDockerImageMock).toHaveBeenCalledWith({
+      accessToken: process.env.E2B_ACCESS_TOKEN,
+      tag: 'docker.e2b.dev/e2b/custom-envs/123:undefined',
+    })
 
     expect(triggerBuildMock).toHaveBeenCalled()
   })

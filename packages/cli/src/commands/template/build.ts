@@ -255,17 +255,21 @@ export const buildCommand = new commander.Command('build')
           true
         )
 
-        await dockerConnect(accessToken)
+        await dockerConnect({ accessToken })
 
-        dockerBuild(
+        const dockerImageTag = `docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${template.templateID}:${template.buildID}`
+
+        await dockerBuild({
           dockerfileRelativePath,
-          templateID,
-          template,
+          tag: dockerImageTag,
           dockerBuildArgs,
-          root
-        )
+          root,
+        })
 
-        pushDockerImage(templateID, template, root)
+        await pushDockerImage({
+          tag: dockerImageTag,
+          accessToken,
+        })
 
         console.log('Triggering build...')
         await triggerBuild(accessToken, templateID, template.buildID)

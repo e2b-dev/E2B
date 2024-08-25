@@ -63,6 +63,7 @@
     "e2b": "^0.16.2",
     "inquirer": "^9.2.12",
     "open": "^9.1.0",
+    "pretty-bytes": "^6.1.1",
     "ssh2": "^1.15.0",
     "strip-ansi": "^7.1.0",
     "update-notifier": "5.1.0",
