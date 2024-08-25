@@ -2,6 +2,11 @@ import { test, expect, describe, vi, afterEach } from 'vitest'
 import { buildCommand } from 'src/commands/template/build'
 import commandExists from 'command-exists'
 import stripAnsi from 'strip-ansi'
+import path from 'path'
+import * as buildUtils from '../src/commands/template/utils'
+import * as fs from 'fs'
+import * as config from 'src/config'
+import * as dockerCommands from 'src/docker/commands'
 
 describe('template build', () => {
   const consoleErrorSpy = vi
@@ -85,5 +90,69 @@ describe('template build', () => {
     )
 
     expect(processExitSpy).toHaveBeenCalledWith(1)
+  })
+
+  test('should perform a build', async () => {
+    const name = 'somevalidname'
+    const requestBuildTemplateMock = vi
+      .spyOn(buildUtils, 'requestBuildTemplate')
+      .mockReturnValue({ templateID: '123' })
+    const saveConfigMock = vi.spyOn(config, 'saveConfig').mockReturnValue({})
+    const dockerConnectMock = vi
+      .spyOn(dockerCommands, 'dockerConnect')
+      .mockReturnValue({})
+    const dockerBuildMock = vi
+      .spyOn(dockerCommands, 'dockerBuild')
+      .mockReturnValue({})
+    const pushDockerImageMock = vi
+      .spyOn(dockerCommands, 'pushDockerImage')
+      .mockReturnValue({})
+    const triggerBuildMock = vi
+      .spyOn(buildUtils, 'triggerBuild')
+      .mockReturnValue({})
+
+    const validPath = path.join(
+      '../',
+      'testground',
+      'demo-basic',
+      'Dockerfile'
+    )
+
+    await buildCommand.parseAsync(
+      ['build', '--name', name, '--dockerfile', validPath, '--path', __dirname],
+      {
+        from: 'user',
+      }
+    )
+
+    const dockerfile = await fs.readFileSync(
+      path.join(__dirname, validPath),
+      'utf-8'
+    )
+
+    expect(requestBuildTemplateMock).toHaveBeenCalledWith(
+      process.env.E2B_ACCESS_TOKEN,
+      {
+        alias: name,
+        cpuCount: undefined,
+        dockerfile,
+        memoryMB: undefined,
+        startCmd: undefined,
+        teamID: undefined,
+      },
+      false,
+      'e2b.toml',
+      'build'
+    )
+
+    expect(saveConfigMock).toHaveBeenCalled()
+
+    expect(dockerConnectMock).toHaveBeenCalled()
+
+    expect(dockerBuildMock).toHaveBeenCalled()
+
+    expect(pushDockerImageMock).toHaveBeenCalled()
+
+    expect(triggerBuildMock).toHaveBeenCalled()
   })
 })
