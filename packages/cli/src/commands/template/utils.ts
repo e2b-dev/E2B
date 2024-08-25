@@ -75,44 +75,43 @@ export async function requestBuildTemplate(
 }
 
 const triggerTemplateBuild = e2b.withAccessToken(
-    client.api
-      .path('/templates/{templateID}/builds/{buildID}')
-      .method('post')
-      .create()
-  )
+  client.api
+    .path('/templates/{templateID}/builds/{buildID}')
+    .method('post')
+    .create()
+)
 
 export async function triggerBuild(
-    accessToken: string,
-    templateID: string,
-    buildID: string
-  ) {
-    const res = await triggerTemplateBuild(accessToken, { templateID, buildID })
-  
-    if (!res.ok) {
-      const error:
-        | e2b.paths['/templates/{templateID}/builds/{buildID}']['post']['responses']['401']['content']['application/json']
-        | e2b.paths['/templates/{templateID}/builds/{buildID}']['post']['responses']['500']['content']['application/json'] =
-        res.data as any
-  
-      if (error.code === 401) {
-        throw new Error(
-          `Authentication error: ${res.statusText}, ${
-            error.message ?? 'no message'
-          }`
-        )
-      }
-  
-      if (error.code === 500) {
-        throw new Error(
-          `Server error: ${res.statusText}, ${error.message ?? 'no message'}`
-        )
-      }
-  
+  accessToken: string,
+  templateID: string,
+  buildID: string
+) {
+  const res = await triggerTemplateBuild(accessToken, { templateID, buildID })
+
+  if (!res.ok) {
+    const error:
+      | e2b.paths['/templates/{templateID}/builds/{buildID}']['post']['responses']['401']['content']['application/json']
+      | e2b.paths['/templates/{templateID}/builds/{buildID}']['post']['responses']['500']['content']['application/json'] =
+      res.data as any
+
+    if (error.code === 401) {
       throw new Error(
-        `API request failed: ${res.statusText}, ${error.message ?? 'no message'}`
+        `Authentication error: ${res.statusText}, ${
+          error.message ?? 'no message'
+        }`
       )
     }
-  
-    return
+
+    if (error.code === 500) {
+      throw new Error(
+        `Server error: ${res.statusText}, ${error.message ?? 'no message'}`
+      )
+    }
+
+    throw new Error(
+      `API request failed: ${res.statusText}, ${error.message ?? 'no message'}`
+    )
   }
-  
+
+  return
+}
