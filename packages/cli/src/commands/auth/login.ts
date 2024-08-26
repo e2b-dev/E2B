@@ -9,9 +9,8 @@ import * as e2b from 'e2b'
 import { pkg } from 'src'
 import { DOCS_BASE, getUserConfig, USER_CONFIG_PATH, UserConfig } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
-import { client } from 'src/api'
-
-const getTeams = e2b.withAccessToken(client.api.path('/teams').method('get').create())
+import {client, connectionConfig} from 'src/api'
+import {handleE2BRequestError} from '../../utils/errors'
 
 export const loginCommand = new commander.Command('login')
   .description('log in to CLI')
@@ -35,18 +34,12 @@ export const loginCommand = new commander.Command('login')
         return
       }
 
-      const accessToken = userConfig.accessToken
-      const res = await getTeams(accessToken, {})
-      if (!res.ok) {
-        const error: e2b.paths['/teams']['get']['responses']['500']['content']['application/json'] = res.data as any
+      const signal = connectionConfig.getSignal()
+      const res = await client.api.GET('/teams', {signal})
 
-        throw new Error(
-          `Error getting user teams: ${res.statusText}, ${error.message ?? 'no message'
-          }`,
-        )
-      }
+      handleE2BRequestError(res.error, 'Error getting teams')
 
-      const defaultTeam = res.data.find((team) => team.isDefault)
+      const defaultTeam = res.data.find((team: e2b.components['schemas']['Team']) => team.isDefault)
       if (!defaultTeam) {
         console.error(asFormattedError('No default team found, please contact support'))
         process.exit(1)

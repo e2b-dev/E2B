@@ -5,10 +5,10 @@ import * as e2b from 'e2b'
 import * as path from 'path'
 
 import { USER_CONFIG_PATH } from 'src/user'
-import { client, ensureAccessToken, ensureUserConfig } from 'src/api'
+import {client, connectionConfig, ensureAccessToken, ensureUserConfig} from 'src/api'
 import { asFormattedTeam } from '../../utils/format'
+import {handleE2BRequestError} from '../../utils/errors'
 
-const getTeams = e2b.withAccessToken(client.api.path('/teams').method('get').create())
 
 export const configureCommand = new commander.Command('configure')
   .description('configure user')
@@ -23,16 +23,12 @@ export const configureCommand = new commander.Command('configure')
     }
 
     const userConfig = ensureUserConfig()
-    const accessToken = ensureAccessToken()
-    const res = await getTeams(accessToken, {})
-      if (!res.ok) {
-        const error: e2b.paths['/teams']['get']['responses']['500']['content']['application/json'] = res.data as any
+    ensureAccessToken()
+    const signal = connectionConfig.getSignal()
 
-        throw new Error(
-          `Error getting user teams: ${res.statusText}, ${error.message ?? 'no message'
-          }`,
-        )
-      }
+    const res = await client.api.GET('/teams', {signal})
+
+    handleE2BRequestError(res.error, 'Error getting teams')
 
     const team = (await inquirer.default.prompt([
       {
@@ -40,7 +36,7 @@ export const configureCommand = new commander.Command('configure')
         message: chalk.default.underline('Select team'),
         type: 'list',
         pageSize: 50,
-        choices: res.data.map(team => ({
+        choices: res.data.map((team: e2b.components['schemas']['Team']) => ({
           name: asFormattedTeam(team),
           value: team,
         })),

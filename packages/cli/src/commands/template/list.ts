@@ -6,10 +6,7 @@ import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
 import { client, ensureAccessToken, ensureUserConfig } from 'src/api'
 import { teamOption } from '../../options'
-
-const listTemplates = e2b.withAccessToken(
-  client.api.path('/templates').method('get').create(),
-)
+import {handleE2BRequestError} from '../../utils/errors'
 
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
@@ -22,12 +19,11 @@ export const listCommand = new commander.Command('list')
   ) => {
     try {
       const userConfig = ensureUserConfig()
-      const accessToken = ensureAccessToken()
+      ensureAccessToken()
       process.stdout.write('\n')
 
       const templates = await listSandboxTemplates({
-        accessToken: accessToken,
-        teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
+        teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility)
       })
 
       for (const template of templates) {
@@ -62,8 +58,12 @@ export const listCommand = new commander.Command('list')
   })
 
 export async function listSandboxTemplates({
-  accessToken, teamID
-}: { accessToken: string, teamID: string }): Promise<e2b.components['schemas']['Template'][]> {
-  const templates = await listTemplates(accessToken, {teamID})
+teamID}: { teamID: string }): Promise<e2b.components['schemas']['Template'][]> {
+  const templates = await client.api.GET('/templates', {
+        params: {
+          query: {teamID
+      }}})
+
+  handleE2BRequestError(templates.error, 'Error getting templates')
   return templates.data
 }

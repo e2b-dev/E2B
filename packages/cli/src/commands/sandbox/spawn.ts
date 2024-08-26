@@ -80,31 +80,26 @@ export async function connectSandbox({
   apiKey: string
   template: Pick<e2b.components['schemas']['Template'], 'templateID'>
 }) {
-  const sandbox = await e2b.Sandbox.create({
+  const sandbox = await e2b.Sandbox.create(template.templateID, {
     apiKey,
-    template: template.templateID,
   })
 
-  if (sandbox.terminal) {
-    const { exited } = await spawnConnectedTerminal(
-      sandbox.terminal,
-      `Terminal connected to sandbox ${asFormattedSandboxTemplate(
-        template,
-      )}\nwith sandbox URL ${asBold(
-        `${sandbox.getProtocol()}://${sandbox.getHostname()}`,
-      )}`,
-      `Disconnecting terminal from sandbox ${asFormattedSandboxTemplate(
-        template,
-      )}`,
-    )
+  const { exited } = await spawnConnectedTerminal(
+    sandbox,
+    `Terminal connected to sandbox ${asFormattedSandboxTemplate(
+      template,
+    )}\nwith sandbox ID ${asBold(
+      `${sandbox.sandboxId}`,
+    )}`,
+    `Disconnecting terminal from sandbox ${asFormattedSandboxTemplate(
+      template,
+    )}`,
+  )
 
-    await exited
-    console.log(
-      `Closing terminal connection to sandbox ${asFormattedSandboxTemplate(
-        template,
-      )}`,
-    )
-  } else {
-    throw new Error('Cannot start terminal - no sandbox')
-  }
+  await exited
+  console.log(
+    `Closing terminal connection to sandbox ${asFormattedSandboxTemplate(
+      template,
+    )}`,
+  )
 }

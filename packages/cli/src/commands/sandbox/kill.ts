@@ -17,7 +17,7 @@ export const killCommand = new commander.Command('kill')
         process.exit(1)
       }
 
-      await e2b.Sandbox.kill(sandboxID, apiKey)
+      await e2b.Sandbox.kill(sandboxID, {apiKey})
 
       console.log(`Sandbox ${asBold(sandboxID)} has been killed`)
     } catch (err: any) {

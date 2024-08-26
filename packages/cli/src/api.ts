@@ -3,6 +3,7 @@ import * as e2b from 'e2b'
 
 import { getUserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
+import {ConnectionConfig} from 'e2b'
 
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
@@ -61,4 +62,8 @@ export function ensureAccessToken() {
   }
 }
 
-export const client = new e2b.APIClient()
+
+const userConfig = getUserConfig()
+
+export const connectionConfig = new ConnectionConfig({accessToken: userConfig?.accessToken, apiKey: userConfig?.teamApiKey })
+export const client = new e2b.ApiClient(connectionConfig)

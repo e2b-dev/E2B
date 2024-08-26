@@ -1,6 +1,5 @@
 import * as commander from 'commander'
 import * as chalk from 'chalk'
-import * as e2b from 'e2b'
 import * as fs from 'fs'
 
 import { ensureAccessToken, ensureUserConfig } from 'src/api'
@@ -25,10 +24,21 @@ import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
 import { client } from 'src/api'
+import {handleE2BRequestError} from '../../utils/errors'
 
-const deleteTemplate = e2b.withAccessToken(
-  client.api.path('/templates/{templateID}').method('delete').create(),
-)
+async function deleteTemplate(templateID: string) {
+  const res = await client.api.DELETE('/templates/{templateID}', {
+    params: {
+      path: {
+        templateID,
+      },
+      }
+
+  })
+
+  handleE2BRequestError(res.error, 'Error deleting sandbox template')
+  return
+}
 
 export const deleteCommand = new commander.Command('delete')
   .description(`delete sandbox template and ${asLocal(configName)} config`)
@@ -72,9 +82,9 @@ export const deleteCommand = new commander.Command('delete')
           })
         } else if (opts.select) {
           const allTemplates = await listSandboxTemplates({
-            accessToken: accessToken,
             teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
           })
+
           const selectedTemplates = await getPromptTemplates(
             allTemplates,
             'Select sandbox templates to delete',
@@ -157,7 +167,7 @@ export const deleteCommand = new commander.Command('delete')
                 e.configPath,
               )}`,
             )
-            await deleteTemplate(accessToken, { templateID: e.template_id })
+            await deleteTemplate( e.template_id )
             if (e.configPath) {
               await deleteConfig(e.configPath)
             }

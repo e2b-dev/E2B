@@ -1,4 +1,4 @@
-import * as e2b from 'e2b'
+import { Sandbox } from 'e2b'
 import * as commander from 'commander'
 
 import { spawnConnectedTerminal } from 'src/terminal'
@@ -32,14 +32,13 @@ export const connectCommand = new commander.Command('connect')
 
 
 async function connectToSandbox({ apiKey, sandboxID }: { apiKey: string, sandboxID: string }) {
-  const sandbox = await e2b.Sandbox.reconnect({ sandboxID, apiKey })
+  const sandbox = await Sandbox.connect(sandboxID, { apiKey })
 
-  if (sandbox.terminal) {
     const { exited } = await spawnConnectedTerminal(
-      sandbox.terminal,
+      sandbox,
       `Terminal connected to sandbox ${asPrimary(
         sandboxID,
-      )}\nwith sandbox URL ${asBold(`${sandbox.getProtocol()}://${sandbox.getHostname()}`)}`,
+      )}\nwith sandbox ID ${asBold(`${sandbox.sandboxId}`)}`,
       `Disconnecting terminal from sandbox ${asPrimary(
         sandboxID,
       )}`,
@@ -51,7 +50,4 @@ async function connectToSandbox({ apiKey, sandboxID }: { apiKey: string, sandbox
         sandboxID,
       )}`,
     )
-  } else {
-    throw new Error('Cannot start terminal - no sandbox')
-  }
 }

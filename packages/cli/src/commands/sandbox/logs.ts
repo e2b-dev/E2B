@@ -3,14 +3,12 @@ import * as e2b from 'e2b'
 import * as util from 'util'
 import * as chalk from 'chalk'
 
-import { client, ensureAPIKey } from 'src/api'
+import {client, connectionConfig} from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { listSandboxes } from './list'
 import { wait } from 'src/utils/wait'
+import {handleE2BRequestError} from '../../utils/errors'
 
-const getSandboxLogs = e2b.withAPIKey(
-  client.api.path('/sandboxes/{sandboxID}/logs').method('get').create(),
-)
 
 const maxRuntime = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 
@@ -18,7 +16,7 @@ function getShortID(sandboxID: string) {
   return sandboxID.split('-')[0]
 }
 
-function waitForSandboxEnd(apiKey: string, sandboxID: string) {
+function waitForSandboxEnd(sandboxID: string) {
   let isRunning = true
 
   async function monitor() {
@@ -34,7 +32,7 @@ function waitForSandboxEnd(apiKey: string, sandboxID: string) {
         break
       }
 
-      const response = await listSandboxes({ apiKey })
+      const response = await listSandboxes()
       const sandbox = response.find(s => s.sandboxID === getShortID(sandboxID))
       if (!sandbox) {
         isRunning = false
@@ -134,9 +132,7 @@ export const logsCommand = new commander.Command('logs')
         throw new Error(`Invalid log format: ${format}`)
       }
 
-      const apiKey = ensureAPIKey()
-
-      const getIsRunning = opts?.follow ? waitForSandboxEnd(apiKey, sandboxID) : () => false
+      const getIsRunning = opts?.follow ? waitForSandboxEnd(sandboxID) : () => false
 
       let start: number | undefined
       let isFirstRun = true
@@ -146,11 +142,10 @@ export const logsCommand = new commander.Command('logs')
         console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
       }
 
-      const isRunningPromise = listSandboxes({ apiKey }).then(r => r.find(s => s.sandboxID === getShortID(sandboxID))).then(s => !!s)
+      const isRunningPromise = listSandboxes().then(r => r.find(s => s.sandboxID === getShortID(sandboxID))).then(s => !!s)
 
       do {
-        try {
-          const logs = await listSandboxLogs({ apiKey, sandboxID, start })
+          const logs = await listSandboxLogs({ sandboxID, start })
 
           if (logs.length !== 0 && firstLogsPrinted === false) {
             firstLogsPrinted = true
@@ -182,27 +177,6 @@ export const logsCommand = new commander.Command('logs')
             // TODO: Use the timestamp from the last log instead of the current time?
             start = new Date(lastLog.timestamp).getTime() + 1
           }
-        } catch (e) {
-          if (e instanceof getSandboxLogs.Error) {
-            const error = e.getActualType()
-            if (error.status === 401) {
-              throw new Error(
-                `Error getting sandbox logs - (${error.status}) bad request: ${error}`,
-              )
-            }
-            if (error.status === 404) {
-              throw new Error(
-                `Error getting sandbox logs - (${error.status}) not found: ${error}`,
-              )
-            }
-            if (error.status === 500) {
-              throw new Error(
-                `Error getting sandbox logs - (${error.status}) server error: ${error}`,
-              )
-            }
-          }
-          throw e
-        }
 
         await wait(400)
         isFirstRun = false
@@ -266,10 +240,24 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
 }
 
 export async function listSandboxLogs({
-  apiKey,
   sandboxID,
   start,
-}: { apiKey: string, sandboxID: string, start?: number }): Promise<e2b.components['schemas']['SandboxLog'][]> {
-  const response = await getSandboxLogs(apiKey, { sandboxID, start })
-  return response.data.logs
+}: { sandboxID: string, start?: number }): Promise<e2b.components['schemas']['SandboxLog'][]> {
+
+  const signal = connectionConfig.getSignal()
+  const res = await   client.api.GET('/sandboxes/{sandboxID}/logs', {
+    signal,
+    params: {
+      path: {
+        sandboxID,
+      },
+      query: {
+        start,
+      },
+    },
+  })
+
+  handleE2BRequestError(res.error, 'Error while getting sandbox logs')
+
+  return res.data.logs
 }

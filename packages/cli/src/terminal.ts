@@ -1,6 +1,5 @@
 import * as e2b from 'e2b'
 
-import { createDeferredPromise } from './utils/promise'
 
 function getStdoutSize() {
   return {
@@ -10,26 +9,20 @@ function getStdoutSize() {
 }
 
 export async function spawnConnectedTerminal(
-  terminal: e2b.TerminalManager,
+  sandbox: e2b.Sandbox,
   introText: string,
   exitText: string,
 ) {
-  const { promise: exited, resolve: onExit } = createDeferredPromise()
-
   // Clear local terminal emulator before starting terminal
   // process.stdout.write('\x1b[2J\x1b[0f')
 
   console.log(introText)
 
-  const terminalSession = await terminal.start({
-    onData: (data: any) => {
+  const terminalSession = await sandbox.pty.create({
+    onData: (data: Uint8Array) => {
       process.stdout.write(data)
     },
-    size: getStdoutSize(),
-    onExit,
-    envVars: {
-      TERM: 'xterm-256color',
-    },
+    ...getStdoutSize()
   })
 
   process.stdin.setEncoding('utf8')
@@ -38,18 +31,19 @@ export async function spawnConnectedTerminal(
   process.stdout.setEncoding('utf8')
 
   const resizeListener = process.stdout.on('resize', () =>
-    terminalSession.resize(getStdoutSize()),
+    sandbox.pty.resize(terminalSession.pid, getStdoutSize()),
   )
 
-  const stdinListener = process.stdin.on('data', (data) =>
-    terminalSession.sendData(data.toString('utf8')),
-  )
+  const input = await sandbox.pty.streamInput(terminalSession.pid)
+  const stdinListener = process.stdin.on('data', (data) => input.sendData(data))
 
-  exited.then(() => {
+  const exited = async () => {
+    await terminalSession.wait()
+    await input.stop()
     console.log(exitText)
     resizeListener.destroy()
     stdinListener.destroy()
-  })
+  }
 
   return {
     kill: terminalSession.kill.bind(terminalSession),
