@@ -3,7 +3,7 @@ import * as chalk from 'chalk'
 import * as e2b from 'e2b'
 import * as fs from 'fs'
 
-import { ensureAccessToken, ensureUserConfig } from 'src/api'
+import { ensureAccessToken } from 'src/api'
 
 import {
   asBold,
@@ -25,6 +25,7 @@ import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
 import { client } from 'src/api'
+import { getUserConfig } from 'src/user'
 
 const deleteTemplate = e2b.withAccessToken(
   client.api.path('/templates/{templateID}').method('delete').create(),
@@ -58,7 +59,8 @@ export const deleteCommand = new commander.Command('delete')
       },
     ) => {
       try {
-        const userConfig = ensureUserConfig()
+        let teamId = opts.team
+
         const accessToken = ensureAccessToken()
         const root = getRoot(opts.path)
 
@@ -71,9 +73,14 @@ export const deleteCommand = new commander.Command('delete')
             template_id: template,
           })
         } else if (opts.select) {
+          const userConfig = getUserConfig()
+          if (userConfig) {
+            teamId = teamId || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
+          }
+
           const allTemplates = await listSandboxTemplates({
             accessToken: accessToken,
-            teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
+            teamID: teamId,
           })
           const selectedTemplates = await getPromptTemplates(
             allTemplates,

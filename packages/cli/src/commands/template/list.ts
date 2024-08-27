@@ -63,7 +63,7 @@ export const listCommand = new commander.Command('list')
 
 export async function listSandboxTemplates({
   accessToken, teamID
-}: { accessToken: string, teamID: string }): Promise<e2b.components['schemas']['Template'][]> {
+}: { accessToken: string, teamID?: string }): Promise<e2b.components['schemas']['Template'][]> {
   const templates = await listTemplates(accessToken, {teamID})
   return templates.data
 }
