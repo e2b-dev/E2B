@@ -1,7 +1,7 @@
 import * as boxen from 'boxen'
 import * as e2b from 'e2b'
 
-import { getUserConfig } from './user'
+import { getUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
 
 export let apiKey = process.env.E2B_API_KEY
@@ -37,13 +37,13 @@ export function ensureAPIKey() {
   }
 }
 
-export function ensureUserConfig() {
-    const userConfig = getUserConfig()
-    if (!userConfig) {
-        console.error('No user config found, run `e2b auth login` to log in first.')
-        process.exit(1)
-    }
-    return userConfig
+export function ensureUserConfig(): UserConfig {
+  const userConfig = getUserConfig()
+  if (!userConfig) {
+    console.error('No user config found, run `e2b auth login` to log in first.')
+    process.exit(1)
+  }
+  return userConfig
 }
 
 export function ensureAccessToken() {
