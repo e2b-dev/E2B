@@ -4,7 +4,7 @@ import { ConnectionConfig, ConnectionOpts, defaultUsername } from '../connection
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
 import { Filesystem } from './filesystem'
-import { FilesystemEvent } from './filesystem/watchHandle'
+import { FilesystemEvent, FilesystemEventType } from './filesystem/watchHandle'
 import { Process } from './process'
 import { Pty } from './pty'
 import { SandboxApi } from './sandboxApi'
@@ -67,7 +67,8 @@ export class Sandbox extends SandboxApi {
 
     const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
 
-    if (sandboxOpts?.onFileCreation) await sbx.files.watch('/', sandboxOpts.onFileCreation)
+    if (sandboxOpts?.onFileCreation)
+      await sbx.files.watch('/', sandboxOpts.onFileCreation, { eventTypes: new Set([FilesystemEventType.CREATE])})
 
     return sbx
   }
@@ -77,7 +78,8 @@ export class Sandbox extends SandboxApi {
 
     const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
 
-    if (opts?.onFileCreation) await sbx.files.watch('/', opts.onFileCreation)
+    if (opts?.onFileCreation)
+      await sbx.files.watch('/', opts.onFileCreation, { eventTypes: new Set([FilesystemEventType.CREATE])})
 
     return sbx
   }

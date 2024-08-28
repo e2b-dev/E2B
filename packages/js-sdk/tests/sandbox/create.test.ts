@@ -45,7 +45,7 @@ test.skipIf(isDebug)('create with file creation handler', async () => {
     }
   }
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000, onFileCreation })
-  onTestFinished(() =>  sbx.files.remove(dirPath))
+  onTestFinished(async () =>  await sbx.files.remove(dirPath))
 
   const ok = await sbx.files.makeDir(dirPath)
   assert.isTrue(ok)

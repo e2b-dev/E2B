@@ -4,7 +4,7 @@ import { sandboxTest } from '../../setup.js'
 
 sandboxTest('list directory', async ({ sandbox }) => {
   const dirName = 'test_directory4'
-  onTestFinished(() =>  sandbox.files.remove(dirName))
+  onTestFinished(async () =>  await sandbox.files.remove(dirName))
 
   await sandbox.files.makeDir(dirName)
 

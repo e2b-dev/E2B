@@ -1,4 +1,4 @@
-import { expect, onTestFinished } from 'vitest'
+import { assert, expect, onTestFinished } from 'vitest'
 
 import { FilesystemEventType, NotFoundError } from '../../../src'
 import { sandboxTest } from '../../setup.js'
@@ -44,12 +44,14 @@ sandboxTest('watch recursive directory changes', async ({ sandbox }) => {
   const fileName = 'test_watch.txt'
   const filePath = `/${parentDir}/${childDir}/${fileName}`
   const content = 'This file will be watched.'
-  onTestFinished(() =>  {
-    sandbox.files.remove('/'+parentDir)
+
+  onTestFinished(async () =>  {
+    await sandbox.files.remove('/'+parentDir)
   })
 
   let trigger1: () => void
   let trigger2: () => void
+  let trigger3: () => void
 
   const eventPromise1 = new Promise<void>((resolve) => {
     trigger1 = resolve
@@ -59,27 +61,25 @@ sandboxTest('watch recursive directory changes', async ({ sandbox }) => {
     trigger2 = resolve
   })
 
-  // watch nested dir creation
-  const handle1 = await sandbox.files.watch('/', async (event) => {
-    if (event.type === FilesystemEventType.CREATE && event.name === `/${parentDir}/${childDir}`) {
-      trigger1()
-    }
+  const eventPromise3 = new Promise<void>((resolve) => {
+    trigger3 = resolve
   })
 
-  // watch nested file creation
-  const handle2 = await sandbox.files.watch('/', async (event) => {
-    if (event.type === FilesystemEventType.CREATE && event.name === filePath) {
-      trigger2()
-    }
-  })
+  const handle = await sandbox.files.watch('/', async (event) => {
+    assert.strictEqual(event.type, FilesystemEventType.CREATE)
+    // watch parent dir creation
+    if (event.name === `/${parentDir}`) trigger1()
+    // watch child dir creation
+    if (event.name === `/${parentDir}/${childDir}`) trigger2()
+    // watch nested file creation
+    if (event.name === filePath) trigger3()
+  }, { eventTypes: new Set([FilesystemEventType.CREATE])})
 
-  await sandbox.files.makeDir('/a')
-  await sandbox.files.makeDir('/a/b')
+  await sandbox.files.makeDir('/' + parentDir)
+  await sandbox.files.makeDir(`/${parentDir}/${childDir}`)
   await sandbox.files.write(filePath, content)
 
-  await eventPromise1
-  await eventPromise2
+  await Promise.all([eventPromise1, eventPromise2, eventPromise3])
 
-  await handle1.close()
-  await handle2.close()
+  await handle.close()
 })

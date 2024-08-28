@@ -23,7 +23,7 @@ test('connect', async () => {
 test.skipIf(isDebug)('connect with file creation handler', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 10_000 })
   const dirPath = '/new-dir2'
-  onTestFinished(() =>  sbx.files.remove(dirPath))
+  onTestFinished(async () =>  await sbx.files.remove(dirPath))
 
   let trigger: () => void
 
