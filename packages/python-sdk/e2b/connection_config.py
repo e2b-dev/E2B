@@ -12,7 +12,7 @@ class ConnectionConfig:
 
     @staticmethod
     def _debug():
-        return os.getenv("E2B_DEBUG", "false") == "true"
+        return os.getenv("E2B_DEBUG", "false").lower() == "true"
 
     @staticmethod
     def _api_key():
