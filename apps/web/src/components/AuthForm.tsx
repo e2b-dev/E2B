@@ -28,7 +28,11 @@ function AuthForm({ view }: Props) {
     if (user.user && redirectTo) {
       router.push(redirectTo)
     }
-  }, [user.user, router, redirectTo])
+
+    if (user.wasUpdated && !redirectTo) {
+      router.push('/dashboard')
+    }
+  }, [user.user, router, redirectTo, view, user.wasUpdated])
 
   return (
     <div className="mx-auto flex flex-1 w-full justify-center items-center flex-col pt-4">
@@ -40,6 +44,7 @@ function AuthForm({ view }: Props) {
       </h1>
       <div className="md:w-[420px] w-[240px]">
         <Auth
+          otpType={view === 'update_password' ? 'recovery' : undefined}
           supabaseClient={supabase}
           appearance={{
             theme: ThemeSupa,
