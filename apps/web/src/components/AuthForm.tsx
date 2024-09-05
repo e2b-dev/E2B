@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Auth } from '@supabase/auth-ui-react'
 import {
   ThemeSupa,
+  ViewType,
 } from '@supabase/auth-ui-shared'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -14,7 +15,7 @@ import { useUser } from '@/utils/useUser'
 const supabase = createClientComponentClient()
 
 export interface Props {
-  view: 'sign_in' | 'sign_up' | 'forgotten_password'
+  view: ViewType
 }
 
 function AuthForm({ view }: Props) {
@@ -35,6 +36,7 @@ function AuthForm({ view }: Props) {
         {view === 'sign_in' && 'Sign in to E2B'}
         {view === 'sign_up' && 'Create new E2B account'}
         {view === 'forgotten_password' && 'Reset password'}
+        {view === 'update_password' && 'Update password'}
       </h1>
       <div className="md:w-[420px] w-[240px]">
         <Auth
@@ -63,12 +65,16 @@ function AuthForm({ view }: Props) {
           providerScopes={{
             github: 'email',
           }}
-          redirectTo={redirectTo}
+          redirectTo={
+            view === 'forgotten_password'
+              ? 'https://e2b.dev/auth/update-password'
+              : redirectTo
+          }
         />
       </div>
 
       <div className="flex flex-1 flex-col pt-4">
-        {(view === 'sign_up' || view === 'forgotten_password') &&
+        {(view === 'sign_up' || view === 'forgotten_password' || view === 'update_password') &&
           <div className="flex items-center justify-start gap-2">
             <span className="text-zinc-400">Already have an account?</span>
             <Link className="flex items-center justify-center" href={`/auth/sign-in?redirect_to=${redirectTo}`}>

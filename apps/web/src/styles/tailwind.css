@@ -66,6 +66,7 @@
 
     #auth-sign-up button,
     #auth-forgot-password button,
+    #auth-update-password button,
     #auth-sign-in button {
         border: none;
         @apply text-base font-medium transition;
@@ -73,12 +74,13 @@
     }
 
     #auth-forgot-password label,
+    #auth-update-password label,
     #auth-sign-up label,
     #auth-sign-in label {
         @apply text-sm font-medium text-zinc-500 transition;
     }
 
-
+    #auth-update-password input,
     #auth-forgot-password input,
     #auth-sign-up input,
     #auth-sign-in input {
