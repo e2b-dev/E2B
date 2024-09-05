@@ -5,15 +5,13 @@ import {
   PromiseClient,
   Transport,
 } from '@connectrpc/connect'
-import { PartialMessage } from '@bufbuild/protobuf'
 
 import { Process as ProcessService } from '../envd/process/process_connect'
 import {
   Signal,
   StartResponse,
-  StreamInputRequest,
 } from '../envd/process/process_pb'
-import { ConnectionConfig, ConnectionOpts, KEEPALIVE_INTERVAL, Username } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts, Username } from '../connectionConfig'
 import { ProcessHandle } from './process/processHandle'
 import { authenticationHeader, handleRpcError } from '../envd/rpc'
 
@@ -105,69 +103,6 @@ export class Pty {
     }
   }
 
-  async streamInput(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'> & { timeout?: number }) {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
-    const controller = new AbortController()
-
-    const reqTimeout = setTimeout(() => {
-      controller.abort()
-    }, requestTimeoutMs)
-
-    const events = new AsyncQueue<PartialMessage<StreamInputRequest>>()
-
-    this.rpc.streamInput(events, {
-      signal: controller.signal,
-      timeoutMs: opts?.timeout ?? 60_000,
-    })
-
-    clearTimeout(reqTimeout)
-
-    events.enqueue({
-      event: {
-        case: 'start',
-        value: {
-          process: {
-            selector: {
-              case: 'pid',
-              value: pid,
-            },
-          },
-        },
-      },
-    })
-
-    const keepaliveInterval = setInterval(() => {
-      events.enqueue({
-        event: {
-          case: 'keepalive',
-          value: {},
-        }
-      })
-    }, KEEPALIVE_INTERVAL)
-
-    return {
-      stop: () => {
-        controller.abort()
-        events.stop()
-        clearInterval(keepaliveInterval)
-      },
-      sendData: (data: Uint8Array) => events.enqueue({
-        event: {
-          case: 'data',
-          value: {
-            input: {
-              input: {
-                case: 'pty',
-                value: data,
-              },
-            },
-          },
-        },
-      }),
-    }
-  }
-
   async resize(
     pid: number,
     size: {
@@ -215,41 +150,5 @@ export class Pty {
 
       throw handleRpcError(err)
     }
-  }
-}
-
-class AsyncQueue<T> {
-  private readonly resolvers: ((value: T) => void)[] = []
-  private readonly promises: Promise<T>[] = []
-
-  private stopped = false
-
-  stop() {
-    this.stopped = true
-  }
-
-  enqueue(t: T) {
-    if (!this.resolvers.length) this.add()
-    this.resolvers.shift()!(t)
-  }
-
-  async *[Symbol.asyncIterator]() {
-    while (!this.stopped) {
-      const event = await this.dequeue()
-      if (event) {
-        yield event
-      }
-    }
-  }
-
-  private dequeue() {
-    if (!this.promises.length) this.add()
-    return this.promises.shift()
-  }
-
-  private add() {
-    this.promises.push(new Promise(resolve => {
-      this.resolvers.push(resolve)
-    }))
   }
 }
