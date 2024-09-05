@@ -22,6 +22,7 @@ export { FilesystemEventType } from './sandbox/filesystem/watchHandle'
 export type { FilesystemEvent, WatchHandle } from './sandbox/filesystem/watchHandle'
 export type {
   EntryInfo,
+  Filesystem,
 } from './sandbox/filesystem'
 export {
   FileType,
@@ -42,6 +43,7 @@ export type {
   ProcessRequestOpts,
   ProcessConnectOpts,
   ProcessStartOpts,
+  Process,
 } from './sandbox/process'
 
 export type { SandboxInfo } from './sandbox/sandboxApi'
