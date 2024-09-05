@@ -82,6 +82,29 @@ export class Pty {
     )
   }
 
+  async sendInput(pid: number, data: Uint8Array, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
+    try {
+      await this.rpc.sendInput({
+        input: {
+          input: {
+            case: 'pty',
+            value: data,
+          },
+        },
+        process: {
+          selector: {
+            case: 'pid',
+            value: pid,
+          },
+        },
+      }, {
+        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      })
+    } catch (err) {
+      throw handleRpcError(err)
+    }
+  }
+
   async streamInput(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'> & { timeout?: number }) {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
