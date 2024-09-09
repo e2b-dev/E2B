@@ -19,7 +19,7 @@ export interface PtyCreateOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> 
   cols: number
   rows: number
   onData: (data: Uint8Array) => (void | Promise<void>)
-  timeout?: number
+  timeoutMs?: number
   user?: Username
 }
 
@@ -56,7 +56,7 @@ export class Pty {
     }, {
       headers: authenticationHeader(opts?.user),
       signal: controller.signal,
-      timeoutMs: opts?.timeout ?? 60_000,
+      timeoutMs: opts?.timeoutMs ?? 60_000,
     })
 
     const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
