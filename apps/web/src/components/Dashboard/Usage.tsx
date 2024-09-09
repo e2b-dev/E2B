@@ -22,7 +22,7 @@ type Series = {
   data: PlotData[]
 }
 
-export const UsageContent = ({ currentApiKey, team }: { currentApiKey: string | null, team: Team }) => {
+export const UsageContent = ({ team }: { team: Team }) => {
   const [vcpuData, setVcpuData] = useState<Series[]>([])
   const [vcpuHoursThisMonth, setVcpuHoursThisMonth] = useState<number | undefined>()
   const [ramData, setRamData] = useState<Series[]>([])
@@ -31,14 +31,14 @@ export const UsageContent = ({ currentApiKey, team }: { currentApiKey: string | 
   const [costThisMonth, setCostMonth] = useState<number | undefined>()
 
   useEffect(() => {
-    const getUsage = async (apiKey: string) => {
+    const getUsage = async () => {
       setVcpuData([])
       setRamData([])
       setCostUsage([])
 
       const response = await fetch( `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/usage`, {
         headers: {
-          'X-Team-API-Key': apiKey
+          'X-Team-API-Key': team.apiKeys[0]
         }
       })
       if (!response.ok) {
@@ -65,10 +65,9 @@ export const UsageContent = ({ currentApiKey, team }: { currentApiKey: string | 
       setRamData(ramSeries)
       setRamHoursThisMonth(ramSeries[0].data[ramSeries[0].data.length - 1].y)
     }
-    if (currentApiKey) {
-      getUsage(currentApiKey)
-    }
-  }, [currentApiKey])
+
+    getUsage()
+  }, [team])
 
   return (
     <div className='flex flex-col w-full h-full pb-10'>

@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '../Button'
-import { Team } from '@/utils/useUser'
-import { User, createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
+import { E2BUser, Team } from '@/utils/useUser'
 import { toast } from '../ui/use-toast'
 import { Copy } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
@@ -16,9 +15,7 @@ interface TeamMember {
 }
 
 
-export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCurrentTeam }: { team: Team, user: User, teams: Team[], currentApiKey: string | null, setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
-  const supabase = createPagesBrowserClient()
-
+export const TeamContent = ({ team, user, teams, setTeams, setCurrentTeam }: { team: Team, user: E2BUser, teams: Team[], setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentMemberId, setCurrentMemberId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
@@ -31,7 +28,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
     const getTeamMembers = async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/users`, {
         headers: {
-          'X-Team-API-Key': currentApiKey!,
+          'X-Team-API-Key': team.apiKeys[0],
         },
       })
 
@@ -49,10 +46,8 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
       setIsLoading(false)
     }
 
-    if (currentApiKey) {
-      getTeamMembers()
-    }
-  }, [currentApiKey, user, userAdded])
+    getTeamMembers()
+  }, [user, userAdded, team])
 
   useEffect(() => {
     setTeamName(team.name)
@@ -65,20 +60,22 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
   }
 
   const deleteUserFromTeam = async () => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/users`, {
+      method: 'DELETE',
+      headers: {
+        'X-User-Access-Token': user.accessToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({user_id: currentMemberId}),
+    })
 
-    const { error } = await supabase
-      .from('users_teams')
-      .delete()
-      .eq('user_id', currentMemberId)
-      .eq('team_id', team.id)
-
-    if (error) {
-      // TODO: Add sentry event here
+    if (!res.ok) {
       toast({
         title: 'An error occurred',
-        description: 'We were unable to delete the member from the team',
+        description: 'We were unable to delete the user from the team',
       })
-      console.log(error)
+      console.log(res.statusText)
+      // TODO: Add sentry event here
       return
     }
     setMembers(members.filter(member => member.id !== currentMemberId))
@@ -87,13 +84,13 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
 
   const changeTeamName = async () => {
     const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}`, {
-        headers: {
-          'X-Team-API-Key': currentApiKey!,
-          'Content-Type': 'application/json',
-        },
-        method: 'PATCH',
-        body: JSON.stringify({ name: teamName }),
-      })
+      headers: {
+        'X-Team-API-Key': team.apiKeys[0],
+        'Content-Type': 'application/json',
+      },
+      method: 'PATCH',
+      body: JSON.stringify({name: teamName}),
+    })
 
     if (!res.ok) {
       toast({
@@ -114,17 +111,21 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
   }
 
   const addUserToTeam = async () => {
-    const { error } = await supabase
-      .from('users_teams')
-      .insert({ user_id: userToAdd, team_id: team.id })
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/users`, {
+      headers: {
+        'X-User-Access-Token': user.accessToken,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+      body: JSON.stringify({user_id: userToAdd}),
+    })
 
-    if (error) {
-      // TODO: Add sentry event here
+    if (!res.ok) {
       toast({
-        title: 'There was an error adding the user to the team',
-        description: 'Please make sure the user id is correct.',
+        title: 'An error occurred',
+        description: 'We were unable to add the user to the team',
       })
-      console.log(error)
+      console.log(res.statusText)
       return
     }
 

@@ -24,15 +24,17 @@ interface UserTeam {
   team_api_keys: { api_key: string; }[];
 }
 
+export type E2BUser = (User & {
+  teams: Team[];
+  accessToken: string;
+  defaultTeamId: string;
+})
+
 type UserContextType = {
   isLoading: boolean;
   session: Session | null;
   user:
-  | (User & {
-    teams: Team[];
-    accessToken: string;
-    defaultTeamId: string;
-  })
+  | E2BUser
   | null;
   error: Error | null;
   wasUpdated: boolean | null;

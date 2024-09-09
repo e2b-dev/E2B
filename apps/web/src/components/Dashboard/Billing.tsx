@@ -18,17 +18,16 @@ interface Invoice {
   date_created: string
 }
 
-export const BillingContent = ({ currentApiKey, team }: { currentApiKey: string | null, team: Team }) => {
+export const BillingContent = ({ team }: { team: Team }) => {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [credits, setCredits] = useState<number | null>(null)
 
   useEffect(() => {
     const getInvoices = async function getInvoices() {
       setInvoices([])
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/invoices`
-, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/invoices`, {
         headers: {
-          'X-Team-API-Key': currentApiKey!,
+          'X-Team-API-Key': team.apiKeys[0],
         },
       })
       if (!res.ok) {
@@ -41,19 +40,17 @@ export const BillingContent = ({ currentApiKey, team }: { currentApiKey: string 
       setInvoices(invoices)
 
       setCredits(null)
-      const creditsRes = await fetch( `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/usage`, {
+      const creditsRes = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/usage`, {
         headers: {
-          'X-Team-API-Key': currentApiKey!,
+          'X-Team-API-Key': team.apiKeys[0],
         },
       })
       const credits = await creditsRes.json()
       setCredits(credits.credits)
     }
-    if (currentApiKey) {
-      getInvoices()
-    }
-  }
-    , [currentApiKey])
+
+    getInvoices()
+  }, [team])
 
   return (
     <div className="flex flex-col w-full h-full pb-10">
