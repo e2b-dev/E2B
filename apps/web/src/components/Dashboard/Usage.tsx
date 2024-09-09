@@ -3,8 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import LineChart from '@/components/Dashboard/Chart'
 import Spinner from '@/components/Spinner'
 import { toast } from '@/components/ui/use-toast'
-
-const usageUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/usage`
+import { Team } from '@/utils/useUser'
 
 
 type Usage = {
@@ -23,7 +22,7 @@ type Series = {
   data: PlotData[]
 }
 
-export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null }) => {
+export const UsageContent = ({ currentApiKey, team }: { currentApiKey: string | null, team: Team }) => {
   const [vcpuData, setVcpuData] = useState<Series[]>([])
   const [vcpuHoursThisMonth, setVcpuHoursThisMonth] = useState<number | undefined>()
   const [ramData, setRamData] = useState<Series[]>([])
@@ -37,7 +36,7 @@ export const UsageContent = ({ currentApiKey }: { currentApiKey: string | null }
       setRamData([])
       setCostUsage([])
 
-      const response = await fetch(usageUrl, {
+      const response = await fetch( `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/usage`, {
         headers: {
           'X-Team-API-Key': apiKey
         }

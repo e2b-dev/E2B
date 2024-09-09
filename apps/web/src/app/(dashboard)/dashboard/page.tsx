@@ -198,7 +198,7 @@ function MainContent({ selectedItem, user, team, accessToken, currentApiKey, tea
     case 'keys':
       return <KeysContent currentTeam={team} />
     case 'usage':
-      return <UsageContent currentApiKey={currentApiKey} />
+      return <UsageContent currentApiKey={currentApiKey} team={team} />
     case 'billing':
       return <BillingContent currentApiKey={currentApiKey} team={team} />
     case 'team':

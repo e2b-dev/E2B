@@ -10,8 +10,6 @@ function formatCurrency(value: number) {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-const invoiceUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/invoices`
-const creditsUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/usage`
 
 interface Invoice {
   cost: number
@@ -27,7 +25,8 @@ export const BillingContent = ({ currentApiKey, team }: { currentApiKey: string 
   useEffect(() => {
     const getInvoices = async function getInvoices() {
       setInvoices([])
-      const res = await fetch(invoiceUrl, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/invoices`
+, {
         headers: {
           'X-Team-API-Key': currentApiKey!,
         },
@@ -42,7 +41,7 @@ export const BillingContent = ({ currentApiKey, team }: { currentApiKey: string 
       setInvoices(invoices)
 
       setCredits(null)
-      const creditsRes = await fetch(creditsUrl, {
+      const creditsRes = await fetch( `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/usage`, {
         headers: {
           'X-Team-API-Key': currentApiKey!,
         },

@@ -17,8 +17,6 @@ import { useToast } from '../ui/use-toast'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { Team } from '@/utils/useUser'
 
-const createApiKeyUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/api-keys`
-
 export const KeysContent = ({ currentTeam }: { currentTeam: Team }) => {
   const supabase = createPagesBrowserClient()
 
@@ -77,7 +75,7 @@ export const KeysContent = ({ currentTeam }: { currentTeam: Team }) => {
       })
     }
 
-    const res = await fetch(createApiKeyUrl, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${currentTeam.id}/api-keys`, {
       method: 'POST',
       headers: {
         'X-Team-API-Key': currentTeam.apiKeys[0],

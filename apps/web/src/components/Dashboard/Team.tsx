@@ -15,8 +15,6 @@ interface TeamMember {
   email: string
 }
 
-const teamUsersUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/users`
-const teamUpdateNameUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams`
 
 export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCurrentTeam }: { team: Team, user: User, teams: Team[], currentApiKey: string | null, setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
   const supabase = createPagesBrowserClient()
@@ -31,7 +29,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
 
   useEffect(() => {
     const getTeamMembers = async () => {
-      const res = await fetch(teamUsersUrl, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/users`, {
         headers: {
           'X-Team-API-Key': currentApiKey!,
         },
@@ -88,7 +86,7 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
   }
 
   const changeTeamName = async () => {
-    const res = await fetch(teamUpdateNameUrl, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}`, {
         headers: {
           'X-Team-API-Key': currentApiKey!,
           'Content-Type': 'application/json',
