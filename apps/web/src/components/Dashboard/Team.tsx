@@ -16,6 +16,7 @@ interface TeamMember {
 }
 
 const teamUsersUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/users`
+const teamUpdateNameUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams`
 
 export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCurrentTeam }: { team: Team, user: User, teams: Team[], currentApiKey: string | null, setTeams: (teams: Team[]) => void, setCurrentTeam: (team: Team) => void }) => {
   const supabase = createPagesBrowserClient()
@@ -87,20 +88,24 @@ export const TeamContent = ({ team, user, teams, currentApiKey, setTeams, setCur
   }
 
   const changeTeamName = async () => {
-    const { error } = await supabase
-      .from('teams')
-      .update({ name: teamName })
-      .eq('id', team.id)
+    const res = await fetch(teamUpdateNameUrl, {
+        headers: {
+          'X-Team-API-Key': currentApiKey!,
+          'Content-Type': 'application/json',
+        },
+        method: 'PATCH',
+        body: JSON.stringify({ name: teamName }),
+      })
 
-    if (error) {
-      // TODO: Add sentry event here
+    if (!res.ok) {
       toast({
         title: 'An error occurred',
         description: 'We were unable to change the team name',
       })
-      console.log(error)
+      console.log(res.statusText)
       return
     }
+
 
     toast({
       title: 'Team name changed',
