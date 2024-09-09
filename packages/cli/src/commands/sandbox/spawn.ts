@@ -80,15 +80,13 @@ export async function connectSandbox({
   apiKey: string
   template: Pick<e2b.components['schemas']['Template'], 'templateID'>
 }) {
-  const sandbox = await e2b.Sandbox.create(template.templateID, {
-    apiKey,
-  })
+  const sandbox = await e2b.Sandbox.create(template.templateID, { apiKey })
 
   const { exited } = await spawnConnectedTerminal(
     sandbox,
     `Terminal connected to sandbox ${asFormattedSandboxTemplate(
       template,
-    )}\nwith sandbox ID ${asBold(
+    )} with sandbox ID ${asBold(
       `${sandbox.sandboxId}`,
     )}`,
     `Disconnecting terminal from sandbox ${asFormattedSandboxTemplate(
@@ -96,10 +94,6 @@ export async function connectSandbox({
     )}`,
   )
 
-  await exited
-  console.log(
-    `Closing terminal connection to sandbox ${asFormattedSandboxTemplate(
-      template,
-    )}`,
-  )
+  await exited()
+  console.log(`Closing terminal connection to sandbox ${asFormattedSandboxTemplate(template)}`)
 }

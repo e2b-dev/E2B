@@ -1,4 +1,5 @@
 import * as e2b from 'e2b'
+import {wait} from './utils/wait'
 
 
 function getStdoutSize() {
@@ -19,25 +20,20 @@ export async function spawnConnectedTerminal(
   console.log(introText)
 
   const terminalSession = await sandbox.pty.create({
-    onData: (data: Uint8Array) => {
-      process.stdout.write(data)
-    },
+    onData: (data: Uint8Array) => process.stdout.write(data),
     ...getStdoutSize()
   })
 
-  process.stdin.setEncoding('utf8')
+  // TODO: missing newlines
   process.stdin.setRawMode(true)
-
   process.stdout.setEncoding('utf8')
 
-  const resizeListener = process.stdout.on('resize', () =>
-    sandbox.pty.resize(terminalSession.pid, getStdoutSize()),
-  )
-
-  const input = await sandbox.pty.streamInput(terminalSession.pid)
-  const stdinListener = process.stdin.on('data', (data) => input.sendData(data))
+  const resizeListener = process.stdout.on('resize', () => sandbox.pty.resize(terminalSession.pid, getStdoutSize()))
+  const stdinListener = process.stdin.on('data', async (data) => await sandbox.pty.sendInput(terminalSession.pid, data))
 
   const exited = async () => {
+    // TODO: handle exit
+    await wait(1000_000)
     await terminalSession.wait()
     await input.stop()
     console.log(exitText)

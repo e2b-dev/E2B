@@ -34,20 +34,16 @@ export const connectCommand = new commander.Command('connect')
 async function connectToSandbox({ apiKey, sandboxID }: { apiKey: string, sandboxID: string }) {
   const sandbox = await Sandbox.connect(sandboxID, { apiKey })
 
-    const { exited } = await spawnConnectedTerminal(
-      sandbox,
-      `Terminal connected to sandbox ${asPrimary(
-        sandboxID,
-      )}\nwith sandbox ID ${asBold(`${sandbox.sandboxId}`)}`,
-      `Disconnecting terminal from sandbox ${asPrimary(
-        sandboxID,
-      )}`,
-    )
+  const { exited } = await spawnConnectedTerminal(
+    sandbox,
+    `Terminal connected to sandbox ${asPrimary(
+      sandboxID,
+    )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`,
+    `Disconnecting terminal from sandbox ${asPrimary(
+      sandboxID,
+    )}`,
+  )
 
-    await exited
-    console.log(
-      `Closing terminal connection to sandbox ${asPrimary(
-        sandboxID,
-      )}`,
-    )
+  await exited
+  console.log(`Closing terminal connection to sandbox ${asPrimary(sandboxID)}`)
 }
