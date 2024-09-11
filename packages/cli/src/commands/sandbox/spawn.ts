@@ -82,18 +82,17 @@ export async function connectSandbox({
 }) {
   const sandbox = await e2b.Sandbox.create(template.templateID, { apiKey })
 
-  const { exited } = await spawnConnectedTerminal(
-    sandbox,
-    `Terminal connected to sandbox ${asFormattedSandboxTemplate(
-      template,
-    )} with sandbox ID ${asBold(
-      `${sandbox.sandboxId}`,
-    )}`,
-    `Disconnecting terminal from sandbox ${asFormattedSandboxTemplate(
-      template,
-    )}`,
-  )
+  // keep-alive loop
+  const intervalId = setInterval(async () => {
+    await sandbox.setTimeout(10_000)
+  }, 5_000)
 
-  await exited()
-  console.log(`Closing terminal connection to sandbox ${asFormattedSandboxTemplate(template)}`)
+  console.log(`Terminal connecting to template ${asFormattedSandboxTemplate(template)} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`)
+  try {
+    await spawnConnectedTerminal(sandbox)
+  } finally {
+    clearInterval(intervalId)
+    await sandbox.kill()
+    console.log(`Closing terminal connection to template ${asFormattedSandboxTemplate(template)} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`)
+  }
 }

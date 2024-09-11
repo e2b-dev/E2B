@@ -1,5 +1,4 @@
 import * as e2b from 'e2b'
-import {wait} from './utils/wait'
 
 
 function getStdoutSize() {
@@ -9,40 +8,42 @@ function getStdoutSize() {
   }
 }
 
-export async function spawnConnectedTerminal(
-  sandbox: e2b.Sandbox,
-  introText: string,
-  exitText: string,
-) {
+export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
   // Clear local terminal emulator before starting terminal
   // process.stdout.write('\x1b[2J\x1b[0f')
 
-  console.log(introText)
+  process.stdin.setRawMode(true)
+  process.stdout.setEncoding('utf-8')
+
 
   const terminalSession = await sandbox.pty.create({
-    onData: (data: Uint8Array) => process.stdout.write(data),
-    ...getStdoutSize()
-  })
+      onData: data => {
+        process.stdout.write(data)
+      },
+      ...getStdoutSize(),
+      timeoutMs: 0,
+    })
 
-  // TODO: missing newlines
-  process.stdin.setRawMode(true)
-  process.stdout.setEncoding('utf8')
 
   const resizeListener = process.stdout.on('resize', () => sandbox.pty.resize(terminalSession.pid, getStdoutSize()))
   const stdinListener = process.stdin.on('data', async (data) => await sandbox.pty.sendInput(terminalSession.pid, data))
 
-  const exited = async () => {
-    // TODO: handle exit
-    await wait(1000_000)
+  // Wait for terminal session to finish
+  try {
     await terminalSession.wait()
-    await input.stop()
-    console.log(exitText)
+  } catch (err: any) {
+    if (err instanceof e2b.ProcessExitError) {
+      // TODO: Handle Ctrl+C?
+      if (err.exitCode === 130) {
+        return
+      }
+    }
+    throw err
+  } finally {
+    // Cleanup
+    process.stdout.write('\n')
     resizeListener.destroy()
     stdinListener.destroy()
-  }
-
-  return {
-    kill: terminalSession.kill.bind(terminalSession),
-    exited,
+    process.stdin.setRawMode(false)
   }
 }
