@@ -12,7 +12,7 @@ class SandboxSetup(ABC):
     _limits = Limits(
         max_keepalive_connections=10,
         max_connections=20,
-        keepalive_expiry=600,
+        keepalive_expiry=540,
     )
 
     envd_port = 49983
