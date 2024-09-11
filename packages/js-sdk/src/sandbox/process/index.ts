@@ -10,13 +10,12 @@ import { PlainMessage } from '@bufbuild/protobuf'
 import { Process as ProcessService } from '../../envd/process/process_connect'
 import {
   Signal,
-  StartResponse,
   ProcessConfig,
 } from '../../envd/process/process_pb'
 import { ConnectionConfig, Username, ConnectionOpts } from '../../connectionConfig'
-import { SandboxError } from '../../errors'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { ProcessHandle, ProcessResult } from './processHandle'
+import { handleStartEvent } from '../../envd/api'
 
 export interface ProcessRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
 
@@ -141,11 +140,7 @@ export class Process {
     })
 
     try {
-      const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
-
-      if (startEvent.event?.event.case !== 'start') {
-        throw new SandboxError(`Expected start event, got ${startEvent.event?.event}`)
-      }
+      const pid = await handleStartEvent(events)
 
       clearTimeout(reqTimeout)
 
@@ -198,15 +193,9 @@ export class Process {
     })
 
     try {
-      const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
-
-      if (startEvent.event?.event.case !== 'start') {
-        throw new SandboxError(`Expected start event, got ${startEvent.event?.event}`)
-      }
+      const pid = await handleStartEvent(events)
 
       clearTimeout(reqTimeout)
-
-      const pid = startEvent.event.event.value.pid
 
       return new ProcessHandle(
         pid,

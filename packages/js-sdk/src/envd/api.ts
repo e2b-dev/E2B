@@ -4,6 +4,9 @@ import type { components, paths } from './schema.gen'
 import { ConnectionConfig } from '../connectionConfig'
 import { createApiLogger } from '../logs'
 import { SandboxError, InvalidArgumentError, NotFoundError, NotEnoughSpaceError, formatSandboxTimeoutError, AuthenticationError } from '../errors'
+import { StartResponse } from './process/process_pb'
+import { Code, ConnectError } from '@connectrpc/connect'
+import { WatchDirResponse } from './filesystem/filesystem_pb'
 
 export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(res: FetchResponse<A, B, C>) {
   if (!res.error) {
@@ -28,6 +31,27 @@ export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
     default:
       return new SandboxError(`${res.response.status}: ${message}`)
   }
+}
+
+export async function handleStartEvent(events: AsyncIterable<StartResponse | WatchDirResponse>) {
+  let startEvent: StartResponse
+
+  try {
+    startEvent = (await events[Symbol.asyncIterator]().next()).value
+  } catch (err) {
+    if (err instanceof ConnectError) {
+      if (err.code === Code.Unavailable) {
+        throw new NotFoundError('Sandbox is probably not running anymore')
+      }
+    }
+
+    throw err
+  }
+  if (startEvent.event?.event.case !== 'start') {
+    throw new Error('Expected start event')
+  }
+
+  return startEvent.event.event.value.pid
 }
 
 class EnvdApiClient {

@@ -7,13 +7,11 @@ import {
 } from '@connectrpc/connect'
 
 import { Process as ProcessService } from '../envd/process/process_connect'
-import {
-  Signal,
-  StartResponse,
-} from '../envd/process/process_pb'
+import { Signal } from '../envd/process/process_pb'
 import { ConnectionConfig, ConnectionOpts, Username } from '../connectionConfig'
 import { ProcessHandle } from './process/processHandle'
 import { authenticationHeader, handleRpcError } from '../envd/rpc'
+import { handleStartEvent } from '../envd/api'
 
 export interface PtyCreateOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
   cols: number
@@ -59,15 +57,9 @@ export class Pty {
       timeoutMs: opts?.timeoutMs ?? 60_000,
     })
 
-    const startEvent: StartResponse = (await events[Symbol.asyncIterator]().next()).value
-
-    if (startEvent.event?.event.case !== 'start') {
-      throw new Error('Expected start event')
-    }
+    const pid = await handleStartEvent(events)
 
     clearTimeout(reqTimeout)
-
-    const pid = startEvent.event.event.value.pid
 
     return new ProcessHandle(
       pid,

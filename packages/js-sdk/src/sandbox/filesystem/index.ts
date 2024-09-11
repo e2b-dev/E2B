@@ -11,15 +11,13 @@ import {
   Username,
   ConnectionOpts,
 } from '../../connectionConfig'
-import {
-  SandboxError
-} from '../../errors'
-import { handleEnvdApiError } from '../../envd/api'
+
+import { handleEnvdApiError, handleStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
-import { FileType as FsFileType, WatchDirResponse } from '../../envd/filesystem/filesystem_pb'
+import { FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
 
 import { WatchHandle, FilesystemEvent } from './watchHandle'
 
@@ -252,11 +250,7 @@ export class Filesystem {
     })
 
     try {
-      const startEvent: WatchDirResponse = (await events[Symbol.asyncIterator]().next()).value
-
-      if (startEvent.event.case !== 'start') {
-        throw new SandboxError(`Expected start event, got ${startEvent.event}`)
-      }
+      await handleStartEvent(events)
 
       clearTimeout(reqTimeout)
 
