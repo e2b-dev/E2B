@@ -105,6 +105,11 @@ export class Sandbox extends SandboxApi {
   }
 
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    if (this.connectionConfig.debug) {
+      console.log('Skipping kill in debug mode')
+      return
+    }
+
     await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
   }
 
