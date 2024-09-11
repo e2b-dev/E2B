@@ -22,6 +22,7 @@ The latest beta versions you should install can be found in NPM/PyPi release his
 	- [Getting sandbox upload URL](#getting-sandbox-upload-url)
 	- [Configuring sandbox `cwd`](#configuring-sandbox-cwd)
 	- [Timeouts](#timeouts)
+	- [Getting sandbox url](#getting-sandbox-url)
 - [Code Interpreter SDK changes](#code-interpreter-sdk-changes)
 	- [Executing code](#executing-code)
 	- [Custom template](#custom-template)
@@ -414,6 +415,34 @@ There are now two types of timeouts that you can pass as parameters:
 1. `request_timeout`/`requestTimeoutMs` sets how long the operation should wait for connection/processing.
 This is useful for ensuring that none of the sandbox operations hang indefinitely.
 2. `timeout`/`timeoutMs` which is used for setting the maximum length of long-running operations like executing code, running processes, or the sandbox itself.
+
+## Listing sandboxes
+
+
+## Getting sandbox url
+The method for getting the sandbox host has changed from `sandbox.getHostname/sandbox.get_hostname` to `sandbox.getHost/sandbox.get_host`.
+It now requires specifying the port.
+
+<CodeGroup isRunnable={false}>
+```js
+import Sandbox from 'e2b'
+
+// Before
+// const host = await sandbox.getHostname(80)
+
+// Now
+const host = await sandbox.getHost(80)
+```
+```python
+from e2b import Sandbox
+
+# Before
+# host = sandbox.get_hostname(80)
+
+# Now
+host = sandbox.get_host(80)
+```
+</CodeGroup>
 
 
 ## <h1>Code Interpreter SDK changes</h1>
