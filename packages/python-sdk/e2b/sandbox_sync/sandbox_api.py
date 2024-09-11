@@ -78,6 +78,7 @@ class SandboxApi(SandboxApiBase):
         )
 
         if config.debug:
+            # Skip killing the sandbox in debug mode
             return True
 
         with ApiClient(
@@ -112,6 +113,10 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
         )
+
+        if config.debug:
+            # Skip setting timeout in debug mode
+            return
 
         with ApiClient(
             config, transport=HTTPTransport(limits=SandboxApiBase._limits)

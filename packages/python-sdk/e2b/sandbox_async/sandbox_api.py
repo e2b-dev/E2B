@@ -75,6 +75,7 @@ class SandboxApi(SandboxApiBase):
         )
 
         if config.debug:
+            # Skip killing the sandbox in debug mode
             return True
 
         async with AsyncApiClient(config) as api_client:
@@ -107,6 +108,10 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
         )
+
+        if config.debug:
+            # Skip setting the timeout in debug mode
+            return
 
         async with AsyncApiClient(config) as api_client:
             res = await post_sandboxes_sandbox_id_timeout.asyncio_detailed(

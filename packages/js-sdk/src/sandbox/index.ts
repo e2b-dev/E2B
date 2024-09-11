@@ -101,12 +101,17 @@ export class Sandbox extends SandboxApi {
   }
 
   async setTimeout(timeoutMs: number, opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    if (this.connectionConfig.debug) {
+      // Skip timeout in debug mode
+      return
+    }
+
     await Sandbox.setTimeout(this.sandboxId, timeoutMs, { ...this.connectionConfig, ...opts })
   }
 
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     if (this.connectionConfig.debug) {
-      console.log('Skipping kill in debug mode')
+      // Skip killing in debug mode
       return
     }
 
