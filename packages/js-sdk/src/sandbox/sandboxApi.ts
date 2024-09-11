@@ -1,4 +1,4 @@
-import { ApiClient, handleApiError } from '../api'
+import { ApiClient, components, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../errors'
@@ -82,7 +82,7 @@ export class SandboxApi {
       throw err
     }
 
-    return res.data?.map((sandbox) => ({
+    return res.data?.map((sandbox: components['schemas']['RunningSandbox']) => ({
       sandboxId: this.getSandboxId({ sandboxId: sandbox.sandboxID, clientId: sandbox.clientID }),
       templateId: sandbox.templateID,
       ...(sandbox.alias && { name: sandbox.alias }),
