@@ -22,6 +22,7 @@ The latest beta versions you should install can be found in NPM/PyPi release his
 	- [Getting sandbox upload URL](#getting-sandbox-upload-url)
 	- [Configuring sandbox `cwd`](#configuring-sandbox-cwd)
 	- [Timeouts](#timeouts)
+	- [Listing sandboxes](#listing-sandboxes)
 	- [Getting sandbox url](#getting-sandbox-url)
 - [Code Interpreter SDK changes](#code-interpreter-sdk-changes)
 	- [Executing code](#executing-code)
@@ -417,6 +418,66 @@ This is useful for ensuring that none of the sandbox operations hang indefinitel
 2. `timeout`/`timeoutMs` which is used for setting the maximum length of long-running operations like executing code, running processes, or the sandbox itself.
 
 ## Listing sandboxes
+Some properties returned from the `Sandbox.list` method have been renamed.
+
+<CodeGroup isRunnable={false}>
+```js
+import Sandbox from 'e2b'
+
+// Before
+// const sandboxes = await Sandbox.list()
+
+// `sandboxes` is an array of `RunningSandbox` objects:
+// {
+//   sandboxID: string
+//   templateID: string
+//   alias?: string
+//   metadata?: SandboxMetadata
+//   startedAt: Date
+// }
+
+// Now
+const sandboxes = await Sandbox.list()
+
+// `sandboxes` is an array of `SandboxInfo` objects:
+// {
+//   sandboxId: string
+//   templateId: string
+//   name?: string
+//   metadata: Record<string, string>
+//   startedAt: Date
+// }
+```
+```python
+from e2b import Sandbox
+
+# Before
+# sandboxes = Sandbox.list()
+
+# `sandboxes` is an array of `RunningSandbox` objects:
+# class RunningSandbox(BaseModel):
+#     sandbox_id: str
+#     template_id: str
+#     alias: Optional[str]
+#     metadata: Optional[Dict[str, str]]
+#     cpu_count: int
+#     memory_mb: int
+#     started_at: datetime
+
+# Now
+sandboxes = Sandbox.list()
+
+# `sandboxes` is an array of `SandboxInfo` objects:
+# @dataclass
+# class SandboxInfo:
+#     sandbox_id: str
+#     template_id: str
+#     name: Optional[str]
+#     metadata: Dict[str, str]
+#     started_at: datetime
+
+```
+</CodeGroup>
 
 
 ## Getting sandbox url
