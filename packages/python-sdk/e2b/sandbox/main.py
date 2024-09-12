@@ -10,9 +10,9 @@ from httpx import Limits
 
 class SandboxSetup(ABC):
     _limits = Limits(
-        max_keepalive_connections=10,
-        max_connections=20,
-        keepalive_expiry=540,
+        max_keepalive_connections=15,
+        max_connections=30,
+        keepalive_expiry=300,
     )
 
     envd_port = 49983

@@ -2,10 +2,17 @@ import gzip
 import json
 import struct
 
-from httpcore import ConnectionPool, AsyncConnectionPool, Response
+from httpcore import (
+    ConnectionInterface,
+    ConnectionPool,
+    AsyncConnectionPool,
+    RemoteProtocolError,
+    Response,
+)
 from enum import Flag, Enum
-from typing import Callable, Optional, Dict, List, Any, Generator, Tuple
+from typing import Callable, Optional, Dict, Any, Generator, Tuple, Union
 from google.protobuf import json_format
+from httpcore import URL
 
 
 class EnvelopeFlags(Flag):
@@ -145,6 +152,7 @@ class Client:
         self._response_type = response_type
         self._compressor = compressor
         self._headers = {**{"user-agent": "connect-python"}, **headers}
+        self._connection_retries = 3
 
     def _prepare_unary_request(
         self,
@@ -215,31 +223,49 @@ class Client:
         if self.async_pool is None:
             raise ValueError("async_pool is required")
 
-        res = await self.async_pool.request(
-            **self._prepare_unary_request(
-                req,
-                request_timeout,
-                headers,
-                **opts,
-            )
+        req_data = self._prepare_unary_request(
+            req,
+            request_timeout,
+            headers,
+            **opts,
         )
 
-        return self._process_unary_response(res)
+        conn = self.async_pool
+
+        for _ in range(self._connection_retries):
+            try:
+                res = await conn.request(**req_data)
+                return self._process_unary_response(res)
+            except RemoteProtocolError:
+                conn = self.async_pool.create_connection(URL(req_data["url"]).origin)
+
+                continue
+            except:
+                raise
 
     def call_unary(self, req, request_timeout=None, headers={}, **opts):
         if self.pool is None:
             raise ValueError("pool is required")
 
-        res = self.pool.request(
-            **self._prepare_unary_request(
-                req,
-                request_timeout,
-                headers,
-                **opts,
-            )
+        req_data = self._prepare_unary_request(
+            req,
+            request_timeout,
+            headers,
+            **opts,
         )
 
-        return self._process_unary_response(res)
+        conn = self.pool
+
+        for _ in range(self._connection_retries):
+            try:
+                res = conn.request(**req_data)
+                return self._process_unary_response(res)
+            except RemoteProtocolError:
+                conn = self.pool.create_connection(URL(req_data["url"]).origin)
+
+                continue
+            except:
+                raise
 
     def _create_stream_timeout(self, timeout: Optional[int]):
         if timeout:
@@ -301,27 +327,39 @@ class Client:
         if self.async_pool is None:
             raise ValueError("async_pool is required")
 
-        async with self.async_pool.stream(
-            **self._prepare_server_stream_request(
-                req,
-                request_timeout,
-                timeout,
-                headers,
-                **opts,
-            )
-        ) as http_resp:
-            if http_resp.status != 200:
-                await http_resp.aread()
-                raise error_for_response(http_resp)
+        req_data = self._prepare_server_stream_request(
+            req,
+            request_timeout,
+            timeout,
+            headers,
+            **opts,
+        )
 
-            parser = ServerStreamParser(
-                decode=self._codec.decode,
-                response_type=self._response_type,
-            )
+        conn = self.async_pool
 
-            async for chunk in http_resp.aiter_stream():
-                for chunk in parser.parse(chunk):
-                    yield chunk
+        for _ in range(self._connection_retries):
+            try:
+                async with conn.stream(**req_data) as http_resp:
+                    if http_resp.status != 200:
+                        await http_resp.aread()
+                        raise error_for_response(http_resp)
+
+                    parser = ServerStreamParser(
+                        decode=self._codec.decode,
+                        response_type=self._response_type,
+                    )
+
+                    async for chunk in http_resp.aiter_stream():
+                        for chunk in parser.parse(chunk):
+                            yield chunk
+
+                    return
+            except RemoteProtocolError:
+                conn = self.async_pool.create_connection(URL(req_data["url"]).origin)
+
+                continue
+            except:
+                raise
 
     def call_server_stream(
         self,
@@ -334,25 +372,37 @@ class Client:
         if self.pool is None:
             raise ValueError("pool is required")
 
-        with self.pool.stream(
-            **self._prepare_server_stream_request(
-                req,
-                request_timeout,
-                timeout,
-                headers,
-                **opts,
-            )
-        ) as http_resp:
-            if http_resp.status != 200:
-                raise error_for_response(http_resp)
+        req_data = self._prepare_server_stream_request(
+            req,
+            request_timeout,
+            timeout,
+            headers,
+            **opts,
+        )
 
-            parser = ServerStreamParser(
-                decode=self._codec.decode,
-                response_type=self._response_type,
-            )
+        conn = self.pool
 
-            for chunk in http_resp.iter_stream():
-                yield from parser.parse(chunk)
+        for _ in range(self._connection_retries):
+            try:
+                with conn.stream(**req_data) as http_resp:
+                    if http_resp.status != 200:
+                        raise error_for_response(http_resp)
+
+                    parser = ServerStreamParser(
+                        decode=self._codec.decode,
+                        response_type=self._response_type,
+                    )
+
+                    for chunk in http_resp.iter_stream():
+                        yield from parser.parse(chunk)
+
+                    return
+            except RemoteProtocolError:
+                conn = self.pool.create_connection(URL(req_data["url"]).origin)
+
+                continue
+            except:
+                raise
 
     def call_client_stream(self, req, **opts):
         raise NotImplementedError("client stream not supported")
@@ -363,12 +413,14 @@ class Client:
     def call_bidi_stream(self, req, **opts):
         raise NotImplementedError("bidi stream not supported")
 
+    def acall_bidi_stream(self, req, **opts):
+        raise NotImplementedError("bidi stream not supported")
+
 
 DataLen = int
 
 
 class ServerStreamParser:
-
     def __init__(
         self,
         decode: Callable,
