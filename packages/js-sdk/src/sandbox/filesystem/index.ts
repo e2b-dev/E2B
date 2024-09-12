@@ -1,27 +1,27 @@
 import {
-  createPromiseClient,
-  Transport,
-  PromiseClient,
-  ConnectError,
   Code,
+  ConnectError,
+  createPromiseClient,
+  PromiseClient,
+  Transport,
 } from '@connectrpc/connect'
 import {
   ConnectionConfig,
+  ConnectionOpts,
   defaultUsername,
   Username,
-  ConnectionOpts,
 } from '../../connectionConfig'
+import { handleEnvdApiError } from '../../envd/api'
+import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import {
   SandboxError
 } from '../../errors'
-import { handleEnvdApiError } from '../../envd/api'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import { FileType as FsFileType, WatchDirResponse } from '../../envd/filesystem/filesystem_pb'
 
-import { WatchHandle, FilesystemEvent } from './watchHandle'
+import { FilesystemEvent, FilesystemEventType, WatchHandle } from './watchHandle'
 
 export interface EntryInfo {
   name: string
@@ -233,7 +233,7 @@ export class Filesystem {
   async watch(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: FilesystemRequestOpts & { timeout?: number, onExit?: (err?: Error) => void | Promise<void> },
+    opts?: FilesystemRequestOpts & { timeout?: number, onExit?: (err?: Error) => void | Promise<void>, eventTypes?: Set<FilesystemEventType>},
   ): Promise<WatchHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -251,6 +251,15 @@ export class Filesystem {
       timeoutMs: opts?.timeout ?? this.defaultWatchTimeout,
     })
 
+    let onEvent_ = onEvent
+
+    if (opts?.eventTypes) {
+      // wrap handler with event type filtering
+      onEvent_ = (event: FilesystemEvent) => {
+        if (opts.eventTypes!.has(event.type)) return onEvent(event)
+      }
+    }
+
     try {
       const startEvent: WatchDirResponse = (await events[Symbol.asyncIterator]().next()).value
 
@@ -263,7 +272,7 @@ export class Filesystem {
       return new WatchHandle(
         () => controller.abort(),
         events,
-        onEvent,
+        onEvent_,
         opts?.onExit,
       )
     } catch (err) {
