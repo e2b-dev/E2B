@@ -4,7 +4,7 @@ import * as updateNotifier from 'update-notifier'
 
 import * as packageJSON from '../package.json'
 import { program } from './commands'
-import { Option } from 'commander'
+import * as commander from 'commander'
 import * as stripAnsi from 'strip-ansi'
 
 export const pkg = packageJSON
@@ -18,7 +18,7 @@ updateNotifier
 
 program
   .version(packageJSON.version, undefined, 'display E2B CLI version')
-  .addOption(new Option('-cmd2json').hideHelp())
+  .addOption(new commander.Option('-cmd2json').hideHelp())
   .on('option:-cmd2json', () => {
     process.stdout.write(
       JSON.stringify(

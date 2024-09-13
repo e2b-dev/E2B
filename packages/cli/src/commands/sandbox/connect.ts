@@ -1,4 +1,4 @@
-import { Sandbox } from 'e2b'
+import * as e2b from 'e2b'
 import * as commander from 'commander'
 
 import { spawnConnectedTerminal } from 'src/terminal'
@@ -35,7 +35,7 @@ async function connectToSandbox({
   apiKey: string
   sandboxID: string
 }) {
-  const sandbox = await Sandbox.connect(sandboxID, { apiKey })
+  const sandbox = await e2b.Sandbox.connect(sandboxID, { apiKey })
 
   console.log(
     `Terminal connecting to sandbox ${asPrimary(`${sandbox.sandboxId}`)}`,
