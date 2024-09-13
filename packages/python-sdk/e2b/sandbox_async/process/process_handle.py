@@ -17,7 +17,7 @@ from e2b.sandbox.process.process_handle import (
     ProcessResult,
     Stderr,
     Stdout,
-    Pty,
+    PtyOutput,
 )
 from e2b.sandbox_async.utilts import OutputHandler
 
@@ -56,7 +56,7 @@ class AsyncProcessHandle:
         ],
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
-        on_pty: Optional[OutputHandler[Pty]] = None,
+        on_pty: Optional[OutputHandler[PtyOutput]] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
@@ -78,7 +78,7 @@ class AsyncProcessHandle:
         self,
     ) -> AsyncGenerator[
         Union[
-            Tuple[Stdout, None, None], Tuple[None, Stderr, None], Tuple[None, None, Pty]
+            Tuple[Stdout, None, None], Tuple[None, Stderr, None], Tuple[None, None, PtyOutput]
         ],
         None,
     ]:

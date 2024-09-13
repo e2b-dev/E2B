@@ -33,7 +33,7 @@ export type {
   ProcessResult,
   Stdout,
   Stderr,
-  Pty,
+  PtyOutput,
   ProcessHandle,
 } from './sandbox/process/processHandle'
 export type { SandboxApiOpts } from './sandbox/sandboxApi'
@@ -45,6 +45,8 @@ export type {
   ProcessStartOpts,
   Process,
 } from './sandbox/process'
+
+export type { Pty } from './sandbox/pty'
 
 export type { SandboxInfo } from './sandbox/sandboxApi'
 export type { SandboxOpts } from './sandbox'

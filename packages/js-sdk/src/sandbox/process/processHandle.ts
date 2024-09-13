@@ -11,7 +11,7 @@ export type Branded<T, B> = T & Brand<B>
 
 export type Stdout = Branded<string, 'stdout'>
 export type Stderr = Branded<string, 'stderr'>
-export type Pty = Branded<Uint8Array, 'pty'>
+export type PtyOutput = Branded<Uint8Array, 'pty'>
 
 export interface ProcessResult {
   exitCode: number
@@ -106,7 +106,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     await this.handleKill()
   }
 
-  private async* iterateEvents(): AsyncGenerator<[Stdout, null, null] | [null, Stderr, null] | [null, null, Pty]> {
+  private async* iterateEvents(): AsyncGenerator<[Stdout, null, null] | [null, Stderr, null] | [null, null, PtyOutput]> {
     for await (const event of this.events) {
       const e = event?.event?.event
       let out: string | undefined
@@ -125,7 +125,7 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
               yield [null, out as Stderr, null]
               break
             case 'pty':
-              yield [null, null, e.value.output.value as Pty]
+              yield [null, null, e.value.output.value as PtyOutput]
               break
           }
           break

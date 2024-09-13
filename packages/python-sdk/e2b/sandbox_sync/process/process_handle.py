@@ -7,7 +7,7 @@ from e2b.sandbox.process.process_handle import (
     ProcessResult,
     Stderr,
     Stdout,
-    Pty,
+    PtyOutput,
 )
 
 
@@ -41,7 +41,7 @@ class ProcessHandle:
         self,
     ) -> Generator[
         Union[
-            Tuple[Stdout, None, None], Tuple[None, Stderr, None], Tuple[None, None, Pty]
+            Tuple[Stdout, None, None], Tuple[None, Stderr, None], Tuple[None, None, PtyOutput]
         ],
         None,
         None,

@@ -20,6 +20,8 @@ from .sandbox.process.process_handle import (
     Stderr,
     Stdout,
     ProcessExitException,
+    PtyOutput,
+    PtySize,
 )
 from .sandbox.process.main import ProcessInfo
 from .sandbox.filesystem.watch_handle import (
