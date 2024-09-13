@@ -4,7 +4,7 @@ from e2b import Sandbox
 
 
 def test_command_envs(sandbox: Sandbox):
-    cmd = sandbox.commands.run("echo $FOO",  envs={"FOO": "bar"})
+    cmd = sandbox.commands.run("echo $FOO", envs={"FOO": "bar"})
     assert cmd.stdout.strip() == "bar"
 
 

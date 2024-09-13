@@ -1,8 +1,10 @@
+import uuid
+
 from e2b import Sandbox, FileType
 
 
 def test_list_directory(sandbox: Sandbox):
-    dir_name = "test_directory"
+    dir_name = f"test_directory_{uuid.uuid4()}"
 
     sandbox.files.make_dir(dir_name)
     files = sandbox.files.list(dir_name)

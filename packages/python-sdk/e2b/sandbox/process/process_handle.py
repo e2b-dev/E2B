@@ -5,6 +5,13 @@ from e2b.exceptions import SandboxException
 
 Stdout = str
 Stderr = str
+Pty = str
+
+
+@dataclass
+class PtySize:
+    rows: int
+    cols: int
 
 
 @dataclass

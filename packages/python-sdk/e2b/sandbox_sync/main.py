@@ -13,6 +13,7 @@ from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.process.main import Process
+from e2b.sandbox_sync.pty.main import Pty
 from e2b.sandbox_sync.sandbox_api import SandboxApi
 
 
@@ -39,6 +40,10 @@ class Sandbox(SandboxSetup, SandboxApi):
     @property
     def commands(self) -> Process:
         return self._process
+
+    @property
+    def pty(self) -> Pty:
+        return self._pty
 
     @property
     def sandbox_id(self) -> str:
@@ -112,6 +117,11 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._envd_api,
         )
         self._process = Process(
+            self.envd_api_url,
+            self.connection_config,
+            self._transport._pool,
+        )
+        self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
             self._transport._pool,

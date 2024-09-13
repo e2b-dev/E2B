@@ -1,7 +1,7 @@
 import e2b_connect
 import httpcore
 
-from typing import Dict, List, Optional, Literal, overload, Union, Callable
+from typing import Dict, Optional
 
 from e2b.envd.process import process_connect, process_pb2
 from e2b.connection_config import (
@@ -10,12 +10,11 @@ from e2b.connection_config import (
 )
 from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.sandbox.process.main import ProcessInfo
-from e2b.sandbox.process.process_handle import ProcessResult
+from e2b.sandbox.process.process_handle import PtySize
 from e2b.sandbox_sync.process.process_handle import ProcessHandle
 
 
-class Process:
+class Pty:
     def __init__(
         self,
         envd_api_url: str,
@@ -29,31 +28,6 @@ class Process:
             # compressor=e2b_connect.GzipCompressor,
             pool=pool,
         )
-
-    def list(
-        self,
-        request_timeout: Optional[float] = None,
-    ) -> List[ProcessInfo]:
-        try:
-            res = self._rpc.list(
-                process_pb2.ListRequest(),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
-            )
-            return [
-                ProcessInfo(
-                    pid=p.pid,
-                    tag=p.tag,
-                    cmd=p.config.cmd,
-                    args=list(p.config.args),
-                    envs=dict(p.config.envs),
-                    cwd=p.config.cwd,
-                )
-                for p in res.processes
-            ]
-        except Exception as e:
-            raise handle_rpc_exception(e)
 
     def kill(
         self,
@@ -80,15 +54,15 @@ class Process:
     def send_stdin(
         self,
         pid: int,
-        data: str,
+        data: bytes,
         request_timeout: Optional[float] = None,
-    ):
+    ) -> None:
         try:
             self._rpc.send_input(
                 process_pb2.SendInputRequest(
                     process=process_pb2.ProcessSelector(pid=pid),
                     input=process_pb2.ProcessInput(
-                        stdin=data.encode(),
+                        pty=data,
                     ),
                 ),
                 request_timeout=self._connection_config.get_request_timeout(
@@ -98,80 +72,27 @@ class Process:
         except Exception as e:
             raise handle_rpc_exception(e)
 
-    @overload
-    def run(
+    def create(
         self,
-        cmd: str,
-        background: Union[Literal[False], None] = None,
-        envs: Optional[Dict[str, str]] = None,
+        size: PtySize,
         user: Username = "user",
         cwd: Optional[str] = None,
-        on_stdout: Optional[Callable[[str], None]] = None,
-        on_stderr: Optional[Callable[[str], None]] = None,
-        timeout: Optional[float] = 60,
-        request_timeout: Optional[float] = None,
-    ) -> ProcessResult: ...
-
-    @overload
-    def run(
-        self,
-        cmd: str,
-        background: Literal[True],
         envs: Optional[Dict[str, str]] = None,
-        user: Username = "user",
-        cwd: Optional[str] = None,
-        on_stdout: None = None,
-        on_stderr: None = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessHandle: ...
-
-    def run(
-        self,
-        cmd: str,
-        background: Union[bool, None] = None,
-        envs: Optional[Dict[str, str]] = None,
-        user: Username = "user",
-        cwd: Optional[str] = None,
-        on_stdout: Optional[Callable[[str], None]] = None,
-        on_stderr: Optional[Callable[[str], None]] = None,
-        timeout: Optional[float] = 60,
-        request_timeout: Optional[float] = None,
-    ):
-        proc = self._start(
-            cmd,
-            envs,
-            user,
-            cwd,
-            timeout,
-            request_timeout,
-        )
-
-        return (
-            proc
-            if background
-            else proc.wait(
-                on_stdout=on_stdout,
-                on_stderr=on_stderr,
-            )
-        )
-
-    def _start(
-        self,
-        cmd: str,
-        envs: Optional[Dict[str, str]] = None,
-        user: Username = "user",
-        cwd: Optional[str] = None,
-        timeout: Optional[float] = 60,
-        request_timeout: Optional[float] = None,
-    ):
+    ) -> ProcessHandle:
+        envs = envs or {}
+        envs["TERM"] = "xterm-256color"
         events = self._rpc.start(
             process_pb2.StartRequest(
                 process=process_pb2.ProcessConfig(
                     cmd="/bin/bash",
                     envs=envs,
-                    args=["-l", "-c", cmd],
+                    args=["-i", "-l"],
                     cwd=cwd,
+                ),
+                pty=process_pb2.PTY(
+                    size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols)
                 ),
             ),
             headers=authentication_header(user),
@@ -197,34 +118,17 @@ class Process:
         except Exception as e:
             raise handle_rpc_exception(e)
 
-    def connect(
-        self,
-        pid: int,
-        timeout: Optional[float] = 60,
-        request_timeout: Optional[float] = None,
-    ):
-        events = self._rpc.connect(
-            process_pb2.ConnectRequest(
+    def resize(
+        self, pid: int, size: PtySize, request_timeout: Optional[float] = None
+    ) -> None:
+        self._rpc.update(
+            process_pb2.UpdateRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
+                pty=process_pb2.PTY(
+                    size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols),
+                ),
             ),
-            timeout=timeout,
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
             ),
         )
-
-        try:
-            start_event = events.__next__()
-
-            if not start_event.HasField("event"):
-                raise SandboxException(
-                    f"Failed to connect to process: expected start event, got {start_event}"
-                )
-
-            return ProcessHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
-                events=events,
-            )
-        except Exception as e:
-            raise handle_rpc_exception(e)

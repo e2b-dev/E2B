@@ -1,8 +1,10 @@
+import uuid
+
 from e2b import Sandbox
 
 
 def test_make_directory(sandbox: Sandbox):
-    dir_name = "test_directory"
+    dir_name = f"test_directory_{uuid.uuid4()}"
 
     sandbox.files.make_dir(dir_name)
     exists = sandbox.files.exists(dir_name)
@@ -10,7 +12,7 @@ def test_make_directory(sandbox: Sandbox):
 
 
 async def test_make_directory_already_exists(sandbox: Sandbox):
-    dir_name = "test_directory"
+    dir_name = f"test_directory_{uuid.uuid4()}"
 
     created = sandbox.files.make_dir(dir_name)
     assert created
@@ -20,7 +22,7 @@ async def test_make_directory_already_exists(sandbox: Sandbox):
 
 
 def test_make_nested_directory(sandbox: Sandbox):
-    nested_dir_name = "test_directory/nested_directory"
+    nested_dir_name = f"test_directory_{uuid.uuid4()}/nested_directory"
 
     sandbox.files.make_dir(nested_dir_name)
     exists = sandbox.files.exists(nested_dir_name)

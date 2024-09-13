@@ -17,6 +17,7 @@ from e2b.sandbox.process.process_handle import (
     ProcessResult,
     Stderr,
     Stdout,
+    Pty,
 )
 from e2b.sandbox_async.utilts import OutputHandler
 
@@ -55,6 +56,7 @@ class AsyncProcessHandle:
         ],
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
+        on_pty: Optional[OutputHandler[Pty]] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
@@ -65,6 +67,7 @@ class AsyncProcessHandle:
 
         self._on_stdout = on_stdout
         self._on_stderr = on_stderr
+        self._on_pty = on_pty
 
         self._result: Optional[ProcessResult] = None
         self._iteration_exception: Optional[Exception] = None
@@ -74,7 +77,9 @@ class AsyncProcessHandle:
     async def _iterate_events(
         self,
     ) -> AsyncGenerator[
-        Union[Tuple[Stdout, None], Tuple[None, Stderr]],
+        Union[
+            Tuple[Stdout, None, None], Tuple[None, Stderr, None], Tuple[None, None, Pty]
+        ],
         None,
     ]:
         async for event in self._events:
@@ -82,11 +87,13 @@ class AsyncProcessHandle:
                 if event.event.data.stdout:
                     out = event.event.data.stdout.decode()
                     self._stdout += out
-                    yield out, None
+                    yield out, None, None
                 if event.event.data.stderr:
                     out = event.event.data.stderr.decode()
                     self._stderr += out
-                    yield None, out
+                    yield None, out, None
+                if event.event.data.pty:
+                    yield None, None, event.event.data.pty
             if event.event.HasField("end"):
                 self._result = ProcessResult(
                     stdout=self._stdout,
@@ -102,13 +109,17 @@ class AsyncProcessHandle:
 
     async def _handle_events(self):
         try:
-            async for stdout, stderr in self._iterate_events():
+            async for stdout, stderr, pty in self._iterate_events():
                 if stdout is not None and self._on_stdout:
                     cb = self._on_stdout(stdout)
                     if inspect.isawaitable(cb):
                         await cb
                 elif stderr is not None and self._on_stderr:
                     cb = self._on_stderr(stderr)
+                    if inspect.isawaitable(cb):
+                        await cb
+                elif pty is not None and self._on_pty:
+                    cb = self._on_pty(pty)
                     if inspect.isawaitable(cb):
                         await cb
         except StopAsyncIteration:

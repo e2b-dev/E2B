@@ -7,6 +7,7 @@ from e2b.sandbox.process.process_handle import (
     ProcessResult,
     Stderr,
     Stdout,
+    Pty,
 )
 
 
@@ -39,7 +40,9 @@ class ProcessHandle:
     def _handle_events(
         self,
     ) -> Generator[
-        Union[Tuple[Stdout, None], Tuple[None, Stderr]],
+        Union[
+            Tuple[Stdout, None, None], Tuple[None, Stderr, None], Tuple[None, None, Pty]
+        ],
         None,
         None,
     ]:
@@ -48,11 +51,13 @@ class ProcessHandle:
                 if event.event.data.stdout:
                     out = event.event.data.stdout.decode()
                     self._stdout += out
-                    yield out, None
+                    yield out, None, None
                 if event.event.data.stderr:
                     out = event.event.data.stderr.decode()
                     self._stderr += out
-                    yield None, out
+                    yield None, out, None
+                if event.event.data.pty:
+                    yield None, None, event.event.data.pty
             if event.event.HasField("end"):
                 self._result = ProcessResult(
                     stdout=self._stdout,
@@ -68,13 +73,16 @@ class ProcessHandle:
         self,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
+        on_pty: Optional[Callable[[str], None]] = None,
     ) -> ProcessResult:
         try:
-            for stdout, stderr in self:
+            for stdout, stderr, pty in self:
                 if stdout is not None and on_stdout:
                     on_stdout(stdout)
                 elif stderr is not None and on_stderr:
                     on_stderr(stderr)
+                elif pty is not None and on_pty:
+                    on_pty(pty)
         except StopIteration:
             pass
         except Exception as e:

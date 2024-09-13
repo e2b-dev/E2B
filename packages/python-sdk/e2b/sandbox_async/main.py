@@ -13,6 +13,7 @@ from e2b.envd.api import (
 )
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.process.process import Process
+from e2b.sandbox_async.pty.main import Pty
 from e2b.sandbox_async.sandbox_api import SandboxApi
 from e2b.sandbox.main import SandboxSetup
 
@@ -47,6 +48,10 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         return self._process
 
     @property
+    def pty(self) -> Pty:
+        return self._pty
+
+    @property
     def sandbox_id(self) -> str:
         return self._sandbox_id
 
@@ -79,6 +84,11 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             self._envd_api,
         )
         self._process = Process(
+            self.envd_api_url,
+            self.connection_config,
+            self._transport._pool,
+        )
+        self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
             self._transport._pool,
