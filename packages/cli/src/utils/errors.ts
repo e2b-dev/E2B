@@ -1,4 +1,3 @@
-
 /**
  * Thrown when a request to E2B API occurs.
  */
@@ -9,8 +8,10 @@ export class E2BRequestError extends Error {
   }
 }
 
-
-export function handleE2BRequestError(err?: { code: number; message: string; }, errMsg?: string) {
+export function handleE2BRequestError(
+  err?: { code: number; message: string },
+  errMsg?: string,
+) {
   if (!err) {
     return
   }
@@ -34,5 +35,9 @@ export function handleE2BRequestError(err?: { code: number; message: string; }, 
       break
   }
 
-  throw new E2BRequestError(`${errMsg && `${errMsg}: `}[${err.code}] ${message && `${message}: `}${err.message ?? 'no message'}`)
+  throw new E2BRequestError(
+    `${errMsg && `${errMsg}: `}[${err.code}] ${message && `${message}: `}${
+      err.message ?? 'no message'
+    }`,
+  )
 }

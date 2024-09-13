@@ -6,7 +6,10 @@ import * as e2b from 'e2b'
 
 export const killCommand = new commander.Command('kill')
   .description('kill sandbox')
-  .argument('<sandboxID>', `kill the sandbox specified by ${asBold('<sandboxID>')}`)
+  .argument(
+    '<sandboxID>',
+    `kill the sandbox specified by ${asBold('<sandboxID>')}`,
+  )
   .alias('kl')
   .action(async (sandboxID: string) => {
     try {
@@ -17,7 +20,7 @@ export const killCommand = new commander.Command('kill')
         process.exit(1)
       }
 
-      await e2b.Sandbox.kill(sandboxID, {apiKey})
+      await e2b.Sandbox.kill(sandboxID, { apiKey })
 
       console.log(`Sandbox ${asBold(sandboxID)} has been killed`)
     } catch (err: any) {

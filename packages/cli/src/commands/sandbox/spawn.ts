@@ -87,12 +87,20 @@ export async function connectSandbox({
     await sandbox.setTimeout(10_000)
   }, 5_000)
 
-  console.log(`Terminal connecting to template ${asFormattedSandboxTemplate(template)} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`)
+  console.log(
+    `Terminal connecting to template ${asFormattedSandboxTemplate(
+      template,
+    )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`,
+  )
   try {
     await spawnConnectedTerminal(sandbox)
   } finally {
     clearInterval(intervalId)
     await sandbox.kill()
-    console.log(`Closing terminal connection to template ${asFormattedSandboxTemplate(template)} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`)
+    console.log(
+      `Closing terminal connection to template ${asFormattedSandboxTemplate(
+        template,
+      )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`,
+    )
   }
 }

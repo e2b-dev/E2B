@@ -5,10 +5,14 @@ import * as e2b from 'e2b'
 import * as path from 'path'
 
 import { USER_CONFIG_PATH } from 'src/user'
-import {client, connectionConfig, ensureAccessToken, ensureUserConfig} from 'src/api'
+import {
+  client,
+  connectionConfig,
+  ensureAccessToken,
+  ensureUserConfig,
+} from 'src/api'
 import { asFormattedTeam } from '../../utils/format'
-import {handleE2BRequestError} from '../../utils/errors'
-
+import { handleE2BRequestError } from '../../utils/errors'
 
 export const configureCommand = new commander.Command('configure')
   .description('configure user')
@@ -26,27 +30,29 @@ export const configureCommand = new commander.Command('configure')
     ensureAccessToken()
     const signal = connectionConfig.getSignal()
 
-    const res = await client.api.GET('/teams', {signal})
+    const res = await client.api.GET('/teams', { signal })
 
     handleE2BRequestError(res.error, 'Error getting teams')
 
-    const team = (await inquirer.default.prompt([
-      {
-        name: 'team',
-        message: chalk.default.underline('Select team'),
-        type: 'list',
-        pageSize: 50,
-        choices: res.data.map((team: e2b.components['schemas']['Team']) => ({
-          name: asFormattedTeam(team),
-          value: team,
-        })),
-      },
-    ]))['team']
+    const team = (
+      await inquirer.default.prompt([
+        {
+          name: 'team',
+          message: chalk.default.underline('Select team'),
+          type: 'list',
+          pageSize: 50,
+          choices: res.data.map((team: e2b.components['schemas']['Team']) => ({
+            name: asFormattedTeam(team),
+            value: team,
+          })),
+        },
+      ])
+    )['team']
 
     userConfig.teamName = team.name
     userConfig.teamId = team.teamID
     userConfig.teamApiKey = team.apiKey
-    fs.mkdirSync(path.dirname(USER_CONFIG_PATH), {recursive: true})
+    fs.mkdirSync(path.dirname(USER_CONFIG_PATH), { recursive: true })
     fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
 
     console.log(`Team ${asFormattedTeam(team)} selected.\n`)

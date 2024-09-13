@@ -6,7 +6,7 @@ import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
 import commandExists from 'command-exists'
 import { wait } from 'src/utils/wait'
-import {connectionConfig, ensureAccessToken} from 'src/api'
+import { connectionConfig, ensureAccessToken } from 'src/api'
 import { getRoot } from 'src/utils/filesystem'
 import {
   asBold,
@@ -28,13 +28,23 @@ import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 import * as child_process from 'child_process'
 
 import { client } from 'src/api'
-import {handleE2BRequestError} from '../../utils/errors'
+import { handleE2BRequestError } from '../../utils/errors'
 
 const templateCheckInterval = 500 // 0.5 sec
 
-async function getTemplateBuildLogs({templateID, buildID, logsOffset}: {templateID: string, buildID: string, logsOffset: number}) {
-    const signal = connectionConfig.getSignal()
-    const res = await client.api.GET('/templates/{templateID}/builds/{buildID}/status', {
+async function getTemplateBuildLogs({
+  templateID,
+  buildID,
+  logsOffset,
+}: {
+  templateID: string
+  buildID: string
+  logsOffset: number
+}) {
+  const signal = connectionConfig.getSignal()
+  const res = await client.api.GET(
+    '/templates/{templateID}/builds/{buildID}/status',
+    {
       signal,
       params: {
         path: {
@@ -43,49 +53,53 @@ async function getTemplateBuildLogs({templateID, buildID, logsOffset}: {template
         },
         query: {
           logsOffset,
-        }
-      }
-
-    }
-    )
+        },
+      },
+    },
+  )
 
   handleE2BRequestError(res.error, 'Error getting template build status')
   return res.data as e2b.paths['/templates/{templateID}/builds/{buildID}/status']['get']['responses']['200']['content']['application/json']
 }
 
-
-async function requestTemplateBuild(args?: e2b.paths['/templates']['post']['requestBody']['content']['application/json']) {
-   return await client.api.POST('/templates', {
-      body: args,
-   }
-   )
+async function requestTemplateBuild(
+  args?: e2b.paths['/templates']['post']['requestBody']['content']['application/json'],
+) {
+  return await client.api.POST('/templates', {
+    body: args,
+  })
 }
 
-async function requestTemplateRebuild(templateID: string, args?: e2b.paths['/templates/{templateID}']['post']['requestBody']['content']['application/json']) {
+async function requestTemplateRebuild(
+  templateID: string,
+  args?: e2b.paths['/templates/{templateID}']['post']['requestBody']['content']['application/json'],
+) {
   return await client.api.POST('/templates/{templateID}', {
     body: args,
     params: {
       path: {
-        templateID
-      }
-    }
+        templateID,
+      },
+    },
   })
 }
 
 async function triggerTemplateBuild(templateID: string, buildID: string) {
-  const res = await client.api
-    .POST('/templates/{templateID}/builds/{buildID}', {
+  const res = await client.api.POST(
+    '/templates/{templateID}/builds/{buildID}',
+    {
       params: {
-      path:{
-        templateID,
-      buildID}
-      }
-    })
+        path: {
+          templateID,
+          buildID,
+        },
+      },
+    },
+  )
 
   handleE2BRequestError(res.error, 'Error triggering template build')
   return res.data
 }
-
 
 export const buildCommand = new commander.Command('build')
   .description(
@@ -317,12 +331,13 @@ export const buildCommand = new commander.Command('build')
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${connectionConfig.domain
-          }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
-            dockerBuildArgs,
-          )
-            .map(([key, value]) => `--build-arg="${key}=${value}"`)
-            .join(' ')}`
+        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${
+          connectionConfig.domain
+        }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
+          dockerBuildArgs,
+        )
+          .map(([key, value]) => `--build-arg="${key}=${value}"`)
+          .join(' ')}`
         child_process.execSync(cmd, {
           stdio: 'inherit',
           cwd: root,
@@ -383,11 +398,11 @@ async function waitForBuildFinish(
   do {
     await wait(templateCheckInterval)
 
-      template = await getTemplateBuildLogs({
-        templateID,
-        logsOffset,
-        buildID,
-      })
+    template = await getTemplateBuildLogs({
+      templateID,
+      logsOffset,
+      buildID,
+    })
 
     logsOffset += template.logs.length
 
@@ -401,8 +416,9 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox
 
 # Start sandbox
-sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.templateID
-          }")
+sandbox = Sandbox(template="${
+          aliases?.length ? aliases[0] : template.templateID
+        }")
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview
@@ -413,7 +429,9 @@ sandbox.close()`)
         const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
 
 // Start sandbox
-const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.templateID}' })
+const sandbox = await Sandbox.create({ template: '${
+          aliases?.length ? aliases[0] : template.templateID
+        }' })
 
 // Interact with sandbox. Learn more here:
 // https://e2b.dev/docs/sandbox/overview
@@ -564,11 +582,8 @@ async function requestBuildTemplate(
   return res.data
 }
 
-async function triggerBuild(
-  templateID: string,
-  buildID: string,
-) {
-  await triggerTemplateBuild( templateID, buildID )
+async function triggerBuild(templateID: string, buildID: string) {
+  await triggerTemplateBuild(templateID, buildID)
 
   return
 }

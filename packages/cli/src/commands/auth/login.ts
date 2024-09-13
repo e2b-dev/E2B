@@ -7,10 +7,15 @@ import * as path from 'path'
 import * as e2b from 'e2b'
 
 import { pkg } from 'src'
-import { DOCS_BASE, getUserConfig, USER_CONFIG_PATH, UserConfig } from 'src/user'
+import {
+  DOCS_BASE,
+  getUserConfig,
+  USER_CONFIG_PATH,
+  UserConfig,
+} from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
-import {client, connectionConfig} from 'src/api'
-import {handleE2BRequestError} from '../../utils/errors'
+import { client, connectionConfig } from 'src/api'
+import { handleE2BRequestError } from '../../utils/errors'
 
 export const loginCommand = new commander.Command('login')
   .description('log in to CLI')
@@ -23,7 +28,9 @@ export const loginCommand = new commander.Command('login')
     }
     if (userConfig) {
       console.log(
-        `\nAlready logged in. ${asFormattedConfig(userConfig)}.\n\nIf you want to log in as a different user, log out first by running 'e2b auth logout'.\nTo change the team, run 'e2b auth configure'.\n`,
+        `\nAlready logged in. ${asFormattedConfig(
+          userConfig,
+        )}.\n\nIf you want to log in as a different user, log out first by running 'e2b auth logout'.\nTo change the team, run 'e2b auth configure'.\n`,
       )
       return
     } else if (!userConfig) {
@@ -35,26 +42,32 @@ export const loginCommand = new commander.Command('login')
       }
 
       const signal = connectionConfig.getSignal()
-      const res = await client.api.GET('/teams', {signal})
+      const res = await client.api.GET('/teams', { signal })
 
       handleE2BRequestError(res.error, 'Error getting teams')
 
-      const defaultTeam = res.data.find((team: e2b.components['schemas']['Team']) => team.isDefault)
+      const defaultTeam = res.data.find(
+        (team: e2b.components['schemas']['Team']) => team.isDefault,
+      )
       if (!defaultTeam) {
-        console.error(asFormattedError('No default team found, please contact support'))
+        console.error(
+          asFormattedError('No default team found, please contact support'),
+        )
         process.exit(1)
       }
 
       userConfig.teamName = defaultTeam.name
       userConfig.teamId = defaultTeam.teamID
       userConfig.teamApiKey = defaultTeam.apiKey
-      fs.mkdirSync(path.dirname(USER_CONFIG_PATH), {recursive: true})
+      fs.mkdirSync(path.dirname(USER_CONFIG_PATH), { recursive: true })
       fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
     }
 
-
-
-    console.log(`Logged in as ${asBold(userConfig.email)} with default team ${asBold(userConfig.teamName)}`)
+    console.log(
+      `Logged in as ${asBold(userConfig.email)} with default team ${asBold(
+        userConfig.teamName,
+      )}`,
+    )
     process.exit(0)
   })
 
@@ -73,9 +86,9 @@ async function signInWithBrowser(): Promise<UserConfig> {
       const searchParams = new URL(req.url || '/', 'http://localhost')
         .searchParams
       const searchParamsObj = Object.fromEntries(
-        searchParams.entries()
+        searchParams.entries(),
       ) as unknown as UserConfig & {
-        error?: string;
+        error?: string
       }
       const { error } = searchParamsObj
       if (error) {

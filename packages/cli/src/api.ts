@@ -3,7 +3,7 @@ import * as e2b from 'e2b'
 
 import { getUserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
-import {ConnectionConfig} from 'e2b'
+import { ConnectionConfig } from 'e2b'
 
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
@@ -11,8 +11,12 @@ export let accessToken = process.env.E2B_ACCESS_TOKEN
 const authErrorBox = boxen.default(
   `You must be logged in to use this command. Run ${asBold('e2b auth login')}.
 
-If you are seeing this message in CI/CD you may need to set the ${asBold('E2B_ACCESS_TOKEN')} environment variable.
-Visit ${asPrimary('https://e2b.dev/docs/getting-started/api-key')} to get the access token.`,
+If you are seeing this message in CI/CD you may need to set the ${asBold(
+    'E2B_ACCESS_TOKEN',
+  )} environment variable.
+Visit ${asPrimary(
+    'https://e2b.dev/docs/getting-started/api-key',
+  )} to get the access token.`,
   {
     width: 70,
     float: 'center',
@@ -39,12 +43,12 @@ export function ensureAPIKey() {
 }
 
 export function ensureUserConfig() {
-    const userConfig = getUserConfig()
-    if (!userConfig) {
-        console.error('No user config found, run `e2b auth login` to log in first.')
-        process.exit(1)
-    }
-    return userConfig
+  const userConfig = getUserConfig()
+  if (!userConfig) {
+    console.error('No user config found, run `e2b auth login` to log in first.')
+    process.exit(1)
+  }
+  return userConfig
 }
 
 export function ensureAccessToken() {
@@ -62,8 +66,10 @@ export function ensureAccessToken() {
   }
 }
 
-
 const userConfig = getUserConfig()
 
-export const connectionConfig = new ConnectionConfig({accessToken: userConfig?.accessToken, apiKey: userConfig?.teamApiKey })
+export const connectionConfig = new ConnectionConfig({
+  accessToken: userConfig?.accessToken,
+  apiKey: userConfig?.teamApiKey,
+})
 export const client = new e2b.ApiClient(connectionConfig)

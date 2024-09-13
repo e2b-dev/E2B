@@ -2,8 +2,8 @@ import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import * as e2b from 'e2b'
 
-import {ensureAPIKey, client, connectionConfig} from 'src/api'
-import {handleE2BRequestError} from '../../utils/errors'
+import { ensureAPIKey, client, connectionConfig } from 'src/api'
+import { handleE2BRequestError } from '../../utils/errors'
 
 export const listCommand = new commander.Command('list')
   .description('list all running sandboxes')
@@ -28,9 +28,19 @@ export const listCommand = new commander.Command('list')
             { name: 'metadata', alignment: 'left', title: 'Metadata' },
           ],
           disabledColumns: ['clientID'],
-          rows: sandboxes.map((sandbox) => ({ ...sandbox, sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`, startedAt: new Date(sandbox.startedAt).toLocaleString(), endAt: new Date(sandbox.endAt).toLocaleString(), metadata: JSON.stringify(sandbox.metadata) })).sort(
-            (a, b) => a.startedAt.localeCompare(b.startedAt) || a.sandboxID.localeCompare(b.sandboxID)
-          ),
+          rows: sandboxes
+            .map((sandbox) => ({
+              ...sandbox,
+              sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,
+              startedAt: new Date(sandbox.startedAt).toLocaleString(),
+              endAt: new Date(sandbox.endAt).toLocaleString(),
+              metadata: JSON.stringify(sandbox.metadata),
+            }))
+            .sort(
+              (a, b) =>
+                a.startedAt.localeCompare(b.startedAt) ||
+                a.sandboxID.localeCompare(b.sandboxID),
+            ),
           colorMap: {
             orange: '\x1b[38;5;216m',
           },
@@ -45,11 +55,13 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-export async function listSandboxes(): Promise<e2b.components['schemas']['RunningSandbox'][]> {
+export async function listSandboxes(): Promise<
+  e2b.components['schemas']['RunningSandbox'][]
+> {
   ensureAPIKey()
 
   const signal = connectionConfig.getSignal()
-  const res = await client.api.GET('/sandboxes', {signal})
+  const res = await client.api.GET('/sandboxes', { signal })
 
   handleE2BRequestError(res.error, 'Error getting running sandboxes')
 

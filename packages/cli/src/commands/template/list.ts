@@ -6,24 +6,20 @@ import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
 import { client, ensureAccessToken, ensureUserConfig } from 'src/api'
 import { teamOption } from '../../options'
-import {handleE2BRequestError} from '../../utils/errors'
+import { handleE2BRequestError } from '../../utils/errors'
 
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
   .addOption(teamOption)
-  .action(async (
-    opts: {
-      team: string
-    },
-  ) => {
+  .action(async (opts: { team: string }) => {
     try {
       const userConfig = ensureUserConfig()
       ensureAccessToken()
       process.stdout.write('\n')
 
       const templates = await listSandboxTemplates({
-        teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility)
+        teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId!, // default team ID is here for backwards compatibility)
       })
 
       for (const template of templates) {
@@ -37,12 +33,20 @@ export const listCommand = new commander.Command('list')
           title: 'Sandbox templates',
           columns: [
             { name: 'templateID', alignment: 'left', title: 'Template ID' },
-            { name: 'aliases', alignment: 'left', title: 'Template Name', color: 'orange' },
+            {
+              name: 'aliases',
+              alignment: 'left',
+              title: 'Template Name',
+              color: 'orange',
+            },
             { name: 'cpuCount', alignment: 'right', title: 'vCPUs' },
             { name: 'memoryMB', alignment: 'right', title: 'RAM MiB' },
           ],
           disabledColumns: ['public', 'buildID'],
-          rows: templates.map((template) => ({ ...template, aliases: listAliases(template.aliases) })),
+          rows: templates.map((template) => ({
+            ...template,
+            aliases: listAliases(template.aliases),
+          })),
           colorMap: {
             orange: '\x1b[38;5;216m',
           },
@@ -58,11 +62,15 @@ export const listCommand = new commander.Command('list')
   })
 
 export async function listSandboxTemplates({
-teamID}: { teamID: string }): Promise<e2b.components['schemas']['Template'][]> {
+  teamID,
+}: {
+  teamID: string
+}): Promise<e2b.components['schemas']['Template'][]> {
   const templates = await client.api.GET('/templates', {
-        params: {
-          query: {teamID
-      }}})
+    params: {
+      query: { teamID },
+    },
+  })
 
   handleE2BRequestError(templates.error, 'Error getting templates')
   return templates.data

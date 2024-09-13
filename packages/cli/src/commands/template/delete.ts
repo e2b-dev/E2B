@@ -11,7 +11,12 @@ import {
   asLocal,
   asLocalRelative,
 } from 'src/utils/format'
-import { configOption, pathOption, selectMultipleOption, teamOption } from 'src/options'
+import {
+  configOption,
+  pathOption,
+  selectMultipleOption,
+  teamOption,
+} from 'src/options'
 import {
   E2BConfig,
   configName,
@@ -24,7 +29,7 @@ import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
 import { client } from 'src/api'
-import {handleE2BRequestError} from '../../utils/errors'
+import { handleE2BRequestError } from '../../utils/errors'
 
 async function deleteTemplate(templateID: string) {
   const res = await client.api.DELETE('/templates/{templateID}', {
@@ -32,8 +37,7 @@ async function deleteTemplate(templateID: string) {
       path: {
         templateID,
       },
-      }
-
+    },
   })
 
   handleE2BRequestError(res.error, 'Error deleting sandbox template')
@@ -82,7 +86,7 @@ export const deleteCommand = new commander.Command('delete')
           })
         } else if (opts.select) {
           const allTemplates = await listSandboxTemplates({
-            teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
+            teamID: opts.team || userConfig.teamId || userConfig.defaultTeamId!, // default team ID is here for backwards compatibility
           })
 
           const selectedTemplates = await getPromptTemplates(
@@ -149,7 +153,8 @@ export const deleteCommand = new commander.Command('delete')
 
         if (!opts.yes) {
           const confirmed = await confirm(
-            `Do you really want to delete ${templates.length === 1 ? 'this template' : 'these templates'
+            `Do you really want to delete ${
+              templates.length === 1 ? 'this template' : 'these templates'
             }?`,
           )
 
@@ -167,7 +172,7 @@ export const deleteCommand = new commander.Command('delete')
                 e.configPath,
               )}`,
             )
-            await deleteTemplate( e.template_id )
+            await deleteTemplate(e.template_id)
             if (e.configPath) {
               await deleteConfig(e.configPath)
             }

@@ -14,9 +14,7 @@ export const connectCommand = new commander.Command('connect')
       const apiKey = ensureAPIKey()
 
       if (!sandboxID) {
-        console.error(
-          'You need to specify sandbox ID',
-        )
+        console.error('You need to specify sandbox ID')
         process.exit(1)
       }
 
@@ -30,11 +28,20 @@ export const connectCommand = new commander.Command('connect')
     }
   })
 
-
-async function connectToSandbox({ apiKey, sandboxID }: { apiKey: string, sandboxID: string }) {
+async function connectToSandbox({
+  apiKey,
+  sandboxID,
+}: {
+  apiKey: string
+  sandboxID: string
+}) {
   const sandbox = await Sandbox.connect(sandboxID, { apiKey })
 
-  console.log(`Terminal connecting to sandbox ${asPrimary(`${sandbox.sandboxId}`)}`)
+  console.log(
+    `Terminal connecting to sandbox ${asPrimary(`${sandbox.sandboxId}`)}`,
+  )
   await spawnConnectedTerminal(sandbox)
-  console.log(`Closing terminal connection to sandbox ${asPrimary(sandbox.sandboxId)}`)
+  console.log(
+    `Closing terminal connection to sandbox ${asPrimary(sandbox.sandboxId)}`,
+  )
 }
