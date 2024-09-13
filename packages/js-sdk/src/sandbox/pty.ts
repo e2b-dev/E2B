@@ -19,6 +19,8 @@ export interface PtyCreateOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> 
   onData: (data: Uint8Array) => (void | Promise<void>)
   timeoutMs?: number
   user?: Username
+  envs?: Record<string, string>
+  cwd?: string
 }
 
 export class Pty {
@@ -30,7 +32,8 @@ export class Pty {
 
   async create(opts: PtyCreateOpts) {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
+    const envs = opts?.envs ?? {}
+    envs.TERM = 'xterm-256color'
     const controller = new AbortController()
 
     const reqTimeout = setTimeout(() => {
@@ -41,9 +44,8 @@ export class Pty {
       process: {
         cmd: '/bin/bash',
         args: ['-i', '-l'],
-        envs: {
-          'TERM': 'xterm-256color',
-        },
+        envs: envs,
+        cwd: opts?.cwd,
       },
       pty: {
         size: {
