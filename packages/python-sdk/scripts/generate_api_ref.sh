@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 # This script generates the python sdk api reference markdown files
 # Run it in the `python-sdk/` directory
 
