@@ -1,20 +1,15 @@
 import logging
+from typing import Dict, Optional, overload
+
 import httpx
-
-from typing import Optional, Dict, overload
-
-from e2b.sandbox.utils import class_method_variant
 from e2b.connection_config import ConnectionConfig
-from e2b.envd.api import (
-    handle_envd_api_exception,
-    ENVD_API_HEALTH_ROUTE,
-)
+from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxSetup
+from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.process.main import Process
 from e2b.sandbox_sync.sandbox_api import SandboxApi
-
 
 logger = logging.getLogger(__name__)
 
@@ -34,23 +29,28 @@ class TransportWithLogger(httpx.HTTPTransport):
 class Sandbox(SandboxSetup, SandboxApi):
     @property
     def files(self) -> Filesystem:
+        """Get a Filesystem Object"""
         return self._filesystem
 
     @property
     def commands(self) -> Process:
+        """Get a Process Object"""
         return self._process
 
     @property
     def sandbox_id(self) -> str:
+        """Get the sandbox ID"""
         return self._sandbox_id
 
     @property
-    def connection_config(self) -> ConnectionConfig:
-        return self._connection_config
+    def envd_api_url(self) -> str:
+        """Get the sanbox API URL"""
+        return self._envd_api_url
 
     @property
-    def envd_api_url(self) -> str:
-        return self._envd_api_url
+    def connection_config(self) -> ConnectionConfig:
+        """Get the ConnectionConfig Object"""
+        return self._connection_config
 
     def __init__(
         self,
@@ -64,6 +64,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         sandbox_id: Optional[str] = None,
         request_timeout: Optional[float] = None,
     ):
+        """Instantiate sandbox"""
         super().__init__()
 
         if sandbox_id and (metadata is not None or template is not None):
@@ -118,6 +119,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         )
 
     def is_running(self, request_timeout: Optional[float] = None) -> bool:
+        """Check if sandbox is running"""
         try:
             r = self._envd_api.get(
                 ENVD_API_HEALTH_ROUTE,
@@ -145,6 +147,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
     ):
+        """Connect to a running sandbox"""
         return cls(
             sandbox_id=sandbox_id,
             api_key=api_key,
@@ -173,6 +176,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
     @class_method_variant("_cls_kill")
     def kill(self, request_timeout: Optional[float] = None) -> bool:  # type: ignore
+        """Kill sandbox"""
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)
@@ -209,6 +213,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         timeout: int,
         request_timeout: Optional[float] = None,
     ) -> None:
+        """Configure request timeout"""
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)

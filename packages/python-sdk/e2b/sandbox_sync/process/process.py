@@ -1,15 +1,11 @@
+from typing import Callable, Dict, List, Literal, Optional, Union, overload
+
 import e2b_connect
 import httpcore
-
-from typing import Dict, List, Optional, Literal, overload, Union, Callable
-
+from e2b.connection_config import ConnectionConfig, Username
 from e2b.envd.process import process_connect, process_pb2
-from e2b.connection_config import (
-    Username,
-    ConnectionConfig,
-)
-from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.exceptions import SandboxException
 from e2b.sandbox.process.main import ProcessInfo
 from e2b.sandbox.process.process_handle import ProcessResult
 from e2b.sandbox_sync.process.process_handle import ProcessHandle
@@ -34,6 +30,7 @@ class Process:
         self,
         request_timeout: Optional[float] = None,
     ) -> List[ProcessInfo]:
+        """List processes"""
         try:
             res = self._rpc.list(
                 process_pb2.ListRequest(),
@@ -60,6 +57,7 @@ class Process:
         pid: int,
         request_timeout: Optional[float] = None,
     ) -> bool:
+        """Kill process"""
         try:
             self._rpc.send_signal(
                 process_pb2.SendSignalRequest(
@@ -83,6 +81,7 @@ class Process:
         data: str,
         request_timeout: Optional[float] = None,
     ):
+        """Send stdin"""
         try:
             self._rpc.send_input(
                 process_pb2.SendInputRequest(
@@ -138,6 +137,7 @@ class Process:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
+        """Run command"""
         proc = self._start(
             cmd,
             envs,
@@ -203,6 +203,7 @@ class Process:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
+        """Connect to process"""
         events = self._rpc.connect(
             process_pb2.ConnectRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
