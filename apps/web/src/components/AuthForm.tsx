@@ -66,7 +66,7 @@ function AuthForm({ view }: Props) {
           view={view}
           theme="dark"
           showLinks={false}
-          providers={['github']}
+          providers={['github', 'google']}
           providerScopes={{
             github: 'email',
           }}
