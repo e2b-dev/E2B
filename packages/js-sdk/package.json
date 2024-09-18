@@ -46,6 +46,8 @@
     "npm-check-updates": "^16.14.20",
     "openapi-typescript": "^6.7.6",
     "tsup": "^8.0.2",
+    "typedoc": "^0.26.7",
+    "typedoc-plugin-markdown": "^4.2.7",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   },
