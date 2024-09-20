@@ -1,0 +1,337 @@
+
+
+
+## Filesystem Objects
+
+```python
+class Filesystem()
+```
+
+
+#### read
+
+```python
+async def read(path: str,
+               format: Literal["text", "bytes", "stream"] = "text",
+               user: Username = "user",
+               request_timeout: Optional[float] = None)
+```
+
+Read from file
+
+
+#### write
+
+```python
+async def write(path: str,
+                data: Union[str, bytes, IO],
+                user: Username = "user",
+                request_timeout: Optional[float] = None) -> EntryInfo
+```
+
+Write to file
+When writing to a file that doesn't exist, the file will get created.
+When writing to a file that already exists, the file will get overwritten.
+When writing to a file that's in a directory that doesn't exist, you'll get an error.
+
+
+#### list
+
+```python
+async def list(path: str,
+               user: Username = "user",
+               request_timeout: Optional[float] = None) -> List[EntryInfo]
+```
+
+List directory
+
+
+#### exists
+
+```python
+async def exists(path: str,
+                 user: Username = "user",
+                 request_timeout: Optional[float] = None) -> bool
+```
+
+Check if file exists.
+
+
+#### remove
+
+```python
+async def remove(path: str,
+                 user: Username = "user",
+                 request_timeout: Optional[float] = None) -> None
+```
+
+Remove file
+
+
+#### rename
+
+```python
+async def rename(old_path: str,
+                 new_path: str,
+                 user: Username = "user",
+                 request_timeout: Optional[float] = None) -> EntryInfo
+```
+
+Rename file
+
+
+#### make\_dir
+
+```python
+async def make_dir(path: str,
+                   user: Username = "user",
+                   request_timeout: Optional[float] = None) -> bool
+```
+
+Create directory and all parent directories
+
+
+#### watch
+
+```python
+async def watch(path: str,
+                on_event: OutputHandler[FilesystemEvent],
+                on_exit: Optional[OutputHandler[Exception]] = None,
+                user: Username = "user",
+                request_timeout: Optional[float] = None,
+                timeout: Optional[float] = 60)
+```
+
+Watch directory for changes
+
+
+
+
+
+
+
+
+## Process Objects
+
+```python
+class Process()
+```
+
+
+#### list
+
+```python
+async def list(request_timeout: Optional[float] = None) -> List[ProcessInfo]
+```
+
+List processes
+
+
+#### kill
+
+```python
+async def kill(pid: int, request_timeout: Optional[float] = None) -> bool
+```
+
+Kill process
+
+
+#### send\_stdin
+
+```python
+async def send_stdin(pid: int,
+                     data: str,
+                     request_timeout: Optional[float] = None)
+```
+
+Send stdin
+
+
+#### run
+
+```python
+async def run(cmd: str,
+              background: Union[bool, None] = None,
+              envs: Optional[Dict[str, str]] = None,
+              user: Username = "user",
+              cwd: Optional[str] = None,
+              on_stdout: Optional[OutputHandler[Stdout]] = None,
+              on_stderr: Optional[OutputHandler[Stderr]] = None,
+              timeout: Optional[float] = 60,
+              request_timeout: Optional[float] = None)
+```
+
+Run command
+
+
+
+
+
+
+## Pty Objects
+
+```python
+class Pty()
+```
+
+
+#### kill
+
+```python
+async def kill(pid: int, request_timeout: Optional[float] = None) -> bool
+```
+
+Kill process by PID
+
+
+#### send\_stdin
+
+```python
+async def send_stdin(pid: int,
+                     data: bytes,
+                     request_timeout: Optional[float] = None)
+```
+
+Send data to process stdin
+
+
+#### create
+
+```python
+async def create(
+        size: PtySize,
+        user: Username = "user",
+        cwd: Optional[str] = None,
+        on_data: Optional[Callable[[bytes], None]] = None,
+        envs: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None) -> AsyncProcessHandle
+```
+
+Create new PTY process
+
+
+#### resize
+
+```python
+async def resize(pid: int,
+                 size: PtySize,
+                 request_timeout: Optional[float] = None)
+```
+
+Resize PTY
+
+
+
+
+
+
+## AsyncSandbox Objects
+
+```python
+class AsyncSandbox(SandboxSetup, SandboxApi)
+```
+
+
+#### files
+
+```python
+@property
+def files() -> Filesystem
+```
+
+Get a Filesystem Object
+
+
+#### commands
+
+```python
+@property
+def commands() -> Process
+```
+
+Get a Process Object
+
+
+#### sandbox\_id
+
+```python
+@property
+def sandbox_id() -> str
+```
+
+Get the sandbox ID
+
+
+#### envd\_api\_url
+
+```python
+@property
+def envd_api_url() -> str
+```
+
+Get the sanbox API URL
+
+
+#### connection\_config
+
+```python
+@property
+def connection_config() -> ConnectionConfig
+```
+
+Get the ConnectionConfig Object
+
+
+#### \_\_init\_\_
+
+```python
+def __init__(**opts: Unpack[AsyncSandboxOpts])
+```
+
+Instantiate sandbox
+
+
+#### is\_running
+
+```python
+async def is_running(request_timeout: Optional[float] = None) -> bool
+```
+
+Check if sandbox is running
+
+
+#### connect
+
+```python
+@classmethod
+async def connect(cls,
+                  sandbox_id: str,
+                  api_key: Optional[str] = None,
+                  domain: Optional[str] = None,
+                  debug: Optional[bool] = None)
+```
+
+Connect to a running sandbox
+
+
+#### kill
+
+```python
+@class_method_variant("_cls_kill")
+async def kill(request_timeout: Optional[float] = None) -> bool
+```
+
+Kill sandbox
+
+
+#### set\_timeout
+
+```python
+@class_method_variant("_cls_set_timeout")
+async def set_timeout(timeout: int,
+                      request_timeout: Optional[float] = None) -> None
+```
+
+Configure request timeout
+

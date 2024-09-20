@@ -34,6 +34,7 @@ class Pty:
         pid: int,
         request_timeout: Optional[float] = None,
     ) -> bool:
+        """Kill process by PID"""
         try:
             self._rpc.send_signal(
                 process_pb2.SendSignalRequest(
@@ -57,6 +58,7 @@ class Pty:
         data: bytes,
         request_timeout: Optional[float] = None,
     ) -> None:
+        """Send data to process stdin"""
         try:
             self._rpc.send_input(
                 process_pb2.SendInputRequest(
@@ -81,6 +83,7 @@ class Pty:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> ProcessHandle:
+        """Create new PTY process"""
         envs = envs or {}
         envs["TERM"] = "xterm-256color"
         events = self._rpc.start(
@@ -121,6 +124,7 @@ class Pty:
     def resize(
         self, pid: int, size: PtySize, request_timeout: Optional[float] = None
     ) -> None:
+        """Resize PTY"""
         self._rpc.update(
             process_pb2.UpdateRequest(
                 process=process_pb2.ProcessSelector(pid=pid),

@@ -1,15 +1,11 @@
+from typing import Callable, Dict, Optional
+
 import e2b_connect
 import httpcore
-
-from typing import Dict, Optional, Callable
-
+from e2b.connection_config import ConnectionConfig, Username
 from e2b.envd.process import process_connect, process_pb2
-from e2b.connection_config import (
-    Username,
-    ConnectionConfig,
-)
-from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.exceptions import SandboxException
 from e2b.sandbox.process.process_handle import PtySize
 from e2b.sandbox_async.process.process_handle import AsyncProcessHandle
 
@@ -34,6 +30,7 @@ class Pty:
         pid: int,
         request_timeout: Optional[float] = None,
     ) -> bool:
+        """Kill process by PID"""
         try:
             await self._rpc.asend_signal(
                 process_pb2.SendSignalRequest(
@@ -57,6 +54,7 @@ class Pty:
         data: bytes,
         request_timeout: Optional[float] = None,
     ):
+        """Send data to process stdin"""
         try:
             await self._rpc.asend_input(
                 process_pb2.SendInputRequest(
@@ -82,6 +80,7 @@ class Pty:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> AsyncProcessHandle:
+        """Create new PTY process"""
         envs = envs or {}
         envs["TERM"] = "xterm-256color"
         events = self._rpc.astart(
@@ -123,6 +122,7 @@ class Pty:
     async def resize(
         self, pid: int, size: PtySize, request_timeout: Optional[float] = None
     ):
+        """Resize PTY"""
         await self._rpc.aupdate(
             process_pb2.UpdateRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
