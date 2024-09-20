@@ -57,12 +57,15 @@ export function commands2md(commands: Command[]): void {
       mdContent += subMdContent + '\n\n'
     })
 
-    // Clean the mdContent
+    // Clean the mdContent from terminal colors and escape HTML characters
     mdContent = mdContent
       .replace(/</g, '<')
       .replace(/>/g, '>')
       .replace(/\[1m/g, '')
       .replace(/\[22m/g, '')
+      .replace(/\[34m/g, '')
+      .replace(/\[39m/g, '')
+      .replace(/\[38;2;255;183;102m/g, '')
 
     return [fullName, mdContent]
   }
