@@ -296,6 +296,9 @@ importers:
       '@types/update-notifier':
         specifier: 6.0.5
         version: 6.0.5
+      json2md:
+        specifier: ^2.0.1
+        version: 2.0.1
       knip:
         specifier: ^2.33.4
         version: 2.35.0
@@ -4354,6 +4357,9 @@ packages:
     resolution: {integrity: sha512-EdDDZu4A2OyIK7Lr/2zG+w5jmbuk1DVBnEwREQvBzspBJkCEbRa8GxU1lghYcaGJCnRWibjDXlq779X1/y5xwg==}
     engines: {node: '>=8'}
 
+  indento@1.1.13:
+    resolution: {integrity: sha512-YZWk3mreBEM7sBPddsiQnW9Z8SGg/gNpFfscJq00HCDS7pxcQWWWMSVKJU7YkTRyDu1Zv2s8zaK8gQWKmCXHlg==}
+
   individual@3.0.0:
     resolution: {integrity: sha512-rUY5vtT748NMRbEMrTNiFfy29BgGZwGXUi2NFUVMWQrogSLzlJvQV9eeMWi+g1aVaQ53tpyLAQtd5x/JH0Nh1g==}
 
@@ -4715,6 +4721,9 @@ packages:
 
   json-stringify-safe@5.0.1:
     resolution: {integrity: sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA==}
+
+  json2md@2.0.1:
+    resolution: {integrity: sha512-VbwmZ83qmUfKBS2pUOHlzNKEZFPBeJSbzEok3trMYyboZUgdHNn1XZfc1uT8UZs1GHCrmRUBXCfqw4YmmQuOhw==}
 
   json5@1.0.2:
     resolution: {integrity: sha512-g1MWMLBiz8FKi1e4w0UyVL3w+iJceWAFBAaBnnGKOpNa5f8TLktkbre1+s6oICydWAm+HRUGTmI+//xv2hvXYA==}
@@ -12038,6 +12047,8 @@ snapshots:
 
   indent-string@4.0.0: {}
 
+  indento@1.1.13: {}
+
   individual@3.0.0: {}
 
   inflight@1.0.6:
@@ -12350,6 +12361,10 @@ snapshots:
   json-stable-stringify-without-jsonify@1.0.1: {}
 
   json-stringify-safe@5.0.1: {}
+
+  json2md@2.0.1:
+    dependencies:
+      indento: 1.1.13
 
   json5@1.0.2:
     dependencies:

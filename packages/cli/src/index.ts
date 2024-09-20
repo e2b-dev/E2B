@@ -2,10 +2,10 @@
 
 import * as updateNotifier from 'update-notifier'
 
+import * as commander from 'commander'
 import * as packageJSON from '../package.json'
 import { program } from './commands'
-import * as commander from 'commander'
-import * as stripAnsi from 'strip-ansi'
+import { commands2md } from './utils/commands2md'
 
 export const pkg = packageJSON
 
@@ -16,27 +16,19 @@ updateNotifier
   })
   .notify()
 
-program
-  .version(packageJSON.version, undefined, 'display E2B CLI version')
-  .addOption(new commander.Option('-cmd2json').hideHelp())
-  .on('option:-cmd2json', () => {
-    process.stdout.write(
-      JSON.stringify(
-        program.commands
-          .map((x: any) => ({
-            command: x.name(),
-            description: stripAnsi.default(x.description()),
-            options: x.options.map((y: any) => ({
-              flags: y.flags,
-              description: stripAnsi.default(y.description),
-              defaultValue: y.defaultValue,
-            })),
-          }))
-          .sort((row1: any, row2: any) =>
-            row1.name().localeCompare(row2.name()),
-          ),
-      ),
-    )
-    process.exit(0)
-  })
-  .parse()
+const prog = program.version(
+  packageJSON.version,
+  undefined,
+  'display E2B CLI version'
+)
+
+if (process.env.NODE_ENV === 'development') {
+  prog
+    .addOption(new commander.Option('-cmd2md').hideHelp())
+    .on('option:-cmd2md', () => {
+      commands2md(program.commands as any)
+      process.exit(0)
+    })
+}
+
+prog.parse()
