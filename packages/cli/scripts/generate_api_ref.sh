@@ -6,7 +6,7 @@ set -euo pipefail
 ## Run it in the `cli/` directory
 mkdir -p api_ref
 
-npx tsup && echo && node dist/index.js -cmd2md
+npx tsup && echo && NODE_ENV=development node dist/index.js -cmd2md
 
 # move to docs (for later use)
 #for file in api_ref/*.md; do
