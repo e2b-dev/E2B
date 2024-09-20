@@ -1,22 +1,17 @@
 import logging
+from typing import Dict, Optional, TypedDict, overload
+
 import httpx
-
-from typing_extensions import Unpack
-from typing import Optional, Dict, TypedDict, overload
-
-from e2b.exceptions import format_request_timeout_error
-from e2b.sandbox.utils import class_method_variant
 from e2b.connection_config import ConnectionConfig
-from e2b.envd.api import (
-    ahandle_envd_api_exception,
-    ENVD_API_HEALTH_ROUTE,
-)
+from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
+from e2b.exceptions import format_request_timeout_error
+from e2b.sandbox.main import SandboxSetup
+from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.process.process import Process
 from e2b.sandbox_async.pty.main import Pty
 from e2b.sandbox_async.sandbox_api import SandboxApi
-from e2b.sandbox.main import SandboxSetup
-
+from typing_extensions import Unpack
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +36,12 @@ class AsyncSandboxOpts(TypedDict):
 class AsyncSandbox(SandboxSetup, SandboxApi):
     @property
     def files(self) -> Filesystem:
+        """Get a Filesystem Object"""
         return self._filesystem
 
     @property
     def commands(self) -> Process:
+        """Get a Process Object"""
         return self._process
 
     @property
@@ -53,17 +50,21 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
     @property
     def sandbox_id(self) -> str:
+        """Get the sandbox ID"""
         return self._sandbox_id
 
     @property
     def envd_api_url(self) -> str:
+        """Get the sanbox API URL"""
         return self._envd_api_url
 
     @property
     def connection_config(self) -> ConnectionConfig:
+        """Get the ConnectionConfig Object"""
         return self._connection_config
 
     def __init__(self, **opts: Unpack[AsyncSandboxOpts]):
+        """Instantiate sandbox"""
         super().__init__()
 
         self._sandbox_id = opts["sandbox_id"]
@@ -95,6 +96,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         )
 
     async def is_running(self, request_timeout: Optional[float] = None) -> bool:
+        """Check if sandbox is running"""
         try:
             r = await self._envd_api.get(
                 ENVD_API_HEALTH_ROUTE,
@@ -161,6 +163,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
     ):
+        """Connect to a running sandbox"""
         connection_config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
@@ -193,6 +196,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
     @class_method_variant("_cls_kill")
     async def kill(self, request_timeout: Optional[float] = None) -> bool:  # type: ignore
+        """Kill sandbox"""
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)
@@ -229,6 +233,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         timeout: int,
         request_timeout: Optional[float] = None,
     ) -> None:
+        """Configure request timeout"""
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)

@@ -1,27 +1,17 @@
-import e2b_connect as connect
-import httpx
-import httpcore
 from io import TextIOBase
+from typing import IO, AsyncIterator, List, Literal, Optional, Union, overload
 
-from typing import (
-    AsyncIterator,
-    List,
-    Optional,
-    overload,
-    Literal,
-    Union,
-    IO,
-)
-
-from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
-from e2b.connection_config import Username, ConnectionConfig
-from e2b.exceptions import SandboxException
-from e2b.envd.api import ahandle_envd_api_exception
-from e2b.envd.rpc import authentication_header, handle_rpc_exception
+import e2b_connect as connect
+import httpcore
+import httpx
+from e2b.connection_config import ConnectionConfig, Username
+from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
-from e2b.envd.api import ENVD_API_FILES_ROUTE
-from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
+from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.exceptions import SandboxException
+from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
+from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utilts import OutputHandler
 
 
@@ -79,6 +69,7 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ):
+        """Read from file"""
         r = await self._envd_api.get(
             ENVD_API_FILES_ROUTE,
             params={"path": path, "username": user},
@@ -103,6 +94,11 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
+        """Write to file
+        When writing to a file that doesn't exist, the file will get created.
+        When writing to a file that already exists, the file will get overwritten.
+        When writing to a file that's in a directory that doesn't exist, you'll get an error.
+        """
         if isinstance(data, TextIOBase):
             data = data.read().encode()
 
@@ -131,6 +127,7 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> List[EntryInfo]:
+        """List directory"""
         try:
             res = await self._rpc.alist_dir(
                 filesystem_pb2.ListDirRequest(path=path),
@@ -145,7 +142,9 @@ class Filesystem:
                 event_type = map_file_type(entry.type)
 
                 if event_type:
-                    entries.append(EntryInfo(name=entry.name, type=event_type, path=entry.path))
+                    entries.append(
+                        EntryInfo(name=entry.name, type=event_type, path=entry.path)
+                    )
 
             return entries
         except Exception as e:
@@ -157,6 +156,7 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> bool:
+        """Check if file exists."""
         try:
             await self._rpc.astat(
                 filesystem_pb2.StatRequest(path=path),
@@ -180,6 +180,7 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> None:
+        """Remove file"""
         try:
             await self._rpc.aremove(
                 filesystem_pb2.RemoveRequest(path=path),
@@ -198,6 +199,7 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
+        """Rename file"""
         try:
             r = await self._rpc.amove(
                 filesystem_pb2.MoveRequest(
@@ -219,6 +221,7 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> bool:
+        """Create directory and all parent directories"""
         try:
             await self._rpc.amake_dir(
                 filesystem_pb2.MakeDirRequest(path=path),
@@ -244,6 +247,7 @@ class Filesystem:
         request_timeout: Optional[float] = None,
         timeout: Optional[float] = 60,
     ):
+        """Watch directory for changes"""
         events = self._rpc.awatch_dir(
             filesystem_pb2.WatchDirRequest(path=path),
             request_timeout=self._connection_config.get_request_timeout(

@@ -1,26 +1,14 @@
+from typing import Dict, List, Literal, Optional, Union, overload
+
 import e2b_connect
 import httpcore
-
-from typing import (
-    Dict,
-    List,
-    Optional,
-    Literal,
-    overload,
-    Union,
-)
-
+from e2b.connection_config import ConnectionConfig, Username
 from e2b.envd.process import process_connect, process_pb2
-from e2b.connection_config import Username, ConnectionConfig
-from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.exceptions import SandboxException
 from e2b.sandbox.process.main import ProcessInfo
 from e2b.sandbox.process.process_handle import ProcessResult
-from e2b.sandbox_async.process.process_handle import (
-    AsyncProcessHandle,
-    Stdout,
-    Stderr,
-)
+from e2b.sandbox_async.process.process_handle import AsyncProcessHandle, Stderr, Stdout
 from e2b.sandbox_async.utilts import OutputHandler
 
 
@@ -43,6 +31,7 @@ class Process:
         self,
         request_timeout: Optional[float] = None,
     ) -> List[ProcessInfo]:
+        """List processes"""
         try:
             res = await self._rpc.alist(
                 process_pb2.ListRequest(),
@@ -69,6 +58,7 @@ class Process:
         pid: int,
         request_timeout: Optional[float] = None,
     ) -> bool:
+        """Kill process"""
         try:
             await self._rpc.asend_signal(
                 process_pb2.SendSignalRequest(
@@ -92,6 +82,7 @@ class Process:
         data: str,
         request_timeout: Optional[float] = None,
     ):
+        """Send stdin"""
         try:
             await self._rpc.asend_input(
                 process_pb2.SendInputRequest(
@@ -147,6 +138,7 @@ class Process:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
+        """Run command"""
         proc = await self._start(
             cmd,
             envs,
@@ -222,7 +214,7 @@ class Process:
                 request_timeout
             ),
         )
-
+        """Connect to process"""
         try:
             start_event = await events.__anext__()
 
