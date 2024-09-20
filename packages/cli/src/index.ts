@@ -16,15 +16,19 @@ updateNotifier
   })
   .notify()
 
-const prog = program
-  .version(packageJSON.version, undefined, 'display E2B CLI version')
-  .addOption(new commander.Option('-cmd2md').hideHelp())
+const prog = program.version(
+  packageJSON.version,
+  undefined,
+  'display E2B CLI version'
+)
 
 if (process.env.NODE_ENV === 'development') {
-  prog.on('option:-cmd2md', () => {
-    commands2md(program.commands as any)
-    process.exit(0)
-  })
+  prog
+    .addOption(new commander.Option('-cmd2md').hideHelp())
+    .on('option:-cmd2md', () => {
+      commands2md(program.commands as any)
+      process.exit(0)
+    })
 }
 
 prog.parse()
