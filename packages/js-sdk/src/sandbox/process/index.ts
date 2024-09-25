@@ -15,7 +15,7 @@ import {
 import { ConnectionConfig, Username, ConnectionOpts } from '../../connectionConfig'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { ProcessHandle, ProcessResult } from './processHandle'
-import { handleStartEvent } from '../../envd/api'
+import { handleProcessStartEvent } from '../../envd/api'
 
 export interface ProcessRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
 
@@ -140,7 +140,7 @@ export class Process {
     })
 
     try {
-      const pid = await handleStartEvent(events)
+      const pid = await handleProcessStartEvent(events)
 
       clearTimeout(reqTimeout)
 
@@ -193,7 +193,7 @@ export class Process {
     })
 
     try {
-      const pid = await handleStartEvent(events)
+      const pid = await handleProcessStartEvent(events)
 
       clearTimeout(reqTimeout)
 

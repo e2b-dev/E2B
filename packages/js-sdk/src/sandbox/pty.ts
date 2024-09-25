@@ -11,7 +11,7 @@ import { Signal } from '../envd/process/process_pb'
 import { ConnectionConfig, ConnectionOpts, Username } from '../connectionConfig'
 import { ProcessHandle } from './process/processHandle'
 import { authenticationHeader, handleRpcError } from '../envd/rpc'
-import { handleStartEvent } from '../envd/api'
+import { handleProcessStartEvent } from '../envd/api'
 
 export interface PtyCreateOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
   cols: number
@@ -59,7 +59,7 @@ export class Pty {
       timeoutMs: opts?.timeoutMs ?? 60_000,
     })
 
-    const pid = await handleStartEvent(events)
+    const pid = await handleProcessStartEvent(events)
 
     clearTimeout(reqTimeout)
 

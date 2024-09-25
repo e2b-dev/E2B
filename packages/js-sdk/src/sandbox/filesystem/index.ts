@@ -12,7 +12,7 @@ import {
   ConnectionOpts,
 } from '../../connectionConfig'
 
-import { handleEnvdApiError, handleStartEvent } from '../../envd/api'
+import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
@@ -250,7 +250,7 @@ export class Filesystem {
     })
 
     try {
-      await handleStartEvent(events)
+      await handleWatchDirStartEvent(events)
 
       clearTimeout(reqTimeout)
 
