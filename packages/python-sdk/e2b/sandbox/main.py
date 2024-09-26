@@ -10,8 +10,8 @@ from httpx import Limits
 
 class SandboxSetup(ABC):
     _limits = Limits(
-        max_keepalive_connections=15,
-        max_connections=30,
+        max_keepalive_connections=40,
+        max_connections=40,
         keepalive_expiry=300,
     )
 
