@@ -2,7 +2,12 @@ from typing import Dict, List, Literal, Optional, Union, overload
 
 import e2b_connect
 import httpcore
-from e2b.connection_config import ConnectionConfig, Username
+from e2b.connection_config import (
+    ConnectionConfig,
+    Username,
+    KEEPALIVE_PING_HEADER,
+    KEEPALIVE_PING_INTERVAL_SEC,
+)
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.exceptions import SandboxException
@@ -173,7 +178,10 @@ class Process:
                     cwd=cwd,
                 ),
             ),
-            headers=authentication_header(user),
+            headers={
+                **authentication_header(user),
+                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+            },
             timeout=timeout,
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
@@ -214,6 +222,9 @@ class Process:
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
             ),
+            headers={
+                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+            },
         )
         """Connect to process"""
         try:

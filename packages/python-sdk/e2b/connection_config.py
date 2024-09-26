@@ -4,6 +4,9 @@ from typing import Literal, Optional
 
 REQUEST_TIMEOUT: float = 30.0  # 30s
 
+KEEPALIVE_PING_INTERVAL_SEC = 50  # 50s
+KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
+
 
 class ConnectionConfig:
     @staticmethod
