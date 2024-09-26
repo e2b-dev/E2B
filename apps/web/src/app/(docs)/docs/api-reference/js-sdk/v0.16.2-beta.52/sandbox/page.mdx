@@ -1,0 +1,367 @@
+# sandbox
+
+## Classes
+
+### Sandbox
+
+#### Constructors
+
+##### new Sandbox()
+
+> **new Sandbox**(`opts`): `Sandbox`
+
+###### Parameters
+
+• **opts**: `Omit`\<`SandboxOpts`, `"metadata"` \| `"envs"` \| `"timeoutMs"`\> & `object`
+
+###### Returns
+
+`Sandbox`
+
+###### Defined in
+
+sandbox/index.ts:33
+
+#### Properties
+
+##### commands
+
+> `readonly` **commands**: `Process`
+
+###### Defined in
+
+sandbox/index.ts:22
+
+##### files
+
+> `readonly` **files**: `Filesystem`
+
+###### Defined in
+
+sandbox/index.ts:21
+
+##### pty
+
+> `readonly` **pty**: `Pty`
+
+###### Defined in
+
+sandbox/index.ts:23
+
+##### sandboxId
+
+> `readonly` **sandboxId**: `string`
+
+###### Defined in
+
+sandbox/index.ts:25
+
+#### Methods
+
+##### downloadUrl()
+
+> **downloadUrl**(`path`): `string`
+
+###### Parameters
+
+• **path**: `string`
+
+###### Returns
+
+`string`
+
+###### Defined in
+
+sandbox/index.ts:125
+
+##### getHost()
+
+> **getHost**(`port`): `string`
+
+###### Parameters
+
+• **port**: `number`
+
+###### Returns
+
+`string`
+
+###### Defined in
+
+sandbox/index.ts:76
+
+##### isRunning()
+
+> **isRunning**(`opts`?): `Promise`\<`boolean`\>
+
+###### Parameters
+
+• **opts?**: `Pick`\<`ConnectionOpts`, `"requestTimeoutMs"`\>
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+###### Defined in
+
+sandbox/index.ts:84
+
+##### kill()
+
+> **kill**(`opts`?): `Promise`\<`void`\>
+
+###### Parameters
+
+• **opts?**: `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Defined in
+
+sandbox/index.ts:112
+
+##### setTimeout()
+
+> **setTimeout**(`timeoutMs`, `opts`?): `Promise`\<`void`\>
+
+###### Parameters
+
+• **timeoutMs**: `number`
+
+• **opts?**: `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Defined in
+
+sandbox/index.ts:103
+
+##### uploadUrl()
+
+> **uploadUrl**(`path`?): `string`
+
+###### Parameters
+
+• **path?**: `string`
+
+###### Returns
+
+`string`
+
+###### Defined in
+
+sandbox/index.ts:121
+
+##### connect()
+
+> `static` **connect**\<`S`\>(`this`, `sandboxId`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+
+###### Type Parameters
+
+• **S** *extends* *typeof* `Sandbox`
+
+###### Parameters
+
+• **this**: `S`
+
+• **sandboxId**: `string`
+
+• **opts?**: `Omit`\<`SandboxOpts`, `"metadata"` \| `"envs"` \| `"timeoutMs"`\>
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+###### Defined in
+
+sandbox/index.ts:69
+
+##### create()
+
+###### create(this, opts)
+
+> `static` **create**\<`S`\>(`this`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+
+###### Type Parameters
+
+• **S** *extends* *typeof* `Sandbox`
+
+###### Parameters
+
+• **this**: `S`
+
+• **opts?**: `SandboxOpts`
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+###### Defined in
+
+sandbox/index.ts:52
+
+###### create(this, template, opts)
+
+> `static` **create**\<`S`\>(`this`, `template`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+
+###### Type Parameters
+
+• **S** *extends* *typeof* `Sandbox`
+
+###### Parameters
+
+• **this**: `S`
+
+• **template**: `string`
+
+• **opts?**: `SandboxOpts`
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+###### Defined in
+
+sandbox/index.ts:53
+
+##### kill()
+
+> `static` **kill**(`sandboxId`, `opts`?): `Promise`\<`boolean`\>
+
+Kills sandbox specified by sandbox ID.
+
+###### Parameters
+
+• **sandboxId**: `string`
+
+Sandbox ID.
+
+• **opts?**: `SandboxApiOpts`
+
+Connection options.
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+###### Defined in
+
+sandbox/sandboxApi.ts:47
+
+##### list()
+
+> `static` **list**(`opts`?): `Promise`\<`SandboxInfo`[]\>
+
+###### Parameters
+
+• **opts?**: `SandboxApiOpts`
+
+###### Returns
+
+`Promise`\<`SandboxInfo`[]\>
+
+###### Defined in
+
+sandbox/sandboxApi.ts:72
+
+##### setTimeout()
+
+> `static` **setTimeout**(`sandboxId`, `timeoutMs`, `opts`?): `Promise`\<`void`\>
+
+###### Parameters
+
+• **sandboxId**: `string`
+
+• **timeoutMs**: `number`
+
+• **opts?**: `SandboxApiOpts`
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Defined in
+
+sandbox/sandboxApi.ts:94
+
+## Interfaces
+
+### SandboxOpts
+
+#### Properties
+
+##### accessToken?
+
+> `optional` **accessToken**: `string`
+
+###### Defined in
+
+connectionConfig.ts:11
+
+##### apiKey?
+
+> `optional` **apiKey**: `string`
+
+###### Defined in
+
+connectionConfig.ts:10
+
+##### debug?
+
+> `optional` **debug**: `boolean`
+
+###### Defined in
+
+connectionConfig.ts:13
+
+##### domain?
+
+> `optional` **domain**: `string`
+
+###### Defined in
+
+connectionConfig.ts:12
+
+##### envs?
+
+> `optional` **envs**: `Record`\<`string`, `string`\>
+
+###### Defined in
+
+sandbox/index.ts:13
+
+##### logger?
+
+> `optional` **logger**: `Logger`
+
+###### Defined in
+
+connectionConfig.ts:15
+
+##### metadata?
+
+> `optional` **metadata**: `Record`\<`string`, `string`\>
+
+###### Defined in
+
+sandbox/index.ts:12
+
+##### requestTimeoutMs?
+
+> `optional` **requestTimeoutMs**: `number`
+
+###### Defined in
+
+connectionConfig.ts:14
+
+##### timeoutMs?
+
+> `optional` **timeoutMs**: `number`
+
+###### Defined in
+
+sandbox/index.ts:14
