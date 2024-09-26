@@ -12,10 +12,10 @@ import {
   Signal,
   ProcessConfig,
 } from '../../envd/process/process_pb'
-import { ConnectionConfig, Username, ConnectionOpts } from '../../connectionConfig'
+import { ConnectionConfig, Username, ConnectionOpts, KEEPALIVE_PING_INTERVAL_SEC, KEEPALIVE_PING_HEADER } from '../../connectionConfig'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { ProcessHandle, ProcessResult } from './processHandle'
-import { handleStartEvent } from '../../envd/api'
+import { handleProcessStartEvent } from '../../envd/api'
 
 export interface ProcessRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
 
@@ -136,11 +136,14 @@ export class Process {
       },
     }, {
       signal: controller.signal,
+      headers: {
+        [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
+      },
       timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
     })
 
     try {
-      const pid = await handleStartEvent(events)
+      const pid = await handleProcessStartEvent(events)
 
       clearTimeout(reqTimeout)
 
@@ -187,13 +190,16 @@ export class Process {
         args: ['-l', '-c', cmd],
       },
     }, {
-      headers: authenticationHeader(opts?.user),
+      headers: {
+        ...authenticationHeader(opts?.user),
+        [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
+      },
       signal: controller.signal,
       timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
     })
 
     try {
-      const pid = await handleStartEvent(events)
+      const pid = await handleProcessStartEvent(events)
 
       clearTimeout(reqTimeout)
 

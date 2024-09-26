@@ -2,12 +2,25 @@ from typing import Callable, Dict, Optional
 
 import e2b_connect
 import httpcore
-from e2b.connection_config import ConnectionConfig, Username
+
+from typing import Dict, Optional
+
 from e2b.envd.process import process_connect, process_pb2
+from e2b.connection_config import (
+    Username,
+    ConnectionConfig,
+    KEEPALIVE_PING_HEADER,
+    KEEPALIVE_PING_INTERVAL_SEC,
+)
+from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.exceptions import SandboxException
 from e2b.sandbox.process.process_handle import PtySize
-from e2b.sandbox_async.process.process_handle import AsyncProcessHandle
+from e2b.sandbox_async.process.process_handle import (
+    AsyncProcessHandle,
+    OutputHandler,
+    PtyOutput,
+)
 
 
 class Pty:
@@ -23,6 +36,7 @@ class Pty:
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
             async_pool=pool,
+            json=True,
         )
 
     async def kill(
@@ -73,9 +87,9 @@ class Pty:
     async def create(
         self,
         size: PtySize,
+        on_data: OutputHandler[PtyOutput],
         user: Username = "user",
         cwd: Optional[str] = None,
-        on_data: Optional[Callable[[bytes], None]] = None,
         envs: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
@@ -95,7 +109,10 @@ class Pty:
                     size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols)
                 ),
             ),
-            headers=authentication_header(user),
+            headers={
+                **authentication_header(user),
+                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+            },
             timeout=timeout,
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
@@ -120,7 +137,10 @@ class Pty:
             raise handle_rpc_exception(e)
 
     async def resize(
-        self, pid: int, size: PtySize, request_timeout: Optional[float] = None
+        self,
+        pid: int,
+        size: PtySize,
+        request_timeout: Optional[float] = None,
     ):
         """Resize PTY"""
         await self._rpc.aupdate(

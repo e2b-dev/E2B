@@ -5,7 +5,7 @@ from e2b.exceptions import SandboxException
 
 Stdout = str
 Stderr = str
-PtyOutput = str
+PtyOutput = bytes
 
 
 @dataclass

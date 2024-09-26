@@ -10,9 +10,11 @@ import {
   defaultUsername,
   Username,
   ConnectionOpts,
+  KEEPALIVE_PING_INTERVAL_SEC,
+  KEEPALIVE_PING_HEADER,
 } from '../../connectionConfig'
 
-import { handleEnvdApiError, handleStartEvent } from '../../envd/api'
+import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
@@ -23,7 +25,7 @@ import { WatchHandle, FilesystemEvent } from './watchHandle'
 
 export interface EntryInfo {
   name: string
-  type: FileType
+  type?: FileType
   path: string
 }
 
@@ -190,7 +192,7 @@ export class Filesystem {
 
       return {
         name: entry.name,
-        type: mapFileType(entry.type)!,
+        type: mapFileType(entry.type),
         path: entry.path,
       }
     } catch (err) {
@@ -244,13 +246,16 @@ export class Filesystem {
       : undefined
 
     const events = this.rpc.watchDir({ path }, {
-      headers: authenticationHeader(opts?.user),
+      headers: {
+        ...authenticationHeader(opts?.user),
+        [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
+      },
       signal: controller.signal,
       timeoutMs: opts?.timeout ?? this.defaultWatchTimeout,
     })
 
     try {
-      await handleStartEvent(events)
+      await handleWatchDirStartEvent(events)
 
       clearTimeout(reqTimeout)
 

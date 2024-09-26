@@ -8,10 +8,10 @@ import {
 
 import { Process as ProcessService } from '../envd/process/process_connect'
 import { Signal } from '../envd/process/process_pb'
-import { ConnectionConfig, ConnectionOpts, Username } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts, Username, KEEPALIVE_PING_HEADER, KEEPALIVE_PING_INTERVAL_SEC } from '../connectionConfig'
 import { ProcessHandle } from './process/processHandle'
 import { authenticationHeader, handleRpcError } from '../envd/rpc'
-import { handleStartEvent } from '../envd/api'
+import { handleProcessStartEvent } from '../envd/api'
 
 export interface PtyCreateOpts extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
   cols: number
@@ -54,24 +54,31 @@ export class Pty {
         },
       },
     }, {
-      headers: authenticationHeader(opts?.user),
+      headers: {
+        ...authenticationHeader(opts?.user),
+        [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
+      },
       signal: controller.signal,
       timeoutMs: opts?.timeoutMs ?? 60_000,
     })
 
-    const pid = await handleStartEvent(events)
+    try {
+      const pid = await handleProcessStartEvent(events)
 
-    clearTimeout(reqTimeout)
+      clearTimeout(reqTimeout)
 
-    return new ProcessHandle(
-      pid,
-      () => controller.abort(),
-      () => this.kill(pid),
-      events,
-      undefined,
-      undefined,
-      opts.onData,
-    )
+      return new ProcessHandle(
+        pid,
+        () => controller.abort(),
+        () => this.kill(pid),
+        events,
+        undefined,
+        undefined,
+        opts.onData,
+      )
+    } catch (err) {
+      throw handleRpcError(err)
+    }
   }
 
   async sendInput(pid: number, data: Uint8Array, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<void> {
@@ -105,19 +112,23 @@ export class Pty {
     },
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>,
   ): Promise<void> {
-    await this.rpc.update({
-      process: {
-        selector: {
-          case: 'pid',
-          value: pid,
-        }
-      },
-      pty: {
-        size,
-      },
-    }, {
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-    })
+    try {
+      await this.rpc.update({
+        process: {
+          selector: {
+            case: 'pid',
+            value: pid,
+          }
+        },
+        pty: {
+          size,
+        },
+      }, {
+        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      })
+    } catch (err) {
+      throw handleRpcError(err)
+    }
   }
 
   private async kill(pid: number, opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>): Promise<boolean> {

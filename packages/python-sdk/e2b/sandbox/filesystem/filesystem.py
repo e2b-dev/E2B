@@ -1,5 +1,6 @@
 from enum import Enum
 from dataclasses import dataclass
+from typing import Optional
 
 from e2b.envd.filesystem import filesystem_pb2
 
@@ -19,5 +20,5 @@ def map_file_type(ft: filesystem_pb2.FileType):
 @dataclass
 class EntryInfo:
     name: str
-    type: FileType
+    type: Optional[FileType]
     path: str

@@ -10,9 +10,7 @@ def test_pty(sandbox: Sandbox):
         PtySize(80, 24), envs={"ABC": "123"}, cwd="/"
     )
 
-    sandbox.pty.send_stdin(terminal.pid, b"echo $ABC\n")
-    sandbox.pty.send_stdin(terminal.pid, b"pwd\n")
-    sandbox.pty.send_stdin(terminal.pid, b"logout\n")
+    sandbox.pty.send_stdin(terminal.pid, b"echo $ABC\nexit\n")
 
     output = []
     result = terminal.wait(on_pty=lambda x: append_data(output, x))

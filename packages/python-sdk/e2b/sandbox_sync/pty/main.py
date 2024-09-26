@@ -7,6 +7,8 @@ from e2b.envd.process import process_connect, process_pb2
 from e2b.connection_config import (
     Username,
     ConnectionConfig,
+    KEEPALIVE_PING_HEADER,
+    KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
@@ -27,6 +29,7 @@ class Pty:
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
             pool=pool,
+            json=True,
         )
 
     def kill(
@@ -98,7 +101,10 @@ class Pty:
                     size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols)
                 ),
             ),
-            headers=authentication_header(user),
+            headers={
+                **authentication_header(user),
+                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+            },
             timeout=timeout,
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
@@ -122,7 +128,10 @@ class Pty:
             raise handle_rpc_exception(e)
 
     def resize(
-        self, pid: int, size: PtySize, request_timeout: Optional[float] = None
+        self,
+        pid: int,
+        size: PtySize,
+        request_timeout: Optional[float] = None,
     ) -> None:
         """Resize PTY"""
         self._rpc.update(

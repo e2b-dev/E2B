@@ -1,14 +1,15 @@
 # This is a config for E2B sandbox template.
-# You can use 'template_id' (idnrwvs3vrde6hknozc0) from this config to spawn a sandbox:
+# You can use 'template_id' (rki5dems9wqfm4r03t7g) or 'template_name (base) from this config to spawn a sandbox:
 
 # Python SDK
 # from e2b import Sandbox
-# sandbox = Sandbox(template='idnrwvs3vrde6hknozc0')
+# sandbox = Sandbox(template='base')
 
 # JS SDK
 # import { Sandbox } from 'e2b'
-# const sandbox = await Sandbox.create({ template: 'idnrwvs3vrde6hknozc0' })
+# const sandbox = await Sandbox.create({ template: 'base' })
 
-memory_mb = 4_096
+team_id = "460355b3-4f64-48f9-9a16-4442817f79f5"
 dockerfile = "e2b.Dockerfile"
-template_id = "idnrwvs3vrde6hknozc0"
+template_name = "base"
+template_id = "rki5dems9wqfm4r03t7g"

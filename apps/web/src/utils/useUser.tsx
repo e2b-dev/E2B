@@ -24,17 +24,20 @@ interface UserTeam {
   team_api_keys: { api_key: string; }[];
 }
 
+export type E2BUser = (User & {
+  teams: Team[];
+  accessToken: string;
+  defaultTeamId: string;
+})
+
 type UserContextType = {
   isLoading: boolean;
   session: Session | null;
   user:
-  | (User & {
-    teams: Team[];
-    accessToken: string;
-    defaultTeamId: string;
-  })
+  | E2BUser
   | null;
   error: Error | null;
+  wasUpdated: boolean | null;
 }
 
 export const UserContext = createContext(undefined)
@@ -46,6 +49,8 @@ export const CustomUserContextProvider = (props) => {
   const [error, setError] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const mounted = useRef<boolean>(false)
+
+  const [wasUpdated, setWasUpdated] = useState<boolean | null>(null)
 
   useEffect(() => {
     mounted.current = true
@@ -85,6 +90,9 @@ export const CustomUserContextProvider = (props) => {
           event === 'USER_UPDATED')
       ) {
         setSession(session)
+        if (event === 'USER_UPDATED') {
+          setWasUpdated(true)
+        }
       }
 
       if (event === 'SIGNED_OUT') {
@@ -154,6 +162,7 @@ export const CustomUserContextProvider = (props) => {
         error: null,
         session: null,
         user: null,
+        wasUpdated: null,
       }
     }
 
@@ -163,6 +172,7 @@ export const CustomUserContextProvider = (props) => {
         error,
         session: null,
         user: null,
+        wasUpdated: null,
       }
     }
 
@@ -171,6 +181,7 @@ export const CustomUserContextProvider = (props) => {
       error: null,
       session: session,
       user,
+      wasUpdated,
     }
   }, [isLoading, user, session, error])
 

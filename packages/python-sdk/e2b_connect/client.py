@@ -3,14 +3,13 @@ import json
 import struct
 
 from httpcore import (
-    ConnectionInterface,
     ConnectionPool,
     AsyncConnectionPool,
     RemoteProtocolError,
     Response,
 )
 from enum import Flag, Enum
-from typing import Callable, Optional, Dict, Any, Generator, Tuple, Union
+from typing import Callable, Optional, Dict, Any, Generator, Tuple
 from google.protobuf import json_format
 from httpcore import URL
 

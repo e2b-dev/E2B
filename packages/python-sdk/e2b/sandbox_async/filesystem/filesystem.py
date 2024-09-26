@@ -4,7 +4,12 @@ from typing import IO, AsyncIterator, List, Literal, Optional, Union, overload
 import e2b_connect as connect
 import httpcore
 import httpx
-from e2b.connection_config import ConnectionConfig, Username
+from e2b.connection_config import (
+    ConnectionConfig,
+    Username,
+    KEEPALIVE_PING_HEADER,
+    KEEPALIVE_PING_INTERVAL_SEC,
+)
 from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
@@ -33,6 +38,7 @@ class Filesystem:
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
             async_pool=pool,
+            json=True,
         )
 
     @overload
@@ -211,7 +217,12 @@ class Filesystem:
                 ),
                 headers=authentication_header(user),
             )
-            return r.entry
+
+            return EntryInfo(
+                name=r.entry.name,
+                type=map_file_type(r.entry.type),
+                path=r.entry.path,
+            )
         except Exception as e:
             raise handle_rpc_exception(e)
 
@@ -254,7 +265,10 @@ class Filesystem:
                 request_timeout
             ),
             timeout=timeout,
-            headers=authentication_header(user),
+            headers={
+                **authentication_header(user),
+                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+            },
         )
 
         try:

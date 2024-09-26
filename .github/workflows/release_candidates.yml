@@ -40,6 +40,14 @@ jobs:
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
         run: pnpm install --frozen-lockfile
 
+      - name: Test JS SDK
+        working-directory: packages/js-sdk
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
+        run: |
+          pnpm run test
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
       - name: Release JS Candidate
         working-directory: packages/js-sdk
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
@@ -72,6 +80,14 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
+
+      - name: Test Python SDK
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        working-directory: packages/python-sdk
+        run: |
+          poetry run pytest -n 4 --verbose -x
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
       - name: Release Candidate
         if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}

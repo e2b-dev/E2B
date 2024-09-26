@@ -78,7 +78,9 @@ class AsyncProcessHandle:
         self,
     ) -> AsyncGenerator[
         Union[
-            Tuple[Stdout, None, None], Tuple[None, Stderr, None], Tuple[None, None, PtyOutput]
+            Tuple[Stdout, None, None],
+            Tuple[None, Stderr, None],
+            Tuple[None, None, PtyOutput],
         ],
         None,
     ]:
