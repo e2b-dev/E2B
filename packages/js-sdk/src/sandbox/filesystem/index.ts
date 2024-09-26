@@ -24,7 +24,7 @@ import { WatchHandle, FilesystemEvent } from './watchHandle'
 
 export interface EntryInfo {
   name: string
-  type: FileType
+  type?: FileType
   path: string
 }
 
@@ -191,7 +191,7 @@ export class Filesystem {
 
       return {
         name: entry.name,
-        type: mapFileType(entry.type)!,
+        type: mapFileType(entry.type),
         path: entry.path,
       }
     } catch (err) {
