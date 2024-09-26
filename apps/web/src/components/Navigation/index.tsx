@@ -1,16 +1,16 @@
 'use client'
 
-import { useRef } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import { AnimatePresence, motion, useIsPresent } from 'framer-motion'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useRef } from 'react'
 
+import { Auth } from '@/components/Auth'
 import { useIsInsideMobileNavigation } from '@/components/MobileNavigation'
 import { useSectionStore } from '@/components/SectionProvider'
 import { Tag } from '@/components/Tag'
 import { remToPx } from '@/lib/remToPx'
-import { Auth } from '@/components/Auth'
 import { routes } from './routes'
 
 interface NavGroup {
@@ -76,17 +76,14 @@ function NavLink({
           ? 'text-zinc-900 dark:text-white'
           : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white',
         isFontMono ? 'font-mono text-xs' : '',
-        className,
+        className
       )}
     >
       <div className="flex items-center justify-start gap-1">
         {icon}
         {tag ? (
           <div className="flex items-center gap-2">
-            <Tag
-              variant="small"
-              color="emerald"
-            >
+            <Tag variant="small" color="emerald">
               {tag}
             </Tag>
             <span className={clsx('truncate', active ? 'text-white' : '')}>
@@ -94,7 +91,9 @@ function NavLink({
             </span>
           </div>
         ) : (
-          <span className={clsx('truncate', active ? 'text-white' : '')}>{children}</span>
+          <span className={clsx('truncate', active ? 'text-white' : '')}>
+            {children}
+          </span>
         )}
       </div>
     </Link>
@@ -103,19 +102,27 @@ function NavLink({
 
 function VisibleSectionHighlight({ group, pathname }) {
   const [sections, visibleSections] = useInitialValue(
-    [useSectionStore(s => s.sections), useSectionStore(s => s.visibleSections)],
-    useIsInsideMobileNavigation(),
+    [
+      useSectionStore((s) => s.sections),
+      useSectionStore((s) => s.visibleSections),
+    ],
+    useIsInsideMobileNavigation()
   )
 
   const isPresent = useIsPresent()
   const firstVisibleSectionIndex = Math.max(
     0,
-    [{ id: '_top' }, ...sections].findIndex(section => section.id === visibleSections[0]),
+    [{ id: '_top' }, ...sections].findIndex(
+      (section) => section.id === visibleSections[0]
+    )
   )
   const itemHeight = remToPx(2)
-  const height = isPresent ? Math.max(1, visibleSections.length) * itemHeight : itemHeight
+  const height = isPresent
+    ? Math.max(1, visibleSections.length) * itemHeight
+    : itemHeight
   const activePageIndex = activeGroupIndex(group, pathname)
-  const top = activePageIndex * itemHeight + firstVisibleSectionIndex * itemHeight
+  const top =
+    activePageIndex * itemHeight + firstVisibleSectionIndex * itemHeight
 
   return (
     <motion.div
@@ -129,7 +136,13 @@ function VisibleSectionHighlight({ group, pathname }) {
   )
 }
 
-function ActivePageMarker({ group, pathname }: { group: NavGroup; pathname: string }) {
+function ActivePageMarker({
+  group,
+  pathname,
+}: {
+  group: NavGroup
+  pathname: string
+}) {
   const itemHeight = remToPx(2)
   const offset = remToPx(0.25)
   const activePageIndex = activeGroupIndex(group, pathname)
@@ -155,8 +168,8 @@ function NavigationGroup({ group, className }) {
   const initialPathname = usePathname()
 
   const [pathname, sections] = useInitialValue(
-    [initialPathname, useSectionStore(s => s.sections)],
-    isInsideMobileNavigation,
+    [initialPathname, useSectionStore((s) => s.sections)],
+    isInsideMobileNavigation
   )
 
   if (!pathname) {
@@ -176,10 +189,7 @@ function NavigationGroup({ group, className }) {
       <div className="relative mt-3 pl-2">
         <AnimatePresence initial={!isInsideMobileNavigation}>
           {isActiveGroup && (
-            <VisibleSectionHighlight
-              group={group}
-              pathname={pathname}
-            />
+            <VisibleSectionHighlight group={group} pathname={pathname} />
           )}
         </AnimatePresence>
         <motion.div
@@ -188,69 +198,95 @@ function NavigationGroup({ group, className }) {
         />
         <AnimatePresence initial={false}>
           {isActiveGroup && (
-            <ActivePageMarker
-              group={group}
-              pathname={pathname}
-            />
+            <ActivePageMarker group={group} pathname={pathname} />
           )}
         </AnimatePresence>
-        <ul
-          role="list"
-          className="border-l border-transparent"
-        >
-          {group.links.map(link => (
-            <motion.li
-              key={link.href}
-              layout="position"
-              className="relative"
-            >
+        <ul role="list" className="border-l border-transparent">
+          {group.links.map((link) => (
+            <motion.li key={link.href} layout="position" className="relative">
               {/* @ts-ignore */}
-              <NavLink
-                className="font-medium"
-                href={link.href}
-                active={
-                  `/docs${link.href}` === pathname ||
-                  // Special case for index (/)
-                  (link.href == '/' && pathname == '/docs')
-                }
-                isFontMono={link.isFontMono}
-                icon={link.icon}
-                tag={link.tag}
-              >
-                {link.title}
-              </NavLink>
-              <AnimatePresence
-                mode="popLayout"
-                initial={false}
-              >
-                {`/docs${link.href}` === pathname && sections.length > 0 && (
-                  <motion.ul
-                    role="list"
-                    initial={{ opacity: 0 }}
-                    animate={{
-                      opacity: 1,
-                      transition: { delay: 0.1 },
-                    }}
-                    exit={{
-                      opacity: 0,
-                      transition: { duration: 0.15 },
-                    }}
-                  >
-                    {sections.map(section => (
-                      <li key={section.id}>
-                        {/* @ts-ignore */}
-                        <NavLink
-                          href={`${link.href}#${section.id}`}
-                          tag={section.tag}
-                          icon={section.icon}
-                          isAnchorLink
-                        >
-                          {section.title}
-                        </NavLink>
-                      </li>
-                    ))}
-                  </motion.ul>
-                )}
+              {link.href ? (
+                <NavLink
+                  className="font-medium"
+                  href={link.href}
+                  active={
+                    `/docs${link.href}` === pathname ||
+                    // Special case for index (/)
+                    (link.href == '/' && pathname == '/docs')
+                  }
+                  isFontMono={link.isFontMono}
+                  icon={link.icon}
+                  tag={link.tag}
+                >
+                  {link.title}
+                </NavLink>
+              ) : (
+                <span className="font-medium">{link.title}</span>
+              )}
+              <AnimatePresence mode="popLayout" initial={false}>
+                {`/docs${link.href}` === pathname &&
+                  (sections.length > 0 || link.links) && (
+                    <motion.ul
+                      role="list"
+                      initial={{ opacity: 0 }}
+                      animate={{
+                        opacity: 1,
+                        transition: { delay: 0.1 },
+                      }}
+                      exit={{
+                        opacity: 0,
+                        transition: { duration: 0.15 },
+                      }}
+                    >
+                      {sections.map((section) => (
+                        <li key={section.id}>
+                          {/* @ts-ignore */}
+                          <NavLink
+                            href={`${link.href}#${section.id}`}
+                            tag={section.tag}
+                            icon={section.icon}
+                            isAnchorLink
+                          >
+                            {section.title}
+                          </NavLink>
+                        </li>
+                      ))}
+                      {link.links &&
+                        link.links.map((nestedLink) => (
+                          <li key={nestedLink.href}>
+                            <NavLink
+                              href={nestedLink.href}
+                              active={`/docs${nestedLink.href}` === pathname}
+                              isFontMono={nestedLink.isFontMono}
+                              icon={nestedLink.icon}
+                              tag={nestedLink.tag}
+                            >
+                              {nestedLink.title}
+                            </NavLink>
+                            {nestedLink.links && (
+                              <ul>
+                                {nestedLink.links.map((deepNestedLink) => (
+                                  <li key={deepNestedLink.href}>
+                                    <NavLink
+                                      href={deepNestedLink.href}
+                                      active={
+                                        `/docs${deepNestedLink.href}` ===
+                                        pathname
+                                      }
+                                      isFontMono={deepNestedLink.isFontMono}
+                                      icon={deepNestedLink.icon}
+                                      tag={deepNestedLink.tag}
+                                    >
+                                      {deepNestedLink.title}
+                                    </NavLink>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        ))}
+                    </motion.ul>
+                  )}
               </AnimatePresence>
             </motion.li>
           ))}
@@ -259,7 +295,6 @@ function NavigationGroup({ group, className }) {
     </li>
   )
 }
-
 
 export function Navigation(props) {
   return (
@@ -291,7 +326,7 @@ export function Navigation(props) {
 }
 
 function activeGroupIndex(group: NavGroup, pathname: string) {
-  return group.links.findIndex(link => {
+  return group.links.findIndex((link) => {
     return link.href === pathname
   })
 }
