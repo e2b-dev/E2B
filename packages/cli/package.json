@@ -30,6 +30,7 @@
   "devDependencies": {
     "@types/command-exists": "^1.2.3",
     "@types/inquirer": "^9.0.7",
+    "@types/json2md": "^1.5.4",
     "@types/node": "^18.18.6",
     "@types/update-notifier": "6.0.5",
     "json2md": "^2.0.1",
