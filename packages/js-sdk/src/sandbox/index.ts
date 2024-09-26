@@ -39,7 +39,7 @@ export class Sandbox extends SandboxApi {
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
-      useBinaryFormat: true,
+      useBinaryFormat: false,
       interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
     })
 

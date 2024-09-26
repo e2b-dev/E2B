@@ -27,6 +27,7 @@ class Pty:
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
             pool=pool,
+            json=True,
         )
 
     def kill(
