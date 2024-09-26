@@ -203,8 +203,11 @@ function NavigationGroup({ group, className }) {
         </AnimatePresence>
         <ul role="list" className="border-l border-transparent">
           {group.links.map((link) => (
-            <motion.li key={link.href} layout="position" className="relative">
-              {/* @ts-ignore */}
+            <motion.li
+              key={link.href || `link-${link.title}`}
+              layout="position"
+              className="relative"
+            >
               {link.href ? (
                 <NavLink
                   className="font-medium"
@@ -212,7 +215,7 @@ function NavigationGroup({ group, className }) {
                   active={
                     `/docs${link.href}` === pathname ||
                     // Special case for index (/)
-                    (link.href == '/' && pathname == '/docs')
+                    (link.href === '/' && pathname === '/docs')
                   }
                   isFontMono={link.isFontMono}
                   icon={link.icon}
@@ -221,72 +224,39 @@ function NavigationGroup({ group, className }) {
                   {link.title}
                 </NavLink>
               ) : (
-                <span className="font-medium">{link.title}</span>
+                <span className="block py-1 pl-4 pr-3 text-sm text-zinc-600 dark:text-zinc-400">
+                  {link.title}
+                </span>
               )}
               <AnimatePresence mode="popLayout" initial={false}>
-                {`/docs${link.href}` === pathname &&
-                  (sections.length > 0 || link.links) && (
-                    <motion.ul
-                      role="list"
-                      initial={{ opacity: 0 }}
-                      animate={{
-                        opacity: 1,
-                        transition: { delay: 0.1 },
-                      }}
-                      exit={{
-                        opacity: 0,
-                        transition: { duration: 0.15 },
-                      }}
-                    >
-                      {sections.map((section) => (
-                        <li key={section.id}>
-                          {/* @ts-ignore */}
-                          <NavLink
-                            href={`${link.href}#${section.id}`}
-                            tag={section.tag}
-                            icon={section.icon}
-                            isAnchorLink
-                          >
-                            {section.title}
-                          </NavLink>
-                        </li>
-                      ))}
-                      {link.links &&
-                        link.links.map((nestedLink) => (
-                          <li key={nestedLink.href}>
-                            <NavLink
-                              href={nestedLink.href}
-                              active={`/docs${nestedLink.href}` === pathname}
-                              isFontMono={nestedLink.isFontMono}
-                              icon={nestedLink.icon}
-                              tag={nestedLink.tag}
-                            >
-                              {nestedLink.title}
-                            </NavLink>
-                            {nestedLink.links && (
-                              <ul>
-                                {nestedLink.links.map((deepNestedLink) => (
-                                  <li key={deepNestedLink.href}>
-                                    <NavLink
-                                      href={deepNestedLink.href}
-                                      active={
-                                        `/docs${deepNestedLink.href}` ===
-                                        pathname
-                                      }
-                                      isFontMono={deepNestedLink.isFontMono}
-                                      icon={deepNestedLink.icon}
-                                      tag={deepNestedLink.tag}
-                                    >
-                                      {deepNestedLink.title}
-                                    </NavLink>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </li>
-                        ))}
-                    </motion.ul>
-                  )}
+                {`/docs${link.href}` === pathname && sections.length > 0 && (
+                  <motion.ul
+                    role="list"
+                    initial={{ opacity: 0 }}
+                    animate={{
+                      opacity: 1,
+                      transition: { delay: 0.1 },
+                    }}
+                    exit={{
+                      opacity: 0,
+                      transition: { duration: 0.15 },
+                    }}
+                  >
+                    {sections.map((section) => (
+                      <li key={section.id}>
+                        {/* @ts-ignore */}
+                        <NavLink
+                          href={`${link.href}#${section.id}`}
+                          tag={section.tag}
+                          icon={section.icon}
+                          isAnchorLink
+                        >
+                          {section.title}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </motion.ul>
+                )}
               </AnimatePresence>
             </motion.li>
           ))}
