@@ -212,7 +212,12 @@ class Filesystem:
                 ),
                 headers=authentication_header(user),
             )
-            return r.entry
+
+            return EntryInfo(
+                name=r.entry.name,
+                type=map_file_type(r.entry.type),
+                path=r.entry.path,
+            )
         except Exception as e:
             raise handle_rpc_exception(e)
 
