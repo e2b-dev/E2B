@@ -41,7 +41,9 @@ class ProcessHandle:
         self,
     ) -> Generator[
         Union[
-            Tuple[Stdout, None, None], Tuple[None, Stderr, None], Tuple[None, None, PtyOutput]
+            Tuple[Stdout, None, None],
+            Tuple[None, Stderr, None],
+            Tuple[None, None, PtyOutput],
         ],
         None,
         None,
@@ -71,9 +73,9 @@ class ProcessHandle:
 
     def wait(
         self,
+        on_pty: Optional[Callable[[PtyOutput], None]] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-        on_pty: Optional[Callable[[str], None]] = None,
     ) -> ProcessResult:
         try:
             for stdout, stderr, pty in self:

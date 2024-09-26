@@ -1,7 +1,7 @@
 import e2b_connect
 import httpcore
 
-from typing import Dict, Optional, Callable
+from typing import Dict, Optional
 
 from e2b.envd.process import process_connect, process_pb2
 from e2b.connection_config import (
@@ -11,7 +11,11 @@ from e2b.connection_config import (
 from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.sandbox.process.process_handle import PtySize
-from e2b.sandbox_async.process.process_handle import AsyncProcessHandle
+from e2b.sandbox_async.process.process_handle import (
+    AsyncProcessHandle,
+    OutputHandler,
+    PtyOutput,
+)
 
 
 class Pty:
@@ -76,9 +80,9 @@ class Pty:
     async def create(
         self,
         size: PtySize,
+        on_data: OutputHandler[PtyOutput],
         user: Username = "user",
         cwd: Optional[str] = None,
-        on_data: Optional[Callable[[bytes], None]] = None,
         envs: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
@@ -122,7 +126,10 @@ class Pty:
             raise handle_rpc_exception(e)
 
     async def resize(
-        self, pid: int, size: PtySize, request_timeout: Optional[float] = None
+        self,
+        pid: int,
+        size: PtySize,
+        request_timeout: Optional[float] = None,
     ):
         await self._rpc.aupdate(
             process_pb2.UpdateRequest(

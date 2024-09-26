@@ -120,7 +120,10 @@ class Pty:
             raise handle_rpc_exception(e)
 
     def resize(
-        self, pid: int, size: PtySize, request_timeout: Optional[float] = None
+        self,
+        pid: int,
+        size: PtySize,
+        request_timeout: Optional[float] = None,
     ) -> None:
         self._rpc.update(
             process_pb2.UpdateRequest(
