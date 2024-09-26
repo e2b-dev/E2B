@@ -12,7 +12,7 @@ import {
   Signal,
   ProcessConfig,
 } from '../../envd/process/process_pb'
-import { ConnectionConfig, Username, ConnectionOpts } from '../../connectionConfig'
+import { ConnectionConfig, Username, ConnectionOpts, KEEPALIVE_PING_INTERVAL_SEC } from '../../connectionConfig'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { ProcessHandle, ProcessResult } from './processHandle'
 import { handleProcessStartEvent } from '../../envd/api'
@@ -136,6 +136,9 @@ export class Process {
       },
     }, {
       signal: controller.signal,
+      headers: {
+        'Keepalive-Ping-Interval': KEEPALIVE_PING_INTERVAL_SEC.toString(),
+      },
       timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
     })
 
@@ -187,7 +190,10 @@ export class Process {
         args: ['-l', '-c', cmd],
       },
     }, {
-      headers: authenticationHeader(opts?.user),
+      headers: {
+        ...authenticationHeader(opts?.user),
+        'Keepalive-Ping-Interval': KEEPALIVE_PING_INTERVAL_SEC.toString(),
+      },
       signal: controller.signal,
       timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
     })

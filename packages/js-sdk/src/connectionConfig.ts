@@ -2,6 +2,7 @@ import { Logger } from './logs'
 import { getEnvVar } from './api/metadata'
 
 const REQUEST_TIMEOUT_MS = 30_000  // 30s
+export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50s
 
 export interface ConnectionOpts {
   apiKey?: string
