@@ -200,9 +200,9 @@ Send data to process stdin
 ```python
 async def create(
         size: PtySize,
+        on_data: OutputHandler[PtyOutput],
         user: Username = "user",
         cwd: Optional[str] = None,
-        on_data: Optional[Callable[[bytes], None]] = None,
         envs: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None) -> AsyncProcessHandle
