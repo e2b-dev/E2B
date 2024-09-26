@@ -62,9 +62,9 @@ export const listCommand = new commander.Command('list')
   })
 
 export async function listSandboxTemplates({
-  teamID,
+  teamID
 }: {
-  teamID: string
+  teamID?: string
 }): Promise<e2b.components['schemas']['Template'][]> {
   const templates = await client.api.GET('/templates', {
     params: {

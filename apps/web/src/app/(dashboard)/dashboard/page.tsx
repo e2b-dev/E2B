@@ -6,8 +6,7 @@ import { BarChart, CreditCard, Key, LucideIcon, Settings, Users } from 'lucide-r
 import { BillingContent } from '@/components/Dashboard/Billing'
 import { TeamContent } from '@/components/Dashboard/Team'
 
-import { Team, useUser } from '@/utils/useUser'
-import { User } from '@supabase/supabase-js'
+import { E2BUser, Team, useUser } from '@/utils/useUser'
 import { KeysContent } from '@/components/Dashboard/Keys'
 import { UsageContent } from '@/components/Dashboard/Usage'
 import { AccountSelector } from '@/components/Dashboard/AccountSelector'
@@ -31,15 +30,6 @@ type MenuLabel = typeof menuLabels[number]
 export default function Page() {
   const { user, isLoading, error } = useUser()
   const router = useRouter()
-
-  const [accessToken, setAccessToken] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (user) {
-      setAccessToken(user.accessToken)
-    }
-  }, [accessToken, user])
-
 
   useEffect(() => {
     if (isLoading) { return }
@@ -71,21 +61,11 @@ const Dashboard = ({ user }) => {
   const teamParam = searchParams!.get('team')
   const [teams, setTeams] = useState<Team[]>([])
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
-  const [currentApiKey, setCurrentApiKey] = useState<string | null>(null)
 
   const initialTab = tab && menuLabels.includes(tab as MenuLabel) ? (tab as MenuLabel) : 'personal'
   const [selectedItem, setSelectedItem] = useState<MenuLabel>(initialTab)
 
   const router = useRouter()
-
-
-  useEffect(() => {
-    if (user && currentTeam) {
-      const apiKey = currentTeam.apiKeys[0]
-      setCurrentApiKey(apiKey)
-    }
-  }, [currentApiKey, currentTeam, user])
-
 
   useEffect(() => {
     if (user) {
@@ -133,7 +113,7 @@ const Dashboard = ({ user }) => {
         <div className="flex-1 md:pl-10">
           <h2 className='text-2xl mb-2 font-bold'>{selectedItem[0].toUpperCase() + selectedItem.slice(1)}</h2>
           <div className='border border-white/5 w-full h-[1px] mb-10' />
-          <MainContent selectedItem={selectedItem} user={user} team={currentTeam} currentApiKey={currentApiKey} accessToken={user.accessToken} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
+          <MainContent selectedItem={selectedItem} user={user} team={currentTeam} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
         </div>
       </>
     )
@@ -182,27 +162,25 @@ const MenuItem = ({ icon: Icon, label, selected, onClick }: { icon: LucideIcon; 
 )
 
 
-function MainContent({ selectedItem, user, team, accessToken, currentApiKey, teams, setTeams, setCurrentTeam }: {
+function MainContent({ selectedItem, user, team, teams, setTeams, setCurrentTeam }: {
   selectedItem: MenuLabel,
-  user: User,
+  user: E2BUser,
   team: Team,
-  accessToken: string,
-  currentApiKey: string | null,
   teams: Team[],
   setTeams: (teams: Team[]) => void,
   setCurrentTeam: (team: Team) => void
 }) {
   switch (selectedItem) {
     case 'personal':
-      return <PersonalContent user={user} accessToken={accessToken} />
+      return <PersonalContent user={user} />
     case 'keys':
       return <KeysContent currentTeam={team} />
     case 'usage':
-      return <UsageContent currentApiKey={currentApiKey} />
+      return <UsageContent team={team} />
     case 'billing':
-      return <BillingContent currentApiKey={currentApiKey} team={team} />
+      return <BillingContent team={team} />
     case 'team':
-      return <TeamContent team={team} user={user} teams={teams} currentApiKey={currentApiKey} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
+      return <TeamContent team={team} user={user} teams={teams} setTeams={setTeams} setCurrentTeam={setCurrentTeam} />
     default:
       return <ErrorContent />
   }

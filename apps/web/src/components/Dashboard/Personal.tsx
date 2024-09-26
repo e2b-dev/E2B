@@ -2,14 +2,14 @@
 
 import { useToast } from '../ui/use-toast'
 import { Button } from '../Button'
-import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useState } from 'react'
 import { Copy } from 'lucide-react'
+import { E2BUser } from '@/utils/useUser'
 
 const updateUserUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/users`
 
-export const PersonalContent = ({ user, accessToken }: { user: User, accessToken: string }) => {
+export const PersonalContent = ({ user }: { user: E2BUser }) => {
   const { toast } = useToast()
   const [hovered, setHovered] = useState<boolean>(false)
   const [email, setEmail] = useState(user.email)
@@ -29,15 +29,11 @@ export const PersonalContent = ({ user, accessToken }: { user: User, accessToken
   }
 
   const updateUserEmail = async () => {
-    if (!accessToken) {
-      return
-    }
-
     const res = await fetch(updateUserUrl, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'X-User-Access-Token': `Bearer ${accessToken}`,
+        'X-User-Access-Token': `Bearer ${user.accessToken}`,
       },
       body: JSON.stringify({
         email,
@@ -112,9 +108,9 @@ export const PersonalContent = ({ user, accessToken }: { user: User, accessToken
             className="font-mono cursor-pointer text-xs md:text-sm"
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
-            onClick={() => copyToClipboard(accessToken)}
+            onClick={() => copyToClipboard(user.accessToken)}
           >
-            {hovered ? accessToken : maskAccessToken(accessToken!)}
+            {hovered ? user.accessToken : maskAccessToken(user.accessToken!)}
           </div>
         </div>
 
