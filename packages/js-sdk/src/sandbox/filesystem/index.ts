@@ -11,6 +11,7 @@ import {
   Username,
   ConnectionOpts,
   KEEPALIVE_PING_INTERVAL_SEC,
+  KEEPALIVE_PING_HEADER,
 } from '../../connectionConfig'
 
 import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
@@ -247,7 +248,7 @@ export class Filesystem {
     const events = this.rpc.watchDir({ path }, {
       headers: {
         ...authenticationHeader(opts?.user),
-        'Keepalive-Ping-Interval': KEEPALIVE_PING_INTERVAL_SEC.toString(),
+        [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
       },
       signal: controller.signal,
       timeoutMs: opts?.timeout ?? this.defaultWatchTimeout,
