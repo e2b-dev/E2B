@@ -290,3 +290,4 @@ cython_debug/
 
 # API reference artifacts
 api_ref/
+apiRefRoutes.json
