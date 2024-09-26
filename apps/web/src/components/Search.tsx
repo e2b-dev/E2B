@@ -1,8 +1,5 @@
 'use client'
 
-import { forwardRef, Fragment, Suspense, useCallback, useEffect, useId, useRef, useState } from 'react'
-import Highlighter from 'react-highlight-words'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   type AutocompleteApi,
   type AutocompleteCollection,
@@ -10,10 +7,22 @@ import {
   createAutocomplete,
 } from '@algolia/autocomplete-core'
 import clsx from 'clsx'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import {
+  forwardRef,
+  Fragment,
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react'
+import Highlighter from 'react-highlight-words'
 
+import { DialogAnimated } from '@/components/DialogAnimated'
 import { routes } from '@/components/Navigation/routes'
 import { type Result } from '@/mdx/search.mjs'
-import { DialogAnimated } from '@/components/DialogAnimated'
 
 type EmptyObject = Record<string, never>
 
@@ -82,7 +91,7 @@ function useAutocomplete({ close }: { close: () => void }) {
           ]
         })
       },
-    }),
+    })
   )
 
   return { autocomplete, autocompleteState }
@@ -90,12 +99,7 @@ function useAutocomplete({ close }: { close: () => void }) {
 
 function SearchIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
-    <svg
-      viewBox="0 0 20 20"
-      fill="none"
-      aria-hidden="true"
-      {...props}
-    >
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -107,12 +111,7 @@ function SearchIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 
 function NoResultsIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
-    <svg
-      viewBox="0 0 20 20"
-      fill="none"
-      aria-hidden="true"
-      {...props}
-    >
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -126,18 +125,8 @@ function LoadingIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   const id = useId()
 
   return (
-    <svg
-      viewBox="0 0 20 20"
-      fill="none"
-      aria-hidden="true"
-      {...props}
-    >
-      <circle
-        cx="10"
-        cy="10"
-        r="5.5"
-        strokeLinejoin="round"
-      />
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
+      <circle cx="10" cy="10" r="5.5" strokeLinejoin="round" />
       <path
         stroke={`url(#${id})`}
         strokeLinecap="round"
@@ -153,12 +142,8 @@ function LoadingIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
           y2="15"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="currentColor"/>
-          <stop
-            offset="1"
-            stopColor="currentColor"
-            stopOpacity="0"
-          />
+          <stop stopColor="currentColor" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
       </defs>
     </svg>
@@ -177,12 +162,12 @@ function HighlightQuery({ text, query }: { text: string; query: string }) {
 }
 
 function SearchResult({
-                        result,
-                        resultIndex,
-                        autocomplete,
-                        collection,
-                        query,
-                      }: {
+  result,
+  resultIndex,
+  autocomplete,
+  collection,
+  query,
+}: {
   result: Result
   resultIndex: number
   autocomplete: Autocomplete
@@ -191,18 +176,19 @@ function SearchResult({
 }) {
   const id = useId()
 
-  const sectionTitle = routes.find(section =>
-    section.links.find(link => link.href === result.url.split('#')[0]),
+  const sectionTitle = routes.find((section) =>
+    // @ts-ignore
+    section.links.find((link) => link?.href === result.url.split('#')[0])
   )?.title
   const hierarchy = [sectionTitle, result.pageTitle].filter(
-    (x): x is string => typeof x === 'string',
+    (x): x is string => typeof x === 'string'
   )
 
   return (
     <li
       className={clsx(
         'group block cursor-default px-4 py-3 aria-selected:bg-zinc-50 dark:aria-selected:bg-zinc-800/50',
-        resultIndex > 0 && 'border-t border-zinc-100 dark:border-zinc-800',
+        resultIndex > 0 && 'border-t border-zinc-100 dark:border-zinc-800'
       )}
       aria-labelledby={`${id}-hierarchy ${id}-title`}
       {...autocomplete.getItemProps({
@@ -215,10 +201,7 @@ function SearchResult({
         aria-hidden="true"
         className="text-sm font-medium text-zinc-900 group-aria-selected:text-brand-500 dark:text-white"
       >
-        <HighlightQuery
-          text={result.title}
-          query={query}
-        />
+        <HighlightQuery text={result.title} query={query} />
       </div>
       {hierarchy.length > 0 && (
         <div
@@ -228,10 +211,7 @@ function SearchResult({
         >
           {hierarchy.map((item, itemIndex, items) => (
             <Fragment key={itemIndex}>
-              <HighlightQuery
-                text={item}
-                query={query}
-              />
+              <HighlightQuery text={item} query={query} />
               <span
                 className={
                   itemIndex === items.length - 1
@@ -250,10 +230,10 @@ function SearchResult({
 }
 
 function SearchResults({
-                         autocomplete,
-                         query,
-                         collection,
-                       }: {
+  autocomplete,
+  query,
+  collection,
+}: {
   autocomplete: Autocomplete
   query: string
   collection: AutocompleteCollection<Result>
@@ -261,7 +241,7 @@ function SearchResults({
   if (collection.items.length === 0) {
     return (
       <div className="p-6 text-center">
-        <NoResultsIcon className="mx-auto h-5 w-5 stroke-zinc-900 dark:stroke-zinc-600"/>
+        <NoResultsIcon className="mx-auto h-5 w-5 stroke-zinc-900 dark:stroke-zinc-600" />
         <p className="mt-2 text-xs text-zinc-700 dark:text-zinc-400">
           Nothing found for{' '}
           <strong className="break-words font-semibold text-zinc-900 dark:text-white">
@@ -301,15 +281,15 @@ const SearchInput = forwardRef<
 
   return (
     <div className="group relative flex h-12">
-      <SearchIcon className="pointer-events-none absolute left-3 top-0 h-full w-5 stroke-zinc-500"/>
+      <SearchIcon className="pointer-events-none absolute left-3 top-0 h-full w-5 stroke-zinc-500" />
       <input
         ref={inputRef}
         className={clsx(
           'flex-auto appearance-none bg-transparent pl-10 text-zinc-900 outline-none placeholder:text-zinc-500 focus:w-full focus:flex-none dark:text-white sm:text-sm [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden',
-          autocompleteState.status === 'stalled' ? 'pr-11' : 'pr-4',
+          autocompleteState.status === 'stalled' ? 'pr-11' : 'pr-4'
         )}
         {...inputProps}
-        onKeyDown={event => {
+        onKeyDown={(event) => {
           if (
             event.key === 'Escape' &&
             !autocompleteState.isOpen &&
@@ -329,8 +309,7 @@ const SearchInput = forwardRef<
       />
       {autocompleteState.status === 'stalled' && (
         <div className="absolute inset-y-0 right-3 flex items-center">
-          <LoadingIcon
-            className="h-5 w-5 animate-spin stroke-zinc-200 text-zinc-900 dark:stroke-zinc-800 dark:text-brand-400"/>
+          <LoadingIcon className="h-5 w-5 animate-spin stroke-zinc-200 text-zinc-900 dark:stroke-zinc-800 dark:text-brand-400" />
         </div>
       )}
     </div>
@@ -338,10 +317,10 @@ const SearchInput = forwardRef<
 })
 
 function SearchDialog({
-                        open,
-                        setOpen,
-                        className,
-                      }: {
+  open,
+  setOpen,
+  className,
+}: {
   open: boolean
   setOpen: (open: boolean) => void
   className?: string
@@ -441,12 +420,12 @@ function useSearchProps() {
       setOpen: useCallback(
         (open: boolean) => {
           const { width = 0, height = 0 } =
-          buttonRef.current?.getBoundingClientRect() ?? {}
+            buttonRef.current?.getBoundingClientRect() ?? {}
           if (!open || (width !== 0 && height !== 0)) {
             setOpen(open)
           }
         },
-        [setOpen],
+        [setOpen]
       ),
     },
   }
@@ -457,7 +436,9 @@ export function Search() {
   const { buttonProps, dialogProps } = useSearchProps()
 
   useEffect(() => {
-    setModifierKey(/(Mac|iPhone|iPod|iPad)/i.test(navigator.platform) ? '⌘' : 'Ctrl ')
+    setModifierKey(
+      /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform) ? '⌘' : 'Ctrl '
+    )
   }, [])
 
   return (
@@ -467,7 +448,7 @@ export function Search() {
         className="hidden h-8 w-full items-center gap-2 whitespace-nowrap rounded-full bg-white pl-2 pr-3 text-sm text-zinc-500 ring-1 ring-zinc-900/10 transition hover:ring-zinc-900/20 ui-not-focus-visible:outline-none dark:bg-white/5 dark:text-zinc-400 dark:ring-inset dark:ring-white/10 dark:hover:ring-white/20 lg:flex"
         {...buttonProps}
       >
-        <SearchIcon className="h-5 w-5 stroke-current"/>
+        <SearchIcon className="h-5 w-5 stroke-current" />
         Search in docs...
         <kbd className="ml-auto text-2xs text-zinc-400 dark:text-zinc-500">
           <kbd className="font-sans">{modifierKey}</kbd>
@@ -475,10 +456,7 @@ export function Search() {
         </kbd>
       </button>
       <Suspense fallback={null}>
-        <SearchDialog
-          className="hidden lg:block"
-          {...dialogProps}
-        />
+        <SearchDialog className="hidden lg:block" {...dialogProps} />
       </Suspense>
     </div>
   )
@@ -495,13 +473,10 @@ export function MobileSearch() {
         aria-label="Search in docs..."
         {...buttonProps}
       >
-        <SearchIcon className="h-5 w-5 stroke-zinc-900 dark:stroke-white"/>
+        <SearchIcon className="h-5 w-5 stroke-zinc-900 dark:stroke-white" />
       </button>
       <Suspense fallback={null}>
-        <SearchDialog
-          className="lg:hidden"
-          {...dialogProps}
-        />
+        <SearchDialog className="lg:hidden" {...dialogProps} />
       </Suspense>
     </div>
   )
