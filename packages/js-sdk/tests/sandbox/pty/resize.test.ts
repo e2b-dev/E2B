@@ -16,11 +16,7 @@ sandboxTest('resize', async ({ sandbox }) => {
 
   await sandbox.pty.sendInput(
     terminal.pid,
-    new Uint8Array(Buffer.from('tput cols\n'))
-  )
-  await sandbox.pty.sendInput(
-    terminal.pid,
-    new Uint8Array(Buffer.from('exit\n'))
+    new Uint8Array(Buffer.from('tput cols\nexit\n'))
   )
 
   await terminal.wait()
@@ -37,11 +33,7 @@ sandboxTest('resize', async ({ sandbox }) => {
   await sandbox.pty.resize(resizedTerminal.pid, { cols: 100, rows: 24 })
   await sandbox.pty.sendInput(
     resizedTerminal.pid,
-    new Uint8Array(Buffer.from('tput cols\n'))
-  )
-  await sandbox.pty.sendInput(
-    resizedTerminal.pid,
-    new Uint8Array(Buffer.from('exit\n'))
+    new Uint8Array(Buffer.from('tput cols\nexit\n'))
   )
 
   await resizedTerminal.wait()

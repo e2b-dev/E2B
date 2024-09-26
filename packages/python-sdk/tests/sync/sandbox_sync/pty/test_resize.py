@@ -8,8 +8,7 @@ def test_resize(sandbox: Sandbox):
 
     terminal = sandbox.pty.create(PtySize(cols=80, rows=24))
 
-    sandbox.pty.send_stdin(terminal.pid, b"tput cols\n")
-    sandbox.pty.send_stdin(terminal.pid, b"exit\n")
+    sandbox.pty.send_stdin(terminal.pid, b"tput cols\nexit\n")
 
     output = []
     result = terminal.wait(on_pty=lambda x: append_data(output, x))
@@ -20,8 +19,7 @@ def test_resize(sandbox: Sandbox):
     terminal = sandbox.pty.create(PtySize(cols=80, rows=24))
 
     sandbox.pty.resize(terminal.pid, PtySize(cols=100, rows=24))
-    sandbox.pty.send_stdin(terminal.pid, b"tput cols\n")
-    sandbox.pty.send_stdin(terminal.pid, b"exit\n")
+    sandbox.pty.send_stdin(terminal.pid, b"tput cols\nexit\n")
 
     output = []
     result = terminal.wait(on_pty=lambda x: append_data(output, x))

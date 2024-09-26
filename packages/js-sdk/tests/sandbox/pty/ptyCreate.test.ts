@@ -1,7 +1,7 @@
 import { sandboxTest } from '../../setup'
 import { assert } from 'vitest'
 
-sandboxTest('should create a PTY and execute commands', async ({ sandbox }) => {
+sandboxTest('create PTY', async ({ sandbox }) => {
   let output = ''
   const decoder = new TextDecoder()
   const appendData = (data: Uint8Array) => {
@@ -17,12 +17,9 @@ sandboxTest('should create a PTY and execute commands', async ({ sandbox }) => {
 
   await sandbox.pty.sendInput(
     terminal.pid,
-    new Uint8Array(Buffer.from('echo $ABC\n'))
+    new Uint8Array(Buffer.from('echo $ABC\nexit\n'))
   )
-  await sandbox.pty.sendInput(
-    terminal.pid,
-    new Uint8Array(Buffer.from('exit\n'))
-  )
+
   await terminal.wait()
   assert.equal(terminal.exitCode, 0)
 
