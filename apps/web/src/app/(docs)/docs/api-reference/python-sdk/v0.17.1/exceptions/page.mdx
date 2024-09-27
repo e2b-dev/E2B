@@ -1,7 +1,7 @@
 
 
 
-## SandboxException Objects
+## SandboxException
 
 ```python
 class SandboxException(Exception)
@@ -12,7 +12,7 @@ Raised when a sandbox exception occurs.
 Base class for all sandbox errors.
 
 
-## TimeoutException Objects
+## TimeoutException
 
 ```python
 class TimeoutException(SandboxException)
@@ -29,7 +29,7 @@ The [deadline_exceeded] exception type is caused by exceeding the timeout for pr
 The [unknown] exception type is sometimes caused by the sandbox timeout when the request is not processed correctly.
 
 
-## NotEnoughSpaceException Objects
+## NotEnoughSpaceException
 
 ```python
 class NotEnoughSpaceException(SandboxException)
@@ -38,7 +38,7 @@ class NotEnoughSpaceException(SandboxException)
 Raised when there is not enough disk space.
 
 
-## NotFoundException Objects
+## NotFoundException
 
 ```python
 class NotFoundException(SandboxException)
@@ -47,7 +47,7 @@ class NotFoundException(SandboxException)
 Raised when a resource is not found.
 
 
-## InvalidArgumentException Objects
+## InvalidArgumentException
 
 ```python
 class InvalidArgumentException(SandboxException)
@@ -56,7 +56,7 @@ class InvalidArgumentException(SandboxException)
 Raised when an invalid argument is provided.
 
 
-## AuthenticationException Objects
+## AuthenticationException
 
 ```python
 class AuthenticationException(SandboxException)
@@ -65,7 +65,7 @@ class AuthenticationException(SandboxException)
 Raised when authentication fails.
 
 
-## TemplateException Objects
+## TemplateException
 
 ```python
 class TemplateException(SandboxException)
