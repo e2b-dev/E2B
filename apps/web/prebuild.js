@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 
-function walkDir(dir, basePath = '') {
+function walkDir(dirName, dir, basePath = '', depth = 1) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
 
   return entries
@@ -9,12 +9,31 @@ function walkDir(dir, basePath = '') {
       const relativePath = path.join(basePath, entry.name)
 
       if (entry.isDirectory()) {
-        let route = { title: entry.name }
-        const links = walkDir(path.join(dir, entry.name), relativePath)
+        let route = {
+          title: depth === 1 ? entry.name.toLocaleUpperCase() : entry.name,
+        }
+        const entryName = entry.name
+        const childPath = path.join(dir, entry.name)
+        const links = walkDir(entryName, childPath, relativePath, depth + 1)
         if (links.length > 0) {
-          route.links = links
-        } else {
-          route.href = '/' + relativePath
+          if (depth === 1) {
+            route.href = '.' + relativePath
+            route.links = links
+          } else if (depth === 2) {
+            route.href = '/docs/api-reference/' + relativePath
+            const mdxFilePath = path.join(childPath, 'page.mdx')
+            console.log(`Generating ${mdxFilePath}`)
+            const mdxContent = `# ${dirName} ${entryName}\n\n${links
+              .map(
+                (link) =>
+                  `- [${
+                    link.title.charAt(0).toUpperCase() +
+                    link.title.slice(1).toLowerCase()
+                  }](./${entryName}/${link.title})`
+              )
+              .join('\n')}`
+            fs.writeFileSync(mdxFilePath, mdxContent)
+          }
         }
         return route
       }
@@ -29,7 +48,7 @@ function generateApiRefRoutes() {
     return []
   }
 
-  return walkDir(apiRefPath)
+  return walkDir('api-reference', apiRefPath)
 }
 
 const apiRefRoutes = generateApiRefRoutes()
