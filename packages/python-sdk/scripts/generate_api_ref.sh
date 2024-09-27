@@ -20,6 +20,9 @@ for package in "${packages[@]}"; do
     sed -i '/<a[^>]*>.*<\/a>/d' api_ref/"${package}".mdx
     # remove empty hyperlinks
     sed -i '/^# /d' "api_ref/${package}.mdx"
+    Objects
+    # remove " Objects" from lines starting with "##"
+    sed -i '/^## / s/ Objects$//' "api_ref/${package}.mdx"
     # move to docs
     mkdir -p "../../apps/web/src/app/(docs)/docs/api-reference/python-sdk/${PKG_VERSION}/${package}"
     mv "api_ref/${package}.mdx" "../../apps/web/src/app/(docs)/docs/api-reference/python-sdk/${PKG_VERSION}/${package}/page.mdx"
