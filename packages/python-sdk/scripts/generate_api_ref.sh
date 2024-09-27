@@ -20,7 +20,6 @@ for package in "${packages[@]}"; do
     sed -i '/<a[^>]*>.*<\/a>/d' api_ref/"${package}".mdx
     # remove empty hyperlinks
     sed -i '/^# /d' "api_ref/${package}.mdx"
-    Objects
     # remove " Objects" from lines starting with "##"
     sed -i '/^## / s/ Objects$//' "api_ref/${package}.mdx"
     # move to docs
