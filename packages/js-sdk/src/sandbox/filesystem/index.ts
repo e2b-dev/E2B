@@ -8,6 +8,7 @@ import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import { FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
 
+import { clearTimeout } from 'timers'
 import { FilesystemEvent, WatchHandle } from './watchHandle'
 
 export interface EntryInfo {
@@ -80,8 +81,23 @@ export class Filesystem {
     return res.data
   }
 
-  async write(path: string, data: WriteData | { data: WriteData; filename: string }[], opts?: FilesystemRequestOpts): Promise<EntryInfo | EntryInfo[]> {
+  async write(path: string, data: WriteData, opts?: FilesystemRequestOpts): Promise<EntryInfo>
+  async write(files: { data: WriteData; filename: string }[], opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
+  async write(pathOrFiles: string | { data: WriteData; filename: string }[], dataOrOpts?: WriteData | FilesystemRequestOpts, opts?: FilesystemRequestOpts): Promise<EntryInfo | EntryInfo[]> {
+    let path: string
+    let data: WriteData | { data: WriteData; filename: string }[]
+
+    if (typeof pathOrFiles === 'string') {
+      path = pathOrFiles
+      data = dataOrOpts as WriteData
+    } else {
+      path = ''
+      data = pathOrFiles
+      opts = dataOrOpts as FilesystemRequestOpts
+    }
+
     let blobs: Blob[] = []
+
     if (Array.isArray(data)) {
       for (const d of data) {
         const blob = await new Response(d.data).blob()
@@ -251,11 +267,7 @@ export class Filesystem {
     }
   }
 
-  async watch(
-    path: string,
-    onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: FilesystemRequestOpts & { timeout?: number; onExit?: (err?: Error) => void | Promise<void> }
-  ): Promise<WatchHandle> {
+  async watch(path: string, onEvent: (event: FilesystemEvent) => void | Promise<void>, opts?: FilesystemRequestOpts & { timeout?: number; onExit?: (err?: Error) => void | Promise<void> }): Promise<WatchHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
