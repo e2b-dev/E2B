@@ -1,18 +1,5 @@
-import {
-  createPromiseClient,
-  Transport,
-  PromiseClient,
-  ConnectError,
-  Code,
-} from '@connectrpc/connect'
-import {
-  ConnectionConfig,
-  defaultUsername,
-  Username,
-  ConnectionOpts,
-  KEEPALIVE_PING_INTERVAL_SEC,
-  KEEPALIVE_PING_HEADER,
-} from '../../connectionConfig'
+import { Code, ConnectError, createPromiseClient, PromiseClient, Transport } from '@connectrpc/connect'
+import { ConnectionConfig, ConnectionOpts, defaultUsername, KEEPALIVE_PING_HEADER, KEEPALIVE_PING_INTERVAL_SEC, Username } from '../../connectionConfig'
 
 import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
@@ -21,7 +8,7 @@ import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import { FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
 
-import { WatchHandle, FilesystemEvent } from './watchHandle'
+import { FilesystemEvent, WatchHandle } from './watchHandle'
 
 export interface EntryInfo {
   name: string
@@ -33,6 +20,8 @@ export const enum FileType {
   FILE = 'file',
   DIR = 'dir',
 }
+
+export type WriteData = string | ArrayBuffer | Blob | ReadableStream
 
 function mapFileType(fileType: FsFileType) {
   switch (fileType) {
@@ -57,11 +46,7 @@ export class Filesystem {
 
   private readonly defaultWatchTimeout = 60_000 // 60 seconds
 
-  constructor(
-    transport: Transport,
-    private readonly envdApi: EnvdApiClient,
-    private readonly connectionConfig: ConnectionConfig,
-  ) {
+  constructor(transport: Transport, private readonly envdApi: EnvdApiClient, private readonly connectionConfig: ConnectionConfig) {
     this.rpc = createPromiseClient(FilesystemService, transport)
   }
 
@@ -95,8 +80,17 @@ export class Filesystem {
     return res.data
   }
 
-  async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
-    const blob = await new Response(data).blob()
+  async write(path: string, data: WriteData | { data: WriteData; filename: string }[], opts?: FilesystemRequestOpts): Promise<EntryInfo | EntryInfo[]> {
+    let blobs: Blob[] = []
+    if (Array.isArray(data)) {
+      for (const d of data) {
+        const blob = await new Response(d.data).blob()
+        blobs.push(blob)
+      }
+    } else {
+      const blob = await new Response(data).blob()
+      blobs.push(blob)
+    }
 
     const res = await this.envdApi.api.POST('/files', {
       params: {
@@ -108,7 +102,15 @@ export class Filesystem {
       bodySerializer() {
         const fd = new FormData()
 
-        fd.append('file', blob)
+        for (let i = 0; i < blobs.length; i++) {
+          const blob = blobs[i]
+          if (Array.isArray(data)) {
+            const filename = data[i].filename
+            fd.append('file', blob, filename)
+          } else {
+            fd.append('file', blob)
+          }
+        }
 
         return fd
       },
@@ -126,15 +128,22 @@ export class Filesystem {
       throw new Error('Expected to receive information about written file')
     }
 
-    return files[0] as EntryInfo
+    if (files.length > 1) {
+      return files as EntryInfo[]
+    } else {
+      return files[0] as EntryInfo
+    }
   }
 
   async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
     try {
-      const res = await this.rpc.listDir({ path }, {
-        headers: authenticationHeader(opts?.user),
-        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-      })
+      const res = await this.rpc.listDir(
+        { path },
+        {
+          headers: authenticationHeader(opts?.user),
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        }
+      )
 
       const entries: EntryInfo[] = []
 
@@ -158,10 +167,13 @@ export class Filesystem {
 
   async makeDir(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
     try {
-      await this.rpc.makeDir({ path }, {
-        headers: authenticationHeader(opts?.user),
-        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-      })
+      await this.rpc.makeDir(
+        { path },
+        {
+          headers: authenticationHeader(opts?.user),
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        }
+      )
 
       return true
     } catch (err) {
@@ -177,13 +189,16 @@ export class Filesystem {
 
   async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
     try {
-      const res = await this.rpc.move({
-        source: oldPath,
-        destination: newPath,
-      }, {
-        headers: authenticationHeader(opts?.user),
-        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-      })
+      const res = await this.rpc.move(
+        {
+          source: oldPath,
+          destination: newPath,
+        },
+        {
+          headers: authenticationHeader(opts?.user),
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        }
+      )
 
       const entry = res.entry
       if (!entry) {
@@ -202,10 +217,13 @@ export class Filesystem {
 
   async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
     try {
-      await this.rpc.remove({ path }, {
-        headers: authenticationHeader(opts?.user),
-        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-      })
+      await this.rpc.remove(
+        { path },
+        {
+          headers: authenticationHeader(opts?.user),
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        }
+      )
     } catch (err) {
       throw handleRpcError(err)
     }
@@ -213,10 +231,13 @@ export class Filesystem {
 
   async exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
     try {
-      await this.rpc.stat({ path }, {
-        headers: authenticationHeader(opts?.user),
-        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-      })
+      await this.rpc.stat(
+        { path },
+        {
+          headers: authenticationHeader(opts?.user),
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        }
+      )
 
       return true
     } catch (err) {
@@ -233,7 +254,7 @@ export class Filesystem {
   async watch(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: FilesystemRequestOpts & { timeout?: number, onExit?: (err?: Error) => void | Promise<void> },
+    opts?: FilesystemRequestOpts & { timeout?: number; onExit?: (err?: Error) => void | Promise<void> }
   ): Promise<WatchHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -241,30 +262,28 @@ export class Filesystem {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-        controller.abort()
-      }, requestTimeoutMs)
+          controller.abort()
+        }, requestTimeoutMs)
       : undefined
 
-    const events = this.rpc.watchDir({ path }, {
-      headers: {
-        ...authenticationHeader(opts?.user),
-        [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
-      },
-      signal: controller.signal,
-      timeoutMs: opts?.timeout ?? this.defaultWatchTimeout,
-    })
+    const events = this.rpc.watchDir(
+      { path },
+      {
+        headers: {
+          ...authenticationHeader(opts?.user),
+          [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
+        },
+        signal: controller.signal,
+        timeoutMs: opts?.timeout ?? this.defaultWatchTimeout,
+      }
+    )
 
     try {
       await handleWatchDirStartEvent(events)
 
       clearTimeout(reqTimeout)
 
-      return new WatchHandle(
-        () => controller.abort(),
-        events,
-        onEvent,
-        opts?.onExit,
-      )
+      return new WatchHandle(() => controller.abort(), events, onEvent, opts?.onExit)
     } catch (err) {
       throw handleRpcError(err)
     }
