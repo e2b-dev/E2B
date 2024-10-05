@@ -1,9 +1,7 @@
 import * as commander from 'commander'
 import * as chalk from 'chalk'
-import * as e2b from 'e2b'
 import * as fs from 'fs'
 
-import { ensureAccessToken } from 'src/api'
 
 import {
   asBold,
@@ -12,7 +10,12 @@ import {
   asLocal,
   asLocalRelative,
 } from 'src/utils/format'
-import { configOption, pathOption, selectMultipleOption, teamOption } from 'src/options'
+import {
+  configOption,
+  pathOption,
+  selectMultipleOption,
+  teamOption,
+} from 'src/options'
 import {
   E2BConfig,
   configName,
@@ -25,11 +28,21 @@ import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
 import { client } from 'src/api'
+import { handleE2BRequestError } from '../../utils/errors'
 import { getUserConfig } from 'src/user'
 
-const deleteTemplate = e2b.withAccessToken(
-  client.api.path('/templates/{templateID}').method('delete').create(),
-)
+async function deleteTemplate(templateID: string) {
+  const res = await client.api.DELETE('/templates/{templateID}', {
+    params: {
+      path: {
+        templateID,
+      },
+    },
+  })
+
+  handleE2BRequestError(res.error, 'Error deleting sandbox template')
+  return
+}
 
 export const deleteCommand = new commander.Command('delete')
   .description(`delete sandbox template and ${asLocal(configName)} config`)
@@ -61,7 +74,6 @@ export const deleteCommand = new commander.Command('delete')
       try {
         let teamId = opts.team
 
-        const accessToken = ensureAccessToken()
         const root = getRoot(opts.path)
 
         const templates: (Pick<E2BConfig, 'template_id'> & {
@@ -79,9 +91,9 @@ export const deleteCommand = new commander.Command('delete')
           }
 
           const allTemplates = await listSandboxTemplates({
-            accessToken: accessToken,
             teamID: teamId,
           })
+
           const selectedTemplates = await getPromptTemplates(
             allTemplates,
             'Select sandbox templates to delete',
@@ -146,7 +158,8 @@ export const deleteCommand = new commander.Command('delete')
 
         if (!opts.yes) {
           const confirmed = await confirm(
-            `Do you really want to delete ${templates.length === 1 ? 'this template' : 'these templates'
+            `Do you really want to delete ${
+              templates.length === 1 ? 'this template' : 'these templates'
             }?`,
           )
 
@@ -164,7 +177,7 @@ export const deleteCommand = new commander.Command('delete')
                 e.configPath,
               )}`,
             )
-            await deleteTemplate(accessToken, { templateID: e.template_id })
+            await deleteTemplate(e.template_id)
             if (e.configPath) {
               await deleteConfig(e.configPath)
             }

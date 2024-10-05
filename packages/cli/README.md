@@ -43,7 +43,7 @@ FROM ubuntu:22.04
 ```
 
 3. Run `e2b build` inside the directory with the `Dockerfile` to create and
-   build the sandbox template. You will get *_template ID_* that you use for
+   build the sandbox template. You will get _*template ID*_ that you use for
    connecting to the sandbox via SDKs and for rebuilding the sandbox template
 
 4. Use the **template ID** that you got during the `e2b build` with the Python
@@ -58,6 +58,6 @@ All commands can be called with a `--path <path-to-dir>` flag that changes the
 directory where the command will be called, without the need to call `cd`.
 
 ```md
--V, --version    Display E2B CLI version
--h, --help       display help for command
+-V, --version Display E2B CLI version
+-h, --help display help for command
 ```

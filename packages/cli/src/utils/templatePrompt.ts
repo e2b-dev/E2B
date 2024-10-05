@@ -14,12 +14,14 @@ export async function getPromptTemplates(
       message: chalk.default.underline(text),
       type: 'checkbox',
       pageSize: 50,
-      choices: templates.map(e => ({
+      choices: templates.map((e) => ({
         name: asFormattedSandboxTemplate(e),
         value: e,
       })),
     },
   ])
 
-  return templatesAnwsers['templates'] as e2b.components['schemas']['Template'][]
+  return templatesAnwsers[
+    'templates'
+  ] as e2b.components['schemas']['Template'][]
 }

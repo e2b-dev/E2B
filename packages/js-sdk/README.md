@@ -71,3 +71,32 @@ const sandbox = await Sandbox.create();
 // Close sandbox once done
 await sandbox.close();
 ```
+
+## Development
+
+You can use the SDK with a locally running [`envd`](https://github.com/e2b-dev/infra/blob/main/packages/envd) (that usually runs inside the sandbox and allows the SDK to interact with it) by passing `E2B_DEBUG=true` to `.env` or by using `debug: true` in the `Sandbox.create` or `Sandbox.connect` method options.
+
+### Install dependencies
+
+```bash
+pnpm install
+```
+
+### Generating API clients used by SDK
+
+Check out top-level [README](../../README.md#generating-api-clients-used-by-sdks) for more information.
+
+### Building
+
+For development, you can run the following command to rebuild the SDK on every change:
+
+```bash
+pnpm dev
+```
+
+### Testing
+
+Use `pnpm test` to run the test suite or `pnpm example` to run the example code.
+Pass `E2B_DEBUG=true` to `.env` to run against the locally running envd (usually run via Docker).
+
+> When running with a local environment the environment is not cleaned up after every test run as when running the test againts production. This might lead to some issues when running the tests multiple times and it is good to keep in mind.

@@ -1,0 +1,183 @@
+openapi: 3.0.0
+info:
+  title: envd
+  version: 0.1.1
+  description: API for managing files' content and controlling envd
+
+tags:
+  - name: files
+
+paths:
+  /health:
+    get:
+      summary: Check the health of the service
+      responses:
+        "204":
+          description: The service is healthy
+
+  /init:
+    post:
+      summary: Set env vars, ensure the time and metadata is synced with the host
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                envVars:
+                  $ref: "#/components/schemas/EnvVars"
+      responses:
+        "204":
+          description: Env vars set, the time and metadata is synced with the host
+
+  /files:
+    get:
+      summary: Download a file
+      tags: [files]
+      parameters:
+        - $ref: "#/components/parameters/FilePath"
+        - $ref: "#/components/parameters/User"
+      responses:
+        "200":
+          $ref: "#/components/responses/DownloadSuccess"
+        "401":
+          $ref: "#/components/responses/InvalidUser"
+        "400":
+          $ref: "#/components/responses/InvalidPath"
+        "404":
+          $ref: "#/components/responses/FileNotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      summary: Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
+      tags: [files]
+      parameters:
+        - $ref: "#/components/parameters/FilePath"
+        - $ref: "#/components/parameters/User"
+      requestBody:
+        $ref: "#/components/requestBodies/File"
+      responses:
+        "200":
+          $ref: "#/components/responses/UploadSuccess"
+        "400":
+          $ref: "#/components/responses/InvalidPath"
+        "401":
+          $ref: "#/components/responses/InvalidUser"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "507":
+          $ref: "#/components/responses/NotEnoughDiskSpace"
+
+components:
+  parameters:
+    FilePath:
+      name: path
+      in: query
+      required: false
+      description: Path to the file, URL encoded. Can be relative to user's home directory.
+      schema:
+        type: string
+    User:
+      name: username
+      in: query
+      required: true
+      description: User used for setting the owner, or resolving relative paths.
+      schema:
+        type: string
+        pattern: "^(root|user)$"
+
+  requestBodies:
+    File:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
+
+  responses:
+    UploadSuccess:
+      description: The file was uploaded successfully.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/EntryInfo"
+
+    DownloadSuccess:
+      description: Entire file downloaded successfully.
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+            description: The file content
+    InvalidPath:
+      description: Invalid path
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    FileNotFound:
+      description: File not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InvalidUser:
+      description: Invalid user
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotEnoughDiskSpace:
+      description: Not enough disk space
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      required:
+        - message
+        - code
+      properties:
+        message:
+          type: string
+          description: Error message
+        code:
+          type: integer
+          description: Error code
+    EntryInfo:
+      required:
+        - path
+        - name
+        - type
+      properties:
+        path:
+          type: string
+          description: Path to the file
+        name:
+          type: string
+          description: Name of the file
+        type:
+          type: string
+          description: Type of the file
+          enum:
+              - file
+    EnvVars:
+      type: object
+      description: Environment variables to set
+      additionalProperties:
+          type: string

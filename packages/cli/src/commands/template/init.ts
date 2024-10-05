@@ -10,7 +10,11 @@ import { asLocalRelative, asPrimary } from 'src/utils/format'
 
 export const initCommand = new commander.Command('init')
   .description(
-    `create basic E2B Dockerfile (${asLocalRelative('e2b.Dockerfile')}) in root directory. You can then run ${asPrimary('e2b template build')} to build sandbox template from this Dockerfile`,
+    `create basic E2B Dockerfile (${asLocalRelative(
+      'e2b.Dockerfile',
+    )}) in root directory. You can then run ${asPrimary(
+      'e2b template build',
+    )} to build sandbox template from this Dockerfile`,
   )
   .addOption(pathOption)
   .alias('it')
