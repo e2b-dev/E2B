@@ -130,7 +130,7 @@ ANTHROPIC_API_KEY="anthropic-api-key"
 
 <CodeGroup isRunnable={false}>
 ```bash {{ language: 'python' }}
-pip install anthropic
+pip install anthropic==0.35.0
 ```
 </CodeGroup>
 
@@ -157,7 +157,7 @@ client = Anthropic()
 def chat(code_interpreter: CodeInterpreter, user_message: str) -> Tuple[List[Result], Logs]:
     print(f"\n{'='*50}\nUser Message: {user_message}\n{'='*50}")
 
-    message = client.beta.tools.messages.create(
+    message = client.messages.create(
         model=MODEL_NAME,
         system=SYSTEM_PROMPT,
         max_tokens=4096,
