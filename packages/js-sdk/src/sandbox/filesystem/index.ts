@@ -82,56 +82,30 @@ export class Filesystem {
   }
 
   async write(path: string, data: WriteData, opts?: FilesystemRequestOpts): Promise<EntryInfo>
-  async write(files: { data: WriteData; filename: string }[], opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
-  async write(pathOrFiles: string | { data: WriteData; filename: string }[], dataOrOpts?: WriteData | FilesystemRequestOpts, opts?: FilesystemRequestOpts): Promise<EntryInfo | EntryInfo[]> {
-    let path: string
-    let data: WriteData | { data: WriteData; filename: string }[]
+  async write(files: { path: string, data: WriteData }[], opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
+  async write(pathOrFiles: string | { path: string; data: WriteData }[], dataOrOpts?: WriteData | FilesystemRequestOpts, opts?: FilesystemRequestOpts): Promise<EntryInfo | EntryInfo[]> {
+    const { path, writeOpts, writeFiles } = typeof pathOrFiles === 'string'
+      ? { path: pathOrFiles, writeFiles: [{ data: dataOrOpts }], writeOpts: opts }
+      : { path: undefined, writeFiles: pathOrFiles, writeOpts: dataOrOpts }
 
-    if (typeof pathOrFiles === 'string') {
-      path = pathOrFiles
-      data = dataOrOpts as WriteData
-    } else {
-      path = ''
-      data = pathOrFiles
-      opts = dataOrOpts as FilesystemRequestOpts
-    }
-
-    let blobs: Blob[] = []
-
-    if (Array.isArray(data)) {
-      for (const d of data) {
-        const blob = await new Response(d.data).blob()
-        blobs.push(blob)
-      }
-    } else {
-      const blob = await new Response(data).blob()
-      blobs.push(blob)
-    }
+    const blobs = await Promise.all(writeFiles.map(f => new Response(f.data).blob()))
 
     const res = await this.envdApi.api.POST('/files', {
       params: {
         query: {
           path,
-          username: opts?.user || defaultUsername,
+          username: writeOpts?.user || defaultUsername,
         },
       },
       bodySerializer() {
-        const fd = new FormData()
+        return blobs.reduce((fd, blob, i) => {
+          fd.append('file', blob, writeFiles[i].path)
 
-        for (let i = 0; i < blobs.length; i++) {
-          const blob = blobs[i]
-          if (Array.isArray(data)) {
-            const filename = data[i].filename
-            fd.append('file', blob, filename)
-          } else {
-            fd.append('file', blob)
-          }
-        }
-
-        return fd
+          return fd
+        }, new FormData())
       },
       body: {},
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
     })
 
     const err = await handleEnvdApiError(res)
@@ -144,11 +118,7 @@ export class Filesystem {
       throw new Error('Expected to receive information about written file')
     }
 
-    if (files.length > 1) {
-      return files as EntryInfo[]
-    } else {
-      return files[0] as EntryInfo
-    }
+    return files.length === 1 ? files[0] : files
   }
 
   async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
@@ -274,8 +244,8 @@ export class Filesystem {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
+        controller.abort()
+      }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.watchDir(
