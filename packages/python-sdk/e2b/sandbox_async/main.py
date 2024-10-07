@@ -46,6 +46,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
     @property
     def pty(self) -> Pty:
+        """Get a Pty Object"""
         return self._pty
 
     @property
