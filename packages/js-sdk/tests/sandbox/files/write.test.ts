@@ -21,19 +21,49 @@ sandboxTest('write file', async ({ sandbox }) => {
 })
 
 sandboxTest('write multiple files', async ({ sandbox }) => {
-  let files: Array<{ data: WriteData; filename: string }> = []
+  // Attempt to write with empty files array
+  await sandbox.files
+    .write([])
+    .then((e) => {
+      assert.isUndefined(e)
+    })
+    .catch((err) => {
+      assert.instanceOf(err, Error)
+      assert.include(err.message, 'Expected to receive information about written file')
+    })
+
+  // Attempt to write with patn and file array
+  await sandbox.files
+    .write('/path/to/file', [{ path: 'one_test_file.txt', data: 'This is a test file.' }])
+    .then((e) => {
+      assert.isUndefined(e)
+    })
+    .catch((err) => {
+      assert.instanceOf(err, Error)
+      assert.include(err.message, 'Cannot specify path with array of files')
+    })
+
+  // Attempt to write with one file in array
+  const info = await sandbox.files.write([{ path: 'one_test_file.txt', data: 'This is a test file.' }])
+  assert.isTrue(Array.isArray(info))
+  assert.equal(info[0].name, 'one_test_file.txt')
+  assert.equal(info[0].type, 'file')
+  assert.equal(info[0].path, `/home/user/one_test_file.txt`)
+
+  // Attempt to write with multiple files in array
+  let files: Array<{ data: WriteData; path: string }> = []
 
   for (let i = 0; i < 10; i++) {
-    const filename = `multi_test_file${i}.txt`
-    onTestFinished(async () => await sandbox.files.remove(filename))
+    const path = `multi_test_file${i}.txt`
+    onTestFinished(async () => await sandbox.files.remove(path))
 
     files.push({
-      filename: `multi_test_file${i}.txt`,
+      path: `multi_test_file${i}.txt`,
       data: `This is a test file ${i}.`,
     })
   }
 
-  const infos = await sandbox.files.write('', files)
+  const infos = await sandbox.files.write(files)
 
   assert.isTrue(Array.isArray(infos))
   assert.equal((infos as EntryInfo[]).length, files.length)
@@ -42,13 +72,13 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
     const file = files[i]
     const info = infos[i] as EntryInfo
 
-    assert.equal(info.name, file.filename)
+    assert.equal(info.name, file.path)
     assert.equal(info.type, 'file')
-    assert.equal(info.path, `/home/user/${file.filename}`)
+    assert.equal(info.path, `/home/user/${file.path}`)
 
-    const exists = await sandbox.files.exists(file.filename)
+    const exists = await sandbox.files.exists(file.path)
     assert.isTrue(exists)
-    const readContent = await sandbox.files.read(file.filename)
+    const readContent = await sandbox.files.read(file.path)
     assert.equal(readContent, file.data)
   }
 })
