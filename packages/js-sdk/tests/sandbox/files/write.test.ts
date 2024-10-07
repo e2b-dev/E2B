@@ -32,7 +32,7 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
       assert.include(err.message, 'Expected to receive information about written file')
     })
 
-  // Attempt to write with patn and file array
+  // Attempt to write with path and file array
   await sandbox.files
     .write('/path/to/file', [{ path: 'one_test_file.txt', data: 'This is a test file.' }])
     .then((e) => {
@@ -68,6 +68,7 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   assert.isTrue(Array.isArray(infos))
   assert.equal((infos as EntryInfo[]).length, files.length)
 
+  // Attempt to write with multiple files in array
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
     const info = infos[i] as EntryInfo

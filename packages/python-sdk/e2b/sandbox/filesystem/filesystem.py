@@ -1,6 +1,6 @@
 from enum import Enum
 from dataclasses import dataclass
-from typing import Optional
+from typing import IO, Optional, Union
 
 from e2b.envd.filesystem import filesystem_pb2
 
@@ -22,3 +22,10 @@ class EntryInfo:
     name: str
     type: Optional[FileType]
     path: str
+
+WriteData = Union[str, bytes, IO]
+
+@dataclass
+class FileWriteData:
+    path: str
+    data: WriteData

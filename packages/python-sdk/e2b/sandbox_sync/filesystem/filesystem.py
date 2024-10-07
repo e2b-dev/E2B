@@ -1,5 +1,6 @@
 from io import TextIOBase
-from typing import IO, Iterator, List, Literal, Optional, Union, overload
+from typing import Iterator, List, Literal, Optional, overload
+from e2b.sandbox.filesystem.filesystem import WriteData, FileWriteData
 
 import e2b_connect
 import httpcore
@@ -93,23 +94,48 @@ class Filesystem:
 
     def write(
         self,
-        path: str,
-        data: Union[str, bytes, IO],
+        path: str | None,
+        data: WriteData | List[FileWriteData],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> EntryInfo:
-        """Write to file
+    ) -> EntryInfo | List[EntryInfo]:
+        """Write to file(s)
         When writing to a file that doesn't exist, the file will get created.
         When writing to a file that already exists, the file will get overwritten.
         When writing to a file that's in a directory that doesn't exist, you'll get an error.
         """
-        if isinstance(data, TextIOBase):
-            data = data.read().encode()
+
+        write_files = []
+        if path is None:
+            if not isinstance(data, list):
+                raise Exception("Expected data to be a list of FileWriteData")
+            write_files = data
+        else:
+            if isinstance(data, list):
+                raise Exception("Cannot specify path with array of files")
+            write_files = [{"path": path, "data": data}]
+
+        if len(write_files) == 0:
+            raise Exception("Need at least one file to write")
+
+        # Prepare the files for the multipart/form-data request
+        httpx_files = []
+        for file in write_files:
+            file_path, file_data = file['path'], file['data']
+            if isinstance(file_data, str) or isinstance(file_data, bytes):
+                httpx_files.append(('file', (file_path, file_data)))
+            elif isinstance(file_data, TextIOBase):
+                httpx_files.append(('file', (file_path, file_data.read())))
+            else:
+                raise ValueError(f"Unsupported data type for file {file_path}")
+
+        params = {"username": user}
+        if path is not None: params["path"] = path
 
         r = self._envd_api.post(
             ENVD_API_FILES_ROUTE,
-            files={"file": data},
-            params={"path": path, "username": user},
+            files=httpx_files,
+            params=params,
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
@@ -117,13 +143,16 @@ class Filesystem:
         if err:
             raise err
 
-        files = r.json()
+        write_files = r.json()
 
-        if not isinstance(files, list) or len(files) == 0:
+        if not isinstance(write_files, list) or len(write_files) == 0:
             raise Exception("Expected to receive information about written file")
 
-        file = files[0]
-        return EntryInfo(**file)
+        if len(write_files) == 1 and path:
+            file = write_files[0]
+            return EntryInfo(**file)
+        else:
+            return [EntryInfo(**file) for file in write_files]
 
     def list(
         self,
