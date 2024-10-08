@@ -21,6 +21,10 @@ from e2b.sandbox_async.utilts import OutputHandler
 
 
 class Filesystem:
+    """
+    Manager for interacting with the filesystem in the sandbox.
+    """
+
     def __init__(
         self,
         envd_api_url: str,
@@ -75,7 +79,15 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ):
-        """Read from file"""
+        """
+        Reads a whole file content and returns it in requested format (text by default).
+
+        :param path: Path to the file
+        :param format: Format of the file content
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request
+        :return File content in requested format
+        """
         r = await self._envd_api.get(
             ENVD_API_FILES_ROUTE,
             params={"path": path, "username": user},
@@ -100,10 +112,17 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
-        """Write to file
+        """
+        Writes content to a file on the path.
         When writing to a file that doesn't exist, the file will get created.
         When writing to a file that already exists, the file will get overwritten.
         When writing to a file that's in a directory that doesn't exist, you'll get an error.
+
+        :param path: Path to the file
+        :param data: Data to write to the file
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request
+        :return: Information about the written file
         """
         if isinstance(data, TextIOBase):
             data = data.read().encode()
@@ -133,7 +152,14 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> List[EntryInfo]:
-        """List directory"""
+        """
+        Lists entries in a directory.
+
+        :param path: Path to the directory
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request
+        :return: List of entries in the directory
+        """
         try:
             res = await self._rpc.alist_dir(
                 filesystem_pb2.ListDirRequest(path=path),
@@ -162,7 +188,13 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> bool:
-        """Check if file exists."""
+        """
+        Checks if a file or a directory exists.
+
+        :param path: Path to a file or a directory
+        :param user Run the operation as this user
+        :param request_timeout Timeout for the request
+        """
         try:
             await self._rpc.astat(
                 filesystem_pb2.StatRequest(path=path),
@@ -186,7 +218,12 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> None:
-        """Remove file"""
+        """
+        Removes a file or a directory.
+        :param path: Path to a file or a directory
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request
+        """
         try:
             await self._rpc.aremove(
                 filesystem_pb2.RemoveRequest(path=path),
@@ -205,7 +242,16 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
-        """Rename file"""
+        """
+        Renames a file or directory from one path to another.
+
+        :param old_path Path to the file or directory to move
+        :param new_path Path to move the file or directory to
+        :param user Run the operation as this user
+        :param request_timeout Timeout for the request
+
+        :return: Information about the renamed file or directory
+        """
         try:
             r = await self._rpc.amove(
                 filesystem_pb2.MoveRequest(
@@ -232,7 +278,14 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> bool:
-        """Create directory and all parent directories"""
+        """
+        Creates a new directory and all directories along the way if needed on the specified path.
+
+        :param path: Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request
+        :return: True if the directory was created, False if the directory already exists
+        """
         try:
             await self._rpc.amake_dir(
                 filesystem_pb2.MakeDirRequest(path=path),
@@ -257,8 +310,18 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
         timeout: Optional[float] = 60,
-    ):
-        """Watch directory for changes"""
+    ) -> AsyncWatchHandle:
+        """
+        Watches directory for filesystem events.
+
+        :param path: Path to a directory that will be watched
+        :param on_event: Callback that will be called on each event
+        :param on_exit: Callback that will be called when the watch is closed
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request
+        :param timeout: Timeout for the watch, after which the watch will be closed
+        :return: Watcher handle
+        """
         events = self._rpc.awatch_dir(
             filesystem_pb2.WatchDirRequest(path=path),
             request_timeout=self._connection_config.get_request_timeout(

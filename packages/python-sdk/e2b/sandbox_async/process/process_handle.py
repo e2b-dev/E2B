@@ -23,26 +23,45 @@ from e2b.sandbox_async.utilts import OutputHandler
 
 
 class AsyncProcessHandle:
+    """
+    Class representing a process. It provides methods for waiting and killing the process.
+    """
+
     @property
     def pid(self):
+        """
+        Get the process ID.
+        """
         return self._pid
 
     @property
     def stdout(self):
+        """
+        Stdout of the process.
+        """
         return self._stdout
 
     @property
     def stderr(self):
+        """
+        Stderr of the process.
+        """
         return self._stderr
 
     @property
     def error(self):
+        """
+        Error message of the process. It is `None` if the process is still running.
+        """
         if self._result is None:
             return None
         return self._result.error
 
     @property
     def exit_code(self):
+        """
+        Exit code of the process. It is `None` if the process is still running.
+        """
         if self._result is None:
             return None
         return self._result.exit_code
@@ -105,6 +124,9 @@ class AsyncProcessHandle:
                 )
 
     async def disconnect(self) -> None:
+        """
+        Disconnects from the process. It does not kill the process. It only stops receiving events from the process.
+        """
         self._wait.cancel()
         # BUG: In Python 3.8 closing async generator can throw RuntimeError.
         # await self._events.aclose()
@@ -130,6 +152,12 @@ class AsyncProcessHandle:
             self._iteration_exception = handle_rpc_exception(e)
 
     async def wait(self) -> ProcessResult:
+        """
+        Waits for the process to finish and returns the result.
+        If the process exits with a non-zero exit code, it throws a `ProcessExitException`.
+
+        :return: Process result
+        """
         await self._wait
         if self._iteration_exception:
             raise self._iteration_exception
@@ -147,5 +175,9 @@ class AsyncProcessHandle:
 
         return self._result
 
-    async def kill(self):
+    async def kill(self) -> bool:
+        """
+        Kills the process.
+        :return: Whether the process was killed successfully
+        """
         await self._handle_kill()

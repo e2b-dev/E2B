@@ -5,7 +5,7 @@ from e2b.sandbox.process.process_handle import PtySize
 async def test_pty_create(async_sandbox: AsyncSandbox):
     output = []
 
-    def append_data(data:list, x: bytes):
+    def append_data(data: list, x: bytes):
         data.append(x.decode("utf-8"))
 
     terminal = await async_sandbox.pty.create(
@@ -18,4 +18,4 @@ async def test_pty_create(async_sandbox: AsyncSandbox):
     await terminal.wait()
     assert terminal.exit_code == 0
 
-    assert "123" in ''.join(output)
+    assert "123" in "".join(output)

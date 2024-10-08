@@ -3,7 +3,7 @@ from e2b.sandbox.process.process_handle import PtySize
 
 
 def test_resize(sandbox: Sandbox):
-    def append_data(data:list, x: bytes):
+    def append_data(data: list, x: bytes):
         data.append(x.decode("utf-8"))
 
     terminal = sandbox.pty.create(PtySize(cols=80, rows=24))
@@ -14,7 +14,7 @@ def test_resize(sandbox: Sandbox):
     result = terminal.wait(on_pty=lambda x: append_data(output, x))
     assert result.exit_code == 0
 
-    assert "80" in ''.join(output)
+    assert "80" in "".join(output)
 
     terminal = sandbox.pty.create(PtySize(cols=80, rows=24))
 
@@ -25,5 +25,4 @@ def test_resize(sandbox: Sandbox):
     result = terminal.wait(on_pty=lambda x: append_data(output, x))
     assert result.exit_code == 0
 
-    assert "100" in ''.join(output)
-
+    assert "100" in "".join(output)

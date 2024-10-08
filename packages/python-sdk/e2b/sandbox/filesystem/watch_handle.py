@@ -5,6 +5,10 @@ from e2b.envd.filesystem.filesystem_pb2 import EventType
 
 
 class FilesystemEventType(Enum):
+    """
+    Enum representing the type of filesystem event.
+    """
+
     CHMOD = "chmod"
     CREATE = "create"
     REMOVE = "remove"
@@ -27,5 +31,9 @@ def map_event_type(event: EventType):
 
 @dataclass
 class FilesystemEvent:
+    """
+    Contains information about the filesystem event - the name of the file and the type of the event.
+    """
+
     name: str
     type: FilesystemEventType
