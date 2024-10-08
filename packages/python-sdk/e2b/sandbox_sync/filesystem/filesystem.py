@@ -1,6 +1,6 @@
 from io import TextIOBase
 from typing import Iterator, List, Literal, Optional, overload
-from e2b.sandbox.filesystem.filesystem import WriteData, FileWriteData
+from e2b.sandbox.filesystem.filesystem import WriteData, WriteEntry
 
 import e2b_connect
 import httpcore
@@ -92,12 +92,32 @@ class Filesystem:
         elif format == "stream":
             return r.iter_bytes()
 
+    @overload
     def write(
         self,
-        path: str | None,
-        data: WriteData | List[FileWriteData],
+        path: str,
+        data: WriteData,
         user: Username = "user",
         request_timeout: Optional[float] = None,
+    ) -> EntryInfo:
+        """Write to file"""
+
+    @overload
+    def write(
+        self,
+        files: List[WriteEntry],
+        user: Optional[Username] = "user",
+        path: Optional[str] = None,
+        request_timeout: Optional[float] = None,
+    ) -> List[EntryInfo]:
+        """Write multiple files"""
+
+    def write(
+        self,
+        path_or_files: str | List[WriteEntry],
+        data_or_user: WriteData | Username = "user",
+        user_or_request_timeout: Optional[float | Username] = None,
+        request_timeout_or_none: Optional[float] = None
     ) -> EntryInfo | List[EntryInfo]:
         """Write to file(s)
         When writing to a file that doesn't exist, the file will get created.
@@ -105,16 +125,16 @@ class Filesystem:
         When writing to a file that's in a directory that doesn't exist, you'll get an error.
         """
 
-        write_files = []
-        if path is None:
-            if not isinstance(data, list):
-                raise Exception("Expected data to be a list of FileWriteData")
-            write_files = data
-        else:
-            if isinstance(data, list):
+        path, write_files, user, request_timeout,  = None, [], "user", None
+        if isinstance(path_or_files, str):
+            if isinstance(data_or_user, list):
                 raise Exception("Cannot specify path with array of files")
-            write_files = [{"path": path, "data": data}]
-
+            path, write_files, user, request_timeout = \
+                path_or_files, [{"path": path_or_files, "data": data_or_user}], user_or_request_timeout or "user", request_timeout_or_none
+        else:
+            path, write_files, user, request_timeout = \
+                None, path_or_files, data_or_user, user_or_request_timeout
+        
         if len(write_files) == 0:
             raise Exception("Need at least one file to write")
 

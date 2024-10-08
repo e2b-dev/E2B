@@ -16,7 +16,7 @@ def test_write_file(sandbox):
 def test_write_multiple_files(sandbox):
     # Attempt to write with empty files array
     try:
-        sandbox.files.write(None, [])
+        sandbox.files.write([])
     except Exception as e:
         assert "Need at least one file to write" in str(e)
 
@@ -27,7 +27,7 @@ def test_write_multiple_files(sandbox):
         assert "Cannot specify path with array of files" in str(e)
 
     # Attempt to write with one file in array
-    info = sandbox.files.write(None, [{ "path": "one_test_file.txt", "data": "This is a test file." }])
+    info = sandbox.files.write([{ "path": "one_test_file.txt", "data": "This is a test file." }])
     assert isinstance(info, list)
     assert len(info) == 1
     info = info[0]
@@ -46,7 +46,7 @@ def test_write_multiple_files(sandbox):
         content = f"This is a test file {i}."
         files.append({"path": filename, "data": content})
 
-    infos = sandbox.files.write(None, files)
+    infos = sandbox.files.write(files)
     assert isinstance(infos, list)
     assert len(infos) == len(files)
     for i, info in enumerate(infos):

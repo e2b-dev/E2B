@@ -26,6 +26,6 @@ class EntryInfo:
 WriteData = Union[str, bytes, IO]
 
 @dataclass
-class FileWriteData:
+class WriteEntry:
     path: str
     data: WriteData
