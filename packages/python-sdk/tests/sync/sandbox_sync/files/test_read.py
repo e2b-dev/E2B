@@ -16,3 +16,12 @@ def test_read_non_existing_file(sandbox):
 
     with pytest.raises(NotFoundException):
         sandbox.files.read(filename)
+
+
+def test_read_empty_file(sandbox):
+    filename = "empty_file.txt"
+    content = ""
+
+    sandbox.commands.run(f"touch {filename}")
+    read_content = sandbox.files.read(filename)
+    assert read_content == content

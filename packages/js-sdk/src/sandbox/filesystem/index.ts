@@ -133,6 +133,11 @@ export class Filesystem {
       return new Uint8Array(res.data as ArrayBuffer)
     }
 
+    // When the file is empty, res.data is parsed as `{}`. This is a workaround to return an empty string.
+    if (res.response.headers.get('content-length') === '0') {
+      return ''
+    }
+
     return res.data
   }
 
