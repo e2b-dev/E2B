@@ -4,6 +4,8 @@
 
 ### FileType
 
+Type of filesystem object.
+
 #### Enumeration Members
 
 ##### DIR
@@ -12,7 +14,7 @@
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:34
+sandbox/filesystem/index.ts:40
 
 ##### FILE
 
@@ -20,11 +22,13 @@ sandbox/filesystem/index.ts:34
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:33
+sandbox/filesystem/index.ts:39
 
 ## Classes
 
 ### Filesystem
+
+Manager for interacting with the filesystem in the sandbox.
 
 #### Constructors
 
@@ -46,7 +50,7 @@ sandbox/filesystem/index.ts:33
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:60
+sandbox/filesystem/index.ts:76
 
 #### Methods
 
@@ -54,55 +58,79 @@ sandbox/filesystem/index.ts:60
 
 > **exists**(`path`, `opts`?): `Promise`\<`boolean`\>
 
+Checks if a file or a directory exists.
+
 ###### Parameters
 
 • **path**: `string`
 
+Path to a file or a directory
+
 • **opts?**: `FilesystemRequestOpts`
+
+Options for the request
 
 ###### Returns
 
 `Promise`\<`boolean`\>
 
+True if the file or directory exists, false otherwise
+
 ###### Defined in
 
-sandbox/filesystem/index.ts:214
+sandbox/filesystem/index.ts:325
 
 ##### list()
 
 > **list**(`path`, `opts`?): `Promise`\<`EntryInfo`[]\>
 
+Lists entries in a directory.
+
 ###### Parameters
 
 • **path**: `string`
 
+Path to the directory
+
 • **opts?**: `FilesystemRequestOpts`
+
+Options for the request
 
 ###### Returns
 
 `Promise`\<`EntryInfo`[]\>
 
+List of entries in the directory
+
 ###### Defined in
 
-sandbox/filesystem/index.ts:132
+sandbox/filesystem/index.ts:200
 
 ##### makeDir()
 
 > **makeDir**(`path`, `opts`?): `Promise`\<`boolean`\>
 
+Creates a new directory and all directories along the way if needed on the specified pth.
+
 ###### Parameters
 
 • **path**: `string`
 
+Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
+
 • **opts?**: `FilesystemRequestOpts`
+
+Options for the request
 
 ###### Returns
 
 `Promise`\<`boolean`\>
 
+True if the directory was created, false if it already exists
+
 ###### Defined in
 
-sandbox/filesystem/index.ts:159
+sandbox/filesystem/index.ts:237
 
 ##### read()
 
@@ -110,19 +138,27 @@ sandbox/filesystem/index.ts:159
 
 > **read**(`path`, `opts`?): `Promise`\<`string`\>
 
+Reads a whole file content and returns it in requested format (text by default).
+
 ###### Parameters
 
 • **path**: `string`
 
+Path to the file
+
 • **opts?**: `FilesystemRequestOpts` & `object`
+
+Options for the request
 
 ###### Returns
 
 `Promise`\<`string`\>
 
+File content in requested format
+
 ###### Defined in
 
-sandbox/filesystem/index.ts:68
+sandbox/filesystem/index.ts:92
 
 ###### read(path, opts)
 
@@ -140,7 +176,7 @@ sandbox/filesystem/index.ts:68
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:69
+sandbox/filesystem/index.ts:96
 
 ###### read(path, opts)
 
@@ -158,7 +194,7 @@ sandbox/filesystem/index.ts:69
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:70
+sandbox/filesystem/index.ts:100
 
 ###### read(path, opts)
 
@@ -176,17 +212,23 @@ sandbox/filesystem/index.ts:70
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:71
+sandbox/filesystem/index.ts:104
 
 ##### remove()
 
 > **remove**(`path`, `opts`?): `Promise`\<`void`\>
 
+Removes a file or a directory.
+
 ###### Parameters
 
 • **path**: `string`
 
+Path to a file or a directory
+
 • **opts?**: `FilesystemRequestOpts`
+
+Options for the request
 
 ###### Returns
 
@@ -194,71 +236,106 @@ sandbox/filesystem/index.ts:71
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:203
+sandbox/filesystem/index.ts:304
 
 ##### rename()
 
 > **rename**(`oldPath`, `newPath`, `opts`?): `Promise`\<`EntryInfo`\>
 
+Renames a file or directory from one path to another.
+
 ###### Parameters
 
 • **oldPath**: `string`
 
+Path to the file or directory to move
+
 • **newPath**: `string`
 
+Path to move the file or directory to
+
 • **opts?**: `FilesystemRequestOpts`
+
+Options for the request
 
 ###### Returns
 
 `Promise`\<`EntryInfo`\>
 
+Information about the moved object
+
 ###### Defined in
 
-sandbox/filesystem/index.ts:178
+sandbox/filesystem/index.ts:267
 
 ##### watch()
 
 > **watch**(`path`, `onEvent`, `opts`?): `Promise`\<`WatchHandle`\>
 
+Watches directory for filesystem events.
+
 ###### Parameters
 
 • **path**: `string`
 
+Path to a directory that will be watched
+
 • **onEvent**
 
+Callback that will be called when an event in the directory occurs
+
 • **opts?**: `FilesystemRequestOpts` & `object`
+
+Options for the request
 
 ###### Returns
 
 `Promise`\<`WatchHandle`\>
 
+New watcher
+
 ###### Defined in
 
-sandbox/filesystem/index.ts:233
+sandbox/filesystem/index.ts:355
 
 ##### write()
 
 > **write**(`path`, `data`, `opts`?): `Promise`\<`EntryInfo`\>
 
+Writes content to a file on the path.
+  When writing to a file that doesn't exist, the file will get created.
+  When writing to a file that already exists, the file will get overwritten.
+  When writing to a file that's in a directory that doesn't exist, you'll get an error.
+
 ###### Parameters
 
 • **path**: `string`
 
+Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
+
 • **data**: `string` \| `ArrayBuffer` \| `Blob` \| `ReadableStream`\<`any`\>
 
+Data to write to a new file
+
 • **opts?**: `FilesystemRequestOpts`
+
+Options for the request
 
 ###### Returns
 
 `Promise`\<`EntryInfo`\>
 
+Information about the written file
+
 ###### Defined in
 
-sandbox/filesystem/index.ts:98
+sandbox/filesystem/index.ts:155
 
 ## Interfaces
 
 ### EntryInfo
+
+Information about a filesystem object.
 
 #### Properties
 
@@ -268,7 +345,7 @@ sandbox/filesystem/index.ts:98
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:27
+sandbox/filesystem/index.ts:30
 
 ##### path
 
@@ -276,7 +353,7 @@ sandbox/filesystem/index.ts:27
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:29
+sandbox/filesystem/index.ts:32
 
 ##### type?
 
@@ -284,11 +361,13 @@ sandbox/filesystem/index.ts:29
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:28
+sandbox/filesystem/index.ts:31
 
 ***
 
 ### FilesystemRequestOpts
+
+Options for sending a request to the filesystem.
 
 #### Extended by
 
@@ -302,7 +381,7 @@ sandbox/filesystem/index.ts:28
 
 ###### Defined in
 
-connectionConfig.ts:14
+connectionConfig.ts:17
 
 ##### user?
 
@@ -310,11 +389,13 @@ connectionConfig.ts:14
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:47
+sandbox/filesystem/index.ts:57
 
 ***
 
 ### WatchOpts
+
+Options for watching a directory.
 
 #### Properties
 
@@ -332,7 +413,7 @@ sandbox/filesystem/index.ts:47
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:52
+sandbox/filesystem/index.ts:65
 
 ##### requestTimeoutMs?
 
@@ -340,7 +421,7 @@ sandbox/filesystem/index.ts:52
 
 ###### Defined in
 
-connectionConfig.ts:14
+connectionConfig.ts:17
 
 ##### timeout?
 
@@ -348,7 +429,7 @@ connectionConfig.ts:14
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:51
+sandbox/filesystem/index.ts:64
 
 ##### user?
 
@@ -356,4 +437,4 @@ sandbox/filesystem/index.ts:51
 
 ###### Defined in
 
-sandbox/filesystem/index.ts:47
+sandbox/filesystem/index.ts:57

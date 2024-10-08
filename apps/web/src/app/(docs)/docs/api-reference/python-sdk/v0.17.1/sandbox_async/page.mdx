@@ -7,6 +7,8 @@
 class Filesystem()
 ```
 
+Manager for interacting with the filesystem in the sandbox.
+
 
 #### read
 
@@ -17,7 +19,14 @@ async def read(path: str,
                request_timeout: Optional[float] = None)
 ```
 
-Read from file
+Reads a whole file content and returns it in requested format (text by default).
+
+:param path: Path to the file
+:param format: Format of the file content
+:param user: Run the operation as this user
+:param request_timeout: Timeout for the request
+:return File content in requested format
+
 
 
 #### write
@@ -29,10 +38,22 @@ async def write(path: str,
                 request_timeout: Optional[float] = None) -> EntryInfo
 ```
 
-Write to file
+Writes content to a file on the path.
+
 When writing to a file that doesn't exist, the file will get created.
 When writing to a file that already exists, the file will get overwritten.
 When writing to a file that's in a directory that doesn't exist, you'll get an error.
+
+**Arguments**:
+
+- `path`: Path to the file
+- `data`: Data to write to the file
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request
+
+**Returns**:
+
+Information about the written file
 
 
 #### list
@@ -43,7 +64,17 @@ async def list(path: str,
                request_timeout: Optional[float] = None) -> List[EntryInfo]
 ```
 
-List directory
+Lists entries in a directory.
+
+**Arguments**:
+
+- `path`: Path to the directory
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request
+
+**Returns**:
+
+List of entries in the directory
 
 
 #### exists
@@ -54,7 +85,12 @@ async def exists(path: str,
                  request_timeout: Optional[float] = None) -> bool
 ```
 
-Check if file exists.
+Checks if a file or a directory exists.
+
+:param path: Path to a file or a directory
+:param user Run the operation as this user
+:param request_timeout Timeout for the request
+
 
 
 #### remove
@@ -65,7 +101,13 @@ async def remove(path: str,
                  request_timeout: Optional[float] = None) -> None
 ```
 
-Remove file
+Removes a file or a directory.
+
+**Arguments**:
+
+- `path`: Path to a file or a directory
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request
 
 
 #### rename
@@ -77,7 +119,15 @@ async def rename(old_path: str,
                  request_timeout: Optional[float] = None) -> EntryInfo
 ```
 
-Rename file
+Renames a file or directory from one path to another.
+
+:param old_path Path to the file or directory to move
+:param new_path Path to move the file or directory to
+:param user Run the operation as this user
+:param request_timeout Timeout for the request
+
+:return: Information about the renamed file or directory
+
 
 
 #### make\_dir
@@ -88,7 +138,17 @@ async def make_dir(path: str,
                    request_timeout: Optional[float] = None) -> bool
 ```
 
-Create directory and all parent directories
+Creates a new directory and all directories along the way if needed on the specified path.
+
+**Arguments**:
+
+- `path`: Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request
+
+**Returns**:
+
+True if the directory was created, False if the directory already exists
 
 
 #### watch
@@ -99,14 +159,234 @@ async def watch(path: str,
                 on_exit: Optional[OutputHandler[Exception]] = None,
                 user: Username = "user",
                 request_timeout: Optional[float] = None,
-                timeout: Optional[float] = 60)
+                timeout: Optional[float] = 60) -> AsyncWatchHandle
 ```
 
-Watch directory for changes
+Watches directory for filesystem events.
+
+**Arguments**:
+
+- `path`: Path to a directory that will be watched
+- `on_event`: Callback that will be called on each event
+- `on_exit`: Callback that will be called when the watch is closed
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request
+- `timeout`: Timeout for the watch, after which the watch will be closed
+
+**Returns**:
+
+Watcher handle
 
 
 
 
+## AsyncWatchHandle
+
+```python
+class AsyncWatchHandle()
+```
+
+Class representing the watch operation. It provides method to stop the watch operation.
+
+
+#### close
+
+```python
+async def close()
+```
+
+Stop watching the directory.
+
+
+
+
+## AsyncProcessHandle
+
+```python
+class AsyncProcessHandle()
+```
+
+Class representing a process. It provides methods for waiting and killing the process.
+
+
+#### pid
+
+```python
+@property
+def pid()
+```
+
+Get the process ID.
+
+
+#### stdout
+
+```python
+@property
+def stdout()
+```
+
+Stdout of the process.
+
+
+#### stderr
+
+```python
+@property
+def stderr()
+```
+
+Stderr of the process.
+
+
+#### error
+
+```python
+@property
+def error()
+```
+
+Error message of the process. It is `None` if the process is still running.
+
+
+#### exit\_code
+
+```python
+@property
+def exit_code()
+```
+
+Exit code of the process. It is `None` if the process is still running.
+
+
+#### disconnect
+
+```python
+async def disconnect() -> None
+```
+
+Disconnects from the process. It does not kill the process. It only stops receiving events from the process.
+
+
+#### wait
+
+```python
+async def wait() -> ProcessResult
+```
+
+Waits for the process to finish and returns the result.
+
+If the process exits with a non-zero exit code, it throws a `ProcessExitException`.
+
+**Returns**:
+
+Process result
+
+
+#### kill
+
+```python
+async def kill() -> bool
+```
+
+Kills the process.
+
+**Returns**:
+
+Whether the process was killed successfully
+
+
+
+
+## Pty
+
+```python
+class Pty()
+```
+
+Manager for starting and interacting with PTY (pseudo-terminal) processes in the sandbox.
+
+
+#### kill
+
+```python
+async def kill(pid: int, request_timeout: Optional[float] = None) -> bool
+```
+
+Kills a process.
+
+**Arguments**:
+
+- `pid`: Process ID to kill. You can get the list of processes using `sandbox.commands.list()`.
+- `request_timeout`: Timeout for the request
+
+**Returns**:
+
+`true` if the process was killed, `false` if the process was not found
+
+
+#### send\_stdin
+
+```python
+async def send_stdin(pid: int,
+                     data: bytes,
+                     request_timeout: Optional[float] = None) -> None
+```
+
+Sends input to a PTY process.
+
+**Arguments**:
+
+- `pid`: Process ID of the PTY process
+- `data`: Input data to send
+- `request_timeout`: Timeout for the request
+
+
+#### create
+
+```python
+async def create(
+        size: PtySize,
+        on_data: OutputHandler[PtyOutput],
+        user: Username = "user",
+        cwd: Optional[str] = None,
+        envs: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None) -> AsyncProcessHandle
+```
+
+Starts a new process with a PTY (pseudo-terminal).
+
+**Arguments**:
+
+- `size`: Size of the PTY
+- `on_data`: Callback for handling PTY output
+- `user`: User to start the process as
+- `cwd`: Current working directory
+- `envs`: Environment variables
+- `timeout`: Timeout for the request
+- `request_timeout`: Timeout for the request
+
+**Returns**:
+
+New process
+
+
+#### resize
+
+```python
+async def resize(pid: int,
+                 size: PtySize,
+                 request_timeout: Optional[float] = None)
+```
+
+Resizes a PTY process (changes the number of columns and rows in the terminal).
+
+**Arguments**:
+
+- `pid`: Process ID of the PTY process
+- `size`: New size of the PTY
+- `request_timeout`: Timeout for the request
 
 
 
@@ -117,6 +397,8 @@ Watch directory for changes
 class Process()
 ```
 
+Manager for starting and interacting with processes in the sandbox.
+
 
 #### list
 
@@ -124,7 +406,15 @@ class Process()
 async def list(request_timeout: Optional[float] = None) -> List[ProcessInfo]
 ```
 
-List processes
+Lists all running processes.
+
+**Arguments**:
+
+- `request_timeout`: Request timeout
+
+**Returns**:
+
+List of running processes
 
 
 #### kill
@@ -133,7 +423,16 @@ List processes
 async def kill(pid: int, request_timeout: Optional[float] = None) -> bool
 ```
 
-Kill process
+Kills a process.
+
+**Arguments**:
+
+- `pid`: Process ID to connect to. You can get the list of processes using `sandbox.commands.list()`.
+- `request_timeout`: Request timeout
+
+**Returns**:
+
+`True` if the process was killed, `False` if the process was not found
 
 
 #### send\_stdin
@@ -141,10 +440,15 @@ Kill process
 ```python
 async def send_stdin(pid: int,
                      data: str,
-                     request_timeout: Optional[float] = None)
+                     request_timeout: Optional[float] = None) -> None
 ```
 
-Send stdin
+Sends data to the stdin of a process.
+
+:param pid Process ID to send data to. You can get the list of processes using `sandbox.commands.list()`.
+:param data: Data to send to the process
+:param request_timeout: Request timeout
+
 
 
 #### run
@@ -161,65 +465,46 @@ async def run(cmd: str,
               request_timeout: Optional[float] = None)
 ```
 
-Run command
+Starts a new process and depending on the `background` parameter, waits for the process to finish or not.
+
+:param cmd Command to execute
+:param background:
+    If `True`, the function will return a `ProcessHandle` object that can be used to interact with the process.
+    If `False`, the function will wait for the process to finish and return a `ProcessResult` object.
+:param envs: Environment variables
+:param user: User to run the process as
+:param cwd: Working directory
+:param on_stdout: Callback for stdout
+:param on_stderr: Callback for stderr
+:param timeout: Timeout for the maximum time the process is allowed to run
+:param request_timeout: Timeout for the request
+:return: `ProcessHandle` if `background` is `True`, `ProcessResult` if `background` is `False`
 
 
 
-
-
-
-## Pty
-
-```python
-class Pty()
-```
-
-
-#### kill
-
-```python
-async def kill(pid: int, request_timeout: Optional[float] = None) -> bool
-```
-
-Kill process by PID
-
-
-#### send\_stdin
+#### connect
 
 ```python
-async def send_stdin(pid: int,
-                     data: bytes,
-                     request_timeout: Optional[float] = None)
-```
-
-Send data to process stdin
-
-
-#### create
-
-```python
-async def create(
-        size: PtySize,
-        on_data: OutputHandler[PtyOutput],
-        user: Username = "user",
-        cwd: Optional[str] = None,
-        envs: Optional[Dict[str, str]] = None,
+async def connect(
+        pid: int,
         timeout: Optional[float] = 60,
-        request_timeout: Optional[float] = None) -> AsyncProcessHandle
+        request_timeout: Optional[float] = None,
+        on_stdout: Optional[OutputHandler[Stdout]] = None,
+        on_stderr: Optional[OutputHandler[Stderr]] = None
+) -> AsyncProcessHandle
 ```
 
-Create new PTY process
+Connects to an existing process.
+
+**Arguments**:
+
+- `pid`: Process ID to connect to. You can get the list of processes using `sandbox.commands.list()`.
+- `timeout`: Timeout for the connection
+- `request_timeout`: Request timeout
+- `on_stdout`: Callback for stdout
+- `on_stderr`: Callback for stderr
 
 
-#### resize
-
-```python
-async def resize(pid: int,
-                 size: PtySize,
-                 request_timeout: Optional[float] = None)
-```
-
-Resize PTY
 
 
 
@@ -232,6 +517,27 @@ Resize PTY
 class AsyncSandbox(SandboxSetup, SandboxApi)
 ```
 
+E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
+
+That means:
+- Access to Linux OS
+- Using filesystem (create, list, and delete files and dirs)
+- Run commands
+- Sandboxed - you can run any code
+- Access to the internet
+
+Check usage docs - https://e2b.dev/docs/sandbox/overview
+
+These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
+
+Use the `AsyncSandbox.create()` to create a new sandbox.
+
+**Example**:
+
+```python
+sandbox = await AsyncSandbox.create()
+```
+
 
 #### files
 
@@ -240,7 +546,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi)
 def files() -> Filesystem
 ```
 
-Get a Filesystem Object
+Filesystem module for interacting with the sandbox's filesystem
 
 
 #### commands
@@ -250,7 +556,17 @@ Get a Filesystem Object
 def commands() -> Process
 ```
 
-Get a Process Object
+Commands module for interacting with the sandbox's processes
+
+
+#### pty
+
+```python
+@property
+def pty() -> Pty
+```
+
+PTY module for interacting with the sandbox's pseudo-terminal.
 
 
 #### sandbox\_id
@@ -270,7 +586,7 @@ Get the sandbox ID
 def envd_api_url() -> str
 ```
 
-Get the sanbox API URL
+Get the sandbox API URL
 
 
 #### connection\_config
@@ -280,7 +596,7 @@ Get the sanbox API URL
 def connection_config() -> ConnectionConfig
 ```
 
-Get the ConnectionConfig Object
+Get the ConnectionConfig object
 
 
 #### \_\_init\_\_
@@ -289,7 +605,7 @@ Get the ConnectionConfig Object
 def __init__(**opts: Unpack[AsyncSandboxOpts])
 ```
 
-Instantiate sandbox
+Use `Sandbox.create()` instead.
 
 
 #### is\_running
@@ -298,7 +614,40 @@ Instantiate sandbox
 async def is_running(request_timeout: Optional[float] = None) -> bool
 ```
 
-Check if sandbox is running
+Check if the sandbox is running.
+
+**Returns**:
+
+`True` if the sandbox is running, `False` otherwise
+Example
+```python
+sandbox = await AsyncSandbox.create()
+await sandbox.is_running() # Returns True
+
+await sandbox.kill()
+await sandbox.is_running() # Returns False
+```
+
+
+#### create
+
+```python
+@classmethod
+async def create(cls,
+                 template: Optional[str] = None,
+                 timeout: Optional[int] = None,
+                 metadata: Optional[Dict[str, str]] = None,
+                 envs: Optional[Dict[str, str]] = None,
+                 api_key: Optional[str] = None,
+                 domain: Optional[str] = None,
+                 debug: Optional[bool] = None,
+                 request_timeout: Optional[float] = None)
+```
+
+Creates a new sandbox.
+
+This method creates a new sandbox in the async version,
+you have to use this method instead of using the constructor.
 
 
 #### connect
@@ -312,7 +661,24 @@ async def connect(cls,
                   debug: Optional[bool] = None)
 ```
 
-Connect to a running sandbox
+Connects to an existing Sandbox.
+
+**Arguments**:
+
+- `sandbox_id`: Sandbox ID
+- `api_key`: E2B API Key
+- `domain`: E2B Domain (use only if you self-host E2B)
+- `debug`: For developing purposes, uses a local sandbox
+
+**Returns**:
+
+Sandbox object
+@example
+```python
+sandbox = await AsyncSandbox.create()
+sandbox_id = sandbox.sandbox_id
+
+same_sandbox = await AsyncSandbox.connect(sandbox_id)
 
 
 #### kill
@@ -322,7 +688,15 @@ Connect to a running sandbox
 async def kill(request_timeout: Optional[float] = None) -> bool
 ```
 
-Kill sandbox
+Kill the sandbox.
+
+**Arguments**:
+
+- `request_timeout`: Timeout for the request
+
+**Returns**:
+
+`True` if the sandbox was killed, `False` if the sandbox was not found
 
 
 #### set\_timeout
@@ -333,5 +707,13 @@ async def set_timeout(timeout: int,
                       request_timeout: Optional[float] = None) -> None
 ```
 
-Configure request timeout
+Set the sandbox's timeout, after which the sandbox will be automatically killed.
+
+The sandbox can be kept alive for a maximum of 24 hours from the time of creation.
+If you try to set the timeout to a period, which exceeds the maximum limit, the timeout will be set to the maximum limit.
+
+**Arguments**:
+
+- `timeout`: Duration in milliseconds. Must be between 0 and 86400000 milliseconds (24 hours).
+- `request_timeout`: Timeout for the request
 

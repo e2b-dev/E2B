@@ -4,23 +4,28 @@
 
 ### Sandbox
 
-#### Constructors
+E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
 
-##### new Sandbox()
+That means:
+- Access to Linux OS
+- Using filesystem (create, list, and delete files and dirs)
+- Run commands
+- Sandboxed - you can run any code
+- Access to the internet
 
-> **new Sandbox**(`opts`): `Sandbox`
+Check usage docs - https://e2b.dev/docs/sandbox/overview
 
-###### Parameters
+These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
 
-• **opts**: `Omit`\<`SandboxOpts`, `"metadata"` \| `"envs"` \| `"timeoutMs"`\> & `object`
+Use the Sandbox.create method to create a new sandbox.
 
-###### Returns
+#### Example
 
-`Sandbox`
+```ts
+import { Sandbox } from '@e2b/sdk'
 
-###### Defined in
-
-sandbox/index.ts:33
+const sandbox = await Sandbox.create()
+```
 
 #### Properties
 
@@ -28,33 +33,41 @@ sandbox/index.ts:33
 
 > `readonly` **commands**: `Process`
 
+Commands module for interacting with the sandbox's processes
+
 ###### Defined in
 
-sandbox/index.ts:22
+sandbox/index.ts:57
 
 ##### files
 
 > `readonly` **files**: `Filesystem`
 
+Filesystem module for interacting with the sandbox's filesystem
+
 ###### Defined in
 
-sandbox/index.ts:21
+sandbox/index.ts:53
 
 ##### pty
 
 > `readonly` **pty**: `Pty`
 
+PTY module for interacting with the sandbox's pseudo-terminal
+
 ###### Defined in
 
-sandbox/index.ts:23
+sandbox/index.ts:61
 
 ##### sandboxId
 
 > `readonly` **sandboxId**: `string`
 
+Unique identifier of the sandbox.
+
 ###### Defined in
 
-sandbox/index.ts:25
+sandbox/index.ts:66
 
 #### Methods
 
@@ -62,37 +75,61 @@ sandbox/index.ts:25
 
 > **downloadUrl**(`path`): `string`
 
+Get the URL to download a file from the sandbox.
+
 ###### Parameters
 
 • **path**: `string`
+
+Path to the file
 
 ###### Returns
 
 `string`
 
+URL to download the file
+
 ###### Defined in
 
-sandbox/index.ts:125
+sandbox/index.ts:297
 
 ##### getHost()
 
 > **getHost**(`port`): `string`
 
+Get the hostname for the specified sandbox's port.
+
 ###### Parameters
 
 • **port**: `number`
+
+Port number of a specific port in the sandbox
 
 ###### Returns
 
 `string`
 
+Hostname of the sandbox's port
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+// Start an HTTP server
+await sandbox.commands.exec('python3 -m http.server 3000')
+// Get the hostname of the HTTP server
+const serverURL = sandbox.getHost(3000)
+``
+
 ###### Defined in
 
-sandbox/index.ts:76
+sandbox/index.ts:198
 
 ##### isRunning()
 
 > **isRunning**(`opts`?): `Promise`\<`boolean`\>
+
+Check if the sandbox is running.
 
 ###### Parameters
 
@@ -102,63 +139,101 @@ sandbox/index.ts:76
 
 `Promise`\<`boolean`\>
 
+`true` if the sandbox is running, `false` otherwise
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+await sandbox.isRunning() // Returns true
+
+await sandbox.kill()
+await sandbox.isRunning() // Returns false
+```
+
 ###### Defined in
 
-sandbox/index.ts:84
+sandbox/index.ts:219
 
 ##### kill()
 
 > **kill**(`opts`?): `Promise`\<`void`\>
 
+Kill the sandbox.
+
 ###### Parameters
 
 • **opts?**: `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\>
+
+Connection options
 
 ###### Returns
 
 `Promise`\<`void`\>
 
+Promise that resolves when the sandbox is killed
+
 ###### Defined in
 
-sandbox/index.ts:112
+sandbox/index.ts:270
 
 ##### setTimeout()
 
 > **setTimeout**(`timeoutMs`, `opts`?): `Promise`\<`void`\>
 
+Set the sandbox's timeout, after which the sandbox will be automatically killed.
+The sandbox can be kept alive for a maximum of 24 hours from the time of creation.
+If you try to set the timeout to a period, which exceeds the maximum limit, the timeout will be set to the maximum limit.
+
 ###### Parameters
 
 • **timeoutMs**: `number`
 
+Duration in milliseconds. Must be between 0 and 86400000 milliseconds (24 hours).
+
 • **opts?**: `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\>
+
+Connection options
 
 ###### Returns
 
 `Promise`\<`void`\>
 
+Promise that resolves when the sandbox is kept alive
+
 ###### Defined in
 
-sandbox/index.ts:103
+sandbox/index.ts:249
 
 ##### uploadUrl()
 
 > **uploadUrl**(`path`?): `string`
 
+Get the URL to upload a file to the sandbox.
+You have to send a POST request to this URL with the file as the field in the form data.
+You can find the specification for this API at https://github.com/e2b-dev/E2B/blob/main/spec/envd/envd.yaml.
+
 ###### Parameters
 
 • **path?**: `string`
+
+Path to the directory where the file will be uploaded, defaults to user's home directory
 
 ###### Returns
 
 `string`
 
+URL to upload the file
+
 ###### Defined in
 
-sandbox/index.ts:121
+sandbox/index.ts:287
 
 ##### connect()
 
 > `static` **connect**\<`S`\>(`this`, `sandboxId`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+
+Connects to an existing Sandbox.
 
 ###### Type Parameters
 
@@ -170,21 +245,39 @@ sandbox/index.ts:121
 
 • **sandboxId**: `string`
 
+Sandbox ID
+
 • **opts?**: `Omit`\<`SandboxOpts`, `"metadata"` \| `"envs"` \| `"timeoutMs"`\>
+
+Connection options
 
 ###### Returns
 
 `Promise`\<`InstanceType`\<`S`\>\>
 
+Existing Sandbox
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+const sandboxId = sandbox.sandboxId
+
+// Another code block
+const sameSandbox = await Sandbox.connect(sandboxId)
+```
+
 ###### Defined in
 
-sandbox/index.ts:69
+sandbox/index.ts:173
 
 ##### create()
 
 ###### create(this, opts)
 
 > `static` **create**\<`S`\>(`this`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+
+Creates a new Sandbox from the default `base` sandbox template.
 
 ###### Type Parameters
 
@@ -196,13 +289,27 @@ sandbox/index.ts:69
 
 • **opts?**: `SandboxOpts`
 
+Connection options
+
 ###### Returns
 
 `Promise`\<`InstanceType`\<`S`\>\>
 
+New Sandbox
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+```
+
+###### Constructs
+
+Sandbox
+
 ###### Defined in
 
-sandbox/index.ts:52
+sandbox/index.ts:125
 
 ###### create(this, template, opts)
 
@@ -226,7 +333,7 @@ sandbox/index.ts:52
 
 ###### Defined in
 
-sandbox/index.ts:53
+sandbox/index.ts:129
 
 ##### kill()
 
@@ -250,7 +357,7 @@ Connection options.
 
 ###### Defined in
 
-sandbox/sandboxApi.ts:47
+sandbox/sandboxApi.ts:53
 
 ##### list()
 
@@ -266,7 +373,7 @@ sandbox/sandboxApi.ts:47
 
 ###### Defined in
 
-sandbox/sandboxApi.ts:72
+sandbox/sandboxApi.ts:81
 
 ##### setTimeout()
 
@@ -286,11 +393,13 @@ sandbox/sandboxApi.ts:72
 
 ###### Defined in
 
-sandbox/sandboxApi.ts:94
+sandbox/sandboxApi.ts:108
 
 ## Interfaces
 
 ### SandboxOpts
+
+Options for creating a new Sandbox.
 
 #### Properties
 
@@ -300,7 +409,7 @@ sandbox/sandboxApi.ts:94
 
 ###### Defined in
 
-connectionConfig.ts:11
+connectionConfig.ts:14
 
 ##### apiKey?
 
@@ -308,7 +417,7 @@ connectionConfig.ts:11
 
 ###### Defined in
 
-connectionConfig.ts:10
+connectionConfig.ts:13
 
 ##### debug?
 
@@ -316,7 +425,7 @@ connectionConfig.ts:10
 
 ###### Defined in
 
-connectionConfig.ts:13
+connectionConfig.ts:16
 
 ##### domain?
 
@@ -324,7 +433,7 @@ connectionConfig.ts:13
 
 ###### Defined in
 
-connectionConfig.ts:12
+connectionConfig.ts:15
 
 ##### envs?
 
@@ -332,7 +441,7 @@ connectionConfig.ts:12
 
 ###### Defined in
 
-sandbox/index.ts:13
+sandbox/index.ts:19
 
 ##### logger?
 
@@ -340,7 +449,7 @@ sandbox/index.ts:13
 
 ###### Defined in
 
-connectionConfig.ts:15
+connectionConfig.ts:18
 
 ##### metadata?
 
@@ -348,7 +457,7 @@ connectionConfig.ts:15
 
 ###### Defined in
 
-sandbox/index.ts:12
+sandbox/index.ts:18
 
 ##### requestTimeoutMs?
 
@@ -356,7 +465,7 @@ sandbox/index.ts:12
 
 ###### Defined in
 
-connectionConfig.ts:14
+connectionConfig.ts:17
 
 ##### timeoutMs?
 
@@ -364,4 +473,4 @@ connectionConfig.ts:14
 
 ###### Defined in
 
-sandbox/index.ts:14
+sandbox/index.ts:20
