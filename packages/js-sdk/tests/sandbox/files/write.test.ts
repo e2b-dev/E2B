@@ -1,3 +1,4 @@
+import path from 'path'
 import { assert, onTestFinished } from 'vitest'
 
 import { EntryInfo } from '../../../src/index.js'
@@ -54,11 +55,17 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   let files: Array<{ data: WriteData; path: string }> = []
 
   for (let i = 0; i < 10; i++) {
-    const path = `multi_test_file${i}.txt`
+    let path = ''
+    if (i % 2 == 0) {
+      path = `/${i}/multi_test_file${i}.txt`
+    } else {
+      path = `/home/user/multi_test_file${i}.txt`
+    }
+
     onTestFinished(async () => await sandbox.files.remove(path))
 
     files.push({
-      path: `multi_test_file${i}.txt`,
+      path: path,
       data: `This is a test file ${i}.`,
     })
   }
@@ -73,9 +80,9 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
     const file = files[i]
     const info = infos[i] as EntryInfo
 
-    assert.equal(info.name, file.path)
+    assert.equal(info.name, path.basename(file.path))
+    assert.equal(info.path, file.path)
     assert.equal(info.type, 'file')
-    assert.equal(info.path, `/home/user/${file.path}`)
 
     const exists = await sandbox.files.exists(file.path)
     assert.isTrue(exists)

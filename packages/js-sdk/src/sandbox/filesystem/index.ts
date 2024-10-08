@@ -13,7 +13,7 @@ import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
-import { EntryInfo, FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
+import { FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
 
 import { clearTimeout } from 'timers'
 import { FilesystemEvent, WatchHandle } from './watchHandle'
