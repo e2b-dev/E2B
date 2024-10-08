@@ -23,18 +23,13 @@ sandboxTest('write file', async ({ sandbox }) => {
 
 sandboxTest('write multiple files', async ({ sandbox }) => {
   // Attempt to write with empty files array
-  await sandbox.files
-    .write([])
-    .then((e) => {
-      assert.isUndefined(e)
-    })
-    .catch((err) => {
-      assert.instanceOf(err, Error)
-      assert.include(err.message, 'Expected to receive information about written file')
-    })
+  const emptyInfo = await sandbox.files.write([])
+  assert.isTrue(Array.isArray(emptyInfo))
+  assert.equal(emptyInfo.length, 0)
 
   // Attempt to write with path and file array
   await sandbox.files
+    // @ts-ignore
     .write('/path/to/file', [{ path: 'one_test_file.txt', data: 'This is a test file.' }])
     .then((e) => {
       assert.isUndefined(e)

@@ -171,7 +171,7 @@ export class Filesystem {
     }
 
     const files = res.data
-    if (!files || files.length === 0) {
+    if (!files) {
       throw new Error('Expected to receive information about written file')
     }
 
