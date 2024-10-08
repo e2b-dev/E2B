@@ -25,6 +25,10 @@ def handle_api_exception(e: Response):
 
 
 class ApiClient(AuthenticatedClient):
+    """
+    The client for interacting with the E2B API.
+    """
+
     def __init__(
         self,
         config: ConnectionConfig,

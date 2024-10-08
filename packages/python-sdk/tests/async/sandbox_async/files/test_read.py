@@ -17,3 +17,12 @@ async def test_read_non_existing_file(async_sandbox: AsyncSandbox):
 
     with pytest.raises(NotFoundException):
         await async_sandbox.files.read(filename)
+
+
+async def test_read_empty_file(async_sandbox: AsyncSandbox):
+    filename = "empty_file.txt"
+    content = ""
+
+    await async_sandbox.commands.run(f"touch {filename}")
+    read_content = await async_sandbox.files.read(filename)
+    assert read_content == content

@@ -36,7 +36,12 @@ class Process:
         self,
         request_timeout: Optional[float] = None,
     ) -> List[ProcessInfo]:
-        """List processes"""
+        """
+        Lists all running processes.
+
+        :param request_timeout: Request timeout
+        :return: List of running processes
+        """
         try:
             res = self._rpc.list(
                 process_pb2.ListRequest(),
@@ -63,7 +68,13 @@ class Process:
         pid: int,
         request_timeout: Optional[float] = None,
     ) -> bool:
-        """Kill process"""
+        """
+        Kills a process.
+
+        :param pid: Process ID to connect to. You can get the list of processes using `sandbox.commands.list()`.
+        :param request_timeout: Request timeout
+        :return: `True` if the process was killed, `False` if the process was not found
+        """
         try:
             self._rpc.send_signal(
                 process_pb2.SendSignalRequest(
@@ -87,7 +98,13 @@ class Process:
         data: str,
         request_timeout: Optional[float] = None,
     ):
-        """Send stdin"""
+        """
+        Sends data to the stdin of a process.
+
+        :param pid Process ID to send data to. You can get the list of processes using `sandbox.commands.list()`.
+        :param data: Data to send to the process
+        :param request_timeout: Request timeout
+        """
         try:
             self._rpc.send_input(
                 process_pb2.SendInputRequest(
@@ -143,7 +160,21 @@ class Process:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
-        """Run command"""
+        """
+        Starts a new process and depending on the `background` parameter, waits for the process to finish or not.
+        :param cmd Command to execute
+        :param background:
+            If `True`, the function will return a `ProcessHandle` object that can be used to interact with the process.
+            If `False`, the function will wait for the process to finish and return a `ProcessResult` object.
+        :param envs: Environment variables
+        :param user: User to run the process as
+        :param cwd: Working directory
+        :param on_stdout: Callback for stdout
+        :param on_stderr: Callback for stderr
+        :param timeout: Timeout for the maximum time the process is allowed to run
+        :param request_timeout: Timeout for the request
+        :return: `ProcessHandle` if `background` is `True`, `ProcessResult` if `background` is `False`
+        """
         proc = self._start(
             cmd,
             envs,
@@ -212,7 +243,13 @@ class Process:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
-        """Connect to process"""
+        """
+        Connects to an existing process.
+
+        :param pid: Process ID to connect to. You can get the list of processes using `sandbox.commands.list()`.
+        :param timeout: Timeout for the connection
+        :param request_timeout: Request timeout
+        """
         events = self._rpc.connect(
             process_pb2.ConnectRequest(
                 process=process_pb2.ProcessSelector(pid=pid),

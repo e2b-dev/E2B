@@ -6,6 +6,10 @@ from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
 
 class WatchHandle:
+    """
+    Handle for watching filesystem events. It is used to iterate over the events in the watched directory.
+    """
+
     def __init__(
         self,
         events: Generator[WatchDirResponse, Any, None],
@@ -16,6 +20,12 @@ class WatchHandle:
         return self._handle_events()
 
     def close(self):
+        """
+        Stop watching the directory.
+
+        Warning:
+            You won't get any event if you don't iterate over the handle before closing it.
+        """
         self._events.close()
 
     def _handle_events(self):

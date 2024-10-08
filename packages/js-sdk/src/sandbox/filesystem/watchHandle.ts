@@ -4,6 +4,9 @@ import {
   WatchDirResponse,
 } from '../../envd/filesystem/filesystem_pb'
 
+/**
+ * Type of filesystem event.
+ */
 export const enum FilesystemEventType {
   CHMOD = 'chmod',
   CREATE = 'create',
@@ -27,26 +30,35 @@ function mapEventType(type: EventType) {
   }
 }
 
+/**
+ * Information about a filesystem event.
+ */
 export interface FilesystemEvent {
   name: string
   type: FilesystemEventType
 }
 
+/**
+ * Handle for watching a directory in the sandbox filesystem. It provides a method to close the watcher.
+ */
 export class WatchHandle {
   constructor(
     private readonly handleStop: () => void,
     private readonly events: AsyncIterable<WatchDirResponse>,
     private readonly onEvent?: (event: FilesystemEvent) => void | Promise<void>,
-    private readonly onExit?: (err?: Error) => void | Promise<void>,
+    private readonly onExit?: (err?: Error) => void | Promise<void>
   ) {
     this.handleEvents()
   }
 
+  /**
+   * Stop watching the directory.
+   */
   async close() {
     this.handleStop()
   }
 
-  private async* iterateEvents() {
+  private async *iterateEvents() {
     try {
       for await (const event of this.events) {
         switch (event.event.case) {

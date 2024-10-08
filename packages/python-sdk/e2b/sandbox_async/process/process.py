@@ -18,6 +18,10 @@ from e2b.sandbox_async.utilts import OutputHandler
 
 
 class Process:
+    """
+    Manager for starting and interacting with processes in the sandbox.
+    """
+
     def __init__(
         self,
         envd_api_url: str,
@@ -37,7 +41,12 @@ class Process:
         self,
         request_timeout: Optional[float] = None,
     ) -> List[ProcessInfo]:
-        """List processes"""
+        """
+        Lists all running processes.
+
+        :param request_timeout: Request timeout
+        :return: List of running processes
+        """
         try:
             res = await self._rpc.alist(
                 process_pb2.ListRequest(),
@@ -64,7 +73,13 @@ class Process:
         pid: int,
         request_timeout: Optional[float] = None,
     ) -> bool:
-        """Kill process"""
+        """
+        Kills a process.
+
+        :param pid: Process ID to connect to. You can get the list of processes using `sandbox.commands.list()`.
+        :param request_timeout: Request timeout
+        :return: `True` if the process was killed, `False` if the process was not found
+        """
         try:
             await self._rpc.asend_signal(
                 process_pb2.SendSignalRequest(
@@ -87,8 +102,14 @@ class Process:
         pid: int,
         data: str,
         request_timeout: Optional[float] = None,
-    ):
-        """Send stdin"""
+    ) -> None:
+        """
+        Sends data to the stdin of a process.
+
+        :param pid Process ID to send data to. You can get the list of processes using `sandbox.commands.list()`.
+        :param data: Data to send to the process
+        :param request_timeout: Request timeout
+        """
         try:
             await self._rpc.asend_input(
                 process_pb2.SendInputRequest(
@@ -144,7 +165,21 @@ class Process:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
-        """Run command"""
+        """
+        Starts a new process and depending on the `background` parameter, waits for the process to finish or not.
+        :param cmd Command to execute
+        :param background:
+            If `True`, the function will return a `ProcessHandle` object that can be used to interact with the process.
+            If `False`, the function will wait for the process to finish and return a `ProcessResult` object.
+        :param envs: Environment variables
+        :param user: User to run the process as
+        :param cwd: Working directory
+        :param on_stdout: Callback for stdout
+        :param on_stderr: Callback for stderr
+        :param timeout: Timeout for the maximum time the process is allowed to run
+        :param request_timeout: Timeout for the request
+        :return: `ProcessHandle` if `background` is `True`, `ProcessResult` if `background` is `False`
+        """
         proc = await self._start(
             cmd,
             envs,
@@ -168,7 +203,7 @@ class Process:
         request_timeout: Optional[float] = None,
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
-    ):
+    ) -> AsyncProcessHandle:
         events = self._rpc.astart(
             process_pb2.StartRequest(
                 process=process_pb2.ProcessConfig(
@@ -213,7 +248,16 @@ class Process:
         request_timeout: Optional[float] = None,
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
-    ):
+    ) -> AsyncProcessHandle:
+        """
+        Connects to an existing process.
+
+        :param pid: Process ID to connect to. You can get the list of processes using `sandbox.commands.list()`.
+        :param timeout: Timeout for the connection
+        :param request_timeout: Request timeout
+        :param on_stdout: Callback for stdout
+        :param on_stderr: Callback for stderr
+        """
         events = self._rpc.aconnect(
             process_pb2.ConnectRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
@@ -226,7 +270,7 @@ class Process:
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
         )
-        """Connect to process"""
+
         try:
             start_event = await events.__anext__()
 

@@ -1,11 +1,14 @@
 import { Logger } from './logs'
 import { getEnvVar } from './api/metadata'
 
-const REQUEST_TIMEOUT_MS = 30_000  // 30s
+const REQUEST_TIMEOUT_MS = 30_000 // 30s
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50s
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
 
+/**
+ * Connection options for requests to the API.
+ */
 export interface ConnectionOpts {
   apiKey?: string
   accessToken?: string
@@ -15,6 +18,9 @@ export interface ConnectionOpts {
   logger?: Logger
 }
 
+/**
+ * Configuration for connecting to the API.
+ */
 export class ConnectionConfig {
   readonly debug: boolean
   readonly domain: string
@@ -34,7 +40,9 @@ export class ConnectionConfig {
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
 
-    this.apiUrl = this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`
+    this.apiUrl = this.debug
+      ? 'http://localhost:3000'
+      : `https://api.${this.domain}`
   }
 
   private static get domain() {
@@ -60,6 +68,9 @@ export class ConnectionConfig {
   }
 }
 
+/**
+ * Username for the user in the sandbox.
+ */
 export type Username = 'root' | 'user'
 
 export const defaultUsername: Username = 'user'

@@ -3,7 +3,15 @@ export type { components, paths } from './api'
 
 export { ConnectionConfig } from './connectionConfig'
 export type { ConnectionOpts, Username } from './connectionConfig'
-export { AuthenticationError, InvalidArgumentError, NotEnoughSpaceError, NotFoundError, SandboxError, TemplateError, TimeoutError } from './errors'
+export {
+  AuthenticationError,
+  InvalidArgumentError,
+  NotEnoughSpaceError,
+  NotFoundError,
+  SandboxError,
+  TemplateError,
+  TimeoutError,
+} from './errors'
 export type { Logger } from './logs'
 
 export { FileType } from './sandbox/filesystem'

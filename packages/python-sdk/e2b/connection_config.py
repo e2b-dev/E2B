@@ -9,6 +9,10 @@ KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
 
 
 class ConnectionConfig:
+    """
+    Configuration for the connection to the E2B API.
+    """
+
     @staticmethod
     def _domain():
         return os.getenv("E2B_DOMAIN", "e2b.dev")

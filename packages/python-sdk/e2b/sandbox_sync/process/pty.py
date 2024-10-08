@@ -17,6 +17,10 @@ from e2b.sandbox_sync.process.process_handle import ProcessHandle
 
 
 class Pty:
+    """
+    Manager for starting and interacting with PTY (pseudo-terminal) processes in the sandbox.
+    """
+
     def __init__(
         self,
         envd_api_url: str,
@@ -37,6 +41,13 @@ class Pty:
         pid: int,
         request_timeout: Optional[float] = None,
     ) -> bool:
+        """
+        Kills a process.
+
+        :param pid: Process ID to kill. You can get the list of processes using `sandbox.commands.list()`.
+        :param request_timeout: Timeout for the request
+        :return: `true` if the process was killed, `false` if the process was not found
+        """
         try:
             self._rpc.send_signal(
                 process_pb2.SendSignalRequest(
@@ -60,6 +71,13 @@ class Pty:
         data: bytes,
         request_timeout: Optional[float] = None,
     ) -> None:
+        """
+        Sends input to a PTY process.
+
+        :param pid: Process ID of the PTY process
+        :param data: Input data to send
+        :param request_timeout: Timeout for the request
+        """
         try:
             self._rpc.send_input(
                 process_pb2.SendInputRequest(
@@ -84,6 +102,17 @@ class Pty:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> ProcessHandle:
+        """
+        Starts a new process with a PTY (pseudo-terminal).
+
+        :param size: Size of the PTY
+        :param user: User to start the process as
+        :param cwd: Current working directory
+        :param envs: Environment variables
+        :param timeout: Timeout for the request
+        :param request_timeout: Timeout for the request
+        :return: New process
+        """
         envs = envs or {}
         envs["TERM"] = "xterm-256color"
         events = self._rpc.start(
@@ -130,6 +159,13 @@ class Pty:
         size: PtySize,
         request_timeout: Optional[float] = None,
     ) -> None:
+        """
+        Resizes a PTY process (changes the number of columns and rows in the terminal).
+
+        :param pid: Process ID of the PTY process
+        :param size: New size of the PTY
+        :param request_timeout: Timeout for the request
+        """
         self._rpc.update(
             process_pb2.UpdateRequest(
                 process=process_pb2.ProcessSelector(pid=pid),

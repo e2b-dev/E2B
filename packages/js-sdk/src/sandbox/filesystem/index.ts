@@ -8,22 +8,28 @@ import {
   Username,
 } from '../../connectionConfig'
 
-import { handleEnvdApiError } from '../../envd/api'
+import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import { EntryInfo, FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
 
-import { FilesystemEvent, WatchHandle } from './watchHandle'
 import { clearTimeout } from 'timers'
+import { FilesystemEvent, WatchHandle } from './watchHandle'
 
+/**
+ * Information about a filesystem object.
+ */
 export interface EntryInfo {
   name: string
   type?: FileType
   path: string
 }
 
+/**
+ * Type of filesystem object.
+ */
 export const enum FileType {
   FILE = 'file',
   DIR = 'dir',
@@ -40,15 +46,24 @@ function mapFileType(fileType: FsFileType) {
   }
 }
 
+/**
+ * Options for sending a request to the filesystem.
+ */
 export interface FilesystemRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
   user?: Username
 }
 
+/**
+ * Options for watching a directory.
+ */
 export interface WatchOpts extends FilesystemRequestOpts {
   timeout?: number
   onExit?: (err: Error) => void
 }
 
+/**
+ * Manager for interacting with the filesystem in the sandbox.
+ */
 export class Filesystem {
   private readonly rpc: PromiseClient<typeof FilesystemService>
 
@@ -62,13 +77,23 @@ export class Filesystem {
     this.rpc = createPromiseClient(FilesystemService, transport)
   }
 
+  /**
+   * Reads a whole file content and returns it in requested format (text by default).
+   *
+   * @param path Path to the file
+   * @param opts Options for the request
+   * @param {format} [opts.format] Format of the file content. Default is 'text'.
+   * @returns File content in requested format
+   */
   async read(path: string, opts?: FilesystemRequestOpts & { format?: 'text' }): Promise<string>
   async read(path: string, opts?: FilesystemRequestOpts & { format: 'bytes' }): Promise<Uint8Array>
   async read(path: string, opts?: FilesystemRequestOpts & { format: 'blob' }): Promise<Blob>
   async read(path: string, opts?: FilesystemRequestOpts & { format: 'stream' }): Promise<ReadableStream<Uint8Array>>
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & { format?: 'text' | 'stream' | 'bytes' | 'blob' }
+    opts?: FilesystemRequestOpts & {
+      format?: 'text' | 'stream' | 'bytes' | 'blob'
+    }
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
 
@@ -90,6 +115,11 @@ export class Filesystem {
 
     if (format === 'bytes') {
       return new Uint8Array(res.data as ArrayBuffer)
+    }
+
+    // When the file is empty, res.data is parsed as `{}`. This is a workaround to return an empty string.
+    if (res.response.headers.get('content-length') === '0') {
+      return ''
     }
 
     return res.data
@@ -148,6 +178,13 @@ export class Filesystem {
     return files.length === 1 && path ? (files[0] as EntryInfo) : (files as EntryInfo[])
   }
 
+  /**
+   * Lists entries in a directory.
+   *
+   * @param path Path to the directory
+   * @param opts Options for the request
+   * @returns List of entries in the directory
+   */
   async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
     try {
       const res = await this.rpc.listDir(
@@ -178,6 +215,13 @@ export class Filesystem {
     }
   }
 
+  /**
+   * Creates a new directory and all directories along the way if needed on the specified pth.
+   *
+   * @param path Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
+   * @param opts Options for the request
+   * @returns True if the directory was created, false if it already exists
+   */
   async makeDir(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
     try {
       await this.rpc.makeDir(
@@ -200,6 +244,14 @@ export class Filesystem {
     }
   }
 
+  /**
+   * Renames a file or directory from one path to another.
+   *
+   * @param oldPath Path to the file or directory to move
+   * @param newPath Path to move the file or directory to
+   * @param opts Options for the request
+   * @returns Information about the moved object
+   */
   async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
     try {
       const res = await this.rpc.move(
@@ -228,6 +280,11 @@ export class Filesystem {
     }
   }
 
+  /**
+   * Removes a file or a directory.
+   * @param path Path to a file or a directory
+   * @param opts Options for the request
+   */
   async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
     try {
       await this.rpc.remove(
@@ -242,6 +299,13 @@ export class Filesystem {
     }
   }
 
+  /**
+   * Checks if a file or a directory exists.
+   *
+   * @param path Path to a file or a directory
+   * @param opts Options for the request
+   * @returns True if the file or directory exists, false otherwise
+   */
   async exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
     try {
       await this.rpc.stat(
@@ -264,6 +328,14 @@ export class Filesystem {
     }
   }
 
+  /**
+   * Watches directory for filesystem events.
+   *
+   * @param path Path to a directory that will be watched
+   * @param onEvent Callback that will be called when an event in the directory occurs
+   * @param opts Options for the request
+   * @returns New watcher
+   */
   async watch(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
