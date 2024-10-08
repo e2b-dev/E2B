@@ -15,10 +15,9 @@ def test_write_file(sandbox):
 
 def test_write_multiple_files(sandbox):
     # Attempt to write with empty files array
-    try:
-        sandbox.files.write([])
-    except Exception as e:
-        assert "Need at least one file to write" in str(e)
+    empty_info = sandbox.files.write([])
+    assert isinstance(empty_info, list)
+    assert len(empty_info) == 0
 
     # Attempt to write with path and file array
     try:

@@ -155,7 +155,7 @@ class Filesystem:
         When writing to a file that's in a directory that doesn't exist, you'll get an error.
         """
 
-        path, write_files, user, request_timeout,  = None, [], "user", None
+        path, write_files, user, request_timeout  = None, [], "user", None
         if isinstance(path_or_files, str):
             if isinstance(data_or_user, list):
                 raise Exception("Cannot specify path with array of files")
@@ -165,9 +165,6 @@ class Filesystem:
             path, write_files, user, request_timeout = \
                 None, path_or_files, data_or_user, user_or_request_timeout
         
-        if len(write_files) == 0:
-            raise Exception("Need at least one file to write")
-
         # Prepare the files for the multipart/form-data request
         httpx_files = []
         for file in write_files:
@@ -178,6 +175,9 @@ class Filesystem:
                 httpx_files.append(('file', (file_path, file_data.read())))
             else:
                 raise ValueError(f"Unsupported data type for file {file_path}")
+        
+        # Allow passing empty list of files
+        if len(httpx_files) == 0: return []
 
         params = {"username": user}
         if path is not None: params["path"] = path
