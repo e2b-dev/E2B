@@ -1,3 +1,5 @@
+from typing import Callable, Dict, Optional
+
 import e2b_connect
 import httpcore
 
@@ -12,34 +14,49 @@ from e2b.connection_config import (
 )
 from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.exceptions import SandboxException
 from e2b.sandbox.process.process_handle import PtySize
-from e2b.sandbox_sync.process.process_handle import ProcessHandle
+from e2b.sandbox_async.process.process_handle import (
+    AsyncProcessHandle,
+    OutputHandler,
+    PtyOutput,
+)
 
 
 class Pty:
+    """
+    Manager for starting and interacting with PTY (pseudo-terminal) processes in the sandbox.
+    """
+
     def __init__(
         self,
         envd_api_url: str,
         connection_config: ConnectionConfig,
-        pool: httpcore.ConnectionPool,
+        pool: httpcore.AsyncConnectionPool,
     ) -> None:
         self._connection_config = connection_config
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
-            pool=pool,
+            async_pool=pool,
             json=True,
         )
 
-    def kill(
+    async def kill(
         self,
         pid: int,
         request_timeout: Optional[float] = None,
     ) -> bool:
-        """Kill process by PID"""
+        """
+        Kills a process.
+
+        :param pid: Process ID to kill. You can get the list of processes using `sandbox.commands.list()`.
+        :param request_timeout: Timeout for the request
+        :return: `true` if the process was killed, `false` if the process was not found
+        """
         try:
-            self._rpc.send_signal(
+            await self._rpc.asend_signal(
                 process_pb2.SendSignalRequest(
                     process=process_pb2.ProcessSelector(pid=pid),
                     signal=process_pb2.Signal.SIGNAL_SIGKILL,
@@ -55,15 +72,21 @@ class Pty:
                     return False
             raise handle_rpc_exception(e)
 
-    def send_stdin(
+    async def send_stdin(
         self,
         pid: int,
         data: bytes,
         request_timeout: Optional[float] = None,
     ) -> None:
-        """Send data to process stdin"""
+        """
+        Sends input to a PTY process.
+
+        :param pid: Process ID of the PTY process
+        :param data: Input data to send
+        :param request_timeout: Timeout for the request
+        """
         try:
-            self._rpc.send_input(
+            await self._rpc.asend_input(
                 process_pb2.SendInputRequest(
                     process=process_pb2.ProcessSelector(pid=pid),
                     input=process_pb2.ProcessInput(
@@ -77,19 +100,31 @@ class Pty:
         except Exception as e:
             raise handle_rpc_exception(e)
 
-    def create(
+    async def create(
         self,
         size: PtySize,
+        on_data: OutputHandler[PtyOutput],
         user: Username = "user",
         cwd: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessHandle:
-        """Create new PTY process"""
+    ) -> AsyncProcessHandle:
+        """
+        Starts a new process with a PTY (pseudo-terminal).
+
+        :param size: Size of the PTY
+        :param on_data: Callback for handling PTY output
+        :param user: User to start the process as
+        :param cwd: Current working directory
+        :param envs: Environment variables
+        :param timeout: Timeout for the request
+        :param request_timeout: Timeout for the request
+        :return: New process
+        """
         envs = envs or {}
         envs["TERM"] = "xterm-256color"
-        events = self._rpc.start(
+        events = self._rpc.astart(
             process_pb2.StartRequest(
                 process=process_pb2.ProcessConfig(
                     cmd="/bin/bash",
@@ -112,29 +147,36 @@ class Pty:
         )
 
         try:
-            start_event = events.__next__()
+            start_event = await events.__anext__()
 
             if not start_event.HasField("event"):
                 raise SandboxException(
                     f"Failed to start process: expected start event, got {start_event}"
                 )
 
-            return ProcessHandle(
+            return AsyncProcessHandle(
                 pid=start_event.event.start.pid,
                 handle_kill=lambda: self.kill(start_event.event.start.pid),
                 events=events,
+                on_pty=on_data,
             )
         except Exception as e:
             raise handle_rpc_exception(e)
 
-    def resize(
+    async def resize(
         self,
         pid: int,
         size: PtySize,
         request_timeout: Optional[float] = None,
-    ) -> None:
-        """Resize PTY"""
-        self._rpc.update(
+    ):
+        """
+        Resizes a PTY process (changes the number of columns and rows in the terminal).
+
+        :param pid: Process ID of the PTY process
+        :param size: New size of the PTY
+        :param request_timeout: Timeout for the request
+        """
+        await self._rpc.aupdate(
             process_pb2.UpdateRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
                 pty=process_pb2.PTY(

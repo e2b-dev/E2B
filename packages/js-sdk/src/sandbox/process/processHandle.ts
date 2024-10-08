@@ -1,9 +1,6 @@
 import { handleRpcError } from '../../envd/rpc'
 import { SandboxError } from '../../errors'
-import {
-  ConnectResponse,
-  StartResponse,
-} from '../../envd/process/process_pb'
+import { ConnectResponse, StartResponse } from '../../envd/process/process_pb'
 
 declare const __brand: unique symbol
 type Brand<B> = { [__brand]: B }
@@ -13,6 +10,9 @@ export type Stdout = Branded<string, 'stdout'>
 export type Stderr = Branded<string, 'stderr'>
 export type PtyOutput = Branded<Uint8Array, 'pty'>
 
+/**
+ * Result of a process execution.
+ */
 export interface ProcessResult {
   exitCode: number
   error?: string
@@ -20,6 +20,9 @@ export interface ProcessResult {
   stderr: string
 }
 
+/**
+ * Error thrown when a process exits with a non-zero exit code.
+ */
 export class ProcessExitError extends SandboxError implements ProcessResult {
   constructor(private readonly result: ProcessResult) {
     super(result.error)
@@ -43,7 +46,14 @@ export class ProcessExitError extends SandboxError implements ProcessResult {
   }
 }
 
-export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>, Partial<Pick<ProcessResult, 'exitCode' | 'error'>> {
+/**
+ * Represents a process object. It provides methods for waiting for the finish and killing the process.
+ */
+export class ProcessHandle
+  implements
+    Omit<ProcessResult, 'exitCode' | 'error'>,
+    Partial<Pick<ProcessResult, 'exitCode' | 'error'>>
+{
   private _stdout = ''
   private _stderr = ''
 
@@ -57,29 +67,46 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     private readonly handleDisconnect: () => void,
     private readonly handleKill: () => Promise<boolean>,
     private readonly events: AsyncIterable<ConnectResponse | StartResponse>,
-    private readonly onStdout?: (stdout: string) => (void | Promise<void>),
-    private readonly onStderr?: (stderr: string) => (void | Promise<void>),
-    private readonly onPty?: (pty: Uint8Array) => (void | Promise<void>),
+    private readonly onStdout?: (stdout: string) => void | Promise<void>,
+    private readonly onStderr?: (stderr: string) => void | Promise<void>,
+    private readonly onPty?: (pty: Uint8Array) => void | Promise<void>
   ) {
     this._wait = this.handleEvents()
   }
 
+  /**
+   * Exit code of the process. It is `undefined` if the process is still running.
+   */
   get exitCode() {
     return this.result?.exitCode
   }
 
+  /**
+   * Error message of the process. It is `undefined` if the process is still running.
+   */
   get error() {
     return this.result?.error
   }
 
+  /**
+   * Stderr of the process.
+   */
   get stderr() {
     return this._stderr
   }
 
+  /**
+   * Stdout of the process.
+   */
   get stdout() {
     return this._stdout
   }
 
+  /**
+   * Waits for the process to finish and returns the result.
+   * If the process exits with a non-zero exit code, it throws a `ProcessExitError`.
+   * @returns Process result
+   */
   async wait() {
     await this._wait
 
@@ -98,15 +125,24 @@ export class ProcessHandle implements Omit<ProcessResult, 'exitCode' | 'error'>,
     return this.result
   }
 
+  /**
+   * Disconnects from the process. It does not kill the process. It only stops receiving events from the process.
+   */
   async disconnect() {
     this.handleDisconnect()
   }
 
+  /**
+   * Kills the process.
+   * @returns Whether the process was killed successfully
+   */
   async kill() {
     await this.handleKill()
   }
 
-  private async* iterateEvents(): AsyncGenerator<[Stdout, null, null] | [null, Stderr, null] | [null, null, PtyOutput]> {
+  private async *iterateEvents(): AsyncGenerator<
+    [Stdout, null, null] | [null, Stderr, null] | [null, null, PtyOutput]
+  > {
     for await (const event of this.events) {
       const e = event?.event?.event
       let out: string | undefined

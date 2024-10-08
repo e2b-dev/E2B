@@ -17,3 +17,11 @@ sandboxTest('read non-existing file', async ({ sandbox }) => {
 
   await expect(sandbox.files.read(filename)).rejects.toThrowError(NotFoundError)
 })
+
+sandboxTest('empty file', async ({ sandbox }) => {
+  const filename = 'empty-file.txt'
+
+  await sandbox.commands.run(`touch ${filename}`)
+  const content = await sandbox.files.read(filename)
+  expect(content).toBe('')
+})

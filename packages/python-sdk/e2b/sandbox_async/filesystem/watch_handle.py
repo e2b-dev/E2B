@@ -10,6 +10,10 @@ from e2b.sandbox_async.utilts import OutputHandler
 
 
 class AsyncWatchHandle:
+    """
+    Class representing the watch operation. It provides method to stop the watch operation.
+    """
+
     def __init__(
         self,
         events: AsyncGenerator[WatchDirResponse, Any],
@@ -23,6 +27,9 @@ class AsyncWatchHandle:
         self._wait = asyncio.create_task(self._handle_events())
 
     async def close(self):
+        """
+        Stop watching the directory.
+        """
         self._wait.cancel()
         # BUG: In Python 3.8 closing async generator can throw RuntimeError.
         # await self._events.aclose()
