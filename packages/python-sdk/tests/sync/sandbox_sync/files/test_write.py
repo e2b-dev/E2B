@@ -4,6 +4,12 @@ def test_write_file(sandbox):
     filename = "test_write.txt"
     content = "This is a test file."
 
+    # Attempt to write without path
+    try:
+        sandbox.files.write(None, content)
+    except Exception as e:
+        assert "object is not iterable" in str(e)
+
     info = sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
 
@@ -18,6 +24,12 @@ def test_write_multiple_files(sandbox):
     empty_info = sandbox.files.write([])
     assert isinstance(empty_info, list)
     assert len(empty_info) == 0
+
+    # Attempt to write with None path and empty files array
+    try:
+        sandbox.files.write(None, [])
+    except Exception as e:
+        assert "object is not iterable" in str(e)
 
     # Attempt to write with path and file array
     try:
