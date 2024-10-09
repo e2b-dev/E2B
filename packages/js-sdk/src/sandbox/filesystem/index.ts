@@ -15,7 +15,6 @@ import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import { FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
 
-import { clearTimeout } from 'timers'
 import { FilesystemEvent, WatchHandle } from './watchHandle'
 
 /**
@@ -36,6 +35,11 @@ export const enum FileType {
 }
 
 export type WriteData = string | ArrayBuffer | Blob | ReadableStream
+
+export type WriteEntry = {
+  path: string
+  data: WriteData
+}
 
 function mapFileType(fileType: FsFileType) {
   switch (fileType) {
@@ -126,9 +130,9 @@ export class Filesystem {
   }
 
   async write(path: string, data: WriteData, opts?: FilesystemRequestOpts): Promise<EntryInfo>
-  async write(files: { path: string; data: WriteData }[], opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
+  async write(files: WriteEntry[], opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
   async write(
-    pathOrFiles: string | { path: string; data: WriteData }[],
+    pathOrFiles: string | WriteEntry[],
     dataOrOpts?: WriteData | FilesystemRequestOpts,
     opts?: FilesystemRequestOpts
   ): Promise<EntryInfo | EntryInfo[]> {
@@ -138,31 +142,35 @@ export class Filesystem {
 
     const { path, writeOpts, writeFiles } =
       typeof pathOrFiles === 'string'
-        ? { path: pathOrFiles, writeOpts: opts, writeFiles: [{ data: dataOrOpts }] }
-        : { path: undefined, writeOpts: dataOrOpts, writeFiles: pathOrFiles }
+        ? {
+            path: pathOrFiles,
+            writeOpts: opts as FilesystemRequestOpts,
+            writeFiles: [{ data: dataOrOpts as WriteData }],
+          }
+        : { path: undefined, writeOpts: dataOrOpts as FilesystemRequestOpts, writeFiles: pathOrFiles as WriteEntry[] }
 
-    const blobs = await Promise.all(
-      (writeFiles as { path: string; data: WriteData }[]).map((f) => new Response(f.data).blob())
-    )
+    const blobs = await Promise.all(writeFiles.map((f) => new Response(f.data).blob()))
 
     const res = await this.envdApi.api.POST('/files', {
       params: {
         query: {
           path,
-          username: (writeOpts as FilesystemRequestOpts)?.user || defaultUsername,
+          username: writeOpts?.user || defaultUsername,
         },
       },
       bodySerializer() {
         return blobs.reduce((fd, blob, i) => {
           // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
           // the directory path information must not be used.
+          // BUT in our case we need to use the directory path information with a custom
+          // muktipart part name getter in envd.
           fd.append('file', blob, writeFiles[i].path)
 
           return fd
         }, new FormData())
       },
       body: {},
-      signal: this.connectionConfig.getSignal((writeOpts as FilesystemRequestOpts)?.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
     })
 
     const err = await handleEnvdApiError(res)
@@ -170,12 +178,12 @@ export class Filesystem {
       throw err
     }
 
-    const files = res.data
+    const files = res.data as EntryInfo[]
     if (!files) {
       throw new Error('Expected to receive information about written file')
     }
 
-    return files.length === 1 && path ? (files[0] as EntryInfo) : (files as EntryInfo[])
+    return files.length === 1 && path ? files[0] : files
   }
 
   /**
