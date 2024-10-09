@@ -1,15 +1,26 @@
 import path from 'path'
 import { assert, onTestFinished } from 'vitest'
 
-import { EntryInfo } from '../../../src/index.js'
-import { WriteData } from '../../../src/sandbox/filesystem/index.js'
+import { WriteEntry } from '../../../src/sandbox/filesystem/index.js'
 import { sandboxTest } from '../../setup.js'
 
 sandboxTest('write file', async ({ sandbox }) => {
   const filename = 'test_write.txt'
   const content = 'This is a test file.'
 
-  const info = (await sandbox.files.write(filename, content)) as EntryInfo
+  // Attempt to write with undefined path and content
+  await sandbox.files
+    // @ts-ignore
+    .write(undefined, content)
+    .then((e) => {
+      assert.isUndefined(e)
+    })
+    .catch((err) => {
+      assert.instanceOf(err, Error)
+      assert.include(err.message, 'Cannot read properties of undefined')
+    })
+
+  const info = await sandbox.files.write(filename, content)
   assert.isFalse(Array.isArray(info))
   assert.equal(info.name, filename)
   assert.equal(info.type, 'file')
@@ -26,6 +37,18 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   const emptyInfo = await sandbox.files.write([])
   assert.isTrue(Array.isArray(emptyInfo))
   assert.equal(emptyInfo.length, 0)
+
+  // Attempt to write with undefined path and file array
+  await sandbox.files
+    // @ts-ignore
+    .write(undefined, [{ path: 'one_test_file.txt', data: 'This is a test file.' }])
+    .then((e) => {
+      assert.isUndefined(e)
+    })
+    .catch((err) => {
+      assert.instanceOf(err, Error)
+      assert.include(err.message, 'Cannot read properties of undefined')
+    })
 
   // Attempt to write with path and file array
   await sandbox.files
@@ -47,7 +70,7 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   assert.equal(info[0].path, `/home/user/one_test_file.txt`)
 
   // Attempt to write with multiple files in array
-  let files: Array<{ data: WriteData; path: string }> = []
+  let files: WriteEntry[] = []
 
   for (let i = 0; i < 10; i++) {
     let path = ''
@@ -68,12 +91,12 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   const infos = await sandbox.files.write(files)
 
   assert.isTrue(Array.isArray(infos))
-  assert.equal((infos as EntryInfo[]).length, files.length)
+  assert.equal(infos.length, files.length)
 
   // Attempt to write with multiple files in array
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
-    const info = infos[i] as EntryInfo
+    const info = infos[i]
 
     assert.equal(info.name, path.basename(file.path))
     assert.equal(info.path, file.path)
@@ -90,7 +113,7 @@ sandboxTest('write file', async ({ sandbox }) => {
   const filename = 'test_write.txt'
   const content = 'This is a test file.'
 
-  const info = (await sandbox.files.write(filename, content)) as EntryInfo
+  const info = await sandbox.files.write(filename, content)
   assert.isFalse(Array.isArray(info))
   assert.equal(info.name, filename)
   assert.equal(info.type, 'file')

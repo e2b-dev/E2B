@@ -53,9 +53,9 @@ def test_write_multiple_files(sandbox):
     # Attempt to write with multiple files in array
     files = []
     for i in range(10):
-        filename = f"test_write_{i}.txt"
+        path = f"test_write_{i}.txt"
         content = f"This is a test file {i}."
-        files.append({"path": filename, "data": content})
+        files.append({"path": path, "data": content})
 
     infos = sandbox.files.write(files)
     assert isinstance(infos, list)
@@ -63,7 +63,7 @@ def test_write_multiple_files(sandbox):
     for i, info in enumerate(infos):
         assert isinstance(info, EntryInfo)
         assert info.path == f"/home/user/test_write_{i}.txt"
-        exists = sandbox.files.exists(filename)
+        exists = sandbox.files.exists(path)
         assert exists
 
         read_content = sandbox.files.read(info.path)
