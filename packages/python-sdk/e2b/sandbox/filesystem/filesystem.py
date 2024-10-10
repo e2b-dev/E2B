@@ -1,5 +1,5 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 from typing import IO, Optional, Union
 
 from e2b.envd.filesystem import filesystem_pb2
@@ -31,9 +31,15 @@ class EntryInfo:
     type: Optional[FileType]
     path: str
 
+
 WriteData = Union[str, bytes, IO]
+
 
 @dataclass
 class WriteEntry:
+    """
+    Contains path and data of the file to be written to the filesystem.
+    """
+
     path: str
     data: WriteData
