@@ -30,10 +30,10 @@ class TimeoutException(SandboxException):
     """
     Raised when a timeout occurs.
 
-    The [unavailable] exception type is caused by sandbox timeout.\n
-    The [canceled] exception type is caused by exceeding request timeout.\n
-    The [deadline_exceeded] exception type is caused by exceeding the timeout for process, watch, etc.\n
-    The [unknown] exception type is sometimes caused by the sandbox timeout when the request is not processed correctly.\n
+    The `unavailable` exception type is caused by sandbox timeout.\n
+    The `canceled` exception type is caused by exceeding request timeout.\n
+    The `deadline_exceeded` exception type is caused by exceeding the timeout for process, watch, etc.\n
+    The `unknown` exception type is sometimes caused by the sandbox timeout when the request is not processed correctly.\n
     """
 
     pass

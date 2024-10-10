@@ -1,17 +1,11 @@
-import {
-  createPromiseClient,
-  Transport,
-  PromiseClient,
-  ConnectError,
-  Code,
-} from '@connectrpc/connect'
+import { Code, ConnectError, createPromiseClient, PromiseClient, Transport } from '@connectrpc/connect'
 import {
   ConnectionConfig,
-  defaultUsername,
-  Username,
   ConnectionOpts,
-  KEEPALIVE_PING_INTERVAL_SEC,
+  defaultUsername,
   KEEPALIVE_PING_HEADER,
+  KEEPALIVE_PING_INTERVAL_SEC,
+  Username,
 } from '../../connectionConfig'
 
 import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
@@ -21,7 +15,7 @@ import { EnvdApiClient } from '../../envd/api'
 import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
 import { FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
 
-import { WatchHandle, FilesystemEvent } from './watchHandle'
+import { FilesystemEvent, WatchHandle } from './watchHandle'
 
 /**
  * Information about a filesystem object.
@@ -40,6 +34,13 @@ export const enum FileType {
   DIR = 'dir',
 }
 
+export type WriteData = string | ArrayBuffer | Blob | ReadableStream
+
+export type WriteEntry = {
+  path: string
+  data: WriteData
+}
+
 function mapFileType(fileType: FsFileType) {
   switch (fileType) {
     case FsFileType.DIRECTORY:
@@ -52,8 +53,7 @@ function mapFileType(fileType: FsFileType) {
 /**
  * Options for sending a request to the filesystem.
  */
-export interface FilesystemRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
+export interface FilesystemRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
   user?: Username
 }
 
@@ -89,22 +89,10 @@ export class Filesystem {
    * @param {format} [opts.format] Format of the file content. Default is 'text'.
    * @returns File content in requested format
    */
-  async read(
-    path: string,
-    opts?: FilesystemRequestOpts & { format?: 'text' }
-  ): Promise<string>
-  async read(
-    path: string,
-    opts?: FilesystemRequestOpts & { format: 'bytes' }
-  ): Promise<Uint8Array>
-  async read(
-    path: string,
-    opts?: FilesystemRequestOpts & { format: 'blob' }
-  ): Promise<Blob>
-  async read(
-    path: string,
-    opts?: FilesystemRequestOpts & { format: 'stream' }
-  ): Promise<ReadableStream<Uint8Array>>
+  async read(path: string, opts?: FilesystemRequestOpts & { format?: 'text' }): Promise<string>
+  async read(path: string, opts?: FilesystemRequestOpts & { format: 'bytes' }): Promise<Uint8Array>
+  async read(path: string, opts?: FilesystemRequestOpts & { format: 'blob' }): Promise<Blob>
+  async read(path: string, opts?: FilesystemRequestOpts & { format: 'stream' }): Promise<ReadableStream<Uint8Array>>
   async read(
     path: string,
     opts?: FilesystemRequestOpts & {
@@ -152,29 +140,56 @@ export class Filesystem {
    * @param opts Options for the request
    * @returns Information about the written file
    */
+  async write(path: string, data: WriteData, opts?: FilesystemRequestOpts): Promise<EntryInfo>
+  async write(files: WriteEntry[], opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
   async write(
-    path: string,
-    data: string | ArrayBuffer | Blob | ReadableStream,
+    pathOrFiles: string | WriteEntry[],
+    dataOrOpts?: WriteData | FilesystemRequestOpts,
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo> {
-    const blob = await new Response(data).blob()
+  ): Promise<EntryInfo | EntryInfo[]> {
+    if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
+      throw new Error('Path or files are required')
+    }
+
+    if (typeof pathOrFiles === 'string' && Array.isArray(dataOrOpts)) {
+      throw new Error(
+        'Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files.'
+      )
+    }
+
+    const { path, writeOpts, writeFiles } =
+      typeof pathOrFiles === 'string'
+        ? {
+            path: pathOrFiles,
+            writeOpts: opts as FilesystemRequestOpts,
+            writeFiles: [{ data: dataOrOpts as WriteData }],
+          }
+        : { path: undefined, writeOpts: dataOrOpts as FilesystemRequestOpts, writeFiles: pathOrFiles as WriteEntry[] }
+
+    if (writeFiles.length === 0) return [] as EntryInfo[]
+
+    const blobs = await Promise.all(writeFiles.map((f) => new Response(f.data).blob()))
 
     const res = await this.envdApi.api.POST('/files', {
       params: {
         query: {
           path,
-          username: opts?.user || defaultUsername,
+          username: writeOpts?.user || defaultUsername,
         },
       },
       bodySerializer() {
-        const fd = new FormData()
+        return blobs.reduce((fd, blob, i) => {
+          // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
+          // the directory path information must not be used.
+          // BUT in our case we need to use the directory path information with a custom
+          // muktipart part name getter in envd.
+          fd.append('file', blob, writeFiles[i].path)
 
-        fd.append('file', blob)
-
-        return fd
+          return fd
+        }, new FormData())
       },
       body: {},
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
     })
 
     const err = await handleEnvdApiError(res)
@@ -182,12 +197,12 @@ export class Filesystem {
       throw err
     }
 
-    const files = res.data
-    if (!files || files.length === 0) {
+    const files = res.data as EntryInfo[]
+    if (!files) {
       throw new Error('Expected to receive information about written file')
     }
 
-    return files[0] as EntryInfo
+    return files.length === 1 && path ? files[0] : files
   }
 
   /**
@@ -264,11 +279,7 @@ export class Filesystem {
    * @param opts Options for the request
    * @returns Information about the moved object
    */
-  async rename(
-    oldPath: string,
-    newPath: string,
-    opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo> {
+  async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
     try {
       const res = await this.rpc.move(
         {
@@ -355,13 +366,9 @@ export class Filesystem {
   async watch(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: FilesystemRequestOpts & {
-      timeout?: number
-      onExit?: (err?: Error) => void | Promise<void>
-    }
+    opts?: FilesystemRequestOpts & { timeout?: number; onExit?: (err?: Error) => void | Promise<void> }
   ): Promise<WatchHandle> {
-    const requestTimeoutMs =
-      opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
 
@@ -388,12 +395,7 @@ export class Filesystem {
 
       clearTimeout(reqTimeout)
 
-      return new WatchHandle(
-        () => controller.abort(),
-        events,
-        onEvent,
-        opts?.onExit
-      )
+      return new WatchHandle(() => controller.abort(), events, onEvent, opts?.onExit)
     } catch (err) {
       throw handleRpcError(err)
     }
