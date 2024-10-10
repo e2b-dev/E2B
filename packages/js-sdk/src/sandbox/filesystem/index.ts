@@ -129,6 +129,17 @@ export class Filesystem {
     return res.data
   }
 
+  /**
+   * Writes content to a file on the path.
+   *   When writing to a file that doesn't exist, the file will get created.
+   *   When writing to a file that already exists, the file will get overwritten.
+   *   When writing to a file that's in a directory that doesn't exist, the directory will get created.
+   *
+   * @param path Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
+   * @param data Data to write to a new file
+   * @param opts Options for the request
+   * @returns Information about the written file
+   */
   async write(path: string, data: WriteData, opts?: FilesystemRequestOpts): Promise<EntryInfo>
   async write(files: WriteEntry[], opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
   async write(

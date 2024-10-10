@@ -118,7 +118,7 @@ class Filesystem:
         Writes content to a file on the path.
         When writing to a file that doesn't exist, the file will get created.
         When writing to a file that already exists, the file will get overwritten.
-        When writing to a file that's in a directory that doesn't exist, you'll get an error.
+        When writing to a file that's in a directory that doesn't exist, the directory will get created.
 
         :param path: Path to the file
         :param data: Data to write to the file
