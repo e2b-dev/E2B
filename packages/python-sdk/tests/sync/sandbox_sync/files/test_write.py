@@ -8,7 +8,7 @@ def test_write_file(sandbox):
     try:
         sandbox.files.write(None, content)
     except Exception as e:
-        assert "object is not iterable" in str(e)
+        assert "Path or files are required" in str(e)
 
     info = sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
@@ -29,13 +29,13 @@ def test_write_multiple_files(sandbox):
     try:
         sandbox.files.write(None, [])
     except Exception as e:
-        assert "object is not iterable" in str(e)
+        assert "Path or files are required" in str(e)
 
     # Attempt to write with path and file array
     try:
         sandbox.files.write("/path/to/file", [{ "path": "one_test_file.txt", "data": "This is a test file." }])
     except Exception as e:
-        assert "Cannot specify path with array of files" in str(e)
+        assert "Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files." in str(e)
 
     # Attempt to write with one file in array
     info = sandbox.files.write([{ "path": "one_test_file.txt", "data": "This is a test file." }])

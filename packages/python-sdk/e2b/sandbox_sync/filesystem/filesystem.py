@@ -133,7 +133,10 @@ class Filesystem:
         request_timeout: Optional[float] = None,
     ) -> List[EntryInfo]:
         """
-        Writes multiple files.
+        Writes a list of files to the filesystem.
+        When writing to a file that doesn't exist, the file will get created.
+        When writing to a file that already exists, the file will get overwritten.
+        When writing to a file that's in a directory that doesn't exist, you'll get an error.
 
         :param files: list of files to write 
         :param user: Run the operation as this user
@@ -148,20 +151,15 @@ class Filesystem:
         user_or_request_timeout: Optional[float | Username] = None,
         request_timeout_or_none: Optional[float] = None
     ) -> EntryInfo | List[EntryInfo]:
-        """
-        Writes content to a file on the path.
-        When writing to a file that doesn't exist, the file will get created.
-        When writing to a file that already exists, the file will get overwritten.
-        When writing to a file that's in a directory that doesn't exist, you'll get an error.
-        """
-
         path, write_files, user, request_timeout  = None, [], "user", None
         if isinstance(path_or_files, str):
             if isinstance(data_or_user, list):
-                raise Exception("Cannot specify path with array of files")
+                raise Exception("Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files.")
             path, write_files, user, request_timeout = \
                 path_or_files, [{"path": path_or_files, "data": data_or_user}], user_or_request_timeout or "user", request_timeout_or_none
         else:
+            if path_or_files is None:
+                raise Exception("Path or files are required")
             path, write_files, user, request_timeout = \
                 None, path_or_files, data_or_user, user_or_request_timeout
         
