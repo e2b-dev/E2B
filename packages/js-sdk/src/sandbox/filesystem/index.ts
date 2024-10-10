@@ -147,8 +147,14 @@ export class Filesystem {
     dataOrOpts?: WriteData | FilesystemRequestOpts,
     opts?: FilesystemRequestOpts
   ): Promise<EntryInfo | EntryInfo[]> {
+    if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
+      throw new Error('Path or files are required')
+    }
+
     if (typeof pathOrFiles === 'string' && Array.isArray(dataOrOpts)) {
-      throw new Error('Cannot specify path with array of files')
+      throw new Error(
+        'Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files.'
+      )
     }
 
     const { path, writeOpts, writeFiles } =
@@ -159,6 +165,8 @@ export class Filesystem {
             writeFiles: [{ data: dataOrOpts as WriteData }],
           }
         : { path: undefined, writeOpts: dataOrOpts as FilesystemRequestOpts, writeFiles: pathOrFiles as WriteEntry[] }
+
+    if (writeFiles.length === 0) return [] as EntryInfo[]
 
     const blobs = await Promise.all(writeFiles.map((f) => new Response(f.data).blob()))
 

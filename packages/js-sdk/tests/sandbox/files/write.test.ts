@@ -17,7 +17,7 @@ sandboxTest('write file', async ({ sandbox }) => {
     })
     .catch((err) => {
       assert.instanceOf(err, Error)
-      assert.include(err.message, 'Cannot read properties of undefined')
+      assert.include(err.message, 'Path or files are required')
     })
 
   const info = await sandbox.files.write(filename, content)
@@ -47,7 +47,7 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
     })
     .catch((err) => {
       assert.instanceOf(err, Error)
-      assert.include(err.message, 'Cannot read properties of undefined')
+      assert.include(err.message, 'Path or files are required')
     })
 
   // Attempt to write with path and file array
@@ -59,7 +59,10 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
     })
     .catch((err) => {
       assert.instanceOf(err, Error)
-      assert.include(err.message, 'Cannot specify path with array of files')
+      assert.include(
+        err.message,
+        'Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files.'
+      )
     })
 
   // Attempt to write with one file in array
