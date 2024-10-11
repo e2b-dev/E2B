@@ -3,6 +3,9 @@ name: Generate SDK API references
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+      - beta
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
