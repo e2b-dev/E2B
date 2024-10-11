@@ -14,6 +14,24 @@
 --->
 The E2B SDK is made to control the E2B Sandboxes - secure cloud environments for running LLM-generated code. The SDK lets you give your AI app a custom code interpreter.
 
+- ✔️ Works with any LLM and AI framework (see [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) for examples)
+- ✔️ Supports streaming content like charts and stdout, stderr
+- ✔️ Python & JS SDK
+- ✔️ Runs on serverless and edge functions
+- ✔️ Runs AI-generated code in secure sandboxed environments
+- ✔️ 100% open source (including [infrastructure](https://github.com/e2b-dev/infra))
+
+
+##### 💻 Supported language runtimes
+- ✔️ Python
+- [(Beta)](https://e2b.dev/docs/guide/beta-code-interpreter-language-runtimes) JavaScript, R, Java
+
+
+<!---
+<img width="100%" src="/readme-assets/preview.png" alt="Cover image">
+
+--->
+
 <h4 align="center">
   <a href="https://pypi.org/project/e2b/">
     <img alt="Last 1 month downloads for the Python SDK" loading="lazy" width="200" height="20" decoding="async" data-nimg="1"
@@ -69,7 +87,7 @@ E2B Sandbox is a secure cloud environment that allows AI agents and apps. You ca
 
 
 <h1 align="center">
-  E2B SDK
+  Start with E2B SDK
 </h1>
 
 Use this SDK to create and control the E2B Sandboxes.
