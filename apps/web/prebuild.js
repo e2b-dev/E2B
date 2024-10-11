@@ -1,6 +1,17 @@
 const fs = require('fs')
 const path = require('path')
 
+const ApiRefRoutesFilePath = './src/components/Navigation/apiRefRoutes.json'
+
+// Current directory hierarchy:
+//
+// {
+//   'sdk-name': {
+//     'version': {
+//       'module': null
+//     }
+//   }
+// }
 let hierarchy = {}
 
 function buildDirectoryHierarchy(dirPath) {
@@ -18,7 +29,9 @@ function buildDirectoryHierarchy(dirPath) {
   return Object.keys(result).length === 0 ? null : result
 }
 
-function walkDir(dirName, dir, basePath = '', depth = 1) {
+const filesCreated = new Set()
+
+function buildRoutes(dirName, dir, basePath = '', depth = 1) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
   const parentDirName = path.basename(path.dirname(dir))
 
@@ -32,14 +45,16 @@ function walkDir(dirName, dir, basePath = '', depth = 1) {
         }
         const entryName = entry.name
         const childPath = path.join(dir, entry.name)
-        const links = walkDir(entryName, childPath, relativePath, depth + 1)
+        const links = buildRoutes(entryName, childPath, relativePath, depth + 1)
 
         if (links.length > 0) {
           route.href = '/docs/api-reference/' + relativePath
+          // SDK level
           if (depth === 2) {
-            // module level
             const mdxFilePath = path.join(dir, 'page.mdx')
+            if (filesCreated.has(mdxFilePath)) return route
 
+            // Generate SDK version TOC markdown file
             let mdxContent = `# ${dirName}\n\n## ${entryName}\n\n${links
               .map(
                 (link) =>
@@ -65,14 +80,19 @@ function walkDir(dirName, dir, basePath = '', depth = 1) {
               mdxContent = `${versionLinks}\n\n\n${mdxContent}`
             }
 
+            console.log('Generated TOC file:', mdxFilePath)
             fs.writeFileSync(mdxFilePath, mdxContent)
+            filesCreated.add(mdxFilePath)
           }
         }
 
+        // Version level
         if (depth === 3) {
-          // version level
-          const modules = Object.keys(hierarchy[parentDirName][dirName])
+          const mdxFilePath = path.join(dir, 'page.mdx')
+          if (filesCreated.has(mdxFilePath)) return route
 
+          // Generate modules TOC markdown file
+          const modules = Object.keys(hierarchy[parentDirName][dirName])
           let mdxContent = `# ${parentDirName.toLocaleUpperCase()} ${dirName}\n\n${modules
             .map(
               (module) =>
@@ -82,8 +102,9 @@ function walkDir(dirName, dir, basePath = '', depth = 1) {
             )
             .join('\n')}`
 
-          const mdxFilePath = path.join(dir, 'page.mdx')
+          console.log('Generated TOC file:', mdxFilePath)
           fs.writeFileSync(mdxFilePath, mdxContent)
+          filesCreated.add(mdxFilePath)
         }
 
         return route
@@ -100,9 +121,8 @@ function generateApiRefRoutes() {
   }
 
   hierarchy = buildDirectoryHierarchy(apiRefPath)
-  console.log('hierarchy', hierarchy)
 
-  const routes = walkDir('api-reference', apiRefPath)
+  const routes = buildRoutes('api-reference', apiRefPath)
   return routes
 }
 
@@ -114,8 +134,11 @@ const apiRefRoutes = [
 ]
 
 fs.writeFileSync(
-  path.join(__dirname, './src/components/Navigation/apiRefRoutes.json'),
+  path.join(__dirname, ApiRefRoutesFilePath),
   JSON.stringify(apiRefRoutes, null, 2)
 )
 
-console.log('API reference routes generated successfully.')
+console.log(
+  '\n\nAPI reference TOCs and routes file generated successfully:\n\n'
+)
+console.log('routes', JSON.stringify(apiRefRoutes, null, 2), '\n\n')
