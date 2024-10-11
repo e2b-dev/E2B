@@ -8,20 +8,29 @@ set -euo pipefail
 # generate raw api reference markdown files
 npx typedoc
 
-# move to docs (for later use)
-#mkdir -p ../../apps/web/src/app/\(docs\)/docs/api-reference/js-sdk/sandbox
-#mv api_ref/sandbox.md ../../apps/web/src/app/\(docs\)/docs/api-reference/js-sdk/sandbox/page.mdx
-#
-#mkdir -p ../../apps/web/src/app/\(docs\)/docs/api-reference/js-sdk/errors
-#mv api_ref/errors.md ../../apps/web/src/app/\(docs\)/docs/api-reference/js-sdk/errors/page.mdx
-#
-#mkdir -p ../../apps/web/src/app/\(docs\)/docs/api-reference/js-sdk/filesystem
-#mv api_ref/sandbox/filesystem.md ../../apps/web/src/app/\(docs\)/docs/api-reference/js-sdk/filesystem/page.mdx
-#
-#mkdir -p ../../apps/web/src/app/\(docs\)/docs/api-reference/js-sdk/process
-#mv api_ref/sandbox/process.md ../../apps/web/src/app/\(docs\)/docs/api-reference/js-sdk/process/page.mdx
-#
-#mkdir -p ../../apps/web/src/app/\(docs\)/docs/api-reference/js-sdk/pty
-#mv api_ref/sandbox/pty.md ../../apps/web/src/app/\(docs\)/docs/api-reference/js-sdk/pty/page.mdx
-#
-#rm -rf api_ref
+PKG_VERSION="v$(node -p "require('./package.json').version")"
+ROUTES_DIR="../../apps/web/src/app/(docs)/docs/api-reference/js-sdk/${PKG_VERSION}"
+# move to docs web app
+mkdir -p "${ROUTES_DIR}"
+
+rm -rf api_ref/README.md
+
+# Flatten the api_ref directory by moving all nested files to the root level and remove empty subdirectories
+find api_ref -mindepth 2 -type f | while read -r file; do
+    mv "$file" api_ref/
+done
+find api_ref -type d -empty -delete
+
+# Transfrom top level MD files into folders of the same name with page.mdx inside
+find api_ref -maxdepth 1 -type f -name "*.md" | while read -r file; do
+    # Extract the filename without extension
+    filename=$(basename "$file" .md)
+    # Create the directory of the same name in api_ref
+    mkdir -p "api_ref/${filename}"
+    # Move the file inside the newly created directory
+    mv "$file" "api_ref/${filename}/page.mdx"
+done
+
+cp -r api_ref/* "${ROUTES_DIR}"
+
+rm -rf api_ref

@@ -1,0 +1,359 @@
+# sandbox/filesystem
+
+## Enumerations
+
+### FileType
+
+#### Enumeration Members
+
+##### DIR
+
+> **DIR**: `"dir"`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:32
+
+##### FILE
+
+> **FILE**: `"file"`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:31
+
+## Classes
+
+### Filesystem
+
+#### Constructors
+
+##### new Filesystem()
+
+> **new Filesystem**(`transport`, `envdApi`, `connectionConfig`): `Filesystem`
+
+###### Parameters
+
+• **transport**: `Transport`
+
+• **envdApi**: `EnvdApiClient`
+
+• **connectionConfig**: `ConnectionConfig`
+
+###### Returns
+
+`Filesystem`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:58
+
+#### Methods
+
+##### exists()
+
+> **exists**(`path`, `opts`?): `Promise`\<`boolean`\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts`
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:212
+
+##### list()
+
+> **list**(`path`, `opts`?): `Promise`\<`EntryInfo`[]\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts`
+
+###### Returns
+
+`Promise`\<`EntryInfo`[]\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:130
+
+##### makeDir()
+
+> **makeDir**(`path`, `opts`?): `Promise`\<`boolean`\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts`
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:157
+
+##### read()
+
+###### read(path, opts)
+
+> **read**(`path`, `opts`?): `Promise`\<`string`\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts` & `object`
+
+###### Returns
+
+`Promise`\<`string`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:66
+
+###### read(path, opts)
+
+> **read**(`path`, `opts`?): `Promise`\<`Uint8Array`\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts` & `object`
+
+###### Returns
+
+`Promise`\<`Uint8Array`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:67
+
+###### read(path, opts)
+
+> **read**(`path`, `opts`?): `Promise`\<`Blob`\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts` & `object`
+
+###### Returns
+
+`Promise`\<`Blob`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:68
+
+###### read(path, opts)
+
+> **read**(`path`, `opts`?): `Promise`\<`ReadableStream`\<`Uint8Array`\>\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts` & `object`
+
+###### Returns
+
+`Promise`\<`ReadableStream`\<`Uint8Array`\>\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:69
+
+##### remove()
+
+> **remove**(`path`, `opts`?): `Promise`\<`void`\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts`
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:201
+
+##### rename()
+
+> **rename**(`oldPath`, `newPath`, `opts`?): `Promise`\<`EntryInfo`\>
+
+###### Parameters
+
+• **oldPath**: `string`
+
+• **newPath**: `string`
+
+• **opts?**: `FilesystemRequestOpts`
+
+###### Returns
+
+`Promise`\<`EntryInfo`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:176
+
+##### watch()
+
+> **watch**(`path`, `onEvent`, `opts`?): `Promise`\<`WatchHandle`\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **onEvent**
+
+• **opts?**: `FilesystemRequestOpts` & `object`
+
+###### Returns
+
+`Promise`\<`WatchHandle`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:231
+
+##### write()
+
+> **write**(`path`, `data`, `opts`?): `Promise`\<`EntryInfo`\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **data**: `string` \| `ArrayBuffer` \| `Blob` \| `ReadableStream`\<`any`\>
+
+• **opts?**: `FilesystemRequestOpts`
+
+###### Returns
+
+`Promise`\<`EntryInfo`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:96
+
+## Interfaces
+
+### EntryInfo
+
+#### Properties
+
+##### name
+
+> **name**: `string`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:25
+
+##### path
+
+> **path**: `string`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:27
+
+##### type
+
+> **type**: `FileType`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:26
+
+***
+
+### FilesystemRequestOpts
+
+#### Extended by
+
+- `WatchOpts`
+
+#### Properties
+
+##### requestTimeoutMs?
+
+> `optional` **requestTimeoutMs**: `number`
+
+###### Defined in
+
+connectionConfig.ts:11
+
+##### user?
+
+> `optional` **user**: `Username`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:45
+
+***
+
+### WatchOpts
+
+#### Properties
+
+##### onExit()?
+
+> `optional` **onExit**: (`err`) => `void`
+
+###### Parameters
+
+• **err**: `Error`
+
+###### Returns
+
+`void`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:50
+
+##### requestTimeoutMs?
+
+> `optional` **requestTimeoutMs**: `number`
+
+###### Defined in
+
+connectionConfig.ts:11
+
+##### timeout?
+
+> `optional` **timeout**: `number`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:49
+
+##### user?
+
+> `optional` **user**: `Username`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:45
