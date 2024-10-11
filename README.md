@@ -73,7 +73,7 @@ tools as humans do, e.g.:
   E2B SDK
 </h1>
 
-To create and control a Sandbox, use our SDK.
+Use this SDK to create and control the E2B Sandboxes.
 - ✔️ Works with any LLM and AI framework (see [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) for examples)
 - ✔️ Supports streaming content like charts and stdout, stderr
 - ✔️ Python & JS SDK
@@ -100,7 +100,7 @@ Python
 pip install e2b_code_interpreter
 ```
 
-### 2. Execute code with code interpreter inside sandbox
+### 2. Execute code with code interpreter inside Sandbox
 
 **JavaScript**
 ```ts
