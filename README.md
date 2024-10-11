@@ -68,7 +68,6 @@ tools as humans do, e.g.:
 - Coding tools like linters, autocomplete, "go-to defintion"
 - Audio & video editing
 
----
 
 <h1 align="center">
   E2B SDK
@@ -87,8 +86,7 @@ To create and control a Sandbox, use our SDK.
 - ✔️ Python
 - [(Beta)](https://e2b.dev/docs/guide/beta-code-interpreter-language-runtimes) JavaScript, R, Java
 
-
-## 🚀 Quickstart
+---
 
 ### 1. Install SDK
 
@@ -132,8 +130,6 @@ with CodeInterpreter() as sandbox:
 Dive depeer and check out the [JavaScript/TypeScript](https://e2b.dev/docs/hello-world/js) and [Python](https://e2b.dev/docs/hello-world/py) "Hello World" guides to learn how to connect code interpreter LLMs.
 
 > Please visit [documentation](https://e2b.dev/docs) to get started.
-
----
 
 ## Repository Structure
 
