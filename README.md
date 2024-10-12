@@ -58,8 +58,7 @@ The E2B SDK is made to control the E2B Sandboxes - secure cloud environments for
 
 
 ### E2B Sandbox
-E2B Sandbox is a secure cloud environment that allows AI agents and apps. You can run multiple instances of Sandboxes, and have long-running sessions. Inside the Sandboxes, LLMs can use the same
-tools as humans do, e.g.:
+E2B Sandbox is a secure cloud environment that allows AI agents and apps. You can run multiple instances of Sandboxes, and have long-running sessions. Inside the Sandboxes, LLMs can use the same tools as humans do, e.g.:
 
 - Running LLM generated code
 - Cloud browsers
@@ -77,7 +76,6 @@ Use this SDK to create and control the E2B Sandboxes.
 - ✔️ Supports streaming content like charts and stdout, stderr
 - ✔️ Python & JS SDK
 - ✔️ Runs on serverless and edge functions
-- ✔️ Runs AI-generated code in secure sandboxed environments
 - ✔️ 100% open source (including [infrastructure](https://github.com/e2b-dev/infra))
 
 
