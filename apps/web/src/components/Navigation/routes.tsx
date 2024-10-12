@@ -77,7 +77,7 @@ export const routes = [
     title: 'Quickstart',
     links: [
       {
-        title: 'Set up E2B Sandbox',
+        title: 'Start E2B Sandbox',
         href: '/docs/installation',
       },
     ]
@@ -86,7 +86,7 @@ export const routes = [
     title: 'Guides', // How to's
     links: [
       {
-        title: 'Executed AI-generated code',
+        title: 'Execute AI-generated code',
         href: '/docs/a',
       },
       {
@@ -94,12 +94,24 @@ export const routes = [
         href: '/docs/b',
       },
       {
-        title: 'Upload & download files',
+        title: 'Set environment variables',
         href: '/docs/c',
       },
       {
-        title: 'Customize CPU and RAM',
+        title: 'Upload & download files',
         href: '/docs/d',
+      },
+      {
+        title: 'Customize CPU and RAM',
+        href: '/docs/e',
+      },
+      {
+        title: 'Set working directory',
+        href: '/docs/f',
+      },
+      {
+        title: 'Associate specific sandbox with your user',
+        href: '/docs/g',
       }
     ]
   },
@@ -121,6 +133,23 @@ export const routes = [
     ]
   },
   {
+    title: 'Sandbox',
+    links: [
+      {
+        title: 'Lifecycle',
+        href: '/docs/sandbox/lifecycle',
+      },
+      {
+        title: 'Metadata',
+        href: '/docs/sandbox/filesystem',
+      },
+      {
+        title: 'Customization',
+        href: '/docs/sandbox/customization',
+      }
+    ],
+  },
+  {
     title: 'Filesystem',
     links: [
       {
@@ -136,6 +165,7 @@ export const routes = [
         title: 'Overview',
         href: '/docs/process/overview',
       },
+
     ]
   },
   {

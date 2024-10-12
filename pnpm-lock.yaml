@@ -382,7 +382,7 @@ importers:
         specifier: ^8.0.2
         version: 8.3.0(typescript@5.5.3)
       typedoc:
-        specifier: ^0.26.7
+        specifier: ^0.26.8
         version: 0.26.8(typescript@5.5.3)
       typedoc-plugin-markdown:
         specifier: ^4.2.7
