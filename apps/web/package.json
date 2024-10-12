@@ -3,8 +3,9 @@
   "version": "0.1.6",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node prebuild.js && next dev",
+    "prebuild": "node prebuild.js",
+    "build": "node prebuild.js && next build",
     "start": "next start",
     "lint": "next lint",
     "rm-next-cache": "rm -rf .next/cache",
