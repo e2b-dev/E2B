@@ -30,7 +30,8 @@ e2b --help
 
 > To authenticate without the ability to open browser, you can provide
 > `E2B_ACCESS_TOKEN` as an environment variable. Get your `E2B_ACCESS_TOKEN`
-> from [e2b.dev/docs](https://e2b.dev/docs). Then use the CLI like this:
+> from [e2b.dev/docs](https://e2b.dev/docs). (As a reminder:
+Please use E2B_ACCESS_TOKEN instead of E2B_API_KEY, as it's very easy to confuse here.) Then use the CLI like this:
 > `E2B_ACCESS_TOKEN=sk_e2b_... e2b build`
 
 2. Create a `Dockerfile` where you describe how your custom E2B sandbox template
