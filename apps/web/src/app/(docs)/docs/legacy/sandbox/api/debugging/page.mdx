@@ -1,0 +1,14 @@
+export const sections = [
+  { title: 'Logging', id: 'logging' },
+]
+
+# Logging
+
+<LanguageSpecificText>
+  ```js {{ language: 'js', text: "E2B package logs only warnings & errors to the console by default. Below is an example of how to fully customize the logging levels.\n\nFeel free to override the logger with your own implementation with debug, info, warn, and error methods." }}
+  ```
+  ```python {{ language: 'python', text: "E2B package uses the standard Python logging module You can configure the logging level, handlers and format as you would with any other Python application. \n\nBelow is an example of how to configure the logging module to log to the console." }}
+  ```
+</LanguageSpecificText>
+
+<CodeGroupAutoload path="logging/e2b_logging" isRunnable={false} />

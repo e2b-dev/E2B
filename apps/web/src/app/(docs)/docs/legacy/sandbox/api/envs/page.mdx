@@ -1,0 +1,21 @@
+# Setting environment variables
+
+## Global environment variables
+You can set the sandbox's global environment variables when initializing a new sandbox.
+<CodeGroupAutoload
+  path="basics/set_env_vars"
+  isRunnable={false}
+/>
+
+
+## Environment variables per process
+Alternatively, you can set environment variables when starting a new process. These environment variables are accessible only for this process.
+
+<Note>
+Environment variables set when starting a new process have precedence over the environment variables set when initializing the sandbox.
+</Note>
+
+<CodeGroupAutoload
+  path="basics/process_env_vars"
+  isRunnable={true}
+/>
