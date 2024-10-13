@@ -1,0 +1,70 @@
+import Image from 'next/image'
+import imgModel from '@/images/ai-app-e2b-sandbox-model.png'
+import { Check } from 'lucide-react'
+
+import { features } from './features'
+
+# Overview
+**The E2B's sandboxes are isolated cloud environments made specifcially for AI code interpreting or code execution.**
+
+The E2B sandboxes are an ideal fit as a playground for AI assistants like coding copilots, code interpreters, AI data analysts, AI browser assistants, and other AI-powered apps.
+
+## Features
+<div className="flex flex-col items-start space-y-2">
+  {features.map((feature, i) => (
+    <span key={i} className="flex items-center space-x-2">
+      <Check
+        className="w-4 h-4 text-brand-400"
+      />
+      <span className="text-brand-100">{feature}</span>
+    </span>
+  ))}
+</div>
+
+With more features coming in the future:
+- Out-of-the box working monitoring of what's happening inside the sandbox
+- LLM Access control to data, tools, and any internet requests
+- Statefull sandboxes
+- Resumable workflows (pause sandbox and load it later)
+- Unlimited long-running sandboxed
+
+## Comparison to other services
+With LLMs, it's not safe to let the LLM run code and use tools in the same environment where your application is running.
+
+You need to isolate the LLM from the rest of your app and make sure that the LLM can't access your data, tools, and the internet without you knowing about it or giving it explicit access. You need to make sure that the LLM can run untrusted code safely and install libraries on fly.
+The AI apps also often need to run for a long time, and need to be resumable - for example, when waiting for user's consent to make an internet purchase, you need to be able to pause the AI app and resume it later without losing the whole state.
+
+Additionally, the AI apps present need for a new model:
+- How can every user of your AI app have the environment described above for themselves?
+- How can developers easily manage and orchestrate these environments?
+- How can developers easily debug these environments?
+- How to let LLMs use the same tools as humans do on their computers (for example browser, code linters, autocomplete, etc)?
+- How can developers easily monitor what's happening inside these environments?
+- How to scale these environments to billions of instances?
+
+<Image
+  src={imgModel}
+  className="rounded w-full"
+  alt="Separate E2B Sandbox for each instance of your AI app"
+  unoptimized
+/>
+
+E2B Sandboxes are made exactly to solve these challenges. The sandbox is like an isolated runtime or playground for the LLM. **We give you our SDK to spawn and control these sandboxes.**
+
+
+## How sandboxes work under the hood
+When you create a new sandbox session, we start a small VM in our cloud. This VM is running a Ubuntu OS and it takes about 400-600ms to start it.
+
+Inside this sandbox, your AI app can [run code and start any programs](/docs/sandbox/api/process), access the internet to download or upload data, use the [filesystem](/docs/sandbox/api/filesystem), start long running processes such as web servers, and more.
+You can also [upload](/docs/sandbox/api/upload) to sandbox and [download](/docs/sandbox/api/upload) from sandbox any file you want.
+
+To start and control the sandbox, use the [E2B SDK](/docs/getting-started/installation) for Python or JavaScript.
+
+<CodeGroupAutoload
+  title="Starting Sandbox"
+  path="basics/init"
+/>
+
+<Note>
+Make sure you have the `E2B_API_KEY` environment variable set with your [API key](/docs/getting-started/api-key).
+</Note>

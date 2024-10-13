@@ -1,3 +1,5 @@
+from typing import Callable, Dict, Optional
+
 import e2b_connect
 import httpcore
 
@@ -12,6 +14,7 @@ from e2b.connection_config import (
 )
 from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.exceptions import SandboxException
 from e2b.sandbox.process.process_handle import PtySize
 from e2b.sandbox_async.process.process_handle import (
     AsyncProcessHandle,

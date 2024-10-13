@@ -256,6 +256,7 @@ function NavigationGroup({ group, className }) {
           ))}
         </ul>
       </div>
+      <div className="h-px bg-zinc-900/10 dark:bg-white/5 my-4"></div>
     </li>
   )
 }

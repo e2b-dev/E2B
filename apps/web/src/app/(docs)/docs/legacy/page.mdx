@@ -1,0 +1,55 @@
+import { Guides } from '@/components/Guides'
+import { UseCases } from '@/components/UseCases'
+import { HeroPattern } from '@/components/HeroPattern'
+import { Button } from '@/components/Button'
+
+<HeroPattern />
+
+# Code interpreting for your AI app
+E2B's [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter) allows you to add code interpreting capabilities to your AI apps. {{ className: 'lead' }}
+
+With code interpreting, you can build apps like:
+- AI code execution
+- Data analysis with AI
+- AI tutors
+- Reasoning modules for LLM
+
+## Quickstart
+
+### 1. Install SDK
+<CodeGroup isRunnable={false}>
+```bash {{ language: 'js' }}
+npm i @e2b/code-interpreter
+```
+```bash {{ language: 'python' }}
+pip install e2b_code_interpreter
+```
+</CodeGroup>
+
+### 2. Execute code with code interpreter inside sandbox
+<CodeGroup isRunnable={false}>
+```ts {{ language: 'js' }}
+import { CodeInterpreter } from '@e2b/code-interpreter'
+
+const sandbox = await CodeInterpreter.create()
+await sandbox.notebook.execCell('x = 1')
+
+const execution = await sandbox.notebook.execCell('x+=1; x')
+console.log(execution.text)  // outputs 2
+
+await sandbox.close()
+```
+
+```py {{ language: 'python' }}
+from e2b_code_interpreter import CodeInterpreter
+
+with CodeInterpreter() as sandbox:
+    sandbox.notebook.exec_cell("x = 1")
+
+    execution = sandbox.notebook.exec_cell("x+=1; x")
+    print(execution.text)  # outputs 2
+```
+</CodeGroup>
+
+### 3. Hello World guide
+Dive depeer and check out the [JavaScript](/docs/hello-world/js) and [Python](/docs/hello-world/py) Hello World guides to learn how to connect the code interpreter to LLMs.
