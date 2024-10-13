@@ -16,15 +16,15 @@ export function NavigationLink({
   tag?: string
 }) {
   const pathname = usePathname()
-  const active = pathname === link.href
+  const isActive = pathname === link.href
 
   return (
     <Link
       href={link.href}
-      aria-current={active ? 'page' : undefined}
+      aria-current={isActive ? 'page' : undefined}
       className={clsx(
         'flex justify-between py-1 px-2 text-sm transition rounded-md hover:bg-zinc-800 transition-colors',
-        active
+        isActive
           ? 'text-white bg-zinc-800'
           : 'hover:text-white text-zinc-400 bg-transparent',
         className,
@@ -40,12 +40,12 @@ export function NavigationLink({
             >
               {tag}
             </Tag>
-            <span className={clsx('truncate', active ? 'text-white' : '')}>
+            <span className={clsx('truncate', isActive ? 'text-white' : '')}>
               {link.title}
             </span>
           </div>
         ) : (
-          <span className={clsx('truncate', active ? 'text-white' : '')}>
+          <span className={clsx('truncate', isActive ? 'text-white' : '')}>
             {link.title}
           </span>
         )}
