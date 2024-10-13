@@ -8,18 +8,11 @@ import { NavLink } from './routes'
 export function NavigationLink({
   className,
   link,
-  // href,
-  // children,
   tag,
-  // icon,
-  // isAnchorLink = false,
-  // isFontMono = false,
 }: {
 
   className?: string
   link: NavLink
-  // href: string
-  // children: React.ReactNode
   tag?: string
 }) {
   const pathname = usePathname()
