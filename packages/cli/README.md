@@ -34,13 +34,13 @@ e2b --help
 > from [e2b.dev/docs](https://e2b.dev/docs). Then use the CLI like this:
 > `E2B_ACCESS_TOKEN=sk_e2b_... e2b build`.
 
-2. Create a `Dockerfile` where you describe how your custom E2B sandbox template should look like. Majority of **Debian-based linux distros should work as the base image**. Here is an example of a minimal `Dockerfile` for E2B sandbox template:
+2. Create a `Dockerfile` where you describe how your custom E2B sandbox template should look like. Majority of **Debian-based Linux distros should work as the base image**. Here is an example of a minimal `Dockerfile` for E2B sandbox template:
 
 ```Dockerfile
 FROM ubuntu:22.04
 ```
 
-3. Run `e2b build` inside the directory with the `Dockerfile` to create and build the sandbox template. You will get _*template ID*_ that you use for connecting to the sandbox via SDKs and for rebuilding the sandbox template.
+3. Run `e2b build` inside the directory with the `Dockerfile` to create and build the sandbox template. You will get the _*template ID*_ that you use for connecting to the sandbox via SDKs and for rebuilding the sandbox template.
 
 4. Use the **template ID** that you got during the `e2b build` with the Python or JS/TS SDK as the `id` to create sandbox.
 
