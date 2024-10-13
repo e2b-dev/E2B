@@ -84,22 +84,6 @@ E2B Sandbox is a secure cloud environment that allows AI agents and apps. You ca
   Start with E2B SDK
 </h1>
 
-<<<<<<< HEAD
-Use this SDK to create and control the E2B Sandboxes.
-- ✔️ Works with any LLM and AI framework (see [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) for examples)
-- ✔️ Supports streaming content like charts and stdout, stderr
-- ✔️ Python & JS SDK
-- ✔️ Runs on serverless and edge functions
-- ✔️ 100% open source (including [infrastructure](https://github.com/e2b-dev/infra))
-
-
-##### 💻 Supported language runtimes
-- ✔️ Python
-- [(Beta)](https://e2b.dev/docs/guide/beta-code-interpreter-language-runtimes) JavaScript, R, Java
-
-=======
->>>>>>> d342a63cbed29585693bf0e4c4f370523cb6e98c
----
 
 ### 1. Install SDK
 
