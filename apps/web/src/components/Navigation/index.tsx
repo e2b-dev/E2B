@@ -41,7 +41,6 @@ function NavigationGroup({ group, className, isLast }: { group: NavGroup; classN
   return (
     <li className={clsx('relative', className)}>
       <div className="pl-2 mb-1 flex items-center justify-start gap-1">
-        {group.icon}
         <motion.h2
           layout="position"
           className="text-2xs font-medium text-white"
