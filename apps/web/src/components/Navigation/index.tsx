@@ -7,7 +7,7 @@ import {
   motion,
 } from 'framer-motion'
 
-import { useIsInsideMobileNavigation } from '@/components/MobileNavigation'
+import { useIsInsideMobileNavigation } from '@/components/MobileBurgerMenu'
 import { useSectionStore } from '@/components/SectionProvider'
 import {
   routes,
@@ -40,12 +40,15 @@ function NavigationGroup({ group, className, isLast }: { group: NavGroup; classN
 
   return (
     <li className={clsx('relative', className)}>
-      <motion.h2
-        layout="position"
-        className="pl-2 text-2xs font-medium text-white mb-1"
-      >
-        {group.title}
-      </motion.h2>
+      <div className="pl-2 mb-1 flex items-center justify-start gap-1">
+        {group.icon}
+        <motion.h2
+          layout="position"
+          className="text-2xs font-medium text-white"
+        >
+          {group.title}
+        </motion.h2>
+      </div>
       <div className="relative">
         <ul
           role="list"

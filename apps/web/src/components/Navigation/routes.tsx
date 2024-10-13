@@ -1,13 +1,6 @@
 import {
   Home,
   // BarChart,
-  // BookOpen,
-  // Braces,
-  // ChevronRightSquare,
-  // Cog,
-  // Cpu,
-  // DollarSign,
-  // File,
   // FileDown,
   // FileUp,
   // Folder,
@@ -77,6 +70,7 @@ export interface NavSubgroup {
 
 export interface NavGroup {
   title?: string
+  icon?: React.ReactNode
   items: Array<NavLink | NavSubgroup>
   // links?: NavLink[]
   // subgroups?: NavSubgroup[]
@@ -153,23 +147,6 @@ export const routes: NavGroup[] = [
     title: 'AI Code Execution',
     items: [
       {
-        title: 'Data analysis',
-        links: [
-          {
-            title: 'Overview',
-            href: '/docs/hello-world/py',
-          },
-          {
-            title: 'Data visualization',
-            href: '/docs/code-execution/overview',
-          },
-          {
-            title: 'Interactive charts',
-            href: '/docs/code-execution/overview',
-          },
-        ]
-      },
-      {
         title: 'Python',
         href: '/docs/code-execution/python',
       },
@@ -184,6 +161,23 @@ export const routes: NavGroup[] = [
       {
         title: 'Custom language',
         href: '/docs/code-execution/python',
+      },
+      {
+        title: 'AI data analysis',
+        links: [
+          {
+            title: 'Overview',
+            href: '/docs/hello-world/py',
+          },
+          {
+            title: 'Data visualization',
+            href: '/docs/code-execution/overview',
+          },
+          {
+            title: 'Interactive charts',
+            href: '/docs/code-execution/overview',
+          },
+        ]
       },
     ],
   },
@@ -220,7 +214,19 @@ export const routes: NavGroup[] = [
         title: 'Overview',
         href: '/docs/process/overview',
       },
-
+    ]
+  },
+  {
+    title: 'CLI',
+    items: [
+      {
+        title: 'List running sandboxes',
+        href: '/docs/cli/list',
+      },
+      {
+        title: 'Kill all sandboxes',
+        href: '/docs/cli/kill-all',
+      },
     ]
   },
   {

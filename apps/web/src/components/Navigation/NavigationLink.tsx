@@ -23,7 +23,7 @@ export function NavigationLink({
       href={link.href}
       aria-current={isActive ? 'page' : undefined}
       className={clsx(
-        'flex justify-between py-1 px-2 text-sm transition rounded-md hover:bg-zinc-800 transition-colors',
+        'flex justify-between mb-[2px] py-1 px-2 text-sm transition rounded-md hover:bg-zinc-800 transition-colors',
         isActive
           ? 'text-white bg-zinc-800'
           : 'hover:text-white text-zinc-400 bg-transparent',

@@ -100,21 +100,18 @@ function SocialLink({
 
 function SmallPrint() {
   return (
-    <div className="flex flex-col w-full items-center px-10 justify-between gap-5 pt-8 dark:border-white/5 sm:flex-row">
+    <div className="flex flex-col w-full items-center justify-between gap-5 pt-8 dark:border-white/5 sm:flex-row">
       <div className="flex flex-col items-center justify-start lg:items-start">
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
           &copy; FoundryLabs, Inc. {new Date().getFullYear()}. All rights reserved.
         </p>
-        <p className="text-xs text-zinc-600 dark:text-zinc-400">
-          548 Market Street #83122, San Francisco, CA 94104
-        </p>
       </div>
       <div className="flex gap-4">
         <SocialLink
-          href="https://twitter.com/e2b_dev"
+          href="https://x.com/e2b_dev"
           icon={TwitterIcon}
         >
-          Follow us on Twitter
+          Follow us on X (f.k.a. Twitter)
         </SocialLink>
         <SocialLink
           href="https://github.com/e2b-dev"

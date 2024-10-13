@@ -18,7 +18,7 @@ function MenuIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
       aria-hidden="true"
       {...props}
     >
-      <path d="M.5 1h9M.5 8h9M.5 4.5h9"/>
+      <path d="M.5 1h9M.5 8h9M.5 4.5h9" />
     </svg>
   )
 }
@@ -32,7 +32,7 @@ function XIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
       aria-hidden="true"
       {...props}
     >
-      <path d="m1.5 1 7 7M8.5 1l-7 7"/>
+      <path d="m1.5 1 7 7M8.5 1l-7 7" />
     </svg>
   )
 }
@@ -40,9 +40,9 @@ function XIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 const IsInsideMobileNavigationContext = createContext(false)
 
 function MobileNavigationDialog({
-                                  isOpen,
-                                  close,
-                                }: {
+  isOpen,
+  close,
+}: {
   isOpen: boolean
   close: () => void
 }) {
@@ -91,7 +91,7 @@ function MobileNavigationDialog({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 top-14 bg-zinc-400/20 backdrop-blur-sm dark:bg-black/40"/>
+          <div className="fixed inset-0 top-14 bg-zinc-400/20 backdrop-blur-sm dark:bg-black/40" />
         </Transition.Child>
 
         <Dialog.Panel>
@@ -104,7 +104,7 @@ function MobileNavigationDialog({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Header/>
+            <Header />
           </Transition.Child>
 
           <Transition.Child
@@ -120,7 +120,7 @@ function MobileNavigationDialog({
               layoutScroll
               className="fixed bottom-0 left-0 top-14 w-full overflow-y-auto overflow-x-hidden bg-white px-4 pb-4 pt-6 shadow-lg shadow-zinc-900/10 ring-1 ring-zinc-900/7.5 dark:bg-zinc-900 dark:ring-zinc-800 min-[416px]:max-w-sm sm:px-6 sm:pb-10"
             >
-              <Navigation/>
+              <Navigation />
             </motion.div>
           </Transition.Child>
         </Dialog.Panel>
@@ -145,7 +145,7 @@ export const useMobileNavigationStore = create<{
   toggle: () => set(state => ({ isOpen: !state.isOpen })),
 }))
 
-export function MobileNavigation() {
+export function MobileBurgerMenu() {
   const isInsideMobileNavigation = useIsInsideMobileNavigation()
   const { isOpen, toggle, close } = useMobileNavigationStore()
   const ToggleIcon = isOpen ? XIcon : MenuIcon
@@ -158,7 +158,7 @@ export function MobileNavigation() {
         aria-label="Toggle navigation"
         onClick={toggle}
       >
-        <ToggleIcon className="w-2.5 stroke-zinc-900 dark:stroke-white"/>
+        <ToggleIcon className="w-2.5 stroke-zinc-900 dark:stroke-white" />
       </button>
       {!isInsideMobileNavigation && (
         <Suspense fallback={null}>
