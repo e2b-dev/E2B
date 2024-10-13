@@ -3,19 +3,33 @@
 </p>
 
 <h1 align="center">
-  Sandbox for AI Apps & Agents
+  E2B SDK
 </h1>
 
+<!---
 <h3 align="center">
-  Secure sandboxed cloud environments made for AI agents and AI apps
+  SDK made to control the E2B Sandboxes - secure cloud environments for running LLM-generated code
 </h3>
+--->
+The E2B SDK is made to control the E2B Sandboxes - secure cloud environments for running LLM-generated code. The SDK lets you give your AI app a custom code interpreter.
 
-<h4 align="center">
-  <a href="https://e2b.dev/docs">Docs</a> |
-  <a href="https://e2b.dev">Website</a> |
-  <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
-  <a href="https://twitter.com/e2b_dev">Twitter</a>
-</h4>
+- ✔️ Works with any LLM and AI framework (see [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) for examples)
+- ✔️ Supports streaming content like charts and stdout, stderr
+- ✔️ Python & JS SDK
+- ✔️ Runs on serverless and edge functions
+- ✔️ Runs AI-generated code in secure sandboxed environments
+- ✔️ 100% open source (including [infrastructure](https://github.com/e2b-dev/infra))
+
+
+##### 💻 Supported language runtimes
+- ✔️ Python
+- [(Beta)](https://e2b.dev/docs/guide/beta-code-interpreter-language-runtimes) JavaScript, R, Java
+
+
+<!---
+<img width="100%" src="/readme-assets/preview.png" alt="Cover image">
+
+--->
 
 <h4 align="center">
   <a href="https://pypi.org/project/e2b/">
@@ -28,22 +42,42 @@
   </a>
 </h4>
 
-<img width="100%" src="https://raw.githubusercontent.com/e2b-dev/E2B/main/readme-assets/preview.png" alt="Cover image">
+---
+### What is E2B?
 
-## What is E2B?
+[E2B](https://www.e2b.dev/) is an open-source runtime for running AI-generated code in secure cloud Sandboxes. It's tailor-made for agentic & AI use cases.
 
-E2B Sandbox is a secure sandboxed cloud environment made for AI agents and AI
-apps. Sandboxes allow AI agents and apps to have long running cloud secure
-environments. In these environments, large language models can use the same
-tools as humans do. For example:
+<!---
+<h4 align="center">
+  <a href="https://e2b.dev/docs">Docs</a> |
+  <a href="https://e2b.dev">Website</a> |
+  <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
+  <a href="https://twitter.com/e2b_dev">Twitter</a>
+</h4>
+--->
 
+
+<div align='center'>
+<!-- <a href="https://e2b.dev/docs" target="_blank">
+<img src="https://img.shields.io/badge/docs-%2300acee.svg?color=143D52&style=for-the-badge&logo=x&logoColor=white" alt=docs style="margin-bottom: 5px;"/></a>  -->
+<a href="https://twitter.com/e2b_dev" target="_blank">
+<img src="https://img.shields.io/badge/x (twitter)-%2300acee.svg?color=000000&style=for-the-badge&logo=x&logoColor=white" alt=linkedin style="margin-bottom: 5px;"/></a> 
+<a href="https://discord.com/invite/U7KEcGErtQ" target="_blank">
+<img src="https://img.shields.io/badge/discord -%2300acee.svg?color=143D52&style=for-the-badge&logo=discord&logoColor=white" alt=discord style="margin-bottom: 5px;"/></a> 
+<a href="https://www.linkedin.com/company/e2b-dev/" target="_blank">
+<img src="https://img.shields.io/badge/linkedin-%2300acee.svg?color=000000&style=for-the-badge&logo=linkedin&logoColor=white" alt=linkedin style="margin-bottom: 5px;"/></a> 
+</div align='center'>
+
+
+### E2B Sandbox
+E2B Sandbox is a secure cloud environment that allows AI agents and apps. You can run multiple instances of Sandboxes, and have long-running sessions. Inside the Sandboxes, LLMs can use the same tools as humans do, e.g.:
+
+- Running LLM generated code
 - Cloud browsers
 - GitHub repositories and CLIs
 - Coding tools like linters, autocomplete, "go-to defintion"
-- Running LLM generated code
 - Audio & video editing
 
-**The E2B sandbox can be connected to any LLM and any AI agent or app.**
 
 ## Getting Started & Documentation
 

@@ -337,13 +337,12 @@ export const buildCommand = new commander.Command('build')
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${
-          connectionConfig.domain
-        }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
-          dockerBuildArgs,
-        )
-          .map(([key, value]) => `--build-arg="${key}=${value}"`)
-          .join(' ')}`
+        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${connectionConfig.domain
+          }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
+            dockerBuildArgs,
+          )
+            .map(([key, value]) => `--build-arg="${key}=${value}"`)
+            .join(' ')}`
         child_process.execSync(cmd, {
           stdio: 'inherit',
           cwd: root,
@@ -422,33 +421,29 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox
 
 # Start sandbox
-sandbox = Sandbox(template="${
-          aliases?.length ? aliases[0] : template.templateID
-        }")
+sandbox = Sandbox("${aliases?.length ? aliases[0] : template.templateID}")
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview
 
-# Close sandbox once done
-sandbox.close()`)
+# Kill sandbox once done
+sandbox.kill()`)
 
         const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
 
 // Start sandbox
-const sandbox = await Sandbox.create({ template: '${
-          aliases?.length ? aliases[0] : template.templateID
-        }' })
+const sandbox = await Sandbox.create('${aliases?.length ? aliases[0] : template.templateID}')
 
 // Interact with sandbox. Learn more here:
 // https://e2b.dev/docs/sandbox/overview
 
-// Close sandbox once done
-await sandbox.close()`)
+// Kill sandbox once done
+await sandbox.kill()`)
 
-        const examplesMessage = `You can use E2B Python or JS SDK to spawn sandboxes now.
+        const examplesMessage = `You can use E2B Python or JS SDK to create sandboxes now.
 Find more here - ${asPrimary(
           'https://e2b.dev/docs/guide/custom-sandbox',
-        )} in ${asBold('Spawn and control your sandbox')} section.`
+        )} in ${asBold('Create and control your sandbox')} section.`
 
         const exampleHeader = boxen.default(examplesMessage, {
           padding: {
