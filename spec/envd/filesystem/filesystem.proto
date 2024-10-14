@@ -13,7 +13,7 @@ service Filesystem {
 
     // Non-streaming versions of WatchDir
     rpc WatchDirStart(WatchDirRequest) returns (WatchDirStartResponse);
-    rpc WatchDirPoll(WatchDirPollRequest) returns (WatchDirPollResponse);
+    rpc WatchDirGet(WatchDirGetRequest) returns (WatchDirGetResponse);
     rpc WatchDirStop(WatchDirStopRequest) returns (WatchDirStopResponse);
 }
 
@@ -93,12 +93,12 @@ message WatchDirStartResponse {
     string watcherId = 1;
 }
 
-message WatchDirPollRequest {
-    string watcherId = 1;
+message WatchDirGetRequest {
+    string watcher_id = 1;
     uint32 offset = 2;
 }
 
-message WatchDirPollResponse {
+message WatchDirGetResponse {
     repeated FilesystemEvent events = 1;
 }
 
