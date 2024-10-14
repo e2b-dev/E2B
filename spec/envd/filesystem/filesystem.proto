@@ -90,12 +90,11 @@ message WatchDirResponse {
 }
 
 message WatchDirStartResponse {
-    string watcherId = 1;
+    string watcher_id = 1;
 }
 
 message WatchDirGetRequest {
     string watcher_id = 1;
-    uint32 offset = 2;
 }
 
 message WatchDirGetResponse {
@@ -103,7 +102,7 @@ message WatchDirGetResponse {
 }
 
 message WatchDirStopRequest {
-      string watcherId = 1;
+      string watcher_id = 1;
 }
 
 message WatchDirStopResponse {}

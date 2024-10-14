@@ -7,16 +7,38 @@ def test_watch_directory_changes(sandbox: Sandbox):
     dirname = "test_watch_dir"
     filename = "test_watch.txt"
     content = "This file will be watched."
+
+    sandbox.files.make_dir(dirname)
+    handle = sandbox.files.watch(dirname)
+    sandbox.files.write(f"{dirname}/{filename}", content)
+
+    events = handle.get_new_events()
+    assert len(events) == 3
+    assert events[0].type == FilesystemEventType.CREATE
+    assert events[0].name == filename
+    assert events[1].type == FilesystemEventType.CHMOD
+    assert events[1].name == filename
+    assert events[2].type == FilesystemEventType.WRITE
+    assert events[2].name == filename
+
+    handle.stop()
+
+
+def test_watch_iterated(sandbox: Sandbox):
+    dirname = "test_watch_dir"
+    filename = "test_watch.txt"
+    content = "This file will be watched."
     new_content = "This file has been modified."
 
     sandbox.files.make_dir(dirname)
+    handle = sandbox.files.watch(dirname)
     sandbox.files.write(f"{dirname}/{filename}", content)
 
-    handle = sandbox.files.watch(dirname)
+    events = handle.get_new_events()
+    assert len(events) == 3
 
     sandbox.files.write(f"{dirname}/{filename}", new_content)
-
-    events = handle.get()
+    events = handle.get_new_events()
     for event in events:
         if event.type == FilesystemEventType.WRITE and event.name == filename:
             break

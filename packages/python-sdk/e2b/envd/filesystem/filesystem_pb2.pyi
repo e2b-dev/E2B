@@ -156,20 +156,16 @@ class WatchDirResponse(_message.Message):
     ) -> None: ...
 
 class WatchDirStartResponse(_message.Message):
-    __slots__ = ("watcherId",)
-    WATCHERID_FIELD_NUMBER: _ClassVar[int]
-    watcherId: str
-    def __init__(self, watcherId: _Optional[str] = ...) -> None: ...
+    __slots__ = ("watcher_id",)
+    WATCHER_ID_FIELD_NUMBER: _ClassVar[int]
+    watcher_id: str
+    def __init__(self, watcher_id: _Optional[str] = ...) -> None: ...
 
 class WatchDirGetRequest(_message.Message):
-    __slots__ = ("watcher_id", "offset")
+    __slots__ = ("watcher_id",)
     WATCHER_ID_FIELD_NUMBER: _ClassVar[int]
-    OFFSET_FIELD_NUMBER: _ClassVar[int]
     watcher_id: str
-    offset: int
-    def __init__(
-        self, watcher_id: _Optional[str] = ..., offset: _Optional[int] = ...
-    ) -> None: ...
+    def __init__(self, watcher_id: _Optional[str] = ...) -> None: ...
 
 class WatchDirGetResponse(_message.Message):
     __slots__ = ("events",)
@@ -180,10 +176,10 @@ class WatchDirGetResponse(_message.Message):
     ) -> None: ...
 
 class WatchDirStopRequest(_message.Message):
-    __slots__ = ("watcherId",)
-    WATCHERID_FIELD_NUMBER: _ClassVar[int]
-    watcherId: str
-    def __init__(self, watcherId: _Optional[str] = ...) -> None: ...
+    __slots__ = ("watcher_id",)
+    WATCHER_ID_FIELD_NUMBER: _ClassVar[int]
+    watcher_id: str
+    def __init__(self, watcher_id: _Optional[str] = ...) -> None: ...
 
 class WatchDirStopResponse(_message.Message):
     __slots__ = ()

@@ -26,27 +26,21 @@ class WatchHandle:
         Stop watching the directory. After you close the watcher you won't be able to get the events anymore.
         """
         try:
-            self._rpc.watch_dir_stop(WatchDirStopRequest(watcherId=self._watcher_id))
+            self._rpc.watch_dir_stop(WatchDirStopRequest(watcher_id=self._watcher_id))
         except Exception as e:
             raise handle_rpc_exception(e)
 
         self._closed = True
 
-    def get(self, offset: int = 0) -> List[FilesystemEvent]:
+    def get_new_events(self) -> List[FilesystemEvent]:
         """
-        Get the events that occurred in the watched directory till now.
-        If you are calling it multiple times, you can pass the offset to get the new events only.
+        Get the latest events that have occurred in the watched directory since the last call, or from the beginning of the watching, up to now.
         """
         if self._closed:
             raise SandboxException("The watcher is already closed")
 
         try:
-            r = self._rpc.watch_dir_get(
-                WatchDirGetRequest(
-                    watcher_id=self._watcher_id,
-                    offset=offset,
-                )
-            )
+            r = self._rpc.watch_dir_get(WatchDirGetRequest(watcher_id=self._watcher_id))
         except Exception as e:
             raise handle_rpc_exception(e)
 

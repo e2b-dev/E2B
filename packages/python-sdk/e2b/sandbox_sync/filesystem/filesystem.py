@@ -330,4 +330,4 @@ class Filesystem:
         except Exception as e:
             raise handle_rpc_exception(e)
 
-        return WatchHandle(self._rpc, r.watcherId)
+        return WatchHandle(self._rpc, r.watcher_id)
