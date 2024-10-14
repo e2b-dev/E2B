@@ -146,21 +146,21 @@ export const routes: NavGroup[] = [
     title: '* Code Interpreting',
     items: [
       {
-        title: '* Analyze data with AI',
+        title: 'Analyze data with AI',
         links: [
           {
             title: 'Overview',
-            href: '/docs/code-interpreting/analyze-data',
+            href: '/docs/code-interpreting/analyze-data-with-ai',
           },
           {
             title: 'Pre-installed libraries',
-            href: '/docs/code-interpreting/analyze-data/pre-installed-libraries',
-          },
-          {
-            title: '* Example',
-            href: '/docs/code-interpreting/analyze-data/example',
+            href: '/docs/code-interpreting/analyze-data-with-ai/pre-installed-libraries',
           },
         ],
+      },
+      {
+        title: '* Connect your data',
+        href: '/docs/code-interpreting/connect-your-data',
       },
       {
         title: 'Supported languages',
@@ -188,12 +188,8 @@ export const routes: NavGroup[] = [
         ]
       },
       {
-        title: '* Create charts & visualizations',
-        href: '/docs/code-interpreting/create-charts',
-      },
-      {
-        title: '* Connect your data',
-        href: '/docs/code-interpreting/connect-your-data',
+        title: '* Code interpreting results',
+        href: '/docs/code-interpreting/todo',
       },
     ]
   },
