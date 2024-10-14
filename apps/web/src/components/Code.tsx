@@ -314,7 +314,6 @@ export function CodeGroup({
     <CodeGroupHeader
       title={title ?? ''}
       selectedIndex={tabGroupProps.selectedIndex}
-      isFileName={isFileName}
       isTerminalCommand={isTerminalCommand}
     >
       {children}
