@@ -150,11 +150,11 @@ export const routes: NavGroup[] = [
         links: [
           {
             title: 'Overview',
-            href: '/docs/code-interpreting/analyze-data',
+            href: '/docs/code-interpreting/analyze-data-with-ai',
           },
           {
             title: 'Pre-installed libraries',
-            href: '/docs/code-interpreting/analyze-data/pre-installed-libraries',
+            href: '/docs/code-interpreting/analyze-data-with-ai/pre-installed-libraries',
           },
         ],
       },
