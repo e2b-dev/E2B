@@ -303,16 +303,14 @@ class Filesystem:
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-        timeout: Optional[float] = 60,
     ) -> WatchHandle:
         """
-        Watches directory for filesystem events. The watch will be closed after the timeout.
-        To get the events, you need to iterate over the returned WatchHandle.
+        Watches directory for filesystem events.
+        To get events, use the `get_new_events` method on the returned handle.
 
         :param path: Path to a directory that will be watched
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
-        :param timeout: Timeout for the watch, after which the watch will be closed
         :return: Watcher handle
         """
         try:
@@ -321,7 +319,6 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                timeout=timeout,
                 headers={
                     **authentication_header(user),
                     KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),

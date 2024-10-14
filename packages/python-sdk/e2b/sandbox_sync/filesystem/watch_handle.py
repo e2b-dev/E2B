@@ -23,7 +23,7 @@ class WatchHandle:
 
     def stop(self):
         """
-        Stop watching the directory. After you close the watcher you won't be able to get the events anymore.
+        Stop watching the directory. After you stop the watcher you won't be able to get the events anymore.
         """
         try:
             self._rpc.watch_dir_stop(WatchDirStopRequest(watcher_id=self._watcher_id))
@@ -37,7 +37,7 @@ class WatchHandle:
         Get the latest events that have occurred in the watched directory since the last call, or from the beginning of the watching, up to now.
         """
         if self._closed:
-            raise SandboxException("The watcher is already closed")
+            raise SandboxException("The watcher is already stopped")
 
         try:
             r = self._rpc.watch_dir_get(WatchDirGetRequest(watcher_id=self._watcher_id))
