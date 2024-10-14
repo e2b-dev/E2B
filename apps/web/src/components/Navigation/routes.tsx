@@ -156,11 +156,11 @@ export const routes: NavGroup[] = [
             title: 'Pre-installed libraries',
             href: '/docs/code-interpreting/analyze-data/pre-installed-libraries',
           },
-          {
-            title: '* Example',
-            href: '/docs/code-interpreting/analyze-data/example',
-          },
         ],
+      },
+      {
+        title: '* Connect your data',
+        href: '/docs/code-interpreting/connect-your-data',
       },
       {
         title: 'Supported languages',
@@ -188,12 +188,8 @@ export const routes: NavGroup[] = [
         ]
       },
       {
-        title: '* Create charts & visualizations',
-        href: '/docs/code-interpreting/create-charts',
-      },
-      {
-        title: '* Connect your data',
-        href: '/docs/code-interpreting/connect-your-data',
+        title: '* Code interpreting results',
+        href: '/docs/code-interpreting/todo',
       },
     ]
   },
