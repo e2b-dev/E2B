@@ -80,7 +80,7 @@ export const routes: NavGroup[] = [
             href: '/docs/quickstart/upload-download-files',
           },
           {
-            title: '* Install custom packages',
+            title: 'Install custom packages',
             href: '/docs/quickstart/install-custom-packages',
           },
         ],
