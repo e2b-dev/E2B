@@ -146,7 +146,7 @@ export const routes: NavGroup[] = [
     title: '* Code Interpreting',
     items: [
       {
-        title: '* Analyze data with AI',
+        title: 'Analyze data with AI',
         links: [
           {
             title: 'Overview',
