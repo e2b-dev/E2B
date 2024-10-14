@@ -2,7 +2,13 @@ from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from typing import (
+    ClassVar as _ClassVar,
+    Iterable as _Iterable,
+    Mapping as _Mapping,
+    Optional as _Optional,
+    Union as _Union,
+)
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -20,6 +26,7 @@ class EventType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     EVENT_TYPE_REMOVE: _ClassVar[EventType]
     EVENT_TYPE_RENAME: _ClassVar[EventType]
     EVENT_TYPE_CHMOD: _ClassVar[EventType]
+
 FILE_TYPE_UNSPECIFIED: FileType
 FILE_TYPE_FILE: FileType
 FILE_TYPE_DIRECTORY: FileType
@@ -36,7 +43,9 @@ class MoveRequest(_message.Message):
     DESTINATION_FIELD_NUMBER: _ClassVar[int]
     source: str
     destination: str
-    def __init__(self, source: _Optional[str] = ..., destination: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self, source: _Optional[str] = ..., destination: _Optional[str] = ...
+    ) -> None: ...
 
 class MoveResponse(_message.Message):
     __slots__ = ("entry",)
@@ -86,7 +95,12 @@ class EntryInfo(_message.Message):
     name: str
     type: FileType
     path: str
-    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[FileType, str]] = ..., path: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        name: _Optional[str] = ...,
+        type: _Optional[_Union[FileType, str]] = ...,
+        path: _Optional[str] = ...,
+    ) -> None: ...
 
 class ListDirRequest(_message.Message):
     __slots__ = ("path",)
@@ -98,7 +112,9 @@ class ListDirResponse(_message.Message):
     __slots__ = ("entries",)
     ENTRIES_FIELD_NUMBER: _ClassVar[int]
     entries: _containers.RepeatedCompositeFieldContainer[EntryInfo]
-    def __init__(self, entries: _Optional[_Iterable[_Union[EntryInfo, _Mapping]]] = ...) -> None: ...
+    def __init__(
+        self, entries: _Optional[_Iterable[_Union[EntryInfo, _Mapping]]] = ...
+    ) -> None: ...
 
 class WatchDirRequest(_message.Message):
     __slots__ = ("path",)
@@ -112,13 +128,17 @@ class FilesystemEvent(_message.Message):
     TYPE_FIELD_NUMBER: _ClassVar[int]
     name: str
     type: EventType
-    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[EventType, str]] = ...) -> None: ...
+    def __init__(
+        self, name: _Optional[str] = ..., type: _Optional[_Union[EventType, str]] = ...
+    ) -> None: ...
 
 class WatchDirResponse(_message.Message):
     __slots__ = ("start", "filesystem", "keepalive")
+
     class StartEvent(_message.Message):
         __slots__ = ()
         def __init__(self) -> None: ...
+
     class KeepAlive(_message.Message):
         __slots__ = ()
         def __init__(self) -> None: ...
@@ -128,7 +148,12 @@ class WatchDirResponse(_message.Message):
     start: WatchDirResponse.StartEvent
     filesystem: FilesystemEvent
     keepalive: WatchDirResponse.KeepAlive
-    def __init__(self, start: _Optional[_Union[WatchDirResponse.StartEvent, _Mapping]] = ..., filesystem: _Optional[_Union[FilesystemEvent, _Mapping]] = ..., keepalive: _Optional[_Union[WatchDirResponse.KeepAlive, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        start: _Optional[_Union[WatchDirResponse.StartEvent, _Mapping]] = ...,
+        filesystem: _Optional[_Union[FilesystemEvent, _Mapping]] = ...,
+        keepalive: _Optional[_Union[WatchDirResponse.KeepAlive, _Mapping]] = ...,
+    ) -> None: ...
 
 class WatchDirStartResponse(_message.Message):
     __slots__ = ("watcherId",)
@@ -136,19 +161,23 @@ class WatchDirStartResponse(_message.Message):
     watcherId: str
     def __init__(self, watcherId: _Optional[str] = ...) -> None: ...
 
-class WatchDirPollRequest(_message.Message):
-    __slots__ = ("watcherId", "offset")
-    WATCHERID_FIELD_NUMBER: _ClassVar[int]
+class WatchDirGetRequest(_message.Message):
+    __slots__ = ("watcher_id", "offset")
+    WATCHER_ID_FIELD_NUMBER: _ClassVar[int]
     OFFSET_FIELD_NUMBER: _ClassVar[int]
-    watcherId: str
+    watcher_id: str
     offset: int
-    def __init__(self, watcherId: _Optional[str] = ..., offset: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self, watcher_id: _Optional[str] = ..., offset: _Optional[int] = ...
+    ) -> None: ...
 
-class WatchDirPollResponse(_message.Message):
+class WatchDirGetResponse(_message.Message):
     __slots__ = ("events",)
     EVENTS_FIELD_NUMBER: _ClassVar[int]
     events: _containers.RepeatedCompositeFieldContainer[FilesystemEvent]
-    def __init__(self, events: _Optional[_Iterable[_Union[FilesystemEvent, _Mapping]]] = ...) -> None: ...
+    def __init__(
+        self, events: _Optional[_Iterable[_Union[FilesystemEvent, _Mapping]]] = ...
+    ) -> None: ...
 
 class WatchDirStopRequest(_message.Message):
     __slots__ = ("watcherId",)

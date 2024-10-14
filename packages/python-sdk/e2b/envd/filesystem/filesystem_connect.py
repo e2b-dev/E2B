@@ -83,11 +83,11 @@ class FilesystemClient:
             json=json,
             **opts,
         )
-        self._watch_dir_poll = connect.Client(
+        self._watch_dir_get = connect.Client(
             pool=pool,
             async_pool=async_pool,
-            url=f"{base_url}/{FilesystemName}/WatchDirPoll",
-            response_type=filesystem_dot_filesystem__pb2.WatchDirPollResponse,
+            url=f"{base_url}/{FilesystemName}/WatchDirGet",
+            response_type=filesystem_dot_filesystem__pb2.WatchDirGetResponse,
             compressor=compressor,
             json=json,
             **opts,
@@ -172,15 +172,15 @@ class FilesystemClient:
     ) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.WatchDirStartResponse]:
         return self._watch_dir_start.acall_unary(req, **opts)
 
-    def watch_dir_poll(
-        self, req: filesystem_dot_filesystem__pb2.WatchDirPollRequest, **opts
-    ) -> filesystem_dot_filesystem__pb2.WatchDirPollResponse:
-        return self._watch_dir_poll.call_unary(req, **opts)
+    def watch_dir_get(
+        self, req: filesystem_dot_filesystem__pb2.WatchDirGetRequest, **opts
+    ) -> filesystem_dot_filesystem__pb2.WatchDirGetResponse:
+        return self._watch_dir_get.call_unary(req, **opts)
 
-    def awatch_dir_poll(
-        self, req: filesystem_dot_filesystem__pb2.WatchDirPollRequest, **opts
-    ) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.WatchDirPollResponse]:
-        return self._watch_dir_poll.acall_unary(req, **opts)
+    def awatch_dir_get(
+        self, req: filesystem_dot_filesystem__pb2.WatchDirGetRequest, **opts
+    ) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.WatchDirGetResponse]:
+        return self._watch_dir_get.acall_unary(req, **opts)
 
     def watch_dir_stop(
         self, req: filesystem_dot_filesystem__pb2.WatchDirStopRequest, **opts
