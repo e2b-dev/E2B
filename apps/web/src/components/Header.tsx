@@ -10,7 +10,7 @@ import {
   useMobileNavigationStore,
 } from '@/components/MobileBurgerMenu'
 import { Logo } from '@/components/Logo'
-import { MobileSearch, Search } from '@/components/Search'
+import { MobileSearch } from '@/components/Search'
 import { useLocalStorage } from 'usehooks-ts'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
 
@@ -99,7 +99,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
           <DocumentationTypeLink pathname={pathname} href="/docs/reference" title="Reference" />
         </div>
       </div>
-      {isDocs && <Search />}
+      {/* {isDocs && <Search />} */}
 
       {/* Mobile logo + burger menu */}
       <div className="flex items-center gap-5 lg:hidden">
