@@ -10,7 +10,6 @@ import {
   useMobileNavigationStore,
 } from '@/components/MobileBurgerMenu'
 import { Logo } from '@/components/Logo'
-import { MobileSearch } from '@/components/Search'
 import { useLocalStorage } from 'usehooks-ts'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
 
@@ -51,7 +50,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
   const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8])
 
   const pathname = usePathname()
-  const isDocs = pathname?.startsWith('/docs')
+  // const isDocs = pathname?.startsWith('/docs')
   const isAuth = pathname?.startsWith('/auth')
 
 
@@ -127,7 +126,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
               />
             </ul>
           </nav>
-          {isDocs && <MobileSearch />}
+          {/* {isDocs && <MobileSearch />} */}
           {/* <div className="hidden min-[540px]:contents">
             <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/docs'>
               Docs

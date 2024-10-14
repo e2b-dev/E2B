@@ -292,6 +292,7 @@ export function CodeGroup({
   children,
   title,
   isTerminalCommand,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isFileName,
   path,
   ...props
