@@ -292,10 +292,7 @@ export const buildCommand = new commander.Command('build')
         }
 
         const template = await requestBuildTemplate(
-          accessToken,
           body,
-          !!config,
-          relativeConfigPath,
           templateID,
         )
         templateID = template.templateID
@@ -374,7 +371,6 @@ export const buildCommand = new commander.Command('build')
 
         console.log('Waiting for build to finish...')
         await waitForBuildFinish(
-          accessToken,
           templateID,
           template.buildID,
           name,
@@ -389,7 +385,6 @@ export const buildCommand = new commander.Command('build')
   )
 
 async function waitForBuildFinish(
-  accessToken: string,
   templateID: string,
   buildID: string,
   name?: string,
@@ -418,32 +413,22 @@ async function waitForBuildFinish(
         )
         break
       case 'ready': {
-        const pythonExample = asPython(`from e2b import Sandbox
+        const pythonExample = asPython(`from e2b import Sandbox, AsyncSandbox
 
-# Start sandbox
+# Create sync sandbox
 sandbox = Sandbox("${aliases?.length ? aliases[0] : template.templateID}")
 
-# Interact with sandbox. Learn more here:
-# https://e2b.dev/docs/sandbox/overview
-
-# Kill sandbox once done
-sandbox.kill()`)
+# Create async sandbox
+sandbox = await AsyncSandbox.create("${aliases?.length ? aliases[0] : template.templateID}")`)
 
         const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
 
-// Start sandbox
-const sandbox = await Sandbox.create('${aliases?.length ? aliases[0] : template.templateID}')
+// Create sandbox
+const sandbox = await Sandbox.create('${aliases?.length ? aliases[0] : template.templateID}')`)
 
-// Interact with sandbox. Learn more here:
-// https://e2b.dev/docs/sandbox/overview
-
-// Kill sandbox once done
-await sandbox.kill()`)
-
-        const examplesMessage = `You can use E2B Python or JS SDK to create sandboxes now.
-Find more here - ${asPrimary(
-          'https://e2b.dev/docs/guide/custom-sandbox',
-        )} in ${asBold('Create and control your sandbox')} section.`
+        const examplesMessage = `You can now use the template to create custom sandboxes.\nLearn more on ${asPrimary(
+          'https://e2b.dev/docs',
+        )}`
 
         const exampleHeader = boxen.default(examplesMessage, {
           padding: {
@@ -561,10 +546,7 @@ function getDockerfile(root: string, file?: string) {
 }
 
 async function requestBuildTemplate(
-  accessToken: string,
   args: e2b.paths['/templates']['post']['requestBody']['content']['application/json'],
-  hasConfig: boolean,
-  configPath: string,
   templateID?: string,
 ): Promise<
   Omit<
