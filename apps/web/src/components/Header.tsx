@@ -4,17 +4,34 @@ import { forwardRef, useEffect } from 'react'
 import Link from 'next/link'
 import clsx from 'clsx'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { MobileNavigation, useIsInsideMobileNavigation, useMobileNavigationStore } from '@/components/MobileNavigation'
+import {
+  MobileBurgerMenu,
+  useIsInsideMobileNavigation,
+  useMobileNavigationStore,
+} from '@/components/MobileBurgerMenu'
 import { Logo } from '@/components/Logo'
-import { MobileSearch, Search } from '@/components/Search'
-import { Auth } from '@/components/Auth'
-import { HeaderSeparator } from '@/components/HeaderUtils'
 import { useLocalStorage } from 'usehooks-ts'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
 
 import dynamic from 'next/dynamic'
 import { config } from '../../config'
 import { usePathname } from 'next/navigation'
+
+
+function DocumentationTypeLink({ pathname, href, title }: { pathname: string | null, href: string, title: string }) {
+  if (!pathname) return null
+  return (
+    <Link
+      className={clsx(
+        'hover:text-white hover:cursor-pointer text-sm font-medium px-2 py-1 rounded-md',
+        pathname.startsWith(href) ? 'text-white bg-zinc-800' : 'text-neutral-400'
+      )}
+      href={href}
+    >
+      {title}
+    </Link>
+  )
+}
 
 // No SSR to avoid hydration mismatch
 const TopLevelNavItem = dynamic(() => import('@/components/TopLevelNavItem'), {
@@ -33,7 +50,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
   const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8])
 
   const pathname = usePathname()
-  const isDocs = pathname?.startsWith('/docs')
+  // const isDocs = pathname?.startsWith('/docs')
   const isAuth = pathname?.startsWith('/auth')
 
 
@@ -50,7 +67,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
       ref={ref}
       className={clsx(
         className,
-        'fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-8',
+        'fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-6',
         !isInsideMobileNavigation && 'backdrop-blur-sm dark:backdrop-blur',
       )}
       style={
@@ -67,51 +84,60 @@ export const Header = forwardRef(function Header({ className }, ref) {
           'bg-zinc-900/7.5 dark:bg-white/7.5',
         )}
       />
-      <div className="relative top-1 hidden items-start justify-start lg:flex">
+
+      {/* Desktop logo */}
+      <div className="relative top-1 hidden items-center justify-start lg:flex gap-4">
         <Link
           href="/"
           aria-label="Home"
         >
           <Logo className="h-6" />
         </Link>
-      </div>
-      {isDocs && <Search />}
-      <div className="flex items-center gap-5 lg:hidden">
-        <MobileNavigation />
-        <Link
-          href="/"
-          aria-label="Home"
-        >
-          <Logo className="h-6" />
-        </Link>
-      </div>
-      {!isAuth && <div className="flex items-center gap-4">
-        <nav className="hidden md:block">
-          <ul
-            role="list"
-            className="flex items-center gap-4"
-          >
-            <TopLevelNavItem
-              href={config.github.url}
-              stat={githubStars}
-              statType="githubStars"
-              icon={<GitHubIcon className="h-5 w-5 fill-current" />}
-            />
-          </ul>
-        </nav>
-        <HeaderSeparator />
-        {isDocs && <MobileSearch />}
-        <div className="hidden min-[540px]:contents">
-          <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/docs'>
-            Docs
-          </Link>
-          <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/dashboard'>
-            Dashboard
-          </Link>
-          <HeaderSeparator />
-          <Auth />
+        <div className='flex items-center gap-1'>
+          <DocumentationTypeLink pathname={pathname} href="/docs" title="Documentation" />
+          <DocumentationTypeLink pathname={pathname} href="/docs/reference" title="* Reference" />
         </div>
       </div>
+      {/* {isDocs && <Search />} */}
+
+      {/* Mobile logo + burger menu */}
+      <div className="flex items-center gap-5 lg:hidden">
+        <MobileBurgerMenu />
+        <Link
+          href="/"
+          aria-label="Home"
+        >
+          <Logo className="h-6" />
+        </Link>
+      </div>
+
+      {!isAuth &&
+        <div className="flex items-center gap-4">
+          <nav className="hidden md:block">
+            <ul
+              role="list"
+              className="flex items-center gap-4"
+            >
+              <TopLevelNavItem
+                href={config.github.url}
+                stat={githubStars}
+                statType="githubStars"
+                icon={<GitHubIcon className="h-5 w-5 fill-current" />}
+              />
+            </ul>
+          </nav>
+          {/* {isDocs && <MobileSearch />} */}
+          {/* <div className="hidden min-[540px]:contents">
+            <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/docs'>
+              Docs
+            </Link>
+            <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/dashboard'>
+              Dashboard
+            </Link>
+            <HeaderSeparator />
+            <Auth />
+          </div> */}
+        </div>
       }
     </motion.div>
   )

@@ -38,7 +38,7 @@ export function Layout({
                 lg:block
                 lg:w-[var(--sidebar-nav-width)]
                 lg:overflow-y-auto
-                lg:px-6
+                lg:px-4
                 lg:pb-8
               "
             >

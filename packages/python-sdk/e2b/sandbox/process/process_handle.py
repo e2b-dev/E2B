@@ -37,4 +37,4 @@ class ProcessExitException(SandboxException, ProcessResult):
     """
 
     def __str__(self):
-        return f"Process exited with code {self.exit_code} and error: {self.error}\n{self.stderr}"
+        return f"Process exited with code {self.exit_code} and error:\n{self.stderr}"

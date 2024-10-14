@@ -235,7 +235,8 @@ class Sandbox(SandboxSetup, SandboxApi):
         self.kill()
 
     @overload
-    def kill(self, request_timeout: Optional[float] = None) -> bool: ...
+    def kill(self, request_timeout: Optional[float] = None) -> bool:
+        ...
 
     @overload
     @staticmethod
@@ -245,7 +246,8 @@ class Sandbox(SandboxSetup, SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> bool: ...
+    ) -> bool:
+        ...
 
     @class_method_variant("_cls_kill")
     def kill(self, request_timeout: Optional[float] = None) -> bool:  # type: ignore
@@ -272,7 +274,9 @@ class Sandbox(SandboxSetup, SandboxApi):
         self,
         timeout: int,
         request_timeout: Optional[float] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
+
     @overload
     @staticmethod
     def set_timeout(
@@ -282,7 +286,9 @@ class Sandbox(SandboxSetup, SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
+
     @class_method_variant("_cls_set_timeout")
     def set_timeout(  # type: ignore
         self,
