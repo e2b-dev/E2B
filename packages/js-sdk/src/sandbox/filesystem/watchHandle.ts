@@ -54,7 +54,7 @@ export class WatchHandle {
   /**
    * Stop watching the directory.
    */
-  async close() {
+  async stop() {
     this.handleStop()
   }
 

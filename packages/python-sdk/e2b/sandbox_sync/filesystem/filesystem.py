@@ -13,7 +13,6 @@ from e2b.connection_config import (
 from e2b.envd.api import ENVD_API_FILES_ROUTE, handle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.exceptions import SandboxException
 from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
@@ -299,43 +298,33 @@ class Filesystem:
                     return False
             raise handle_rpc_exception(e)
 
-    def watch(
+    def watch_dir(
         self,
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-        timeout: Optional[float] = 60,
     ) -> WatchHandle:
         """
-        Watches directory for filesystem events. The watch will be closed after the timeout.
-        To get the events, you need to iterate over the returned WatchHandle.
+        Watches directory for filesystem events.
+        To get events, use the `get_new_events` method on the returned handle.
 
         :param path: Path to a directory that will be watched
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
-        :param timeout: Timeout for the watch, after which the watch will be closed
         :return: Watcher handle
         """
-        events = self._rpc.watch_dir(
-            filesystem_pb2.WatchDirRequest(path=path),
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
-            timeout=timeout,
-            headers={
-                **authentication_header(user),
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
-        )
-
         try:
-            start_event = events.__next__()
-
-            if not start_event.HasField("start"):
-                raise SandboxException(
-                    f"Failed to start watch: expected start event, got {start_event}",
-                )
-
-            return WatchHandle(events=events)
+            r = self._rpc.watch_dir_start(
+                filesystem_pb2.WatchDirRequest(path=path),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
+                headers={
+                    **authentication_header(user),
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                },
+            )
         except Exception as e:
             raise handle_rpc_exception(e)
+
+        return WatchHandle(self._rpc, r.watcher_id)

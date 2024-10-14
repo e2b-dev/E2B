@@ -470,17 +470,22 @@ class WatchHandle()
 Handle for watching filesystem events. It is used to iterate over the events in the watched directory.
 
 
-#### close
+#### stop
 
 ```python
-def close()
+def stop()
 ```
 
-Stop watching the directory.
+Stop watching the directory. After you stop the watcher you won't be able to get the events anymore.
 
-**Warnings**:
 
-  You won't get any event if you don't iterate over the handle before closing it.
+#### get\_new\_events
+
+```python
+def get_new_events() -> List[FilesystemEvent]
+```
+
+Get the latest events that have occurred in the watched directory since the last call, or from the beginning of the watching, up to now.
 
 
 
@@ -635,25 +640,23 @@ Creates a new directory and all directories along the way if needed on the speci
 True if the directory was created, False if the directory already exists
 
 
-#### watch
+#### watch\_dir
 
 ```python
-def watch(path: str,
-          user: Username = "user",
-          request_timeout: Optional[float] = None,
-          timeout: Optional[float] = 60) -> WatchHandle
+def watch_dir(path: str,
+              user: Username = "user",
+              request_timeout: Optional[float] = None) -> WatchHandle
 ```
 
-Watches directory for filesystem events. The watch will be closed after the timeout.
+Watches directory for filesystem events.
 
-To get the events, you need to iterate over the returned WatchHandle.
+To get events, use the `get_new_events` method on the returned handle.
 
 **Arguments**:
 
 - `path`: Path to a directory that will be watched
 - `user`: Run the operation as this user
 - `request_timeout`: Timeout for the request
-- `timeout`: Timeout for the watch, after which the watch will be closed
 
 **Returns**:
 

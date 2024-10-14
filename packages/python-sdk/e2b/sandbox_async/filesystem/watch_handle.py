@@ -26,7 +26,7 @@ class AsyncWatchHandle:
 
         self._wait = asyncio.create_task(self._handle_events())
 
-    async def close(self):
+    async def stop(self):
         """
         Stop watching the directory.
         """

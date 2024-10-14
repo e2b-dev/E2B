@@ -7,8 +7,14 @@ service Filesystem {
     rpc MakeDir(MakeDirRequest) returns (MakeDirResponse);
     rpc Move(MoveRequest) returns (MoveResponse);
     rpc ListDir(ListDirRequest) returns (ListDirResponse);
-    rpc WatchDir(WatchDirRequest) returns (stream WatchDirResponse);
     rpc Remove(RemoveRequest) returns (RemoveResponse);
+
+    rpc WatchDir(WatchDirRequest) returns (stream WatchDirResponse);
+
+    // Non-streaming versions of WatchDir
+    rpc WatchDirStart(WatchDirRequest) returns (WatchDirStartResponse);
+    rpc WatchDirGet(WatchDirGetRequest) returns (WatchDirGetResponse);
+    rpc WatchDirStop(WatchDirStopRequest) returns (WatchDirStopResponse);
 }
 
 message MoveRequest {
@@ -66,6 +72,11 @@ message WatchDirRequest {
     string path = 1;
 }
 
+message FilesystemEvent {
+    string name = 1;
+    EventType type = 2;
+}
+
 message WatchDirResponse {
     oneof event {
         StartEvent start = 1;
@@ -75,13 +86,26 @@ message WatchDirResponse {
 
     message StartEvent {}
 
-    message FilesystemEvent {
-        string name = 1;
-        EventType type = 2;
-    }
-
     message KeepAlive {}
 }
+
+message WatchDirStartResponse {
+    string watcher_id = 1;
+}
+
+message WatchDirGetRequest {
+    string watcher_id = 1;
+}
+
+message WatchDirGetResponse {
+    repeated FilesystemEvent events = 1;
+}
+
+message WatchDirStopRequest {
+      string watcher_id = 1;
+}
+
+message WatchDirStopResponse {}
 
 enum EventType {
     EVENT_TYPE_UNSPECIFIED = 0;
