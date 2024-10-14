@@ -2,7 +2,7 @@ from typing import List
 
 from e2b import SandboxException
 from e2b.envd.filesystem import filesystem_connect
-from e2b.envd.filesystem.filesystem_pb2 import WatchDirStopRequest, WatchDirPollRequest
+from e2b.envd.filesystem.filesystem_pb2 import WatchDirStopRequest, WatchDirGetRequest
 from e2b.envd.rpc import handle_rpc_exception
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
@@ -32,7 +32,7 @@ class WatchHandle:
 
         self._closed = True
 
-    def get_events(self, offset: int = 0) -> List[FilesystemEvent]:
+    def get(self, offset: int = 0) -> List[FilesystemEvent]:
         """
         Get the events that occurred in the watched directory till now.
         If you are calling it multiple times, you can pass the offset to get the new events only.
@@ -41,9 +41,9 @@ class WatchHandle:
             raise SandboxException("The watcher is already closed")
 
         try:
-            r = self._rpc.watch_dir_poll(
-                WatchDirPollRequest(
-                    watcherId=self._watcher_id,
+            r = self._rpc.watch_dir_get(
+                WatchDirGetRequest(
+                    watcher_id=self._watcher_id,
                     offset=offset,
                 )
             )
