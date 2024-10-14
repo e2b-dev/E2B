@@ -1,55 +1,42 @@
 import { Guides } from '@/components/Guides'
-import { UseCases } from '@/components/UseCases'
 import { HeroPattern } from '@/components/HeroPattern'
 import { Button } from '@/components/Button'
 
+import { Quickstart } from '@/components/Quickstart'
+import { Concepts } from '@/components/Concepts'
+import { UseCases } from '@/components/UseCases'
+
 <HeroPattern />
 
-# Code interpreting for your AI app
-E2B's [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter) allows you to add code interpreting capabilities to your AI apps. {{ className: 'lead' }}
+# E2B Documentation
+Here you'll find all the guides, concepts, and API reference for developing with E2B.
 
-With code interpreting, you can build apps like:
-- AI code execution
-- Data analysis with AI
-- AI tutors
-- Reasoning modules for LLM
-
-## Quickstart
-
-### 1. Install SDK
 <CodeGroup isRunnable={false}>
 ```bash {{ language: 'js' }}
-npm i @e2b/code-interpreter
+npm i e2b
 ```
 ```bash {{ language: 'python' }}
-pip install e2b_code_interpreter
+pip install e2b
 ```
 </CodeGroup>
 
-### 2. Execute code with code interpreter inside sandbox
-<CodeGroup isRunnable={false}>
-```ts {{ language: 'js' }}
-import { CodeInterpreter } from '@e2b/code-interpreter'
+## What is E2B?
+E2B is an [open-source](https://github.com/e2b-dev) infrastructure that allows you run to AI-generated code in secure isolated sandboxes in the cloud.
+To start and control sandboxes, use our [Python SDK](https://pypi.org/project/e2b/) or [JavaScript SDK](https://www.npmjs.com/package/e2b). {{ className: 'lead' }}
 
-const sandbox = await CodeInterpreter.create()
-await sandbox.notebook.execCell('x = 1')
+The E2B Sandbox is a small isolated VM. You can think of it as a small computer for the AI model. You can run many sandboxes at once. Typically you run separate sandbox for each LLM, user, or AI agent session in your app.
+For example, if you were building an AI data analysis chatbot, you would start the sandbox for every user session.
 
-const execution = await sandbox.notebook.execCell('x+=1; x')
-console.log(execution.text)  // outputs 2
+Some of the typical use cases for E2B are AI data analysis or visualization, running AI-generated code of various languages, playground for coding agents, environment for codegen evals, or running full AI-generated apps like in [Fragments](https://github.com/e2b-dev/fragments).
 
-await sandbox.close()
-```
+## Quickstart
+<Quickstart/>
 
-```py {{ language: 'python' }}
-from e2b_code_interpreter import CodeInterpreter
+## [TODO] Code interpreting
+1. Analyze data with LLM & E2B
+2. Create charts & visualizations
 
-with CodeInterpreter() as sandbox:
-    sandbox.notebook.exec_cell("x = 1")
 
-    execution = sandbox.notebook.exec_cell("x+=1; x")
-    print(execution.text)  # outputs 2
-```
-</CodeGroup>
+## Learn the core concepts
+<Concepts/>
 
-### 3. Hello World guide
-Dive depeer and check out the [JavaScript](/docs/hello-world/js) and [Python](/docs/hello-world/py) Hello World guides to learn how to connect the code interpreter to LLMs.

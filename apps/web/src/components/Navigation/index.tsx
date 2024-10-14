@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import React, { useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import {
@@ -55,7 +55,7 @@ function NavigationGroup({ group, className, isLast }: { group: NavGroup; classN
         >
           <>
             {group.items?.map(item => (
-              <>
+              <React.Fragment key={item.title}>
                 {(item as any).links ? (
                   <NavigationSubgroup subgroup={item as NavSubgroup} />
                 ) : (
@@ -64,7 +64,7 @@ function NavigationGroup({ group, className, isLast }: { group: NavGroup; classN
                     className="font-medium"
                   />
                 )}
-              </>
+              </React.Fragment>
             ))}
           </>
         </ul>
@@ -83,7 +83,7 @@ export function Navigation(props) {
       <ul role="list">
         {routes.map((group, groupIndex) => (
           <NavigationGroup
-            key={group.title}
+            key={groupIndex}
             group={group}
             className={groupIndex === 0 ? 'md:mt-0' : undefined}
             isLast={groupIndex === routes.length - 1}

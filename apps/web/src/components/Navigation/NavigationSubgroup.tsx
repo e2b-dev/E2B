@@ -16,7 +16,10 @@ export function NavigationSubgroup({ subgroup }: { subgroup: NavSubgroup }) {
         onClick={toggleExpand}
         className="group flex items-center justify-between w-full text-left px-2 py-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
       >
-        <h3 className="text-sm font-medium text-zinc-400 group-hover:text-white">{subgroup.title}</h3>
+        <div className="flex items-center justify-start gap-1">
+          {subgroup.icon}
+          <h3 className="text-sm font-medium text-zinc-400 group-hover:text-white">{subgroup.title}</h3>
+        </div>
         {isExpanded ? (
           <ChevronDown className="w-4 h-4 ml-2 text-zinc-400 group-hover:text-white" />
         ) : (
