@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, quotes */
 import { mdxAnnotations } from 'mdx-annotations'
 import remarkGfm from 'remark-gfm'
+import remarkToc from 'remark-toc'
 import { visit } from 'unist-util-visit'
 import { readFile } from 'fs/promises'
 import path from 'path'
@@ -87,5 +88,5 @@ export const remarkPlugins = [
   processCodeGroupAutoload,
   mdxAnnotations.remark,
   remarkGfm,
-  loadFileSnippet
+  loadFileSnippet,
 ]

@@ -76,7 +76,7 @@ export const routes: NavGroup[] = [
             href: '/docs/quickstart/connect-llms',
           },
           {
-            title: '* Upload & download files',
+            title: 'Upload & download files',
             href: '/docs/quickstart/upload-download-files',
           },
           {
@@ -89,6 +89,10 @@ export const routes: NavGroup[] = [
         title: '* Support',
         href: '/docs/support',
         icon: <MessagesSquare size={16} />,
+      },
+      {
+        title: 'Migrating from SDK v0.* to v1.*',
+        href: '/docs/quickstart/migrating-from-v0',
       },
     ],
   },
@@ -297,6 +301,15 @@ export const routes: NavGroup[] = [
       {
         title: '* Run commands in background',
         href: '/docs/process/overview',
+      },
+    ]
+  },
+  {
+    title: '* Async Python SDK',
+    items: [
+      {
+        title: '* Overview',
+        href: '/docs/sdk/overview',
       },
     ]
   },
