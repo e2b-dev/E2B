@@ -21,7 +21,7 @@ class WatchHandle:
         self._watcher_id = watcher_id
         self._closed = False
 
-    def close(self):
+    def stop(self):
         """
         Stop watching the directory. After you close the watcher you won't be able to get the events anymore.
         """

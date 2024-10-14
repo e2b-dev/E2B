@@ -2,7 +2,13 @@ import pytest
 
 from asyncio import Event
 
-from e2b import NotFoundException, AsyncSandbox, FilesystemEvent, FilesystemEventType
+from e2b import (
+    NotFoundException,
+    AsyncSandbox,
+    FilesystemEvent,
+    FilesystemEventType,
+    SandboxException,
+)
 
 
 async def test_watch_directory_changes(async_sandbox: AsyncSandbox):
@@ -26,7 +32,7 @@ async def test_watch_directory_changes(async_sandbox: AsyncSandbox):
 
     await event_triggered.wait()
 
-    await handle.close()
+    await handle.stop()
 
 
 async def test_watch_non_existing_directory(async_sandbox: AsyncSandbox):
@@ -36,4 +42,9 @@ async def test_watch_non_existing_directory(async_sandbox: AsyncSandbox):
         await async_sandbox.files.watch(dirname, on_event=lambda e: None)
 
 
-# TODO: Add test for nonexistent file
+async def test_watch_file(async_sandbox: AsyncSandbox):
+    filename = "test_watch.txt"
+    await async_sandbox.files.write(filename, "This file will be watched.")
+
+    with pytest.raises(SandboxException):
+        await async_sandbox.files.watch(filename, on_event=lambda e: None)

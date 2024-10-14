@@ -2,19 +2,9 @@ import time
 
 from e2b import Sandbox
 
-watcher = None
+sandbox = Sandbox()
 
-
-def create_watcher(sandbox):  # $HighlightLine
-    # Start filesystem watcher for the /home directory
-    watcher = sandbox.filesystem.watch_dir("/home")  # $HighlightLine
-    watcher.add_event_listener(lambda event: print(event))  # $HighlightLine
-    watcher.start()  # $HighlightLine
-
-
-sandbox = Sandbox(template="base")
-
-create_watcher(sandbox)  # $HighlightLine
+watcher = sandbox.files.watch("/home")  # $HighlightLine
 
 # Create files in the /home directory inside the playground
 # We'll receive notifications for these events through the watcher we created above.
@@ -22,7 +12,11 @@ for i in range(10):
     # `filesystem.write()` will trigger two events:
     # 1. 'Create' when the file is created
     # 2. 'Write' when the file is written to
-    sandbox.filesystem.write(f"/home/file{i}.txt", f"Hello World {i}!")
+    sandbox.files.write(f"/home/file{i}.txt", f"Hello World {i}!")
     time.sleep(1)
 
-sandbox.close()
+for event in watcher.get():
+    print(f"Event: {event.type} {event.name}")  # $HighlightLine
+
+watcher.stop()
+sandbox.kill()
