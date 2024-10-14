@@ -8,8 +8,8 @@
 
 This CLI tool allows you to build and manage E2B sandbox templates.
 
-You define your sandbox template with a `e2b.Dockerfile` and then use the CLI `e2b template build` to build the sandbox template.
-You can then create a sandbox from template with E2B SDKs and run your AI agents and execute code.
+You define your sandbox template with an `e2b.Dockerfile` and then use the CLI `e2b template build` to build the sandbox template.
+You can then create a sandbox from a template with E2B SDKs and run your AI agents or execute code.
 
 The `e2b.Dockerfile` is the same as for Docker, but you can only use **Debian-based Linux distros** as the base image.
 
@@ -34,22 +34,22 @@ e2b --help
 > from [e2b.dev/docs](https://e2b.dev/docs). Then use the CLI like this:
 > `E2B_ACCESS_TOKEN=sk_e2b_... e2b build`.
 
-2. Create a `e2b.Dockerfile` where you describe how your custom E2B sandbox template should look like. Majority of **Debian-based Linux distros should work as the base image**. Here is an example of a minimal `Dockerfile` for E2B sandbox template:
+2. Create an `e2b.Dockerfile` where you describe how your custom E2B sandbox template should look like. The majority of **Debian-based Linux distros should work as the base image**. Here is an example of a minimal `Dockerfile` for an E2B sandbox template:
 
 ```Dockerfile
 FROM ubuntu:22.04
 ```
 
-3. Run `e2b template build` inside the directory with the `e2b.Dockerfile` to create and build the sandbox template. You will get the _*template ID*_ that you use for create the sandbox from template with E2B SDKs. The `e2b.toml` file will be created automatically in the same directory
+3. Run `e2b template build` inside the directory with the `e2b.Dockerfile` to create and build the sandbox template. You will get the _*template ID*_ to use for creating sandboxes with E2B SDKs. The `e2b.toml` file will be created automatically in the same directory
 
-4. Use the **template ID** that you got during the `e2b template build` with the Python or JS/TS SDK as the `id` to create sandbox
+4. Use the **template ID** that you got during the `e2b template build` with the Python or JS/TS SDK as the `id` to create a sandbox
 
 5. Rebuild the sandbox template by running `e2b template build` in the directory with the `e2b.Dockerfile` and `e2b.toml` files
 
 ## Commands
 
 All commands can be called with a `--path <path-to-dir>` flag that changes the
-directory where the command will be called, without the need to call `cd`.
+directory where the command will be called without the need to call `cd`.
 
 ```md
 -V, --version Display E2B CLI version
