@@ -1,0 +1,18 @@
+# Run Python code
+Use the `runCode`/`run_code` method to run Python code inside the sandbox.
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+const execution = await sbx.runCode('print("Hello, world!")')
+console.log(execution)
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox()
+execution = sbx.run_code('print("Hello, world!")')
+print(execution)
+```
+</CodeGroup>

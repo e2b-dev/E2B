@@ -95,7 +95,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
         </Link>
         <div className='flex items-center gap-1'>
           <DocumentationTypeLink pathname={pathname} href="/docs" title="Documentation" />
-          <DocumentationTypeLink pathname={pathname} href="/docs/reference" title="Reference" />
+          <DocumentationTypeLink pathname={pathname} href="/docs/reference" title="* Reference" />
         </div>
       </div>
       {/* {isDocs && <Search />} */}

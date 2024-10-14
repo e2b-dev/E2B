@@ -91,7 +91,7 @@ export const routes: NavGroup[] = [
         icon: <MessagesSquare size={16} />,
       },
       {
-        title: 'Migrating from SDK v0.* to v1.*',
+        title: '* Migrating from SDK v0.* to v1.*',
         href: '/docs/quickstart/migrating-from-v0',
       },
     ],
@@ -147,15 +147,53 @@ export const routes: NavGroup[] = [
     items: [
       {
         title: '* Analyze data with AI',
-        href: '/docs/code-interpreting/overview',
+        links: [
+          {
+            title: 'Overview',
+            href: '/docs/code-interpreting/analyze-data',
+          },
+          {
+            title: 'Pre-installed libraries',
+            href: '/docs/code-interpreting/analyze-data/pre-installed-libraries',
+          },
+          {
+            title: '* Example',
+            href: '/docs/code-interpreting/analyze-data/example',
+          },
+        ],
+      },
+      {
+        title: 'Supported languages',
+        links: [
+          {
+            title: 'Overview',
+            href: '/docs/code-interpreting/supported-languages',
+          },
+          {
+            title: 'Python',
+            href: '/docs/code-interpreting/supported-languages/python',
+          },
+          {
+            title: 'JavaScript',
+            href: '/docs/code-interpreting/supported-languages/javascript',
+          },
+          {
+            title: 'R',
+            href: '/docs/code-interpreting/supported-languages/r',
+          },
+          {
+            title: 'Bash',
+            href: '/docs/code-interpreting/supported-languages/bash',
+          },
+        ]
       },
       {
         title: '* Create charts & visualizations',
-        href: '/docs/code-interpreting/overview',
+        href: '/docs/code-interpreting/create-charts',
       },
       {
         title: '* Connect your data',
-        href: '/docs/code-interpreting/overview',
+        href: '/docs/code-interpreting/connect-your-data',
       },
     ]
   },
