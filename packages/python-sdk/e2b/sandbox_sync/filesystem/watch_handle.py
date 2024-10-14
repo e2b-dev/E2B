@@ -1,7 +1,9 @@
-from typing import Any, Generator
+from typing import List
 
+from e2b import SandboxException
+from e2b.envd.filesystem import filesystem_connect
+from e2b.envd.filesystem.filesystem_pb2 import WatchDirStopRequest, WatchDirGetRequest
 from e2b.envd.rpc import handle_rpc_exception
-from e2b.envd.filesystem.filesystem_pb2 import EventType, WatchDirResponse
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
 
@@ -12,31 +14,45 @@ class WatchHandle:
 
     def __init__(
         self,
-        events: Generator[WatchDirResponse, Any, None],
+        rpc: filesystem_connect.FilesystemClient,
+        watcher_id: str,
     ):
-        self._events = events
+        self._rpc = rpc
+        self._watcher_id = watcher_id
+        self._closed = False
 
-    def __iter__(self):
-        return self._handle_events()
-
-    def close(self):
+    def stop(self):
         """
-        Stop watching the directory.
-
-        Warning:
-            You won't get any event if you don't iterate over the handle before closing it.
+        Stop watching the directory. After you stop the watcher you won't be able to get the events anymore.
         """
-        self._events.close()
-
-    def _handle_events(self):
         try:
-            for event in self._events:
-                if event.HasField("filesystem"):
-                    event_type = map_event_type(event.filesystem.type)
-                    if event_type:
-                        yield FilesystemEvent(
-                            name=event.filesystem.name,
-                            type=event_type,
-                        )
+            self._rpc.watch_dir_stop(WatchDirStopRequest(watcher_id=self._watcher_id))
         except Exception as e:
             raise handle_rpc_exception(e)
+
+        self._closed = True
+
+    def get_new_events(self) -> List[FilesystemEvent]:
+        """
+        Get the latest events that have occurred in the watched directory since the last call, or from the beginning of the watching, up to now.
+        """
+        if self._closed:
+            raise SandboxException("The watcher is already stopped")
+
+        try:
+            r = self._rpc.watch_dir_get(WatchDirGetRequest(watcher_id=self._watcher_id))
+        except Exception as e:
+            raise handle_rpc_exception(e)
+
+        events = []
+        for event in r.events:
+            event_type = map_event_type(event.type)
+            if event_type:
+                events.append(
+                    FilesystemEvent(
+                        name=event.name,
+                        type=event_type,
+                    )
+                )
+
+        return events
