@@ -22,10 +22,10 @@ E2B_API_KEY=e2b_***
 Install the E2B SDK to your project by running the following command in your terminal.
 <CodeGroup isTerminalCommand>
 ```bash {{ language: 'js' }}
-npm i e2b dotenv
+npm i @e2b/code-interpreter dotenv
 ```
 ```bash {{ language: 'python' }}
-pip install e2b python-dotenv
+pip install e2b_code_interpreter python-dotenv
 ```
 </CodeGroup>
 
@@ -34,7 +34,7 @@ We'll write the minimal code for starting Sandbox, executing Python inside it an
 <CodeGroup>
 ```ts {{ language: 'js', description: 'index.ts' }}
 import 'dotenv/config'
-import { Sandbox } from 'e2b'
+import { Sandbox } from '@e2b/code-interpreter'
 
 const sbx = await Sandbox.create() // By default the sandbox is alive for 5 minutes
 const execution = await sbx.runCode('print("hello world")') // Execute Python inside the sandbox
@@ -47,7 +47,7 @@ console.log(files)
 ```python {{ language: 'python', description: 'main.py' }}
 from dotenv import load_dotenv
 load_dotenv()
-from e2b import Sandbox
+from e2b_code_interpreter import Sandbox
 
 sbx = Sandbox() # By default the sandbox is alive for 5 minutes
 execution = sbx.run_code("print('hello world')") # Execute Python inside the sandbox

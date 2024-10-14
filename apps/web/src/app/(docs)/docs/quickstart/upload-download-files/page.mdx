@@ -8,7 +8,7 @@ An alternative way to get your data to the sandbox is to create a [(TODO: link)c
 ## Upload file
 <CodeGroup>
 ```ts {{ language: 'js' }}
-import { Sandbox } from 'e2b'
+import { Sandbox } from '@e2b/code-interpreter'
 
 // Read local file
 const content = fs.readFileSync('/local/file')
@@ -19,7 +19,7 @@ await sbx.files.write('/home/user/my-file', content)
 ```
 
 ```python {{ language: 'python' }}
-from e2b import Sandbox
+from e2b_code_interpreter import Sandbox
 
 sbx = Sandbox.create()
 
@@ -37,7 +37,7 @@ We're working on a better solution.
 
 <CodeGroup>
 ```ts {{ language: 'js' }}
-import { Sandbox } from 'e2b'
+import { Sandbox } from '@e2b/code-interpreter'
 
 // Read local files
 const fileA = fs.readFileSync('/local/file/a')
@@ -51,7 +51,7 @@ await sbx.files.write('/home/user/my-file-b', content)
 ```
 
 ```python {{ language: 'python' }}
-from e2b import Sandbox
+from e2b_code_interpreter import Sandbox
 
 sbx = Sandbox.create()
 
@@ -76,7 +76,7 @@ To download a file, you need to first get the file's content and then write it t
 
 <CodeGroup>
 ```ts {{ language: 'js' }}
-import { Sandbox } from 'e2b'
+import { Sandbox } from '@e2b/code-interpreter'
 
 const sbx = await Sandbox.create()
 // Download file from the sandbox to path '/home/user/my-file'
@@ -86,7 +86,7 @@ fs.writeFileSync('/local/file', content)
 ```
 
 ```python {{ language: 'python' }}
-from e2b import Sandbox
+from e2b_code_interpreter import Sandbox
 
 sbx = Sandbox.create()
 # Download file from the sandbox to path '/home/user/my-file'
@@ -105,7 +105,7 @@ We're working on a better solution.
 
 <CodeGroup>
 ```ts {{ language: 'js' }}
-import { Sandbox } from 'e2b'
+import { Sandbox } from '@e2b/code-interpreter'
 
 const sbx = await Sandbox.create()
 // Download file A from the sandbox to path '/home/user/my-file'
@@ -120,7 +120,7 @@ fs.writeFileSync('/local/file/b', contentB)
 ```
 
 ```python {{ language: 'python' }}
-from e2b import Sandbox
+from e2b_code_interpreter import Sandbox
 
 sbx = Sandbox.create()
 # Download file A from the sandbox to path '/home/user/my-file-a'
