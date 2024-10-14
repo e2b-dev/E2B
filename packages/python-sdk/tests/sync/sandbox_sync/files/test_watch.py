@@ -9,7 +9,7 @@ def test_watch_directory_changes(sandbox: Sandbox):
     content = "This file will be watched."
 
     sandbox.files.make_dir(dirname)
-    handle = sandbox.files.watch(dirname)
+    handle = sandbox.files.watch_dir(dirname)
     sandbox.files.write(f"{dirname}/{filename}", content)
 
     events = handle.get_new_events()
@@ -31,7 +31,7 @@ def test_watch_iterated(sandbox: Sandbox):
     new_content = "This file has been modified."
 
     sandbox.files.make_dir(dirname)
-    handle = sandbox.files.watch(dirname)
+    handle = sandbox.files.watch_dir(dirname)
     sandbox.files.write(f"{dirname}/{filename}", content)
 
     events = handle.get_new_events()
@@ -50,7 +50,7 @@ def test_watch_non_existing_directory(sandbox: Sandbox):
     dirname = "non_existing_watch_dir"
 
     with pytest.raises(NotFoundException):
-        sandbox.files.watch(dirname)
+        sandbox.files.watch_dir(dirname)
 
 
 def test_watch_file(sandbox: Sandbox):
@@ -58,4 +58,4 @@ def test_watch_file(sandbox: Sandbox):
     sandbox.files.write(filename, "This file will be watched.")
 
     with pytest.raises(SandboxException):
-        sandbox.files.watch(filename)
+        sandbox.files.watch_dir(filename)

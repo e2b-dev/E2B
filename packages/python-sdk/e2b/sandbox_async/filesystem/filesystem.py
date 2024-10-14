@@ -302,7 +302,7 @@ class Filesystem:
                     return False
             raise handle_rpc_exception(e)
 
-    async def watch(
+    async def watch_dir(
         self,
         path: str,
         on_event: OutputHandler[FilesystemEvent],

@@ -298,7 +298,7 @@ class Filesystem:
                     return False
             raise handle_rpc_exception(e)
 
-    def watch(
+    def watch_dir(
         self,
         path: str,
         user: Username = "user",

@@ -4,7 +4,7 @@ from e2b import Sandbox
 
 sandbox = Sandbox()
 
-watcher = sandbox.files.watch("/home")  # $HighlightLine
+watcher = sandbox.files.watch_dir("/home")  # $HighlightLine
 
 # Create files in the /home directory inside the playground
 # We'll receive notifications for these events through the watcher we created above.

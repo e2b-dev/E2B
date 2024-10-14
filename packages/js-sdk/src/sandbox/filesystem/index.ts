@@ -352,7 +352,7 @@ export class Filesystem {
    * @param opts Options for the request
    * @returns New watcher
    */
-  async watch(
+  async watchDir(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
     opts?: FilesystemRequestOpts & {

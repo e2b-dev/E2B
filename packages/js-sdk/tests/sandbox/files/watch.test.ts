@@ -18,7 +18,7 @@ sandboxTest('watch directory changes', async ({ sandbox }) => {
     trigger = resolve
   })
 
-  const handle = await sandbox.files.watch(dirname, async (event) => {
+  const handle = await sandbox.files.watchDir(dirname, async (event) => {
     if (event.type === FilesystemEventType.WRITE && event.name === filename) {
       trigger()
     }
@@ -34,7 +34,7 @@ sandboxTest('watch directory changes', async ({ sandbox }) => {
 sandboxTest('watch non-existing directory', async ({ sandbox }) => {
   const dirname = 'non_existing_watch_dir'
 
-  await expect(sandbox.files.watch(dirname, () => {})).rejects.toThrowError(
+  await expect(sandbox.files.watchDir(dirname, () => {})).rejects.toThrowError(
     NotFoundError
   )
 })
@@ -44,7 +44,7 @@ sandboxTest('watch file', async ({ sandbox }) => {
   const content = 'This file will be watched.'
   await sandbox.files.write(filename, content)
 
-  await expect(sandbox.files.watch(filename, () => {})).rejects.toThrowError(
+  await expect(sandbox.files.watchDir(filename, () => {})).rejects.toThrowError(
     SandboxError
   )
 })
