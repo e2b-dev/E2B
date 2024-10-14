@@ -139,18 +139,18 @@ export const routes: NavGroup[] = [
   //   ]
   // },
   {
-    title: 'Code Interpreting',
+    title: '* Code Interpreting',
     items: [
       {
-        title: 'Analyze data with AI',
+        title: '* Analyze data with AI',
         href: '/docs/code-interpreting/overview',
       },
       {
-        title: 'Create charts & visualizations',
+        title: '* Create charts & visualizations',
         href: '/docs/code-interpreting/overview',
       },
       {
-        title: 'Connect your data',
+        title: '* Connect your data',
         href: '/docs/code-interpreting/overview',
       },
     ]
@@ -169,51 +169,51 @@ export const routes: NavGroup[] = [
   //   ]
   // },
   {
-    title: 'AI Code Execution',
+    title: '* AI Code Execution',
     items: [
       {
-        title: 'Python',
+        title: '* Python',
         href: '/docs/code-execution/python',
         icon: <Image src={logoPython} alt="Python" width={20} height={20} />,
       },
       {
-        title: 'JavaScript',
+        title: '* JavaScript',
         href: '/docs/code-execution/python',
         icon: <Image src={logoNode} alt="JavaScript" width={20} height={20} />,
       },
       {
-        title: 'TypeScript',
+        title: '* TypeScript',
         href: '/docs/code-execution/python',
       },
       {
-        title: 'Custom language',
+        title: '* Custom language',
         href: '/docs/code-execution/python',
       },
       {
-        title: 'Web frameworks',
+        title: '* Web frameworks',
         links: [
           {
-            title: 'Next.js',
+            title: '* Next.js',
             href: '/docs/code-execution/python',
           },
           {
-            title: 'React',
+            title: '* React',
             href: '/docs/code-execution/python',
           },
           {
-            title: 'Svelte',
+            title: '* Svelte',
             href: '/docs/code-execution/python',
           },
           {
-            title: 'Vue.js',
+            title: '* Vue.js',
             href: '/docs/code-execution/python',
           },
           {
-            title: 'Streamlit',
+            title: '* Streamlit',
             href: '/docs/code-execution/python',
           },
           {
-            title: 'Gradio',
+            title: '* Gradio',
             href: '/docs/code-execution/python',
           },
         ],
@@ -221,37 +221,37 @@ export const routes: NavGroup[] = [
     ],
   },
   {
-    title: 'Sandbox',
+    title: '* Sandbox',
     items: [
       {
-        title: 'Lifecycle',
+        title: '* Lifecycle',
         href: '/docs/sandbox/lifecycle',
       },
       {
-        title: 'Metadata',
+        title: '* Metadata',
         href: '/docs/sandbox/filesystem',
       },
       {
-        title: 'Environment variables',
+        title: '* Environment variables',
         href: '/docs/sandbox/environment-variables',
       },
       {
-        title: 'Persistence',
+        title: '* Persistence',
         href: '/docs/sandbox/persistence',
       },
       {
-        title: 'Customization',
+        title: '* Customization',
         links: [
           {
-            title: 'Overview',
+            title: '* Overview',
             href: '/docs/sandbox/custom',
           },
           {
-            title: 'CPU & RAM',
+            title: '* CPU & RAM',
             href: '/docs/sandbox/custom/compute',
           },
           {
-            title: 'Preinstall packages (TODO: Better title for custom sandbox templates)',
+            title: '* Preinstall packages (TODO: Better title for custom sandbox templates)',
             href: '/docs/sandbox/custom/sandbox-template',
           },
         ]
@@ -259,60 +259,60 @@ export const routes: NavGroup[] = [
     ],
   },
   {
-    title: 'Filesystem',
+    title: '* Filesystem',
     items: [
       {
-        title: 'Overview',
+        title: '* Overview',
         href: '/docs/filesystem/overview',
       },
       {
-        title: 'Read & write',
+        title: '* Read & write',
         href: '/docs/filesystem/read-write',
       },
       {
-        title: 'Watch directory for changes',
+        title: '* Watch directory for changes',
         href: '/docs/filesystem/watch',
       },
       {
-        title: 'Upload data',
+        title: '* Upload data',
         href: '/docs/filesystem/upload',
       },
       {
-        title: 'Download data',
+        title: '* Download data',
         href: '/docs/filesystem/download',
       },
     ]
   },
   {
-    title: 'Commands',
+    title: '* Commands',
     items: [
       {
-        title: 'Overview',
+        title: '* Overview',
         href: '/docs/process/overview',
       },
       {
-        title: 'Run commands',
+        title: '* Run commands',
         href: '/docs/process/overview',
       },
       {
-        title: 'Run commands in background',
+        title: '* Run commands in background',
         href: '/docs/process/overview',
       },
     ]
   },
   {
-    title: 'CLI',
+    title: '* CLI',
     items: [
       {
-        title: 'Installation',
+        title: '* Installation',
         href: '/docs/cli/install',
       },
       {
-        title: 'List running sandboxes',
+        title: '* List running sandboxes',
         href: '/docs/cli/list',
       },
       {
-        title: 'Shutdown all running sandboxes',
+        title: '* Shutdown all running sandboxes',
         href: '/docs/cli/kill-all',
       },
     ]

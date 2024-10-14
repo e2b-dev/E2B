@@ -30,6 +30,7 @@ pip install e2b python-dotenv
 </CodeGroup>
 
 ## 4. Write code for starting Sandbox
+We'll write the minimal code for starting Sandbox, executing Python inside it and listing all files inside the root directory.
 <CodeGroup>
 ```ts {{ language: 'js', description: 'index.ts' }}
 import 'dotenv/config'
@@ -38,20 +39,27 @@ import { Sandbox } from 'e2b'
 const sbx = await Sandbox.create() // By default the sandbox is alive for 5 minutes
 const execution = await sbx.runCode('print("hello world")') // Execute Python inside the sandbox
 console.log(execution.logs)
+
+const files = await sbx.files.list('/')
+console.log(files)
 ```
 
 ```python {{ language: 'python', description: 'main.py' }}
 from dotenv import load_dotenv
 load_dotenv()
-
 from e2b import Sandbox
+
 sbx = Sandbox() # By default the sandbox is alive for 5 minutes
 execution = sbx.run_code("print('hello world')") # Execute Python inside the sandbox
 print(execution.logs)
+
+files = sbx.files.list("/")
+print(files)
 ```
 </CodeGroup>
 
 ## 5. Start your first E2B Sandbox
+Run the code with the following command:
 <CodeGroup isTerminalCommand>
 ```bash {{ language: 'js' }}
 npx tsx ./index.ts
