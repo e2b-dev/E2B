@@ -1,6 +1,7 @@
 vale-styles
 .vercel
 .vscode
+.DS_Store
 
 # Logs
 logs
