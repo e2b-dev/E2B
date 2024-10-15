@@ -203,6 +203,10 @@ export const routes: NavGroup[] = [
             href: '/docs/code-interpreting/supported-languages/r',
           },
           {
+            title: 'Java',
+            href: '/docs/code-interpreting/supported-languages/java',
+          },
+          {
             title: 'Bash',
             href: '/docs/code-interpreting/supported-languages/bash',
           },

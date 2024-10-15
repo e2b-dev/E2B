@@ -1,0 +1,85 @@
+# Setting environment variables
+
+There are 3 ways to set environment variables in a sandbox:
+1. [Global environment variables when creating the sandbox](/docs/sandbox/environment-variables#1-global-environment-variables-when-creating-the-sandbox).
+2. [When running code in the sandbox](/docs/sandbox/environment-variables#2-setting-environment-variables-when-running-code).
+3. [When running commands in the sandbox](/docs/sandbox/environment-variables#3-setting-environment-variables-when-running-commands).
+
+
+## 1. Global environment variables
+You can set global environment variables when creating a sandbox.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create({
+  env: { // $HighlightLine
+    MY_VAR: 'my_value', // $HighlightLine
+  }, // $HighlightLine
+})
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox(
+  env={ # $HighlightLine
+    'MY_VAR': 'my_value', # $HighlightLine
+  }, # $HighlightLine
+)
+```
+</CodeGroup>
+
+## 2. Setting environment variables when running code
+You can set environment variables for specific code execution call in the sandbox.
+
+<Note>
+If you had a global environment variable with the same name, it will be overridden.
+</Note>
+
+<CodeGroup>
+```js
+const sandbox = await Sandbox.create()
+const result = await sandbox.runCode('import os; print(os.environ.get("MY_VAR"))', {
+  envs: { // $HighlightLine
+    MY_VAR: 'my_value', // $HighlightLine
+  }, // $HighlightLine
+})
+```
+```python
+sandbox = Sandbox()
+result = sandbox.run_code(
+    'import os; print(os.environ.get("MY_VAR"))',
+    envs={ # $HighlightLine
+        'MY_VAR': 'my_value' # $HighlightLine
+    } # $HighlightLine
+)
+```
+</CodeGroup>
+
+## 3. Setting environment variables when running commands
+You can set environment variables for specific command execution in the sandbox.
+
+<Note>
+If you had a global environment variable with the same name, it will be overridden.
+</Note>
+
+<CodeGroup>
+```js
+const sandbox = await Sandbox.create()
+sandbox.commands.run('echo $MY_VAR', {
+  envs: { // $HighlightLine
+    MY_VAR: '123', // $HighlightLine
+  }, // $HighlightLine
+})
+```
+```python
+sandbox = Sandbox()
+sandbox.commands.run(
+    'echo $MY_VAR',
+    envs={ # $HighlightLine
+        'MY_VAR': '123' # $HighlightLine
+    } # $HighlightLine
+)
+```
+</CodeGroup>
