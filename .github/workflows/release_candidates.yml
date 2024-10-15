@@ -71,14 +71,6 @@ jobs:
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
-
-      - name: Generate Python SDK API reference
-        id: python-sdk-api-ref
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
-        working-directory: ./packages/python-sdk
-        run: |
-          ./scripts/generate_api_ref.sh
-
       - name: Install JS dependencies
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
         run: |
@@ -102,14 +94,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-
-      - name: Generate JS SDK API reference
-        id: js-sdk-api-ref
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
-        working-directory: packages/js-sdk
-        run: ./scripts/generate_api_ref.sh
-
-
       - name: Install dependencies
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
         run: |
@@ -124,20 +108,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Generate CLI API reference
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
-        id: cli-api-ref
-        working-directory: packages/cli
-        run: ./scripts/generate_api_ref.sh
-
       - name: Commit new versions
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') || contains( github.event.pull_request.labels.*.name, 'python-rc') }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-        
-          git add apps/web/src/app/\(docs\)/docs/api-reference 
-
           git commit -am "[skip ci] Release new versions" || exit 0
           git push
         env:
