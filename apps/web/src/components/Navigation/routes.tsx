@@ -159,7 +159,7 @@ export const routes: NavGroup[] = [
         ],
       },
       {
-        title: '* Charts & visualizations',
+        title: 'Charts & visualizations',
         href: '/docs/code-interpreting/create-charts-visualizations',
         links: [
           {
