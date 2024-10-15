@@ -71,38 +71,42 @@ The E2B SDK is made to control the E2B Sandboxes - secure cloud environments for
 
 JavaScript/TypeScript
 ```
-npm i @e2b/code-interpreter
+npm install e2b
 ```
 
 Python
 ```
-pip install e2b_code_interpreter
+pip install e2b
 ```
 
-### 2. Execute code with code interpreter inside Sandbox
+### 2. Start Sandbox
 
 **JavaScript**
 ```ts
-import { CodeInterpreter } from '@e2b/code-interpreter'
+import { Sandbox } from "e2b";
 
-const sandbox = await CodeInterpreter.create()
-await sandbox.notebook.execCell('x = 1')
+// Create sandbox
+const sandbox = await Sandbox.create();
 
-const execution = await sandbox.notebook.execCell('x+=1; x')
-console.log(execution.text)  // outputs 2
+// Let an LLM use the sandbox here
+// Visit https://e2b.dev/docs/sandbox/overview to learn more about sandboxes.
 
-await sandbox.close()
+// Close sandbox once done
+await sandbox.close();
 ```
 
 **Python**
 ```py
-from e2b_code_interpreter import CodeInterpreter
+from e2b import Sandbox
 
-with CodeInterpreter() as sandbox:
-    sandbox.notebook.exec_cell("x = 1")
+# Create sandbox
+sandbox = Sandbox()
 
-    execution = sandbox.notebook.exec_cell("x+=1; x")
-    print(execution.text)  # outputs 2
+# Let an LLM use the sandbox here
+# Visit https://e2b.dev/docs/sandbox/overview to learn more about sandboxes.
+
+# Close sandbox once done
+sandbox.close()
 ```
 
 ### 3. More resources
