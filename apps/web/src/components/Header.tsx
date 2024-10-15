@@ -4,6 +4,10 @@ import { forwardRef, useEffect } from 'react'
 import Link from 'next/link'
 import clsx from 'clsx'
 import { motion, useScroll, useTransform } from 'framer-motion'
+import dynamic from 'next/dynamic'
+import { usePathname } from 'next/navigation'
+
+import { Auth } from '@/components/Auth'
 import {
   MobileBurgerMenu,
   useIsInsideMobileNavigation,
@@ -13,10 +17,7 @@ import { Logo } from '@/components/Logo'
 import { useLocalStorage } from 'usehooks-ts'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
 
-import dynamic from 'next/dynamic'
 import { config } from '../../config'
-import { usePathname } from 'next/navigation'
-
 
 function DocumentationTypeLink({ pathname, href, title }: { pathname: string | null, href: string, title: string }) {
   if (!pathname) return null
@@ -127,16 +128,16 @@ export const Header = forwardRef(function Header({ className }, ref) {
             </ul>
           </nav>
           {/* {isDocs && <MobileSearch />} */}
-          {/* <div className="hidden min-[540px]:contents">
-            <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/docs'>
+          <div className="hidden min-[540px]:contents">
+            {/* <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/docs'>
               Docs
             </Link>
             <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/dashboard'>
               Dashboard
             </Link>
-            <HeaderSeparator />
+            <HeaderSeparator /> */}
             <Auth />
-          </div> */}
+          </div>
         </div>
       }
     </motion.div>

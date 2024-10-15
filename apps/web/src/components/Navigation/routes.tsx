@@ -2,6 +2,7 @@ import {
   Home,
   CheckCircle,
   MessagesSquare,
+  Braces,
 } from 'lucide-react'
 
 
@@ -81,6 +82,11 @@ export const routes: NavGroup[] = [
             href: '/docs/quickstart/install-custom-packages',
           },
         ],
+      },
+      {
+        title: 'Cookbook',
+        href: 'https://github.com/e2b-dev/e2b-cookbook',
+        icon: <Braces size={16} />,
       },
       {
         title: 'Need help?',
@@ -277,8 +283,8 @@ export const routes: NavGroup[] = [
     title: '* Sandbox',
     items: [
       {
-        title: '* Lifecycle',
-        href: '/docs/sandbox/lifecycle',
+        title: 'Lifecycle',
+        href: '/docs/sandbox',
       },
       {
         title: '* Metadata',
@@ -344,54 +350,50 @@ export const routes: NavGroup[] = [
         href: '/docs/process/overview',
       },
       {
-        title: '* Run commands',
-        href: '/docs/process/overview',
-      },
-      {
         title: '* Run commands in background',
         href: '/docs/process/overview',
       },
     ]
   },
-  {
-    title: '* Async Python SDK',
-    items: [
-      {
-        title: '* Overview',
-        href: '/docs/sdk/overview',
-      },
-    ]
-  },
-  {
-    title: '* Limits',
-    items: [
-      {
-        title: '* Sandbox',
-        href: '/docs/limits/sandbox',
-      },
-      {
-        title: '* Filesystem',
-        href: '/docs/limits/overview',
-      },
-      {
-        title: '* File upload & download',
-        href: '/docs/limits/file-upload-download',
-      },
-    ]
-  },
-  {
-    title: '* Latency',
-    items: [
-      {
-        title: '* Start times',
-        href: '/docs/latency/start-times',
-      },
-      {
-        title: '* Sandbox operations',
-        href: '/docs/latency/sandbox-operations',
-      },
-    ]
-  },
+  // {
+  //   title: '* Async Python SDK',
+  //   items: [
+  //     {
+  //       title: '* Overview',
+  //       href: '/docs/sdk/overview',
+  //     },
+  //   ]
+  // },
+  // {
+  //   title: '* Limits',
+  //   items: [
+  //     {
+  //       title: '* Sandbox',
+  //       href: '/docs/limits/sandbox',
+  //     },
+  //     {
+  //       title: '* Filesystem',
+  //       href: '/docs/limits/overview',
+  //     },
+  //     {
+  //       title: '* File upload & download',
+  //       href: '/docs/limits/file-upload-download',
+  //     },
+  //   ]
+  // },
+  // {
+  //   title: '* Latency',
+  //   items: [
+  //     {
+  //       title: '* Start times',
+  //       href: '/docs/latency/start-times',
+  //     },
+  //     {
+  //       title: '* Sandbox operations',
+  //       href: '/docs/latency/sandbox-operations',
+  //     },
+  //   ]
+  // },
   {
     title: '* CLI',
     items: [
