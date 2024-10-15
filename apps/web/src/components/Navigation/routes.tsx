@@ -295,7 +295,7 @@ export const routes: NavGroup[] = [
         href: '/docs/sandbox/metadata',
       },
       {
-        title: '* Environment variables',
+        title: 'Environment variables',
         href: '/docs/sandbox/environment-variables',
       },
       {
