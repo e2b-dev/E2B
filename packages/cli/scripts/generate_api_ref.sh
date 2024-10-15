@@ -6,7 +6,7 @@ set -euo pipefail
 ## Run it in the `cli/` directory
 mkdir -p api_ref
 
-npx tsup && echo && NODE_ENV=development node dist/index.js -cmd2md
+npx tsup && NODE_ENV=development node dist/index.js -cmd2md
 
 PKG_VERSION="v$(node -p "require('./package.json').version")"
 

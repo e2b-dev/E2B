@@ -41,7 +41,7 @@ jobs:
         uses: actions/setup-python@v4
         if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
         with:
-          python-version: "3.8"
+          python-version: "3.9"
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
@@ -71,7 +71,7 @@ jobs:
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
-      - name: Install dependencies
+      - name: Install JS dependencies
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
         run: |
           pnpm install --frozen-lockfile
@@ -93,6 +93,11 @@ jobs:
           npm publish --tag rc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Install dependencies
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        run: |
+          pnpm install --frozen-lockfile
 
       - name: Release CLI Candidate
         working-directory: packages/cli

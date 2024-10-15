@@ -15,7 +15,7 @@ mkdir -p api_ref
 
 for package in "${packages[@]}"; do
     # generate raw api reference markdown file
-    pydoc-markdown -p e2b."${package}" >api_ref/"${package}".mdx
+    poetry run pydoc-markdown -p e2b."${package}" >api_ref/"${package}".mdx
     # remove package path display
     sed -i '/<a[^>]*>.*<\/a>/d' api_ref/"${package}".mdx
     # remove empty hyperlinks

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e2b"
-version = "0.17.2a60"
+version = "0.17.2a62"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
@@ -10,7 +10,7 @@ repository = "https://github.com/e2b-dev/e2b/tree/main/packages/python-sdk"
 packages = [{ include = "e2b" }, { include = "e2b_connect" }]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 
 python-dateutil = ">=2.8.2"
 protobuf = ">=3.20.0, <6.0.0"
