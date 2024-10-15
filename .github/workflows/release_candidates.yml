@@ -79,6 +79,11 @@ jobs:
         run: |
           ./scripts/generate_api_ref.sh
 
+      - name: Install JS dependencies
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        run: |
+          pnpm install --frozen-lockfile
+
       - name: Test JS SDK
         working-directory: packages/js-sdk
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
