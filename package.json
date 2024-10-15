@@ -20,5 +20,8 @@
     "changeset": "^0.2.6",
     "eslint": "^8.49.0",
     "eslint-plugin-unused-imports": "^3.0.0"
+  },
+  "engines": {
+    "pnpm": ">=9.0.0 <10"
   }
 }
