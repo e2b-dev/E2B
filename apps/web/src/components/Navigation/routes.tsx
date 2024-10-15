@@ -159,8 +159,22 @@ export const routes: NavGroup[] = [
         ],
       },
       {
-        title: '* Create charts & visualizations',
+        title: '* Charts & visualizations',
         href: '/docs/code-interpreting/create-charts-visualizations',
+        links: [
+          {
+            title: 'Overview',
+            href: '/docs/code-interpreting/create-charts-visualizations',
+          },
+          {
+            title: 'Static charts',
+            href: '/docs/code-interpreting/create-charts-visualizations/static-charts',
+          },
+          {
+            title: 'Interactive charts',
+            href: '/docs/code-interpreting/create-charts-visualizations/interactive-charts',
+          },
+        ]
       },
       {
         title: '* Connect your data',
@@ -281,24 +295,24 @@ export const routes: NavGroup[] = [
         title: '* Persistence',
         href: '/docs/sandbox/persistence',
       },
-      {
-        title: '* Customization',
-        links: [
-          {
-            title: '* Overview',
-            href: '/docs/sandbox/custom',
-          },
-          {
-            title: '* CPU & RAM',
-            href: '/docs/sandbox/custom/compute',
-          },
-          {
-            title: '* Preinstall packages (TODO: Better title for custom sandbox templates)',
-            href: '/docs/sandbox/custom/sandbox-template',
-          },
-        ]
-      },
     ],
+  },
+  {
+    title: '* Templates',
+    items: [
+      {
+        title: '* Sandbox customization',
+        href: '/docs/sandbox/custom',
+      },
+      {
+        title: '* Customize CPU & RAM',
+        href: '/docs/sandbox/custom/compute',
+      },
+      {
+        title: '* Preinstall packages (TODO: Better title for custom sandbox templates)',
+        href: '/docs/sandbox/custom/sandbox-template',
+      },
+    ]
   },
   {
     title: '* Filesystem',
@@ -348,6 +362,19 @@ export const routes: NavGroup[] = [
       {
         title: '* Overview',
         href: '/docs/sdk/overview',
+      },
+    ]
+  },
+  {
+    title: '* Latency',
+    items: [
+      {
+        title: '* Start times',
+        href: '/docs/latency/start-times',
+      },
+      {
+        title: '* Sandbox operations',
+        href: '/docs/latency/sandbox-operations',
       },
     ]
   },
