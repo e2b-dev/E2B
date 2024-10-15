@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import {
-  ArrowRight,
   Mail,
+  Github,
+  UsersRound,
 } from 'lucide-react'
 
 export function Support() {
@@ -12,7 +13,7 @@ export function Support() {
           href="https://discord.com/invite/U7KEcGErtQ"
           className="no-underline flex flex-col justify-center items-center gap-2 h-full w-full"
         >
-          <ArrowRight strokeWidth={1.5} className="h-6 w-6 text-zinc-300 group-hover:text-white transition-colors" />
+          <UsersRound strokeWidth={1.5} className="h-6 w-6 text-zinc-300 group-hover:text-[#5865F2] transition-colors" />
           <span className="text-zinc-300 transition-colors group-hover:text-white">Join our Discord community</span>
         </Link>
       </div>
@@ -22,7 +23,7 @@ export function Support() {
           href="https://github.com/e2b-dev/e2b"
           className="no-underline flex flex-col justify-center items-center gap-2 h-full w-full"
         >
-          <ArrowRight strokeWidth={1.5} className="h-6 w-6 text-zinc-300 group-hover:text-white transition-colors" />
+          <Github strokeWidth={1.5} className="h-6 w-6 text-zinc-300 group-hover:text-[#6e40c9] transition-colors" />
           <span className="text-zinc-300 transition-colors group-hover:text-white">Visit our GitHub</span>
         </Link>
       </div>
