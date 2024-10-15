@@ -52,7 +52,8 @@ class Filesystem:
         format: Literal["text"] = "text",
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> str: ...
+    ) -> str:
+        ...
 
     @overload
     async def read(
@@ -61,7 +62,8 @@ class Filesystem:
         format: Literal["bytes"],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> bytearray: ...
+    ) -> bytearray:
+        ...
 
     @overload
     async def read(
@@ -70,7 +72,8 @@ class Filesystem:
         format: Literal["stream"],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> AsyncIterator[bytes]: ...
+    ) -> AsyncIterator[bytes]:
+        ...
 
     async def read(
         self,

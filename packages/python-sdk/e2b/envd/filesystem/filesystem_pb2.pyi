@@ -155,19 +155,25 @@ class WatchDirResponse(_message.Message):
         keepalive: _Optional[_Union[WatchDirResponse.KeepAlive, _Mapping]] = ...,
     ) -> None: ...
 
-class WatchDirStartResponse(_message.Message):
+class CreateWatcherRequest(_message.Message):
+    __slots__ = ("path",)
+    PATH_FIELD_NUMBER: _ClassVar[int]
+    path: str
+    def __init__(self, path: _Optional[str] = ...) -> None: ...
+
+class CreateWatcherResponse(_message.Message):
     __slots__ = ("watcher_id",)
     WATCHER_ID_FIELD_NUMBER: _ClassVar[int]
     watcher_id: str
     def __init__(self, watcher_id: _Optional[str] = ...) -> None: ...
 
-class WatchDirGetRequest(_message.Message):
+class GetWatcherEventsRequest(_message.Message):
     __slots__ = ("watcher_id",)
     WATCHER_ID_FIELD_NUMBER: _ClassVar[int]
     watcher_id: str
     def __init__(self, watcher_id: _Optional[str] = ...) -> None: ...
 
-class WatchDirGetResponse(_message.Message):
+class GetWatcherEventsResponse(_message.Message):
     __slots__ = ("events",)
     EVENTS_FIELD_NUMBER: _ClassVar[int]
     events: _containers.RepeatedCompositeFieldContainer[FilesystemEvent]
@@ -175,12 +181,12 @@ class WatchDirGetResponse(_message.Message):
         self, events: _Optional[_Iterable[_Union[FilesystemEvent, _Mapping]]] = ...
     ) -> None: ...
 
-class WatchDirStopRequest(_message.Message):
+class RemoveWatcherRequest(_message.Message):
     __slots__ = ("watcher_id",)
     WATCHER_ID_FIELD_NUMBER: _ClassVar[int]
     watcher_id: str
     def __init__(self, watcher_id: _Optional[str] = ...) -> None: ...
 
-class WatchDirStopResponse(_message.Message):
+class RemoveWatcherResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...

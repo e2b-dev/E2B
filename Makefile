@@ -9,7 +9,7 @@ generate: generate-js generate-python
 generate-js:
 	cd packages/js-sdk && pnpm generate
 	cd packages/js-sdk && pnpm generate-envd-api
-	buf generate --template spec/envd/buf-js.gen.yaml
+	cd spec/envd && buf generate --template buf-js.gen.yaml
 
 generate-python:
 	cd packages/python-sdk && make generate-api

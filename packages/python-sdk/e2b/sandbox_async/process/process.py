@@ -137,7 +137,8 @@ class Process:
         on_stderr: Optional[OutputHandler[Stderr]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessResult: ...
+    ) -> ProcessResult:
+        ...
 
     @overload
     async def run(
@@ -151,7 +152,8 @@ class Process:
         on_stderr: Optional[OutputHandler[Stderr]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> AsyncProcessHandle: ...
+    ) -> AsyncProcessHandle:
+        ...
 
     async def run(
         self,

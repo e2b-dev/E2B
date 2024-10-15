@@ -2,7 +2,10 @@ from typing import List
 
 from e2b import SandboxException
 from e2b.envd.filesystem import filesystem_connect
-from e2b.envd.filesystem.filesystem_pb2 import WatchDirStopRequest, WatchDirGetRequest
+from e2b.envd.filesystem.filesystem_pb2 import (
+    GetWatcherEventsRequest,
+    RemoveWatcherRequest,
+)
 from e2b.envd.rpc import handle_rpc_exception
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
@@ -26,7 +29,7 @@ class WatchHandle:
         Stop watching the directory. After you stop the watcher you won't be able to get the events anymore.
         """
         try:
-            self._rpc.watch_dir_stop(WatchDirStopRequest(watcher_id=self._watcher_id))
+            self._rpc.remove_watcher(RemoveWatcherRequest(watcher_id=self._watcher_id))
         except Exception as e:
             raise handle_rpc_exception(e)
 
@@ -40,7 +43,9 @@ class WatchHandle:
             raise SandboxException("The watcher is already stopped")
 
         try:
-            r = self._rpc.watch_dir_get(WatchDirGetRequest(watcher_id=self._watcher_id))
+            r = self._rpc.get_watcher_events(
+                GetWatcherEventsRequest(watcher_id=self._watcher_id)
+            )
         except Exception as e:
             raise handle_rpc_exception(e)
 

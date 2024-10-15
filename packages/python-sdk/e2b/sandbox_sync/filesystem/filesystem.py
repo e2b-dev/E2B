@@ -314,8 +314,8 @@ class Filesystem:
         :return: Watcher handle
         """
         try:
-            r = self._rpc.watch_dir_start(
-                filesystem_pb2.WatchDirRequest(path=path),
+            r = self._rpc.create_watcher(
+                filesystem_pb2.CreateWatcherRequest(path=path),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
