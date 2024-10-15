@@ -64,9 +64,10 @@ export function Layout({
           "
           >
             <main className="
-            flex-auto
-          ">
-              {children}</main>
+              flex-auto
+            ">
+              {children}
+            </main>
             <Footer />
           </div>
         )}

@@ -60,7 +60,7 @@ export default async function RootLayout({ children }) {
       <head>
         <Canonical />
       </head>
-      <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
+      <body className="flex min-h-full antialiased bg-zinc-900">
         <Providers>
           <Layout allSections={allSections}>
             <Header />

@@ -86,7 +86,7 @@ export const routes: NavGroup[] = [
         ],
       },
       {
-        title: '* Support',
+        title: '* Need help?',
         href: '/docs/support',
         icon: <MessagesSquare size={16} />,
       },
@@ -192,7 +192,7 @@ export const routes: NavGroup[] = [
         ]
       },
       {
-        title: '* Parsing code execution result',
+        title: '* Parsing code execution results',
         href: '/docs/code-interpreting/todo',
       },
     ]
