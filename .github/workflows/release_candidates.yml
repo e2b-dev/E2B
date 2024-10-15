@@ -36,37 +36,6 @@ jobs:
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
 
-      - name: Install dependencies
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
-        run: |
-          pnpm install --frozen-lockfile
-
-      - name: Test JS SDK
-        working-directory: packages/js-sdk
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
-        run: |
-          npx playwright install --with-deps
-          pnpm run test
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-
-      - name: Release JS Candidate
-        working-directory: packages/js-sdk
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
-        run: |
-          npm version prerelease --preid=${{ github.head_ref }}
-          npm publish --tag rc
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Release CLI Candidate
-        working-directory: packages/cli
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
-        run: |
-          npm version prerelease --preid=${{ github.head_ref }}
-          npm publish --tag rc
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -101,6 +70,38 @@ jobs:
           poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Install dependencies
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: Test JS SDK
+        working-directory: packages/js-sdk
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
+        run: |
+          npx playwright install --with-deps
+          pnpm run test
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+      - name: Release JS Candidate
+        working-directory: packages/js-sdk
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
+        run: |
+          npm version prerelease --preid=${{ github.head_ref }}
+          npm publish --tag rc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Release CLI Candidate
+        working-directory: packages/cli
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        run: |
+          npm version prerelease --preid=${{ github.head_ref }}
+          npm publish --tag rc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Commit new versions
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') || contains( github.event.pull_request.labels.*.name, 'python-rc') }}
