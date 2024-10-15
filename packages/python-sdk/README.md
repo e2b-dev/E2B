@@ -81,50 +81,42 @@ E2B Sandbox is a secure cloud environment that allows AI agents and apps. You ca
 
 ## Getting Started & Documentation
 
-> Please visit [documentation](https://e2b.dev/docs) to get started.
+### 1. Install SDK
 
-**Python**
-
-1. Install SDK
-
-```bash
+```
 pip install e2b
 ```
 
-2. Start sandbox
+### 2. Execute code with code interpreter inside Sandbox
 
 ```py
-from e2b import Sandbox
+from e2b_code_interpreter import Sandbox
 
-# Create sandbox
-sandbox = Sandbox()
+with Sandbox() as sandbox:
+    sandbox.run_code()("x = 1")
 
-# Let an LLM use the sandbox here
-# Visit https://e2b.dev/docs/sandbox/overview to learn more about sandboxes.
-
-# Close sandbox once done
-sandbox.close()
+    execution = sandbox.run_code()("x+=1; x")
+    print(execution.text)  # outputs 2
 ```
 
-**JavaScript & TypeScript**
 
-1. Install SDK
+### 3. More resources
+- Check out the [JavaScript/TypeScript](https://e2b.dev/docs/hello-world/js) and [Python](https://e2b.dev/docs/hello-world/py) "Hello World" guides to learn how to use our SDK.
 
-```bash
-npm install e2b
-```
+- See [E2B documentation](https://e2b.dev/docs) to get started.
 
-2. Start sandbox
+- Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
 
-```js
-import { Sandbox } from "e2b";
 
-// Create sandbox
-const sandbox = await Sandbox.create();
+___
 
-// Let an LLM use the sandbox here
-// Visit https://e2b.dev/docs/sandbox/overview to learn more about sandboxes.
-
-// Close sandbox once done
-await sandbox.close();
-```
+<div align='center'>
+<!-- <a href="https://e2b.dev/docs" target="_blank">
+<img src="https://img.shields.io/badge/docs-%2300acee.svg?color=143D52&style=for-the-badge&logo=x&logoColor=white" alt=docs style="margin-bottom: 5px;"/></a>  -->
+<a href="https://twitter.com/e2b_dev" target="_blank">
+<img src="https://img.shields.io/badge/x (twitter)-%2300acee.svg?color=000000&style=for-the-badge&logo=x&logoColor=white" alt=linkedin style="margin-bottom: 5px;"/></a> 
+<a href="https://discord.com/invite/U7KEcGErtQ" target="_blank">
+<img src="https://img.shields.io/badge/discord -%2300acee.svg?color=143D52&style=for-the-badge&logo=discord&logoColor=white" alt=discord style="margin-bottom: 5px;"/></a> 
+<a href="https://www.linkedin.com/company/e2b-dev/" target="_blank">
+<img src="https://img.shields.io/badge/linkedin-%2300acee.svg?color=000000&style=for-the-badge&logo=linkedin&logoColor=white" alt=linkedin style="margin-bottom: 5px;"/></a> 
+</div align='center'>
