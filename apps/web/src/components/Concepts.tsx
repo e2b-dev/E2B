@@ -38,5 +38,5 @@ const concepts: BoxItem[] = [
 ]
 
 export function Concepts() {
-  return <BoxGrid items={concepts} />
+  return <BoxGrid items={concepts} noBackground />
 }

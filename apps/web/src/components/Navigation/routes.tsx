@@ -91,7 +91,7 @@ export const routes: NavGroup[] = [
         icon: <MessagesSquare size={16} />,
       },
       {
-        title: '* Migrating from SDK v0.* to v1.*',
+        title: '* Migrating from v0.* to v1.*',
         href: '/docs/quickstart/migrating-from-v0',
       },
     ],
@@ -159,6 +159,10 @@ export const routes: NavGroup[] = [
         ],
       },
       {
+        title: '* Create charts & visualizations',
+        href: '/docs/code-interpreting/create-charts-visualizations',
+      },
+      {
         title: '* Connect your data',
         href: '/docs/code-interpreting/connect-your-data',
       },
@@ -188,7 +192,7 @@ export const routes: NavGroup[] = [
         ]
       },
       {
-        title: '* Code interpreting results',
+        title: '* Parsing code execution result',
         href: '/docs/code-interpreting/todo',
       },
     ]
