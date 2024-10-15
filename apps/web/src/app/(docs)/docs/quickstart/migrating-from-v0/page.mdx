@@ -162,9 +162,9 @@ grit apply e2b_v0_to_v1_py
 
 Once the migration is applied, review the changes for possible mistakes, including code that was broken (false positives) or outdated code that was not fixed (false negatives) by the migration. Such issues you may encounter include:
 
-- ⚠️ If non-E2B objects with .close() methods, .id attributes, etc. exist in files that import E2B libraries, they will be incorrectly changed. You need to reject these changes manually.
-- ⚠️ The output structure of Sandbox.list() has changed in the new SDK. You must manually rewrite your code to account for this.
-- ⚠️ The Sandbox cwd option no longer exists, and there is no replacement.
+- ⚠️ If non-E2B objects with `.close()` methods, `.id` attributes, etc. exist in files that import E2B libraries, they will be incorrectly changed. You need to reject these changes manually.
+- ⚠️ The output structure of `Sandbox.list()` has changed in the new SDK. You must manually rewrite your code to account for this.
+- ⚠️ The global `cwd` option no longer exists when creating a Sandbox. You must manually rewrite your code to include the `cwd` option with each command.
 
 You should manually review all changes made by Grit to fix these "gotchas" and others which are sure to exist.
 
