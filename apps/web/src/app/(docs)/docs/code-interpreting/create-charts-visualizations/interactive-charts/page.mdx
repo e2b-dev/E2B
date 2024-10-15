@@ -4,12 +4,12 @@ E2B also allows you to create interactive charts with custom styling.
 
 E2B automatically detects charts when executing Python code with `runCode()` in JavaScript or `run_code()` in Python. The Python code must include Matplotlib charts.
 
-When a chart is deteted, E2B sends the data of the chart back to the client. You can access the chart in the `execution.results` array where each item is a `Result` object with the `graph` property.
+When a chart is deteted, E2B sends the data of the chart back to the client. You can access the chart in the `execution.results` array where each item is a `Result` object with the `chart` property.
 
 Here's a simple example of bar chart:
 <CodeGroup>
 ```js
-import { Sandbox, BarGraph } from '@e2b/code-interpreter'
+import { Sandbox, BarChart } from '@e2b/code-interpreter'
 
 const code = `
 import matplotlib.pyplot as plt
@@ -18,29 +18,29 @@ import matplotlib.pyplot as plt
 authors = ['Author A', 'Author B', 'Author C', 'Author D']
 sales = [100, 200, 300, 400]
 
-# Create and customize the bar graph
+# Create and customize the bar chart
 plt.figure(figsize=(10, 6))
 plt.bar(authors, sales, label='Books Sold', color='blue')
 plt.xlabel('Authors')
 plt.ylabel('Number of Books Sold')
 plt.title('Book Sales by Authors')
 
-# Display the graph
+# Display the chart
 plt.tight_layout()
 plt.show()
 `
 
 const sandbox = await Sandbox.create()
 const result = await sandbox.runCode(code)
-const graph = result.results[0].graph as BarGraph
+const chart = result.results[0].chart as BarChart
 
-console.log('Type:', graph.type)
-console.log('Title:', graph.title)
-console.log('X Label:', graph.x_label)
-console.log('Y Label:', graph.y_label)
-console.log('X Unit:', graph.x_unit)
-console.log('Y Unit:', graph.y_unit)
-console.log('Elements:', graph.elements)
+console.log('Type:', chart.type)
+console.log('Title:', chart.title)
+console.log('X Label:', chart.x_label)
+console.log('Y Label:', chart.y_label)
+console.log('X Unit:', chart.x_unit)
+console.log('Y Unit:', chart.y_unit)
+console.log('Elements:', chart.elements)
 ```
 ```python
 from e2b_code_interpreter import Sandbox
@@ -52,30 +52,30 @@ import matplotlib.pyplot as plt
 authors = ['Author A', 'Author B', 'Author C', 'Author D']
 sales = [100, 200, 300, 400]
 
-# Create and customize the bar graph
+# Create and customize the bar char
 plt.figure(figsize=(10, 6))
 plt.bar(authors, sales, label='Books Sold', color='blue')
 plt.xlabel('Authors')
 plt.ylabel('Number of Books Sold')
 plt.title('Book Sales by Authors')
 
-# Display the graph
+# Display the chart
 plt.tight_layout()
 plt.show()
 """
 
 sandbox = Sandbox()
 execution = sandbox.run_code(code)
-graph = execution.results[0].graph
+chart = execution.results[0].chart
 
-print('Type:', graph.type)
-print('Title:', graph.title)
-print('X Label:', graph.x_label)
-print('Y Label:', graph.y_label)
-print('X Unit:', graph.x_unit)
-print('Y Unit:', graph.y_unit)
+print('Type:', chart.type)
+print('Title:', chart.title)
+print('X Label:', chart.x_label)
+print('Y Label:', chart.y_label)
+print('X Unit:', chart.x_unit)
+print('Y Unit:', chart.y_unit)
 print('Elements:')
-for element in graph.elements:
+for element in chart.elements:
     print('\n  Label:', element.label)
     print('  Value:', element.value)
     print('  Group:', element.group)
@@ -113,7 +113,7 @@ Elements: [
 ]
 ```
 ```bash {{ language: 'python' }}
-Type: GraphType.BAR
+Type: ChartType.BAR
 Title: Book Sales by Authors
 X Label: Authors
 Y Label: Number of Books Sold
@@ -144,8 +144,15 @@ You can then use this data to create an interactive chart with your favorite cha
 ---
 
 ## Supported intertactive charts
-
 The following charts are currently supported:
+- Line chart
+- Bar chart
+- Scatter plot
+- Pie chart
+- Box and whisker plot
+
+
+{/* The following charts are currently supported:
 - [Line chart](#line-chart)
 - [Bar chart](#bar-chart)
 - [Scatter plot](#scatter-plot)
@@ -161,4 +168,4 @@ The following charts are currently supported:
 
 ## Pie chart
 
-## Box and whisker plot
+## Box and whisker plot */}
