@@ -287,12 +287,24 @@ export const routes: NavGroup[] = [
         href: '/docs/sandbox',
       },
       {
-        title: '* Metadata',
-        href: '/docs/sandbox/filesystem',
+        title: 'Metadata',
+        href: '/docs/sandbox/metadata',
       },
       {
         title: '* Environment variables',
         href: '/docs/sandbox/environment-variables',
+      },
+      {
+        title: '* List running sandboxes',
+        href: '/docs/sandbox/list',
+      },
+      {
+        title: '* Connect to running sandbox',
+        href: '/docs/sandbox/connect',
+      },
+      {
+        title: '* Request timeouts',
+        href: '/docs/sandbox/request-timeouts',
       },
       {
         title: '* Persistence',
