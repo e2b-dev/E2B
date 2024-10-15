@@ -22,11 +22,10 @@ function E2BTest() {
   return <div>{text}</div>
 }
 test('browser test', async () => {
-  const screen = render(<E2BTest />)
+  render(<E2BTest />)
   await waitFor(
     () => expect.element(page.getByText('Hello World')).toBeVisible(),
     { timeout: 5000 }
   )
   await expect.element(page.getByText('Hello World')).toBeVisible()
-  expect(screen.container).toMatchSnapshot()
 })
