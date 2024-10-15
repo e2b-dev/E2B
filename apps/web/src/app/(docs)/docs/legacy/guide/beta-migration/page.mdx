@@ -14,8 +14,10 @@ The latest beta versions you should install can be found in NPM/PyPi release his
 	- [Creating sandbox](#creating-sandbox)
 	- [Modifying sandbox timeout](#modifying-sandbox-timeout)
 	- [Reconnecting](#reconnecting)
-	- [Uploading data and creating files in sandbox](#uploading-data-and-creating-files-in-sandbox)
-	- [Downloading files and reading files in sandbox](#downloading-files-and-reading-files-in-sandbox)
+	- [Writing files to sandbox](#writing-files-to-sandbox)
+	- [Reading files from sandbox](#reading-files-from-sandbox)
+	- [Uploading data to sandbox](#uploading-data-to-sandbox)
+	- [Downloading files from sandbox](#downloading-files-from-sandbox)
 	- [Running processes](#running-processes)
 	- [Watching for files' changes](#watching-for-files-changes)
 	- [Accessing sandbox ID](#accessing-sandbox-id)
@@ -24,10 +26,10 @@ The latest beta versions you should install can be found in NPM/PyPi release his
 	- [Timeouts](#timeouts)
 	- [Listing sandboxes](#listing-sandboxes)
 	- [Getting sandbox url](#getting-sandbox-url)
-- [Code Interpreter SDK changes](#code-interpreter-sdk-changes)
+        - [Code Interpreter SDK changes](#code-interpreter-sdk-changes)
 	- [Executing code](#executing-code)
 	- [Custom template](#custom-template)
-- [Python Async](#python-async)
+        - [Python Async](#python-async)
 	- [Watching for files' changes in async Python SDK](#watching-for-files-changes-in-async-python-sdk)
 	- [Running background commands in async Python SDK](#running-background-commands-in-async-python-sdk)
 
@@ -164,7 +166,59 @@ existing_sandbox = Sandbox.connect(sandbox.sandbox_id)
 ```
 </CodeGroup>
 
-## Uploading data and creating files in sandbox
+## Writing files to sandbox
+Use `.files.write()` method to write files to the sandbox.
+
+The method accepts `path` in the sandbox as the first argument and the `data` as the second argument.
+
+<CodeGroup isRunnable={false}>
+```js
+import Sandbox from 'e2b'
+
+// Before
+// await sandbox.filesystem.write('/hello.txt', 'Hello World!') 
+
+// Now
+await sandbox.files.write('/path/in/sandbox', 'Hello World!')
+```
+```python
+from e2b import Sandbox
+
+# Before
+# sandbox.filesystem.write("/hello.txt", "Hello World!") 
+
+# Now
+sandbox.files.write("/path/in/sandbox", "Hello World!")
+```
+</CodeGroup>
+
+## Reading files from sandbox
+Use `.files.read()` method to read files from the sandbox.
+
+The method accepts `path` in the sandbox as the first argument and optional `format` as the second argument.
+
+<CodeGroup isRunnable={false}>
+```js
+import Sandbox from 'e2b'
+
+// Before
+//const content = await sandbox.downloadFile('/path/in/sandbox')
+
+// Now
+const content = await sandbox.files.read('/path/in/sandbox')
+```
+```python
+from e2b import Sandbox
+
+# Before
+# content = sandbox.download_file("/path/in/sandbox")
+
+# Now
+content = sandbox.files.read("/path/in/sandbox")
+```
+</CodeGroup>
+
+## Uploading data to sandbox
 Use `.files.write()` method to upload files to the sandbox.
 
 The method accepts `path` in the sandbox as the first argument and the `data` as the second argument.
@@ -194,7 +248,7 @@ with open("path/to/local/file", "rb") as file:
 ```
 </CodeGroup>
 
-## Downloading files and reading files in sandbox
+## Downloading files from sandbox
 Use `.files.read()` method to download files from the sandbox.
 
 The method accepts `path` in the sandbox as the first argument and optional `format` as the second argument.
@@ -213,7 +267,7 @@ const content = await sandbox.files.read('/path/in/sandbox')
 from e2b import Sandbox
 
 # Before
-# content = sandbox.download_file('/path/in/sandbox')
+# content = sandbox.download_file("/path/in/sandbox")
 
 # Now
 content = sandbox.files.read("/path/in/sandbox")

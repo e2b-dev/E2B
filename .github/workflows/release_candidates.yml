@@ -36,14 +36,51 @@ jobs:
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
 
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        with:
+          python-version: "3.8"
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        with:
+          version: 1.5.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Test Python SDK
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        working-directory: packages/python-sdk
+        run: |
+          poetry install
+          poetry run pytest -n 4 --verbose -x
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+      - name: Release Candidate
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        working-directory: packages/python-sdk
+        run: |
+          poetry version prerelease
+          poetry build
+          poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
       - name: Install dependencies
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
 
       - name: Test JS SDK
         working-directory: packages/js-sdk
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
         run: |
+          npx playwright install --with-deps
           pnpm run test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
@@ -65,39 +102,6 @@ jobs:
           npm publish --tag rc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
-        with:
-          python-version: "3.8"
-
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
-        with:
-          version: 1.5.1
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-
-      - name: Test Python SDK
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
-        working-directory: packages/python-sdk
-        run: |
-          poetry run pytest -n 4 --verbose -x
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-
-      - name: Release Candidate
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
-        working-directory: packages/python-sdk
-        run: |
-          poetry version prerelease
-          poetry build
-          poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing
-        env:
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Commit new versions
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') || contains( github.event.pull_request.labels.*.name, 'python-rc') }}
