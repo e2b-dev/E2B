@@ -303,7 +303,7 @@ export const routes: NavGroup[] = [
         href: '/docs/sandbox/list',
       },
       {
-        title: '* Connect to running sandbox',
+        title: 'Connect to running sandbox',
         href: '/docs/sandbox/connect',
       },
       {
