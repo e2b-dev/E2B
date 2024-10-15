@@ -253,7 +253,8 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         await self.kill()
 
     @overload
-    async def kill(self, request_timeout: Optional[float] = None) -> bool: ...
+    async def kill(self, request_timeout: Optional[float] = None) -> bool:
+        ...
 
     @overload
     @staticmethod
@@ -263,7 +264,8 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> bool: ...
+    ) -> bool:
+        ...
 
     @class_method_variant("_cls_kill")
     async def kill(self, request_timeout: Optional[float] = None) -> bool:  # type: ignore
@@ -290,7 +292,8 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         self,
         timeout: int,
         request_timeout: Optional[float] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     @staticmethod
@@ -301,7 +304,8 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @class_method_variant("_cls_set_timeout")
     async def set_timeout(  # type: ignore

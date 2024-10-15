@@ -533,6 +533,49 @@ export class WatchDirRequest extends Message<WatchDirRequest> {
 }
 
 /**
+ * @generated from message filesystem.FilesystemEvent
+ */
+export class FilesystemEvent extends Message<FilesystemEvent> {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name = "";
+
+  /**
+   * @generated from field: filesystem.EventType type = 2;
+   */
+  type = EventType.UNSPECIFIED;
+
+  constructor(data?: PartialMessage<FilesystemEvent>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.FilesystemEvent";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "type", kind: "enum", T: proto3.getEnumType(EventType) },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FilesystemEvent {
+    return new FilesystemEvent().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FilesystemEvent {
+    return new FilesystemEvent().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FilesystemEvent {
+    return new FilesystemEvent().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: FilesystemEvent | PlainMessage<FilesystemEvent> | undefined, b: FilesystemEvent | PlainMessage<FilesystemEvent> | undefined): boolean {
+    return proto3.util.equals(FilesystemEvent, a, b);
+  }
+}
+
+/**
  * @generated from message filesystem.WatchDirResponse
  */
 export class WatchDirResponse extends Message<WatchDirResponse> {
@@ -547,9 +590,9 @@ export class WatchDirResponse extends Message<WatchDirResponse> {
     case: "start";
   } | {
     /**
-     * @generated from field: filesystem.WatchDirResponse.FilesystemEvent filesystem = 2;
+     * @generated from field: filesystem.FilesystemEvent filesystem = 2;
      */
-    value: WatchDirResponse_FilesystemEvent;
+    value: FilesystemEvent;
     case: "filesystem";
   } | {
     /**
@@ -568,7 +611,7 @@ export class WatchDirResponse extends Message<WatchDirResponse> {
   static readonly typeName = "filesystem.WatchDirResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "start", kind: "message", T: WatchDirResponse_StartEvent, oneof: "event" },
-    { no: 2, name: "filesystem", kind: "message", T: WatchDirResponse_FilesystemEvent, oneof: "event" },
+    { no: 2, name: "filesystem", kind: "message", T: FilesystemEvent, oneof: "event" },
     { no: 3, name: "keepalive", kind: "message", T: WatchDirResponse_KeepAlive, oneof: "event" },
   ]);
 
@@ -621,49 +664,6 @@ export class WatchDirResponse_StartEvent extends Message<WatchDirResponse_StartE
 }
 
 /**
- * @generated from message filesystem.WatchDirResponse.FilesystemEvent
- */
-export class WatchDirResponse_FilesystemEvent extends Message<WatchDirResponse_FilesystemEvent> {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name = "";
-
-  /**
-   * @generated from field: filesystem.EventType type = 2;
-   */
-  type = EventType.UNSPECIFIED;
-
-  constructor(data?: PartialMessage<WatchDirResponse_FilesystemEvent>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "filesystem.WatchDirResponse.FilesystemEvent";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "type", kind: "enum", T: proto3.getEnumType(EventType) },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): WatchDirResponse_FilesystemEvent {
-    return new WatchDirResponse_FilesystemEvent().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): WatchDirResponse_FilesystemEvent {
-    return new WatchDirResponse_FilesystemEvent().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): WatchDirResponse_FilesystemEvent {
-    return new WatchDirResponse_FilesystemEvent().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: WatchDirResponse_FilesystemEvent | PlainMessage<WatchDirResponse_FilesystemEvent> | undefined, b: WatchDirResponse_FilesystemEvent | PlainMessage<WatchDirResponse_FilesystemEvent> | undefined): boolean {
-    return proto3.util.equals(WatchDirResponse_FilesystemEvent, a, b);
-  }
-}
-
-/**
  * @generated from message filesystem.WatchDirResponse.KeepAlive
  */
 export class WatchDirResponse_KeepAlive extends Message<WatchDirResponse_KeepAlive> {
@@ -691,6 +691,222 @@ export class WatchDirResponse_KeepAlive extends Message<WatchDirResponse_KeepAli
 
   static equals(a: WatchDirResponse_KeepAlive | PlainMessage<WatchDirResponse_KeepAlive> | undefined, b: WatchDirResponse_KeepAlive | PlainMessage<WatchDirResponse_KeepAlive> | undefined): boolean {
     return proto3.util.equals(WatchDirResponse_KeepAlive, a, b);
+  }
+}
+
+/**
+ * @generated from message filesystem.CreateWatcherRequest
+ */
+export class CreateWatcherRequest extends Message<CreateWatcherRequest> {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path = "";
+
+  constructor(data?: PartialMessage<CreateWatcherRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.CreateWatcherRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateWatcherRequest {
+    return new CreateWatcherRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateWatcherRequest {
+    return new CreateWatcherRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateWatcherRequest {
+    return new CreateWatcherRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: CreateWatcherRequest | PlainMessage<CreateWatcherRequest> | undefined, b: CreateWatcherRequest | PlainMessage<CreateWatcherRequest> | undefined): boolean {
+    return proto3.util.equals(CreateWatcherRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message filesystem.CreateWatcherResponse
+ */
+export class CreateWatcherResponse extends Message<CreateWatcherResponse> {
+  /**
+   * @generated from field: string watcher_id = 1;
+   */
+  watcherId = "";
+
+  constructor(data?: PartialMessage<CreateWatcherResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.CreateWatcherResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "watcher_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateWatcherResponse {
+    return new CreateWatcherResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateWatcherResponse {
+    return new CreateWatcherResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateWatcherResponse {
+    return new CreateWatcherResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: CreateWatcherResponse | PlainMessage<CreateWatcherResponse> | undefined, b: CreateWatcherResponse | PlainMessage<CreateWatcherResponse> | undefined): boolean {
+    return proto3.util.equals(CreateWatcherResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message filesystem.GetWatcherEventsRequest
+ */
+export class GetWatcherEventsRequest extends Message<GetWatcherEventsRequest> {
+  /**
+   * @generated from field: string watcher_id = 1;
+   */
+  watcherId = "";
+
+  constructor(data?: PartialMessage<GetWatcherEventsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.GetWatcherEventsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "watcher_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetWatcherEventsRequest {
+    return new GetWatcherEventsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetWatcherEventsRequest {
+    return new GetWatcherEventsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetWatcherEventsRequest {
+    return new GetWatcherEventsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetWatcherEventsRequest | PlainMessage<GetWatcherEventsRequest> | undefined, b: GetWatcherEventsRequest | PlainMessage<GetWatcherEventsRequest> | undefined): boolean {
+    return proto3.util.equals(GetWatcherEventsRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message filesystem.GetWatcherEventsResponse
+ */
+export class GetWatcherEventsResponse extends Message<GetWatcherEventsResponse> {
+  /**
+   * @generated from field: repeated filesystem.FilesystemEvent events = 1;
+   */
+  events: FilesystemEvent[] = [];
+
+  constructor(data?: PartialMessage<GetWatcherEventsResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.GetWatcherEventsResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "events", kind: "message", T: FilesystemEvent, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetWatcherEventsResponse {
+    return new GetWatcherEventsResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetWatcherEventsResponse {
+    return new GetWatcherEventsResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetWatcherEventsResponse {
+    return new GetWatcherEventsResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetWatcherEventsResponse | PlainMessage<GetWatcherEventsResponse> | undefined, b: GetWatcherEventsResponse | PlainMessage<GetWatcherEventsResponse> | undefined): boolean {
+    return proto3.util.equals(GetWatcherEventsResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message filesystem.RemoveWatcherRequest
+ */
+export class RemoveWatcherRequest extends Message<RemoveWatcherRequest> {
+  /**
+   * @generated from field: string watcher_id = 1;
+   */
+  watcherId = "";
+
+  constructor(data?: PartialMessage<RemoveWatcherRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.RemoveWatcherRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "watcher_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveWatcherRequest {
+    return new RemoveWatcherRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RemoveWatcherRequest {
+    return new RemoveWatcherRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RemoveWatcherRequest {
+    return new RemoveWatcherRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: RemoveWatcherRequest | PlainMessage<RemoveWatcherRequest> | undefined, b: RemoveWatcherRequest | PlainMessage<RemoveWatcherRequest> | undefined): boolean {
+    return proto3.util.equals(RemoveWatcherRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message filesystem.RemoveWatcherResponse
+ */
+export class RemoveWatcherResponse extends Message<RemoveWatcherResponse> {
+  constructor(data?: PartialMessage<RemoveWatcherResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "filesystem.RemoveWatcherResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveWatcherResponse {
+    return new RemoveWatcherResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RemoveWatcherResponse {
+    return new RemoveWatcherResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RemoveWatcherResponse {
+    return new RemoveWatcherResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: RemoveWatcherResponse | PlainMessage<RemoveWatcherResponse> | undefined, b: RemoveWatcherResponse | PlainMessage<RemoveWatcherResponse> | undefined): boolean {
+    return proto3.util.equals(RemoveWatcherResponse, a, b);
   }
 }
 

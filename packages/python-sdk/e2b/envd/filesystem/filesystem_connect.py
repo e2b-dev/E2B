@@ -74,29 +74,29 @@ class FilesystemClient:
             json=json,
             **opts,
         )
-        self._watch_dir_start = connect.Client(
+        self._create_watcher = connect.Client(
             pool=pool,
             async_pool=async_pool,
-            url=f"{base_url}/{FilesystemName}/WatchDirStart",
-            response_type=filesystem_dot_filesystem__pb2.WatchDirStartResponse,
+            url=f"{base_url}/{FilesystemName}/CreateWatcher",
+            response_type=filesystem_dot_filesystem__pb2.CreateWatcherResponse,
             compressor=compressor,
             json=json,
             **opts,
         )
-        self._watch_dir_get = connect.Client(
+        self._get_watcher_events = connect.Client(
             pool=pool,
             async_pool=async_pool,
-            url=f"{base_url}/{FilesystemName}/WatchDirGet",
-            response_type=filesystem_dot_filesystem__pb2.WatchDirGetResponse,
+            url=f"{base_url}/{FilesystemName}/GetWatcherEvents",
+            response_type=filesystem_dot_filesystem__pb2.GetWatcherEventsResponse,
             compressor=compressor,
             json=json,
             **opts,
         )
-        self._watch_dir_stop = connect.Client(
+        self._remove_watcher = connect.Client(
             pool=pool,
             async_pool=async_pool,
-            url=f"{base_url}/{FilesystemName}/WatchDirStop",
-            response_type=filesystem_dot_filesystem__pb2.WatchDirStopResponse,
+            url=f"{base_url}/{FilesystemName}/RemoveWatcher",
+            response_type=filesystem_dot_filesystem__pb2.RemoveWatcherResponse,
             compressor=compressor,
             json=json,
             **opts,
@@ -162,32 +162,32 @@ class FilesystemClient:
     ) -> AsyncGenerator[filesystem_dot_filesystem__pb2.WatchDirResponse, Any]:
         return self._watch_dir.acall_server_stream(req, **opts)
 
-    def watch_dir_start(
-        self, req: filesystem_dot_filesystem__pb2.WatchDirRequest, **opts
-    ) -> filesystem_dot_filesystem__pb2.WatchDirStartResponse:
-        return self._watch_dir_start.call_unary(req, **opts)
+    def create_watcher(
+        self, req: filesystem_dot_filesystem__pb2.CreateWatcherRequest, **opts
+    ) -> filesystem_dot_filesystem__pb2.CreateWatcherResponse:
+        return self._create_watcher.call_unary(req, **opts)
 
-    def awatch_dir_start(
-        self, req: filesystem_dot_filesystem__pb2.WatchDirRequest, **opts
-    ) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.WatchDirStartResponse]:
-        return self._watch_dir_start.acall_unary(req, **opts)
+    def acreate_watcher(
+        self, req: filesystem_dot_filesystem__pb2.CreateWatcherRequest, **opts
+    ) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.CreateWatcherResponse]:
+        return self._create_watcher.acall_unary(req, **opts)
 
-    def watch_dir_get(
-        self, req: filesystem_dot_filesystem__pb2.WatchDirGetRequest, **opts
-    ) -> filesystem_dot_filesystem__pb2.WatchDirGetResponse:
-        return self._watch_dir_get.call_unary(req, **opts)
+    def get_watcher_events(
+        self, req: filesystem_dot_filesystem__pb2.GetWatcherEventsRequest, **opts
+    ) -> filesystem_dot_filesystem__pb2.GetWatcherEventsResponse:
+        return self._get_watcher_events.call_unary(req, **opts)
 
-    def awatch_dir_get(
-        self, req: filesystem_dot_filesystem__pb2.WatchDirGetRequest, **opts
-    ) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.WatchDirGetResponse]:
-        return self._watch_dir_get.acall_unary(req, **opts)
+    def aget_watcher_events(
+        self, req: filesystem_dot_filesystem__pb2.GetWatcherEventsRequest, **opts
+    ) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.GetWatcherEventsResponse]:
+        return self._get_watcher_events.acall_unary(req, **opts)
 
-    def watch_dir_stop(
-        self, req: filesystem_dot_filesystem__pb2.WatchDirStopRequest, **opts
-    ) -> filesystem_dot_filesystem__pb2.WatchDirStopResponse:
-        return self._watch_dir_stop.call_unary(req, **opts)
+    def remove_watcher(
+        self, req: filesystem_dot_filesystem__pb2.RemoveWatcherRequest, **opts
+    ) -> filesystem_dot_filesystem__pb2.RemoveWatcherResponse:
+        return self._remove_watcher.call_unary(req, **opts)
 
-    def awatch_dir_stop(
-        self, req: filesystem_dot_filesystem__pb2.WatchDirStopRequest, **opts
-    ) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.WatchDirStopResponse]:
-        return self._watch_dir_stop.acall_unary(req, **opts)
+    def aremove_watcher(
+        self, req: filesystem_dot_filesystem__pb2.RemoveWatcherRequest, **opts
+    ) -> Coroutine[Any, Any, filesystem_dot_filesystem__pb2.RemoveWatcherResponse]:
+        return self._remove_watcher.acall_unary(req, **opts)
