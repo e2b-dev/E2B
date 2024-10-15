@@ -86,6 +86,9 @@ pattern e2b_v0_to_v1_js() {
         $msg => `Sandbox` where { $msg <: "CodeInterpreter", $msg <: imported_from(`"@e2b/code-interpreter"`) },
         `$sbx.notebook.execCell($params)` => `$sbx.runCode($params)`,
         `ProcessMessage` => `OutputMessage`,
+    } where or {
+        $program <: contains `import $_ from "@e2b/code-interpreter"`,
+        $program <: contains `import $_ from "@e2b"`
     }
 }
 ```
@@ -132,6 +135,9 @@ pattern e2b_v0_to_v1_py() {
         `$sbx.close()` => `$sbx.kill()`,
         $msg => `Sandbox` where { $msg <: "CodeInterpreter", $msg <: imported_from(`e2b_code_interpreter`) },
         `$sbx.notebook.exec_cell($params)` => `$sbx.run_code($params)`,
+    } where or {
+        $program <: contains `from e2b import $_`,
+        $program <: contains `from e2b_code_interpreter import $_`
     }
 }
 ```
