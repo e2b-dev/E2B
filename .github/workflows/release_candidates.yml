@@ -41,7 +41,7 @@ jobs:
         uses: actions/setup-python@v4
         if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
         with:
-          python-version: "3.8"
+          python-version: "3.9"
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
