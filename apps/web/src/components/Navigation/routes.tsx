@@ -299,7 +299,7 @@ export const routes: NavGroup[] = [
         href: '/docs/sandbox/environment-variables',
       },
       {
-        title: '* List running sandboxes',
+        title: 'List running sandboxes',
         href: '/docs/sandbox/list',
       },
       {
