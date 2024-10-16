@@ -21,6 +21,8 @@ const codeToRun = `
 `
 const sandbox = await Sandbox.create()
 sandbox.runCode(codeToRun, {
+  // Use `onError` to handle runtime code errors
+  onError: error => console.error('error:', error), // $HighlightLine
   onStdout: data => console.log('stdout:', data), // $HighlightLine
   onStderr: data => console.error('stderr:', data), // $HighlightLine
 })
@@ -41,6 +43,8 @@ code_to_run = """
 sandbox = Sandbox()
 sandbox.run_code(
   code_to_run,
+  # Use `on_error` to handle runtime code errors
+  on_error=lambda error: print('error:', error), # $HighlightLine
   on_stdout=lambda data: print('stdout:', data), # $HighlightLine
   on_stderr=lambda data: print('stderr:', data), # $HighlightLine
 )

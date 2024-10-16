@@ -50,14 +50,13 @@ export function Layout({
           <div
             className="
           relative
+          h-full
           flex
           flex-col
           px-4
           pt-14
           sm:px-6
           lg:ml-1
-          lg:border-l
-          lg:border-zinc-900/10
           lg:px-8
           lg:dark:border-white/10
           "
