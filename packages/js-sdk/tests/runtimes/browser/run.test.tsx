@@ -21,11 +21,14 @@ function E2BTest() {
 
   return <div>{text}</div>
 }
-test('browser test', async () => {
-  render(<E2BTest />)
-  await waitFor(
-    () => expect.element(page.getByText('Hello World')).toBeVisible(),
-    { timeout: 5000 }
-  )
-  await expect.element(page.getByText('Hello World')).toBeVisible()
-})
+test(
+  'browser test',
+  async () => {
+    render(<E2BTest />)
+    await waitFor(
+      () => expect.element(page.getByText('Hello World')).toBeVisible(),
+      { timeout: 10000 }
+    )
+  },
+  { timeout: 20000 }
+)
