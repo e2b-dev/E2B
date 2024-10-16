@@ -371,15 +371,15 @@ export const routes: NavGroup[] = [
     items: [
       {
         title: '* Overview',
-        href: '/docs/process/overview',
+        href: '/docs/commands',
       },
       {
         title: '* Streaming',
-        href: '/docs/process/streaming',
+        href: '/docs/commands/streaming',
       },
       {
         title: '* Run commands in background',
-        href: '/docs/process/overview',
+        href: '/docs/commands/background',
       },
     ]
   },
