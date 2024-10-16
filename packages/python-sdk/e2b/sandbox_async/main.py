@@ -59,7 +59,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
     @property
     def files(self) -> Filesystem:
         """
-        Module for interacting with the sandbox filesystem..
+        Module for interacting with the sandbox filesystem.
         """
         return self._filesystem
 

@@ -83,6 +83,7 @@ class Filesystem:
 
         :return: File content as a `bytearray`
         """
+        ...
 
     @overload
     async def read(

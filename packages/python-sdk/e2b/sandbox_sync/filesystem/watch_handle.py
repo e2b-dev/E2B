@@ -12,7 +12,10 @@ from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
 class WatchHandle:
     """
-    Handle for watching filesystem events. It is used to iterate over the events in the watched directory.
+    Handle for watching filesystem events.
+    It is used to get the latest events that have occurred in the watched directory.
+
+    Use `.stop()` to stop watching the directory.
     """
 
     def __init__(
@@ -26,7 +29,8 @@ class WatchHandle:
 
     def stop(self):
         """
-        Stop watching the directory. After you stop the watcher you won't be able to get the events anymore.
+        Stop watching the directory.
+        After you stop the watcher you won't be able to get the events anymore.
         """
         try:
             self._rpc.remove_watcher(RemoveWatcherRequest(watcher_id=self._watcher_id))
@@ -37,7 +41,9 @@ class WatchHandle:
 
     def get_new_events(self) -> List[FilesystemEvent]:
         """
-        Get the latest events that have occurred in the watched directory since the last call, or from the beginning of the watching, up to now.
+        Get the latest events that have occurred in the watched directory since the last call, or from the beginning of the watching, up until now.
+
+        :return: List of filesystem events
         """
         if self._closed:
             raise SandboxException("The watcher is already stopped")

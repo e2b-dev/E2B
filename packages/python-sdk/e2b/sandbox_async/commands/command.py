@@ -111,7 +111,7 @@ class Commands:
 
         :param pid Process ID of the command. You can get the list of processes using `sandbox.commands.list()`.
         :param data: Data to send to the command
-        :param request_timeout: Request timeout
+        :param request_timeout: Timeout for the request in **seconds**
         """
         try:
             await self._rpc.asend_input(
@@ -184,7 +184,7 @@ class Commands:
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for the request in **seconds**
 
-        :return: `CommandHandle` handle to interact with the running command
+        :return: `AsyncCommandHandle` handle to interact with the running command
         """
         ...
 
@@ -271,7 +271,7 @@ class Commands:
     ) -> AsyncCommandHandle:
         """
         Connects to a running command.
-        You can use `CommandHandle.wait()` to wait for the command to finish and get execution results.
+        You can use `AsyncCommandHandle.wait()` to wait for the command to finish and get execution results.
 
         :param pid: Process ID of the command to connect to. You can get the list of processes using `sandbox.commands.list()`
         :param request_timeout: Request timeout in **seconds**
@@ -279,7 +279,7 @@ class Commands:
         :param on_stdout: Callback for command stdout output
         :param on_stderr: Callback for command stderr output
 
-        :return: `CommandHandle` handle to interact with the running command
+        :return: `AsyncCommandHandle` handle to interact with the running command
         """
         events = self._rpc.aconnect(
             process_pb2.ConnectRequest(
