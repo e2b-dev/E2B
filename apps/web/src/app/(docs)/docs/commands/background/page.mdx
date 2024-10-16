@@ -1,0 +1,34 @@
+# Running commands in background
+
+To run commands in background, pass the `background` option to the `commands.run()` method. This will return immediately and the command will continue to run in the sandbox.
+You can then later kill the command using the `commands.kill()` method.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Start the command in the background
+const command = await sandbox.commands.run('echo hello; sleep 10; echo world', {
+  background: true, // $HighlightLine
+  onStdout: (data) => {
+    console.log(data)
+  },
+})
+
+// Kill the command
+await command.kill()
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+
+# Start the command in the background
+command = sandbox.commands.run('echo hello; sleep 10; echo world', on_stdout=lambda data: print(data), background=True)
+
+# Kill the command
+command.kill()
+```
+</CodeGroup>

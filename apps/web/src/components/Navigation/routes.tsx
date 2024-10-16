@@ -367,18 +367,18 @@ export const routes: NavGroup[] = [
     ]
   },
   {
-    title: '* Commands',
+    title: 'Commands',
     items: [
       {
-        title: '* Overview',
+        title: 'Overview',
         href: '/docs/commands',
       },
       {
-        title: '* Streaming',
+        title: 'Streaming',
         href: '/docs/commands/streaming',
       },
       {
-        title: '* Run commands in background',
+        title: 'Run commands in background',
         href: '/docs/commands/background',
       },
     ]
