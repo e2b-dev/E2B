@@ -111,6 +111,11 @@ export const Header = forwardRef(function Header({ className }, ref) {
         >
           <Logo className="h-6" />
         </Link>
+        <div className='flex items-center gap-1'>
+          <DocumentationTypeLink pathname={pathname} href="/docs" title="Documentation" />
+          {/* <DocumentationTypeLink pathname={pathname} href="/docs/api-reference" title="* Reference" /> */}
+          <DocumentationTypeLink pathname={pathname} href="/dashboard" title="Dashboard" />
+        </div>
       </div>
 
       {!isAuth &&
