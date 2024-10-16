@@ -13,14 +13,15 @@ from e2b.sandbox.commands.command_handle import (
 
 class CommandHandle:
     """
-    Class representing a process. It provides methods for waiting and killing the process.
-    It is also used to iterate over the process output.
+    Command execution handle.
+
+    It provides methods for waiting for the command to finish, retrieving stdout/stderr, and killing the command.
     """
 
     @property
     def pid(self):
         """
-        Get the process ID.
+        Command process ID.
         """
         return self._pid
 
@@ -43,6 +44,11 @@ class CommandHandle:
         self._iteration_exception: Optional[Exception] = None
 
     def __iter__(self):
+        """
+        Iterate over the command output.
+
+        :return: Generator of command outputs
+        """
         return self._handle_events()
 
     def _handle_events(
@@ -78,7 +84,10 @@ class CommandHandle:
 
     def disconnect(self) -> None:
         """
-        Disconnect from the process. It does not kill the process. It only stops receiving events from the process.
+        Disconnect from the command.
+
+        The command is not killed, but SDK stops receiving events from the command.
+        You can reconnect to the command using `sandbox.commands.connect` method.
         """
         self._events.close()
 
@@ -89,13 +98,14 @@ class CommandHandle:
         on_stderr: Optional[Callable[[str], None]] = None,
     ) -> CommandResult:
         """
-        Waits for the process to finish and returns the result.
-        If the process exits with a non-zero exit code, it throws a `CommandExitException`.
+        Wait for the command to finish and returns the result.
+        If the command exits with a non-zero exit code, it throws a `CommandExitException`.
 
         :param on_pty: Callback for pty output
         :param on_stdout: Callback for stdout output
         :param on_stderr: Callback for stderr output
-        :return: Process result
+
+        :return: `CommandResult` result of command execution
         """
         try:
             for stdout, stderr, pty in self:
@@ -128,7 +138,10 @@ class CommandHandle:
 
     def kill(self) -> bool:
         """
-        Kills the process.
-        :return: Whether the process was killed successfully
+        Kills the command.
+
+        It uses `SIGKILL` signal to kill the command.
+
+        :return: Whether the command was killed successfully
         """
         return self._handle_kill()
