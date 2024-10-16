@@ -4,7 +4,7 @@ import { GetServerSideProps } from 'next'
 export const getServerSideProps: GetServerSideProps = async () => {
   return {
     redirect: {
-      destination: '/dashboard',
+      destination: '/',
       permanent: false,
     },
   }

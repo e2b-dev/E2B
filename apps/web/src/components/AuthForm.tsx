@@ -2,10 +2,7 @@
 
 import Link from 'next/link'
 import { Auth } from '@supabase/auth-ui-react'
-import {
-  ThemeSupa,
-  ViewType,
-} from '@supabase/auth-ui-shared'
+import { ThemeSupa, ViewType } from '@supabase/auth-ui-shared'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
@@ -20,19 +17,22 @@ export interface Props {
 
 function AuthForm({ view }: Props) {
   const searchParams = useSearchParams()
-  const redirectTo = searchParams?.get('redirect_to') || undefined
+  const redirectTo = searchParams?.get('redirect_to') || '/dashboard'
   const router = useRouter()
   const user = useUser()
 
-  useEffect(function redirect() {
-    if (user.user && redirectTo) {
-      router.push(redirectTo)
-    }
+  useEffect(
+    function redirect() {
+      if (user.user && redirectTo) {
+        router.push(redirectTo)
+      }
 
-    if (user.wasUpdated && !redirectTo) {
-      router.push('/dashboard')
-    }
-  }, [user.user, router, redirectTo, view, user.wasUpdated])
+      if (user.wasUpdated && !redirectTo) {
+        router.push('/dashboard')
+      }
+    },
+    [user.user, router, redirectTo, view, user.wasUpdated]
+  )
 
   return (
     <div className="mx-auto flex flex-1 w-full justify-center items-center flex-col pt-4">
@@ -79,43 +79,36 @@ function AuthForm({ view }: Props) {
       </div>
 
       <div className="flex flex-1 flex-col pt-4">
-        {(view === 'sign_up' || view === 'forgotten_password' || view === 'update_password') &&
+        {(view === 'sign_up' ||
+          view === 'forgotten_password' ||
+          view === 'update_password') && (
           <div className="flex items-center justify-start gap-2">
             <span className="text-zinc-400">Already have an account?</span>
-            <Link className="flex items-center justify-center" href={`/auth/sign-in?redirect_to=${redirectTo}`}>
-              <Button
-                variant="textLink"
-              >
-                Sign in
-              </Button>
-            </Link>
-          </div>
-        }
-
-        {view === 'sign_in' &&
-          <Link className="text-center" href="/auth/reset-password">
-            <Button
-              variant="textSubtle"
+            <Link
+              className="flex items-center justify-center"
+              href={`/auth/sign-in?redirect_to=${redirectTo}`}
             >
-              Forgot your password?
-            </Button>
-          </Link>
-        }
-
-        {view === 'sign_in' &&
-          <div className="flex items-center justify-start gap-2">
-            <span className="text-zinc-400">{'Don\'t have an account?'}</span>
-            <Link href={`/auth/sign-up?redirect_to=${redirectTo}`}>
-              <Button
-                variant="textLink"
-              >
-                Sign up
-              </Button>
+              <Button variant="textLink">Sign in</Button>
             </Link>
           </div>
-        }
+        )}
+
+        {view === 'sign_in' && (
+          <Link className="text-center" href="/auth/reset-password">
+            <Button variant="textSubtle">Forgot your password?</Button>
+          </Link>
+        )}
+
+        {view === 'sign_in' && (
+          <div className="flex items-center justify-start gap-2">
+            <span className="text-zinc-400">{"Don't have an account?"}</span>
+            <Link href={`/auth/sign-up?redirect_to=${redirectTo}`}>
+              <Button variant="textLink">Sign up</Button>
+            </Link>
+          </div>
+        )}
       </div>
-    </div >
+    </div>
   )
 }
 
