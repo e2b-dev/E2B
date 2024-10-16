@@ -423,19 +423,23 @@ export const routes: NavGroup[] = [
   //   ]
   // },
   {
-    title: '* CLI',
+    title: 'CLI',
     items: [
       {
-        title: '* Installation',
-        href: '/docs/cli/install',
+        title: 'Installation',
+        href: '/docs/cli',
       },
       {
-        title: '* List running sandboxes',
-        href: '/docs/cli/list',
+        title: 'Authentication',
+        href: '/docs/cli/auth',
       },
       {
-        title: '* Shutdown all running sandboxes',
-        href: '/docs/cli/kill-all',
+        title: 'List running sandboxes',
+        href: '/docs/cli/list-sandboxes',
+      },
+      {
+        title: '* Shutdown running sandboxes',
+        href: '/docs/cli/shutdown-sandbox',
       },
     ]
   },
