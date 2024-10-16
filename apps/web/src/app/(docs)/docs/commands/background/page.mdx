@@ -26,7 +26,15 @@ from e2b_code_interpreter import Sandbox
 sandbox = Sandbox()
 
 # Start the command in the background
-command = sandbox.commands.run('echo hello; sleep 10; echo world', on_stdout=lambda data: print(data), background=True)
+command = sandbox.commands.run('echo hello; sleep 10; echo world', background=True)
+
+# Get stdout and stderr from the command running in the background.
+# You can run this code in a separate thread or use command.wait() to wait for the command to finish.
+for stdout, stderr, _ in command:
+    if stdout:
+        print(stdout)
+    if stderr:
+        print(stderr)
 
 # Kill the command
 command.kill()
