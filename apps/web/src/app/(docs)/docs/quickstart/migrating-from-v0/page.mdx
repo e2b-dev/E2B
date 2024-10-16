@@ -66,19 +66,19 @@ pattern e2b_v0_to_v1_js() {
         } => `$sbx.commands.run($cmd, {$params})` where $params += `backgrund: true`,
         `const $watcher = $sbx.filesystem.watchDir($path)` => `` where {
             $program <: contains `$watcher.addEventListener($body)` => .,
-            $program <: contains `await $watcher.start()` => `await $sbx.files.watch($path, $body)`
+            $program <: contains `await $watcher.start()` => `await $sbx.files.watchDir($path, $body)`
         },
         `let $watcher = $sbx.filesystem.watchDir($path)` => `` where {
             $program <: contains `$watcher.addEventListener($body)` => .,
-            $program <: contains `await $watcher.start()` => `await $sbx.files.watch($path, $body)`
+            $program <: contains `await $watcher.start()` => `await $sbx.files.watchDir($path, $body)`
         },
         `var $watcher = $sbx.filesystem.watchDir($path)` => `` where {
             $program <: contains `$watcher.addEventListener($body)` => .,
-            $program <: contains `await $watcher.start()` => `await $sbx.files.watch($path, $body)`
+            $program <: contains `await $watcher.start()` => `await $sbx.files.watchDir($path, $body)`
         },
         `$watcher = $sbx.filesystem.watchDir($path)` => `` where {
             $program <: contains `$watcher.addEventListener($body)` => .,
-            $program <: contains `await $watcher.start()` => `await $sbx.files.watch($path, $body)`
+            $program <: contains `await $watcher.start()` => `await $sbx.files.watchDir($path, $body)`
         },
         `$sbx.id` => `$sbx.sandboxId`,
         `$sbx.fileURL` => `$sbx.uploadUrl()`,
@@ -128,7 +128,7 @@ pattern e2b_v0_to_v1_py() {
         } => `$sbx.commands.run($cmd, $params, background=True)`,
         `watcher = $sbx.filesystem.watch_dir($path)` => `` where {
             $program <: contains `watcher.add_event_listener($body)` => .,
-            $program <: contains `await watcher.start()` => `await $sbx.files.watch($path, $body)`
+            $program <: contains `await watcher.start()` => `await $sbx.files.watch_dir($path, $body)`
         },
         `$sbx.id` => `$sbx.sandbox_id`,
         `$sbx.file_url` => `$sbx.upload_url`,

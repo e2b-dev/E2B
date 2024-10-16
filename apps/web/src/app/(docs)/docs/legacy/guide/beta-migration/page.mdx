@@ -280,7 +280,7 @@ You execute processes by calling `.commands.run()` method. By default, the metho
 
 You can specify the timeout for the command execution by passing `timeoutMs`/`timeout` option. The default timeout is 60 seconds.
 
-If the command fails with a non-zero exit it will raise `ProcessExitError` in Javascript, or `ProcessExitException` in Python, and you can catch and inspect the error for more info.
+If the command fails with a non-zero exit it will raise `CommandExitError` in Javascript, or `CommandExitException` in Python, and you can catch and inspect the error for more info.
 
 <CodeGroup isRunnable={false}>
 ```js
@@ -388,7 +388,7 @@ import Sandbox from 'e2b'
 
 // Now
 const sandbox = await Sandbox.create()
-await sandbox.files.watch('/path/in/sandbox', (event) => console.log(event))
+await sandbox.files.watchDir('/path/in/sandbox', (event) => console.log(event))
 ```
 ```python
 from e2b import Sandbox
@@ -402,7 +402,7 @@ from e2b import Sandbox
 
 # Now
 sandbox = Sandbox()
-watcher = sandbox.files.watch("/path/in/sandbox")
+watcher = sandbox.files.watch_dir("/path/in/sandbox")
 
 for event in watcher:
     print(event)
@@ -656,7 +656,7 @@ from e2b import Sandbox
 
 # Sync
 # sandbox = Sandbox()
-# watcher = sandbox.files.watch("/path/in/sandbox")
+# watcher = sandbox.files.watch_dir("/path/in/sandbox")
 
 # for event in watcher:
 #     print(event)
@@ -664,7 +664,7 @@ from e2b import Sandbox
 # Async
 sandbox = await AsyncSandbox.create()
 
-await sandbox.files.watch("/path/in/sandbox", lambda event: print(event))
+await sandbox.files.watch_dir("/path/in/sandbox", lambda event: print(event))
 ```
 </CodeGroup>
 
