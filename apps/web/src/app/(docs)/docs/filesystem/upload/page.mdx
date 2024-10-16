@@ -1,0 +1,27 @@
+# Upload data to sandbox
+
+You can upload data to the sandbox using the `files.write()` method.
+
+<CodeGroup>
+```js
+import fs from 'fs'
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Read file from local filesystem
+const content = fs.readFileSync('/local/path')
+// Upload file to sandbox
+await sandbox.files.write('/path/in/sandbox', content)
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+
+# Read file from local filesystem
+with open("path/to/local/file", "rb") as file:
+  # Upload file to sandbox
+	sandbox.files.write("/path/in/sandbox", file)
+```
+</CodeGroup>

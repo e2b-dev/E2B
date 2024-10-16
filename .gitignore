@@ -1,6 +1,7 @@
 vale-styles
 .vercel
 .vscode
+.DS_Store
 
 # Logs
 logs
@@ -287,3 +288,7 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
+
+# API reference artifacts
+api_ref/
+apiRefRoutes.json

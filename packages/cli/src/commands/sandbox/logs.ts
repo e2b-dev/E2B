@@ -3,25 +3,19 @@ import * as e2b from 'e2b'
 import * as util from 'util'
 import * as chalk from 'chalk'
 
-import { client, ensureAPIKey } from 'src/api'
+import { client, connectionConfig } from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { listSandboxes } from './list'
 import { wait } from 'src/utils/wait'
-
-const getSandboxLogs = e2b.withAPIKey(
-  client.api.path('/sandboxes/{sandboxID}/logs').method('get').create(),
-)
+import { handleE2BRequestError } from '../../utils/errors'
 
 const maxRuntime = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 
-function getLongID(sandboxID: string, clientID?: string) {
-  if (clientID) {
-    return `${sandboxID}-${clientID}`
-  }
-  return sandboxID
+function getShortID(sandboxID: string) {
+  return sandboxID.split('-')[0]
 }
 
-function waitForSandboxEnd(apiKey: string, sandboxID: string) {
+function waitForSandboxEnd(sandboxID: string) {
   let isRunning = true
 
   async function monitor() {
@@ -37,8 +31,10 @@ function waitForSandboxEnd(apiKey: string, sandboxID: string) {
         break
       }
 
-      const response = await listSandboxes({ apiKey })
-      const sandbox = response.find(s => getLongID(s.sandboxID, s.clientID) === sandboxID)
+      const response = await listSandboxes()
+      const sandbox = response.find(
+        (s) => s.sandboxID === getShortID(sandboxID)
+      )
       if (!sandbox) {
         isRunning = false
         break
@@ -68,7 +64,11 @@ function isLevelIncluded(level: LogLevel, allowedLevel?: LogLevel) {
     case LogLevel.DEBUG:
       return true
     case LogLevel.INFO:
-      return level === LogLevel.INFO || level === LogLevel.WARN || level === LogLevel.ERROR
+      return (
+        level === LogLevel.INFO ||
+        level === LogLevel.WARN ||
+        level === LogLevel.ERROR
+      )
     case LogLevel.WARN:
       return level === LogLevel.WARN || level === LogLevel.ERROR
     case LogLevel.ERROR:
@@ -77,22 +77,15 @@ function isLevelIncluded(level: LogLevel, allowedLevel?: LogLevel) {
 }
 
 function formatEnum(e: { [key: string]: string }) {
-  return Object.values(e).map(level => asBold(level)).join(', ')
+  return Object.values(e)
+    .map((level) => asBold(level))
+    .join(', ')
 }
 
 enum LogFormat {
   JSON = 'json',
   PRETTY = 'pretty',
 }
-
-enum LoggerService {
-  PROCESS = 'process',
-  FILESYSTEM = 'filesystem',
-  TERMINAL = 'terminal',
-  NETWORK = 'network',
-  FILE = 'file',
-}
-
 
 function cleanLogger(logger?: string) {
   if (!logger) {
@@ -104,56 +97,68 @@ function cleanLogger(logger?: string) {
 
 export const logsCommand = new commander.Command('logs')
   .description('show logs for sandbox')
-  .argument('<sandboxID>', `show logs for sandbox specified by ${asBold('<sandboxID>')}`)
+  .argument(
+    '<sandboxID>',
+    `show logs for sandbox specified by ${asBold('<sandboxID>')}`
+  )
   .alias('lg')
-  .option('--level <level>', `filter logs by level (${formatEnum(LogLevel)}). The logs with the higher levels will be also shown.`, LogLevel.INFO)
+  .option(
+    '--level <level>',
+    `filter logs by level (${formatEnum(
+      LogLevel
+    )}). The logs with the higher levels will be also shown.`,
+    LogLevel.INFO
+  )
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
-  .option('--format <format>', `specify format for printing logs (${formatEnum(LogFormat)})`, LogFormat.PRETTY)
-  .option('--loggers [loggers]', `filter logs by loggers. The available loggers are ${formatEnum(LoggerService)}. Specify multiple loggers by separating them with a comma.`, (value) => {
-    const loggers = value.split(',').map(s => s.trim()) as LoggerService[]
-    // Check if all loggers are valid
-    loggers.forEach(s => {
-      if (!Object.values(LoggerService).includes(s)) {
-        console.error(`Invalid logger used as argument: "${s}"\nValid loggers are ${formatEnum(LoggerService)}`)
-        process.exit(1)
+  .option(
+    '--format <format>',
+    `specify format for printing logs (${formatEnum(LogFormat)})`,
+    LogFormat.PRETTY
+  )
+  .option(
+    '--loggers [loggers]',
+    'filter logs by loggers. Specify multiple loggers by separating them with a comma.',
+    (val: string) => val.split(',')
+  )
+  .action(
+    async (
+      sandboxID: string,
+      opts?: {
+        level: string
+        follow: boolean
+        format: LogFormat
+        loggers?: string[]
       }
-    })
-    return loggers
-  }, [LoggerService.PROCESS, LoggerService.FILESYSTEM])
-  .action(async (sandboxID: string, opts?: {
-    level: string,
-    follow: boolean,
-    format: LogFormat,
-    loggers: LoggerService[] | boolean,
-  }) => {
-    try {
-      const level = opts?.level.toUpperCase() as LogLevel | undefined
-      if (level && !Object.values(LogLevel).includes(level)) {
-        throw new Error(`Invalid log level: ${level}`)
-      }
+    ) => {
+      try {
+        const level = opts?.level.toUpperCase() as LogLevel | undefined
+        if (level && !Object.values(LogLevel).includes(level)) {
+          throw new Error(`Invalid log level: ${level}`)
+        }
 
-      const format = opts?.format.toLowerCase() as LogFormat | undefined
-      if (format && !Object.values(LogFormat).includes(format)) {
-        throw new Error(`Invalid log format: ${format}`)
-      }
+        const format = opts?.format.toLowerCase() as LogFormat | undefined
+        if (format && !Object.values(LogFormat).includes(format)) {
+          throw new Error(`Invalid log format: ${format}`)
+        }
 
-      const apiKey = ensureAPIKey()
+        const getIsRunning = opts?.follow
+          ? waitForSandboxEnd(sandboxID)
+          : () => false
 
-      const getIsRunning = opts?.follow ? waitForSandboxEnd(apiKey, sandboxID) : () => false
+        let start: number | undefined
+        let isFirstRun = true
+        let firstLogsPrinted = false
 
-      let start: number | undefined
-      let isFirstRun = true
-      let firstLogsPrinted = false
+        if (format === LogFormat.PRETTY) {
+          console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
+        }
 
-      if (format === LogFormat.PRETTY) {
-        console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
-      }
+        const isRunningPromise = listSandboxes()
+          .then((r) => r.find((s) => s.sandboxID === getShortID(sandboxID)))
+          .then((s) => !!s)
 
-      const isRunningPromise = listSandboxes({ apiKey }).then(r => r.find(s => getLongID(s.sandboxID, s.clientID) === sandboxID)).then(s => !!s)
-
-      do {
-        try {
-          const logs = await listSandboxLogs({ apiKey, sandboxID, start })
+        do {
+          const logs = await listSandboxLogs({ sandboxID, start })
 
           if (logs.length !== 0 && firstLogsPrinted === false) {
             firstLogsPrinted = true
@@ -161,21 +166,35 @@ export const logsCommand = new commander.Command('logs')
           }
 
           for (const log of logs) {
-            printLog(log.timestamp, log.line, level, format, opts?.loggers)
+            printLog(
+              log.timestamp,
+              log.line,
+              level,
+              format,
+              opts?.loggers ?? undefined
+            )
           }
 
           const isRunning = await isRunningPromise
 
           if (!isRunning && logs.length === 0 && isFirstRun) {
             if (format === LogFormat.PRETTY) {
-              console.log(`\nStopped printing logs — sandbox ${withUnderline('not found')}`)
+              console.log(
+                `\nStopped printing logs — sandbox ${withUnderline(
+                  'not found'
+                )}`
+              )
             }
             break
           }
 
           if (!isRunning) {
             if (format === LogFormat.PRETTY) {
-              console.log(`\nStopped printing logs — sandbox is ${withUnderline('closed')}`)
+              console.log(
+                `\nStopped printing logs — sandbox is ${withUnderline(
+                  'closed'
+                )}`
+              )
             }
             break
           }
@@ -185,45 +204,37 @@ export const logsCommand = new commander.Command('logs')
             // TODO: Use the timestamp from the last log instead of the current time?
             start = new Date(lastLog.timestamp).getTime() + 1
           }
-        } catch (e) {
-          if (e instanceof getSandboxLogs.Error) {
-            const error = e.getActualType()
-            if (error.status === 401) {
-              throw new Error(
-                `Error getting sandbox logs - (${error.status}) bad request: ${error}`,
-              )
-            }
-            if (error.status === 404) {
-              throw new Error(
-                `Error getting sandbox logs - (${error.status}) not found: ${error}`,
-              )
-            }
-            if (error.status === 500) {
-              throw new Error(
-                `Error getting sandbox logs - (${error.status}) server error: ${error}`,
-              )
-            }
-          }
-          throw e
-        }
 
-        await wait(400)
-        isFirstRun = false
-      } while (getIsRunning() && opts?.follow)
-    } catch (err: any) {
-      console.error(err)
-      process.exit(1)
+          await wait(400)
+          isFirstRun = false
+        } while (getIsRunning() && opts?.follow)
+      } catch (err: any) {
+        console.error(err)
+        process.exit(1)
+      }
     }
-  })
+  )
 
-function printLog(timestamp: string, line: string, allowedLevel: LogLevel | undefined, format: LogFormat | undefined, allowedLoggers?: LoggerService[] | boolean) {
+function printLog(
+  timestamp: string,
+  line: string,
+  allowedLevel: LogLevel | undefined,
+  format: LogFormat | undefined,
+  allowedLoggers?: string[] | undefined
+) {
   const log = JSON.parse(line)
   let level = log['level'].toUpperCase()
 
   log.logger = cleanLogger(log.logger)
 
   // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all loggers.
-  if (allowedLoggers !== true && Array.isArray(allowedLoggers) && !allowedLoggers.some(allowedLogger => log.logger.startsWith(allowedLogger))) {
+  if (
+    allowedLoggers !== undefined &&
+    Array.isArray(allowedLoggers) &&
+    !allowedLoggers.some((allowedLogger) =>
+      log.logger.startsWith(allowedLogger)
+    )
+  ) {
     return
   }
 
@@ -256,23 +267,54 @@ function printLog(timestamp: string, line: string, allowedLevel: LogLevel | unde
   delete log['sandboxID']
 
   if (format === LogFormat.JSON) {
-    console.log(JSON.stringify({
-      timestamp: new Date(timestamp).toISOString(),
-      level,
-      ...log,
-    }))
+    console.log(
+      JSON.stringify({
+        timestamp: new Date(timestamp).toISOString(),
+        level,
+        ...log,
+      })
+    )
   } else {
-    const time = `[${new Date(timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '')}]`
+    const time = `[${new Date(timestamp)
+      .toISOString()
+      .replace(/T/, ' ')
+      .replace(/\..+/, '')}]`
     delete log['level']
-    console.log(`${asTimestamp(time)} ${level} ` + util.inspect(log, { colors: true, depth: null, maxArrayLength: Infinity, sorted: true, compact: true, breakLength: Infinity }))
+    console.log(
+      `${asTimestamp(time)} ${level} ` +
+        util.inspect(log, {
+          colors: true,
+          depth: null,
+          maxArrayLength: Infinity,
+          sorted: true,
+          compact: true,
+          breakLength: Infinity,
+        })
+    )
   }
 }
 
 export async function listSandboxLogs({
-  apiKey,
   sandboxID,
   start,
-}: { apiKey: string, sandboxID: string, start?: number }): Promise<e2b.components['schemas']['SandboxLog'][]> {
-  const response = await getSandboxLogs(apiKey, { sandboxID, start })
-  return response.data.logs
+}: {
+  sandboxID: string
+  start?: number
+}): Promise<e2b.components['schemas']['SandboxLog'][]> {
+  const signal = connectionConfig.getSignal()
+  const res = await client.api.GET('/sandboxes/{sandboxID}/logs', {
+    signal,
+    params: {
+      path: {
+        sandboxID,
+      },
+      query: {
+        start,
+      },
+    },
+  })
+
+  handleE2BRequestError(res.error, 'Error while getting sandbox logs')
+
+  return res.data.logs
 }

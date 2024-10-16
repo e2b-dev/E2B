@@ -1,281 +1,436 @@
 import {
-  BarChart,
+  Home,
+  CheckCircle,
+  MessagesSquare,
   Braces,
-  ChevronRightSquare,
-  Cog,
-  Cpu,
-  DollarSign,
-  File,
-  FileDown,
-  FileUp,
-  Folder,
-  FolderTree,
-  Hammer,
-  HardDrive,
-  KeyRound,
-  Link,
-  PencilRuler,
-  PlaySquare,
-  RefreshCw,
-  Settings,
-  ShieldQuestion,
-  Terminal,
-  TerminalSquare,
-  Timer,
-  Variable,
-  Wrench,
-  BookOpen,
 } from 'lucide-react'
 
-import Image from 'next/image'
-import logoNode from '@/images/logos/node.svg'
-import logoPython from '@/images/logos/python.svg'
+export interface NavLink {
+  title: string
+  href: string
+  icon?: React.ReactNode
+}
 
-export const routes = [
+export interface NavSubgroup {
+  title: string
+  icon?: React.ReactNode
+  links: NavLink[]
+}
+
+export interface NavGroup {
+  title?: string
+  icon?: React.ReactNode
+  items: Array<NavLink | NavSubgroup>
+}
+
+export const routes: NavGroup[] = [
   {
-    title: 'Getting Started',
-    links: [
+    items: [
       {
-        title: 'Installation',
+        title: 'Home',
         href: '/docs',
+        icon: <Home size={16} />,
       },
       {
-        title: 'helloWorld.[ts|js]',
-        href: '/docs/hello-world/js',
-        icon: <Image src={logoNode} width={20} height={20} alt="Python logo" />,
-        isFontMono: true,
+        title: 'Quickstart',
+        icon: <CheckCircle size={16} />,
+        links: [
+          {
+            title: 'Running your first Sandbox',
+            href: '/docs/quickstart',
+          },
+          {
+            title: 'Connect LLMs to E2B',
+            href: '/docs/quickstart/connect-llms',
+          },
+          {
+            title: 'Upload & download files',
+            href: '/docs/quickstart/upload-download-files',
+          },
+          {
+            title: 'Install custom packages',
+            href: '/docs/quickstart/install-custom-packages',
+          },
+        ],
       },
       {
-        title: 'hello_world.py',
-        href: '/docs/hello-world/py',
-        icon: <Image src={logoPython} width={20} height={20} alt="Python logo" />,
-        isFontMono: true,
-      },
-      {
-        title: 'Supported LLMs and AI frameworks',
-        href: '/docs/supported',
-      },
-      // {
-      //   title: 'What\'s Code Interpreting?',
-      //   href: '/code-interpreting',
-      // },
-      {
-        icon: <KeyRound strokeWidth={1} size={20} />,
-        title: 'API Key',
-        href: '/docs/getting-started/api-key',
-      },
-      {
-        icon: <DollarSign strokeWidth={1} size={20} />,
-        title: 'Pricing',
-        href: '/docs/pricing',
-      },
-      {
-        icon: <BarChart strokeWidth={1} size={20} />,
-        title: 'Track usage',
-        href: '/dashboard?tab=usage',
-      },
-      {
-        icon: <ShieldQuestion strokeWidth={1} size={20} />,
-        title: 'Getting help',
-        href: '/docs/getting-help',
-      },
-    ],
-  },
-  {
-    title: 'Guides',
-    links: [
-      {
-        icon: <BookOpen strokeWidth={1} size={20} />,
-        title: 'Guides and examples in cookbook',
+        title: 'Cookbook',
         href: 'https://github.com/e2b-dev/e2b-cookbook',
+        icon: <Braces size={16} />,
       },
       {
-        icon: <BookOpen strokeWidth={1} size={20} />,
-        title: '[SDK Beta] Migration',
-        href: '/docs/guide/beta-migration',
+        title: 'Need help?',
+        href: '/docs/support',
+        icon: <MessagesSquare size={16} />,
       },
       {
-        icon: <BookOpen strokeWidth={1} size={20} />,
-        title: '[SDK Beta] Runtimes in Code Interpreter',
-        href: '/docs/guide/beta-code-interpreter-language-runtimes',
+        title: 'Migrating from v0.* to v1.*',
+        href: '/docs/quickstart/migrating-from-v0',
+      },
+    ],
+  },
+  // {
+  //   title: 'Quickstart',
+  //   items: [
+  //     {
+  //       title: 'Running your first Sandbox',
+  //       href: '/docs/hello-world/js',
+  //     },
+  //     {
+  //       title: 'Connecting LLMs to E2B',
+  //       links: [
+  //         {
+  //           title: 'OpenAI',
+  //           href: '/docs/integrations/openai',
+  //         },
+  //         {
+  //           title: 'Anthropic',
+  //           href: '/docs/integrations/ai-sdk',
+  //         },
+  //         {
+  //           title: 'Mistral',
+  //           href: '/docs/integrations/ai-sdk',
+  //         },
+  //         {
+  //           title: 'Vercel AI SDK',
+  //           href: '/docs/integrations/ai-sdk',
+  //         },
+  //         {
+  //           title: 'LangChain',
+  //           href: '/docs/integrations/ai-sdk',
+  //         },
+  //         {
+  //           title: 'LlamaIndex',
+  //           href: '/docs/integrations/ai-sdk',
+  //         },
+  //       ],
+  //     },
+  //     {
+  //       title: 'Uploading & downloading files',
+  //       href: '/docs/code-execution/python',
+  //     },
+  //     {
+  //       title: 'Install custom packages',
+  //       href: '/docs/code-execution/python',
+  //     },
+  //   ]
+  // },
+  {
+    title: 'Code Interpreting',
+    items: [
+      {
+        title: 'Analyze data with AI',
+        links: [
+          {
+            title: 'Overview',
+            href: '/docs/code-interpreting/analyze-data-with-ai',
+          },
+          {
+            title: 'Pre-installed libraries',
+            href: '/docs/code-interpreting/analyze-data-with-ai/pre-installed-libraries',
+          },
+        ],
+      },
+      {
+        title: 'Charts & visualizations',
+        href: '/docs/code-interpreting/create-charts-visualizations',
+        links: [
+          {
+            title: 'Overview',
+            href: '/docs/code-interpreting/create-charts-visualizations',
+          },
+          {
+            title: 'Static charts',
+            href: '/docs/code-interpreting/create-charts-visualizations/static-charts',
+          },
+          {
+            title: 'Interactive charts',
+            href: '/docs/code-interpreting/create-charts-visualizations/interactive-charts',
+          },
+        ]
+      },
+      {
+        title: 'Streaming',
+        href: '/docs/code-interpreting/streaming',
       },
       // {
-      //   icon: <Hammer strokeWidth={1} size={20} />,
-      //   title: 'Guide: Code Interpreter with OpenAI models',
-      //   href: '/guide/simple-gpt4-code-interpreter',
+      //   title: '* Connect your data',
+      //   href: '/docs/code-interpreting/connect-your-data',
+      // },
+      {
+        title: 'Supported languages',
+        links: [
+          {
+            title: 'Overview',
+            href: '/docs/code-interpreting/supported-languages',
+          },
+          {
+            title: 'Python',
+            href: '/docs/code-interpreting/supported-languages/python',
+          },
+          {
+            title: 'JavaScript',
+            href: '/docs/code-interpreting/supported-languages/javascript',
+          },
+          {
+            title: 'R',
+            href: '/docs/code-interpreting/supported-languages/r',
+          },
+          {
+            title: 'Java',
+            href: '/docs/code-interpreting/supported-languages/java',
+          },
+          {
+            title: 'Bash',
+            href: '/docs/code-interpreting/supported-languages/bash',
+          },
+        ]
+      },
+      // {
+      //   title: '* Parsing code execution results',
+      //   href: '/docs/code-interpreting/todo',
+      // },
+    ]
+  },
+  // {
+  //   title: 'Guides', // How to's
+  //   items: [
+  //     {
+  //       title: 'Set working directory',
+  //       href: '/docs/f',
+  //     },
+  //     {
+  //       title: 'Link specific sandbox with user',
+  //       href: '/docs/g',
+  //     }
+  //   ]
+  // },
+  // {
+  //   title: '* AI Code Execution',
+  //   items: [
+  //     {
+  //       title: '* Python',
+  //       href: '/docs/code-execution/python',
+  //       icon: <Image src={logoPython} alt="Python" width={20} height={20} />,
+  //     },
+  //     {
+  //       title: '* JavaScript',
+  //       href: '/docs/code-execution/python',
+  //       icon: <Image src={logoNode} alt="JavaScript" width={20} height={20} />,
+  //     },
+  //     {
+  //       title: '* TypeScript',
+  //       href: '/docs/code-execution/python',
+  //     },
+  //     {
+  //       title: '* Custom language',
+  //       href: '/docs/code-execution/python',
+  //     },
+  //     {
+  //       title: '* Streaming'
+  //       href: '/docs/code-execution/streaming',
+  //     },
+  //     {
+  //       title: '* Web frameworks',
+  //       links: [
+  //         {
+  //           title: '* Next.js',
+  //           href: '/docs/code-execution/python',
+  //         },
+  //         {
+  //           title: '* React',
+  //           href: '/docs/code-execution/python',
+  //         },
+  //         {
+  //           title: '* Svelte',
+  //           href: '/docs/code-execution/python',
+  //         },
+  //         {
+  //           title: '* Vue.js',
+  //           href: '/docs/code-execution/python',
+  //         },
+  //         {
+  //           title: '* Streamlit',
+  //           href: '/docs/code-execution/python',
+  //         },
+  //         {
+  //           title: '* Gradio',
+  //           href: '/docs/code-execution/python',
+  //         },
+  //       ],
+  //     },
+  //   ],
+  // },
+  {
+    title: 'Sandbox',
+    items: [
+      {
+        title: 'Lifecycle',
+        href: '/docs/sandbox',
+      },
+      {
+        title: 'Metadata',
+        href: '/docs/sandbox/metadata',
+      },
+      {
+        title: 'Environment variables',
+        href: '/docs/sandbox/environment-variables',
+      },
+      {
+        title: 'List running sandboxes',
+        href: '/docs/sandbox/list',
+      },
+      {
+        title: 'Connect to running sandbox',
+        href: '/docs/sandbox/connect',
+      },
+      {
+        title: 'Internet access',
+        href: '/docs/sandbox/internet-access',
+      },
+      // {
+      //   title: '* Request timeouts',
+      //   href: '/docs/sandbox/request-timeouts',
       // },
       // {
-      //   icon: <Hammer strokeWidth={1} size={20} />,
-      //   title: 'Guide: Secure Sandbox for Devin-like agent',
-      //   href: '/guide/simple-gpt4-code-interpreter',
-      // },
-      // {
-      //   icon: <Hammer strokeWidth={1} size={20} />,
-      //   title: 'Guide: Generative UI with Next.js',
-      //   href: '/guide/simple-gpt4-code-interpreter',
-      // },
-      // {
-      //   icon: <Hammer strokeWidth={1} size={20} />,
-      //   title: 'Guide: Upload and analyze CSV files with AI',
-      //   href: '/guide/simple-gpt4-code-interpreter',
-      // },
-      // {
-      //   icon: <Hammer strokeWidth={1} size={20} />,
-      //   title: 'Guide: Customize sandbox compute (TODO: Move this away from guides?)',
-      //   href: '/guide/simple-gpt4-code-interpreter',
+      //   title: '* Persistence',
+      //   href: '/docs/sandbox/persistence',
       // },
     ],
   },
   {
-    title: 'E2B Code Interpreter',
-    links: [
+    title: 'Templates',
+    items: [
       {
-        title: 'Installation',
-        href: '/docs/code-interpreter/installation',
+        title: 'Sandbox customization',
+        href: '/docs/sandbox-template',
       },
       {
-        icon: <Terminal strokeWidth={1} size={20} />,
-        title: 'AI Code Execution',
-        href: '/docs/code-interpreter/execution',
+        title: 'Customize CPU & RAM',
+        href: '/docs/sandbox-template/customize-cpu-ram',
       },
-      // {
-      //   icon: <Book strokeWidth={1} size={20} />,
-      //   title: 'Streaming',
-      //   href: '/code-interpreter/examples',
-      // },
-      // {
-      //   icon: <Wrench strokeWidth={1} size={20} />,
-      //   title: 'Supported languages',
-      //   href: '/code-interpreter/template',
-      // },
-      // {
-      //   icon: <Wrench strokeWidth={1} size={20} />,
-      //   title: 'Preinstalled packages (customization)',
-      //   href: '/code-interpreter/template',
-      // },
-      {
-        icon: <Wrench strokeWidth={1} size={20} />,
-        title: 'Customization',
-        href: '/docs/code-interpreter/template',
-      },
-      {
-        icon: <Cog strokeWidth={1} size={20} />,
-        title: 'Kernels',
-        href: '/docs/code-interpreter/kernels',
-      },
-    ],
+    ]
   },
   {
-    title: 'E2B Sandbox',
-    links: [
+    title: 'Filesystem',
+    items: [
       {
         title: 'Overview',
-        href: '/docs/sandbox/overview',
+        href: '/docs/filesystem',
       },
       {
-        icon: <Cpu strokeWidth={1} size={20} />,
-        title: 'Compute',
-        href: '/docs/sandbox/compute',
+        title: 'Read & write',
+        href: '/docs/filesystem/read-write',
       },
       {
-        icon: <PencilRuler strokeWidth={1} size={20} />,
-        title: 'Customization',
-        href: '/docs/sandbox/custom',
+        title: 'Watch directory for changes',
+        href: '/docs/filesystem/watch',
       },
       {
-        icon: <Variable strokeWidth={1} size={20} />,
-        title: 'Environment Variables',
-        href: '/docs/sandbox/api/envs',
+        title: 'Upload data',
+        href: '/docs/filesystem/upload',
       },
       {
-        icon: <FolderTree strokeWidth={1} size={20} />,
-        title: 'Filesystem',
-        href: '/docs/sandbox/api/filesystem',
+        title: 'Download data',
+        href: '/docs/filesystem/download',
       },
-      {
-        icon: <ChevronRightSquare strokeWidth={1} size={20} />,
-        title: 'Process',
-        href: '/docs/sandbox/api/process',
-      },
-      {
-        icon: <Folder strokeWidth={1} size={20} />,
-        title: 'Working Directory',
-        href: '/docs/sandbox/api/cwd',
-      },
-      {
-        icon: <Link strokeWidth={1} size={20} />,
-        title: 'Sandbox URL',
-        href: '/docs/sandbox/api/url',
-      },
-      {
-        icon: <FileUp strokeWidth={1} size={20} />,
-        title: 'Upload Files',
-        href: '/docs/sandbox/api/upload',
-      },
-      {
-        icon: <FileDown strokeWidth={1} size={20} />,
-        title: 'Download Files',
-        href: '/docs/sandbox/api/download',
-      },
-      {
-        icon: <Timer strokeWidth={1} size={20} />,
-        title: 'Timeouts',
-        href: '/docs/sandbox/api/timeouts',
-      },
-      {
-        icon: <RefreshCw strokeWidth={1} size={20} />,
-        title: 'Connect to running sandbox',
-        href: '/docs/sandbox/api/reconnect',
-      },
-      {
-        icon: <Braces strokeWidth={1} size={20} />,
-        title: 'Sandbox metadata',
-        href: '/docs/sandbox/api/metadata',
-      },
-    ],
+    ]
   },
+  {
+    title: 'Commands',
+    items: [
+      {
+        title: 'Overview',
+        href: '/docs/commands',
+      },
+      {
+        title: 'Streaming',
+        href: '/docs/commands/streaming',
+      },
+      {
+        title: 'Run commands in background',
+        href: '/docs/commands/background',
+      },
+    ]
+  },
+  // {
+  //   title: '* Async Python SDK',
+  //   items: [
+  //     {
+  //       title: '* Overview',
+  //       href: '/docs/sdk/overview',
+  //     },
+  //   ]
+  // },
+  // {
+  //   title: '* Limits',
+  //   items: [
+  //     {
+  //       title: '* Sandbox',
+  //       href: '/docs/limits/sandbox',
+  //     },
+  //     {
+  //       title: '* Filesystem',
+  //       href: '/docs/limits/overview',
+  //     },
+  //     {
+  //       title: '* File upload & download',
+  //       href: '/docs/limits/file-upload-download',
+  //     },
+  //   ]
+  // },
+  // {
+  //   title: '* Latency',
+  //   items: [
+  //     {
+  //       title: '* Start times',
+  //       href: '/docs/latency/start-times',
+  //     },
+  //     {
+  //       title: '* Sandbox operations',
+  //       href: '/docs/latency/sandbox-operations',
+  //     },
+  //   ]
+  // },
   {
     title: 'CLI',
-    links: [
+    items: [
       {
-        icon: <Settings strokeWidth={1} size={20} />,
         title: 'Installation',
-        href: '/docs/cli/installation',
+        href: '/docs/cli',
       },
       {
-        icon: <TerminalSquare strokeWidth={1} size={20} />,
-        title: 'Commands',
-        href: '/docs/cli/commands',
+        title: 'Authentication',
+        href: '/docs/cli/auth',
       },
-    ],
+      {
+        title: 'List running sandboxes',
+        href: '/docs/cli/list-sandboxes',
+      },
+      {
+        title: 'Shutdown running sandboxes',
+        href: '/docs/cli/shutdown-sandboxes',
+      },
+    ]
   },
-  {
-    title: 'Custom Sandboxes',
-    links: [
-      {
-        title: 'Overview',
-        href: '/docs/sandbox/templates/overview',
-      },
-      {
-        icon: <File strokeWidth={1} size={20} />,
-        title: 'Template File',
-        href: '/docs/sandbox/templates/template-file',
-      },
-      {
-        icon: <PlaySquare strokeWidth={1} size={20} />,
-        title: 'Start Command',
-        href: '/docs/sandbox/templates/start-cmd',
-      },
-      {
-        icon: <Hammer strokeWidth={1} size={20} />,
-        title: 'Guide: Creating Custom Sandbox',
-        href: '/docs/guide/custom-sandbox',
-      },
-      {
-        icon: <HardDrive strokeWidth={1} size={20} />,
-        title: 'Connecting buckets to persist data',
-        href: '/docs/guide/connect-bucket',
-      },
-    ],
-  },
+  // {
+  //   // Maybe move integrations to a separate docs page?
+  //   title: 'Integrations',
+  //   items: [
+  //     {
+  //       title: 'OpenAI',
+  //       href: '/docs/integrations/openai',
+  //     },
+  //     {
+  //       title: 'Vercel AI SDK',
+  //       href: '/docs/integrations/ai-sdk',
+  //     },
+  //     {
+  //       title: 'Langchain',
+  //       href: '/docs/integrations/ai-sdk',
+  //     },
+  //   ]
+  // },
+  // ...apiRefRoutes,
 ]
+

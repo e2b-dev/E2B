@@ -3,13 +3,12 @@ import Link from 'next/link'
 import { Team, useUser } from '@/utils/useUser'
 import { Button } from '../Button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
-import SwitchToHobbyButton from '@/app/(docs)/docs/pricing/SwitchToHobbyButton'
-import SwitchToProButton from '@/app/(docs)/docs/pricing/SwitchToProButton'
+import SwitchToHobbyButton from '@/components/Pricing/SwitchToHobbyButton'
+import SwitchToProButton from '@/components/Pricing/SwitchToProButton'
 
 function formatCurrency(value: number) {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
-
 
 interface Invoice {
   cost: number

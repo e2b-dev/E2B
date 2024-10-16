@@ -1,0 +1,440 @@
+# sandbox/filesystem
+
+## Enumerations
+
+### FileType
+
+Type of filesystem object.
+
+#### Enumeration Members
+
+##### DIR
+
+> **DIR**: `"dir"`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:40
+
+##### FILE
+
+> **FILE**: `"file"`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:39
+
+## Classes
+
+### Filesystem
+
+Manager for interacting with the filesystem in the sandbox.
+
+#### Constructors
+
+##### new Filesystem()
+
+> **new Filesystem**(`transport`, `envdApi`, `connectionConfig`): `Filesystem`
+
+###### Parameters
+
+• **transport**: `Transport`
+
+• **envdApi**: `EnvdApiClient`
+
+• **connectionConfig**: `ConnectionConfig`
+
+###### Returns
+
+`Filesystem`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:76
+
+#### Methods
+
+##### exists()
+
+> **exists**(`path`, `opts`?): `Promise`\<`boolean`\>
+
+Checks if a file or a directory exists.
+
+###### Parameters
+
+• **path**: `string`
+
+Path to a file or a directory
+
+• **opts?**: `FilesystemRequestOpts`
+
+Options for the request
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+True if the file or directory exists, false otherwise
+
+###### Defined in
+
+sandbox/filesystem/index.ts:325
+
+##### list()
+
+> **list**(`path`, `opts`?): `Promise`\<`EntryInfo`[]\>
+
+Lists entries in a directory.
+
+###### Parameters
+
+• **path**: `string`
+
+Path to the directory
+
+• **opts?**: `FilesystemRequestOpts`
+
+Options for the request
+
+###### Returns
+
+`Promise`\<`EntryInfo`[]\>
+
+List of entries in the directory
+
+###### Defined in
+
+sandbox/filesystem/index.ts:200
+
+##### makeDir()
+
+> **makeDir**(`path`, `opts`?): `Promise`\<`boolean`\>
+
+Creates a new directory and all directories along the way if needed on the specified pth.
+
+###### Parameters
+
+• **path**: `string`
+
+Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
+
+• **opts?**: `FilesystemRequestOpts`
+
+Options for the request
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+True if the directory was created, false if it already exists
+
+###### Defined in
+
+sandbox/filesystem/index.ts:237
+
+##### read()
+
+###### read(path, opts)
+
+> **read**(`path`, `opts`?): `Promise`\<`string`\>
+
+Reads a whole file content and returns it in requested format (text by default).
+
+###### Parameters
+
+• **path**: `string`
+
+Path to the file
+
+• **opts?**: `FilesystemRequestOpts` & `object`
+
+Options for the request
+
+###### Returns
+
+`Promise`\<`string`\>
+
+File content in requested format
+
+###### Defined in
+
+sandbox/filesystem/index.ts:92
+
+###### read(path, opts)
+
+> **read**(`path`, `opts`?): `Promise`\<`Uint8Array`\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts` & `object`
+
+###### Returns
+
+`Promise`\<`Uint8Array`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:96
+
+###### read(path, opts)
+
+> **read**(`path`, `opts`?): `Promise`\<`Blob`\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts` & `object`
+
+###### Returns
+
+`Promise`\<`Blob`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:100
+
+###### read(path, opts)
+
+> **read**(`path`, `opts`?): `Promise`\<`ReadableStream`\<`Uint8Array`\>\>
+
+###### Parameters
+
+• **path**: `string`
+
+• **opts?**: `FilesystemRequestOpts` & `object`
+
+###### Returns
+
+`Promise`\<`ReadableStream`\<`Uint8Array`\>\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:104
+
+##### remove()
+
+> **remove**(`path`, `opts`?): `Promise`\<`void`\>
+
+Removes a file or a directory.
+
+###### Parameters
+
+• **path**: `string`
+
+Path to a file or a directory
+
+• **opts?**: `FilesystemRequestOpts`
+
+Options for the request
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Defined in
+
+sandbox/filesystem/index.ts:304
+
+##### rename()
+
+> **rename**(`oldPath`, `newPath`, `opts`?): `Promise`\<`EntryInfo`\>
+
+Renames a file or directory from one path to another.
+
+###### Parameters
+
+• **oldPath**: `string`
+
+Path to the file or directory to move
+
+• **newPath**: `string`
+
+Path to move the file or directory to
+
+• **opts?**: `FilesystemRequestOpts`
+
+Options for the request
+
+###### Returns
+
+`Promise`\<`EntryInfo`\>
+
+Information about the moved object
+
+###### Defined in
+
+sandbox/filesystem/index.ts:267
+
+##### watchDir()
+
+> **watchDir**(`path`, `onEvent`, `opts`?): `Promise`\<`WatchHandle`\>
+
+Watches directory for filesystem events.
+
+###### Parameters
+
+• **path**: `string`
+
+Path to a directory that will be watched
+
+• **onEvent**
+
+Callback that will be called when an event in the directory occurs
+
+• **opts?**: `FilesystemRequestOpts` & `object`
+
+Options for the request
+
+###### Returns
+
+`Promise`\<`WatchHandle`\>
+
+New watcher
+
+###### Defined in
+
+sandbox/filesystem/index.ts:355
+
+##### write()
+
+> **write**(`path`, `data`, `opts`?): `Promise`\<`EntryInfo`\>
+
+Writes content to a file on the path.
+  When writing to a file that doesn't exist, the file will get created.
+  When writing to a file that already exists, the file will get overwritten.
+  When writing to a file that's in a directory that doesn't exist, the directory will get created.
+
+###### Parameters
+
+• **path**: `string`
+
+Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
+
+• **data**: `string` \| `ArrayBuffer` \| `Blob` \| `ReadableStream`\<`any`\>
+
+Data to write to a new file
+
+• **opts?**: `FilesystemRequestOpts`
+
+Options for the request
+
+###### Returns
+
+`Promise`\<`EntryInfo`\>
+
+Information about the written file
+
+###### Defined in
+
+sandbox/filesystem/index.ts:155
+
+## Interfaces
+
+### EntryInfo
+
+Information about a filesystem object.
+
+#### Properties
+
+##### name
+
+> **name**: `string`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:30
+
+##### path
+
+> **path**: `string`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:32
+
+##### type?
+
+> `optional` **type**: `FileType`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:31
+
+***
+
+### FilesystemRequestOpts
+
+Options for sending a request to the filesystem.
+
+#### Extended by
+
+- `WatchOpts`
+
+#### Properties
+
+##### requestTimeoutMs?
+
+> `optional` **requestTimeoutMs**: `number`
+
+###### Defined in
+
+connectionConfig.ts:17
+
+##### user?
+
+> `optional` **user**: `Username`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:57
+
+***
+
+### WatchOpts
+
+Options for watching a directory.
+
+#### Properties
+
+##### onExit()?
+
+> `optional` **onExit**: (`err`) => `void`
+
+###### Parameters
+
+• **err**: `Error`
+
+###### Returns
+
+`void`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:65
+
+##### requestTimeoutMs?
+
+> `optional` **requestTimeoutMs**: `number`
+
+###### Defined in
+
+connectionConfig.ts:17
+
+##### timeout?
+
+> `optional` **timeout**: `number`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:64
+
+##### user?
+
+> `optional` **user**: `Username`
+
+###### Defined in
+
+sandbox/filesystem/index.ts:57

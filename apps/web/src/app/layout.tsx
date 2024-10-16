@@ -1,4 +1,3 @@
-import Script from 'next/script'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
 
@@ -61,7 +60,7 @@ export default async function RootLayout({ children }) {
       <head>
         <Canonical />
       </head>
-      <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
+      <body className="flex min-h-full antialiased bg-zinc-900">
         <Providers>
           <Layout allSections={allSections}>
             <Header />
@@ -72,9 +71,6 @@ export default async function RootLayout({ children }) {
           </Suspense>
           <Analytics />
         </Providers>
-
-        <Script src="https://js.chatlio.com/widget.js" strategy="lazyOnload" />
-        <chatlio-widget widgetid={process.env.NEXT_PUBLIC_CHATLIO_WIDGET_ID} disable-favicon-badge></chatlio-widget>
       </body>
     </html>
   )

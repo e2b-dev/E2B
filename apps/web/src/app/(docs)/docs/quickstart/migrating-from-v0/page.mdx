@@ -1,0 +1,187 @@
+# Migrating E2B SDK from v0.* to v1.0 using Grit
+
+This guide explains how to migrate your project from **E2B SDK `v0.*`** to **E2B SDK `v1.0`** using [Grit](https://www.grit.io/) and our custom migrations.
+This mostly automates the process of searching through your codebase to update code to migrate to the new SDK without errors. However, this is not a 100% accurate process, and you should expect human intervention to be required.
+
+## Step 1: Install the Grit CLI
+
+You can install **Grit CLI** using one of the following methods:
+
+### Option 1: Install via NPM
+
+```bash
+npm install --location=global @getgrit/cli
+```
+
+### Option 2: Install via bash script
+
+```bash
+curl -fsSL https://docs.grit.io/install | bash
+```
+
+## Step 2: Prepare for migration
+
+Before applying the migration, format your code and commit your changes to ensure you have a stable state to revert to if necessary.
+
+```bash
+git add .
+git commit -m "Last changes made"
+```
+
+## Step 3: Add Custom Migration Patterns
+
+You can paste the following content into the appropriate files for JavaScript/TypeScript and Python.
+
+### JavaScript/TypeScript Pattern (e2b_v0_to_v1_js.grit)
+
+Create or edit the file `.grit/patterns/e2b_v0_to_v1_js.grit` and paste the following:
+
+```bash
+engine marzano(0.1)
+language js
+
+pattern e2b_v0_to_v1_js() {
+    or {
+        `Sandbox.create({$params})` where {
+            $params <: contains `template: $name` => ., // `timeoutMs: 300_000`,
+            $params <: contains `cwd: $cwd` => .
+        } => `Sandbox.create($name, {$params}) // TODO: cwd $cwd was removed, it can't be set on sbx anymore`,
+        `Sandbox.create({$params})` where {
+            $params <: contains `template: $name` => . // `timeoutMs: 300_000`
+        } => `Sandbox.create($name, {$params})`,
+        `Sandbox.create({$params})` where {
+            $params <: contains `cwd: $cwd` => ., // `timeoutMs: 300_000`,
+        } => `Sandbox.create({$params}) // TODO: cwd $cwd was removed, it can't be set on sbx anymore`,
+        `$sbx.keepAlive($time)` => `$sbx.setTimeout($time)`,
+        `Sandbox.reconnect($x)` => `Sandbox.connect($x)`,
+        `$sbx.filesystem.write($path, $text)` => `$sbx.files.write($path, $text)`,
+        `$sbx.uploadFile($file, $path)` => `$sbx.files.write($path, $file)`,
+        `$sbx.downloadFile($path)` => `$sbx.files.read($path)`,
+        `$sbx.process.startAndWait({$params})` where {
+            $params <: contains `cmd: $cmd` => .,
+        } => `$sbx.commands.run($cmd, {$params)`,
+        `$sbx.process.startAndWait` => `$sbx.commands.run`,
+        `$sbx.process.start({$params})` where {
+            $params <: contains `cmd: $cmd` => .,
+        } => `$sbx.commands.run($cmd, {$params})` where $params += `backgrund: true`,
+        `const $watcher = $sbx.filesystem.watchDir($path)` => `` where {
+            $program <: contains `$watcher.addEventListener($body)` => .,
+            $program <: contains `await $watcher.start()` => `await $sbx.files.watchDir($path, $body)`
+        },
+        `let $watcher = $sbx.filesystem.watchDir($path)` => `` where {
+            $program <: contains `$watcher.addEventListener($body)` => .,
+            $program <: contains `await $watcher.start()` => `await $sbx.files.watchDir($path, $body)`
+        },
+        `var $watcher = $sbx.filesystem.watchDir($path)` => `` where {
+            $program <: contains `$watcher.addEventListener($body)` => .,
+            $program <: contains `await $watcher.start()` => `await $sbx.files.watchDir($path, $body)`
+        },
+        `$watcher = $sbx.filesystem.watchDir($path)` => `` where {
+            $program <: contains `$watcher.addEventListener($body)` => .,
+            $program <: contains `await $watcher.start()` => `await $sbx.files.watchDir($path, $body)`
+        },
+        `$sbx.id` => `$sbx.sandboxId`,
+        `$sbx.fileURL` => `$sbx.uploadUrl()`,
+        `$sbx.getHostname` => `$sbx.getHost()`,
+        `$sbx.close()` => `$sbx.kill()`,
+        $msg => `Sandbox` where { $msg <: "CodeInterpreter", $msg <: imported_from(`"@e2b/code-interpreter"`) },
+        `$sbx.notebook.execCell($params)` => `$sbx.runCode($params)`,
+        `ProcessMessage` => `OutputMessage`,
+    } where or {
+        $program <: contains `import $_ from "@e2b/code-interpreter"`,
+        $program <: contains `import $_ from "@e2b"`
+    }
+}
+```
+
+### Python Pattern (e2b_v0_to_v1_py.grit)
+
+Create or edit the file `.grit/patterns/e2b_v0_to_v1_py.grit` and paste the following:
+
+```bash
+engine marzano(0.1)
+language python
+
+pattern e2b_v0_to_v1_py() {
+    or {
+        `Sandbox.create($params)` where {
+            $params <: contains `template="$name"` => ., // `timeout_ms=300_000`,
+            $params <: contains `cwd="$cwd"` => .
+        } => `Sandbox.create(template="$name", $params) # TODO: cwd "$cwd" was removed, it can't be set on sbx anymore`,
+        `Sandbox.create($params)` where {
+            $params <: contains `template="$name"` => . // `timeout_ms=300_000`
+        } => `Sandbox.create(template="$name", $params)`,
+        `Sandbox.create($params)` where {
+            $params <: contains `cwd="$cwd"` => ., // `timeout_ms=300_000`,
+        } => `Sandbox.create($params) # TODO: cwd "$cwd" was removed, it can't be set on sbx anymore`,
+        `$sbx.keep_alive($time)` => `$sbx.set_timeout($time)`,
+        `Sandbox.reconnect($x)` => `Sandbox.connect($x)`,
+        `$sbx.filesystem.write($path, $text)` => `$sbx.files.write($path, $text)`,
+        `$sbx.upload_file($file)` => `$sbx.files.write($file)`,
+        `$sbx.download_file($path)` => `$sbx.files.read($path)`,
+        `$sbx.process.start_and_wait($params)` where {
+            $params <: contains `cmd="$cmd"` => .,
+        } => `$sbx.commands.run($cmd, $params)`,
+        `$sbx.process.start_and_wait` => `$sbx.commands.run`,
+        `$sbx.process.start($params)` where {
+            $params <: contains `cmd="$cmd"` => .,
+        } => `$sbx.commands.run($cmd, $params, background=True)`,
+        `watcher = $sbx.filesystem.watch_dir($path)` => `` where {
+            $program <: contains `watcher.add_event_listener($body)` => .,
+            $program <: contains `await watcher.start()` => `await $sbx.files.watch_dir($path, $body)`
+        },
+        `$sbx.id` => `$sbx.sandbox_id`,
+        `$sbx.file_url` => `$sbx.upload_url`,
+        `$sbx.get_hostname` => `$sbx.getHost`,
+        `$sbx.close()` => `$sbx.kill()`,
+        $msg => `Sandbox` where { $msg <: "CodeInterpreter", $msg <: imported_from(`e2b_code_interpreter`) },
+        `$sbx.notebook.exec_cell($params)` => `$sbx.run_code($params)`,
+    } where or {
+        $program <: contains `from e2b import $_`,
+        $program <: contains `from e2b_code_interpreter import $_`
+    }
+}
+```
+
+## Step 4: Run Grit with the Custom Pattern
+
+To apply the custom migration pattern, run the following command for your project.
+
+### For JavaScript/TypeScript:
+
+```bash
+grit apply github.com/e2b-dev/e2b-cookbook#e2b_v0_to_v1_js
+```
+
+### For Python:
+
+```bash
+grit apply github.com/e2b-dev/e2b-cookbook#e2b_v0_to_v1_py
+```
+
+## Step 5: Review changes
+
+Once the migration is applied, review the changes for possible mistakes, including code that was broken (false positives) or outdated code that was not fixed (false negatives) by the migration. Such issues you may encounter include:
+
+- ⚠️ If non-E2B objects with `.close()` methods, `.id` attributes, etc. exist in files that import E2B libraries, they will be incorrectly changed. You need to reject these changes manually.
+- ⚠️ The output structure of `Sandbox.list()` has changed in the new SDK. You must manually rewrite your code to account for this.
+- ⚠️ The global `cwd` option no longer exists when creating a Sandbox. You must manually rewrite your code to include the `cwd` option with each command.
+
+You should manually review all changes made by Grit to fix these "gotchas" and others which are sure to exist.
+
+## Step 6: Commit changes
+
+Before commiting the changes made by Grit, it's recommended to re-format the generated code following the convention of your choice. After verifying the changes and reformatting code, commit them to Git.
+
+```bash
+git add .
+git commit -m "Migrate project to E2B SDK v1.0"
+```
+
+## Step 7: Test your application
+
+Now, thoroughly test your application to make sure the migration is successful and everything is functioning as expected.
+
+---
+
+By following these steps, you can easily migrate your TypeScript or Python project from **E2B SDK `v0.*`** to **E2B SDK `v1.0`** using Grit. Don’t forget to use version control to track all changes throughout the process and to thoroughly test your application after migrating.

@@ -1,0 +1,22 @@
+{
+  "out": "api_ref",
+  "plugin": ["typedoc-plugin-markdown", "./scripts/CustomMarkdownTheme.js"],
+  "exclude": ["**/*.spec.ts"],
+  "entryPoints": [
+    "src/sandbox/index.ts",
+    "src/sandbox/filesystem/index.ts",
+    "src/sandbox/process/index.ts",
+    "src/sandbox/process/index.ts",
+    "src/sandbox/pty.ts",
+    "src/errors.ts"
+  ],
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "navigation": {
+    "includeGroups": false,
+    "includeCategories": false
+  },
+  "outputFileStrategy": "modules",
+  "readme": "none"
+}

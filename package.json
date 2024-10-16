@@ -7,7 +7,8 @@
     "test": "pnpm test --recursive --if-present",
     "dev:web": "pnpm --prefix apps/web run dev",
     "rm-node-modules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
-    "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json"
+    "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json",
+    "generate-api-reference": "pnpm --recursive run generate-api-reference  --if-present"
   },
   "packageManager": "pnpm@8.7.6",
   "dependencies": {
@@ -20,5 +21,8 @@
     "changeset": "^0.2.6",
     "eslint": "^8.49.0",
     "eslint-plugin-unused-imports": "^3.0.0"
+  },
+  "engines": {
+    "pnpm": ">=9.0.0 <10"
   }
 }

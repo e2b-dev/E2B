@@ -1,16 +1,11 @@
-import { config } from 'dotenv'
-
 import { Sandbox } from './dist'
 
-config()
+import dotenv from 'dotenv'
 
-const sandbox = await Sandbox.create({
-  logger: {
-    error: console.error,
-    warn: console.warn,
-    info: console.info,
-  },
-})
-console.log(sandbox.id)
+dotenv.config()
 
-await sandbox.close()
+for (let i = 0; i < 10; i++) {
+  const start = Date.now()
+  const sbx = await Sandbox.create({ timeoutMs: 10000 })
+  console.log('time', Date.now() - start)
+}

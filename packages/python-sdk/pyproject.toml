@@ -1,26 +1,24 @@
 [tool.poetry]
 name = "e2b"
-version = "0.17.1"
+version = "0.17.2a62"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://e2b.dev/"
 repository = "https://github.com/e2b-dev/e2b/tree/main/packages/python-sdk"
-packages = [{ include = "e2b" }]
+packages = [{ include = "e2b" }, { include = "e2b_connect" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
 
-urllib3 = ">= 1.25.3"
 python-dateutil = ">=2.8.2"
-aiohttp = ">= 3.8.4"
-pydantic = "*"
-aenum = ">=3.1.11"
-websockets = ">=11.0.3"
-jsonrpcclient = ">=4.0.3"
-requests = ">=2.31.0"
-typing-extensions = ">=4.8.0"
+protobuf = ">=3.20.0, <6.0.0"
+httpcore = "^1.0.5"
+httpx = "^0.27.0"
+attrs = "^23.2.0"
+packaging = "^24.1"
+typing-extensions = "^4.12.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
@@ -28,6 +26,8 @@ pytest = "^7.4.0"
 pytest-xdist = "^3.3.1"
 python-dotenv = "^1.0.0"
 pytest-dotenv = "^0.5.2"
+pytest-asyncio = "^0.23.7"
+pydoc-markdown = "^4.8.2"
 
 [build-system]
 requires = ["poetry-core"]

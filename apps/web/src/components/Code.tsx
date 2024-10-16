@@ -6,7 +6,6 @@ import { Tab } from '@headlessui/react'
 import clsx from 'clsx'
 import { create } from 'zustand'
 import {
-  File,
   Terminal,
 } from 'lucide-react'
 
@@ -30,6 +29,25 @@ export function getPanelTitle({
   }
   return 'Code'
 }
+
+function extractPanelProps(props: any) {
+  let { language } = props
+  if (language && language in languageNames) {
+    language = languageNames[language]
+  }
+  return { description: props.description || '', language }
+}
+
+function renderLanguageLogo(props: any) {
+  const { language } = extractPanelProps(props)
+  if (language === 'JavaScript & TypeScript') {
+    return <Image src={logoNode} alt="" className="h-7 w-7" unoptimized />
+  } else if (language === 'Python') {
+    return <Image src={logoPython} alt="" className="h-7 w-7" unoptimized />
+  }
+  return null
+}
+
 
 function CodePanel({
   children,
@@ -66,17 +84,16 @@ function CodePanel({
   )
 }
 
+
 export function CodeGroupHeader({
   title,
   children,
   selectedIndex,
-  isFileName,
   isTerminalCommand,
 }: {
   title: string;
   children: React.ReactNode;
   selectedIndex: number;
-  isFileName?: boolean;
   isTerminalCommand?: boolean;
 }) {
   const hasTabs = Children.count(children) > 1
@@ -84,50 +101,10 @@ export function CodeGroupHeader({
 
   return (
     <div
-      className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-700 bg-zinc-800 px-4 dark:border-zinc-800 dark:bg-transparent">
-      <div className="flex flex-col items-start">
-        {title && (
-          <div>
-            {isFileName ? (
-              <div className="flex items-center justify-start space-x-2">
-                <File
-                  className="text-brand-300"
-                  size={18}
-                  strokeWidth={1}
-                />
-                <h3 className="text-sm text-gray-500 font-mono">{title}</h3>
-              </div>
-            ) : isTerminalCommand ? (
-              <div className="flex items-center justify-start space-x-2">
-                <Terminal
-                  className="text-brand-300"
-                  size={18}
-                  strokeWidth={1}
-                />
-                {title && (
-                  <h3 className="text-sm text-gray-500">{title}</h3>
-                )}
-              </div>
-            ) : (
-              <h3 className="pt-3 text-sm text-gray-500 text-brand-400">{title}</h3>
-            )}
-          </div>
-        )}
-
-        {isTerminalCommand && !title && (
-          <div className="flex items-center justify-start space-x-2">
-            <Terminal
-              className="text-brand-300"
-              size={18}
-              strokeWidth={1}
-            />
-          </div>
-        )}
-
-
-
+      className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-800 bg-transparent">
+      <div className="flex flex-col items-start w-full">
         {hasTabs && (
-          <Tab.List className="-mb-px flex gap-4 text-xs font-medium">
+          <Tab.List className="w-full border-b border-white/5 -mb-px flex gap-4 text-xs font-medium">
             {Children.map(children, (child, childIndex) => (
               <Tab
                 /* Set ID due to bug in Next https://github.com/vercel/next.js/issues/53110 */
@@ -148,28 +125,49 @@ export function CodeGroupHeader({
                   gap-1
                 "
                 >
-                  {getPanelTitle(
-                    isValidElement(child) ? child.props : {},
-                  ).includes('JavaScript') ? (
-                    <Image
-                      src={logoNode}
-                      alt=""
-                      className="h-7 w-7"
-                      unoptimized
-                    />
-                  ) : (
-                    <Image
-                      src={logoPython}
-                      alt=""
-                      className="h-7 w-7"
-                      unoptimized
-                    />
-                  )}
-                  {getPanelTitle(isValidElement(child) ? child.props : {} as any)}
+                  {renderLanguageLogo(isValidElement(child) ? child.props : {})}
+                  {extractPanelProps(isValidElement(child) ? child.props : {} as any).language}
                 </div>
               </Tab>
             ))}
           </Tab.List>
+        )}
+
+        {title && (
+          <div className="flex items-center justify-start space-x-2 p-2">
+            <h3 className="text-xs text-white font-mono">{title}</h3>
+          </div>
+        )}
+
+        {hasTabs && (
+          <>
+            {Children.map(children, (child, childIndex) => (
+              <>
+                {selectedIndex === childIndex && (
+                  <>
+                    {extractPanelProps(isValidElement(child) ? child.props : {} as any).description && (
+                      <span
+                        id={`description-${childIndex}`}
+                        className="text-xs font-medium text-white font-mono p-2"
+                      >
+                        {extractPanelProps(isValidElement(child) ? child.props : {} as any).description}
+                      </span>
+                    )}
+                  </>
+                )}
+              </>
+            ))}
+          </>
+        )}
+
+        {isTerminalCommand && (
+          <div className="flex items-center justify-start space-x-2 p-2">
+            <Terminal
+              className="text-white"
+              size={18}
+            />
+            <span className="text-xs font-mono font-medium text-white">Terminal</span>
+          </div>
         )}
       </div>
     </div>
@@ -294,6 +292,7 @@ export function CodeGroup({
   children,
   title,
   isTerminalCommand,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isFileName,
   path,
   ...props
@@ -316,7 +315,6 @@ export function CodeGroup({
     <CodeGroupHeader
       title={title ?? ''}
       selectedIndex={tabGroupProps.selectedIndex}
-      isFileName={isFileName}
       isTerminalCommand={isTerminalCommand}
     >
       {children}
@@ -384,7 +382,7 @@ export function Pre({
 /**
  * Special Component just for MDX files, processed by Remark
  */
-export function CodeGroupAutoload({ children, isRunnable = true }) {
+export function CodeGroupAutoload({ children, isRunnable = false }) {
   if (!children) {
     console.warn(
       'CodeGroupAutoload: No children provided - something is wrong with your MDX file',

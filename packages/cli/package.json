@@ -25,13 +25,16 @@
     "dev": "tsup --watch",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
     "check-deps": "knip",
-    "update-deps": "ncu -u && pnpm i"
+    "update-deps": "ncu -u && pnpm i",
+    "generate-api-reference": "./scripts/generate_api_ref.sh"
   },
   "devDependencies": {
     "@types/command-exists": "^1.2.3",
     "@types/inquirer": "^9.0.7",
+    "@types/json2md": "^1.5.4",
     "@types/node": "^18.18.6",
     "@types/update-notifier": "6.0.5",
+    "json2md": "^2.0.1",
     "knip": "^2.33.4",
     "npm-check-updates": "^16.14.6",
     "tsup": "^7.2.0",
@@ -55,7 +58,7 @@
     "command-exists": "^1.2.9",
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
-    "e2b": "^0.16.2",
+    "e2b": "^0.16.2-beta.44",
     "inquirer": "^9.2.12",
     "open": "^9.1.0",
     "strip-ansi": "^7.1.0",

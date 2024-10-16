@@ -13,7 +13,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   noExternal: Object.keys(packageJSON.dependencies).filter(
-    f => !excludedPackages.includes(f)
+    (f) => !excludedPackages.includes(f)
   ),
   esbuildOptions: (options) => {
     options.legalComments = 'none'

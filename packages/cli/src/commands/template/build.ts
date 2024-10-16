@@ -6,7 +6,7 @@ import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
 import commandExists from 'command-exists'
 import { wait } from 'src/utils/wait'
-import { ensureAccessToken } from 'src/api'
+import { connectionConfig, ensureAccessToken } from 'src/api'
 import { getRoot } from 'src/utils/filesystem'
 import {
   asBold,
@@ -28,31 +28,79 @@ import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 import * as child_process from 'child_process'
 
 import { client } from 'src/api'
+import { handleE2BRequestError } from '../../utils/errors'
 import { getUserConfig } from 'src/user'
 
 const templateCheckInterval = 500 // 0.5 sec
 
-const getTemplate = e2b.withAccessToken(
-  client.api
-    .path('/templates/{templateID}/builds/{buildID}/status')
-    .method('get')
-    .create(),
-)
+async function getTemplateBuildLogs({
+  templateID,
+  buildID,
+  logsOffset,
+}: {
+  templateID: string
+  buildID: string
+  logsOffset: number
+}) {
+  const signal = connectionConfig.getSignal()
+  const res = await client.api.GET(
+    '/templates/{templateID}/builds/{buildID}/status',
+    {
+      signal,
+      params: {
+        path: {
+          templateID,
+          buildID,
+        },
+        query: {
+          logsOffset,
+        },
+      },
+    },
+  )
 
-const requestTemplateBuild = e2b.withAccessToken(
-  client.api.path('/templates').method('post').create(),
-)
+  handleE2BRequestError(res.error, 'Error getting template build status')
+  return res.data as e2b.paths['/templates/{templateID}/builds/{buildID}/status']['get']['responses']['200']['content']['application/json']
+}
 
-const requestTemplateRebuild = e2b.withAccessToken(
-  client.api.path('/templates/{templateID}').method('post').create(),
-)
+async function requestTemplateBuild(
+  args?: e2b.paths['/templates']['post']['requestBody']['content']['application/json'],
+) {
+  return await client.api.POST('/templates', {
+    body: args,
+  })
+}
 
-const triggerTemplateBuild = e2b.withAccessToken(
-  client.api
-    .path('/templates/{templateID}/builds/{buildID}')
-    .method('post')
-    .create(),
-)
+async function requestTemplateRebuild(
+  templateID: string,
+  args?: e2b.paths['/templates/{templateID}']['post']['requestBody']['content']['application/json'],
+) {
+  return await client.api.POST('/templates/{templateID}', {
+    body: args,
+    params: {
+      path: {
+        templateID,
+      },
+    },
+  })
+}
+
+async function triggerTemplateBuild(templateID: string, buildID: string) {
+  const res = await client.api.POST(
+    '/templates/{templateID}/builds/{buildID}',
+    {
+      params: {
+        path: {
+          templateID,
+          buildID,
+        },
+      },
+    },
+  )
+
+  handleE2BRequestError(res.error, 'Error triggering template build')
+  return res.data
+}
 
 export const buildCommand = new commander.Command('build')
   .description(
@@ -244,10 +292,7 @@ export const buildCommand = new commander.Command('build')
         }
 
         const template = await requestBuildTemplate(
-          accessToken,
           body,
-          !!config,
-          relativeConfigPath,
           templateID,
         )
         templateID = template.templateID
@@ -274,7 +319,7 @@ export const buildCommand = new commander.Command('build')
 
         try {
           child_process.execSync(
-            `echo "${accessToken}" | docker login docker.${e2b.SANDBOX_DOMAIN} -u _e2b_access_token --password-stdin`,
+            `echo "${accessToken}" | docker login docker.${connectionConfig.domain} -u _e2b_access_token --password-stdin`,
             {
               stdio: 'inherit',
               cwd: root,
@@ -289,7 +334,7 @@ export const buildCommand = new commander.Command('build')
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${e2b.SANDBOX_DOMAIN
+        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${connectionConfig.domain
           }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
             dockerBuildArgs,
           )
@@ -307,7 +352,7 @@ export const buildCommand = new commander.Command('build')
 
         console.log('Pushing docker image...')
         child_process.execSync(
-          `docker push docker.${e2b.SANDBOX_DOMAIN}/e2b/custom-envs/${templateID}:${template.buildID}`,
+          `docker push docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`,
           {
             stdio: 'inherit',
             cwd: root,
@@ -316,7 +361,7 @@ export const buildCommand = new commander.Command('build')
         console.log('Docker image pushed.\n')
 
         console.log('Triggering build...')
-        await triggerBuild(accessToken, templateID, template.buildID)
+        await triggerBuild(templateID, template.buildID)
 
         console.log(
           `Triggered build for the sandbox template ${asFormattedSandboxTemplate(
@@ -326,7 +371,6 @@ export const buildCommand = new commander.Command('build')
 
         console.log('Waiting for build to finish...')
         await waitForBuildFinish(
-          accessToken,
           templateID,
           template.buildID,
           name,
@@ -341,84 +385,50 @@ export const buildCommand = new commander.Command('build')
   )
 
 async function waitForBuildFinish(
-  accessToken: string,
   templateID: string,
   buildID: string,
   name?: string,
 ) {
   let logsOffset = 0
 
-  let template: Awaited<ReturnType<typeof getTemplate>> | undefined
+  let template: Awaited<ReturnType<typeof getTemplateBuildLogs>> | undefined
   const aliases = name ? [name] : undefined
 
   process.stdout.write('\n')
   do {
     await wait(templateCheckInterval)
 
-    try {
-      template = await getTemplate(accessToken, {
-        templateID,
-        logsOffset,
-        buildID,
-      })
-    } catch (e) {
-      if (e instanceof getTemplate.Error) {
-        const error = e.getActualType()
-        if (error.status === 401) {
-          throw new Error(
-            `Error getting build info - (${error.status}) bad request: ${error.data.message}`,
-          )
-        }
-        if (error.status === 404) {
-          throw new Error(
-            `Error getting build info - (${error.status}) not found: ${error.data.message}`,
-          )
-        }
-        if (error.status === 500) {
-          throw new Error(
-            `Error getting build info - (${error.status}) server error: ${error.data.message}`,
-          )
-        }
-      }
-      throw e
-    }
+    template = await getTemplateBuildLogs({
+      templateID,
+      logsOffset,
+      buildID,
+    })
 
-    logsOffset += template.data.logs.length
+    logsOffset += template.logs.length
 
-    switch (template.data.status) {
+    switch (template.status) {
       case 'building':
-        template.data.logs.forEach((line) =>
+        template.logs.forEach((line) =>
           process.stdout.write(asBuildLogs(stripAnsi.default(line))),
         )
         break
       case 'ready': {
-        const pythonExample = asPython(`from e2b import Sandbox
+        const pythonExample = asPython(`from e2b import Sandbox, AsyncSandbox
 
-# Start sandbox
-sandbox = Sandbox(template="${aliases?.length ? aliases[0] : template.data.templateID
-          }")
+# Create sync sandbox
+sandbox = Sandbox("${aliases?.length ? aliases[0] : template.templateID}")
 
-# Interact with sandbox. Learn more here:
-# https://e2b.dev/docs/sandbox/overview
-
-# Close sandbox once done
-sandbox.close()`)
+# Create async sandbox
+sandbox = await AsyncSandbox.create("${aliases?.length ? aliases[0] : template.templateID}")`)
 
         const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
 
-// Start sandbox
-const sandbox = await Sandbox.create({ template: '${aliases?.length ? aliases[0] : template.data.templateID}' })
+// Create sandbox
+const sandbox = await Sandbox.create('${aliases?.length ? aliases[0] : template.templateID}')`)
 
-// Interact with sandbox. Learn more here:
-// https://e2b.dev/docs/sandbox/overview
-
-// Close sandbox once done
-await sandbox.close()`)
-
-        const examplesMessage = `You can use E2B Python or JS SDK to spawn sandboxes now.
-Find more here - ${asPrimary(
-          'https://e2b.dev/docs/guide/custom-sandbox',
-        )} in ${asBold('Spawn and control your sandbox')} section.`
+        const examplesMessage = `You can now use the template to create custom sandboxes.\nLearn more on ${asPrimary(
+          'https://e2b.dev/docs',
+        )}`
 
         const exampleHeader = boxen.default(examplesMessage, {
           padding: {
@@ -447,25 +457,25 @@ Find more here - ${asPrimary(
         console.log(
           `\n✅ Building sandbox template ${asFormattedSandboxTemplate({
             aliases,
-            ...template.data,
+            ...template,
           })} finished.\n${exampleHeader}\n${exampleUsage}\n`,
         )
         break
       }
       case 'error':
-        template.data.logs.forEach((line) =>
+        template.logs.forEach((line) =>
           process.stdout.write(asBuildLogs(stripAnsi.default(line))),
         )
         throw new Error(
           `\n❌ Building sandbox template ${asFormattedSandboxTemplate({
             aliases,
-            ...template.data,
+            ...template,
           })} failed.\nCheck the logs above for more details or contact us ${asPrimary(
             '(https://e2b.dev/docs/getting-help)',
           )} to get help.\n`,
         )
     }
-  } while (template.data.status === 'building')
+  } while (template.status === 'building')
 }
 
 function loadFile(filePath: string) {
@@ -536,10 +546,7 @@ function getDockerfile(root: string, file?: string) {
 }
 
 async function requestBuildTemplate(
-  accessToken: string,
   args: e2b.paths['/templates']['post']['requestBody']['content']['application/json'],
-  hasConfig: boolean,
-  configPath: string,
   templateID?: string,
 ): Promise<
   Omit<
@@ -549,82 +556,17 @@ async function requestBuildTemplate(
 > {
   let res
   if (templateID) {
-    res = await requestTemplateRebuild(accessToken, { templateID, ...args })
+    res = await requestTemplateRebuild(templateID, args)
   } else {
-    res = await requestTemplateBuild(accessToken, args)
+    res = await requestTemplateBuild(args)
   }
 
-  if (!res.ok) {
-    const error:
-      | e2b.paths['/templates']['post']['responses']['401']['content']['application/json']
-      | e2b.paths['/templates']['post']['responses']['500']['content']['application/json'] =
-      res.data as any
-
-    if (error.code === 401) {
-      throw new Error(
-        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
-        }`,
-      )
-    }
-
-    if (error.code === 404) {
-      throw new Error(
-        `Sandbox template you want to build ${templateID ? `(${templateID})` : ''
-        } not found: ${res.statusText}, ${error.message ?? 'no message'}\n${hasConfig
-          ? `This could be caused by ${asLocalRelative(
-            configPath,
-          )} belonging to a deleted template or a template that you don't own. If so you can delete the ${asLocalRelative(
-            configPath,
-          )} and start building the template again.`
-          : ''
-        }`,
-      )
-    }
-
-    if (error.code === 500) {
-      throw new Error(
-        `Server error: ${res.statusText}, ${error.message ?? 'no message'}`,
-      )
-    }
-
-    throw new Error(
-      `API request failed: ${res.statusText}, ${error.message ?? 'no message'}`,
-    )
-  }
-
-  return res.data as any
+  handleE2BRequestError(res.error, 'Error requesting template build')
+  return res.data
 }
 
-async function triggerBuild(
-  accessToken: string,
-  templateID: string,
-  buildID: string,
-) {
-  const res = await triggerTemplateBuild(accessToken, { templateID, buildID })
-
-  if (!res.ok) {
-    const error:
-      | e2b.paths['/templates/{templateID}/builds/{buildID}']['post']['responses']['401']['content']['application/json']
-      | e2b.paths['/templates/{templateID}/builds/{buildID}']['post']['responses']['500']['content']['application/json'] =
-      res.data as any
-
-    if (error.code === 401) {
-      throw new Error(
-        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'
-        }`,
-      )
-    }
-
-    if (error.code === 500) {
-      throw new Error(
-        `Server error: ${res.statusText}, ${error.message ?? 'no message'}`,
-      )
-    }
-
-    throw new Error(
-      `API request failed: ${res.statusText}, ${error.message ?? 'no message'}`,
-    )
-  }
+async function triggerBuild(templateID: string, buildID: string) {
+  await triggerTemplateBuild(templateID, buildID)
 
   return
 }

@@ -3,9 +3,11 @@
   "private": true,
   "version": "0.17.1",
   "scripts": {
-    "test": "poetry run pytest -n 1 --verbose -x",
+    "example": "poetry run python example.py",
+    "test": "poetry run pytest -n 4 --verbose -x",
     "postVersion": "poetry version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
     "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing",
-    "pretest": "poetry install"
+    "pretest": "poetry install",
+    "generate-api-reference": "./scripts/generate_api_ref.sh"
   }
 }

@@ -22,7 +22,7 @@ export function Layout({
 
   return (
     <SectionProvider sections={relativePathname ? allSections[relativePathname] ?? [] : []}>
-      <div className={clsx('h-full w-full', { 'lg:ml-[var(--sidebar-nav-width)]': isDocs })}>
+      <div className={clsx('h-[100vh] w-full', { 'lg:ml-[var(--sidebar-nav-width)]': isDocs })}>
         {!isDashboard && (
           <motion.header
             layoutScroll
@@ -38,11 +38,10 @@ export function Layout({
                 lg:block
                 lg:w-[var(--sidebar-nav-width)]
                 lg:overflow-y-auto
-                lg:px-6
-                lg:pb-8
+                lg:px-4
               "
             >
-              {isDocs && <Navigation className="hidden lg:my-4 lg:block" />}
+              {isDocs && <div className="hidden lg:block lg:mt-4"><Navigation /></div>}
             </div>
           </motion.header>
         )}
@@ -50,23 +49,22 @@ export function Layout({
           <div
             className="
           relative
-          flex
           h-full
+          flex
           flex-col
           px-4
           pt-14
           sm:px-6
           lg:ml-1
-          lg:border-l
-          lg:border-zinc-900/10
           lg:px-8
           lg:dark:border-white/10
           "
           >
             <main className="
-            flex-auto
-          ">
-              {children}</main>
+              flex-auto
+            ">
+              {children}
+            </main>
             <Footer />
           </div>
         )}

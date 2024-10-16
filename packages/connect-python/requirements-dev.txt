@@ -1,0 +1,5 @@
+-e .[http2]
+
+ruff
+build
+twine

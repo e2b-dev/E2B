@@ -1,0 +1,16 @@
+# buf.gen.yaml defines a local generation template.
+# For details, see https://buf.build/docs/configuration/v1/buf-gen-yaml
+version: v1
+plugins:
+  - plugin: es
+    out: ../../packages/js-sdk/src/envd
+    opt:
+      - target=ts
+  - plugin: connect-es
+    out: ../../packages/js-sdk/src/envd
+    opt:
+      - target=ts
+
+managed:
+  enabled: true
+  optimize_for: SPEED

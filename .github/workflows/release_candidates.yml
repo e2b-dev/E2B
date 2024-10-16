@@ -19,12 +19,14 @@ jobs:
 
       - uses: pnpm/action-setup@v3
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        with:
+          version: 9.5
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 18
         uses: actions/setup-node@v4
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') || contains( github.event.pull_request.labels.*.name, 'python-rc') }}
         with:
-          node-version: 20
+          node-version: '18.x'
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
@@ -34,33 +36,12 @@ jobs:
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
 
-      - name: Install dependencies
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
-        run: pnpm install --frozen-lockfile
-
-      - name: Release JS Candidate
-        working-directory: packages/js-sdk
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
-        run: |
-          npm version prerelease --preid=${{ github.head_ref }}
-          npm publish --tag rc
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Release CLI Candidate
-        working-directory: packages/cli
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
-        run: |
-          npm version prerelease --preid=${{ github.head_ref }}
-          npm publish --tag rc
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
         if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
         with:
-          python-version: "3.10"
+          python-version: "3.9"
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
@@ -71,6 +52,15 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
 
+      - name: Test Python SDK
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        working-directory: packages/python-sdk
+        run: |
+          poetry install
+          poetry run pytest -n 4 --verbose -x
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
       - name: Release Candidate
         if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
         working-directory: packages/python-sdk
@@ -80,6 +70,43 @@ jobs:
           poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Install JS dependencies
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: Test JS SDK
+        working-directory: packages/js-sdk
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
+        run: |
+          npx playwright install --with-deps
+          pnpm run test
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+      - name: Release JS Candidate
+        working-directory: packages/js-sdk
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
+        run: |
+          npm version prerelease --preid=${{ github.head_ref }}
+          npm publish --tag rc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Install dependencies
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: Release CLI Candidate
+        working-directory: packages/cli
+        if: ${{ contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        run: |
+          npm version prerelease --preid=${{ github.head_ref }}
+          npm publish --tag rc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Commit new versions
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') || contains( github.event.pull_request.labels.*.name, 'python-rc') }}

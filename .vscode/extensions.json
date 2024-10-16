@@ -5,5 +5,8 @@
     "ms-python.vscode-pylance",
     "ms-python.python",
     "bradlc.vscode-tailwindcss",
+    "streetsidesoftware.code-spell-checker",
+    "timonwong.shellcheck",
+    "chrischinchilla.vale-vscode"
   ]
 }

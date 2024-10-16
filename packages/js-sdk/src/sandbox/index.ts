@@ -1,432 +1,138 @@
-import normalizePath from 'normalize-path'
+import { createConnectTransport } from '@connectrpc/connect-web'
 
-import { ENVD_PORT, FILE_ROUTE } from '../constants'
-import { id } from '../utils/id'
-import { createDeferredPromise, formatSettledErrors, withTimeout } from '../utils/promise'
-import { codeSnippetService, ScanOpenedPortsHandler as ScanOpenPortsHandler } from './codeSnippet'
-import { FileInfo, FilesystemManager, filesystemService } from './filesystem'
-import FilesystemWatcher from './filesystemWatcher'
-import { Process, ProcessManager, ProcessMessage, ProcessOpts, ProcessOutput, processService } from './process'
-import { CallOpts, SandboxConnection, SandboxConnectionOpts } from './sandboxConnection'
-import { Terminal, TerminalManager, TerminalOpts, TerminalOutput, terminalService } from './terminal'
-import { resolvePath } from '../utils/filesystem'
-import { CurrentWorkingDirectoryDoesntExistError } from '../error'
-
-export type DownloadFileFormat =
-  | 'base64'
-  | 'blob'
-  | 'buffer'
-  | 'arraybuffer'
-  | 'text'
-
-export interface SandboxOpts extends SandboxConnectionOpts {
-  onScanPorts?: ScanOpenPortsHandler;
-  /** Timeout for sandbox to start */
-  timeout?: number;
-  onStdout?: (out: ProcessMessage) => Promise<void> | void;
-  onStderr?: (out: ProcessMessage) => Promise<void> | void;
-  onExit?: (() => Promise<void> | void) | ((exitCode: number) => Promise<void> | void);
-}
-
+import {
+  ConnectionOpts,
+  ConnectionConfig,
+  defaultUsername,
+} from '../connectionConfig'
+import { createRpcLogger } from '../logs'
+import { Filesystem } from './filesystem'
+import { Commands, Pty } from './commands'
+import { SandboxApi } from './sandboxApi'
+import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 
 /**
- * E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
+ * Options for creating a new Sandbox.
+ */
+export interface SandboxOpts extends ConnectionOpts {
+  /**
+   * Custom metadata for the sandbox.
+   * 
+   * @default {}
+   */
+  metadata?: Record<string, string>
+  /**
+   * Custom environment variables for the sandbox.
+   * 
+   * Used when executing commands and code in the sandbox.
+   * Can be overridden with the `envs` argument when executing commands or code.
+   * 
+   * @default {}
+   */
+  envs?: Record<string, string>
+  /**
+   * Timeout for the sandbox in **milliseconds**.
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   * 
+   * @default 300_000 // 5 minutes
+   */
+  timeoutMs?: number
+}
+
+/**
+ * E2B cloud sandbox is a secure and isolated cloud environment.
  *
- * That means:
- * - Access to Linux OS
- * - Using filesystem (create, list, and delete files and dirs)
- * - Run processes
- * - Sandboxed - you can run any code
- * - Access to the internet
+ * The sandbox allows you to:
+ * - Access Linux OS
+ * - Create, list, and delete files and directories
+ * - Run commands
+ * - Run isolated code
+ * - Access the internet
  *
- * Check usage docs - https://e2b.dev/docs/sandbox/overview
+ * Check docs [here](https://e2b.dev/docs).
  *
- * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
- *
- * Use the {@link Sandbox.create} method to create a new sandbox.
+ * Use {@link Sandbox.create} to create a new sandbox.
  *
  * @example
  * ```ts
- * import { Sandbox } from '@e2b/sdk'
+ * import { Sandbox } from 'e2b'
  *
  * const sandbox = await Sandbox.create()
- *
- * await sandbox.close()
  * ```
  */
-export class Sandbox extends SandboxConnection {
-  /**
-   * Terminal manager used to create interactive terminals.
-   */
-  readonly terminal: TerminalManager
-  /**
-   * Filesystem manager used to manage files.
-   */
-  readonly filesystem: FilesystemManager
-  /**
-   * Process manager used to run commands.
-   */
-  readonly process: ProcessManager
-
-  private readonly onScanPorts?: ScanOpenPortsHandler
+export class Sandbox extends SandboxApi {
+  protected static readonly defaultTemplate: string = 'base'
+  protected static readonly defaultSandboxTimeoutMs = 300_000
 
   /**
-   * Use `Sandbox.create()` instead.
+   * Module for interacting with the sandbox filesystem
+   */
+  readonly files: Filesystem
+  /**
+   * Module for running commands in the sandbox
+   */
+  readonly commands: Commands
+  /**
+   * Module for interacting with the sandbox pseudo-terminals
+   */
+  readonly pty: Pty
+
+  /**
+   * Unique identifier of the sandbox.
+   */
+  readonly sandboxId: string
+
+  protected readonly envdPort = 49983
+
+  protected readonly connectionConfig: ConnectionConfig
+  private readonly envdApiUrl: string
+  private readonly envdApi: EnvdApiClient
+
+  /**
+   * Use {@link Sandbox.create} to create a new Sandbox instead.
    *
    * @hidden
    * @hide
    * @internal
    * @access protected
    */
-  constructor(opts?: SandboxOpts, protected createCalled: boolean = false) {
-    opts = opts || {}
-    super(opts, createCalled)
-    this.onScanPorts = opts.onScanPorts
-
-    // Init Filesystem handler
-    this.filesystem = {
-      list: async (path, opts?: CallOpts) => {
-        return (await this._call(
-          filesystemService,
-          'list',
-          [_resolvePath(path)],
-          opts,
-        )) as FileInfo[]
-      },
-      read: async (path, opts?: CallOpts) => {
-        return (await this._call(
-          filesystemService,
-          'read',
-          [_resolvePath(path)],
-          opts,
-        )) as string
-      },
-      remove: async (path, opts?: CallOpts) => {
-        await this._call(
-          filesystemService,
-          'remove',
-          [_resolvePath(path)],
-          opts,
-        )
-      },
-      write: async (path, content, opts?: CallOpts) => {
-        await this._call(
-          filesystemService,
-          'write',
-          [_resolvePath(path), content],
-          opts,
-        )
-      },
-      writeBytes: async (path: string, content: Uint8Array) => {
-        // We need to convert the byte array to base64 string without using browser or node specific APIs.
-        // This should be achieved by the node polyfills.
-        const base64Content = Buffer.from(content).toString('base64')
-        await this._call(filesystemService, 'writeBase64', [
-          _resolvePath(path),
-          base64Content,
-        ])
-      },
-      readBytes: async (path: string) => {
-        const base64Content = (await this._call(
-          filesystemService,
-          'readBase64',
-          [_resolvePath(path)],
-        )) as string
-        // We need to convert the byte array to base64 string without using browser or node specific APIs.
-        // This should be achieved by the node polyfills.
-        return Buffer.from(base64Content, 'base64')
-      },
-      makeDir: async (path, opts?: CallOpts) => {
-        await this._call(
-          filesystemService,
-          'makeDir',
-          [_resolvePath(path)],
-          opts,
-        )
-      },
-      watchDir: (path: string) => {
-        this.logger.debug?.(`Watching directory "${path}"`)
-        const npath = normalizePath(_resolvePath(path))
-        return new FilesystemWatcher(this, npath)
-      },
+  constructor(
+    opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & {
+      sandboxId: string
     }
+  ) {
+    super()
 
-    // Init Terminal handler
-    this.terminal = {
-      start: async ({
-        onData,
-        size,
-        onExit,
-        envVars,
-        cmd,
-        cwd = '',
-        terminalID = id(12),
-        timeout = undefined,
-      }: TerminalOpts) => {
-        const start = async ({
-          onData,
-          size,
-          onExit,
-          envVars,
-          cmd,
-          cwd = '',
-          rootDir,
-          terminalID = id(12),
-        }: Omit<TerminalOpts, 'timeout'>) => {
-          this.logger.debug?.(`Starting terminal "${terminalID}"`)
-          if (!cwd && rootDir) {
-            this.logger.warn?.(
-              'The rootDir parameter is deprecated, use cwd instead.',
-            )
-            cwd = rootDir
-          }
-          if (!cwd && this.cwd) {
-            cwd = this.cwd
-          }
-          envVars = envVars || {}
-          envVars = { ...this.envVars, ...envVars }
+    this.sandboxId = opts.sandboxId
+    this.connectionConfig = new ConnectionConfig(opts)
+    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
+      }://${this.getHost(this.envdPort)}`
 
-          const { promise: terminalExited, resolve: triggerExit } =
-            createDeferredPromise()
+    const rpcTransport = createConnectTransport({
+      baseUrl: this.envdApiUrl,
+      useBinaryFormat: false,
+      interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
+    })
 
-          const output = new TerminalOutput()
-
-          function handleData(data: string) {
-            output.addData(data)
-            onData?.(data)
-          }
-
-          const [onDataSubID, onExitSubID] = await this._handleSubscriptions(
-            this._subscribe(terminalService, handleData, 'onData', terminalID),
-            this._subscribe(terminalService, triggerExit, 'onExit', terminalID),
-          )
-
-          const { promise: unsubscribing, resolve: handleFinishUnsubscribing } =
-            createDeferredPromise<TerminalOutput>()
-
-          terminalExited.then(async () => {
-            Promise.allSettled([
-              this._unsubscribe(onExitSubID),
-              this._unsubscribe(onDataSubID),
-            ]).then((results) => {
-              const errMsg = formatSettledErrors(results)
-              if (errMsg) {
-                this.logger.debug?.(errMsg)
-              }
-            })
-
-            this.logger.debug?.(`Terminal "${terminalID}" exited`)
-
-            onExit?.()
-            handleFinishUnsubscribing(output)
-          })
-
-          try {
-            await this._call(terminalService, 'start', [
-              terminalID,
-              size.cols,
-              size.rows,
-              // Handle optional args for old devbookd compatibility
-              ...(cmd !== undefined ? [envVars, cmd, cwd] : []),
-            ])
-          } catch (err) {
-            triggerExit()
-            await unsubscribing
-            throw err
-          }
-
-          return new Terminal(
-            terminalID,
-            this,
-            triggerExit,
-            unsubscribing,
-            output,
-          )
-        }
-        return await withTimeout(
-          start,
-          timeout,
-        )({
-          onData,
-          size,
-          onExit,
-          envVars,
-          cmd,
-          cwd,
-          terminalID,
-        })
-      },
-    }
-
-    // Init Process handler
-    this.process = {
-      start: async (optsOrCmd: string | ProcessOpts) => {
-        const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
-        const start = async ({
-          cmd,
-          onStdout,
-          onStderr,
-          onExit,
-          envVars = {},
-          cwd = '',
-          rootDir,
-          processID = id(12),
-        }: Omit<ProcessOpts, 'timeout'>) => {
-          if (!cwd && rootDir) {
-            this.logger.warn?.(
-              'The rootDir parameter is deprecated, use cwd instead.',
-            )
-            cwd = rootDir
-          }
-          if (!cwd && this.cwd) {
-            cwd = this.cwd
-          }
-          if (!cmd) throw new Error('cmd is required')
-
-          envVars = envVars || {}
-          envVars = { ...this.envVars, ...envVars }
-
-          this.logger.debug?.(`Starting process "${processID}", cmd: "${cmd}"`)
-
-          const { promise: processExited, resolve: triggerExit } =
-            createDeferredPromise()
-
-          const output = new ProcessOutput()
-          const handleExit = (exitCode: number) => {
-            output.setExitCode(exitCode)
-            triggerExit()
-          }
-
-          const handleStdout = (data: { line: string; timestamp: number }) => {
-            const message = new ProcessMessage(
-              data.line,
-              data.timestamp,
-              false,
-            )
-            output.addStdout(message)
-
-            if (onStdout) {
-              onStdout(message)
-            } else if ((this.opts as SandboxOpts).onStdout) {
-              // @ts-expect-error TS2339
-              this.opts.onStdout(message)
-            }
-          }
-
-          const handleStderr = (data: { line: string; timestamp: number }) => {
-            const message = new ProcessMessage(data.line, data.timestamp, true)
-            output.addStderr(message)
-
-            if (onStderr) {
-              onStderr(message)
-            } else if ((this.opts as SandboxOpts).onStderr) {
-              // @ts-expect-error TS2339
-              this.opts.onStderr(message)
-            }
-          }
-
-          const [onExitSubID, onStdoutSubID, onStderrSubID] =
-            await this._handleSubscriptions(
-              this._subscribe(processService, handleExit, 'onExit', processID),
-              this._subscribe(
-                processService,
-                handleStdout,
-                'onStdout',
-                processID,
-              ),
-              this._subscribe(
-                processService,
-                handleStderr,
-                'onStderr',
-                processID,
-              ),
-            )
-
-          const { promise: unsubscribing, resolve: handleFinishUnsubscribing } =
-            createDeferredPromise<ProcessOutput>()
-
-          processExited.then(async () => {
-            Promise.allSettled([
-              this._unsubscribe(onExitSubID),
-              onStdoutSubID ? this._unsubscribe(onStdoutSubID) : undefined,
-              onStderrSubID ? this._unsubscribe(onStderrSubID) : undefined,
-            ]).then((results) => {
-              const errMsg = formatSettledErrors(results)
-              if (errMsg) {
-                this.logger.debug?.(errMsg)
-              }
-            })
-
-            this.logger.debug?.(`Process "${processID}" exited`)
-
-            if (onExit) {
-              onExit(output.exitCode || 0)
-            } else if ((this.opts as SandboxOpts).onExit) {
-              // @ts-expect-error TS2339
-              this.opts.onExit()
-            }
-
-            handleFinishUnsubscribing(output)
-          })
-
-          try {
-            await this._call(processService, 'start', [
-              processID,
-              cmd,
-              envVars,
-              cwd,
-            ])
-          } catch (err) {
-            triggerExit()
-            await unsubscribing
-            if (
-              /error starting process '\w+': fork\/exec \/bin\/bash: no such file or directory/.test((err as Error)?.message)
-            ) {
-              throw new CurrentWorkingDirectoryDoesntExistError(
-                `Failed to start the process. You are trying set 'cwd' to a directory that does not exist.\n${(err as Error)?.message}`
-              )
-            }
-            throw err
-          }
-
-          return new Process(
-            processID,
-            this,
-            triggerExit,
-            unsubscribing,
-            output,
-          )
-        }
-        const timeout = opts.timeout
-        return await withTimeout(start, timeout)(opts)
-      },
-      startAndWait: async (optsOrCmd: string | ProcessOpts) => {
-        const opts = typeof optsOrCmd === 'string' ? { cmd: optsOrCmd } : optsOrCmd
-        const process = await this.process.start(opts)
-        const out = await process.wait()
-        return out
-      }
-    }
-
-    const _resolvePath = (path: string): string =>
-      resolvePath(path, this.cwd, this.logger)
+    this.envdApi = new EnvdApiClient({
+      apiUrl: this.envdApiUrl,
+      logger: opts?.logger,
+    })
+    this.files = new Filesystem(
+      rpcTransport,
+      this.envdApi,
+      this.connectionConfig
+    )
+    this.commands = new Commands(rpcTransport, this.connectionConfig)
+    this.pty = new Pty(rpcTransport, this.connectionConfig)
   }
 
   /**
-   * URL that can be used to download or upload file to the sandbox via a multipart/form-data POST request.
-   * This is useful if you're uploading files directly from the browser.
-   * The file will be uploaded to the user's home directory with the same name.
-   * If a file with the same name already exists, it will be overwritten.
-   */
-  get fileURL() {
-    const protocol = this.getProtocol('http', this.opts.__debug_devEnv !== 'local')
-    const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
-    return `${protocol}://${hostname}${FILE_ROUTE}`
-  }
-
-  /**
-   * Creates a new Sandbox from the default `base` sandbox template.
-   * @returns New Sandbox
+   * Create a new sandbox from the default `base` sandbox template.
+   * 
+   * @param opts connection options.
+   * 
+   * @returns sandbox instance for the new sandbox.
    *
    * @example
    * ```ts
@@ -434,207 +140,213 @@ export class Sandbox extends SandboxConnection {
    * ```
    * @constructs Sandbox
    */
-  static async create<S extends typeof Sandbox>(this: S): Promise<InstanceType<S>>
-  /**
-   * Creates a new Sandbox from the template with the specified ID.
-   * @param template Sandbox template ID or name
-   * @returns New Sandbox
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.create("sandboxTemplateID")
-   * ```
-   */
-  static async create<S extends typeof Sandbox>(this: S, template: string): Promise<InstanceType<S>>
-  /**
-   * Creates a new Sandbox from the specified options.
-   * @param opts Sandbox options
-   * @returns New Sandbox
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.create({
-   *   template: "sandboxTemplate",
-   *   onStdout: console.log,
-   * })
-   * ```
-   */
-  static async create<S extends typeof Sandbox>(this: S, opts: SandboxOpts): Promise<InstanceType<S>>
-  static async create(optsOrTemplate?: string | SandboxOpts) {
-    const opts: SandboxOpts | undefined = typeof optsOrTemplate === 'string' ? { template: optsOrTemplate } : optsOrTemplate
-    const sandbox = new this(opts, true)
-    await sandbox._open({ timeout: opts?.timeout })
+  static async create<S extends typeof Sandbox>(
+    this: S,
+    opts?: SandboxOpts
+  ): Promise<InstanceType<S>>
 
-    return sandbox
+  /**
+   * Create a new sandbox from the specified sandbox template.
+   * 
+   * @param template sandbox template name or ID.
+   * @param opts connection options.
+   * 
+   * @returns sandbox instance for the new sandbox.
+   * 
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create('<template-name-or-id>')
+   * ```
+   * @constructs Sandbox
+   */
+  static async create<S extends typeof Sandbox>(
+    this: S,
+    template: string,
+    opts?: SandboxOpts
+  ): Promise<InstanceType<S>>
+  static async create<S extends typeof Sandbox>(
+    this: S,
+    templateOrOpts?: SandboxOpts | string,
+    opts?: SandboxOpts
+  ): Promise<InstanceType<S>> {
+    const { template, sandboxOpts } =
+      typeof templateOrOpts === 'string'
+        ? { template: templateOrOpts, sandboxOpts: opts }
+        : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+
+    const config = new ConnectionConfig(sandboxOpts)
+
+    const sandboxId = config.debug
+      ? 'debug_sandbox_id'
+      : await this.createSandbox(
+        template,
+        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+        sandboxOpts
+      )
+
+    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
+    return sbx
   }
 
   /**
-   * Reconnects to an existing Sandbox.
-   * @param sandboxID Sandbox ID
-   * @returns Existing Sandbox
+   * Connect to an existing sandbox.
+   * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+   * 
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   * 
+   * @returns sandbox instance for the existing sandbox.
    *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
-   * const sandboxID = sandbox.id
+   * const sandboxId = sandbox.sandboxId
    *
-   * await sandbox.keepAlive(300 * 1000)
-   * await sandbox.close()
-   *
-   * const reconnectedSandbox = await Sandbox.reconnect(sandboxID)
+   * // Connect to the same sandbox.
+   * const sameSandbox = await Sandbox.connect(sandboxId)
    * ```
    */
-  static async reconnect<S extends typeof Sandbox>(this: S, sandboxID: string): Promise<InstanceType<S>>
+  static async connect<S extends typeof Sandbox>(
+    this: S,
+    sandboxId: string,
+    opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
+  ): Promise<InstanceType<S>> {
+    const config = new ConnectionConfig(opts)
+
+    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
+    return sbx
+  }
+
   /**
-   * Reconnects to an existing Sandbox.
-   * @param opts Sandbox options
-   * @returns Existing Sandbox
+   * Get the host address for the specified sandbox port.
+   * You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
    *
+   * @param port number of the port in the sandbox.
+   *
+   * @returns host address of the sandbox port.
+   * 
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
-   * const sandboxID = sandbox.id
-   *
-   * await sandbox.keepAlive(300 * 1000)
-   * await sandbox.close()
-   *
-   * const reconnectedSandbox = await Sandbox.reconnect({
-   *   sandboxID,
-   * })
-   * ```
+   * // Start an HTTP server
+   * await sandbox.commands.exec('python3 -m http.server 3000')
+   * // Get the hostname of the HTTP server
+   * const serverURL = sandbox.getHost(3000)
+   * ``
    */
-  static async reconnect<S extends typeof Sandbox>(this: S, opts: Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>>
-  static async reconnect<S extends typeof Sandbox>(this: S, sandboxIDorOpts: string | Omit<SandboxOpts, 'id' | 'template'> & { sandboxID: string }): Promise<InstanceType<S>> {
-    let id: string
-    let opts: SandboxOpts
-    if (typeof sandboxIDorOpts === 'string') {
-      id = sandboxIDorOpts
-      opts = {}
-    } else {
-      id = sandboxIDorOpts.sandboxID
-      opts = sandboxIDorOpts
+  getHost(port: number) {
+    if (this.connectionConfig.debug) {
+      return `localhost:${port}`
     }
 
-    const sandboxIDAndClientID = id.split('-')
-    const sandboxID = sandboxIDAndClientID[0]
-    const clientID = sandboxIDAndClientID[1]
-    opts.__sandbox = { sandboxID, clientID, templateID: 'unknown', envdVersion: 'unknown' }
-
-    const sandbox = new this(opts, true) as InstanceType<S>
-    await sandbox._open({ timeout: opts?.timeout })
-
-    return sandbox
+    return `${port}-${this.sandboxId}.${this.connectionConfig.domain}`
   }
 
   /**
-   * Uploads a file to the sandbox.
-   * The file will be uploaded to the user's home directory with the same name.
-   * If a file with the same name already exists, it will be overwritten.
+   * Check if the sandbox is running.
    *
-   * **You can use the {@link Sandbox.fileURL} property and upload file directly via POST multipart/form-data**
+   * @returns `true` if the sandbox is running, `false` otherwise.
+   * 
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * await sandbox.isRunning() // Returns true
    *
+   * await sandbox.kill()
+   * await sandbox.isRunning() // Returns false
+   * ```
    */
-  async uploadFile(file: Buffer | Blob, filename: string) {
-    const body = new FormData()
+  async isRunning(
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>
+  ): Promise<boolean> {
+    const signal = this.connectionConfig.getSignal(opts?.requestTimeoutMs)
 
-    const blob =
-      file instanceof Blob
-        ? file
-        : new Blob([file], { type: 'application/octet-stream' })
-
-    body.append('file', blob, filename)
-
-    // TODO: Ensure the this is bound in this function
-    const response = await fetch(this.fileURL, {
-      method: 'POST',
-      body,
+    const res = await this.envdApi.api.GET('/health', {
+      signal,
     })
 
-    if (!response.ok) {
-      const text = await response.text()
-      throw new Error(
-        `Failed to upload file ${response.status} - ${response.statusText}: ${text}`,
-      )
+    if (res.response.status == 502) {
+      return false
     }
 
-    return `/home/user/${filename}`
+    const err = await handleEnvdApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return true
   }
 
   /**
-   * Downloads a file from the sandbox.
-   * @param remotePath Path to a file on the sandbox
-   * @param format Format of the downloaded file
-   * @returns File content
+   * Set the timeout of the sandbox.
+   * After the timeout expires the sandbox will be automatically killed.
+   * 
+   * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.setTimeout`.
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
    *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.create()
-   * const content = await sandbox.downloadFile('/home/user/file.txt')
-   * ```
+   * @param timeoutMs timeout in **milliseconds**.
+   * @param opts connection options.
    */
-  async downloadFile(remotePath: string, format?: DownloadFileFormat) {
-    remotePath = encodeURIComponent(remotePath)
-
-    // TODO: Ensure the this is bound in this function
-    const response = await fetch(`${this.fileURL}?path=${remotePath}`)
-    if (!response.ok) {
-      const text = await response.text()
-      throw new Error(`Failed to download file '${remotePath}': ${text}`)
+  async setTimeout(
+    timeoutMs: number,
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
+  ) {
+    if (this.connectionConfig.debug) {
+      // Skip timeout in debug mode
+      return
     }
 
-    switch (format) {
-      case 'base64':
-        return Buffer.from(await response.arrayBuffer()).toString('base64')
-      case 'blob':
-        return await response.blob()
-      case 'buffer':
-        return Buffer.from(await response.arrayBuffer())
-      case 'arraybuffer':
-        return await response.arrayBuffer()
-      case 'text':
-        return await response.text()
-      default:
-        return await response.arrayBuffer()
-    }
+    await Sandbox.setTimeout(this.sandboxId, timeoutMs, {
+      ...this.connectionConfig,
+      ...opts,
+    })
   }
 
-  protected override async _open(opts: CallOpts) {
-    await super._open(opts)
-
-    const portsHandler = this.onScanPorts
-      ? (ports: { State: string; Ip: string; Port: number }[]) =>
-        this.onScanPorts?.(
-          ports.map((p) => ({ ip: p.Ip, port: p.Port, state: p.State })),
-        )
-      : undefined
-
-    await this._handleSubscriptions(
-      portsHandler
-        ? this._subscribe(codeSnippetService, portsHandler, 'scanOpenedPorts')
-        : undefined,
-    )
-
-    if (this.cwd) {
-      this.logger.debug?.(`Custom cwd for Sandbox set: "${this.cwd}"`)
-      await this.filesystem.makeDir(this.cwd)
+  /**
+   * Kill the sandbox.
+   *
+   * @param opts connection options.
+   */
+  async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    if (this.connectionConfig.debug) {
+      // Skip killing in debug mode
+      return
     }
 
-    if ((this.opts as SandboxOpts).onStdout || (this.opts as SandboxOpts).onStderr) {
-      this.handleStartCmdLogs()
-    }
-
-    return this
+    await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
   }
 
-  private async handleStartCmdLogs() {
-    try {
-      await this.process.startAndWait({
-        cmd: 'sudo journalctl --follow --lines=all -o cat _SYSTEMD_UNIT=start_cmd.service',
-        envVars: {},
-        cwd: '/',
-      })
-    } catch (err) {
-      this.logger.debug?.('start command not started', err)
+  /**
+   * Get the URL to upload a file to the sandbox.
+   * 
+   * You have to send a POST request to this URL with the file as multipart/form-data.
+   * 
+   * @param path the directory where to upload the file, defaults to user's home directory.
+   * 
+   * @returns URL for uploading file.
+   */
+  uploadUrl(path?: string) {
+    return this.fileUrl(path)
+  }
+
+  /**
+   * Get the URL to download a file from the sandbox.
+   *
+   * @param path path to the file to download.
+   * 
+   * @returns URL for downloading file.
+   */
+  downloadUrl(path: string) {
+    return this.fileUrl(path)
+  }
+
+  private fileUrl(path?: string) {
+    const url = new URL('/files', this.envdApiUrl)
+    url.searchParams.set('username', defaultUsername)
+    if (path) {
+      url.searchParams.set('path', path)
     }
+
+    return url.toString()
   }
 }

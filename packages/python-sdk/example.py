@@ -1,11 +1,18 @@
+import asyncio
 import logging
+from e2b import AsyncSandbox
 
-from dotenv import load_dotenv
-from e2b import Sandbox
+import dotenv
 
-load_dotenv()
+dotenv.load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.ERROR)
 
-with Sandbox() as sandbox:
-    print(sandbox.id)
+
+async def main():
+    sbx = await AsyncSandbox.create(timeout=10, debug=True)
+    await sbx.set_timeout(20)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

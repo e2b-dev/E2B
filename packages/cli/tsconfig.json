@@ -2,11 +2,7 @@
   "compilerOptions": {
     "target": "es2022",
     "module": "es2022",
-    "lib": [
-      "es2022",
-      "dom",
-      "dom.iterable",
-    ],
+    "lib": ["es2022", "dom", "dom.iterable"],
     "allowJs": true,
     "declaration": true,
     "declarationMap": true,
@@ -27,13 +23,9 @@
     "allowSyntheticDefaultImports": true,
     "outDir": "dist",
     "baseUrl": ".",
-    "rootDirs": [
-      "src"
-    ],
+    "rootDirs": ["src"],
     "paths": {
-      "e2b": [
-        "../js-sdk/src"
-      ]
+      "e2b": ["../js-sdk/src"]
     }
   }
 }

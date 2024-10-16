@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  test:
     defaults:
       run:
         working-directory: ./packages/js-sdk
@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         id: pnpm-install
         with:
           version: 9.5
@@ -40,12 +40,32 @@ jobs:
           pnpm config set exclude-links-from-lockfile true
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          npx playwright install --with-deps
 
       - name: Test build
         run: pnpm build
 
-      - name: Run node tests
-        run: pnpm run test
+      - name: Run Node tests
+        run: pnpm test
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Run Bun tests
+        run: pnpm test:bun
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+      - name: Install Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Run Deno tests
+        run: pnpm test:deno
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
