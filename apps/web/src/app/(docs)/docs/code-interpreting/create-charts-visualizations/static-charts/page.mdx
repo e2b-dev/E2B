@@ -6,7 +6,7 @@ import imgStaticChart from '@/images/static-chart.png'
 Every time you run Python code with `runCode()` in JavaScript or `run_code()` method in Python, the code is executed in a headless Jupyter server inside the sandbox.
 
 E2B automatically detects any plots created with Matplotlib and sends them back to the client as images encoded in the base64 format.
-These images are directly accesible on the [(todo: link to reference)`result`](/todo) items in the [(todo: link to reference)`execution.results` array](/todo).
+These images are directly accesible on the `result` items in the `execution.results` array.
 
 Here's how to retrieve a static chart from the executed Python code that contains a Matplotlib plot.
 <CodeGroup>
