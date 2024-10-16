@@ -1,24 +1,25 @@
-## Migrating a TypeScript or Python Project from E2B SDK 0 to 1 Using Grit
+# Migrating a TypeScript or Python Project from E2B SDK 0 to 1 Using Grit
 
-This guide explains how to migrate your project from **E2B SDK 0** to **E2B SDK 1** using Grit and our custom migratione. This mostly automates the process of searching through your codebase to update code to migrate to the new SDK without errors. However, this is not a 100% accurate process, and you should expect human intervention to be required.
+This guide explains how to migrate your project from **E2B SDK `v0.*`** to **E2B SDK `v1.0`** using [Grit](https://www.grit.io/) and our custom migrations.
+This mostly automates the process of searching through your codebase to update code to migrate to the new SDK without errors. However, this is not a 100% accurate process, and you should expect human intervention to be required.
 
-### Step 1: Install the Grit CLI
+## Step 1: Install the Grit CLI
 
 You can install **Grit CLI** using one of the following methods:
 
-#### Option 1: Install via NPM
+### Option 1: Install via NPM
 
 ```bash
 npm install --location=global @getgrit/cli
 ```
 
-#### Option 2: Install via bash script
+### Option 2: Install via bash script
 
 ```bash
 curl -fsSL https://docs.grit.io/install | bash
 ```
 
-### Step 2: Prepare for migration
+## Step 2: Prepare for migration
 
 Before applying the migration, format your code and commit your changes to ensure you have a stable state to revert to if necessary.
 
@@ -27,11 +28,11 @@ git add .
 git commit -m "Last changes made"
 ```
 
-### Step 3: Add Custom Migration Patterns
+## Step 3: Add Custom Migration Patterns
 
 You can paste the following content into the appropriate files for JavaScript/TypeScript and Python.
 
-#### JavaScript/TypeScript Pattern (e2b_v0_to_v1_js.grit)
+### JavaScript/TypeScript Pattern (e2b_v0_to_v1_js.grit)
 
 Create or edit the file `.grit/patterns/e2b_v0_to_v1_js.grit` and paste the following:
 
@@ -93,7 +94,7 @@ pattern e2b_v0_to_v1_js() {
 }
 ```
 
-#### Python Pattern (e2b_v0_to_v1_py.grit)
+### Python Pattern (e2b_v0_to_v1_py.grit)
 
 Create or edit the file `.grit/patterns/e2b_v0_to_v1_py.grit` and paste the following:
 
@@ -142,23 +143,23 @@ pattern e2b_v0_to_v1_py() {
 }
 ```
 
-### Step 4: Run Grit with the Custom Pattern
+## Step 4: Run Grit with the Custom Pattern
 
 To apply the custom migration pattern, run the following command for your project.
 
-#### For JavaScript/TypeScript:
+### For JavaScript/TypeScript:
 
 ```bash
 grit apply github.com/e2b-dev/e2b-cookbook#e2b_v0_to_v1_js
 ```
 
-#### For Python:
+### For Python:
 
 ```bash
 grit apply github.com/e2b-dev/e2b-cookbook#e2b_v0_to_v1_py
 ```
 
-### Step 5: Review changes
+## Step 5: Review changes
 
 Once the migration is applied, review the changes for possible mistakes, including code that was broken (false positives) or outdated code that was not fixed (false negatives) by the migration. Such issues you may encounter include:
 
@@ -168,16 +169,16 @@ Once the migration is applied, review the changes for possible mistakes, includi
 
 You should manually review all changes made by Grit to fix these "gotchas" and others which are sure to exist.
 
-### Step 6: Commit changes
+## Step 6: Commit changes
 
 Before commiting the changes made by Grit, it's recommended to re-format the generated code following the convention of your choice. After verifying the changes and reformatting code, commit them to Git.
 
 ```bash
 git add .
-git commit -m "Migrate project to E2B SDK 1"
+git commit -m "Migrate project to E2B SDK v1.0"
 ```
 
-### Step 6: Test your application
+## Step 7: Test your application
 
 Now, thoroughly test your application to make sure the migration is successful and everything is functioning as expected.
 
