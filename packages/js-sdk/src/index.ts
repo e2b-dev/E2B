@@ -22,24 +22,24 @@ export type {
 export type { EntryInfo, Filesystem, WatchOpts } from './sandbox/filesystem'
 export { FileType } from './sandbox/filesystem'
 
-export { ProcessExitError } from './sandbox/process/processHandle'
+export { CommandExitError } from './sandbox/commands/commandHandle'
 export type {
-  ProcessResult,
+  CommandResult,
   Stdout,
   Stderr,
   PtyOutput,
-  ProcessHandle,
-} from './sandbox/process/processHandle'
+  CommandHandle,
+} from './sandbox/commands/commandHandle'
 export type { SandboxApiOpts } from './sandbox/sandboxApi'
 
 export type {
   ProcessInfo,
-  ProcessRequestOpts,
-  ProcessConnectOpts,
-  ProcessStartOpts,
-  Process,
+  CommandRequestOpts,
+  CommandConnectOpts,
+  CommandStartOpts,
+  Commands,
   Pty,
-} from './sandbox/process'
+} from './sandbox/commands'
 
 export type { SandboxInfo } from './sandbox/sandboxApi'
 export type { SandboxOpts } from './sandbox'

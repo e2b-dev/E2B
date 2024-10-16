@@ -6,9 +6,9 @@ export function formatSandboxTimeoutError(message: string) {
 }
 
 /**
- * Thrown when a sandbox error occurs.
- * 
  * Base class for all sandbox errors.
+ * 
+ * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
   constructor(message: any) {
@@ -24,7 +24,7 @@ export class SandboxError extends Error {
  * 
  * The [canceled] error type is caused by exceeding request timeout.
  * 
- * The [deadline_exceeded] error type is caused by exceeding the timeout for process, watch, etc.
+ * The [deadline_exceeded] error type is caused by exceeding the timeout for command execution, watch, etc.
  * 
  * The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
  */

@@ -17,50 +17,88 @@ import {
   KEEPALIVE_PING_HEADER,
 } from '../../connectionConfig'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
-import { ProcessHandle, ProcessResult } from './processHandle'
+import { CommandHandle, CommandResult } from './commandHandle'
 import { handleProcessStartEvent } from '../../envd/api'
 export { Pty } from './pty'
 
 /**
- * Options for sending a request to a process.
+ * Options for sending a command request.
  */
-export interface ProcessRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {}
+export interface CommandRequestOpts
+  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
 
 /**
- * Options for starting a new process.
+ * Options for starting a new command.
  */
-export interface ProcessStartOpts extends ProcessRequestOpts {
+export interface CommandStartOpts extends CommandRequestOpts {
+  /**
+   * If true, starts command in the background and the method returns immediately.
+   * You can use {@link CommandHandle.wait} to wait for the command to finish.
+   */
   background?: boolean
+  /**
+   * Working directory for the command.
+   * 
+   * @default `HOMEDIR` of the user
+   */
   cwd?: string
+  /**
+   * User to run the command as.
+   * 
+   * @default `user`
+   */
   user?: Username
+  /**
+   * Environment variables used for the command.
+   * 
+   * This overrides the default environment variables from `Sandbox` constructor.
+   * 
+   * @default `{}`
+   */
   envs?: Record<string, string>
+  /**
+   * Callback for command stdout output.
+   */
   onStdout?: (data: string) => void | Promise<void>
+  /**
+   * Callback for command stderr output.
+   */
   onStderr?: (data: string) => void | Promise<void>
+  /**
+   * Timeout for the command in **milliseconds**.
+   * 
+   * @default 60_000 (60 seconds)
+   */
   timeoutMs?: number
 }
 
 /**
- * Options for connecting to a process.
+ * Options for connecting to a command.
  */
-export type ProcessConnectOpts = Pick<
-  ProcessStartOpts,
+export type CommandConnectOpts = Pick<
+  CommandStartOpts,
   'onStderr' | 'onStdout' | 'timeoutMs'
 > &
-  ProcessRequestOpts
+  CommandRequestOpts
 
 /**
- * Process information.
+ * Information about a command, PTY session or start command running in the sandbox as process.
  */
 export interface ProcessInfo extends PlainMessage<ProcessConfig> {
+  /**
+   * Process ID.
+   */
   pid: number
+  /**
+   * Custom tag used for identifying special commands like start command in the custom template.
+   */
   tag?: string
 }
 
 /**
- * Manager for starting and interacting with processes in the sandbox.
+ * Module for starting and interacting with commands in the sandbox.
  */
-export class Process {
+export class Commands {
   protected readonly rpc: PromiseClient<typeof ProcessService>
 
   private readonly defaultProcessConnectionTimeout = 60_000 // 60 seconds
@@ -73,12 +111,13 @@ export class Process {
   }
 
   /**
-   * Lists all running processes.
+   * List all running commands and PTY sessions.
    *
-   * @param opts Options for the request
-   * @returns List of running processes
+   * @param opts connection options.
+   * 
+   * @returns list of running commands and PTY sessions.
    */
-  async list(opts?: ProcessRequestOpts): Promise<ProcessInfo[]> {
+  async list(opts?: CommandRequestOpts): Promise<ProcessInfo[]> {
     try {
       const res = await this.rpc.list(
         {},
@@ -101,16 +140,16 @@ export class Process {
   }
 
   /**
-   * Sends data to the stdin of a process
-   * .
-   * @param pid Process ID to send data to. You can get the list of processes using `sandbox.commands.list()`.
-   * @param data Data to send to the process
-   * @param opts Options for the request
+   * Send data to command stdin.
+   *
+   * @param pid process ID of the command. You can get the list of running commands using {@link Commands.list}.
+   * @param data data to send to the command.
+   * @param opts connection options.
    */
   async sendStdin(
     pid: number,
     data: string,
-    opts?: ProcessRequestOpts
+    opts?: CommandRequestOpts
   ): Promise<void> {
     try {
       await this.rpc.sendInput(
@@ -138,13 +177,15 @@ export class Process {
   }
 
   /**
-   * Kills a process.
+   * Kill a running command specified by its process ID.
+   * It uses `SIGKILL` signal to kill the command.
    *
-   * @param pid Process ID to kill. You can get the list of processes using `sandbox.commands.list()`.
-   * @param opts Options for the request
-   * @returns `true` if the process was killed, `false` if the process was not found
+   * @param pid process ID of the command. You can get the list of running commands using {@link Commands.list}.
+   * @param opts connection options.
+   * 
+   * @returns `true` if the command was killed, `false` if the command was not found.
    */
-  async kill(pid: number, opts?: ProcessRequestOpts): Promise<boolean> {
+  async kill(pid: number, opts?: CommandRequestOpts): Promise<boolean> {
     try {
       await this.rpc.sendSignal(
         {
@@ -174,15 +215,18 @@ export class Process {
   }
 
   /**
-   * Connects to an existing process.
+   * Connect to an existing command.
+   * You can use {@link CommandHandle.wait} to wait for the command to finish and get execution results.
    *
-   * @param pid Process ID to connect to. You can get the list of processes using `sandbox.commands.list()`.
-   * @param opts Options for connecting to the process
+   * @param pid process ID of the command to connect to. You can get the list of running commands using {@link Commands.list}.
+   * @param opts connection options.
+   * 
+   * @returns `CommandHandle` handle to interact with the running command.
    */
   async connect(
     pid: number,
-    opts?: ProcessConnectOpts
-  ): Promise<ProcessHandle> {
+    opts?: CommandConnectOpts
+  ): Promise<CommandHandle> {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -190,8 +234,8 @@ export class Process {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
+        controller.abort()
+      }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.connect(
@@ -217,7 +261,7 @@ export class Process {
 
       clearTimeout(reqTimeout)
 
-      return new ProcessHandle(
+      return new CommandHandle(
         pid,
         () => controller.abort(),
         () => this.kill(pid),
@@ -232,45 +276,43 @@ export class Process {
   }
 
   /**
-   * Starts a new process without waiting for it to finish.
-   * @param cmd Command to execute
-   * @param opts Options for starting the process
-   * @returns New process
+   * Start a new command and wait until it finishes executing.
+   * 
+   * @param cmd command to execute.
+   * @param opts options for starting the command.
+   * 
+   * @returns `CommandResult` result of the command execution.
    */
   async run(
     cmd: string,
-    opts?: ProcessStartOpts & { background?: false }
-  ): Promise<ProcessResult>
+    opts?: CommandStartOpts & { background?: false }
+  ): Promise<CommandResult>
   /**
-   * Starts a new process and waits until it finishes.
-   * @param cmd Command to execute
-   * @param opts Options for starting the process
-   * @returns New process
+   * Start a new command in the background.
+   * You can use {@link CommandHandle.wait} to wait for the command to finish and get its result.
+   * 
+   * @param cmd command to execute.
+   * @param opts options for starting the command
+   * 
+   * @returns `CommandHandle` handle to interact with the running command.
    */
   async run(
     cmd: string,
-    opts?: ProcessStartOpts & { background: true }
-  ): Promise<ProcessHandle>
+    opts?: CommandStartOpts & { background: true }
+  ): Promise<CommandHandle>
   async run(
     cmd: string,
-    opts?: ProcessStartOpts & { background?: boolean }
+    opts?: CommandStartOpts & { background?: boolean }
   ): Promise<unknown> {
     const proc = await this.start(cmd, opts)
 
     return opts?.background ? proc : proc.wait()
   }
 
-  /**
-   * Use `run` instead.
-   * @hidden
-   * @hide
-   * @internal
-   * @access protected
-   */
   private async start(
     cmd: string,
-    opts?: ProcessStartOpts
-  ): Promise<ProcessHandle> {
+    opts?: CommandStartOpts
+  ): Promise<CommandHandle> {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -278,8 +320,8 @@ export class Process {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
+        controller.abort()
+      }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.start(
@@ -306,7 +348,7 @@ export class Process {
 
       clearTimeout(reqTimeout)
 
-      return new ProcessHandle(
+      return new CommandHandle(
         pid,
         () => controller.abort(),
         () => this.kill(pid),
