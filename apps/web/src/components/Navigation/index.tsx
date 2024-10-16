@@ -39,7 +39,7 @@ function NavigationGroup({ group, className, isLast }: { group: NavGroup; classN
   }
 
   return (
-    <li className={clsx('relative', className)}>
+    <li className={clsx('relative pr-8', className)}>
       <div className="pl-2 mb-1 flex items-center justify-start gap-1">
         <motion.h2
           layout="position"
@@ -79,7 +79,7 @@ function NavigationGroup({ group, className, isLast }: { group: NavGroup; classN
 
 export function Navigation(props) {
   return (
-    <nav {...props}>
+    <nav {...props} className="border-r border-white/10">
       <ul role="list">
         {routes.map((group, groupIndex) => (
           <NavigationGroup

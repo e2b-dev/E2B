@@ -438,8 +438,8 @@ export const routes: NavGroup[] = [
         href: '/docs/cli/list-sandboxes',
       },
       {
-        title: '* Shutdown running sandboxes',
-        href: '/docs/cli/shutdown-sandbox',
+        title: 'Shutdown running sandboxes',
+        href: '/docs/cli/shutdown-sandboxes',
       },
     ]
   },
