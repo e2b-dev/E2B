@@ -17,7 +17,8 @@ export interface Props {
 
 function AuthForm({ view }: Props) {
   const searchParams = useSearchParams()
-  const redirectTo = searchParams?.get('redirect_to') || undefined
+  const redirectTo =
+    searchParams?.get('redirect_to') || 'https://e2b.dev/dashboard'
   const router = useRouter()
   const user = useUser()
 
