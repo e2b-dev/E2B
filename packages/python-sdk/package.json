@@ -8,6 +8,6 @@
     "postVersion": "poetry version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
     "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing",
     "pretest": "poetry install",
-    "generate-api-reference": "./scripts/generate_api_ref.sh"
+    "generate-api-reference": "poetry install && ./scripts/generate_api_ref.sh"
   }
 }
