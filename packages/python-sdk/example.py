@@ -1,7 +1,6 @@
 import asyncio
-import time
 import logging
-from e2b import AsyncSandbox, Sandbox
+from e2b import AsyncSandbox
 
 import dotenv
 
