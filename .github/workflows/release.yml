@@ -170,7 +170,10 @@ jobs:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Generate API Ref
-        run: pnpm run generate-api-reference
+        run: |
+          cd packages/python-sdk && pnpm run generate-api-reference
+          cd ../js-sdk && pnpm run generate-api-reference
+          cd ../cli && pnpm run generate-api-reference
 
       - name: Update lock file
         run: pnpm i --no-link --no-frozen-lockfile
