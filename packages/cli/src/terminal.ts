@@ -37,6 +37,10 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
       if (err.exitCode === -1 && err.error === 'signal: killed') {
         return
       }
+      if (err.exitCode === 130) {
+        console.warn('Terminal session was killed by user')
+        return
+      }
     }
     throw err
   } finally {
