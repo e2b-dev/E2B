@@ -2,16 +2,16 @@ from typing import Optional, Callable, Any, Generator, Union, Tuple
 
 from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.process import process_pb2
-from e2b.sandbox.process.process_handle import (
-    ProcessExitException,
-    ProcessResult,
+from e2b.sandbox.commands.command_handle import (
+    CommandExitException,
+    CommandResult,
     Stderr,
     Stdout,
     PtyOutput,
 )
 
 
-class ProcessHandle:
+class CommandHandle:
     """
     Class representing a process. It provides methods for waiting and killing the process.
     It is also used to iterate over the process output.
@@ -39,7 +39,7 @@ class ProcessHandle:
         self._stdout: str = ""
         self._stderr: str = ""
 
-        self._result: Optional[ProcessResult] = None
+        self._result: Optional[CommandResult] = None
         self._iteration_exception: Optional[Exception] = None
 
     def __iter__(self):
@@ -69,7 +69,7 @@ class ProcessHandle:
                 if event.event.data.pty:
                     yield None, None, event.event.data.pty
             if event.event.HasField("end"):
-                self._result = ProcessResult(
+                self._result = CommandResult(
                     stdout=self._stdout,
                     stderr=self._stderr,
                     exit_code=event.event.end.exit_code,
@@ -87,10 +87,10 @@ class ProcessHandle:
         on_pty: Optional[Callable[[PtyOutput], None]] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-    ) -> ProcessResult:
+    ) -> CommandResult:
         """
         Waits for the process to finish and returns the result.
-        If the process exits with a non-zero exit code, it throws a `ProcessExitException`.
+        If the process exits with a non-zero exit code, it throws a `CommandExitException`.
 
         :param on_pty: Callback for pty output
         :param on_stdout: Callback for stdout output
@@ -117,7 +117,7 @@ class ProcessHandle:
             raise Exception("Process ended without an end event")
 
         if self._result.exit_code != 0:
-            raise ProcessExitException(
+            raise CommandExitException(
                 stdout=self._stdout,
                 stderr=self._stderr,
                 exit_code=self._result.exit_code,

@@ -45,7 +45,7 @@ export class SandboxApi {
   protected constructor() { }
 
   /**
-   * Kill sandbox specified by sandbox ID.
+   * Kill the sandbox specified by sandbox ID.
    *
    * @param sandboxId sandbox ID.
    * @param opts connection options.
@@ -119,7 +119,9 @@ export class SandboxApi {
    * After the timeout expires the sandbox will be automatically killed.
    * 
    * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to {@link Sandbox.setTimeout}.
-   *
+   * 
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   * 
    * @param sandboxId sandbox ID.
    * @param timeoutMs timeout in **milliseconds**.
    * @param opts connection options.

@@ -12,46 +12,48 @@ from typing import (
 
 from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.process import process_pb2
-from e2b.sandbox.process.process_handle import (
-    ProcessExitException,
-    ProcessResult,
+from e2b.sandbox.commands.command_handle import (
+    CommandExitException,
+    CommandResult,
     Stderr,
     Stdout,
     PtyOutput,
 )
-from e2b.sandbox_async.utilts import OutputHandler
+from e2b.sandbox_async.utils import OutputHandler
 
 
-class AsyncProcessHandle:
+class AsyncCommandHandle:
     """
-    Class representing a process. It provides methods for waiting and killing the process.
+    Command execution handle.
+
+    It provides methods for waiting for the command to finish, retrieving stdout/stderr, and killing the command.
     """
 
     @property
     def pid(self):
         """
-        Get the process ID.
+        Command process ID.
         """
         return self._pid
 
     @property
     def stdout(self):
         """
-        Stdout of the process.
+        Command stdout output.
         """
         return self._stdout
 
     @property
     def stderr(self):
         """
-        Stderr of the process.
+        Command stderr output.
         """
         return self._stderr
 
     @property
     def error(self):
         """
-        Error message of the process. It is `None` if the process is still running.
+        Command execution error message.
         """
         if self._result is None:
             return None
@@ -60,7 +62,11 @@ class AsyncProcessHandle:
     @property
     def exit_code(self):
         """
-        Exit code of the process. It is `None` if the process is still running.
+        Command execution exit code.
+
+        `0` if the command finished successfully.
+
+        It is `None` if the command is still running.
         """
         if self._result is None:
             return None
@@ -88,7 +94,7 @@ class AsyncProcessHandle:
         self._on_stderr = on_stderr
         self._on_pty = on_pty
 
-        self._result: Optional[ProcessResult] = None
+        self._result: Optional[CommandResult] = None
         self._iteration_exception: Optional[Exception] = None
 
         self._wait = asyncio.create_task(self._handle_events())
@@ -116,7 +122,7 @@ class AsyncProcessHandle:
                 if event.event.data.pty:
                     yield None, None, event.event.data.pty
             if event.event.HasField("end"):
-                self._result = ProcessResult(
+                self._result = CommandResult(
                     stdout=self._stdout,
                     stderr=self._stderr,
                     exit_code=event.event.end.exit_code,
@@ -125,7 +131,10 @@ class AsyncProcessHandle:
 
     async def disconnect(self) -> None:
         """
-        Disconnects from the process. It does not kill the process. It only stops receiving events from the process.
+        Disconnects from the command.
+
+        The command is not killed, but SDK stops receiving events from the command.
+        You can reconnect to the command using `sandbox.commands.connect` method.
         """
         self._wait.cancel()
         # BUG: In Python 3.8 closing async generator can throw RuntimeError.
@@ -151,12 +160,12 @@ class AsyncProcessHandle:
         except Exception as e:
             self._iteration_exception = handle_rpc_exception(e)
 
-    async def wait(self) -> ProcessResult:
+    async def wait(self) -> CommandResult:
         """
-        Waits for the process to finish and returns the result.
-        If the process exits with a non-zero exit code, it throws a `ProcessExitException`.
+        Wait for the command to finish and return the result.
+        If the command exits with a non-zero exit code, it throws a `CommandExitException`.
 
-        :return: Process result
+        :return: `CommandResult` result of command execution
         """
         await self._wait
         if self._iteration_exception:
@@ -166,7 +175,7 @@ class AsyncProcessHandle:
             raise Exception("Process ended without an end event")
 
         if self._result.exit_code != 0:
-            raise ProcessExitException(
+            raise CommandExitException(
                 stdout=self._stdout,
                 stderr=self._stderr,
                 exit_code=self._result.exit_code,
@@ -177,7 +186,11 @@ class AsyncProcessHandle:
 
     async def kill(self) -> bool:
         """
-        Kills the process.
-        :return: Whether the process was killed successfully
+        Kills the command.
+
+        It uses `SIGKILL` signal to kill the command
+
+        :return: `True` if the command was killed successfully, `False` if the command was not found
         """
-        await self._handle_kill()
+        result = await self._handle_kill()
+        return result

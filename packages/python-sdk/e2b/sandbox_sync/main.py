@@ -8,8 +8,8 @@ from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
-from e2b.sandbox_sync.process.process import Process
-from e2b.sandbox_sync.process.pty import Pty
+from e2b.sandbox_sync.commands.command import Commands
+from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.sandbox_api import SandboxApi
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
     That means:
     - Access to Linux OS
-    - Using filesystem (create, list, and delete files and dirs)
+    - Using filesystem (create, list, and delete files and directories)
     - Run commands
     - Sandboxed - you can run any code
     - Access to the internet
@@ -58,11 +58,11 @@ class Sandbox(SandboxSetup, SandboxApi):
         return self._filesystem
 
     @property
-    def commands(self) -> Process:
+    def commands(self) -> Commands:
         """
         Commands module for interacting with the sandbox's processes
         """
-        return self._process
+        return self._commands
 
     @property
     def pty(self) -> Pty:
@@ -152,7 +152,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._transport._pool,
             self._envd_api,
         )
-        self._process = Process(
+        self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
             self._transport._pool,
@@ -235,8 +235,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         self.kill()
 
     @overload
-    def kill(self, request_timeout: Optional[float] = None) -> bool:
-        ...
+    def kill(self, request_timeout: Optional[float] = None) -> bool: ...
 
     @overload
     @staticmethod
@@ -246,8 +245,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
     @class_method_variant("_cls_kill")
     def kill(self, request_timeout: Optional[float] = None) -> bool:  # type: ignore
@@ -274,8 +272,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         self,
         timeout: int,
         request_timeout: Optional[float] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     @staticmethod
@@ -286,8 +283,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @class_method_variant("_cls_set_timeout")
     def set_timeout(  # type: ignore

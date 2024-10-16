@@ -2,15 +2,15 @@ import os
 
 from typing import Literal, Optional
 
-REQUEST_TIMEOUT: float = 30.0  # 30s
+REQUEST_TIMEOUT: float = 30.0  # 30 seconds
 
-KEEPALIVE_PING_INTERVAL_SEC = 50  # 50s
+KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
 
 
 class ConnectionConfig:
     """
-    Configuration for the connection to the E2B API.
+    Configuration for the connection to the API.
     """
 
     @staticmethod
@@ -75,5 +75,11 @@ class ConnectionConfig:
 
 
 Username = Literal["root", "user"]
+"""
+User used for the operation in the sandbox.
+"""
 
 default_username: Username = "user"
+"""
+Default user used for the operation in the sandbox.
+"""

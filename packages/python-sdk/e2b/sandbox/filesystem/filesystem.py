@@ -11,7 +11,13 @@ class FileType(Enum):
     """
 
     FILE = "file"
+    """
+    Filesystem object is a file.
+    """
     DIR = "dir"
+    """
+    Filesystem object is a directory.
+    """
 
 
 def map_file_type(ft: filesystem_pb2.FileType):
@@ -24,9 +30,18 @@ def map_file_type(ft: filesystem_pb2.FileType):
 @dataclass
 class EntryInfo:
     """
-    Contains information about the filesystem object (file or directory).
+    Sandbox filesystem object information.
     """
 
     name: str
+    """
+    Name of the filesystem object.
+    """
     type: Optional[FileType]
+    """
+    Type of the filesystem object.
+    """
     path: str
+    """
+    Path to the filesystem object.
+    """
