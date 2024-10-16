@@ -86,6 +86,9 @@ pattern e2b_v0_to_v1_js() {
         $msg => `Sandbox` where { $msg <: "CodeInterpreter", $msg <: imported_from(`"@e2b/code-interpreter"`) },
         `$sbx.notebook.execCell($params)` => `$sbx.runCode($params)`,
         `ProcessMessage` => `OutputMessage`,
+    } where or {
+        $program <: contains `import $_ from "@e2b/code-interpreter"`,
+        $program <: contains `import $_ from "@e2b"`
     }
 }
 ```
@@ -132,6 +135,9 @@ pattern e2b_v0_to_v1_py() {
         `$sbx.close()` => `$sbx.kill()`,
         $msg => `Sandbox` where { $msg <: "CodeInterpreter", $msg <: imported_from(`e2b_code_interpreter`) },
         `$sbx.notebook.exec_cell($params)` => `$sbx.run_code($params)`,
+    } where or {
+        $program <: contains `from e2b import $_`,
+        $program <: contains `from e2b_code_interpreter import $_`
     }
 }
 ```
@@ -154,7 +160,13 @@ grit apply e2b_v0_to_v1_py
 
 ### Step 5: Review changes
 
-Once the migration is applied, review the changes for possible mistakes, including code that was broken (false positives) or outdated code that was not fixed (false negatives) by the migration.
+Once the migration is applied, review the changes for possible mistakes, including code that was broken (false positives) or outdated code that was not fixed (false negatives) by the migration. Such issues you may encounter include:
+
+- ⚠️ If non-E2B objects with `.close()` methods, `.id` attributes, etc. exist in files that import E2B libraries, they will be incorrectly changed. You need to reject these changes manually.
+- ⚠️ The output structure of `Sandbox.list()` has changed in the new SDK. You must manually rewrite your code to account for this.
+- ⚠️ The global `cwd` option no longer exists when creating a Sandbox. You must manually rewrite your code to include the `cwd` option with each command.
+
+You should manually review all changes made by Grit to fix these "gotchas" and others which are sure to exist.
 
 ### Step 6: Commit changes
 

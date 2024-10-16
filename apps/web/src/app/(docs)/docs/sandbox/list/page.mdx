@@ -1,0 +1,60 @@
+# List running sandboxes
+
+You can list all running sandboxes using the `Sandbox.list()` method.
+
+<Note>
+Once you have information about running sandbox, you can [connect](/docs/sandbox/connect) to it using the `Sandbox.connect()` method.
+</Note>
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create({
+  metadata: {
+    name: 'My Sandbox',
+  },
+})
+
+const runningSandboxes = await Sandbox.list() // $HighlightLine
+const runningSandbox = runningSandboxes[0]
+console.log('Running sandbox metadata:', runningSandbox.metadata)
+console.log('Running sandbox id:', runningSandbox.sandboxId)
+console.log('Running sandbox started at:', runningSandbox.startedAt)
+console.log('Running sandbox template id:', runningSandbox.templateId)
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox({
+  metadata: {
+    name: 'My Sandbox',
+  },
+})
+
+running_sandboxes = sandbox.list() # $HighlightLine
+running_sandbox = running_sandboxes[0]
+print('Running sandbox metadata:', running_sandbox.metadata)
+print('Running sandbox id:', running_sandbox.sandbox_id)
+print('Running sandbox started at:', running_sandbox.started_at)
+print('Running sandbox template id:', running_sandbox.template_id)
+```
+</CodeGroup>
+
+The code above will output something like this:
+<CodeGroup isTerminalCommand>
+```bash {{ language: "js" }}
+Running sandbox metadata: {
+  name: "My Sandbox",
+}
+Running sandbox id: ixjj3iankaishgcge4jwn-b0b684e9
+Running sandbox started at: 2024-10-15T21:13:07.311Z
+Running sandbox template id: 3e4rngfa34txe0gxc1zf
+```
+```bash {{ language: "python" }}
+Running sandbox metadata: {'name': 'My Sandbox'}
+Running sandbox id: ixjj3iankaishgcge4jwn-b0b684e9
+Running sandbox started at: 2024-10-15 21:13:07.311861+00:00
+Running sandbox template id: 3e4rngfa34txe0gxc1zf
+```
+</CodeGroup>

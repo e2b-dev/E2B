@@ -76,19 +76,19 @@ npm i @e2b/code-interpreter
 
 Python
 ```
-pip install e2b_code_interpreter
+pip install e2b
 ```
 
 ### 2. Execute code with code interpreter inside Sandbox
 
 **JavaScript**
 ```ts
-import { CodeInterpreter } from '@e2b/code-interpreter'
+import { Sandbox } from '@e2b/code-interpreter'
 
-const sandbox = await CodeInterpreter.create()
-await sandbox.notebook.execCell('x = 1')
+const sandbox = await Sandbox.create()
+await sbx.runCode()('x = 1')
 
-const execution = await sandbox.notebook.execCell('x+=1; x')
+const execution = await sbx.runCode()('x+=1; x')
 console.log(execution.text)  // outputs 2
 
 await sandbox.close()
@@ -96,12 +96,12 @@ await sandbox.close()
 
 **Python**
 ```py
-from e2b_code_interpreter import CodeInterpreter
+from e2b_code_interpreter import Sandbox
 
-with CodeInterpreter() as sandbox:
-    sandbox.notebook.exec_cell("x = 1")
+with Sandbox() as sandbox:
+    sandbox.run_code()("x = 1")
 
-    execution = sandbox.notebook.exec_cell("x+=1; x")
+    execution = sandbox.run_code()("x+=1; x")
     print(execution.text)  # outputs 2
 ```
 
