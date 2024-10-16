@@ -4,12 +4,12 @@ import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../errors'
 
 /**
- * Options for request to the sandbox orchestration API.
+ * Options for request to the Sandbox API.
  */
 export interface SandboxApiOpts
   extends Partial<
     Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
-  > {}
+  > { }
 
 /**
  * Information about a sandbox.
@@ -26,7 +26,7 @@ export interface SandboxInfo {
   templateId: string
 
   /**
-   * Sandbox name.
+   * Template name.
    */
   name?: string
 
@@ -42,13 +42,15 @@ export interface SandboxInfo {
 }
 
 export class SandboxApi {
-  protected constructor() {}
+  protected constructor() { }
 
   /**
-   * Kills sandbox specified by sandbox ID.
+   * Kill sandbox specified by sandbox ID.
    *
-   * @param sandboxId - Sandbox ID.
-   * @param opts - Connection options.
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   * 
+   * @returns `true` if the sandbox was found and killed, `false` otherwise.
    */
   static async kill(
     sandboxId: string,
@@ -78,6 +80,13 @@ export class SandboxApi {
     return true
   }
 
+  /**
+   * List all running sandboxes.
+   *
+   * @param opts connection options.
+   * 
+   * @returns list of running sandboxes.
+   */
   static async list(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -105,6 +114,16 @@ export class SandboxApi {
     )
   }
 
+  /**
+   * Set the timeout of the specified sandbox.
+   * After the timeout expires the sandbox will be automatically killed.
+   * 
+   * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to {@link Sandbox.setTimeout}.
+   *
+   * @param sandboxId sandbox ID.
+   * @param timeoutMs timeout in **milliseconds**.
+   * @param opts connection options.
+   */
   static async setTimeout(
     sandboxId: string,
     timeoutMs: number,
@@ -167,7 +186,7 @@ export class SandboxApi {
       )
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
     return this.getSandboxId({

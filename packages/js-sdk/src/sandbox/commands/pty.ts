@@ -15,23 +15,52 @@ import {
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
 } from '../../connectionConfig'
-import { ProcessHandle } from './processHandle'
+import { CommandHandle } from './commandHandle'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { handleProcessStartEvent } from '../../envd/api'
 
 export interface PtyCreateOpts
   extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
+  /**
+   * Number of columns for the PTY.
+   */
   cols: number
+  /**
+   * Number of rows for the PTY.
+   */
   rows: number
+  /**
+   * Callback to handle PTY data.
+   */
   onData: (data: Uint8Array) => void | Promise<void>
+  /**
+   * Timeout for the PTY in **milliseconds**.
+   * 
+   * @default 60_000 // (60 seconds)
+   */
   timeoutMs?: number
+  /**
+   * User to use for the PTY.
+   * 
+   * @default `user`
+   */
   user?: Username
+  /**
+   * Environment variables for the PTY.
+   * 
+   * @default {}
+   */
   envs?: Record<string, string>
+  /**
+   * Working directory for the PTY.
+   * 
+   * @default // home directory of the user used to start the PTY
+   */
   cwd?: string
 }
 
 /**
- * Manager for starting and interacting with PTY (pseudo-terminal) processes in the sandbox.
+ * Module for interacting with PTYs (pseudo-terminals) in the sandbox.
  */
 export class Pty {
   private readonly rpc: PromiseClient<typeof ProcessService>
@@ -44,10 +73,11 @@ export class Pty {
   }
 
   /**
-   * Starts a new process with a PTY (pseudo-terminal).
+   * Create a new PTY (pseudo-terminal).
    *
-   * @param opts Options for creating the PTY process
-   * @returns New process
+   * @param opts options for creating the PTY.
+   * 
+   * @returns handle to interact with the PTY.
    */
   async create(opts: PtyCreateOpts) {
     const requestTimeoutMs =
@@ -90,7 +120,7 @@ export class Pty {
 
       clearTimeout(reqTimeout)
 
-      return new ProcessHandle(
+      return new CommandHandle(
         pid,
         () => controller.abort(),
         () => this.kill(pid),
@@ -105,11 +135,11 @@ export class Pty {
   }
 
   /**
-   * Sends input to a PTY process.
+   * Send input to a PTY process.
    *
-   * @param pid Process ID of the PTY process
-   * @param data Input data to send
-   * @param opts Connection options for the request
+   * @param pid process ID of the PTY.
+   * @param data input data to send to the PTY.
+   * @param opts connection options.
    */
   async sendInput(
     pid: number,
@@ -142,11 +172,12 @@ export class Pty {
   }
 
   /**
-   * Resizes a PTY process (changes the number of columns and rows in the terminal).
+   * Resize a PTY.
+   * Call this when the terminal window is resized and the number of columns and rows has changed.
    *
-   * @param pid Process ID of the PTY process
-   * @param size New size of the PTY
-   * @param opts Connection options for the request
+   * @param pid process ID of the PTY.
+   * @param size new size of the PTY.
+   * @param opts connection options.
    */
   async resize(
     pid: number,
@@ -179,11 +210,13 @@ export class Pty {
   }
 
   /**
-   * Kills a process.
+   * Kill a running PTY specified by process ID.
+   * It uses `SIGKILL` signal to kill the PTY.
    *
-   * @param pid Process ID to kill
-   * @param opts Options for the request
-   * @returns `true` if the process was killed, `false` if the process was not found
+   * @param pid process ID of the PTY.
+   * @param opts connection options.
+   * 
+   * @returns `true` if the PTY was killed, `false` if the PTY was not found.
    */
   async kill(
     pid: number,

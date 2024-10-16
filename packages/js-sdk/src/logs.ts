@@ -2,12 +2,20 @@ import type { Interceptor } from '@connectrpc/connect'
 import type { Middleware } from 'openapi-fetch'
 
 /**
- * Logger interface compatible with `console` that can be used in places that accept `Logger`
- * to log messages into the console.
+ * Logger interface compatible with {@link console} used for logging Sandbox messages.
  */
 export interface Logger {
+  /**
+   * Debug level logging method.
+   */
   debug?: (...args: any[]) => void
+  /**
+   * Info level logging method.
+   */
   info?: (...args: any[]) => void
+  /**
+   * Error level logging method.
+   */
   error?: (...args: any[]) => void
 }
 
