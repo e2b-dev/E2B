@@ -29,8 +29,8 @@ export interface ConnectionOpts {
    */
   domain?: string
   /**
-   * If true the SDK starts in the debug mode and **connects to the local envd API server**.
-   * 
+   * If true the SDK starts in the debug mode and connects to the local envd API server.
+   * @internal
    * @default E2B_DEBUG // environment variable or `false`
    */
   debug?: boolean

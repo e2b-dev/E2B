@@ -1,5 +1,5 @@
 from e2b import Sandbox
-from e2b.sandbox.process.process_handle import PtySize
+from e2b.sandbox.commands.command_handle import PtySize
 
 
 def test_resize(sandbox: Sandbox):

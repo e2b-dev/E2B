@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import AsyncSandbox, ProcessExitException
+from e2b import AsyncSandbox, CommandExitException
 
 
 async def test_kill_process(async_sandbox: AsyncSandbox):
@@ -9,7 +9,7 @@ async def test_kill_process(async_sandbox: AsyncSandbox):
 
     await async_sandbox.commands.kill(pid)
 
-    with pytest.raises(ProcessExitException):
+    with pytest.raises(CommandExitException):
         await async_sandbox.commands.run(f"kill -0 {pid}")
 
 

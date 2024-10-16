@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Optional, Union, overload
+from typing import Callable, Dict, List, Literal, Optional, Union, overload
 
 import e2b_connect
 import httpcore
@@ -11,33 +11,28 @@ from e2b.connection_config import (
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.exceptions import SandboxException
-from e2b.sandbox.process.main import ProcessInfo
-from e2b.sandbox.process.process_handle import ProcessResult
-from e2b.sandbox_async.process.process_handle import AsyncProcessHandle, Stderr, Stdout
-from e2b.sandbox_async.utilts import OutputHandler
+from e2b.sandbox.commands.main import ProcessInfo
+from e2b.sandbox.commands.command_handle import CommandResult
+from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
 
-class Process:
-    """
-    Manager for starting and interacting with processes in the sandbox.
-    """
-
+class Commands:
     def __init__(
         self,
         envd_api_url: str,
         connection_config: ConnectionConfig,
-        pool: httpcore.AsyncConnectionPool,
+        pool: httpcore.ConnectionPool,
     ) -> None:
         self._connection_config = connection_config
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
-            async_pool=pool,
+            pool=pool,
             json=True,
         )
 
-    async def list(
+    def list(
         self,
         request_timeout: Optional[float] = None,
     ) -> List[ProcessInfo]:
@@ -48,7 +43,7 @@ class Process:
         :return: List of running processes
         """
         try:
-            res = await self._rpc.alist(
+            res = self._rpc.list(
                 process_pb2.ListRequest(),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
@@ -68,7 +63,7 @@ class Process:
         except Exception as e:
             raise handle_rpc_exception(e)
 
-    async def kill(
+    def kill(
         self,
         pid: int,
         request_timeout: Optional[float] = None,
@@ -81,7 +76,7 @@ class Process:
         :return: `True` if the process was killed, `False` if the process was not found
         """
         try:
-            await self._rpc.asend_signal(
+            self._rpc.send_signal(
                 process_pb2.SendSignalRequest(
                     process=process_pb2.ProcessSelector(pid=pid),
                     signal=process_pb2.Signal.SIGNAL_SIGKILL,
@@ -97,12 +92,12 @@ class Process:
                     return False
             raise handle_rpc_exception(e)
 
-    async def send_stdin(
+    def send_stdin(
         self,
         pid: int,
         data: str,
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ):
         """
         Sends data to the stdin of a process.
 
@@ -111,7 +106,7 @@ class Process:
         :param request_timeout: Request timeout
         """
         try:
-            await self._rpc.asend_input(
+            self._rpc.send_input(
                 process_pb2.SendInputRequest(
                     process=process_pb2.ProcessSelector(pid=pid),
                     input=process_pb2.ProcessInput(
@@ -126,44 +121,42 @@ class Process:
             raise handle_rpc_exception(e)
 
     @overload
-    async def run(
+    def run(
         self,
         cmd: str,
         background: Union[Literal[False], None] = None,
         envs: Optional[Dict[str, str]] = None,
         user: Username = "user",
         cwd: Optional[str] = None,
-        on_stdout: Optional[OutputHandler[Stdout]] = None,
-        on_stderr: Optional[OutputHandler[Stderr]] = None,
+        on_stdout: Optional[Callable[[str], None]] = None,
+        on_stderr: Optional[Callable[[str], None]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessResult:
-        ...
+    ) -> CommandResult: ...
 
     @overload
-    async def run(
+    def run(
         self,
         cmd: str,
         background: Literal[True],
         envs: Optional[Dict[str, str]] = None,
         user: Username = "user",
         cwd: Optional[str] = None,
-        on_stdout: Optional[OutputHandler[Stdout]] = None,
-        on_stderr: Optional[OutputHandler[Stderr]] = None,
+        on_stdout: None = None,
+        on_stderr: None = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> AsyncProcessHandle:
-        ...
+    ) -> CommandHandle: ...
 
-    async def run(
+    def run(
         self,
         cmd: str,
         background: Union[bool, None] = None,
         envs: Optional[Dict[str, str]] = None,
         user: Username = "user",
         cwd: Optional[str] = None,
-        on_stdout: Optional[OutputHandler[Stdout]] = None,
-        on_stderr: Optional[OutputHandler[Stderr]] = None,
+        on_stdout: Optional[Callable[[str], None]] = None,
+        on_stderr: Optional[Callable[[str], None]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
@@ -182,20 +175,25 @@ class Process:
         :param request_timeout: Timeout for the request
         :return: `ProcessHandle` if `background` is `True`, `ProcessResult` if `background` is `False`
         """
-        proc = await self._start(
+        proc = self._start(
             cmd,
             envs,
             user,
             cwd,
             timeout,
             request_timeout,
-            on_stdout=on_stdout,
-            on_stderr=on_stderr,
         )
 
-        return proc if background else await proc.wait()
+        return (
+            proc
+            if background
+            else proc.wait(
+                on_stdout=on_stdout,
+                on_stderr=on_stderr,
+            )
+        )
 
-    async def _start(
+    def _start(
         self,
         cmd: str,
         envs: Optional[Dict[str, str]] = None,
@@ -203,10 +201,8 @@ class Process:
         cwd: Optional[str] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-        on_stdout: Optional[OutputHandler[Stdout]] = None,
-        on_stderr: Optional[OutputHandler[Stderr]] = None,
-    ) -> AsyncProcessHandle:
-        events = self._rpc.astart(
+    ):
+        events = self._rpc.start(
             process_pb2.StartRequest(
                 process=process_pb2.ProcessConfig(
                     cmd="/bin/bash",
@@ -226,67 +222,59 @@ class Process:
         )
 
         try:
-            start_event = await events.__anext__()
+            start_event = events.__next__()
 
             if not start_event.HasField("event"):
                 raise SandboxException(
                     f"Failed to start process: expected start event, got {start_event}"
                 )
 
-            return AsyncProcessHandle(
+            return CommandHandle(
                 pid=start_event.event.start.pid,
                 handle_kill=lambda: self.kill(start_event.event.start.pid),
                 events=events,
-                on_stdout=on_stdout,
-                on_stderr=on_stderr,
             )
         except Exception as e:
             raise handle_rpc_exception(e)
 
-    async def connect(
+    def connect(
         self,
         pid: int,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-        on_stdout: Optional[OutputHandler[Stdout]] = None,
-        on_stderr: Optional[OutputHandler[Stderr]] = None,
-    ) -> AsyncProcessHandle:
+    ):
         """
         Connects to an existing process.
 
         :param pid: Process ID to connect to. You can get the list of processes using `sandbox.commands.list()`.
         :param timeout: Timeout for the connection
         :param request_timeout: Request timeout
-        :param on_stdout: Callback for stdout
-        :param on_stderr: Callback for stderr
         """
-        events = self._rpc.aconnect(
+        events = self._rpc.connect(
             process_pb2.ConnectRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
-            ),
-            timeout=timeout,
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
             ),
             headers={
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
+            timeout=timeout,
+            request_timeout=self._connection_config.get_request_timeout(
+                request_timeout
+            ),
         )
 
         try:
-            start_event = await events.__anext__()
+            start_event = events.__next__()
 
             if not start_event.HasField("event"):
                 raise SandboxException(
                     f"Failed to connect to process: expected start event, got {start_event}"
                 )
 
-            return AsyncProcessHandle(
+            return CommandHandle(
                 pid=start_event.event.start.pid,
                 handle_kill=lambda: self.kill(start_event.event.start.pid),
                 events=events,
-                on_stdout=on_stdout,
-                on_stderr=on_stderr,
             )
         except Exception as e:
             raise handle_rpc_exception(e)

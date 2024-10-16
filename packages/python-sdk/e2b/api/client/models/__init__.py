@@ -2,9 +2,7 @@
 
 from .error import Error
 from .new_sandbox import NewSandbox
-from .post_sandboxes_sandbox_id_refreshes_body import (
-    PostSandboxesSandboxIDRefreshesBody,
-)
+from .post_sandboxes_sandbox_id_refreshes_body import PostSandboxesSandboxIDRefreshesBody
 from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
 from .running_sandbox import RunningSandbox
 from .sandbox import Sandbox

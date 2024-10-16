@@ -215,7 +215,7 @@ export class Commands {
   }
 
   /**
-   * Connect to an existing command.
+   * Connect to a running command.
    * You can use {@link CommandHandle.wait} to wait for the command to finish and get execution results.
    *
    * @param pid process ID of the command to connect to. You can get the list of running commands using {@link Commands.list}.

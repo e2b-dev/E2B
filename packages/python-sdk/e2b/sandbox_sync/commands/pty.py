@@ -12,13 +12,13 @@ from e2b.connection_config import (
 )
 from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.sandbox.process.process_handle import PtySize
-from e2b.sandbox_sync.process.process_handle import ProcessHandle
+from e2b.sandbox.commands.command_handle import PtySize
+from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
 
 class Pty:
     """
-    Manager for starting and interacting with PTY (pseudo-terminal) processes in the sandbox.
+    Module for interacting with PTYs (pseudo-terminals) in the sandbox.
     """
 
     def __init__(
@@ -42,11 +42,12 @@ class Pty:
         request_timeout: Optional[float] = None,
     ) -> bool:
         """
-        Kills a process.
+        Kill PTY.
 
-        :param pid: Process ID to kill. You can get the list of processes using `sandbox.commands.list()`.
-        :param request_timeout: Timeout for the request
-        :return: `true` if the process was killed, `false` if the process was not found
+        :param pid: Process ID of the PTY
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: `true` if the PTY was killed, `false` if the PTY was not found
         """
         try:
             self._rpc.send_signal(
@@ -72,11 +73,11 @@ class Pty:
         request_timeout: Optional[float] = None,
     ) -> None:
         """
-        Sends input to a PTY process.
+        Send input to a PTY.
 
-        :param pid: Process ID of the PTY process
+        :param pid: Process ID of the PTY
         :param data: Input data to send
-        :param request_timeout: Timeout for the request
+        :param request_timeout: Timeout for the request in **seconds**
         """
         try:
             self._rpc.send_input(
@@ -101,17 +102,18 @@ class Pty:
         envs: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-    ) -> ProcessHandle:
+    ) -> CommandHandle:
         """
-        Starts a new process with a PTY (pseudo-terminal).
+        Start a new PTY (pseudo-terminal).
 
         :param size: Size of the PTY
-        :param user: User to start the process as
-        :param cwd: Current working directory
-        :param envs: Environment variables
-        :param timeout: Timeout for the request
-        :param request_timeout: Timeout for the request
-        :return: New process
+        :param user: User to use for the PTY
+        :param cwd: Working directory for the PTY
+        :param envs: Environment variables for the PTY
+        :param timeout: Timeout for the PTY in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Handle to interact with the PTY
         """
         envs = envs or {}
         envs["TERM"] = "xterm-256color"
@@ -145,7 +147,7 @@ class Pty:
                     f"Failed to start process: expected start event, got {start_event}"
                 )
 
-            return ProcessHandle(
+            return CommandHandle(
                 pid=start_event.event.start.pid,
                 handle_kill=lambda: self.kill(start_event.event.start.pid),
                 events=events,
@@ -160,11 +162,12 @@ class Pty:
         request_timeout: Optional[float] = None,
     ) -> None:
         """
-        Resizes a PTY process (changes the number of columns and rows in the terminal).
+        Resize PTY.
+        Call this when the terminal window is resized and the number of columns and rows has changed.
 
-        :param pid: Process ID of the PTY process
+        :param pid: Process ID of the PTY
         :param size: New size of the PTY
-        :param request_timeout: Timeout for the request
+        :param request_timeout: Timeout for the request in **seconds**s
         """
         self._rpc.update(
             process_pb2.UpdateRequest(

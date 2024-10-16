@@ -18,9 +18,9 @@ def format_execution_timeout_error() -> Exception:
 
 class SandboxException(Exception):
     """
-    Raised when a sandbox exception occurs.
-
     Base class for all sandbox errors.
+
+    Raised when a general sandbox exception occurs.
     """
 
     pass
@@ -39,6 +39,14 @@ class TimeoutException(SandboxException):
     pass
 
 
+class InvalidArgumentException(SandboxException):
+    """
+    Raised when an invalid argument is provided.
+    """
+
+    pass
+
+
 class NotEnoughSpaceException(SandboxException):
     """
     Raised when there is not enough disk space.
@@ -50,14 +58,6 @@ class NotEnoughSpaceException(SandboxException):
 class NotFoundException(SandboxException):
     """
     Raised when a resource is not found.
-    """
-
-    pass
-
-
-class InvalidArgumentException(SandboxException):
-    """
-    Raised when an invalid argument is provided.
     """
 
     pass

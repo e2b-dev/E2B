@@ -1,5 +1,5 @@
 import uuid
-from e2b.sandbox.process.process_handle import ProcessExitException
+from e2b.sandbox.commands.command_handle import CommandExitException
 
 import pytest
 
@@ -38,7 +38,7 @@ exit(0)
 def test_envelope_decode():
     with Desktop(timeout=30) as desktop:
         for _ in range(10):
-            with pytest.raises(ProcessExitException):
+            with pytest.raises(CommandExitException):
                 desktop.pyautogui(
                     """
 pyautogui.write("Hello, ")
