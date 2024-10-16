@@ -180,6 +180,10 @@ export const routes: NavGroup[] = [
         ]
       },
       {
+        title: '* Streaming',
+        href: '/docs/code-interpreting/streaming',
+      },
+      {
         title: '* Connect your data',
         href: '/docs/code-interpreting/connect-your-data',
       },
@@ -253,6 +257,10 @@ export const routes: NavGroup[] = [
   //       href: '/docs/code-execution/python',
   //     },
   //     {
+  //       title: '* Streaming'
+  //       href: '/docs/code-execution/streaming',
+  //     },
+  //     {
   //       title: '* Web frameworks',
   //       links: [
   //         {
@@ -305,6 +313,10 @@ export const routes: NavGroup[] = [
       {
         title: 'Connect to running sandbox',
         href: '/docs/sandbox/connect',
+      },
+      {
+        title: 'Internet access',
+        href: '/docs/sandbox/internet-access',
       },
       {
         title: '* Request timeouts',
@@ -364,6 +376,10 @@ export const routes: NavGroup[] = [
       {
         title: '* Overview',
         href: '/docs/process/overview',
+      },
+      {
+        title: '* Streaming',
+        href: '/docs/process/streaming',
       },
       {
         title: '* Run commands in background',
