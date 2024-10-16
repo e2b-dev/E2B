@@ -117,7 +117,8 @@ export const logsCommand = new commander.Command('logs')
   )
   .option(
     '--loggers [loggers]',
-    'filter logs by loggers. Specify multiple loggers by separating them with a comma.'
+    'filter logs by loggers. Specify multiple loggers by separating them with a comma.',
+    (val: string) => val.split(',')
   )
   .action(
     async (
@@ -165,7 +166,13 @@ export const logsCommand = new commander.Command('logs')
           }
 
           for (const log of logs) {
-            printLog(log.timestamp, log.line, level, format, opts?.loggers)
+            printLog(
+              log.timestamp,
+              log.line,
+              level,
+              format,
+              opts?.loggers ?? undefined
+            )
           }
 
           const isRunning = await isRunningPromise
