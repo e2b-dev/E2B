@@ -39,10 +39,9 @@ export function Layout({
                 lg:w-[var(--sidebar-nav-width)]
                 lg:overflow-y-auto
                 lg:px-4
-                lg:pb-8
               "
             >
-              {isDocs && <Navigation className="hidden lg:my-4 lg:block" />}
+              {isDocs && <div className="hidden lg:block lg:mt-4"><Navigation /></div>}
             </div>
           </motion.header>
         )}

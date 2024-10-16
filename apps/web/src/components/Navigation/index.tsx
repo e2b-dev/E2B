@@ -79,7 +79,7 @@ function NavigationGroup({ group, className, isLast }: { group: NavGroup; classN
 
 export function Navigation(props) {
   return (
-    <nav {...props} className="border-r border-white/10">
+    <nav {...props} className="border-r border-white/10 lg:pb-4">
       <ul role="list">
         {routes.map((group, groupIndex) => (
           <NavigationGroup
