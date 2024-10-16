@@ -18,6 +18,21 @@
   "publishConfig": {
     "access": "public"
   },
+  "keywords": [
+    "e2b",
+    "ai-agents",
+    "agents",
+    "ai",
+    "code-interpreter",
+    "sandbox",
+    "code",
+    "cli",
+    "runtime",
+    "vm",
+    "nodejs",
+    "javascript",
+    "typescript"
+  ],
   "sideEffects": false,
   "scripts": {
     "prepublishOnly": "pnpm build",
