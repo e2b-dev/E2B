@@ -39,7 +39,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
   /**
    * Working directory for the command.
    * 
-   * @default `HOMEDIR` of the user
+   * @default // home directory of the user used to start the command
    */
   cwd?: string
   /**
@@ -67,7 +67,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
   /**
    * Timeout for the command in **milliseconds**.
    * 
-   * @default 60_000 (60 seconds)
+   * @default 60_000 // (60 seconds)
    */
   timeoutMs?: number
 }

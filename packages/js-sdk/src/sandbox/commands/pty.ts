@@ -36,7 +36,7 @@ export interface PtyCreateOpts
   /**
    * Timeout for the PTY in **milliseconds**.
    * 
-   * @default 60_000 (60 seconds)
+   * @default 60_000 // (60 seconds)
    */
   timeoutMs?: number
   /**
@@ -54,7 +54,7 @@ export interface PtyCreateOpts
   /**
    * Working directory for the PTY.
    * 
-   * @default `HOMEDIR` of the user.
+   * @default // home directory of the user used to start the PTY
    */
   cwd?: string
 }

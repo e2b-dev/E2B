@@ -84,7 +84,7 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * Timeout for the watch operation in **milliseconds**.
    * You can pass `0` to disable the timeout.
    * 
-   * @default 60_000 (60 seconds)
+   * @default 60_000 // (60 seconds)
    */
   timeoutMs?: number
   /**

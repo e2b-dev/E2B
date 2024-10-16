@@ -33,7 +33,7 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Timeout for the sandbox in **milliseconds**.
    * 
-   * @default 300_000
+   * @default 300_000 // (5 minutes)
    */
   timeoutMs?: number
 }

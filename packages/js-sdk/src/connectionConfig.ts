@@ -13,31 +13,31 @@ export interface ConnectionOpts {
   /**
    * E2B API key to use for authentication.
    * 
-   * @default `E2B_API_KEY` environment variable
+   * @default `E2B_API_KEY` // environment variable
    */
   apiKey?: string
   /**
    * E2B access token to use for authentication.
    * 
-   * @default `E2B_ACCESS_TOKEN` environment variable
+   * @default `E2B_ACCESS_TOKEN` // environment variable
    */
   accessToken?: string
   /**
    * Domain to use for the API.
    * 
-   * @default `E2B_DOMAIN` environment variable or `e2b.dev`
+   * @default `E2B_DOMAIN` // environment variable or `e2b.dev`
    */
   domain?: string
   /**
    * If true the SDK starts in the debug mode and **connects to the local envd API server**.
    * 
-   * @default `E2B_DEBUG` environment variable or `false`
+   * @default `E2B_DEBUG` // environment variable or `false`
    */
   debug?: boolean
   /**
    * Timeout for requests to the API in **milliseconds**.
    * 
-   * @default 30_000
+   * @default 30_000 // (30 seconds)
    */
   requestTimeoutMs?: number
   /**
