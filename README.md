@@ -51,9 +51,9 @@ JavaScript / TypeScript
 import { Sandbox } from '@e2b/code-interpreter'
 
 const sandbox = await Sandbox.create()
-await sbx.runCode()('x = 1')
+await sbx.runCode('x = 1')
 
-const execution = await sbx.runCode()('x+=1; x')
+const execution = await sbx.runCode('x+=1; x')
 console.log(execution.text)  // outputs 2
 ```
 
@@ -62,8 +62,8 @@ Python
 from e2b_code_interpreter import Sandbox
 
 with Sandbox() as sandbox:
-    sandbox.run_code()("x = 1")
-    execution = sandbox.run_code()("x+=1; x")
+    sandbox.run_code("x = 1")
+    execution = sandbox.run_code("x+=1; x")
     print(execution.text)  # outputs 2
 ```
 
