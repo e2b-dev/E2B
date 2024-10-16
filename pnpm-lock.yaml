@@ -266,8 +266,8 @@ importers:
         specifier: ^2.11.2
         version: 2.11.2
       e2b:
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.1
+        version: 1.0.1
       inquirer:
         specifier: ^9.2.12
         version: 9.2.12
@@ -3918,8 +3918,8 @@ packages:
     resolution: {integrity: sha512-xKmVK4ipgVQPJ/uyyrfH9LnaawERRWt8U2UZhdhGfzdL/QU/OpBjuhoIbFCv1Uy6qXV4nIiJ6Nw4MBC4HmXf1g==}
     engines: {node: '>=18'}
 
-  e2b@1.0.0:
-    resolution: {integrity: sha512-HCxcLWrLbV+Si87QDRGPLbhS1o+Cm6voUW4mSbApAHnm4bZegIWhd3x80O4cwmYaMNWfhbJUmqasCN++iOgiew==}
+  e2b@1.0.1:
+    resolution: {integrity: sha512-A3T56Dso60AXTJO+V0zUNecYXDQB9jv6nm94DpLuEshjlk2MfbCF99rHgYUbOp9IOmh3EBv0RdEGIY5l4zJZQA==}
     engines: {node: '>=18'}
 
   eastasianwidth@0.2.0:
@@ -11954,7 +11954,7 @@ snapshots:
       bufferutil: 4.0.8
       utf-8-validate: 6.0.3
 
-  e2b@1.0.0:
+  e2b@1.0.1:
     dependencies:
       '@bufbuild/protobuf': 1.10.0
       '@connectrpc/connect': 1.5.0(@bufbuild/protobuf@1.10.0)
