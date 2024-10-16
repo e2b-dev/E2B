@@ -33,7 +33,7 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
   try {
     await terminalSession.wait()
   } catch (err: any) {
-    if (err instanceof e2b.ProcessExitError) {
+    if (err instanceof e2b.CommandExitError) {
       if (err.exitCode === -1 && err.error === 'signal: killed') {
         return
       }
