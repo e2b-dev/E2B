@@ -1,0 +1,112 @@
+# Sandbox templates
+
+Sandbox templates allow you to customize the sandbox environment to your needs.
+
+To create a sandbox template, you specify the `e2b.Dockerfile`. We then take this Dockerfile and create a new sandbox template from it and give you back a template ID.
+
+You can then use this template ID to create a new sandbox with the SDK based on the template you created.
+
+## How to create custom sandbox
+
+**Steps**
+1. [Install E2B CLI](#1-install-e2b-cli)
+1. [Initialize sandbox template](#2-initialize-sandbox-template)
+1. [Customize `e2b.Dockerfile`](#3-customize-e2bdockerfile)
+1. [Build your sandbox template](#4-build-your-sandbox-template)
+1. [Start your custom sandbox](#5-start-your-custom-sandbox)
+
+
+### 1. Install E2B CLI
+Install E2B CLI with npm:
+<CodeGroup isTerminalCommand>
+```bash
+npm i @e2b/cli
+```
+</CodeGroup>
+
+### 2. Initialize sandbox template
+The following command will create a basic `e2b.Dockerfile` in the current directory.
+
+<CodeGroup isTerminalCommand>
+```bash
+e2b template init
+```
+</CodeGroup>
+
+### 3. Customize `e2b.Dockerfile`
+Now you can customize your sandbox template by editing the `e2b.Dockerfile` file.
+<CodeGroup title="e2b.Dockerfile">
+```bash
+# Make sure to use this base image
+FROM e2bdev/code-interpreter:latest # $HighlightLine
+
+# Install some Python packages
+RUN pip install cowsay # $HighlightLine
+```
+</CodeGroup>
+
+### 4. Build your sandbox template
+Now you can build your sandbox template. We'll use Docker and the E2B CLI.
+What is going to happen is that E2B CLI will call Docker to build the image and then push it to the E2B cloud.
+Then we convert the Docker image to a micro VM that can be then launched as a sandbox with our SDK.
+
+<CodeGroup isTerminalCommand>
+```bash
+e2b template build -c "/root/.jupyter/start-up.sh"
+```
+</CodeGroup>
+
+This process will take a moment. In the end, you'll see your template ID that you'll need to use to create a sandbox with the SDK.
+
+### 5. Start your custom sandbox
+Now you can use the template ID to create a sandbox with the SDK.
+
+<CodeGroup>
+```javascript {{ language: 'js' }}
+import { sandbox } from '@e2b/code-interpreter'
+
+// Your template ID from the previous step
+const templateID = 'id-of-your-template' // $HighlightLine
+// Pass the template ID to the `Sandbox.create` method
+const sandbox = await Sandbox.create(templateID) // $HighlightLine
+
+// The template installed cowsay, so we can use it
+const execution = await sandbox.runCode(`
+import cowsay
+cowsay.say('Hello from E2B!')
+`)
+
+console.log(execution.stdout)
+```
+```python {{ language: 'python' }}
+from e2b_code_interpreter import Sandbox
+
+# Your template ID from the previous step
+template_id = 'id-of-your-template' # $HighlightLine
+# Pass the template ID to the `Sandbox.create` method
+sandbox = Sandbox(template_id) # $HighlightLine
+
+# The template installed cowsay, so we can use it
+execution = sandbox.run_code("""
+import cowsay
+cowsay.say('Hello from E2B!')
+""")
+
+print(execution.stdout)
+```
+</CodeGroup>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
