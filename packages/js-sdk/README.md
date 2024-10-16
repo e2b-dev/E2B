@@ -37,9 +37,9 @@ E2B_API_KEY=e2b_***
 import { Sandbox } from '@e2b/code-interpreter'
 
 const sandbox = await Sandbox.create()
-await sbx.runCode(('x = 1')
+await sbx.runCode('x = 1')
 
-const execution = await sbx.runCode(('x+=1; x')
+const execution = await sbx.runCode('x+=1; x')
 console.log(execution.text)  // outputs 2
 ```
 
