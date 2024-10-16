@@ -1,0 +1,136 @@
+# Streaming
+
+Use E2B SDK allows you to stream the output, and results when executing code in the sandbox.
+
+
+## Stream `stdout` and `stderr`
+When using the `runCode()` method in JavaScript or `run_code()` in Python you can pass `onStdout`/`on_stdout` and `onStderr`/`on_stderr` callbacks to handle the output.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const codeToRun = `
+  import time
+  import sys
+  print("This goes first to stdout")
+  time.sleep(3)
+  print("This goes later to stderr", file=sys.stderr)
+  time.sleep(3)
+  print("This goes last")
+`
+const sandbox = await Sandbox.create()
+sandbox.runCode(codeToRun, {
+  onStdout: data => console.log('stdout:', data), // $HighlightLine
+  onStderr: data => console.error('stderr:', data), // $HighlightLine
+})
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+code_to_run = """
+  import time
+  import sys
+  print("This goes first to stdout")
+  time.sleep(3)
+  print("This goes later to stderr", file=sys.stderr)
+  time.sleep(3)
+  print("This goes last")
+"""
+
+sandbox = Sandbox()
+sandbox.run_code(
+  code_to_run,
+  on_stdout=lambda data: print('stdout:', data), # $HighlightLine
+  on_stderr=lambda data: print('stderr:', data), # $HighlightLine
+)
+```
+</CodeGroup>
+
+The code above will print the following:
+
+<CodeGroup>
+```javascript {{ language: 'javascript' }}
+stdout: {
+  error: false,
+  line: "This goes first to stdout\n",
+  timestamp: 1729049666861000,
+}
+stderr: {
+  error: true,
+  line: "This goes later to stderr\n",
+  timestamp: 1729049669924000,
+}
+stdout: {
+  error: false,
+  line: "This goes last\n",
+  timestamp: 1729049672664000,
+}
+```
+```bash {{ language: 'python' }}
+stdout: This goes first to stdout
+
+stderr: This goes later to stderr
+
+stdout: This goes last
+
+```
+</CodeGroup>
+
+## Stream `results`
+
+When using the `runCode()` method in JavaScript or `run_code()` in Python you can pass `onResults`/`on_results` callback
+to receive results from the sandbox like charts, tables, text, and more.
+
+<CodeGroup>
+```js
+const codeToRun = `
+import matplotlib.pyplot as plt
+
+# Prepare data
+categories = ['Category A', 'Category B', 'Category C', 'Category D']
+values = [10, 20, 15, 25]
+
+# Create and customize the bar chart
+plt.figure(figsize=(10, 6))
+plt.bar(categories, values, color='green')
+plt.xlabel('Categories')
+plt.ylabel('Values')
+plt.title('Values by Category')
+
+# Display the chart
+plt.show()
+`
+const sandbox = await Sandbox.create()
+await sandbox.runCode(codeToRun, {
+  onResult: result => console.log('result:', result), // $HighlightLine
+})
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+code_to_run = """
+import matplotlib.pyplot as plt
+
+# Prepare data
+categories = ['Category A', 'Category B', 'Category C', 'Category D']
+values = [10, 20, 15, 25]
+
+# Create and customize the bar chart
+plt.figure(figsize=(10, 6))
+plt.bar(categories, values, color='green')
+plt.xlabel('Categories')
+plt.ylabel('Values')
+plt.title('Values by Category')
+
+# Display the chart
+plt.show()
+"""
+
+sandbox = Sandbox()
+sandbox.run_code(
+  code_to_run,
+  on_result=lambda result: print('result:', result), # $HighlightLine
+)
+```
+</CodeGroup>

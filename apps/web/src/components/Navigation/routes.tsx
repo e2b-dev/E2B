@@ -180,7 +180,7 @@ export const routes: NavGroup[] = [
         ]
       },
       {
-        title: '* Streaming',
+        title: 'Streaming',
         href: '/docs/code-interpreting/streaming',
       },
       {
@@ -329,19 +329,15 @@ export const routes: NavGroup[] = [
     ],
   },
   {
-    title: '* Templates',
+    title: 'Templates',
     items: [
       {
-        title: '* Sandbox customization',
-        href: '/docs/sandbox/custom',
+        title: 'Sandbox customization',
+        href: '/docs/sandbox-template',
       },
       {
-        title: '* Customize CPU & RAM',
-        href: '/docs/sandbox/custom/compute',
-      },
-      {
-        title: '* Preinstall packages (TODO: Better title for custom sandbox templates)',
-        href: '/docs/sandbox/custom/sandbox-template',
+        title: 'Customize CPU & RAM',
+        href: '/docs/sandbox-template/customize-cpu-ram',
       },
     ]
   },

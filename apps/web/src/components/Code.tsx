@@ -96,7 +96,7 @@ export function CodeGroupHeader({
   selectedIndex: number;
   isTerminalCommand?: boolean;
 }) {
-  const hasTabs = Children.count(children) > 0
+  const hasTabs = Children.count(children) > 1
   if (!title && !hasTabs && !isTerminalCommand) return null
 
   return (
@@ -178,7 +178,7 @@ function CodeGroupPanels({
   children,
   ...props
 }: React.ComponentPropsWithoutRef<typeof CodePanel>) {
-  const hasTabs = Children.count(children) > 0
+  const hasTabs = Children.count(children) > 1
 
   /* <INTERNAL> */
   // @ts-ignore
@@ -302,7 +302,7 @@ export function CodeGroup({
   isFileName?: boolean;
   path?: string; // For analytics
 }) {
-  const hasTabs = Children.count(children) > 0
+  const hasTabs = Children.count(children) > 1
   const containerClassName =
     'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
   const languages =
