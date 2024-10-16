@@ -39,7 +39,7 @@ export const listCommand = new commander.Command('list')
             .sort(
               (a, b) =>
                 a.startedAt.localeCompare(b.startedAt) ||
-                a.sandboxID.localeCompare(b.sandboxID),
+                a.sandboxID.localeCompare(b.sandboxID)
             ),
           colorMap: {
             orange: '\x1b[38;5;216m',

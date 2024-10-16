@@ -11,10 +11,10 @@ const authErrorBox = boxen.default(
   `You must be logged in to use this command. Run ${asBold('e2b auth login')}.
 
 If you are seeing this message in CI/CD you may need to set the ${asBold(
-    'E2B_ACCESS_TOKEN',
+    'E2B_ACCESS_TOKEN'
   )} environment variable.
 Visit ${asPrimary(
-    'https://e2b.dev/docs/getting-started/api-key',
+    'https://e2b.dev/docs/getting-started/api-key'
   )} to get the access token.`,
   {
     width: 70,
@@ -23,7 +23,7 @@ Visit ${asPrimary(
     margin: 1,
     borderStyle: 'round',
     borderColor: 'redBright',
-  },
+  }
 )
 
 export function ensureAPIKey() {
@@ -68,7 +68,7 @@ export function ensureAccessToken() {
 const userConfig = getUserConfig()
 
 export const connectionConfig = new e2b.ConnectionConfig({
-  accessToken: userConfig?.accessToken,
-  apiKey: userConfig?.teamApiKey,
+  accessToken: process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken,
+  apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
 })
 export const client = new e2b.ApiClient(connectionConfig)
