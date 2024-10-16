@@ -44,6 +44,8 @@ class Sandbox(SandboxSetup, SandboxApi):
 
     Example:
     ```python
+    from e2b import Sandbox
+
     sandbox = Sandbox()
     ```
     """

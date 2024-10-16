@@ -52,6 +52,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
     Example:
     ```python
     from e2b import AsyncSandbox
+
     sandbox = await AsyncSandbox.create()
     ```
     """
