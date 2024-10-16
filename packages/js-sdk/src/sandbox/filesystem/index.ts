@@ -84,7 +84,7 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * Timeout for the watch operation in **milliseconds**.
    * You can pass `0` to disable the timeout.
    * 
-   * @default 60_000 // (60 seconds)
+   * @default 60_000 // 60 seconds
    */
   timeoutMs?: number
   /**
@@ -110,7 +110,7 @@ export class Filesystem {
   }
 
   /**
-   * Read file content and return it as a `string`.
+   * Read file content as a `string`.
    * 
    * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
    * 
@@ -125,7 +125,7 @@ export class Filesystem {
     opts?: FilesystemRequestOpts & { format?: 'text' }
   ): Promise<string>
   /**
-   * Read file content and return it as a `Uint8Array`.
+   * Read file content as a `Uint8Array`.
    * 
    * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
    * 
@@ -140,7 +140,7 @@ export class Filesystem {
     opts?: FilesystemRequestOpts & { format: 'bytes' }
   ): Promise<Uint8Array>
   /**
-   * Read file content and return it as a `Blob`.
+   * Read file content as a `Blob`.
    * 
    * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
    * 
@@ -155,7 +155,7 @@ export class Filesystem {
     opts?: FilesystemRequestOpts & { format: 'blob' }
   ): Promise<Blob>
   /**
-   * Read file content and return it as a `ReadableStream`.
+   * Read file content as a `ReadableStream`.
    * 
    * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
    * 
@@ -425,7 +425,7 @@ export class Filesystem {
    * @param onEvent callback to call when an event in the directory occurs.
    * @param opts connection options.
    * 
-   * @returns `WatchHandle` object that for stopping watching directory.
+   * @returns `WatchHandle` object for stopping watching directory.
    */
   async watchDir(
     path: string,

@@ -36,7 +36,7 @@ export interface PtyCreateOpts
   /**
    * Timeout for the PTY in **milliseconds**.
    * 
-   * @default 60_000 // (60 seconds)
+   * @default 60_000 // 60 seconds
    */
   timeoutMs?: number
   /**
@@ -135,7 +135,7 @@ export class Pty {
   }
 
   /**
-   * Send input to a PTY process.
+   * Send input to a PTY.
    *
    * @param pid process ID of the PTY.
    * @param data input data to send to the PTY.
@@ -172,7 +172,7 @@ export class Pty {
   }
 
   /**
-   * Resize a PTY.
+   * Resize PTY.
    * Call this when the terminal window is resized and the number of columns and rows has changed.
    *
    * @param pid process ID of the PTY.

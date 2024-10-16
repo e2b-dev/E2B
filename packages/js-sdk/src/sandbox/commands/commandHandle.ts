@@ -141,7 +141,7 @@ export class CommandHandle
   }
 
   /**
-   * Waits for the command to finish and returns the result.
+   * Wait for the command to finish and return the result.
    * If the command exits with a non-zero exit code, it throws a `CommandExitError`.
    * 
    * @returns `CommandResult` result of command execution.

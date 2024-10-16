@@ -33,7 +33,7 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Timeout for the sandbox in **milliseconds**.
    * 
-   * @default 300_000 // (5 minutes)
+   * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
 }
@@ -41,7 +41,7 @@ export interface SandboxOpts extends ConnectionOpts {
 /**
  * E2B cloud sandbox is a secure and isolated cloud environment.
  *
- * That allows you to:
+ * The sandbox allows you to:
  * - Access Linux OS
  * - Create, list, and delete files and directories
  * - Run commands
@@ -50,7 +50,7 @@ export interface SandboxOpts extends ConnectionOpts {
  *
  * Check docs [here](https://e2b.dev/docs).
  *
- * Use {@link Sandbox.create} method to create a new sandbox.
+ * Use {@link Sandbox.create} to create a new sandbox.
  *
  * @example
  * ```ts
@@ -222,7 +222,7 @@ export class Sandbox extends SandboxApi {
    *
    * @param port number of the port in the sandbox.
    *
-   * @returns host address of the sandbox port
+   * @returns host address of the sandbox port.
    * 
    * @example
    * ```ts

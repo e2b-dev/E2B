@@ -67,7 +67,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
   /**
    * Timeout for the command in **milliseconds**.
    * 
-   * @default 60_000 // (60 seconds)
+   * @default 60_000 // 60 seconds
    */
   timeoutMs?: number
 }
