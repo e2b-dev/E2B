@@ -33,7 +33,7 @@ function waitForSandboxEnd(sandboxID: string) {
 
       const response = await listSandboxes()
       const sandbox = response.find(
-        (s) => s.sandboxID === getShortID(sandboxID),
+        (s) => s.sandboxID === getShortID(sandboxID)
       )
       if (!sandbox) {
         isRunning = false
@@ -87,14 +87,6 @@ enum LogFormat {
   PRETTY = 'pretty',
 }
 
-enum LoggerService {
-  PROCESS = 'process',
-  FILESYSTEM = 'filesystem',
-  TERMINAL = 'terminal',
-  NETWORK = 'network',
-  FILE = 'file',
-}
-
 function cleanLogger(logger?: string) {
   if (!logger) {
     return ''
@@ -107,43 +99,25 @@ export const logsCommand = new commander.Command('logs')
   .description('show logs for sandbox')
   .argument(
     '<sandboxID>',
-    `show logs for sandbox specified by ${asBold('<sandboxID>')}`,
+    `show logs for sandbox specified by ${asBold('<sandboxID>')}`
   )
   .alias('lg')
   .option(
     '--level <level>',
     `filter logs by level (${formatEnum(
-      LogLevel,
+      LogLevel
     )}). The logs with the higher levels will be also shown.`,
-    LogLevel.INFO,
+    LogLevel.INFO
   )
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option(
     '--format <format>',
     `specify format for printing logs (${formatEnum(LogFormat)})`,
-    LogFormat.PRETTY,
+    LogFormat.PRETTY
   )
   .option(
     '--loggers [loggers]',
-    `filter logs by loggers. The available loggers are ${formatEnum(
-      LoggerService,
-    )}. Specify multiple loggers by separating them with a comma.`,
-    (value) => {
-      const loggers = value.split(',').map((s) => s.trim()) as LoggerService[]
-      // Check if all loggers are valid
-      loggers.forEach((s) => {
-        if (!Object.values(LoggerService).includes(s)) {
-          console.error(
-            `Invalid logger used as argument: "${s}"\nValid loggers are ${formatEnum(
-              LoggerService,
-            )}`,
-          )
-          process.exit(1)
-        }
-      })
-      return loggers
-    },
-    [LoggerService.PROCESS, LoggerService.FILESYSTEM],
+    'filter logs by loggers. Specify multiple loggers by separating them with a comma.'
   )
   .action(
     async (
@@ -152,8 +126,8 @@ export const logsCommand = new commander.Command('logs')
         level: string
         follow: boolean
         format: LogFormat
-        loggers: LoggerService[] | boolean
-      },
+        loggers?: string[]
+      }
     ) => {
       try {
         const level = opts?.level.toUpperCase() as LogLevel | undefined
@@ -200,8 +174,8 @@ export const logsCommand = new commander.Command('logs')
             if (format === LogFormat.PRETTY) {
               console.log(
                 `\nStopped printing logs — sandbox ${withUnderline(
-                  'not found',
-                )}`,
+                  'not found'
+                )}`
               )
             }
             break
@@ -211,8 +185,8 @@ export const logsCommand = new commander.Command('logs')
             if (format === LogFormat.PRETTY) {
               console.log(
                 `\nStopped printing logs — sandbox is ${withUnderline(
-                  'closed',
-                )}`,
+                  'closed'
+                )}`
               )
             }
             break
@@ -231,7 +205,7 @@ export const logsCommand = new commander.Command('logs')
         console.error(err)
         process.exit(1)
       }
-    },
+    }
   )
 
 function printLog(
@@ -239,7 +213,7 @@ function printLog(
   line: string,
   allowedLevel: LogLevel | undefined,
   format: LogFormat | undefined,
-  allowedLoggers?: LoggerService[] | boolean,
+  allowedLoggers?: string[] | undefined
 ) {
   const log = JSON.parse(line)
   let level = log['level'].toUpperCase()
@@ -248,10 +222,10 @@ function printLog(
 
   // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all loggers.
   if (
-    allowedLoggers !== true &&
+    allowedLoggers !== undefined &&
     Array.isArray(allowedLoggers) &&
     !allowedLoggers.some((allowedLogger) =>
-      log.logger.startsWith(allowedLogger),
+      log.logger.startsWith(allowedLogger)
     )
   ) {
     return
@@ -291,7 +265,7 @@ function printLog(
         timestamp: new Date(timestamp).toISOString(),
         level,
         ...log,
-      }),
+      })
     )
   } else {
     const time = `[${new Date(timestamp)
@@ -308,7 +282,7 @@ function printLog(
           sorted: true,
           compact: true,
           breakLength: Infinity,
-        }),
+        })
     )
   }
 }
