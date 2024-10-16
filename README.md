@@ -36,6 +36,10 @@ pip install e2b-code-interpreter
 ### 2. Get your E2B API key
 1. Sign up to E2B [here](https://e2b.dev).
 2. Get your API key [here](https://e2b.dev/dashboard?tab=keys).
+3. Set environment variable with your API key
+```
+E2B_API_KEY=e2b_***
+```     
 
 ### 3. Execute code with code interpreter inside Sandbox
 
