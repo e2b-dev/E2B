@@ -1,7 +1,6 @@
 import {
   FolderTree,
   Terminal,
-  Binary,
   Hourglass
 } from 'lucide-react'
 
@@ -12,17 +11,17 @@ import {
 
 const concepts: BoxItem[] = [
   {
-    href: '/docs/sandbox/lifecycle',
+    href: '/docs/sandbox',
     title: 'Sandbox lifecycle',
     description: 'Learn about how to start the sandbox, manage its lifecycle, and interact with it.',
     icon: <Hourglass strokeWidth={1.5} className="h-6 w-6 transition-colors duration-300 fill-white/10 stroke-zinc-400 group-hover:fill-brand-300/10 group-hover:stroke-brand-400" />,
   },
-  {
-    href: '/docs/code-execution',
-    title: 'AI code execution',
-    description: 'E2B Sandboxex offer built-in support for running AI-generated Python, JS, TS, and R. You can customize sandbox to run almost any language.',
-    icon: <Binary strokeWidth={1.5} className="h-6 w-6 transition-colors duration-300 fill-white/10 stroke-zinc-400 group-hover:fill-brand-300/10 group-hover:stroke-brand-400" />,
-  },
+  // {
+  //   href: '/docs/code-execution',
+  //   title: 'AI code execution',
+  //   description: 'E2B Sandboxex offer built-in support for running AI-generated Python, JS, TS, and R. You can customize sandbox to run almost any language.',
+  //   icon: <Binary strokeWidth={1.5} className="h-6 w-6 transition-colors duration-300 fill-white/10 stroke-zinc-400 group-hover:fill-brand-300/10 group-hover:stroke-brand-400" />,
+  // },
   {
     href: '/docs/filesystem',
     title: 'Filesystem',
