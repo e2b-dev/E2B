@@ -22,7 +22,7 @@ export function Layout({
 
   return (
     <SectionProvider sections={relativePathname ? allSections[relativePathname] ?? [] : []}>
-      <div className={clsx('h-full w-full', { 'lg:ml-[var(--sidebar-nav-width)]': isDocs })}>
+      <div className={clsx('h-[100vh] w-full', { 'lg:ml-[var(--sidebar-nav-width)]': isDocs })}>
         {!isDashboard && (
           <motion.header
             layoutScroll
@@ -51,7 +51,6 @@ export function Layout({
             className="
           relative
           flex
-          h-full
           flex-col
           px-4
           pt-14

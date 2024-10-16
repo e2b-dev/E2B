@@ -1,0 +1,28 @@
+# Download data from sandbox
+
+You can download data from the sandbox using the `files.read()` method.
+
+<CodeGroup>
+```js
+import fs from 'fs'
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Read file from sandbox
+const content = await sandbox.files.read('/path/in/sandbox')
+// Write file to local filesystem
+fs.writeFileSync('/local/path', content)
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+
+# Read file from sandbox
+content = sandbox.files.read('/path/in/sandbox')
+# Write file to local filesystem
+with open('/local/path', 'wb') as file:
+  file.write(content)
+```
+</CodeGroup>
