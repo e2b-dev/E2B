@@ -20,7 +20,7 @@
 [E2B](https://www.e2b.dev/) is an open-source infrastructure that allows you run to AI-generated code in secure isolated sandboxes in the cloud. To start and control sandboxes, use our [JavaScript SDK](https://www.npmjs.com/package/@e2b/code-interpreter) or [Python SDK](https://pypi.org/project/e2b_code_interpreter).
 
 > [!NOTE]
-> This repository contains the core E2B SDK that's used in our main [E2B Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter)
+> This repository contains the core E2B SDK that's used in our main [E2B Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter).
 
 ## Run your first Sandbox
 
