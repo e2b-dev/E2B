@@ -33,7 +33,11 @@ Python
 pip install e2b-code-interpreter
 ```
 
-### 2. Execute code with code interpreter inside Sandbox
+### 2. Get your E2B API key
+1. Sign up to E2B [here](https://e2b.dev).
+2. Get your API key [here](https://e2b.dev/dashboard?tab=keys).
+
+### 3. Execute code with code interpreter inside Sandbox
 
 JavaScript / TypeScript
 ```ts
@@ -56,8 +60,8 @@ with Sandbox() as sandbox:
     print(execution.text)  # outputs 2
 ```
 
-### 3. Check docs
+### 4. Check docs
 Visit [E2B documentation](https://e2b.dev/docs).
 
-### 4. E2B cookbook
+### 5. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
