@@ -342,44 +342,44 @@ export const routes: NavGroup[] = [
     ]
   },
   {
-    title: '* Filesystem',
+    title: 'Filesystem',
     items: [
       {
-        title: '* Overview',
-        href: '/docs/filesystem/overview',
+        title: 'Overview',
+        href: '/docs/filesystem',
       },
       {
-        title: '* Read & write',
+        title: 'Read & write',
         href: '/docs/filesystem/read-write',
       },
       {
-        title: '* Watch directory for changes',
+        title: 'Watch directory for changes',
         href: '/docs/filesystem/watch',
       },
       {
-        title: '* Upload data',
+        title: 'Upload data',
         href: '/docs/filesystem/upload',
       },
       {
-        title: '* Download data',
+        title: 'Download data',
         href: '/docs/filesystem/download',
       },
     ]
   },
   {
-    title: '* Commands',
+    title: 'Commands',
     items: [
       {
-        title: '* Overview',
-        href: '/docs/process/overview',
+        title: 'Overview',
+        href: '/docs/commands',
       },
       {
-        title: '* Streaming',
-        href: '/docs/process/streaming',
+        title: 'Streaming',
+        href: '/docs/commands/streaming',
       },
       {
-        title: '* Run commands in background',
-        href: '/docs/process/overview',
+        title: 'Run commands in background',
+        href: '/docs/commands/background',
       },
     ]
   },
