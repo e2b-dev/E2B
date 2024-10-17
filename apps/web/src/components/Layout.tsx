@@ -21,12 +21,18 @@ export function Layout({
   const isDashboard = pathname?.startsWith('/dashboard')
 
   return (
-    <SectionProvider sections={relativePathname ? allSections[relativePathname] ?? [] : []}>
-      <div className={clsx('h-[100vh] w-full', { 'lg:ml-[var(--sidebar-nav-width)]': isDocs })}>
+    <SectionProvider
+      sections={relativePathname ? allSections[relativePathname] ?? [] : []}
+    >
+      <div
+        className={clsx('h-[100vh] w-full', {
+          'lg:ml-[var(--sidebar-nav-width)]': isDocs,
+        })}
+      >
         {!isDashboard && (
           <motion.header
             layoutScroll
-            className='contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]'
+            className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]"
           >
             <div
               id="sidebar"
@@ -39,9 +45,16 @@ export function Layout({
                 lg:w-[var(--sidebar-nav-width)]
                 lg:overflow-y-auto
                 lg:px-4
+                border-r
+                border-white/10
+                lg:pb-4
               "
             >
-              {isDocs && <div className="hidden lg:block lg:mt-4"><Navigation /></div>}
+              {isDocs && (
+                <div className="hidden lg:block lg:mt-4">
+                  <Navigation />
+                </div>
+              )}
             </div>
           </motion.header>
         )}
@@ -60,9 +73,11 @@ export function Layout({
           lg:dark:border-white/10
           "
           >
-            <main className="
+            <main
+              className="
               flex-auto
-            ">
+            "
+            >
               {children}
             </main>
             <Footer />
@@ -78,9 +93,11 @@ export function Layout({
           pt-14
           "
           >
-            <main className="
+            <main
+              className="
             flex-auto
-          ">
+          "
+            >
               {children}
             </main>
           </div>
