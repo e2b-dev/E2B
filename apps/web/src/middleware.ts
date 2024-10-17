@@ -25,6 +25,10 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     url.hostname = 'e2b-landing-page.framer.website'
   }
 
+  if (url.pathname.startsWith('/pricing')) {
+    url.hostname = 'e2b-landing-page.framer.website'
+  }
+
   if (url.pathname.startsWith('/ai-agents')) {
     url.hostname = 'e2b-landing-page.framer.website'
   }
@@ -63,6 +67,14 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
 // We should probably filter all /, /blog and /changelog paths here and decide what to do with them in the middleware body.
 export const config = {
-  matcher: ['/', '/blog/:path*', '/changelog/:path*', '/ai-agents/:path*', '/privacy/:path*', '/terms/:path*'],
+  matcher: [
+    '/',
+    '/blog/:path*',
+    '/changelog/:path*',
+    '/ai-agents/:path*',
+    '/privacy/:path*',
+    '/terms/:path*',
+    '/pricing/:path*'
+  ],
 }
 
