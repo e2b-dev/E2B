@@ -82,16 +82,16 @@ jobs:
             js-sdk:
               - 'packages/js-sdk/**'
               - '.github/workflows/js_sdk_tests.yml'
+              - '!packages/js-sdk/package.json'
             python-sdk:
               - 'packages/python-sdk/**'
               - '.github/workflows/python_sdk_tests.yml'
+              - '!packages/python-sdk/package.json'
+              - '!packages/python-sdk/pyproject.toml'
             cli:
               - 'packages/cli/**'
               - '.github/workflows/cli_tests.yml'
-
-      - name: Read Version file
-        id: getversion
-        run: echo "::set-output name=version::$(cat VERSION)"
+              - '!packages/cli/package.json'
 
   python-tests:
     name: Python SDK Tests
