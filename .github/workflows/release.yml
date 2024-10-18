@@ -80,18 +80,14 @@ jobs:
           base: ${{ steps.last_release.outputs.tag_name }}
           filters: |
             js-sdk:
-              - 'packages/js-sdk/**'
+              - 'packages/js-sdk/src/**'
               - '.github/workflows/js_sdk_tests.yml'
-              - '!packages/js-sdk/package.json'
             python-sdk:
-              - 'packages/python-sdk/**'
+              - 'packages/python-sdk/e2b/**'
               - '.github/workflows/python_sdk_tests.yml'
-              - '!packages/python-sdk/package.json'
-              - '!packages/python-sdk/pyproject.toml'
             cli:
-              - 'packages/cli/**'
+              - 'packages/cli/src/**'
               - '.github/workflows/cli_tests.yml'
-              - '!packages/cli/package.json'
 
   python-tests:
     name: Python SDK Tests
