@@ -14,7 +14,7 @@ import {
   UserConfig,
 } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
-import { client, connectionConfig } from 'src/api'
+import { connectionConfig } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 export const loginCommand = new commander.Command('login')
@@ -29,8 +29,8 @@ export const loginCommand = new commander.Command('login')
     if (userConfig) {
       console.log(
         `\nAlready logged in. ${asFormattedConfig(
-          userConfig,
-        )}.\n\nIf you want to log in as a different user, log out first by running 'e2b auth logout'.\nTo change the team, run 'e2b auth configure'.\n`,
+          userConfig
+        )}.\n\nIf you want to log in as a different user, log out first by running 'e2b auth logout'.\nTo change the team, run 'e2b auth configure'.\n`
       )
       return
     } else if (!userConfig) {
@@ -42,16 +42,21 @@ export const loginCommand = new commander.Command('login')
       }
 
       const signal = connectionConfig.getSignal()
+      const config = new e2b.ConnectionConfig({
+        accessToken: process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken,
+        apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
+      })
+      const client = new e2b.ApiClient(config)
       const res = await client.api.GET('/teams', { signal })
 
       handleE2BRequestError(res.error, 'Error getting teams')
 
       const defaultTeam = res.data.find(
-        (team: e2b.components['schemas']['Team']) => team.isDefault,
+        (team: e2b.components['schemas']['Team']) => team.isDefault
       )
       if (!defaultTeam) {
         console.error(
-          asFormattedError('No default team found, please contact support'),
+          asFormattedError('No default team found, please contact support')
         )
         process.exit(1)
       }
@@ -64,9 +69,9 @@ export const loginCommand = new commander.Command('login')
     }
 
     console.log(
-      `Logged in as ${asBold(userConfig.email)} with default team ${asBold(
-        userConfig.teamName,
-      )}`,
+      `Logged in as ${asBold(userConfig.email)} with selected team ${asBold(
+        userConfig.teamName
+      )}`
     )
     process.exit(0)
   })
@@ -86,7 +91,7 @@ async function signInWithBrowser(): Promise<UserConfig> {
       const searchParams = new URL(req.url || '/', 'http://localhost')
         .searchParams
       const searchParamsObj = Object.fromEntries(
-        searchParams.entries(),
+        searchParams.entries()
       ) as unknown as UserConfig & {
         error?: string
       }
