@@ -51,14 +51,14 @@ jobs:
         run: pnpm test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-# Skip bun tests for now, it's failing without a clear reason
-#      - name: Install Bun
-#        uses: oven-sh/setup-bun@v2
-#
-#      - name: Run Bun tests
-#        run: pnpm test:bun
-#        env:
-#          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Run Bun tests
+        run: pnpm test:bun
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
       - name: Install Deno
         uses: denoland/setup-deno@v1
