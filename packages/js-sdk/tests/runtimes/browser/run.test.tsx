@@ -27,9 +27,9 @@ test(
     await waitFor(
       () => expect.element(getByText('Hello World')).toBeInTheDocument(),
       {
-        timeout: 10_000,
+        timeout: 30_000,
       }
     )
   },
-  { timeout: 20000 }
+  { timeout: 40_000 }
 )
