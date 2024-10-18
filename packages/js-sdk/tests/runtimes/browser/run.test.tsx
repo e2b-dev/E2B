@@ -1,5 +1,4 @@
 import { expect, test } from 'vitest'
-import { page } from '@vitest/browser/context'
 import { render } from 'vitest-browser-react'
 import React from 'react'
 import { useEffect, useState } from 'react'
@@ -24,10 +23,12 @@ function E2BTest() {
 test(
   'browser test',
   async () => {
-    render(<E2BTest />)
+    const { getByText } = render(<E2BTest />)
     await waitFor(
-      () => expect.element(page.getByText('Hello World')).toBeVisible(),
-      { timeout: 10000 }
+      () => expect.element(getByText('Hello World')).toBeInTheDocument(),
+      {
+        timeout: 10_000,
+      }
     )
   },
   { timeout: 20000 }
