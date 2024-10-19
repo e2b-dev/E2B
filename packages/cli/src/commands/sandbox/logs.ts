@@ -275,10 +275,7 @@ function printLog(
       })
     )
   } else {
-    const time = `[${new Date(timestamp)
-      .toISOString()
-      .replace(/T/, ' ')
-      .replace(/\..+/, '')}]`
+    const time = `[${new Date(timestamp).toISOString().replace(/T/, ' ')}]`
     delete log['level']
     console.log(
       `${asTimestamp(time)} ${level} ` +
