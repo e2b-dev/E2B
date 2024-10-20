@@ -154,3 +154,24 @@ sbx.run_code("""
 ```
 </CodeGroup>
 
+
+### 3. Install packages with package manager of your choice
+Since E2B Sandboxes are Debian based machines, you can use any package manager supported by Debian.
+You just need to make sure that the package manager is already installed in the sandbox.
+
+For example, to install `curl` and `git`, you can use the following commands:
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = Sandbox.create()
+await sbx.commands.run('apt-get update && apt-get install -y curl git')
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox()
+sbx.commands.run("apt-get update && apt-get install -y curl git")
+```
+</CodeGroup>
