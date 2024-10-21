@@ -63,8 +63,6 @@ export const spawnCommand = new commander.Command('spawn')
         }
 
         await connectSandbox({ apiKey, template: { templateID } })
-        // We explicitly call exit because the sandbox is keeping the program alive.
-        // We also don't want to call sandbox.close because that would disconnect other users from the edit session.
         process.exit(0)
       } catch (err: any) {
         console.error(err)
