@@ -218,6 +218,7 @@ export class CommandHandle
           }
           break
       }
+      // TODO: Handle empty events like in python SDK
     }
   }
 

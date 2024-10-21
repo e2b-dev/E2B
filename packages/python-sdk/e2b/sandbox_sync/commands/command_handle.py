@@ -124,7 +124,7 @@ class CommandHandle:
             raise self._iteration_exception
 
         if self._result is None:
-            raise Exception("Process ended without an end event")
+            raise Exception("Command ended without an end event")
 
         if self._result.exit_code != 0:
             raise CommandExitException(
