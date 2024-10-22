@@ -57,7 +57,7 @@ jobs:
         working-directory: packages/python-sdk
         run: |
           poetry install
-          poetry run pytest -n 4 --verbose -x
+          poetry run pytest --verbose -x
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
