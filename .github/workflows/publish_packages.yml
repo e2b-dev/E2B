@@ -17,9 +17,6 @@ permissions:
 
 jobs:
   test:
-    defaults:
-      run:
-        working-directory: ./packages/js-sdk
     name: Build and test SDK
     runs-on: ubuntu-20.04
     steps:
