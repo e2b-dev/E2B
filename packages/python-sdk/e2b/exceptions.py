@@ -75,3 +75,9 @@ class TemplateException(SandboxException):
     """
     Exception raised when the template uses old envd version. It isn't compatible with the new SDK.
     """
+
+
+class RateLimitSandboxException(SandboxException):
+    """
+    Raised when the rate limit either for API or sandbox is exceeded.
+    """
