@@ -3,7 +3,7 @@ import createClient, { FetchResponse } from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
 import { ConnectionConfig } from '../connectionConfig'
-import { AuthenticationError, SandboxError } from '../errors'
+import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
 
 export function handleApiError(
@@ -11,6 +11,10 @@ export function handleApiError(
 ): Error | undefined {
   if (!response.error) {
     return
+  }
+
+  if (response.response.status === 429) {
+    return new RateLimitError('Rate limit exceeded, please try again later.')
   }
 
   const message = response.error?.message ?? response.error

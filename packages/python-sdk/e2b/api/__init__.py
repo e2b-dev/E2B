@@ -7,7 +7,11 @@ from httpx import HTTPTransport, AsyncHTTPTransport
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
 from e2b.api.metadata import default_headers
-from e2b.exceptions import AuthenticationException, SandboxException
+from e2b.exceptions import (
+    AuthenticationException,
+    SandboxException,
+    RateLimitException,
+)
 from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
@@ -18,6 +22,11 @@ def handle_api_exception(e: Response):
         body = json.loads(e.content) if e.content else {}
     except json.JSONDecodeError:
         body = {}
+
+    if e.status_code == 429:
+        return RateLimitException(
+            f"{e.status_code}: Rate limit exceeded, please try again later."
+        )
 
     if "message" in body:
         return SandboxException(f"{e.status_code}: {body['message']}")
