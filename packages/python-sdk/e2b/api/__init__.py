@@ -10,7 +10,7 @@ from e2b.api.metadata import default_headers
 from e2b.exceptions import (
     AuthenticationException,
     SandboxException,
-    RateLimitSandboxException,
+    RateLimitException,
 )
 from e2b.api.client.types import Response
 
@@ -24,7 +24,7 @@ def handle_api_exception(e: Response):
         body = {}
 
     if e.status_code == 429:
-        return RateLimitSandboxException(
+        return RateLimitException(
             f"{e.status_code}: Rate limit exceeded, please try again later."
         )
 

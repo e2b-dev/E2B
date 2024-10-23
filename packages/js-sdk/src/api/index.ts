@@ -14,9 +14,7 @@ export function handleApiError(
   }
 
   if (response.response.status === 429) {
-    return new RateLimitError(
-      'Authentication failed, please check your API key and access token.'
-    )
+    return new RateLimitError('Rate limit exceeded, please try again later.')
   }
 
   const message = response.error?.message ?? response.error

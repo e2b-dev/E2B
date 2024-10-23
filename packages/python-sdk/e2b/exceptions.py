@@ -77,7 +77,7 @@ class TemplateException(SandboxException):
     """
 
 
-class RateLimitSandboxException(SandboxException):
+class RateLimitException(SandboxException):
     """
-    Raised when the rate limit either for API or sandbox is exceeded.
+    Raised when the API rate limit is exceeded.
     """

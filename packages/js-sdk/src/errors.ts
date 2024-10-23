@@ -86,7 +86,7 @@ export class TemplateError extends SandboxError {
 }
 
 /**
- * Thrown when the rate limit either for API or sandbox is exceeded.
+ * Thrown when the API rate limit is exceeded.
  */
 export class RateLimitError extends SandboxError {
   constructor(message: any) {
