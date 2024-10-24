@@ -110,79 +110,15 @@ jobs:
     uses: ./.github/workflows/cli_tests.yml
     secrets: inherit
 
-  release:
+  publish:
+    name: Publish
     needs: [is_release, python-tests, js-tests, cli-tests]
-    if: always() && !contains(needs.*.result, 'failure') && needs.is_release.outputs.release == 'true'
-    name: Release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.5.1
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9.5
-
-      - name: Setup Node.js 18
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-          cache: pnpm
-
-      - name: Configure pnpm
-        run: |
-          pnpm config set auto-install-peers true
-          pnpm config set exclude-links-from-lockfile true
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Create new versions
-        run: pnpm run version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Release new versions
-        uses: changesets/action@v1
-        with:
-          publish: pnpm run publish
-          createGithubReleases: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-
-      - name: Generate API Ref
-        run: pnpm run generate-api-reference
-
-      - name: Update lock file
-        run: pnpm i --no-link --no-frozen-lockfile
-
-      - name: Commit new versions
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add apps/web/src/app/\(docs\)/docs/api-reference 
-          git commit -am "[skip ci] Release new versions" || exit 0
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.is_release.outputs.release == 'true'
+    uses: ./.github/workflows/publish_packages.yml
+    secrets: inherit
 
   report-failure:
-    needs: [python-tests, js-tests, cli-tests, release]
+    needs: [python-tests, js-tests, cli-tests, publish]
     if: failure()
     name: Release Failed - Slack Notification
     runs-on: ubuntu-latest

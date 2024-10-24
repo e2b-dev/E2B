@@ -1,4 +1,4 @@
-import createClient from 'openapi-fetch'
+import createClient, { FetchResponse } from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
@@ -6,12 +6,15 @@ import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
 
-export function handleApiError(err?: { code: number; message: string }) {
-  if (!err) {
+export function handleApiError(
+  response: FetchResponse<any, any, any>
+): Error | undefined {
+  if (!response.error) {
     return
   }
 
-  return new SandboxError(`${err.code}: ${err.message}`)
+  const message = response.error?.message ?? response.error
+  return new SandboxError(`${response.response.status}: ${message}`)
 }
 
 /**
@@ -30,15 +33,15 @@ class ApiClient {
     if (!opts?.requireApiKey && !config.apiKey) {
       throw new AuthenticationError(
         'API key is required, please visit https://e2b.dev/docs to get your API key. ' +
-        'You can either set the environment variable `E2B_API_KEY` ' +
-        "or you can pass it directly to the sandbox like Sandbox.create({ apiKey: 'e2b_...' })"
+          'You can either set the environment variable `E2B_API_KEY` ' +
+          "or you can pass it directly to the sandbox like Sandbox.create({ apiKey: 'e2b_...' })"
       )
     }
 
     if (opts?.requireAccessToken && !config.accessToken) {
       throw new AuthenticationError(
         'Access token is required, please visit https://e2b.dev/docs to get your access token. ' +
-        'You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `accessToken` in options.'
+          'You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `accessToken` in options.'
       )
     }
 
