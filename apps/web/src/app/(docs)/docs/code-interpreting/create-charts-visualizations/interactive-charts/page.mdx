@@ -4,7 +4,11 @@ E2B also allows you to create interactive charts with custom styling.
 
 E2B automatically detects charts when executing Python code with `runCode()` in JavaScript or `run_code()` in Python. The Python code must include Matplotlib charts.
 
-When a chart is deteted, E2B sends the data of the chart back to the client. You can access the chart in the `execution.results` array where each item is a `Result` object with the `chart` property.
+When a chart is detected, E2B sends the data of the chart back to the client. You can access the chart in the `execution.results` array where each item is a `Result` object with the `chart` property.
+
+<Note>
+Try out [AI Data Analyst](https://github.com/e2b-dev/ai-analyst/) - a Next.js app that uses E2B to create interactive charts.
+</Note>
 
 Here's a simple example of bar chart:
 <CodeGroup>
