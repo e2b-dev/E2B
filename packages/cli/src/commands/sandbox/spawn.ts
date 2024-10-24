@@ -82,7 +82,7 @@ export async function connectSandbox({
 
   // keep-alive loop
   const intervalId = setInterval(async () => {
-    await sandbox.setTimeout(10_000)
+    await sandbox.setTimeout(30_000)
   }, 5_000)
 
   console.log(
