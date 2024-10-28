@@ -11,10 +11,16 @@ function E2BTest() {
   useEffect(() => {
     const getText = async () => {
       const sandbox = await Sandbox.create()
-      await sandbox.commands.run('echo "Hello World" > hello.txt')
-      const content = await sandbox.files.read('hello.txt')
-      setText(content)
+
+      try {
+        await sandbox.commands.run('echo "Hello World" > hello.txt')
+        const content = await sandbox.files.read('hello.txt')
+        setText(content)
+      } finally {
+        await sandbox.kill()
+      }
     }
+
     getText()
   }, [])
 
