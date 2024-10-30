@@ -34,9 +34,10 @@ export function Layout({
             layoutScroll
             className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]"
           >
-            <div
-              id="sidebar"
-              className="
+            {isDocs && (
+              <div
+                id="sidebar"
+                className="
                 lg:pointer-events-auto
                 scrollbar-thin
                 scrollbar-thumb-scrollbar
@@ -49,13 +50,12 @@ export function Layout({
                 border-white/10
                 lg:pb-4
               "
-            >
-              {isDocs && (
+              >
                 <div className="hidden lg:block lg:mt-4">
                   <Navigation />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </motion.header>
         )}
         {isDocs && (
