@@ -14,11 +14,11 @@ python = "^3.8"
 
 python-dateutil = ">=2.8.2"
 protobuf = ">=3.20.0, <6.0.0"
-httpcore = "^1.0.5"
-httpx = "^0.27.0"
-attrs = "^23.2.0"
-packaging = "^24.1"
-typing-extensions = "^4.12.2"
+httpcore = ">=1.0.5"
+httpx = ">=0.27.0"
+attrs = ">=23.2.0"
+packaging = ">=24.1"
+typing-extensions = ">=4.12.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
