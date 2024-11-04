@@ -36,7 +36,7 @@ class ApiClient {
   ) {
     if (!opts?.requireApiKey && !config.apiKey) {
       throw new AuthenticationError(
-        'API key is required, please visit https://e2b.dev/docs to get your API key. ' +
+        'API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. ' +
           'You can either set the environment variable `E2B_API_KEY` ' +
           "or you can pass it directly to the sandbox like Sandbox.create({ apiKey: 'e2b_...' })"
       )
@@ -44,7 +44,7 @@ class ApiClient {
 
     if (opts?.requireAccessToken && !config.accessToken) {
       throw new AuthenticationError(
-        'Access token is required, please visit https://e2b.dev/docs to get your access token. ' +
+        'Access token is required, please visit the Personal tab at https://e2b.dev/dashboard to get your access token. ' +
           'You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `accessToken` in options.'
       )
     }
