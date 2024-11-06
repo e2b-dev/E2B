@@ -233,6 +233,16 @@ export const TeamContent = ({
       </span>
 
       <h2 className="text-xl font-bold pb-4">Add members to your team</h2>
+
+      <div className="bg-white/5 border-l-4 border-orange-500/20 text-gray-300 p-4 mb-4" role="alert">
+        <h4 className="font-medium pb-2">How to invite people to your team</h4>
+        <ol className="list-decimal list-inside text-sm text-gray-400">
+          <li>Have them create an E2B account</li>
+          <li>Ask them to send you their user ID (Click on "Copy your user ID" button)</li>
+          <li>Paste their user ID and click on "Add user"</li>
+        </ol>
+      </div>
+
       <div className="flex items-center space-x-2 pb-4">
         <input
           type="text"
@@ -260,7 +270,7 @@ export const TeamContent = ({
       </div>
 
       <span
-        className="flex pb-10 w-fit text-sm text-orange-500 hover:cursor-pointer hover:text-orange-500/30 space-x-2 items-center"
+        className="flex pb-4 w-fit text-sm text-orange-500 hover:cursor-pointer hover:text-orange-500/30 space-x-2 items-center"
         onClick={() => {
           navigator.clipboard.writeText(user.id)
           toast({
