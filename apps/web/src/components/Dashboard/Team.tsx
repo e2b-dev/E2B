@@ -238,8 +238,8 @@ export const TeamContent = ({
         <h4 className="font-medium pb-2">How to invite people to your team</h4>
         <ol className="list-decimal list-inside text-sm text-gray-400">
           <li>Have them create an E2B account</li>
-          <li>Ask them to send you their user ID (Click on "Copy your user ID" button)</li>
-          <li>Paste their user ID and click on "Add user"</li>
+          <li>Ask them to send you their user ID (Click on 'Copy your user ID' button)</li>
+          <li>Paste their user ID and click on 'Add user'</li>
         </ol>
       </div>
 
