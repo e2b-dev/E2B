@@ -9,7 +9,7 @@ import {
 
 import { useState } from 'react'
 import { useEffect } from 'react'
-import { E2BUser, Team } from '@/utils/useUser'
+import { E2BUser } from '@/utils/useUser'
 
 interface Template {
   aliases: string[]
