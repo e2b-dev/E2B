@@ -9,22 +9,25 @@ import {
 
 import { useState } from 'react'
 import { useEffect } from 'react'
-import { Team}  from '@/utils/useUser'
+import { Team } from '@/utils/useUser'
 
 interface Sandbox {
-  sandboxID: string
-  templateID: string
-  cpuCount: number
-  memoryMB: number
-  startedAt: string
+  alias: string
   clientID: string
+  cpuCount: number
+  endAt: string
+  memoryMB: number
+  metadata: Record<string, any>
+  sandboxID: string
+  startedAt: string
+  templateID: string
 }
 
-export const SandboxesContent = ({ team } : { team: Team }) => {
+export function SandboxesContent({ team }: { team: Team }) {
   const [runningSandboxes, setRunningSandboxes] = useState<Sandbox[]>([])
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    function f() {
       const apiKey = team.apiKeys[0]
       if (apiKey) {
         fetchSandboxes(apiKey).then((newSandboxes) => {
@@ -33,65 +36,85 @@ export const SandboxesContent = ({ team } : { team: Team }) => {
           }
         })
       }
-    }, 2000)
+    }
 
+    const interval = setInterval(() => {
+      f()
+    }, 5000)
+
+    f()
     // Cleanup interval on component unmount
     return () => clearInterval(interval)
   }, [team])
 
   return (
     <div className="flex flex-col justify-center">
-
-      <h2 className="text-xl font-bold pb-4">Total Running Sandboxes: {runningSandboxes.length}</h2>
-
       <Table>
         <TableHeader>
-          <TableRow className='hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5 '>
-            <TableHead>ID</TableHead>
-            <TableHead>Template</TableHead>
-            <TableHead>CPU Count</TableHead>
-            <TableHead>Memory (MB)</TableHead>
-            <TableHead>Started At</TableHead>
-            <TableHead>Client ID</TableHead>
+          <TableRow className="hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5 ">
+            <TableHead>Sandbox ID</TableHead>
+            <TableHead>Template ID</TableHead>
+            <TableHead>Alias</TableHead>
+            <TableHead>Started at</TableHead>
+            <TableHead>End at</TableHead>
+            <TableHead>vCPUs</TableHead>
+            <TableHead>RAM MiB</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {runningSandboxes.map((sandbox) => (
-            <TableRow 
-            className='hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5'
-            key={sandbox.sandboxID}>
-              <TableCell>{sandbox.sandboxID}</TableCell>
-              <TableCell>{sandbox.templateID}</TableCell>
-              <TableCell>{sandbox.cpuCount}</TableCell>
-              <TableCell>{sandbox.memoryMB}</TableCell>
-              <TableCell>{new Date(sandbox.startedAt).toLocaleString('en-UK', {timeZoneName: 'short'})}</TableCell>
-              <TableCell>{sandbox.clientID}</TableCell>
+          {runningSandboxes.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center">
+                No running sandboxes
+              </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            runningSandboxes.map((sandbox) => (
+              <TableRow
+                className="hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5"
+                key={sandbox.sandboxID}
+              >
+                <TableCell>{sandbox.sandboxID}</TableCell>
+                <TableCell>{sandbox.templateID}</TableCell>
+                <TableCell>{sandbox.alias}</TableCell>
+                <TableCell>
+                  {new Date(sandbox.startedAt).toLocaleString('en-UK', {
+                    timeZoneName: 'short',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {new Date(sandbox.endAt).toLocaleString('en-UK', {
+                    timeZoneName: 'short',
+                  })}
+                </TableCell>
+                <TableCell>{sandbox.cpuCount}</TableCell>
+                <TableCell>{sandbox.memoryMB}</TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
-  
     </div>
   )
 }
 
-const fetchSandboxes = async (apiKey: string): Promise<Sandbox[]> => {
-
+async function fetchSandboxes(apiKey: string): Promise<Sandbox[]> {
   const res = await fetch('https://api.e2b.dev/sandboxes', {
     method: 'GET',
     headers: {
       'X-API-KEY': apiKey,
-    }
+    },
   })
   try {
     const data: Sandbox[] = await res.json()
-    data.sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime())
-    return data
+
+    // Latest sandboxes first
+    return data.sort(
+      (a, b) =>
+        new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+    )
   } catch (e) {
     // TODO: add sentry event here
     return []
   }
-} 
-
-
-
+}
