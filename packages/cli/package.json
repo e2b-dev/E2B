@@ -46,12 +46,10 @@
     "generate-api-reference": "./scripts/generate_api_ref.sh"
   },
   "devDependencies": {
-    "@types/command-exists": "^1.2.3",
     "@types/dockerode": "^3.3.29",
     "@types/inquirer": "^9.0.7",
     "@types/json2md": "^1.5.4",
     "@types/node": "^18.18.6",
-    "@types/tar-fs": "^2.0.4",
     "@types/update-notifier": "6.0.5",
     "json2md": "^2.0.1",
     "knip": "^2.33.4",
@@ -69,7 +67,6 @@
     "e2b": "dist/index.js"
   },
   "dependencies": {
-    "@balena/dockerignore": "^1.0.2",
     "@iarna/toml": "^2.2.5",
     "async-listen": "^3.0.1",
     "boxen": "^7.1.1",
@@ -81,8 +78,8 @@
     "e2b": "^1.0.1",
     "inquirer": "^9.2.12",
     "open": "^9.1.0",
+    "pretty-bytes": "^6.1.1",
     "strip-ansi": "^7.1.0",
-    "tar-fs": "^3.0.6",
     "update-notifier": "5.1.0",
     "yup": "^1.3.2"
   },
