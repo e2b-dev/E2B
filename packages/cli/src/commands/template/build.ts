@@ -345,6 +345,7 @@ export const buildCommand = new commander.Command('build')
             buildargs: dockerBuildArgs,
             dockerfile: dockerfileRelativePath,
             pull: 'always',
+            nocache: true,
           }
         )
 
