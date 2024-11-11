@@ -317,7 +317,7 @@ export const buildCommand = new commander.Command('build')
         )
 
         try {
-          dockerClient.checkAuth({
+          await dockerClient.checkAuth({
             username: '_e2b_access_token',
             password: accessToken,
             serveraddress: `docker.${connectionConfig.domain}`,
@@ -344,12 +344,13 @@ export const buildCommand = new commander.Command('build')
             platform: 'linux/amd64',
             buildargs: dockerBuildArgs,
             dockerfile: dockerfileRelativePath,
+            pull: 'always',
           }
         )
 
         const buildProgress = new Map()
         for await (const chunk of buildStream) {
-          prettyPrintDockerLogs(chunk.toString('utf-8'), buildProgress)
+          await prettyPrintDockerLogs(chunk.toString('utf-8'), buildProgress)
         }
 
         console.log('Docker image built.\n')
@@ -367,7 +368,7 @@ export const buildCommand = new commander.Command('build')
 
         const pushProgress = new Map()
         for await (const chunk of pushStream) {
-          prettyPrintDockerLogs(chunk.toString('utf-8'), pushProgress)
+          await prettyPrintDockerLogs(chunk.toString('utf-8'), pushProgress)
         }
 
         console.log('Docker image pushed.\n')
