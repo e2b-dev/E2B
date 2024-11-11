@@ -1,6 +1,6 @@
-# E2B Docs
+# E2B Web App
 
-The official [E2B documentation](https://e2b.dev/docs).
+This repository contains E2D Dashboard, documentation, and API reference.
 
 ## SDK API References
 
