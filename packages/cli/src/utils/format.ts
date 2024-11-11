@@ -5,6 +5,7 @@ import * as boxen from 'boxen'
 import * as prettyBytes from 'pretty-bytes'
 
 import { cwdRelative } from './filesystem'
+import { UserConfig } from '../user'
 
 export const primaryColor = '#FFB766'
 
@@ -204,7 +205,7 @@ export async function prettyPrintDockerLogs(
                     ? l.progress
                     : `[${prettyBytes.default(
                         l.progressDetail.current
-                      )}/${prettyBytes(l.progressDetail.total)}]`
+                      )}/${prettyBytes.default(l.progressDetail.total)}]`
                   : ''
               }\n`
             )

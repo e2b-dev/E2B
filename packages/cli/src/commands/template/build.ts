@@ -4,7 +4,7 @@ import * as path from 'path'
 import * as e2b from 'e2b'
 import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
-import Docker from 'dockerode'
+import * as docker from 'dockerode'
 import { wait } from 'src/utils/wait'
 import { connectionConfig, ensureAccessToken } from 'src/api'
 import { getRoot } from 'src/utils/filesystem'
@@ -170,9 +170,9 @@ export const buildCommand = new commander.Command('build')
       }
     ) => {
       try {
-        const docker = new Docker()
+        const dockerClient = new docker.default()
         try {
-          await docker.ping()
+          await dockerClient.ping()
         } catch {
           console.error(
             'Docker has to be installed and running to build and push the sandbox template.'
@@ -317,7 +317,7 @@ export const buildCommand = new commander.Command('build')
         )
 
         try {
-          docker.checkAuth({
+          dockerClient.checkAuth({
             username: '_e2b_access_token',
             password: accessToken,
             serveraddress: `docker.${connectionConfig.domain}`,
@@ -334,7 +334,7 @@ export const buildCommand = new commander.Command('build')
         console.log('Building docker image...')
 
         const dockerImageTag = `docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`
-        const buildStream = await docker.buildImage(
+        const buildStream = await dockerClient.buildImage(
           {
             context: root,
             src: fs.readdirSync(root),
@@ -356,7 +356,7 @@ export const buildCommand = new commander.Command('build')
 
         console.log('Pushing docker image...')
 
-        const img = docker.getImage(dockerImageTag)
+        const img = dockerClient.getImage(dockerImageTag)
         const pushStream = await img.push({
           authconfig: {
             username: '_e2b_access_token',
