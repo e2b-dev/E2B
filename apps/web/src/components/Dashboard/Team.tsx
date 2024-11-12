@@ -31,8 +31,8 @@ interface TeamMember {
   email: string
 }
 
-const uuidRegex = new RegExp(
-  '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+const emailRegex = new RegExp(
+  '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
 )
 
 export const TeamContent = ({
@@ -155,10 +155,10 @@ export const TeamContent = ({
   }
 
   const addUserToTeam = async () => {
-    if (!uuidRegex.test(userToAdd)) {
+    if (!emailRegex.test(userToAdd)) {
       toast({
-        title: 'Invalid user ID',
-        description: 'The user ID must be a valid UUID',
+        title: 'Invalid email',
+        description: 'The email must be a valid email address',
       })
       return
     }
@@ -171,7 +171,7 @@ export const TeamContent = ({
           'Content-Type': 'application/json',
         },
         method: 'POST',
-        body: JSON.stringify({ user_id: userToAdd.trim() }),
+        body: JSON.stringify({ user_email: userToAdd.trim() }),
       }
     )
 
@@ -234,20 +234,11 @@ export const TeamContent = ({
 
       <h2 className="text-xl font-bold pb-4">Add members to your team</h2>
 
-      <div className="bg-white/5 border-l-4 border-orange-500/20 text-gray-300 p-4 mb-4" role="alert">
-        <h4 className="font-medium pb-2">How to invite people to your team</h4>
-        <ol className="list-decimal list-inside text-sm text-gray-400">
-          <li>Have them create an E2B account</li>
-          <li>Ask them to send you their user ID (Click on &quot;Copy your user ID&quot; button)</li>
-          <li>Paste their user ID and click on &quot;Add user&quot;</li>
-        </ol>
-      </div>
-
       <div className="flex items-center space-x-2 pb-4">
         <input
           type="text"
           className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
-          placeholder="Paste ID of the user you want to add here"
+          placeholder="Enter email of the user you want to add"
           value={userToAdd}
           onChange={(e) => {
             e.preventDefault()
@@ -258,29 +249,6 @@ export const TeamContent = ({
           Add user
         </Button>
       </div>
-
-      <h3 className="text-lg font-medium pb-4">Your user ID</h3>
-      <div className="flex items-center space-x-2 pb-4">
-        <input
-          readOnly
-          type="text"
-          className="w-1/2 md:w-1/3 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
-          value={user.id}
-        />
-      </div>
-
-      <span
-        className="flex pb-4 w-fit text-sm text-orange-500 hover:cursor-pointer hover:text-orange-500/30 space-x-2 items-center"
-        onClick={() => {
-          navigator.clipboard.writeText(user.id)
-          toast({
-            title: 'User ID copied to clipboard',
-          })
-        }}
-      >
-        <p>Copy your user ID</p>
-        <Copy className="h-4 w-4" />
-      </span>
 
       <h2 className="text-xl font-bold pb-4">Team members</h2>
       {isLoading ? (
