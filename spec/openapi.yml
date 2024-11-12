@@ -56,7 +56,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-
+    "409":
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     "500":
       description: Server error
       content:
@@ -430,6 +435,51 @@ paths:
       responses:
         "204":
           description: The sandbox was killed successfully
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  # TODO: Pause and resume might be exposed as POST /sandboxes/{sandboxID}/snapshot and then POST /sandboxes with specified snapshotting setup
+  /sandboxes/{sandboxID}/pause:
+    post:
+      description: Pause the sandbox
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "204":
+          description: The sandbox was paused successfully and can be resumed
+        "409":
+          $ref: "#/components/responses/409"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /sandboxes/{sandboxID}/resume:
+    post:
+      description: Resume the sandbox
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "201":
+          description: The sandbox was resumed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sandbox"
+        "409":
+          $ref: "#/components/responses/409"
         "404":
           $ref: "#/components/responses/404"
         "401":

@@ -217,6 +217,16 @@ export class Sandbox extends SandboxApi {
     return sbx
   }
 
+  static async resume<S extends typeof Sandbox>(
+    this: S,
+    sandboxId: string,
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
+  ): Promise<InstanceType<S>> {
+    const id = await Sandbox.resumeSandbox(sandboxId, opts)
+
+    return this.connect(id, opts)
+  }
+
   /**
    * Get the host address for the specified sandbox port.
    * You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
@@ -314,6 +324,21 @@ export class Sandbox extends SandboxApi {
     }
 
     await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
+  }
+
+  async pause(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>): Promise<string> {
+    if (this.connectionConfig.debug) {
+      // Skip pausing in debug mode
+      return this.sandboxId
+    }
+
+    return await Sandbox.pause(this.sandboxId, { ...this.connectionConfig, ...opts })
+  }
+
+  async resume(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    await Sandbox.resume(this.sandboxId, { ...this.connectionConfig, ...opts })
+
+    return this
   }
 
   /**

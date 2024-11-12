@@ -1,7 +1,7 @@
 import { ApiClient, components, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { TemplateError } from '../errors'
+import { NotFoundError, SandboxError, TemplateError } from '../errors'
 
 /**
  * Options for request to the Sandbox API.
@@ -9,7 +9,7 @@ import { TemplateError } from '../errors'
 export interface SandboxApiOpts
   extends Partial<
     Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
-  > {}
+  > { }
 
 /**
  * Information about a sandbox.
@@ -42,7 +42,7 @@ export interface SandboxInfo {
 }
 
 export class SandboxApi {
-  protected constructor() {}
+  protected constructor() { }
 
   /**
    * Kill the sandbox specified by sandbox ID.
@@ -78,6 +78,39 @@ export class SandboxApi {
     }
 
     return true
+  }
+
+  static async pause(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<string> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/pause', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    if (res.error?.code === 409) {
+      // Sandbox is already paused
+      throw new SandboxError(`Sandbox ${sandboxId} is already paused`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return sandboxId
   }
 
   /**
@@ -152,6 +185,41 @@ export class SandboxApi {
     }
   }
 
+  protected static async resumeSandbox(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<string> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/resume', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Paused sandbox ${sandboxId} not found`)
+    }
+
+    if (res.error?.code === 409) {
+      // Sandbox is not paused
+      throw new SandboxError(`Sandbox ${sandboxId} is not paused`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return this.getSandboxId({
+      sandboxId: res.data!.sandboxID,
+      clientId: res.data!.clientID,
+    })
+  }
+
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
@@ -188,7 +256,7 @@ export class SandboxApi {
       )
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
     return this.getSandboxId({
