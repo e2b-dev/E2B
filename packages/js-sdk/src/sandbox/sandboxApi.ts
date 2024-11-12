@@ -187,6 +187,7 @@ export class SandboxApi {
 
   protected static async resumeSandbox(
     sandboxId: string,
+    timeoutMs: number,
     opts?: SandboxApiOpts
   ): Promise<string> {
     const config = new ConnectionConfig(opts)
@@ -197,6 +198,9 @@ export class SandboxApi {
         path: {
           sandboxID: sandboxId,
         },
+      },
+      body: {
+        timeout: this.timeoutToSeconds(timeoutMs),
       },
     })
 

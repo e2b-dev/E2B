@@ -216,6 +216,15 @@ components:
         envVars:
           $ref: "#/components/schemas/EnvVars"
 
+    ResumedSandbox:
+      properties:
+        timeout:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 15
+          description: Time to live for the sandbox in seconds.
+
     Template:
       required:
         - templateID
@@ -471,6 +480,12 @@ paths:
         - ApiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResumedSandbox"
       responses:
         "201":
           description: The sandbox was resumed successfully

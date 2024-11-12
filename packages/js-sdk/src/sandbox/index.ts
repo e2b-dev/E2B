@@ -220,9 +220,9 @@ export class Sandbox extends SandboxApi {
   static async resume<S extends typeof Sandbox>(
     this: S,
     sandboxId: string,
-    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'timeoutMs'>
   ): Promise<InstanceType<S>> {
-    const id = await Sandbox.resumeSandbox(sandboxId, opts)
+    const id = await Sandbox.resumeSandbox(sandboxId, opts?.timeoutMs ?? this.defaultSandboxTimeoutMs, opts)
 
     return this.connect(id, opts)
   }

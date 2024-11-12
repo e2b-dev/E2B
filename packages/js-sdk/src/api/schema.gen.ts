@@ -152,6 +152,11 @@ export interface paths {
           sandboxID: components["parameters"]["sandboxID"];
         };
       };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["ResumedSandbox"];
+        };
+      };
       responses: {
         /** @description The sandbox was resumed successfully */
         201: {
@@ -368,6 +373,14 @@ export interface components {
       metadata?: components["schemas"]["SandboxMetadata"];
       /** @description Identifier of the required template */
       templateID: string;
+      /**
+       * Format: int32
+       * @description Time to live for the sandbox in seconds.
+       * @default 15
+       */
+      timeout?: number;
+    };
+    ResumedSandbox: {
       /**
        * Format: int32
        * @description Time to live for the sandbox in seconds.
