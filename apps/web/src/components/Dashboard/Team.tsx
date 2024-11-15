@@ -178,7 +178,8 @@ export const TeamContent = ({
     if (!res.ok) {
       toast({
         title: 'An error occurred',
-        description: 'We were unable to add the user to the team',
+        description:
+          'We were unable to add the user to the team. Make sure the user is registered with the email address provided.',
       })
       console.log(res.statusText)
       return
