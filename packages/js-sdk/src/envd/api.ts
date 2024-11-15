@@ -11,7 +11,7 @@ import {
   formatSandboxTimeoutError,
   AuthenticationError,
 } from '../errors'
-import { StartResponse } from './process/process_pb'
+import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
 
@@ -48,9 +48,9 @@ export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
 }
 
 export async function handleProcessStartEvent(
-  events: AsyncIterable<StartResponse>
+  events: AsyncIterable<StartResponse | ConnectResponse>
 ) {
-  let startEvent: StartResponse
+  let startEvent: StartResponse | ConnectResponse
 
   try {
     startEvent = (await events[Symbol.asyncIterator]().next()).value

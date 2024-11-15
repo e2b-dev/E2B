@@ -1,13 +1,12 @@
 import {
   Code,
   ConnectError,
-  createPromiseClient,
-  PromiseClient,
+  createClient,
+  Client,
   Transport,
 } from '@connectrpc/connect'
 
-import { Process as ProcessService } from '../../envd/process/process_connect'
-import { Signal } from '../../envd/process/process_pb'
+import { Signal, Process as ProcessService } from '../../envd/process/process_pb'
 import {
   ConnectionConfig,
   Username,
@@ -115,7 +114,7 @@ export interface ProcessInfo {
  * Module for starting and interacting with commands in the sandbox.
  */
 export class Commands {
-  protected readonly rpc: PromiseClient<typeof ProcessService>
+  protected readonly rpc: Client<typeof ProcessService>
 
   private readonly defaultProcessConnectionTimeout = 60_000 // 60 seconds
 
@@ -123,7 +122,7 @@ export class Commands {
     transport: Transport,
     private readonly connectionConfig: ConnectionConfig
   ) {
-    this.rpc = createPromiseClient(ProcessService, transport)
+    this.rpc = createClient(ProcessService, transport)
   }
 
   /**
