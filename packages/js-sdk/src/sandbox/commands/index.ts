@@ -5,10 +5,9 @@ import {
   PromiseClient,
   Transport,
 } from '@connectrpc/connect'
-import { PlainMessage } from '@bufbuild/protobuf'
 
 import { Process as ProcessService } from '../../envd/process/process_connect'
-import { Signal, ProcessConfig } from '../../envd/process/process_pb'
+import { Signal } from '../../envd/process/process_pb'
 import {
   ConnectionConfig,
   Username,
@@ -84,7 +83,7 @@ export type CommandConnectOpts = Pick<
 /**
  * Information about a command, PTY session or start command running in the sandbox as process.
  */
-export interface ProcessInfo extends PlainMessage<ProcessConfig> {
+export interface ProcessInfo {
   /**
    * Process ID.
    */
@@ -93,7 +92,24 @@ export interface ProcessInfo extends PlainMessage<ProcessConfig> {
    * Custom tag used for identifying special commands like start command in the custom template.
    */
   tag?: string
+  /**
+   * Command that was executed.
+   */
+  cmd: string
+  /**
+   * Command arguments.
+   */
+  args: string[]
+  /**
+   * Environment variables used for the command.
+   */
+  envs: Record<string, string>
+  /**
+   * Executed command working directory.
+   */
+  cwd?: string
 }
+
 
 /**
  * Module for starting and interacting with commands in the sandbox.
