@@ -129,7 +129,7 @@ function generateApiRefRoutes() {
 const apiRefRoutes = [
   {
     title: 'References',
-    links: generateApiRefRoutes(),
+    items: generateApiRefRoutes(),
   },
 ]
 
