@@ -73,7 +73,7 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
               const versionLinks = `${versions
                 .map(
                   (version) =>
-                    `<a href="/docs/api-reference/${dirName}/${version}" class="version-link">[${version}]</a>`
+                    `<a href="/docs/api-reference/${dirName}/${version}" className="version-link">[${version}]</a>`
                 )
                 .join('\n  ')}`
 

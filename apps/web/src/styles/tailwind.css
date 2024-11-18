@@ -48,6 +48,15 @@
         border-radius: 10px;
     }
 
+    .version-link {
+        color: rgb(0, 255, 0) !important;
+        text-decoration: none !important; 
+    }
+
+    .version-link:hover {
+        color: white !important;
+    }
+
     .supabase-auth-ui_ui-button {
         @apply rounded-lg;
     }
