@@ -1,7 +1,6 @@
 import {
   Monitor,
   SquareMousePointer,
-  ChartNoAxesCombined,
 } from 'lucide-react'
 
 import {
