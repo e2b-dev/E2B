@@ -70,12 +70,18 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
               Object.keys(hierarchy[dirName]).length > 1
             ) {
               const versions = Object.keys(hierarchy[dirName])
-              const versionLinks = `${versions
-                .map(
-                  (version) =>
-                    `<a href="/docs/api-reference/${dirName}/${version}" className="version-link">[${version}]</a>`
-                )
-                .join('\n  ')}`
+              const versionLinks = `<div className="versions-dropdown">
+                ${versions[0]} ▼
+                <div className="dropdown-content">
+                ${versions
+                  .slice(1)
+                  .map(
+                    (version) =>
+                      `<a href="/docs/api-reference/${dirName}/${version}" className="version-link">${version}</a>`
+                  )
+                  .join('\n  ')}
+                </div>
+                </div>`
 
               mdxContent = `${versionLinks}\n\n\n${mdxContent}`
             }
