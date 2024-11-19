@@ -101,7 +101,7 @@ export const PersonalContent = ({ user }: { user: E2BUser }) => {
 
         <span className='font-bold text-neutral-300 pb-2'>Access token</span>
         <span className='text-sm text-neutral-300 pb-4'>
-          This is your personal access token. It is used in CLI (e.g. for building new templates). You can find more information in the <Link className='text-brand-500' href={'docs/getting-started/api-key'}>documentation</Link>.
+          This is your personal access token. It is used in CLI (e.g. for building new templates).
         </span>
         <div className='flex w-full justify-between items-center border border-white/5 rounded-lg p-2 mb-4 space-x-4'>
           <div
