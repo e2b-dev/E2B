@@ -1,0 +1,57 @@
+# E2B Desktop Sandbox (beta)
+
+[E2B Desktop Sandbox](https://github.com/e2b-dev/desktop) is an isolated cloud environment with a desktop-like interface like you would have on your local machine.
+You can use it for LLMs to control the computer in a secure way. The desktop sandbox is currently in beta.
+
+<Note>
+The desktop sandbox is ready for AI Computer Use.
+[Check out the example](https://github.com/e2b-dev/secure-computer-use) of a secure computer use.
+</Note>
+
+
+## Getting started
+
+### 1. Install the package
+To get started, install the separate `@e2b/desktop` package in JS or `e2b-desktop` in Python.
+
+<CodeGroup isTerminalCommand>
+```bash {{ language: 'js' }}
+npm i @e2b/desktop
+```
+```bash {{ language: 'python' }}
+pip install e2b-desktop
+```
+</CodeGroup>
+
+### 2. Create a desktop sandbox
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/desktop'
+
+const sandbox = Sandbox.create()
+```
+
+```python
+from e2b_desktop import Sandbox
+
+sandbox = Sandbox.create()
+```
+</CodeGroup>
+
+
+### 3. Take the screenshot
+
+<CodeGroup isRunnable={false}>
+```js
+TODO
+```
+
+```python
+from e2b_desktop import Sandbox
+desktop = Sandbox()
+
+# Take a screenshot and save it as "screenshot.png" locally
+desktop.screenshot("screenshot.png")
+```
+</CodeGroup>

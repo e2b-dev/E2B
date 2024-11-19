@@ -1,0 +1,22 @@
+# Run commands
+
+You can run shell commands in the desktop sandbox the same way you can [run commands with the E2B Sandbox](/docs/commands).
+
+<CodeGroup isRunnable={false}>
+```js
+import { Sandbox } from '@e2b/desktop'
+
+const sandbox = await Sandbox.create()
+
+// Run any bash command
+const result = await sandbox.commands.run("ls -la /home/user")
+```
+
+```python
+from e2b_desktop import Sandbox
+desktop = Sandbox()
+
+# Run any bash command
+result = desktop.commands.run("ls -la /home/user")
+```
+</CodeGroup>

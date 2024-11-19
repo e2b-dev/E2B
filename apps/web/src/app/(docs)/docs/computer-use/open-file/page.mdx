@@ -1,0 +1,18 @@
+# Open file
+
+You can use the `open` method to open a file in the desktop sandbox with the default app for that file type.
+
+<CodeGroup>
+```js
+TODO
+```
+
+```python
+from e2b_desktop import Sandbox
+desktop = Sandbox()
+
+# Open file with default application
+desktop.files.write("/home/user/index.js", "console.log('hello')") # First create the file
+desktop.open("/home/user/index.js") # Then open it
+```
+</CodeGroup>

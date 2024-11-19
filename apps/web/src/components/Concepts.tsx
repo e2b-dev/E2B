@@ -1,7 +1,8 @@
 import {
   FolderTree,
   Terminal,
-  Hourglass
+  Hourglass,
+  Command,
 } from 'lucide-react'
 
 import {
@@ -32,6 +33,12 @@ const concepts: BoxItem[] = [
     href: '/docs/commands',
     title: 'Commands',
     description: 'You can run terminal commands inside the Sandbox. This allows you to start any process inside the Sandbox.',
+    icon: <Command strokeWidth={1.5} className="h-6 w-6 transition-colors duration-300 fill-white/10 stroke-zinc-400 group-hover:fill-brand-300/10 group-hover:stroke-brand-400" />,
+  },
+  {
+    href: '/docs/cli',
+    title: 'CLI',
+    description: 'E2B CLI allows you to build and manage your templates and sandboxes.',
     icon: <Terminal strokeWidth={1.5} className="h-6 w-6 transition-colors duration-300 fill-white/10 stroke-zinc-400 group-hover:fill-brand-300/10 group-hover:stroke-brand-400" />,
   }
 ]

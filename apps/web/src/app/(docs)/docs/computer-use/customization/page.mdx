@@ -1,12 +1,9 @@
-# Sandbox templates
+# Install custom apps & packages
 
-Sandbox templates allow you to customize the sandbox environment to your needs.
+You can install custom apps and packages in the desktop sandbox the similar way you can install custom apps and packages in the E2B Sandbox [via templates](/docs/sandbox-template).
 
-To create a sandbox template, you specify the `e2b.Dockerfile`. We then take this Dockerfile and create a new sandbox template from it and give you back a template ID.
 
-You can then use this template ID to create a new sandbox with the SDK based on the template you created.
-
-## How to create custom sandbox
+## How to install custom apps & packages
 
 **Steps**
 1. [Install E2B CLI](#1-install-e2b-cli)
@@ -29,7 +26,7 @@ The following command will create a basic `e2b.Dockerfile` in the current direct
 
 <CodeGroup isTerminalCommand>
 ```bash
-e2b template init
+e2b template init --desktop
 ```
 </CodeGroup>
 
@@ -37,11 +34,16 @@ e2b template init
 Now you can customize your sandbox template by editing the `e2b.Dockerfile` file.
 <CodeGroup title="e2b.Dockerfile">
 ```bash
-# Make sure to use this base image
-FROM e2bdev/code-interpreter:latest # $HighlightLine
+# Make sure to use the desktop base image
+FROM e2bdev/desktop:latest # $HighlightLine
 
-# Install some Python packages
-RUN pip install cowsay # $HighlightLine
+# Install vscode
+RUN apt update -y \ # $HighlightLine
+  && apt install -y software-properties-common apt-transport-https wget \ # $HighlightLine
+  && wget -qO- https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \ # $HighlightLine
+  && add-apt-repository -y "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" \ # $HighlightLine
+  && apt update -y \ # $HighlightLine
+  && apt install -y code # $HighlightLine
 ```
 </CodeGroup>
 
@@ -52,7 +54,7 @@ Then we convert the Docker image to a micro VM that can be then launched as a sa
 
 <CodeGroup isTerminalCommand>
 ```bash
-e2b template build -c "/root/.jupyter/start-up.sh"
+e2b template build
 ```
 </CodeGroup>
 
@@ -63,35 +65,32 @@ Now you can use the template ID to create a sandbox with the SDK.
 
 <CodeGroup>
 ```javascript {{ language: 'js' }}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from '@e2b/desktop'
 
 // Your template ID from the previous step
 const templateID = 'id-of-your-template' // $HighlightLine
 // Pass the template ID to the `Sandbox.create` method
-const sandbox = await Sandbox.create(templateID) // $HighlightLine
+const desktop = await Sandbox.create(templateID) // $HighlightLine
 
-// The template installed cowsay, so we can use it
-const execution = await sandbox.runCode(`
-import cowsay
-cowsay.say('Hello from E2B!')
-`)
-
-console.log(execution.stdout)
+// Start VSCode that we installed in the template
+await desktop.commands.run("code", { background: true })
+// Sleep for 3 seconds to wait for vscode to start
+await new Promise((resolve) => setTimeout(resolve, 3000))
+await desktop.screenshot('vscode.png')
 ```
 ```python {{ language: 'python' }}
-from e2b_code_interpreter import Sandbox
+from e2b_desktop import Sandbox
 
 # Your template ID from the previous step
 template_id = 'id-of-your-template' # $HighlightLine
 # Pass the template ID to the sandbox constructor
-sandbox = Sandbox(template_id) # $HighlightLine
+desktop = Sandbox(template_id) # $HighlightLine
 
-# The template installed cowsay, so we can use it
-execution = sandbox.run_code("""
-import cowsay
-cowsay.say('Hello from E2B!')
-""")
-
-print(execution.stdout)
+# Start VSCode that we installed in the template
+desktop.commands.run("code", background=True)
+# Sleep for 3 seconds to wait for vscode to start
+import time
+time.sleep(3)
+desktop.screenshot('vscode.png')
 ```
 </CodeGroup>

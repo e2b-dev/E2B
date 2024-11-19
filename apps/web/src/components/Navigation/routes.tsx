@@ -192,6 +192,39 @@ export const routes: NavGroup[] = [
       // },
     ]
   },
+  {
+    title: 'AI Computer Use (beta)',
+    items: [
+      {
+        title: 'E2B Desktop Sandbox',
+        href: '/docs/computer-use',
+      },
+      {
+        title: 'Mouse & keyboard controls',
+        href: '/docs/computer-use/mouse-keyboard',
+      },
+      {
+        title: 'Open file',
+        href: '/docs/computer-use/open-file',
+      },
+      {
+        title: 'Take screenshot',
+        href: '/docs/computer-use/screenshot',
+      },
+      {
+        title: 'Locate on screen',
+        href: '/docs/computer-use/locate-on-screen',
+      },
+      {
+        title: 'Run commands',
+        href: '/docs/computer-use/commands',
+      },
+      {
+        title: 'Install custom apps & packages',
+        href: '/docs/computer-use/customization',
+      },
+    ]
+  },
   // {
   //   title: 'Guides', // How to's
   //   items: [
