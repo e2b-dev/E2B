@@ -135,7 +135,10 @@ async function proxy(
           targetUrl.pathname == '/v2'
         ) {
           options.headers!.Authorization = `Bearer ${credsBase64}`
-        } else {
+        } else if (
+          // Exclude the artifacts-uploads namespace
+          !targetUrl.pathname.startsWith('/artifacts-uploads/namespaces')
+        ) {
           options.headers!.Authorization = `Bearer ${token}`
         }
       }
