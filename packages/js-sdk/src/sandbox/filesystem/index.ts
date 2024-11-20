@@ -1,7 +1,7 @@
 import {
-  createPromiseClient,
+  createClient,
   Transport,
-  PromiseClient,
+  Client,
   ConnectError,
   Code,
 } from '@connectrpc/connect'
@@ -18,8 +18,7 @@ import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
-import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
-import { FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
+import { FileType as FsFileType, Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_pb'
 
 import { WatchHandle, FilesystemEvent } from './watchHandle'
 
@@ -97,7 +96,7 @@ export interface WatchOpts extends FilesystemRequestOpts {
  * Module for interacting with the sandbox filesystem.
  */
 export class Filesystem {
-  private readonly rpc: PromiseClient<typeof FilesystemService>
+  private readonly rpc: Client<typeof FilesystemService>
 
   private readonly defaultWatchTimeout = 60_000 // 60 seconds
 
@@ -106,7 +105,7 @@ export class Filesystem {
     private readonly envdApi: EnvdApiClient,
     private readonly connectionConfig: ConnectionConfig
   ) {
-    this.rpc = createPromiseClient(FilesystemService, transport)
+    this.rpc = createClient(FilesystemService, transport)
   }
 
   /**
@@ -442,8 +441,8 @@ export class Filesystem {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
+        controller.abort()
+      }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.watchDir(

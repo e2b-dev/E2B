@@ -351,6 +351,8 @@ export const buildCommand = new commander.Command('build')
 
         console.log('Pushing docker image...')
         try {
+          throw new Error('Docker login failed')
+
           child_process.execSync(
             `docker push docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`,
             {

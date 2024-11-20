@@ -1,0 +1,12 @@
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence.
+* @jakubno @ValentaTomas
+
+# Web
+apps/web @jakubno @mishushakov
+apps/web/src/app/(docs)/docs @mlejva
+apps/web/src/app/(docs)/docs/api-reference @0div
+
+# SDKs
+packages @jakubno @ValentaTomas
+packages/connect-python @ValentaTomas

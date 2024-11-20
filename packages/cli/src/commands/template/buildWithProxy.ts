@@ -38,6 +38,7 @@ export async function buildWithProxy(
 
   proxyServer.close()
 }
+
 async function docker(
   connectionConfig: e2b.ConnectionConfig,
   template: { templateID: string; buildID: string },
@@ -72,11 +73,16 @@ async function docker(
     }
   )
   child.on('exit', (code) => {
+    if (code !== 0) {
+      console.error('Docker push failed')
+      process.exit(1)
+    }
     onExit!(code)
   })
+
   child.on('error', (err) => {
     console.error('Error', err)
-    onExit!(1)
+    process.exit(1)
   })
 
   await dockerBuilt

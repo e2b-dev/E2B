@@ -26,10 +26,10 @@ The latest beta versions you should install can be found in NPM/PyPi release his
 	- [Timeouts](#timeouts)
 	- [Listing sandboxes](#listing-sandboxes)
 	- [Getting sandbox url](#getting-sandbox-url)
-        - [Code Interpreter SDK changes](#code-interpreter-sdk-changes)
+	- [Code Interpreter SDK changes](#code-interpreter-sdk-changes)
 	- [Executing code](#executing-code)
 	- [Custom template](#custom-template)
-        - [Python Async](#python-async)
+  - [Python Async](#python-async)
 	- [Watching for files' changes in async Python SDK](#watching-for-files-changes-in-async-python-sdk)
 	- [Running background commands in async Python SDK](#running-background-commands-in-async-python-sdk)
 
@@ -176,7 +176,7 @@ The method accepts `path` in the sandbox as the first argument and the `data` as
 import Sandbox from 'e2b'
 
 // Before
-// await sandbox.filesystem.write('/hello.txt', 'Hello World!') 
+// await sandbox.filesystem.write('/hello.txt', 'Hello World!')
 
 // Now
 await sandbox.files.write('/path/in/sandbox', 'Hello World!')
@@ -185,7 +185,7 @@ await sandbox.files.write('/path/in/sandbox', 'Hello World!')
 from e2b import Sandbox
 
 # Before
-# sandbox.filesystem.write("/hello.txt", "Hello World!") 
+# sandbox.filesystem.write("/hello.txt", "Hello World!")
 
 # Now
 sandbox.files.write("/path/in/sandbox", "Hello World!")

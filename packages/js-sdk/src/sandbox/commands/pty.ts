@@ -1,13 +1,12 @@
 import {
   Code,
   ConnectError,
-  createPromiseClient,
-  PromiseClient,
+  createClient,
+  Client,
   Transport,
 } from '@connectrpc/connect'
 
-import { Process as ProcessService } from '../../envd/process/process_connect'
-import { Signal } from '../../envd/process/process_pb'
+import { Signal, Process as ProcessService } from '../../envd/process/process_pb'
 import {
   ConnectionConfig,
   ConnectionOpts,
@@ -63,13 +62,13 @@ export interface PtyCreateOpts
  * Module for interacting with PTYs (pseudo-terminals) in the sandbox.
  */
 export class Pty {
-  private readonly rpc: PromiseClient<typeof ProcessService>
+  private readonly rpc: Client<typeof ProcessService>
 
   constructor(
     private readonly transport: Transport,
     private readonly connectionConfig: ConnectionConfig
   ) {
-    this.rpc = createPromiseClient(ProcessService, this.transport)
+    this.rpc = createClient(ProcessService, this.transport)
   }
 
   /**
