@@ -1,9 +1,4 @@
-import {
-  Home,
-  CheckCircle,
-  MessagesSquare,
-  Braces,
-} from 'lucide-react'
+import { Home, CheckCircle, MessagesSquare, Braces } from 'lucide-react'
 
 export interface NavLink {
   title: string
@@ -147,7 +142,7 @@ export const routes: NavGroup[] = [
             title: 'Interactive charts',
             href: '/docs/code-interpreting/create-charts-visualizations/interactive-charts',
           },
-        ]
+        ],
       },
       {
         title: 'Streaming',
@@ -184,13 +179,13 @@ export const routes: NavGroup[] = [
             title: 'Bash',
             href: '/docs/code-interpreting/supported-languages/bash',
           },
-        ]
+        ],
       },
       // {
       //   title: '* Parsing code execution results',
       //   href: '/docs/code-interpreting/todo',
       // },
-    ]
+    ],
   },
   // {
   //   title: 'Guides', // How to's
@@ -309,7 +304,7 @@ export const routes: NavGroup[] = [
         title: 'Customize CPU & RAM',
         href: '/docs/sandbox-template/customize-cpu-ram',
       },
-    ]
+    ],
   },
   {
     title: 'Filesystem',
@@ -334,7 +329,7 @@ export const routes: NavGroup[] = [
         title: 'Download data',
         href: '/docs/filesystem/download',
       },
-    ]
+    ],
   },
   {
     title: 'Commands',
@@ -351,7 +346,7 @@ export const routes: NavGroup[] = [
         title: 'Run commands in background',
         href: '/docs/commands/background',
       },
-    ]
+    ],
   },
   // {
   //   title: '* Async Python SDK',
@@ -411,7 +406,16 @@ export const routes: NavGroup[] = [
         title: 'Shutdown running sandboxes',
         href: '/docs/cli/shutdown-sandboxes',
       },
-    ]
+    ],
+  },
+  {
+    title: 'Troubleshooting',
+    items: [
+      {
+        title: 'Templates',
+        href: '/docs/troubleshooting/templates',
+      },
+    ],
   },
   // {
   //   // Maybe move integrations to a separate docs page?
@@ -433,4 +437,3 @@ export const routes: NavGroup[] = [
   // },
   // ...apiRefRoutes,
 ]
-

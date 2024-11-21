@@ -1,9 +1,11 @@
-# Docker push authentication error
+# Templates
+
+## Docker push authentication error
 
 When the CLI tries to push a Docker image to the registry, you might encounter an authentication error. This error sometimes occurs for users when Docker doesn't send any credentials to the registry.
 To resolve this issue, you can use the following steps:
 
-## MacOS
+### MacOS
 
 1. Open Docker Desktop.
 2. Go to Settings.
@@ -39,7 +41,7 @@ This allows Docker to send requests to local proxy, which handles the authentica
 5. Click Apply & Restart.
 
 
-## Linux
+### Linux
 
 1. Edit the Docker configuration file (usually `/etc/docker/daemon.json`) and add the following line, if the file doesn't exist, create it:
 ```json
@@ -54,7 +56,7 @@ This allows Docker to send requests to local proxy, which handles the authentica
 sudo systemctl restart docker
 ```
 
-## Windows
+### Windows
 
 1. Open Docker Desktop.
 2. Go to Settings.
