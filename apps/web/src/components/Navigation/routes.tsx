@@ -413,7 +413,12 @@ export const routes: NavGroup[] = [
     items: [
       {
         title: 'Templates',
-        href: '/docs/troubleshooting/templates',
+        links: [
+          {
+            title: 'Build authentication error',
+            href: '/docs/troubleshooting/templates/build-authentication-error',
+          },
+        ],
       },
     ],
   },
