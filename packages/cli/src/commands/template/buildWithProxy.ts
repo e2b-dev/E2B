@@ -23,7 +23,7 @@ export async function buildWithProxy(
     const yes = await confirm('Did you complete the guide?')
 
     if (!yes) {
-      console.log('Please configure the Docker CLI and try again.')
+      console.log('Please follow the workaround steps from https://e2b.dev/docs/cli/build-auth-error and then try again.')
       process.exit(1)
     }
   }
