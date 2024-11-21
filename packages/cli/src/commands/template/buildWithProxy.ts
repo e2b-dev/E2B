@@ -20,7 +20,7 @@ export async function buildWithProxy(
     console.log(
       "There was an issue during Docker authentication. Please follow the workaround steps from https://e2b.dev/docs/cli/build-auth-error and then continue."
     )
-    const yes = await confirm('Did you complete the guide?')
+    const yes = await confirm('Have you completed the steps from the https://e2b.dev/docs/cli/build-auth-error workaround guide?')
 
     if (!yes) {
       console.log('Please follow the workaround steps from https://e2b.dev/docs/cli/build-auth-error and then try again.')
