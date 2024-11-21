@@ -10,6 +10,7 @@ export interface UserConfig {
   teamName: string
   teamId: string
   teamApiKey: string
+  dockerProxySet?: boolean
 }
 
 export const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') // TODO: Keep in Keychain
