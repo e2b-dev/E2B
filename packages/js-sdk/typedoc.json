@@ -6,8 +6,7 @@
     "src/sandbox/index.ts",
     "src/sandbox/filesystem/index.ts",
     "src/sandbox/process/index.ts",
-    "src/sandbox/process/index.ts",
-    "src/sandbox/pty.ts",
+    "src/sandbox/commands/index.ts",
     "src/errors.ts"
   ],
   "excludeExternals": true,
