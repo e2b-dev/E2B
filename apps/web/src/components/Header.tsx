@@ -35,7 +35,7 @@ function DocumentationTypeLink({
         'hover:text-white hover:cursor-pointer text-sm font-medium px-2 py-1 rounded-md',
         pathname.startsWith(href) &&
           // XXX: this is a hack to avoid the /docs and /docs/api-reference links being highlighted at the same time
-          !(href === '/docs' && pathname === '/docs/api-reference')
+          !(href === '/docs' && pathname.startsWith('/docs/api-reference'))
           ? 'text-white bg-zinc-800'
           : 'text-neutral-400'
       )}
