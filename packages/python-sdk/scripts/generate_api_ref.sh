@@ -17,11 +17,13 @@ for package in "${packages[@]}"; do
     # generate raw api reference markdown file
     poetry run pydoc-markdown -p e2b."${package}" >api_ref/"${package}".mdx
     # remove package path display
-    sed -i '/<a[^>]*>.*<\/a>/d' api_ref/"${package}".mdx
+    sed -i'' -e '/<a[^>]*>.*<\/a>/d' "api_ref/${package}.mdx"
     # remove empty hyperlinks
-    sed -i '/^# /d' "api_ref/${package}.mdx"
+    sed -i'' -e '/^# /d' "api_ref/${package}.mdx"
     # remove " Objects" from lines starting with "##"
-    sed -i '/^## / s/ Objects$//' "api_ref/${package}.mdx"
+    sed -i'' -e '/^## / s/ Objects$//' "api_ref/${package}.mdx"
+    # replace lines starting with "####" with "###"
+    sed -i'' -e 's/^####/###/' "api_ref/${package}.mdx"
     # move to docs
     mkdir -p "../../apps/web/src/app/(docs)/docs/api-reference/python-sdk/${PKG_VERSION}/${package}"
     mv "api_ref/${package}.mdx" "../../apps/web/src/app/(docs)/docs/api-reference/python-sdk/${PKG_VERSION}/${package}/page.mdx"
