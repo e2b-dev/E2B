@@ -1,15 +1,13 @@
-## Enumerations
-
 ### FileType
 
 Sandbox filesystem object type.
 
 #### Enumeration Members
 
-| Enumeration Member | Value | Description | Defined in |
-| ------ | ------ | ------ | ------ |
-| `DIR` | `"dir"` | Filesystem object is a directory. | sandbox/filesystem/index.ts:54 |
-| `FILE` | `"file"` | Filesystem object is a file. | sandbox/filesystem/index.ts:50 |
+| Enumeration Member | Value | Description |
+| ------ | ------ | ------ |
+| `DIR` | `"dir"` | Filesystem object is a directory. |
+| `FILE` | `"file"` | Filesystem object is a file. |
 
 ## Classes
 
@@ -19,7 +17,7 @@ Module for interacting with the sandbox filesystem.
 
 #### Constructors
 
-##### new Filesystem()
+### new Filesystem()
 
 ```ts
 new Filesystem(
@@ -40,13 +38,9 @@ new Filesystem(
 
 `Filesystem`
 
-###### Defined in
-
-sandbox/filesystem/index.ts:103
-
 #### Methods
 
-##### exists()
+### exists()
 
 ```ts
 exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean>
@@ -67,11 +61,7 @@ Check if a file or a directory exists.
 
 `true` if the file or directory exists, `false` otherwise
 
-###### Defined in
-
-sandbox/filesystem/index.ts:401
-
-##### list()
+### list()
 
 ```ts
 list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
@@ -92,11 +82,7 @@ List entries in a directory.
 
 list of entries in the sandbox filesystem directory.
 
-###### Defined in
-
-sandbox/filesystem/index.ts:272
-
-##### makeDir()
+### makeDir()
 
 ```ts
 makeDir(path: string, opts?: FilesystemRequestOpts): Promise<boolean>
@@ -117,11 +103,7 @@ Create a new directory and all directories along the way if needed on the specif
 
 `true` if the directory was created, `false` if it already exists.
 
-###### Defined in
-
-sandbox/filesystem/index.ts:310
-
-##### read()
+### read()
 
 ###### read(path, opts)
 
@@ -146,10 +128,6 @@ You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the
 
 file content as string
 
-###### Defined in
-
-sandbox/filesystem/index.ts:122
-
 ###### read(path, opts)
 
 ```ts
@@ -172,10 +150,6 @@ You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the
 `Promise`\<`Uint8Array`\>
 
 file content as `Uint8Array`
-
-###### Defined in
-
-sandbox/filesystem/index.ts:137
 
 ###### read(path, opts)
 
@@ -200,10 +174,6 @@ You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the
 
 file content as `Blob`
 
-###### Defined in
-
-sandbox/filesystem/index.ts:152
-
 ###### read(path, opts)
 
 ```ts
@@ -227,11 +197,7 @@ You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the
 
 file content as `ReadableStream`
 
-###### Defined in
-
-sandbox/filesystem/index.ts:167
-
-##### remove()
+### remove()
 
 ```ts
 remove(path: string, opts?: FilesystemRequestOpts): Promise<void>
@@ -250,11 +216,7 @@ Remove a file or directory.
 
 `Promise`\<`void`\>
 
-###### Defined in
-
-sandbox/filesystem/index.ts:379
-
-##### rename()
+### rename()
 
 ```ts
 rename(
@@ -279,11 +241,7 @@ Rename a file or directory.
 
 information about renamed file or directory.
 
-###### Defined in
-
-sandbox/filesystem/index.ts:341
-
-##### watchDir()
+### watchDir()
 
 ```ts
 watchDir(
@@ -308,11 +266,7 @@ Start watching a directory for filesystem events.
 
 `WatchHandle` object for stopping watching directory.
 
-###### Defined in
-
-sandbox/filesystem/index.ts:432
-
-##### write()
+### write()
 
 ```ts
 write(
@@ -343,10 +297,6 @@ Writing to a file at path that doesn't exist creates the necessary directories.
 
 information about the written file
 
-###### Defined in
-
-sandbox/filesystem/index.ts:223
-
 ## Interfaces
 
 ### EntryInfo
@@ -355,7 +305,7 @@ Sandbox filesystem object information.
 
 #### Properties
 
-##### name
+### name
 
 ```ts
 name: string;
@@ -363,11 +313,7 @@ name: string;
 
 Name of the filesystem object.
 
-###### Defined in
-
-sandbox/filesystem/index.ts:32
-
-##### path
+### path
 
 ```ts
 path: string;
@@ -375,21 +321,13 @@ path: string;
 
 Path to the filesystem object.
 
-###### Defined in
-
-sandbox/filesystem/index.ts:40
-
-##### type?
+### type?
 
 ```ts
 optional type: FileType;
 ```
 
 Type of the filesystem object.
-
-###### Defined in
-
-sandbox/filesystem/index.ts:36
 
 ***
 
@@ -403,7 +341,7 @@ Options for the sandbox filesystem operations.
 
 #### Properties
 
-##### requestTimeoutMs?
+### requestTimeoutMs?
 
 ```ts
 optional requestTimeoutMs: number;
@@ -417,11 +355,7 @@ Timeout for requests to the API in **milliseconds**.
 30_000 // 30 seconds
 ```
 
-###### Defined in
-
-connectionConfig.ts:42
-
-##### user?
+### user?
 
 ```ts
 optional user: Username;
@@ -429,10 +363,6 @@ optional user: Username;
 
 User to use for the operation in the sandbox.
 This affects the resolution of relative paths and ownership of the created filesystem objects.
-
-###### Defined in
-
-sandbox/filesystem/index.ts:75
 
 ***
 
@@ -442,7 +372,7 @@ Options for watching a directory.
 
 #### Properties
 
-##### onExit()?
+### onExit()?
 
 ```ts
 optional onExit: (err?: Error) => void | Promise<void>;
@@ -460,11 +390,7 @@ Callback to call when the watch operation stops.
 
 `void` \| `Promise`\<`void`\>
 
-###### Defined in
-
-sandbox/filesystem/index.ts:92
-
-##### requestTimeoutMs?
+### requestTimeoutMs?
 
 ```ts
 optional requestTimeoutMs: number;
@@ -478,11 +404,7 @@ Timeout for requests to the API in **milliseconds**.
 30_000 // 30 seconds
 ```
 
-###### Defined in
-
-connectionConfig.ts:42
-
-##### timeoutMs?
+### timeoutMs?
 
 ```ts
 optional timeoutMs: number;
@@ -497,11 +419,7 @@ You can pass `0` to disable the timeout.
 60_000 // 60 seconds
 ```
 
-###### Defined in
-
-sandbox/filesystem/index.ts:88
-
-##### user?
+### user?
 
 ```ts
 optional user: Username;
@@ -509,7 +427,3 @@ optional user: Username;
 
 User to use for the operation in the sandbox.
 This affects the resolution of relative paths and ownership of the created filesystem objects.
-
-###### Defined in
-
-sandbox/filesystem/index.ts:75

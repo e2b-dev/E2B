@@ -1,12 +1,10 @@
-## Classes
-
 ### AuthenticationError
 
 Thrown when authentication fails.
 
 #### Constructors
 
-##### new AuthenticationError()
+### new AuthenticationError()
 
 ```ts
 new AuthenticationError(message: any): AuthenticationError
@@ -22,10 +20,6 @@ new AuthenticationError(message: any): AuthenticationError
 
 `AuthenticationError`
 
-###### Defined in
-
-errors.ts:72
-
 ***
 
 ### InvalidArgumentError
@@ -34,7 +28,7 @@ Thrown when an invalid argument is provided.
 
 #### Constructors
 
-##### new InvalidArgumentError()
+### new InvalidArgumentError()
 
 ```ts
 new InvalidArgumentError(message: string): InvalidArgumentError
@@ -50,10 +44,6 @@ new InvalidArgumentError(message: string): InvalidArgumentError
 
 `InvalidArgumentError`
 
-###### Defined in
-
-errors.ts:42
-
 ***
 
 ### NotEnoughSpaceError
@@ -62,7 +52,7 @@ Thrown when there is not enough disk space.
 
 #### Constructors
 
-##### new NotEnoughSpaceError()
+### new NotEnoughSpaceError()
 
 ```ts
 new NotEnoughSpaceError(message: string): NotEnoughSpaceError
@@ -78,10 +68,6 @@ new NotEnoughSpaceError(message: string): NotEnoughSpaceError
 
 `NotEnoughSpaceError`
 
-###### Defined in
-
-errors.ts:52
-
 ***
 
 ### NotFoundError
@@ -90,7 +76,7 @@ Thrown when a resource is not found.
 
 #### Constructors
 
-##### new NotFoundError()
+### new NotFoundError()
 
 ```ts
 new NotFoundError(message: string): NotFoundError
@@ -106,10 +92,6 @@ new NotFoundError(message: string): NotFoundError
 
 `NotFoundError`
 
-###### Defined in
-
-errors.ts:62
-
 ***
 
 ### RateLimitError
@@ -118,7 +100,7 @@ Thrown when the API rate limit is exceeded.
 
 #### Constructors
 
-##### new RateLimitError()
+### new RateLimitError()
 
 ```ts
 new RateLimitError(message: any): RateLimitError
@@ -133,10 +115,6 @@ new RateLimitError(message: any): RateLimitError
 ###### Returns
 
 `RateLimitError`
-
-###### Defined in
-
-errors.ts:92
 
 ***
 
@@ -158,7 +136,7 @@ Thrown when general sandbox errors occur.
 
 #### Constructors
 
-##### new SandboxError()
+### new SandboxError()
 
 ```ts
 new SandboxError(message: any): SandboxError
@@ -174,10 +152,6 @@ new SandboxError(message: any): SandboxError
 
 `SandboxError`
 
-###### Defined in
-
-errors.ts:14
-
 ***
 
 ### TemplateError
@@ -186,7 +160,7 @@ Thrown when the template uses old envd version. It isn't compatible with the new
 
 #### Constructors
 
-##### new TemplateError()
+### new TemplateError()
 
 ```ts
 new TemplateError(message: string): TemplateError
@@ -201,10 +175,6 @@ new TemplateError(message: string): TemplateError
 ###### Returns
 
 `TemplateError`
-
-###### Defined in
-
-errors.ts:82
 
 ***
 
@@ -222,7 +192,7 @@ The [unknown] error type is sometimes caused by the sandbox timeout when the req
 
 #### Constructors
 
-##### new TimeoutError()
+### new TimeoutError()
 
 ```ts
 new TimeoutError(message: string): TimeoutError
@@ -237,10 +207,6 @@ new TimeoutError(message: string): TimeoutError
 ###### Returns
 
 `TimeoutError`
-
-###### Defined in
-
-errors.ts:32
 
 ## Functions
 
@@ -259,7 +225,3 @@ function formatSandboxTimeoutError(message: string): TimeoutError
 #### Returns
 
 `TimeoutError`
-
-#### Defined in
-
-errors.ts:2

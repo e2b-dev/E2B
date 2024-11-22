@@ -1,5 +1,3 @@
-## Classes
-
 ### Sandbox
 
 E2B cloud sandbox is a secure and isolated cloud environment.
@@ -25,16 +23,16 @@ const sandbox = await Sandbox.create()
 
 #### Properties
 
-| Property | Modifier | Type | Description | Defined in |
-| ------ | ------ | ------ | ------ | ------ |
-| `commands` | `readonly` | `Commands` | Module for running commands in the sandbox | sandbox/index.ts:74 |
-| `files` | `readonly` | `Filesystem` | Module for interacting with the sandbox filesystem | sandbox/index.ts:70 |
-| `pty` | `readonly` | `Pty` | Module for interacting with the sandbox pseudo-terminals | sandbox/index.ts:78 |
-| `sandboxId` | `readonly` | `string` | Unique identifier of the sandbox. | sandbox/index.ts:83 |
+| Property | Modifier | Type | Description |
+| ------ | ------ | ------ | ------ |
+| `commands` | `readonly` | `Commands` | Module for running commands in the sandbox |
+| `files` | `readonly` | `Filesystem` | Module for interacting with the sandbox filesystem |
+| `pty` | `readonly` | `Pty` | Module for interacting with the sandbox pseudo-terminals |
+| `sandboxId` | `readonly` | `string` | Unique identifier of the sandbox. |
 
 #### Methods
 
-##### downloadUrl()
+### downloadUrl()
 
 ```ts
 downloadUrl(path: string): string
@@ -54,11 +52,7 @@ Get the URL to download a file from the sandbox.
 
 URL for downloading file.
 
-###### Defined in
-
-sandbox/index.ts:339
-
-##### getHost()
+### getHost()
 
 ```ts
 getHost(port: number): string
@@ -89,11 +83,7 @@ await sandbox.commands.exec('python3 -m http.server 3000')
 const serverURL = sandbox.getHost(3000)
 ``
 
-###### Defined in
-
-sandbox/index.ts:237
-
-##### isRunning()
+### isRunning()
 
 ```ts
 isRunning(opts?: Pick<ConnectionOpts, "requestTimeoutMs">): Promise<boolean>
@@ -123,11 +113,7 @@ await sandbox.kill()
 await sandbox.isRunning() // Returns false
 ```
 
-###### Defined in
-
-sandbox/index.ts:259
-
-##### kill()
+### kill()
 
 ```ts
 kill(opts?: Pick<SandboxOpts, "requestTimeoutMs">): Promise<void>
@@ -145,11 +131,7 @@ Kill the sandbox.
 
 `Promise`\<`void`\>
 
-###### Defined in
-
-sandbox/index.ts:310
-
-##### setTimeout()
+### setTimeout()
 
 ```ts
 setTimeout(timeoutMs: number, opts?: Pick<SandboxOpts, "requestTimeoutMs">): Promise<void>
@@ -172,11 +154,7 @@ Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) f
 
 `Promise`\<`void`\>
 
-###### Defined in
-
-sandbox/index.ts:290
-
-##### uploadUrl()
+### uploadUrl()
 
 ```ts
 uploadUrl(path?: string): string
@@ -198,11 +176,7 @@ You have to send a POST request to this URL with the file as multipart/form-data
 
 URL for uploading file.
 
-###### Defined in
-
-sandbox/index.ts:328
-
-##### connect()
+### connect()
 
 ```ts
 static connect<S>(
@@ -244,11 +218,7 @@ const sandboxId = sandbox.sandboxId
 const sameSandbox = await Sandbox.connect(sandboxId)
 ```
 
-###### Defined in
-
-sandbox/index.ts:209
-
-##### create()
+### create()
 
 ###### create(this, opts)
 
@@ -286,10 +256,6 @@ const sandbox = await Sandbox.create()
 ###### Constructs
 
 Sandbox
-
-###### Defined in
-
-sandbox/index.ts:143
 
 ###### create(this, template, opts)
 
@@ -332,11 +298,7 @@ const sandbox = await Sandbox.create('<template-name-or-id>')
 
 Sandbox
 
-###### Defined in
-
-sandbox/index.ts:162
-
-##### kill()
+### kill()
 
 ```ts
 static kill(sandboxId: string, opts?: SandboxApiOpts): Promise<boolean>
@@ -357,11 +319,7 @@ Kill the sandbox specified by sandbox ID.
 
 `true` if the sandbox was found and killed, `false` otherwise.
 
-###### Defined in
-
-sandbox/sandboxApi.ts:55
-
-##### list()
+### list()
 
 ```ts
 static list(opts?: SandboxApiOpts): Promise<SandboxInfo[]>
@@ -381,11 +339,7 @@ List all running sandboxes.
 
 list of running sandboxes.
 
-###### Defined in
-
-sandbox/sandboxApi.ts:90
-
-##### setTimeout()
+### setTimeout()
 
 ```ts
 static setTimeout(
@@ -413,10 +367,6 @@ Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) f
 
 `Promise`\<`void`\>
 
-###### Defined in
-
-sandbox/sandboxApi.ts:129
-
 ## Interfaces
 
 ### SandboxOpts
@@ -425,7 +375,7 @@ Options for creating a new Sandbox.
 
 #### Properties
 
-##### accessToken?
+### accessToken?
 
 ```ts
 optional accessToken: string;
@@ -439,11 +389,7 @@ E2B access token to use for authentication.
 E2B_ACCESS_TOKEN // environment variable
 ```
 
-###### Defined in
-
-connectionConfig.ts:24
-
-##### apiKey?
+### apiKey?
 
 ```ts
 optional apiKey: string;
@@ -457,11 +403,7 @@ E2B API key to use for authentication.
 E2B_API_KEY // environment variable
 ```
 
-###### Defined in
-
-connectionConfig.ts:18
-
-##### debug?
+### debug?
 
 ```ts
 optional debug: boolean;
@@ -475,11 +417,7 @@ If true the SDK starts in the debug mode and connects to the local envd API serv
 
 E2B_DEBUG // environment variable or `false`
 
-###### Defined in
-
-connectionConfig.ts:36
-
-##### domain?
+### domain?
 
 ```ts
 optional domain: string;
@@ -491,11 +429,7 @@ Domain to use for the API.
 
 E2B_DOMAIN // environment variable or `e2b.dev`
 
-###### Defined in
-
-connectionConfig.ts:30
-
-##### envs?
+### envs?
 
 ```ts
 optional envs: Record<string, string>;
@@ -512,11 +446,7 @@ Can be overridden with the `envs` argument when executing commands or code.
 {}
 ```
 
-###### Defined in
-
-sandbox/index.ts:32
-
-##### logger?
+### logger?
 
 ```ts
 optional logger: Logger;
@@ -524,11 +454,7 @@ optional logger: Logger;
 
 Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, console.
 
-###### Defined in
-
-connectionConfig.ts:46
-
-##### metadata?
+### metadata?
 
 ```ts
 optional metadata: Record<string, string>;
@@ -542,11 +468,7 @@ Custom metadata for the sandbox.
 {}
 ```
 
-###### Defined in
-
-sandbox/index.ts:23
-
-##### requestTimeoutMs?
+### requestTimeoutMs?
 
 ```ts
 optional requestTimeoutMs: number;
@@ -560,11 +482,7 @@ Timeout for requests to the API in **milliseconds**.
 30_000 // 30 seconds
 ```
 
-###### Defined in
-
-connectionConfig.ts:42
-
-##### timeoutMs?
+### timeoutMs?
 
 ```ts
 optional timeoutMs: number;
@@ -578,7 +496,3 @@ Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) f
 ```ts
 300_000 // 5 minutes
 ```
-
-###### Defined in
-
-sandbox/index.ts:39
