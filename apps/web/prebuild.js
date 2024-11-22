@@ -48,7 +48,6 @@ function toAnchorLink(title) {
 }
 
 function getSubModules(pkg, href, dirPath) {
-  console.log('[submodules] pkg', pkg)
   try {
     const filePath = dirPath + '/page.mdx'
     if (!fs.existsSync(filePath)) {

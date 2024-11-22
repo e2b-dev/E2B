@@ -48,10 +48,6 @@
     border-radius: 10px;
   }
 
-  .api-ref h1 {
-    color: red !important;
-  }
-
   .dropdown-content {
     display: none;
     flex-direction: column;
