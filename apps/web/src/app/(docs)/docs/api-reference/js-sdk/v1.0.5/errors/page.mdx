@@ -1,5 +1,3 @@
-# errors
-
 ## Classes
 
 ### AuthenticationError
@@ -10,11 +8,15 @@ Thrown when authentication fails.
 
 ##### new AuthenticationError()
 
-> **new AuthenticationError**(`message`): `AuthenticationError`
+```ts
+new AuthenticationError(message: any): AuthenticationError
+```
 
 ###### Parameters
 
-• **message**: `any`
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `any` |
 
 ###### Returns
 
@@ -34,11 +36,15 @@ Thrown when an invalid argument is provided.
 
 ##### new InvalidArgumentError()
 
-> **new InvalidArgumentError**(`message`): `InvalidArgumentError`
+```ts
+new InvalidArgumentError(message: string): InvalidArgumentError
+```
 
 ###### Parameters
 
-• **message**: `string`
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
 
 ###### Returns
 
@@ -58,11 +64,15 @@ Thrown when there is not enough disk space.
 
 ##### new NotEnoughSpaceError()
 
-> **new NotEnoughSpaceError**(`message`): `NotEnoughSpaceError`
+```ts
+new NotEnoughSpaceError(message: string): NotEnoughSpaceError
+```
 
 ###### Parameters
 
-• **message**: `string`
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
 
 ###### Returns
 
@@ -82,11 +92,15 @@ Thrown when a resource is not found.
 
 ##### new NotFoundError()
 
-> **new NotFoundError**(`message`): `NotFoundError`
+```ts
+new NotFoundError(message: string): NotFoundError
+```
 
 ###### Parameters
 
-• **message**: `string`
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
 
 ###### Returns
 
@@ -106,11 +120,15 @@ Thrown when the API rate limit is exceeded.
 
 ##### new RateLimitError()
 
-> **new RateLimitError**(`message`): `RateLimitError`
+```ts
+new RateLimitError(message: any): RateLimitError
+```
 
 ###### Parameters
 
-• **message**: `any`
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `any` |
 
 ###### Returns
 
@@ -142,11 +160,15 @@ Thrown when general sandbox errors occur.
 
 ##### new SandboxError()
 
-> **new SandboxError**(`message`): `SandboxError`
+```ts
+new SandboxError(message: any): SandboxError
+```
 
 ###### Parameters
 
-• **message**: `any`
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `any` |
 
 ###### Returns
 
@@ -166,11 +188,15 @@ Thrown when the template uses old envd version. It isn't compatible with the new
 
 ##### new TemplateError()
 
-> **new TemplateError**(`message`): `TemplateError`
+```ts
+new TemplateError(message: string): TemplateError
+```
 
 ###### Parameters
 
-• **message**: `string`
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
 
 ###### Returns
 
@@ -198,11 +224,15 @@ The [unknown] error type is sometimes caused by the sandbox timeout when the req
 
 ##### new TimeoutError()
 
-> **new TimeoutError**(`message`): `TimeoutError`
+```ts
+new TimeoutError(message: string): TimeoutError
+```
 
 ###### Parameters
 
-• **message**: `string`
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
 
 ###### Returns
 
@@ -216,11 +246,15 @@ errors.ts:32
 
 ### formatSandboxTimeoutError()
 
-> **formatSandboxTimeoutError**(`message`): `TimeoutError`
+```ts
+function formatSandboxTimeoutError(message: string): TimeoutError
+```
 
 #### Parameters
 
-• **message**: `string`
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
 
 #### Returns
 

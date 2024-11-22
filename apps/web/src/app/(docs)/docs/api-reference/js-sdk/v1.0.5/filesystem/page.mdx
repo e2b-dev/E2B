@@ -1,5 +1,3 @@
-# sandbox/filesystem
-
 ## Enumerations
 
 ### FileType
@@ -8,25 +6,10 @@ Sandbox filesystem object type.
 
 #### Enumeration Members
 
-##### DIR
-
-> **DIR**: `"dir"`
-
-Filesystem object is a directory.
-
-###### Defined in
-
-sandbox/filesystem/index.ts:54
-
-##### FILE
-
-> **FILE**: `"file"`
-
-Filesystem object is a file.
-
-###### Defined in
-
-sandbox/filesystem/index.ts:50
+| Enumeration Member | Value | Description | Defined in |
+| ------ | ------ | ------ | ------ |
+| `DIR` | `"dir"` | Filesystem object is a directory. | sandbox/filesystem/index.ts:54 |
+| `FILE` | `"file"` | Filesystem object is a file. | sandbox/filesystem/index.ts:50 |
 
 ## Classes
 
@@ -38,15 +21,20 @@ Module for interacting with the sandbox filesystem.
 
 ##### new Filesystem()
 
-> **new Filesystem**(`transport`, `envdApi`, `connectionConfig`): `Filesystem`
+```ts
+new Filesystem(
+   transport: Transport, 
+   envdApi: EnvdApiClient, 
+   connectionConfig: ConnectionConfig): Filesystem
+```
 
 ###### Parameters
 
-• **transport**: `Transport`
-
-• **envdApi**: `EnvdApiClient`
-
-• **connectionConfig**: `ConnectionConfig`
+| Parameter | Type |
+| ------ | ------ |
+| `transport` | `Transport` |
+| `envdApi` | `EnvdApiClient` |
+| `connectionConfig` | `ConnectionConfig` |
 
 ###### Returns
 
@@ -60,19 +48,18 @@ sandbox/filesystem/index.ts:103
 
 ##### exists()
 
-> **exists**(`path`, `opts`?): `Promise`\<`boolean`\>
+```ts
+exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean>
+```
 
 Check if a file or a directory exists.
 
 ###### Parameters
 
-• **path**: `string`
-
-path to a file or a directory
-
-• **opts?**: `FilesystemRequestOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to a file or a directory |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
 
 ###### Returns
 
@@ -86,19 +73,18 @@ sandbox/filesystem/index.ts:401
 
 ##### list()
 
-> **list**(`path`, `opts`?): `Promise`\<`EntryInfo`[]\>
+```ts
+list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
+```
 
 List entries in a directory.
 
 ###### Parameters
 
-• **path**: `string`
-
-path to the directory.
-
-• **opts?**: `FilesystemRequestOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the directory. |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
 
 ###### Returns
 
@@ -112,19 +98,18 @@ sandbox/filesystem/index.ts:272
 
 ##### makeDir()
 
-> **makeDir**(`path`, `opts`?): `Promise`\<`boolean`\>
+```ts
+makeDir(path: string, opts?: FilesystemRequestOpts): Promise<boolean>
+```
 
 Create a new directory and all directories along the way if needed on the specified path.
 
 ###### Parameters
 
-• **path**: `string`
-
-path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
-
-• **opts?**: `FilesystemRequestOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to a new directory. For example '/dirA/dirB' when creating 'dirB'. |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
 
 ###### Returns
 
@@ -140,7 +125,9 @@ sandbox/filesystem/index.ts:310
 
 ###### read(path, opts)
 
-> **read**(`path`, `opts`?): `Promise`\<`string`\>
+```ts
+read(path: string, opts?: FilesystemRequestOpts & object): Promise<string>
+```
 
 Read file content as a `string`.
 
@@ -148,13 +135,10 @@ You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the
 
 ###### Parameters
 
-• **path**: `string`
-
-path to the file.
-
-• **opts?**: `FilesystemRequestOpts` & `object`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the file. |
+| `opts`? | `FilesystemRequestOpts` & `object` | connection options. |
 
 ###### Returns
 
@@ -168,7 +152,9 @@ sandbox/filesystem/index.ts:122
 
 ###### read(path, opts)
 
-> **read**(`path`, `opts`?): `Promise`\<`Uint8Array`\>
+```ts
+read(path: string, opts?: FilesystemRequestOpts & object): Promise<Uint8Array>
+```
 
 Read file content as a `Uint8Array`.
 
@@ -176,13 +162,10 @@ You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the
 
 ###### Parameters
 
-• **path**: `string`
-
-path to the file.
-
-• **opts?**: `FilesystemRequestOpts` & `object`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the file. |
+| `opts`? | `FilesystemRequestOpts` & `object` | connection options. |
 
 ###### Returns
 
@@ -196,7 +179,9 @@ sandbox/filesystem/index.ts:137
 
 ###### read(path, opts)
 
-> **read**(`path`, `opts`?): `Promise`\<`Blob`\>
+```ts
+read(path: string, opts?: FilesystemRequestOpts & object): Promise<Blob>
+```
 
 Read file content as a `Blob`.
 
@@ -204,13 +189,10 @@ You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the
 
 ###### Parameters
 
-• **path**: `string`
-
-path to the file.
-
-• **opts?**: `FilesystemRequestOpts` & `object`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the file. |
+| `opts`? | `FilesystemRequestOpts` & `object` | connection options. |
 
 ###### Returns
 
@@ -224,7 +206,9 @@ sandbox/filesystem/index.ts:152
 
 ###### read(path, opts)
 
-> **read**(`path`, `opts`?): `Promise`\<`ReadableStream`\<`Uint8Array`\>\>
+```ts
+read(path: string, opts?: FilesystemRequestOpts & object): Promise<ReadableStream<Uint8Array>>
+```
 
 Read file content as a `ReadableStream`.
 
@@ -232,13 +216,10 @@ You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the
 
 ###### Parameters
 
-• **path**: `string`
-
-path to the file.
-
-• **opts?**: `FilesystemRequestOpts` & `object`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the file. |
+| `opts`? | `FilesystemRequestOpts` & `object` | connection options. |
 
 ###### Returns
 
@@ -252,19 +233,18 @@ sandbox/filesystem/index.ts:167
 
 ##### remove()
 
-> **remove**(`path`, `opts`?): `Promise`\<`void`\>
+```ts
+remove(path: string, opts?: FilesystemRequestOpts): Promise<void>
+```
 
 Remove a file or directory.
 
 ###### Parameters
 
-• **path**: `string`
-
-path to a file or directory.
-
-• **opts?**: `FilesystemRequestOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to a file or directory. |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
 
 ###### Returns
 
@@ -276,23 +256,22 @@ sandbox/filesystem/index.ts:379
 
 ##### rename()
 
-> **rename**(`oldPath`, `newPath`, `opts`?): `Promise`\<`EntryInfo`\>
+```ts
+rename(
+   oldPath: string, 
+   newPath: string, 
+opts?: FilesystemRequestOpts): Promise<EntryInfo>
+```
 
 Rename a file or directory.
 
 ###### Parameters
 
-• **oldPath**: `string`
-
-path to the file or directory to rename.
-
-• **newPath**: `string`
-
-new path for the file or directory.
-
-• **opts?**: `FilesystemRequestOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `oldPath` | `string` | path to the file or directory to rename. |
+| `newPath` | `string` | new path for the file or directory. |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
 
 ###### Returns
 
@@ -306,23 +285,22 @@ sandbox/filesystem/index.ts:341
 
 ##### watchDir()
 
-> **watchDir**(`path`, `onEvent`, `opts`?): `Promise`\<`WatchHandle`\>
+```ts
+watchDir(
+   path: string, 
+   onEvent: (event: FilesystemEvent) => void | Promise<void>, 
+opts?: WatchOpts): Promise<WatchHandle>
+```
 
 Start watching a directory for filesystem events.
 
 ###### Parameters
 
-• **path**: `string`
-
-path to directory to watch.
-
-• **onEvent**
-
-callback to call when an event in the directory occurs.
-
-• **opts?**: `WatchOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to directory to watch. |
+| `onEvent` | (`event`: `FilesystemEvent`) => `void` \| `Promise`\<`void`\> | callback to call when an event in the directory occurs. |
+| `opts`? | `WatchOpts` | connection options. |
 
 ###### Returns
 
@@ -336,7 +314,12 @@ sandbox/filesystem/index.ts:432
 
 ##### write()
 
-> **write**(`path`, `data`, `opts`?): `Promise`\<`EntryInfo`\>
+```ts
+write(
+   path: string, 
+   data: string | ArrayBuffer | Blob | ReadableStream<any>, 
+opts?: FilesystemRequestOpts): Promise<EntryInfo>
+```
 
 Write content to a file.
 
@@ -348,17 +331,11 @@ Writing to a file at path that doesn't exist creates the necessary directories.
 
 ###### Parameters
 
-• **path**: `string`
-
-path to file.
-
-• **data**: `string` \| `ArrayBuffer` \| `Blob` \| `ReadableStream`\<`any`\>
-
-data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`.
-
-• **opts?**: `FilesystemRequestOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to file. |
+| `data` | `string` \| `ArrayBuffer` \| `Blob` \| `ReadableStream`\<`any`\> | data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`. |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
 
 ###### Returns
 
@@ -380,7 +357,9 @@ Sandbox filesystem object information.
 
 ##### name
 
-> **name**: `string`
+```ts
+name: string;
+```
 
 Name of the filesystem object.
 
@@ -390,7 +369,9 @@ sandbox/filesystem/index.ts:32
 
 ##### path
 
-> **path**: `string`
+```ts
+path: string;
+```
 
 Path to the filesystem object.
 
@@ -400,7 +381,9 @@ sandbox/filesystem/index.ts:40
 
 ##### type?
 
-> `optional` **type**: `FileType`
+```ts
+optional type: FileType;
+```
 
 Type of the filesystem object.
 
@@ -422,7 +405,9 @@ Options for the sandbox filesystem operations.
 
 ##### requestTimeoutMs?
 
-> `optional` **requestTimeoutMs**: `number`
+```ts
+optional requestTimeoutMs: number;
+```
 
 Timeout for requests to the API in **milliseconds**.
 
@@ -438,7 +423,9 @@ connectionConfig.ts:42
 
 ##### user?
 
-> `optional` **user**: `Username`
+```ts
+optional user: Username;
+```
 
 User to use for the operation in the sandbox.
 This affects the resolution of relative paths and ownership of the created filesystem objects.
@@ -457,13 +444,17 @@ Options for watching a directory.
 
 ##### onExit()?
 
-> `optional` **onExit**: (`err`?) => `void` \| `Promise`\<`void`\>
+```ts
+optional onExit: (err?: Error) => void | Promise<void>;
+```
 
 Callback to call when the watch operation stops.
 
 ###### Parameters
 
-• **err?**: `Error`
+| Parameter | Type |
+| ------ | ------ |
+| `err`? | `Error` |
 
 ###### Returns
 
@@ -475,7 +466,9 @@ sandbox/filesystem/index.ts:92
 
 ##### requestTimeoutMs?
 
-> `optional` **requestTimeoutMs**: `number`
+```ts
+optional requestTimeoutMs: number;
+```
 
 Timeout for requests to the API in **milliseconds**.
 
@@ -491,7 +484,9 @@ connectionConfig.ts:42
 
 ##### timeoutMs?
 
-> `optional` **timeoutMs**: `number`
+```ts
+optional timeoutMs: number;
+```
 
 Timeout for the watch operation in **milliseconds**.
 You can pass `0` to disable the timeout.
@@ -508,7 +503,9 @@ sandbox/filesystem/index.ts:88
 
 ##### user?
 
-> `optional` **user**: `Username`
+```ts
+optional user: Username;
+```
 
 User to use for the operation in the sandbox.
 This affects the resolution of relative paths and ownership of the created filesystem objects.

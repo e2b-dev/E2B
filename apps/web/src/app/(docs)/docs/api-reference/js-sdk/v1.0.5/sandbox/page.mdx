@@ -1,5 +1,3 @@
-# sandbox
-
 ## Classes
 
 ### Sandbox
@@ -27,59 +25,28 @@ const sandbox = await Sandbox.create()
 
 #### Properties
 
-##### commands
-
-> `readonly` **commands**: `Commands`
-
-Module for running commands in the sandbox
-
-###### Defined in
-
-sandbox/index.ts:74
-
-##### files
-
-> `readonly` **files**: `Filesystem`
-
-Module for interacting with the sandbox filesystem
-
-###### Defined in
-
-sandbox/index.ts:70
-
-##### pty
-
-> `readonly` **pty**: `Pty`
-
-Module for interacting with the sandbox pseudo-terminals
-
-###### Defined in
-
-sandbox/index.ts:78
-
-##### sandboxId
-
-> `readonly` **sandboxId**: `string`
-
-Unique identifier of the sandbox.
-
-###### Defined in
-
-sandbox/index.ts:83
+| Property | Modifier | Type | Description | Defined in |
+| ------ | ------ | ------ | ------ | ------ |
+| `commands` | `readonly` | `Commands` | Module for running commands in the sandbox | sandbox/index.ts:74 |
+| `files` | `readonly` | `Filesystem` | Module for interacting with the sandbox filesystem | sandbox/index.ts:70 |
+| `pty` | `readonly` | `Pty` | Module for interacting with the sandbox pseudo-terminals | sandbox/index.ts:78 |
+| `sandboxId` | `readonly` | `string` | Unique identifier of the sandbox. | sandbox/index.ts:83 |
 
 #### Methods
 
 ##### downloadUrl()
 
-> **downloadUrl**(`path`): `string`
+```ts
+downloadUrl(path: string): string
+```
 
 Get the URL to download a file from the sandbox.
 
 ###### Parameters
 
-• **path**: `string`
-
-path to the file to download.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the file to download. |
 
 ###### Returns
 
@@ -93,16 +60,18 @@ sandbox/index.ts:339
 
 ##### getHost()
 
-> **getHost**(`port`): `string`
+```ts
+getHost(port: number): string
+```
 
 Get the host address for the specified sandbox port.
 You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
 
 ###### Parameters
 
-• **port**: `number`
-
-number of the port in the sandbox.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `port` | `number` | number of the port in the sandbox. |
 
 ###### Returns
 
@@ -126,13 +95,17 @@ sandbox/index.ts:237
 
 ##### isRunning()
 
-> **isRunning**(`opts`?): `Promise`\<`boolean`\>
+```ts
+isRunning(opts?: Pick<ConnectionOpts, "requestTimeoutMs">): Promise<boolean>
+```
 
 Check if the sandbox is running.
 
 ###### Parameters
 
-• **opts?**: `Pick`\<`ConnectionOpts`, `"requestTimeoutMs"`\>
+| Parameter | Type |
+| ------ | ------ |
+| `opts`? | `Pick`\<`ConnectionOpts`, `"requestTimeoutMs"`\> |
 
 ###### Returns
 
@@ -156,15 +129,17 @@ sandbox/index.ts:259
 
 ##### kill()
 
-> **kill**(`opts`?): `Promise`\<`void`\>
+```ts
+kill(opts?: Pick<SandboxOpts, "requestTimeoutMs">): Promise<void>
+```
 
 Kill the sandbox.
 
 ###### Parameters
 
-• **opts?**: `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\>
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts`? | `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\> | connection options. |
 
 ###### Returns
 
@@ -176,7 +151,9 @@ sandbox/index.ts:310
 
 ##### setTimeout()
 
-> **setTimeout**(`timeoutMs`, `opts`?): `Promise`\<`void`\>
+```ts
+setTimeout(timeoutMs: number, opts?: Pick<SandboxOpts, "requestTimeoutMs">): Promise<void>
+```
 
 Set the timeout of the sandbox.
 After the timeout expires the sandbox will be automatically killed.
@@ -186,13 +163,10 @@ Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) f
 
 ###### Parameters
 
-• **timeoutMs**: `number`
-
-timeout in **milliseconds**.
-
-• **opts?**: `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\>
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `timeoutMs` | `number` | timeout in **milliseconds**. |
+| `opts`? | `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\> | connection options. |
 
 ###### Returns
 
@@ -204,7 +178,9 @@ sandbox/index.ts:290
 
 ##### uploadUrl()
 
-> **uploadUrl**(`path`?): `string`
+```ts
+uploadUrl(path?: string): string
+```
 
 Get the URL to upload a file to the sandbox.
 
@@ -212,9 +188,9 @@ You have to send a POST request to this URL with the file as multipart/form-data
 
 ###### Parameters
 
-• **path?**: `string`
-
-the directory where to upload the file, defaults to user's home directory.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path`? | `string` | the directory where to upload the file, defaults to user's home directory. |
 
 ###### Returns
 
@@ -228,26 +204,29 @@ sandbox/index.ts:328
 
 ##### connect()
 
-> `static` **connect**\<`S`\>(`this`, `sandboxId`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+```ts
+static connect<S>(
+   this: S, 
+   sandboxId: string, 
+opts?: Omit<SandboxOpts, "timeoutMs" | "metadata" | "envs">): Promise<InstanceType<S>>
+```
 
 Connect to an existing sandbox.
 With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
 ###### Type Parameters
 
-• **S** *extends* *typeof* `Sandbox`
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
 
 ###### Parameters
 
-• **this**: `S`
-
-• **sandboxId**: `string`
-
-sandbox ID.
-
-• **opts?**: `Omit`\<`SandboxOpts`, `"timeoutMs"` \| `"metadata"` \| `"envs"`\>
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `sandboxId` | `string` | sandbox ID. |
+| `opts`? | `Omit`\<`SandboxOpts`, `"timeoutMs"` \| `"metadata"` \| `"envs"`\> | connection options. |
 
 ###### Returns
 
@@ -273,21 +252,24 @@ sandbox/index.ts:209
 
 ###### create(this, opts)
 
-> `static` **create**\<`S`\>(`this`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+```ts
+static create<S>(this: S, opts?: SandboxOpts): Promise<InstanceType<S>>
+```
 
 Create a new sandbox from the default `base` sandbox template.
 
 ###### Type Parameters
 
-• **S** *extends* *typeof* `Sandbox`
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
 
 ###### Parameters
 
-• **this**: `S`
-
-• **opts?**: `SandboxOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `opts`? | `SandboxOpts` | connection options. |
 
 ###### Returns
 
@@ -311,25 +293,28 @@ sandbox/index.ts:143
 
 ###### create(this, template, opts)
 
-> `static` **create**\<`S`\>(`this`, `template`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+```ts
+static create<S>(
+   this: S, 
+   template: string, 
+opts?: SandboxOpts): Promise<InstanceType<S>>
+```
 
 Create a new sandbox from the specified sandbox template.
 
 ###### Type Parameters
 
-• **S** *extends* *typeof* `Sandbox`
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
 
 ###### Parameters
 
-• **this**: `S`
-
-• **template**: `string`
-
-sandbox template name or ID.
-
-• **opts?**: `SandboxOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `template` | `string` | sandbox template name or ID. |
+| `opts`? | `SandboxOpts` | connection options. |
 
 ###### Returns
 
@@ -353,19 +338,18 @@ sandbox/index.ts:162
 
 ##### kill()
 
-> `static` **kill**(`sandboxId`, `opts`?): `Promise`\<`boolean`\>
+```ts
+static kill(sandboxId: string, opts?: SandboxApiOpts): Promise<boolean>
+```
 
 Kill the sandbox specified by sandbox ID.
 
 ###### Parameters
 
-• **sandboxId**: `string`
-
-sandbox ID.
-
-• **opts?**: `SandboxApiOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `sandboxId` | `string` | sandbox ID. |
+| `opts`? | `SandboxApiOpts` | connection options. |
 
 ###### Returns
 
@@ -379,15 +363,17 @@ sandbox/sandboxApi.ts:55
 
 ##### list()
 
-> `static` **list**(`opts`?): `Promise`\<`SandboxInfo`[]\>
+```ts
+static list(opts?: SandboxApiOpts): Promise<SandboxInfo[]>
+```
 
 List all running sandboxes.
 
 ###### Parameters
 
-• **opts?**: `SandboxApiOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts`? | `SandboxApiOpts` | connection options. |
 
 ###### Returns
 
@@ -401,7 +387,12 @@ sandbox/sandboxApi.ts:90
 
 ##### setTimeout()
 
-> `static` **setTimeout**(`sandboxId`, `timeoutMs`, `opts`?): `Promise`\<`void`\>
+```ts
+static setTimeout(
+   sandboxId: string, 
+   timeoutMs: number, 
+opts?: SandboxApiOpts): Promise<void>
+```
 
 Set the timeout of the specified sandbox.
 After the timeout expires the sandbox will be automatically killed.
@@ -412,17 +403,11 @@ Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) f
 
 ###### Parameters
 
-• **sandboxId**: `string`
-
-sandbox ID.
-
-• **timeoutMs**: `number`
-
-timeout in **milliseconds**.
-
-• **opts?**: `SandboxApiOpts`
-
-connection options.
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `sandboxId` | `string` | sandbox ID. |
+| `timeoutMs` | `number` | timeout in **milliseconds**. |
+| `opts`? | `SandboxApiOpts` | connection options. |
 
 ###### Returns
 
@@ -442,7 +427,9 @@ Options for creating a new Sandbox.
 
 ##### accessToken?
 
-> `optional` **accessToken**: `string`
+```ts
+optional accessToken: string;
+```
 
 E2B access token to use for authentication.
 
@@ -458,7 +445,9 @@ connectionConfig.ts:24
 
 ##### apiKey?
 
-> `optional` **apiKey**: `string`
+```ts
+optional apiKey: string;
+```
 
 E2B API key to use for authentication.
 
@@ -474,7 +463,9 @@ connectionConfig.ts:18
 
 ##### debug?
 
-> `optional` **debug**: `boolean`
+```ts
+optional debug: boolean;
+```
 
 **`Internal`**
 
@@ -490,7 +481,9 @@ connectionConfig.ts:36
 
 ##### domain?
 
-> `optional` **domain**: `string`
+```ts
+optional domain: string;
+```
 
 Domain to use for the API.
 
@@ -504,7 +497,9 @@ connectionConfig.ts:30
 
 ##### envs?
 
-> `optional` **envs**: `Record`\<`string`, `string`\>
+```ts
+optional envs: Record<string, string>;
+```
 
 Custom environment variables for the sandbox.
 
@@ -523,7 +518,9 @@ sandbox/index.ts:32
 
 ##### logger?
 
-> `optional` **logger**: `Logger`
+```ts
+optional logger: Logger;
+```
 
 Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, console.
 
@@ -533,7 +530,9 @@ connectionConfig.ts:46
 
 ##### metadata?
 
-> `optional` **metadata**: `Record`\<`string`, `string`\>
+```ts
+optional metadata: Record<string, string>;
+```
 
 Custom metadata for the sandbox.
 
@@ -549,7 +548,9 @@ sandbox/index.ts:23
 
 ##### requestTimeoutMs?
 
-> `optional` **requestTimeoutMs**: `number`
+```ts
+optional requestTimeoutMs: number;
+```
 
 Timeout for requests to the API in **milliseconds**.
 
@@ -565,7 +566,9 @@ connectionConfig.ts:42
 
 ##### timeoutMs?
 
-> `optional` **timeoutMs**: `number`
+```ts
+optional timeoutMs: number;
+```
 
 Timeout for the sandbox in **milliseconds**.
 Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.

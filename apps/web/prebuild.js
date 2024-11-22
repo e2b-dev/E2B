@@ -31,6 +31,64 @@ function buildDirectoryHierarchy(dirPath) {
 
 const filesCreated = new Set()
 
+function formatModuleTitle(title) {
+  // Replace underscore with space for _sync and _async suffixes
+  if (title.endsWith('_sync')) {
+    title = title.replace('_sync', '')
+  } else if (title.endsWith('_async')) {
+    title = title.replace('_async', ' async')
+  }
+  return title.charAt(0).toUpperCase() + title.slice(1).toLowerCase()
+}
+
+function toAnchorLink(title) {
+  // Add dashes between words for camelCase
+  title = title.replace(/([a-z])([A-Z])/g, '$1-$2')
+  return '#' + title.toLowerCase().replace(/ /g, '-')
+}
+
+function getSubModules(pkg, href, dirPath) {
+  console.log('[submodules] pkg', pkg)
+  try {
+    const filePath = dirPath + '/page.mdx'
+    if (!fs.existsSync(filePath)) {
+      return null
+    }
+
+    const content = fs.readFileSync(filePath, 'utf8')
+    const lines = content.split('\n')
+
+    const subModules = []
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      if (pkg === 'js-sdk') {
+        if (line.startsWith('### ')) {
+          const title = line.slice(3).trim()
+          if (title) {
+            subModules.push({
+              title: title,
+              href: href + toAnchorLink(title),
+            })
+          }
+        }
+      } else if (pkg === 'python-sdk' || pkg === 'cli') {
+        if (line.startsWith('## ')) {
+          const title = line.slice(2).trim()
+          if (title) {
+            subModules.push({
+              title: title,
+              href: href + toAnchorLink(title),
+            })
+          }
+        }
+      }
+    }
+    return subModules.length > 0 ? subModules : null
+  } catch (err) {
+    return null
+  }
+}
+
 function buildRoutes(dirName, dir, basePath = '', depth = 1) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
   const parentDirName = path.basename(path.dirname(dir))
@@ -41,7 +99,9 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
 
       if (entry.isDirectory()) {
         let route = {
-          title: depth === 1 ? entry.name.toLocaleUpperCase() : entry.name,
+          title:
+            (depth === 1 ? entry.name.toLocaleUpperCase() : entry.name) +
+            ' Reference',
         }
         const entryName = entry.name
         const childPath = path.join(dir, entry.name)
@@ -50,18 +110,39 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
         if (links.length > 0) {
           route.href = '/docs/api-reference/' + relativePath
           // SDK level
+          if (depth === 1) {
+            const latestVersion = Object.keys(hierarchy[entryName]).reverse()[0]
+            const latestModules = Object.keys(
+              hierarchy[entryName][latestVersion]
+            )
+
+            route.items = latestModules.map((module) => ({
+              title: formatModuleTitle(module),
+              href: `/docs/api-reference/${entryName}/${latestVersion}/${module}`,
+              links: getSubModules(
+                entryName,
+                `/docs/api-reference/${entryName}/${latestVersion}/${module}`,
+                path.join(
+                  __dirname,
+                  `./src/app/(docs)/docs/api-reference/${entryName}/${latestVersion}/${module}`
+                )
+              ),
+            }))
+          }
+
           if (depth === 2) {
             const mdxFilePath = path.join(dir, 'page.mdx')
             if (filesCreated.has(mdxFilePath)) return route
 
             // Generate SDK version TOC markdown file
+            const latestVersion = Object.keys(hierarchy[dirName]).reverse()[0]
             let mdxContent = `# ${dirName}\n\n## ${entryName}\n\n${links
               .map(
                 (link) =>
                   `- [${
                     link.title.charAt(0).toUpperCase() +
                     link.title.slice(1).toLowerCase()
-                  }](./${dirName}/${entryName}/${link.title})`
+                  }](./${dirName}/${latestVersion}/${link.title})`
               )
               .join('\n')}`
 
@@ -69,7 +150,7 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
               hierarchy[dirName] &&
               Object.keys(hierarchy[dirName]).length > 1
             ) {
-              const versions = Object.keys(hierarchy[dirName])
+              const versions = Object.keys(hierarchy[dirName]).reverse()
               const versionLinks = `<div className="versions-dropdown">
                 ${versions[0]} ▼
                 <div className="dropdown-content">
@@ -132,12 +213,7 @@ function generateApiRefRoutes() {
   return routes
 }
 
-const apiRefRoutes = [
-  {
-    title: 'References',
-    items: generateApiRefRoutes(),
-  },
-]
+const apiRefRoutes = generateApiRefRoutes()
 
 fs.writeFileSync(
   path.join(__dirname, ApiRefRoutesFilePath),
