@@ -11,7 +11,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Edit, MoreVertical, Trash } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useToast } from '../ui/use-toast'
 import { E2BUser, Team } from '@/utils/useUser'
 import {
@@ -190,11 +190,12 @@ export const KeysContent = ({
     setIsKeyDialogOpen(false)
   }
 
-  function sortApiKeys(apiKeys: TeamApiKey[]) {
-    return apiKeys.sort((a, b) => {
+  const sortedApiKeys = useMemo(() => {
+    const [first, ...rest] = apiKeys
+    return rest.sort((a, b) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
-  }
+  }, [apiKeys])
 
   function copyApiKey() {
     navigator.clipboard.writeText(
@@ -232,50 +233,61 @@ export const KeysContent = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortApiKeys(apiKeys).map((apiKey, index) => (
-            <TableRow
-              className="hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5"
-              key={index}
-            >
-              <TableCell>{apiKey.name}</TableCell>
-              <TableCell className="font-mono">{apiKey.maskedValue}</TableCell>
-              <TableCell>{apiKey.createdBy?.email}</TableCell>
-              <TableCell>
-                {new Date(apiKey.createdAt).toLocaleString('en-UK', {
-                  timeZoneName: 'short',
-                })}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <MoreVertical className="w-4 h-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setNewApiKeyInput(apiKey.name)
-                        setCurrentKey(apiKey)
-                        setIsKeyDialogOpen(true)
-                      }}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-red-500"
-                      onClick={() => {
-                        setCurrentKey(apiKey)
-                        setIsDeleteDialogOpen(true)
-                      }}
-                    >
-                      <Trash className="w-4 h-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+          {sortedApiKeys.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center">
+                Click on 'Add API Key' button above to create your first API
+                key.
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            sortedApiKeys.map((apiKey, index) => (
+              <TableRow
+                className="hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5"
+                key={index}
+              >
+                <TableCell>{apiKey.name}</TableCell>
+                <TableCell className="font-mono">
+                  {apiKey.maskedValue}
+                </TableCell>
+                <TableCell>{apiKey.createdBy?.email}</TableCell>
+                <TableCell>
+                  {new Date(apiKey.createdAt).toLocaleString('en-UK', {
+                    timeZoneName: 'short',
+                  })}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <MoreVertical className="w-4 h-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setNewApiKeyInput(apiKey.name)
+                          setCurrentKey(apiKey)
+                          setIsKeyDialogOpen(true)
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-500"
+                        onClick={() => {
+                          setCurrentKey(apiKey)
+                          setIsDeleteDialogOpen(true)
+                        }}
+                      >
+                        <Trash className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
 
