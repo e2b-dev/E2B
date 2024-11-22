@@ -192,7 +192,7 @@ export const KeysContent = ({
 
   // remove the first API key from the list (for legacy reasons) and sort the rest by creation date
   const sortedApiKeys = useMemo(() => {
-    const [_first, ...rest] = apiKeys
+    const rest = apiKeys.slice(1)
     return rest.sort((a, b) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
