@@ -250,7 +250,7 @@ function MainContent({
     case 'personal':
       return <PersonalContent user={user} />
     case 'keys':
-      return <KeysContent currentTeam={team} />
+      return <KeysContent currentTeam={team} user={user} />
     case 'sandboxes':
       return <SandboxesContent team={team} />
     case 'templates':
