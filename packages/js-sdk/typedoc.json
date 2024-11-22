@@ -18,5 +18,15 @@
     "includeCategories": false
   },
   "outputFileStrategy": "modules",
-  "readme": "none"
+  "readme": "none",
+  "disableSources": true,
+  // typedoc-plugin-markdown options
+  "classPropertiesFormat": "table",
+  "typeDeclarationFormat": "table",
+  "enumMembersFormat": "table",
+  "parametersFormat": "table",
+  "expandParameters": true,
+  "useCodeBlocks": true,
+  "hidePageTitle": true,
+  "hideBreadcrumbs": true
 }

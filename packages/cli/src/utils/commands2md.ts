@@ -23,9 +23,9 @@ export function commands2md(commands: Command[]): void {
     const fullName = parentName ? `${parentName} ${commandName}` : commandName
 
     const mdStructure = [
-      { h1: `e2b ${fullName}` },
+      { h2: `e2b ${fullName}` },
       { p: command.description() },
-      { h2: 'Usage' },
+      { h3: 'Usage' },
       {
         code: {
           language: 'bash',
@@ -34,7 +34,7 @@ export function commands2md(commands: Command[]): void {
       },
       ...(command.options.length > 0
         ? [
-            { h2: 'Options' },
+            { h3: 'Options' },
             {
               ul: command.options.map(
                 (y: any) =>
