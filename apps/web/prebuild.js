@@ -42,6 +42,8 @@ function formatModuleTitle(title) {
 }
 
 function toAnchorLink(title) {
+  // Remove special characters except dashes and spaces
+  title = title.replace(/[^a-zA-Z0-9\- ]/g, '')
   // Add dashes between words for camelCase
   title = title.replace(/([a-z])([A-Z])/g, '$1-$2')
   return '#' + title.toLowerCase().replace(/ /g, '-')
