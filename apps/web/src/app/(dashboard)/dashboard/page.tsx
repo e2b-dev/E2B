@@ -254,7 +254,7 @@ function MainContent({
     case 'sandboxes':
       return <SandboxesContent team={team} />
     case 'templates':
-      return <TemplatesContent user={user} />
+      return <TemplatesContent user={user} teamId={team.id} />
     case 'usage':
       return <UsageContent team={team} />
     case 'billing':
