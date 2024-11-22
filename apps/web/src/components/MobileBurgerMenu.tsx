@@ -1,13 +1,20 @@
 'use client'
 
-import { createContext, Fragment, Suspense, useContext, useEffect, useRef } from 'react'
-import { usePathname, useSearchParams } from 'next/navigation'
 import { Dialog, Transition } from '@headlessui/react'
 import { motion } from 'framer-motion'
+import { usePathname, useSearchParams } from 'next/navigation'
+import {
+  createContext,
+  Fragment,
+  Suspense,
+  useContext,
+  useEffect,
+  useRef,
+} from 'react'
 import { create } from 'zustand'
 
 import { Header } from '@/components/Header'
-import { Navigation } from '@/components/Navigation'
+import { DocsNavigation } from '@/components/Navigation'
 
 function MenuIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -66,17 +73,14 @@ function MobileNavigationDialog({
     if (
       link &&
       link.pathname + link.search + link.hash ===
-      window.location.pathname + window.location.search + window.location.hash
+        window.location.pathname + window.location.search + window.location.hash
     ) {
       close()
     }
   }
 
   return (
-    <Transition.Root
-      show={isOpen}
-      as={Fragment}
-    >
+    <Transition.Root show={isOpen} as={Fragment}>
       <Dialog
         onClickCapture={onClickDialog}
         onClose={close}
@@ -120,7 +124,7 @@ function MobileNavigationDialog({
               layoutScroll
               className="fixed bottom-0 left-0 top-14 w-full overflow-y-auto overflow-x-hidden bg-white px-4 pb-4 pt-6 shadow-lg shadow-zinc-900/10 ring-1 ring-zinc-900/7.5 dark:bg-zinc-900 dark:ring-zinc-800 min-[416px]:max-w-sm sm:px-6 sm:pb-10"
             >
-              <Navigation />
+              <DocsNavigation />
             </motion.div>
           </Transition.Child>
         </Dialog.Panel>
@@ -138,11 +142,11 @@ export const useMobileNavigationStore = create<{
   open: () => void
   close: () => void
   toggle: () => void
-}>()(set => ({
+}>()((set) => ({
   isOpen: false,
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
-  toggle: () => set(state => ({ isOpen: !state.isOpen })),
+  toggle: () => set((state) => ({ isOpen: !state.isOpen })),
 }))
 
 export function MobileBurgerMenu() {
@@ -162,10 +166,7 @@ export function MobileBurgerMenu() {
       </button>
       {!isInsideMobileNavigation && (
         <Suspense fallback={null}>
-          <MobileNavigationDialog
-            isOpen={isOpen}
-            close={close}
-          />
+          <MobileNavigationDialog isOpen={isOpen} close={close} />
         </Suspense>
       )}
     </IsInsideMobileNavigationContext.Provider>

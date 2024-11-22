@@ -1,31 +1,43 @@
 'use client'
 
-import { forwardRef, useEffect } from 'react'
-import Link from 'next/link'
 import clsx from 'clsx'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { forwardRef, useEffect } from 'react'
 
 import { Auth } from '@/components/Auth'
+import { GitHubIcon } from '@/components/icons/GitHubIcon'
+import { Logo } from '@/components/Logo'
 import {
   MobileBurgerMenu,
   useIsInsideMobileNavigation,
   useMobileNavigationStore,
 } from '@/components/MobileBurgerMenu'
-import { Logo } from '@/components/Logo'
 import { useLocalStorage } from 'usehooks-ts'
-import { GitHubIcon } from '@/components/icons/GitHubIcon'
 
 import { config } from '../../config'
 
-function DocumentationTypeLink({ pathname, href, title }: { pathname: string | null, href: string, title: string }) {
+function DocumentationTypeLink({
+  pathname,
+  href,
+  title,
+}: {
+  pathname: string | null
+  href: string
+  title: string
+}) {
   if (!pathname) return null
   return (
     <Link
       className={clsx(
         'hover:text-white hover:cursor-pointer text-sm font-medium px-2 py-1 rounded-md',
-        pathname.startsWith(href) ? 'text-white bg-zinc-800' : 'text-neutral-400'
+        pathname.startsWith(href) &&
+          // XXX: this is a hack to avoid the /docs and /docs/api-reference links being highlighted at the same time
+          !(href === '/docs' && pathname === '/docs/api-reference')
+          ? 'text-white bg-zinc-800'
+          : 'text-neutral-400'
       )}
       href={href}
     >
@@ -54,11 +66,10 @@ export const Header = forwardRef(function Header({ className }, ref) {
   // const isDocs = pathname?.startsWith('/docs')
   const isAuth = pathname?.startsWith('/auth')
 
-
   useEffect(() => {
     fetch(config.github.api)
-      .then(response => response.json())
-      .then(data => setGithubStars(data.stargazers_count))
+      .then((response) => response.json())
+      .then((data) => setGithubStars(data.stargazers_count))
       .catch(() => setGithubStars(null))
   }, [setGithubStars])
 
@@ -69,7 +80,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
       className={clsx(
         className,
         'fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-6',
-        !isInsideMobileNavigation && 'backdrop-blur-sm dark:backdrop-blur',
+        !isInsideMobileNavigation && 'backdrop-blur-sm dark:backdrop-blur'
       )}
       style={
         {
@@ -82,22 +93,31 @@ export const Header = forwardRef(function Header({ className }, ref) {
         className={clsx(
           'absolute inset-x-0 top-full h-px transition',
           (isInsideMobileNavigation || !mobileNavIsOpen) &&
-          'bg-zinc-900/7.5 dark:bg-white/7.5',
+            'bg-zinc-900/7.5 dark:bg-white/7.5'
         )}
       />
 
       {/* Desktop logo */}
       <div className="relative top-1 hidden items-center justify-start lg:flex gap-4">
-        <Link
-          href="/"
-          aria-label="Home"
-        >
+        <Link href="/" aria-label="Home">
           <Logo className="h-6" />
         </Link>
-        <div className='flex items-center gap-1'>
-          <DocumentationTypeLink pathname={pathname} href="/docs" title="Documentation" />
-          {/* <DocumentationTypeLink pathname={pathname} href="/docs/api-reference" title="* Reference" /> */}
-          <DocumentationTypeLink pathname={pathname} href="/dashboard" title="Dashboard" />
+        <div className="flex items-center gap-1">
+          <DocumentationTypeLink
+            pathname={pathname}
+            href="/docs"
+            title="Documentation"
+          />
+          <DocumentationTypeLink
+            pathname={pathname}
+            href="/docs/api-reference"
+            title="API Reference"
+          />
+          <DocumentationTypeLink
+            pathname={pathname}
+            href="/dashboard"
+            title="Dashboard"
+          />
         </div>
       </div>
       {/* {isDocs && <Search />} */}
@@ -105,26 +125,32 @@ export const Header = forwardRef(function Header({ className }, ref) {
       {/* Mobile logo + burger menu */}
       <div className="flex items-center gap-5 lg:hidden">
         <MobileBurgerMenu />
-        <Link
-          href="/"
-          aria-label="Home"
-        >
+        <Link href="/" aria-label="Home">
           <Logo className="h-6" />
         </Link>
-        <div className='flex items-center gap-1'>
-          <DocumentationTypeLink pathname={pathname} href="/docs" title="Documentation" />
-          {/* <DocumentationTypeLink pathname={pathname} href="/docs/api-reference" title="* Reference" /> */}
-          <DocumentationTypeLink pathname={pathname} href="/dashboard" title="Dashboard" />
+        <div className="flex items-center gap-1">
+          <DocumentationTypeLink
+            pathname={pathname}
+            href="/docs"
+            title="Documentation"
+          />
+          <DocumentationTypeLink
+            pathname={pathname}
+            href="/docs/api-reference"
+            title="API Reference"
+          />
+          <DocumentationTypeLink
+            pathname={pathname}
+            href="/dashboard"
+            title="Dashboard"
+          />
         </div>
       </div>
 
-      {!isAuth &&
+      {!isAuth && (
         <div className="flex items-center gap-4">
           <nav className="hidden md:block">
-            <ul
-              role="list"
-              className="flex items-center gap-4"
-            >
+            <ul role="list" className="flex items-center gap-4">
               <TopLevelNavItem
                 href={config.github.url}
                 stat={githubStars}
@@ -145,7 +171,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
             <Auth />
           </div>
         </div>
-      }
+      )}
     </motion.div>
   )
 })

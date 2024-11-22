@@ -1,15 +1,21 @@
 'use client'
 
-import React, { useRef } from 'react'
-import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
+import { usePathname } from 'next/navigation'
+import React, { useRef } from 'react'
 
 import { useIsInsideMobileNavigation } from '@/components/MobileBurgerMenu'
 import { useSectionStore } from '@/components/SectionProvider'
-import { routes, NavGroup, NavSubgroup, NavLink } from './routes'
-import { NavigationSubgroup } from './NavigationSubgroup'
 import { NavigationLink } from './NavigationLink'
+import { NavigationSubgroup } from './NavigationSubgroup'
+import {
+  NavGroup,
+  NavLink,
+  NavSubgroup,
+  apiRefRoutes,
+  docRoutes,
+} from './routes'
 
 function useInitialValue<T>(value: T, condition = true) {
   const initialValue = useRef(value).current
@@ -74,16 +80,33 @@ function NavigationGroup({
   )
 }
 
-export function Navigation(props) {
+export function DocsNavigation(props) {
   return (
     <nav {...props}>
       <ul role="list">
-        {routes.map((group, groupIndex) => (
+        {docRoutes.map((group, groupIndex) => (
           <NavigationGroup
             key={groupIndex}
             group={group}
             className={groupIndex === 0 ? 'md:mt-0' : undefined}
-            isLast={groupIndex === routes.length - 1}
+            isLast={groupIndex === docRoutes.length - 1}
+          />
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+export function ApiRefNavigation(props) {
+  return (
+    <nav {...props}>
+      <ul role="list">
+        {apiRefRoutes.map((group, groupIndex) => (
+          <NavigationGroup
+            key={groupIndex}
+            group={group}
+            className={groupIndex === 0 ? 'md:mt-0' : undefined}
+            isLast={groupIndex === docRoutes.length - 1}
           />
         ))}
       </ul>

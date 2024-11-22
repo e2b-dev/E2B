@@ -1,5 +1,5 @@
 import { Braces, CheckCircle, Home, MessagesSquare } from 'lucide-react'
-import apiRefRoutes from './apiRefRoutes.json'
+import apiRefRoutesJson from './apiRefRoutes.json'
 
 export interface NavLink {
   title: string
@@ -19,7 +19,7 @@ export interface NavGroup {
   items: Array<NavLink | NavSubgroup>
 }
 
-export const routes: NavGroup[] = [
+export const docRoutes: NavGroup[] = [
   {
     items: [
       {
@@ -441,5 +441,6 @@ export const routes: NavGroup[] = [
   //     },
   //   ]
   // },
-  ...apiRefRoutes,
 ]
+
+export const apiRefRoutes: NavGroup[] = apiRefRoutesJson
