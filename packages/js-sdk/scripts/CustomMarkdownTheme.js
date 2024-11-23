@@ -45,8 +45,15 @@ function removeLinesWithConditions(text) {
       i += 3 // Skip this line and the next three
       continue
     }
+
+    if (lines[i].startsWith('##### new')) {
+      // avoid promoting constructors
+      i += 1
+      continue
+    }
+
     // If not removed, add the line to filteredLines
-    filteredLines.push(lines[i])
+    filteredLines.push(convertH5toH3(lines[i]))
   }
 
   // Join the filtered lines back into a single string
