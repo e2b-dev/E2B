@@ -37,11 +37,15 @@ export default async function StreamPage({ params }: { params: { sandboxId: stri
     <Suspense fallback={<div className="h-full w-full flex items-center justify-center">Loading stream...</div>}>
       <div className="h-full w-full">
         <MuxPlayer
+          autoPlay
+          muted
           playbackId={stream.playbackId}
+          themeProps={{ controlBarVertical: true, controlBarPlace: 'start start' }}
           metadata={{
             video_id: `sandbox-${stream.sandboxId}`,
             video_title: 'Desktop Sandbox Stream',
           }}
+          streamType="live"
         />
       </div>
     </Suspense>
