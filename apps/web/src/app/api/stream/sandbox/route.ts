@@ -14,14 +14,7 @@ const mux = new Mux({
 })
 
 export async function POST(request: Request) {
-  // TODO: UseG apiKey
-  // const apiKey = request.headers.get('X-API-Key')
   const { sandboxId } = await request.json()
-  console.log('sandboxId', sandboxId)
-
-  // if (!apiKey) {
-  //   return NextResponse.json({ error: 'Missing X-API-Key' }, { status: 400 })
-  // }
 
   if (!sandboxId) {
     return NextResponse.json({ error: 'Missing sandboxId' }, { status: 400 })

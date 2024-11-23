@@ -37,18 +37,7 @@ declare global {
   }
 }
 
-export default async function RootLayout({ children, params }) {
-  const isSandboxRoute = params?.sandboxId !== undefined
-
-  if (isSandboxRoute) {
-    return (
-      <html lang="en">
-        <head></head>
-        <body>{children}</body>
-      </html>
-    )
-  }
-
+export default async function RootLayout({ children }) {
   const pages = await glob('**/*.mdx', { cwd: 'src/app/(docs)/docs' })
   const allSectionsEntries = (await Promise.all(
     pages.map(async filename => [
