@@ -34,18 +34,16 @@ export default async function StreamPage({ params }: { params: { sandboxId: stri
   }
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <h1>Stream Details</h1>
-      <div>Sandbox ID: {stream.sandboxId}</div>
-      <div>Playback ID: {stream.playbackId}</div>
-
-      <MuxPlayer
-        playbackId={stream.playbackId}
-        metadata={{
-          video_id: `sandbox-${stream.sandboxId}`,
-          video_title: 'Desktop Sandbox Stream',
-        }}
-      />
+    <Suspense fallback={<div className="h-full w-full flex items-center justify-center">Loading stream...</div>}>
+      <div className="h-full w-full">
+        <MuxPlayer
+          playbackId={stream.playbackId}
+          metadata={{
+            video_id: `sandbox-${stream.sandboxId}`,
+            video_title: 'Desktop Sandbox Stream',
+          }}
+        />
+      </div>
     </Suspense>
   )
 }
