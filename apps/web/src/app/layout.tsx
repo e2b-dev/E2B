@@ -13,8 +13,6 @@ import { Section } from '@/components/SectionProvider'
 import { Layout } from '@/components/Layout'
 
 export const metadata: Metadata = {
-  // TODO: Add metadataBase
-  // metadataBase: ''
   title: {
     template: '%s - E2B',
     default: 'E2B - Code Interpreting for AI apps',

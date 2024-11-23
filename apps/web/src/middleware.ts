@@ -5,6 +5,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   if (req.method !== 'GET') return NextResponse.next()
 
   const url = new URL(req.nextUrl.toString())
+  console.log('url', url)
 
   url.protocol = 'https'
   url.port = ''

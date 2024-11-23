@@ -19,6 +19,7 @@
     "@mdx-js/loader": "^2.1.5",
     "@mdx-js/react": "^2.1.5",
     "@mux/mux-node": "^9.0.1",
+    "@mux/mux-player-react": "^3.1.0",
     "@next/mdx": "^14.2.5",
     "@nivo/line": "^0.87.0",
     "@radix-ui/react-alert-dialog": "^1.0.5",
