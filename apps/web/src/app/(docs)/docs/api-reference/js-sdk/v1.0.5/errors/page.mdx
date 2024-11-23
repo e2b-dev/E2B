@@ -4,8 +4,6 @@ Thrown when authentication fails.
 
 #### Constructors
 
-### new AuthenticationError()
-
 ```ts
 new AuthenticationError(message: any): AuthenticationError
 ```
@@ -27,8 +25,6 @@ new AuthenticationError(message: any): AuthenticationError
 Thrown when an invalid argument is provided.
 
 #### Constructors
-
-### new InvalidArgumentError()
 
 ```ts
 new InvalidArgumentError(message: string): InvalidArgumentError
@@ -52,8 +48,6 @@ Thrown when there is not enough disk space.
 
 #### Constructors
 
-### new NotEnoughSpaceError()
-
 ```ts
 new NotEnoughSpaceError(message: string): NotEnoughSpaceError
 ```
@@ -76,8 +70,6 @@ Thrown when a resource is not found.
 
 #### Constructors
 
-### new NotFoundError()
-
 ```ts
 new NotFoundError(message: string): NotFoundError
 ```
@@ -99,8 +91,6 @@ new NotFoundError(message: string): NotFoundError
 Thrown when the API rate limit is exceeded.
 
 #### Constructors
-
-### new RateLimitError()
 
 ```ts
 new RateLimitError(message: any): RateLimitError
@@ -136,8 +126,6 @@ Thrown when general sandbox errors occur.
 
 #### Constructors
 
-### new SandboxError()
-
 ```ts
 new SandboxError(message: any): SandboxError
 ```
@@ -159,8 +147,6 @@ new SandboxError(message: any): SandboxError
 Thrown when the template uses old envd version. It isn't compatible with the new SDK.
 
 #### Constructors
-
-### new TemplateError()
 
 ```ts
 new TemplateError(message: string): TemplateError
@@ -191,8 +177,6 @@ The [deadline_exceeded] error type is caused by exceeding the timeout for comman
 The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
 
 #### Constructors
-
-### new TimeoutError()
 
 ```ts
 new TimeoutError(message: string): TimeoutError
