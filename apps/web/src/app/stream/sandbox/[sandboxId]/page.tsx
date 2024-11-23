@@ -35,7 +35,7 @@ export default async function StreamPage({ params }: { params: { sandboxId: stri
 
   return (
     <Suspense fallback={<div className="h-full w-full flex items-center justify-center">Loading stream...</div>}>
-      <div className="h-full w-full">
+      <div className="flex justify-center">
         <MuxPlayer
           autoPlay
           muted
