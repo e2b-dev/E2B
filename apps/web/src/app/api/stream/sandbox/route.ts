@@ -44,24 +44,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ streamKey: liveStream.stream_key }, { status: 201 })
 }
-
-export async function GET(request: Request) {
-  const url = new URL(request.url)
-  const sandboxId = url.searchParams.get('sandboxId')
-
-  if (!sandboxId) {
-    return NextResponse.json({ error: 'Missing sandboxId' }, { status: 400 })
-  }
-
-  const { data, error } = await supabase
-    .from('sandbox_streams')
-    .select('playback_id')
-    .eq('sandbox_id', sandboxId)
-    .single()
-
-  if (error || !data) {
-    return NextResponse.json({ error: 'Playback ID not found' }, { status: 404 })
-  }
-
-  return NextResponse.json({ playbackId: data.playback_id }, { status: 200 })
-}
