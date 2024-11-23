@@ -237,8 +237,8 @@ export const KeysContent = ({
           {sortedApiKeys.length === 0 ? (
             <TableRow>
               <TableCell colSpan={8} className="text-center">
-                Click on 'Add API Key' button above to create your first API
-                key.
+                Click on &quot;Add API Key&quot; button above to create your
+                first API key.
               </TableCell>
             </TableRow>
           ) : (
