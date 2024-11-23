@@ -42,5 +42,5 @@ export async function POST(request: Request) {
     .from('sandbox_streams')
     .insert([{ sandbox_id: sandboxId, playback_id: liveStream.playback_ids[0].id }])
 
-  return NextResponse.json({ streamKey: liveStream.stream_key, playbackId: liveStream.playback_ids[0].id }, { status: 201 })
+  return NextResponse.json({ streamKey: liveStream.stream_key }, { status: 201 })
 }
