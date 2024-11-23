@@ -1,7 +1,8 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
+// @ts-ignore
 import MuxPlayer from '@mux/mux-player-react'
 
 
@@ -46,7 +47,7 @@ export default function StreamPage() {
   console.log('stream', stream)
 
   return (
-    <div>
+    <Suspense fallback={<div>Loading...</div>}>
       hello
       <h1>Stream Details</h1>
       <div>Sandbox ID: {stream.sandboxId}</div>
@@ -60,6 +61,6 @@ export default function StreamPage() {
           viewer_user_id: 'user-id-007',
         }}
       />
-    </div>
+    </Suspense>
   )
 }
