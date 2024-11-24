@@ -37,13 +37,13 @@ export default async function StreamPage({
   const token = searchParams.token
 
   if (!token) {
-    return <div>Missing token</div>
+    return <div className="h-full w-full flex items-center justify-center">Missing token</div>
   }
 
   const stream = await fetchStream(params.sandboxId, token)
 
   if (!stream) {
-    return <div>Stream not found</div>
+    return <div className="h-full w-full flex items-center justify-center">Sandbox video stream not found</div>
   }
 
   return (
