@@ -121,8 +121,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       e2b:
-        specifier: ^0.16.2
-        version: 0.16.2
+        specifier: ^1.0.5
+        version: 1.0.5
       fast-glob:
         specifier: ^3.3.0
         version: 3.3.1
@@ -3979,12 +3979,12 @@ packages:
   duplexer3@0.1.5:
     resolution: {integrity: sha512-1A8za6ws41LQgv9HrE/66jyC5yuSjQ3L/KOpFtoBilsAK2iA2wuS5rTt1OCzIvtS2V7nVmedsUU+DGRcjBmOYA==}
 
-  e2b@0.16.2:
-    resolution: {integrity: sha512-xKmVK4ipgVQPJ/uyyrfH9LnaawERRWt8U2UZhdhGfzdL/QU/OpBjuhoIbFCv1Uy6qXV4nIiJ6Nw4MBC4HmXf1g==}
-    engines: {node: '>=18'}
-
   e2b@1.0.1:
     resolution: {integrity: sha512-A3T56Dso60AXTJO+V0zUNecYXDQB9jv6nm94DpLuEshjlk2MfbCF99rHgYUbOp9IOmh3EBv0RdEGIY5l4zJZQA==}
+    engines: {node: '>=18'}
+
+  e2b@1.0.5:
+    resolution: {integrity: sha512-0c2xqNQfVcVBmETsd1bXWCYaN3iVl7m81dJVcjB7O2/c15A7t0s/FkydcZGzVvfZchj40/1f09AdjGX6nk1eNQ==}
     engines: {node: '>=18'}
 
   eastasianwidth@0.2.0:
@@ -5077,11 +5077,6 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
-  isomorphic-ws@5.0.0:
-    resolution: {integrity: sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==}
-    peerDependencies:
-      ws: '*'
-
   iterable-lookahead@1.0.0:
     resolution: {integrity: sha512-hJnEP2Xk4+44DDwJqUQGdXal5VbyeWLaPyDl2AQc242Zr7iqz4DgpQOrEzglWVMGHMDCkguLHEKxd1+rOsmgSQ==}
     engines: {node: '>=4'}
@@ -6030,10 +6025,6 @@ packages:
   openapi-fetch@0.9.8:
     resolution: {integrity: sha512-zM6elH0EZStD/gSiNlcPrzXcVQ/pZo3BDvC6CDwRDUt1dDzxlshpmQnpD6cZaJ39THaSmwVCxxRrPKNM1hHrDg==}
 
-  openapi-typescript-fetch@1.1.3:
-    resolution: {integrity: sha512-smLZPck4OkKMNExcw8jMgrMOGgVGx2N/s6DbKL2ftNl77g5HfoGpZGFy79RBzU/EkaO0OZpwBnslfdBfh7ZcWg==}
-    engines: {node: '>= 12.0.0', npm: '>= 7.0.0'}
-
   openapi-typescript-helpers@0.0.8:
     resolution: {integrity: sha512-1eNjQtbfNi5Z/kFhagDIaIRj6qqDzhjNJKz8cmMW0CVdGwT6e1GLbAfgI0d28VTJa1A8jz82jm/4dG8qNoNS8g==}
 
@@ -6165,9 +6156,6 @@ packages:
 
   parse5@6.0.1:
     resolution: {integrity: sha512-Ofn/CTFzRGTTxwpNEs9PP93gXShHcTq255nzRYSKe8AkVpZY7e1fpmTfOyoIvjP5HG7Z2ZM7VS9PPhQGW2pOpw==}
-
-  path-browserify@1.0.1:
-    resolution: {integrity: sha512-b7uo2UCUOYZcnF/3ID0lulOJi/bafxa1xPe7ZPsammBSpjSWQkjNxlt635YGS2MiR9GjvuXCtz2emr3jbsz98g==}
 
   path-exists@4.0.0:
     resolution: {integrity: sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w==}
@@ -7869,18 +7857,6 @@ packages:
 
   write-file-atomic@3.0.3:
     resolution: {integrity: sha512-AvHcyZ5JnSfq3ioSyjrBkH9yW4m7Ayk8/9My/DD9onKeu/94fwrMocemO2QAJFAlnnDN+ZDS+ZjAR5ua1/PV/Q==}
-
-  ws@8.15.1:
-    resolution: {integrity: sha512-W5OZiCjXEmk0yZ66ZN82beM5Sz7l7coYxpRkzS+p9PP+ToQry8szKh+61eNktr7EA9DOwvFGhfC605jDHbP6QQ==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
 
   ws@8.18.0:
     resolution: {integrity: sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw==}
@@ -12120,23 +12096,20 @@ snapshots:
 
   duplexer3@0.1.5: {}
 
-  e2b@0.16.2:
-    dependencies:
-      isomorphic-ws: 5.0.0(ws@8.15.1(bufferutil@4.0.8)(utf-8-validate@6.0.3))
-      normalize-path: 3.0.0
-      openapi-typescript-fetch: 1.1.3
-      path-browserify: 1.0.1
-      platform: 1.3.6
-      ws: 8.15.1(bufferutil@4.0.8)(utf-8-validate@6.0.3)
-    optionalDependencies:
-      bufferutil: 4.0.8
-      utf-8-validate: 6.0.3
-
   e2b@1.0.1:
     dependencies:
       '@bufbuild/protobuf': 1.10.0
       '@connectrpc/connect': 1.6.1(@bufbuild/protobuf@1.10.0)
       '@connectrpc/connect-web': 1.5.0(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))
+      compare-versions: 6.1.1
+      openapi-fetch: 0.9.8
+      platform: 1.3.6
+
+  e2b@1.0.5:
+    dependencies:
+      '@bufbuild/protobuf': 2.2.2
+      '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.2.2)
+      '@connectrpc/connect-web': 2.0.0-rc.3(@bufbuild/protobuf@2.2.2)(@connectrpc/connect@2.0.0-rc.3(@bufbuild/protobuf@2.2.2))
       compare-versions: 6.1.1
       openapi-fetch: 0.9.8
       platform: 1.3.6
@@ -13493,10 +13466,6 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  isomorphic-ws@5.0.0(ws@8.15.1(bufferutil@4.0.8)(utf-8-validate@6.0.3)):
-    dependencies:
-      ws: 8.15.1(bufferutil@4.0.8)(utf-8-validate@6.0.3)
-
   iterable-lookahead@1.0.0: {}
 
   iterator.prototype@1.1.2:
@@ -14812,8 +14781,6 @@ snapshots:
     dependencies:
       openapi-typescript-helpers: 0.0.8
 
-  openapi-typescript-fetch@1.1.3: {}
-
   openapi-typescript-helpers@0.0.8: {}
 
   openapi-typescript@6.7.6:
@@ -14979,8 +14946,6 @@ snapshots:
   parse5@5.1.1: {}
 
   parse5@6.0.1: {}
-
-  path-browserify@1.0.1: {}
 
   path-exists@4.0.0: {}
 
@@ -16858,11 +16823,6 @@ snapshots:
       is-typedarray: 1.0.0
       signal-exit: 3.0.7
       typedarray-to-buffer: 3.1.5
-
-  ws@8.15.1(bufferutil@4.0.8)(utf-8-validate@6.0.3):
-    optionalDependencies:
-      bufferutil: 4.0.8
-      utf-8-validate: 6.0.3
 
   ws@8.18.0(bufferutil@4.0.8)(utf-8-validate@6.0.3):
     optionalDependencies:

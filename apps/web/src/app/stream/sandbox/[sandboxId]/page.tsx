@@ -12,11 +12,12 @@ interface SandboxStream {
   playbackId: string
 }
 
-async function fetchStream(sandboxId: string): Promise<SandboxStream | null> {
+async function fetchStream(sandboxId: string, token: string): Promise<SandboxStream | null> {
   const { data, error } = await supabase
     .from('sandbox_streams')
     .select('playback_id')
     .eq('sandbox_id', sandboxId)
+    .eq('token', token)
     .single()
 
   if (error || !data) {
@@ -26,8 +27,20 @@ async function fetchStream(sandboxId: string): Promise<SandboxStream | null> {
   return { sandboxId, playbackId: data.playback_id }
 }
 
-export default async function StreamPage({ params }: { params: { sandboxId: string } }) {
-  const stream = await fetchStream(params.sandboxId)
+export default async function StreamPage({
+  params,
+  searchParams // Add searchParams to props
+}: {
+  params: { sandboxId: string }
+  searchParams: { token?: string } // Add type for searchParams
+}) {
+  const token = searchParams.token
+
+  if (!token) {
+    return <div>Missing token</div>
+  }
+
+  const stream = await fetchStream(params.sandboxId, token)
 
   if (!stream) {
     return <div>Stream not found</div>
@@ -35,7 +48,7 @@ export default async function StreamPage({ params }: { params: { sandboxId: stri
 
   return (
     <Suspense fallback={<div className="h-full w-full flex items-center justify-center">Loading stream...</div>}>
-      <div className="flex justify-center">
+      <div className="flex justify-center max-h-[768px]">
         <MuxPlayer
           autoPlay
           muted
