@@ -251,9 +251,7 @@ export const KeysContent = ({
                 </TableCell>
                 <TableCell>{apiKey.createdBy?.email}</TableCell>
                 <TableCell>
-                  {new Date(apiKey.createdAt).toLocaleString('en-UK', {
-                    timeZoneName: 'short',
-                  })}
+                  {new Date(apiKey.createdAt).toLocaleString()}
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>

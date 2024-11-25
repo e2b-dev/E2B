@@ -78,14 +78,10 @@ export function SandboxesContent({ team }: { team: Team }) {
                 <TableCell>{sandbox.templateID}</TableCell>
                 <TableCell>{sandbox.alias}</TableCell>
                 <TableCell>
-                  {new Date(sandbox.startedAt).toLocaleString('en-UK', {
-                    timeZoneName: 'short',
-                  })}
+                  {new Date(sandbox.startedAt).toLocaleString()}
                 </TableCell>
                 <TableCell>
-                  {new Date(sandbox.endAt).toLocaleString('en-UK', {
-                    timeZoneName: 'short',
-                  })}
+                  {new Date(sandbox.endAt).toLocaleString()}
                 </TableCell>
                 <TableCell>{sandbox.cpuCount}</TableCell>
                 <TableCell>{sandbox.memoryMB}</TableCell>
