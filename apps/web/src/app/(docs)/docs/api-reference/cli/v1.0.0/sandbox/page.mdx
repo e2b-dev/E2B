@@ -1,84 +1,84 @@
-# e2b sandbox
+## e2b sandbox
 
 
 work with sandboxes
 
-## Usage
+### Usage
 
 ```bash
 e2b sandbox [options] [command]
 ```
-# e2b sandbox connect
+## e2b sandbox connect
 
 
 connect terminal to already running sandbox
 
-## Usage
+### Usage
 
 ```bash
 e2b sandbox connect [options] <sandboxID>
 ```
 
 
-# e2b sandbox list
+## e2b sandbox list
 
 
 list all running sandboxes
 
-## Usage
+### Usage
 
 ```bash
 e2b sandbox list [options]
 ```
 
 
-# e2b sandbox kill
+## e2b sandbox kill
 
 
 kill sandbox
 
-## Usage
+### Usage
 
 ```bash
 e2b sandbox kill [options] [sandboxID]
 ```
 
-## Options
+### Options
 
 
  - `-a, --all: kill all running sandboxes `
 
 
-# e2b sandbox spawn
+## e2b sandbox spawn
 
 
 spawn sandbox and connect terminal to it
 
-## Usage
+### Usage
 
 ```bash
 e2b sandbox spawn [options] [template]
 ```
 
-## Options
+### Options
 
 
  - `-p, --path <path>: change root directory where command is executed to <path> directory `
  - `--config <e2b-toml>: specify path to the E2B config toml. By default E2B tries to find ./e2b.toml in root directory. `
 
 
-# e2b sandbox logs
+## e2b sandbox logs
 
 
 show logs for sandbox
 
-## Usage
+### Usage
 
 ```bash
 e2b sandbox logs [options] <sandboxID>
 ```
 
-## Options
+### Options
 
 
  - `--level <level>: filter logs by level (DEBUG, INFO, WARN, ERROR). The logs with the higher levels will be also shown. [default: INFO]`

@@ -1,25 +1,25 @@
-# e2b template
+## e2b template
 
 
 manage sandbox templates
 
-## Usage
+### Usage
 
 ```bash
 e2b template [options] [command]
 ```
-# e2b template build
+## e2b template build
 
 
 build sandbox template defined by ./e2b.Dockerfile or ./Dockerfile in root directory. By default the root directory is the current working directory. This command also creates e2b.toml config.
 
-## Usage
+### Usage
 
 ```bash
 e2b template build [options] [template]
 ```
 
-## Options
+### Options
 
 
  - `-p, --path <path>: change root directory where command is executed to <path> directory `
@@ -33,52 +33,52 @@ e2b template build [options] [template]
  - `--build-arg <args...>: specify additional build arguments for the build command. The format should be <varname>=<value>. `
 
 
-# e2b template list
+## e2b template list
 
 
 list sandbox templates
 
-## Usage
+### Usage
 
 ```bash
 e2b template list [options]
 ```
 
-## Options
+### Options
 
 
  - `-t, --team <team-id>: specify the team ID that the operation will be associated with. You can find team ID in the team settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team). `
 
 
-# e2b template init
+## e2b template init
 
 
 create basic E2B Dockerfile (./e2b.Dockerfile) in root directory. You can then run e2b template build to build sandbox template from this Dockerfile
 
-## Usage
+### Usage
 
 ```bash
 e2b template init [options]
 ```
 
-## Options
+### Options
 
 
  - `-p, --path <path>: change root directory where command is executed to <path> directory `
 
 
-# e2b template delete
+## e2b template delete
 
 
 delete sandbox template and e2b.toml config
 
-## Usage
+### Usage
 
 ```bash
 e2b template delete [options] [template]
 ```
 
-## Options
+### Options
 
 
  - `-p, --path <path>: change root directory where command is executed to <path> directory `
