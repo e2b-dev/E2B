@@ -19,6 +19,12 @@ export interface NavGroup {
   items: Array<NavLink | NavSubgroup>
 }
 
+export interface VersionedNavGroup {
+  title?: string
+  icon?: React.ReactNode
+  versionedItems: { [key: string]: NavSubgroup[] }
+}
+
 export const docRoutes: NavGroup[] = [
   {
     items: [
@@ -443,4 +449,5 @@ export const docRoutes: NavGroup[] = [
   // },
 ]
 
-export const apiRefRoutes: NavGroup[] = apiRefRoutesJson
+export const apiRefRoutes: VersionedNavGroup[] =
+  apiRefRoutesJson as VersionedNavGroup[]

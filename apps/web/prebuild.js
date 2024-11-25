@@ -100,9 +100,7 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
 
       if (entry.isDirectory()) {
         let route = {
-          title:
-            (depth === 1 ? entry.name.toLocaleUpperCase() : entry.name) +
-            ' Reference',
+          title: depth === 1 ? entry.name.toLocaleUpperCase() : entry.name,
         }
         const entryName = entry.name
         const childPath = path.join(dir, entry.name)
