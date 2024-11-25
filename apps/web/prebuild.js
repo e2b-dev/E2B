@@ -29,7 +29,7 @@ function buildDirectoryHierarchy(dirPath) {
   return Object.keys(result).length === 0 ? null : result
 }
 
-const filesCreated = new Set()
+//const filesCreated = new Set()
 
 function formatModuleTitle(title) {
   // Replace underscore with space for _async and remove sync from name of python-sdk modules
@@ -92,7 +92,7 @@ function getSubModules(pkg, href, dirPath) {
 
 function buildRoutes(dirName, dir, basePath = '', depth = 1) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
-  const parentDirName = path.basename(path.dirname(dir))
+  // const parentDirName = path.basename(path.dirname(dir))
 
   return entries
     .map((entry) => {
@@ -108,92 +108,97 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
         const childPath = path.join(dir, entry.name)
         const links = buildRoutes(entryName, childPath, relativePath, depth + 1)
 
-        if (links.length > 0) {
-          route.href = '/docs/api-reference/' + relativePath
-          // SDK level
+        if (links && links.length > 0) {
           if (depth === 1) {
-            const latestVersion = Object.keys(hierarchy[entryName]).reverse()[0]
-            const latestModules = Object.keys(
-              hierarchy[entryName][latestVersion]
-            )
+            const versions = Object.keys(hierarchy[entryName]).reverse()
+            const versionedItems = {}
+            console.log('entryName', entryName)
+            console.log('versions', versions)
+            for (const version of versions) {
+              const modules = Object.keys(hierarchy[entryName][version])
+              console.log('modules', modules)
 
-            route.items = latestModules.map((module) => ({
-              title: formatModuleTitle(module),
-              href: `/docs/api-reference/${entryName}/${latestVersion}/${module}`,
-              links: getSubModules(
-                entryName,
-                `/docs/api-reference/${entryName}/${latestVersion}/${module}`,
-                path.join(
-                  __dirname,
-                  `./src/app/(docs)/docs/api-reference/${entryName}/${latestVersion}/${module}`
-                )
-              ),
-            }))
-          }
-
-          if (depth === 2) {
-            const mdxFilePath = path.join(dir, 'page.mdx')
-            if (filesCreated.has(mdxFilePath)) return route
-
-            // Generate SDK version TOC markdown file
-            const latestVersion = Object.keys(hierarchy[dirName]).reverse()[0]
-            let mdxContent = `# ${dirName}\n\n## ${entryName}\n\n${links
-              .map(
-                (link) =>
-                  `- [${
-                    link.title.charAt(0).toUpperCase() +
-                    link.title.slice(1).toLowerCase()
-                  }](./${dirName}/${latestVersion}/${link.title})`
-              )
-              .join('\n')}`
-
-            if (
-              hierarchy[dirName] &&
-              Object.keys(hierarchy[dirName]).length > 1
-            ) {
-              const versions = Object.keys(hierarchy[dirName]).reverse()
-              const versionLinks = `<div className="versions-dropdown">
-                ${versions[0]} ▼
-                <div className="dropdown-content">
-                ${versions
-                  .slice(1)
-                  .map(
-                    (version) =>
-                      `<a href="/docs/api-reference/${dirName}/${version}" className="version-link">${version}</a>`
-                  )
-                  .join('\n  ')}
-                </div>
-                </div>`
-
-              mdxContent = `${versionLinks}\n\n\n${mdxContent}`
+              versionedItems[version] = modules.map((module) => {
+                return {
+                  title: formatModuleTitle(module),
+                  href: `/docs/api-reference/${entryName}/${version}/${module}`,
+                  links: getSubModules(
+                    entryName,
+                    `/docs/api-reference/${entryName}/${version}/${module}`,
+                    path.join(
+                      __dirname,
+                      `./src/app/(docs)/docs/api-reference/${entryName}/${version}/${module}`
+                    )
+                  ),
+                }
+              })
             }
-
-            console.log('Generated TOC file:', mdxFilePath)
-            fs.writeFileSync(mdxFilePath, mdxContent)
-            filesCreated.add(mdxFilePath)
+            route.versionedItems = versionedItems
           }
+
+          //if (depth === 2) {
+          //  const mdxFilePath = path.join(dir, 'page.mdx')
+          //  if (filesCreated.has(mdxFilePath)) return route
+
+          //  // Generate SDK version TOC markdown file
+          //  const latestVersion = Object.keys(hierarchy[dirName]).reverse()[0]
+          //  let mdxContent = `# ${dirName}\n\n## ${entryName}\n\n${links
+          //    .map(
+          //      (link) =>
+          //        `- [${
+          //          link.title.charAt(0).toUpperCase() +
+          //          link.title.slice(1).toLowerCase()
+          //        }](./${dirName}/${latestVersion}/${link.title})`
+          //    )
+          //    .join('\n')}`
+
+          //  if (
+          //    hierarchy[dirName] &&
+          //    Object.keys(hierarchy[dirName]).length > 1
+          //  ) {
+          //    const versions = Object.keys(hierarchy[dirName]).reverse()
+          //    const versionLinks = `<div className="versions-dropdown">
+          //      ${versions[0]} ▼
+          //      <div className="dropdown-content">
+          //      ${versions
+          //        .slice(1)
+          //        .map(
+          //          (version) =>
+          //            `<a href="/docs/api-reference/${dirName}/${version}" className="version-link">${version}</a>`
+          //        )
+          //        .join('\n  ')}
+          //      </div>
+          //      </div>`
+
+          //    mdxContent = `${versionLinks}\n\n\n${mdxContent}`
+          //  }
+
+          //  console.log('Generated TOC file:', mdxFilePath)
+          //  fs.writeFileSync(mdxFilePath, mdxContent)
+          //  filesCreated.add(mdxFilePath)
+          //}
         }
 
         // Version level
-        if (depth === 3) {
-          const mdxFilePath = path.join(dir, 'page.mdx')
-          if (filesCreated.has(mdxFilePath)) return route
+        // if (depth === 3) {
+        //   const mdxFilePath = path.join(dir, 'page.mdx')
+        //   if (filesCreated.has(mdxFilePath)) return route
 
-          // Generate modules TOC markdown file
-          const modules = Object.keys(hierarchy[parentDirName][dirName])
-          let mdxContent = `# ${parentDirName.toLocaleUpperCase()} ${dirName}\n\n${modules
-            .map(
-              (module) =>
-                `- [${
-                  module.charAt(0).toUpperCase() + module.slice(1).toLowerCase()
-                }](./${dirName}/${module})`
-            )
-            .join('\n')}`
+        //   // Generate modules TOC markdown file
+        //   const modules = Object.keys(hierarchy[parentDirName][dirName])
+        //   let mdxContent = `# ${parentDirName.toLocaleUpperCase()} ${dirName}\n\n${modules
+        //     .map(
+        //       (module) =>
+        //         `- [${
+        //           module.charAt(0).toUpperCase() + module.slice(1).toLowerCase()
+        //         }](./${dirName}/${module})`
+        //     )
+        //     .join('\n')}`
 
-          console.log('Generated TOC file:', mdxFilePath)
-          fs.writeFileSync(mdxFilePath, mdxContent)
-          filesCreated.add(mdxFilePath)
-        }
+        //   console.log('Generated TOC file:', mdxFilePath)
+        //   fs.writeFileSync(mdxFilePath, mdxContent)
+        //   filesCreated.add(mdxFilePath)
+        // }
 
         return route
       }
@@ -221,7 +226,5 @@ fs.writeFileSync(
   JSON.stringify(apiRefRoutes, null, 2)
 )
 
-console.log(
-  '\n\nAPI reference TOCs and routes file generated successfully:\n\n'
-)
+console.log('\n\nAPI reference routes generated successfully:\n\n')
 console.log('routes', JSON.stringify(apiRefRoutes, null, 2), '\n\n')
