@@ -217,14 +217,25 @@ export class Sandbox extends SandboxApi {
     return sbx
   }
 
+  /**
+   * Resume the sandbox.
+   * 
+   * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
+   * If you pass a custom timeout in the `opts` parametervia {@link SandboxOpts.timeoutMs} property, it will be used instead.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox instance.
+   */
   static async resume<S extends typeof Sandbox>(
     this: S,
     sandboxId: string,
     opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'timeoutMs'>
   ): Promise<InstanceType<S>> {
-    const id = await Sandbox.resumeSandbox(sandboxId, opts?.timeoutMs ?? this.defaultSandboxTimeoutMs, opts)
+    await Sandbox.resumeSandbox(sandboxId, opts?.timeoutMs ?? this.defaultSandboxTimeoutMs, opts)
 
-    return this.connect(id, opts)
+    return await this.connect(sandboxId, opts)
   }
 
   /**
@@ -326,16 +337,33 @@ export class Sandbox extends SandboxApi {
     await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
   }
 
-  async pause(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>): Promise<string> {
+  /**
+   * Pause the sandbox.
+   *
+   * @param opts connection options.
+   *
+   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   */
+  async pause(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>): Promise<boolean> {
     if (this.connectionConfig.debug) {
       // Skip pausing in debug mode
-      return this.sandboxId
+      return true
     }
 
     return await Sandbox.pause(this.sandboxId, { ...this.connectionConfig, ...opts })
   }
 
-  async resume(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+  /**
+   * Resume the sandbox.
+   * 
+   * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
+   * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
+   *
+   * @param opts connection options.
+   *
+   * @returns sandbox instance.
+   */
+  async resume(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>): Promise<this> {
     await Sandbox.resume(this.sandboxId, { ...this.connectionConfig, ...opts })
 
     return this

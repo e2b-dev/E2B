@@ -1,7 +1,7 @@
 import { ApiClient, components, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { NotFoundError, SandboxError, TemplateError } from '../errors'
+import { NotFoundError, TemplateError } from '../errors'
 
 /**
  * Options for request to the Sandbox API.
@@ -80,10 +80,18 @@ export class SandboxApi {
     return true
   }
 
+  /**
+   * Pause the sandbox specified by sandbox ID.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   */
   static async pause(
     sandboxId: string,
     opts?: SandboxApiOpts
-  ): Promise<string> {
+  ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -102,7 +110,7 @@ export class SandboxApi {
 
     if (res.error?.code === 409) {
       // Sandbox is already paused
-      throw new SandboxError(`Sandbox ${sandboxId} is already paused`)
+      return false
     }
 
     const err = handleApiError(res)
@@ -110,7 +118,7 @@ export class SandboxApi {
       throw err
     }
 
-    return sandboxId
+    return true
   }
 
   /**
@@ -189,7 +197,7 @@ export class SandboxApi {
     sandboxId: string,
     timeoutMs: number,
     opts?: SandboxApiOpts
-  ): Promise<string> {
+  ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -202,6 +210,7 @@ export class SandboxApi {
       body: {
         timeout: this.timeoutToSeconds(timeoutMs),
       },
+      signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
     if (res.error?.code === 404) {
@@ -210,7 +219,7 @@ export class SandboxApi {
 
     if (res.error?.code === 409) {
       // Sandbox is not paused
-      throw new SandboxError(`Sandbox ${sandboxId} is not paused`)
+      return false
     }
 
     const err = handleApiError(res)
@@ -218,10 +227,7 @@ export class SandboxApi {
       throw err
     }
 
-    return this.getSandboxId({
-      sandboxId: res.data!.sandboxID,
-      clientId: res.data!.clientID,
-    })
+    return true
   }
 
   protected static async createSandbox(
