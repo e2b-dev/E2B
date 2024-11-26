@@ -14,8 +14,8 @@ import {
   NavLink,
   NavSubgroup,
   VersionedNavGroup,
-  apiRefRoutes,
   docRoutes,
+  sdkRefRoutes,
 } from './routes'
 
 function useInitialValue<T>(value: T, condition = true) {
@@ -92,7 +92,7 @@ function VersionedNavigationGroup({
 }) {
   const router = useRouter()
 
-  // Manage the state of the current version of the API reference
+  // Manage the state of the current version of the SDK reference
   const versions = Object.keys(group.versionedItems)
   const [curVersion, setCurVersion] = useState(versions[0])
 
@@ -124,7 +124,7 @@ function VersionedNavigationGroup({
           onChange={(e) => {
             setCurVersion(e.target.value)
 
-            if (pathname !== '/docs/api-reference') {
+            if (pathname !== '/docs/sdk-reference') {
               const pathParts = pathname.split('/')
               pathParts[pathParts.length - 2] = e.target.value
               router.push(pathParts.join('/'))
@@ -181,11 +181,11 @@ export function DocsNavigation(props) {
   )
 }
 
-export function ApiRefNavigation(props) {
+export function SdkRefNavigation(props) {
   return (
     <nav {...props}>
       <ul role="list">
-        {apiRefRoutes.map((group, groupIndex) => (
+        {sdkRefRoutes.map((group, groupIndex) => (
           <VersionedNavigationGroup
             key={groupIndex}
             group={group}

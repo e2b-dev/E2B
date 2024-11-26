@@ -1,4 +1,4 @@
-name: Generate SDK API references
+name: Generate SDK references
 
 on:
   workflow_dispatch:
@@ -13,11 +13,11 @@ permissions:
   contents: write
 
 jobs:
-  is_new_api_ref:
-    name: Is new API reference?
+  is_new_sdk_ref:
+    name: Is new SDK reference?
     runs-on: ubuntu-latest
     outputs:
-      new_api_ref: ${{ steps.sdk-changes.outputs.new_api_ref }}
+      new_sdk_ref: ${{ steps.sdk-changes.outputs.new_sdk_ref }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -27,12 +27,12 @@ jobs:
       - name: Check if SDK changes
         id: sdk-changes
         run: |
-          IS_NEW_API_REF=$(./.github/scripts/is_new_api_ref.sh)
-          echo "new_api_ref=$IS_NEW_API_REF" >> "$GITHUB_OUTPUT"
+          IS_NEW_sdk_REF=$(./.github/scripts/is_new_sdk_ref.sh)
+          echo "new_sdk_ref=$IS_NEW_sdk_REF" >> "$GITHUB_OUTPUT"
 
   sdk-changes:
     name: SDK changes
-    needs: [is_new_api_ref]
+    needs: [is_new_sdk_ref]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -81,43 +81,41 @@ jobs:
         working-directory: ./packages/python-sdk
         run: poetry install --no-interaction --no-root
 
-      - name: Generate Python SDK API reference
-        id: python-sdk-api-ref
+      - name: Generate Python SDK reference
+        id: python-sdk-ref
         working-directory: ./packages/python-sdk
         run: |
           source .venv/bin/activate
-          ./scripts/generate_api_ref.sh
+          ./scripts/generate_sdk_ref.sh
 
-      - name: Generate JS SDK API reference
-        id: js-sdk-api-ref
+      - name: Generate JS SDK reference
+        id: js-sdk-ref
         working-directory: packages/js-sdk
-        run: ./scripts/generate_api_ref.sh
+        run: ./scripts/generate_sdk_ref.sh
 
-      - name: Generate CLI API reference
-        id: cli-api-ref
+      - name: Generate CLI reference
+        id: cli-sdk-ref
         working-directory: packages/cli
-        run: ./scripts/generate_api_ref.sh
+        run: ./scripts/generate_sdk_ref.sh
 
-      - name: Clone code-interpreter API reference
+      - name: Clone code-interpreter reference
         run: |
           git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/code-interpreter -b generate-api-reference-for-code-interpreter-sdk-e2b-1235
           cd code-interpreter
-          git sparse-checkout set api-reference
-          cp -r api-reference/* ../apps/web/src/app/\(docs\)/docs/api-reference/
+          git sparse-checkout set sdk-reference
+          cp -r sdk-reference/* ../apps/web/src/app/\(docs\)/docs/sdk-reference/
           cd ..
           rm -rf code-interpreter
 
       - name: Show docs file structure
-        run: tree apps/web/src/app/\(docs\)/docs/api-reference
+        run: tree apps/web/src/app/\(docs\)/docs/sdk-reference
 
-      - name: Commit new SDK API reference versions
+      - name: Commit new SDK reference versions
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |  
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          tree apps/web/src/app/\(docs\)/docs/api-reference
-          git status
-          git add apps/web/src/app/\(docs\)/docs/api-reference
-          git commit -m "[skip ci] Release new SDK API reference doc versions" || exit 0
+          git add apps/web/src/app/\(docs\)/docs/sdk-reference
+          git commit -m "[skip ci] Release new SDK reference doc versions" || exit 0
           git push

@@ -1,5 +1,5 @@
 import { Braces, CheckCircle, Home, MessagesSquare } from 'lucide-react'
-import apiRefRoutesJson from './apiRefRoutes.json'
+import sdkRefRoutesJson from './sdkRefRoutes.json'
 
 export interface NavLink {
   title: string
@@ -449,5 +449,11 @@ export const docRoutes: NavGroup[] = [
   // },
 ]
 
-export const apiRefRoutes: VersionedNavGroup[] =
-  apiRefRoutesJson as VersionedNavGroup[]
+export const sdkRefRoutes: VersionedNavGroup[] = (
+  sdkRefRoutesJson as VersionedNavGroup[]
+).sort((a, b) => {
+  const order = { CLI: 1, 'JS-SDK': 2, 'PYTHON-SDK': 3 }
+  const aOrder = order[a.title || ''] || 999
+  const bOrder = order[b.title || ''] || 999
+  return aOrder - bOrder
+})

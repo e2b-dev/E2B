@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 
-const ApiRefRoutesFilePath = './src/components/Navigation/apiRefRoutes.json'
+const sdkRefRoutesFilePath = './src/components/Navigation/sdkRefRoutes.json'
 
 // Current directory hierarchy:
 //
@@ -42,6 +42,10 @@ function formatModuleTitle(title) {
 }
 
 function toAnchorLink(title) {
+  // Replace underscores with dashes
+  title = title.replace(/_/g, '-')
+  // Trim dashes from start and end
+  title = title.replace(/^-+|-+$/g, '')
   // Remove special characters except dashes and spaces
   title = title.replace(/[^a-zA-Z0-9\- ]/g, '')
   // Add dashes between words for camelCase
@@ -62,9 +66,11 @@ function getSubModules(pkg, href, dirPath) {
     const subModules = []
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
-      if (pkg === 'js-sdk') {
+      if (pkg === 'js-sdk' || pkg === 'code-interpreter-js-sdk') {
         if (line.startsWith('### ')) {
-          const title = line.slice(3).trim()
+          let title = line.slice(3).trim()
+          // Remove backslashes from title
+          title = title.replace(/\\/g, '')
           if (title) {
             subModules.push({
               title: title,
@@ -72,7 +78,11 @@ function getSubModules(pkg, href, dirPath) {
             })
           }
         }
-      } else if (pkg === 'python-sdk' || pkg === 'cli') {
+      } else if (
+        pkg === 'python-sdk' ||
+        pkg === 'cli' ||
+        pkg === 'code-interpreter-python-sdk'
+      ) {
         if (line.startsWith('## ')) {
           const title = line.slice(2).trim()
           if (title) {
@@ -119,13 +129,13 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
               versionedItems[version] = modules.map((module) => {
                 return {
                   title: formatModuleTitle(module),
-                  href: `/docs/api-reference/${entryName}/${version}/${module}`,
+                  href: `/docs/sdk-reference/${entryName}/${version}/${module}`,
                   links: getSubModules(
                     entryName,
-                    `/docs/api-reference/${entryName}/${version}/${module}`,
+                    `/docs/sdk-reference/${entryName}/${version}/${module}`,
                     path.join(
                       __dirname,
-                      `./src/app/(docs)/docs/api-reference/${entryName}/${version}/${module}`
+                      `./src/app/(docs)/docs/sdk-reference/${entryName}/${version}/${module}`
                     )
                   ),
                 }
@@ -162,7 +172,7 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
           //        .slice(1)
           //        .map(
           //          (version) =>
-          //            `<a href="/docs/api-reference/${dirName}/${version}" className="version-link">${version}</a>`
+          //            `<a href="/docs/sdk-reference/${dirName}/${version}" className="version-link">${version}</a>`
           //        )
           //        .join('\n  ')}
           //      </div>
@@ -204,25 +214,25 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
     .filter(Boolean)
 }
 
-function generateApiRefRoutes() {
-  const apiRefPath = path.join(__dirname, './src/app/(docs)/docs/api-reference')
+function generatesdkRefRoutes() {
+  const sdkRefPath = path.join(__dirname, './src/app/(docs)/docs/sdk-reference')
 
-  if (!fs.existsSync(apiRefPath)) {
+  if (!fs.existsSync(sdkRefPath)) {
     return []
   }
 
-  hierarchy = buildDirectoryHierarchy(apiRefPath)
+  hierarchy = buildDirectoryHierarchy(sdkRefPath)
 
-  const routes = buildRoutes('api-reference', apiRefPath)
+  const routes = buildRoutes('sdk-reference', sdkRefPath)
   return routes
 }
 
-const apiRefRoutes = generateApiRefRoutes()
+const sdkRefRoutes = generatesdkRefRoutes()
 
 fs.writeFileSync(
-  path.join(__dirname, ApiRefRoutesFilePath),
-  JSON.stringify(apiRefRoutes, null, 2)
+  path.join(__dirname, sdkRefRoutesFilePath),
+  JSON.stringify(sdkRefRoutes, null, 2)
 )
 
-console.log('\n\nAPI reference routes generated successfully:\n\n')
-console.log('routes', JSON.stringify(apiRefRoutes, null, 2), '\n\n')
+console.log('\n\nSDK reference routes generated successfully:\n\n')
+console.log('routes', JSON.stringify(sdkRefRoutes, null, 2), '\n\n')

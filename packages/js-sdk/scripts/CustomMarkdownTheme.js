@@ -13,7 +13,7 @@ function load(app) {
   })
 }
 
-// this is a hacky way to make methods in the js-sdk api reference look more prominent
+// this is a hacky way to make methods in the js-sdk reference look more prominent
 function convertH5toH3(text) {
   return text.replace(/^##### (.*)$/gm, '### $1')
 }

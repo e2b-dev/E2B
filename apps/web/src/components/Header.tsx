@@ -34,8 +34,8 @@ function DocumentationTypeLink({
       className={clsx(
         'hover:text-white hover:cursor-pointer text-sm font-medium px-2 py-1 rounded-md',
         pathname.startsWith(href) &&
-          // XXX: this is a hack to avoid the /docs and /docs/api-reference links being highlighted at the same time
-          !(href === '/docs' && pathname.startsWith('/docs/api-reference'))
+          // XXX: this is a hack to avoid the /docs and /docs/sdk-reference links being highlighted at the same time
+          !(href === '/docs' && pathname.startsWith('/docs/sdk-reference'))
           ? 'text-white bg-zinc-800'
           : 'text-neutral-400'
       )}
@@ -110,8 +110,8 @@ export const Header = forwardRef(function Header({ className }, ref) {
           />
           <DocumentationTypeLink
             pathname={pathname}
-            href="/docs/api-reference"
-            title="API Reference"
+            href="/docs/sdk-reference"
+            title="SDK Reference"
           />
           <DocumentationTypeLink
             pathname={pathname}
@@ -136,8 +136,8 @@ export const Header = forwardRef(function Header({ className }, ref) {
           />
           <DocumentationTypeLink
             pathname={pathname}
-            href="/docs/api-reference"
-            title="API Reference"
+            href="/docs/sdk-reference"
+            title="SDK Reference"
           />
           <DocumentationTypeLink
             pathname={pathname}
