@@ -1,4 +1,4 @@
-name: Test JS SDK
+name: Publish Packages
 
 on:
   workflow_call:

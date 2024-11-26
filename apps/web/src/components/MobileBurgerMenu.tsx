@@ -14,7 +14,7 @@ import {
 import { create } from 'zustand'
 
 import { Header } from '@/components/Header'
-import { DocsNavigation } from '@/components/Navigation'
+import { DocsNavigation, SdkRefNavigation } from '@/components/Navigation'
 
 function MenuIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -57,6 +57,7 @@ function MobileNavigationDialog({
   const searchParams = useSearchParams()
   const initialPathname = useRef(pathname).current
   const initialSearchParams = useRef(searchParams).current
+  const isApiRef = pathname?.startsWith('/docs/sdk-reference')
 
   useEffect(() => {
     if (pathname !== initialPathname || searchParams !== initialSearchParams) {
@@ -124,7 +125,7 @@ function MobileNavigationDialog({
               layoutScroll
               className="fixed bottom-0 left-0 top-14 w-full overflow-y-auto overflow-x-hidden bg-white px-4 pb-4 pt-6 shadow-lg shadow-zinc-900/10 ring-1 ring-zinc-900/7.5 dark:bg-zinc-900 dark:ring-zinc-800 min-[416px]:max-w-sm sm:px-6 sm:pb-10"
             >
-              <DocsNavigation />
+              {isApiRef ? <SdkRefNavigation /> : <DocsNavigation />}
             </motion.div>
           </Transition.Child>
         </Dialog.Panel>
