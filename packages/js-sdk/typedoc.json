@@ -1,5 +1,5 @@
 {
-  "out": "api_ref",
+  "out": "sdk_ref",
   "plugin": ["typedoc-plugin-markdown", "./scripts/CustomMarkdownTheme.js"],
   "exclude": ["**/*.spec.ts"],
   "entryPoints": [
