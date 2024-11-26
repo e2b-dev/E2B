@@ -10,7 +10,7 @@ import path from 'path'
  * @returns A string containing the entire markdown documentation for all commands.
  */
 export function commands2md(commands: Command[]): void {
-  const outputDir = 'api_ref'
+  const outputDir = 'sdk_ref'
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true })
   }
