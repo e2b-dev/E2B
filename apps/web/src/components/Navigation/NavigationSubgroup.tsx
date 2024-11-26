@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react'
-import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-import { NavSubgroup } from './routes'
 import { NavigationLink } from './NavigationLink'
+import { NavSubgroup } from './routes'
 
 export function NavigationSubgroup({ subgroup }: { subgroup: NavSubgroup }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const pathname = usePathname()
 
-  const isActive = subgroup.links.some(link => link.href === pathname)
+  console.log('subgroup', subgroup)
+  const isActive = subgroup.links.some((link) => link.href === pathname)
 
   // Automatically expand the subgroup if it's active
   useEffect(() => {
@@ -36,7 +37,9 @@ export function NavigationSubgroup({ subgroup }: { subgroup: NavSubgroup }) {
       >
         <div className="flex items-center justify-start gap-1">
           {subgroup.icon}
-          <h3 className="text-sm font-medium group-hover:text-white">{subgroup.title}</h3>
+          <h3 className="text-sm font-medium group-hover:text-white">
+            {subgroup.title}
+          </h3>
         </div>
         {isExpanded ? (
           <ChevronDown className="w-4 h-4 ml-2 text-zinc-400 group-hover:text-white" />

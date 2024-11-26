@@ -22,7 +22,7 @@ export interface NavGroup {
 export interface VersionedNavGroup {
   title?: string
   icon?: React.ReactNode
-  versionedItems: { [key: string]: NavSubgroup[] }
+  versionedItems: { [key: string]: Array<NavLink | NavSubgroup> }
 }
 
 export const docRoutes: NavGroup[] = [

@@ -143,7 +143,14 @@ function VersionedNavigationGroup({
           <>
             {group.versionedItems[curVersion]?.map((item) => (
               <React.Fragment key={item.title}>
-                <NavigationSubgroup subgroup={item as NavSubgroup} />
+                {(item as any).links ? (
+                  <NavigationSubgroup subgroup={item as NavSubgroup} />
+                ) : (
+                  <NavigationLink
+                    link={item as NavLink}
+                    className="font-medium"
+                  />
+                )}
               </React.Fragment>
             ))}
           </>
