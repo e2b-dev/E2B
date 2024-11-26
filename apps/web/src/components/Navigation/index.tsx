@@ -91,6 +91,11 @@ function VersionedNavigationGroup({
   isLast?: boolean
 }) {
   const router = useRouter()
+
+  // Manage the state of the current version of the API reference
+  const versions = Object.keys(group.versionedItems)
+  const [curVersion, setCurVersion] = useState(versions[0])
+
   // If this is the mobile navigation then we always render the initial
   // state, so that the state does not change during the close animation.
   // The state will still update when we re-open (re-render) the navigation.
@@ -103,9 +108,6 @@ function VersionedNavigationGroup({
   if (!pathname) {
     return null
   }
-
-  const versions = Object.keys(group.versionedItems)
-  const [curVersion, setCurVersion] = useState(versions[0])
 
   return (
     <li className={clsx('relative', className)}>
