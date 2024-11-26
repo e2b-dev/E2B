@@ -98,9 +98,6 @@ jobs:
         working-directory: packages/cli
         run: ./scripts/generate_api_ref.sh
 
-      - name: Show docs file structure
-        run: tree apps/web/src/app/\(docs\)/docs/api-reference
-
       - name: Clone code-interpreter API reference
         run: |
           git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/code-interpreter -b generate-api-reference-for-code-interpreter-sdk-e2b-1235
@@ -109,6 +106,9 @@ jobs:
           cp -r api-reference/* ../apps/web/src/app/\(docs\)/docs/api-reference/
           cd ..
           rm -rf code-interpreter
+
+      - name: Show docs file structure
+        run: tree apps/web/src/app/\(docs\)/docs/api-reference
 
       - name: Commit new SDK API reference versions
         env:
