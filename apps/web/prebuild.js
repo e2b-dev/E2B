@@ -81,7 +81,7 @@ function getSubModules(pkg, href, dirPath) {
           let title = line.slice(3).trim()
           // Remove backslashes from title
           title = title.replace(/\\/g, '')
-          if (title) {
+          if (title && !title.startsWith('_')) {
             subModules.push({
               title: title,
               href: href + toAnchorLink(title),
