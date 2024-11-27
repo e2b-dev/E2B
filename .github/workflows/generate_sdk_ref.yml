@@ -98,7 +98,7 @@ jobs:
         working-directory: packages/cli
         run: ./scripts/generate_sdk_ref.sh
 
-      - name: Clone code-interpreter reference
+      - name: Clone Code Interpreter reference
         run: |
           git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/code-interpreter -b generate-api-reference-for-code-interpreter-sdk-e2b-1235
           cd code-interpreter
@@ -106,6 +106,15 @@ jobs:
           cp -r sdk-reference/* ../apps/web/src/app/\(docs\)/docs/sdk-reference/
           cd ..
           rm -rf code-interpreter
+
+      - name: Clone Desktop reference
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/desktop -b generate-api-reference-for-desktop-sdk-e2b-1236
+          cd desktop
+          git sparse-checkout set sdk-reference
+          cp -r sdk-reference/* ../apps/web/src/app/\(docs\)/docs/sdk-reference/
+          cd ..
+          rm -rf desktop
 
       - name: Show docs file structure
         run: tree apps/web/src/app/\(docs\)/docs/sdk-reference
