@@ -120,12 +120,8 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
           if (depth === 1) {
             const versions = Object.keys(hierarchy[entryName]).reverse()
             const versionedItems = {}
-            console.log('entryName', entryName)
-            console.log('versions', versions)
             for (const version of versions) {
               const modules = Object.keys(hierarchy[entryName][version])
-              console.log('modules', modules)
-
               versionedItems[version] = modules.map((module) => {
                 return {
                   title: formatModuleTitle(module),
@@ -234,5 +230,4 @@ fs.writeFileSync(
   JSON.stringify(sdkRefRoutes, null, 2)
 )
 
-console.log('\n\nSDK reference routes generated successfully:\n\n')
-console.log('routes', JSON.stringify(sdkRefRoutes, null, 2), '\n\n')
+console.log('\n\nSDK reference routes generated successfully')
