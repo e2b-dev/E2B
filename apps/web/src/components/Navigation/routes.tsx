@@ -452,7 +452,13 @@ export const docRoutes: NavGroup[] = [
 export const sdkRefRoutes: VersionedNavGroup[] = (
   sdkRefRoutesJson as VersionedNavGroup[]
 ).sort((a, b) => {
-  const order = { CLI: 1, 'JS-SDK': 2, 'PYTHON-SDK': 3 }
+  const order = {
+    CLI: 1,
+    'JS-SDK': 2,
+    'PYTHON-SDK': 3,
+    'DESKTOP-JS-SDK': 4,
+    'DESKTOP-PYTHON-SDK': 5,
+  }
   const aOrder = order[a.title || ''] || 999
   const bOrder = order[b.title || ''] || 999
   return aOrder - bOrder
