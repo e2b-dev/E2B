@@ -67,7 +67,13 @@ function getSubModules(pkg, href, dirPath) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       if (
-        ['js-sdk', 'code-interpreter-js-sdk', 'desktop-js-sdk'].includes(pkg)
+        [
+          'js-sdk',
+          'code-interpreter-js-sdk',
+          'code-interpreter-python-sdk',
+          'desktop-js-sdk',
+          'desktop-python-sdk',
+        ].includes(pkg)
       ) {
         if (line.startsWith('### ')) {
           let title = line.slice(3).trim()
@@ -80,14 +86,7 @@ function getSubModules(pkg, href, dirPath) {
             })
           }
         }
-      } else if (
-        [
-          'python-sdk',
-          'cli',
-          'code-interpreter-python-sdk',
-          'desktop-python-sdk',
-        ].includes(pkg)
-      ) {
+      } else if (['python-sdk', 'cli'].includes(pkg)) {
         if (line.startsWith('## ')) {
           const title = line.slice(2).trim()
           if (title) {
