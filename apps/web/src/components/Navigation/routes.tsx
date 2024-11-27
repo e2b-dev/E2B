@@ -449,17 +449,34 @@ export const docRoutes: NavGroup[] = [
   // },
 ]
 
+const sdkRefNameMap = {
+  'JS-SDK': 'JavaScript SDK',
+  'PYTHON-SDK': 'Python SDK',
+  'DESKTOP-JS-SDK': 'Desktop JavaScript SDK',
+  'DESKTOP-PYTHON-SDK': 'Desktop Python SDK',
+  'CODE-INTERPRETER-JS-SDK': 'Code Interpreter JavaScript SDK',
+  'CODE-INTERPRETER-PYTHON-SDK': 'Code Interpreter Python SDK',
+}
+
 export const sdkRefRoutes: VersionedNavGroup[] = (
   sdkRefRoutesJson as VersionedNavGroup[]
-).sort((a, b) => {
-  const order = {
-    CLI: 1,
-    'JS-SDK': 2,
-    'PYTHON-SDK': 3,
-    'DESKTOP-JS-SDK': 4,
-    'DESKTOP-PYTHON-SDK': 5,
-  }
-  const aOrder = order[a.title || ''] || 999
-  const bOrder = order[b.title || ''] || 999
-  return aOrder - bOrder
-})
+)
+  .sort((a, b) => {
+    const order = {
+      CLI: 1,
+      'JS-SDK': 2,
+      'PYTHON-SDK': 3,
+      'DESKTOP-JS-SDK': 4,
+      'DESKTOP-PYTHON-SDK': 5,
+    }
+    const aOrder = order[a.title || ''] || 999
+    const bOrder = order[b.title || ''] || 999
+    return aOrder - bOrder
+  })
+  .map((group) => ({
+    ...group,
+    title:
+      group?.title && sdkRefNameMap[group.title]
+        ? sdkRefNameMap[group.title]
+        : group.title,
+  }))
