@@ -10,7 +10,6 @@ export function NavigationSubgroup({ subgroup }: { subgroup: NavSubgroup }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const pathname = usePathname()
 
-  console.log('subgroup', subgroup)
   const isActive = subgroup.links.some((link) => link.href === pathname)
 
   // Automatically expand the subgroup if it's active

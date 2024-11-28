@@ -7,6 +7,7 @@ import React, { useRef, useState } from 'react'
 
 import { useIsInsideMobileNavigation } from '@/components/MobileBurgerMenu'
 import { useSectionStore } from '@/components/SectionProvider'
+import { SdkVersionSelect } from '@/components/SDKVersionSelect'
 import { NavigationLink } from './NavigationLink'
 import { NavigationSubgroup } from './NavigationSubgroup'
 import {
@@ -118,25 +119,18 @@ function VersionedNavigationGroup({
         >
           {group.title}
         </motion.h2>
-        <select
-          className="text-xs text-brand-400"
-          value={curVersion}
-          onChange={(e) => {
-            setCurVersion(e.target.value)
-
+        <SdkVersionSelect
+          selectedVersion={curVersion}
+          versions={versions}
+          onVersionChange={(version) => {
+            setCurVersion(version)
             if (pathname !== '/docs/sdk-reference') {
               const pathParts = pathname.split('/')
-              pathParts[pathParts.length - 2] = e.target.value
+              pathParts[pathParts.length - 2] = version
               router.push(pathParts.join('/'))
             }
           }}
-        >
-          {versions.map((version, i) => (
-            <option key={version} value={version}>
-              {i === 0 ? `${version}@latest` : version}
-            </option>
-          ))}
-        </select>
+        />
       </div>
       <div className="relative">
         <ul role="list" className="border-l border-transparent">
