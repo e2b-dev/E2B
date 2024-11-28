@@ -76,8 +76,12 @@ jobs:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Generate SDK reference
-        run: pnpm run generate-sdk-reference
-
+        id: sdk-ref
+        run: pnpm run --recursive generate-ref
+              
+      - name: Show docs file structure
+        run: tree ./sdk-reference
+  
       - name: Update lock file
         run: pnpm i --no-link --no-frozen-lockfile
 
