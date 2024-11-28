@@ -7,7 +7,7 @@ import React, { useRef, useState } from 'react'
 
 import { useIsInsideMobileNavigation } from '@/components/MobileBurgerMenu'
 import { useSectionStore } from '@/components/SectionProvider'
-import { SdkVersionSelect } from '@/components/SDKVersionSelect'
+import { SdkVersionSelect } from '@/components/SdkVersionSelect'
 import { NavigationLink } from './NavigationLink'
 import { NavigationSubgroup } from './NavigationSubgroup'
 import {
@@ -112,7 +112,7 @@ function VersionedNavigationGroup({
 
   return (
     <li className={clsx('relative', className)}>
-      <div className="pl-2 mb-1 flex items-center justify-between gap-1">
+      <div className="pl-2 mb-1 flex flex-col items-start justify-between gap-1">
         <motion.h2
           layout="position"
           className="text-2xs font-medium text-white"

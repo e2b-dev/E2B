@@ -4,7 +4,6 @@ export interface Props {
   onVersionChange: (version: string) => void
 }
 
-
 export function SdkVersionSelect({
   selectedVersion,
   versions,
@@ -12,7 +11,7 @@ export function SdkVersionSelect({
 }: Props) {
   return (
     <select
-      className="text-xs text-brand-400"
+      className="text-xs text-brand-400 bg-transparent cursor-pointer"
       value={selectedVersion}
       onChange={(e) => {
         onVersionChange(e.target.value)
