@@ -92,7 +92,7 @@ sbx = Sandbox.create()
 # Download file from the sandbox to path '/home/user/my-file'
 content = sbx.files.read('/home/user/my-file')
 # Write file to local path
-with open('/local/file', 'wb') as file:
+with open('/local/file', 'w') as file:
     file.write(content)
 ```
 </CodeGroup>
@@ -126,13 +126,13 @@ sbx = Sandbox.create()
 # Download file A from the sandbox to path '/home/user/my-file-a'
 contentA = sbx.files.read('/home/user/my-file-a')
 # Write file A to local path
-with open('/local/file/a', 'wb') as file:
+with open('/local/file/a', 'w') as file:
     file.write(contentA)
 
 # Download file B from the sandbox to path '/home/user/my-file-b'
 contentB = sbx.files.read('/home/user/my-file-b')
 # Write file B to local path
-with open('/local/file/b', 'wb') as file:
+with open('/local/file/b', 'w') as file:
     file.write(contentB)
 ```
 </CodeGroup>

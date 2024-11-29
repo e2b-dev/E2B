@@ -25,4 +25,7 @@ bin/$(plugin): $(wildcard cmd/$(plugin)/*.go) pyproject.toml Makefile
 	  -ldflags "-w -s" \
 	  ./cmd/$(plugin)
 
-.PHONY: dev fmt lint upload clean
+.PHONY: dev fmt lint upload clean build
+
+build:
+	make bin/protoc-gen-connect-python
