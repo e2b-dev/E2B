@@ -27,6 +27,7 @@
     "@radix-ui/react-popover": "^1.0.6",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toast": "^1.1.5",
+    "@radix-ui/react-tooltip": "^1.1.4",
     "@sentry/nextjs": "^8.18.0",
     "@sindresorhus/slugify": "^2.1.1",
     "@supabase/auth-helpers-nextjs": "^0.7.4",
