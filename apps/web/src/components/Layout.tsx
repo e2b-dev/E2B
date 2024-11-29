@@ -1,11 +1,11 @@
 'use client'
 
 import clsx from 'clsx'
-import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { usePathname } from 'next/navigation'
 
 import { Footer } from '@/components/Footer'
-import { Navigation } from '@/components/Navigation'
+import { DocsNavigation, SdkRefNavigation } from '@/components/Navigation'
 import { Section, SectionProvider } from '@/components/SectionProvider'
 
 export function Layout({
@@ -18,6 +18,7 @@ export function Layout({
   const pathname = usePathname()
   const relativePathname = pathname?.replace(new RegExp('^/docs'), '')
   const isDocs = pathname?.startsWith('/docs')
+  const isApiRef = pathname?.startsWith('/docs/sdk-reference')
   const isDashboard = pathname?.startsWith('/dashboard')
 
   return (
@@ -52,7 +53,7 @@ export function Layout({
               "
               >
                 <div className="hidden lg:block lg:mt-4">
-                  <Navigation />
+                  {isApiRef ? <SdkRefNavigation /> : <DocsNavigation />}
                 </div>
               </div>
             )}

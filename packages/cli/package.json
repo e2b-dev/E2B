@@ -41,7 +41,7 @@
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
-    "generate-api-reference": "./scripts/generate_api_ref.sh"
+    "generate-ref": "./scripts/generate_sdk_ref.sh"
   },
   "devDependencies": {
     "@types/command-exists": "^1.2.3",

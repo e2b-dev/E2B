@@ -1,4 +1,4 @@
-name: Test JS SDK
+name: Publish Packages
 
 on:
   workflow_call:
@@ -75,9 +75,13 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
-      - name: Generate API Ref
-        run: pnpm run generate-api-reference
-
+      - name: Generate SDK reference
+        id: sdk-ref
+        run: pnpm run --recursive generate-ref
+              
+      - name: Show docs file structure
+        run: tree ./sdk-reference
+  
       - name: Update lock file
         run: pnpm i --no-link --no-frozen-lockfile
 
@@ -85,7 +89,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add apps/web/src/app/\(docs\)/docs/api-reference 
+          git add apps/web/src/app/\(docs\)/docs/sdk-reference 
           git commit -am "[skip ci] Release new versions" || exit 0
           git push
         env:
