@@ -68,7 +68,7 @@ export function TemplatesContent({
   useEffect(() => {
     async function fetchTemplates() {
       const res = await fetch(
-        `http://localhost:3000/templates?teamID=${teamId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/templates?teamID=${teamId}`,
         {
           method: 'GET',
           headers: {
@@ -99,7 +99,7 @@ export function TemplatesContent({
 
   async function deleteTemplate() {
     const res = await fetch(
-      `http://localhost:3000/templates/${currentTemplate?.templateID}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/templates/${currentTemplate?.templateID}`,
       {
         method: 'DELETE',
         headers: {
@@ -126,7 +126,7 @@ export function TemplatesContent({
 
   async function publishTemplate() {
     const res = await fetch(
-      `http://localhost:3000/templates/${currentTemplate?.templateID}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/templates/${currentTemplate?.templateID}`,
       {
         method: 'PATCH',
         headers: {
