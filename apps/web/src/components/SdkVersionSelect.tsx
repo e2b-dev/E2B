@@ -12,6 +12,7 @@ export function SdkVersionSelect({
   return (
     <select
       className="
+        appearance-none
         text-xs
         text-brand-400
         bg-transparent
