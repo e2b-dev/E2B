@@ -10,6 +10,7 @@ import { useSectionStore } from '@/components/SectionProvider'
 import { SdkVersionSelect } from '@/components/SdkVersionSelect'
 import { NavigationLink } from './NavigationLink'
 import { NavigationSubgroup } from './NavigationSubgroup'
+import { DocsTypes } from './DocsTypeItems'
 import {
   NavGroup,
   NavLink,
@@ -161,7 +162,8 @@ function VersionedNavigationGroup({
 export function DocsNavigation(props) {
   return (
     <nav {...props}>
-      <ul role="list">
+      <ul role="list" className="space-y-2">
+        <DocsTypes />
         {docRoutes.map((group, groupIndex) => (
           <NavigationGroup
             key={groupIndex}
@@ -178,7 +180,8 @@ export function DocsNavigation(props) {
 export function SdkRefNavigation(props) {
   return (
     <nav {...props}>
-      <ul role="list">
+      <ul role="list" className="space-y-2">
+        <DocsTypes />
         {sdkRefRoutes.map((group, groupIndex) => (
           <VersionedNavigationGroup
             key={groupIndex}

@@ -93,7 +93,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
         className={clsx(
           'absolute inset-x-0 top-full h-px transition',
           (isInsideMobileNavigation || !mobileNavIsOpen) &&
-            'bg-zinc-900/7.5 dark:bg-white/7.5'
+          'bg-zinc-900/7.5 dark:bg-white/7.5'
         )}
       />
 
@@ -107,11 +107,6 @@ export const Header = forwardRef(function Header({ className }, ref) {
             pathname={pathname}
             href="/docs"
             title="Documentation"
-          />
-          <DocumentationTypeLink
-            pathname={pathname}
-            href="/docs/sdk-reference"
-            title="SDK Reference"
           />
           <DocumentationTypeLink
             pathname={pathname}
@@ -133,11 +128,6 @@ export const Header = forwardRef(function Header({ className }, ref) {
             pathname={pathname}
             href="/docs"
             title="Documentation"
-          />
-          <DocumentationTypeLink
-            pathname={pathname}
-            href="/docs/sdk-reference"
-            title="SDK Reference"
           />
           <DocumentationTypeLink
             pathname={pathname}
