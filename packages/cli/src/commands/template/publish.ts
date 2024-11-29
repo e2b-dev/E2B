@@ -81,6 +81,15 @@ async function templateAction(
         (e) => !e.public === publish
       )
 
+      if (filteredTemplates.length === 0) {
+        console.log(
+          `No sandbox templates available ${
+            publish ? 'to publish' : 'to unpublish'
+          } found`
+        )
+        return
+      }
+
       const selectedTemplates = await getPromptTemplates(
         filteredTemplates,
         `Select sandbox templates to ${publish ? 'publish' : 'unpublish'}`
