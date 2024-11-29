@@ -5,16 +5,23 @@ import { BookIcon, BracesIcon } from 'lucide-react'
 
 function Item({
   href,
+  allHrefs,
   icon,
   title,
 }: {
   href: string
+  allHrefs: string[]
   icon: React.ReactNode
   title: string
 }) {
   const pathname = usePathname()
-  console.log(pathname, href)
-  const isActive = pathname === href
+  const bestMatch = allHrefs.find(h =>
+    pathname.startsWith(h) &&
+    (pathname.length === h.length || pathname.charAt(h.length) === '/')
+  )
+
+  const isActive = href === bestMatch
+
   return (
     <Link href={href} className={clsx(
       'text-xs flex items-center gap-2 group p-1 transition-all',
@@ -36,8 +43,9 @@ function Item({
 export function DocsTypes() {
   return (
     <>
-      <Item href="/docs" icon={<BookIcon className="w-4 h-4 text-white" />} title="Documentation" />
-      <Item href="/docs/sdk-reference" icon={<BracesIcon className="w-4 h-4 text-white" />} title="SDK Reference" />
+      {/* Order of allHrefs is important here to calculate `bestMatch` correctly! */}
+      <Item href="/docs" icon={<BookIcon className="w-4 h-4 text-white" />} title="Documentation" allHrefs={['/docs/sdk-reference', '/docs']} />
+      <Item href="/docs/sdk-reference" icon={<BracesIcon className="w-4 h-4 text-white" />} title="SDK Reference" allHrefs={['/docs/sdk-reference', '/docs']} />
       <li className="h-px bg-white/5 my-4"></li>
     </>
   )

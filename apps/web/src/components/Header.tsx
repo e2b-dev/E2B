@@ -33,9 +33,7 @@ function DocumentationTypeLink({
     <Link
       className={clsx(
         'hover:text-white hover:cursor-pointer text-sm font-medium px-2 py-1 rounded-md',
-        pathname.startsWith(href) &&
-          // XXX: this is a hack to avoid the /docs and /docs/sdk-reference links being highlighted at the same time
-          !(href === '/docs' && pathname.startsWith('/docs/sdk-reference'))
+        pathname.startsWith(href)
           ? 'text-white bg-zinc-800'
           : 'text-neutral-400'
       )}
@@ -149,15 +147,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
               />
             </ul>
           </nav>
-          {/* {isDocs && <MobileSearch />} */}
           <div className="hidden min-[540px]:contents">
-            {/* <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/docs'>
-              Docs
-            </Link>
-            <Link className='hover:text-white hover:cursor-pointer text-sm text-neutral-400' href='/dashboard'>
-              Dashboard
-            </Link>
-            <HeaderSeparator /> */}
             <Auth />
           </div>
         </div>
