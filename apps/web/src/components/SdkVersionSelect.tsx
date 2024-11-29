@@ -11,7 +11,20 @@ export function SdkVersionSelect({
 }: Props) {
   return (
     <select
-      className="text-xs text-brand-400 bg-transparent cursor-pointer"
+      className="
+        text-xs
+        text-brand-400
+        bg-transparent
+        cursor-pointer
+        border
+        border-[#ff880040]
+        hover:border-brand-400
+        transition-colors
+        rounded-md
+        pr-[10px]
+        pl-1
+        py-1
+      "
       value={selectedVersion}
       onChange={(e) => {
         onVersionChange(e.target.value)
