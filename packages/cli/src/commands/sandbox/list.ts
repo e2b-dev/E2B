@@ -41,6 +41,27 @@ export const listCommand = new commander.Command('list')
                 a.startedAt.localeCompare(b.startedAt) ||
                 a.sandboxID.localeCompare(b.sandboxID)
             ),
+          style: {
+            headerTop: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            headerBottom: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            tableBottom: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            vertical: '',
+          },
           colorMap: {
             orange: '\x1b[38;5;216m',
           },

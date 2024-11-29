@@ -47,6 +47,27 @@ export const listCommand = new commander.Command('list')
             ...template,
             aliases: listAliases(template.aliases),
           })),
+          style: {
+            headerTop: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            headerBottom: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            tableBottom: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            vertical: '',
+          },
           colorMap: {
             orange: '\x1b[38;5;216m',
           },
@@ -62,7 +83,7 @@ export const listCommand = new commander.Command('list')
   })
 
 export async function listSandboxTemplates({
-  teamID
+  teamID,
 }: {
   teamID?: string
 }): Promise<e2b.components['schemas']['Template'][]> {
