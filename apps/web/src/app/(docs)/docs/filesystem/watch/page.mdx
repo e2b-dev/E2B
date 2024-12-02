@@ -64,7 +64,7 @@ const handle = await sandbox.files.watchDir(dirname, async (event) => {
 })
 
 // Trigger file write event
-await sandbox.files.write(`${dirname}/my-folder/my-file`, 'hello')
+await sandbox.files.write(`${dirname}/my-folder/my-file`, 'hello') // $HighlightLine
 ```
 ```python
 from e2b_code_interpreter import Sandbox
@@ -75,7 +75,7 @@ dirname = '/home/user'
 # Watch directory for changes
 handle = sandbox.files.watch_dir(dirname, recursive=True) # $HighlightLine
 # Trigger file write event
-sandbox.files.write(f"{dirname}/my-folder/my-file", "hello")
+sandbox.files.write(f"{dirname}/my-folder/my-file", "hello") # $HighlightLine
 
 # Retrieve the latest new events since the last `get_new_events()` call
 events = handle.get_new_events()
