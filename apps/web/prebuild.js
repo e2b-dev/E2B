@@ -88,7 +88,9 @@ function getSubModules(pkg, href, dirPath) {
             })
           }
         }
-      } else if (['python-sdk', 'cli'].includes(pkg)) {
+      }
+
+      if (['python-sdk', 'cli', 'code-interpreter-python-sdk'].includes(pkg)) {
         if (line.startsWith('## ')) {
           const title = line.slice(2).trim()
           if (title) {
