@@ -103,6 +103,7 @@ export class Filesystem {
   private readonly rpc: Client<typeof FilesystemService>
 
   private readonly defaultWatchTimeout = 60_000 // 60 seconds
+  private readonly defaultWatchRecursive = false
 
   constructor(
     transport: Transport,
@@ -452,7 +453,7 @@ export class Filesystem {
     const events = this.rpc.watchDir(
       {
         path,
-        recursive: opts?.recursive ?? false,
+        recursive: opts?.recursive ?? this.defaultWatchRecursive,
       },
       {
         headers: {
