@@ -47,11 +47,14 @@ async def test_watch_recursive_directory_changes(async_sandbox: AsyncSandbox):
     event_triggered = Event()
 
     expected_filename = f"{nested_dirname}/{filename}"
+
     def handle_event(e: FilesystemEvent):
         if e.type == FilesystemEventType.WRITE and e.name == expected_filename:
             event_triggered.set()
 
-    handle = await async_sandbox.files.watch_dir(dirname, on_event=handle_event, recursive=True)
+    handle = await async_sandbox.files.watch_dir(
+        dirname, on_event=handle_event, recursive=True
+    )
 
     await async_sandbox.files.write(f"{dirname}/{nested_dirname}/{filename}", content)
 
@@ -72,11 +75,14 @@ async def test_watch_recursive_directory_folder_addition(async_sandbox: AsyncSan
     event_triggered = Event()
 
     expected_filename = f"{nested_dirname}/{filename}"
+
     def handle_event(e: FilesystemEvent):
         if e.type == FilesystemEventType.WRITE and e.name == expected_filename:
             event_triggered.set()
 
-    handle = await async_sandbox.files.watch_dir(dirname, on_event=handle_event, recursive=True)
+    handle = await async_sandbox.files.watch_dir(
+        dirname, on_event=handle_event, recursive=True
+    )
 
     await async_sandbox.files.make_dir(f"{dirname}/{nested_dirname}")
     await async_sandbox.files.write(f"{dirname}/{nested_dirname}/{filename}", content)
