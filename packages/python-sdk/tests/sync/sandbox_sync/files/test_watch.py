@@ -49,7 +49,7 @@ def test_watch_iterated(sandbox: Sandbox):
 
 
 def test_watch_recursive_directory_changes(sandbox: Sandbox):
-    dirname = "test_watch_dir"
+    dirname = "test_recursive_watch_dir"
     nested_dirname = "test_nested_watch_dir"
     filename = "test_watch.txt"
     content = "This file will be watched."
@@ -69,8 +69,8 @@ def test_watch_recursive_directory_changes(sandbox: Sandbox):
     handle.stop()
 
 
-def test_watch_recursive_directory_folder_addition(sandbox: Sandbox):
-    dirname = "test_watch_dir"
+def test_watch_recursive_directory_after_nested_folder_addition(sandbox: Sandbox):
+    dirname = "test_recursive_watch_dir_add"
     nested_dirname = "test_nested_watch_dir"
     filename = "test_watch.txt"
     content = "This file will be watched."

@@ -32,7 +32,7 @@ sandboxTest('watch directory changes', async ({ sandbox }) => {
 })
 
 sandboxTest('watch recursive directory changes', async ({ sandbox }) => {
-  const dirname = 'test_watch_dir'
+  const dirname = 'test_recursive_watch_dir'
   const nestedDirname = 'test_nested_watch_dir'
   const filename = 'test_watch.txt'
   const content = 'This file will be watched.'
@@ -64,8 +64,8 @@ sandboxTest('watch recursive directory changes', async ({ sandbox }) => {
   await handle.stop()
 })
 
-sandboxTest('watch recursive directory folder addition', async ({ sandbox }) => {
-  const dirname = 'test_watch_dir'
+sandboxTest('watch recursive directory after nested folder addition', async ({ sandbox }) => {
+  const dirname = 'test_recursive_watch_dir_add'
   const nestedDirname = 'test_nested_watch_dir'
   const filename = 'test_watch.txt'
   const content = 'This file will be watched.'
