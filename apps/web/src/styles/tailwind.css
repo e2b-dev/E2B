@@ -47,38 +47,7 @@
   #sidebar::-webkit-scrollbar-thumb {
     border-radius: 10px;
   }
-
-  .dropdown-content {
-    display: none;
-    flex-direction: column;
-    position: absolute;
-    background-color: rgb(30, 41, 59);
-    z-index: 1;
-  }
-
-  .versions-dropdown {
-    color: rgb(229, 123, 0);
-    font-size: 1.3em;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 1em !important;
-    p {
-      margin-bottom: 0px !important;
-    }
-  }
-
-  .versions-dropdown:hover .dropdown-content {
-    display: flex;
-  }
-
-  .version-link {
-    text-decoration: none !important;
-  }
-
-  .version-link:hover {
-    color: white !important;
-  }
-
+  
   .supabase-auth-ui_ui-button {
     @apply rounded-lg;
   }
