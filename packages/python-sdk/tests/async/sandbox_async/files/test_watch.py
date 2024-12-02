@@ -35,6 +35,57 @@ async def test_watch_directory_changes(async_sandbox: AsyncSandbox):
     await handle.stop()
 
 
+async def test_watch_recursive_directory_changes(async_sandbox: AsyncSandbox):
+    dirname = "test_watch_dir"
+    nested_dirname = "test_nested_watch_dir"
+    filename = "test_watch.txt"
+    content = "This file will be watched."
+
+    await async_sandbox.files.remove(dirname)
+    await async_sandbox.files.make_dir(f"{dirname}/{nested_dirname}")
+
+    event_triggered = Event()
+
+    expected_filename = f"{nested_dirname}/{filename}"
+    def handle_event(e: FilesystemEvent):
+        if e.type == FilesystemEventType.WRITE and e.name == expected_filename:
+            event_triggered.set()
+
+    handle = await async_sandbox.files.watch_dir(dirname, on_event=handle_event, recursive=True)
+
+    await async_sandbox.files.write(f"{dirname}/{nested_dirname}/{filename}", content)
+
+    await event_triggered.wait()
+
+    await handle.stop()
+
+
+async def test_watch_recursive_directory_folder_addition(async_sandbox: AsyncSandbox):
+    dirname = "test_watch_dir"
+    nested_dirname = "test_nested_watch_dir"
+    filename = "test_watch.txt"
+    content = "This file will be watched."
+
+    await async_sandbox.files.remove(dirname)
+    await async_sandbox.files.make_dir(dirname)
+
+    event_triggered = Event()
+
+    expected_filename = f"{nested_dirname}/{filename}"
+    def handle_event(e: FilesystemEvent):
+        if e.type == FilesystemEventType.WRITE and e.name == expected_filename:
+            event_triggered.set()
+
+    handle = await async_sandbox.files.watch_dir(dirname, on_event=handle_event, recursive=True)
+
+    await async_sandbox.files.make_dir(f"{dirname}/{nested_dirname}")
+    await async_sandbox.files.write(f"{dirname}/{nested_dirname}/{filename}", content)
+
+    await event_triggered.wait()
+
+    await handle.stop()
+
+
 async def test_watch_non_existing_directory(async_sandbox: AsyncSandbox):
     dirname = "non_existing_watch_dir"
 
