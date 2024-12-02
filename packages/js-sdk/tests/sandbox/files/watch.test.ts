@@ -31,6 +31,71 @@ sandboxTest('watch directory changes', async ({ sandbox }) => {
   await handle.stop()
 })
 
+sandboxTest('watch recursive directory changes', async ({ sandbox }) => {
+  const dirname = 'test_watch_dir'
+  const nestedDirname = 'test_nested_watch_dir'
+  const filename = 'test_watch.txt'
+  const content = 'This file will be watched.'
+  const newContent = 'This file has been modified.'
+
+  await sandbox.files.remove(dirname)
+  await sandbox.files.makeDir(`${dirname}/${nestedDirname}`)
+  await sandbox.files.write(`${dirname}/${nestedDirname}/${filename}`, content)
+
+  let trigger: () => void
+
+  const eventPromise = new Promise<void>((resolve) => {
+    trigger = resolve
+  })
+
+  const expectedFileName = `${nestedDirname}/${filename}`
+  const handle = await sandbox.files.watchDir(dirname, async (event) => {
+    if (event.type === FilesystemEventType.WRITE && event.name === expectedFileName) {
+      trigger()
+    }
+  }, {
+    recursive: true
+  })
+
+  await sandbox.files.write(`${dirname}/${nestedDirname}/${filename}`, newContent)
+
+  await eventPromise
+
+  await handle.stop()
+})
+
+sandboxTest('watch recursive directory folder addition', async ({ sandbox }) => {
+  const dirname = 'test_watch_dir'
+  const nestedDirname = 'test_nested_watch_dir'
+  const filename = 'test_watch.txt'
+  const content = 'This file will be watched.'
+
+  await sandbox.files.remove(dirname)
+  await sandbox.files.makeDir(dirname)
+
+  let trigger: () => void
+
+  const eventPromise = new Promise<void>((resolve) => {
+    trigger = resolve
+  })
+
+  const expectedFileName = `${nestedDirname}/${filename}`
+  const handle = await sandbox.files.watchDir(dirname, async (event) => {
+    if (event.type === FilesystemEventType.WRITE && event.name === expectedFileName) {
+      trigger()
+    }
+  }, {
+    recursive: true
+  })
+
+  await sandbox.files.makeDir(`${dirname}/${nestedDirname}`)
+  await sandbox.files.write(`${dirname}/${nestedDirname}/${filename}`, content)
+
+  await eventPromise
+
+  await handle.stop()
+})
+
 sandboxTest('watch non-existing directory', async ({ sandbox }) => {
   const dirname = 'non_existing_watch_dir'
 
