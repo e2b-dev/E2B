@@ -17,15 +17,14 @@ export interface Props {
 
 function AuthForm({ view }: Props) {
   const searchParams = useSearchParams()
-  const redirectTo =
-    searchParams?.get('redirect_to') || 'https://e2b.dev/dashboard'
+  const redirectTo = searchParams?.get('redirect_to')
   const router = useRouter()
   const user = useUser()
 
   useEffect(
     function redirect() {
-      if (user.user && redirectTo) {
-        router.push(redirectTo)
+      if (user.user && view !== 'update_password') {
+        router.push(redirectTo || '/dashboard')
       }
 
       if (user.wasUpdated && !redirectTo) {
@@ -74,7 +73,7 @@ function AuthForm({ view }: Props) {
           redirectTo={
             view === 'forgotten_password'
               ? 'https://e2b.dev/auth/update-password'
-              : redirectTo
+              : 'https://e2b.dev/dashboard'
           }
         />
       </div>
@@ -87,7 +86,9 @@ function AuthForm({ view }: Props) {
             <span className="text-zinc-400">Already have an account?</span>
             <Link
               className="flex items-center justify-center"
-              href={`/auth/sign-in?redirect_to=${redirectTo}`}
+              href={`/auth/sign-in?${
+                redirectTo ? `redirect_to=${redirectTo}` : ''
+              }`}
             >
               <Button variant="textLink">Sign in</Button>
             </Link>
@@ -103,7 +104,11 @@ function AuthForm({ view }: Props) {
         {view === 'sign_in' && (
           <div className="flex items-center justify-start gap-2">
             <span className="text-zinc-400">{"Don't have an account?"}</span>
-            <Link href={`/auth/sign-up?redirect_to=${redirectTo}`}>
+            <Link
+              href={`/auth/sign-up?${
+                redirectTo ? `redirect_to=${redirectTo}` : ''
+              }`}
+            >
               <Button variant="textLink">Sign up</Button>
             </Link>
           </div>
