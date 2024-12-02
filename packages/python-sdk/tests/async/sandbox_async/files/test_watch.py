@@ -63,7 +63,9 @@ async def test_watch_recursive_directory_changes(async_sandbox: AsyncSandbox):
     await handle.stop()
 
 
-async def test_watch_recursive_directory_after_nested_folder_addition(async_sandbox: AsyncSandbox):
+async def test_watch_recursive_directory_after_nested_folder_addition(
+    async_sandbox: AsyncSandbox,
+):
     dirname = "test_recursive_watch_dir_add"
     nested_dirname = "test_nested_watch_dir"
     filename = "test_watch.txt"
