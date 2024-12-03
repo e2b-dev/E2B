@@ -73,25 +73,32 @@ sandboxTest('watch recursive directory after nested folder addition', async ({ s
   await sandbox.files.remove(dirname)
   await sandbox.files.makeDir(dirname)
 
-  let trigger: () => void
+  let triggerFile: () => void
+  let triggerFolder: () => void
 
-  const eventPromise = new Promise<void>((resolve) => {
-    trigger = resolve
+  const eventFilePromise = new Promise<void>((resolve) => {
+    triggerFile = resolve
+  })
+  const eventFolderPromise = new Promise<void>((resolve) => {
+    triggerFolder = resolve
   })
 
   const expectedFileName = `${nestedDirname}/${filename}`
   const handle = await sandbox.files.watchDir(dirname, async (event) => {
     if (event.type === FilesystemEventType.WRITE && event.name === expectedFileName) {
-      trigger()
+      triggerFile()
+    } else if (event.type === FilesystemEventType.CREATE && event.name === nestedDirname) {
+      triggerFolder()
     }
   }, {
     recursive: true
   })
 
   await sandbox.files.makeDir(`${dirname}/${nestedDirname}`)
-  await sandbox.files.write(`${dirname}/${nestedDirname}/${filename}`, content)
+  await eventFolderPromise
 
-  await eventPromise
+  await sandbox.files.write(`${dirname}/${nestedDirname}/${filename}`, content)
+  await eventFilePromise
 
   await handle.stop()
 })
