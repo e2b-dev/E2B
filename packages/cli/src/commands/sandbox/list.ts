@@ -19,7 +19,12 @@ export const listCommand = new commander.Command('list')
           title: 'Running sandboxes',
           columns: [
             { name: 'sandboxID', alignment: 'left', title: 'Sandbox ID' },
-            { name: 'templateID', alignment: 'left', title: 'Template ID' },
+            {
+              name: 'templateID',
+              alignment: 'left',
+              title: 'Template ID',
+              maxLen: 20,
+            },
             { name: 'alias', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
             { name: 'endAt', alignment: 'left', title: 'End at' },

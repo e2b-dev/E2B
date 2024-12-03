@@ -38,6 +38,7 @@ export const listCommand = new commander.Command('list')
               alignment: 'left',
               title: 'Template Name',
               color: 'orange',
+              maxLen: 20,
             },
             { name: 'cpuCount', alignment: 'right', title: 'vCPUs' },
             { name: 'memoryMB', alignment: 'right', title: 'RAM MiB' },

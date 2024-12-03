@@ -100,7 +100,7 @@ export function withUnderline(content: string) {
 
 export function listAliases(aliases: string[] | undefined) {
   if (!aliases) return undefined
-  return aliases.join(' | ')
+  return aliases.join(', ')
 }
 
 export function asTypescript(code: string) {
