@@ -1,4 +1,4 @@
-import { expect } from 'vitest'
+import { expect, onTestFinished } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
 import { FilesystemEventType, NotFoundError, SandboxError } from '../../../src'
@@ -38,8 +38,9 @@ sandboxTest('watch recursive directory changes', async ({ sandbox }) => {
   const content = 'This file will be watched.'
   const newContent = 'This file has been modified.'
 
-  await sandbox.files.remove(dirname)
   await sandbox.files.makeDir(`${dirname}/${nestedDirname}`)
+  onTestFinished(() => sandbox.files.remove(dirname))
+
   await sandbox.files.write(`${dirname}/${nestedDirname}/${filename}`, content)
 
   let trigger: () => void
@@ -70,8 +71,8 @@ sandboxTest('watch recursive directory after nested folder addition', async ({ s
   const filename = 'test_watch.txt'
   const content = 'This file will be watched.'
 
-  await sandbox.files.remove(dirname)
   await sandbox.files.makeDir(dirname)
+  onTestFinished(() => sandbox.files.remove(dirname))
 
   let triggerFile: () => void
   let triggerFolder: () => void
