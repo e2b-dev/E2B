@@ -87,11 +87,15 @@ def test_watch_recursive_directory_after_nested_folder_addition(sandbox: Sandbox
 
     events = handle.get_new_events()
     file_changed = False
+    folder_created = False
     for event in events:
         if event.type == FilesystemEventType.WRITE and event.name == expected_filename:
             file_changed = True
-            break
+            continue
+        if event.type == FilesystemEventType.CREATE and event.name == nested_dirname:
+            folder_created = True
 
+    assert folder_created
     assert file_changed
 
     handle.stop()
