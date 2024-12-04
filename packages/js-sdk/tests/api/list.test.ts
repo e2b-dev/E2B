@@ -14,8 +14,8 @@ sandboxTest.skipIf(isDebug)('list sandboxes', async ({ sandbox }) => {
   // Check that sandboxes are sorted by startedAt in descending order (newest first)
   for (let i = 0; i < sandboxes.length - 1; i++) {
     assert.isAtLeast(
-      new Date(sandboxes[i].startedAt).getTime(),
       new Date(sandboxes[i + 1].startedAt).getTime(),
+      new Date(sandboxes[i].startedAt).getTime(),
       'Sandboxes should be sorted by startedAt in descending order'
     )
   }
