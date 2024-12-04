@@ -38,6 +38,7 @@ export const listCommand = new commander.Command('list')
               alignment: 'left',
               title: 'Template Name',
               color: 'orange',
+              maxLen: 20,
             },
             { name: 'cpuCount', alignment: 'right', title: 'vCPUs' },
             { name: 'memoryMB', alignment: 'right', title: 'RAM MiB' },
@@ -47,6 +48,27 @@ export const listCommand = new commander.Command('list')
             ...template,
             aliases: listAliases(template.aliases),
           })),
+          style: {
+            headerTop: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            headerBottom: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            tableBottom: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            vertical: '',
+          },
           colorMap: {
             orange: '\x1b[38;5;216m',
           },
@@ -62,7 +84,7 @@ export const listCommand = new commander.Command('list')
   })
 
 export async function listSandboxTemplates({
-  teamID
+  teamID,
 }: {
   teamID?: string
 }): Promise<e2b.components['schemas']['Template'][]> {
