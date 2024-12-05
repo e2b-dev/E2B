@@ -28,13 +28,6 @@ import {
   AlertDialogAction,
 } from '../ui/alert-dialog'
 import { toast } from '../ui/use-toast'
-import { Button } from '../ui/button'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../ui/tooltip'
 
 interface Template {
   aliases: string[]
