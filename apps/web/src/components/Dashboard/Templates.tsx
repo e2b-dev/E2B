@@ -191,28 +191,16 @@ export function TemplatesContent({
                 key={template.templateID}
               >
                 <TableCell>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setCurrentTemplate(template)
-                            setIsPublishTemplateDialogOpen(true)
-                          }}
-                        >
-                          {template.public ? (
-                            <LockOpen className="w-4 h-4" />
-                          ) : (
-                            <Lock className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Change visibility</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <div className="flex items-center gap-2">
+                    {template.public ? (
+                      <LockOpen className="w-4 h-4" />
+                    ) : (
+                      <Lock className="w-4 h-4" />
+                    )}
+                    <span className="text-xs">
+                      {template.public ? 'Visible' : 'Private'}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell>{template.templateID}</TableCell>
                 <TableCell className="font-mono">
