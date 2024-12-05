@@ -274,7 +274,7 @@ export const TeamContent = ({
           <TableBody>
             {members.length === 0 ? (
               <TableRow className="border-b border-white/5">
-                <TableCell colSpan={2} className="text-center">
+                <TableCell colSpan={4} className="text-center">
                   No members found
                 </TableCell>
               </TableRow>
@@ -287,7 +287,9 @@ export const TeamContent = ({
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.addedBy?.email}</TableCell>
                   <TableCell>
-                    {new Date(user.addedAt).toLocaleString()}
+                    {user.addedAt
+                      ? new Date(user.addedAt).toLocaleString()
+                      : ''}
                   </TableCell>
                   <TableCell align="right">
                     <Button
