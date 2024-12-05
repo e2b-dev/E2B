@@ -197,7 +197,8 @@ export function TemplatesContent({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation()
                             setCurrentTemplate(template)
                             setIsPublishTemplateDialogOpen(true)
                           }}
