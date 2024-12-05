@@ -22,13 +22,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '../ui/alert-dialog'
 import Spinner from '@/components/Spinner'
 
 interface TeamMember {
   id: string
   email: string
+  addedBy: {
+    id: string
+    email: string
+  } | null
+  addedAt: string
 }
 
 const emailRegex = new RegExp(
@@ -62,6 +66,7 @@ export const TeamContent = ({
         `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${team.id}/users`,
         {
           headers: {
+            'X-User-Access-Token': user.accessToken,
             'X-Team-API-Key': team.apiKeys[0],
           },
         }
@@ -261,13 +266,15 @@ export const TeamContent = ({
           <TableHeader>
             <TableRow className="hover:bg-inherit dark:hover:bg-inherit border-b border-white/5">
               <TableHead>Email</TableHead>
+              <TableHead>Added by</TableHead>
+              <TableHead>Added at</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {members.length === 0 ? (
               <TableRow className="border-b border-white/5">
-                <TableCell colSpan={2} className="text-center">
+                <TableCell colSpan={4} className="text-center">
                   No members found
                 </TableCell>
               </TableRow>
@@ -278,13 +285,18 @@ export const TeamContent = ({
                   key={user.id}
                 >
                   <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.addedBy?.email}</TableCell>
                   <TableCell>
+                    {user.addedAt
+                      ? new Date(user.addedAt).toLocaleString()
+                      : ''}
+                  </TableCell>
+                  <TableCell align="right">
                     <Button
-                      className="text-sm"
                       variant="desctructive"
                       onClick={() => openDialog(user.id)}
                     >
-                      Remove team member
+                      Remove
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -295,18 +307,13 @@ export const TeamContent = ({
       )}
 
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" style={{ display: 'none' }}>
-            Show Dialog
-          </Button>
-        </AlertDialogTrigger>
         <AlertDialogContent className="bg-inherit text-white border-black">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              You are about to delete a member from the team
+              You are about to remove a member from the team
             </AlertDialogTitle>
             <AlertDialogDescription className="text-white/90">
-              This action cannot be undone. This will permanently delete the
+              This action cannot be undone. This will permanently remove the
               member from the team.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -321,7 +328,7 @@ export const TeamContent = ({
               className="bg-red-500 text-white hover:bg-red-600"
               onClick={() => deleteUserFromTeam()}
             >
-              Continue
+              Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
