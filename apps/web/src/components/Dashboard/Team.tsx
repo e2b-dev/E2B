@@ -67,6 +67,7 @@ export const TeamContent = ({
         {
           headers: {
             'X-User-Access-Token': user.accessToken,
+            'X-Team-API-Key': team.apiKeys[0],
           },
         }
       )
