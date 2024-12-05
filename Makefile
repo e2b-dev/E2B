@@ -12,6 +12,7 @@ generate-js:
 	cd spec/envd && buf generate --template buf-js.gen.yaml
 
 generate-python:
+	$(MAKE) -C packages/connect-python build
 	cd packages/python-sdk && make generate-api
 	cd spec/envd && buf generate --template buf-python.gen.yaml
 	cd packages/python-sdk && ./scripts/fix-python-pb.sh && black .

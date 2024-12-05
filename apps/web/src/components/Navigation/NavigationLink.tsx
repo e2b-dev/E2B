@@ -16,7 +16,16 @@ export function NavigationLink({
   tag?: string
 }) {
   const pathname = usePathname()
-  const isActive = pathname === link.href
+  // Add this to get the hash
+  const hash = typeof window !== 'undefined' ? window.location.hash : ''
+
+  // Modify the isActive check to include hash comparison if needed
+  const isActive = pathname === link.href ||
+    (link.href.includes('#') && pathname + hash === link.href)
+  // const pathname = usePathname()
+  // console.log(link)
+  // console.log(link.title, pathname, link.href)
+  // const isActive = pathname === link.href
 
   return (
     <Link

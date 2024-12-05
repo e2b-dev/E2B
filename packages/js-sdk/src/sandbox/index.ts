@@ -1,15 +1,15 @@
 import { createConnectTransport } from '@connectrpc/connect-web'
 
 import {
-  ConnectionOpts,
   ConnectionConfig,
+  ConnectionOpts,
   defaultUsername,
 } from '../connectionConfig'
-import { createRpcLogger } from '../logs'
-import { Filesystem } from './filesystem'
-import { Commands, Pty } from './commands'
-import { SandboxApi } from './sandboxApi'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
+import { createRpcLogger } from '../logs'
+import { Commands, Pty } from './commands'
+import { Filesystem } from './filesystem'
+import { SandboxApi } from './sandboxApi'
 
 /**
  * Options for creating a new Sandbox.
@@ -17,23 +17,23 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 export interface SandboxOpts extends ConnectionOpts {
   /**
    * Custom metadata for the sandbox.
-   * 
+   *
    * @default {}
    */
   metadata?: Record<string, string>
   /**
    * Custom environment variables for the sandbox.
-   * 
+   *
    * Used when executing commands and code in the sandbox.
    * Can be overridden with the `envs` argument when executing commands or code.
-   * 
+   *
    * @default {}
    */
   envs?: Record<string, string>
   /**
    * Timeout for the sandbox in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   * 
+   *
    * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
@@ -105,8 +105,9 @@ export class Sandbox extends SandboxApi {
 
     this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
-    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
-      }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${
+      this.connectionConfig.debug ? 'http' : 'https'
+    }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -129,9 +130,9 @@ export class Sandbox extends SandboxApi {
 
   /**
    * Create a new sandbox from the default `base` sandbox template.
-   * 
+   *
    * @param opts connection options.
-   * 
+   *
    * @returns sandbox instance for the new sandbox.
    *
    * @example
@@ -147,12 +148,12 @@ export class Sandbox extends SandboxApi {
 
   /**
    * Create a new sandbox from the specified sandbox template.
-   * 
+   *
    * @param template sandbox template name or ID.
    * @param opts connection options.
-   * 
+   *
    * @returns sandbox instance for the new sandbox.
-   * 
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create('<template-name-or-id>')
@@ -179,10 +180,10 @@ export class Sandbox extends SandboxApi {
     const sandboxId = config.debug
       ? 'debug_sandbox_id'
       : await this.createSandbox(
-        template,
-        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-        sandboxOpts
-      )
+          template,
+          sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+          sandboxOpts
+        )
 
     const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
     return sbx
@@ -191,10 +192,10 @@ export class Sandbox extends SandboxApi {
   /**
    * Connect to an existing sandbox.
    * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
-   * 
+   *
    * @param sandboxId sandbox ID.
    * @param opts connection options.
-   * 
+   *
    * @returns sandbox instance for the existing sandbox.
    *
    * @example
@@ -224,7 +225,7 @@ export class Sandbox extends SandboxApi {
    * @param port number of the port in the sandbox.
    *
    * @returns host address of the sandbox port.
-   * 
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
@@ -232,7 +233,7 @@ export class Sandbox extends SandboxApi {
    * await sandbox.commands.exec('python3 -m http.server 3000')
    * // Get the hostname of the HTTP server
    * const serverURL = sandbox.getHost(3000)
-   * ``
+   * ```
    */
   getHost(port: number) {
     if (this.connectionConfig.debug) {
@@ -246,7 +247,7 @@ export class Sandbox extends SandboxApi {
    * Check if the sandbox is running.
    *
    * @returns `true` if the sandbox is running, `false` otherwise.
-   * 
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
@@ -280,7 +281,7 @@ export class Sandbox extends SandboxApi {
   /**
    * Set the timeout of the sandbox.
    * After the timeout expires the sandbox will be automatically killed.
-   * 
+   *
    * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.setTimeout`.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
    *
@@ -318,11 +319,11 @@ export class Sandbox extends SandboxApi {
 
   /**
    * Get the URL to upload a file to the sandbox.
-   * 
+   *
    * You have to send a POST request to this URL with the file as multipart/form-data.
-   * 
+   *
    * @param path the directory where to upload the file, defaults to user's home directory.
-   * 
+   *
    * @returns URL for uploading file.
    */
   uploadUrl(path?: string) {
@@ -333,7 +334,7 @@ export class Sandbox extends SandboxApi {
    * Get the URL to download a file from the sandbox.
    *
    * @param path path to the file to download.
-   * 
+   *
    * @returns URL for downloading file.
    */
   downloadUrl(path: string) {

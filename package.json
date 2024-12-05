@@ -8,7 +8,7 @@
     "dev:web": "pnpm --prefix apps/web run dev",
     "rm-node-modules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
     "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json",
-    "generate-api-reference": "pnpm --if-present --recursive run generate-api-reference"
+    "generate-sdk-reference": "pnpm --if-present --recursive run generate-sdk-reference"
   },
   "packageManager": "pnpm@8.7.6",
   "dependencies": {
