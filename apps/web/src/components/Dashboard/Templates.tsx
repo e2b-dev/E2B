@@ -169,7 +169,7 @@ export function TemplatesContent({
           <TableRow className="hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5">
             <TableHead>Visibility</TableHead>
             <TableHead>Template ID</TableHead>
-            <TableHead>Aliases</TableHead>
+            <TableHead>Template Name</TableHead>
             <TableHead>vCPUs</TableHead>
             <TableHead>RAM MiB</TableHead>
             <TableHead>Created by</TableHead>
