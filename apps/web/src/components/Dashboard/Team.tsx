@@ -285,7 +285,9 @@ export const TeamContent = ({
                 >
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.addedBy?.email}</TableCell>
-                  <TableCell>{user.addedAt}</TableCell>
+                  <TableCell>
+                    {new Date(user.addedAt).toLocaleString()}
+                  </TableCell>
                   <TableCell align="right">
                     <Button
                       variant="desctructive"
