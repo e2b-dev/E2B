@@ -31,22 +31,28 @@ export const DeveloperContent = ({
 
         <span className="font-bold text-neutral-300 pb-2">API URL</span>
         <span className="text-sm text-neutral-300 pb-4">
-          Customize E2B Cluster API URL.
+          Set API URL so the dashboard can connect to your E2B Cluster and correctly display running sandboxes nad your templates.
         </span>
 
         {apiUrl !== defaultAPIUrl && (
           <div
-            className="bg-white/5 border-l-4 border-orange-500/20 text-gray-300 p-4 mb-4 w-1/2"
+            className="bg-white/5 border-l-4 border-orange-500/20 text-gray-300 p-4 mb-4 lg:w-1/2 w-full"
             role="alert"
           >
             <h4 className="font-medium pb-2">
               Setting custom API URL in the E2B SDK & CLI
             </h4>
             <div className="text-sm text-gray-400">
-              In your environment variables, set E2B_DOMAIN variable to your
+              In your environment variables, set the <code>E2B_DOMAIN</code> variable to your
               custom domain:
               <br />
-              E2B_DOMAIN={isUrl(apiUrl) ? new URL(apiUrl).host : 'Invalid URL'}
+              <pre className="mt-2 w-full bg-neutral-700 px-2 py-1 rounded-md text-brand-300">
+                E2B_DOMAIN={
+                  isUrl(apiUrl)
+                    ? `"${new URL(apiUrl).host}"`
+                    : 'Invalid URL'
+                }
+              </pre>
             </div>
           </div>
         )}
