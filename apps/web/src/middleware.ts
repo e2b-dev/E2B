@@ -62,7 +62,8 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
   const modifiedHtmlBody = replaceUrls(htmlBody, url.pathname, 'href="', '">')
-  // Remove the script with cdn.prod.website-files.com hostname
+  // Even though we are paying for a Webflow tier that allows us to remove the badge, it doesn't work.
+  // eslint-disable-next-line
   const scriptRegex = /<script src="https:\/\/cdn\.prod\.website-files\.com\/[^\"]*\.js" type="text\/javascript"><\/script>/g
   const cleanedHtmlBody = modifiedHtmlBody.replace(scriptRegex, '')
 
