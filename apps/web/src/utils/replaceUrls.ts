@@ -1,5 +1,5 @@
 import {
-  landingPageWebflowHostname,
+  landingPageHostname,
   landingPageFramerHostname,
   blogFramerHostname,
   changelogFramerHostname,
@@ -13,7 +13,7 @@ export function replaceUrls(text: string, urlPathName: string, prefix: string = 
     (_, url) => url + suffix,
   )
     .replaceAll(
-      `${prefix}${landingPageWebflowHostname}`,
+      `${prefix}${landingPageHostname}`,
       `${prefix}https://e2b.dev`
     )
     .replaceAll(
