@@ -230,18 +230,16 @@ const MenuItem = ({
   onClick: () => void
 }) => (
   <div
-    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${
-      selected ? 'bg-[#995100]' : ''
-    }`}
+    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${selected ? 'bg-[#995100]' : ''
+      }`}
     onClick={onClick}
   >
     <Icon width={20} height={20} />
     <p
-      className={`${
-        !label || !window.matchMedia('(min-width: 768)').matches
+      className={`${!label || !window.matchMedia('(min-width: 768)').matches
           ? 'sr-only sm:not-sr-only'
           : ''
-      }`}
+        }`}
     >
       {label[0].toUpperCase() + label.slice(1)}
     </p>
@@ -307,7 +305,6 @@ function MainContent({
       return (
         <DeveloperContent
           apiUrlState={apiUrlState}
-          billingUrlState={billingUrlState}
         />
       )
     default:

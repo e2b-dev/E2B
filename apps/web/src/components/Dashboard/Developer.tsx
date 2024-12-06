@@ -3,17 +3,13 @@
 import { Button } from '../Button'
 
 const defaultAPIUrl = process.env.NEXT_PUBLIC_API_URL || ''
-const defaultBillingUrl = process.env.NEXT_PUBLIC_BILLING_API_URL || ''
 
 export const DeveloperContent = ({
   apiUrlState,
-  billingUrlState,
 }: {
   apiUrlState: [string, (value: string) => void]
-  billingUrlState: [string, (value: string) => void]
 }) => {
   const [apiUrl, setApiUrl] = apiUrlState
-  const [billingUrl, setBillingUrl] = billingUrlState
 
   function isUrl(url: string) {
     try {
@@ -67,25 +63,6 @@ export const DeveloperContent = ({
           <Button
             variant="desctructive"
             onClick={() => setApiUrl(defaultAPIUrl)}
-          >
-            Reset to default
-          </Button>
-        </div>
-
-        <span className="font-bold text-neutral-300 pb-2">Billing URL</span>
-        <span className="text-sm text-neutral-300 pb-4">
-          Customize E2B Billing API URL.
-        </span>
-        <div className="flex w-full items-center space-x-2 pb-4">
-          <input
-            type="text"
-            className="w-1/2 border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
-            value={billingUrl}
-            onChange={(e) => setBillingUrl(e.target.value)}
-          />
-          <Button
-            variant="desctructive"
-            onClick={() => setBillingUrl(defaultBillingUrl)}
           >
             Reset to default
           </Button>
