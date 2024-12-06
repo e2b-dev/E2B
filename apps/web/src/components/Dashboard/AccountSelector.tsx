@@ -5,7 +5,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ChevronRight, PencilRuler, PlusCircle } from 'lucide-react'
+import { ChevronRight, PlusCircle } from 'lucide-react'
 import { toast } from '../ui/use-toast'
 import {
   AlertDialog,
@@ -28,7 +28,6 @@ export const AccountSelector = ({
   currentTeam,
   setCurrentTeam,
   setTeams,
-  openDevSettings,
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [teamName, setTeamName] = useState('')
@@ -92,14 +91,6 @@ export const AccountSelector = ({
           >
             <PlusCircle width={15} height={15} />
             <span>Create Team</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="flex items-center space-x-1"
-            onClick={openDevSettings}
-          >
-            <PencilRuler width={15} height={15} />
-            <span>Developer</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

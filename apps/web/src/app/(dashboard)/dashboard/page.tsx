@@ -10,6 +10,7 @@ import {
   Key,
   LucideIcon,
   PackageIcon,
+  PencilRuler,
   Settings,
   Users,
 } from 'lucide-react'
@@ -46,6 +47,7 @@ const menuLabels = [
   'usage',
   'billing',
   'team',
+  'developer',
 ] as const
 type MenuLabel = (typeof menuLabels)[number]
 
@@ -189,9 +191,6 @@ const Sidebar = ({
       currentTeam={currentTeam}
       setCurrentTeam={setCurrentTeam}
       setTeams={setTeams}
-      openDevSettings={() => {
-        setSelectedItem('developer')
-      }}
     />
 
     <div className="flex flex-row justify-center space-x-4 md:space-x-0 md:space-y-2 md:flex-col">
@@ -216,6 +215,7 @@ const iconMap: { [key in MenuLabel]: LucideIcon } = {
   team: Users,
   templates: FileText,
   sandboxes: PackageIcon,
+  developer: PencilRuler,
 }
 
 const MenuItem = ({
@@ -303,7 +303,7 @@ function MainContent({
           billingUrl={billingUrlState[0]}
         />
       )
-    case 'developer' as string:
+    case 'developer':
       return (
         <DeveloperContent
           apiUrlState={apiUrlState}
