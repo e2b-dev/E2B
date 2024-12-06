@@ -88,10 +88,7 @@ function SocialLink({
   children: React.ReactNode
 }) {
   return (
-    <Link
-      href={href}
-      className="group"
-    >
+    <Link href={href} className="group">
       <span className="sr-only">{children}</span>
       <Icon className="h-5 w-5 fill-zinc-700 transition group-hover:fill-zinc-900 dark:group-hover:fill-zinc-500" />
     </Link>
@@ -103,26 +100,18 @@ function SmallPrint() {
     <div className="flex flex-col w-full items-center justify-between gap-5 pt-8 dark:border-white/5 sm:flex-row">
       <div className="flex flex-col items-center justify-start lg:items-start">
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
-          &copy; FoundryLabs, Inc. {new Date().getFullYear()}. All rights reserved.
+          &copy; FoundryLabs, Inc. {new Date().getFullYear()}. All rights
+          reserved.
         </p>
       </div>
       <div className="flex gap-4">
-        <SocialLink
-          href="https://x.com/e2b_dev"
-          icon={TwitterIcon}
-        >
+        <SocialLink href="https://x.com/e2b_dev" icon={TwitterIcon}>
           Follow us on X (f.k.a. Twitter)
         </SocialLink>
-        <SocialLink
-          href="https://github.com/e2b-dev"
-          icon={GitHubIcon}
-        >
+        <SocialLink href="https://github.com/e2b-dev" icon={GitHubIcon}>
           Follow us on GitHub
         </SocialLink>
-        <SocialLink
-          href="https://discord.gg/U7KEcGErtQ"
-          icon={DiscordIcon}
-        >
+        <SocialLink href="https://discord.gg/U7KEcGErtQ" icon={DiscordIcon}>
           Join our Discord server
         </SocialLink>
       </div>
@@ -141,7 +130,7 @@ export function Footer() {
 
 export function FooterMain() {
   return (
-    <footer className="flex w-full space-y-10 pb-16">
+    <footer className="flex w-full px-2 md:px-32 py-10">
       <div className="flex flex-col w-full items-center justify-center border-t border-zinc-900/5 dark:border-white/5">
         <SmallPrint />
       </div>

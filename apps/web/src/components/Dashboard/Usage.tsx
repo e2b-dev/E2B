@@ -79,7 +79,7 @@ export const UsageContent = ({
   }, [team])
 
   return (
-    <div className="flex flex-col w-full h-full pb-10">
+    <div className="flex flex-col w-full">
       <div className="pb-10">
         <h2 className="font-bold pb-4 text-xl">Usage history</h2>
         <p>

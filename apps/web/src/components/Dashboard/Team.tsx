@@ -188,7 +188,7 @@ export const TeamContent = ({
   }
 
   return (
-    <div className="flex flex-col justify-center pb-10">
+    <div className="flex flex-col justify-center">
       <h3 className="text-lg font-medium pb-4">Team name</h3>
       <div className="flex items-center space-x-2 pb-4">
         <input

@@ -13,7 +13,7 @@ export const DeveloperContent = ({
   const [billingUrl, setBillingUrl] = billingUrlState
 
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className="flex flex-col w-full">
       <div className="flex flex-col h-full">
         <h1 className="font-bold pb-10 text-xl">Developer settings</h1>
 

@@ -206,8 +206,8 @@ export const KeysContent = ({
   }
 
   return (
-    <div className="flex flex-col w-full h-full">
-      <div className="flex flex-col w-full pb-10">
+    <div className="flex flex-col w-full">
+      <div className="flex flex-col w-full">
         <Button
           className="w-fit"
           onClick={() => {

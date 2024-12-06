@@ -5,7 +5,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Bug, ChevronRight, PlusCircle } from 'lucide-react'
+import { Bug, ChevronRight, PencilRuler, PlusCircle } from 'lucide-react'
 import { toast } from '../ui/use-toast'
 import {
   AlertDialog,
@@ -98,7 +98,7 @@ export const AccountSelector = ({
             className="flex items-center space-x-1"
             onClick={openDevSettings}
           >
-            <Bug width={15} height={15} />
+            <PencilRuler width={15} height={15} />
             <span>Developer</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

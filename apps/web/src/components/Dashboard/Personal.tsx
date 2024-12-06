@@ -60,7 +60,7 @@ export const PersonalContent = ({
   }
 
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className="flex flex-col w-full">
       <div className="flex flex-col h-full">
         <h1 className="font-bold pb-10 text-xl">Personal settings</h1>
 
@@ -123,7 +123,7 @@ export const PersonalContent = ({
               Resetting will send an email with a link to reset the password.{' '}
               <br />
             </span>
-            <div className="flex items-center space-x-2 pb-10">
+            <div className="flex items-center space-x-2">
               <Link href={'/sign-in?view=forgotten-password'}>
                 <Button variant="desctructive">Reset password</Button>
               </Link>

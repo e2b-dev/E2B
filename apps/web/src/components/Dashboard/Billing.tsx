@@ -68,7 +68,7 @@ export const BillingContent = ({
   }, [team])
 
   return (
-    <div className="flex flex-col w-full h-full pb-10">
+    <div className="flex flex-col w-full">
       <div className="flex items-center space-x-4 pb-10">
         <h2 className="font-bold text-xl">Make changes to your billing</h2>
         <ManageBilling />

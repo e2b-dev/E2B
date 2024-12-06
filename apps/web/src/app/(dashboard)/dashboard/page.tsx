@@ -68,7 +68,7 @@ export default function Page() {
 
   if (user) {
     return (
-      <div className="flex min-h-screen flex-col md:flex-row pt-16 md:pt-32 px-2 md:px-32">
+      <div className="flex flex-col md:flex-row pt-16 md:pt-32 px-2 md:px-32">
         <Suspense>
           <Dashboard user={user} />
         </Suspense>
@@ -152,7 +152,7 @@ const Dashboard = ({ user }) => {
           setCurrentTeam={setCurrentTeam}
           setTeams={setTeams}
         />
-        <div className="flex-1 md:pl-10">
+        <div className="flex-1 md:pl-10 pb-16">
           <h2 className="text-2xl mb-2 font-bold">
             {selectedItem[0].toUpperCase() + selectedItem.slice(1)}
           </h2>
