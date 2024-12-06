@@ -46,9 +46,11 @@ type TeamApiKey = {
 export const KeysContent = ({
   currentTeam,
   user,
+  billingUrl,
 }: {
   currentTeam: Team
   user: E2BUser
+  billingUrl: string
 }) => {
   const { toast } = useToast()
   const [isKeyDialogOpen, setIsKeyDialogOpen] = useState(false)
@@ -61,7 +63,7 @@ export const KeysContent = ({
   useEffect(() => {
     async function fetchApiKeys() {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${currentTeam.id}/api-keys`,
+        `${billingUrl}/teams/${currentTeam.id}/api-keys`,
         {
           headers: {
             'X-USER-ACCESS-TOKEN': user.accessToken,
@@ -95,7 +97,7 @@ export const KeysContent = ({
     }
 
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${currentTeam.id}/api-keys/${currentKey?.id}`,
+      `${billingUrl}/teams/${currentTeam.id}/api-keys/${currentKey?.id}`,
       {
         method: 'DELETE',
         headers: {
@@ -117,19 +119,16 @@ export const KeysContent = ({
   }
 
   async function createApiKey() {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${currentTeam.id}/api-keys`,
-      {
-        method: 'POST',
-        headers: {
-          'X-USER-ACCESS-TOKEN': user.accessToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: newApiKeyInput,
-        }),
-      }
-    )
+    const res = await fetch(`${billingUrl}/teams/${currentTeam.id}/api-keys`, {
+      method: 'POST',
+      headers: {
+        'X-USER-ACCESS-TOKEN': user.accessToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: newApiKeyInput,
+      }),
+    })
 
     if (!res.ok) {
       toast({
@@ -150,7 +149,7 @@ export const KeysContent = ({
 
   async function updateApiKey() {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${currentTeam.id}/api-keys/${currentKey?.id}`,
+      `${billingUrl}/teams/${currentTeam.id}/api-keys/${currentKey?.id}`,
       {
         method: 'PATCH',
         headers: {

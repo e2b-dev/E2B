@@ -1,6 +1,8 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
+import { useLocalStorage } from 'usehooks-ts'
+
 import {
   BarChart,
   CreditCard,
@@ -23,6 +25,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { PersonalContent } from '@/components/Dashboard/Personal'
 import { TemplatesContent } from '@/components/Dashboard/Templates'
 import { SandboxesContent } from '@/components/Dashboard/Sandboxes'
+import { DeveloperContent } from '@/components/Dashboard/Developer'
 
 function redirectToCurrentURL() {
   const url = typeof window !== 'undefined' ? window.location.href : undefined
@@ -81,6 +84,15 @@ const Dashboard = ({ user }) => {
   const teamParam = searchParams!.get('team')
   const [teams, setTeams] = useState<Team[]>([])
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
+
+  const apiUrlState = useLocalStorage(
+    'apiUrl',
+    process.env.NEXT_PUBLIC_API_URL || ''
+  )
+  const billingUrlState = useLocalStorage(
+    'billingUrl',
+    process.env.NEXT_PUBLIC_BILLING_API_URL || ''
+  )
 
   const initialTab =
     tab && menuLabels.includes(tab as MenuLabel)
@@ -152,6 +164,8 @@ const Dashboard = ({ user }) => {
             teams={teams}
             setTeams={setTeams}
             setCurrentTeam={setCurrentTeam}
+            apiUrlState={apiUrlState}
+            billingUrlState={billingUrlState}
           />
         </div>
       </>
@@ -175,6 +189,9 @@ const Sidebar = ({
       currentTeam={currentTeam}
       setCurrentTeam={setCurrentTeam}
       setTeams={setTeams}
+      openDevSettings={() => {
+        setSelectedItem('developer')
+      }}
     />
 
     <div className="flex flex-row justify-center space-x-4 md:space-x-0 md:space-y-2 md:flex-col">
@@ -238,6 +255,8 @@ function MainContent({
   teams,
   setTeams,
   setCurrentTeam,
+  apiUrlState,
+  billingUrlState,
 }: {
   selectedItem: MenuLabel
   user: E2BUser
@@ -245,20 +264,34 @@ function MainContent({
   teams: Team[]
   setTeams: (teams: Team[]) => void
   setCurrentTeam: (team: Team) => void
+  apiUrlState: [string, (value: string) => void]
+  billingUrlState: [string, (value: string) => void]
 }) {
   switch (selectedItem) {
     case 'personal':
-      return <PersonalContent user={user} />
+      return <PersonalContent user={user} billingUrl={billingUrlState[0]} />
     case 'keys':
-      return <KeysContent currentTeam={team} user={user} />
+      return (
+        <KeysContent
+          currentTeam={team}
+          user={user}
+          billingUrl={billingUrlState[0]}
+        />
+      )
     case 'sandboxes':
-      return <SandboxesContent team={team} />
+      return <SandboxesContent team={team} apiUrl={apiUrlState[0]} />
     case 'templates':
-      return <TemplatesContent user={user} teamId={team.id} />
+      return (
+        <TemplatesContent
+          user={user}
+          teamId={team.id}
+          apiUrl={apiUrlState[0]}
+        />
+      )
     case 'usage':
-      return <UsageContent team={team} />
+      return <UsageContent team={team} billingUrl={billingUrlState[0]} />
     case 'billing':
-      return <BillingContent team={team} />
+      return <BillingContent team={team} billingUrl={billingUrlState[0]} />
     case 'team':
       return (
         <TeamContent
@@ -267,6 +300,14 @@ function MainContent({
           teams={teams}
           setTeams={setTeams}
           setCurrentTeam={setCurrentTeam}
+          billingUrl={billingUrlState[0]}
+        />
+      )
+    case 'developer' as string:
+      return (
+        <DeveloperContent
+          apiUrlState={apiUrlState}
+          billingUrlState={billingUrlState}
         />
       )
     default:
