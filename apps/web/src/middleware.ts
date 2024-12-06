@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { replaceUrls } from '@/utils/replaceUrls'
+import {
+  landingPageWebflowHostname,
+  landingPageFramerHostname,
+  blogFramerHostname,
+  changelogFramerHostname,
+} from '@/app/hostnames'
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   if (req.method !== 'GET') return NextResponse.next()
@@ -11,43 +17,43 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   if (url.pathname === '' || url.pathname === '/') {
     if (process.env.NODE_ENV === 'production') {
-      url.hostname = 'e2b-landing-page.framer.website'
+      url.hostname = landingPageWebflowHostname
     } else {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
   }
 
   if (url.pathname.startsWith('/terms')) {
-    url.hostname = 'e2b-landing-page.framer.website'
+    url.hostname = landingPageWebflowHostname
   }
 
   if (url.pathname.startsWith('/privacy')) {
-    url.hostname = 'e2b-landing-page.framer.website'
+    url.hostname = landingPageWebflowHostname
   }
 
   if (url.pathname.startsWith('/pricing')) {
-    url.hostname = 'e2b-landing-page.framer.website'
+    url.hostname = landingPageWebflowHostname
   }
 
+  // TODO: Not on the new landing page hosting yet
   if (url.pathname.startsWith('/ai-agents')) {
-    url.hostname = 'e2b-landing-page.framer.website'
+    url.hostname = landingPageFramerHostname
   }
 
   if (url.pathname === '/blog' || url.pathname === '/blog/') {
     url.pathname = '/'
-    url.hostname = 'e2b-blog.framer.website'
+    url.hostname = blogFramerHostname
   }
-
   if (url.pathname.startsWith('/blog')) {
-    url.hostname = 'e2b-blog.framer.website'
+    url.hostname = blogFramerHostname
   }
 
   if (url.pathname === '/changelog' || url.pathname === '/changelog/') {
     url.pathname = '/'
-    url.hostname = 'e2b-changelog.framer.website'
+    url.hostname = changelogFramerHostname
   }
   if (url.pathname.startsWith('/changelog')) {
-    url.hostname = 'e2b-changelog.framer.website'
+    url.hostname = changelogFramerHostname
   }
 
   const res = await fetch(url.toString(), { ...req })
@@ -56,8 +62,12 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
   const modifiedHtmlBody = replaceUrls(htmlBody, url.pathname, 'href="', '">')
+  // Even though we are paying for a Webflow tier that allows us to remove the badge, it doesn't work.
+  // eslint-disable-next-line
+  const scriptRegex = /<script src="https:\/\/cdn\.prod\.website-files\.com\/[^\"]*\.js" type="text\/javascript"><\/script>/g
+  const cleanedHtmlBody = modifiedHtmlBody.replace(scriptRegex, '')
 
-  return new NextResponse(modifiedHtmlBody, {
+  return new NextResponse(cleanedHtmlBody, {
     status: res.status,
     statusText: res.statusText,
     headers: res.headers,
