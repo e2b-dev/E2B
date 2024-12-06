@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { replaceUrls } from '@/utils/replaceUrls'
 import {
-  landingPageWebflowHostname,
+  landingPageHostname,
   landingPageFramerHostname,
   blogFramerHostname,
   changelogFramerHostname,
@@ -17,22 +17,22 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   if (url.pathname === '' || url.pathname === '/') {
     if (process.env.NODE_ENV === 'production') {
-      url.hostname = landingPageWebflowHostname
+      url.hostname = landingPageHostname
     } else {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
   }
 
   if (url.pathname.startsWith('/terms')) {
-    url.hostname = landingPageWebflowHostname
+    url.hostname = landingPageHostname
   }
 
   if (url.pathname.startsWith('/privacy')) {
-    url.hostname = landingPageWebflowHostname
+    url.hostname = landingPageHostname
   }
 
   if (url.pathname.startsWith('/pricing')) {
-    url.hostname = landingPageWebflowHostname
+    url.hostname = landingPageHostname
   }
 
   // TODO: Not on the new landing page hosting yet
@@ -62,12 +62,8 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
   const modifiedHtmlBody = replaceUrls(htmlBody, url.pathname, 'href="', '">')
-  // Even though we are paying for a Webflow tier that allows us to remove the badge, it doesn't work.
-  // eslint-disable-next-line
-  const scriptRegex = /<script src="https:\/\/cdn\.prod\.website-files\.com\/[^\"]*\.js" type="text\/javascript"><\/script>/g
-  const cleanedHtmlBody = modifiedHtmlBody.replace(scriptRegex, '')
 
-  return new NextResponse(cleanedHtmlBody, {
+  return new NextResponse(modifiedHtmlBody, {
     status: res.status,
     statusText: res.statusText,
     headers: res.headers,
