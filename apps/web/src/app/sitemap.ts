@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 import { XMLParser } from 'fast-xml-parser'
-import path from 'path'
 import { replaceUrls } from '@/utils/replaceUrls'
+import path from 'path'
 import { getPageForSitemap } from '@/utils/sitemap'
 
 type ChangeFrequency =
@@ -57,7 +57,7 @@ async function getXmlData(url: string): Promise<Sitemap> {
   const response = await fetch(url, { cache: 'no-cache' })
 
   if (!response.ok) {
-    return { urlset: { url: [] } }
+    return { urlset: { url: [] }}
   }
 
   const text = await response.text()
@@ -99,7 +99,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 
   const dashboardPath = path.join(process.cwd(), 'src', 'app', '(dashboard)', 'dashboard')
-  const dashboardPages = getPageForSitemap(dashboardPath, 'https://e2b.dev/dashboard/', 0.5)
+  const dashboardPages =  getPageForSitemap(dashboardPath, 'https://e2b.dev/dashboard/', 0.5)
 
   const docsDirectory = path.join(process.cwd(), 'src', 'app', '(docs)', 'docs')
   const docsPages = getPageForSitemap(docsDirectory, 'https://e2b.dev/docs/', 0.5).filter(
