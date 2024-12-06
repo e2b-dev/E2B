@@ -1,6 +1,8 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
+import { useLocalStorage } from 'usehooks-ts'
+
 import {
   BarChart,
   CreditCard,
@@ -8,6 +10,7 @@ import {
   Key,
   LucideIcon,
   PackageIcon,
+  PencilRuler,
   Settings,
   Users,
 } from 'lucide-react'
@@ -23,6 +26,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { PersonalContent } from '@/components/Dashboard/Personal'
 import { TemplatesContent } from '@/components/Dashboard/Templates'
 import { SandboxesContent } from '@/components/Dashboard/Sandboxes'
+import { DeveloperContent } from '@/components/Dashboard/Developer'
 
 function redirectToCurrentURL() {
   const url = typeof window !== 'undefined' ? window.location.href : undefined
@@ -43,6 +47,7 @@ const menuLabels = [
   'usage',
   'billing',
   'team',
+  'developer',
 ] as const
 type MenuLabel = (typeof menuLabels)[number]
 
@@ -65,7 +70,7 @@ export default function Page() {
 
   if (user) {
     return (
-      <div className="flex min-h-screen flex-col md:flex-row pt-16 md:pt-32 px-2 md:px-32">
+      <div className="flex flex-col md:flex-row pt-16 md:pt-32 px-2 md:px-32">
         <Suspense>
           <Dashboard user={user} />
         </Suspense>
@@ -81,6 +86,15 @@ const Dashboard = ({ user }) => {
   const teamParam = searchParams!.get('team')
   const [teams, setTeams] = useState<Team[]>([])
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
+
+  const apiUrlState = useLocalStorage(
+    'apiUrl',
+    process.env.NEXT_PUBLIC_API_URL || ''
+  )
+  const billingUrlState = useLocalStorage(
+    'billingUrl',
+    process.env.NEXT_PUBLIC_BILLING_API_URL || ''
+  )
 
   const initialTab =
     tab && menuLabels.includes(tab as MenuLabel)
@@ -140,7 +154,7 @@ const Dashboard = ({ user }) => {
           setCurrentTeam={setCurrentTeam}
           setTeams={setTeams}
         />
-        <div className="flex-1 md:pl-10">
+        <div className="flex-1 md:pl-10 pb-16">
           <h2 className="text-2xl mb-2 font-bold">
             {selectedItem[0].toUpperCase() + selectedItem.slice(1)}
           </h2>
@@ -152,6 +166,8 @@ const Dashboard = ({ user }) => {
             teams={teams}
             setTeams={setTeams}
             setCurrentTeam={setCurrentTeam}
+            apiUrlState={apiUrlState}
+            billingUrlState={billingUrlState}
           />
         </div>
       </>
@@ -199,6 +215,7 @@ const iconMap: { [key in MenuLabel]: LucideIcon } = {
   team: Users,
   templates: FileText,
   sandboxes: PackageIcon,
+  developer: PencilRuler,
 }
 
 const MenuItem = ({
@@ -213,18 +230,16 @@ const MenuItem = ({
   onClick: () => void
 }) => (
   <div
-    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${
-      selected ? 'bg-[#995100]' : ''
-    }`}
+    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${selected ? 'bg-[#995100]' : ''
+      }`}
     onClick={onClick}
   >
     <Icon width={20} height={20} />
     <p
-      className={`${
-        !label || !window.matchMedia('(min-width: 768)').matches
+      className={`${!label || !window.matchMedia('(min-width: 768)').matches
           ? 'sr-only sm:not-sr-only'
           : ''
-      }`}
+        }`}
     >
       {label[0].toUpperCase() + label.slice(1)}
     </p>
@@ -238,6 +253,8 @@ function MainContent({
   teams,
   setTeams,
   setCurrentTeam,
+  apiUrlState,
+  billingUrlState,
 }: {
   selectedItem: MenuLabel
   user: E2BUser
@@ -245,20 +262,34 @@ function MainContent({
   teams: Team[]
   setTeams: (teams: Team[]) => void
   setCurrentTeam: (team: Team) => void
+  apiUrlState: [string, (value: string) => void]
+  billingUrlState: [string, (value: string) => void]
 }) {
   switch (selectedItem) {
     case 'personal':
-      return <PersonalContent user={user} />
+      return <PersonalContent user={user} billingUrl={billingUrlState[0]} />
     case 'keys':
-      return <KeysContent currentTeam={team} user={user} />
+      return (
+        <KeysContent
+          currentTeam={team}
+          user={user}
+          billingUrl={billingUrlState[0]}
+        />
+      )
     case 'sandboxes':
-      return <SandboxesContent team={team} />
+      return <SandboxesContent team={team} apiUrl={apiUrlState[0]} />
     case 'templates':
-      return <TemplatesContent user={user} teamId={team.id} />
+      return (
+        <TemplatesContent
+          user={user}
+          teamId={team.id}
+          apiUrl={apiUrlState[0]}
+        />
+      )
     case 'usage':
-      return <UsageContent team={team} />
+      return <UsageContent team={team} billingUrl={billingUrlState[0]} />
     case 'billing':
-      return <BillingContent team={team} />
+      return <BillingContent team={team} billingUrl={billingUrlState[0]} />
     case 'team':
       return (
         <TeamContent
@@ -267,6 +298,13 @@ function MainContent({
           teams={teams}
           setTeams={setTeams}
           setCurrentTeam={setCurrentTeam}
+          billingUrl={billingUrlState[0]}
+        />
+      )
+    case 'developer':
+      return (
+        <DeveloperContent
+          apiUrlState={apiUrlState}
         />
       )
     default:

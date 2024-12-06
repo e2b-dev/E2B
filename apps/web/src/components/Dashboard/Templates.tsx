@@ -23,9 +23,11 @@ interface Template {
 export function TemplatesContent({
   user,
   teamId,
+  apiUrl,
 }: {
   user: E2BUser
   teamId: string
+  apiUrl: string
 }) {
   const [templates, setTemplates] = useState<Template[]>([])
 
@@ -33,7 +35,7 @@ export function TemplatesContent({
     function f() {
       const accessToken = user.accessToken
       if (accessToken) {
-        fetchTemplates(accessToken, teamId).then((newTemplates) => {
+        fetchTemplates(apiUrl, accessToken, teamId).then((newTemplates) => {
           if (newTemplates) {
             setTemplates(newTemplates)
           }
@@ -88,10 +90,11 @@ export function TemplatesContent({
 }
 
 async function fetchTemplates(
+  apiUrl: string,
   accessToken: string,
   teamId: string
 ): Promise<Template[]> {
-  const res = await fetch(`https://api.e2b.dev/templates?teamID=${teamId}`, {
+  const res = await fetch(`${apiUrl}/templates?teamID=${teamId}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,

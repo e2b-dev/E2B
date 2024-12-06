@@ -23,14 +23,20 @@ interface Sandbox {
   templateID: string
 }
 
-export function SandboxesContent({ team }: { team: Team }) {
+export function SandboxesContent({
+  team,
+  apiUrl,
+}: {
+  team: Team
+  apiUrl: string
+}) {
   const [runningSandboxes, setRunningSandboxes] = useState<Sandbox[]>([])
 
   useEffect(() => {
     function f() {
       const apiKey = team.apiKeys[0]
       if (apiKey) {
-        fetchSandboxes(apiKey).then((newSandboxes) => {
+        fetchSandboxes(apiUrl, apiKey).then((newSandboxes) => {
           if (newSandboxes) {
             setRunningSandboxes(newSandboxes)
           }
@@ -94,8 +100,11 @@ export function SandboxesContent({ team }: { team: Team }) {
   )
 }
 
-async function fetchSandboxes(apiKey: string): Promise<Sandbox[]> {
-  const res = await fetch('https://api.e2b.dev/sandboxes', {
+async function fetchSandboxes(
+  apiUrl: string,
+  apiKey: string
+): Promise<Sandbox[]> {
+  const res = await fetch(`${apiUrl}/sandboxes`, {
     method: 'GET',
     headers: {
       'X-API-KEY': apiKey,
