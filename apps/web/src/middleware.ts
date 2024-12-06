@@ -62,8 +62,11 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
   const modifiedHtmlBody = replaceUrls(htmlBody, url.pathname, 'href="', '">')
+  // Remove the script with cdn.prod.website-files.com hostname
+  const scriptRegex = /<script src="https:\/\/cdn\.prod\.website-files\.com\/[^\"]*\.js" type="text\/javascript"><\/script>/g
+  const cleanedHtmlBody = modifiedHtmlBody.replace(scriptRegex, '')
 
-  return new NextResponse(modifiedHtmlBody, {
+  return new NextResponse(cleanedHtmlBody, {
     status: res.status,
     statusText: res.statusText,
     headers: res.headers,
