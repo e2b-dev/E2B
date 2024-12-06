@@ -31,7 +31,7 @@ export const DeveloperContent = ({
 
         <span className="font-bold text-neutral-300 pb-2">API URL</span>
         <span className="text-sm text-neutral-300 pb-4">
-          Set API URL so the dashboard can connect to your E2B Cluster and correctly display running sandboxes nad your templates.
+          Set API URL so the dashboard can connect to your E2B Cluster and correctly display running sandboxes and templates.
         </span>
 
         {apiUrl !== defaultAPIUrl && (
