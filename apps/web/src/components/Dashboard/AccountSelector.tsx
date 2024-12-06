@@ -5,7 +5,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Bug, ChevronRight, PlusCircle, Settings } from 'lucide-react'
+import { Bug, ChevronRight, PlusCircle } from 'lucide-react'
 import { toast } from '../ui/use-toast'
 import {
   AlertDialog,
