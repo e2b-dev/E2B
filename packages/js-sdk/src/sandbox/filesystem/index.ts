@@ -90,6 +90,10 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * Callback to call when the watch operation stops.
    */
   onExit?: (err?: Error) => void | Promise<void>
+  /**
+   * Watch the directory recursively
+   */
+  recursive?: boolean
 }
 
 /**
@@ -99,6 +103,7 @@ export class Filesystem {
   private readonly rpc: Client<typeof FilesystemService>
 
   private readonly defaultWatchTimeout = 60_000 // 60 seconds
+  private readonly defaultWatchRecursive = false
 
   constructor(
     transport: Transport,
@@ -446,7 +451,10 @@ export class Filesystem {
       : undefined
 
     const events = this.rpc.watchDir(
-      { path },
+      {
+        path,
+        recursive: opts?.recursive ?? this.defaultWatchRecursive,
+      },
       {
         headers: {
           ...authenticationHeader(opts?.user),
