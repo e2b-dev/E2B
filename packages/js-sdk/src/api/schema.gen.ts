@@ -98,6 +98,26 @@ export interface paths {
       };
     };
   };
+  "/sandboxes/{sandboxID}/pause": {
+    /** @description Pause the sandbox */
+    post: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      responses: {
+        /** @description The sandbox was paused successfully and can be resumed */
+        204: {
+          content: never;
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        409: components["responses"]["409"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
   "/sandboxes/{sandboxID}/refreshes": {
     /** @description Refresh the sandbox extending its time to live */
     post: {
@@ -121,6 +141,33 @@ export interface paths {
         };
         401: components["responses"]["401"];
         404: components["responses"]["404"];
+      };
+    };
+  };
+  "/sandboxes/{sandboxID}/resume": {
+    /** @description Resume the sandbox */
+    post: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["ResumedSandbox"];
+        };
+      };
+      responses: {
+        /** @description The sandbox was resumed successfully */
+        201: {
+          content: {
+            "application/json": components["schemas"]["Sandbox"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        409: components["responses"]["409"];
+        500: components["responses"]["500"];
       };
     };
   };
@@ -333,6 +380,14 @@ export interface components {
        */
       timeout?: number;
     };
+    ResumedSandbox: {
+      /**
+       * Format: int32
+       * @description Time to live for the sandbox in seconds.
+       * @default 15
+       */
+      timeout?: number;
+    };
     RunningSandbox: {
       /** @description Alias of the template */
       alias?: string;
@@ -451,6 +506,12 @@ export interface components {
     };
     /** @description Not found */
     404: {
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Conflict */
+    409: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
