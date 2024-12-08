@@ -1,16 +1,107 @@
 # Sandbox persistence
 
-We're working on a feature that will allow you to persist sandboxes between runs.
+<Note>
+Sandbox persistence is currently in beta with [some limitations](#limitations-while-in-beta).
 
-In the meantime, you can mount cloud storage like Amazon's S3, Google Cloud Storage, or Cloudflare's R2 to the sandbox's filesystem.
+The persistence is free for all users during the beta.
+</Note>
 
-**Prerequisites**
-- Famil
+The sandbox persistence allows you to pause your sandbox and resume it later from the same state it was in when you paused it.
+
+This includes not only state of the sandbox's filesystem but also the sandbox's memory. This means all running processes, loaded variables, data, etc.
+
+## Pausing sandbox
+When you pause a sandbox, both the sandbox's filesystem and memory state will be saved. This includes all the files in the sandbox's filesystem and all the running processes, loaded variables, data, etc.
+
+<CodeGroup>
+```js
+import { Sandbox } from 'e2b'
+// or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
+// import { Sandbox } from '@e2b/code-interpreter'
+//
+// or use Desktop: https://github.com/e2b-dev/desktop
+// import { Sandbox } from '@e2b/desktop'
+
+const sbx = await Sandbox.create()
+console.log('Sandbox created', sbx.id)
+
+// Pause the sandbox
+// You can save the resumable ID in your database
+// to resume the sandbox later
+const resumableId = await sbx.pause() // $HighlightLine
+console.log('Sandbox paused', resumableId) // $HighlightLine
+```
+```python
+from e2b import Sandbox
+# or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
+# from e2b_code_interpreter import Sandbox
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# from e2b_desktop import Sandbox
+
+sbx = Sandbox()
+print('Sandbox created', sbx.id)
+
+# Pause the sandbox
+# You can save the resumable ID in your database
+# to resume the sandbox later
+resumable_id = sbx.pause() # $HighlightLine
+print('Sandbox paused', resumable_id) # $HighlightLine
+```
+</CodeGroup>
 
 
+## Resuming sandbox
+When you resume a sandbox, it will be in the same state it was in when you paused it.
+This means that all the files in the sandbox's filesystem will be restored and all the running processes, loaded variables, data, etc. will be restored.
 
-## Amazon S3
+<CodeGroup>
+```js
+import { Sandbox } from 'e2b'
+// or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
+// import { Sandbox } from '@e2b/code-interpreter'
+//
+// or use Desktop: https://github.com/e2b-dev/desktop
+// import { Sandbox } from '@e2b/desktop'
 
-## Google Cloud Storage
+const sbx = await Sandbox.create()
+console.log('Sandbox created', sbx.id)
 
-## Cloudflare R2
+// Pause the sandbox
+// You can save the resumable ID in your database
+// to resume the sandbox later
+const resumableId = await sbx.pause()
+console.log('Sandbox paused', resumableId)
+
+// Resume the sandbox from the same state
+const sameSbx = await Sandbox.resume(resumableId) // $HighlightLine
+console.log('Sandbox resumed', sameSbx.id) // $HighlightLine
+```
+```python
+from e2b import Sandbox
+# or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
+# from e2b_code_interpreter import Sandbox
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# from e2b_desktop import Sandbox
+
+sbx = Sandbox()
+print('Sandbox created', sbx.id)
+
+# Pause the sandbox
+# You can save the resumable ID in your database
+# to resume the sandbox later
+resumable_id = sbx.pause()
+print('Sandbox paused', resumable_id)
+
+# Resume the sandbox from the same state
+same_sbx = Sandbox.resume(resumable_id) # $HighlightLine
+print('Sandbox resumed', same_sbx.id) # $HighlightLine
+```
+</CodeGroup>
+
+
+## Limitations while in beta
+- It takes about X seconds to pause the sandbox
+- The sandbox can be paused up to X days
+- The sandbox can only be resume on the same node (todo: friendlier explanation to users and add implications)
