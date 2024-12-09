@@ -176,7 +176,7 @@ export function TemplatesContent({
                       <Lock className="w-4 h-4" />
                     )}
                     <span className="text-xs">
-                      {template.public ? 'Visible' : 'Private'}
+                      {template.public ? 'Public' : 'Private'}
                     </span>
                   </div>
                 </TableCell>
