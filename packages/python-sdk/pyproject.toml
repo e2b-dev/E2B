@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e2b"
-version = "1.0.4"
+version = "1.0.5"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
@@ -15,7 +15,7 @@ python = "^3.8"
 python-dateutil = ">=2.8.2"
 protobuf = ">=3.20.0, <6.0.0"
 httpcore = "^1.0.5"
-httpx = "^0.27.0"
+httpx = ">=0.27.0, <1.0.0"
 attrs = ">=23.2.0"
 packaging = ">=24.1"
 typing-extensions = ">=4.1.0"

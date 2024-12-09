@@ -47,9 +47,11 @@ interface Template {
 export function TemplatesContent({
   user,
   teamId,
+  apiUrl,
 }: {
   user: E2BUser
   teamId: string
+  apiUrl: string
 }) {
   const [templates, setTemplates] = useState<Template[]>([])
   const [currentTemplate, setCurrentTemplate] = useState<Template | null>(null)
@@ -59,22 +61,13 @@ export function TemplatesContent({
     useState(false)
 
   useEffect(() => {
-    async function fetchTemplates() {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/templates?teamID=${teamId}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${user.accessToken}`,
-          },
-        }
-      )
-
-      const data: Template[] = await res.json()
-      if (!res.ok) {
-        toast({
-          title: 'An error occurred',
-          description: 'We were unable to fetch the team members',
+    function f() {
+      const accessToken = user.accessToken
+      if (accessToken) {
+        fetchTemplates(apiUrl, accessToken, teamId).then((newTemplates) => {
+          if (newTemplates) {
+            setTemplates(newTemplates)
+          }
         })
         console.log(res.statusText)
         return
@@ -313,4 +306,24 @@ export function TemplatesContent({
       </AlertDialog>
     </div>
   )
+}
+
+async function fetchTemplates(
+  apiUrl: string,
+  accessToken: string,
+  teamId: string
+): Promise<Template[]> {
+  const res = await fetch(`${apiUrl}/templates?teamID=${teamId}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+  try {
+    const data: Template[] = await res.json()
+    return data
+  } catch (e) {
+    // TODO: add sentry event here
+    return []
+  }
 }
