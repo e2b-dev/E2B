@@ -10,6 +10,9 @@ The sandbox persistence allows you to pause your sandbox and resume it later fro
 
 This includes not only state of the sandbox's filesystem but also the sandbox's memory. This means all running processes, loaded variables, data, etc.
 
+## Use cases
+Persistence is useful in cases ...
+
 ## Pausing sandbox
 When you pause a sandbox, both the sandbox's filesystem and memory state will be saved. This includes all the files in the sandbox's filesystem and all the running processes, loaded variables, data, etc.
 
@@ -102,6 +105,7 @@ print('Sandbox resumed', same_sbx.id) # $HighlightLine
 
 
 ## Limitations while in beta
-- It takes about X seconds to pause the sandbox
-- The sandbox can be paused up to X days
-- The sandbox can only be resume on the same node (todo: friendlier explanation to users and add implications)
+- It takes about 4 seconds per 1 GB RAM to pause the sandbox
+- It takes about 2 seconds to resume the sandbox
+  - Soon, this will get to the same speed as calling `Sandbox.create()`
+- Sandbox can be paused up to 30 days
