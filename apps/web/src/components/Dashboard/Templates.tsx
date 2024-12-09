@@ -61,7 +61,7 @@ export function TemplatesContent({
     useState(false)
 
   useEffect(() => {
-    function f() {
+    async function f() {
       const accessToken = user.accessToken
       if (accessToken) {
         fetchTemplates(apiUrl, accessToken, teamId).then((newTemplates) => {
@@ -69,18 +69,10 @@ export function TemplatesContent({
             setTemplates(newTemplates)
           }
         })
-        console.log(res.statusText)
-        return
       }
-
-      // Display the most recently updated templates first
-      const orderedData = data.sort((a, b) => {
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      })
-      setTemplates(orderedData)
     }
 
-    fetchTemplates()
+    f()
   }, [user, teamId])
 
   async function deleteTemplate() {
@@ -321,7 +313,10 @@ async function fetchTemplates(
   })
   try {
     const data: Template[] = await res.json()
-    return data
+    const orderedData = data.sort((a, b) => {
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    })
+    return orderedData
   } catch (e) {
     // TODO: add sentry event here
     return []
