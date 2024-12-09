@@ -192,7 +192,7 @@ async function templateAction(
 }
 
 export const publishCommand = new commander.Command('publish')
-  .description(`publish sandbox template`)
+  .description('publish sandbox template')
   .argument(
     '[template]',
     `specify ${asBold(
@@ -207,12 +207,12 @@ export const publishCommand = new commander.Command('publish')
   .addOption(configOption)
   .addOption(selectMultipleOption)
   .addOption(teamOption)
-  .alias('pub')
+  .alias('pb')
   .option('-y, --yes', 'skip manual publish confirmation')
   .action(templateAction.bind(null, true))
 
 export const unPublishCommand = new commander.Command('unpublish')
-  .description(`unpublish sandbox template`)
+  .description('unpublish sandbox template')
   .argument(
     '[template]',
     `specify ${asBold(
@@ -227,6 +227,6 @@ export const unPublishCommand = new commander.Command('unpublish')
   .addOption(configOption)
   .addOption(selectMultipleOption)
   .addOption(teamOption)
-  .alias('unpub')
+  .alias('upb')
   .option('-y, --yes', 'skip manual unpublish confirmation')
   .action(templateAction.bind(null, false))
