@@ -289,6 +289,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-# API reference artifacts
-api_ref/
-apiRefRoutes.json
+# SDK reference artifacts
+sdk_ref/
+sdkRefRoutes.json

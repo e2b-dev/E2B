@@ -8,15 +8,22 @@ import { NavLink } from './routes'
 export function NavigationLink({
   className,
   link,
-  tag,
 }: {
 
   className?: string
   link: NavLink
-  tag?: string
 }) {
   const pathname = usePathname()
-  const isActive = pathname === link.href
+  // Add this to get the hash
+  const hash = typeof window !== 'undefined' ? window.location.hash : ''
+
+  // Modify the isActive check to include hash comparison if needed
+  const isActive = pathname === link.href ||
+    (link.href.includes('#') && pathname + hash === link.href)
+  // const pathname = usePathname()
+  // console.log(link)
+  // console.log(link.title, pathname, link.href)
+  // const isActive = pathname === link.href
 
   return (
     <Link
@@ -32,17 +39,14 @@ export function NavigationLink({
     >
       <div className="flex items-center justify-start gap-1">
         {link.icon}
-        {tag ? (
+        {link.tag ? (
           <div className="flex items-center gap-2">
-            <Tag
-              variant="small"
-              color="emerald"
-            >
-              {tag}
-            </Tag>
             <span className={clsx('truncate', isActive ? 'text-white' : '')}>
               {link.title}
             </span>
+            <Tag>
+              {link.tag}
+            </Tag>
           </div>
         ) : (
           <span className={clsx('truncate', isActive ? 'text-white' : '')}>

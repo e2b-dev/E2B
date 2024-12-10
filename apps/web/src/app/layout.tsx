@@ -13,8 +13,6 @@ import { Section } from '@/components/SectionProvider'
 import { Layout } from '@/components/Layout'
 
 export const metadata: Metadata = {
-  // TODO: Add metadataBase
-  // metadataBase: ''
   title: {
     template: '%s - E2B',
     default: 'E2B - Code Interpreting for AI apps',
@@ -39,7 +37,6 @@ declare global {
   }
 }
 
-
 export default async function RootLayout({ children }) {
   const pages = await glob('**/*.mdx', { cwd: 'src/app/(docs)/docs' })
   const allSectionsEntries = (await Promise.all(
@@ -49,7 +46,6 @@ export default async function RootLayout({ children }) {
     ]),
   )) as Array<[string, Array<Section>]>
   const allSections = Object.fromEntries(allSectionsEntries)
-
 
   return (
     <html

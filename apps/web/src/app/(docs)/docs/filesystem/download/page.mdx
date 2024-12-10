@@ -22,7 +22,7 @@ sandbox = Sandbox()
 # Read file from sandbox
 content = sandbox.files.read('/path/in/sandbox')
 # Write file to local filesystem
-with open('/local/path', 'wb') as file:
+with open('/local/path', 'w') as file:
   file.write(content)
 ```
 </CodeGroup>

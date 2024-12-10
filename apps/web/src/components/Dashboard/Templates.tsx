@@ -20,14 +20,22 @@ interface Template {
   templateID: string
 }
 
-export function TemplatesContent({ user }: { user: E2BUser }) {
+export function TemplatesContent({
+  user,
+  teamId,
+  apiUrl,
+}: {
+  user: E2BUser
+  teamId: string
+  apiUrl: string
+}) {
   const [templates, setTemplates] = useState<Template[]>([])
 
   useEffect(() => {
     function f() {
-      const apiKey = user.accessToken
-      if (apiKey) {
-        fetchTemplates(apiKey).then((newTemplates) => {
+      const accessToken = user.accessToken
+      if (accessToken) {
+        fetchTemplates(apiUrl, accessToken, teamId).then((newTemplates) => {
           if (newTemplates) {
             setTemplates(newTemplates)
           }
@@ -42,7 +50,7 @@ export function TemplatesContent({ user }: { user: E2BUser }) {
     f()
     // Cleanup interval on component unmount
     return () => clearInterval(interval)
-  }, [user])
+  }, [user, teamId])
 
   return (
     <div className="flex flex-col justify-center">
@@ -81,11 +89,15 @@ export function TemplatesContent({ user }: { user: E2BUser }) {
   )
 }
 
-async function fetchTemplates(apiKey: string): Promise<Template[]> {
-  const res = await fetch('https://api.e2b.dev/templates', {
+async function fetchTemplates(
+  apiUrl: string,
+  accessToken: string,
+  teamId: string
+): Promise<Template[]> {
+  const res = await fetch(`${apiUrl}/templates?teamID=${teamId}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${accessToken}`,
     },
   })
   try {

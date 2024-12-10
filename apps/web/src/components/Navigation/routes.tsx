@@ -1,13 +1,14 @@
-import {
-  Home,
-  CheckCircle,
-  MessagesSquare,
-  Braces,
-} from 'lucide-react'
+import { Braces, CheckCircle, Home, MessagesSquare } from 'lucide-react'
+import sdkRefRoutesJson from './sdkRefRoutes.json'
+
+enum Tag {
+  New = 'New',
+}
 
 export interface NavLink {
   title: string
   href: string
+  tag?: Tag
   icon?: React.ReactNode
 }
 
@@ -23,7 +24,13 @@ export interface NavGroup {
   items: Array<NavLink | NavSubgroup>
 }
 
-export const routes: NavGroup[] = [
+export interface VersionedNavGroup {
+  title?: string
+  icon?: React.ReactNode
+  versionedItems: { [key: string]: Array<NavLink | NavSubgroup> }
+}
+
+export const docRoutes: NavGroup[] = [
   {
     items: [
       {
@@ -147,7 +154,7 @@ export const routes: NavGroup[] = [
             title: 'Interactive charts',
             href: '/docs/code-interpreting/create-charts-visualizations/interactive-charts',
           },
-        ]
+        ],
       },
       {
         title: 'Streaming',
@@ -184,13 +191,13 @@ export const routes: NavGroup[] = [
             title: 'Bash',
             href: '/docs/code-interpreting/supported-languages/bash',
           },
-        ]
+        ],
       },
       // {
       //   title: '* Parsing code execution results',
       //   href: '/docs/code-interpreting/todo',
       // },
-    ]
+    ],
   },
   // {
   //   title: 'Guides', // How to's
@@ -269,6 +276,11 @@ export const routes: NavGroup[] = [
         href: '/docs/sandbox',
       },
       {
+        title: 'Persistence',
+        tag: Tag.New,
+        href: '/docs/sandbox/persistence',
+      },
+      {
         title: 'Metadata',
         href: '/docs/sandbox/metadata',
       },
@@ -293,9 +305,6 @@ export const routes: NavGroup[] = [
       //   href: '/docs/sandbox/request-timeouts',
       // },
       // {
-      //   title: '* Persistence',
-      //   href: '/docs/sandbox/persistence',
-      // },
     ],
   },
   {
@@ -309,7 +318,7 @@ export const routes: NavGroup[] = [
         title: 'Customize CPU & RAM',
         href: '/docs/sandbox-template/customize-cpu-ram',
       },
-    ]
+    ],
   },
   {
     title: 'Filesystem',
@@ -334,7 +343,7 @@ export const routes: NavGroup[] = [
         title: 'Download data',
         href: '/docs/filesystem/download',
       },
-    ]
+    ],
   },
   {
     title: 'Commands',
@@ -351,7 +360,7 @@ export const routes: NavGroup[] = [
         title: 'Run commands in background',
         href: '/docs/commands/background',
       },
-    ]
+    ],
   },
   // {
   //   title: '* Async Python SDK',
@@ -411,7 +420,21 @@ export const routes: NavGroup[] = [
         title: 'Shutdown running sandboxes',
         href: '/docs/cli/shutdown-sandboxes',
       },
-    ]
+    ],
+  },
+  {
+    title: 'Troubleshooting',
+    items: [
+      {
+        title: 'Templates',
+        links: [
+          {
+            title: 'Build authentication error',
+            href: '/docs/troubleshooting/templates/build-authentication-error',
+          },
+        ],
+      },
+    ],
   },
   // {
   //   // Maybe move integrations to a separate docs page?
@@ -431,6 +454,36 @@ export const routes: NavGroup[] = [
   //     },
   //   ]
   // },
-  // ...apiRefRoutes,
 ]
 
+const sdkRefNameMap = {
+  'JS-SDK': 'JavaScript SDK',
+  'PYTHON-SDK': 'Python SDK',
+  'DESKTOP-JS-SDK': 'Desktop JavaScript SDK',
+  'DESKTOP-PYTHON-SDK': 'Desktop Python SDK',
+  'CODE-INTERPRETER-JS-SDK': 'Code Interpreter JavaScript SDK',
+  'CODE-INTERPRETER-PYTHON-SDK': 'Code Interpreter Python SDK',
+}
+
+export const sdkRefRoutes: VersionedNavGroup[] = (
+  sdkRefRoutesJson as VersionedNavGroup[]
+)
+  .sort((a, b) => {
+    const order = {
+      CLI: 1,
+      'JS-SDK': 2,
+      'PYTHON-SDK': 3,
+      'DESKTOP-JS-SDK': 4,
+      'DESKTOP-PYTHON-SDK': 5,
+    }
+    const aOrder = order[a.title || ''] || 999
+    const bOrder = order[b.title || ''] || 999
+    return aOrder - bOrder
+  })
+  .map((group) => ({
+    ...group,
+    title:
+      group?.title && sdkRefNameMap[group.title]
+        ? sdkRefNameMap[group.title]
+        : group.title,
+  }))

@@ -1,8 +1,7 @@
 import { Button } from '../Button'
-
+import { Button as AlertDialogAction } from '../ui/button'
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -11,32 +10,84 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Copy } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Edit, MoreVertical, Trash } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useToast } from '../ui/use-toast'
-import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
-import { Team } from '@/utils/useUser'
+import { E2BUser, Team } from '@/utils/useUser'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu'
 
-export const KeysContent = ({ currentTeam }: { currentTeam: Team }) => {
-  const supabase = createPagesBrowserClient()
+type TeamApiKey = {
+  id: string
+  value: string | null
+  maskedValue: string
+  name: string
+  createdBy: {
+    email: string
+    id: string
+  } | null
+  createdAt: string
+  lastUsed: string | null
+  updatedAt: string | null
+}
 
+export const KeysContent = ({
+  currentTeam,
+  user,
+  billingUrl,
+}: {
+  currentTeam: Team
+  user: E2BUser
+  billingUrl: string
+}) => {
   const { toast } = useToast()
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [currentKey, setCurrentKey] = useState<string | null>(null)
-  const [hoveredKey, setHoveredKey] = useState<string | null>(null)
-  const [apiKeys, setApiKeys] = useState<string[]>([])
+  const [isKeyDialogOpen, setIsKeyDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isKeyPreviewDialogOpen, setIsKeyPreviewDialogOpen] = useState(false)
+  const [currentKey, setCurrentKey] = useState<TeamApiKey | null>(null)
+  const [newApiKeyInput, setNewApiKeyInput] = useState<string>('')
+  const [apiKeys, setApiKeys] = useState<TeamApiKey[]>([])
 
   useEffect(() => {
-    setApiKeys(currentTeam.apiKeys)
+    async function fetchApiKeys() {
+      const res = await fetch(
+        `${billingUrl}/teams/${currentTeam.id}/api-keys`,
+        {
+          headers: {
+            'X-USER-ACCESS-TOKEN': user.accessToken,
+          },
+        }
+      )
+
+      if (!res.ok) {
+        toast({
+          title: 'An error occurred',
+          description: 'We were unable to fetch the team API keys',
+        })
+        console.log(res.statusText)
+        return
+      }
+
+      const keys = await res.json()
+      setApiKeys(keys)
+    }
+
+    fetchApiKeys()
   }, [currentTeam])
 
-  const closeDialog = () => setIsDialogOpen(false)
-  const openDialog = (key: string) => {
-    setCurrentKey(key)
-    setIsDialogOpen(true)
-  }
-
-  const deleteApiKey = async () => {
+  async function deleteApiKey() {
     if (apiKeys.length === 1) {
       toast({
         title: 'Cannot delete the last API key',
@@ -45,41 +96,38 @@ export const KeysContent = ({ currentTeam }: { currentTeam: Team }) => {
       return
     }
 
-    const { error } = await supabase
-      .from('team_api_keys')
-      .delete()
-      .eq('api_key', currentKey)
-
-    if (error) {
-      // TODO: Add sentry event here
-      toast(
-        {
-          title: 'An error occurred',
-          description: 'We were unable to delete the API key',
-
+    const res = await fetch(
+      `${billingUrl}/teams/${currentTeam.id}/api-keys/${currentKey?.id}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'X-USER-ACCESS-TOKEN': user.accessToken,
         },
-      )
-      console.log(error)
-      return
-    }
+      }
+    )
 
-    setApiKeys(apiKeys.filter(apiKey => apiKey !== currentKey))
-    closeDialog()
-  }
-
-  const addApiKey = async () => {
-    if (currentTeam === null) {
+    if (!res.ok) {
       toast({
         title: 'An error occurred',
-        description: 'We were unable to create the API key',
+        description: 'We were unable to delete the API key',
       })
     }
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams/${currentTeam.id}/api-keys`, {
+    setApiKeys(apiKeys.filter((apiKey) => apiKey.id !== currentKey?.id))
+    setCurrentKey(null)
+    setIsDeleteDialogOpen(false)
+  }
+
+  async function createApiKey() {
+    const res = await fetch(`${billingUrl}/teams/${currentTeam.id}/api-keys`, {
       method: 'POST',
       headers: {
-        'X-Team-API-Key': currentTeam.apiKeys[0],
+        'X-USER-ACCESS-TOKEN': user.accessToken,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        name: newApiKeyInput,
+      }),
     })
 
     if (!res.ok) {
@@ -87,88 +135,286 @@ export const KeysContent = ({ currentTeam }: { currentTeam: Team }) => {
         title: 'An error occurred',
         description: 'We were unable to create the API key',
       })
-      console.log(res.status, res.statusText)
-      // TODO: Add sentry event here
+
       return
     }
 
     const newKey = await res.json()
 
-    toast({
-      title: 'API key created',
-    })
-
-    setApiKeys([...apiKeys, newKey.apiKey])
+    setApiKeys([...apiKeys, newKey])
+    setNewApiKeyInput('')
+    setCurrentKey(newKey)
+    setIsKeyPreviewDialogOpen(true)
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
+  async function updateApiKey() {
+    const res = await fetch(
+      `${billingUrl}/teams/${currentTeam.id}/api-keys/${currentKey?.id}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'X-USER-ACCESS-TOKEN': user.accessToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newApiKeyInput,
+        }),
+      }
+    )
+
+    if (!res.ok) {
+      toast({
+        title: 'An error occurred',
+        description: 'We were unable to update the API key',
+      })
+    }
+
     toast({
-      title: 'API Key copied to clipboard',
+      title: 'API key updated',
     })
+
+    setApiKeys(
+      apiKeys.map((apiKey) =>
+        apiKey.id === currentKey?.id
+          ? {
+              ...apiKey,
+              name: newApiKeyInput,
+            }
+          : apiKey
+      )
+    )
+
+    setNewApiKeyInput('')
+    setCurrentKey(null)
+    setIsKeyDialogOpen(false)
   }
 
-  const maskApiKey = (key: string) => {
-    const firstFour = key.slice(0, 4)
-    const lastFour = key.slice(-4)
-    const stars = '*'.repeat(key.length - 8) // use fixed-width character
-    return `${firstFour}${stars}${lastFour}`
+  const sortedApiKeys = useMemo(() => {
+    return apiKeys.sort((a, b) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
+  }, [apiKeys])
+
+  function copyApiKey() {
+    navigator.clipboard.writeText(
+      currentKey?.value || currentKey?.maskedValue || ''
+    )
+
+    toast({
+      title: 'Copied API key to clipboard',
+    })
   }
 
   return (
-    <div className="flex flex-col w-full h-full">
-      <div className="flex flex-col w-fit h-full">
-
-        <div className='flex flex-col w-full pb-10'>
-          <Button className='w-fit' onClick={addApiKey}>Add API Key</Button>
-        </div>
-
-        <p className='text-neutral-300 pb-2'>Active keys</p>
-
-        {apiKeys.map((apiKey, index) => (
-          <div
-            key={index}
-            className='flex w-full justify-between items-center border border-white/5 rounded-lg p-2 mb-4 space-x-4'
-          >
-            <div
-              className="font-mono text-xs md:text-sm"
-              onMouseEnter={() => setHoveredKey(apiKey)}
-              onMouseLeave={() => setHoveredKey(null)}
-            >
-              {hoveredKey === apiKey ? apiKey : maskApiKey(apiKey)}
-            </div>
-
-            <div className='flex items-center space-x-2'>
-              <Copy className='hover:cursor-pointer' width={18} height={18} onClick={() => copyToClipboard(apiKey)} />
-              <Button className='text-sm' variant='desctructive' onClick={() => openDialog(apiKey)}>
-                Delete key
-              </Button>
-            </div>
-          </div>
-        ))}
-
-
+    <div className="flex flex-col w-full">
+      <div className="flex flex-col w-full">
+        <Button
+          className="w-fit"
+          onClick={() => {
+            setCurrentKey(null)
+            setNewApiKeyInput('')
+            setIsKeyDialogOpen(true)
+          }}
+        >
+          Add API Key
+        </Button>
       </div>
 
-      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" style={{ display: 'none' }}>Show Dialog</Button>
-        </AlertDialogTrigger>
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5">
+            <TableHead>Name</TableHead>
+            <TableHead>Key</TableHead>
+            <TableHead>Created by</TableHead>
+            <TableHead>Created at</TableHead>
+            <TableHead></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedApiKeys.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center">
+                Click on &quot;Add API Key&quot; button above to create your
+                first API key.
+              </TableCell>
+            </TableRow>
+          ) : (
+            sortedApiKeys.map((apiKey, index) => (
+              <TableRow
+                className="hover:bg-orange-300/10 dark:hover:bg-orange-300/10 border-b border-white/5"
+                key={index}
+              >
+                <TableCell>{apiKey.name}</TableCell>
+                <TableCell className="font-mono">
+                  {apiKey.maskedValue}
+                </TableCell>
+                <TableCell>{apiKey.createdBy?.email}</TableCell>
+                <TableCell>
+                  {new Date(apiKey.createdAt).toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <MoreVertical className="w-4 h-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setNewApiKeyInput(apiKey.name)
+                          setCurrentKey(apiKey)
+                          setIsKeyDialogOpen(true)
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-500"
+                        onClick={() => {
+                          setCurrentKey(apiKey)
+                          setIsDeleteDialogOpen(true)
+                        }}
+                      >
+                        <Trash className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+
+      <AlertDialog open={isKeyDialogOpen} onOpenChange={setIsKeyDialogOpen}>
         <AlertDialogContent className="bg-inherit text-white border-black">
           <AlertDialogHeader>
-            <AlertDialogTitle>You are about to delete an API key</AlertDialogTitle>
-            <AlertDialogDescription className='text-white/90'>
-              This action cannot be undone. This will permanently delete the
-              API key with immediate effect.
-            </AlertDialogDescription>
+            <AlertDialogTitle>
+              You are about to {currentKey ? 'edit' : 'create'} an API key
+            </AlertDialogTitle>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className='border-white/10' onClick={closeDialog}>Cancel</AlertDialogCancel>
-            <AlertDialogAction className='bg-red-500 text-white hover:bg-red-600' onClick={deleteApiKey}>Continue</AlertDialogAction>
-          </AlertDialogFooter>
+          <form
+            className="flex flex-col gap-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              currentKey ? updateApiKey() : createApiKey()
+              setIsKeyDialogOpen(false)
+            }}
+          >
+            <input
+              type="text"
+              className="border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
+              placeholder="Name"
+              value={newApiKeyInput}
+              onChange={(e) => {
+                setNewApiKeyInput(e.target.value)
+              }}
+              autoFocus
+              required
+            />
+
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  setIsKeyDialogOpen(false)
+                  setCurrentKey(null)
+                  setNewApiKeyInput('')
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction type="submit">
+                {currentKey ? 'Update' : 'Create'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </form>
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog
+        open={isKeyPreviewDialogOpen}
+        onOpenChange={setIsKeyPreviewDialogOpen}
+      >
+        <AlertDialogContent className="bg-inherit text-white border-black">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Your API key</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will only see the API key once. Make sure to copy it now.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <form className="flex flex-col gap-2">
+            <input
+              type="text"
+              className="border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
+              placeholder="Name"
+              value={currentKey?.value || currentKey?.maskedValue}
+              autoFocus
+              required
+              readOnly
+            />
+
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  setIsKeyPreviewDialogOpen(false)
+                  setCurrentKey(null)
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                type="button"
+                onClick={() => {
+                  copyApiKey()
+                  setIsKeyPreviewDialogOpen(false)
+                }}
+              >
+                Copy
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" style={{ display: 'none' }}>
+            Show Dialog
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent className="bg-inherit text-white border-black">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              You are about to delete an API key
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-white/90">
+              This action cannot be undone. This will permanently delete the API
+              key with immediate effect.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="border-white/10"
+              onClick={() => {
+                setIsDeleteDialogOpen(false)
+                setCurrentKey(null)
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 text-white hover:bg-red-600"
+              onClick={deleteApiKey}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

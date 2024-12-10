@@ -1,4 +1,4 @@
-name: Test JS SDK
+name: Publish Packages
 
 on:
   workflow_call:
@@ -18,8 +18,16 @@ jobs:
     name: Build and test SDK
     runs-on: ubuntu-20.04
     steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.VERSION_BUMPER_APPID }}
+          private-key: ${{ secrets.VERSION_BUMPER_SECRET }}
+
       - name: Checkout Repo
         uses: actions/checkout@v3
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -67,9 +75,13 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
-      - name: Generate API Ref
-        run: pnpm run generate-api-reference
-
+      - name: Generate SDK reference
+        id: sdk-ref
+        run: pnpm run --recursive generate-ref
+              
+      - name: Show docs file structure
+        run: tree ./sdk-reference
+  
       - name: Update lock file
         run: pnpm i --no-link --no-frozen-lockfile
 
@@ -77,7 +89,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add apps/web/src/app/\(docs\)/docs/api-reference 
+          git add apps/web/src/app/\(docs\)/docs/sdk-reference 
           git commit -am "[skip ci] Release new versions" || exit 0
           git push
         env:
