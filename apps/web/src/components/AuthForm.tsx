@@ -72,8 +72,8 @@ function AuthForm({ view }: Props) {
           }}
           redirectTo={
             view === 'forgotten_password'
-              ? 'https://e2b.dev/auth/update-password'
-              : 'https://e2b.dev/dashboard'
+              ? `${document.location.origin}/auth/update-password`
+              : `${document.location.origin}/dashboard`
           }
         />
       </div>
