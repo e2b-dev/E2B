@@ -7,9 +7,9 @@ from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.utils import class_method_variant
-from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
+from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.sandbox_api import SandboxApi
 
 logger = logging.getLogger(__name__)
@@ -354,4 +354,27 @@ class Sandbox(SandboxSetup, SandboxApi):
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             **self.connection_config.__dict__,
+        )
+
+    @class_method_variant("_cls_resume")
+    def resume(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ):
+
+        SandboxApi._cls_resume(
+            sandbox_id=sandbox_id,
+            request_timeout=request_timeout,
+            **self.connection_config.__dict__,
+        )
+
+        return cls.connect(
+            sandbox_id=sandbox_id,
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
         )
