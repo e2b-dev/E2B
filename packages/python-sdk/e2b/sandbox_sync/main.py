@@ -378,3 +378,14 @@ class Sandbox(SandboxSetup, SandboxApi):
             domain=domain,
             debug=debug,
         )
+
+    @class_method_variant("_cls_pause")
+    def pause(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        SandboxApi._cls_pause(sandbox_id=sandbox_id, **self.connection_config.__dict__)

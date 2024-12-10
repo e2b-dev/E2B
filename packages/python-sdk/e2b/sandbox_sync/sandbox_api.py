@@ -5,6 +5,7 @@ from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     get_sandboxes,
     post_sandboxes,
+    post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_resume,
     post_sandboxes_sandbox_id_timeout,
 )
@@ -225,6 +226,33 @@ class SandboxApi(SandboxApiBase):
                 sandbox_id,
                 client=api_client,
                 body=ResumedSandbox(timeout=timeout),
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+    @classmethod
+    def _cls_pause(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
+
+        with ApiClient(
+            config, transport=HTTPTransport(limits=SandboxApiBase._limits)
+        ) as api_client:
+            res = post_sandboxes_sandbox_id_pause.sync_detailed(
+                sandbox_id,
+                client=api_client,
             )
 
             if res.status_code >= 300:
