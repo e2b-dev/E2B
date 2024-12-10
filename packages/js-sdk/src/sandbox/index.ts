@@ -363,7 +363,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns sandbox instance.
    */
-  async resume(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>): Promise<this> {
+  async resume(opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'timeoutMs'>): Promise<this> {
     await Sandbox.resume(this.sandboxId, { ...this.connectionConfig, ...opts })
 
     return this
