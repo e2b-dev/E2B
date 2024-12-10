@@ -72,8 +72,8 @@ function AuthForm({ view }: Props) {
           }}
           redirectTo={
             view === 'forgotten_password'
-              ? `${process.env.NEXT_PUBLIC_BASE_URL}/auth/update-password`
-              : `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`
+              ? `${document.location.origin}/auth/update-password`
+              : `${document.location.origin}/dashboard`
           }
         />
       </div>
