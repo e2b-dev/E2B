@@ -1,18 +1,23 @@
-from typing import Optional, Dict, List
-from packaging.version import Version
+from typing import Dict, List, Optional
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
-from e2b.exceptions import TemplateException
-from e2b.api import AsyncApiClient
-from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
+from e2b.api import AsyncApiClient, handle_api_exception
 from e2b.api.client.api.sandboxes import (
-    post_sandboxes_sandbox_id_timeout,
-    get_sandboxes,
     delete_sandboxes_sandbox_id,
+    get_sandboxes,
     post_sandboxes,
+    post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_resume,
+    post_sandboxes_sandbox_id_timeout,
+)
+from e2b.api.client.models import (
+    NewSandbox,
+    PostSandboxesSandboxIDTimeoutBody,
+    ResumedSandbox,
 )
 from e2b.connection_config import ConnectionConfig
-from e2b.api import handle_api_exception
+from e2b.exceptions import TemplateException
+from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo
+from packaging.version import Version
 
 
 class SandboxApi(SandboxApiBase):
@@ -187,3 +192,54 @@ class SandboxApi(SandboxApiBase):
     @staticmethod
     def _get_sandbox_id(sandbox_id: str, client_id: str) -> str:
         return f"{sandbox_id}-{client_id}"
+
+    @classmethod
+    async def _cls_resume(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
+
+        async with AsyncApiClient(config) as api_client:
+            res = await post_sandboxes_sandbox_id_resume.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+                body=ResumedSandbox(timeout=timeout),
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+    @classmethod
+    async def _cls_pause(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
+
+        async with AsyncApiClient(config) as api_client:
+            res = await post_sandboxes_sandbox_id_pause.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
