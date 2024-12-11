@@ -2,6 +2,7 @@ import { defineWorkspace } from 'vitest/config'
 import { config } from 'dotenv'
 
 const env = config()
+
 export default defineWorkspace([
   {
     test: {
@@ -11,12 +12,6 @@ export default defineWorkspace([
       exclude: [
         'tests/runtimes/**',
       ],
-      poolOptions: {
-        threads: {
-          minThreads: 1,
-          maxThreads: 4,
-        },
-      },
       globals: false,
       testTimeout: 30000,
       environment: 'node',
