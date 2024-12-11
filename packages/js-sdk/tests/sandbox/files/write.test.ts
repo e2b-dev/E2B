@@ -35,9 +35,6 @@ sandboxTest('write files', async ({ sandbox }) => {
 
   assert.isTrue(Array.isArray(infos))
   assert.equal(infos.length, files.length)
-  console.log('infos')
-  console.log(infos)
-
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
