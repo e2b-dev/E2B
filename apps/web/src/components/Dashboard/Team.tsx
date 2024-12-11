@@ -28,11 +28,11 @@ import Spinner from '@/components/Spinner'
 interface TeamMember {
   id: string
   email: string
-  addedBy: {
+  added_by: {
     id: string
     email: string
   } | null
-  addedAt: string
+  added_at: string
 }
 
 const emailRegex = new RegExp(
@@ -275,10 +275,10 @@ export const TeamContent = ({
                   key={user.id}
                 >
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.addedBy?.email}</TableCell>
+                  <TableCell>{user.added_by?.email}</TableCell>
                   <TableCell>
-                    {user.addedAt
-                      ? new Date(user.addedAt).toLocaleString()
+                    {user.added_at
+                      ? new Date(user.added_at).toLocaleString()
                       : ''}
                   </TableCell>
                   <TableCell align="right">
