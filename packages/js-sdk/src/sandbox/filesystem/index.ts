@@ -22,6 +22,13 @@ import { FileType as FsFileType, Filesystem as FilesystemService } from '../../e
 
 import { WatchHandle, FilesystemEvent } from './watchHandle'
 
+export type WriteData = string | ArrayBuffer | Blob | ReadableStream
+
+export type WriteEntry = {
+  path: string
+  data: WriteData
+}
+
 /**
  * Sandbox filesystem object information.
  */
@@ -205,7 +212,7 @@ export class Filesystem {
   }
 
   /**
-   * Write content to a file.
+   * Write content to a file(s).
    *
    *
    * Writing to a file that doesn't exist creates the file.
@@ -214,32 +221,36 @@ export class Filesystem {
    *
    * Writing to a file at path that doesn't exist creates the necessary directories.
    *
-   * @param path path to file.
-   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`.
+   * @param files array of WriteEntry objects to write
    * @param opts connection options.
    *
-   * @returns information about the written file
+   * @returns array of information about the written files
    */
   async write(
-    path: string,
-    data: string | ArrayBuffer | Blob | ReadableStream,
+    files: WriteEntry[],
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo> {
-    const blob = await new Response(data).blob()
+  ): Promise<EntryInfo[]> {
+
+    if (files.length === 0) return [] as EntryInfo[]
+
+    const blobs = await Promise.all(files.map((f) => new Response(f.data).blob()))
 
     const res = await this.envdApi.api.POST('/files', {
       params: {
         query: {
-          path,
           username: opts?.user || defaultUsername,
         },
       },
       bodySerializer() {
-        const fd = new FormData()
+        return blobs.reduce((fd, blob, i) => {
+          // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
+          // the directory path information must not be used.
+          // BUT in our case we need to use the directory path information with a custom
+          // muktipart part name getter in envd.
+          fd.append('file', blob, files[i].path)
 
-        fd.append('file', blob)
-
-        return fd
+          return fd
+        }, new FormData())
       },
       body: {},
       headers: {
@@ -253,12 +264,12 @@ export class Filesystem {
       throw err
     }
 
-    const files = res.data
-    if (!files || files.length === 0) {
+    const createdFiles = res.data as EntryInfo[]
+    if (!createdFiles || createdFiles.length === 0) {
       throw new Error('Expected to receive information about written file')
     }
 
-    return files[0] as EntryInfo
+    return createdFiles
   }
 
   /**
