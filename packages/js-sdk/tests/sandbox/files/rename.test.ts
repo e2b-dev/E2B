@@ -8,7 +8,7 @@ sandboxTest('rename file', async ({ sandbox }) => {
   const newFilename = 'test_rename_new.txt'
   const content = 'This file will be renamed.'
 
-  await sandbox.files.write(oldFilename, content)
+  await sandbox.files.write([{ path: oldFilename, data: content }])
   const info = await sandbox.files.rename(oldFilename, newFilename)
   assert.equal(info.name, newFilename)
   assert.equal(info.type, 'file')

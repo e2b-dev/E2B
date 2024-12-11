@@ -4,6 +4,7 @@ import { Sandbox } from '../../src'
 import { template, isDebug } from '../setup.js'
 
 test.skipIf(isDebug)('create', async () => {
+  console.log('is debug', isDebug)
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000 })
   try {
     const isRunning = await sbx.isRunning()

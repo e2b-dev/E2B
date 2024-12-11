@@ -5,7 +5,7 @@ import { sandboxTest } from '../../setup.js'
 sandboxTest('file exists', async ({ sandbox }) => {
   const filename = 'test_exists.txt'
 
-  await sandbox.files.write(filename, 'test')
+  await sandbox.files.write([{ path: filename, data: 'test' }])
   const exists = await sandbox.files.exists(filename)
   assert.isTrue(exists)
 })
