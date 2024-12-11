@@ -1,7 +1,8 @@
 import {
   FolderTree,
   Terminal,
-  Hourglass
+  Hourglass,
+  RefreshCcw,
 } from 'lucide-react'
 
 import {
@@ -16,6 +17,12 @@ const concepts: BoxItem[] = [
     description: 'Learn about how to start the sandbox, manage its lifecycle, and interact with it.',
     icon: <Hourglass strokeWidth={1.5} className="h-6 w-6 transition-colors duration-300 fill-white/10 stroke-zinc-400 group-hover:fill-brand-300/10 group-hover:stroke-brand-400" />,
   },
+  {
+    href: '/docs/sandbox/persistence',
+    title: 'Sandbox persistence',
+    description: 'Learn how to achieve data persistence by pausing and resuming sandboxes.',
+    icon: <RefreshCcw strokeWidth={1.5} className="h-6 w-6 transition-colors duration-300 fill-white/10 stroke-zinc-400 group-hover:fill-brand-300/10 group-hover:stroke-brand-400" />,
+  },
   // {
   //   href: '/docs/code-execution',
   //   title: 'AI code execution',
@@ -25,13 +32,13 @@ const concepts: BoxItem[] = [
   {
     href: '/docs/filesystem',
     title: 'Filesystem',
-    description: 'Each sandbox has its own isolated filesystem that you can use to create, read, write, and delete files.',
+    description: 'Sandbox has an isolated filesystem that you can use to create, read, write, and delete files.',
     icon: <FolderTree strokeWidth={1.5} className="h-6 w-6 transition-colors duration-300 fill-white/10 stroke-zinc-400 group-hover:fill-brand-300/10 group-hover:stroke-brand-400" />,
   },
   {
     href: '/docs/commands',
     title: 'Commands',
-    description: 'You can run terminal commands inside the Sandbox. This allows you to start any process inside the Sandbox.',
+    description: 'Run terminal commands inside the Sandbox and start any process inside the Sandbox.',
     icon: <Terminal strokeWidth={1.5} className="h-6 w-6 transition-colors duration-300 fill-white/10 stroke-zinc-400 group-hover:fill-brand-300/10 group-hover:stroke-brand-400" />,
   }
 ]

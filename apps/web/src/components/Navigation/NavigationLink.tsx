@@ -8,12 +8,10 @@ import { NavLink } from './routes'
 export function NavigationLink({
   className,
   link,
-  tag,
 }: {
 
   className?: string
   link: NavLink
-  tag?: string
 }) {
   const pathname = usePathname()
   // Add this to get the hash
@@ -41,17 +39,14 @@ export function NavigationLink({
     >
       <div className="flex items-center justify-start gap-1">
         {link.icon}
-        {tag ? (
+        {link.tag ? (
           <div className="flex items-center gap-2">
-            <Tag
-              variant="small"
-              color="emerald"
-            >
-              {tag}
-            </Tag>
             <span className={clsx('truncate', isActive ? 'text-white' : '')}>
               {link.title}
             </span>
+            <Tag>
+              {link.tag}
+            </Tag>
           </div>
         ) : (
           <span className={clsx('truncate', isActive ? 'text-white' : '')}>

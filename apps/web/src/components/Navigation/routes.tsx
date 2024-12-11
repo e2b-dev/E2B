@@ -1,9 +1,14 @@
 import { Braces, CheckCircle, Home, MessagesSquare } from 'lucide-react'
 import sdkRefRoutesJson from './sdkRefRoutes.json'
 
+enum Tag {
+  New = 'New',
+}
+
 export interface NavLink {
   title: string
   href: string
+  tag?: Tag
   icon?: React.ReactNode
 }
 
@@ -271,6 +276,11 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox',
       },
       {
+        title: 'Persistence',
+        tag: Tag.New,
+        href: '/docs/sandbox/persistence',
+      },
+      {
         title: 'Metadata',
         href: '/docs/sandbox/metadata',
       },
@@ -295,9 +305,6 @@ export const docRoutes: NavGroup[] = [
       //   href: '/docs/sandbox/request-timeouts',
       // },
       // {
-      //   title: '* Persistence',
-      //   href: '/docs/sandbox/persistence',
-      // },
     ],
   },
   {
