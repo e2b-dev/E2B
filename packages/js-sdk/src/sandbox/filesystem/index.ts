@@ -246,7 +246,7 @@ export class Filesystem {
           // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
           // the directory path information must not be used.
           // BUT in our case we need to use the directory path information with a custom
-          // muktipart part name getter in envd.
+          // multipart part name getter in envd.
           fd.append('file', blob, files[i].path)
 
           return fd
