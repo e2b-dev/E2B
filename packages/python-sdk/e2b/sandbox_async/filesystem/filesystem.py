@@ -1,5 +1,5 @@
 from io import TextIOBase
-from typing import AsyncIterator, List, Literal, Optional, overload
+from typing import AsyncIterator, List, Literal, Optional, overload, Union
 from e2b.sandbox.filesystem.filesystem import WriteData, WriteEntry
 
 import e2b_connect as connect
@@ -173,11 +173,11 @@ class Filesystem:
 
     async def write(
         self,
-        path_or_files: str | List[WriteEntry],
-        data_or_user: WriteData | Username = "user",
-        user_or_request_timeout: Optional[float | Username] = None,
+        path_or_files: Union[str, List[WriteEntry]],
+        data_or_user: Union[WriteData, Username] = "user",
+        user_or_request_timeout: Optional[Union[float, Username]] = None,
         request_timeout_or_none: Optional[float] = None
-    ) -> EntryInfo | List[EntryInfo]:
+    ) -> Union[EntryInfo, List[EntryInfo]]:
         """
         Writes content to a file on the path.
         When writing to a file that doesn't exist, the file will get created.
