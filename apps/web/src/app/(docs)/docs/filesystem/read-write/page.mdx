@@ -26,12 +26,28 @@ You can write files to the sandbox filesystem using the `files.write()` method.
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
 const sandbox = await Sandbox.create()
+
+// Write single file
 await sandbox.files.write('/path/to/file', 'file content')
+
+// Write multiple files
+await sandbox.files.write([
+    { path: "/path/to/a", data: "file content" },
+    { path: "/another/path/to/b", data: "file content" }
+])
 ```
 ```python
 from e2b_code_interpreter import Sandbox
 
 sandbox = Sandbox()
+
+# Write single file
 await sandbox.files.write('/path/to/file', 'file content')
+
+# Write multiple files
+await sandbox.files.write([
+    { "path": "/path/to/a", "data": "file content" },
+    { "path": "another/path/to/b", "data": "file content" }
+])
 ```
 </CodeGroup>
