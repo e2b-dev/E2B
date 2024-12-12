@@ -343,6 +343,7 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
         timeout: Optional[float] = 60,
+        recursive: bool = False,
     ) -> AsyncWatchHandle:
         """
         Watch directory for filesystem events.
@@ -353,11 +354,12 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param timeout: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time
+        :param recursive: Watch directory recursively
 
         :return: `AsyncWatchHandle` object for stopping watching directory
         """
         events = self._rpc.awatch_dir(
-            filesystem_pb2.WatchDirRequest(path=path),
+            filesystem_pb2.WatchDirRequest(path=path, recursive=recursive),
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
             ),
