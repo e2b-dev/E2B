@@ -6,8 +6,6 @@ export function formatSandboxTimeoutError(message: string) {
 }
 
 /**
- * Thrown when a sandbox error occurs.
- *
  * Base class for all sandbox errors.
  *
  * Thrown when general sandbox errors occur.
