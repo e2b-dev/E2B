@@ -65,11 +65,11 @@ class CommandHandle:
         for event in self._events:
             if event.event.HasField("data"):
                 if event.event.data.stdout:
-                    out = event.event.data.stdout.decode()
+                    out = event.event.data.stdout.decode('utf-8', 'replace')
                     self._stdout += out
                     yield out, None, None
                 if event.event.data.stderr:
-                    out = event.event.data.stderr.decode()
+                    out = event.event.data.stderr.decode('utf-8', 'replace')
                     self._stderr += out
                     yield None, out, None
                 if event.event.data.pty:
