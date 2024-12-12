@@ -5,7 +5,7 @@ def test_remove_file(sandbox: Sandbox):
     filename = "test_remove.txt"
     content = "This file will be removed."
 
-    sandbox.files.write(filename, content)
+    sandbox.files.write([{ "path": filename, "data": content }])
 
     sandbox.files.remove(filename)
 

@@ -7,7 +7,7 @@ async def test_remove_file(async_sandbox: AsyncSandbox):
     filename = "test_remove.txt"
     content = "This file will be removed."
 
-    await async_sandbox.files.write(filename, content)
+    await async_sandbox.files.write([{ "path": filename, "data": content }])
 
     await async_sandbox.files.remove(filename)
 

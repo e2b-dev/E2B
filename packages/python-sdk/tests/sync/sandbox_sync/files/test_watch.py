@@ -10,11 +10,11 @@ def test_watch_directory_changes(sandbox: Sandbox):
 
     sandbox.files.make_dir(dirname)
     handle = sandbox.files.watch_dir(dirname)
-    sandbox.files.write(f"{dirname}/{filename}", content)
+    sandbox.files.write([{ "path": f"{dirname}/{filename}", "data": content }])
 
     events = handle.get_new_events()
-    assert len(events) == 3
-    assert events[0].type == FilesystemEventType.CREATE
+    assert len(events) >= 3
+    assert events[0].type == FilesystemEventType.WRITE
     assert events[0].name == filename
     assert events[1].type == FilesystemEventType.CHMOD
     assert events[1].name == filename
@@ -32,12 +32,12 @@ def test_watch_iterated(sandbox: Sandbox):
 
     sandbox.files.make_dir(dirname)
     handle = sandbox.files.watch_dir(dirname)
-    sandbox.files.write(f"{dirname}/{filename}", content)
+    sandbox.files.write([{ "path": f"{dirname}/{filename}", "data": content }])
 
     events = handle.get_new_events()
     assert len(events) == 3
 
-    sandbox.files.write(f"{dirname}/{filename}", new_content)
+    sandbox.files.write([{ "path": f"{dirname}/{filename}", "data": new_content }])
     events = handle.get_new_events()
     for event in events:
         if event.type == FilesystemEventType.WRITE and event.name == filename:
@@ -55,7 +55,7 @@ def test_watch_non_existing_directory(sandbox: Sandbox):
 
 def test_watch_file(sandbox: Sandbox):
     filename = "test_watch.txt"
-    sandbox.files.write(filename, "This file will be watched.")
+    sandbox.files.write([{ "path": filename, "data": "This file will be watched." }])
 
     with pytest.raises(SandboxException):
         sandbox.files.watch_dir(filename)

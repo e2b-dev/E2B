@@ -10,7 +10,7 @@ async def test_list_directory(async_sandbox: AsyncSandbox):
     files = await async_sandbox.files.list(dir_name)
     assert len(files) == 0
 
-    await async_sandbox.files.write(f"{dir_name}/test_file", "test")
+    await async_sandbox.files.write([{ "path": f"{dir_name}/test_file", "data": "test" }])
     files1 = await async_sandbox.files.list(dir_name)
     assert len(files1) == 1
     assert files1[0].name == "test_file"

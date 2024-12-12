@@ -1,5 +1,5 @@
 from io import TextIOBase
-from typing import IO, Iterator, List, Literal, Optional, Union, overload
+from typing import Iterator, List, Literal, Optional, overload
 
 import e2b_connect
 import httpcore
@@ -13,9 +13,8 @@ from e2b.connection_config import (
 from e2b.envd.api import ENVD_API_FILES_ROUTE, handle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
+from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type, WriteEntry
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
-
 
 class Filesystem:
     """
@@ -128,34 +127,39 @@ class Filesystem:
 
     def write(
         self,
-        path: str,
-        data: Union[str, bytes, IO],
-        user: Username = "user",
+        files: List[WriteEntry],
+        user: Optional[Username] = "user",
         request_timeout: Optional[float] = None,
-    ) -> EntryInfo:
+    ) -> List[EntryInfo]:
         """
-        Write content to a file on the path.
+        Write content to a file(s).
 
-        Writing to a file that doesn't exist creates the file.
-
-        Writing to a file that already exists overwrites the file.
-
-        Writing to a file at path that doesn't exist creates the necessary directories.
-
-        :param path: Path to the file
-        :param data: Data to write to the file, can be a `str`, `bytes`, or `IO`.
+        :param files: list of files to write 
         :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request in **seconds**
-
-        :return: Information about the written file
+        :param request_timeout: Timeout for the request
+        :return: Information about the written files
         """
-        if isinstance(data, TextIOBase):
-            data = data.read().encode()
+
+       # Prepare the files for the multipart/form-data request
+        httpx_files = []
+        for file in files:
+            file_path, file_data = file['path'], file['data']
+            if isinstance(file_data, str) or isinstance(file_data, bytes):
+                httpx_files.append(('file', (file_path, file_data)))
+            elif isinstance(file_data, TextIOBase):
+                httpx_files.append(('file', (file_path, file_data.read())))
+            else:
+                raise ValueError(f"Unsupported data type for file {file_path}")
+        
+        # Allow passing empty list of files
+        if len(httpx_files) == 0: return []
+
+        params = {"username": user}
 
         r = self._envd_api.post(
             ENVD_API_FILES_ROUTE,
-            files={"file": data},
-            params={"path": path, "username": user},
+            files=httpx_files,
+            params=params,
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
@@ -163,13 +167,12 @@ class Filesystem:
         if err:
             raise err
 
-        files = r.json()
+        write_files = r.json()
 
-        if not isinstance(files, list) or len(files) == 0:
+        if not isinstance(write_files, list) or len(write_files) == 0:
             raise Exception("Expected to receive information about written file")
 
-        file = files[0]
-        return EntryInfo(**file)
+        return [EntryInfo(**file) for file in write_files]
 
     def list(
         self,

@@ -18,7 +18,7 @@ async def test_watch_directory_changes(async_sandbox: AsyncSandbox):
     new_content = "This file has been modified."
 
     await async_sandbox.files.make_dir(dirname)
-    await async_sandbox.files.write(f"{dirname}/{filename}", content)
+    await async_sandbox.files.write([{ "path": f"{dirname}/{filename}", "data": content }])
 
     event_triggered = Event()
 
@@ -28,7 +28,7 @@ async def test_watch_directory_changes(async_sandbox: AsyncSandbox):
 
     handle = await async_sandbox.files.watch_dir(dirname, on_event=handle_event)
 
-    await async_sandbox.files.write(f"{dirname}/{filename}", new_content)
+    await async_sandbox.files.write([{ "path": f"{dirname}/{filename}", "data": new_content }])
 
     await event_triggered.wait()
 
@@ -44,7 +44,7 @@ async def test_watch_non_existing_directory(async_sandbox: AsyncSandbox):
 
 async def test_watch_file(async_sandbox: AsyncSandbox):
     filename = "test_watch.txt"
-    await async_sandbox.files.write(filename, "This file will be watched.")
+    await async_sandbox.files.write([{ "path": filename, "data": "This file will be watched." }])
 
     with pytest.raises(SandboxException):
         await async_sandbox.files.watch_dir(filename, on_event=lambda e: None)

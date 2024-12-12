@@ -7,7 +7,7 @@ def test_rename_file(sandbox: Sandbox):
     new_filename = "test_rename_new.txt"
     content = "This file will be renamed."
 
-    sandbox.files.write(old_filename, content)
+    sandbox.files.write([{ "path": old_filename, "data": content }])
 
     info = sandbox.files.rename(old_filename, new_filename)
     assert info.path == f"/home/user/{new_filename}"

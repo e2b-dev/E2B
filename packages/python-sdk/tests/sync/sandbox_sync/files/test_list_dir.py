@@ -10,7 +10,7 @@ def test_list_directory(sandbox: Sandbox):
     files = sandbox.files.list(dir_name)
     assert len(files) == 0
 
-    sandbox.files.write(f"{dir_name}/test_file", "test")
+    sandbox.files.write([{ "path": f"{dir_name}/test_file", "data": "test" }])
     files1 = sandbox.files.list(dir_name)
     assert len(files1) == 1
     assert files1[0].name == "test_file"

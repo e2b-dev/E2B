@@ -6,7 +6,7 @@ def test_read_file(sandbox):
     filename = "test_read.txt"
     content = "Hello, world!"
 
-    sandbox.files.write(filename, content)
+    sandbox.files.write([{ "path": filename, "data": content }])
     read_content = sandbox.files.read(filename)
     assert read_content == content
 

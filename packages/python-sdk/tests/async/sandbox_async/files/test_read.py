@@ -7,7 +7,7 @@ async def test_read_file(async_sandbox: AsyncSandbox):
     filename = "test_read.txt"
     content = "Hello, world!"
 
-    await async_sandbox.files.write(filename, content)
+    await async_sandbox.files.write([{ "path": filename, "data": content }])
     read_content = await async_sandbox.files.read(filename)
     assert read_content == content
 
