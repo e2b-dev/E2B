@@ -10,7 +10,7 @@ sandboxTest('list directory', async ({ sandbox }) => {
   const files = await sandbox.files.list(dirName)
   assert.equal(files.length, 0)
 
-  await sandbox.files.write('test_directory4/test_file', 'test')
+  await sandbox.files.write([{ path: 'test_directory4/test_file', data: 'test' }])
 
   const files1 = await sandbox.files.list(dirName)
   assert.equal(files1.length, 1)

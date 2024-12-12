@@ -10,7 +10,7 @@ sandboxTest('watch directory changes', async ({ sandbox }) => {
   const newContent = 'This file has been modified.'
 
   await sandbox.files.makeDir(dirname)
-  await sandbox.files.write(`${dirname}/${filename}`, content)
+  await sandbox.files.write([{ path: `${dirname}/${filename}`, data: content }])
 
   let trigger: () => void
 
@@ -24,7 +24,7 @@ sandboxTest('watch directory changes', async ({ sandbox }) => {
     }
   })
 
-  await sandbox.files.write(`${dirname}/${filename}`, newContent)
+  await sandbox.files.write([{ path: `${dirname}/${filename}`, data: newContent }])
 
   await eventPromise
 
@@ -42,7 +42,7 @@ sandboxTest('watch non-existing directory', async ({ sandbox }) => {
 sandboxTest('watch file', async ({ sandbox }) => {
   const filename = 'test_watch.txt'
   const content = 'This file will be watched.'
-  await sandbox.files.write(filename, content)
+  await sandbox.files.write([{ path: filename, data: content }])
 
   await expect(sandbox.files.watchDir(filename, () => {})).rejects.toThrowError(
     SandboxError

@@ -7,7 +7,7 @@ sandboxTest('read file', async ({ sandbox }) => {
   const filename = 'test_read.txt'
   const content = 'Hello, world!'
 
-  await sandbox.files.write(filename, content)
+  await sandbox.files.write([{ path: filename, data: content }])
   const readContent = await sandbox.files.read(filename)
   assert.equal(readContent, content)
 })

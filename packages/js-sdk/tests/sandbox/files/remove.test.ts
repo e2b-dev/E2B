@@ -6,7 +6,7 @@ sandboxTest('remove file', async ({ sandbox }) => {
   const filename = 'test_remove.txt'
   const content = 'This file will be removed.'
 
-  await sandbox.files.write(filename, content)
+  await sandbox.files.write([{ path: filename, data: content }])
   await sandbox.files.remove(filename)
 
   const exists = await sandbox.files.exists(filename)
