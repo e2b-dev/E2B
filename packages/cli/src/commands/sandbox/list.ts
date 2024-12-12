@@ -19,7 +19,12 @@ export const listCommand = new commander.Command('list')
           title: 'Running sandboxes',
           columns: [
             { name: 'sandboxID', alignment: 'left', title: 'Sandbox ID' },
-            { name: 'templateID', alignment: 'left', title: 'Template ID' },
+            {
+              name: 'templateID',
+              alignment: 'left',
+              title: 'Template ID',
+              maxLen: 20,
+            },
             { name: 'alias', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
             { name: 'endAt', alignment: 'left', title: 'End at' },
@@ -39,8 +44,29 @@ export const listCommand = new commander.Command('list')
             .sort(
               (a, b) =>
                 a.startedAt.localeCompare(b.startedAt) ||
-                a.sandboxID.localeCompare(b.sandboxID),
+                a.sandboxID.localeCompare(b.sandboxID)
             ),
+          style: {
+            headerTop: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            headerBottom: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            tableBottom: {
+              left: '',
+              right: '',
+              mid: '',
+              other: '',
+            },
+            vertical: '',
+          },
           colorMap: {
             orange: '\x1b[38;5;216m',
           },

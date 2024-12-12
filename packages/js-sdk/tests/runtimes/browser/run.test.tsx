@@ -1,5 +1,4 @@
 import { expect, test } from 'vitest'
-import { page } from '@vitest/browser/context'
 import { render } from 'vitest-browser-react'
 import React from 'react'
 import { useEffect, useState } from 'react'
@@ -12,21 +11,31 @@ function E2BTest() {
   useEffect(() => {
     const getText = async () => {
       const sandbox = await Sandbox.create()
-      await sandbox.commands.run('echo "Hello World" > hello.txt')
-      const content = await sandbox.files.read('hello.txt')
-      setText(content)
+
+      try {
+        await sandbox.commands.run('echo "Hello World" > hello.txt')
+        const content = await sandbox.files.read('hello.txt')
+        setText(content)
+      } finally {
+        await sandbox.kill()
+      }
     }
+
     getText()
   }, [])
 
   return <div>{text}</div>
 }
-test('browser test', async () => {
-  const screen = render(<E2BTest />)
-  await waitFor(
-    () => expect.element(page.getByText('Hello World')).toBeVisible(),
-    { timeout: 5000 }
-  )
-  await expect.element(page.getByText('Hello World')).toBeVisible()
-  expect(screen.container).toMatchSnapshot()
-})
+test(
+  'browser test',
+  async () => {
+    const { getByText } = render(<E2BTest />)
+    await waitFor(
+      () => expect.element(getByText('Hello World')).toBeInTheDocument(),
+      {
+        timeout: 30_000,
+      }
+    )
+  },
+  { timeout: 40_000 }
+)

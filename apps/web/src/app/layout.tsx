@@ -1,4 +1,3 @@
-import Script from 'next/script'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
 
@@ -14,8 +13,6 @@ import { Section } from '@/components/SectionProvider'
 import { Layout } from '@/components/Layout'
 
 export const metadata: Metadata = {
-  // TODO: Add metadataBase
-  // metadataBase: ''
   title: {
     template: '%s - E2B',
     default: 'E2B - Code Interpreting for AI apps',
@@ -40,7 +37,6 @@ declare global {
   }
 }
 
-
 export default async function RootLayout({ children }) {
   const pages = await glob('**/*.mdx', { cwd: 'src/app/(docs)/docs' })
   const allSectionsEntries = (await Promise.all(
@@ -51,7 +47,6 @@ export default async function RootLayout({ children }) {
   )) as Array<[string, Array<Section>]>
   const allSections = Object.fromEntries(allSectionsEntries)
 
-
   return (
     <html
       lang="en"
@@ -61,7 +56,7 @@ export default async function RootLayout({ children }) {
       <head>
         <Canonical />
       </head>
-      <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
+      <body className="flex min-h-full antialiased bg-zinc-900">
         <Providers>
           <Layout allSections={allSections}>
             <Header />
@@ -72,9 +67,6 @@ export default async function RootLayout({ children }) {
           </Suspense>
           <Analytics />
         </Providers>
-
-        <Script src="https://js.chatlio.com/widget.js" strategy="lazyOnload" />
-        <chatlio-widget widgetid={process.env.NEXT_PUBLIC_CHATLIO_WIDGET_ID} disable-favicon-badge></chatlio-widget>
       </body>
     </html>
   )

@@ -1,0 +1,49 @@
+# Sandbox metadata
+
+Metadata is a way to attach arbitrary key-value pairs for a sandbox.
+
+This is useful in various scenarios, for example:
+- Associate a sandbox with a user session.
+- Store custom user data for a sandbox like API keys.
+- Associate a sandbox with a user ID and [connect to it later](/docs/sandbox/connect).
+
+You specify metadata when creating a sandbox and can access it later through listing running sandboxes with `Sandbox.list()` method.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with metadata.
+const sandbox = await Sandbox.create({
+  metadata: {
+    userId: '123', // $HighlightLine
+  },
+})
+
+// List running sandboxes and access metadata.
+const runningSandboxes = await Sandbox.list()
+// Will print:
+// {
+//   'userId': '123',
+// }
+console.log(runningSandboxes[0].metadata)
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+# Create sandbox with metadata.
+sandbox = Sandbox(
+  metadata={
+    'userId': '123', # $HighlightLine
+  },
+)
+
+# List running sandboxes and access metadata.
+running_sandboxes = Sandbox.list()
+# Will print:
+# {
+#   'userId': '123',
+# }
+print(running_sandboxes[0].metadata)
+```
+</CodeGroup>

@@ -3,17 +3,29 @@ import createClient, { FetchResponse } from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { ConnectionConfig } from '../connectionConfig'
 import { createApiLogger } from '../logs'
-import { SandboxError, InvalidArgumentError, NotFoundError, NotEnoughSpaceError, formatSandboxTimeoutError, AuthenticationError } from '../errors'
-import { StartResponse } from './process/process_pb'
+import {
+  SandboxError,
+  InvalidArgumentError,
+  NotFoundError,
+  NotEnoughSpaceError,
+  formatSandboxTimeoutError,
+  AuthenticationError,
+} from '../errors'
+import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
 
-export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(res: FetchResponse<A, B, C>) {
+export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
+  res: FetchResponse<A, B, C>
+) {
   if (!res.error) {
     return
   }
 
-  const message: string = typeof res.error == 'string' ? res.error : res.error?.message || await res.response.text()
+  const message: string =
+    typeof res.error == 'string'
+      ? res.error
+      : res.error?.message || (await res.response.text())
 
   switch (res.response.status) {
     case 400:
@@ -23,7 +35,9 @@ export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
     case 404:
       return new NotFoundError(message)
     case 429:
-      return new SandboxError(`${res.response.status}: ${message}: The requests are being rate limited.`)
+      return new SandboxError(
+        `${res.response.status}: ${message}: The requests are being rate limited.`
+      )
     case 502:
       return formatSandboxTimeoutError(message)
     case 507:
@@ -33,8 +47,10 @@ export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
   }
 }
 
-export async function handleProcessStartEvent(events: AsyncIterable<StartResponse>) {
-  let startEvent: StartResponse
+export async function handleProcessStartEvent(
+  events: AsyncIterable<StartResponse | ConnectResponse>
+) {
+  let startEvent: StartResponse | ConnectResponse
 
   try {
     startEvent = (await events[Symbol.asyncIterator]().next()).value
@@ -54,7 +70,9 @@ export async function handleProcessStartEvent(events: AsyncIterable<StartRespons
   return startEvent.event.event.value.pid
 }
 
-export async function handleWatchDirStartEvent(events: AsyncIterable<WatchDirResponse>) {
+export async function handleWatchDirStartEvent(
+  events: AsyncIterable<WatchDirResponse>
+) {
   let startEvent: WatchDirResponse
 
   try {

@@ -1,44 +1,61 @@
 import { createConnectTransport } from '@connectrpc/connect-web'
 
 import {
-  ConnectionOpts,
   ConnectionConfig,
+  ConnectionOpts,
   defaultUsername,
 } from '../connectionConfig'
-import { createRpcLogger } from '../logs'
-import { Filesystem } from './filesystem'
-import { Process, Pty } from './process'
-import { SandboxApi } from './sandboxApi'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
+import { createRpcLogger } from '../logs'
+import { Commands, Pty } from './commands'
+import { Filesystem } from './filesystem'
+import { SandboxApi } from './sandboxApi'
 
 /**
  * Options for creating a new Sandbox.
  */
 export interface SandboxOpts extends ConnectionOpts {
+  /**
+   * Custom metadata for the sandbox.
+   *
+   * @default {}
+   */
   metadata?: Record<string, string>
+  /**
+   * Custom environment variables for the sandbox.
+   *
+   * Used when executing commands and code in the sandbox.
+   * Can be overridden with the `envs` argument when executing commands or code.
+   *
+   * @default {}
+   */
   envs?: Record<string, string>
+  /**
+   * Timeout for the sandbox in **milliseconds**.
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   *
+   * @default 300_000 // 5 minutes
+   */
   timeoutMs?: number
 }
 
 /**
- * E2B cloud sandbox gives your agent a full cloud development environment that's sandboxed.
+ * E2B cloud sandbox is a secure and isolated cloud environment.
  *
- * That means:
- * - Access to Linux OS
- * - Using filesystem (create, list, and delete files and dirs)
+ * The sandbox allows you to:
+ * - Access Linux OS
+ * - Create, list, and delete files and directories
  * - Run commands
- * - Sandboxed - you can run any code
- * - Access to the internet
+ * - Run isolated code
+ * - Access the internet
  *
- * Check usage docs - https://e2b.dev/docs/sandbox/overview
+ * Check docs [here](https://e2b.dev/docs).
  *
- * These cloud sandboxes are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
- *
- * Use the {@link Sandbox.create} method to create a new sandbox.
+ * Use {@link Sandbox.create} to create a new sandbox.
  *
  * @example
  * ```ts
- * import { Sandbox } from '@e2b/sdk'
+ * import { Sandbox } from 'e2b'
  *
  * const sandbox = await Sandbox.create()
  * ```
@@ -48,15 +65,15 @@ export class Sandbox extends SandboxApi {
   protected static readonly defaultSandboxTimeoutMs = 300_000
 
   /**
-   * Filesystem module for interacting with the sandbox's filesystem
+   * Module for interacting with the sandbox filesystem
    */
   readonly files: Filesystem
   /**
-   * Commands module for interacting with the sandbox's processes
+   * Module for running commands in the sandbox
    */
-  readonly commands: Process
+  readonly commands: Commands
   /**
-   * PTY module for interacting with the sandbox's pseudo-terminal
+   * Module for interacting with the sandbox pseudo-terminals
    */
   readonly pty: Pty
 
@@ -72,7 +89,7 @@ export class Sandbox extends SandboxApi {
   private readonly envdApi: EnvdApiClient
 
   /**
-   * Use `Sandbox.create()` instead.
+   * Use {@link Sandbox.create} to create a new Sandbox instead.
    *
    * @hidden
    * @hide
@@ -107,14 +124,16 @@ export class Sandbox extends SandboxApi {
       this.envdApi,
       this.connectionConfig
     )
-    this.commands = new Process(rpcTransport, this.connectionConfig)
+    this.commands = new Commands(rpcTransport, this.connectionConfig)
     this.pty = new Pty(rpcTransport, this.connectionConfig)
   }
 
   /**
-   * Creates a new Sandbox from the default `base` sandbox template.
-   * @param opts Connection options
-   * @returns New Sandbox
+   * Create a new sandbox from the default `base` sandbox template.
+   *
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the new sandbox.
    *
    * @example
    * ```ts
@@ -126,6 +145,21 @@ export class Sandbox extends SandboxApi {
     this: S,
     opts?: SandboxOpts
   ): Promise<InstanceType<S>>
+
+  /**
+   * Create a new sandbox from the specified sandbox template.
+   *
+   * @param template sandbox template name or ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the new sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create('<template-name-or-id>')
+   * ```
+   * @constructs Sandbox
+   */
   static async create<S extends typeof Sandbox>(
     this: S,
     template: string,
@@ -156,17 +190,20 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * Connects to an existing Sandbox.
-   * @param sandboxId Sandbox ID
-   * @param opts Connection options
-   * @returns Existing Sandbox
+   * Connect to an existing sandbox.
+   * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the existing sandbox.
    *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
    * const sandboxId = sandbox.sandboxId
    *
-   * // Another code block
+   * // Connect to the same sandbox.
    * const sameSandbox = await Sandbox.connect(sandboxId)
    * ```
    */
@@ -182,10 +219,13 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * Get the hostname for the specified sandbox's port.
+   * Get the host address for the specified sandbox port.
+   * You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
    *
-   * @param port Port number of a specific port in the sandbox
-   * @returns Hostname of the sandbox's port
+   * @param port number of the port in the sandbox.
+   *
+   * @returns host address of the sandbox port.
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
@@ -193,7 +233,7 @@ export class Sandbox extends SandboxApi {
    * await sandbox.commands.exec('python3 -m http.server 3000')
    * // Get the hostname of the HTTP server
    * const serverURL = sandbox.getHost(3000)
-   * ``
+   * ```
    */
   getHost(port: number) {
     if (this.connectionConfig.debug) {
@@ -206,7 +246,8 @@ export class Sandbox extends SandboxApi {
   /**
    * Check if the sandbox is running.
    *
-   * @returns `true` if the sandbox is running, `false` otherwise
+   * @returns `true` if the sandbox is running, `false` otherwise.
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
@@ -238,13 +279,14 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * Set the sandbox's timeout, after which the sandbox will be automatically killed.
-   * The sandbox can be kept alive for a maximum of 24 hours from the time of creation.
-   * If you try to set the timeout to a period, which exceeds the maximum limit, the timeout will be set to the maximum limit.
+   * Set the timeout of the sandbox.
+   * After the timeout expires the sandbox will be automatically killed.
    *
-   * @param timeoutMs Duration in milliseconds. Must be between 0 and 86400000 milliseconds (24 hours).
-   * @param opts Connection options
-   * @returns Promise that resolves when the sandbox is kept alive
+   * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.setTimeout`.
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   *
+   * @param timeoutMs timeout in **milliseconds**.
+   * @param opts connection options.
    */
   async setTimeout(
     timeoutMs: number,
@@ -264,8 +306,7 @@ export class Sandbox extends SandboxApi {
   /**
    * Kill the sandbox.
    *
-   * @param opts Connection options
-   * @returns Promise that resolves when the sandbox is killed
+   * @param opts connection options.
    */
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     if (this.connectionConfig.debug) {
@@ -278,11 +319,12 @@ export class Sandbox extends SandboxApi {
 
   /**
    * Get the URL to upload a file to the sandbox.
-   * You have to send a POST request to this URL with the file as the field in the form data.
-   * You can find the specification for this API at https://github.com/e2b-dev/E2B/blob/main/spec/envd/envd.yaml.
    *
-   * @param path Path to the directory where the file will be uploaded, defaults to user's home directory
-   * @returns URL to upload the file
+   * You have to send a POST request to this URL with the file as multipart/form-data.
+   *
+   * @param path the directory where to upload the file, defaults to user's home directory.
+   *
+   * @returns URL for uploading file.
    */
   uploadUrl(path?: string) {
     return this.fileUrl(path)
@@ -291,19 +333,14 @@ export class Sandbox extends SandboxApi {
   /**
    * Get the URL to download a file from the sandbox.
    *
-   * @param path Path to the file
-   * @returns URL to download the file
+   * @param path path to the file to download.
+   *
+   * @returns URL for downloading file.
    */
   downloadUrl(path: string) {
     return this.fileUrl(path)
   }
 
-  /**
-   * Get the URL to a file in the sandbox.
-   *
-   * @param path Path to the file
-   * @returns URL to the file
-   */
   private fileUrl(path?: string) {
     const url = new URL('/files', this.envdApiUrl)
     url.searchParams.set('username', defaultUsername)

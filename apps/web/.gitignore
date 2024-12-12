@@ -43,3 +43,7 @@ vale-styles
 
 # Sentry Auth Token
 .sentryclirc
+
+# Add the generated route file for SDK reference docs to gitignore so we don't commit it.
+# The idea is that we want to generate this file only from the automated GitHub actions.
+sdkRefRoutes.json

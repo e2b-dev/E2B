@@ -23,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
@@ -40,6 +40,6 @@ jobs:
         run: poetry build
 
       - name: Run tests
-        run: poetry run pytest -n 4 --verbose -x
+        run: poetry run pytest --verbose -x
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

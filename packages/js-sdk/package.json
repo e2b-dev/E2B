@@ -1,6 +1,6 @@
 {
   "name": "e2b",
-  "version": "0.16.2-beta.52",
+  "version": "1.0.5",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -30,6 +30,7 @@
     "test": "vitest run",
     "generate": "openapi-typescript ../../spec/openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",
     "generate-envd-api": "openapi-typescript ../../spec/envd/envd.yaml -x api_key --support-array-length --alphabetize --output src/envd/schema.gen.ts",
+    "generate-ref": "./scripts/generate_sdk_ref.sh",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
     "postPublish": "./scripts/post-publish.sh || true",
@@ -52,7 +53,7 @@
     "playwright": "^1.48.0",
     "react": "^18.3.1",
     "tsup": "^8.0.2",
-    "typedoc": "^0.26.7",
+    "typedoc": "^0.26.8",
     "typedoc-plugin-markdown": "^4.2.7",
     "typescript": "^5.4.5",
     "vitest": "^2.1.2",
@@ -78,9 +79,9 @@
     "typescript"
   ],
   "dependencies": {
-    "@bufbuild/protobuf": "^1.10.0",
-    "@connectrpc/connect": "^1.4.0",
-    "@connectrpc/connect-web": "^1.4.0",
+    "@bufbuild/protobuf": "^2.2.2",
+    "@connectrpc/connect": "2.0.0-rc.3",
+    "@connectrpc/connect-web": "2.0.0-rc.3",
     "compare-versions": "^6.1.0",
     "openapi-fetch": "^0.9.7",
     "platform": "^1.3.6"

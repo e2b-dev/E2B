@@ -1,11 +1,11 @@
 'use client'
 
 import clsx from 'clsx'
-import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { usePathname } from 'next/navigation'
 
 import { Footer } from '@/components/Footer'
-import { Navigation } from '@/components/Navigation'
+import { DocsNavigation, SdkRefNavigation } from '@/components/Navigation'
 import { Section, SectionProvider } from '@/components/SectionProvider'
 
 export function Layout({
@@ -18,19 +18,27 @@ export function Layout({
   const pathname = usePathname()
   const relativePathname = pathname?.replace(new RegExp('^/docs'), '')
   const isDocs = pathname?.startsWith('/docs')
+  const isApiRef = pathname?.startsWith('/docs/sdk-reference')
   const isDashboard = pathname?.startsWith('/dashboard')
 
   return (
-    <SectionProvider sections={relativePathname ? allSections[relativePathname] ?? [] : []}>
-      <div className={clsx('h-full w-full', { 'lg:ml-[var(--sidebar-nav-width)]': isDocs })}>
+    <SectionProvider
+      sections={relativePathname ? allSections[relativePathname] ?? [] : []}
+    >
+      <div
+        className={clsx('h-[100vh] w-full', {
+          'lg:ml-[var(--sidebar-nav-width)]': isDocs,
+        })}
+      >
         {!isDashboard && (
           <motion.header
             layoutScroll
-            className='contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]'
+            className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]"
           >
-            <div
-              id="sidebar"
-              className="
+            {isDocs && (
+              <div
+                id="sidebar"
+                className="
                 lg:pointer-events-auto
                 scrollbar-thin
                 scrollbar-thumb-scrollbar
@@ -38,35 +46,41 @@ export function Layout({
                 lg:block
                 lg:w-[var(--sidebar-nav-width)]
                 lg:overflow-y-auto
-                lg:px-6
-                lg:pb-8
+                lg:px-4
+                border-r
+                border-white/10
+                lg:pb-4
               "
-            >
-              {isDocs && <Navigation className="hidden lg:my-4 lg:block" />}
-            </div>
+              >
+                <div className="hidden lg:block lg:mt-4">
+                  {isApiRef ? <SdkRefNavigation /> : <DocsNavigation />}
+                </div>
+              </div>
+            )}
           </motion.header>
         )}
         {isDocs && (
           <div
             className="
           relative
-          flex
           h-full
+          flex
           flex-col
           px-4
           pt-14
           sm:px-6
           lg:ml-1
-          lg:border-l
-          lg:border-zinc-900/10
           lg:px-8
           lg:dark:border-white/10
           "
           >
-            <main className="
-            flex-auto
-          ">
-              {children}</main>
+            <main
+              className="
+              flex-auto
+            "
+            >
+              {children}
+            </main>
             <Footer />
           </div>
         )}
@@ -80,9 +94,11 @@ export function Layout({
           pt-14
           "
           >
-            <main className="
+            <main
+              className="
             flex-auto
-          ">
+          "
+            >
               {children}
             </main>
           </div>

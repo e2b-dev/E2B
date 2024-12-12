@@ -40,3 +40,5 @@ build/Release
 /test.md
 logs.txt
 deno.lock
+
+__screenshots__

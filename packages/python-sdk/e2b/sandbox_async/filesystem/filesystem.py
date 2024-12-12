@@ -18,12 +18,12 @@ from e2b.exceptions import SandboxException
 from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
-from e2b.sandbox_async.utilts import OutputHandler
+from e2b.sandbox_async.utils import OutputHandler
 
 
 class Filesystem:
     """
-    Manager for interacting with the filesystem in the sandbox.
+    Module for interacting with the filesystem in the sandbox.
     """
 
     def __init__(
@@ -53,7 +53,18 @@ class Filesystem:
         format: Literal["text"] = "text",
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> str: ...
+    ) -> str:
+        """
+        Read file content as a `str`.
+
+        :param path: Path to the file
+        :param user: Run the operation as this user
+        :param format: Format of the file content—`text` by default
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: File content as a `str`
+        """
+        ...
 
     @overload
     async def read(
@@ -62,7 +73,18 @@ class Filesystem:
         format: Literal["bytes"],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> bytearray: ...
+    ) -> bytearray:
+        """
+        Read file content as a `bytearray`.
+
+        :param path: Path to the file
+        :param user: Run the operation as this user
+        :param format: Format of the file content—`bytes`
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: File content as a `bytearray`
+        """
+        ...
 
     @overload
     async def read(
@@ -71,7 +93,18 @@ class Filesystem:
         format: Literal["stream"],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> AsyncIterator[bytes]: ...
+    ) -> AsyncIterator[bytes]:
+        """
+        Read file content as a `AsyncIterator[bytes]`.
+
+        :param path: Path to the file
+        :param user: Run the operation as this user
+        :param format: Format of the file content—`stream`
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: File content as an `AsyncIterator[bytes]`
+        """
+        ...
 
     async def read(
         self,
@@ -80,15 +113,6 @@ class Filesystem:
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ):
-        """
-        Reads a whole file content and returns it in requested format (text by default).
-
-        :param path: Path to the file
-        :param format: Format of the file content
-        :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request
-        :return File content in requested format
-        """
         r = await self._envd_api.get(
             ENVD_API_FILES_ROUTE,
             params={"path": path, "username": user},
@@ -115,15 +139,19 @@ class Filesystem:
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
         """
-        Writes content to a file on the path.
-        When writing to a file that doesn't exist, the file will get created.
-        When writing to a file that already exists, the file will get overwritten.
-        When writing to a file that's in a directory that doesn't exist, the directory will get created.
+        Write content to a file on the path.
+
+        Writing to a file that doesn't exist creates the file.
+
+        Writing to a file that already exists overwrites the file.
+
+        Writing to a file at path that doesn't exist creates the necessary directories.
 
         :param path: Path to the file
-        :param data: Data to write to the file
+        :param data: Data to write to the file, can be a `str`, `bytes`, or `IO`.
         :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request
+        :param request_timeout: Timeout for the request in **seconds**
+
         :return: Information about the written file
         """
 
@@ -215,11 +243,12 @@ class Filesystem:
         request_timeout: Optional[float] = None,
     ) -> List[EntryInfo]:
         """
-        Lists entries in a directory.
+        List entries in a directory.
 
         :param path: Path to the directory
         :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request
+        :param request_timeout: Timeout for the request in **seconds**
+
         :return: List of entries in the directory
         """
         try:
@@ -251,11 +280,13 @@ class Filesystem:
         request_timeout: Optional[float] = None,
     ) -> bool:
         """
-        Checks if a file or a directory exists.
+        Check if a file or a directory exists.
 
         :param path: Path to a file or a directory
-        :param user Run the operation as this user
-        :param request_timeout Timeout for the request
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: `True` if the file or directory exists, `False` otherwise
         """
         try:
             await self._rpc.astat(
@@ -281,10 +312,11 @@ class Filesystem:
         request_timeout: Optional[float] = None,
     ) -> None:
         """
-        Removes a file or a directory.
+        Remove a file or a directory.
+
         :param path: Path to a file or a directory
         :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request
+        :param request_timeout: Timeout for the request in **seconds**
         """
         try:
             await self._rpc.aremove(
@@ -305,12 +337,12 @@ class Filesystem:
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
         """
-        Renames a file or directory from one path to another.
+        Rename a file or directory.
 
-        :param old_path Path to the file or directory to move
-        :param new_path Path to move the file or directory to
-        :param user Run the operation as this user
-        :param request_timeout Timeout for the request
+        :param old_path: Path to the file or directory to rename
+        :param new_path: New path to the file or directory
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request in **seconds**
 
         :return: Information about the renamed file or directory
         """
@@ -341,12 +373,13 @@ class Filesystem:
         request_timeout: Optional[float] = None,
     ) -> bool:
         """
-        Creates a new directory and all directories along the way if needed on the specified path.
+        Create a new directory and all directories along the way if needed on the specified path.
 
         :param path: Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
         :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request
-        :return: True if the directory was created, False if the directory already exists
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: `True` if the directory was created, `False` if the directory already exists
         """
         try:
             await self._rpc.amake_dir(
@@ -364,7 +397,7 @@ class Filesystem:
                     return False
             raise handle_rpc_exception(e)
 
-    async def watch(
+    async def watch_dir(
         self,
         path: str,
         on_event: OutputHandler[FilesystemEvent],
@@ -374,15 +407,16 @@ class Filesystem:
         timeout: Optional[float] = 60,
     ) -> AsyncWatchHandle:
         """
-        Watches directory for filesystem events.
+        Watch directory for filesystem events.
 
-        :param path: Path to a directory that will be watched
-        :param on_event: Callback that will be called on each event
-        :param on_exit: Callback that will be called when the watch is closed
+        :param path: Path to a directory to watch
+        :param on_event: Callback to call on each event in the directory
+        :param on_exit: Callback to call when the watching ends
         :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request
-        :param timeout: Timeout for the watch, after which the watch will be closed
-        :return: Watcher handle
+        :param request_timeout: Timeout for the request in **seconds**
+        :param timeout: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time
+
+        :return: `AsyncWatchHandle` object for stopping watching directory
         """
         events = self._rpc.awatch_dir(
             filesystem_pb2.WatchDirRequest(path=path),

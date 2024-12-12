@@ -4,31 +4,61 @@ import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
 import * as e2b from 'e2b'
 
+async function killSandbox(sandboxID: string, apiKey: string) {
+  const killed = await e2b.Sandbox.kill(sandboxID, { apiKey })
+  if (killed) {
+    console.log(`Sandbox ${asBold(sandboxID)} has been killed`)
+  } else {
+    console.error(`Sandbox ${asBold(sandboxID)} wasn't found`)
+  }
+}
+
 export const killCommand = new commander.Command('kill')
   .description('kill sandbox')
   .argument(
-    '<sandboxID>',
-    `kill the sandbox specified by ${asBold('<sandboxID>')}`,
+    '[sandboxID]',
+    `kill the sandbox specified by ${asBold('[sandboxID]')}`,
   )
   .alias('kl')
-  .action(async (sandboxID: string) => {
+  .option('-a, --all', 'kill all running sandboxes')
+  .action(async (sandboxID: string, { all }: { all: boolean }) => {
     try {
       const apiKey = ensureAPIKey()
 
-      if (!sandboxID) {
-        console.error('You need to specify sandbox ID')
+      if (!sandboxID && !all) {
+        console.error(
+          `You need to specify ${asBold('[sandboxID]')} or use ${asBold(
+            '-a/--all',
+          )} flag`,
+        )
         process.exit(1)
       }
 
-      await e2b.Sandbox.kill(sandboxID, { apiKey })
-
-      console.log(`Sandbox ${asBold(sandboxID)} has been killed`)
-    } catch (err: any) {
-      if (err?.status === 404) {
-        console.error(`Sandbox ${asBold(sandboxID)} wasn't found`)
-      } else {
-        console.error(err)
+      if (all && sandboxID) {
+        console.error(
+          `You cannot use ${asBold('-a/--all')} flag while specifying ${asBold(
+            '[sandboxID]',
+          )}`,
+        )
+        process.exit(1)
       }
+
+      if (all) {
+        const sandboxes = await e2b.Sandbox.list({ apiKey })
+
+        if (sandboxes.length === 0) {
+          console.log('No running sandboxes')
+          process.exit(0)
+        }
+
+        await Promise.all(
+          sandboxes.map((sandbox) => killSandbox(sandbox.sandboxId, apiKey)),
+        )
+      } else {
+        await killSandbox(sandboxID, apiKey)
+      }
+    } catch (err: any) {
+      console.error(err)
       process.exit(1)
     }
   })

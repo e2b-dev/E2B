@@ -17,11 +17,15 @@ export function asFormattedConfig(config: UserConfig) {
   return `You are logged in as ${email},\nSelected team: ${team} (${teamId})`
 }
 
-export function asFormattedTeam(team: e2b.components['schemas']['Team']) {
+export function asFormattedTeam(
+  team: e2b.components['schemas']['Team'],
+  selected: string
+) {
   const name = asBold(team.name)
   const id = asBold(team.teamID)
-  const isDefault = team.isDefault ? asPrimary(' (default team)') : ''
-  return `${name} (${id})${isDefault}`
+  const isSelected =
+    team.teamID == selected ? asPrimary(' (currently selected team)') : ''
+  return `${name} (${id})${isSelected}`
 }
 
 export function asFormattedSandboxTemplate(
@@ -29,7 +33,7 @@ export function asFormattedSandboxTemplate(
     e2b.components['schemas']['Template'],
     'templateID' | 'aliases'
   >,
-  configLocalPath?: string,
+  configLocalPath?: string
 ) {
   const aliases = listAliases(template.aliases)
 
@@ -49,7 +53,7 @@ export function asRed(text: string) {
 
 export function asFormattedError(text: string | undefined, err?: any) {
   return chalk.default.redBright(
-    `${text ? `${text} \n` : ''}${err ? err.stack : ''}\n`,
+    `${text ? `${text} \n` : ''}${err ? err.stack : ''}\n`
   )
 }
 
@@ -96,7 +100,7 @@ export function withUnderline(content: string) {
 
 export function listAliases(aliases: string[] | undefined) {
   if (!aliases) return undefined
-  return aliases.join(' | ')
+  return aliases.join(', ')
 }
 
 export function asTypescript(code: string) {
@@ -127,7 +131,7 @@ const verticalPadding = 1
 export function withDelimiter(
   content: string,
   title: string,
-  isLast?: boolean,
+  isLast?: boolean
 ) {
   return boxen.default(content, {
     borderStyle: {

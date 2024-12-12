@@ -28,6 +28,17 @@ export const h2 = function H2(
   )
 }
 
+export const h3 = function H3(
+  props: Omit<React.ComponentPropsWithoutRef<typeof Heading>, 'level'>,
+) {
+  return (
+    <Heading
+      level={3}
+      {...props}
+    />
+  )
+}
+
 function InfoIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
     <svg

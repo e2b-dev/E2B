@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import Sandbox, ProcessExitException
+from e2b import Sandbox, CommandExitException
 
 
 def test_kill_process(sandbox: Sandbox):
@@ -9,7 +9,7 @@ def test_kill_process(sandbox: Sandbox):
 
     sandbox.commands.kill(pid)
 
-    with pytest.raises(ProcessExitException):
+    with pytest.raises(CommandExitException):
         sandbox.commands.run(f"kill -0 {pid}")
 
 

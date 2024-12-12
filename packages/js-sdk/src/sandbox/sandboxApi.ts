@@ -4,7 +4,7 @@ import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../errors'
 
 /**
- * Options for request to the sandbox orchestration API.
+ * Options for request to the Sandbox API.
  */
 export interface SandboxApiOpts
   extends Partial<
@@ -26,7 +26,7 @@ export interface SandboxInfo {
   templateId: string
 
   /**
-   * Sandbox name.
+   * Template name.
    */
   name?: string
 
@@ -45,10 +45,12 @@ export class SandboxApi {
   protected constructor() {}
 
   /**
-   * Kills sandbox specified by sandbox ID.
+   * Kill the sandbox specified by sandbox ID.
    *
-   * @param sandboxId - Sandbox ID.
-   * @param opts - Connection options.
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns `true` if the sandbox was found and killed, `false` otherwise.
    */
   static async kill(
     sandboxId: string,
@@ -70,7 +72,7 @@ export class SandboxApi {
       return false
     }
 
-    const err = handleApiError(res.error)
+    const err = handleApiError(res)
     if (err) {
       throw err
     }
@@ -78,6 +80,13 @@ export class SandboxApi {
     return true
   }
 
+  /**
+   * List all running sandboxes.
+   *
+   * @param opts connection options.
+   *
+   * @returns list of running sandboxes.
+   */
   static async list(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -86,7 +95,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    const err = handleApiError(res.error)
+    const err = handleApiError(res)
     if (err) {
       throw err
     }
@@ -105,6 +114,18 @@ export class SandboxApi {
     )
   }
 
+  /**
+   * Set the timeout of the specified sandbox.
+   * After the timeout expires the sandbox will be automatically killed.
+   *
+   * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to {@link Sandbox.setTimeout}.
+   *
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   *
+   * @param sandboxId sandbox ID.
+   * @param timeoutMs timeout in **milliseconds**.
+   * @param opts connection options.
+   */
   static async setTimeout(
     sandboxId: string,
     timeoutMs: number,
@@ -125,7 +146,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    const err = handleApiError(res.error)
+    const err = handleApiError(res)
     if (err) {
       throw err
     }
@@ -152,7 +173,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    const err = handleApiError(res.error)
+    const err = handleApiError(res)
     if (err) {
       throw err
     }

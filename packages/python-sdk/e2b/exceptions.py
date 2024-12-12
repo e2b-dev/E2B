@@ -18,9 +18,9 @@ def format_execution_timeout_error() -> Exception:
 
 class SandboxException(Exception):
     """
-    Raised when a sandbox exception occurs.
-
     Base class for all sandbox errors.
+
+    Raised when a general sandbox exception occurs.
     """
 
     pass
@@ -34,6 +34,14 @@ class TimeoutException(SandboxException):
     The `canceled` exception type is caused by exceeding request timeout.\n
     The `deadline_exceeded` exception type is caused by exceeding the timeout for process, watch, etc.\n
     The `unknown` exception type is sometimes caused by the sandbox timeout when the request is not processed correctly.\n
+    """
+
+    pass
+
+
+class InvalidArgumentException(SandboxException):
+    """
+    Raised when an invalid argument is provided.
     """
 
     pass
@@ -55,14 +63,6 @@ class NotFoundException(SandboxException):
     pass
 
 
-class InvalidArgumentException(SandboxException):
-    """
-    Raised when an invalid argument is provided.
-    """
-
-    pass
-
-
 class AuthenticationException(SandboxException):
     """
     Raised when authentication fails.
@@ -74,4 +74,10 @@ class AuthenticationException(SandboxException):
 class TemplateException(SandboxException):
     """
     Exception raised when the template uses old envd version. It isn't compatible with the new SDK.
+    """
+
+
+class RateLimitException(SandboxException):
+    """
+    Raised when the API rate limit is exceeded.
     """

@@ -9,6 +9,8 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when a sandbox error occurs.
  *
  * Base class for all sandbox errors.
+ *
+ * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
   constructor(message: any) {
@@ -20,13 +22,13 @@ export class SandboxError extends Error {
 /**
  * Thrown when a timeout error occurs.
  *
- * The `unavailable` error type is caused by sandbox timeout.
+ * The [unavailable] error type is caused by sandbox timeout.
  *
- * The `canceled` error type is caused by exceeding request timeout.
+ * The [canceled] error type is caused by exceeding request timeout.
  *
- * The `deadline_exceeded` error type is caused by exceeding the timeout for process, watch, etc.
+ * The [deadline_exceeded] error type is caused by exceeding the timeout for command execution, watch, etc.
  *
- * The `unknown` error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
+ * The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
  */
 export class TimeoutError extends SandboxError {
   constructor(message: string) {
@@ -82,5 +84,15 @@ export class TemplateError extends SandboxError {
   constructor(message: string) {
     super(message)
     this.name = 'TemplateError'
+  }
+}
+
+/**
+ * Thrown when the API rate limit is exceeded.
+ */
+export class RateLimitError extends SandboxError {
+  constructor(message: any) {
+    super(message)
+    this.name = 'RateLimitError'
   }
 }

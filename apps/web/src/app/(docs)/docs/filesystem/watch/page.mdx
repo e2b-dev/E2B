@@ -1,0 +1,41 @@
+# Watch sandbox directory for changes
+
+You can watch a directory for changes using the `files.watchDir()` method in JavaScript and `files.watch_dir()` method in Python.
+
+<CodeGroup>
+```js
+import { Sandbox, FilesystemEventType } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+const dirname = '/home/user'
+
+// Start watching directory for changes
+const handle = await sandbox.files.watchDir(dirname, async (event) => { // $HighlightLine
+  console.log(event) // $HighlightLine
+  if (event.type === FilesystemEventType.WRITE) { // $HighlightLine
+    console.log(`wrote to file ${event.name}`) // $HighlightLine
+  } // $HighlightLine
+}) // $HighlightLine
+
+// Trigger file write event
+await sandbox.files.write(`${dirname}/my-file`, 'hello')
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+dirname = '/home/user'
+
+# Watch directory for changes
+handle = sandbox.files.watch_dir(dirname) # $HighlightLine
+# Trigger file write event
+sandbox.files.write(f"{dirname}/my-file", "hello")
+
+# Retrieve the latest new events since the last `get_new_events()` call
+events = handle.get_new_events() # $HighlightLine
+for event in events: # $HighlightLine
+  print(event) # $HighlightLine
+  if event.type == FilesystemEventType.Write: # $HighlightLine
+    print(f"wrote to file {event.name}") # $HighlightLine
+```
+</CodeGroup>

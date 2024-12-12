@@ -7,8 +7,6 @@ function getStdoutSize() {
   }
 }
 
-const ctrlCSequence = '\u0003' // ASCII escape sequence for CTRL+C
-
 export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
   // Clear local terminal emulator before starting terminal
   // process.stdout.write('\x1b[2J\x1b[0f')
@@ -25,15 +23,9 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
   })
 
   const resizeListener = process.stdout.on('resize', () =>
-    sandbox.pty.resize(terminalSession.pid, getStdoutSize()),
+    sandbox.pty.resize(terminalSession.pid, getStdoutSize())
   )
   const stdinListener = process.stdin.on('data', async (data) => {
-    if (data.toString() === ctrlCSequence) {
-      process.stdout.write('^C')
-      await sandbox.commands.kill(terminalSession.pid)
-      return
-    }
-
     await sandbox.pty.sendInput(terminalSession.pid, data)
   })
 
@@ -41,8 +33,12 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
   try {
     await terminalSession.wait()
   } catch (err: any) {
-    if (err instanceof e2b.ProcessExitError) {
+    if (err instanceof e2b.CommandExitError) {
       if (err.exitCode === -1 && err.error === 'signal: killed') {
+        return
+      }
+      if (err.exitCode === 130) {
+        console.warn('Terminal session was killed by user')
         return
       }
     }

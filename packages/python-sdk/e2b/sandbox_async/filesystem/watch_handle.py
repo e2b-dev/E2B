@@ -6,12 +6,14 @@ from typing import Any, AsyncGenerator, Optional
 from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.filesystem.filesystem_pb2 import WatchDirResponse
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
-from e2b.sandbox_async.utilts import OutputHandler
+from e2b.sandbox_async.utils import OutputHandler
 
 
 class AsyncWatchHandle:
     """
-    Class representing the watch operation. It provides method to stop the watch operation.
+    Handle for watching a directory in the sandbox filesystem.
+
+    Use `.stop()` to stop watching the directory.
     """
 
     def __init__(
@@ -26,7 +28,7 @@ class AsyncWatchHandle:
 
         self._wait = asyncio.create_task(self._handle_events())
 
-    async def close(self):
+    async def stop(self):
         """
         Stop watching the directory.
         """

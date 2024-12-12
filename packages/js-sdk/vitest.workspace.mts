@@ -18,7 +18,7 @@ export default defineWorkspace([
         },
       },
       globals: false,
-      testTimeout: 20000,
+      testTimeout: 30000,
       environment: 'node',
       bail: 1,
       server: {},

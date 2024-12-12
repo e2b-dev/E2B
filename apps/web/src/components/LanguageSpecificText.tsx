@@ -13,6 +13,7 @@ export interface Props {
 export function LanguageSpecificText({
   children,
   title,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isFileName,
 }: Props) {
   const languages =
@@ -27,7 +28,7 @@ export function LanguageSpecificText({
     <CodeGroupHeader
       title={title}
       selectedIndex={tabGroupProps.selectedIndex}
-      isFileName={isFileName}
+    // isFileName={isFileName}
     >
       {children}
     </CodeGroupHeader>

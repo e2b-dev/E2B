@@ -1,0 +1,96 @@
+name: Publish Packages
+
+on:
+  workflow_call:
+    secrets:
+      E2B_API_KEY:
+        required: true
+      NPM_TOKEN:
+        required: true
+      PYPI_TOKEN:
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Build and test SDK
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.VERSION_BUMPER_APPID }}
+          private-key: ${{ secrets.VERSION_BUMPER_SECRET }}
+
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.5.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9.5
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: pnpm
+
+      - name: Configure pnpm
+        run: |
+          pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create new versions
+        run: pnpm run version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release new versions
+        uses: changesets/action@v1
+        with:
+          publish: pnpm run publish
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Generate SDK reference
+        id: sdk-ref
+        run: pnpm run --recursive generate-ref
+              
+      - name: Show docs file structure
+        run: tree ./sdk-reference
+  
+      - name: Update lock file
+        run: pnpm i --no-link --no-frozen-lockfile
+
+      - name: Commit new versions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apps/web/src/app/\(docs\)/docs/sdk-reference 
+          git commit -am "[skip ci] Release new versions" || exit 0
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

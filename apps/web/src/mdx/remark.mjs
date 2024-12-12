@@ -87,5 +87,5 @@ export const remarkPlugins = [
   processCodeGroupAutoload,
   mdxAnnotations.remark,
   remarkGfm,
-  loadFileSnippet
+  loadFileSnippet,
 ]

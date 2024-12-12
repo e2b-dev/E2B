@@ -1,4 +1,10 @@
-import { Code, ConnectError, createPromiseClient, PromiseClient, Transport } from '@connectrpc/connect'
+import {
+  createClient,
+  Transport,
+  Client,
+  ConnectError,
+  Code,
+} from '@connectrpc/connect'
 import {
   ConnectionConfig,
   ConnectionOpts,
@@ -12,25 +18,39 @@ import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
-import { Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_connect'
-import { FileType as FsFileType } from '../../envd/filesystem/filesystem_pb'
+import { FileType as FsFileType, Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_pb'
 
 import { FilesystemEvent, WatchHandle } from './watchHandle'
 
 /**
- * Information about a filesystem object.
+ * Sandbox filesystem object information.
  */
 export interface EntryInfo {
+  /**
+   * Name of the filesystem object.
+   */
   name: string
+  /**
+   * Type of the filesystem object.
+   */
   type?: FileType
+  /**
+   * Path to the filesystem object.
+   */
   path: string
 }
 
 /**
- * Type of filesystem object.
+ * Sandbox filesystem object type.
  */
 export const enum FileType {
+  /**
+   * Filesystem object is a file.
+   */
   FILE = 'file',
+  /**
+   * Filesystem object is a directory.
+   */
   DIR = 'dir',
 }
 
@@ -51,9 +71,14 @@ function mapFileType(fileType: FsFileType) {
 }
 
 /**
- * Options for sending a request to the filesystem.
+ * Options for the sandbox filesystem operations.
  */
-export interface FilesystemRequestOpts extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
+export interface FilesystemRequestOpts
+  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
+  /**
+   * User to use for the operation in the sandbox.
+   * This affects the resolution of relative paths and ownership of the created filesystem objects.
+   */
   user?: Username
 }
 
@@ -61,15 +86,24 @@ export interface FilesystemRequestOpts extends Partial<Pick<ConnectionOpts, 'req
  * Options for watching a directory.
  */
 export interface WatchOpts extends FilesystemRequestOpts {
-  timeout?: number
-  onExit?: (err: Error) => void
+  /**
+   * Timeout for the watch operation in **milliseconds**.
+   * You can pass `0` to disable the timeout.
+   *
+   * @default 60_000 // 60 seconds
+   */
+  timeoutMs?: number
+  /**
+   * Callback to call when the watch operation stops.
+   */
+  onExit?: (err?: Error) => void | Promise<void>
 }
 
 /**
- * Manager for interacting with the filesystem in the sandbox.
+ * Module for interacting with the sandbox filesystem.
  */
 export class Filesystem {
-  private readonly rpc: PromiseClient<typeof FilesystemService>
+  private readonly rpc: Client<typeof FilesystemService>
 
   private readonly defaultWatchTimeout = 60_000 // 60 seconds
 
@@ -78,21 +112,69 @@ export class Filesystem {
     private readonly envdApi: EnvdApiClient,
     private readonly connectionConfig: ConnectionConfig
   ) {
-    this.rpc = createPromiseClient(FilesystemService, transport)
+    this.rpc = createClient(FilesystemService, transport)
   }
 
   /**
-   * Reads a whole file content and returns it in requested format (text by default).
+   * Read file content as a `string`.
    *
-   * @param path Path to the file
-   * @param opts Options for the request
-   * @param {format} [opts.format] Format of the file content. Default is 'text'.
-   * @returns File content in requested format
+   * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+   *
+   * @param path path to the file.
+   * @param opts connection options.
+   * @param [opts.format] format of the file content—`text` by default.
+   *
+   * @returns file content as string
    */
-  async read(path: string, opts?: FilesystemRequestOpts & { format?: 'text' }): Promise<string>
-  async read(path: string, opts?: FilesystemRequestOpts & { format: 'bytes' }): Promise<Uint8Array>
-  async read(path: string, opts?: FilesystemRequestOpts & { format: 'blob' }): Promise<Blob>
-  async read(path: string, opts?: FilesystemRequestOpts & { format: 'stream' }): Promise<ReadableStream<Uint8Array>>
+  async read(
+    path: string,
+    opts?: FilesystemRequestOpts & { format?: 'text' }
+  ): Promise<string>
+  /**
+   * Read file content as a `Uint8Array`.
+   *
+   * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+   *
+   * @param path path to the file.
+   * @param opts connection options.
+   * @param [opts.format] format of the file content—`bytes`.
+   *
+   * @returns file content as `Uint8Array`
+   */
+  async read(
+    path: string,
+    opts?: FilesystemRequestOpts & { format: 'bytes' }
+  ): Promise<Uint8Array>
+  /**
+   * Read file content as a `Blob`.
+   *
+   * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+   *
+   * @param path path to the file.
+   * @param opts connection options.
+   * @param [opts.format] format of the file content—`blob`.
+   *
+   * @returns file content as `Blob`
+   */
+  async read(
+    path: string,
+    opts?: FilesystemRequestOpts & { format: 'blob' }
+  ): Promise<Blob>
+  /**
+   * Read file content as a `ReadableStream`.
+   *
+   * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+   *
+   * @param path path to the file.
+   * @param opts connection options.
+   * @param [opts.format] format of the file content—`stream`.
+   *
+   * @returns file content as `ReadableStream`
+   */
+  async read(
+    path: string,
+    opts?: FilesystemRequestOpts & { format: 'stream' }
+  ): Promise<ReadableStream<Uint8Array>>
   async read(
     path: string,
     opts?: FilesystemRequestOpts & {
@@ -130,15 +212,20 @@ export class Filesystem {
   }
 
   /**
-   * Writes content to a file on the path.
-   *   When writing to a file that doesn't exist, the file will get created.
-   *   When writing to a file that already exists, the file will get overwritten.
-   *   When writing to a file that's in a directory that doesn't exist, the directory will get created.
+   * Write content to a file.
    *
-   * @param path Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
-   * @param data Data to write to a new file
-   * @param opts Options for the request
-   * @returns Information about the written file
+   *
+   * Writing to a file that doesn't exist creates the file.
+   *
+   * Writing to a file that already exists overwrites the file.
+   *
+   * Writing to a file at path that doesn't exist creates the necessary directories.
+   *
+   * @param path path to file.
+   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`.
+   * @param opts connection options.
+   *
+   * @returns information about the written file
    */
   async write(path: string, data: WriteData, opts?: FilesystemRequestOpts): Promise<EntryInfo>
   async write(files: WriteEntry[], opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
@@ -189,7 +276,10 @@ export class Filesystem {
         }, new FormData())
       },
       body: {},
-      signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Bun-Content-Type': 'temporary-fix', // https://github.com/oven-sh/bun/issues/14988
+      },
     })
 
     const err = await handleEnvdApiError(res)
@@ -206,11 +296,12 @@ export class Filesystem {
   }
 
   /**
-   * Lists entries in a directory.
+   * List entries in a directory.
    *
-   * @param path Path to the directory
-   * @param opts Options for the request
-   * @returns List of entries in the directory
+   * @param path path to the directory.
+   * @param opts connection options.
+   *
+   * @returns list of entries in the sandbox filesystem directory.
    */
   async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
     try {
@@ -243,11 +334,12 @@ export class Filesystem {
   }
 
   /**
-   * Creates a new directory and all directories along the way if needed on the specified pth.
+   * Create a new directory and all directories along the way if needed on the specified path.
    *
-   * @param path Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
-   * @param opts Options for the request
-   * @returns True if the directory was created, false if it already exists
+   * @param path path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
+   * @param opts connection options.
+   *
+   * @returns `true` if the directory was created, `false` if it already exists.
    */
   async makeDir(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
     try {
@@ -272,12 +364,13 @@ export class Filesystem {
   }
 
   /**
-   * Renames a file or directory from one path to another.
+   * Rename a file or directory.
    *
-   * @param oldPath Path to the file or directory to move
-   * @param newPath Path to move the file or directory to
-   * @param opts Options for the request
-   * @returns Information about the moved object
+   * @param oldPath path to the file or directory to rename.
+   * @param newPath new path for the file or directory.
+   * @param opts connection options.
+   *
+   * @returns information about renamed file or directory.
    */
   async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
     try {
@@ -308,9 +401,10 @@ export class Filesystem {
   }
 
   /**
-   * Removes a file or a directory.
-   * @param path Path to a file or a directory
-   * @param opts Options for the request
+   * Remove a file or directory.
+   *
+   * @param path path to a file or directory.
+   * @param opts connection options.
    */
   async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
     try {
@@ -327,11 +421,12 @@ export class Filesystem {
   }
 
   /**
-   * Checks if a file or a directory exists.
+   * Check if a file or a directory exists.
    *
-   * @param path Path to a file or a directory
-   * @param opts Options for the request
-   * @returns True if the file or directory exists, false otherwise
+   * @param path path to a file or a directory
+   * @param opts connection options.
+   *
+   * @returns `true` if the file or directory exists, `false` otherwise
    */
   async exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean> {
     try {
@@ -356,17 +451,18 @@ export class Filesystem {
   }
 
   /**
-   * Watches directory for filesystem events.
+   * Start watching a directory for filesystem events.
    *
-   * @param path Path to a directory that will be watched
-   * @param onEvent Callback that will be called when an event in the directory occurs
-   * @param opts Options for the request
-   * @returns New watcher
+   * @param path path to directory to watch.
+   * @param onEvent callback to call when an event in the directory occurs.
+   * @param opts connection options.
+   *
+   * @returns `WatchHandle` object for stopping watching directory.
    */
-  async watch(
+  async watchDir(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: FilesystemRequestOpts & { timeout?: number; onExit?: (err?: Error) => void | Promise<void> }
+    opts?: WatchOpts
   ): Promise<WatchHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -374,8 +470,8 @@ export class Filesystem {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
+        controller.abort()
+      }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.watchDir(
@@ -386,7 +482,7 @@ export class Filesystem {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeout ?? this.defaultWatchTimeout,
+        timeoutMs: opts?.timeoutMs ?? this.defaultWatchTimeout,
       }
     )
 

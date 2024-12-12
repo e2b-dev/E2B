@@ -1,0 +1,21 @@
+# Running commands in sandbox
+
+You can run terminal commands inside the sandbox using the `commands.run()` method.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+const result = await sandbox.commands.run('ls -l')
+console.log(result)
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+
+result = sandbox.commands.run('ls -l')
+print(result)
+```
+</CodeGroup>

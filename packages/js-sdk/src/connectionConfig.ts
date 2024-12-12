@@ -1,8 +1,8 @@
 import { Logger } from './logs'
 import { getEnvVar } from './api/metadata'
 
-const REQUEST_TIMEOUT_MS = 30_000 // 30s
-export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50s
+const REQUEST_TIMEOUT_MS = 30_000 // 30 seconds
+export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
 
@@ -10,11 +10,39 @@ export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
  * Connection options for requests to the API.
  */
 export interface ConnectionOpts {
+  /**
+   * E2B API key to use for authentication.
+   * 
+   * @default E2B_API_KEY // environment variable
+   */
   apiKey?: string
+  /**
+   * E2B access token to use for authentication.
+   * 
+   * @default E2B_ACCESS_TOKEN // environment variable
+   */
   accessToken?: string
+  /**
+   * Domain to use for the API.
+   * 
+   * @default E2B_DOMAIN // environment variable or `e2b.dev`
+   */
   domain?: string
+  /**
+   * If true the SDK starts in the debug mode and connects to the local envd API server.
+   * @internal
+   * @default E2B_DEBUG // environment variable or `false`
+   */
   debug?: boolean
+  /**
+   * Timeout for requests to the API in **milliseconds**.
+   * 
+   * @default 30_000 // 30 seconds
+   */
   requestTimeoutMs?: number
+  /**
+   * Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, {@link console}.
+   */
   logger?: Logger
 }
 
@@ -69,8 +97,9 @@ export class ConnectionConfig {
 }
 
 /**
- * Username for the user in the sandbox.
+ * User used for the operation in the sandbox.
  */
 export type Username = 'root' | 'user'
+
 
 export const defaultUsername: Username = 'user'

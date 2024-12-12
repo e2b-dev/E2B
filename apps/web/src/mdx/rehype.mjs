@@ -194,6 +194,9 @@ function rehypeSlugify() {
       if (node.tagName === 'h2' && !node.properties.id) {
         node.properties.id = slugify(toString(node))
       }
+      if (node.tagName === 'h3' && !node.properties.id) {
+        node.properties.id = slugify(toString(node))
+      }
     })
   }
 }
@@ -232,7 +235,7 @@ function getSections(node) {
   let sections = []
 
   for (let child of node.children ?? []) {
-    if (child.type === 'element' && child.tagName === 'h2') {
+    if (child.type === 'element' && (child.tagName === 'h2' || child.tagName === 'h3')) {
       sections.push(`{
         title: ${JSON.stringify(toString(child))},
         id: ${JSON.stringify(child.properties.id)},

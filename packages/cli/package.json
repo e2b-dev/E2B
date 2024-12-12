@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "0.5.10",
+  "version": "1.0.8",
   "description": "CLI for managing e2b sandbox templates",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -18,6 +18,21 @@
   "publishConfig": {
     "access": "public"
   },
+  "keywords": [
+    "e2b",
+    "ai-agents",
+    "agents",
+    "ai",
+    "code-interpreter",
+    "sandbox",
+    "code",
+    "cli",
+    "runtime",
+    "vm",
+    "nodejs",
+    "javascript",
+    "typescript"
+  ],
   "sideEffects": false,
   "scripts": {
     "prepublishOnly": "pnpm build",
@@ -25,7 +40,8 @@
     "dev": "tsup --watch",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
     "check-deps": "knip",
-    "update-deps": "ncu -u && pnpm i"
+    "update-deps": "ncu -u && pnpm i",
+    "generate-ref": "./scripts/generate_sdk_ref.sh"
   },
   "devDependencies": {
     "@types/command-exists": "^1.2.3",
@@ -57,7 +73,7 @@
     "command-exists": "^1.2.9",
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
-    "e2b": "^0.16.2-beta.44",
+    "e2b": "^1.0.1",
     "inquirer": "^9.2.12",
     "open": "^9.1.0",
     "strip-ansi": "^7.1.0",

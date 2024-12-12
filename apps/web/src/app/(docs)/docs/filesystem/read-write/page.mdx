@@ -1,0 +1,37 @@
+# Read & write files
+
+## Reading files
+
+You can read files from the sandbox filesystem using the `files.reado()` method.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+const sandbox = await Sandbox.create()
+const fileContent = await sandbox.files.read('/path/to/file')
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+file_content = sandbox.files.read('/path/to/file')
+```
+</CodeGroup>
+
+## Writing files
+
+You can write files to the sandbox filesystem using the `files.write()` method.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+const sandbox = await Sandbox.create()
+await sandbox.files.write('/path/to/file', 'file content')
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+await sandbox.files.write('/path/to/file', 'file content')
+```
+</CodeGroup>

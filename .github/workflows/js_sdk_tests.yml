@@ -40,7 +40,9 @@ jobs:
           pnpm config set exclude-links-from-lockfile true
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          npx playwright install --with-deps
 
       - name: Test build
         run: pnpm build

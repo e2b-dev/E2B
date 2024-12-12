@@ -10,10 +10,25 @@ class FilesystemEventType(Enum):
     """
 
     CHMOD = "chmod"
+    """
+    Filesystem object permissions were changed.
+    """
     CREATE = "create"
+    """
+    Filesystem object was created.
+    """
     REMOVE = "remove"
+    """
+    Filesystem object was removed.
+    """
     RENAME = "rename"
+    """
+    Filesystem object was renamed.
+    """
     WRITE = "write"
+    """
+    Filesystem object was written to.
+    """
 
 
 def map_event_type(event: EventType):
@@ -36,4 +51,10 @@ class FilesystemEvent:
     """
 
     name: str
+    """
+    Relative path to the filesystem object.
+    """
     type: FilesystemEventType
+    """
+    Filesystem operation event type.
+    """

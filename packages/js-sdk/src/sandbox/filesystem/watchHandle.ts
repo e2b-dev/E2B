@@ -5,13 +5,28 @@ import {
 } from '../../envd/filesystem/filesystem_pb'
 
 /**
- * Type of filesystem event.
+ * Sandbox filesystem event types.
  */
 export const enum FilesystemEventType {
+  /**
+   * Filesystem object permissions were changed.
+   */
   CHMOD = 'chmod',
+  /**
+   * Filesystem object was created.
+   */
   CREATE = 'create',
+  /**
+   * Filesystem object was removed.
+   */
   REMOVE = 'remove',
+  /**
+   * Filesystem object was renamed.
+   */
   RENAME = 'rename',
+  /**
+   * Filesystem object was written to.
+   */
   WRITE = 'write',
 }
 
@@ -34,12 +49,20 @@ function mapEventType(type: EventType) {
  * Information about a filesystem event.
  */
 export interface FilesystemEvent {
+  /**
+   * Relative path to the filesystem object.
+   */
   name: string
+  /**
+   * Filesystem operation event type.
+   */
   type: FilesystemEventType
 }
 
 /**
- * Handle for watching a directory in the sandbox filesystem. It provides a method to close the watcher.
+ * Handle for watching a directory in the sandbox filesystem.
+ *
+ * Use {@link WatchHandle.stop} to stop watching the directory.
  */
 export class WatchHandle {
   constructor(
@@ -54,7 +77,7 @@ export class WatchHandle {
   /**
    * Stop watching the directory.
    */
-  async close() {
+  async stop() {
     this.handleStop()
   }
 

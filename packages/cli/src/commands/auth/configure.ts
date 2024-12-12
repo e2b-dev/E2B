@@ -11,7 +11,7 @@ import {
   ensureAccessToken,
   ensureUserConfig,
 } from 'src/api'
-import { asFormattedTeam } from '../../utils/format'
+import { asBold, asFormattedTeam } from '../../utils/format'
 import { handleE2BRequestError } from '../../utils/errors'
 
 export const configureCommand = new commander.Command('configure')
@@ -42,7 +42,7 @@ export const configureCommand = new commander.Command('configure')
           type: 'list',
           pageSize: 50,
           choices: res.data.map((team: e2b.components['schemas']['Team']) => ({
-            name: asFormattedTeam(team),
+            name: asFormattedTeam(team, userConfig.teamId),
             value: team,
           })),
         },
@@ -55,5 +55,5 @@ export const configureCommand = new commander.Command('configure')
     fs.mkdirSync(path.dirname(USER_CONFIG_PATH), { recursive: true })
     fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
 
-    console.log(`Team ${asFormattedTeam(team)} selected.\n`)
+    console.log(`Team ${asBold(team.name)} (${team.teamID}) selected.\n`)
   })
