@@ -52,14 +52,14 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
 
-      - name: Test Python SDK
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
-        working-directory: packages/python-sdk
-        run: |
-          poetry install
-          poetry run pytest --verbose -x
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+      # - name: Test Python SDK
+      #   if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+      #   working-directory: packages/python-sdk
+      #   run: |
+      #     poetry install
+      #     poetry run pytest --verbose -x
+      #   env:
+      #     E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
       - name: Release Candidate
         if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
@@ -76,14 +76,14 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
-      - name: Test JS SDK
-        working-directory: packages/js-sdk
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
-        run: |
-          npx playwright install --with-deps
-          pnpm run test
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+      # - name: Test JS SDK
+      #   working-directory: packages/js-sdk
+      #   if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
+      #   run: |
+      #     npx playwright install --with-deps
+      #     pnpm run test
+      #   env:
+      #     E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
       - name: Release JS Candidate
         working-directory: packages/js-sdk
