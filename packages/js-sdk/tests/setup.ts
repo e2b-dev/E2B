@@ -1,17 +1,24 @@
 import { Sandbox } from '../src'
 import { test as base } from 'vitest'
 
-export const template = 'base'
+export const template = 'base_01'
 
 interface SandboxFixture {
   sandbox: Sandbox
+  template: string
 }
 
 export const sandboxTest = base.extend<SandboxFixture>({
+ template,
   sandbox: [
     async ({}, use) => {
       const sandbox = await Sandbox.create(template)
       try {
+        console.log('pause sandbox')
+        const sandboxId = await sandbox.pause()
+        console.log('resume sandbox', sandboxId)
+        await sandbox.resume()
+        console.log('sandbox resumed')
         await use(sandbox)
       } finally {
         try {
