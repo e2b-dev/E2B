@@ -54,11 +54,9 @@ export const enum FileType {
   DIR = 'dir',
 }
 
-export type WriteData = string | ArrayBuffer | Blob | ReadableStream
-
 export type WriteEntry = {
   path: string
-  data: WriteData
+  data: string | ArrayBuffer | Blob | ReadableStream
 }
 
 function mapFileType(fileType: FsFileType) {
@@ -227,11 +225,11 @@ export class Filesystem {
    *
    * @returns information about the written file
    */
-  async write(path: string, data: WriteData, opts?: FilesystemRequestOpts): Promise<EntryInfo>
+  async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream, opts?: FilesystemRequestOpts): Promise<EntryInfo>
   async write(files: WriteEntry[], opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
   async write(
     pathOrFiles: string | WriteEntry[],
-    dataOrOpts?: WriteData | FilesystemRequestOpts,
+    dataOrOpts?: string | ArrayBuffer | Blob | ReadableStream | FilesystemRequestOpts,
     opts?: FilesystemRequestOpts
   ): Promise<EntryInfo | EntryInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
@@ -249,7 +247,7 @@ export class Filesystem {
         ? {
             path: pathOrFiles,
             writeOpts: opts as FilesystemRequestOpts,
-            writeFiles: [{ data: dataOrOpts as WriteData }],
+            writeFiles: [{ data: dataOrOpts as string | ArrayBuffer | Blob | ReadableStream }],
           }
         : { path: undefined, writeOpts: dataOrOpts as FilesystemRequestOpts, writeFiles: pathOrFiles as WriteEntry[] }
 
@@ -462,7 +460,10 @@ export class Filesystem {
   async watchDir(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: WatchOpts
+    opts?: FilesystemRequestOpts & {
+      timeout?: number
+      onExit?: (err?: Error) => void | Promise<void>
+    }
   ): Promise<WatchHandle> {
     const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
