@@ -23,13 +23,13 @@ import { Sandbox } from 'e2b'
 // import { Sandbox } from '@e2b/desktop'
 
 const sbx = await Sandbox.create()
-console.log('Sandbox created', sbx.id)
+console.log('Sandbox created', sbx.sandboxId)
 
 // Pause the sandbox
 // You can save the resumable ID in your database
 // to resume the sandbox later
-const resumableId = await sbx.pause() // $HighlightLine
-console.log('Sandbox paused', resumableId) // $HighlightLine
+const sandboxId = await sbx.pause() // $HighlightLine
+console.log('Sandbox paused', sandboxId) // $HighlightLine
 ```
 ```python
 from e2b import Sandbox
@@ -40,13 +40,13 @@ from e2b import Sandbox
 # from e2b_desktop import Sandbox
 
 sbx = Sandbox()
-print('Sandbox created', sbx.id)
+print('Sandbox created', sbx.sandbox_id)
 
 # Pause the sandbox
 # You can save the resumable ID in your database
 # to resume the sandbox later
-resumable_id = sbx.pause() # $HighlightLine
-print('Sandbox paused', resumable_id) # $HighlightLine
+sandbox_id = sbx.pause() # $HighlightLine
+print('Sandbox paused', sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
@@ -65,17 +65,17 @@ import { Sandbox } from 'e2b'
 // import { Sandbox } from '@e2b/desktop'
 
 const sbx = await Sandbox.create()
-console.log('Sandbox created', sbx.id)
+console.log('Sandbox created', sbx.sandboxId)
 
 // Pause the sandbox
 // You can save the resumable ID in your database
 // to resume the sandbox later
-const resumableId = await sbx.pause()
-console.log('Sandbox paused', resumableId)
+const sandboxId = await sbx.pause()
+console.log('Sandbox paused', sandboxId)
 
 // Resume the sandbox from the same state
-const sameSbx = await Sandbox.resume(resumableId) // $HighlightLine
-console.log('Sandbox resumed', sameSbx.id) // $HighlightLine
+const sameSbx = await Sandbox.resume(sandboxId) // $HighlightLine
+console.log('Sandbox resumed', sameSbx.sandboxId) // $HighlightLine
 ```
 ```python
 from e2b import Sandbox
@@ -86,17 +86,17 @@ from e2b import Sandbox
 # from e2b_desktop import Sandbox
 
 sbx = Sandbox()
-print('Sandbox created', sbx.id)
+print('Sandbox created', sbx.sandbox_id)
 
 # Pause the sandbox
 # You can save the resumable ID in your database
 # to resume the sandbox later
-resumable_id = sbx.pause()
-print('Sandbox paused', resumable_id)
+sandbox_id = sbx.pause()
+print('Sandbox paused', sandbox_id)
 
 # Resume the sandbox from the same state
-same_sbx = Sandbox.resume(resumable_id) # $HighlightLine
-print('Sandbox resumed', same_sbx.id) # $HighlightLine
+same_sbx = Sandbox.resume(sandbox_id) # $HighlightLine
+print('Sandbox resumed', same_sbx.sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 

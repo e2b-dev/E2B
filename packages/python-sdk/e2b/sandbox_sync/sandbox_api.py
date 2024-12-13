@@ -15,7 +15,7 @@ from e2b.api.client.models import (
     ResumedSandbox,
 )
 from e2b.connection_config import ConnectionConfig
-from e2b.exceptions import TemplateException
+from e2b.exceptions import TemplateException, NotFoundException
 from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo
 from httpx import HTTPTransport
 from packaging.version import Version
@@ -207,17 +207,13 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> bool:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
         )
-
-        if config.debug:
-            # Skip setting timeout in debug mode
-            return
 
         with ApiClient(
             config, transport=HTTPTransport(limits=SandboxApiBase._limits)
@@ -228,8 +224,16 @@ class SandboxApi(SandboxApiBase):
                 body=ResumedSandbox(timeout=timeout),
             )
 
+            if res.status_code == 404:
+                raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
+
+            if res.status_code == 409:
+                return False
+
             if res.status_code >= 300:
                 raise handle_api_exception(res)
+
+            return True
 
     @classmethod
     def _cls_pause(
@@ -239,7 +243,7 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> None:
+    ) -> bool:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
@@ -255,5 +259,13 @@ class SandboxApi(SandboxApiBase):
                 client=api_client,
             )
 
+            if res.status_code == 404:
+                raise NotFoundException(f"Sandbox {sandbox_id} not found")
+
+            if res.status_code == 409:
+                return False
+
             if res.status_code >= 300:
                 raise handle_api_exception(res)
+
+            return True

@@ -105,9 +105,8 @@ export class Sandbox extends SandboxApi {
 
     this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
+      }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -180,10 +179,10 @@ export class Sandbox extends SandboxApi {
     const sandboxId = config.debug
       ? 'debug_sandbox_id'
       : await this.createSandbox(
-          template,
-          sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-          sandboxOpts
-        )
+        template,
+        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+        sandboxOpts
+      )
 
     const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
     return sbx
@@ -227,7 +226,7 @@ export class Sandbox extends SandboxApi {
    * @param sandboxId sandbox ID.
    * @param opts connection options.
    *
-   * @returns sandbox instance.
+   * @returns a running sandbox instance.
    */
   static async resume<S extends typeof Sandbox>(
     this: S,
@@ -343,31 +342,12 @@ export class Sandbox extends SandboxApi {
    *
    * @param opts connection options.
    *
-   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   * @returns sandbox ID that can be used to resume the sandbox.
    */
-  async pause(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>): Promise<boolean> {
-    if (this.connectionConfig.debug) {
-      // Skip pausing in debug mode
-      return true
-    }
+  async pause(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>): Promise<string> {
+    await Sandbox.pauseSandbox(this.sandboxId, { ...this.connectionConfig, ...opts })
 
-    return await Sandbox.pause(this.sandboxId, { ...this.connectionConfig, ...opts })
-  }
-
-  /**
-   * Resume the sandbox.
-   * 
-   * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
-   * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
-   *
-   * @param opts connection options.
-   *
-   * @returns sandbox instance.
-   */
-  async resume(opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'timeoutMs'>): Promise<this> {
-    await Sandbox.resume(this.sandboxId, { ...this.connectionConfig, ...opts })
-
-    return this
+    return this.sandboxId
   }
 
   /**
