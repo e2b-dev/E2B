@@ -1,6 +1,6 @@
 from io import TextIOBase
-from typing import Iterator, List, Literal, Optional, overload, Union
-from e2b.sandbox.filesystem.filesystem import WriteData, WriteEntry
+from typing import IO, Iterator, List, Literal, Optional, overload, Union
+from e2b.sandbox.filesystem.filesystem import WriteEntry
 
 import e2b_connect
 import httpcore
@@ -131,7 +131,7 @@ class Filesystem:
     def write(
         self,
         path: str,
-        data: WriteData,
+        data: Union[str, bytes, IO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
@@ -174,7 +174,7 @@ class Filesystem:
     def write(
         self,
         path_or_files: Union[str, List[WriteEntry]],
-        data_or_user: Union[WriteData, Username] = "user",
+        data_or_user: Union[str, bytes, IO, Username] = "user",
         user_or_request_timeout: Optional[Union[float, Username]] = None,
         request_timeout_or_none: Optional[float] = None
     ) -> Union[EntryInfo, List[EntryInfo]]:

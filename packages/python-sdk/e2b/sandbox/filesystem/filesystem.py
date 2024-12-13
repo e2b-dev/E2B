@@ -47,14 +47,11 @@ class EntryInfo:
     """
 
 
-WriteData = Union[str, bytes, IO]
-
-
-@dataclass
+dataclass
 class WriteEntry:
     """
     Contains path and data of the file to be written to the filesystem.
     """
 
     path: str
-    data: WriteData
+    data: Union[str, bytes, IO]
