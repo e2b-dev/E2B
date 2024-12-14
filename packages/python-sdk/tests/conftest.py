@@ -1,15 +1,14 @@
-import pytest
-import pytest_asyncio
 import os
-
 from logging import warning
 
-from e2b import Sandbox, AsyncSandbox
+import pytest
+import pytest_asyncio
+from e2b import AsyncSandbox, Sandbox
 
 
 @pytest.fixture()
 def template():
-    return "base"
+    return "base_01"
 
 
 @pytest.fixture()
@@ -17,6 +16,8 @@ def sandbox(template, debug):
     sandbox = Sandbox(template)
 
     try:
+        sandbox_id = sandbox.pause()
+        sandbox.resume(sandbox_id)
         yield sandbox
     finally:
         try:
@@ -33,6 +34,8 @@ async def async_sandbox(template, debug):
     sandbox = await AsyncSandbox.create(template)
 
     try:
+        sandbox_id = await sandbox.pause()
+        await sandbox.resume(sandbox_id)
         yield sandbox
     finally:
         try:
