@@ -1,5 +1,6 @@
 import { assert } from 'vitest'
 
+import { Sandbox } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)('pause and resume a sandbox', async ({ sandbox }) => {
@@ -9,7 +10,7 @@ sandboxTest.skipIf(isDebug)('pause and resume a sandbox', async ({ sandbox }) =>
 
   assert.isFalse(await sandbox.isRunning())
 
-  await sandbox.resume()
+  await Sandbox.resume(sandbox.sandboxId)
 
   assert.isTrue(await sandbox.isRunning())
 })
