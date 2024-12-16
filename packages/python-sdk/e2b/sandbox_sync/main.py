@@ -388,6 +388,9 @@ class Sandbox(SandboxSetup, SandboxApi):
             sandbox_id=sandbox_id,
             request_timeout=request_timeout,
             timeout=timeout,
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
         )
 
         return cls.connect(
