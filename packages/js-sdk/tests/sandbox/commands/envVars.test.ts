@@ -10,8 +10,8 @@ sandboxTest.skipIf(isDebug)('env vars', async ({ sandbox }) => {
   assert.equal(cmd.stdout.trim(), 'bar')
 })
 
-sandboxTest.skipIf(isDebug)('env vars on sandbox', async () => {
-  const sandbox = await Sandbox.create({ envs: { FOO: 'bar' } })
+sandboxTest.skipIf(isDebug)('env vars on sandbox', async ({ template }) => {
+  const sandbox = await Sandbox.create(template, { envs: { FOO: 'bar' } })
 
   try {
     const cmd = await sandbox.commands.run('echo "$FOO"')

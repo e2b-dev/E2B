@@ -6,8 +6,8 @@ await load({ envPath: '.env', export: true })
 import { Sandbox } from '../../../dist/index.mjs'
 
 
-Deno.test('Deno test', async () => {
-  const sbx = await Sandbox.create('base', { timeoutMs: 5_000 })
+Deno.test('Deno test', async ({ template }) => {
+  const sbx = await Sandbox.create(template, { timeoutMs: 5_000 })
   try {
     const isRunning = await sbx.isRunning()
     assert(isRunning)

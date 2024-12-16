@@ -9,16 +9,11 @@ interface SandboxFixture {
 }
 
 export const sandboxTest = base.extend<SandboxFixture>({
- template,
+  template,
   sandbox: [
-    async ({}, use) => {
+    async ({ }, use) => {
       const sandbox = await Sandbox.create(template)
       try {
-        console.log('pause sandbox')
-        const sandboxId = await sandbox.pause()
-        console.log('resume sandbox', sandboxId)
-        await sandbox.resume()
-        console.log('sandbox resumed')
         await use(sandbox)
       } finally {
         try {
