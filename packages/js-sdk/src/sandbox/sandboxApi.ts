@@ -8,7 +8,7 @@ import { NotFoundError, TemplateError } from '../errors'
  */
 export interface SandboxApiOpts
   extends Partial<
-    Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs' | 'accessToken'>
+    Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
   > { }
 
 /**
