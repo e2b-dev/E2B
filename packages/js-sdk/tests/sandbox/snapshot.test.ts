@@ -1,3 +1,4 @@
+
 import { assert } from 'vitest'
 
 import { Sandbox } from '../../src'
@@ -100,7 +101,9 @@ sandboxTest.skipIf(isDebug)('pause and resume a sandbox with http server', async
   await sandbox.commands.run('python3 -m http.server 8000', { background: true })
 
   let url = await sandbox.getHost(8000)
-  console.log(url)
+
+  await new Promise(resolve => setTimeout(resolve, 3000))
+  
   const response1 = await fetch(`https://${url}`)
   assert.equal(response1.status, 200)
 
