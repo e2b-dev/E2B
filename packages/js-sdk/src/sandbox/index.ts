@@ -221,7 +221,7 @@ export class Sandbox extends SandboxApi {
    * Resume the sandbox.
    * 
    * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
-   * If you pass a custom timeout in the `opts` parametervia {@link SandboxOpts.timeoutMs} property, it will be used instead.
+   * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
    *
    * @param sandboxId sandbox ID.
    * @param opts connection options.
@@ -231,7 +231,7 @@ export class Sandbox extends SandboxApi {
   static async resume<S extends typeof Sandbox>(
     this: S,
     sandboxId: string,
-    opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'timeoutMs'>
+    opts?: Omit<SandboxOpts, 'metadata' | 'envs'>
   ): Promise<InstanceType<S>> {
     await Sandbox.resumeSandbox(sandboxId, opts?.timeoutMs ?? this.defaultSandboxTimeoutMs, opts)
 
