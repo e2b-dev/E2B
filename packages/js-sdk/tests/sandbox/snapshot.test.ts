@@ -72,10 +72,10 @@ sandboxTest.skipIf(isDebug)('pause and resume a sandbox with file', async ({ san
   assert.equal(readContent2, content)
 })
 
-sandboxTest.skipIf(isDebug)('pause and resume a sandbox long running process', async ({ sandbox }) => {
+sandboxTest.skipIf(isDebug)('pause and resume a sandbox with long running process', async ({ sandbox }) => {
   const filename = 'test_long_running.txt'
 
-  sandbox.commands.run(`sleep 2 && echo "done" > /home/user/${filename}`)
+  sandbox.commands.run(`sleep 2 && echo "done" > /home/user/${filename}`, { background: true })
 
   // the file should not exist before 2 seconds have elapsed
   const exists = await sandbox.files.exists(filename)
@@ -96,3 +96,21 @@ sandboxTest.skipIf(isDebug)('pause and resume a sandbox long running process', a
   assert.equal(readContent2.trim(), 'done')
 })
  
+sandboxTest.skipIf(isDebug)('pause and resume a sandbox with http server', async ({ sandbox }) => {
+  await sandbox.commands.run('python3 -m http.server 8000', { background: true })
+
+  let url = await sandbox.getHost(8000)
+  console.log(url)
+  const response1 = await fetch(`https://${url}`)
+  assert.equal(response1.status, 200)
+
+  await sandbox.pause()
+  assert.isFalse(await sandbox.isRunning())
+
+  await Sandbox.resume(sandbox.sandboxId)
+  assert.isTrue(await sandbox.isRunning())
+
+  url = await sandbox.getHost(8000)
+  const response2 = await fetch(`https://${url}`)
+  assert.equal(response2.status, 200)
+})

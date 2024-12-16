@@ -8,7 +8,7 @@ from e2b import AsyncSandbox, Sandbox
 
 @pytest.fixture()
 def template():
-    return "base_01"
+    return "base"
 
 
 @pytest.fixture()
