@@ -145,7 +145,7 @@ export function TemplatesContent({
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5">
-            <TableHead>Visibility</TableHead>
+            <TableHead>Access</TableHead>
             <TableHead>Template ID</TableHead>
             <TableHead>Template Name</TableHead>
             <TableHead>vCPUs</TableHead>
@@ -176,7 +176,7 @@ export function TemplatesContent({
                       <Lock className="w-4 h-4" />
                     )}
                     <span className="text-xs">
-                      {template.public ? 'Visible' : 'Private'}
+                      {template.public ? 'Public' : 'Private'}
                     </span>
                   </div>
                 </TableCell>
@@ -207,7 +207,7 @@ export function TemplatesContent({
                         ) : (
                           <LockOpen className="w-4 h-4 mr-2" />
                         )}
-                        {template.public ? 'Make private' : 'Make public'}
+                        {template.public ? 'Unpublish' : 'Publish'}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-red-500"
