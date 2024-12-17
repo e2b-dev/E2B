@@ -90,7 +90,7 @@ jobs:
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
         run: |
           npm version prerelease --preid="beta"
-          npm publish --tag rc
+          npm publish --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -104,7 +104,7 @@ jobs:
         if: ${{ contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
         run: |
           npm version prerelease --preid="beta"
-          npm publish --tag rc
+          npm publish --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
