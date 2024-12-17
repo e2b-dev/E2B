@@ -100,6 +100,29 @@ print('Sandbox resumed', same_sbx.sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
+## Sandbox's timeout
+When you resume a sandbox, the sandbox's timeout is reset to the default timeout of an E2B sandbox - 5 minutes.
+
+
+You can pass a custom timeout to the `Sandbox.resume()` method like this:
+
+<CodeGroup>
+```js
+import { Sandbox } from 'e2b'
+
+const sbx = await Sandbox.resume(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
+```
+```python
+from e2b import Sandbox
+
+sbx = Sandbox.resume(sandbox_id, timeout=60) # 60 seconds
+```
+</CodeGroup>
+
+## Network
+If you have a service (for example a server) running inside your sandbox and you pause the sandbox, the service won't be accessible from the outside and all the clients will be disconnected.
+If you resume the sandbox, the service will be accessible again but you need to connect clients again.
+
 
 ## Limitations while in beta
 - It takes about 4 seconds per 1 GB RAM to pause the sandbox
