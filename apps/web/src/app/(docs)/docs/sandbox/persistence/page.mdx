@@ -2,8 +2,8 @@
 
 <Note>
 Sandbox persistence is currently in beta:
-1. [Reach out to us](/docs/support) to get access to the beta.
-1. You need to install the [beta version of the SDKs](#installing-the-beta-version-of-the-sdks).
+1. [Reach out to us](/docs/support) with your use caseto get access to the beta.
+1. You'll need to install the [beta version of the SDKs](#installing-the-beta-version-of-the-sdks).
 1. Consider [some limitations](#limitations-while-in-beta).
 1. The persistence is free for all users during the beta.
 </Note>
@@ -17,13 +17,25 @@ To use the sandbox persistence, you need to install the beta version of the SDKs
 
 <CodeGroup>
 ```bash {{ language: 'js' }}
-npm i e2b@beta
+npm i @e2b/code-interpreter@beta
+#
+# or use Core: https://github.com/e2b-dev/e2b
+# npm i e2b@beta
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# npm i @e2b/desktop@beta
 ```
 
 ```bash {{ language: 'python' }}
 # Install the latest beta version of the SDK on PyPi
 # https://pypi.org/project/e2b/#history
-pip install e2b-code-interpreter==1.1.0.b17
+pip install e2b-code-interpreter==1.0.4b0
+#
+# or use Core: https://github.com/e2b-dev/e2b
+# pip install e2b==1.1.0.b17
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# pip install e2b-desktop==1.1.0.b0
 ```
 </CodeGroup>
 
@@ -33,9 +45,9 @@ When you pause a sandbox, both the sandbox's filesystem and memory state will be
 
 <CodeGroup>
 ```js
-import { Sandbox } from 'e2b'
-// or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
-// import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from '@e2b/code-interpreter'
+// or use Core: https://github.com/e2b-dev/e2b
+// import { Sandbox } from 'e2b'
 //
 // or use Desktop: https://github.com/e2b-dev/desktop
 // import { Sandbox } from '@e2b/desktop'
@@ -50,9 +62,9 @@ const sandboxId = await sbx.pause() // $HighlightLine
 console.log('Sandbox paused', sandboxId) // $HighlightLine
 ```
 ```python
-from e2b import Sandbox
-# or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
-# from e2b_code_interpreter import Sandbox
+from e2b_code_interpreter import Sandbox
+# or use Core: https://github.com/e2b-dev/e2b
+# from e2b import Sandbox
 #
 # or use Desktop: https://github.com/e2b-dev/desktop
 # from e2b_desktop import Sandbox
@@ -75,9 +87,9 @@ This means that all the files in the sandbox's filesystem will be restored and a
 
 <CodeGroup>
 ```js
-import { Sandbox } from 'e2b'
-// or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
-// import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from '@e2b/code-interpreter'
+// or use Core: https://github.com/e2b-dev/e2b
+// import { Sandbox } from 'e2b'
 //
 // or use Desktop: https://github.com/e2b-dev/desktop
 // import { Sandbox } from '@e2b/desktop'
@@ -97,8 +109,8 @@ console.log('Sandbox resumed', sameSbx.sandboxId) // $HighlightLine
 ```
 ```python
 from e2b import Sandbox
-# or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
-# from e2b_code_interpreter import Sandbox
+# or use Core: https://github.com/e2b-dev/e2b
+# from e2b import Sandbox
 #
 # or use Desktop: https://github.com/e2b-dev/desktop
 # from e2b_desktop import Sandbox
@@ -126,12 +138,22 @@ You can pass a custom timeout to the `Sandbox.resume()` method like this:
 
 <CodeGroup>
 ```js
-import { Sandbox } from 'e2b'
+import { Sandbox } from '@e2b/code-interpreter'
+// or use Core: https://github.com/e2b-dev/e2b
+// import { Sandbox } from 'e2b'
+//
+// or use Desktop: https://github.com/e2b-dev/desktop
+// import { Sandbox } from '@e2b/desktop'
 
 const sbx = await Sandbox.resume(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
 ```
 ```python
-from e2b import Sandbox
+from e2b_code_interpreter import Sandbox
+# or use Core: https://github.com/e2b-dev/e2b
+# from e2b import Sandbox
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# from e2b_desktop import Sandbox
 
 sbx = Sandbox.resume(sandbox_id, timeout=60) # 60 seconds
 ```
