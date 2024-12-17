@@ -89,7 +89,7 @@ jobs:
         working-directory: packages/js-sdk
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
         run: |
-          npm version prerelease --preid=${{ github.head_ref }}
+          npm version prerelease --preid="beta"
           npm publish --tag rc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -103,7 +103,7 @@ jobs:
         working-directory: packages/cli
         if: ${{ contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
         run: |
-          npm version prerelease --preid=${{ github.head_ref }}
+          npm version prerelease --preid="beta"
           npm publish --tag rc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
