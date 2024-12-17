@@ -247,6 +247,28 @@ export interface paths {
         500: components["responses"]["500"];
       };
     };
+    /** @description Update template */
+    patch: {
+      parameters: {
+        path: {
+          templateID: components["parameters"]["templateID"];
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["TemplateUpdateRequest"];
+        };
+      };
+      responses: {
+        /** @description The template was updated successfully */
+        200: {
+          content: never;
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
   };
   "/templates/{templateID}/builds/{buildID}": {
     /** @description Start the build */
@@ -395,17 +417,52 @@ export interface components {
       /** @description Identifier of the team */
       teamID: string;
     };
+    TeamUser: {
+      /** @description Email of the user */
+      email: string;
+      /**
+       * Format: uuid
+       * @description Identifier of the user
+       */
+      id: string;
+    };
     Template: {
       /** @description Aliases of the template */
       aliases?: string[];
+      /**
+       * Format: int32
+       * @description Number of times the template was built
+       */
+      buildCount: number;
       /** @description Identifier of the last successful build for given template */
       buildID: string;
       cpuCount: components["schemas"]["CPUCount"];
+      /**
+       * Format: date-time
+       * @description Time when the template was created
+       */
+      createdAt: string;
+      createdBy: components["schemas"]["TeamUser"] | null;
+      /**
+       * Format: date-time
+       * @description Time when the template was last used
+       */
+      lastSpawnedAt: string;
       memoryMB: components["schemas"]["MemoryMB"];
       /** @description Whether the template is public or only accessible by the team */
       public: boolean;
+      /**
+       * Format: int64
+       * @description Number of times the template was used
+       */
+      spawnCount: number;
       /** @description Identifier of the template */
       templateID: string;
+      /**
+       * Format: date-time
+       * @description Time when the template was last updated
+       */
+      updatedAt: string;
     };
     TemplateBuild: {
       /** @description Identifier of the build */
@@ -434,6 +491,10 @@ export interface components {
       startCmd?: string;
       /** @description Identifier of the team */
       teamID?: string;
+    };
+    TemplateUpdateRequest: {
+      /** @description Whether the template is public or only accessible by the team */
+      public?: boolean;
     };
   };
   responses: {
