@@ -124,7 +124,7 @@ export const PersonalContent = ({
               <br />
             </span>
             <div className="flex items-center space-x-2">
-              <Link href={'/sign-in?view=forgotten-password'}>
+              <Link href={'/auth/update-password'}>
                 <Button variant="desctructive">Reset password</Button>
               </Link>
             </div>
