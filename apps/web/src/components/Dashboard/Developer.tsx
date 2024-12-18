@@ -20,6 +20,14 @@ export const DeveloperContent = ({
     }
   }
 
+  function removeApiSubdomain(url: URL): string {
+    const hostParts = url.host.split('.')
+    if (hostParts.length > 2 && hostParts[0] === 'api') {
+      return hostParts.slice(1).join('.')
+    }
+    return url.host
+  }
+
   return (
     <div className="flex flex-col w-full">
       <div className="flex flex-col h-full">
@@ -45,7 +53,7 @@ export const DeveloperContent = ({
               <pre className="mt-2 w-full bg-neutral-700 px-2 py-1 rounded-md text-brand-300">
                 E2B_DOMAIN={
                   isUrl(apiUrl)
-                    ? `"${new URL(apiUrl).host}"`
+                    ? `"${removeApiSubdomain(new URL(apiUrl))}"`
                     : 'Invalid URL'
                 }
               </pre>
