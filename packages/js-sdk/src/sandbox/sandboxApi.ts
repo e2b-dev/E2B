@@ -159,7 +159,10 @@ export class SandboxApi {
       metadata?: Record<string, string>
       envs?: Record<string, string>
     }
-  ): Promise<string> {
+  ): Promise<{
+    sandboxId: string
+    envdVersion: string
+  }> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -191,10 +194,13 @@ export class SandboxApi {
           'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
-    return this.getSandboxId({
-      sandboxId: res.data!.sandboxID,
-      clientId: res.data!.clientID,
-    })
+    return {
+      sandboxId: this.getSandboxId({
+        sandboxId: res.data!.sandboxID,
+        clientId: res.data!.clientID,
+      }),
+      envdVersion: res.data!.envdVersion
+    }
   }
 
   private static timeoutToSeconds(timeout: number): number {

@@ -39,3 +39,52 @@ for event in events: # $HighlightLine
     print(f"wrote to file {event.name}") # $HighlightLine
 ```
 </CodeGroup>
+
+
+## Recursive Watching
+
+You can enable recursive watching using the parameter `recursive`.
+
+<Note>
+When rapidly creating new folders (e.g., deeply nested path of folders), events other than `CREATE` might not be emitted. To avoid this behavior, create the required folder structure in advance.
+</Note>
+
+<CodeGroup>
+```js
+import { Sandbox, FilesystemEventType } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+const dirname = '/home/user'
+
+// Start watching directory for changes
+const handle = await sandbox.files.watchDir(dirname, async (event) => {
+  console.log(event)
+  if (event.type === FilesystemEventType.WRITE) {
+    console.log(`wrote to file ${event.name}`)
+  }
+}, {
+  recursive: true // $HighlightLine
+})
+
+// Trigger file write event
+await sandbox.files.write(`${dirname}/my-folder/my-file`, 'hello') // $HighlightLine
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+dirname = '/home/user'
+
+# Watch directory for changes
+handle = sandbox.files.watch_dir(dirname, recursive=True) # $HighlightLine
+# Trigger file write event
+sandbox.files.write(f"{dirname}/my-folder/my-file", "hello") # $HighlightLine
+
+# Retrieve the latest new events since the last `get_new_events()` call
+events = handle.get_new_events()
+for event in events:
+  print(event)
+  if event.type == FilesystemEventType.Write:
+    print(f"wrote to file {event.name}")
+```
+</CodeGroup>
