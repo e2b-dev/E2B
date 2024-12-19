@@ -45,6 +45,9 @@ for event in events: # $HighlightLine
 
 You can enable recursive watching using the parameter `recursive`.
 
+<Note>
+When rapidly creating new folders (e.g., deeply nested path of folders), events other than `CREATE` might not be emitted. To avoid this behavior, create the required folder structure in advance.
+</Note>
 
 <CodeGroup>
 ```js
