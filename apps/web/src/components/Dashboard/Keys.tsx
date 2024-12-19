@@ -28,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
+import { getBillingUrl } from '@/app/(dashboard)/dashboard/utils'
 
 type TeamApiKey = {
   id: string
@@ -46,11 +47,11 @@ type TeamApiKey = {
 export const KeysContent = ({
   currentTeam,
   user,
-  billingUrl,
+  domain,
 }: {
   currentTeam: Team
   user: E2BUser
-  billingUrl: string
+  domain: string
 }) => {
   const { toast } = useToast()
   const [isKeyDialogOpen, setIsKeyDialogOpen] = useState(false)
@@ -63,7 +64,7 @@ export const KeysContent = ({
   useEffect(() => {
     async function fetchApiKeys() {
       const res = await fetch(
-        `${billingUrl}/teams/${currentTeam.id}/api-keys`,
+        getBillingUrl(domain, `/teams/${currentTeam.id}/api-keys`),
         {
           headers: {
             'X-USER-ACCESS-TOKEN': user.accessToken,
@@ -85,7 +86,7 @@ export const KeysContent = ({
     }
 
     fetchApiKeys()
-  }, [currentTeam])
+  }, [domain, currentTeam, user.accessToken])
 
   async function deleteApiKey() {
     if (apiKeys.length === 1) {
@@ -97,7 +98,10 @@ export const KeysContent = ({
     }
 
     const res = await fetch(
-      `${billingUrl}/teams/${currentTeam.id}/api-keys/${currentKey?.id}`,
+      getBillingUrl(
+        domain,
+        `/teams/${currentTeam.id}/api-keys/${currentKey?.id}`
+      ),
       {
         method: 'DELETE',
         headers: {
@@ -119,16 +123,19 @@ export const KeysContent = ({
   }
 
   async function createApiKey() {
-    const res = await fetch(`${billingUrl}/teams/${currentTeam.id}/api-keys`, {
-      method: 'POST',
-      headers: {
-        'X-USER-ACCESS-TOKEN': user.accessToken,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: newApiKeyInput,
-      }),
-    })
+    const res = await fetch(
+      getBillingUrl(domain, `/teams/${currentTeam.id}/api-keys`),
+      {
+        method: 'POST',
+        headers: {
+          'X-USER-ACCESS-TOKEN': user.accessToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newApiKeyInput,
+        }),
+      }
+    )
 
     if (!res.ok) {
       toast({
@@ -149,7 +156,10 @@ export const KeysContent = ({
 
   async function updateApiKey() {
     const res = await fetch(
-      `${billingUrl}/teams/${currentTeam.id}/api-keys/${currentKey?.id}`,
+      getBillingUrl(
+        domain,
+        `/teams/${currentTeam.id}/api-keys/${currentKey?.id}`
+      ),
       {
         method: 'PATCH',
         headers: {
