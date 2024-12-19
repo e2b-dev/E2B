@@ -91,10 +91,6 @@ const Dashboard = ({ user }) => {
     'apiUrl',
     process.env.NEXT_PUBLIC_API_URL || ''
   )
-  const billingUrlState = useLocalStorage(
-    'billingUrl',
-    process.env.NEXT_PUBLIC_BILLING_API_URL || ''
-  )
 
   const initialTab =
     tab && menuLabels.includes(tab as MenuLabel)
@@ -167,7 +163,6 @@ const Dashboard = ({ user }) => {
             setTeams={setTeams}
             setCurrentTeam={setCurrentTeam}
             apiUrlState={apiUrlState}
-            billingUrlState={billingUrlState}
           />
         </div>
       </>
@@ -230,16 +225,18 @@ const MenuItem = ({
   onClick: () => void
 }) => (
   <div
-    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${selected ? 'bg-[#995100]' : ''
-      }`}
+    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${
+      selected ? 'bg-[#995100]' : ''
+    }`}
     onClick={onClick}
   >
     <Icon width={20} height={20} />
     <p
-      className={`${!label || !window.matchMedia('(min-width: 768)').matches
+      className={`${
+        !label || !window.matchMedia('(min-width: 768)').matches
           ? 'sr-only sm:not-sr-only'
           : ''
-        }`}
+      }`}
     >
       {label[0].toUpperCase() + label.slice(1)}
     </p>
@@ -254,7 +251,6 @@ function MainContent({
   setTeams,
   setCurrentTeam,
   apiUrlState,
-  billingUrlState,
 }: {
   selectedItem: MenuLabel
   user: E2BUser
@@ -263,18 +259,13 @@ function MainContent({
   setTeams: (teams: Team[]) => void
   setCurrentTeam: (team: Team) => void
   apiUrlState: [string, (value: string) => void]
-  billingUrlState: [string, (value: string) => void]
 }) {
   switch (selectedItem) {
     case 'personal':
-      return <PersonalContent user={user} billingUrl={billingUrlState[0]} />
+      return <PersonalContent user={user} apiUrl={apiUrlState[0]} />
     case 'keys':
       return (
-        <KeysContent
-          currentTeam={team}
-          user={user}
-          billingUrl={billingUrlState[0]}
-        />
+        <KeysContent currentTeam={team} user={user} apiUrl={apiUrlState[0]} />
       )
     case 'sandboxes':
       return <SandboxesContent team={team} apiUrl={apiUrlState[0]} />
@@ -287,9 +278,9 @@ function MainContent({
         />
       )
     case 'usage':
-      return <UsageContent team={team} billingUrl={billingUrlState[0]} />
+      return <UsageContent team={team} apiUrl={apiUrlState[0]} />
     case 'billing':
-      return <BillingContent team={team} billingUrl={billingUrlState[0]} />
+      return <BillingContent team={team} apiUrl={apiUrlState[0]} />
     case 'team':
       return (
         <TeamContent
@@ -298,15 +289,11 @@ function MainContent({
           teams={teams}
           setTeams={setTeams}
           setCurrentTeam={setCurrentTeam}
-          billingUrl={billingUrlState[0]}
+          apiUrl={apiUrlState[0]}
         />
       )
     case 'developer':
-      return (
-        <DeveloperContent
-          apiUrlState={apiUrlState}
-        />
-      )
+      return <DeveloperContent domainState={apiUrlState} />
     default:
       return <ErrorContent />
   }

@@ -23,10 +23,10 @@ type Series = {
 
 export const UsageContent = ({
   team,
-  billingUrl,
+  apiUrl,
 }: {
   team: Team
-  billingUrl: string
+  apiUrl: string
 }) => {
   const [vcpuData, setVcpuData] = useState<Series[]>([])
   const [vcpuHoursThisMonth, setVcpuHoursThisMonth] = useState<
@@ -45,11 +45,14 @@ export const UsageContent = ({
       setRamData([])
       setCostUsage([])
 
-      const response = await fetch(`${billingUrl}/teams/${team.id}/usage`, {
-        headers: {
-          'X-Team-API-Key': team.apiKeys[0],
-        },
-      })
+      const response = await fetch(
+        `https://billing.${apiUrl}/teams/${team.id}/usage`,
+        {
+          headers: {
+            'X-Team-API-Key': team.apiKeys[0],
+          },
+        }
+      )
       if (!response.ok) {
         // TODO: Add sentry event here
         toast({

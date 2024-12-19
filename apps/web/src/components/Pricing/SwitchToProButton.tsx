@@ -9,8 +9,8 @@ import Spinner from '@/components/Spinner'
 
 import { TierActiveTag } from './TierActiveTag'
 
-function createCheckout(billingApiURL: string, tierID: string, teamID: string) {
-  return fetch(`${billingApiURL}/checkouts`, {
+function createCheckout(apiUrl: string, tierID: string, teamID: string) {
+  return fetch(`https://billing.${apiUrl}/checkouts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -22,13 +22,7 @@ function createCheckout(billingApiURL: string, tierID: string, teamID: string) {
   })
 }
 
-function SwitchTierButton({
-  team,
-  billingApiURL,
-}: {
-  team: Team
-  billingApiURL: string
-}) {
+function SwitchTierButton({ team, apiUrl }: { team: Team; apiUrl: string }) {
   const { user, isLoading } = useUser()
   const [error, setError] = useState('')
 
@@ -40,7 +34,7 @@ function SwitchTierButton({
     }
 
     const response = await createCheckout(
-      billingApiURL,
+      apiUrl,
       tiers.pro.id,
       user.teams[0].id
     )
@@ -67,10 +61,7 @@ function SwitchTierButton({
 
   // Only show the button if the user is on the base_v1 tier.
   // Teams can have custom tiers. We only want the button to users on the free tier.
-  if (
-    !billingApiURL ||
-    (team.tier !== tiers.hobby.id && team.tier !== tiers.pro.id)
-  ) {
+  if (!apiUrl || (team.tier !== tiers.hobby.id && team.tier !== tiers.pro.id)) {
     return
   }
 

@@ -29,10 +29,10 @@ interface Invoice {
 
 export const BillingContent = ({
   team,
-  billingUrl,
+  apiUrl,
 }: {
   team: Team
-  billingUrl: string
+  apiUrl: string
 }) => {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [credits, setCredits] = useState<number | null>(null)
@@ -40,11 +40,14 @@ export const BillingContent = ({
   useEffect(() => {
     const getInvoices = async function getInvoices() {
       setInvoices([])
-      const res = await fetch(`${billingUrl}/teams/${team.id}/invoices`, {
-        headers: {
-          'X-Team-API-Key': team.apiKeys[0],
-        },
-      })
+      const res = await fetch(
+        `https://billing.${apiUrl}/teams/${team.id}/invoices`,
+        {
+          headers: {
+            'X-Team-API-Key': team.apiKeys[0],
+          },
+        }
+      )
       if (!res.ok) {
         // TODO: add sentry error
         console.log(res)
@@ -55,11 +58,14 @@ export const BillingContent = ({
       setInvoices(invoices)
 
       setCredits(null)
-      const creditsRes = await fetch(`${billingUrl}/teams/${team.id}/usage`, {
-        headers: {
-          'X-Team-API-Key': team.apiKeys[0],
-        },
-      })
+      const creditsRes = await fetch(
+        `https://billing.${apiUrl}/teams/${team.id}/usage`,
+        {
+          headers: {
+            'X-Team-API-Key': team.apiKeys[0],
+          },
+        }
+      )
       const credits = await creditsRes.json()
       setCredits(credits.credits)
     }
@@ -108,7 +114,7 @@ export const BillingContent = ({
       <div className="flex flex-col items-start justify-center pb-10">
         <div className="flex items-center space-x-4">
           <h2>Pro tier</h2>
-          <SwitchToProButton billingApiURL={billingUrl} team={team} />
+          <SwitchToProButton apiUrl={apiUrl} team={team} />
         </div>
         <ul className="flex flex-col list-disc list-inside text-neutral-400">
           <li>One-time $100 credits</li>

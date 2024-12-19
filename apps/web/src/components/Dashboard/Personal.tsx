@@ -9,10 +9,10 @@ import { E2BUser } from '@/utils/useUser'
 
 export const PersonalContent = ({
   user,
-  billingUrl,
+  apiUrl,
 }: {
   user: E2BUser
-  billingUrl: string
+  apiUrl: string
 }) => {
   const { toast } = useToast()
   const [hovered, setHovered] = useState<boolean>(false)
@@ -33,7 +33,7 @@ export const PersonalContent = ({
   }
 
   const updateUserEmail = async () => {
-    const res = await fetch(`${billingUrl}/users`, {
+    const res = await fetch(`https://billing.${apiUrl}/users`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

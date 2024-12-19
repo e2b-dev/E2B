@@ -45,14 +45,14 @@ export const TeamContent = ({
   teams,
   setTeams,
   setCurrentTeam,
-  billingUrl,
+  apiUrl,
 }: {
   team: Team
   user: E2BUser
   teams: Team[]
   setTeams: (teams: Team[]) => void
   setCurrentTeam: (team: Team) => void
-  billingUrl: string
+  apiUrl: string
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentMemberId, setCurrentMemberId] = useState<string | null>(null)
@@ -64,12 +64,15 @@ export const TeamContent = ({
 
   useEffect(() => {
     const getTeamMembers = async () => {
-      const res = await fetch(`${billingUrl}/teams/${team.id}/users`, {
-        headers: {
-          'X-User-Access-Token': user.accessToken,
-          'X-Team-API-Key': team.apiKeys[0],
-        },
-      })
+      const res = await fetch(
+        `https://billing.${apiUrl}/teams/${team.id}/users`,
+        {
+          headers: {
+            'X-User-Access-Token': user.accessToken,
+            'X-Team-API-Key': team.apiKeys[0],
+          },
+        }
+      )
 
       if (!res.ok) {
         toast({
@@ -101,14 +104,17 @@ export const TeamContent = ({
   }
 
   const deleteUserFromTeam = async () => {
-    const res = await fetch(`${billingUrl}/teams/${team.id}/users`, {
-      method: 'DELETE',
-      headers: {
-        'X-User-Access-Token': user.accessToken,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ user_id: currentMemberId }),
-    })
+    const res = await fetch(
+      `https://billing.${apiUrl}/teams/${team.id}/users`,
+      {
+        method: 'DELETE',
+        headers: {
+          'X-User-Access-Token': user.accessToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: currentMemberId }),
+      }
+    )
 
     if (!res.ok) {
       toast({
@@ -124,7 +130,7 @@ export const TeamContent = ({
   }
 
   const changeTeamName = async () => {
-    const res = await fetch(`${billingUrl}/teams/${team.id}`, {
+    const res = await fetch(`https://billing.${apiUrl}/teams/${team.id}`, {
       headers: {
         'X-Team-API-Key': team.apiKeys[0],
         'Content-Type': 'application/json',
@@ -161,14 +167,17 @@ export const TeamContent = ({
       return
     }
 
-    const res = await fetch(`${billingUrl}/teams/${team.id}/users`, {
-      headers: {
-        'X-User-Access-Token': user.accessToken,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify({ user_email: userToAdd.trim() }),
-    })
+    const res = await fetch(
+      `https://billing.${apiUrl}/teams/${team.id}/users`,
+      {
+        headers: {
+          'X-User-Access-Token': user.accessToken,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({ user_email: userToAdd.trim() }),
+      }
+    )
 
     if (!res.ok) {
       toast({
