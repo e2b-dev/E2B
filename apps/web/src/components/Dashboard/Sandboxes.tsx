@@ -10,6 +10,7 @@ import {
 import { useState } from 'react'
 import { useEffect } from 'react'
 import { Team } from '@/utils/useUser'
+import { getBaseUrl } from '@/app/(dashboard)/dashboard/utils'
 
 interface Sandbox {
   alias: string
@@ -25,10 +26,10 @@ interface Sandbox {
 
 export function SandboxesContent({
   team,
-  apiUrl,
+  domain,
 }: {
   team: Team
-  apiUrl: string
+  domain: string
 }) {
   const [runningSandboxes, setRunningSandboxes] = useState<Sandbox[]>([])
 
@@ -36,7 +37,7 @@ export function SandboxesContent({
     function f() {
       const apiKey = team.apiKeys[0]
       if (apiKey) {
-        fetchSandboxes(apiUrl, apiKey).then((newSandboxes) => {
+        fetchSandboxes(domain, apiKey).then((newSandboxes) => {
           if (newSandboxes) {
             setRunningSandboxes(newSandboxes)
           }
@@ -101,10 +102,10 @@ export function SandboxesContent({
 }
 
 async function fetchSandboxes(
-  apiUrl: string,
+  domain: string,
   apiKey: string
 ): Promise<Sandbox[]> {
-  const res = await fetch(`${apiUrl}/sandboxes`, {
+  const res = await fetch(`${getBaseUrl(domain)}/sandboxes`, {
     method: 'GET',
     headers: {
       'X-API-KEY': apiKey,

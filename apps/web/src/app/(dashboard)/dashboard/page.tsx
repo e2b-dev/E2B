@@ -87,9 +87,9 @@ const Dashboard = ({ user }) => {
   const [teams, setTeams] = useState<Team[]>([])
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
 
-  const apiUrlState = useLocalStorage(
-    'apiUrl',
-    process.env.NEXT_PUBLIC_API_URL || ''
+  const domainState = useLocalStorage(
+    'e2bDomain',
+    process.env.NEXT_PUBLIC_DOMAIN || ''
   )
 
   const initialTab =
@@ -162,7 +162,7 @@ const Dashboard = ({ user }) => {
             teams={teams}
             setTeams={setTeams}
             setCurrentTeam={setCurrentTeam}
-            apiUrlState={apiUrlState}
+            domainState={domainState}
           />
         </div>
       </>
@@ -250,7 +250,7 @@ function MainContent({
   teams,
   setTeams,
   setCurrentTeam,
-  apiUrlState,
+  domainState,
 }: {
   selectedItem: MenuLabel
   user: E2BUser
@@ -258,29 +258,29 @@ function MainContent({
   teams: Team[]
   setTeams: (teams: Team[]) => void
   setCurrentTeam: (team: Team) => void
-  apiUrlState: [string, (value: string) => void]
+  domainState: [string, (value: string) => void]
 }) {
   switch (selectedItem) {
     case 'personal':
-      return <PersonalContent user={user} apiUrl={apiUrlState[0]} />
+      return <PersonalContent user={user} domain={domainState[0]} />
     case 'keys':
       return (
-        <KeysContent currentTeam={team} user={user} apiUrl={apiUrlState[0]} />
+        <KeysContent currentTeam={team} user={user} domain={domainState[0]} />
       )
     case 'sandboxes':
-      return <SandboxesContent team={team} apiUrl={apiUrlState[0]} />
+      return <SandboxesContent team={team} domain={domainState[0]} />
     case 'templates':
       return (
         <TemplatesContent
           user={user}
           teamId={team.id}
-          apiUrl={apiUrlState[0]}
+          domain={domainState[0]}
         />
       )
     case 'usage':
-      return <UsageContent team={team} apiUrl={apiUrlState[0]} />
+      return <UsageContent team={team} domain={domainState[0]} />
     case 'billing':
-      return <BillingContent team={team} apiUrl={apiUrlState[0]} />
+      return <BillingContent team={team} domain={domainState[0]} />
     case 'team':
       return (
         <TeamContent
@@ -289,11 +289,11 @@ function MainContent({
           teams={teams}
           setTeams={setTeams}
           setCurrentTeam={setCurrentTeam}
-          apiUrl={apiUrlState[0]}
+          domain={domainState[0]}
         />
       )
     case 'developer':
-      return <DeveloperContent domainState={apiUrlState} />
+      return <DeveloperContent domainState={domainState} />
     default:
       return <ErrorContent />
   }

@@ -6,13 +6,14 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Copy } from 'lucide-react'
 import { E2BUser } from '@/utils/useUser'
+import { getBillingUrl } from '@/app/(dashboard)/dashboard/utils'
 
 export const PersonalContent = ({
   user,
-  apiUrl,
+  domain,
 }: {
   user: E2BUser
-  apiUrl: string
+  domain: string
 }) => {
   const { toast } = useToast()
   const [hovered, setHovered] = useState<boolean>(false)
@@ -33,7 +34,7 @@ export const PersonalContent = ({
   }
 
   const updateUserEmail = async () => {
-    const res = await fetch(`https://billing.${apiUrl}/users`, {
+    const res = await fetch(`${getBillingUrl(domain)}/users`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

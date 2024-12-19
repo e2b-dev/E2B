@@ -28,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
+import { getBillingUrl } from '@/app/(dashboard)/dashboard/utils'
 
 type TeamApiKey = {
   id: string
@@ -46,11 +47,11 @@ type TeamApiKey = {
 export const KeysContent = ({
   currentTeam,
   user,
-  apiUrl,
+  domain,
 }: {
   currentTeam: Team
   user: E2BUser
-  apiUrl: string
+  domain: string
 }) => {
   const { toast } = useToast()
   const [isKeyDialogOpen, setIsKeyDialogOpen] = useState(false)
@@ -60,11 +61,10 @@ export const KeysContent = ({
   const [newApiKeyInput, setNewApiKeyInput] = useState<string>('')
   const [apiKeys, setApiKeys] = useState<TeamApiKey[]>([])
 
-  console.log(apiUrl)
   useEffect(() => {
     async function fetchApiKeys() {
       const res = await fetch(
-        `https://billing.${apiUrl}/teams/${currentTeam.id}/api-keys`,
+        `${getBillingUrl(domain)}/teams/${currentTeam.id}/api-keys`,
         {
           headers: {
             'X-USER-ACCESS-TOKEN': user.accessToken,
@@ -86,7 +86,7 @@ export const KeysContent = ({
     }
 
     fetchApiKeys()
-  }, [apiUrl, currentTeam])
+  }, [domain, currentTeam, user.accessToken])
 
   async function deleteApiKey() {
     if (apiKeys.length === 1) {
@@ -98,7 +98,9 @@ export const KeysContent = ({
     }
 
     const res = await fetch(
-      `https://billing.${apiUrl}/teams/${currentTeam.id}/api-keys/${currentKey?.id}`,
+      `${getBillingUrl(domain)}/teams/${currentTeam.id}/api-keys/${
+        currentKey?.id
+      }`,
       {
         method: 'DELETE',
         headers: {
@@ -121,7 +123,7 @@ export const KeysContent = ({
 
   async function createApiKey() {
     const res = await fetch(
-      `https://billing.${apiUrl}/teams/${currentTeam.id}/api-keys`,
+      `${getBillingUrl(domain)}/teams/${currentTeam.id}/api-keys`,
       {
         method: 'POST',
         headers: {
@@ -153,7 +155,9 @@ export const KeysContent = ({
 
   async function updateApiKey() {
     const res = await fetch(
-      `https://billing.${apiUrl}/teams/${currentTeam.id}/api-keys/${currentKey?.id}`,
+      `${getBillingUrl(domain)}/teams/${currentTeam.id}/api-keys/${
+        currentKey?.id
+      }`,
       {
         method: 'PATCH',
         headers: {

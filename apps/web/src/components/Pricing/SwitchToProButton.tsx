@@ -8,9 +8,10 @@ import { tiers } from '@/utils/consts'
 import Spinner from '@/components/Spinner'
 
 import { TierActiveTag } from './TierActiveTag'
+import { getBillingUrl } from '@/app/(dashboard)/dashboard/utils'
 
-function createCheckout(apiUrl: string, tierID: string, teamID: string) {
-  return fetch(`https://billing.${apiUrl}/checkouts`, {
+function createCheckout(domain: string, tierID: string, teamID: string) {
+  return fetch(`${getBillingUrl(domain)}/checkouts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -22,7 +23,7 @@ function createCheckout(apiUrl: string, tierID: string, teamID: string) {
   })
 }
 
-function SwitchTierButton({ team, apiUrl }: { team: Team; apiUrl: string }) {
+function SwitchTierButton({ team, domain }: { team: Team; domain: string }) {
   const { user, isLoading } = useUser()
   const [error, setError] = useState('')
 
@@ -34,7 +35,7 @@ function SwitchTierButton({ team, apiUrl }: { team: Team; apiUrl: string }) {
     }
 
     const response = await createCheckout(
-      apiUrl,
+      domain,
       tiers.pro.id,
       user.teams[0].id
     )
@@ -61,7 +62,7 @@ function SwitchTierButton({ team, apiUrl }: { team: Team; apiUrl: string }) {
 
   // Only show the button if the user is on the base_v1 tier.
   // Teams can have custom tiers. We only want the button to users on the free tier.
-  if (!apiUrl || (team.tier !== tiers.hobby.id && team.tier !== tiers.pro.id)) {
+  if (!domain || (team.tier !== tiers.hobby.id && team.tier !== tiers.pro.id)) {
     return
   }
 

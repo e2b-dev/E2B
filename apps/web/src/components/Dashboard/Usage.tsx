@@ -4,6 +4,7 @@ import LineChart from '@/components/Dashboard/Chart'
 import Spinner from '@/components/Spinner'
 import { toast } from '@/components/ui/use-toast'
 import { Team } from '@/utils/useUser'
+import { getBillingUrl } from '@/app/(dashboard)/dashboard/utils'
 
 type Usage = {
   month: number
@@ -23,10 +24,10 @@ type Series = {
 
 export const UsageContent = ({
   team,
-  apiUrl,
+  domain,
 }: {
   team: Team
-  apiUrl: string
+  domain: string
 }) => {
   const [vcpuData, setVcpuData] = useState<Series[]>([])
   const [vcpuHoursThisMonth, setVcpuHoursThisMonth] = useState<
@@ -46,7 +47,7 @@ export const UsageContent = ({
       setCostUsage([])
 
       const response = await fetch(
-        `https://billing.${apiUrl}/teams/${team.id}/usage`,
+        `${getBillingUrl(domain)}/teams/${team.id}/usage`,
         {
           headers: {
             'X-Team-API-Key': team.apiKeys[0],
@@ -79,7 +80,7 @@ export const UsageContent = ({
     }
 
     getUsage()
-  }, [team])
+  }, [team, domain])
 
   return (
     <div className="flex flex-col w-full">
