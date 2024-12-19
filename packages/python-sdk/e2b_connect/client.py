@@ -65,7 +65,12 @@ def error_for_response(http_resp: Response):
     try:
         error = json.loads(http_resp.content)
     except (json.decoder.JSONDecodeError, KeyError):
-        if http_resp.status == 429:
+        if http_resp.status == 404:
+            return ConnectException(
+                Code.not_found,
+                f"HTTP {http_resp.status}: Sandbox is probably not running anymore.",
+            )
+        elif http_resp.status == 429:
             return ConnectException(
                 Code.resource_exhausted,
                 f"{http_resp.content.decode()} The requests are being rate limited.",

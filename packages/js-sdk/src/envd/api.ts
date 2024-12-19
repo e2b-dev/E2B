@@ -12,7 +12,6 @@ import {
   AuthenticationError,
 } from '../errors'
 import { StartResponse, ConnectResponse } from './process/process_pb'
-import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
 
 export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
@@ -50,19 +49,7 @@ export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
 export async function handleProcessStartEvent(
   events: AsyncIterable<StartResponse | ConnectResponse>
 ) {
-  let startEvent: StartResponse | ConnectResponse
-
-  try {
-    startEvent = (await events[Symbol.asyncIterator]().next()).value
-  } catch (err) {
-    if (err instanceof ConnectError) {
-      if (err.code === Code.Unavailable) {
-        throw new NotFoundError('Sandbox is probably not running anymore')
-      }
-    }
-
-    throw err
-  }
+  const startEvent = (await events[Symbol.asyncIterator]().next()).value
   if (startEvent.event?.event.case !== 'start') {
     throw new Error('Expected start event')
   }
@@ -73,19 +60,7 @@ export async function handleProcessStartEvent(
 export async function handleWatchDirStartEvent(
   events: AsyncIterable<WatchDirResponse>
 ) {
-  let startEvent: WatchDirResponse
-
-  try {
-    startEvent = (await events[Symbol.asyncIterator]().next()).value
-  } catch (err) {
-    if (err instanceof ConnectError) {
-      if (err.code === Code.Unavailable) {
-        throw new NotFoundError('Sandbox is probably not running anymore')
-      }
-    }
-
-    throw err
-  }
+  const startEvent = (await events[Symbol.asyncIterator]().next()).value
   if (startEvent.event?.case !== 'start') {
     throw new Error('Expected start event')
   }
