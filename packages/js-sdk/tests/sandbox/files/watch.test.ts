@@ -1,6 +1,6 @@
 import { expect, onTestFinished } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { isDebug, sandboxTest } from '../../setup.js'
 import { FilesystemEventType, NotFoundError, SandboxError } from '../../../src'
 
 sandboxTest('watch directory changes', async ({ sandbox }) => {
@@ -39,7 +39,9 @@ sandboxTest('watch recursive directory changes', async ({ sandbox }) => {
   const newContent = 'This file has been modified.'
 
   await sandbox.files.makeDir(`${dirname}/${nestedDirname}`)
-  onTestFinished(() => sandbox.files.remove(dirname))
+  if (isDebug) {
+    onTestFinished(() => sandbox.files.remove(dirname))
+  }
 
   await sandbox.files.write(`${dirname}/${nestedDirname}/${filename}`, content)
 
@@ -72,7 +74,9 @@ sandboxTest('watch recursive directory after nested folder addition', async ({ s
   const content = 'This file will be watched.'
 
   await sandbox.files.makeDir(dirname)
-  onTestFinished(() => sandbox.files.remove(dirname))
+  if (isDebug) {
+    onTestFinished(() => sandbox.files.remove(dirname))
+  }
 
   let triggerFile: () => void
   let triggerFolder: () => void
