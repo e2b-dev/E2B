@@ -39,9 +39,6 @@ export const DeveloperContent = ({
         hostParts = hostParts.slice(1)
       }
       setDomain(hostParts.join('.'))
-    } else {
-      console.log('Invalid URL')
-      setDomain('Invalid URL')
     }
   }
 

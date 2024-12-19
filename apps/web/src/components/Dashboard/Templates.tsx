@@ -28,7 +28,7 @@ import {
   AlertDialogAction,
 } from '../ui/alert-dialog'
 import { toast } from '../ui/use-toast'
-import { getBaseUrl } from '@/app/(dashboard)/dashboard/utils'
+import { getAPIUrl } from '@/app/(dashboard)/dashboard/utils'
 
 interface Template {
   aliases: string[]
@@ -78,7 +78,7 @@ export function TemplatesContent({
 
   async function deleteTemplate(domain: string) {
     const res = await fetch(
-      `${getBaseUrl(domain)}/templates/${currentTemplate?.templateID}`,
+      getAPIUrl(domain, `/templates/${currentTemplate?.templateID}`),
       {
         method: 'DELETE',
         headers: {
@@ -105,7 +105,7 @@ export function TemplatesContent({
 
   async function publishTemplate(domain: string) {
     const res = await fetch(
-      `${getBaseUrl(domain)}/templates/${currentTemplate?.templateID}`,
+      getAPIUrl(domain, `/templates/${currentTemplate?.templateID}`),
       {
         method: 'PATCH',
         headers: {
@@ -306,7 +306,7 @@ async function fetchTemplates(
   accessToken: string,
   teamId: string
 ): Promise<Template[]> {
-  const res = await fetch(`${getBaseUrl(domain)}/templates?teamID=${teamId}`, {
+  const res = await fetch(getAPIUrl(domain, `templates?teamID=${teamId}`), {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,

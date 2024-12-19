@@ -66,7 +66,7 @@ export const TeamContent = ({
   useEffect(() => {
     const getTeamMembers = async () => {
       const res = await fetch(
-        `${getBillingUrl(domain)}/teams/${team.id}/users`,
+        getBillingUrl(domain, `/teams/${team.id}/users`),
         {
           headers: {
             'X-User-Access-Token': user.accessToken,
@@ -105,7 +105,7 @@ export const TeamContent = ({
   }
 
   const deleteUserFromTeam = async () => {
-    const res = await fetch(`${getBillingUrl(domain)}/teams/${team.id}/users`, {
+    const res = await fetch(getBillingUrl(domain, `/teams/${team.id}/users`), {
       method: 'DELETE',
       headers: {
         'X-User-Access-Token': user.accessToken,
@@ -128,7 +128,7 @@ export const TeamContent = ({
   }
 
   const changeTeamName = async () => {
-    const res = await fetch(`${getBillingUrl(domain)}/teams/${team.id}`, {
+    const res = await fetch(getBillingUrl(domain, `/teams/${team.id}`), {
       headers: {
         'X-Team-API-Key': team.apiKeys[0],
         'Content-Type': 'application/json',
@@ -165,7 +165,7 @@ export const TeamContent = ({
       return
     }
 
-    const res = await fetch(`${getBillingUrl(domain)}/teams/${team.id}/users`, {
+    const res = await fetch(getBillingUrl(domain, `/teams/${team.id}/users`), {
       headers: {
         'X-User-Access-Token': user.accessToken,
         'Content-Type': 'application/json',

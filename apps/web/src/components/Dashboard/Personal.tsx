@@ -34,7 +34,7 @@ export const PersonalContent = ({
   }
 
   const updateUserEmail = async () => {
-    const res = await fetch(`${getBillingUrl(domain)}/users`, {
+    const res = await fetch(getBillingUrl(domain, '/users'), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

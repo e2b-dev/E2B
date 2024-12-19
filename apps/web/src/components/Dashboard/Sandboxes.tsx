@@ -10,7 +10,7 @@ import {
 import { useState } from 'react'
 import { useEffect } from 'react'
 import { Team } from '@/utils/useUser'
-import { getBaseUrl } from '@/app/(dashboard)/dashboard/utils'
+import { getAPIUrl } from '@/app/(dashboard)/dashboard/utils'
 
 interface Sandbox {
   alias: string
@@ -105,7 +105,7 @@ async function fetchSandboxes(
   domain: string,
   apiKey: string
 ): Promise<Sandbox[]> {
-  const res = await fetch(`${getBaseUrl(domain)}/sandboxes`, {
+  const res = await fetch(getAPIUrl(domain, '/sandboxes'), {
     method: 'GET',
     headers: {
       'X-API-KEY': apiKey,

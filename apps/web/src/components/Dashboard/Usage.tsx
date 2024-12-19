@@ -47,7 +47,7 @@ export const UsageContent = ({
       setCostUsage([])
 
       const response = await fetch(
-        `${getBillingUrl(domain)}/teams/${team.id}/usage`,
+        getBillingUrl(domain, `/teams/${team.id}/usage`),
         {
           headers: {
             'X-Team-API-Key': team.apiKeys[0],

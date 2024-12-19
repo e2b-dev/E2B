@@ -42,7 +42,7 @@ export const BillingContent = ({
     const getInvoices = async function getInvoices() {
       setInvoices([])
       const res = await fetch(
-        `${getBillingUrl(domain)}/teams/${team.id}/invoices`,
+        getBillingUrl(domain, `/teams/${team.id}/invoices`),
         {
           headers: {
             'X-Team-API-Key': team.apiKeys[0],
@@ -60,7 +60,7 @@ export const BillingContent = ({
 
       setCredits(null)
       const creditsRes = await fetch(
-        `${getBillingUrl(domain)}/teams/${team.id}/usage`,
+        getBillingUrl(domain, `/teams/${team.id}/usage`),
         {
           headers: {
             'X-Team-API-Key': team.apiKeys[0],

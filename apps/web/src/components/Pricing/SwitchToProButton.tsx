@@ -20,7 +20,7 @@ function createCheckout(domain: string, tierID: string, teamID: string) {
     })
   }
 
-  return fetch(`${getBillingUrl(domain)}/checkouts`, {
+  return fetch(getBillingUrl(domain, '/checkouts'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
