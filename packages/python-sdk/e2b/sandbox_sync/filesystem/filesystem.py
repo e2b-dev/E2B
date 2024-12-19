@@ -4,6 +4,9 @@ from typing import IO, Iterator, List, Literal, Optional, Union, overload
 import e2b_connect
 import httpcore
 import httpx
+from packaging.version import Version
+
+from e2b.exceptions import TemplateException
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
@@ -25,11 +28,13 @@ class Filesystem:
     def __init__(
         self,
         envd_api_url: str,
+        envd_version: Optional[str],
         connection_config: ConnectionConfig,
         pool: httpcore.ConnectionPool,
         envd_api: httpx.Client,
     ) -> None:
         self._envd_api_url = envd_api_url
+        self._envd_version = envd_version
         self._connection_config = connection_config
         self._pool = pool
         self._envd_api = envd_api
@@ -348,6 +353,12 @@ class Filesystem:
 
         :return: `WatchHandle` object for stopping watching directory
         """
+        if recursive and self._envd_version is not None and Version(self._envd_version) < Version("0.1.3"):
+            raise TemplateException(
+                "You need to update the template to use recursive watching. "
+                "You can do this by running `e2b template build` in the directory with the template."
+            )
+
         try:
             r = self._rpc.create_watcher(
                 filesystem_pb2.CreateWatcherRequest(path=path, recursive=recursive),
