@@ -22,6 +22,9 @@ import { FileType as FsFileType, Filesystem as FilesystemService } from '../../e
 
 import { WatchHandle, FilesystemEvent } from './watchHandle'
 
+import { compareVersions } from 'compare-versions'
+import { TemplateError } from '../../errors'
+
 /**
  * Sandbox filesystem object information.
  */
@@ -439,6 +442,13 @@ export class Filesystem {
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
     opts?: WatchOpts
   ): Promise<WatchHandle> {
+    if (opts?.recursive && this.envdApi.version && compareVersions(this.envdApi.version, '0.1.3') < 0) {
+      throw new TemplateError(
+        'You need to update the template to use recursive watching. ' +
+        'You can do this by running `e2b template build` in the directory with the template.'
+      )
+    }
+
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
