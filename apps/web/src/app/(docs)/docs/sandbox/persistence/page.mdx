@@ -166,3 +166,4 @@ If you resume the sandbox, the service will be accessible again but you need to 
 - It takes about 4 seconds per 1 GB RAM to pause the sandbox
 - It takes about 1 second to resume the sandbox
 - Sandbox can be paused up to 30 days
+  - After 30 days, the data will be deleted and you will not be able to resume the sandbox. Trying to resume sandbox that was deleted or does not exist will result in the `NotFoundError` error in JavaScript SDK and `NotFoundException` exception in Python SDK
