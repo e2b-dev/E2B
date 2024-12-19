@@ -9,8 +9,17 @@ import Spinner from '@/components/Spinner'
 
 import { TierActiveTag } from './TierActiveTag'
 import { getBillingUrl } from '@/app/(dashboard)/dashboard/utils'
+import { toast } from '@/components/ui/use-toast'
 
 function createCheckout(domain: string, tierID: string, teamID: string) {
+  if (domain !== 'e2b.dev') {
+    console.error('Managing billing is allowed only at e2b.dev.')
+    toast({
+      title: 'Error',
+      description: 'Managing billing is allowed only at e2b.dev.',
+    })
+  }
+
   return fetch(`${getBillingUrl(domain)}/checkouts`, {
     method: 'POST',
     headers: {
