@@ -39,6 +39,11 @@ export interface SandboxInfo {
    * Sandbox start time.
    */
   startedAt: Date
+
+  /**
+   * Sandbox end time.
+   */
+  endAt: Date
 }
 
 export class SandboxApi {
@@ -81,6 +86,52 @@ export class SandboxApi {
   }
 
   /**
+   * Get running sandbox.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns running sandbox.
+   */
+  static async get(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<SandboxInfo> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/sandboxes/{sandboxID}', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    if (!res.data) {
+      throw new Error('Sandbox not found')
+    }
+
+    return {
+      sandboxId: this.getSandboxId({
+        sandboxId: res.data.sandboxID,
+        clientId: res.data.clientID,
+      }),
+      templateId: res.data.templateID,
+      ...(res.data.alias && { name: res.data.alias }),
+      metadata: res.data.metadata ?? {},
+      startedAt: new Date(res.data.startedAt),
+      endAt: new Date(res.data.endAt),
+    }
+  }
+
+  /**
    * List all running sandboxes.
    *
    * @param opts connection options.
@@ -110,6 +161,7 @@ export class SandboxApi {
         ...(sandbox.alias && { name: sandbox.alias }),
         metadata: sandbox.metadata ?? {},
         startedAt: new Date(sandbox.startedAt),
+        endAt: new Date(sandbox.endAt),
       })) ?? []
     )
   }
