@@ -318,11 +318,6 @@ export class Sandbox extends SandboxApi {
   }
 
   async getTimeout(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
-    if (this.connectionConfig.debug) {
-      // Skip killing in debug mode
-      return
-    }
-
     const { endAt } = await Sandbox.get(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,

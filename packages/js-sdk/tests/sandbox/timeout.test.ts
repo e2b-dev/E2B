@@ -27,5 +27,5 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)('get sandbox timeout', async ({ sandbox }) => {
   const timeout = await sandbox.getTimeout()
-  expect(timeout).toBeDefined()
+  expect(timeout).toBeInstanceOf(Date)
 })
