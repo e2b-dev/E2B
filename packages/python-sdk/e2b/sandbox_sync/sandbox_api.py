@@ -1,5 +1,5 @@
 from httpx import HTTPTransport
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 from packaging.version import Version
 
 from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
@@ -149,7 +149,7 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> str:
+    ) -> Tuple[str, str]:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
@@ -191,4 +191,4 @@ class SandboxApi(SandboxApiBase):
             return SandboxApi._get_sandbox_id(
                 res.parsed.sandbox_id,
                 res.parsed.client_id,
-            )
+            ), res.parsed.envd_version
