@@ -317,6 +317,20 @@ export class Sandbox extends SandboxApi {
     await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
   }
 
+  async getTimeout(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    if (this.connectionConfig.debug) {
+      // Skip killing in debug mode
+      return
+    }
+
+    const { endAt } = await Sandbox.get(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
+
+    return endAt
+  }
+
   /**
    * Get the URL to upload a file to the sandbox.
    *
