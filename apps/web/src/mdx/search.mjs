@@ -22,16 +22,27 @@ function isObjectExpression(node) {
 }
 
 function excludeObjectExpressions(tree) {
-  return filter(tree, node => !isObjectExpression(node))
+  return filter(tree, (node) => !isObjectExpression(node))
 }
 
 function extractSections() {
   return (tree, { sections }) => {
     slugify.reset()
 
-    visit(tree, node => {
-      if (node.type === 'heading' || node.type === 'paragraph') {
-        let content = toString(excludeObjectExpressions(node))
+    visit(tree, (node) => {
+      if (
+        node.type === 'heading' ||
+        node.type === 'paragraph' ||
+        node.type === 'code'
+      ) {
+        let content
+        if (node.type === 'code') {
+          // Format code blocks with language for better context
+          content = `Code (${node.lang || 'text'}): ${node.value}`
+        } else {
+          content = toString(excludeObjectExpressions(node))
+        }
+
         if (node.type === 'heading' && node.depth <= 2) {
           let hash = node.depth === 1 ? null : slugify(content)
           sections.push([content, hash, []])
@@ -58,7 +69,7 @@ export default function (nextConfig = {}) {
             this.addContextDependency(appDir)
 
             let files = glob.sync('**/*.mdx', { cwd: appDir })
-            let data = files.map(file => {
+            let data = files.map((file) => {
               let url = '/' + file.replace(/(^|\/)page\.mdx$/, '')
               let mdx = fs.readFileSync(path.join(appDir, file), 'utf8')
 
@@ -85,7 +96,7 @@ export default function (nextConfig = {}) {
                 document: {
                   id: 'url',
                   index: 'content',
-                  store: ['title', 'pageTitle'],
+                  store: ['title', 'pageTitle', 'preview'],
                 },
                 context: {
                   resolution: 9,
@@ -97,12 +108,19 @@ export default function (nextConfig = {}) {
               let data = ${JSON.stringify(data)}
 
               for (let { url, sections } of data) {
+                const isReference = url.includes('docs/sdk-reference') || url.includes('docs/api-reference')
+
+                if (isReference) {
+                  continue
+                }
+
                 for (let [title, hash, content] of sections) {
                   sectionIndex.add({
                     url: url + (hash ? ('#' + hash) : ''),
                     title,
                     content: [title, ...content].join('\\n'),
                     pageTitle: hash ? sections[0][0] : undefined,
+                    preview: content.join('\\n'),
                   })
                 }
               }
@@ -119,11 +137,12 @@ export default function (nextConfig = {}) {
                   url: item.id,
                   title: item.doc.title,
                   pageTitle: item.doc.pageTitle,
+                  preview: item.doc.preview,
                 }))
               }
             `
-          })
-        ]
+          }),
+        ],
       })
 
       if (typeof nextConfig.webpack === 'function') {
@@ -131,6 +150,6 @@ export default function (nextConfig = {}) {
       }
 
       return config
-    }
+    },
   })
 }
