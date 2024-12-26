@@ -96,7 +96,7 @@ export default function (nextConfig = {}) {
                 document: {
                   id: 'url',
                   index: 'content',
-                  store: ['title', 'pageTitle', 'preview'],
+                  store: ['title', 'pageTitle', 'preview', 'sdkRefVersion'],
                 },
                 context: {
                   resolution: 9,
@@ -108,6 +108,12 @@ export default function (nextConfig = {}) {
               let data = ${JSON.stringify(data)}
 
               for (let { url, sections } of data) {
+                const isReference = url.includes('docs/sdk-reference') || url.includes('docs/api-reference')
+
+                if (isReference) {
+                  continue
+                }
+
                 for (let [title, hash, content] of sections) {
                   sectionIndex.add({
                     url: url + (hash ? ('#' + hash) : ''),
