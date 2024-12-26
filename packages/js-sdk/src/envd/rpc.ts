@@ -2,7 +2,14 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import { runtime } from '../api/metadata'
 import { defaultUsername } from '../connectionConfig'
 
-import { SandboxError, TimeoutError, formatSandboxTimeoutError, InvalidArgumentError, NotFoundError, AuthenticationError } from '../errors'
+import {
+  AuthenticationError,
+  formatSandboxTimeoutError,
+  InvalidArgumentError,
+  NotFoundError,
+  SandboxError,
+  TimeoutError,
+} from '../errors'
 
 
 export function handleRpcError(err: unknown): Error {
@@ -24,6 +31,13 @@ export function handleRpcError(err: unknown): Error {
         return new TimeoutError(
           `${err.message}: This error is likely due to exceeding 'timeoutMs' — the total time a long running request (like command execution or directory watch) can be active. It can be modified by passing 'timeoutMs' when making the request. Use '0' to disable the timeout.`
         )
+      case Code.Unimplemented:
+        // https://github.com/connectrpc/connect-es/blob/main/packages/connect/src/protocol-grpc/http-status.ts
+        if (err.rawMessage === 'HTTP 404') {
+          return new NotFoundError(`${err.message}: Sandbox is probably not running anymore.`)
+        } else {
+          return new SandboxError(`Not implemented: ${err.message}`)
+        }
       default:
         return new SandboxError(`${err.code}: ${err.message}`)
     }
