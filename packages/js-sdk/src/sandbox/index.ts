@@ -10,6 +10,7 @@ import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import { SandboxApi } from './sandboxApi'
+import { components } from '../api/schema.gen'
 
 /**
  * Options for creating a new Sandbox.
@@ -276,6 +277,23 @@ export class Sandbox extends SandboxApi {
     }
 
     return true
+  }
+
+  /**
+   * Get the metrics of the sandbox.
+   *
+   * @param timeoutMs timeout in **milliseconds**.
+   * @param opts connection options.
+   *
+   * @returns metrics of the sandbox.
+   */
+  async getMetrics(
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
+  ): Promise<components['schemas']['SandboxMetric'][]> {
+    return await Sandbox.getMetrics(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
   }
 
   /**
