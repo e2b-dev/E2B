@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import httpx
 
@@ -364,3 +365,11 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             timeout=timeout,
             **self.connection_config.__dict__,
         )
+
+    async def get_timeout(self) -> datetime:
+        sandbox = await SandboxApi.get(
+            sandbox_id=self.sandbox_id,
+            **self.connection_config.__dict__,
+        )
+
+        return sandbox.end_at

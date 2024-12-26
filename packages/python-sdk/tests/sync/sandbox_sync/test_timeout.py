@@ -1,3 +1,4 @@
+from datetime import datetime
 from time import sleep
 
 import pytest
@@ -19,3 +20,9 @@ def test_shorten_then_lengthen_timeout(sandbox):
     sandbox.set_timeout(10)
     sleep(6)
     sandbox.is_running()
+
+
+@pytest.mark.skip_debug()
+def test_get_timeout(sandbox):
+    timeout = sandbox.get_timeout()
+    assert isinstance(timeout, datetime)

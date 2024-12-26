@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 from typing import Dict, Optional, overload
 
@@ -355,3 +356,11 @@ class Sandbox(SandboxSetup, SandboxApi):
             timeout=timeout,
             **self.connection_config.__dict__,
         )
+
+    def get_timeout(self) -> datetime:
+        sandbox = SandboxApi.get(
+            sandbox_id=self.sandbox_id,
+            **self.connection_config.__dict__,
+        )
+
+        return sandbox.end_at

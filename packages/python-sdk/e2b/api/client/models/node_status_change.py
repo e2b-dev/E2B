@@ -1,36 +1,31 @@
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-if TYPE_CHECKING:
-    from ..models.sandbox_log import SandboxLog
+from ..models.node_status import NodeStatus
 
-
-T = TypeVar("T", bound="SandboxLogs")
+T = TypeVar("T", bound="NodeStatusChange")
 
 
 @_attrs_define
-class SandboxLogs:
+class NodeStatusChange:
     """
     Attributes:
-        logs (list['SandboxLog']): Logs of the sandbox
+        status (NodeStatus): Status of the node
     """
 
-    logs: list["SandboxLog"]
+    status: NodeStatus
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        logs = []
-        for logs_item_data in self.logs:
-            logs_item = logs_item_data.to_dict()
-            logs.append(logs_item)
+        status = self.status.value
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "logs": logs,
+                "status": status,
             }
         )
 
@@ -38,22 +33,15 @@ class SandboxLogs:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
-        from ..models.sandbox_log import SandboxLog
-
         d = src_dict.copy()
-        logs = []
-        _logs = d.pop("logs")
-        for logs_item_data in _logs:
-            logs_item = SandboxLog.from_dict(logs_item_data)
+        status = NodeStatus(d.pop("status"))
 
-            logs.append(logs_item)
-
-        sandbox_logs = cls(
-            logs=logs,
+        node_status_change = cls(
+            status=status,
         )
 
-        sandbox_logs.additional_properties = d
-        return sandbox_logs
+        node_status_change.additional_properties = d
+        return node_status_change
 
     @property
     def additional_keys(self) -> list[str]:

@@ -6,6 +6,7 @@ from e2b.exceptions import TemplateException
 from e2b.api import AsyncApiClient
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
 from e2b.api.client.api.sandboxes import (
+    get_sandboxes_sandbox_id,
     post_sandboxes_sandbox_id_timeout,
     get_sandboxes,
     delete_sandboxes_sandbox_id,
@@ -16,6 +17,48 @@ from e2b.api import handle_api_exception
 
 
 class SandboxApi(SandboxApiBase):
+    @classmethod
+    async def get(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> SandboxInfo:
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
+
+        async with AsyncApiClient(config) as api_client:
+            res = await get_sandboxes_sandbox_id.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                raise Exception("Body of the request is None")
+
+            return SandboxInfo(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    res.parsed.sandbox_id,
+                    res.parsed.client_id,
+                ),
+                template_id=res.parsed.template_id,
+                name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
+                metadata=(
+                    res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
+                ),
+                started_at=res.parsed.started_at,
+                end_at=res.parsed.end_at,
+            )
+
     @classmethod
     async def list(
         cls,
@@ -62,6 +105,7 @@ class SandboxApi(SandboxApiBase):
                         sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
                     ),
                     started_at=sandbox.started_at,
+                    end_at=sandbox.end_at,
                 )
                 for sandbox in res.parsed
             ]
