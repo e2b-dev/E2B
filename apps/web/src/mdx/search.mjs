@@ -22,16 +22,27 @@ function isObjectExpression(node) {
 }
 
 function excludeObjectExpressions(tree) {
-  return filter(tree, node => !isObjectExpression(node))
+  return filter(tree, (node) => !isObjectExpression(node))
 }
 
 function extractSections() {
   return (tree, { sections }) => {
     slugify.reset()
 
-    visit(tree, node => {
-      if (node.type === 'heading' || node.type === 'paragraph') {
-        let content = toString(excludeObjectExpressions(node))
+    visit(tree, (node) => {
+      if (
+        node.type === 'heading' ||
+        node.type === 'paragraph' ||
+        node.type === 'code'
+      ) {
+        let content
+        if (node.type === 'code') {
+          // Format code blocks with language for better context
+          content = `Code (${node.lang || 'text'}): ${node.value}`
+        } else {
+          content = toString(excludeObjectExpressions(node))
+        }
+
         if (node.type === 'heading' && node.depth <= 2) {
           let hash = node.depth === 1 ? null : slugify(content)
           sections.push([content, hash, []])
@@ -58,7 +69,7 @@ export default function (nextConfig = {}) {
             this.addContextDependency(appDir)
 
             let files = glob.sync('**/*.mdx', { cwd: appDir })
-            let data = files.map(file => {
+            let data = files.map((file) => {
               let url = '/' + file.replace(/(^|\/)page\.mdx$/, '')
               let mdx = fs.readFileSync(path.join(appDir, file), 'utf8')
 
@@ -122,8 +133,8 @@ export default function (nextConfig = {}) {
                 }))
               }
             `
-          })
-        ]
+          }),
+        ],
       })
 
       if (typeof nextConfig.webpack === 'function') {
@@ -131,6 +142,6 @@ export default function (nextConfig = {}) {
       }
 
       return config
-    }
+    },
   })
 }
