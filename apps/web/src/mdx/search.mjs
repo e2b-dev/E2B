@@ -96,7 +96,7 @@ export default function (nextConfig = {}) {
                 document: {
                   id: 'url',
                   index: 'content',
-                  store: ['title', 'pageTitle'],
+                  store: ['title', 'pageTitle', 'preview'],
                 },
                 context: {
                   resolution: 9,
@@ -114,6 +114,7 @@ export default function (nextConfig = {}) {
                     title,
                     content: [title, ...content].join('\\n'),
                     pageTitle: hash ? sections[0][0] : undefined,
+                    preview: content.join('\\n'),
                   })
                 }
               }
@@ -130,6 +131,7 @@ export default function (nextConfig = {}) {
                   url: item.id,
                   title: item.doc.title,
                   pageTitle: item.doc.pageTitle,
+                  preview: item.doc.preview,
                 }))
               }
             `

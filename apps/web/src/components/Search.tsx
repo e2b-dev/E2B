@@ -9,6 +9,7 @@ import {
   useId,
   useRef,
   useState,
+  useMemo,
 } from 'react'
 import Highlighter from 'react-highlight-words'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -169,7 +170,7 @@ function SearchResult({
   collection,
   query,
 }: {
-  result: Result
+  result: Result & { preview?: string }
   resultIndex: number
   autocomplete: Autocomplete
   collection: AutocompleteCollection<Result>
@@ -190,6 +191,21 @@ function SearchResult({
   const hierarchy = [sectionTitle, result.pageTitle].filter(
     (x): x is string => typeof x === 'string'
   )
+
+  const contextPreview = useMemo(() => {
+    if (!result.preview || !query) return result.preview
+
+    const previewText = result.preview.toLowerCase()
+    const queryIndex = previewText.indexOf(query.toLowerCase())
+
+    if (queryIndex === -1) return result.preview
+
+    const prefixChars = 10
+    const start = Math.max(0, queryIndex - prefixChars)
+    const prefix = start > 0 ? '...' : ''
+
+    return prefix + result.preview.slice(start)
+  }, [result.preview, query])
 
   return (
     <li
@@ -230,6 +246,11 @@ function SearchResult({
               </span>
             </Fragment>
           ))}
+        </div>
+      )}
+      {contextPreview && (
+        <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2">
+          <HighlightQuery text={contextPreview} query={query} />
         </div>
       )}
     </li>
