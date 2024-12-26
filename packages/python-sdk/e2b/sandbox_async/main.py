@@ -370,6 +370,13 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         self,
         request_timeout: Optional[float] = None,
     ) -> datetime:
+        """
+        Get the timeout of the sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Timeout of the sandbox
+        """
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)

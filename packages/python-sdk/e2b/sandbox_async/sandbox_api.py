@@ -26,6 +26,17 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
     ) -> SandboxInfo:
+        """
+        Get the sandbox info.
+
+        :param sandbox_id: Sandbox ID
+        :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param domain: Domain to use for the request, defaults to `E2B_DOMAIN` environment variable
+        :param debug: Debug mode, defaults to `E2B_DEBUG` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Sandbox info
+        """
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
