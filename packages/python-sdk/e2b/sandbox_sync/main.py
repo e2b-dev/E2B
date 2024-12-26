@@ -357,10 +357,16 @@ class Sandbox(SandboxSetup, SandboxApi):
             **self.connection_config.__dict__,
         )
 
-    def get_timeout(self) -> datetime:
-        sandbox = SandboxApi.get(
+    def get_timeout(  # type: ignore
+        self,
+    ) -> datetime:
+        config_dict = self.connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+
+        sbx = SandboxApi.get(
             sandbox_id=self.sandbox_id,
             **self.connection_config.__dict__,
         )
 
-        return sandbox.end_at
+        return sbx.end_at

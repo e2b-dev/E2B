@@ -366,10 +366,14 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             **self.connection_config.__dict__,
         )
 
-    async def get_timeout(self) -> datetime:
-        sandbox = await SandboxApi.get(
+    async def get_timeout(self) -> datetime:  # type: ignore
+        config_dict = self.connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+
+        sbx = await SandboxApi.get(
             sandbox_id=self.sandbox_id,
             **self.connection_config.__dict__,
         )
 
-        return sandbox.end_at
+        return sbx.end_at
