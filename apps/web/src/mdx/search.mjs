@@ -96,7 +96,7 @@ export default function (nextConfig = {}) {
                 document: {
                   id: 'url',
                   index: 'content',
-                  store: ['title', 'pageTitle', 'preview', 'sdkRefVersion'],
+                  store: ['title', 'pageTitle', 'preview'],
                 },
                 context: {
                   resolution: 9,
