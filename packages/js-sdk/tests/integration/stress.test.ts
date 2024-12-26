@@ -74,12 +74,12 @@ test.skipIf(!isIntegrationTest)('stress network ingress', async ({}) => {
 })
 
 test.skipIf(!isIntegrationTest)('stress requests to nextjs app', async ({}) => {
-  const promises: Array<Promise<string | void>> = []
+  const hostPromises: Array<Promise<string | void>> = []
 
   for (let i = 0; i < sanboxCount; i++) {
-    promises.push(
-      Sandbox.create(integrationTestTemplate, { timeoutMs: 60_000 })
-        .then((sbx) => {
+    hostPromises.push(
+      Sandbox.create(integrationTestTemplate, { timeoutMs: 60_000 }).then(
+        (sbx) => {
           console.log('created sandbox', sbx.sandboxId)
           return new Promise((resolve, reject) => {
             try {
@@ -88,21 +88,30 @@ test.skipIf(!isIntegrationTest)('stress requests to nextjs app', async ({}) => {
               console.error('error getting sbx host', e)
               reject(e)
             }
-          }).then(async (host) => {
-            const url = `https://${host}`
-            console.log('fetching url', url)
-            await fetch(url).then(async (res) => {
-              console.log('response', res.status)
-              await res.text().then((text) => {
-                console.log('response body', text)
-              })
-            })
           })
-        })
-        .catch(console.error)
+        }
+      )
     )
   }
 
   await wait(10_000)
-  await Promise.all(promises)
+  const hosts = await Promise.all(hostPromises)
+
+  const fetchPromises: Array<Promise<string | void>> = []
+
+  for (let i = 0; i < 100; i++) {
+    for (const host of hosts) {
+      fetchPromises.push(
+        new Promise((resolve) => {
+          fetch('https://' + host)
+            .then((res) => {
+              console.log(`response for ${host}: ${res.status}`)
+            })
+            .then(resolve)
+        })
+      )
+    }
+  }
+
+  await Promise.all(fetchPromises)
 })
