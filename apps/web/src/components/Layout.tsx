@@ -53,7 +53,7 @@ export function Layout({
                 lg:pb-4
               "
               >
-                <div className="hidden lg:block lg:mt-4 space-y-4">
+                <div className="hidden space-y-4 lg:block lg:mt-4">
                   <Search />
                   {isApiRef ? <SdkRefNavigation /> : <DocsNavigation />}
                 </div>

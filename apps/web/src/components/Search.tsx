@@ -449,10 +449,10 @@ export function Search() {
   }, [])
 
   return (
-    <div className="hidden lg:block lg:max-w-md lg:flex-auto">
+    <div className="lg:max-w-md lg:flex-auto">
       <button
         type="button"
-        className="hidden h-8 w-full items-center gap-2 whitespace-nowrap rounded-full bg-white pl-2 pr-3 text-sm text-zinc-500 ring-1 ring-zinc-900/10 transition hover:ring-zinc-900/20 ui-not-focus-visible:outline-none dark:bg-white/5 dark:text-zinc-400 dark:ring-inset dark:ring-white/10 dark:hover:ring-white/20 lg:flex"
+        className="h-8 w-full items-center gap-2 whitespace-nowrap rounded-full bg-white pl-2 pr-3 text-sm text-zinc-500 ring-1 ring-zinc-900/10 transition hover:ring-zinc-900/20 ui-not-focus-visible:outline-none dark:bg-white/5 dark:text-zinc-400 dark:ring-inset dark:ring-white/10 dark:hover:ring-white/20 flex"
         {...buttonProps}
       >
         <SearchIcon className="h-5 w-5 stroke-current" />
@@ -463,13 +463,13 @@ export function Search() {
         </kbd>
       </button>
       <Suspense fallback={null}>
-        <SearchDialog className="hidden lg:block" {...dialogProps} />
+        <SearchDialog {...dialogProps} />
       </Suspense>
     </div>
   )
 }
 
-export function MobileSearch() {
+/* export function MobileSearch() {
   const { buttonProps, dialogProps } = useSearchProps()
 
   return (
@@ -487,4 +487,4 @@ export function MobileSearch() {
       </Suspense>
     </div>
   )
-}
+} */
