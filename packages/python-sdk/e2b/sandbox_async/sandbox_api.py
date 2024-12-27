@@ -1,18 +1,19 @@
-from typing import Optional, Dict, List
-from packaging.version import Version
+from datetime import datetime
+from typing import Dict, List, Optional
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
-from e2b.exceptions import TemplateException
-from e2b.api import AsyncApiClient
-from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
+from e2b.api import AsyncApiClient, handle_api_exception
 from e2b.api.client.api.sandboxes import (
-    post_sandboxes_sandbox_id_timeout,
-    get_sandboxes,
     delete_sandboxes_sandbox_id,
+    get_sandboxes,
+    get_sandboxes_sandbox_id_metrics,
     post_sandboxes,
+    post_sandboxes_sandbox_id_timeout,
 )
+from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
 from e2b.connection_config import ConnectionConfig
-from e2b.api import handle_api_exception
+from e2b.exceptions import TemplateException
+from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
+from packaging.version import Version
 
 
 class SandboxApi(SandboxApiBase):
@@ -130,6 +131,49 @@ class SandboxApi(SandboxApiBase):
 
             if res.status_code >= 300:
                 raise handle_api_exception(res)
+
+    @classmethod
+    async def _cls_get_metrics(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetrics]:
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
+
+        if config.debug:
+            # Skip getting the metrics in debug mode
+            return []
+
+        async with AsyncApiClient(config) as api_client:
+            res = await get_sandboxes_sandbox_id_metrics.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                return []
+
+            return [
+                SandboxMetrics(
+                    timestamp=metric.timestamp,
+                    cpu_pct=metric.cpu_pct,
+                    cpu_count=metric.cpu_count,
+                    mem_mib_used=metric.mem_mi_b_used,
+                    mem_mib_total=metric.mem_mi_b_total,
+                )
+                for metric in res.parsed
+            ]
 
     @classmethod
     async def _create_sandbox(
