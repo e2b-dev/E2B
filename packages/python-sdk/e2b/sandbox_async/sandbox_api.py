@@ -18,7 +18,7 @@ from e2b.api import handle_api_exception
 
 class SandboxApi(SandboxApiBase):
     @classmethod
-    async def get(
+    async def get_info(
         cls,
         sandbox_id: str,
         api_key: Optional[str] = None,

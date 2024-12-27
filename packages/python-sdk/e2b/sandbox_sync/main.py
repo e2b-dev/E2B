@@ -1,4 +1,3 @@
-from datetime import datetime
 import logging
 from typing import Dict, Optional, overload
 
@@ -11,7 +10,7 @@ from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
-from e2b.sandbox_sync.sandbox_api import SandboxApi
+from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
 
@@ -357,10 +356,10 @@ class Sandbox(SandboxSetup, SandboxApi):
             **self.connection_config.__dict__,
         )
 
-    def get_timeout(  # type: ignore
+    def get_info(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
-    ) -> datetime:
+    ) -> SandboxInfo:
         """
         Get the timeout of the sandbox.
 
@@ -375,9 +374,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
 
-        sbx = SandboxApi.get(
+        return SandboxApi.get_info(
             sandbox_id=self.sandbox_id,
             **self.connection_config.__dict__,
         )
-
-        return sbx.end_at

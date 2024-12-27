@@ -324,13 +324,11 @@ export class Sandbox extends SandboxApi {
    *
    * @returns timeout of the sandbox.
    */
-  async getTimeout(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
-    const { endAt } = await Sandbox.get(this.sandboxId, {
+  async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    return await Sandbox.getInfo(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,
     })
-
-    return endAt
   }
 
   /**

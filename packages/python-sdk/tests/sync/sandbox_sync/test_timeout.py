@@ -24,5 +24,5 @@ def test_shorten_then_lengthen_timeout(sandbox):
 
 @pytest.mark.skip_debug()
 def test_get_timeout(sandbox):
-    timeout = sandbox.get_timeout()
-    assert isinstance(timeout, datetime)
+    info = sandbox.get_info()
+    assert isinstance(info.end_at, datetime)

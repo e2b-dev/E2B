@@ -93,7 +93,7 @@ export class SandboxApi {
    *
    * @returns running sandbox.
    */
-  static async get(
+  static async getInfo(
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<SandboxInfo> {

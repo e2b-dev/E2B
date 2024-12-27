@@ -1,4 +1,3 @@
-from datetime import datetime
 import logging
 import httpx
 
@@ -13,7 +12,7 @@ from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
-from e2b.sandbox_async.sandbox_api import SandboxApi
+from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
 
@@ -366,10 +365,10 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             **self.connection_config.__dict__,
         )
 
-    async def get_timeout(  # type: ignore
+    async def get_info(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
-    ) -> datetime:
+    ) -> SandboxInfo:
         """
         Get the timeout of the sandbox.
 
@@ -384,9 +383,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
 
-        sbx = await SandboxApi.get(
+        return await SandboxApi.get_info(
             sandbox_id=self.sandbox_id,
             **self.connection_config.__dict__,
         )
-
-        return sbx.end_at
