@@ -1,7 +1,8 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Dict
 from datetime import datetime
+from typing import Dict, Optional
+
 from httpx import Limits
 
 
@@ -19,6 +20,22 @@ class SandboxInfo:
     """Saved sandbox metadata."""
     started_at: datetime
     """Sandbox start time."""
+
+
+@dataclass
+class SandboxMetrics:
+    """Sandbox resource usage metrics"""
+
+    timestamp: datetime
+    """Timestamp of the metrics."""
+    cpu_pct: float
+    """CPU usage in percentage."""
+    cpu_count: int
+    """Number of CPU cores."""
+    mem_mib_used: int
+    """Memory usage in bytes."""
+    mem_mib_total: int
+    """Total memory available"""
 
 
 class SandboxApiBase(ABC):
