@@ -318,11 +318,11 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * Get the timeout of the sandbox.
+   * Get the info of the sandbox.
    *
    * @param opts connection options.
    *
-   * @returns timeout of the sandbox.
+   * @returns info of the sandbox.
    */
   async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     return await Sandbox.getInfo(this.sandboxId, {

@@ -361,11 +361,11 @@ class Sandbox(SandboxSetup, SandboxApi):
         request_timeout: Optional[float] = None,
     ) -> SandboxInfo:
         """
-        Get the timeout of the sandbox.
+        Get sandbox info.
 
         :param request_timeout: Timeout for the request in **seconds**
 
-        :return: Timeout of the sandbox
+        :return: Sandbox info
         """
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
