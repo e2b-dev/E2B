@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Dict, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 import httpx
 
@@ -14,14 +14,14 @@ def _get_kwargs(
     build_id: str,
     *,
     logs_offset: Union[Unset, int] = 0,
-) -> Dict[str, Any]:
-    params: Dict[str, Any] = {}
+) -> dict[str, Any]:
+    params: dict[str, Any] = {}
 
     params["logsOffset"] = logs_offset
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
-    _kwargs: Dict[str, Any] = {
+    _kwargs: dict[str, Any] = {
         "method": "get",
         "url": f"/templates/{template_id}/builds/{build_id}/status",
         "params": params,
@@ -33,17 +33,17 @@ def _get_kwargs(
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
 ) -> Optional[Union[Any, TemplateBuild]]:
-    if response.status_code == HTTPStatus.OK:
+    if response.status_code == 200:
         response_200 = TemplateBuild.from_dict(response.json())
 
         return response_200
-    if response.status_code == HTTPStatus.UNAUTHORIZED:
+    if response.status_code == 401:
         response_401 = cast(Any, None)
         return response_401
-    if response.status_code == HTTPStatus.NOT_FOUND:
+    if response.status_code == 404:
         response_404 = cast(Any, None)
         return response_404
-    if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
+    if response.status_code == 500:
         response_500 = cast(Any, None)
         return response_500
     if client.raise_on_unexpected_status:

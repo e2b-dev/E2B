@@ -1,7 +1,8 @@
 """Contains some shared types for properties"""
 
+from collections.abc import MutableMapping
 from http import HTTPStatus
-from typing import BinaryIO, Generic, Literal, MutableMapping, Optional, Tuple, TypeVar
+from typing import BinaryIO, Generic, Literal, Optional, TypeVar
 
 from attrs import define
 
@@ -13,7 +14,7 @@ class Unset:
 
 UNSET: Unset = Unset()
 
-FileJsonType = Tuple[Optional[str], BinaryIO, Optional[str]]
+FileJsonType = tuple[Optional[str], BinaryIO, Optional[str]]
 
 
 @define
@@ -42,4 +43,4 @@ class Response(Generic[T]):
     parsed: Optional[T]
 
 
-__all__ = ["File", "Response", "FileJsonType", "Unset", "UNSET"]
+__all__ = ["UNSET", "File", "FileJsonType", "Response", "Unset"]

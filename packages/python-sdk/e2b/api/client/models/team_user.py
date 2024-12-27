@@ -1,36 +1,35 @@
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
+from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-if TYPE_CHECKING:
-    from ..models.sandbox_log import SandboxLog
-
-
-T = TypeVar("T", bound="SandboxLogs")
+T = TypeVar("T", bound="TeamUser")
 
 
 @_attrs_define
-class SandboxLogs:
+class TeamUser:
     """
     Attributes:
-        logs (list['SandboxLog']): Logs of the sandbox
+        id (UUID): Identifier of the user
+        email (str): Email of the user
     """
 
-    logs: list["SandboxLog"]
+    id: UUID
+    email: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        logs = []
-        for logs_item_data in self.logs:
-            logs_item = logs_item_data.to_dict()
-            logs.append(logs_item)
+        id = str(self.id)
+
+        email = self.email
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "logs": logs,
+                "id": id,
+                "email": email,
             }
         )
 
@@ -38,22 +37,18 @@ class SandboxLogs:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
-        from ..models.sandbox_log import SandboxLog
-
         d = src_dict.copy()
-        logs = []
-        _logs = d.pop("logs")
-        for logs_item_data in _logs:
-            logs_item = SandboxLog.from_dict(logs_item_data)
+        id = UUID(d.pop("id"))
 
-            logs.append(logs_item)
+        email = d.pop("email")
 
-        sandbox_logs = cls(
-            logs=logs,
+        team_user = cls(
+            id=id,
+            email=email,
         )
 
-        sandbox_logs.additional_properties = d
-        return sandbox_logs
+        team_user.additional_properties = d
+        return team_user
 
     @property
     def additional_keys(self) -> list[str]:
