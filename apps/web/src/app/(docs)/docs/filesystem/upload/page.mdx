@@ -2,6 +2,8 @@
 
 You can upload data to the sandbox using the `files.write()` method.
 
+## Upload single file
+
 <CodeGroup>
 ```js
 import fs from 'fs'
@@ -22,6 +24,89 @@ sandbox = Sandbox()
 # Read file from local filesystem
 with open("path/to/local/file", "rb") as file:
   # Upload file to sandbox
-	sandbox.files.write("/path/in/sandbox", file)
+  sandbox.files.write("/path/in/sandbox", file)
+```
+</CodeGroup>
+
+## Upload directory / multiple files
+
+<CodeGroup>
+```js
+const fs = require('fs');
+const path = require('path');
+
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Read all files in the directory and store their paths and contents in an array
+const readDirectoryFiles = (directoryPath) => {
+  // Read all files in the local directory
+  const files = fs.readdirSync(directoryPath);
+
+  // Map files to objects with path and data
+  const filesArray = files
+    .filter(file => {
+      const fullPath = path.join(directoryPath, file);
+      // Skip if it's a directory
+      return fs.statSync(fullPath).isFile();
+    })
+    .map(file => {
+      const filePath = path.join(directoryPath, file);
+    
+      // Read the content of each file
+      return {
+        path: filePath,
+        data: fs.readFileSync(filePath, 'utf8')
+      };
+    });
+
+  return filesArray;
+};
+
+// Usage example
+const files = readDirectoryContents('/local/dir');
+console.log(files); 
+// [
+//   { path: '/local/dir/file1.txt', data: 'File 1 contents...' },
+//   { path: '/local/dir/file2.txt', data: 'File 2 contents...' },
+//   ...
+// ]
+
+await sandbox.files.write(files)
+```
+```python
+import os
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+
+def read_directory_files(directory_path):
+    files = []
+    
+    # Iterate through all files in the directory
+    for filename in os.listdir(directory_path):
+        file_path = os.path.join(directory_path, filename)
+        
+        # Skip if it's a directory
+        if os.path.isfile(file_path):
+            # Read file contents in binary mode
+            with open(file_path, "rb") as file:
+                files.append({
+                    'path': file_path,
+                    'data': file.read()
+                })
+    
+    return files
+
+files = read_directory_files("/local/dir")
+print(files)
+# [
+#  {"'path": "/local/dir/file1.txt", "data": "File 1 contents..." },
+#   { "path": "/local/dir/file2.txt", "data": "File 2 contents..." },
+#   ...
+# ]
+
+sandbox.files.write(files)
 ```
 </CodeGroup>
