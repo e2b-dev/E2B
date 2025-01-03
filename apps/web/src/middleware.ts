@@ -84,7 +84,8 @@ export const config = {
     '/ai-agents/:path*',
     '/privacy/:path*',
     '/terms/:path*',
-    '/pricing/:path*'
+    '/pricing/:path*',
+    '/cookbooks/:path*',
   ],
 }
 
