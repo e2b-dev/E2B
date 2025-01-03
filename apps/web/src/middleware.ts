@@ -35,7 +35,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     url.hostname = landingPageHostname
   }
 
-  if (url.pathname.startsWith('/cookbooks')) {
+  if (url.pathname.startsWith('/cookbook')) {
     url.hostname = landingPageHostname
   }
 
@@ -85,7 +85,7 @@ export const config = {
     '/privacy/:path*',
     '/terms/:path*',
     '/pricing/:path*',
-    '/cookbooks/:path*',
+    '/cookbook/:path*',
   ],
 }
 
