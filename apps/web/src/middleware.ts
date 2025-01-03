@@ -35,6 +35,10 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     url.hostname = landingPageHostname
   }
 
+  if (url.pathname.startsWith('/cookbook')) {
+    url.hostname = landingPageHostname
+  }
+
   // TODO: Not on the new landing page hosting yet
   if (url.pathname.startsWith('/ai-agents')) {
     url.hostname = landingPageFramerHostname
@@ -80,7 +84,8 @@ export const config = {
     '/ai-agents/:path*',
     '/privacy/:path*',
     '/terms/:path*',
-    '/pricing/:path*'
+    '/pricing/:path*',
+    '/cookbook/:path*',
   ],
 }
 
