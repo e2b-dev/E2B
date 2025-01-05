@@ -187,6 +187,7 @@ response = client.chat.completions.create(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
     ]
+)
 
 # Extract the code from the response
 code = response.choices[0].message.content
