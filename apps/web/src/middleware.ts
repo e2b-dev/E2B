@@ -55,14 +55,6 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     url.hostname = blogFramerHostname
   }
 
-  // if (url.pathname === '/changelog' || url.pathname === '/changelog/') {
-  //   url.pathname = '/'
-  //   url.hostname = changelogFramerHostname
-  // }
-  // if (url.pathname.startsWith('/changelog')) {
-  //   url.hostname = changelogFramerHostname
-  // }
-
   const res = await fetch(url.toString(), { ...req })
 
   const htmlBody = await res.text()
