@@ -11,6 +11,13 @@ export interface SandboxApiOpts
     Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
   > { }
 
+export interface SandboxListOpts extends SandboxApiOpts {
+  /**
+   * Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`
+   */
+  filters?: Record<string, string>
+}
+
 /**
  * Information about a sandbox.
  */
@@ -87,11 +94,21 @@ export class SandboxApi {
    *
    * @returns list of running sandboxes.
    */
-  static async list(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
+  static async list(
+      opts?: SandboxListOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
+    const filters = opts?.filters ?? {}
+    const filterStrings = Object.entries(filters)
+      .map(([key, value]) => `${key}:${value}`)
+
     const res = await client.api.GET('/sandboxes', {
+        params: {
+          query: {
+            filter: filterStrings,
+          }
+        },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
