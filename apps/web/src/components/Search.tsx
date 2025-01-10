@@ -83,7 +83,12 @@ function useAutocomplete({ close }: { close: () => void }) {
             {
               sourceId: 'documentation',
               getItems() {
-                return search(query, { limit: 5 })
+                const results = search(query, { limit: 5 })
+                return results.sort((a, b) => {
+                  if (a.badge === 'Legacy' && b.badge !== 'Legacy') return 1
+                  if (a.badge !== 'Legacy' && b.badge === 'Legacy') return -1
+                  return 0
+                })
               },
               getItemUrl({ item }) {
                 return item.url
@@ -210,7 +215,7 @@ function SearchResult({
   return (
     <li
       className={clsx(
-        'group block cursor-default px-4 py-3 aria-selected:bg-zinc-50 dark:aria-selected:bg-zinc-800/50',
+        'group block relative cursor-default px-4 py-3 aria-selected:bg-zinc-50 dark:aria-selected:bg-zinc-800/50',
         resultIndex > 0 && 'border-t border-zinc-100 dark:border-zinc-800'
       )}
       aria-labelledby={`${id}-hierarchy ${id}-title`}
@@ -251,6 +256,13 @@ function SearchResult({
       {contextPreview && (
         <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2">
           <HighlightQuery text={contextPreview} query={query} />
+        </div>
+      )}
+      {result.badge === 'Legacy' && (
+        <div className="absolute top-3 right-4">
+          <span className="rounded-full text-xs bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-brand-400/10 dark:text-brand-400 dark:ring-1 dark:ring-inset dark:ring-brand-400/20 dark:hover:bg-brand-400/10 dark:hover:text-brand-300 dark:hover:ring-brand-300">
+            {result.badge}
+          </span>
         </div>
       )}
     </li>
