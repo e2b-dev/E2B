@@ -292,4 +292,6 @@ cython_debug/
 # SDK reference artifacts
 sdk_ref/
 sdkRefRoutes.json
+
+# SDK Client generated spec
 spec/openapi_generated.yml

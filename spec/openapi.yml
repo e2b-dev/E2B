@@ -16,6 +16,17 @@ components:
       type: http
       scheme: bearer
       bearerFormat: access_token
+    # Generated code uses security schemas in the alphabetical order.
+    # In order to check first the token, and then the team (so we can already use the user),
+    # there is a 1 and 2 present in the names of the security schemas.
+    Supabase1TokenAuth:
+      type: apiKey
+      in: header
+      name: X-Supabase-Token
+    Supabase2TeamAuth:
+      type: apiKey
+      in: header
+      name: X-Supabase-Team
     AdminTokenAuth:
       type: apiKey
       in: header
@@ -167,6 +178,36 @@ components:
           items:
             $ref: "#/components/schemas/SandboxLog"
 
+    SandboxMetric:
+      description: Metric entry with timestamp and line
+      required:
+        - timestamp
+        - cpuCount
+        - cpuUsedPct
+        - memUsedMiB
+        - memTotalMiB
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the metric entry
+        cpuCount:
+          type: integer
+          format: int32
+          description: Number of CPU cores
+        cpuUsedPct:
+          type: number
+          format: float
+          description: CPU usage percentage
+        memUsedMiB:
+          type: integer
+          format: int64
+          description: Memory used in MiB
+        memTotalMiB:
+          type: integer
+          format: int64
+          description: Total memory in MiB
+
     Sandbox:
       required:
         - templateID
@@ -227,6 +268,47 @@ components:
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
 
+    RunningSandboxWithMetrics:
+      required:
+        - templateID
+        - sandboxID
+        - clientID
+        - startedAt
+        - cpuCount
+        - memoryMB
+        - endAt
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template from which is the sandbox created
+        alias:
+          type: string
+          description: Alias of the template
+        sandboxID:
+          type: string
+          description: Identifier of the sandbox
+        clientID:
+          type: string
+          description: Identifier of the client
+        startedAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox was started
+        endAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox will expire
+        cpuCount:
+          $ref: "#/components/schemas/CPUCount"
+        memoryMB:
+          $ref: "#/components/schemas/MemoryMB"
+        metadata:
+          $ref: "#/components/schemas/SandboxMetadata"
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxMetric"
+
     NewSandbox:
       required:
         - templateID
@@ -240,6 +322,10 @@ components:
           minimum: 0
           default: 15
           description: Time to live for the sandbox in seconds.
+        autoPause:
+          type: boolean
+          default: false
+          description: Automatically pauses the sandbox after the timeout
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
         envVars:
@@ -253,6 +339,10 @@ components:
           minimum: 0
           default: 15
           description: Time to live for the sandbox in seconds.
+        autoPause:
+          type: boolean
+          default: false
+          description: Automatically pauses the sandbox after the timeout
 
     Template:
       required:
@@ -356,6 +446,7 @@ components:
           description: Status of the template
           enum:
             - building
+            - waiting
             - ready
             - error
 
@@ -365,6 +456,8 @@ components:
       enum:
         - ready
         - draining
+        - connecting
+        - unhealthy
 
     NodeStatusChange:
       required:
@@ -380,6 +473,8 @@ components:
         - sandboxCount
         - allocatedCPU
         - allocatedMemoryMiB
+        - createFails
+        - sandboxStartingCount
       properties:
         nodeID:
           type: string
@@ -398,6 +493,14 @@ components:
           type: integer
           format: int32
           description: Amount of allocated memory in MiB
+        createFails:
+          type: integer
+          format: uint64
+          description: Number of sandbox create fails
+        sandboxStartingCount:
+          type: integer
+          format: int
+          description: Number of starting Sandboxes
 
     NodeDetail:
       required:
@@ -405,6 +508,7 @@ components:
         - status
         - sandboxes
         - cachedBuilds
+        - createFails
       properties:
         nodeID:
           type: string
@@ -421,6 +525,10 @@ components:
           description: List of cached builds id on the node
           items:
             type: string
+        createFails:
+          type: integer
+          format: uint64
+          description: Number of sandbox create fails
 
 
     Error:
@@ -457,6 +565,7 @@ paths:
       tags: [auth]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       responses:
         "200":
           description: Successfully returned all teams
@@ -478,15 +587,15 @@ paths:
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
-        - name: filter
+        - name: query
           in: query
-          description: A list of filters with key-value pairs (e.g. user:abc, app:prod).
+          description: A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded.
           required: false
           schema:
-            type: array
-            items:
-              type: string
+            type: string
       responses:
         "200":
           description: Successfully returned all running sandboxes
@@ -508,6 +617,8 @@ paths:
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       requestBody:
         required: true
         content:
@@ -528,12 +639,44 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /sandboxes/metrics:
+    get:
+      description: List all running sandboxes with metrics
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: query
+          in: query
+          description: A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded.
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully returned all running sandboxes with metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/RunningSandboxWithMetrics"
+        "401":
+          $ref: "#/components/responses/401"
+        "400":
+          $ref: "#/components/responses/400"
+        "500":
+          $ref: "#/components/responses/500"
+
   /sandboxes/{sandboxID}/logs:
     get:
       description: Get sandbox logs
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
         - in: query
@@ -565,12 +708,41 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /sandboxes/{sandboxID}/metrics:
+    get:
+      description: Get sandbox metrics
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "200":
+          description: Successfully returned the sandbox metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SandboxMetric"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+
   /sandboxes/{sandboxID}:
     get:
       description: Get a sandbox by id
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
       responses:
@@ -592,6 +764,8 @@ paths:
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
       responses:
@@ -611,6 +785,8 @@ paths:
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
       responses:
@@ -631,6 +807,8 @@ paths:
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
       requestBody:
@@ -660,6 +838,8 @@ paths:
       description: Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       tags: [sandboxes]
       requestBody:
         content:
@@ -691,6 +871,8 @@ paths:
       description: Refresh the sandbox extending its time to live
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       tags: [sandboxes]
       requestBody:
         content:
@@ -719,6 +901,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - in: query
           required: false
@@ -745,6 +928,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       requestBody:
         required: true
         content:
@@ -770,6 +954,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
       requestBody:
@@ -795,6 +980,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
       responses:
@@ -809,6 +995,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
       requestBody:
@@ -833,6 +1020,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
         - $ref: "#/components/parameters/buildID"
@@ -850,6 +1038,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
         - $ref: "#/components/parameters/buildID"

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -16,19 +16,19 @@ T = TypeVar("T", bound="NodeDetail")
 class NodeDetail:
     """
     Attributes:
-        cached_builds (List[str]): List of cached builds id on the node
+        cached_builds (list[str]): List of cached builds id on the node
         node_id (str): Identifier of the node
-        sandboxes (List['RunningSandbox']): List of sandboxes running on the node
+        sandboxes (list['RunningSandbox']): List of sandboxes running on the node
         status (NodeStatus): Status of the node
     """
 
-    cached_builds: List[str]
+    cached_builds: list[str]
     node_id: str
-    sandboxes: List["RunningSandbox"]
+    sandboxes: list["RunningSandbox"]
     status: NodeStatus
-    additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         cached_builds = self.cached_builds
 
         node_id = self.node_id
@@ -40,7 +40,7 @@ class NodeDetail:
 
         status = self.status.value
 
-        field_dict: Dict[str, Any] = {}
+        field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
@@ -54,11 +54,11 @@ class NodeDetail:
         return field_dict
 
     @classmethod
-    def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
+    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         from ..models.running_sandbox import RunningSandbox
 
         d = src_dict.copy()
-        cached_builds = cast(List[str], d.pop("cachedBuilds"))
+        cached_builds = cast(list[str], d.pop("cachedBuilds"))
 
         node_id = d.pop("nodeID")
 
@@ -82,7 +82,7 @@ class NodeDetail:
         return node_detail
 
     @property
-    def additional_keys(self) -> List[str]:
+    def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
     def __getitem__(self, key: str) -> Any:
