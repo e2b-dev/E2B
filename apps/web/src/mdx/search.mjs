@@ -96,7 +96,7 @@ export default function (nextConfig = {}) {
                 document: {
                   id: 'url',
                   index: 'content',
-                  store: ['title', 'pageTitle', 'preview'],
+                  store: ['title', 'pageTitle', 'preview', 'badge'],
                 },
                 context: {
                   resolution: 9,
@@ -114,6 +114,8 @@ export default function (nextConfig = {}) {
                   continue
                 }
 
+                const isLegacy = url.includes('docs/legacy')
+
                 for (let [title, hash, content] of sections) {
                   sectionIndex.add({
                     url: url + (hash ? ('#' + hash) : ''),
@@ -121,6 +123,7 @@ export default function (nextConfig = {}) {
                     content: [title, ...content].join('\\n'),
                     pageTitle: hash ? sections[0][0] : undefined,
                     preview: content.join('\\n'),
+                    badge: isLegacy ? 'Legacy' : undefined,
                   })
                 }
               }
@@ -138,6 +141,7 @@ export default function (nextConfig = {}) {
                   title: item.doc.title,
                   pageTitle: item.doc.pageTitle,
                   preview: item.doc.preview,
+                  badge: item.doc.badge,
                 }))
               }
             `

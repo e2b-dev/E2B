@@ -253,6 +253,13 @@ function SearchResult({
           <HighlightQuery text={contextPreview} query={query} />
         </div>
       )}
+      {result.badge === 'Legacy' && (
+        <div className="absolute top-3 right-4">
+          <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 px-2 py-1">
+            {result.badge}
+          </span>
+        </div>
+      )}
     </li>
   )
 }
