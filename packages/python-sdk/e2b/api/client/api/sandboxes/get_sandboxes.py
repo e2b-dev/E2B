@@ -6,13 +6,27 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.running_sandbox import RunningSandbox
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs() -> Dict[str, Any]:
+def _get_kwargs(
+    *,
+    filter_: Union[Unset, List[str]] = UNSET,
+) -> Dict[str, Any]:
+    params: Dict[str, Any] = {}
+
+    json_filter_: Union[Unset, List[str]] = UNSET
+    if not isinstance(filter_, Unset):
+        json_filter_ = filter_
+
+    params["filter"] = json_filter_
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+
     _kwargs: Dict[str, Any] = {
         "method": "get",
         "url": "/sandboxes",
+        "params": params,
     }
 
     return _kwargs
@@ -30,12 +44,12 @@ def _parse_response(
             response_200.append(response_200_item)
 
         return response_200
-    if response.status_code == HTTPStatus.UNAUTHORIZED:
-        response_401 = cast(Any, None)
-        return response_401
     if response.status_code == HTTPStatus.BAD_REQUEST:
         response_400 = cast(Any, None)
         return response_400
+    if response.status_code == HTTPStatus.UNAUTHORIZED:
+        response_401 = cast(Any, None)
+        return response_401
     if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
         response_500 = cast(Any, None)
         return response_500
@@ -59,8 +73,12 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
+    filter_: Union[Unset, List[str]] = UNSET,
 ) -> Response[Union[Any, List["RunningSandbox"]]]:
     """List all running sandboxes
+
+    Args:
+        filter_ (Union[Unset, List[str]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -70,7 +88,9 @@ def sync_detailed(
         Response[Union[Any, List['RunningSandbox']]]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        filter_=filter_,
+    )
 
     response = client.get_httpx_client().request(
         **kwargs,
@@ -82,8 +102,12 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
+    filter_: Union[Unset, List[str]] = UNSET,
 ) -> Optional[Union[Any, List["RunningSandbox"]]]:
     """List all running sandboxes
+
+    Args:
+        filter_ (Union[Unset, List[str]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -95,14 +119,19 @@ def sync(
 
     return sync_detailed(
         client=client,
+        filter_=filter_,
     ).parsed
 
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
+    filter_: Union[Unset, List[str]] = UNSET,
 ) -> Response[Union[Any, List["RunningSandbox"]]]:
     """List all running sandboxes
+
+    Args:
+        filter_ (Union[Unset, List[str]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -112,7 +141,9 @@ async def asyncio_detailed(
         Response[Union[Any, List['RunningSandbox']]]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        filter_=filter_,
+    )
 
     response = await client.get_async_httpx_client().request(**kwargs)
 
@@ -122,8 +153,12 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
+    filter_: Union[Unset, List[str]] = UNSET,
 ) -> Optional[Union[Any, List["RunningSandbox"]]]:
     """List all running sandboxes
+
+    Args:
+        filter_ (Union[Unset, List[str]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -136,5 +171,6 @@ async def asyncio(
     return (
         await asyncio_detailed(
             client=client,
+            filter_=filter_,
         )
     ).parsed
