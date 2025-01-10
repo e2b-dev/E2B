@@ -138,46 +138,42 @@ export const UsageContent = ({
         </Card>
 
         {/* Budget Controls */}
-        <Card className="bg-inherit/10 border border-white/20">
+        <Card className="bg-inherit/10 border border-white/20 col-span-1 lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle>Budget Alerts</CardTitle>
+            <CardTitle>Budget Controls</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-2">
-              <h3 className="font-medium">Set a Budget Alert</h3>
-              <p className="text-sm text-white/70">
-                If your organization exceeds this threshold in a given calendar
-                month (UTC), an alert notification will be sent to this email.
-              </p>
-              <input
-                type="text"
-                value="$35.00"
-                className="w-full border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
-              />
-            </div>
-          </CardContent>
-        </Card>
+          <CardContent>
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="space-y-2 flex-1">
+                <h3 className="font-medium">Set a Budget Alert</h3>
+                <p className="text-sm text-white/70">
+                  If your organization exceeds this threshold in a given
+                  calendar month (UTC), an alert notification will be sent to{' '}
+                  <b>{team.email}</b>
+                </p>
+                <input
+                  type="text"
+                  value="$35.00"
+                  className="w-full border !mt-4 border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
+                />
+              </div>
 
-        <Card className="bg-inherit/10 border border-white/20">
-          <CardHeader className="pb-2">
-            <CardTitle>Budget Limits</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-2">
-              <h3 className="font-medium">Enable Budget Limit</h3>
-              <p className="text-sm text-white/70">
-                If your organization exceeds this budget in a given calendar
-                month (UTC), subsequent API requests will be rejected.
-              </p>
-              <p className="text-sm text-red-400">
-                Caution: Enabling a Budget Limit could result in interruptions
-                to your service.
-              </p>
-              <input
-                type="text"
-                value="$50.00"
-                className="w-full border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
-              />
+              <div className="space-y-2 flex-1">
+                <h3 className="font-medium">Enable Budget Limit</h3>
+                <p className="text-sm text-white/70">
+                  If your organization exceeds this budget in a given calendar
+                  month (UTC), subsequent API requests will be rejected.
+                </p>
+                <p className="text-sm text-red-400">
+                  Caution: Enabling a Budget Limit could result in interruptions
+                  to your service.
+                </p>
+                <input
+                  type="text"
+                  value="$50.00"
+                  className="w-full border !mt-4 border-white/10 text-sm focus:outline-none outline-none rounded-md p-2"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
