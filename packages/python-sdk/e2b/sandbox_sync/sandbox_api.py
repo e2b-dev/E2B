@@ -26,6 +26,7 @@ class SandboxApi(SandboxApiBase):
     def list(
         cls,
         api_key: Optional[str] = None,
+        filters: Optional[dict[str, str]] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -34,9 +35,12 @@ class SandboxApi(SandboxApiBase):
         List all running sandboxes.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param filters: Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`
+        :param domain: Domain to use for the request, only relevant for self-hosted environments
+        :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
 
-        :return: List of sandbox info
+        :return: List of running sandboxes
         """
         config = ConnectionConfig(
             api_key=api_key,
@@ -45,12 +49,13 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
+        # Convert filters to the format expected by the API
+        filters = [":".join([k, v]) for k, v in (filters or {}).items()]
+
         with ApiClient(
             config, transport=HTTPTransport(limits=SandboxApiBase._limits)
         ) as api_client:
-            res = get_sandboxes.sync_detailed(
-                client=api_client,
-            )
+            res = get_sandboxes.sync_detailed(client=api_client, filter_=filters)
 
             if res.status_code >= 300:
                 raise handle_api_exception(res)
