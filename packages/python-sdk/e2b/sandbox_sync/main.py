@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Optional, overload
+from typing import Dict, List, Optional, overload
 
 import httpx
 from e2b.connection_config import ConnectionConfig
@@ -7,10 +7,10 @@ from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.utils import class_method_variant
-from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
-from e2b.sandbox_sync.sandbox_api import SandboxApi
+from e2b.sandbox_sync.filesystem.filesystem import Filesystem
+from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -353,5 +353,22 @@ class Sandbox(SandboxSetup, SandboxApi):
         SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
+            **self.connection_config.__dict__,
+        )
+
+    @class_method_variant("_get_metrics")
+    async def get_metrics(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetrics]:
+        config_dict = self.connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
+        return SandboxApi._cls_get_metrics(
+            sandbox_id=self.sandbox_id,
             **self.connection_config.__dict__,
         )
