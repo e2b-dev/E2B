@@ -5,20 +5,11 @@ const env = config()
 export default defineWorkspace([
   {
     test: {
-      include: [
-        'tests/**/*.test.ts',
-      ],
-      exclude: [
-        'tests/runtimes/**',
-      ],
-      poolOptions: {
-        threads: {
-          minThreads: 1,
-          maxThreads: 4,
-        },
-      },
+      include: ['tests/**/*.test.ts'],
+      exclude: ['tests/runtimes/**', 'tests/integration/**'],
+      isolate: false, // for projects that don't rely on side effects, disabling isolation will improve the speed of the tests
       globals: false,
-      testTimeout: 30000,
+      testTimeout: 30_000,
       environment: 'node',
       bail: 1,
       server: {},
@@ -26,7 +17,7 @@ export default defineWorkspace([
         interopDefault: true,
       },
       env: {
-        ...process.env as Record<string, string>,
+        ...(process.env as Record<string, string>),
         ...env.parsed,
       },
     },
@@ -43,8 +34,8 @@ export default defineWorkspace([
         providerOptions: {},
       },
       env: {
-      ...process.env as Record<string, string>,
-      ...env.parsed,
+        ...(process.env as Record<string, string>),
+        ...env.parsed,
       },
     },
   },
@@ -53,6 +44,18 @@ export default defineWorkspace([
       include: ['tests/runtimes/edge/**/*.{test,spec}.ts'],
       name: 'node',
       environment: 'edge-runtime',
+    },
+  },
+  {
+    test: {
+      include: ['tests/integration/**/*.test.ts'],
+      globals: false,
+      testTimeout: 60_000,
+      environment: 'node',
+      env: {
+        ...(process.env as Record<string, string>),
+        ...env.parsed,
+      },
     },
   },
 ])
