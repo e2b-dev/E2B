@@ -114,7 +114,7 @@ function useAutocomplete({ close }: { close: () => void }) {
             {
               sourceId: 'documentation',
               getItems() {
-                const results = search(query, { limit: 5 })
+                const results = search(query, { limit: 20 })
                 return results.sort((a, b) => {
                   if (a.badge === 'Legacy' && b.badge !== 'Legacy') return 1
                   if (a.badge !== 'Legacy' && b.badge === 'Legacy') return -1
@@ -325,7 +325,10 @@ function SearchResults({
   }
 
   return (
-    <ul {...autocomplete.getListProps()}>
+    <ul
+      className="max-h-[80dvh] sm:max-h-[50dvh] overflow-y-auto"
+      {...autocomplete.getListProps()}
+    >
       {collection.items.map((result, resultIndex) => (
         <SearchResult
           key={result.url}
