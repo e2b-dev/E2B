@@ -463,15 +463,16 @@ function SearchDialog({
           {...autocomplete.getPanelProps({})}
         >
           {/* @ts-ignore */}
-          {autocompleteState.isOpen && (
-            <SearchResults
-              autocomplete={autocomplete}
-              // @ts-ignore
-              query={autocompleteState.query}
-              // @ts-ignore
-              collection={autocompleteState.collections[0]}
-            />
-          )}
+          {autocompleteState.collections?.[0] &&
+            autocompleteState.query.length > 0 && (
+              <SearchResults
+                autocomplete={autocomplete}
+                // @ts-ignore
+                query={autocompleteState.query}
+                // @ts-ignore
+                collection={autocompleteState.collections[0]}
+              />
+            )}
         </div>
       </form>
     </DialogAnimated>
