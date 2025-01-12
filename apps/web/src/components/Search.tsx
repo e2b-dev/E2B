@@ -54,17 +54,26 @@ function useAutocomplete({ close }: { close: () => void }) {
     500
   )
 
-  function navigate({ itemUrl }: { itemUrl?: string }) {
+  const navigate = ({
+    itemUrl,
+    state,
+  }: {
+    itemUrl?: string
+    state: AutocompleteState<Result>
+  }) => {
     if (!itemUrl) {
       return
     }
 
+    console.log('query', state.query)
+
+    itemUrl = itemUrl.replace('(docs)/', '')
+
     posthog.capture('docs search result click', {
-      query: autocompleteState.query,
+      query: state.query,
       selected_url: itemUrl,
     })
 
-    itemUrl = itemUrl.replace('(docs)/', '')
     router.push(itemUrl)
 
     if (
