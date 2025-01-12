@@ -6,6 +6,7 @@ import clsx from 'clsx'
 import { Heading } from '@/components/Heading'
 import { Prose } from '@/components/Prose'
 import { usePathname } from 'next/navigation'
+import { AlertCircle } from 'lucide-react'
 
 export const a = Link
 export { Button } from '@/components/Button'
@@ -26,17 +27,20 @@ export function wrapper({ children }: { children: React.ReactNode }) {
   return (
     <article className="mx-auto flex h-full max-w-6xl flex-col pb-10 pt-20 md:pt-18">
       <Prose className="flex-auto">
-        {/*         {isLegacy && (
-          <div className="h-16 w-full relative">
-            <div className="sticky flex items-center gap-2 z-10 top-[5rem] w-fit ml-4 px-4 py-4 rounded-2xl bg-gradient-to-b from-zinc-800 to-zinc-900 text-zinc-400 ring-1 ring-inset ring-zinc-700">
-              <AlertCircle className="h-4 w-4 text-brand-400/80" />
-              <span>
-                You are reading a{' '}
-                <span className="text-brand-400/90">legacy</span> document.
-              </span>
+        {isLegacy && (
+          <>
+            <div className="sticky top-[5rem] inset-x-0 z-10">
+              <div className="flex items-center gap-2 max-w-6xl mx-auto w-fit px-4 py-4 rounded-2xl bg-gradient-to-b from-zinc-800 to-zinc-900 text-zinc-400 ring-1 ring-inset ring-zinc-700">
+                <AlertCircle className="h-4 w-4 text-brand-400/80" />
+                <span>
+                  You are reading a{' '}
+                  <span className="text-brand-400/90">legacy</span> document.
+                </span>
+              </div>
             </div>
-          </div>
-        )} */}
+            <div className="h-16" />
+          </>
+        )}
         {children}
       </Prose>
     </article>
