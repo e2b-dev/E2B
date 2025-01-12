@@ -65,8 +65,6 @@ function useAutocomplete({ close }: { close: () => void }) {
       return
     }
 
-    console.log('query', state.query)
-
     itemUrl = itemUrl.replace('(docs)/', '')
 
     posthog.capture('docs search result click', {
