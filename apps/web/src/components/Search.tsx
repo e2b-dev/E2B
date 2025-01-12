@@ -25,6 +25,8 @@ import clsx from 'clsx'
 import { type Result } from '@/mdx/search.mjs'
 import { DialogAnimated } from '@/components/DialogAnimated'
 import { docRoutes } from './Navigation/routes'
+import { usePostHog } from 'posthog-js/react'
+import { useDebounceCallback } from 'usehooks-ts'
 
 type EmptyObject = Record<string, never>
 
@@ -38,16 +40,38 @@ type Autocomplete = AutocompleteApi<
 function useAutocomplete({ close }: { close: () => void }) {
   const id = useId()
   const router = useRouter()
+  const posthog = usePostHog()
   const [autocompleteState, setAutocompleteState] = useState<
     AutocompleteState<Result> | EmptyObject
   >({})
 
-  function navigate({ itemUrl }: { itemUrl?: string }) {
+  const captureSearchEvent = useDebounceCallback(
+    (query: string, results_count: number) =>
+      posthog.capture('searched docs', {
+        query,
+        results_count,
+      }),
+    500
+  )
+
+  const navigate = ({
+    itemUrl,
+    state,
+  }: {
+    itemUrl?: string
+    state: AutocompleteState<Result>
+  }) => {
     if (!itemUrl) {
       return
     }
 
     itemUrl = itemUrl.replace('(docs)/', '')
+
+    posthog.capture('selected docs search result', {
+      query: state.query,
+      selected_url: itemUrl,
+    })
+
     router.push(itemUrl)
 
     if (
@@ -70,6 +94,13 @@ function useAutocomplete({ close }: { close: () => void }) {
       defaultActiveItemId: 0,
       onStateChange({ state }) {
         setAutocompleteState(state)
+
+        if (state.query) {
+          captureSearchEvent(
+            state.query,
+            state.collections[0]?.items.length || 0
+          )
+        }
       },
       shouldPanelOpen({ state }) {
         return state.query !== ''
@@ -83,7 +114,7 @@ function useAutocomplete({ close }: { close: () => void }) {
             {
               sourceId: 'documentation',
               getItems() {
-                const results = search(query, { limit: 5 })
+                const results = search(query, { limit: 20 })
                 return results.sort((a, b) => {
                   if (a.badge === 'Legacy' && b.badge !== 'Legacy') return 1
                   if (a.badge !== 'Legacy' && b.badge === 'Legacy') return -1
@@ -294,7 +325,10 @@ function SearchResults({
   }
 
   return (
-    <ul {...autocomplete.getListProps()}>
+    <ul
+      className="max-h-[80dvh] sm:max-h-[50dvh] overflow-y-auto"
+      {...autocomplete.getListProps()}
+    >
       {collection.items.map((result, resultIndex) => (
         <SearchResult
           key={result.url}
@@ -429,15 +463,16 @@ function SearchDialog({
           {...autocomplete.getPanelProps({})}
         >
           {/* @ts-ignore */}
-          {autocompleteState.isOpen && (
-            <SearchResults
-              autocomplete={autocomplete}
-              // @ts-ignore
-              query={autocompleteState.query}
-              // @ts-ignore
-              collection={autocompleteState.collections[0]}
-            />
-          )}
+          {autocompleteState.collections?.[0] &&
+            autocompleteState.query.length > 0 && (
+              <SearchResults
+                autocomplete={autocomplete}
+                // @ts-ignore
+                query={autocompleteState.query}
+                // @ts-ignore
+                collection={autocompleteState.collections[0]}
+              />
+            )}
         </div>
       </form>
     </DialogAnimated>
