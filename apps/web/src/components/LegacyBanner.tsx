@@ -16,7 +16,8 @@ export default function LegacyBanner() {
         <div className="flex items-center gap-2 max-w-6xl mx-auto w-fit px-4 py-3 rounded-2xl bg-gradient-to-b from-zinc-800 to-zinc-900 text-zinc-400 ring-1 ring-inset ring-zinc-700">
           <AlertCircle className="h-4 w-4 text-brand-400/80" />
           <span>
-            You are reading a <span className="text-brand-400/90">legacy</span>{' '}
+            You are reading a{' '}
+            <span className="text-brand-400/90">legacy (pre v.1.0)</span>{' '}
             document.
           </span>
         </div>
