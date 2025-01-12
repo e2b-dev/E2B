@@ -25,6 +25,8 @@ import clsx from 'clsx'
 import { type Result } from '@/mdx/search.mjs'
 import { DialogAnimated } from '@/components/DialogAnimated'
 import { docRoutes } from './Navigation/routes'
+import { usePostHog } from 'posthog-js/react'
+import { useDebounceCallback } from 'usehooks-ts'
 
 type EmptyObject = Record<string, never>
 
@@ -38,14 +40,29 @@ type Autocomplete = AutocompleteApi<
 function useAutocomplete({ close }: { close: () => void }) {
   const id = useId()
   const router = useRouter()
+  const posthog = usePostHog()
   const [autocompleteState, setAutocompleteState] = useState<
     AutocompleteState<Result> | EmptyObject
   >({})
+
+  const captureSearchEvent = useDebounceCallback(
+    (query: string, results_count: number) =>
+      posthog.capture('docs search', {
+        query,
+        results_count,
+      }),
+    500
+  )
 
   function navigate({ itemUrl }: { itemUrl?: string }) {
     if (!itemUrl) {
       return
     }
+
+    posthog.capture('docs search result click', {
+      query: autocompleteState.query,
+      selected_url: itemUrl,
+    })
 
     itemUrl = itemUrl.replace('(docs)/', '')
     router.push(itemUrl)
@@ -70,6 +87,13 @@ function useAutocomplete({ close }: { close: () => void }) {
       defaultActiveItemId: 0,
       onStateChange({ state }) {
         setAutocompleteState(state)
+
+        if (state.query) {
+          captureSearchEvent(
+            state.query,
+            state.collections[0]?.items.length || 0
+          )
+        }
       },
       shouldPanelOpen({ state }) {
         return state.query !== ''

@@ -1,57 +1,64 @@
+'use client'
+
 import Link from 'next/link'
 import clsx from 'clsx'
 
 import { Heading } from '@/components/Heading'
 import { Prose } from '@/components/Prose'
+import { usePathname } from 'next/navigation'
 
 export const a = Link
 export { Button } from '@/components/Button'
-export { CodeGroupAutoload, CodeGroup, Code as code, Pre as pre } from '@/components/Code'
+export {
+  CodeGroupAutoload,
+  CodeGroup,
+  Code as code,
+  Pre as pre,
+} from '@/components/Code'
 export { LanguageSpecificText } from '@/components/LanguageSpecificText'
 
 export function wrapper({ children }: { children: React.ReactNode }) {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const pathname = usePathname()
+
+  const isLegacy = pathname?.startsWith('/docs/legacy')
+
   return (
     <article className="mx-auto flex h-full max-w-6xl flex-col pb-10 pt-20 md:pt-18">
-      <Prose className="flex-auto">{children}</Prose>
+      <Prose className="flex-auto">
+        {/*         {isLegacy && (
+          <div className="h-16 w-full relative">
+            <div className="sticky flex items-center gap-2 z-10 top-[5rem] w-fit ml-4 px-4 py-4 rounded-2xl bg-gradient-to-b from-zinc-800 to-zinc-900 text-zinc-400 ring-1 ring-inset ring-zinc-700">
+              <AlertCircle className="h-4 w-4 text-brand-400/80" />
+              <span>
+                You are reading a{' '}
+                <span className="text-brand-400/90">legacy</span> document.
+              </span>
+            </div>
+          </div>
+        )} */}
+        {children}
+      </Prose>
     </article>
   )
 }
 
 export const h2 = function H2(
-  props: Omit<React.ComponentPropsWithoutRef<typeof Heading>, 'level'>,
+  props: Omit<React.ComponentPropsWithoutRef<typeof Heading>, 'level'>
 ) {
-  return (
-    <Heading
-      level={2}
-      {...props}
-    />
-  )
+  return <Heading level={2} {...props} />
 }
 
 export const h3 = function H3(
-  props: Omit<React.ComponentPropsWithoutRef<typeof Heading>, 'level'>,
+  props: Omit<React.ComponentPropsWithoutRef<typeof Heading>, 'level'>
 ) {
-  return (
-    <Heading
-      level={3}
-      {...props}
-    />
-  )
+  return <Heading level={3} {...props} />
 }
 
 function InfoIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
-    <svg
-      viewBox="0 0 16 16"
-      aria-hidden="true"
-      {...props}
-    >
-      <circle
-        cx="8"
-        cy="8"
-        r="8"
-        strokeWidth="0"
-      />
+    <svg viewBox="0 0 16 16" aria-hidden="true" {...props}>
+      <circle cx="8" cy="8" r="8" strokeWidth="0" />
       <path
         fill="none"
         strokeLinecap="round"
@@ -59,20 +66,22 @@ function InfoIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         strokeWidth="1.5"
         d="M6.75 7.75h1.5v3.5"
       />
-      <circle
-        cx="8"
-        cy="4"
-        r=".5"
-        fill="none"
-      />
+      <circle cx="8" cy="4" r=".5" fill="none" />
     </svg>
   )
 }
 
-export function Note({ title, children }: { title?: string, children: React.ReactNode }) {
+export function Note({
+  title,
+  children,
+}: {
+  title?: string
+  children: React.ReactNode
+}) {
   return (
     <div
-      className={clsx(`
+      className={clsx(
+        `
         bg-brand-50/50
         my-6
         flex
@@ -90,9 +99,11 @@ export function Note({ title, children }: { title?: string, children: React.Reac
         dark:[--tw-prose-links:theme(colors.white)]
       `,
         title && 'flex-col items-start justify-start'
-      )}>
+      )}
+    >
       <div className="flex gap-2.5 justify-start items-start">
-        <InfoIcon className="
+        <InfoIcon
+          className="
           mt-1
           h-4
           w-4
@@ -101,11 +112,14 @@ export function Note({ title, children }: { title?: string, children: React.Reac
           stroke-white
           dark:fill-brand-200/20
           dark:stroke-brand-200
-        "/>
+        "
+        />
         {title && <span className="font-bold">{title}</span>}
       </div>
 
-      <div className="[&>:first-child]:mt-0 [&>:last-child]:mb-0">{children}</div>
+      <div className="[&>:first-child]:mt-0 [&>:last-child]:mb-0">
+        {children}
+      </div>
     </div>
   )
 }
@@ -129,7 +143,7 @@ export function Col({
     <div
       className={clsx(
         '[&>:first-child]:mt-0 [&>:last-child]:mb-0',
-        sticky && 'xl:sticky xl:top-24',
+        sticky && 'xl:sticky xl:top-24'
       )}
     >
       {children}
@@ -166,12 +180,17 @@ export function Option({
         {type && (
           <>
             <dt className="sr-only">Flags</dt>
-            <dd className="font-mono text-xs text-zinc-600 dark:text-white"> {type}</dd>
+            <dd className="font-mono text-xs text-zinc-600 dark:text-white">
+              {' '}
+              {type}
+            </dd>
           </>
         )}
-        {name && <dd>
-          <code className="text-zinc-300 dark:text-zinc-400">{name}</code>
-        </dd>}
+        {name && (
+          <dd>
+            <code className="text-zinc-300 dark:text-zinc-400">{name}</code>
+          </dd>
+        )}
         <dt className="sr-only">Description</dt>
         <dd className="w-full flex-none [&>:first-child]:mt-0 [&>:last-child]:mb-0">
           {children}
