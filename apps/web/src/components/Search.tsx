@@ -47,7 +47,7 @@ function useAutocomplete({ close }: { close: () => void }) {
 
   const captureSearchEvent = useDebounceCallback(
     (query: string, results_count: number) =>
-      posthog.capture('docs search', {
+      posthog.capture('searched docs', {
         query,
         results_count,
       }),
@@ -67,7 +67,7 @@ function useAutocomplete({ close }: { close: () => void }) {
 
     itemUrl = itemUrl.replace('(docs)/', '')
 
-    posthog.capture('docs search result click', {
+    posthog.capture('selected docs search result', {
       query: state.query,
       selected_url: itemUrl,
     })
