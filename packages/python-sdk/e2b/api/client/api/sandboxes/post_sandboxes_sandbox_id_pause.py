@@ -5,37 +5,28 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
 from ...types import Response
 
 
 def _get_kwargs(
     sandbox_id: str,
-    *,
-    body: PostSandboxesSandboxIDTimeoutBody,
 ) -> dict[str, Any]:
-    headers: dict[str, Any] = {}
-
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": f"/sandboxes/{sandbox_id}/timeout",
+        "url": f"/sandboxes/{sandbox_id}/pause",
     }
 
-    _body = body.to_dict()
-
-    _kwargs["json"] = _body
-    headers["Content-Type"] = "application/json"
-
-    _kwargs["headers"] = headers
     return _kwargs
 
 
 def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Any]:
     if response.status_code == 204:
         return None
-    if response.status_code == 401:
+    if response.status_code == 409:
         return None
     if response.status_code == 404:
+        return None
+    if response.status_code == 401:
         return None
     if response.status_code == 500:
         return None
@@ -58,15 +49,11 @@ def sync_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: PostSandboxesSandboxIDTimeoutBody,
 ) -> Response[Any]:
-    """Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
-    Calling this method multiple times overwrites the TTL, each time using the current timestamp as the
-    starting point to measure the timeout duration.
+    """Pause the sandbox
 
     Args:
         sandbox_id (str):
-        body (PostSandboxesSandboxIDTimeoutBody):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -78,7 +65,6 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         sandbox_id=sandbox_id,
-        body=body,
     )
 
     response = client.get_httpx_client().request(
@@ -92,15 +78,11 @@ async def asyncio_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: PostSandboxesSandboxIDTimeoutBody,
 ) -> Response[Any]:
-    """Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
-    Calling this method multiple times overwrites the TTL, each time using the current timestamp as the
-    starting point to measure the timeout duration.
+    """Pause the sandbox
 
     Args:
         sandbox_id (str):
-        body (PostSandboxesSandboxIDTimeoutBody):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -112,7 +94,6 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         sandbox_id=sandbox_id,
-        body=body,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)

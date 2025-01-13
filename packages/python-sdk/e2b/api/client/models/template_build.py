@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -12,19 +12,19 @@ T = TypeVar("T", bound="TemplateBuild")
 class TemplateBuild:
     """
     Attributes:
-        logs (List[str]): Build logs
+        logs (list[str]): Build logs
         template_id (str): Identifier of the template
         build_id (str): Identifier of the build
         status (TemplateBuildStatus): Status of the template
     """
 
-    logs: List[str]
+    logs: list[str]
     template_id: str
     build_id: str
     status: TemplateBuildStatus
-    additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         logs = self.logs
 
         template_id = self.template_id
@@ -33,7 +33,7 @@ class TemplateBuild:
 
         status = self.status.value
 
-        field_dict: Dict[str, Any] = {}
+        field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
@@ -47,9 +47,9 @@ class TemplateBuild:
         return field_dict
 
     @classmethod
-    def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
+    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         d = src_dict.copy()
-        logs = cast(List[str], d.pop("logs"))
+        logs = cast(list[str], d.pop("logs"))
 
         template_id = d.pop("templateID")
 
@@ -68,7 +68,7 @@ class TemplateBuild:
         return template_build
 
     @property
-    def additional_keys(self) -> List[str]:
+    def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
     def __getitem__(self, key: str) -> Any:

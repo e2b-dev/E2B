@@ -5,40 +5,42 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.sandbox_logs import SandboxLogs
-from ...types import UNSET, Response, Unset
+from ...models.resumed_sandbox import ResumedSandbox
+from ...models.sandbox import Sandbox
+from ...types import Response
 
 
 def _get_kwargs(
     sandbox_id: str,
     *,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
+    body: ResumedSandbox,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {}
-
-    params["start"] = start
-
-    params["limit"] = limit
-
-    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+    headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
-        "method": "get",
-        "url": f"/sandboxes/{sandbox_id}/logs",
-        "params": params,
+        "method": "post",
+        "url": f"/sandboxes/{sandbox_id}/resume",
     }
 
+    _body = body.to_dict()
+
+    _kwargs["json"] = _body
+    headers["Content-Type"] = "application/json"
+
+    _kwargs["headers"] = headers
     return _kwargs
 
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Any, SandboxLogs]]:
-    if response.status_code == 200:
-        response_200 = SandboxLogs.from_dict(response.json())
+) -> Optional[Union[Any, Sandbox]]:
+    if response.status_code == 201:
+        response_201 = Sandbox.from_dict(response.json())
 
-        return response_200
+        return response_201
+    if response.status_code == 409:
+        response_409 = cast(Any, None)
+        return response_409
     if response.status_code == 404:
         response_404 = cast(Any, None)
         return response_404
@@ -56,7 +58,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, SandboxLogs]]:
+) -> Response[Union[Any, Sandbox]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -69,28 +71,25 @@ def sync_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Response[Union[Any, SandboxLogs]]:
-    """Get sandbox logs
+    body: ResumedSandbox,
+) -> Response[Union[Any, Sandbox]]:
+    """Resume the sandbox
 
     Args:
         sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
+        body (ResumedSandbox):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, SandboxLogs]]
+        Response[Union[Any, Sandbox]]
     """
 
     kwargs = _get_kwargs(
         sandbox_id=sandbox_id,
-        start=start,
-        limit=limit,
+        body=body,
     )
 
     response = client.get_httpx_client().request(
@@ -104,29 +103,26 @@ def sync(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Optional[Union[Any, SandboxLogs]]:
-    """Get sandbox logs
+    body: ResumedSandbox,
+) -> Optional[Union[Any, Sandbox]]:
+    """Resume the sandbox
 
     Args:
         sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
+        body (ResumedSandbox):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, SandboxLogs]
+        Union[Any, Sandbox]
     """
 
     return sync_detailed(
         sandbox_id=sandbox_id,
         client=client,
-        start=start,
-        limit=limit,
+        body=body,
     ).parsed
 
 
@@ -134,28 +130,25 @@ async def asyncio_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Response[Union[Any, SandboxLogs]]:
-    """Get sandbox logs
+    body: ResumedSandbox,
+) -> Response[Union[Any, Sandbox]]:
+    """Resume the sandbox
 
     Args:
         sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
+        body (ResumedSandbox):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, SandboxLogs]]
+        Response[Union[Any, Sandbox]]
     """
 
     kwargs = _get_kwargs(
         sandbox_id=sandbox_id,
-        start=start,
-        limit=limit,
+        body=body,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -167,29 +160,26 @@ async def asyncio(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Optional[Union[Any, SandboxLogs]]:
-    """Get sandbox logs
+    body: ResumedSandbox,
+) -> Optional[Union[Any, Sandbox]]:
+    """Resume the sandbox
 
     Args:
         sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
+        body (ResumedSandbox):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, SandboxLogs]
+        Union[Any, Sandbox]
     """
 
     return (
         await asyncio_detailed(
             sandbox_id=sandbox_id,
             client=client,
-            start=start,
-            limit=limit,
+            body=body,
         )
     ).parsed

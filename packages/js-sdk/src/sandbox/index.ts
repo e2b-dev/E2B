@@ -318,6 +318,20 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   * Get the info of the sandbox.
+   *
+   * @param opts connection options.
+   *
+   * @returns info of the sandbox.
+   */
+  async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    return await Sandbox.getInfo(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
+  }
+
+  /**
    * Get the URL to upload a file to the sandbox.
    *
    * You have to send a POST request to this URL with the file as multipart/form-data.
