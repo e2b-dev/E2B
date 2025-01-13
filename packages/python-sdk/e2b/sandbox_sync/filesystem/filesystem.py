@@ -6,6 +6,7 @@ import httpcore
 import httpx
 from packaging.version import Version
 
+from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
 from e2b.exceptions import TemplateException
 from e2b.connection_config import (
     ConnectionConfig,
@@ -353,7 +354,11 @@ class Filesystem:
 
         :return: `WatchHandle` object for stopping watching directory
         """
-        if recursive and self._envd_version is not None and Version(self._envd_version) < Version("0.1.3"):
+        if (
+            recursive
+            and self._envd_version is not None
+            and Version(self._envd_version) < ENVD_VERSION_RECURSIVE_WATCH
+        ):
             raise TemplateException(
                 "You need to update the template to use recursive watching. "
                 "You can do this by running `e2b template build` in the directory with the template."

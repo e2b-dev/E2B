@@ -24,6 +24,7 @@ import { WatchHandle, FilesystemEvent } from './watchHandle'
 
 import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../../errors'
+import {ENVD_VERSION_RECURSIVE_WATCH} from '../../envd/versions'
 
 /**
  * Sandbox filesystem object information.
@@ -442,7 +443,7 @@ export class Filesystem {
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
     opts?: WatchOpts
   ): Promise<WatchHandle> {
-    if (opts?.recursive && this.envdApi.version && compareVersions(this.envdApi.version, '0.1.3') < 0) {
+    if (opts?.recursive && this.envdApi.version && compareVersions(this.envdApi.version, ENVD_VERSION_RECURSIVE_WATCH) < 0) {
       throw new TemplateError(
         'You need to update the template to use recursive watching. ' +
         'You can do this by running `e2b template build` in the directory with the template.'

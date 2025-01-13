@@ -14,6 +14,7 @@ from e2b.connection_config import (
 from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
 from e2b.exceptions import SandboxException, TemplateException
 from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
@@ -361,7 +362,11 @@ class Filesystem:
 
         :return: `AsyncWatchHandle` object for stopping watching directory
         """
-        if recursive and self._envd_version is not None and Version(self._envd_version) < Version("0.1.3"):
+        if (
+            recursive
+            and self._envd_version is not None
+            and Version(self._envd_version) < ENVD_VERSION_RECURSIVE_WATCH
+        ):
             raise TemplateException(
                 "You need to update the template to use recursive watching. "
                 "You can do this by running `e2b template build` in the directory with the template."
