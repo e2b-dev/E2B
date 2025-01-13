@@ -1,12 +1,35 @@
-# Setting environment variables
+# Environment variables
+This page covers how to set and use environment variables in a sandbox, and default environment variables inside the sandbox.
+
+## Default environment variables
+### Knowing if you are inside a sandbox
+
+<Note>
+Sometimes it's useful to know if you are inside a sandbox. Upon creating a sandbox, an environment variable `E2B_SANDBOX` is set to `true`.
+</Note>
+
+<CodeGroup>
+```js
+const sandbox = await Sandbox.create()
+const result = await sandbox.commands.run('echo $E2B_SANDBOX')
+```
+```python
+sandbox = Sandbox()
+result = sandbox.run_code("import os; os.getenv('E2B_SANDBOX')")
+```
+</CodeGroup>
+
 
 There are 3 ways to set environment variables in a sandbox:
 1. [Global environment variables when creating the sandbox](/docs/sandbox/environment-variables#1-global-environment-variables-when-creating-the-sandbox).
 2. [When running code in the sandbox](/docs/sandbox/environment-variables#2-setting-environment-variables-when-running-code).
 3. [When running commands in the sandbox](/docs/sandbox/environment-variables#3-setting-environment-variables-when-running-commands).
 
+---
 
-## 1. Global environment variables
+## Setting environment variables
+
+### 1. Global environment variables
 You can set global environment variables when creating a sandbox.
 
 <CodeGroup>
@@ -30,7 +53,7 @@ sandbox = Sandbox(
 ```
 </CodeGroup>
 
-## 2. Setting environment variables when running code
+### 2. Setting environment variables when running code
 You can set environment variables for specific code execution call in the sandbox.
 
 <Note>
@@ -57,7 +80,7 @@ result = sandbox.run_code(
 ```
 </CodeGroup>
 
-## 3. Setting environment variables when running commands
+### 3. Setting environment variables when running commands
 You can set environment variables for specific command execution in the sandbox.
 
 <Note>
@@ -81,22 +104,5 @@ sandbox.commands.run(
         'MY_VAR': '123' # $HighlightLine
     } # $HighlightLine
 )
-```
-</CodeGroup>
-
-## Knowing if you are inside a sandbox
-
-<Note>
-Sometimes it's useful to know if you are inside a sandbox. Upon creating a sandbox, an environment variable `E2B_SANDBOX` is set to `true`.
-</Note>
-
-<CodeGroup>
-```js
-const sandbox = await Sandbox.create()
-const result = await sandbox.commands.run('echo $E2B_SANDBOX')
-```
-```python
-sandbox = Sandbox()
-result = sandbox.run_code("import os; os.getenv('E2B_SANDBOX')")
 ```
 </CodeGroup>
