@@ -426,6 +426,15 @@ export const docRoutes: NavGroup[] = [
     title: 'Troubleshooting',
     items: [
       {
+        title: 'SDKs',
+        links: [
+          {
+            title: 'Vercel Edge Runtime and Cloudflare Workers',
+            href: '/docs/troubleshooting/sdks/workers-edge-runtime',
+          },
+        ],
+      },
+      {
         title: 'Templates',
         links: [
           {
