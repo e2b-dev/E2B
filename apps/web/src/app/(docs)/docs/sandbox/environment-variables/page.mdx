@@ -83,3 +83,20 @@ sandbox.commands.run(
 )
 ```
 </CodeGroup>
+
+## Knowing if you are inside a sandbox
+
+<Note>
+Sometimes it's useful to know if you are inside a sandbox. Upon creating a sandbox, an environment variable `E2B_SANDBOX` is set to `true`.
+</Note>
+
+<CodeGroup>
+```js
+const sandbox = await Sandbox.create()
+const result = await sandbox.commands.run('echo $E2B_SANDBOX')
+```
+```python
+sandbox = Sandbox()
+result = sandbox.run_code("import os; os.getenv('E2B_SANDBOX')")
+```
+</CodeGroup>
