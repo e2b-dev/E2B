@@ -53,7 +53,7 @@ import { Sandbox } from '@e2b/code-interpreter'
 const sandbox = await Sandbox.create()
 await sandbox.runCode('x = 1')
 
-const execution = await sbx.runCode('x+=1; x')
+const execution = await sandbox.runCode('x+=1; x')
 console.log(execution.text)  // outputs 2
 ```
 
