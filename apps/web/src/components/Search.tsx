@@ -46,11 +46,16 @@ function useAutocomplete({ close }: { close: () => void }) {
   >({})
 
   const captureSearchEvent = useDebounceCallback(
-    (query: string, results_count: number) =>
+    (query: string, results_count: number) => {
+      // return when length <= one, because this occurs when query is
+      // erased & last event on debounce stack is let through with 1 char
+      if (query.length <= 1) return
+
       posthog.capture('searched docs', {
         query,
         results_count,
-      }),
+      })
+    },
     500
   )
 
@@ -95,7 +100,7 @@ function useAutocomplete({ close }: { close: () => void }) {
       onStateChange({ state }) {
         setAutocompleteState(state)
 
-        if (state.query) {
+        if (state.query && state.status === 'loading') {
           captureSearchEvent(
             state.query,
             state.collections[0]?.items.length || 0

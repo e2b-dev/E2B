@@ -17,7 +17,7 @@ export default function LegacyBanner() {
           <AlertCircle className="h-4 w-4 text-brand-400/80" />
           <span>
             You are reading a{' '}
-            <span className="text-brand-400/90">legacy (pre v.1.0)</span>{' '}
+            <span className="text-brand-400/90">legacy (pre v1.0)</span>{' '}
             document.
           </span>
         </div>
