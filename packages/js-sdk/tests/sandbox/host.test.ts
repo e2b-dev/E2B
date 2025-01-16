@@ -25,8 +25,7 @@ sandboxTest('ping server in running sandbox', async ({ sandbox }) => {
   }
 })
 
-// TODO: unskip when we have this new error handling deployed
-sandboxTest.skip('ping server in non-running sandbox', async () => {
+sandboxTest('ping server in non-running sandbox', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 60_000 })
 
   const cmd = await sbx.commands.run('python -m http.server 8000', {
