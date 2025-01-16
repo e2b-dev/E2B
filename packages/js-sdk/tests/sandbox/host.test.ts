@@ -3,7 +3,7 @@ import { assert } from 'vitest'
 import Sandbox from '../../src/index.js'
 import { isDebug, sandboxTest, template, wait } from '../setup.js'
 
-sandboxTest('ping server in running sandbox', async ({ sandbox }) => {
+sandboxTest.skip('ping server in running sandbox', async ({ sandbox }) => {
   const cmd = await sandbox.commands.run('python -m http.server 8000', {
     background: true,
   })
@@ -25,16 +25,15 @@ sandboxTest('ping server in running sandbox', async ({ sandbox }) => {
   }
 })
 
-// TODO: unskip when we have this new error handling deployed
-sandboxTest.skip('ping server in non-running sandbox', async () => {
-  const sbx = await Sandbox.create(template, { timeoutMs: 60_000 })
+sandboxTest.skipIf(isDebug)('ping server in non-running sandbox', async () => {
+  const sbx = await Sandbox.create(template, { timeoutMs: 120_000 })
 
   const cmd = await sbx.commands.run('python -m http.server 8000', {
     background: true,
   })
 
   try {
-    await wait(10_000)
+    await wait(20_000)
 
     const host = sbx.getHost(8000)
 

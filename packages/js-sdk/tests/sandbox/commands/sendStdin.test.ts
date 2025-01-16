@@ -1,5 +1,5 @@
 import { assert } from 'vitest'
-import { sandboxTest } from '../../setup.js'
+import { sandboxTest, wait } from '../../setup.js'
 
 sandboxTest('send stdin to process', async ({ sandbox }) => {
   const text = 'Hello, World!'
@@ -28,6 +28,8 @@ sandboxTest('send special characters to stdin', async ({ sandbox }) => {
   const cmd = await sandbox.commands.run('cat', { background: true })
 
   await sandbox.commands.sendStdin(cmd.pid, text)
+
+  await wait(5_000)
 
   await cmd.kill()
 
