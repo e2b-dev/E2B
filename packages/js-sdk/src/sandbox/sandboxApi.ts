@@ -101,7 +101,7 @@ export class SandboxApi {
 
     let query = undefined
     if (opts?.filters) {
-      const encodedPairs: Record<string, string> = Object.fromEntries(Object.entries(opts.filters).map(([key, value]) => [encodeURIComponent(key),encodeURIComponent(value)))
+      const encodedPairs: Record<string, string> = Object.fromEntries(Object.entries(opts.filters).map(([key, value]) => [encodeURIComponent(key),encodeURIComponent(value)]))
       query = new URLSearchParams(encodedPairs).toString()
     }
 
