@@ -1,7 +1,7 @@
 FROM e2bdev/code-interpreter:latest
 
-# Clone the Next.js app repository
-RUN git clone https://github.com/ezesundayeze/basic-nextjs-app
+# Create a basic Next.js app
+RUN npx -y create-next-app@latest test --yes --ts --use-npm
 
 # Install dependencies
 RUN cd basic-nextjs-app && npm install
