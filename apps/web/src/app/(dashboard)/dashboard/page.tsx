@@ -149,6 +149,7 @@ const Dashboard = ({ user }) => {
           currentTeam={currentTeam}
           setCurrentTeam={setCurrentTeam}
           setTeams={setTeams}
+          domainState={domainState}
         />
         <div className="flex-1 md:pl-10 pb-16">
           <h2 className="text-2xl mb-2 font-bold">
@@ -178,6 +179,7 @@ const Sidebar = ({
   currentTeam,
   setCurrentTeam,
   setTeams,
+  domainState,
 }) => (
   <div className="md:h-full md:w-48 space-y-2 pb-10 md:pb-0">
     <AccountSelector
@@ -186,6 +188,7 @@ const Sidebar = ({
       currentTeam={currentTeam}
       setCurrentTeam={setCurrentTeam}
       setTeams={setTeams}
+      domainState={domainState}
     />
 
     <div className="flex flex-row justify-center space-x-4 md:space-x-0 md:space-y-2 md:flex-col">
