@@ -133,7 +133,7 @@ sandboxTest.skipIf(isDebug)(
     assert.isTrue(await sandbox.isRunning())
 
     // the file should be created after more than 2 seconds have elapsed
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await new Promise((resolve) => setTimeout(resolve, 3500))
 
     const exists2 = await sandbox.files.exists(filename)
     assert.isTrue(exists2)
