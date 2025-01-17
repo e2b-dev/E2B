@@ -91,6 +91,7 @@ export class SandboxApi {
    * List all running sandboxes.
    *
    * @param opts connection options.
+   * @param opts.filters filter the list of sandboxes by metadata, e.g. `{"key": "value"}, if there are multiple filters they are combined with AND.
    *
    * @returns list of running sandboxes.
    */
