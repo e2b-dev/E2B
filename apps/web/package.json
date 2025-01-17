@@ -72,7 +72,7 @@
     "unique-names-generator": "^4.7.1",
     "unist-util-filter": "^4.0.1",
     "unist-util-visit": "^4.1.1",
-    "usehooks-ts": "^2.9.1",
+    "usehooks-ts": "^2.16.0",
     "uuid": "^9.0.1",
     "zustand": "^4.3.2"
   },

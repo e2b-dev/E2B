@@ -9,7 +9,6 @@ export function NavigationLink({
   className,
   link,
 }: {
-
   className?: string
   link: NavLink
 }) {
@@ -18,7 +17,8 @@ export function NavigationLink({
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
 
   // Modify the isActive check to include hash comparison if needed
-  const isActive = pathname === link.href ||
+  const isActive =
+    pathname === link.href ||
     (link.href.includes('#') && pathname + hash === link.href)
   // const pathname = usePathname()
   // console.log(link)
@@ -34,19 +34,17 @@ export function NavigationLink({
         isActive
           ? 'text-white bg-zinc-800'
           : 'hover:text-white text-zinc-400 bg-transparent',
-        className,
+        className
       )}
     >
-      <div className="flex items-center justify-start gap-1">
+      <div className="flex items-center justify-start gap-1 overflow-hidden">
         {link.icon}
         {link.tag ? (
           <div className="flex items-center gap-2">
             <span className={clsx('truncate', isActive ? 'text-white' : '')}>
               {link.title}
             </span>
-            <Tag>
-              {link.tag}
-            </Tag>
+            <Tag>{link.tag}</Tag>
           </div>
         ) : (
           <span className={clsx('truncate', isActive ? 'text-white' : '')}>

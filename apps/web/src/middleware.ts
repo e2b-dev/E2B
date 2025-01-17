@@ -4,7 +4,6 @@ import {
   landingPageHostname,
   landingPageFramerHostname,
   blogFramerHostname,
-  changelogFramerHostname,
 } from '@/app/hostnames'
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
@@ -35,6 +34,14 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     url.hostname = landingPageHostname
   }
 
+  if (url.pathname.startsWith('/cookbook')) {
+    url.hostname = landingPageHostname
+  }
+
+  if (url.pathname.startsWith('/changelog')) {
+    url.hostname = landingPageHostname
+  }
+
   // TODO: Not on the new landing page hosting yet
   if (url.pathname.startsWith('/ai-agents')) {
     url.hostname = landingPageFramerHostname
@@ -46,14 +53,6 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   }
   if (url.pathname.startsWith('/blog')) {
     url.hostname = blogFramerHostname
-  }
-
-  if (url.pathname === '/changelog' || url.pathname === '/changelog/') {
-    url.pathname = '/'
-    url.hostname = changelogFramerHostname
-  }
-  if (url.pathname.startsWith('/changelog')) {
-    url.hostname = changelogFramerHostname
   }
 
   const res = await fetch(url.toString(), { ...req })
@@ -80,7 +79,8 @@ export const config = {
     '/ai-agents/:path*',
     '/privacy/:path*',
     '/terms/:path*',
-    '/pricing/:path*'
+    '/pricing/:path*',
+    '/cookbook/:path*',
   ],
 }
 
