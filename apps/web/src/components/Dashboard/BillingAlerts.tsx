@@ -5,10 +5,11 @@ import { useToast } from '../ui/use-toast'
 import { Button } from '../Button'
 import { getBillingUrl } from '@/app/(dashboard)/dashboard/utils'
 import { Team, useUser } from '@/utils/useUser'
+import { Loader2 } from 'lucide-react'
 
-interface BillingThreshold {
-  amount_gte: number | null
-  alert_amount_percentage: number | null
+interface BillingLimit {
+  limit_amount_gte: number | null
+  alert_amount_gte: number | null
 }
 
 export const BillingAlerts = ({
@@ -21,18 +22,36 @@ export const BillingAlerts = ({
   email: string
 }) => {
   const { toast } = useToast()
-  const [threshold, setThreshold] = useState<BillingThreshold>({
-    amount_gte: null,
-    alert_amount_percentage: null,
+  const [originalLimits, setOriginalLimits] = useState<BillingLimit>({
+    limit_amount_gte: null,
+    alert_amount_gte: null,
+  })
+  const [limits, setLimits] = useState<BillingLimit>({
+    limit_amount_gte: null,
+    alert_amount_gte: null,
+  })
+  const [editMode, setEditMode] = useState({
+    limit: false,
+    alert: false,
   })
   const { user } = useUser()
+  const [isLoading, setIsLoading] = useState({
+    limit: {
+      save: false,
+      clear: false,
+    },
+    alert: {
+      save: false,
+      clear: false,
+    },
+  })
 
-  const fetchBillingThreshold = useCallback(async () => {
+  const fetchBillingLimits = useCallback(async () => {
     if (!user) return
 
     try {
       const res = await fetch(
-        getBillingUrl(domain, `/teams/${team.id}/billing-thresholds`),
+        getBillingUrl(domain, `/teams/${team.id}/billing-limits`),
         {
           headers: {
             'X-Team-API-Key': team.apiKeys[0],
@@ -49,7 +68,8 @@ export const BillingAlerts = ({
       }
 
       const data = await res.json()
-      setThreshold(data)
+      setOriginalLimits(data)
+      setLimits(data)
     } catch (error) {
       console.error('Error fetching billing threshold:', error)
       toast({
@@ -59,33 +79,48 @@ export const BillingAlerts = ({
     }
   }, [user, domain, team, toast])
 
-  const updateBillingThreshold = useCallback(async () => {
+  const updateBillingLimit = async (type: 'limit' | 'alert') => {
     if (!user) return
+
+    setIsLoading((prev) => ({
+      ...prev,
+      [type]: { ...prev[type], save: true },
+    }))
+
+    const value =
+      type === 'limit' ? limits.limit_amount_gte : limits.alert_amount_gte
 
     try {
       const res = await fetch(
-        getBillingUrl(domain, `/teams/${team.id}/billing-thresholds`),
+        getBillingUrl(domain, `/teams/${team.id}/billing-limits`),
         {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'X-Team-API-Key': team.apiKeys[0],
           },
-          body: JSON.stringify(threshold),
+          body: JSON.stringify({
+            [type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte']: value,
+          }),
         }
       )
 
       if (!res.ok) {
         toast({
-          title: 'Failed to update billing alerts',
-          description: 'Unable to save your billing alert settings',
+          title: 'Failed to update billing alert',
+          description: 'Unable to save your billing alert setting',
         })
         return
       }
 
+      setOriginalLimits((prev) => ({
+        ...prev,
+        [type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte']: value,
+      }))
+
       toast({
-        title: 'Billing alerts updated',
-        description: 'Your billing alert settings have been saved',
+        title: 'Billing alert updated',
+        description: 'Your billing alert setting has been saved',
       })
     } catch (error) {
       console.error('Error updating billing threshold:', error)
@@ -93,79 +128,213 @@ export const BillingAlerts = ({
         title: 'Error',
         description: 'Failed to save billing alert settings',
       })
+    } finally {
+      setIsLoading((prev) => ({
+        ...prev,
+        [type]: { ...prev[type], save: false },
+      }))
     }
-  }, [user, domain, team, threshold, toast])
+  }
+
+  const deleteBillingLimit = async (type: 'limit' | 'alert') => {
+    if (!user) return
+
+    setIsLoading((prev) => ({
+      ...prev,
+      [type]: { ...prev[type], clear: true },
+    }))
+
+    try {
+      const res = await fetch(
+        getBillingUrl(
+          domain,
+          `/teams/${team.id}/billing-limits/${
+            type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte'
+          }`
+        ),
+        {
+          method: 'DELETE',
+          headers: {
+            'X-Team-API-Key': team.apiKeys[0],
+          },
+        }
+      )
+
+      if (!res.ok) {
+        toast({
+          title: 'Failed to clear billing alert',
+          description: 'Unable to clear your billing alert setting',
+        })
+        return
+      }
+
+      setOriginalLimits((prev) => ({
+        ...prev,
+        [type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte']: null,
+      }))
+      setLimits((prev) => ({
+        ...prev,
+        [type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte']: null,
+      }))
+
+      toast({
+        title: 'Billing alert cleared',
+        description: 'Your billing alert setting has been cleared',
+      })
+    } catch (error) {
+      console.error('Error clearing billing threshold:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to clear billing alert settings',
+      })
+    } finally {
+      setIsLoading((prev) => ({
+        ...prev,
+        [type]: { ...prev[type], clear: false },
+      }))
+    }
+  }
 
   useEffect(() => {
-    fetchBillingThreshold()
-  }, [fetchBillingThreshold])
+    fetchBillingLimits()
+  }, [fetchBillingLimits])
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+    type: 'limit' | 'alert'
+  ) => {
+    e.preventDefault()
+
+    await updateBillingLimit(type)
+    setEditMode((prev) => ({ ...prev, [type]: false }))
+  }
+
+  const renderAmountInput = (type: 'limit' | 'alert') => {
+    const value =
+      type === 'limit' ? limits.limit_amount_gte : limits.alert_amount_gte
+    const originalValue =
+      type === 'limit'
+        ? originalLimits.limit_amount_gte
+        : originalLimits.alert_amount_gte
+    const isEditing = type === 'limit' ? editMode.limit : editMode.alert
+
+    const buttonClasses = 'h-9 items-center'
+
+    if (originalValue === null || isEditing) {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="number"
+              min="0"
+              className="w-[9rem] rounded-md border border-white/10 text-sm focus:outline-none outline-none p-2 pr-6"
+              value={value || ''}
+              onChange={(e) =>
+                setLimits({
+                  ...limits,
+                  [type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte']:
+                    Number(e.target.value) || null,
+                })
+              }
+              placeholder={`${type === 'limit' ? 'Limit' : 'Alert'} Amount`}
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-white/50">
+              $
+            </div>
+          </div>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={value === originalValue || isLoading[type].save}
+            className={buttonClasses}
+          >
+            {isLoading[type].save ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              'Save'
+            )}
+          </Button>
+          {originalValue !== null && (
+            <Button
+              type="button"
+              variant="desctructive"
+              onClick={() => deleteBillingLimit(type)}
+              disabled={isLoading[type].clear}
+              className={buttonClasses}
+            >
+              {isLoading[type].clear ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Clear'
+              )}
+            </Button>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex items-center gap-2">
+        <div className="text-xs text-white/50 mx-2">
+          $
+          <span className="text-lg font-semibold text-white">
+            {originalValue}
+          </span>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={(e) => {
+            e.preventDefault()
+            setEditMode((prev) => ({ ...prev, [type]: true }))
+          }}
+          className={buttonClasses}
+        >
+          Edit
+        </Button>
+        <Button
+          type="button"
+          variant="desctructive"
+          onClick={() => deleteBillingLimit(type)}
+          disabled={isLoading[type].clear}
+          className={buttonClasses}
+        >
+          {isLoading[type].clear ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            'Clear'
+          )}
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="space-y-2 flex-1">
-          <h3 className="font-medium">Set a Budget Alert</h3>
-          <p className="text-sm text-white/70">
-            When your usage reaches this percentage of your budget, you&apos;ll
-            receive an early warning notification to <b>{email}</b>.
-          </p>
+      <form onSubmit={(e) => handleSubmit(e, 'limit')} className="space-y-2">
+        <h3 className="font-medium">Enable Budget Limit</h3>
+        <p className="text-sm text-white/70">
+          If your organization exceeds this threshold in a given billing period,
+        </p>
+        <p className="text-sm text-white/70">
+          You will automatically receive email notifications when your usage
+          reaches 50% and 80% of this limit.
+        </p>
+        <p className="text-sm text-red-400">
+          Caution: This helps you monitor spending before reaching your budget
+          limit.
+        </p>
+        <div className="!mt-4">{renderAmountInput('limit')}</div>
+      </form>
 
-          <div className="relative !mt-4">
-            <input
-              type="number"
-              min="1"
-              max="100"
-              className="w-full border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2 pr-12"
-              value={threshold.alert_amount_percentage || ''}
-              onChange={(e) =>
-                setThreshold({
-                  ...threshold,
-                  alert_amount_percentage: Number(e.target.value) || null,
-                })
-              }
-              placeholder="Enter percentage"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-white/50">
-              %
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2 flex-1">
-          <h3 className="font-medium">Enable Budget Limit</h3>
-          <p className="text-sm text-white/70">
-            If your organization exceeds this threshold in a given billing
-            period,
-          </p>
-          <p className="text-sm text-red-400">
-            Caution: This helps you monitor spending before reaching your budget
-            limit.
-          </p>
-          <div className="relative !mt-4">
-            <input
-              type="number"
-              className="w-full border border-white/10 text-sm focus:outline-none outline-none rounded-md p-2 pr-12"
-              value={threshold.amount_gte || ''}
-              onChange={(e) =>
-                setThreshold({
-                  ...threshold,
-                  amount_gte: Number(e.target.value) || null,
-                })
-              }
-              placeholder="Enter amount"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-white/50">
-              USD
-            </div>
-          </div>
-        </div>
-      </div>
-      <Button
-        onClick={updateBillingThreshold}
-        className="mt-6 mb-4 float-right"
-      >
-        Save Budget Controls
-      </Button>
+      <form onSubmit={(e) => handleSubmit(e, 'alert')} className="space-y-2">
+        <h3 className="font-medium">Set an Early Warning Alert</h3>
+        <p className="text-sm text-white/70">
+          When your usage reaches this amount, you&apos;ll receive an early
+          warning notification to <b>{email}</b>.
+        </p>
+        <div className="!mt-4">{renderAmountInput('alert')}</div>
+      </form>
     </>
   )
 }

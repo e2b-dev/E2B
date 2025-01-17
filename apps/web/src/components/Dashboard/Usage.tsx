@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import LineChart from '@/components/Dashboard/Chart'
 import { toast } from '@/components/ui/use-toast'
 import { Team } from '@/utils/useUser'
@@ -113,19 +112,24 @@ export const UsageContent = ({
 
   return (
     <div className="flex flex-col w-full gap-3">
-      {/* First Row - Costs and Budget Controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-        {/* Cost Card - Full width mobile, half tablet, third desktop */}
-        <Card className="bg-inherit/10 border border-white/20 col-span-2 xl:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle>Costs in USD</CardTitle>
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 gap-y-12">
+        {/* Budget Controls */}
+        <BillingAlerts team={team} domain={domain} email={team.email} />
+
+        <div className="col-span-1 max-xl:hidden" />
+
+        {/* Cost Section */}
+        <div className="bg-inherit/10 rounded-lg">
+          <div className="pb-2">
+            <h2 className="text-2xl font-semibold">Costs in USD</h2>
             {!isLoading && costThisMonth && (
               <p className="text-sm text-white/50">
                 Total costs this month: <b>${costThisMonth?.toFixed(2)}</b>
               </p>
             )}
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div>
             {isLoading ? (
               <ChartSkeleton className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]" />
             ) : (
@@ -135,34 +139,21 @@ export const UsageContent = ({
                 className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]"
               />
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Budget Controls */}
-        <Card className="bg-inherit/10 border border-white/20 col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle>Budget Controls</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <BillingAlerts team={team} domain={domain} email={team.email} />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Second Row - Resource Usage */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-        {/* vCPU Card - Always half width except mobile */}
-        <Card className="bg-inherit/10 border border-white/20">
-          <CardHeader className="pb-2">
-            <CardTitle>vCPU hours</CardTitle>
+        {/* vCPU Section */}
+        <div className="bg-inherit/10 rounded-lg">
+          <div className="pb-2">
+            <h2 className="text-2xl font-semibold">vCPU hours</h2>
             {!isLoading && vcpuHoursThisMonth && (
               <p className="text-sm text-white/50">
                 Total vCPU hours this month:{' '}
                 <b>{vcpuHoursThisMonth?.toFixed(2)}</b>
               </p>
             )}
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div>
             {isLoading ? (
               <ChartSkeleton className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]" />
             ) : (
@@ -172,21 +163,21 @@ export const UsageContent = ({
                 className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]"
               />
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* RAM Card - Always half width except mobile */}
-        <Card className="bg-inherit/10 border border-white/20">
-          <CardHeader className="pb-2">
-            <CardTitle>RAM hours</CardTitle>
+        {/* RAM Section */}
+        <div className="bg-inherit/10 rounded-lg">
+          <div className="pb-2">
+            <h2 className="text-2xl font-semibold">RAM hours</h2>
             {!isLoading && ramHoursThisMonth && (
               <p className="text-sm text-white/50">
                 Total RAM hours this month:{' '}
                 <b>{ramHoursThisMonth?.toFixed(2)}</b>
               </p>
             )}
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div>
             {isLoading ? (
               <ChartSkeleton className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]" />
             ) : (
@@ -196,8 +187,8 @@ export const UsageContent = ({
                 className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]"
               />
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
