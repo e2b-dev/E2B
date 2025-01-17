@@ -99,15 +99,15 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    const filters = opts?.filters ?? {}
-    const filterStrings = Object.entries(filters)
-      .map(([key, value]) => `${key}:${value}`)
+    let query = undefined
+    if (opts?.filters) {
+      const encodedPairs: Record<string, string> = Object.fromEntries(Object.entries(opts.filters).map(([key, value]) => [encodeURIComponent(key),encodeURIComponent(value)))
+      query = new URLSearchParams(encodedPairs).toString()
+    }
 
     const res = await client.api.GET('/sandboxes', {
         params: {
-          query: {
-            filter: filterStrings,
-          }
+          query: {query},
         },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
