@@ -1,10 +1,11 @@
 import * as commander from 'commander'
 
 import { connectCommand } from './connect'
-import { listCommand } from './list'
 import { killCommand } from './kill'
-import { spawnCommand } from './spawn'
+import { listCommand } from './list'
 import { logsCommand } from './logs'
+import { metricsCommand } from './metrics'
+import { spawnCommand } from './spawn'
 
 export const sandboxCommand = new commander.Command('sandbox')
   .description('work with sandboxes')
@@ -14,3 +15,4 @@ export const sandboxCommand = new commander.Command('sandbox')
   .addCommand(killCommand)
   .addCommand(spawnCommand)
   .addCommand(logsCommand)
+  .addCommand(metricsCommand)
