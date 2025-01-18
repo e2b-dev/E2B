@@ -35,7 +35,7 @@ sandboxTest.skipIf(isDebug)(
     })
 
     try {
-      await wait(20_000)
+      await wait(10_000)
 
       const host = sandbox.getHost(8000)
 

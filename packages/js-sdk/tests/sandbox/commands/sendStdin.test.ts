@@ -7,6 +7,14 @@ sandboxTest('send stdin to process', async ({ sandbox }) => {
 
   await sandbox.commands.sendStdin(cmd.pid, text)
 
+
+  for (let i = 0; i < 5; i++) {
+    if (cmd.stdout === text) {
+      break
+    }
+    await new Promise((r) => setTimeout(r, 500))
+  }
+
   await cmd.kill()
 
   assert.equal(cmd.stdout, text)
@@ -31,6 +39,13 @@ sandboxTest('send special characters to stdin', async ({ sandbox }) => {
 
   await wait(5_000)
 
+  for (let i = 0; i < 5; i++) {
+    if (cmd.stdout === text) {
+      break
+    }
+    await new Promise((r) => setTimeout(r, 500))
+  }
+
   await cmd.kill()
 
   assert.equal(cmd.stdout, text)
@@ -42,7 +57,15 @@ sandboxTest('send multiline string to stdin', async ({ sandbox }) => {
 
   await sandbox.commands.sendStdin(cmd.pid, text)
 
+  for (let i = 0; i < 5; i++) {
+    if (cmd.stdout === text) {
+      break
+    }
+    await new Promise((r) => setTimeout(r, 500))
+  }
+
   await cmd.kill()
+
 
   assert.equal(cmd.stdout, text)
 })

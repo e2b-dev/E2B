@@ -1,37 +1,34 @@
-import datetime
 from typing import Any, Dict, List, Type, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
-T = TypeVar("T", bound="SandboxLog")
+T = TypeVar("T", bound="TeamUser")
 
 
 @_attrs_define
-class SandboxLog:
-    """Log entry with timestamp and line
-
+class TeamUser:
+    """
     Attributes:
-        line (str): Log line content
-        timestamp (datetime.datetime): Timestamp of the log entry
+        email (str): Email of the user
+        id (str): Identifier of the user
     """
 
-    line: str
-    timestamp: datetime.datetime
+    email: str
+    id: str
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        line = self.line
+        email = self.email
 
-        timestamp = self.timestamp.isoformat()
+        id = self.id
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "line": line,
-                "timestamp": timestamp,
+                "email": email,
+                "id": id,
             }
         )
 
@@ -40,17 +37,17 @@ class SandboxLog:
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        line = d.pop("line")
+        email = d.pop("email")
 
-        timestamp = isoparse(d.pop("timestamp"))
+        id = d.pop("id")
 
-        sandbox_log = cls(
-            line=line,
-            timestamp=timestamp,
+        team_user = cls(
+            email=email,
+            id=id,
         )
 
-        sandbox_log.additional_properties = d
-        return sandbox_log
+        team_user.additional_properties = d
+        return team_user
 
     @property
     def additional_keys(self) -> List[str]:

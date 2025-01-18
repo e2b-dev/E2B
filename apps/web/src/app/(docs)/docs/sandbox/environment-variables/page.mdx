@@ -4,9 +4,8 @@ This page covers how to set and use environment variables in a sandbox, and defa
 ## Default environment variables
 ### Knowing if you are inside a sandbox
 
-<Note>
-Sometimes it's useful to know if you are inside a sandbox. Upon creating a sandbox, an environment variable `E2B_SANDBOX` is set to `true`.
-</Note>
+Sometimes it's useful to know if the code is running inside a sandbox. Upon creating a sandbox, an environment variable `E2B_SANDBOX` is automatically set to `true`.
+You can try it out by running the following code in the sandbox:
 
 <CodeGroup>
 ```js
@@ -15,7 +14,7 @@ const result = await sandbox.commands.run('echo $E2B_SANDBOX')
 ```
 ```python
 sandbox = Sandbox()
-result = sandbox.run_code("import os; os.getenv('E2B_SANDBOX')")
+result = sandbox.commands.run("echo $E2B_SANDBOX")
 ```
 </CodeGroup>
 

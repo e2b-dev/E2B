@@ -1,37 +1,31 @@
-import datetime
 from typing import Any, Dict, List, Type, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
-T = TypeVar("T", bound="SandboxLog")
+from ..models.node_status import NodeStatus
+
+T = TypeVar("T", bound="NodeStatusChange")
 
 
 @_attrs_define
-class SandboxLog:
-    """Log entry with timestamp and line
-
+class NodeStatusChange:
+    """
     Attributes:
-        line (str): Log line content
-        timestamp (datetime.datetime): Timestamp of the log entry
+        status (NodeStatus): Status of the node
     """
 
-    line: str
-    timestamp: datetime.datetime
+    status: NodeStatus
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        line = self.line
-
-        timestamp = self.timestamp.isoformat()
+        status = self.status.value
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "line": line,
-                "timestamp": timestamp,
+                "status": status,
             }
         )
 
@@ -40,17 +34,14 @@ class SandboxLog:
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        line = d.pop("line")
+        status = NodeStatus(d.pop("status"))
 
-        timestamp = isoparse(d.pop("timestamp"))
-
-        sandbox_log = cls(
-            line=line,
-            timestamp=timestamp,
+        node_status_change = cls(
+            status=status,
         )
 
-        sandbox_log.additional_properties = d
-        return sandbox_log
+        node_status_change.additional_properties = d
+        return node_status_change
 
     @property
     def additional_keys(self) -> List[str]:
