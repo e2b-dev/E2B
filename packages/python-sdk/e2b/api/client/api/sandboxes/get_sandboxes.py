@@ -6,13 +6,23 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.running_sandbox import RunningSandbox
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs() -> Dict[str, Any]:
+def _get_kwargs(
+    *,
+    query: Union[Unset, str] = UNSET,
+) -> Dict[str, Any]:
+    params: Dict[str, Any] = {}
+
+    params["query"] = query
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+
     _kwargs: Dict[str, Any] = {
         "method": "get",
         "url": "/sandboxes",
+        "params": params,
     }
 
     return _kwargs
@@ -59,8 +69,12 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
+    query: Union[Unset, str] = UNSET,
 ) -> Response[Union[Any, List["RunningSandbox"]]]:
     """List all running sandboxes
+
+    Args:
+        query (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -70,7 +84,9 @@ def sync_detailed(
         Response[Union[Any, List['RunningSandbox']]]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        query=query,
+    )
 
     response = client.get_httpx_client().request(
         **kwargs,
@@ -82,8 +98,12 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
+    query: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Any, List["RunningSandbox"]]]:
     """List all running sandboxes
+
+    Args:
+        query (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -95,14 +115,19 @@ def sync(
 
     return sync_detailed(
         client=client,
+        query=query,
     ).parsed
 
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
+    query: Union[Unset, str] = UNSET,
 ) -> Response[Union[Any, List["RunningSandbox"]]]:
     """List all running sandboxes
+
+    Args:
+        query (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -112,7 +137,9 @@ async def asyncio_detailed(
         Response[Union[Any, List['RunningSandbox']]]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        query=query,
+    )
 
     response = await client.get_async_httpx_client().request(**kwargs)
 
@@ -122,8 +149,12 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
+    query: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Any, List["RunningSandbox"]]]:
     """List all running sandboxes
+
+    Args:
+        query (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -136,5 +167,6 @@ async def asyncio(
     return (
         await asyncio_detailed(
             client=client,
+            query=query,
         )
     ).parsed

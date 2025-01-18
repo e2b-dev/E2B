@@ -17,9 +17,73 @@ export interface paths {
       };
     };
   };
+  "/nodes": {
+    /** @description List all nodes */
+    get: {
+      responses: {
+        /** @description Successfully returned all nodes */
+        200: {
+          content: {
+            "application/json": components["schemas"]["Node"][];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/nodes/{nodeID}": {
+    /** @description Get node info */
+    get: {
+      parameters: {
+        path: {
+          nodeID: components["parameters"]["nodeID"];
+        };
+      };
+      responses: {
+        /** @description Successfully returned the node */
+        200: {
+          content: {
+            "application/json": components["schemas"]["NodeDetail"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+    /** @description Change status of a node */
+    post: {
+      parameters: {
+        path: {
+          nodeID: components["parameters"]["nodeID"];
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["NodeStatusChange"];
+        };
+      };
+      responses: {
+        /** @description The node status was changed successfully */
+        204: {
+          content: never;
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
   "/sandboxes": {
     /** @description List all running sandboxes */
     get: {
+      parameters: {
+        query?: {
+          /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
+          query?: string;
+        };
+      };
       responses: {
         /** @description Successfully returned all running sandboxes */
         200: {
@@ -53,6 +117,25 @@ export interface paths {
     };
   };
   "/sandboxes/{sandboxID}": {
+    /** @description Get a sandbox by id */
+    get: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      responses: {
+        /** @description Successfully returned the sandbox */
+        200: {
+          content: {
+            "application/json": components["schemas"]["RunningSandbox"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
     /** @description Kill a sandbox */
     delete: {
       parameters: {
@@ -94,6 +177,26 @@ export interface paths {
         };
         401: components["responses"]["401"];
         404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/sandboxes/{sandboxID}/pause": {
+    /** @description Pause the sandbox */
+    post: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      responses: {
+        /** @description The sandbox was paused successfully and can be resumed */
+        204: {
+          content: never;
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        409: components["responses"]["409"];
         500: components["responses"]["500"];
       };
     };
@@ -380,6 +483,43 @@ export interface components {
        */
       timeout?: number;
     };
+    Node: {
+      /**
+       * Format: int32
+       * @description Number of allocated CPU cores
+       */
+      allocatedCPU: number;
+      /**
+       * Format: int32
+       * @description Amount of allocated memory in MiB
+       */
+      allocatedMemoryMiB: number;
+      /** @description Identifier of the node */
+      nodeID: string;
+      /**
+       * Format: int32
+       * @description Number of sandboxes running on the node
+       */
+      sandboxCount: number;
+      status: components["schemas"]["NodeStatus"];
+    };
+    NodeDetail: {
+      /** @description List of cached builds id on the node */
+      cachedBuilds: string[];
+      /** @description Identifier of the node */
+      nodeID: string;
+      /** @description List of sandboxes running on the node */
+      sandboxes: components["schemas"]["RunningSandbox"][];
+      status: components["schemas"]["NodeStatus"];
+    };
+    /**
+     * @description Status of the node
+     * @enum {string}
+     */
+    NodeStatus: "ready" | "draining";
+    NodeStatusChange: {
+      status: components["schemas"]["NodeStatus"];
+    };
     ResumedSandbox: {
       /**
        * Format: int32
@@ -525,6 +665,7 @@ export interface components {
   };
   parameters: {
     buildID: string;
+    nodeID: string;
     sandboxID: string;
     templateID: string;
   };
