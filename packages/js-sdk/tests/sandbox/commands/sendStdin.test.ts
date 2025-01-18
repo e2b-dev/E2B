@@ -1,12 +1,11 @@
 import { assert } from 'vitest'
-import { sandboxTest, wait } from '../../setup.js'
+import { sandboxTest } from '../../setup.js'
 
 sandboxTest('send stdin to process', async ({ sandbox }) => {
   const text = 'Hello, World!'
   const cmd = await sandbox.commands.run('cat', { background: true })
 
   await sandbox.commands.sendStdin(cmd.pid, text)
-
 
   for (let i = 0; i < 5; i++) {
     if (cmd.stdout === text) {
@@ -37,8 +36,6 @@ sandboxTest('send special characters to stdin', async ({ sandbox }) => {
 
   await sandbox.commands.sendStdin(cmd.pid, text)
 
-  await wait(5_000)
-
   for (let i = 0; i < 5; i++) {
     if (cmd.stdout === text) {
       break
@@ -65,7 +62,6 @@ sandboxTest('send multiline string to stdin', async ({ sandbox }) => {
   }
 
   await cmd.kill()
-
 
   assert.equal(cmd.stdout, text)
 })

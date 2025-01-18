@@ -10,11 +10,20 @@ sandboxTest.skipIf(isDebug)(
     })
 
     try {
-      await wait(10_000)
+      await wait(1000)
 
       const host = sandbox.getHost(8000)
 
-      const res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
+      let res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
+
+      for (let i = 0; i < 10; i++) {
+        if (res.status === 200) {
+          break
+        }
+
+        res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
+        await wait(500)
+      }
 
       assert.equal(res.status, 200)
     } finally {
@@ -35,17 +44,16 @@ sandboxTest.skipIf(isDebug)(
     })
 
     try {
-      await wait(10_000)
+      const host = sandbox.getHost(49983)
+      const url = `${isDebug ? 'http' : 'https'}://${host}/health`
 
-      const host = sandbox.getHost(8000)
+      const res = await fetch(url)
 
-      const res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
-
-      assert.equal(res.status, 200)
+      assert.equal(res.status, 204)
 
       await sandbox.kill()
 
-      const res2 = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
+      const res2 = await fetch(url)
       assert.equal(res2.status, 502)
 
       const text = await res2.text()
