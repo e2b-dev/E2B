@@ -11,8 +11,6 @@ This is useful in various scenarios, for example:
 
 You specify metadata when creating a sandbox and can access it later through listing running sandboxes with `Sandbox.list()` method.
 
-You can also filter sandboxes by metadata, you can find more about it <Link href="/docs/sandbox/list#filtering-sandboxes">here</Link>
-
 <CodeGroup>
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
@@ -51,3 +49,6 @@ running_sandboxes = Sandbox.list()
 print(running_sandboxes[0].metadata)
 ```
 </CodeGroup>
+
+## Filtering sandboxes by metadata
+You can also filter sandboxes by metadata, you can find more about it <Link href="/docs/sandbox/list#filtering-sandboxes">here</Link>.
