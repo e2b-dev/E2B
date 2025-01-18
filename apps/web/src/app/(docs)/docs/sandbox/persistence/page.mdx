@@ -1,23 +1,51 @@
 # Sandbox persistence
 
 <Note>
-Sandbox persistence is currently in beta with [some limitations](#limitations-while-in-beta).
-
-The persistence is free for all users during the beta.
+Sandbox persistence is currently in beta:
+1. [Reach out to us](/docs/support) with your use case to get access to the beta.
+1. You'll need to install the [beta version of the SDKs](#installing-the-beta-version-of-the-sdks).
+1. Consider [some limitations](#limitations-while-in-beta).
+1. The persistence is free for all users during the beta.
 </Note>
 
 The sandbox persistence allows you to pause your sandbox and resume it later from the same state it was in when you paused it.
 
 This includes not only state of the sandbox's filesystem but also the sandbox's memory. This means all running processes, loaded variables, data, etc.
 
-## Pausing sandbox
+## 1. Installing the beta version of the SDKs
+To use the sandbox persistence, you need to install the beta version of the SDKs.
+
+<CodeGroup>
+```bash {{ language: 'js' }}
+npm i @e2b/code-interpreter@beta
+#
+# or use Core: https://github.com/e2b-dev/e2b
+# npm i e2b@beta
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# npm i @e2b/desktop@beta
+```
+
+```bash {{ language: 'python' }}
+pip install e2b-code-interpreter==1.0.4b
+#
+# or use Core: https://github.com/e2b-dev/e2b
+# pip install e2b==1.1.0.b
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# pip install e2b-desktop==1.1.0.b
+```
+</CodeGroup>
+
+
+## 2. Pausing sandbox
 When you pause a sandbox, both the sandbox's filesystem and memory state will be saved. This includes all the files in the sandbox's filesystem and all the running processes, loaded variables, data, etc.
 
 <CodeGroup>
 ```js
-import { Sandbox } from 'e2b'
-// or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
-// import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from '@e2b/code-interpreter'
+// or use Core: https://github.com/e2b-dev/e2b
+// import { Sandbox } from 'e2b'
 //
 // or use Desktop: https://github.com/e2b-dev/desktop
 // import { Sandbox } from '@e2b/desktop'
@@ -32,9 +60,9 @@ const sandboxId = await sbx.pause() // $HighlightLine
 console.log('Sandbox paused', sandboxId) // $HighlightLine
 ```
 ```python
-from e2b import Sandbox
-# or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
-# from e2b_code_interpreter import Sandbox
+from e2b_code_interpreter import Sandbox
+# or use Core: https://github.com/e2b-dev/e2b
+# from e2b import Sandbox
 #
 # or use Desktop: https://github.com/e2b-dev/desktop
 # from e2b_desktop import Sandbox
@@ -50,19 +78,16 @@ print('Sandbox paused', sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
-## 3. Resuming sandbox
-When you resume a sandbox, it will be in the same state it was in when you paused it.
-This means that all the files in the sandbox's filesystem will be restored and all the running processes, loaded variables, data, etc. will be restored.
 
-## Resuming sandbox
+## 3. Resuming sandbox
 When you resume a sandbox, it will be in the same state it was in when you paused it.
 This means that all the files in the sandbox's filesystem will be restored and all the running processes, loaded variables, data, etc. will be restored.
 
 <CodeGroup>
 ```js
-import { Sandbox } from 'e2b'
-// or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
-// import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from '@e2b/code-interpreter'
+// or use Core: https://github.com/e2b-dev/e2b
+// import { Sandbox } from 'e2b'
 //
 // or use Desktop: https://github.com/e2b-dev/desktop
 // import { Sandbox } from '@e2b/desktop'
@@ -82,8 +107,8 @@ console.log('Sandbox resumed', sameSbx.sandboxId) // $HighlightLine
 ```
 ```python
 from e2b import Sandbox
-# or use Code Interpreter: https://github.com/e2b-dev/code-interpreter
-# from e2b_code_interpreter import Sandbox
+# or use Core: https://github.com/e2b-dev/e2b
+# from e2b import Sandbox
 #
 # or use Desktop: https://github.com/e2b-dev/desktop
 # from e2b_desktop import Sandbox
@@ -111,12 +136,22 @@ You can pass a custom timeout to the `Sandbox.resume()` method like this:
 
 <CodeGroup>
 ```js
-import { Sandbox } from 'e2b'
+import { Sandbox } from '@e2b/code-interpreter'
+// or use Core: https://github.com/e2b-dev/e2b
+// import { Sandbox } from 'e2b'
+//
+// or use Desktop: https://github.com/e2b-dev/desktop
+// import { Sandbox } from '@e2b/desktop'
 
 const sbx = await Sandbox.resume(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
 ```
 ```python
-from e2b import Sandbox
+from e2b_code_interpreter import Sandbox
+# or use Core: https://github.com/e2b-dev/e2b
+# from e2b import Sandbox
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# from e2b_desktop import Sandbox
 
 sbx = Sandbox.resume(sandbox_id, timeout=60) # 60 seconds
 ```
@@ -129,6 +164,6 @@ If you resume the sandbox, the service will be accessible again but you need to 
 
 ## Limitations while in beta
 - It takes about 4 seconds per 1 GB RAM to pause the sandbox
-- It takes about 2 seconds to resume the sandbox
-  - Soon, this will get to the same speed as calling `Sandbox.create()`
+- It takes about 1 second to resume the sandbox
 - Sandbox can be paused up to 30 days
+  - After 30 days, the data will be deleted and you will not be able to resume the sandbox. Trying to resume sandbox that was deleted or does not exist will result in the `NotFoundError` error in JavaScript SDK and `NotFoundException` exception in Python SDK
