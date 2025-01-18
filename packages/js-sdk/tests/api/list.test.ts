@@ -1,9 +1,9 @@
 import { assert } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { sandboxTest } from '../setup.js'
+import { sandboxTest, isDebug } from '../setup.js'
 
-sandboxTest.skipIf(true)('list sandboxes', async ({ sandbox }) => {
+sandboxTest.skipIf(isDebug)('list sandboxes', async ({ sandbox }) => {
   const sandboxes = await Sandbox.list()
   assert.isAtLeast(sandboxes.length, 1)
   assert.include(
