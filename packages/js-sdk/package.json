@@ -28,7 +28,7 @@
     "dev": "tsup --watch",
     "example": "tsx example.mts",
     "test": "vitest run",
-    "generate": "openapi-typescript ../../spec/openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",
+    "generate": "python ./../../spec/remove_extra_tags.py sandboxes templates && openapi-typescript ../../spec/openapi_generated.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",
     "generate-envd-api": "openapi-typescript ../../spec/envd/envd.yaml -x api_key --support-array-length --alphabetize --output src/envd/schema.gen.ts",
     "generate-ref": "./scripts/generate_sdk_ref.sh",
     "check-deps": "knip",

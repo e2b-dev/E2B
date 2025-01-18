@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Dict, Optional, Union, cast
 
 import httpx
 
@@ -14,10 +14,10 @@ def _get_kwargs(
     sandbox_id: str,
     *,
     body: ResumedSandbox,
-) -> dict[str, Any]:
-    headers: dict[str, Any] = {}
+) -> Dict[str, Any]:
+    headers: Dict[str, Any] = {}
 
-    _kwargs: dict[str, Any] = {
+    _kwargs: Dict[str, Any] = {
         "method": "post",
         "url": f"/sandboxes/{sandbox_id}/resume",
     }
@@ -34,20 +34,20 @@ def _get_kwargs(
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
 ) -> Optional[Union[Any, Sandbox]]:
-    if response.status_code == 201:
+    if response.status_code == HTTPStatus.CREATED:
         response_201 = Sandbox.from_dict(response.json())
 
         return response_201
-    if response.status_code == 409:
-        response_409 = cast(Any, None)
-        return response_409
-    if response.status_code == 404:
-        response_404 = cast(Any, None)
-        return response_404
-    if response.status_code == 401:
+    if response.status_code == HTTPStatus.UNAUTHORIZED:
         response_401 = cast(Any, None)
         return response_401
-    if response.status_code == 500:
+    if response.status_code == HTTPStatus.NOT_FOUND:
+        response_404 = cast(Any, None)
+        return response_404
+    if response.status_code == HTTPStatus.CONFLICT:
+        response_409 = cast(Any, None)
+        return response_409
+    if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
         response_500 = cast(Any, None)
         return response_500
     if client.raise_on_unexpected_status:

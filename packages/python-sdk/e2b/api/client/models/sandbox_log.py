@@ -13,25 +13,25 @@ class SandboxLog:
     """Log entry with timestamp and line
 
     Attributes:
-        timestamp (datetime.datetime): Timestamp of the log entry
         line (str): Log line content
+        timestamp (datetime.datetime): Timestamp of the log entry
     """
 
-    timestamp: datetime.datetime
     line: str
+    timestamp: datetime.datetime
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        timestamp = self.timestamp.isoformat()
-
         line = self.line
+
+        timestamp = self.timestamp.isoformat()
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "timestamp": timestamp,
                 "line": line,
+                "timestamp": timestamp,
             }
         )
 
@@ -40,13 +40,13 @@ class SandboxLog:
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        timestamp = isoparse(d.pop("timestamp"))
-
         line = d.pop("line")
 
+        timestamp = isoparse(d.pop("timestamp"))
+
         sandbox_log = cls(
-            timestamp=timestamp,
             line=line,
+            timestamp=timestamp,
         )
 
         sandbox_log.additional_properties = d

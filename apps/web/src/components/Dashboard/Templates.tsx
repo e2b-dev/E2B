@@ -28,6 +28,7 @@ import {
   AlertDialogAction,
 } from '../ui/alert-dialog'
 import { toast } from '../ui/use-toast'
+import { getAPIUrl } from '@/app/(dashboard)/dashboard/utils'
 
 interface Template {
   aliases: string[]
@@ -47,11 +48,11 @@ interface Template {
 export function TemplatesContent({
   user,
   teamId,
-  apiUrl,
+  domain,
 }: {
   user: E2BUser
   teamId: string
-  apiUrl: string
+  domain: string
 }) {
   const [templates, setTemplates] = useState<Template[]>([])
   const [currentTemplate, setCurrentTemplate] = useState<Template | null>(null)
@@ -64,7 +65,7 @@ export function TemplatesContent({
     async function f() {
       const accessToken = user.accessToken
       if (accessToken) {
-        fetchTemplates(apiUrl, accessToken, teamId).then((newTemplates) => {
+        fetchTemplates(domain, accessToken, teamId).then((newTemplates) => {
           if (newTemplates) {
             setTemplates(newTemplates)
           }
@@ -73,11 +74,11 @@ export function TemplatesContent({
     }
 
     f()
-  }, [user, teamId])
+  }, [domain, user, teamId])
 
-  async function deleteTemplate() {
+  async function deleteTemplate(domain: string) {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/templates/${currentTemplate?.templateID}`,
+      getAPIUrl(domain, `/templates/${currentTemplate?.templateID}`),
       {
         method: 'DELETE',
         headers: {
@@ -102,9 +103,9 @@ export function TemplatesContent({
     setIsDeleteTemplateDialogOpen(false)
   }
 
-  async function publishTemplate() {
+  async function publishTemplate(domain: string) {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/templates/${currentTemplate?.templateID}`,
+      getAPIUrl(domain, `/templates/${currentTemplate?.templateID}`),
       {
         method: 'PATCH',
         headers: {
@@ -145,7 +146,7 @@ export function TemplatesContent({
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-orange-500/10 dark:hover:bg-orange-500/10 border-b border-white/5">
-            <TableHead>Visibility</TableHead>
+            <TableHead>Access</TableHead>
             <TableHead>Template ID</TableHead>
             <TableHead>Template Name</TableHead>
             <TableHead>vCPUs</TableHead>
@@ -176,7 +177,7 @@ export function TemplatesContent({
                       <Lock className="w-4 h-4" />
                     )}
                     <span className="text-xs">
-                      {template.public ? 'Visible' : 'Private'}
+                      {template.public ? 'Public' : 'Private'}
                     </span>
                   </div>
                 </TableCell>
@@ -207,7 +208,7 @@ export function TemplatesContent({
                         ) : (
                           <LockOpen className="w-4 h-4 mr-2" />
                         )}
-                        {template.public ? 'Make private' : 'Make public'}
+                        {template.public ? 'Unpublish' : 'Publish'}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-red-500"
@@ -256,7 +257,7 @@ export function TemplatesContent({
             >
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={publishTemplate}>
+            <AlertDialogAction onClick={() => publishTemplate(domain)}>
               {currentTemplate?.public ? 'Unpublish' : 'Publish'}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -289,7 +290,7 @@ export function TemplatesContent({
             </AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-500 text-white hover:bg-red-600"
-              onClick={deleteTemplate}
+              onClick={() => deleteTemplate(domain)}
             >
               Delete
             </AlertDialogAction>
@@ -301,11 +302,11 @@ export function TemplatesContent({
 }
 
 async function fetchTemplates(
-  apiUrl: string,
+  domain: string,
   accessToken: string,
   teamId: string
 ): Promise<Template[]> {
-  const res = await fetch(`${apiUrl}/templates?teamID=${teamId}`, {
+  const res = await fetch(getAPIUrl(domain, `templates?teamID=${teamId}`), {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,

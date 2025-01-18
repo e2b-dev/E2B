@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { Footer } from '@/components/Footer'
 import { DocsNavigation, SdkRefNavigation } from '@/components/Navigation'
 import { Section, SectionProvider } from '@/components/SectionProvider'
+import { Search } from './Search'
 
 export function Layout({
   children,
@@ -52,7 +53,8 @@ export function Layout({
                 lg:pb-4
               "
               >
-                <div className="hidden lg:block lg:mt-4">
+                <div className="hidden space-y-4 lg:block lg:mt-4">
+                  <Search />
                   {isApiRef ? <SdkRefNavigation /> : <DocsNavigation />}
                 </div>
               </div>

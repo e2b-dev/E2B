@@ -5,26 +5,16 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.template_build import TemplateBuild
-from ...types import UNSET, Response, Unset
+from ...models.running_sandbox import RunningSandbox
+from ...types import Response
 
 
 def _get_kwargs(
-    template_id: str,
-    build_id: str,
-    *,
-    logs_offset: Union[Unset, int] = 0,
+    sandbox_id: str,
 ) -> Dict[str, Any]:
-    params: Dict[str, Any] = {}
-
-    params["logsOffset"] = logs_offset
-
-    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
-
     _kwargs: Dict[str, Any] = {
         "method": "get",
-        "url": f"/templates/{template_id}/builds/{build_id}/status",
-        "params": params,
+        "url": f"/sandboxes/{sandbox_id}",
     }
 
     return _kwargs
@@ -32,9 +22,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Any, TemplateBuild]]:
+) -> Optional[Union[Any, RunningSandbox]]:
     if response.status_code == HTTPStatus.OK:
-        response_200 = TemplateBuild.from_dict(response.json())
+        response_200 = RunningSandbox.from_dict(response.json())
 
         return response_200
     if response.status_code == HTTPStatus.UNAUTHORIZED:
@@ -54,7 +44,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, TemplateBuild]]:
+) -> Response[Union[Any, RunningSandbox]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -64,31 +54,25 @@ def _build_response(
 
 
 def sync_detailed(
-    template_id: str,
-    build_id: str,
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    logs_offset: Union[Unset, int] = 0,
-) -> Response[Union[Any, TemplateBuild]]:
-    """Get template build info
+) -> Response[Union[Any, RunningSandbox]]:
+    """Get a sandbox by id
 
     Args:
-        template_id (str):
-        build_id (str):
-        logs_offset (Union[Unset, int]):  Default: 0.
+        sandbox_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, TemplateBuild]]
+        Response[Union[Any, RunningSandbox]]
     """
 
     kwargs = _get_kwargs(
-        template_id=template_id,
-        build_id=build_id,
-        logs_offset=logs_offset,
+        sandbox_id=sandbox_id,
     )
 
     response = client.get_httpx_client().request(
@@ -99,61 +83,49 @@ def sync_detailed(
 
 
 def sync(
-    template_id: str,
-    build_id: str,
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    logs_offset: Union[Unset, int] = 0,
-) -> Optional[Union[Any, TemplateBuild]]:
-    """Get template build info
+) -> Optional[Union[Any, RunningSandbox]]:
+    """Get a sandbox by id
 
     Args:
-        template_id (str):
-        build_id (str):
-        logs_offset (Union[Unset, int]):  Default: 0.
+        sandbox_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, TemplateBuild]
+        Union[Any, RunningSandbox]
     """
 
     return sync_detailed(
-        template_id=template_id,
-        build_id=build_id,
+        sandbox_id=sandbox_id,
         client=client,
-        logs_offset=logs_offset,
     ).parsed
 
 
 async def asyncio_detailed(
-    template_id: str,
-    build_id: str,
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    logs_offset: Union[Unset, int] = 0,
-) -> Response[Union[Any, TemplateBuild]]:
-    """Get template build info
+) -> Response[Union[Any, RunningSandbox]]:
+    """Get a sandbox by id
 
     Args:
-        template_id (str):
-        build_id (str):
-        logs_offset (Union[Unset, int]):  Default: 0.
+        sandbox_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, TemplateBuild]]
+        Response[Union[Any, RunningSandbox]]
     """
 
     kwargs = _get_kwargs(
-        template_id=template_id,
-        build_id=build_id,
-        logs_offset=logs_offset,
+        sandbox_id=sandbox_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -162,32 +134,26 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    template_id: str,
-    build_id: str,
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    logs_offset: Union[Unset, int] = 0,
-) -> Optional[Union[Any, TemplateBuild]]:
-    """Get template build info
+) -> Optional[Union[Any, RunningSandbox]]:
+    """Get a sandbox by id
 
     Args:
-        template_id (str):
-        build_id (str):
-        logs_offset (Union[Unset, int]):  Default: 0.
+        sandbox_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, TemplateBuild]
+        Union[Any, RunningSandbox]
     """
 
     return (
         await asyncio_detailed(
-            template_id=template_id,
-            build_id=build_id,
+            sandbox_id=sandbox_id,
             client=client,
-            logs_offset=logs_offset,
         )
     ).parsed

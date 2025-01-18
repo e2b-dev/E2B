@@ -22,9 +22,9 @@ def _get_kwargs(
 def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Any]:
     if response.status_code == HTTPStatus.NO_CONTENT:
         return None
-    if response.status_code == HTTPStatus.NOT_FOUND:
-        return None
     if response.status_code == HTTPStatus.UNAUTHORIZED:
+        return None
+    if response.status_code == HTTPStatus.NOT_FOUND:
         return None
     if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
         return None

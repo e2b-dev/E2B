@@ -5,83 +5,13 @@
 
 
 export interface paths {
-  "/health": {
-    /** @description Health check */
-    get: {
-      responses: {
-        /** @description Request was successful */
-        200: {
-          content: never;
-        };
-        401: components["responses"]["401"];
-      };
-    };
-  };
-  "/nodes": {
-    /** @description List all nodes */
-    get: {
-      responses: {
-        /** @description Successfully returned all nodes */
-        200: {
-          content: {
-            "application/json": components["schemas"]["Node"][];
-          };
-        };
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-    };
-  };
-  "/nodes/{nodeID}": {
-    /** @description Get node info */
-    get: {
-      parameters: {
-        path: {
-          nodeID: components["parameters"]["nodeID"];
-        };
-      };
-      responses: {
-        /** @description Successfully returned the node */
-        200: {
-          content: {
-            "application/json": components["schemas"]["NodeDetail"];
-          };
-        };
-        401: components["responses"]["401"];
-        404: components["responses"]["404"];
-        500: components["responses"]["500"];
-      };
-    };
-    /** @description Change status of a node */
-    post: {
-      parameters: {
-        path: {
-          nodeID: components["parameters"]["nodeID"];
-        };
-      };
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["NodeStatusChange"];
-        };
-      };
-      responses: {
-        /** @description The node status was changed successfully */
-        204: {
-          content: never;
-        };
-        401: components["responses"]["401"];
-        404: components["responses"]["404"];
-        500: components["responses"]["500"];
-      };
-    };
-  };
   "/sandboxes": {
     /** @description List all running sandboxes */
     get: {
       parameters: {
         query?: {
-          /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
-          query?: string;
+          /** @description A list of filters with key-value pairs (e.g. user:abc, app:prod). */
+          filter?: string[];
         };
       };
       responses: {
@@ -201,26 +131,6 @@ export interface paths {
       };
     };
   };
-  "/sandboxes/{sandboxID}/pause": {
-    /** @description Pause the sandbox */
-    post: {
-      parameters: {
-        path: {
-          sandboxID: components["parameters"]["sandboxID"];
-        };
-      };
-      responses: {
-        /** @description The sandbox was paused successfully and can be resumed */
-        204: {
-          content: never;
-        };
-        401: components["responses"]["401"];
-        404: components["responses"]["404"];
-        409: components["responses"]["409"];
-        500: components["responses"]["500"];
-      };
-    };
-  };
   "/sandboxes/{sandboxID}/refreshes": {
     /** @description Refresh the sandbox extending its time to live */
     post: {
@@ -304,21 +214,6 @@ export interface paths {
       };
     };
   };
-  "/teams": {
-    /** @description List all teams */
-    get: {
-      responses: {
-        /** @description Successfully returned all teams */
-        200: {
-          content: {
-            "application/json": components["schemas"]["Team"][];
-          };
-        };
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-    };
-  };
   "/templates": {
     /** @description List all templates */
     get: {
@@ -393,6 +288,28 @@ export interface paths {
         204: {
           content: never;
         };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+    /** @description Update template */
+    patch: {
+      parameters: {
+        path: {
+          templateID: components["parameters"]["templateID"];
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["TemplateUpdateRequest"];
+        };
+      };
+      responses: {
+        /** @description The template was updated successfully */
+        200: {
+          content: never;
+        };
+        400: components["responses"]["400"];
         401: components["responses"]["401"];
         500: components["responses"]["500"];
       };
@@ -590,17 +507,52 @@ export interface components {
       /** @description Identifier of the team */
       teamID: string;
     };
+    TeamUser: {
+      /** @description Email of the user */
+      email: string;
+      /**
+       * Format: uuid
+       * @description Identifier of the user
+       */
+      id: string;
+    };
     Template: {
       /** @description Aliases of the template */
       aliases?: string[];
+      /**
+       * Format: int32
+       * @description Number of times the template was built
+       */
+      buildCount: number;
       /** @description Identifier of the last successful build for given template */
       buildID: string;
       cpuCount: components["schemas"]["CPUCount"];
+      /**
+       * Format: date-time
+       * @description Time when the template was created
+       */
+      createdAt: string;
+      createdBy: components["schemas"]["TeamUser"] | null;
+      /**
+       * Format: date-time
+       * @description Time when the template was last used
+       */
+      lastSpawnedAt: string;
       memoryMB: components["schemas"]["MemoryMB"];
       /** @description Whether the template is public or only accessible by the team */
       public: boolean;
+      /**
+       * Format: int64
+       * @description Number of times the template was used
+       */
+      spawnCount: number;
       /** @description Identifier of the template */
       templateID: string;
+      /**
+       * Format: date-time
+       * @description Time when the template was last updated
+       */
+      updatedAt: string;
     };
     TemplateBuild: {
       /** @description Identifier of the build */
@@ -629,6 +581,10 @@ export interface components {
       startCmd?: string;
       /** @description Identifier of the team */
       teamID?: string;
+    };
+    TemplateUpdateRequest: {
+      /** @description Whether the template is public or only accessible by the team */
+      public?: boolean;
     };
   };
   responses: {

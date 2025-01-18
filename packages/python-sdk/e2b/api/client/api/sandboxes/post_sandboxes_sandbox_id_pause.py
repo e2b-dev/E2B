@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import httpx
 
@@ -10,8 +10,8 @@ from ...types import Response
 
 def _get_kwargs(
     sandbox_id: str,
-) -> dict[str, Any]:
-    _kwargs: dict[str, Any] = {
+) -> Dict[str, Any]:
+    _kwargs: Dict[str, Any] = {
         "method": "post",
         "url": f"/sandboxes/{sandbox_id}/pause",
     }
@@ -20,15 +20,15 @@ def _get_kwargs(
 
 
 def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Any]:
-    if response.status_code == 204:
+    if response.status_code == HTTPStatus.NO_CONTENT:
         return None
-    if response.status_code == 409:
+    if response.status_code == HTTPStatus.UNAUTHORIZED:
         return None
-    if response.status_code == 404:
+    if response.status_code == HTTPStatus.NOT_FOUND:
         return None
-    if response.status_code == 401:
+    if response.status_code == HTTPStatus.CONFLICT:
         return None
-    if response.status_code == 500:
+    if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
         return None
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)

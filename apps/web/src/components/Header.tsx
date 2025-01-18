@@ -61,7 +61,6 @@ export const Header = forwardRef(function Header({ className }, ref) {
   const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8])
 
   const pathname = usePathname()
-  // const isDocs = pathname?.startsWith('/docs')
   const isAuth = pathname?.startsWith('/auth')
 
   useEffect(() => {
@@ -91,10 +90,9 @@ export const Header = forwardRef(function Header({ className }, ref) {
         className={clsx(
           'absolute inset-x-0 top-full h-px transition',
           (isInsideMobileNavigation || !mobileNavIsOpen) &&
-          'bg-zinc-900/7.5 dark:bg-white/7.5'
+            'bg-zinc-900/7.5 dark:bg-white/7.5'
         )}
       />
-
       {/* Desktop logo */}
       <div className="relative top-1 hidden items-center justify-start lg:flex gap-4">
         <Link href="/" aria-label="Home">
@@ -113,7 +111,6 @@ export const Header = forwardRef(function Header({ className }, ref) {
           />
         </div>
       </div>
-      {/* {isDocs && <Search />} */}
 
       {/* Mobile logo + burger menu */}
       <div className="flex items-center gap-5 lg:hidden">
@@ -134,7 +131,6 @@ export const Header = forwardRef(function Header({ className }, ref) {
           />
         </div>
       </div>
-
       {!isAuth && (
         <div className="flex items-center gap-4">
           <nav className="hidden md:block">
