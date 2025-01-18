@@ -10,8 +10,8 @@ export interface paths {
     get: {
       parameters: {
         query?: {
-          /** @description A list of filters with key-value pairs (e.g. user:abc, app:prod). */
-          filter?: string[];
+          /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
+          query?: string;
         };
       };
       responses: {

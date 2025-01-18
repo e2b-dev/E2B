@@ -479,14 +479,12 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: filter
+        - name: query
           in: query
-          description: A list of filters with key-value pairs (e.g. user:abc, app:prod).
+          description: A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded.
           required: false
           schema:
-            type: array
-            items:
-              type: string
+            type: string
       responses:
         "200":
           description: Successfully returned all running sandboxes
