@@ -329,7 +329,7 @@ export const BillingAlerts = ({
       <form onSubmit={(e) => handleSubmit(e, 'alert')} className="space-y-2">
         <h3 className="font-medium">Set a Budget Alert</h3>
         <p className="text-sm text-white/70">
-          If your team exceeds this threshold in a given billing period, you&apos;ll receive an alert notification to your email.
+          If your team exceeds this threshold in a given billing period, you&apos;ll receive an alert notification to <b>{email}</b>.
         </p>
         <div className="!mt-4">{renderAmountInput('alert')}</div>
       </form>
