@@ -148,7 +148,8 @@ export const BillingAlerts = ({
       const res = await fetch(
         getBillingUrl(
           domain,
-          `/teams/${team.id}/billing-limits/${type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte'
+          `/teams/${team.id}/billing-limits/${
+            type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte'
           }`
         ),
         {
@@ -203,6 +204,12 @@ export const BillingAlerts = ({
     type: 'limit' | 'alert'
   ) => {
     e.preventDefault()
+
+    const value =
+      type === 'limit' ? limits.limit_amount_gte : limits.alert_amount_gte
+    if (value === null) {
+      return
+    }
 
     await updateBillingLimit(type)
     setEditMode((prev) => ({ ...prev, [type]: false }))
@@ -313,15 +320,18 @@ export const BillingAlerts = ({
       <form onSubmit={(e) => handleSubmit(e, 'limit')} className="space-y-2">
         <h3 className="font-medium">Enable Budget Limit</h3>
         <p className="text-sm text-white/70">
-          If your team exceeds this threshold in a given billing period, subsequent API requests will be blocked.
+          If your team exceeds this threshold in a given billing period,
+          subsequent API requests will be blocked.
         </p>
         <p className="text-sm text-white/70">
           You will automatically receive email notifications when your usage
           reaches <b>50%</b> and <b>80%</b> of this limit.
         </p>
         <p className="text-sm text-red-400">
-          Caution: Enabling a Budget Limit may cause interruptions to your service.
-          Once your Budget Limit is reached, your team will not be able to create new sandboxes in the given billing period unless the limit is increased.
+          Caution: Enabling a Budget Limit may cause interruptions to your
+          service. Once your Budget Limit is reached, your team will not be able
+          to create new sandboxes in the given billing period unless the limit
+          is increased.
         </p>
         <div className="!mt-4">{renderAmountInput('limit')}</div>
       </form>
@@ -329,7 +339,8 @@ export const BillingAlerts = ({
       <form onSubmit={(e) => handleSubmit(e, 'alert')} className="space-y-2">
         <h3 className="font-medium">Set a Budget Alert</h3>
         <p className="text-sm text-white/70">
-          If your team exceeds this threshold in a given billing period, you&apos;ll receive an alert notification to <b>{email}</b>.
+          If your team exceeds this threshold in a given billing period,
+          you&apos;ll receive an alert notification to <b>{email}</b>.
         </p>
         <div className="!mt-4">{renderAmountInput('alert')}</div>
       </form>
