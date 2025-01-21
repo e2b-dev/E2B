@@ -111,6 +111,27 @@ export interface paths {
       };
     };
   };
+  "/sandboxes/{sandboxID}/metrics": {
+    /** @description Get sandbox metrics */
+    get: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      responses: {
+        /** @description Successfully returned the sandbox metrics */
+        200: {
+          content: {
+            "application/json": components["schemas"]["SandboxMetric"][];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
   "/sandboxes/{sandboxID}/pause": {
     /** @description Pause the sandbox */
     post: {
@@ -210,6 +231,7 @@ export interface paths {
         };
         401: components["responses"]["401"];
         404: components["responses"]["404"];
+        /** Format: int32 */
         500: components["responses"]["500"];
       };
     };
@@ -496,6 +518,34 @@ export interface components {
     };
     SandboxMetadata: {
       [key: string]: string;
+    };
+    /** @description Metric entry with timestamp and line */
+    SandboxMetric: {
+      /**
+       * Format: int32
+       * @description Number of CPU cores
+       */
+      cpuCount: number;
+      /**
+       * Format: float
+       * @description CPU usage percentage
+       */
+      cpuPct: number;
+      /**
+       * Format: int64
+       * @description Total memory in MiB
+       */
+      memMiBTotal: number;
+      /**
+       * Format: int64
+       * @description Memory used in MiB
+       */
+      memMiBUsed: number;
+      /**
+       * Format: date-time
+       * @description Timestamp of the metric entry
+       */
+      timestamp: string;
     };
     Team: {
       /** @description API key for the team */

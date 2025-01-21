@@ -121,7 +121,7 @@ export const metricsCommand = new commander.Command('metrics')
           }
 
           for (const metric of metrics) {
-            printMetric(metric.timestamp, metric.line, format)
+            printMetric(metric.timestamp, JSON.stringify(metric), format)
           }
 
           const isRunning = await isRunningPromise
@@ -226,5 +226,5 @@ export async function getSandboxMetrics({
 
   handleE2BRequestError(res.error, 'Error while getting sandbox metrics')
 
-  return res.data
+  return res.data as e2b.components['schemas']['SandboxMetric'][]
 }

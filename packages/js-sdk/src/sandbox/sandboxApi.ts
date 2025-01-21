@@ -1,6 +1,6 @@
+import { compareVersions } from 'compare-versions'
 import { ApiClient, components, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
-import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../errors'
 
 /**
@@ -110,6 +110,44 @@ export class SandboxApi {
         ...(sandbox.alias && { name: sandbox.alias }),
         metadata: sandbox.metadata ?? {},
         startedAt: new Date(sandbox.startedAt),
+      })) ?? []
+    )
+  }
+
+  /**
+   * Get the metrics of the sandbox.
+   *
+   * @param sandboxId sandbox ID.
+   * @param timeoutMs timeout in **milliseconds**.
+   * @param opts connection options.
+   *
+   * @returns metrics of the sandbox.
+   */
+  static async getMetrics(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<components['schemas']['SandboxMetric'][]> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/sandboxes/{sandboxID}/metrics', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return (
+      res.data?.map((metric: components['schemas']['SandboxMetric']) => ({
+        ...metric,
+        timestamp: new Date(metric.timestamp).toISOString(),
       })) ?? []
     )
   }
