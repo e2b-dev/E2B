@@ -28,14 +28,15 @@
     "dev": "tsup --watch",
     "example": "tsx example.mts",
     "test": "vitest run",
-    "generate": "openapi-typescript ../../spec/openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",
+    "generate": "python ./../../spec/remove_extra_tags.py sandboxes templates && openapi-typescript ../../spec/openapi_generated.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",
     "generate-envd-api": "openapi-typescript ../../spec/envd/envd.yaml -x api_key --support-array-length --alphabetize --output src/envd/schema.gen.ts",
     "generate-ref": "./scripts/generate_sdk_ref.sh",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
     "postPublish": "./scripts/post-publish.sh || true",
     "test:bun": "bun test tests/runtimes/bun --env-file=.env",
-    "test:deno": "deno test tests/runtimes/deno/ --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks"
+    "test:deno": "deno test tests/runtimes/deno/ --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",
+    "test:integration": "E2B_INTEGRATION_TEST=1 vitest run tests/integration/**"
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.1",

@@ -8,19 +8,27 @@ from ...client import AuthenticatedClient, Client
 from ...types import Response
 
 
-def _get_kwargs() -> Dict[str, Any]:
+def _get_kwargs(
+    sandbox_id: str,
+) -> Dict[str, Any]:
     _kwargs: Dict[str, Any] = {
-        "method": "get",
-        "url": "/health",
+        "method": "post",
+        "url": f"/sandboxes/{sandbox_id}/pause",
     }
 
     return _kwargs
 
 
 def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Any]:
-    if response.status_code == HTTPStatus.OK:
+    if response.status_code == HTTPStatus.NO_CONTENT:
         return None
     if response.status_code == HTTPStatus.UNAUTHORIZED:
+        return None
+    if response.status_code == HTTPStatus.NOT_FOUND:
+        return None
+    if response.status_code == HTTPStatus.CONFLICT:
+        return None
+    if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
         return None
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -38,10 +46,14 @@ def _build_response(*, client: Union[AuthenticatedClient, Client], response: htt
 
 
 def sync_detailed(
+    sandbox_id: str,
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
 ) -> Response[Any]:
-    """Health check
+    """Pause the sandbox
+
+    Args:
+        sandbox_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -51,7 +63,9 @@ def sync_detailed(
         Response[Any]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        sandbox_id=sandbox_id,
+    )
 
     response = client.get_httpx_client().request(
         **kwargs,
@@ -61,10 +75,14 @@ def sync_detailed(
 
 
 async def asyncio_detailed(
+    sandbox_id: str,
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
 ) -> Response[Any]:
-    """Health check
+    """Pause the sandbox
+
+    Args:
+        sandbox_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -74,7 +92,9 @@ async def asyncio_detailed(
         Response[Any]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        sandbox_id=sandbox_id,
+    )
 
     response = await client.get_async_httpx_client().request(**kwargs)
 

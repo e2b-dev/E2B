@@ -16,6 +16,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: access_token
+    AdminTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Admin-Token
 
   parameters:
     templateID:
@@ -32,6 +36,12 @@ components:
         type: string
     sandboxID:
       name: sandboxID
+      in: path
+      required: true
+      schema:
+        type: string
+    nodeID:
+      name: nodeID
       in: path
       required: true
       schema:
@@ -56,7 +66,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-
+    "409":
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     "500":
       description: Server error
       content:
@@ -230,6 +245,15 @@ components:
         envVars:
           $ref: "#/components/schemas/EnvVars"
 
+    ResumedSandbox:
+      properties:
+        timeout:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 15
+          description: Time to live for the sandbox in seconds.
+
     Template:
       required:
         - templateID
@@ -335,26 +359,90 @@ components:
             - ready
             - error
 
+    NodeStatus:
+      type: string
+      description: Status of the node
+      enum:
+        - ready
+        - draining
+
+    NodeStatusChange:
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/NodeStatus"
+
+    Node:
+      required:
+        - nodeID
+        - status
+        - sandboxCount
+        - allocatedCPU
+        - allocatedMemoryMiB
+      properties:
+        nodeID:
+          type: string
+          description: Identifier of the node
+        status:
+          $ref: "#/components/schemas/NodeStatus"
+        sandboxCount:
+          type: integer
+          format: int32
+          description: Number of sandboxes running on the node
+        allocatedCPU:
+          type: integer
+          format: int32
+          description: Number of allocated CPU cores
+        allocatedMemoryMiB:
+          type: integer
+          format: int32
+          description: Amount of allocated memory in MiB
+
+    NodeDetail:
+      required:
+        - nodeID
+        - status
+        - sandboxes
+        - cachedBuilds
+      properties:
+        nodeID:
+          type: string
+          description: Identifier of the node
+        status:
+          $ref: "#/components/schemas/NodeStatus"
+        sandboxes:
+          type: array
+          description: List of sandboxes running on the node
+          items:
+            $ref: "#/components/schemas/RunningSandbox"
+        cachedBuilds:
+          type: array
+          description: List of cached builds id on the node
+          items:
+            type: string
+
     SandboxMetric:
       description: Metric entry with timestamp and line
       required:
         - timestamp
-        - cpuPct
         - cpuCount
+        - cpuPct
         - memMiBUsed
         - memMiBTotal
       properties:
         timestamp:
           type: string
           format: date-time
-          description: Timestamp of the log entry
+          description: Timestamp of the metric entry
+        cpuCount:
+          type: integer
+          format: int32
+          description: Number of CPU cores
         cpuPct:
           type: number
           format: float
           description: CPU usage percentage
-        cpuCount:
-          type: integer
-          description: Number of CPU cores
         memMiBUsed:
           type: integer
           format: int64
@@ -419,6 +507,15 @@ paths:
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - name: filter
+          in: query
+          description: A list of filters with key-value pairs (e.g. user:abc, app:prod).
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         "200":
           description: Successfully returned all running sandboxes
@@ -498,6 +595,27 @@ paths:
           $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}:
+    get:
+      description: Get a sandbox by id
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "200":
+          description: Successfully returned the sandbox
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunningSandbox"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
     delete:
       description: Kill a sandbox
       tags: [sandboxes]
@@ -508,6 +626,57 @@ paths:
       responses:
         "204":
           description: The sandbox was killed successfully
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  # TODO: Pause and resume might be exposed as POST /sandboxes/{sandboxID}/snapshot and then POST /sandboxes with specified snapshotting setup
+  /sandboxes/{sandboxID}/pause:
+    post:
+      description: Pause the sandbox
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "204":
+          description: The sandbox was paused successfully and can be resumed
+        "409":
+          $ref: "#/components/responses/409"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /sandboxes/{sandboxID}/resume:
+    post:
+      description: Resume the sandbox
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResumedSandbox"
+      responses:
+        "201":
+          description: The sandbox was resumed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sandbox"
+        "409":
+          $ref: "#/components/responses/409"
         "404":
           $ref: "#/components/responses/404"
         "401":
@@ -754,6 +923,70 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TemplateBuild"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /nodes:
+    get:
+      description: List all nodes
+      tags: [admin]
+      security:
+        - AdminTokenAuth: []
+      responses:
+        "200":
+          description: Successfully returned all nodes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Node"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /nodes/{nodeID}:
+    get:
+      description: Get node info
+      tags: [admin]
+      security:
+        - AdminTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/nodeID"
+      responses:
+        "200":
+          description: Successfully returned the node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NodeDetail"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+    post:
+      description: Change status of a node
+      tags: [admin]
+      security:
+        - AdminTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/nodeID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NodeStatusChange"
+      responses:
+        "204":
+          description: The node status was changed successfully
         "401":
           $ref: "#/components/responses/401"
         "404":
