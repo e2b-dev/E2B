@@ -361,6 +361,26 @@ class Sandbox(SandboxSetup, SandboxApi):
             **self.connection_config.__dict__,
         )
 
+    @overload
+    @staticmethod
+    def get_metrics(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        ...
+
     @class_method_variant("_cls_get_metrics")
     def get_metrics(  # type: ignore
         self,
