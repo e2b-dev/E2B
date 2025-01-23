@@ -8,9 +8,7 @@ import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
 import { listSandboxes } from './list'
-import { waitForSandboxEnd } from './logs'
-
-const maxRuntime = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+import { cleanLogger, waitForSandboxEnd } from './logs'
 
 function getShortID(sandboxID: string) {
   return sandboxID.split('-')[0]
@@ -25,14 +23,6 @@ function formatEnum(e: { [key: string]: string }) {
 enum LogFormat {
   JSON = 'json',
   PRETTY = 'pretty',
-}
-
-function cleanLogger(logger?: string) {
-  if (!logger) {
-    return ''
-  }
-
-  return logger.replaceAll('Svc', '')
 }
 
 export const metricsCommand = new commander.Command('metrics')

@@ -4,13 +4,14 @@ from typing import Dict, List, Optional, TypedDict, overload
 import httpx
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
-from e2b.exceptions import format_request_timeout_error
+from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxMetrics
+from packaging.version import Version
 from typing_extensions import Unpack
 
 logger = logging.getLogger(__name__)
@@ -375,6 +376,10 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         self,
         request_timeout: Optional[float] = None,
     ) -> List[SandboxMetrics]:
+        if Version(self._envd_version) < Version("0.1.5"):
+            raise SandboxException(
+                "Metrics are not supported in this version of the sandbox, please update to latest version"
+            )
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)

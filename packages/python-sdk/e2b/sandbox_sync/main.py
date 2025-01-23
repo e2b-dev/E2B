@@ -11,6 +11,7 @@ from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxMetrics
+from packaging.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -365,6 +366,11 @@ class Sandbox(SandboxSetup, SandboxApi):
         self,
         request_timeout: Optional[float] = None,
     ) -> List[SandboxMetrics]:
+        if Version(self._envd_version) < Version("0.1.5"):
+            raise SandboxException(
+                "Metrics are not supported in this version of the sandbox, please update to latest version"
+            )
+
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)

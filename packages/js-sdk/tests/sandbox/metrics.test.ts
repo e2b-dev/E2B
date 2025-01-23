@@ -1,6 +1,6 @@
 import { assert } from 'vitest'
 
-import { wait, sandboxTest } from '../setup.js'
+import { sandboxTest, wait } from '../setup.js'
 
 sandboxTest('get sandbox metrics', async ({ sandbox }) => {
   console.log('Getting metrics for sandbox ID:', sandbox.sandboxId)
