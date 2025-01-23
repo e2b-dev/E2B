@@ -169,8 +169,8 @@ class SandboxApi(SandboxApiBase):
                     timestamp=metric.timestamp,
                     cpu_pct=metric.cpu_pct,
                     cpu_count=metric.cpu_count,
-                    mem_mib_used=metric.mem_mi_b_used,
-                    mem_mib_total=metric.mem_mi_b_total,
+                    mem_used_mib=metric.mem_used_mi_b,
+                    mem_total_mib=metric.mem_total_mi_b,
                 )
                 for metric in res.parsed
             ]

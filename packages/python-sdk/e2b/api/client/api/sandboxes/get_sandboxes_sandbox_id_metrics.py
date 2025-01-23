@@ -32,12 +32,12 @@ def _parse_response(
             response_200.append(response_200_item)
 
         return response_200
-    if response.status_code == 404:
-        response_404 = cast(Any, None)
-        return response_404
     if response.status_code == 401:
         response_401 = cast(Any, None)
         return response_401
+    if response.status_code == 404:
+        response_404 = cast(Any, None)
+        return response_404
     if response.status_code == 500:
         response_500 = cast(Any, None)
         return response_500

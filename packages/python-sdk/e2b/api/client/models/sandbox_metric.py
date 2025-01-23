@@ -13,40 +13,40 @@ class SandboxMetric:
     """Metric entry with timestamp and line
 
     Attributes:
-        timestamp (datetime.datetime): Timestamp of the log entry
-        cpu_pct (float): CPU usage percentage
         cpu_count (int): Number of CPU cores
-        mem_mi_b_used (int): Memory used in MiB
-        mem_mi_b_total (int): Total memory in MiB
+        cpu_pct (float): CPU usage percentage
+        mem_total_mi_b (int): Total memory in MiB
+        mem_used_mi_b (int): Memory used in MiB
+        timestamp (datetime.datetime): Timestamp of the metric entry
     """
 
-    timestamp: datetime.datetime
-    cpu_pct: float
     cpu_count: int
-    mem_mi_b_used: int
-    mem_mi_b_total: int
+    cpu_pct: float
+    mem_total_mi_b: int
+    mem_used_mi_b: int
+    timestamp: datetime.datetime
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        timestamp = self.timestamp.isoformat()
+        cpu_count = self.cpu_count
 
         cpu_pct = self.cpu_pct
 
-        cpu_count = self.cpu_count
+        mem_total_mi_b = self.mem_total_mi_b
 
-        mem_mi_b_used = self.mem_mi_b_used
+        mem_used_mi_b = self.mem_used_mi_b
 
-        mem_mi_b_total = self.mem_mi_b_total
+        timestamp = self.timestamp.isoformat()
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "timestamp": timestamp,
-                "cpuPct": cpu_pct,
                 "cpuCount": cpu_count,
-                "memMiBUsed": mem_mi_b_used,
-                "memMiBTotal": mem_mi_b_total,
+                "cpuPct": cpu_pct,
+                "memTotalMiB": mem_total_mi_b,
+                "memUsedMiB": mem_used_mi_b,
+                "timestamp": timestamp,
             }
         )
 
@@ -55,22 +55,22 @@ class SandboxMetric:
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         d = src_dict.copy()
-        timestamp = isoparse(d.pop("timestamp"))
+        cpu_count = d.pop("cpuCount")
 
         cpu_pct = d.pop("cpuPct")
 
-        cpu_count = d.pop("cpuCount")
+        mem_total_mi_b = d.pop("memTotalMiB")
 
-        mem_mi_b_used = d.pop("memMiBUsed")
+        mem_used_mi_b = d.pop("memUsedMiB")
 
-        mem_mi_b_total = d.pop("memMiBTotal")
+        timestamp = isoparse(d.pop("timestamp"))
 
         sandbox_metric = cls(
-            timestamp=timestamp,
-            cpu_pct=cpu_pct,
             cpu_count=cpu_count,
-            mem_mi_b_used=mem_mi_b_used,
-            mem_mi_b_total=mem_mi_b_total,
+            cpu_pct=cpu_pct,
+            mem_total_mi_b=mem_total_mi_b,
+            mem_used_mi_b=mem_used_mi_b,
+            timestamp=timestamp,
         )
 
         sandbox_metric.additional_properties = d
