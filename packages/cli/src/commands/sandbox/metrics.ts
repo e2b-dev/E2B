@@ -8,44 +8,12 @@ import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
 import { listSandboxes } from './list'
+import { waitForSandboxEnd } from './logs'
 
 const maxRuntime = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 
 function getShortID(sandboxID: string) {
   return sandboxID.split('-')[0]
-}
-
-function waitForSandboxEnd(sandboxID: string) {
-  let isRunning = true
-
-  async function monitor() {
-    const startTime = new Date().getTime()
-
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const currentTime = new Date().getTime()
-      const elapsedTime = currentTime - startTime // Time elapsed in milliseconds
-
-      // Check if 24 hours (in milliseconds) have passed
-      if (elapsedTime >= maxRuntime) {
-        break
-      }
-
-      const response = await listSandboxes()
-      const sandbox = response.find(
-        (s) => s.sandboxID === getShortID(sandboxID)
-      )
-      if (!sandbox) {
-        isRunning = false
-        break
-      }
-      await wait(5000)
-    }
-  }
-
-  monitor()
-
-  return () => isRunning
 }
 
 function formatEnum(e: { [key: string]: string }) {
@@ -183,6 +151,7 @@ function printMetric(
   delete metric['service']
   delete metric['envID']
   delete metric['sandboxID']
+  delete metric['logger']
 
   if (format === LogFormat.JSON) {
     console.log(

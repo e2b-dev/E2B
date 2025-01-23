@@ -714,7 +714,6 @@ paths:
           $ref: "#/components/responses/404"
         "500":
           $ref: "#/components/responses/500"
-          format: int32
           
   /sandboxes/{sandboxID}/metrics:
     get:

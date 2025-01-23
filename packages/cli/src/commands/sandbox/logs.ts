@@ -15,7 +15,7 @@ function getShortID(sandboxID: string) {
   return sandboxID.split('-')[0]
 }
 
-function waitForSandboxEnd(sandboxID: string) {
+export function waitForSandboxEnd(sandboxID: string) {
   let isRunning = true
 
   async function monitor() {
