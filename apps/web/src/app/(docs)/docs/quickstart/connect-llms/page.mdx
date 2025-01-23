@@ -165,7 +165,7 @@ import os
 from groq import Groq
 from e2b_code_interpreter import Sandbox
 
-api_key = os.environ["MISTRAL_API_KEY"]
+api_key = os.environ["GROQ_API_KEY"]
 
 # Create Groq client
 client = Groq(api_key=api_key)
@@ -173,16 +173,8 @@ system_prompt = "You are a helpful assistant that can execute python code in a J
 prompt = "Calculate how many r's are in the word 'strawberry'"
 
 # Send the prompt to the model
-response = client.chat.complete(
-    model="codestral-latest",
-    messages=[
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": prompt}
-    ]
-)
-
 response = client.chat.completions.create(
-    model="llama-3.1-70b-versatile",
+    model="llama3-70b-8192",
     messages=[
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
