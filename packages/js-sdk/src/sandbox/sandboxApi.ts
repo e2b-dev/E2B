@@ -237,7 +237,7 @@ export class SandboxApi {
         sandboxId: res.data!.sandboxID,
         clientId: res.data!.clientID,
       }),
-      envdVersion: res.data!.envdVersion
+      envdVersion: res.data!.envdVersion,
     }
   }
 

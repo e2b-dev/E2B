@@ -396,7 +396,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         self,
         request_timeout: Optional[float] = None,
     ) -> List[SandboxMetrics]:
-        if Version(self._envd_version) < Version("0.1.5"):
+        if self._envd_version and Version(self._envd_version) < Version("0.1.5"):
             raise SandboxException(
                 "Metrics are not supported in this version of the sandbox, please rebuild your template."
             )
