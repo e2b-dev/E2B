@@ -396,6 +396,13 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         self,
         request_timeout: Optional[float] = None,
     ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the sandbox specified by sandbox ID.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
         if self._envd_version and Version(self._envd_version) < Version("0.1.5"):
             raise SandboxException(
                 "Metrics are not supported in this version of the sandbox, please rebuild your template."
