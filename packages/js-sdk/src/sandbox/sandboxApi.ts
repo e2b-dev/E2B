@@ -135,7 +135,6 @@ export class SandboxApi {
    * Get the metrics of the sandbox.
    *
    * @param sandboxId sandbox ID.
-   * @param timeoutMs timeout in **milliseconds**.
    * @param opts connection options.
    *
    * @returns metrics of the sandbox.
