@@ -20,14 +20,16 @@ def test_run_with_special_characters(sandbox: Sandbox):
     assert cmd.exit_code == 0
     assert cmd.stdout == f"{text}\n"
 
+
 def test_run_with_broken_utf8(sandbox: Sandbox):
     # Create a string with 8191 'a' characters followed by the problematic byte 0xe2
-    long_str = 'a' * 8191 + '\\xe2'
+    long_str = "a" * 8191 + "\\xe2"
     result = sandbox.commands.run(f'printf "{long_str}"')
     assert result.exit_code == 0
 
     # The broken UTF-8 bytes should be replaced with the Unicode replacement character
-    assert result.stdout == ('a' * 8191 + '\ufffd')
+    assert result.stdout == ("a" * 8191 + "\ufffd")
+
 
 def test_run_with_multiline_string(sandbox):
     text = "Hello,\nWorld!"
