@@ -535,12 +535,12 @@ export interface components {
        * Format: int64
        * @description Total memory in MiB
        */
-      memMiBTotal: number;
+      memTotalMiB: number;
       /**
        * Format: int64
        * @description Memory used in MiB
        */
-      memMiBUsed: number;
+      memUsedMiB: number;
       /**
        * Format: date-time
        * @description Timestamp of the metric entry

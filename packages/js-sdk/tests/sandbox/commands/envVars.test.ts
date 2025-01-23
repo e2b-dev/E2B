@@ -22,3 +22,8 @@ sandboxTest.skipIf(isDebug)('env vars on sandbox', async () => {
     await sandbox.kill()
   }
 })
+
+sandboxTest.skipIf(isDebug)('default env vars present', async ({ sandbox }) => {
+  const result = await sandbox.commands.run('echo $E2B_SANDBOX')
+  assert.equal(result?.stdout.trim(), 'true')
+})
