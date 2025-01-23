@@ -5,7 +5,7 @@ from e2b import Sandbox
 
 @pytest.mark.skip_debug()
 def test_get_metrics(sandbox: Sandbox):
-    time.sleep(5)
+    time.sleep(2)
 
     metrics = sandbox.get_metrics()
     assert len(metrics) > 0
