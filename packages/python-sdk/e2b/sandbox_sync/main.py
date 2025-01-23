@@ -356,8 +356,8 @@ class Sandbox(SandboxSetup, SandboxApi):
             **self.connection_config.__dict__,
         )
 
-    @class_method_variant("_get_metrics")
-    async def get_metrics(  # type: ignore
+    @class_method_variant("_cls_get_metrics")
+    def get_metrics(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
     ) -> List[SandboxMetrics]:
