@@ -32,9 +32,9 @@ class SandboxMetrics:
     """CPU usage in percentage."""
     cpu_count: int
     """Number of CPU cores."""
-    mem_mib_used: int
+    mem_used_mib: int
     """Memory usage in bytes."""
-    mem_mib_total: int
+    mem_total_mib: int
     """Total memory available"""
 
 
