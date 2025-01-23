@@ -148,6 +148,7 @@ message SendSignalResponse {}
 
 message ConnectRequest {
     ProcessSelector process = 1;
+    optional string eventsSince = 2; // ISO 8601 timestamp
 }
 
 message ProcessSelector {

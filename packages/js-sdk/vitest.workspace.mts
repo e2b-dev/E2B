@@ -19,6 +19,10 @@ export default defineWorkspace([
       env: {
         ...(process.env as Record<string, string>),
         ...env.parsed,
+        ...{
+          E2B_DEBUG: 'true',  // Enable debug mode
+        }
+
       },
     },
   },

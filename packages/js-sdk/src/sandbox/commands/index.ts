@@ -77,7 +77,12 @@ export type CommandConnectOpts = Pick<
   CommandStartOpts,
   'onStderr' | 'onStdout' | 'timeoutMs'
 > &
-  CommandRequestOpts
+  CommandRequestOpts & {
+    /**
+     * Timestamp to get events since.
+     */
+    eventsSince?: string, // iso 8601 timestamp
+  }
 
 /**
  * Information about a command, PTY session or start command running in the sandbox as process.
@@ -261,6 +266,7 @@ export class Commands {
             value: pid,
           },
         },
+        eventsSince: opts?.eventsSince,
       },
       {
         signal: controller.signal,
