@@ -4,7 +4,7 @@ from packaging.version import Version
 
 from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
 from e2b.exceptions import TemplateException
-from e2b.api import ApiClient
+from e2b.api import ApiClient, SandboxCreateResponse
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
 from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_timeout,
@@ -149,7 +149,7 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> str:
+    ) -> SandboxCreateResponse:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
@@ -188,7 +188,10 @@ class SandboxApi(SandboxApiBase):
                     "You can do this by running `e2b template build` in the directory with the template."
                 )
 
-            return SandboxApi._get_sandbox_id(
-                res.parsed.sandbox_id,
-                res.parsed.client_id,
+            return SandboxCreateResponse(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    res.parsed.sandbox_id,
+                    res.parsed.client_id,
+                ),
+                envd_version=res.parsed.envd_version,
             )
