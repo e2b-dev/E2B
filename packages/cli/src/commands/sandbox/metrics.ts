@@ -109,7 +109,6 @@ export const metricsCommand = new commander.Command('metrics')
           const lastMetric =
             metrics.length > 0 ? metrics[metrics.length - 1] : undefined
           if (lastMetric) {
-            // TODO: Use the timestamp from the last metric instead of the current time?
             start = new Date(lastMetric.timestamp).getTime() + 1
           }
 

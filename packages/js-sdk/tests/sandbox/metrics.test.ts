@@ -9,7 +9,6 @@ sandboxTest('get sandbox metrics', async ({ sandbox }) => {
 
   const metrics = await sandbox.getMetrics()
 
-  console.log('Metrics:', metrics)
   assert.isAtLeast(metrics.length, 1)
   assert.isAtLeast(metrics[0]?.cpuPct, 0)
   assert.isAtLeast(metrics[0]?.memTotalMiB, 0)

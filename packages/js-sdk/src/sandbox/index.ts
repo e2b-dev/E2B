@@ -304,7 +304,7 @@ export class Sandbox extends SandboxApi {
       compareVersions(this.envdApi.version, '0.1.5') < 0
     ) {
       throw new Error(
-        'Metrics are not supported in this version of the sandbox, please update to latest version'
+        'Metrics are not supported in this version of the sandbox, please rebuild your template.'
       )
     }
     return await Sandbox.getMetrics(this.sandboxId, {

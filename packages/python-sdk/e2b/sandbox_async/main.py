@@ -378,7 +378,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
     ) -> List[SandboxMetrics]:
         if Version(self._envd_version) < Version("0.1.5"):
             raise SandboxException(
-                "Metrics are not supported in this version of the sandbox, please update to latest version"
+                "Metrics are not supported in this version of the sandbox, please rebuild your template."
             )
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
