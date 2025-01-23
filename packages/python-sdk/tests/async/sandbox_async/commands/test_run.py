@@ -18,7 +18,6 @@ async def test_run_with_special_characters(async_sandbox: AsyncSandbox):
     cmd = await async_sandbox.commands.run(f'echo "{text}"')
 
     assert cmd.exit_code == 0
-
     assert cmd.stdout == f"{text}\n"
 
 

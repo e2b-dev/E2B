@@ -2,7 +2,7 @@ import os
 
 from typing import Literal, Optional
 
-REQUEST_TIMEOUT: float = 30.0  # 30 seconds
+REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"

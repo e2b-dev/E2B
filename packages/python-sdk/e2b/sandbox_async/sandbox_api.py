@@ -1,4 +1,5 @@
-from datetime import datetime
+import urllib.parse
+from packaging.version import Version
 from typing import Dict, List, Optional
 
 from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
@@ -7,13 +8,18 @@ from e2b.api.client.api.sandboxes import (
     get_sandboxes,
     get_sandboxes_sandbox_id_metrics,
     post_sandboxes,
+    post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_resume,
     post_sandboxes_sandbox_id_timeout,
 )
-from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
+from e2b.api.client.models import (
+    NewSandbox,
+    PostSandboxesSandboxIDTimeoutBody,
+    ResumedSandbox,
+)
 from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import TemplateException
 from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
-from packaging.version import Version
 
 
 class SandboxApi(SandboxApiBase):
@@ -21,6 +27,7 @@ class SandboxApi(SandboxApiBase):
     async def list(
         cls,
         api_key: Optional[str] = None,
+        filters: Optional[Dict[str, str]] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -29,6 +36,9 @@ class SandboxApi(SandboxApiBase):
         List all running sandboxes.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param filters: Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
+        :param domain: Domain to use for the request, only relevant for self-hosted environments
+        :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: List of running sandboxes
@@ -40,32 +50,40 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
+        query = None
+        if filters:
+            filters = {
+                urllib.parse.quote(k): urllib.parse.quote(v) for k, v in filters.items()
+            }
+            query = urllib.parse.urlencode(filters)
+
         async with AsyncApiClient(config) as api_client:
             res = await get_sandboxes.asyncio_detailed(
                 client=api_client,
+                query=query,
             )
 
-            if res.status_code >= 300:
-                raise handle_api_exception(res)
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
 
-            if res.parsed is None:
-                return []
+        if res.parsed is None:
+            return []
 
-            return [
-                SandboxInfo(
-                    sandbox_id=SandboxApi._get_sandbox_id(
-                        sandbox.sandbox_id,
-                        sandbox.client_id,
-                    ),
-                    template_id=sandbox.template_id,
-                    name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                    metadata=(
-                        sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                    ),
-                    started_at=sandbox.started_at,
-                )
-                for sandbox in res.parsed
-            ]
+        return [
+            SandboxInfo(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    sandbox.sandbox_id,
+                    sandbox.client_id,
+                ),
+                template_id=sandbox.template_id,
+                name=sandbox.alias if isinstance(sandbox.alias, str) else None,
+                metadata=(
+                    sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
+                ),
+                started_at=sandbox.started_at,
+            )
+            for sandbox in res.parsed
+        ]
 
     @classmethod
     async def _cls_kill(
@@ -234,3 +252,71 @@ class SandboxApi(SandboxApiBase):
     @staticmethod
     def _get_sandbox_id(sandbox_id: str, client_id: str) -> str:
         return f"{sandbox_id}-{client_id}"
+
+    @classmethod
+    async def _cls_resume(
+        cls,
+        sandbox_id: str,
+        timeout: int,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> bool:
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
+
+        async with AsyncApiClient(config) as api_client:
+            res = await post_sandboxes_sandbox_id_resume.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+                body=ResumedSandbox(timeout=timeout),
+            )
+
+            if res.status_code == 404:
+                raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
+
+            if res.status_code == 409:
+                return False
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            return True
+
+    @classmethod
+    async def _cls_pause(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> bool:
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
+
+        async with AsyncApiClient(config) as api_client:
+            res = await post_sandboxes_sandbox_id_pause.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code == 404:
+                raise NotFoundException(f"Sandbox {sandbox_id} not found")
+
+            if res.status_code == 409:
+                return False
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            return True

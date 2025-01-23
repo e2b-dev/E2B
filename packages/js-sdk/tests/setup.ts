@@ -5,11 +5,13 @@ export const template = 'base'
 
 interface SandboxFixture {
   sandbox: Sandbox
+  template: string
 }
 
 export const sandboxTest = base.extend<SandboxFixture>({
+  template,
   sandbox: [
-    async ({}, use) => {
+    async ({ }, use) => {
       const sandbox = await Sandbox.create(template)
       try {
         await use(sandbox)

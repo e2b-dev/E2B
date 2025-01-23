@@ -371,6 +371,72 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             **self.connection_config.__dict__,
         )
 
+    @classmethod
+    async def resume(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Resume the sandbox.
+
+        The **default sandbox timeout of 300 seconds** will be used for the resumed sandbox.
+        If you pass a custom timeout via the `timeout` parameter, it will be used instead.
+
+        :param sandbox_id: sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+        :param api_key: E2B API Key to use for authentication
+        :param domain: Domain of the sandbox server
+        :param debug: Enable debug mode
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: A running sandbox instance
+        """
+
+        timeout = timeout or cls.default_sandbox_timeout
+
+        await SandboxApi._cls_resume(
+            sandbox_id=sandbox_id,
+            request_timeout=request_timeout,
+            timeout=timeout,
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+        )
+
+        return await cls.connect(
+            sandbox_id=sandbox_id,
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+        )
+
+    async def pause(
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> str:
+        """
+        Pause the sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: sandbox ID that can be used to resume the sandbox
+        """
+
+        await SandboxApi._cls_pause(
+            sandbox_id=self.sandbox_id,
+            api_key=self.connection_config.api_key,
+            domain=self.connection_config.domain,
+            debug=self.connection_config.debug,
+            request_timeout=request_timeout,
+        )
+
+        return self.sandbox_id
+
     @overload
     @staticmethod
     async def get_metrics(
