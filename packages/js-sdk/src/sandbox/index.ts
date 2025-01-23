@@ -100,6 +100,7 @@ export class Sandbox extends SandboxApi {
   constructor(
     opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & {
       sandboxId: string
+      envdVersion?: string
     }
   ) {
     super()
@@ -116,10 +117,15 @@ export class Sandbox extends SandboxApi {
       interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
     })
 
-    this.envdApi = new EnvdApiClient({
-      apiUrl: this.envdApiUrl,
-      logger: opts?.logger,
-    })
+    this.envdApi = new EnvdApiClient(
+      {
+        apiUrl: this.envdApiUrl,
+        logger: opts?.logger,
+      },
+      {
+        version: opts?.envdVersion
+      }
+    )
     this.files = new Filesystem(
       rpcTransport,
       this.envdApi,
@@ -178,16 +184,16 @@ export class Sandbox extends SandboxApi {
 
     const config = new ConnectionConfig(sandboxOpts)
 
-    const sandboxId = config.debug
-      ? 'debug_sandbox_id'
-      : await this.createSandbox(
+    if (config.debug) {
+      return new this({ sandboxId: 'debug_sandbox_id', ...config }) as InstanceType<S>
+      } else {
+       const sandbox = await this.createSandbox(
           template,
           sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
           sandboxOpts
-        )
-
-    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
-    return sbx
+      )
+      return new this({ ...sandbox, ...config }) as InstanceType<S>
+    }
   }
 
   /**

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from e2b.api import AsyncApiClient, handle_api_exception
+from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     get_sandboxes,
@@ -186,7 +186,7 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> str:
+    ) -> SandboxCreateResponse:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
@@ -223,9 +223,12 @@ class SandboxApi(SandboxApiBase):
                     "You can do this by running `e2b template build` in the directory with the template."
                 )
 
-            return SandboxApi._get_sandbox_id(
-                res.parsed.sandbox_id,
-                res.parsed.client_id,
+            return SandboxCreateResponse(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    res.parsed.sandbox_id,
+                    res.parsed.client_id,
+                ),
+                envd_version=res.parsed.envd_version,
             )
 
     @staticmethod
