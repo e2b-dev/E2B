@@ -1,13 +1,14 @@
 # This is a config for E2B sandbox template.
-# You can use 'template_id' (rki5dems9wqfm4r03t7g) or 'template_name (base) from this config to spawn a sandbox:
+# You can use template ID (rki5dems9wqfm4r03t7g) or template name (base) to create a sandbox:
 
 # Python SDK
-# from e2b import Sandbox
-# sandbox = Sandbox(template='base')
+# from e2b import Sandbox, AsyncSandbox
+# sandbox = Sandbox("base") # Sync sandbox
+# sandbox = await AsyncSandbox.create("base") # Async sandbox
 
 # JS SDK
 # import { Sandbox } from 'e2b'
-# const sandbox = await Sandbox.create({ template: 'base' })
+# const sandbox = await Sandbox.create('base')
 
 team_id = "460355b3-4f64-48f9-9a16-4442817f79f5"
 memory_mb = 512
