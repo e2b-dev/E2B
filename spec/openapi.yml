@@ -167,6 +167,36 @@ components:
           items:
             $ref: "#/components/schemas/SandboxLog"
 
+    SandboxMetric:
+      description: Metric entry with timestamp and line
+      required:
+        - timestamp
+        - cpuCount
+        - cpuUsedPct
+        - memUsedMiB
+        - memTotalMiB
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the metric entry
+        cpuCount:
+          type: integer
+          format: int32
+          description: Number of CPU cores
+        cpuUsedPct:
+          type: number
+          format: float
+          description: CPU usage percentage
+        memUsedMiB:
+          type: integer
+          format: int64
+          description: Memory used in MiB
+        memTotalMiB:
+          type: integer
+          format: int64
+          description: Total memory in MiB
+
     Sandbox:
       required:
         - templateID
@@ -422,35 +452,6 @@ components:
           items:
             type: string
 
-    SandboxMetric:
-      description: Metric entry with timestamp and line
-      required:
-        - timestamp
-        - cpuCount
-        - cpuUsedPct
-        - memUsedMiB
-        - memTotalMiB
-      properties:
-        timestamp:
-          type: string
-          format: date-time
-          description: Timestamp of the metric entry
-        cpuCount:
-          type: integer
-          format: int32
-          description: Number of CPU cores
-        cpuUsedPct:
-          type: number
-          format: float
-          description: CPU usage percentage
-        memUsedMiB:
-          type: integer
-          format: int64
-          description: Memory used in MiB
-        memTotalMiB:
-          type: integer
-          format: int64
-          description: Total memory in MiB
 
     Error:
       required:
@@ -592,6 +593,31 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /sandboxes/{sandboxID}/metrics:
+    get:
+      description: Get sandbox metrics
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "200":
+          description: Successfully returned the sandbox metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SandboxMetric"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+
   /sandboxes/{sandboxID}:
     get:
       description: Get a sandbox by id
@@ -710,31 +736,6 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
-        "500":
-          $ref: "#/components/responses/500"
-          
-  /sandboxes/{sandboxID}/metrics:
-    get:
-      description: Get sandbox metrics
-      tags: [sandboxes]
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - $ref: "#/components/parameters/sandboxID"
-      responses:
-        "200":
-          description: Successfully returned the sandbox metrics
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  $ref: "#/components/schemas/SandboxMetric"
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
         "500":
           $ref: "#/components/responses/500"
 
