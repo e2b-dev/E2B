@@ -428,6 +428,19 @@ class Sandbox(SandboxSetup, SandboxApi):
         return self.sandbox_id
 
     @overload
+    def get_metrics(
+        self, request_timeout: Optional[float] = None
+    ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the current sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        ...
+
+    @overload
     @staticmethod
     def get_metrics(
         sandbox_id: str,
@@ -453,7 +466,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         request_timeout: Optional[float] = None,
     ) -> List[SandboxMetrics]:
         """
-        Get the metrics of the sandbox specified by sandbox ID.
+        Get the metrics of the current sandbox.
 
         :param request_timeout: Timeout for the request in **seconds**
 
