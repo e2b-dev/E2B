@@ -231,7 +231,6 @@ export interface paths {
         };
         401: components["responses"]["401"];
         404: components["responses"]["404"];
-        /** Format: int32 */
         500: components["responses"]["500"];
       };
     };
@@ -530,7 +529,7 @@ export interface components {
        * Format: float
        * @description CPU usage percentage
        */
-      cpuPct: number;
+      cpuUsedPct: number;
       /**
        * Format: int64
        * @description Total memory in MiB

@@ -6,7 +6,6 @@ from e2b import AsyncSandbox
 
 @pytest.mark.skip_debug()
 async def test_get_metrics(async_sandbox):
-
     await asyncio.sleep(2)
     metrics = await async_sandbox.get_metrics()
 
