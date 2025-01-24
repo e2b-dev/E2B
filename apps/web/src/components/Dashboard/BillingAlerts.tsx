@@ -54,7 +54,7 @@ export const BillingAlerts = ({
         getBillingUrl(domain, `/teams/${team.id}/billing-limits`),
         {
           headers: {
-            'X-Team-API-Key': team.apiKeys[0],
+            'X-User-Access-Token': user.accessToken,
           },
         }
       )
@@ -97,7 +97,7 @@ export const BillingAlerts = ({
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            'X-Team-API-Key': team.apiKeys[0],
+            'X-User-Access-Token': user.accessToken,
           },
           body: JSON.stringify({
             [type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte']: value,
@@ -155,7 +155,7 @@ export const BillingAlerts = ({
         {
           method: 'DELETE',
           headers: {
-            'X-Team-API-Key': team.apiKeys[0],
+            'X-User-Access-Token': user.accessToken,
           },
         }
       )
