@@ -1,5 +1,7 @@
 import { createConnectTransport } from '@connectrpc/connect-web'
 
+import { compareVersions } from 'compare-versions'
+import { components } from '../api'
 import {
   ConnectionConfig,
   ConnectionOpts,
@@ -10,7 +12,6 @@ import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import { SandboxApi } from './sandboxApi'
-
 /**
  * Options for creating a new Sandbox.
  */
@@ -99,6 +100,7 @@ export class Sandbox extends SandboxApi {
   constructor(
     opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & {
       sandboxId: string
+      envdVersion?: string
     }
   ) {
     super()
@@ -114,10 +116,15 @@ export class Sandbox extends SandboxApi {
       interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
     })
 
-    this.envdApi = new EnvdApiClient({
-      apiUrl: this.envdApiUrl,
-      logger: opts?.logger,
-    })
+    this.envdApi = new EnvdApiClient(
+      {
+        apiUrl: this.envdApiUrl,
+        logger: opts?.logger,
+      },
+      {
+        version: opts?.envdVersion,
+      }
+    )
     this.files = new Filesystem(
       rpcTransport,
       this.envdApi,
@@ -176,16 +183,19 @@ export class Sandbox extends SandboxApi {
 
     const config = new ConnectionConfig(sandboxOpts)
 
-    const sandboxId = config.debug
-      ? 'debug_sandbox_id'
-      : await this.createSandbox(
+    if (config.debug) {
+      return new this({
+        sandboxId: 'debug_sandbox_id',
+        ...config,
+      }) as InstanceType<S>
+    } else {
+      const sandbox = await this.createSandbox(
         template,
         sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
         sandboxOpts
       )
-
-    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
-    return sbx
+      return new this({ ...sandbox, ...config }) as InstanceType<S>
+    }
   }
 
   /**
@@ -219,7 +229,7 @@ export class Sandbox extends SandboxApi {
 
   /**
    * Resume the sandbox.
-   * 
+   *
    * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
    * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
    *
@@ -296,6 +306,31 @@ export class Sandbox extends SandboxApi {
     }
 
     return true
+  }
+
+  /**
+   * Get the metrics of the sandbox.
+   *
+   * @param timeoutMs timeout in **milliseconds**.
+   * @param opts connection options.
+   *
+   * @returns metrics of the sandbox.
+   */
+  async getMetrics(
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
+  ): Promise<components['schemas']['SandboxMetric'][]> {
+    if (
+      this.envdApi.version &&
+      compareVersions(this.envdApi.version, '0.1.5') < 0
+    ) {
+      throw new Error(
+        'Metrics are not supported in this version of the sandbox, please rebuild your template.'
+      )
+    }
+    return await Sandbox.getMetrics(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
   }
 
   /**

@@ -13,6 +13,7 @@ from .running_sandbox import RunningSandbox
 from .sandbox import Sandbox
 from .sandbox_log import SandboxLog
 from .sandbox_logs import SandboxLogs
+from .sandbox_metric import SandboxMetric
 from .team import Team
 from .team_user import TeamUser
 from .template import Template
@@ -35,6 +36,7 @@ __all__ = (
     "Sandbox",
     "SandboxLog",
     "SandboxLogs",
+    "SandboxMetric",
     "Team",
     "TeamUser",
     "Template",

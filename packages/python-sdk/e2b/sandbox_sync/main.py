@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Optional, overload
+from typing import Dict, List, Optional, overload
 
 import httpx
 from e2b.connection_config import ConnectionConfig
@@ -10,7 +10,8 @@ from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
-from e2b.sandbox_sync.sandbox_api import SandboxApi
+from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxMetrics
+from packaging.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -129,12 +130,14 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         if self.connection_config.debug:
             self._sandbox_id = "debug_sandbox_id"
+            self._envd_version = None
         elif sandbox_id is not None:
             self._sandbox_id = sandbox_id
+            self._envd_version = None
         else:
             template = template or self.default_template
             timeout = timeout or self.default_sandbox_timeout
-            self._sandbox_id = SandboxApi._create_sandbox(
+            response = SandboxApi._create_sandbox(
                 template=template,
                 api_key=api_key,
                 timeout=timeout,
@@ -144,6 +147,8 @@ class Sandbox(SandboxSetup, SandboxApi):
                 debug=debug,
                 request_timeout=request_timeout,
             )
+            self._sandbox_id = response.sandbox_id
+            self._envd_version = response.envd_version
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
 
@@ -230,6 +235,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         # Another code block
         same_sandbox = Sandbox.connect(sandbox_id)
+        ```
         """
         return cls(
             sandbox_id=sandbox_id,
@@ -421,3 +427,65 @@ class Sandbox(SandboxSetup, SandboxApi):
         )
 
         return self.sandbox_id
+
+    @overload
+    def get_metrics(
+        self, request_timeout: Optional[float] = None
+    ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the current sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def get_metrics(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        ...
+
+    @class_method_variant("_cls_get_metrics")
+    def get_metrics(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the current sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        if self._envd_version and Version(self._envd_version) < Version("0.1.5"):
+            raise SandboxException(
+                "Metrics are not supported in this version of the sandbox, please rebuild your template."
+            )
+
+        config_dict = self.connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
+        return SandboxApi._cls_get_metrics(
+            sandbox_id=self.sandbox_id,
+            **self.connection_config.__dict__,
+        )

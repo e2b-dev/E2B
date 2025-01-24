@@ -1,13 +1,11 @@
 import urllib.parse
-
-from httpx import HTTPTransport
-from packaging.version import Version
 from typing import Dict, List, Optional
 
-from e2b.api import ApiClient, handle_api_exception
+from e2b.api import ApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     get_sandboxes,
+    get_sandboxes_sandbox_id_metrics,
     post_sandboxes,
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_resume,
@@ -19,8 +17,10 @@ from e2b.api.client.models import (
     ResumedSandbox,
 )
 from e2b.connection_config import ConnectionConfig
-from e2b.exceptions import TemplateException, NotFoundException
-from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo
+from e2b.exceptions import NotFoundException, TemplateException
+from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
+from httpx import HTTPTransport
+from packaging.version import Version
 
 
 class SandboxApi(SandboxApiBase):
@@ -156,6 +156,49 @@ class SandboxApi(SandboxApiBase):
                 raise handle_api_exception(res)
 
     @classmethod
+    def _cls_get_metrics(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetrics]:
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+        )
+
+        if config.debug:
+            # Skip getting the metrics in debug mode
+            return []
+
+        with ApiClient(config) as api_client:
+            res = get_sandboxes_sandbox_id_metrics.sync_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                return []
+
+            return [
+                SandboxMetrics(
+                    timestamp=metric.timestamp,
+                    cpu_used_pct=metric.cpu_used_pct,
+                    cpu_count=metric.cpu_count,
+                    mem_used_mib=metric.mem_used_mi_b,
+                    mem_total_mib=metric.mem_total_mi_b,
+                )
+                for metric in res.parsed
+            ]
+
+    @classmethod
     def _create_sandbox(
         cls,
         template: str,
@@ -166,7 +209,7 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> str:
+    ) -> SandboxCreateResponse:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
@@ -205,9 +248,12 @@ class SandboxApi(SandboxApiBase):
                     "You can do this by running `e2b template build` in the directory with the template."
                 )
 
-            return SandboxApi._get_sandbox_id(
-                res.parsed.sandbox_id,
-                res.parsed.client_id,
+            return SandboxCreateResponse(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    res.parsed.sandbox_id,
+                    res.parsed.client_id,
+                ),
+                envd_version=res.parsed.envd_version,
             )
 
     @classmethod
