@@ -1,9 +1,6 @@
 import urllib.parse
 from typing import Dict, List, Optional
 
-from httpx import HTTPTransport
-from packaging.version import Version
-
 from e2b.api import ApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
@@ -20,9 +17,10 @@ from e2b.api.client.models import (
     ResumedSandbox,
 )
 from e2b.connection_config import ConnectionConfig
-from e2b.exceptions import TemplateException, NotFoundException
+from e2b.exceptions import NotFoundException, TemplateException
 from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
-
+from httpx import HTTPTransport
+from packaging.version import Version
 
 
 class SandboxApi(SandboxApiBase):
@@ -192,7 +190,7 @@ class SandboxApi(SandboxApiBase):
             return [
                 SandboxMetrics(
                     timestamp=metric.timestamp,
-                    cpu_pct=metric.cpu_pct,
+                    cpu_used_pct=metric.cpu_used_pct,
                     cpu_count=metric.cpu_count,
                     mem_used_mib=metric.mem_used_mi_b,
                     mem_total_mib=metric.mem_total_mi_b,

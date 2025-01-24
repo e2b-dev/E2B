@@ -28,7 +28,7 @@ class SandboxMetrics:
 
     timestamp: datetime
     """Timestamp of the metrics."""
-    cpu_pct: float
+    cpu_used_pct: float
     """CPU usage in percentage."""
     cpu_count: int
     """Number of CPU cores."""

@@ -1,5 +1,4 @@
 import urllib.parse
-from packaging.version import Version
 from typing import Dict, List, Optional
 
 from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
@@ -20,6 +19,7 @@ from e2b.api.client.models import (
 from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import TemplateException
 from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
+from packaging.version import Version
 
 
 class SandboxApi(SandboxApiBase):
@@ -185,7 +185,7 @@ class SandboxApi(SandboxApiBase):
             return [
                 SandboxMetrics(
                     timestamp=metric.timestamp,
-                    cpu_pct=metric.cpu_pct,
+                    cpu_used_pct=metric.cpu_used_pct,
                     cpu_count=metric.cpu_count,
                     mem_used_mib=metric.mem_used_mi_b,
                     mem_total_mib=metric.mem_total_mi_b,

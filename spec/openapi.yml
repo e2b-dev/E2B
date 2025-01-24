@@ -427,7 +427,7 @@ components:
       required:
         - timestamp
         - cpuCount
-        - cpuPct
+        - cpuUsedPct
         - memUsedMiB
         - memTotalMiB
       properties:
@@ -439,7 +439,7 @@ components:
           type: integer
           format: int32
           description: Number of CPU cores
-        cpuPct:
+        cpuUsedPct:
           type: number
           format: float
           description: CPU usage percentage

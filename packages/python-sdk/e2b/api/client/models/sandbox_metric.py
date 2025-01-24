@@ -14,14 +14,14 @@ class SandboxMetric:
 
     Attributes:
         cpu_count (int): Number of CPU cores
-        cpu_pct (float): CPU usage percentage
+        cpu_used_pct (float): CPU usage percentage
         mem_total_mi_b (int): Total memory in MiB
         mem_used_mi_b (int): Memory used in MiB
         timestamp (datetime.datetime): Timestamp of the metric entry
     """
 
     cpu_count: int
-    cpu_pct: float
+    cpu_used_pct: float
     mem_total_mi_b: int
     mem_used_mi_b: int
     timestamp: datetime.datetime
@@ -30,7 +30,7 @@ class SandboxMetric:
     def to_dict(self) -> Dict[str, Any]:
         cpu_count = self.cpu_count
 
-        cpu_pct = self.cpu_pct
+        cpu_used_pct = self.cpu_used_pct
 
         mem_total_mi_b = self.mem_total_mi_b
 
@@ -43,7 +43,7 @@ class SandboxMetric:
         field_dict.update(
             {
                 "cpuCount": cpu_count,
-                "cpuPct": cpu_pct,
+                "cpuUsedPct": cpu_used_pct,
                 "memTotalMiB": mem_total_mi_b,
                 "memUsedMiB": mem_used_mi_b,
                 "timestamp": timestamp,
@@ -57,7 +57,7 @@ class SandboxMetric:
         d = src_dict.copy()
         cpu_count = d.pop("cpuCount")
 
-        cpu_pct = d.pop("cpuPct")
+        cpu_used_pct = d.pop("cpuUsedPct")
 
         mem_total_mi_b = d.pop("memTotalMiB")
 
@@ -67,7 +67,7 @@ class SandboxMetric:
 
         sandbox_metric = cls(
             cpu_count=cpu_count,
-            cpu_pct=cpu_pct,
+            cpu_used_pct=cpu_used_pct,
             mem_total_mi_b=mem_total_mi_b,
             mem_used_mi_b=mem_used_mi_b,
             timestamp=timestamp,
