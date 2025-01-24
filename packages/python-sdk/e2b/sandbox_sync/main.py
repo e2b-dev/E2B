@@ -235,6 +235,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         # Another code block
         same_sandbox = Sandbox.connect(sandbox_id)
+        ```
         """
         return cls(
             sandbox_id=sandbox_id,
