@@ -1,6 +1,13 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
@@ -13,34 +20,38 @@ export type Team = {
   is_default: boolean
   email: string
   apiKeys: string[]
+  is_blocked: boolean
+  blocked_reason: string
 }
 
-interface APIKey { api_key: string; }
+interface APIKey {
+  api_key: string
+}
 interface UserTeam {
-  is_default: boolean;
+  is_default: boolean
   teams: {
-    tier: string;
-    email: string;
-    team_api_keys: { api_key: string; }[];
-    id: string;
-    name: string;
+    tier: string
+    email: string
+    team_api_keys: { api_key: string }[]
+    id: string
+    name: string
+    is_blocked: boolean
+    blocked_reason: string
   }
 }
 
-export type E2BUser = (User & {
-  teams: Team[];
-  accessToken: string;
-  defaultTeamId: string;
-})
+export type E2BUser = User & {
+  teams: Team[]
+  accessToken: string
+  defaultTeamId: string
+}
 
 type UserContextType = {
-  isLoading: boolean;
-  session: Session | null;
-  user:
-  | E2BUser
-  | null;
-  error: Error | null;
-  wasUpdated: boolean | null;
+  isLoading: boolean
+  session: Session | null
+  user: E2BUser | null
+  error: Error | null
+  wasUpdated: boolean | null
 }
 
 export const UserContext = createContext(undefined)
@@ -115,7 +126,9 @@ export const CustomUserContextProvider = (props) => {
 
       const { data: userTeams, error: teamsError } = await supabase
         .from('users_teams')
-        .select('is_default, teams (id, name, tier, email, team_api_keys (api_key))')
+        .select(
+          'is_default, teams (id, name, tier, is_blocked, blocked_reason, email, team_api_keys (api_key))'
+        )
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
 
       if (teamsError) Sentry.captureException(teamsError)
@@ -134,10 +147,14 @@ export const CustomUserContextProvider = (props) => {
           tier: userTeam.teams.tier,
           is_default: userTeam.is_default,
           email: userTeam.teams.email,
-          apiKeys: userTeam.teams.team_api_keys.map((apiKey: APIKey) => apiKey.api_key),
+          apiKeys: userTeam.teams.team_api_keys.map(
+            (apiKey: APIKey) => apiKey.api_key
+          ),
+          is_blocked: userTeam.teams.is_blocked,
+          blocked_reason: userTeam.teams.blocked_reason,
         }
       })
-      const defaultTeam = teams?.find(team => team.is_default)
+      const defaultTeam = teams?.find((team) => team.is_default)
 
       if (!defaultTeam) {
         console.error('No default team found for user', session?.user.id)

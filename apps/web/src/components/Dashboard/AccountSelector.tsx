@@ -19,8 +19,7 @@ import {
 } from '../ui/alert-dialog'
 import { useState } from 'react'
 import { Button } from '../Button'
-
-const createTeamUrl = `${process.env.NEXT_PUBLIC_BILLING_API_URL}/teams`
+import { getBillingUrl } from '@/app/(dashboard)/dashboard/utils'
 
 export const AccountSelector = ({
   teams,
@@ -28,13 +27,16 @@ export const AccountSelector = ({
   currentTeam,
   setCurrentTeam,
   setTeams,
+  domainState,
 }) => {
+  const [domain] = domainState
+
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [teamName, setTeamName] = useState('')
   const closeDialog = () => setIsDialogOpen(false)
 
   const createNewTeam = async () => {
-    const res = await fetch(createTeamUrl, {
+    const res = await fetch(getBillingUrl(domain, '/teams'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
