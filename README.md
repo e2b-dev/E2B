@@ -3,14 +3,38 @@
 </p>
 
 
+
 <h1 align="center">
+  E2B SDK
   E2B SDK
 </h1>
 
 <!---
+<!---
 <h3 align="center">
   SDK made to control the E2B Sandboxes - secure cloud environments for running LLM-generated code
+  SDK made to control the E2B Sandboxes - secure cloud environments for running LLM-generated code
 </h3>
+--->
+The E2B SDK is made to control the E2B Sandboxes - secure cloud environments for running LLM-generated code. The SDK lets you give your AI app a custom code interpreter.
+
+- ✔️ Works with any LLM and AI framework (see [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) for examples)
+- ✔️ Supports streaming content like charts and stdout, stderr
+- ✔️ Python & JS SDK
+- ✔️ Runs on serverless and edge functions
+- ✔️ Runs AI-generated code in secure sandboxed environments
+- ✔️ 100% open source (including [infrastructure](https://github.com/e2b-dev/infra))
+
+
+##### 💻 Supported language runtimes
+- ✔️ Python
+- [(Beta)](https://e2b.dev/docs/guide/beta-code-interpreter-language-runtimes) JavaScript, R, Java
+
+
+<!---
+<img width="100%" src="/readme-assets/preview.png" alt="Cover image">
+
+--->
 --->
 The E2B SDK is made to control the E2B Sandboxes - secure cloud environments for running LLM-generated code. The SDK lets you give your AI app a custom code interpreter.
 
@@ -131,6 +155,21 @@ console.log(execution.text)  // outputs 2
 await sandbox.close()
 ```
 
+**Python**
+```py
+from e2b_code_interpreter import CodeInterpreter
+
+with CodeInterpreter() as sandbox:
+    sandbox.notebook.exec_cell("x = 1")
+
+    execution = sandbox.notebook.exec_cell("x+=1; x")
+    print(execution.text)  # outputs 2
+```
+
+### 3. Hello World guides
+Dive depeer and check out the [JavaScript/TypeScript](https://e2b.dev/docs/hello-world/js) and [Python](https://e2b.dev/docs/hello-world/py) "Hello World" guides to learn how to connect code interpreter LLMs.
+
+> Please visit [documentation](https://e2b.dev/docs) to get started.
 **Python**
 ```py
 from e2b_code_interpreter import CodeInterpreter
