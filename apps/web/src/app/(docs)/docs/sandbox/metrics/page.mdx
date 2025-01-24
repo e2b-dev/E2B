@@ -1,0 +1,118 @@
+# Sandbox metrics
+
+<Note>
+Sandbox metrics is currently in beta:
+1. [Reach out to us](/docs/support) with your use case to get access to the beta.
+1. You'll need to install the [beta version of the SDKs](#installing-the-beta-version-of-the-sdks).
+1. Consider [some limitations](#limitations-while-in-beta).
+1. Metrics is free for all users during the beta.
+</Note>
+
+The sandbox metrics allows you to get information about the sandbox's CPU and memory usage.
+
+## 1. Installing the beta version of the SDKs
+To get sandbox metrics, you need to install the beta version of the SDKs.
+
+<CodeGroup>
+```bash {{ language: 'js' }}
+npm i @e2b/code-interpreter@beta
+#
+# or use Core: https://github.com/e2b-dev/e2b
+# npm i e2b@beta
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# npm i @e2b/desktop@beta
+```
+
+```bash {{ language: 'python' }}
+pip install e2b-code-interpreter==1.0.4b
+#
+# or use Core: https://github.com/e2b-dev/e2b
+# pip install e2b==1.1.0.b
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# pip install e2b-desktop==1.1.0.b
+```
+</CodeGroup>
+
+
+## 2. Getting sandbox metrics
+Getting the metrics of a sandbox returns an array of timestamped metrics containing CPU and memory usage information.
+The metrics are collected at the start of the sandbox, then every 2 seconds, and finally right before the sandbox is deleted.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+console.log('Sandbox created', sbx.sandboxId)
+
+const metrics = await sbx.getMetrics() // $HighlightLine
+
+// You can also get the metrics by sandbox ID:
+// const metrics = await Sandbox.getMetrics(sbx.sandboxId)
+
+console.log('Sandbox metrics:', metrics)
+
+// [
+//   {
+//     cpuCount: 2,
+//     cpuUsedPct: 50.05,
+//     memTotalMiB: 484,
+//     memUsedMiB: 37,
+//     timestamp: '2025-01-23T23:44:12.222Z'
+//   },
+//   {
+//     cpuCount: 2,
+//     cpuUsedPct: 4.5,
+//     memTotalMiB: 484,
+//     memUsedMiB: 37,
+//     timestamp: '2025-01-23T23:44:13.220Z'
+//   }
+// ]
+
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox()
+print('Sandbox created', sbx.sandbox_id)
+
+metrics = sbx.get_metrics() # $HighlightLine
+
+# You can also get the metrics by sandbox ID:
+# metrics = Sandbox.get_metrics(sbx.sandbox_id)
+
+print('Sandbox metrics', metrics) 
+
+# [
+#   SandboxMetrics(timestamp=datetime.datetime(
+#       2025, 1, 23, 23, 58, 42, 84050, tzinfo=tzutc()), 
+#       cpu_count=2, 
+#       cpu_used_pct=50.07, 
+#       mem_total_mib=484
+#       mem_used_mib=37, 
+#   ), 
+#   SandboxMetrics(timestamp=datetime.datetime(
+#       2025, 1, 23, 23, 58, 44, 84845, tzinfo=tzutc()), 
+#       cpu_count=2, 
+#       cpu_used_pct=4.75, 
+#       mem_total_mib=484
+#       mem_used_mib=38, 
+#   ),
+# ]
+```
+```bash
+e2b sandbox metrics <sandbox_id>  # $HighlightLine
+
+# Metrics for sandbox <sandbox_id>
+# 
+# [2025-01-23 00:58:58.829Z]  { cpuCount: 2, cpuUsedPct: 50.21, logger: '', memTotalMiB: 484, memUsedMiB: 38, timestamp: '2025-01-23T00:58:58.829638869Z' }
+# [2025-01-23 00:59:03.814Z]  { cpuCount: 2, cpuUsedPct: 5.16, logger: '', memTotalMiB: 484, memUsedMiB: 37, timestamp: '2025-01-23T00:59:03.814028031Z' }
+# [2025-01-23 00:59:08.815Z]  { cpuCount: 2, cpuUsedPct: 1.6, logger: '', memTotalMiB: 484, memUsedMiB: 37, timestamp: '2025-01-23T00:59:08.815933749Z' }
+```
+</CodeGroup>
+
+## Limitations while in beta
+- It takes a few seconds to get the metrics after the sandbox is created.
+- We are currently returning virtual memory usage.
