@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 
 import {
+  ArrowUpRight,
   BarChart,
   CreditCard,
   FileText,
@@ -27,6 +28,7 @@ import { PersonalContent } from '@/components/Dashboard/Personal'
 import { TemplatesContent } from '@/components/Dashboard/Templates'
 import { SandboxesContent } from '@/components/Dashboard/Sandboxes'
 import { DeveloperContent } from '@/components/Dashboard/Developer'
+import { Button } from '@/components/Button'
 
 function redirectToCurrentURL() {
   const url = typeof window !== 'undefined' ? window.location.href : undefined
@@ -152,15 +154,19 @@ const Dashboard = ({ user }) => {
           domainState={domainState}
         />
         <div className="flex-1 md:pl-10 pb-16">
-          <div className="flex justify-between w-full items-center">
+          <div className="flex flex-col  w-full">
             <h2 className="text-2xl mb-2 font-bold">
               {selectedItem[0].toUpperCase() + selectedItem.slice(1)}
             </h2>
             {currentTeam.is_blocked && (
-              <p className="text-sm text-red-500 mb-2 max-w-lg leading-tight truncate text-right bg-red-500/20 rounded-lg p-2 px-3">
-                Your team is blocked. <br />
-                {currentTeam.blocked_reason}.
-              </p>
+              <Button
+                onClick={() => setSelectedItem('usage')}
+                variant="desctructive"
+                className="mb-3 dark:ring-0 w-fit dark:bg-red-900/20 whitespace-break-spaces rounded-lg h-8 items-center text-xs"
+              >
+                Usage is blocked: {currentTeam.blocked_reason}.
+                <ArrowUpRight className="w-4 h-4" />
+              </Button>
             )}
           </div>
 
