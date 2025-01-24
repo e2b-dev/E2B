@@ -152,9 +152,18 @@ const Dashboard = ({ user }) => {
           domainState={domainState}
         />
         <div className="flex-1 md:pl-10 pb-16">
-          <h2 className="text-2xl mb-2 font-bold">
-            {selectedItem[0].toUpperCase() + selectedItem.slice(1)}
-          </h2>
+          <div className="flex justify-between w-full items-center">
+            <h2 className="text-2xl mb-2 font-bold">
+              {selectedItem[0].toUpperCase() + selectedItem.slice(1)}
+            </h2>
+            {currentTeam.is_blocked && (
+              <p className="text-sm text-red-500 mb-2 max-w-lg leading-tight truncate text-right bg-red-500/20 rounded-lg p-2 px-3">
+                Your team is blocked. <br />
+                {currentTeam.blocked_reason}.
+              </p>
+            )}
+          </div>
+
           <div className="border border-white/5 w-full h-[1px] mb-10" />
           <MainContent
             selectedItem={selectedItem}
