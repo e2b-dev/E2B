@@ -10,31 +10,28 @@ Sandbox metrics is currently in beta:
 
 The sandbox metrics allows you to get information about the sandbox's CPU and memory usage.
 
-## 1. Installing the beta version of the SDKs
-To get sandbox metrics, you need to install the beta version of the SDKs.
+## 1. Installing the beta version of the SDKs and CLI
+To get sandbox metrics, you need to install the beta version of the SDKs and CLI.
 
-<CodeGroup>
+<CodeGroup isTerminalCommand>
 ```bash {{ language: 'js' }}
-npm i @e2b/code-interpreter@beta
+npm i @e2b/code-interpreter@beta1.2.0-beta.0
 #
 # or use Core: https://github.com/e2b-dev/e2b
-# npm i e2b@beta
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# npm i @e2b/desktop@beta
+# npm i e2b@1.2.0-beta.0
 ```
 
 ```bash {{ language: 'python' }}
-pip install e2b-code-interpreter==1.0.4b
+pip install e2b-code-interpreter==1.2.0b0
 #
 # or use Core: https://github.com/e2b-dev/e2b
-# pip install e2b==1.1.0.b
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# pip install e2b-desktop==1.1.0.b
+# pip install e2b==1.2.0b0
+```
+
+```bash {{ language: 'bash' }}
+npm i -g @e2b/cli@1.2.0-beta.0
 ```
 </CodeGroup>
-
 
 ## 2. Getting sandbox metrics
 Getting the metrics of a sandbox returns an array of timestamped metrics containing CPU and memory usage information.
@@ -98,10 +95,12 @@ print('Sandbox metrics', metrics)
 #       cpu_count=2, 
 #       cpu_used_pct=4.75, 
 #       mem_total_mib=484
-#       mem_used_mib=38, 
+#       mem_used_mib=38,
 #   ),
 # ]
 ```
+</CodeGroup>
+<CodeGroup isTerminalCommand>
 ```bash
 e2b sandbox metrics <sandbox_id>  # $HighlightLine
 
@@ -114,5 +113,5 @@ e2b sandbox metrics <sandbox_id>  # $HighlightLine
 </CodeGroup>
 
 ## Limitations while in beta
-- It takes a few seconds to get the metrics after the sandbox is created.
-- We are currently returning virtual memory usage.
+- It takes a few seconds to get the metrics after the sandbox is created, because the logs are collected from the sandbox.
+- We are currently returning virtual memory usage, this is a commonly used metric but it doesn't reflect real-time memory consumption or direct hardware resource allocation, because the OS can swap data between RAM and disk. 
