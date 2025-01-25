@@ -148,8 +148,7 @@ export const BillingAlerts = ({
       const res = await fetch(
         getBillingUrl(
           domain,
-          `/teams/${team.id}/billing-limits/${
-            type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte'
+          `/teams/${team.id}/billing-limits/${type === 'limit' ? 'limit_amount_gte' : 'alert_amount_gte'
           }`
         ),
         {
@@ -320,17 +319,18 @@ export const BillingAlerts = ({
       <form onSubmit={(e) => handleSubmit(e, 'limit')} className="space-y-2">
         <h3 className="font-medium">Enable Budget Limit</h3>
         <p className="text-sm text-white/70">
-          If your team exceeds this threshold in a given billing period,
+          If your team exceeds this threshold in a given month,
           subsequent API requests will be blocked.
         </p>
         <p className="text-sm text-white/70">
           You will automatically receive email notifications when your usage
-          reaches <b>50%</b> and <b>80%</b> of this limit.
+          reaches <b>50%</b>, <b>80%</b>, <b>90%</b>, and <b>100%</b> of this
+          limit.
         </p>
         <p className="text-sm text-red-400">
           Caution: Enabling a Budget Limit may cause interruptions to your
           service. Once your Budget Limit is reached, your team will not be able
-          to create new sandboxes in the given billing period unless the limit
+          to create new sandboxes in the given month unless the limit
           is increased.
         </p>
         <div className="!mt-4">{renderAmountInput('limit')}</div>
@@ -339,8 +339,9 @@ export const BillingAlerts = ({
       <form onSubmit={(e) => handleSubmit(e, 'alert')} className="space-y-2">
         <h3 className="font-medium">Set a Budget Alert</h3>
         <p className="text-sm text-white/70">
-          If your team exceeds this threshold in a given billing period,
-          you&apos;ll receive an alert notification to <b>{email}</b>.
+          If your team exceeds this threshold in a given month, you&apos;ll
+          receive an alert notification to <b>{email}</b>.
+          This will not result in any interruptions to your service.
         </p>
         <div className="!mt-4">{renderAmountInput('alert')}</div>
       </form>
