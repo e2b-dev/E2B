@@ -116,5 +116,4 @@ e2b sandbox metrics <sandbox_id>  # $HighlightLine
 </CodeGroup>
 
 ## Limitations while in beta
-- It takes a few seconds to get the metrics after the sandbox is created, because the logs are collected from the sandbox.
-- We are currently returning virtual memory usage, this is a commonly used metric but it doesn't reflect real-time memory consumption or direct hardware resource allocation, because the OS can swap data between RAM and disk. 
+- It may take a second or more to get the metrics after the sandbox is created. Until the logs are collected from the sandbox, you will get an empty array.
