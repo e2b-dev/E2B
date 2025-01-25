@@ -8,6 +8,7 @@ def test_start(template):
     sbx = Sandbox(template, timeout=5)
     try:
         assert sbx.is_running()
+        assert sbx._envd_version is not None
     finally:
         sbx.kill()
 

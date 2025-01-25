@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
 import LineChart from '@/components/Dashboard/Chart'
-import Spinner from '@/components/Spinner'
 import { toast } from '@/components/ui/use-toast'
 import { Team } from '@/utils/useUser'
 import { getBillingUrl } from '@/app/(dashboard)/dashboard/utils'
+import { cn } from '@/lib/utils'
+import { Skeleton } from '../ui/skeleton'
+import { BillingAlerts } from './BillingAlerts'
 
 type Usage = {
   month: number
@@ -20,6 +21,25 @@ type PlotData = {
 type Series = {
   id: string
   data: PlotData[]
+}
+
+const ChartSkeleton = ({ className }: { className?: string }) => {
+  const numBars = Math.floor(Math.random() * 6) + 5 // Random number between 5-10
+  const bars = Array.from({ length: numBars }, () => Math.random() * 80 + 20) // Random heights between 20-100
+
+  return (
+    <div className={cn('relative w-full aspect-video p-4', className)}>
+      <div className="flex h-full items-end justify-between gap-2">
+        {bars.map((height, i) => (
+          <Skeleton
+            key={i}
+            className="w-full"
+            style={{ height: `${height}%` }}
+          />
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export const UsageContent = ({
@@ -39,132 +59,135 @@ export const UsageContent = ({
   >()
   const [costUsage, setCostUsage] = useState<Series[]>([])
   const [costThisMonth, setCostMonth] = useState<number | undefined>()
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const getUsage = async () => {
+      setIsLoading(true)
       setVcpuData([])
       setRamData([])
       setCostUsage([])
 
-      const response = await fetch(
-        getBillingUrl(domain, `/teams/${team.id}/usage`),
-        {
-          headers: {
-            'X-Team-API-Key': team.apiKeys[0],
-          },
+      try {
+        const response = await fetch(
+          getBillingUrl(domain, `/teams/${team.id}/usage`),
+          {
+            headers: {
+              'X-Team-API-Key': team.apiKeys[0],
+            },
+          }
+        )
+        if (!response.ok) {
+          throw new Error('Failed to fetch usage data')
         }
-      )
-      if (!response.ok) {
-        // TODO: Add sentry event here
+
+        const data = await response.json()
+        const { vcpuSeries, ramSeries } = transformData(data.usages)
+        const costData = transformCostData(data.usages)
+
+        const latestCost = costData[0].data[costData[0].data.length - 1]
+        setCostUsage(costData)
+        setCostMonth(latestCost.y)
+
+        setVcpuData(vcpuSeries)
+        setVcpuHoursThisMonth(
+          vcpuSeries[0].data[vcpuSeries[0].data.length - 1].y
+        )
+
+        setRamData(ramSeries)
+        setRamHoursThisMonth(ramSeries[0].data[ramSeries[0].data.length - 1].y)
+      } catch (error) {
         toast({
           title: 'An error occurred',
           description: 'We were unable to fetch the usage data',
         })
-        console.log(response)
-        return
+        console.error(error)
+      } finally {
+        setIsLoading(false)
       }
-
-      const data = await response.json()
-      const { vcpuSeries, ramSeries } = transformData(data.usages)
-
-      const costData = transformCostData(data.usages)
-      const latestCost = costData[0].data[costData[0].data.length - 1]
-      setCostUsage(costData)
-      setCostMonth(latestCost.y)
-
-      setVcpuData(vcpuSeries)
-      setVcpuHoursThisMonth(vcpuSeries[0].data[vcpuSeries[0].data.length - 1].y)
-
-      setRamData(ramSeries)
-      setRamHoursThisMonth(ramSeries[0].data[ramSeries[0].data.length - 1].y)
     }
 
     getUsage()
   }, [team, domain])
 
   return (
-    <div className="flex flex-col w-full">
-      <div className="pb-10">
-        <h2 className="font-bold pb-4 text-xl">Usage history</h2>
-        <p>
-          The graphs show the total monthly vCPU-hours and RAM-hours used by the
-          team. <br />
-        </p>
-      </div>
+    <div className="flex flex-col w-full gap-3">
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 gap-y-12">
+        {/* Budget Controls */}
+        <BillingAlerts team={team} domain={domain} email={team.email} />
 
-      <div className="flex flex-col 2xl:flex-row w-full space-y-4 2xl:space-y-0 2xl:space-x-4">
-        <div className="flex flex-col w-full md:w-2/3">
-          <h2 className="font-bold pb-4 text-xl">Costs in USD</h2>
-          {costUsage && costUsage.length > 0 ? (
-            <div className="flex flex-col space-y-2">
-              <span className="text-sm text-white/50">
+        <div className="col-span-1 max-xl:hidden" />
+
+        {/* Cost Section */}
+        <div className="bg-inherit/10 rounded-lg">
+          <div className="pb-2">
+            <h2 className="text-2xl font-semibold">Costs in USD</h2>
+            {!isLoading && costThisMonth && (
+              <p className="text-sm text-white/50">
                 Total costs this month: <b>${costThisMonth?.toFixed(2)}</b>
-              </span>
-              <Card className="w-full bg-inherit/10 border border-white/20 mb-10">
-                <CardContent>
-                  <LineChart
-                    className="aspect-[4/3]"
-                    series={costUsage}
-                    type="Cost"
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center w-full">
-              <Spinner />
-            </div>
-          )}
+              </p>
+            )}
+          </div>
+          <div>
+            {isLoading ? (
+              <ChartSkeleton className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]" />
+            ) : (
+              <LineChart
+                series={costUsage}
+                type="Cost"
+                className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]"
+              />
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col w-full md:w-2/3">
-          <h2 className="font-bold pb-4 text-xl">vCPU hours</h2>
-          {vcpuData && vcpuData.length > 0 ? (
-            <div className="flex flex-col space-y-2">
-              <span className="text-sm text-white/50">
+        {/* vCPU Section */}
+        <div className="bg-inherit/10 rounded-lg">
+          <div className="pb-2">
+            <h2 className="text-2xl font-semibold">vCPU hours</h2>
+            {!isLoading && vcpuHoursThisMonth && (
+              <p className="text-sm text-white/50">
                 Total vCPU hours this month:{' '}
                 <b>{vcpuHoursThisMonth?.toFixed(2)}</b>
-              </span>
-              <Card className="w-full bg-inherit/10 border border-white/20 mb-10">
-                <CardContent>
-                  <LineChart
-                    className="aspect-[4/3]"
-                    series={vcpuData}
-                    type="vCPU"
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center w-full">
-              <Spinner />
-            </div>
-          )}
+              </p>
+            )}
+          </div>
+          <div>
+            {isLoading ? (
+              <ChartSkeleton className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]" />
+            ) : (
+              <LineChart
+                series={vcpuData}
+                type="vCPU"
+                className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]"
+              />
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col w-full md:w-2/3">
-          <h2 className="font-bold pb-4 text-xl">RAM hours</h2>
-          {ramData && ramData.length > 0 ? (
-            <div className="flex flex-col space-y-2">
-              <span className="text-sm text-white/50">
+        {/* RAM Section */}
+        <div className="bg-inherit/10 rounded-lg">
+          <div className="pb-2">
+            <h2 className="text-2xl font-semibold">RAM hours</h2>
+            {!isLoading && ramHoursThisMonth && (
+              <p className="text-sm text-white/50">
                 Total RAM hours this month:{' '}
                 <b>{ramHoursThisMonth?.toFixed(2)}</b>
-              </span>
-              <Card className="w-full bg-inherit/10 border border-white/20 mb-10">
-                <CardContent>
-                  <LineChart
-                    className="aspect-[4/3]"
-                    series={ramData}
-                    type="RAM"
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center w-full">
-              <Spinner />
-            </div>
-          )}
+              </p>
+            )}
+          </div>
+          <div>
+            {isLoading ? (
+              <ChartSkeleton className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]" />
+            ) : (
+              <LineChart
+                series={ramData}
+                type="RAM"
+                className="aspect-[21/9] xs:aspect-[2/1] lg:aspect-[16/9]"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
