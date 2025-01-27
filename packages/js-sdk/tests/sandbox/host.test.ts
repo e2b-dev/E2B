@@ -53,6 +53,5 @@ sandboxTest.skipIf(isDebug)(
 
     const text = await res2.text()
     assert.equal(text, 'Sandbox does not exist.')
-    }
   }
 )
