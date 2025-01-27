@@ -170,7 +170,7 @@ api_key = os.environ["GROQ_API_KEY"]
 # Create Groq client
 client = Groq(api_key=api_key)
 system_prompt = "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
-prompt = "Calculate how many r's are in the word 'strawberry'"
+prompt = "Calculate how many r's are in the word 'strawberry.'"
 
 # Send the prompt to the model
 response = client.chat.completions.create(
