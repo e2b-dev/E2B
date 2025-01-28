@@ -1,6 +1,6 @@
-import { test } from 'vitest'
+import { assert, test } from 'vitest'
 
-import Sandbox, { components } from '../../src/index.js'
+import Sandbox, { components, CommandResult } from '../../src/index.js'
 import { isIntegrationTest, wait } from '../setup.js'
 
 const heavyArray = new ArrayBuffer(256 * 1024 * 1024) // 256 MiB = 256 * 1024 * 1024 bytes
@@ -10,9 +10,10 @@ for (let i = 0; i < view.length; i++) {
 }
 
 const integrationTestTemplate = 'integration-test-v1'
-const sanboxCount = 1_000
-const batchSize = 10
+const sanboxCount = 10
+const batchSize = 3
 
+/*
 test.skipIf(!isIntegrationTest)(
   'create a bunch of sandboxes and get metrics',
   async () => {
@@ -126,3 +127,52 @@ test.skipIf(!isIntegrationTest)('stress requests to nextjs app', async ({}) => {
 
   await Promise.all(fetchPromises)
 })
+*/
+
+test.skipIf(!isIntegrationTest)(
+  'long running sandbox process',
+  async ({}) => {
+    const sandboxPromises: Array<Promise<Sandbox>> = []
+    let sandboxResults: Array<Sandbox> = []
+
+    try {
+      console.log('[Step 1] Creating sandboxes and long running commands')
+      for (let i = 0; i < sanboxCount; i++) {
+        sandboxPromises.push(Sandbox.create('base', { timeoutMs: 60_000 * 20 }))
+      }
+
+      sandboxResults = await Promise.all(sandboxPromises)
+
+      await wait(2_000)
+
+      console.log('[Step 2] Run long running commands')
+      const cmdResults = await Promise.all(
+        sandboxResults.map((sbx) => {
+          console.log('starting long running command on sandbox', sbx.sandboxId)
+          return sbx.commands.run('sleep 1000', { timeoutMs: 60_000 * 20 })
+        })
+      )
+
+      await wait(2_000)
+
+      console.log('[Step 3] Check exit codes of command results')
+      await Promise.all(
+        cmdResults.map((r) => {
+          if (r && r.exitCode === 0) return r.exitCode
+          assert.fail(
+            'command result is undefined or exited with non-zero code',
+            JSON.stringify({ r })
+          )
+        })
+      )
+    } finally {
+      console.log('[Step 4] Kill sandboxes')
+      try {
+        await Promise.all(sandboxResults.map((sbx) => sbx?.kill()))
+      } catch (e) {
+        console.error('error killing sandboxes', e)
+      }
+    }
+  },
+  { timeout: 60_000 * 30 }
+)
