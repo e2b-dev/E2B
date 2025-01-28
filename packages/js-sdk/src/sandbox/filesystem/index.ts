@@ -24,7 +24,7 @@ import { WatchHandle, FilesystemEvent } from './watchHandle'
 
 import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../../errors'
-import {ENVD_VERSION_RECURSIVE_WATCH} from '../../envd/versions'
+import { ENVD_VERSION_RECURSIVE_WATCH } from '../../envd/versions'
 
 /**
  * Sandbox filesystem object information.
