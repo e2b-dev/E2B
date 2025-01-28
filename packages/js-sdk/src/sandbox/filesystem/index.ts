@@ -22,6 +22,10 @@ import { FileType as FsFileType, Filesystem as FilesystemService } from '../../e
 
 import { WatchHandle, FilesystemEvent } from './watchHandle'
 
+import { compareVersions } from 'compare-versions'
+import { TemplateError } from '../../errors'
+import { ENVD_VERSION_RECURSIVE_WATCH } from '../../envd/versions'
+
 /**
  * Sandbox filesystem object information.
  */
@@ -90,6 +94,10 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * Callback to call when the watch operation stops.
    */
   onExit?: (err?: Error) => void | Promise<void>
+  /**
+   * Watch the directory recursively
+   */
+  recursive?: boolean
 }
 
 /**
@@ -99,6 +107,7 @@ export class Filesystem {
   private readonly rpc: Client<typeof FilesystemService>
 
   private readonly defaultWatchTimeout = 60_000 // 60 seconds
+  private readonly defaultWatchRecursive = false
 
   constructor(
     transport: Transport,
@@ -434,6 +443,13 @@ export class Filesystem {
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
     opts?: WatchOpts
   ): Promise<WatchHandle> {
+    if (opts?.recursive && this.envdApi.version && compareVersions(this.envdApi.version, ENVD_VERSION_RECURSIVE_WATCH) < 0) {
+      throw new TemplateError(
+        'You need to update the template to use recursive watching. ' +
+        'You can do this by running `e2b template build` in the directory with the template.'
+      )
+    }
+
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -446,7 +462,10 @@ export class Filesystem {
       : undefined
 
     const events = this.rpc.watchDir(
-      { path },
+      {
+        path,
+        recursive: opts?.recursive ?? this.defaultWatchRecursive,
+      },
       {
         headers: {
           ...authenticationHeader(opts?.user),

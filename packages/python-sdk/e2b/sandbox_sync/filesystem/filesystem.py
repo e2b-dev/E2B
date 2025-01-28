@@ -4,6 +4,10 @@ from typing import IO, Iterator, List, Literal, Optional, Union, overload
 import e2b_connect
 import httpcore
 import httpx
+from packaging.version import Version
+
+from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
+from e2b.exceptions import TemplateException
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
@@ -25,11 +29,13 @@ class Filesystem:
     def __init__(
         self,
         envd_api_url: str,
+        envd_version: Optional[str],
         connection_config: ConnectionConfig,
         pool: httpcore.ConnectionPool,
         envd_api: httpx.Client,
     ) -> None:
         self._envd_api_url = envd_api_url
+        self._envd_version = envd_version
         self._connection_config = connection_config
         self._pool = pool
         self._envd_api = envd_api
@@ -336,6 +342,7 @@ class Filesystem:
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
+        recursive: bool = False,
     ) -> WatchHandle:
         """
         Watch directory for filesystem events.
@@ -343,12 +350,23 @@ class Filesystem:
         :param path: Path to a directory to watch
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
+        :param recursive: Watch directory recursively
 
         :return: `WatchHandle` object for stopping watching directory
         """
+        if (
+            recursive
+            and self._envd_version is not None
+            and Version(self._envd_version) < ENVD_VERSION_RECURSIVE_WATCH
+        ):
+            raise TemplateException(
+                "You need to update the template to use recursive watching. "
+                "You can do this by running `e2b template build` in the directory with the template."
+            )
+
         try:
             r = self._rpc.create_watcher(
-                filesystem_pb2.CreateWatcherRequest(path=path),
+                filesystem_pb2.CreateWatcherRequest(path=path, recursive=recursive),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),

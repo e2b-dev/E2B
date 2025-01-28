@@ -70,6 +70,7 @@ message ListDirResponse {
 
 message WatchDirRequest {
     string path = 1;
+    bool recursive = 2;
 }
 
 message FilesystemEvent {
@@ -91,6 +92,7 @@ message WatchDirResponse {
 
 message CreateWatcherRequest {
     string path = 1;
+    bool recursive = 2;
 }
 
 message CreateWatcherResponse {
@@ -106,7 +108,7 @@ message GetWatcherEventsResponse {
 }
 
 message RemoveWatcherRequest {
-      string watcher_id = 1;
+    string watcher_id = 1;
 }
 
 message RemoveWatcherResponse {}

@@ -1,5 +1,5 @@
 from httpx import HTTPTransport
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 from packaging.version import Version
 
 from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
