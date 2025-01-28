@@ -17,7 +17,7 @@ from e2b.api.client.models import (
     ResumedSandbox,
 )
 from e2b.connection_config import ConnectionConfig
-from e2b.exceptions import TemplateException
+from e2b.exceptions import TemplateException, NotFoundException
 from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
 from packaging.version import Version
 
