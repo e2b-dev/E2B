@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Optional, overload
+from typing import Dict, Optional, overload, Literal
 
 import httpx
 from e2b.connection_config import ConnectionConfig
@@ -88,6 +88,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
     def __init__(
         self,
+        auto_pause: Literal[True],
         template: Optional[str] = None,
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
@@ -103,6 +104,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         By default, the sandbox is created from the default `base` sandbox template.
 
+        :param auto_pause: Automatically pause the sandbox after the timeout expires
         :param template: Sandbox template name or ID
         :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users
         :param metadata: Custom metadata for the sandbox
@@ -113,6 +115,9 @@ class Sandbox(SandboxSetup, SandboxApi):
         :return: sandbox instance for the new sandbox
         """
         super().__init__()
+
+        if not auto_pause:
+            raise ValueError("auto_pause must be True")
 
         if sandbox_id and (metadata is not None or template is not None):
             raise SandboxException(
@@ -134,6 +139,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         else:
             template = template or self.default_template
             timeout = timeout or self.default_sandbox_timeout
+            auto_pause = auto_pause or self.default_sandbox_auto_pause
             self._sandbox_id = SandboxApi._create_sandbox(
                 template=template,
                 api_key=api_key,
@@ -143,6 +149,7 @@ class Sandbox(SandboxSetup, SandboxApi):
                 domain=domain,
                 debug=debug,
                 request_timeout=request_timeout,
+                auto_pause=auto_pause,
             )
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
@@ -206,43 +213,11 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         return True
 
-    @classmethod
-    def connect(
-        cls,
-        sandbox_id: str,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
-        debug: Optional[bool] = None,
-    ):
-        """
-        Connects to an existing Sandbox.
-        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
-
-        :param sandbox_id: Sandbox ID
-        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
-
-        :return: sandbox instance for the existing sandbox
-
-        @example
-        ```python
-        sandbox = Sandbox()
-        sandbox_id = sandbox.sandbox_id
-
-        # Another code block
-        same_sandbox = Sandbox.connect(sandbox_id)
-        """
-        return cls(
-            sandbox_id=sandbox_id,
-            api_key=api_key,
-            domain=domain,
-            debug=debug,
-        )
-
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.kill()
+        self.pause()
 
     @overload
     def kill(self, request_timeout: Optional[float] = None) -> bool:
@@ -303,7 +278,7 @@ class Sandbox(SandboxSetup, SandboxApi):
     ) -> None:
         """
         Set the timeout of the sandbox.
-        After the timeout expires the sandbox will be automatically killed.
+        After the timeout expires the sandbox will be automatically paused.
         This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
         Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
@@ -325,7 +300,7 @@ class Sandbox(SandboxSetup, SandboxApi):
     ) -> None:
         """
         Set the timeout of the sandbox specified by sandbox ID.
-        After the timeout expires the sandbox will be automatically killed.
+        After the timeout expires the sandbox will be automatically paused.
         This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
         Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
@@ -357,32 +332,67 @@ class Sandbox(SandboxSetup, SandboxApi):
         )
 
     @classmethod
-    def resume(
+    def connect(
         cls,
         sandbox_id: str,
-        timeout: Optional[int] = None,
+        auto_pause: Literal[True],
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
+        timeout: Optional[int] = None,
         request_timeout: Optional[float] = None,
     ):
         """
-        Resume the sandbox.
+        Connect to or resume the sandbox.
+        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
         The **default sandbox timeout of 300 seconds** will be used for the resumed sandbox.
         If you pass a custom timeout via the `timeout` parameter, it will be used instead.
+        If the sandbox is running, the timeout will be updated to the new value (or default).
 
+        :param auto_pause: Automatically pause the sandbox after the timeout expires
         :param sandbox_id: sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**
-        :param api_key: E2B API Key to use for authentication
+        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param domain: Domain of the sandbox server
         :param debug: Enable debug mode
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: A running sandbox instance
+
+        @example
+        ```python
+        sandbox = Sandbox()
+        sandbox_id = sandbox.sandbox_id
+
+        # Another code block
+        same_sandbox = Sandbox.connect(sandbox_id)
         """
+        if not auto_pause:
+            raise ValueError("auto_pause must be True")
 
         timeout = timeout or cls.default_sandbox_timeout
+        auto_pause = auto_pause or cls.default_sandbox_auto_pause
+
+        # Temporary solution (02/12/2025),
+        # Options discussed:
+        # 1. No set - never sure how long the sandbox will be running
+        # 2. Always set the timeout in code - the user can't just connect to the sandbox
+        #       without changing the timeout, round trip to the server time
+        # 3. Set the timeout in resume on backend - side effect on error
+        # 4. Create new endpoint for connect
+        try:
+            SandboxApi._cls_set_timeout(
+                sandbox_id=sandbox_id,
+                timeout=timeout,
+                api_key=api_key,
+                domain=domain,
+                debug=debug,
+                request_timeout=request_timeout,
+            )
+        except:
+            # Sandbox is not running or found, ignore the error
+            pass
 
         SandboxApi._cls_resume(
             sandbox_id=sandbox_id,
@@ -391,19 +401,17 @@ class Sandbox(SandboxSetup, SandboxApi):
             api_key=api_key,
             domain=domain,
             debug=debug,
+            auto_pause=auto_pause,
         )
 
-        return cls.connect(
+        return cls(
             sandbox_id=sandbox_id,
             api_key=api_key,
             domain=domain,
             debug=debug,
         )
 
-    def pause(
-        self,
-        request_timeout: Optional[float] = None,
-    ) -> str:
+    def pause(self, request_timeout: Optional[float] = None) -> str:
         """
         Pause the sandbox.
 

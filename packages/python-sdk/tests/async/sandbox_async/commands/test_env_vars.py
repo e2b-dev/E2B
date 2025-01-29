@@ -11,7 +11,7 @@ async def test_command_envs(async_sandbox: AsyncSandbox):
 @pytest.mark.skip_debug()
 async def test_sandbox_envs(template: str):
     try:
-        sbx = await AsyncSandbox.create(template, envs={"FOO": "bar"})
+        sbx = await AsyncSandbox.create(template=template, envs={"FOO": "bar"}, auto_pause=True)
         cmd = await sbx.commands.run("echo $FOO")
         assert cmd.stdout.strip() == "bar"
     finally:

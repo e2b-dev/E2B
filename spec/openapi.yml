@@ -211,6 +211,10 @@ components:
           minimum: 0
           default: 15
           description: Time to live for the sandbox in seconds.
+        autoPause:
+          type: boolean
+          default: false
+          description: Automatically pauses the sandbox after the timeout
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
         envVars:
@@ -224,6 +228,10 @@ components:
           minimum: 0
           default: 15
           description: Time to live for the sandbox in seconds.
+        autoPause:
+          type: boolean
+          default: false
+          description: Automatically pauses the sandbox after the timeout
 
     Template:
       required:

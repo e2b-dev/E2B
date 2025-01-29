@@ -12,7 +12,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
   template,
   sandbox: [
     async ({ }, use) => {
-      const sandbox = await Sandbox.create(template)
+      const sandbox = await Sandbox.create(template, { autoPause: true })
       try {
         await use(sandbox)
       } finally {

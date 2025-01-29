@@ -6,7 +6,7 @@ def test_connect(template):
     try:
         assert sbx.is_running()
 
-        sbx_connection = Sandbox.connect(sbx.sandbox_id)
+        sbx_connection = Sandbox.connect(sbx.sandbox_id, auto_pause=True)
         assert sbx_connection.is_running()
     finally:
         sbx.kill()

@@ -116,7 +116,7 @@ export class SandboxApi {
 
   /**
    * Set the timeout of the specified sandbox.
-   * After the timeout expires the sandbox will be automatically killed.
+   * After the timeout expires the sandbox will be automatically paused.
    *
    * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to {@link Sandbox.setTimeout}.
    *
@@ -197,7 +197,8 @@ export class SandboxApi {
   protected static async resumeSandbox(
     sandboxId: string,
     timeoutMs: number,
-    opts?: SandboxApiOpts
+    autoPause: boolean,
+    opts?: SandboxApiOpts,
   ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -210,6 +211,7 @@ export class SandboxApi {
       },
       body: {
         timeout: this.timeoutToSeconds(timeoutMs),
+        autoPause: autoPause,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -234,6 +236,7 @@ export class SandboxApi {
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
+    autoPause: boolean,
     opts?: SandboxApiOpts & {
       metadata?: Record<string, string>
       envs?: Record<string, string>
@@ -248,6 +251,7 @@ export class SandboxApi {
         metadata: opts?.metadata,
         envVars: opts?.envs,
         timeout: this.timeoutToSeconds(timeoutMs),
+        autoPause: autoPause,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })

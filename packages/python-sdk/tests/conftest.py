@@ -13,11 +13,11 @@ def template():
 
 @pytest.fixture()
 def sandbox(template, debug):
-    sandbox = Sandbox(template)
+    sandbox = Sandbox(template=template, auto_pause=True)
 
     try:
         sandbox_id = sandbox.pause()
-        sandbox.resume(sandbox_id)
+        sandbox.connect(sandbox_id, auto_pause=True)
         yield sandbox
     finally:
         try:
@@ -31,11 +31,11 @@ def sandbox(template, debug):
 
 @pytest_asyncio.fixture
 async def async_sandbox(template, debug):
-    sandbox = await AsyncSandbox.create(template)
+    sandbox = await AsyncSandbox.create(template=template, auto_pause=True)
 
     try:
         sandbox_id = await sandbox.pause()
-        await sandbox.resume(sandbox_id)
+        await sandbox.connect(sandbox_id, auto_pause=True)
         yield sandbox
     finally:
         try:

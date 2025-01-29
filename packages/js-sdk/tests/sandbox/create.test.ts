@@ -1,10 +1,10 @@
-import { test, assert } from 'vitest'
+import { assert, expect, test } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { template, isDebug } from '../setup.js'
+import { isDebug, template, wait } from '../setup.js'
 
 test.skipIf(isDebug)('create', async () => {
-  const sbx = await Sandbox.create(template, { timeoutMs: 5_000 })
+  const sbx = await Sandbox.create(template, { timeoutMs: 5_000, autoPause: true })
   try {
     const isRunning = await sbx.isRunning()
     assert.isTrue(isRunning)
@@ -18,7 +18,7 @@ test.skipIf(isDebug)('metadata', async () => {
     'test-key': 'test-value',
   }
 
-  const sbx = await Sandbox.create(template, { timeoutMs: 5_000, metadata })
+  const sbx = await Sandbox.create(template, { timeoutMs: 5_000, metadata, autoPause: true })
 
   try {
     const sbxs = await Sandbox.list()
@@ -27,5 +27,22 @@ test.skipIf(isDebug)('metadata', async () => {
     assert.deepEqual(sbxInfo?.metadata, metadata)
   } finally {
     await sbx.kill()
+  }
+})
+
+test.skipIf(isDebug)('auto pause', async () => {
+  const timeout = 1_000
+  const sbx = await Sandbox.create(template, { timeoutMs: timeout, autoPause: true })
+  await sbx.files.write('test.txt', 'test')
+
+  // Wait for the sandbox to pause and create snapshot
+  await wait(timeout + 5_000)
+
+  const sbxResumed = await Sandbox.connect(sbx.sandboxId, { timeoutMs: 5_000, autoPause: true })
+
+  try {
+    await expect(sbxResumed.files.read('test.txt')).resolves.toEqual('test')
+  } finally {
+    await sbxResumed.kill()
   }
 })

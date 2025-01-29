@@ -18,6 +18,7 @@ class SandboxSetup(ABC):
     envd_port = 49983
 
     default_sandbox_timeout = 300
+    default_sandbox_auto_pause = False
     default_template = "base"
 
     @property

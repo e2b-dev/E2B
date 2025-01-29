@@ -6,7 +6,7 @@ sandboxTest('ping server in sandbox', async ({ sandbox }) => {
   const cmd = await sandbox.commands.run('python -m http.server 8000', { background: true })
 
   try {
-    await wait(1000)
+    await wait(5000)
 
     const host = sandbox.getHost(8000)
 

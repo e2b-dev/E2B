@@ -9,6 +9,7 @@ def print_out(output):
 sandbox = Sandbox(
     # You can pass your own sandbox template id
     template="base",
+    auto_pause=True,
 )
 
 # 2. Save the JavaScript code to a file inside the playground
