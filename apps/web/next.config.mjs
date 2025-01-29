@@ -48,6 +48,16 @@ const codeSnippetsDir = path.resolve('./src/code')
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '',
+  headers: async () => [
+    {
+      source: '/:path*',
+      headers: [{
+        // config to prevent the browser from rendering the page inside a frame or iframe and avoid clickjacking http://en.wikipedia.org/wiki/Clickjacking
+        key: 'X-Frame-Options',
+        value: 'SAMEORIGIN'
+      }],
+    }
+  ],
   webpack: config => {
     const codeFilesHash = getFilesHash(codeSnippetsDir)
     config.cache.version = config.cache.version + delimiter + codeFilesHash
