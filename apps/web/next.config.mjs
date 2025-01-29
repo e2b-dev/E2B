@@ -51,11 +51,11 @@ const nextConfig = {
   headers: async () => [
     {
       source: '/:path*',
-      headers:   {
+      headers: [{
         // config to prevent the browser from rendering the page inside a frame or iframe and avoid clickjacking http://en.wikipedia.org/wiki/Clickjacking
         key: 'X-Frame-Options',
         value: 'SAMEORIGIN'
-      },
+      }],
     }
   ],
   webpack: config => {
