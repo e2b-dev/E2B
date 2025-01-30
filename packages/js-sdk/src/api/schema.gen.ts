@@ -12,6 +12,8 @@ export interface paths {
         query?: {
           /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
           query?: string;
+          /** @description A state of the sandbox (e.g. "running") */
+          state?: "all" | "running" | "paused";
         };
       };
       responses: {
@@ -486,6 +488,11 @@ export interface components {
        * @description Time when the sandbox was started
        */
       startedAt: string;
+      /**
+       * @description State of the sandbox
+       * @enum {string}
+       */
+      state: "running" | "paused";
       /** @description Identifier of the template from which is the sandbox created */
       templateID: string;
     };

@@ -16,6 +16,7 @@ from e2b.api.client.models import (
     PostSandboxesSandboxIDTimeoutBody,
     ResumedSandbox,
 )
+from e2b.api.client.models.get_sandboxes_state import GetSandboxesState
 from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import NotFoundException, TemplateException
 from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
@@ -29,6 +30,7 @@ class SandboxApi(SandboxApiBase):
         cls,
         api_key: Optional[str] = None,
         filters: Optional[Dict[str, str]] = None,
+        state: Optional[GetSandboxesState] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -62,7 +64,9 @@ class SandboxApi(SandboxApiBase):
         with ApiClient(
             config, transport=HTTPTransport(limits=SandboxApiBase._limits)
         ) as api_client:
-            res = get_sandboxes.sync_detailed(client=api_client, query=query)
+            res = get_sandboxes.sync_detailed(
+                client=api_client, query=query, state=state
+            )
 
             if res.status_code >= 300:
                 raise handle_api_exception(res)
@@ -82,6 +86,7 @@ class SandboxApi(SandboxApiBase):
                         sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
                     ),
                     started_at=sandbox.started_at,
+                    state=sandbox.state,
                 )
                 for sandbox in res.parsed
             ]

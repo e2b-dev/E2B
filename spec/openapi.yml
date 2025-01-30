@@ -229,6 +229,7 @@ components:
         - cpuCount
         - memoryMB
         - endAt
+        - state
       properties:
         templateID:
           type: string
@@ -256,6 +257,12 @@ components:
           $ref: "#/components/schemas/MemoryMB"
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
+        state:
+          type: string
+          description: State of the sandbox
+          enum:
+            - running
+            - paused
 
     NewSandbox:
       required:
@@ -447,10 +454,10 @@ components:
           items:
             $ref: "#/components/schemas/RunningSandbox"
         cachedBuilds:
-          type: array
-          description: List of cached builds id on the node
-          items:
-            type: string
+            type: array
+            description: List of cached builds id on the node
+            items:
+                type: string
 
 
     Error:
@@ -515,6 +522,16 @@ paths:
           required: false
           schema:
             type: string
+        - name: state
+          in: query
+          description: A state of the sandbox (e.g. "running")
+          required: false
+          schema:
+            type: string
+            enum:
+              - all
+              - running
+              - paused
       responses:
         "200":
           description: Successfully returned all running sandboxes
