@@ -320,6 +320,10 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox-template',
       },
       {
+        title: 'Start command',
+        href: '/docs/sandbox-template/start-cmd',
+      },
+      {
         title: 'Customize CPU & RAM',
         href: '/docs/sandbox-template/customize-cpu-ram',
       },
