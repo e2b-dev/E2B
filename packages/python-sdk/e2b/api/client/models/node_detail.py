@@ -16,38 +16,38 @@ T = TypeVar("T", bound="NodeDetail")
 class NodeDetail:
     """
     Attributes:
-        node_id (str): Identifier of the node
-        status (NodeStatus): Status of the node
-        sandboxes (list['RunningSandbox']): List of sandboxes running on the node
         cached_builds (list[str]): List of cached builds id on the node
+        node_id (str): Identifier of the node
+        sandboxes (list['RunningSandbox']): List of sandboxes running on the node
+        status (NodeStatus): Status of the node
     """
 
-    node_id: str
-    status: NodeStatus
-    sandboxes: list["RunningSandbox"]
     cached_builds: list[str]
+    node_id: str
+    sandboxes: list["RunningSandbox"]
+    status: NodeStatus
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        node_id = self.node_id
+        cached_builds = self.cached_builds
 
-        status = self.status.value
+        node_id = self.node_id
 
         sandboxes = []
         for sandboxes_item_data in self.sandboxes:
             sandboxes_item = sandboxes_item_data.to_dict()
             sandboxes.append(sandboxes_item)
 
-        cached_builds = self.cached_builds
+        status = self.status.value
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "nodeID": node_id,
-                "status": status,
-                "sandboxes": sandboxes,
                 "cachedBuilds": cached_builds,
+                "nodeID": node_id,
+                "sandboxes": sandboxes,
+                "status": status,
             }
         )
 
@@ -58,9 +58,9 @@ class NodeDetail:
         from ..models.running_sandbox import RunningSandbox
 
         d = src_dict.copy()
-        node_id = d.pop("nodeID")
+        cached_builds = cast(list[str], d.pop("cachedBuilds"))
 
-        status = NodeStatus(d.pop("status"))
+        node_id = d.pop("nodeID")
 
         sandboxes = []
         _sandboxes = d.pop("sandboxes")
@@ -69,13 +69,13 @@ class NodeDetail:
 
             sandboxes.append(sandboxes_item)
 
-        cached_builds = cast(list[str], d.pop("cachedBuilds"))
+        status = NodeStatus(d.pop("status"))
 
         node_detail = cls(
-            node_id=node_id,
-            status=status,
-            sandboxes=sandboxes,
             cached_builds=cached_builds,
+            node_id=node_id,
+            sandboxes=sandboxes,
+            status=status,
         )
 
         node_detail.additional_properties = d

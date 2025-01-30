@@ -10,35 +10,35 @@ T = TypeVar("T", bound="Team")
 class Team:
     """
     Attributes:
-        team_id (str): Identifier of the team
-        name (str): Name of the team
         api_key (str): API key for the team
         is_default (bool): Whether the team is the default team
+        name (str): Name of the team
+        team_id (str): Identifier of the team
     """
 
-    team_id: str
-    name: str
     api_key: str
     is_default: bool
+    name: str
+    team_id: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        team_id = self.team_id
-
-        name = self.name
-
         api_key = self.api_key
 
         is_default = self.is_default
+
+        name = self.name
+
+        team_id = self.team_id
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "teamID": team_id,
-                "name": name,
                 "apiKey": api_key,
                 "isDefault": is_default,
+                "name": name,
+                "teamID": team_id,
             }
         )
 
@@ -47,19 +47,19 @@ class Team:
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         d = src_dict.copy()
-        team_id = d.pop("teamID")
-
-        name = d.pop("name")
-
         api_key = d.pop("apiKey")
 
         is_default = d.pop("isDefault")
 
+        name = d.pop("name")
+
+        team_id = d.pop("teamID")
+
         team = cls(
-            team_id=team_id,
-            name=name,
             api_key=api_key,
             is_default=is_default,
+            name=name,
+            team_id=team_id,
         )
 
         team.additional_properties = d

@@ -22,9 +22,9 @@ def _get_kwargs(
 def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Any]:
     if response.status_code == 204:
         return None
-    if response.status_code == 404:
-        return None
     if response.status_code == 401:
+        return None
+    if response.status_code == 404:
         return None
     if response.status_code == 500:
         return None

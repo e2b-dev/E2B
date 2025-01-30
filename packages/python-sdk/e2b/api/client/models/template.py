@@ -18,50 +18,44 @@ T = TypeVar("T", bound="Template")
 class Template:
     """
     Attributes:
-        template_id (str): Identifier of the template
+        build_count (int): Number of times the template was built
         build_id (str): Identifier of the last successful build for given template
         cpu_count (int): CPU cores for the sandbox
-        memory_mb (int): Memory for the sandbox in MB
-        public (bool): Whether the template is public or only accessible by the team
         created_at (datetime.datetime): Time when the template was created
-        updated_at (datetime.datetime): Time when the template was last updated
         created_by (Union['TeamUser', None]):
         last_spawned_at (datetime.datetime): Time when the template was last used
+        memory_mb (int): Memory for the sandbox in MB
+        public (bool): Whether the template is public or only accessible by the team
         spawn_count (int): Number of times the template was used
-        build_count (int): Number of times the template was built
+        template_id (str): Identifier of the template
+        updated_at (datetime.datetime): Time when the template was last updated
         aliases (Union[Unset, list[str]]): Aliases of the template
     """
 
-    template_id: str
+    build_count: int
     build_id: str
     cpu_count: int
-    memory_mb: int
-    public: bool
     created_at: datetime.datetime
-    updated_at: datetime.datetime
     created_by: Union["TeamUser", None]
     last_spawned_at: datetime.datetime
+    memory_mb: int
+    public: bool
     spawn_count: int
-    build_count: int
+    template_id: str
+    updated_at: datetime.datetime
     aliases: Union[Unset, list[str]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.team_user import TeamUser
 
-        template_id = self.template_id
+        build_count = self.build_count
 
         build_id = self.build_id
 
         cpu_count = self.cpu_count
 
-        memory_mb = self.memory_mb
-
-        public = self.public
-
         created_at = self.created_at.isoformat()
-
-        updated_at = self.updated_at.isoformat()
 
         created_by: Union[None, dict[str, Any]]
         if isinstance(self.created_by, TeamUser):
@@ -71,9 +65,15 @@ class Template:
 
         last_spawned_at = self.last_spawned_at.isoformat()
 
+        memory_mb = self.memory_mb
+
+        public = self.public
+
         spawn_count = self.spawn_count
 
-        build_count = self.build_count
+        template_id = self.template_id
+
+        updated_at = self.updated_at.isoformat()
 
         aliases: Union[Unset, list[str]] = UNSET
         if not isinstance(self.aliases, Unset):
@@ -83,17 +83,17 @@ class Template:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "templateID": template_id,
+                "buildCount": build_count,
                 "buildID": build_id,
                 "cpuCount": cpu_count,
-                "memoryMB": memory_mb,
-                "public": public,
                 "createdAt": created_at,
-                "updatedAt": updated_at,
                 "createdBy": created_by,
                 "lastSpawnedAt": last_spawned_at,
+                "memoryMB": memory_mb,
+                "public": public,
                 "spawnCount": spawn_count,
-                "buildCount": build_count,
+                "templateID": template_id,
+                "updatedAt": updated_at,
             }
         )
         if aliases is not UNSET:
@@ -106,19 +106,13 @@ class Template:
         from ..models.team_user import TeamUser
 
         d = src_dict.copy()
-        template_id = d.pop("templateID")
+        build_count = d.pop("buildCount")
 
         build_id = d.pop("buildID")
 
         cpu_count = d.pop("cpuCount")
 
-        memory_mb = d.pop("memoryMB")
-
-        public = d.pop("public")
-
         created_at = isoparse(d.pop("createdAt"))
-
-        updated_at = isoparse(d.pop("updatedAt"))
 
         def _parse_created_by(data: object) -> Union["TeamUser", None]:
             if data is None:
@@ -137,24 +131,30 @@ class Template:
 
         last_spawned_at = isoparse(d.pop("lastSpawnedAt"))
 
+        memory_mb = d.pop("memoryMB")
+
+        public = d.pop("public")
+
         spawn_count = d.pop("spawnCount")
 
-        build_count = d.pop("buildCount")
+        template_id = d.pop("templateID")
+
+        updated_at = isoparse(d.pop("updatedAt"))
 
         aliases = cast(list[str], d.pop("aliases", UNSET))
 
         template = cls(
-            template_id=template_id,
+            build_count=build_count,
             build_id=build_id,
             cpu_count=cpu_count,
-            memory_mb=memory_mb,
-            public=public,
             created_at=created_at,
-            updated_at=updated_at,
             created_by=created_by,
             last_spawned_at=last_spawned_at,
+            memory_mb=memory_mb,
+            public=public,
             spawn_count=spawn_count,
-            build_count=build_count,
+            template_id=template_id,
+            updated_at=updated_at,
             aliases=aliases,
         )
 

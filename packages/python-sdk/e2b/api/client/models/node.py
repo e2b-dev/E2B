@@ -12,40 +12,40 @@ T = TypeVar("T", bound="Node")
 class Node:
     """
     Attributes:
-        node_id (str): Identifier of the node
-        status (NodeStatus): Status of the node
-        sandbox_count (int): Number of sandboxes running on the node
         allocated_cpu (int): Number of allocated CPU cores
         allocated_memory_mi_b (int): Amount of allocated memory in MiB
+        node_id (str): Identifier of the node
+        sandbox_count (int): Number of sandboxes running on the node
+        status (NodeStatus): Status of the node
     """
 
-    node_id: str
-    status: NodeStatus
-    sandbox_count: int
     allocated_cpu: int
     allocated_memory_mi_b: int
+    node_id: str
+    sandbox_count: int
+    status: NodeStatus
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        node_id = self.node_id
-
-        status = self.status.value
-
-        sandbox_count = self.sandbox_count
-
         allocated_cpu = self.allocated_cpu
 
         allocated_memory_mi_b = self.allocated_memory_mi_b
+
+        node_id = self.node_id
+
+        sandbox_count = self.sandbox_count
+
+        status = self.status.value
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "nodeID": node_id,
-                "status": status,
-                "sandboxCount": sandbox_count,
                 "allocatedCPU": allocated_cpu,
                 "allocatedMemoryMiB": allocated_memory_mi_b,
+                "nodeID": node_id,
+                "sandboxCount": sandbox_count,
+                "status": status,
             }
         )
 
@@ -54,22 +54,22 @@ class Node:
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         d = src_dict.copy()
-        node_id = d.pop("nodeID")
-
-        status = NodeStatus(d.pop("status"))
-
-        sandbox_count = d.pop("sandboxCount")
-
         allocated_cpu = d.pop("allocatedCPU")
 
         allocated_memory_mi_b = d.pop("allocatedMemoryMiB")
 
+        node_id = d.pop("nodeID")
+
+        sandbox_count = d.pop("sandboxCount")
+
+        status = NodeStatus(d.pop("status"))
+
         node = cls(
-            node_id=node_id,
-            status=status,
-            sandbox_count=sandbox_count,
             allocated_cpu=allocated_cpu,
             allocated_memory_mi_b=allocated_memory_mi_b,
+            node_id=node_id,
+            sandbox_count=sandbox_count,
+            status=status,
         )
 
         node.additional_properties = d
