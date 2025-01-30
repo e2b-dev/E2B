@@ -10,8 +10,10 @@ export interface paths {
     get: {
       parameters: {
         query?: {
-          /** @description A list of filters with key-value pairs (e.g. user:abc, app:prod). */
-          filter?: string[];
+          /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
+          query?: string;
+          /** @description A state of the sandbox (e.g. "running") */
+          state?: "all" | "running" | "paused";
         };
       };
       responses: {
@@ -103,6 +105,27 @@ export interface paths {
         200: {
           content: {
             "application/json": components["schemas"]["SandboxLogs"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/sandboxes/{sandboxID}/metrics": {
+    /** @description Get sandbox metrics */
+    get: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      responses: {
+        /** @description Successfully returned the sandbox metrics */
+        200: {
+          content: {
+            "application/json": components["schemas"]["SandboxMetric"][];
           };
         };
         401: components["responses"]["401"];
@@ -465,6 +488,11 @@ export interface components {
        * @description Time when the sandbox was started
        */
       startedAt: string;
+      /**
+       * @description State of the sandbox
+       * @enum {string}
+       */
+      state: "running" | "paused";
       /** @description Identifier of the template from which is the sandbox created */
       templateID: string;
     };
@@ -496,6 +524,34 @@ export interface components {
     };
     SandboxMetadata: {
       [key: string]: string;
+    };
+    /** @description Metric entry with timestamp and line */
+    SandboxMetric: {
+      /**
+       * Format: int32
+       * @description Number of CPU cores
+       */
+      cpuCount: number;
+      /**
+       * Format: float
+       * @description CPU usage percentage
+       */
+      cpuUsedPct: number;
+      /**
+       * Format: int64
+       * @description Total memory in MiB
+       */
+      memTotalMiB: number;
+      /**
+       * Format: int64
+       * @description Memory used in MiB
+       */
+      memUsedMiB: number;
+      /**
+       * Format: date-time
+       * @description Timestamp of the metric entry
+       */
+      timestamp: string;
     };
     Team: {
       /** @description API key for the team */

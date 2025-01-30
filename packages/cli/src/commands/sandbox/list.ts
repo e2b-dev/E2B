@@ -28,6 +28,7 @@ export const listCommand = new commander.Command('list')
             { name: 'alias', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
             { name: 'endAt', alignment: 'left', title: 'End at' },
+            { name: 'state', alignment: 'left', title: 'State' },
             { name: 'cpuCount', alignment: 'left', title: 'vCPUs' },
             { name: 'memoryMB', alignment: 'left', title: 'RAM MiB' },
             { name: 'metadata', alignment: 'left', title: 'Metadata' },
@@ -39,6 +40,8 @@ export const listCommand = new commander.Command('list')
               sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,
               startedAt: new Date(sandbox.startedAt).toLocaleString(),
               endAt: new Date(sandbox.endAt).toLocaleString(),
+              state:
+                sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
               metadata: JSON.stringify(sandbox.metadata),
             }))
             .sort(

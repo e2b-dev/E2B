@@ -167,6 +167,36 @@ components:
           items:
             $ref: "#/components/schemas/SandboxLog"
 
+    SandboxMetric:
+      description: Metric entry with timestamp and line
+      required:
+        - timestamp
+        - cpuCount
+        - cpuUsedPct
+        - memUsedMiB
+        - memTotalMiB
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the metric entry
+        cpuCount:
+          type: integer
+          format: int32
+          description: Number of CPU cores
+        cpuUsedPct:
+          type: number
+          format: float
+          description: CPU usage percentage
+        memUsedMiB:
+          type: integer
+          format: int64
+          description: Memory used in MiB
+        memTotalMiB:
+          type: integer
+          format: int64
+          description: Total memory in MiB
+
     Sandbox:
       required:
         - templateID
@@ -199,6 +229,7 @@ components:
         - cpuCount
         - memoryMB
         - endAt
+        - state
       properties:
         templateID:
           type: string
@@ -226,6 +257,12 @@ components:
           $ref: "#/components/schemas/MemoryMB"
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
+        state:
+          type: string
+          description: State of the sandbox
+          enum:
+            - running
+            - paused
 
     NewSandbox:
       required:
@@ -417,10 +454,10 @@ components:
           items:
             $ref: "#/components/schemas/RunningSandbox"
         cachedBuilds:
-          type: array
-          description: List of cached builds id on the node
-          items:
-            type: string
+            type: array
+            description: List of cached builds id on the node
+            items:
+                type: string
 
 
     Error:
@@ -479,14 +516,22 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: filter
+        - name: query
           in: query
-          description: A list of filters with key-value pairs (e.g. user:abc, app:prod).
+          description: A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded.
           required: false
           schema:
-            type: array
-            items:
-              type: string
+            type: string
+        - name: state
+          in: query
+          description: A state of the sandbox (e.g. "running")
+          required: false
+          schema:
+            type: string
+            enum:
+              - all
+              - running
+              - paused
       responses:
         "200":
           description: Successfully returned all running sandboxes
@@ -564,6 +609,31 @@ paths:
           $ref: "#/components/responses/401"
         "500":
           $ref: "#/components/responses/500"
+
+  /sandboxes/{sandboxID}/metrics:
+    get:
+      description: Get sandbox metrics
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "200":
+          description: Successfully returned the sandbox metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SandboxMetric"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
 
   /sandboxes/{sandboxID}:
     get:
