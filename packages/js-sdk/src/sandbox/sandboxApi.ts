@@ -3,7 +3,14 @@ import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../errors'
 
-export interface SandboxApiOpts extends Partial<Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>> { }
+export interface SandboxApiOpts
+  extends Partial<
+    Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
+  > {}
+
+export interface SandboxListOpts extends SandboxApiOpts {
+  state?: 'running' | 'paused'
+}
 
 /**
  * Information about a sandbox.
@@ -36,7 +43,7 @@ export interface SandboxInfo {
 }
 
 export class SandboxApi {
-  protected constructor() { }
+  protected constructor() {}
 
   /**
    * Kills sandbox specified by sandbox ID.
@@ -44,7 +51,10 @@ export class SandboxApi {
    * @param sandboxId - Sandbox ID.
    * @param opts - Connection options.
    */
-  static async kill(sandboxId: string, opts?: SandboxApiOpts): Promise<boolean> {
+  static async kill(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -69,12 +79,17 @@ export class SandboxApi {
     return true
   }
 
-  static async list(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
+  static async list(opts?: SandboxListOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/sandboxes', {
       signal: config.getSignal(opts?.requestTimeoutMs),
+      params: {
+        query: {
+          state: opts?.state,
+        },
+      },
     })
 
     const err = handleApiError(res.error)
@@ -82,16 +97,25 @@ export class SandboxApi {
       throw err
     }
 
-    return res.data?.map((sandbox: components['schemas']['RunningSandbox']) => ({
-      sandboxId: this.getSandboxId({ sandboxId: sandbox.sandboxID, clientId: sandbox.clientID }),
-      templateId: sandbox.templateID,
-      ...(sandbox.alias && { name: sandbox.alias }),
-      metadata: sandbox.metadata ?? {},
-      startedAt: new Date(sandbox.startedAt),
-    })) ?? []
+    return (
+      res.data?.map((sandbox: components['schemas']['RunningSandbox']) => ({
+        sandboxId: this.getSandboxId({
+          sandboxId: sandbox.sandboxID,
+          clientId: sandbox.clientID,
+        }),
+        templateId: sandbox.templateID,
+        ...(sandbox.alias && { name: sandbox.alias }),
+        metadata: sandbox.metadata ?? {},
+        startedAt: new Date(sandbox.startedAt),
+      })) ?? []
+    )
   }
 
-  static async setTimeout(sandboxId: string, timeoutMs: number, opts?: SandboxApiOpts): Promise<void> {
+  static async setTimeout(
+    sandboxId: string,
+    timeoutMs: number,
+    opts?: SandboxApiOpts
+  ): Promise<void> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -117,9 +141,10 @@ export class SandboxApi {
     template: string,
     timeoutMs: number,
     opts?: SandboxApiOpts & {
-      metadata?: Record<string, string>,
-      envs?: Record<string, string>,
-    }): Promise<string> {
+      metadata?: Record<string, string>
+      envs?: Record<string, string>
+    }
+  ): Promise<string> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -139,20 +164,35 @@ export class SandboxApi {
     }
 
     if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
-      await this.kill(this.getSandboxId({ sandboxId: res.data!.sandboxID, clientId: res.data!.clientID }), opts)
+      await this.kill(
+        this.getSandboxId({
+          sandboxId: res.data!.sandboxID,
+          clientId: res.data!.clientID,
+        }),
+        opts
+      )
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
-        'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
-    return this.getSandboxId({ sandboxId: res.data!.sandboxID, clientId: res.data!.clientID })
+    return this.getSandboxId({
+      sandboxId: res.data!.sandboxID,
+      clientId: res.data!.clientID,
+    })
   }
 
   private static timeoutToSeconds(timeout: number): number {
     return Math.ceil(timeout / 1000)
   }
 
-  private static getSandboxId({ sandboxId, clientId }: { sandboxId: string, clientId: string }): string {
+  private static getSandboxId({
+    sandboxId,
+    clientId,
+  }: {
+    sandboxId: string
+    clientId: string
+  }): string {
     return `${sandboxId}-${clientId}`
   }
 }

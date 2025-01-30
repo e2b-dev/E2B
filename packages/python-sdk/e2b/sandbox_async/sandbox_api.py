@@ -1,4 +1,6 @@
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
+from e2b.api.client.models.get_sandboxes_state import GetSandboxesState
+from e2b.api.client.types import UNSET, Unset
 from packaging.version import Version
 
 from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
@@ -14,12 +16,12 @@ from e2b.api.client.api.sandboxes import (
 from e2b.connection_config import ConnectionConfig
 from e2b.api import handle_api_exception
 
-
 class SandboxApi(SandboxApiBase):
     @classmethod
     async def list(
         cls,
         api_key: Optional[str] = None,
+        state: Union[Unset, GetSandboxesState] = UNSET,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -34,6 +36,7 @@ class SandboxApi(SandboxApiBase):
         async with AsyncApiClient(config) as api_client:
             res = await get_sandboxes.asyncio_detailed(
                 client=api_client,
+                state=state,
             )
 
             if res.status_code >= 300:
@@ -54,6 +57,7 @@ class SandboxApi(SandboxApiBase):
                         sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
                     ),
                     started_at=sandbox.started_at,
+                    state=sandbox.state,
                 )
                 for sandbox in res.parsed
             ]

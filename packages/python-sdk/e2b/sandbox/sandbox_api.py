@@ -1,7 +1,8 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Dict
+from typing import Literal, Optional, Dict
 from datetime import datetime
+from e2b.api.client.models.running_sandbox_state import RunningSandboxState
 from httpx import Limits
 
 
@@ -19,6 +20,8 @@ class SandboxInfo:
     """Saved sandbox metadata."""
     started_at: datetime
     """Sandbox start time."""
+    state: RunningSandboxState
+    """Sandbox state."""
 
 
 class SandboxApiBase(ABC):

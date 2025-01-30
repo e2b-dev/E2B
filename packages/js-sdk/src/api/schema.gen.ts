@@ -17,9 +17,75 @@ export interface paths {
       };
     };
   };
+  "/nodes": {
+    /** @description List all nodes */
+    get: {
+      responses: {
+        /** @description Successfully returned all nodes */
+        200: {
+          content: {
+            "application/json": components["schemas"]["Node"][];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/nodes/{nodeID}": {
+    /** @description Get node info */
+    get: {
+      parameters: {
+        path: {
+          nodeID: components["parameters"]["nodeID"];
+        };
+      };
+      responses: {
+        /** @description Successfully returned the node */
+        200: {
+          content: {
+            "application/json": components["schemas"]["NodeDetail"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+    /** @description Change status of a node */
+    post: {
+      parameters: {
+        path: {
+          nodeID: components["parameters"]["nodeID"];
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["NodeStatusChange"];
+        };
+      };
+      responses: {
+        /** @description The node status was changed successfully */
+        204: {
+          content: never;
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
   "/sandboxes": {
     /** @description List all running sandboxes */
     get: {
+      parameters: {
+        query?: {
+          /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
+          query?: string;
+          /** @description A state of the sandbox (e.g. "running") */
+          state?: "running" | "paused";
+        };
+      };
       responses: {
         /** @description Successfully returned all running sandboxes */
         200: {
@@ -53,6 +119,25 @@ export interface paths {
     };
   };
   "/sandboxes/{sandboxID}": {
+    /** @description Get a sandbox by id */
+    get: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      responses: {
+        /** @description Successfully returned the sandbox */
+        200: {
+          content: {
+            "application/json": components["schemas"]["RunningSandbox"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
     /** @description Kill a sandbox */
     delete: {
       parameters: {
@@ -98,6 +183,47 @@ export interface paths {
       };
     };
   };
+  "/sandboxes/{sandboxID}/metrics": {
+    /** @description Get sandbox metrics */
+    get: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      responses: {
+        /** @description Successfully returned the sandbox metrics */
+        200: {
+          content: {
+            "application/json": components["schemas"]["SandboxMetric"][];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/sandboxes/{sandboxID}/pause": {
+    /** @description Pause the sandbox */
+    post: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      responses: {
+        /** @description The sandbox was paused successfully and can be resumed */
+        204: {
+          content: never;
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        409: components["responses"]["409"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
   "/sandboxes/{sandboxID}/refreshes": {
     /** @description Refresh the sandbox extending its time to live */
     post: {
@@ -121,6 +247,33 @@ export interface paths {
         };
         401: components["responses"]["401"];
         404: components["responses"]["404"];
+      };
+    };
+  };
+  "/sandboxes/{sandboxID}/resume": {
+    /** @description Resume the sandbox */
+    post: {
+      parameters: {
+        path: {
+          sandboxID: components["parameters"]["sandboxID"];
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["ResumedSandbox"];
+        };
+      };
+      responses: {
+        /** @description The sandbox was resumed successfully */
+        201: {
+          content: {
+            "application/json": components["schemas"]["Sandbox"];
+          };
+        };
+        401: components["responses"]["401"];
+        404: components["responses"]["404"];
+        409: components["responses"]["409"];
+        500: components["responses"]["500"];
       };
     };
   };
@@ -247,6 +400,28 @@ export interface paths {
         500: components["responses"]["500"];
       };
     };
+    /** @description Update template */
+    patch: {
+      parameters: {
+        path: {
+          templateID: components["parameters"]["templateID"];
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["TemplateUpdateRequest"];
+        };
+      };
+      responses: {
+        /** @description The template was updated successfully */
+        200: {
+          content: never;
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
   };
   "/templates/{templateID}/builds/{buildID}": {
     /** @description Start the build */
@@ -333,6 +508,51 @@ export interface components {
        */
       timeout?: number;
     };
+    Node: {
+      /**
+       * Format: int32
+       * @description Number of allocated CPU cores
+       */
+      allocatedCPU: number;
+      /**
+       * Format: int32
+       * @description Amount of allocated memory in MiB
+       */
+      allocatedMemoryMiB: number;
+      /** @description Identifier of the node */
+      nodeID: string;
+      /**
+       * Format: int32
+       * @description Number of sandboxes running on the node
+       */
+      sandboxCount: number;
+      status: components["schemas"]["NodeStatus"];
+    };
+    NodeDetail: {
+      /** @description List of cached builds id on the node */
+      cachedBuilds: string[];
+      /** @description Identifier of the node */
+      nodeID: string;
+      /** @description List of sandboxes running on the node */
+      sandboxes: components["schemas"]["RunningSandbox"][];
+      status: components["schemas"]["NodeStatus"];
+    };
+    /**
+     * @description Status of the node
+     * @enum {string}
+     */
+    NodeStatus: "ready" | "draining";
+    NodeStatusChange: {
+      status: components["schemas"]["NodeStatus"];
+    };
+    ResumedSandbox: {
+      /**
+       * Format: int32
+       * @description Time to live for the sandbox in seconds.
+       * @default 15
+       */
+      timeout?: number;
+    };
     RunningSandbox: {
       /** @description Alias of the template */
       alias?: string;
@@ -353,6 +573,11 @@ export interface components {
        * @description Time when the sandbox was started
        */
       startedAt: string;
+      /**
+       * @description State of the sandbox
+       * @enum {string}
+       */
+      state: "running" | "paused";
       /** @description Identifier of the template from which is the sandbox created */
       templateID: string;
     };
@@ -385,6 +610,34 @@ export interface components {
     SandboxMetadata: {
       [key: string]: string;
     };
+    /** @description Metric entry with timestamp and line */
+    SandboxMetric: {
+      /**
+       * Format: int32
+       * @description Number of CPU cores
+       */
+      cpuCount: number;
+      /**
+       * Format: float
+       * @description CPU usage percentage
+       */
+      cpuUsedPct: number;
+      /**
+       * Format: int64
+       * @description Total memory in MiB
+       */
+      memTotalMiB: number;
+      /**
+       * Format: int64
+       * @description Memory used in MiB
+       */
+      memUsedMiB: number;
+      /**
+       * Format: date-time
+       * @description Timestamp of the metric entry
+       */
+      timestamp: string;
+    };
     Team: {
       /** @description API key for the team */
       apiKey: string;
@@ -395,17 +648,52 @@ export interface components {
       /** @description Identifier of the team */
       teamID: string;
     };
+    TeamUser: {
+      /** @description Email of the user */
+      email: string;
+      /**
+       * Format: uuid
+       * @description Identifier of the user
+       */
+      id: string;
+    };
     Template: {
       /** @description Aliases of the template */
       aliases?: string[];
+      /**
+       * Format: int32
+       * @description Number of times the template was built
+       */
+      buildCount: number;
       /** @description Identifier of the last successful build for given template */
       buildID: string;
       cpuCount: components["schemas"]["CPUCount"];
+      /**
+       * Format: date-time
+       * @description Time when the template was created
+       */
+      createdAt: string;
+      createdBy: components["schemas"]["TeamUser"] | null;
+      /**
+       * Format: date-time
+       * @description Time when the template was last used
+       */
+      lastSpawnedAt: string;
       memoryMB: components["schemas"]["MemoryMB"];
       /** @description Whether the template is public or only accessible by the team */
       public: boolean;
+      /**
+       * Format: int64
+       * @description Number of times the template was used
+       */
+      spawnCount: number;
       /** @description Identifier of the template */
       templateID: string;
+      /**
+       * Format: date-time
+       * @description Time when the template was last updated
+       */
+      updatedAt: string;
     };
     TemplateBuild: {
       /** @description Identifier of the build */
@@ -435,6 +723,10 @@ export interface components {
       /** @description Identifier of the team */
       teamID?: string;
     };
+    TemplateUpdateRequest: {
+      /** @description Whether the template is public or only accessible by the team */
+      public?: boolean;
+    };
   };
   responses: {
     /** @description Bad request */
@@ -455,6 +747,12 @@ export interface components {
         "application/json": components["schemas"]["Error"];
       };
     };
+    /** @description Conflict */
+    409: {
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
     /** @description Server error */
     500: {
       content: {
@@ -464,6 +762,7 @@ export interface components {
   };
   parameters: {
     buildID: string;
+    nodeID: string;
     sandboxID: string;
     templateID: string;
   };

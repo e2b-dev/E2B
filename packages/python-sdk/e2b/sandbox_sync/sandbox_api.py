@@ -1,5 +1,7 @@
+from e2b.api.client.models.get_sandboxes_state import GetSandboxesState
+from e2b.api.client.types import UNSET, Unset
 from httpx import HTTPTransport
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 from packaging.version import Version
 
 from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
@@ -21,6 +23,7 @@ class SandboxApi(SandboxApiBase):
     def list(
         cls,
         api_key: Optional[str] = None,
+        state: Union[Unset, GetSandboxesState] = UNSET,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -37,6 +40,7 @@ class SandboxApi(SandboxApiBase):
         ) as api_client:
             res = get_sandboxes.sync_detailed(
                 client=api_client,
+                state=state,
             )
 
             if res.status_code >= 300:
@@ -57,6 +61,7 @@ class SandboxApi(SandboxApiBase):
                         sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
                     ),
                     started_at=sandbox.started_at,
+                    state=sandbox.state,
                 )
                 for sandbox in res.parsed
             ]

@@ -5,28 +5,16 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.sandbox_logs import SandboxLogs
-from ...types import UNSET, Response, Unset
+from ...models.running_sandbox import RunningSandbox
+from ...types import Response
 
 
 def _get_kwargs(
     sandbox_id: str,
-    *,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {}
-
-    params["start"] = start
-
-    params["limit"] = limit
-
-    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
-
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": f"/sandboxes/{sandbox_id}/logs",
-        "params": params,
+        "url": f"/sandboxes/{sandbox_id}",
     }
 
     return _kwargs
@@ -34,9 +22,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Any, SandboxLogs]]:
+) -> Optional[Union[Any, RunningSandbox]]:
     if response.status_code == 200:
-        response_200 = SandboxLogs.from_dict(response.json())
+        response_200 = RunningSandbox.from_dict(response.json())
 
         return response_200
     if response.status_code == 404:
@@ -56,7 +44,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, SandboxLogs]]:
+) -> Response[Union[Any, RunningSandbox]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -69,28 +57,22 @@ def sync_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Response[Union[Any, SandboxLogs]]:
-    """Get sandbox logs
+) -> Response[Union[Any, RunningSandbox]]:
+    """Get a sandbox by id
 
     Args:
         sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, SandboxLogs]]
+        Response[Union[Any, RunningSandbox]]
     """
 
     kwargs = _get_kwargs(
         sandbox_id=sandbox_id,
-        start=start,
-        limit=limit,
     )
 
     response = client.get_httpx_client().request(
@@ -104,29 +86,23 @@ def sync(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Optional[Union[Any, SandboxLogs]]:
-    """Get sandbox logs
+) -> Optional[Union[Any, RunningSandbox]]:
+    """Get a sandbox by id
 
     Args:
         sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, SandboxLogs]
+        Union[Any, RunningSandbox]
     """
 
     return sync_detailed(
         sandbox_id=sandbox_id,
         client=client,
-        start=start,
-        limit=limit,
     ).parsed
 
 
@@ -134,28 +110,22 @@ async def asyncio_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Response[Union[Any, SandboxLogs]]:
-    """Get sandbox logs
+) -> Response[Union[Any, RunningSandbox]]:
+    """Get a sandbox by id
 
     Args:
         sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, SandboxLogs]]
+        Response[Union[Any, RunningSandbox]]
     """
 
     kwargs = _get_kwargs(
         sandbox_id=sandbox_id,
-        start=start,
-        limit=limit,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -167,29 +137,23 @@ async def asyncio(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Optional[Union[Any, SandboxLogs]]:
-    """Get sandbox logs
+) -> Optional[Union[Any, RunningSandbox]]:
+    """Get a sandbox by id
 
     Args:
         sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, SandboxLogs]
+        Union[Any, RunningSandbox]
     """
 
     return (
         await asyncio_detailed(
             sandbox_id=sandbox_id,
             client=client,
-            start=start,
-            limit=limit,
         )
     ).parsed

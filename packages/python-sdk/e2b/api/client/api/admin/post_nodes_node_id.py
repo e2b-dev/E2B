@@ -5,20 +5,20 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
+from ...models.node_status_change import NodeStatusChange
 from ...types import Response
 
 
 def _get_kwargs(
-    sandbox_id: str,
+    node_id: str,
     *,
-    body: PostSandboxesSandboxIDTimeoutBody,
+    body: NodeStatusChange,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": f"/sandboxes/{sandbox_id}/timeout",
+        "url": f"/nodes/{node_id}",
     }
 
     _body = body.to_dict()
@@ -55,18 +55,16 @@ def _build_response(*, client: Union[AuthenticatedClient, Client], response: htt
 
 
 def sync_detailed(
-    sandbox_id: str,
+    node_id: str,
     *,
     client: AuthenticatedClient,
-    body: PostSandboxesSandboxIDTimeoutBody,
+    body: NodeStatusChange,
 ) -> Response[Any]:
-    """Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
-    Calling this method multiple times overwrites the TTL, each time using the current timestamp as the
-    starting point to measure the timeout duration.
+    """Change status of a node
 
     Args:
-        sandbox_id (str):
-        body (PostSandboxesSandboxIDTimeoutBody):
+        node_id (str):
+        body (NodeStatusChange):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -77,7 +75,7 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
-        sandbox_id=sandbox_id,
+        node_id=node_id,
         body=body,
     )
 
@@ -89,18 +87,16 @@ def sync_detailed(
 
 
 async def asyncio_detailed(
-    sandbox_id: str,
+    node_id: str,
     *,
     client: AuthenticatedClient,
-    body: PostSandboxesSandboxIDTimeoutBody,
+    body: NodeStatusChange,
 ) -> Response[Any]:
-    """Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
-    Calling this method multiple times overwrites the TTL, each time using the current timestamp as the
-    starting point to measure the timeout duration.
+    """Change status of a node
 
     Args:
-        sandbox_id (str):
-        body (PostSandboxesSandboxIDTimeoutBody):
+        node_id (str):
+        body (NodeStatusChange):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -111,7 +107,7 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
-        sandbox_id=sandbox_id,
+        node_id=node_id,
         body=body,
     )
 

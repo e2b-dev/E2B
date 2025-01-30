@@ -1,59 +1,45 @@
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-if TYPE_CHECKING:
-    from ..models.sandbox_log import SandboxLog
+from ..types import UNSET, Unset
 
-
-T = TypeVar("T", bound="SandboxLogs")
+T = TypeVar("T", bound="TemplateUpdateRequest")
 
 
 @_attrs_define
-class SandboxLogs:
+class TemplateUpdateRequest:
     """
     Attributes:
-        logs (list['SandboxLog']): Logs of the sandbox
+        public (Union[Unset, bool]): Whether the template is public or only accessible by the team
     """
 
-    logs: list["SandboxLog"]
+    public: Union[Unset, bool] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        logs = []
-        for logs_item_data in self.logs:
-            logs_item = logs_item_data.to_dict()
-            logs.append(logs_item)
+        public = self.public
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update(
-            {
-                "logs": logs,
-            }
-        )
+        field_dict.update({})
+        if public is not UNSET:
+            field_dict["public"] = public
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
-        from ..models.sandbox_log import SandboxLog
-
         d = src_dict.copy()
-        logs = []
-        _logs = d.pop("logs")
-        for logs_item_data in _logs:
-            logs_item = SandboxLog.from_dict(logs_item_data)
+        public = d.pop("public", UNSET)
 
-            logs.append(logs_item)
-
-        sandbox_logs = cls(
-            logs=logs,
+        template_update_request = cls(
+            public=public,
         )
 
-        sandbox_logs.additional_properties = d
-        return sandbox_logs
+        template_update_request.additional_properties = d
+        return template_update_request
 
     @property
     def additional_keys(self) -> list[str]:
