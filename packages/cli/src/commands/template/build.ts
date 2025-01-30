@@ -87,20 +87,39 @@ async function requestTemplateRebuild(
 }
 
 async function triggerTemplateBuild(templateID: string, buildID: string) {
-  const res = await client.api.POST(
-    '/templates/{templateID}/builds/{buildID}',
-    {
-      params: {
-        path: {
-          templateID,
-          buildID,
-        },
-      },
-    }
-  )
+  let res
+  const maxRetries = 3
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      res = await client.api.POST(
+          '/templates/{templateID}/builds/{buildID}',
+          {
+            params: {
+              path: {
+                templateID,
+                buildID,
+              },
+            },
+          }
+      )
 
-  handleE2BRequestError(res.error, 'Error triggering template build')
-  return res.data
+      break
+    } catch (e) {
+      // If the build and push takes more than 10 minutes the connection gets automatically closed by load balancer
+      // and the request fails with UND_ERR_SOCKET error. In this case we just need to retry the request.
+      if ((e instanceof TypeError) && (((e as TypeError).cause) as any)?.code !== 'UND_ERR_SOCKET') {
+        console.error(e)
+        console.log('Retrying...')
+      }
+    }
+  }
+
+  if (!res) {
+    throw new Error('Error triggering template build')
+  }
+
+  handleE2BRequestError(res?.error, 'Error triggering template build')
+  return res?.data
 }
 
 export const buildCommand = new commander.Command('build')
