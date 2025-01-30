@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from e2b.api import ApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.api.sandboxes import (
@@ -17,6 +17,7 @@ from e2b.api.client.models import (
     ResumedSandbox,
 )
 from e2b.api.client.models.get_sandboxes_state import GetSandboxesState
+from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import NotFoundException, TemplateException
 from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
@@ -30,7 +31,7 @@ class SandboxApi(SandboxApiBase):
         cls,
         api_key: Optional[str] = None,
         filters: Optional[Dict[str, str]] = None,
-        state: Optional[GetSandboxesState] = None,
+        state: Union[Unset, GetSandboxesState] = UNSET,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -54,7 +55,7 @@ class SandboxApi(SandboxApiBase):
         )
 
         # Convert filters to the format expected by the API
-        query = None
+        query = UNSET
         if filters:
             filters = {
                 urllib.parse.quote(k): urllib.parse.quote(v) for k, v in filters.items()
