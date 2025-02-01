@@ -13,7 +13,7 @@ export interface paths {
           /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
           query?: string;
           /** @description A state of the sandbox (e.g. "running") */
-          state?: "all" | "running" | "paused";
+          state?: "running" | "paused";
         };
       };
       responses: {

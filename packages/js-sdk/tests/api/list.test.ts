@@ -41,12 +41,12 @@ sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
 
 sandboxTest.skipIf(isDebug)('list paused sandboxes', async ({ sandbox }) => {
   const pausedSandbox = await sandbox.pause()
-  const pausedSandboxNoClientId = pausedSandbox.split('-')[0]
+  const pausedSandboxId = pausedSandbox.split('-')[0] + '-' + '00000000'
   const sandboxes = await Sandbox.list({ state: 'paused' })
 
   assert.isAtLeast(sandboxes.length, 1)
   assert.include(
     sandboxes.map((s) => s.sandboxId),
-    pausedSandboxNoClientId
+    pausedSandboxId
   )
 })

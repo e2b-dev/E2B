@@ -2,7 +2,6 @@ from enum import Enum
 
 
 class GetSandboxesState(str, Enum):
-    ALL = "all"
     PAUSED = "paused"
     RUNNING = "running"
 

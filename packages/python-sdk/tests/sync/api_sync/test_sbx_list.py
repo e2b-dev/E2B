@@ -24,7 +24,8 @@ def test_list_sandboxes_with_filter(sandbox: Sandbox):
 
 @pytest.mark.skip_debug()
 def test_list_paused_sandboxes(sandbox: Sandbox):
-    sandbox.pause()
+    paused_sandbox = sandbox.pause()
+    paused_sandbox_id = paused_sandbox.split("-")[0] + "-" + "00000000"
     sandboxes = Sandbox.list(state=GetSandboxesState.PAUSED)
     assert len(sandboxes) > 0
-    assert sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes]
+    assert paused_sandbox_id in [sbx.sandbox_id for sbx in sandboxes]

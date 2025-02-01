@@ -40,6 +40,7 @@ class SandboxApi(SandboxApiBase):
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param filters: Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
+        :param state: Filter the list of sandboxes by state, e.g. `GetSandboxesState.PAUSED`
         :param domain: Domain to use for the request, only relevant for self-hosted environments
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
