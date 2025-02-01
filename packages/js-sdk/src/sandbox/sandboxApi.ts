@@ -362,6 +362,10 @@ export class SandboxApi {
     sandboxId: string
     clientId: string
   }): string {
+    if (clientId.length === 0) {
+      return sandboxId
+    }
+
     return `${sandboxId}-${clientId}`
   }
 }
