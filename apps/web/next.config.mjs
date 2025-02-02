@@ -48,7 +48,10 @@ const codeSnippetsDir = path.resolve('./src/code')
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '',
-  assetPrefix: `https://${process.env.VERCEL_URL}`,
+  assetPrefix:
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.VERCEL_URL}`
+      : undefined,
   headers: async () => [
     {
       source: '/:path*',
