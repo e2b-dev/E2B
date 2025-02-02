@@ -31,7 +31,7 @@ function getFilesHash(rootPath) {
     shasum.update(delimiter)
   }
 
-  fsWalk.walkSync(rootPath, { stats: true }).forEach(e => {
+  fsWalk.walkSync(rootPath, { stats: true }).forEach((e) => {
     if (!e.stats.isDirectory()) {
       if (e.path.includes('/node_modules/')) return // ignore node_modules which may contain symlinks
       const content = fs.readFileSync(e.path, 'utf8')
@@ -48,17 +48,23 @@ const codeSnippetsDir = path.resolve('./src/code')
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '',
+  assetPrefix:
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.VERCEL_URL}`
+      : undefined,
   headers: async () => [
     {
       source: '/:path*',
-      headers: [{
-        // config to prevent the browser from rendering the page inside a frame or iframe and avoid clickjacking http://en.wikipedia.org/wiki/Clickjacking
-        key: 'X-Frame-Options',
-        value: 'SAMEORIGIN'
-      }],
-    }
+      headers: [
+        {
+          // config to prevent the browser from rendering the page inside a frame or iframe and avoid clickjacking http://en.wikipedia.org/wiki/Clickjacking
+          key: 'X-Frame-Options',
+          value: 'SAMEORIGIN',
+        },
+      ],
+    },
   ],
-  webpack: config => {
+  webpack: (config) => {
     const codeFilesHash = getFilesHash(codeSnippetsDir)
     config.cache.version = config.cache.version + delimiter + codeFilesHash
     return config
@@ -71,9 +77,9 @@ const nextConfig = {
           destination: 'https://app.posthog.com/:path*',
           // BEWARE: setting basePath will break the analytics proxy
         },
-      ]
+      ],
     }
-  }
+  },
 }
 
 export default withSearch(
@@ -91,7 +97,7 @@ export default withSearch(
         tunnelRoute: '/monitoring',
         hideSourceMaps: true,
         disableLogger: true,
-      },
-    ),
-  ),
+      }
+    )
+  )
 )
