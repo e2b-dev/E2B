@@ -50,7 +50,7 @@ const nextConfig = {
   basePath: '',
   assetPrefix:
     process.env.NODE_ENV === 'production'
-      ? `https://${process.env.VERCEL_URL}`
+      ? `https://${process.env.NEXT_PUBLIC_DOMAIN}`
       : undefined,
   headers: async () => [
     {
