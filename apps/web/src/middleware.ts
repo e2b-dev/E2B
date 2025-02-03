@@ -3,7 +3,6 @@ import { replaceUrls } from '@/utils/replaceUrls'
 import {
   landingPageHostname,
   landingPageFramerHostname,
-  blogFramerHostname,
 } from '@/app/hostnames'
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
@@ -42,17 +41,13 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     url.hostname = landingPageHostname
   }
 
+  if (url.pathname.startsWith('/blog')) {
+    url.hostname = landingPageHostname
+  }
+
   // TODO: Not on the new landing page hosting yet
   if (url.pathname.startsWith('/ai-agents')) {
     url.hostname = landingPageFramerHostname
-  }
-
-  if (url.pathname === '/blog' || url.pathname === '/blog/') {
-    url.pathname = '/'
-    url.hostname = blogFramerHostname
-  }
-  if (url.pathname.startsWith('/blog')) {
-    url.hostname = blogFramerHostname
   }
 
   const res = await fetch(url.toString(), { ...req })
