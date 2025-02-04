@@ -146,7 +146,6 @@ console.log('Paused sandboxes', sandboxes)
 ```
 ```python
 from e2b import Sandbox
-from e2b.api.client.models.get_sandboxes_state import GetSandboxesState
 
 # or use Core: https://github.com/e2b-dev/e2b
 # from e2b import Sandbox
@@ -155,7 +154,7 @@ from e2b.api.client.models.get_sandboxes_state import GetSandboxesState
 # from e2b_desktop import Sandbox
 
 # List all paused sandboxes
-sandboxes = Sandbox.list(state=GetSandboxesState.PAUSED)
+sandboxes = Sandbox.list(state='paused')
 print('Paused sandboxes', sandboxes)
 ```
 </CodeGroup>

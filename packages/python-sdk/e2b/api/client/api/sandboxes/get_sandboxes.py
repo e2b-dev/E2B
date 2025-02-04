@@ -21,7 +21,7 @@ def _get_kwargs(
 
     json_state: Union[Unset, str] = UNSET
     if not isinstance(state, Unset):
-        json_state = state.value
+        json_state = state
 
     params["state"] = json_state
 

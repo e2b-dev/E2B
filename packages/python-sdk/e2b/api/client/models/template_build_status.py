@@ -1,10 +1,15 @@
-from enum import Enum
+from typing import Literal, cast
+
+TemplateBuildStatus = Literal["building", "error", "ready"]
+
+TEMPLATE_BUILD_STATUS_VALUES: set[TemplateBuildStatus] = {
+    "building",
+    "error",
+    "ready",
+}
 
 
-class TemplateBuildStatus(str, Enum):
-    BUILDING = "building"
-    ERROR = "error"
-    READY = "ready"
-
-    def __str__(self) -> str:
-        return str(self.value)
+def check_template_build_status(value: str) -> TemplateBuildStatus:
+    if value in TEMPLATE_BUILD_STATUS_VALUES:
+        return cast(TemplateBuildStatus, value)
+    raise TypeError(f"Unexpected value {value!r}. Expected one of {TEMPLATE_BUILD_STATUS_VALUES!r}")

@@ -1,7 +1,6 @@
 import random
 import string
 
-from e2b.api.client.models.get_sandboxes_state import GetSandboxesState
 import pytest
 
 from e2b import Sandbox
@@ -26,6 +25,6 @@ def test_list_sandboxes_with_filter(sandbox: Sandbox):
 def test_list_paused_sandboxes(sandbox: Sandbox):
     paused_sandbox = sandbox.pause()
     paused_sandbox_id = paused_sandbox.split("-")[0] + "-" + "00000000"
-    sandboxes = Sandbox.list(state=GetSandboxesState.PAUSED)
+    sandboxes = Sandbox.list(state='paused')
     assert len(sandboxes) > 0
     assert paused_sandbox_id in [sbx.sandbox_id for sbx in sandboxes]

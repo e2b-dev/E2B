@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.api.sandboxes import (
@@ -30,7 +30,7 @@ class SandboxApi(SandboxApiBase):
         cls,
         api_key: Optional[str] = None,
         filters: Optional[Dict[str, str]] = None,
-        state: Union[Unset, GetSandboxesState] = UNSET,
+        state: Optional[GetSandboxesState] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -65,7 +65,7 @@ class SandboxApi(SandboxApiBase):
             res = await get_sandboxes.asyncio_detailed(
                 client=api_client,
                 query=query,
-                state=state,
+                state=state or UNSET,
             )
 
         if res.status_code >= 300:

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.node_status import NodeStatus
+from ..models.node_status import NodeStatus, check_node_status
 
 if TYPE_CHECKING:
     from ..models.running_sandbox import RunningSandbox
@@ -38,7 +38,7 @@ class NodeDetail:
             sandboxes_item = sandboxes_item_data.to_dict()
             sandboxes.append(sandboxes_item)
 
-        status = self.status.value
+        status: str = self.status
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -69,7 +69,7 @@ class NodeDetail:
 
             sandboxes.append(sandboxes_item)
 
-        status = NodeStatus(d.pop("status"))
+        status = check_node_status(d.pop("status"))
 
         node_detail = cls(
             cached_builds=cached_builds,
