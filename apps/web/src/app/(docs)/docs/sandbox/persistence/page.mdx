@@ -129,7 +129,7 @@ print('Sandbox resumed', same_sbx.sandbox_id) # $HighlightLine
 </CodeGroup>
 
 ## 4. Listing paused sandboxes
-You can list all paused sandboxes by calling the `Sandbox.list` method with the `state` parameter.
+You can list all paused sandboxes by calling the `Sandbox.list` method by supplying the `state` parameter.
 
 <CodeGroup>
 ```js
@@ -146,6 +146,8 @@ console.log('Paused sandboxes', sandboxes)
 ```
 ```python
 from e2b import Sandbox
+from e2b.api.client.models.get_sandboxes_state import GetSandboxesState
+
 # or use Core: https://github.com/e2b-dev/e2b
 # from e2b import Sandbox
 #
@@ -153,7 +155,7 @@ from e2b import Sandbox
 # from e2b_desktop import Sandbox
 
 # List all paused sandboxes
-sandboxes = Sandbox.list(state='paused')
+sandboxes = Sandbox.list(state=GetSandboxesState.PAUSED)
 print('Paused sandboxes', sandboxes)
 ```
 </CodeGroup>
