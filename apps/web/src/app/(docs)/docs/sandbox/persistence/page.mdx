@@ -128,6 +128,36 @@ print('Sandbox resumed', same_sbx.sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
+## 4. Listing paused sandboxes
+You can list all paused sandboxes by calling the `Sandbox.list` method with the `state` parameter.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+// or use Core: https://github.com/e2b-dev/e2b
+// import { Sandbox } from 'e2b'
+//
+// or use Desktop: https://github.com/e2b-dev/desktop
+// import { Sandbox } from '@e2b/desktop'
+
+// List all paused sandboxes
+const sandboxes = await Sandbox.list({ state: 'paused' })
+console.log('Paused sandboxes', sandboxes)
+```
+```python
+from e2b import Sandbox
+# or use Core: https://github.com/e2b-dev/e2b
+# from e2b import Sandbox
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# from e2b_desktop import Sandbox
+
+# List all paused sandboxes
+sandboxes = Sandbox.list(state='paused')
+print('Paused sandboxes', sandboxes)
+```
+</CodeGroup>
+
 ## Sandbox's timeout
 When you resume a sandbox, the sandbox's timeout is reset to the default timeout of an E2B sandbox - 5 minutes.
 
