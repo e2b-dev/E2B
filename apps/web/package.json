@@ -82,7 +82,7 @@
     "@types/mdx": "^2.0.8",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
-    "eslint-config-next": "14.2.5",
+    "eslint-config-next": "14.2.21",
     "knip": "^2.25.2",
     "sharp": "^0.32.0",
     "tailwind-scrollbar": "^3.0.5"
