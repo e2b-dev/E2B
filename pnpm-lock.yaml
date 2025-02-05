@@ -4913,8 +4913,8 @@ packages:
   jju@1.4.0:
     resolution: {integrity: sha512-8wb9Yw966OSxApiCt0K3yNJL8pnNeIv+OEq2YMidz4FKP6nonSRoOXc80iXY4JaN2FC11B9qsNmDsm+ZOfMROA==}
 
-  jose@4.14.6:
-    resolution: {integrity: sha512-EqJPEUlZD0/CSUMubKtMaYUOtWe91tZXTWMJZoKSbLk+KtdhNdcvppH8lA9XwVu2V4Ailvsj0GBZJ2ZwDjfesQ==}
+  jose@4.15.9:
+    resolution: {integrity: sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA==}
 
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
@@ -8309,7 +8309,7 @@ snapshots:
       agentkeepalive: 4.5.0
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
-      jose: 4.14.6
+      jose: 4.15.9
       node-fetch: 2.7.0(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -9919,7 +9919,7 @@ snapshots:
   '@supabase/auth-helpers-shared@0.4.1(@supabase/supabase-js@2.36.0)':
     dependencies:
       '@supabase/supabase-js': 2.36.0
-      jose: 4.14.6
+      jose: 4.15.9
 
   '@supabase/auth-ui-react@0.4.7(@supabase/supabase-js@2.36.0)':
     dependencies:
@@ -9996,7 +9996,7 @@ snapshots:
   '@supabase/supabase-auth-helpers@1.4.2(encoding@0.1.13)':
     dependencies:
       '@supabase/supabase-js': 1.35.7(encoding@0.1.13)
-      jose: 4.14.6
+      jose: 4.15.9
       tslib: 2.6.2
     transitivePeerDependencies:
       - encoding
@@ -12765,7 +12765,7 @@ snapshots:
 
   jju@1.4.0: {}
 
-  jose@4.14.6: {}
+  jose@4.15.9: {}
 
   joycon@3.1.1: {}
 
