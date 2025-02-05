@@ -13,8 +13,8 @@
   },
   "packageManager": "pnpm@8.7.6",
   "dependencies": {
-    "@changesets/cli": "^2.26.2",
-    "@changesets/read": "^0.5.9"
+    "@changesets/cli": "^2.27.12",
+    "@changesets/read": "^0.6.2"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.7.2",
