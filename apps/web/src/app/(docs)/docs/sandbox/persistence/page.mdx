@@ -141,8 +141,8 @@ import { Sandbox } from '@e2b/code-interpreter'
 // import { Sandbox } from '@e2b/desktop'
 
 // List all paused sandboxes
-const sandboxes = await Sandbox.list({ state: 'paused' })
-console.log('Paused sandboxes', sandboxes)
+const sandboxes = await Sandbox.list({ state: 'paused' }) // $HighlightLine
+console.log('Paused sandboxes', sandboxes) // $HighlightLine
 ```
 ```python
 from e2b import Sandbox
@@ -153,8 +153,8 @@ from e2b import Sandbox
 # from e2b_desktop import Sandbox
 
 # List all paused sandboxes
-sandboxes = Sandbox.list(state='paused')
-print('Paused sandboxes', sandboxes)
+sandboxes = Sandbox.list(state='paused') # $HighlightLine
+print('Paused sandboxes', sandboxes) # $HighlightLine
 ```
 </CodeGroup>
 
@@ -180,7 +180,10 @@ console.log('Sandbox created', sbx.sandboxId)
 const sandboxId = await sbx.pause()
 
 // Remove the sandbox
-await sbx.kill()
+await sbx.kill() // $HighlightLine
+
+// Remove sandbox by id
+await Sandbox.kill(sandboxId) // $HighlightLine
 ```
 ```python
 from e2b import Sandbox
@@ -196,7 +199,10 @@ sbx = Sandbox()
 sandbox_id = sbx.pause()
 
 # Remove the sandbox
-sbx.kill()
+sbx.kill() # $HighlightLine
+
+# Remove sandbox by id
+Sandbox.kill(sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
