@@ -28,4 +28,4 @@ sandboxTest('ping server in sandbox', async ({ sandbox }) => {
       console.error(e)
     }
   }
-}, { timeout: 60000 })
+}, 60_000 )

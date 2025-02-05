@@ -28,14 +28,12 @@ export default defineWorkspace([
       browser: {
         enabled: true,
         headless: true,
-        name: 'chromium',
+        instances: [{browser: 'chromium'}],
         provider: 'playwright',
         // https://playwright.dev
-        providerOptions: {},
       },
-      env: {
-        ...(process.env as Record<string, string>),
-        ...env.parsed,
+      provide: {
+        E2B_API_KEY: env.parsed.E2B_API_KEY,
       },
     },
   },
@@ -52,10 +50,7 @@ export default defineWorkspace([
       globals: false,
       testTimeout: 60_000,
       environment: 'node',
-      env: {
-        ...(process.env as Record<string, string>),
-        ...env.parsed,
-      },
     },
   },
 ])
+
