@@ -146,7 +146,6 @@ console.log('Paused sandboxes', sandboxes)
 ```
 ```python
 from e2b import Sandbox
-
 # or use Core: https://github.com/e2b-dev/e2b
 # from e2b import Sandbox
 #
@@ -156,6 +155,48 @@ from e2b import Sandbox
 # List all paused sandboxes
 sandboxes = Sandbox.list(state='paused')
 print('Paused sandboxes', sandboxes)
+```
+</CodeGroup>
+
+## 5. Removing paused sandboxes
+
+You can remove paused (and running!) sandboxes by calling the `kill` method on the Sandbox instance.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+// or use Core: https://github.com/e2b-dev/e2b
+// import { Sandbox } from 'e2b'
+//
+// or use Desktop: https://github.com/e2b-dev/desktop
+// import { Sandbox } from '@e2b/desktop'
+
+const sbx = await Sandbox.create()
+console.log('Sandbox created', sbx.sandboxId)
+
+// Pause the sandbox
+// You can save the sandbox ID in your database
+// to resume the sandbox later
+const sandboxId = await sbx.pause()
+
+// Remove the sandbox
+await sbx.kill()
+```
+```python
+from e2b import Sandbox
+# or use Core: https://github.com/e2b-dev/e2b
+# from e2b import Sandbox
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# from e2b_desktop import Sandbox
+
+sbx = Sandbox()
+
+# Pause the sandbox
+sandbox_id = sbx.pause()
+
+# Remove the sandbox
+sbx.kill()
 ```
 </CodeGroup>
 
