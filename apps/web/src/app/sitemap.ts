@@ -1,7 +1,6 @@
 import { MetadataRoute } from 'next'
-import { XMLParser } from 'fast-xml-parser'
 import path from 'path'
-import { replaceUrls } from '@/utils/replaceUrls'
+import { XMLParser } from 'fast-xml-parser'
 import { getPageForSitemap } from '@/utils/sitemap'
 import {
   landingPageHostname,
@@ -9,6 +8,7 @@ import {
   blogFramerHostname,
   changelogFramerHostname,
 } from '@/app/hostnames'
+import { replaceUrls } from '@/utils/replaceUrls'
 
 export const dynamic = 'force-static'
 
@@ -149,12 +149,17 @@ async function getSitemap(site: Site): Promise<MetadataRoute.Sitemap> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let mergedSitemap: MetadataRoute.Sitemap = []
 
-  const docsDirectory = path.join(process.cwd(), 'src', 'app', '(docs)', 'docs')
+  const docsDirectory = path.join(
+    process.env.NODE_ENV === 'production'
+      ? path.join('.', 'src', 'app', '(docs)', 'docs')
+      : path.join(process.cwd(), 'src', 'app', '(docs)', 'docs')
+  )
+
   const docsPages = getPageForSitemap(
     docsDirectory,
     'https://e2b.dev/docs/',
-    0.5
-  ).filter((page) => !page.url.startsWith('https://e2b.dev/docs/api/'))
+    0.8
+  )
 
   mergedSitemap = mergedSitemap.concat(docsPages)
 
