@@ -52,13 +52,13 @@ export const defaultHeaders = {
 }
 
 export function getEnvVar(name: string) {
-  if (typeof process === 'undefined') {
-    return ''
-  }
-
   if (runtime === 'deno') {
     // @ts-ignore
     return Deno.env.get(name)
+  }
+
+  if (typeof process === 'undefined') {
+    return ''
   }
 
   return process.env[name]
