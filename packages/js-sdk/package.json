@@ -48,7 +48,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/browser": "^3.0.5",
     "dotenv": "^16.4.5",
-    "knip": "^5.17.3",
+    "knip": "^5.43.6",
     "npm-check-updates": "^16.14.20",
     "openapi-typescript": "^7.6.1",
     "playwright": "^1.48.0",
