@@ -45,7 +45,7 @@
     "clsx": "^1.2.1",
     "e2b": "^1.0.7",
     "fast-glob": "^3.3.0",
-    "fast-xml-parser": "^4.3.3",
+    "fast-xml-parser": "4.4.1",
     "flexsearch": "^0.7.31",
     "framer-motion": "7.8.1",
     "json5": "^2.2.3",

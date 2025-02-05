@@ -130,8 +130,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.1
       fast-xml-parser:
-        specifier: ^4.3.3
-        version: 4.3.3
+        specifier: 4.4.1
+        version: 4.4.1
       flexsearch:
         specifier: ^0.7.31
         version: 0.7.31
@@ -4615,8 +4615,8 @@ packages:
   fast-uri@3.0.6:
     resolution: {integrity: sha512-Atfo14OibSv5wAp4VWNsFYE1AchQRTv9cBGWET4pZWHzYshFSS9NQI6I57rdKn9croWVMbYFbLhJ+yJvmZIIHw==}
 
-  fast-xml-parser@4.3.3:
-    resolution: {integrity: sha512-coV/D1MhrShMvU6D0I+VAK3umz6hUaxxhL0yp/9RjfiYUfAv14rDhGQL+PLForhMdr0wq3PiV07WtkkNjJjNHg==}
+  fast-xml-parser@4.4.1:
+    resolution: {integrity: sha512-xkjOecfnKGkSsOwtZ5Pz7Us/T6mrbPQrq0nh+aCO5V9nk5NLWmasAHumTKjiPJPWANe+kAZ84Jc8ooJkzZ88Sw==}
     hasBin: true
 
   fastq@1.15.0:
@@ -13079,7 +13079,7 @@ snapshots:
 
   fast-uri@3.0.6: {}
 
-  fast-xml-parser@4.3.3:
+  fast-xml-parser@4.4.1:
     dependencies:
       strnum: 1.0.5
 
