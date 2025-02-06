@@ -6,4 +6,4 @@ generate-api:
 	rm -rf e2b/api/api
 
 init:
-	pip install openapi-python-client
+	pip install openapi-python-client==0.23.1
