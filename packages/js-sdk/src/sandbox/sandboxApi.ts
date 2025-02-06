@@ -133,7 +133,7 @@ export class SandboxApi {
     }
 
     return (
-      res.data?.map((sandbox: components['schemas']['RunningSandbox']) => ({
+      res.data?.map((sandbox: components['schemas']['ListedSandbox']) => ({
         sandboxId: this.getSandboxId({
           sandboxId: sandbox.sandboxID,
           clientId: sandbox.clientID,

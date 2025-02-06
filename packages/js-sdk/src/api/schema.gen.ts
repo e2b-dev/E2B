@@ -20,7 +20,7 @@ export interface paths {
         /** @description Successfully returned all running sandboxes */
         200: {
           content: {
-            "application/json": components["schemas"]["RunningSandbox"][];
+            "application/json": components["schemas"]["ListedSandbox"][];
           };
         };
         400: components["responses"]["400"];
@@ -60,7 +60,7 @@ export interface paths {
         /** @description Successfully returned the sandbox */
         200: {
           content: {
-            "application/json": components["schemas"]["RunningSandbox"];
+            "application/json": components["schemas"]["ListedSandbox"];
           };
         };
         401: components["responses"]["401"];
@@ -406,6 +406,34 @@ export interface components {
       /** @description Error */
       message: string;
     };
+    ListedSandbox: {
+      /** @description Alias of the template */
+      alias?: string;
+      /** @description Identifier of the client */
+      clientID: string;
+      cpuCount: components["schemas"]["CPUCount"];
+      /**
+       * Format: date-time
+       * @description Time when the sandbox will expire
+       */
+      endAt: string;
+      memoryMB: components["schemas"]["MemoryMB"];
+      metadata?: components["schemas"]["SandboxMetadata"];
+      /** @description Identifier of the sandbox */
+      sandboxID: string;
+      /**
+       * Format: date-time
+       * @description Time when the sandbox was started
+       */
+      startedAt: string;
+      /**
+       * @description State of the sandbox
+       * @enum {string}
+       */
+      state: "running" | "paused";
+      /** @description Identifier of the template from which is the sandbox created */
+      templateID: string;
+    };
     /**
      * Format: int32
      * @description Memory for the sandbox in MB
@@ -449,7 +477,7 @@ export interface components {
       /** @description Identifier of the node */
       nodeID: string;
       /** @description List of sandboxes running on the node */
-      sandboxes: components["schemas"]["RunningSandbox"][];
+      sandboxes: components["schemas"]["ListedSandbox"][];
       status: components["schemas"]["NodeStatus"];
     };
     /**
@@ -467,34 +495,6 @@ export interface components {
        * @default 15
        */
       timeout?: number;
-    };
-    RunningSandbox: {
-      /** @description Alias of the template */
-      alias?: string;
-      /** @description Identifier of the client */
-      clientID: string;
-      cpuCount: components["schemas"]["CPUCount"];
-      /**
-       * Format: date-time
-       * @description Time when the sandbox will expire
-       */
-      endAt: string;
-      memoryMB: components["schemas"]["MemoryMB"];
-      metadata?: components["schemas"]["SandboxMetadata"];
-      /** @description Identifier of the sandbox */
-      sandboxID: string;
-      /**
-       * Format: date-time
-       * @description Time when the sandbox was started
-       */
-      startedAt: string;
-      /**
-       * @description State of the sandbox
-       * @enum {string}
-       */
-      state: "running" | "paused";
-      /** @description Identifier of the template from which is the sandbox created */
-      templateID: string;
     };
     Sandbox: {
       /** @description Alias of the template */

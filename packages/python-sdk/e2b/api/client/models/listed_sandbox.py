@@ -5,14 +5,14 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
-from ..models.running_sandbox_state import RunningSandboxState, check_running_sandbox_state
+from ..models.listed_sandbox_state import ListedSandboxState, check_listed_sandbox_state
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="RunningSandbox")
+T = TypeVar("T", bound="ListedSandbox")
 
 
 @_attrs_define
-class RunningSandbox:
+class ListedSandbox:
     """
     Attributes:
         client_id (str): Identifier of the client
@@ -21,7 +21,7 @@ class RunningSandbox:
         memory_mb (int): Memory for the sandbox in MB
         sandbox_id (str): Identifier of the sandbox
         started_at (datetime.datetime): Time when the sandbox was started
-        state (RunningSandboxState): State of the sandbox
+        state (ListedSandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
@@ -33,7 +33,7 @@ class RunningSandbox:
     memory_mb: int
     sandbox_id: str
     started_at: datetime.datetime
-    state: RunningSandboxState
+    state: ListedSandboxState
     template_id: str
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
@@ -96,7 +96,7 @@ class RunningSandbox:
 
         started_at = isoparse(d.pop("startedAt"))
 
-        state = check_running_sandbox_state(d.pop("state"))
+        state = check_listed_sandbox_state(d.pop("state"))
 
         template_id = d.pop("templateID")
 
@@ -104,7 +104,7 @@ class RunningSandbox:
 
         metadata = d.pop("metadata", UNSET)
 
-        running_sandbox = cls(
+        listed_sandbox = cls(
             client_id=client_id,
             cpu_count=cpu_count,
             end_at=end_at,
@@ -117,8 +117,8 @@ class RunningSandbox:
             metadata=metadata,
         )
 
-        running_sandbox.additional_properties = d
-        return running_sandbox
+        listed_sandbox.additional_properties = d
+        return listed_sandbox
 
     @property
     def additional_keys(self) -> list[str]:

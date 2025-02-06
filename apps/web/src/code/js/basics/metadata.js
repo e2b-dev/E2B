@@ -10,7 +10,7 @@ await sandbox.keepAlive(60_000)
 
 // Later, can be even from another process
 // List all running sandboxes
-const runningSandboxes = await Sandbox.list()
+const runningSandboxes = await Sandbox.list({ state: 'running' })
 // Find the sandbox by metadata
 const found = runningSandboxes.find(s => s.metadata?.userID === 'uniqueID')
 if (found) {

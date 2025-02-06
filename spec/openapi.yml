@@ -220,7 +220,7 @@ components:
           type: string
           description: Version of the envd running in the sandbox
 
-    RunningSandbox:
+    ListedSandbox:
       required:
         - templateID
         - sandboxID
@@ -452,7 +452,7 @@ components:
           type: array
           description: List of sandboxes running on the node
           items:
-            $ref: "#/components/schemas/RunningSandbox"
+            $ref: "#/components/schemas/ListedSandbox"
         cachedBuilds:
             type: array
             description: List of cached builds id on the node
@@ -540,7 +540,7 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: "#/components/schemas/RunningSandbox"
+                    - $ref: "#/components/schemas/ListedSandbox"
         "401":
           $ref: "#/components/responses/401"
         "400":
@@ -648,7 +648,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RunningSandbox"
+                $ref: "#/components/schemas/ListedSandbox"
         "404":
           $ref: "#/components/responses/404"
         "401":

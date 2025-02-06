@@ -85,7 +85,7 @@ export const listCommand = new commander.Command('list')
   })
 
 export async function listSandboxes(): Promise<
-  e2b.components['schemas']['RunningSandbox'][]
+  e2b.components['schemas']['ListedSandbox'][]
 > {
   ensureAPIKey()
 

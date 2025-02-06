@@ -6,7 +6,7 @@ from attrs import field as _attrs_field
 from ..models.node_status import NodeStatus, check_node_status
 
 if TYPE_CHECKING:
-    from ..models.running_sandbox import RunningSandbox
+    from ..models.listed_sandbox import ListedSandbox
 
 
 T = TypeVar("T", bound="NodeDetail")
@@ -18,13 +18,13 @@ class NodeDetail:
     Attributes:
         cached_builds (list[str]): List of cached builds id on the node
         node_id (str): Identifier of the node
-        sandboxes (list['RunningSandbox']): List of sandboxes running on the node
+        sandboxes (list['ListedSandbox']): List of sandboxes running on the node
         status (NodeStatus): Status of the node
     """
 
     cached_builds: list[str]
     node_id: str
-    sandboxes: list["RunningSandbox"]
+    sandboxes: list["ListedSandbox"]
     status: NodeStatus
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -55,7 +55,7 @@ class NodeDetail:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
-        from ..models.running_sandbox import RunningSandbox
+        from ..models.listed_sandbox import ListedSandbox
 
         d = src_dict.copy()
         cached_builds = cast(list[str], d.pop("cachedBuilds"))
@@ -65,7 +65,7 @@ class NodeDetail:
         sandboxes = []
         _sandboxes = d.pop("sandboxes")
         for sandboxes_item_data in _sandboxes:
-            sandboxes_item = RunningSandbox.from_dict(sandboxes_item_data)
+            sandboxes_item = ListedSandbox.from_dict(sandboxes_item_data)
 
             sandboxes.append(sandboxes_item)
 
