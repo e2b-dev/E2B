@@ -29,15 +29,6 @@ export const metadata: Metadata = {
   },
 }
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    interface IntrinsicElements {
-      'chatlio-widget': any
-    }
-  }
-}
-
 export default async function RootLayout({ children }) {
   const pages = await glob('**/*.mdx', { cwd: 'src/app/(docs)/docs' })
   const allSectionsEntries = (await Promise.all(
