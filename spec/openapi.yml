@@ -138,6 +138,13 @@ components:
         type: string
         description: Metadata of the sandbox
 
+    SandboxState:
+      type: string
+      description: State of the sandbox
+      enum:
+        - running
+        - paused
+
     EnvVars:
       additionalProperties:
         type: string
@@ -247,6 +254,7 @@ components:
           type: string
           format: date-time
           description: Time when the sandbox was started
+          nullable: true
         endAt:
           type: string
           format: date-time
@@ -258,11 +266,7 @@ components:
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
         state:
-          type: string
-          description: State of the sandbox
-          enum:
-            - running
-            - paused
+          $ref: "#/components/schemas/SandboxState"
 
     NewSandbox:
       required:
@@ -511,7 +515,7 @@ paths:
 
   /sandboxes:
     get:
-      description: List all running sandboxes
+      description: List all sandboxes
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -524,13 +528,14 @@ paths:
             type: string
         - name: state
           in: query
-          description: A state of the sandbox (e.g. "running")
+          description: Filter sandboxes by one or more states
           required: false
           schema:
-            type: string
-            enum:
-              - running
-              - paused
+            type: array
+            items:
+              $ref: "#/components/schemas/SandboxState"
+          style: form
+          explode: false
       responses:
         "200":
           description: Successfully returned all running sandboxes

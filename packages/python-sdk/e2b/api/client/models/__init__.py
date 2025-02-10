@@ -1,9 +1,7 @@
 """Contains all the data models used in inputs/outputs"""
 
 from .error import Error
-from .get_sandboxes_state import GetSandboxesState
 from .listed_sandbox import ListedSandbox
-from .listed_sandbox_state import ListedSandboxState
 from .new_sandbox import NewSandbox
 from .node import Node
 from .node_detail import NodeDetail
@@ -16,6 +14,7 @@ from .sandbox import Sandbox
 from .sandbox_log import SandboxLog
 from .sandbox_logs import SandboxLogs
 from .sandbox_metric import SandboxMetric
+from .sandbox_state import SandboxState
 from .team import Team
 from .team_user import TeamUser
 from .template import Template
@@ -26,9 +25,7 @@ from .template_update_request import TemplateUpdateRequest
 
 __all__ = (
     "Error",
-    "GetSandboxesState",
     "ListedSandbox",
-    "ListedSandboxState",
     "NewSandbox",
     "Node",
     "NodeDetail",
@@ -41,6 +38,7 @@ __all__ = (
     "SandboxLog",
     "SandboxLogs",
     "SandboxMetric",
+    "SandboxState",
     "Team",
     "TeamUser",
     "Template",

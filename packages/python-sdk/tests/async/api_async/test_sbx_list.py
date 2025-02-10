@@ -29,6 +29,6 @@ async def test_list_sandboxes_with_filter(async_sandbox: AsyncSandbox):
 async def test_list_paused_sandboxes(async_sandbox: AsyncSandbox):
     paused_sandbox = await async_sandbox.pause()
     paused_sandbox_id = paused_sandbox.split("-")[0] + "-" + "00000000"
-    sandboxes = await AsyncSandbox.list(state='paused')
+    sandboxes = await AsyncSandbox.list(state=["paused"])
     assert len(sandboxes) > 0
     assert paused_sandbox_id in [sbx.sandbox_id for sbx in sandboxes]

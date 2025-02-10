@@ -6,14 +6,14 @@
 
 export interface paths {
   "/sandboxes": {
-    /** @description List all running sandboxes */
+    /** @description List all sandboxes */
     get: {
       parameters: {
         query?: {
           /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
           query?: string;
-          /** @description A state of the sandbox (e.g. "running") */
-          state?: "running" | "paused";
+          /** @description Filter sandboxes by one or more states */
+          state?: components["schemas"]["SandboxState"][];
         };
       };
       responses: {
@@ -425,12 +425,8 @@ export interface components {
        * Format: date-time
        * @description Time when the sandbox was started
        */
-      startedAt: string;
-      /**
-       * @description State of the sandbox
-       * @enum {string}
-       */
-      state: "running" | "paused";
+      startedAt: string | null;
+      state: components["schemas"]["SandboxState"];
       /** @description Identifier of the template from which is the sandbox created */
       templateID: string;
     };
@@ -553,6 +549,11 @@ export interface components {
        */
       timestamp: string;
     };
+    /**
+     * @description State of the sandbox
+     * @enum {string}
+     */
+    SandboxState: "running" | "paused";
     Team: {
       /** @description API key for the team */
       apiKey: string;

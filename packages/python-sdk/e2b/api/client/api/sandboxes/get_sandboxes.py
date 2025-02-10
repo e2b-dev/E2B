@@ -5,23 +5,26 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.get_sandboxes_state import GetSandboxesState
 from ...models.listed_sandbox import ListedSandbox
+from ...models.sandbox_state import SandboxState
 from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     *,
     query: Union[Unset, str] = UNSET,
-    state: Union[Unset, GetSandboxesState] = UNSET,
+    state: Union[Unset, list[SandboxState]] = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
     params["query"] = query
 
-    json_state: Union[Unset, str] = UNSET
+    json_state: Union[Unset, list[str]] = UNSET
     if not isinstance(state, Unset):
-        json_state = state
+        json_state = []
+        for state_item_data in state:
+            state_item: str = state_item_data
+            json_state.append(state_item)
 
     params["state"] = json_state
 
@@ -78,13 +81,13 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
-    state: Union[Unset, GetSandboxesState] = UNSET,
+    state: Union[Unset, list[SandboxState]] = UNSET,
 ) -> Response[Union[Any, list["ListedSandbox"]]]:
-    """List all running sandboxes
+    """List all sandboxes
 
     Args:
         query (Union[Unset, str]):
-        state (Union[Unset, GetSandboxesState]):
+        state (Union[Unset, list[SandboxState]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -110,13 +113,13 @@ def sync(
     *,
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
-    state: Union[Unset, GetSandboxesState] = UNSET,
+    state: Union[Unset, list[SandboxState]] = UNSET,
 ) -> Optional[Union[Any, list["ListedSandbox"]]]:
-    """List all running sandboxes
+    """List all sandboxes
 
     Args:
         query (Union[Unset, str]):
-        state (Union[Unset, GetSandboxesState]):
+        state (Union[Unset, list[SandboxState]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -137,13 +140,13 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
-    state: Union[Unset, GetSandboxesState] = UNSET,
+    state: Union[Unset, list[SandboxState]] = UNSET,
 ) -> Response[Union[Any, list["ListedSandbox"]]]:
-    """List all running sandboxes
+    """List all sandboxes
 
     Args:
         query (Union[Unset, str]):
-        state (Union[Unset, GetSandboxesState]):
+        state (Union[Unset, list[SandboxState]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -167,13 +170,13 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
-    state: Union[Unset, GetSandboxesState] = UNSET,
+    state: Union[Unset, list[SandboxState]] = UNSET,
 ) -> Optional[Union[Any, list["ListedSandbox"]]]:
-    """List all running sandboxes
+    """List all sandboxes
 
     Args:
         query (Union[Unset, str]):
-        state (Union[Unset, GetSandboxesState]):
+        state (Union[Unset, list[SandboxState]]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

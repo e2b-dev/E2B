@@ -1,11 +1,11 @@
 import datetime
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
-from ..models.listed_sandbox_state import ListedSandboxState, check_listed_sandbox_state
+from ..models.sandbox_state import SandboxState, check_sandbox_state
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="ListedSandbox")
@@ -20,8 +20,8 @@ class ListedSandbox:
         end_at (datetime.datetime): Time when the sandbox will expire
         memory_mb (int): Memory for the sandbox in MB
         sandbox_id (str): Identifier of the sandbox
-        started_at (datetime.datetime): Time when the sandbox was started
-        state (ListedSandboxState): State of the sandbox
+        started_at (Union[None, datetime.datetime]): Time when the sandbox was started
+        state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
@@ -32,8 +32,8 @@ class ListedSandbox:
     end_at: datetime.datetime
     memory_mb: int
     sandbox_id: str
-    started_at: datetime.datetime
-    state: ListedSandboxState
+    started_at: Union[None, datetime.datetime]
+    state: SandboxState
     template_id: str
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
@@ -50,7 +50,11 @@ class ListedSandbox:
 
         sandbox_id = self.sandbox_id
 
-        started_at = self.started_at.isoformat()
+        started_at: Union[None, str]
+        if isinstance(self.started_at, datetime.datetime):
+            started_at = self.started_at.isoformat()
+        else:
+            started_at = self.started_at
 
         state: str = self.state
 
@@ -94,9 +98,22 @@ class ListedSandbox:
 
         sandbox_id = d.pop("sandboxID")
 
-        started_at = isoparse(d.pop("startedAt"))
+        def _parse_started_at(data: object) -> Union[None, datetime.datetime]:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                started_at_type_0 = isoparse(data)
 
-        state = check_listed_sandbox_state(d.pop("state"))
+                return started_at_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, datetime.datetime], data)
+
+        started_at = _parse_started_at(d.pop("startedAt"))
+
+        state = check_sandbox_state(d.pop("state"))
 
         template_id = d.pop("templateID")
 

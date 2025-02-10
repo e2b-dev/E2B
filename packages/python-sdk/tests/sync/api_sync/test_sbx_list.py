@@ -25,6 +25,6 @@ def test_list_sandboxes_with_filter(sandbox: Sandbox):
 def test_list_paused_sandboxes(sandbox: Sandbox):
     paused_sandbox = sandbox.pause()
     paused_sandbox_id = paused_sandbox.split("-")[0] + "-" + "00000000"
-    sandboxes = Sandbox.list(state='paused')
+    sandboxes = Sandbox.list(state=["paused"])
     assert len(sandboxes) > 0
     assert paused_sandbox_id in [sbx.sandbox_id for sbx in sandboxes]

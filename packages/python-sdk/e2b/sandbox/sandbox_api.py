@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, Optional
 
-from e2b.api.client.models.listed_sandbox_state import ListedSandboxState
 from httpx import Limits
 
+from e2b.api.client.models.sandbox_state import SandboxState
 
 @dataclass
 class SandboxInfo:
@@ -21,7 +21,7 @@ class SandboxInfo:
     """Saved sandbox metadata."""
     started_at: datetime
     """Sandbox start time."""
-    state: ListedSandboxState
+    state: SandboxState
     """Sandbox state."""
 
 

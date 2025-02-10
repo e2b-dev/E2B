@@ -20,7 +20,7 @@ export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Filter the list of sandboxes by state.
    */
-  state?: 'running' | 'paused'
+  state?: Array<'running' | 'paused'>
 }
 
 /**
