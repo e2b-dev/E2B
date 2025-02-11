@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -20,7 +20,7 @@ class ListedSandbox:
         end_at (datetime.datetime): Time when the sandbox will expire
         memory_mb (int): Memory for the sandbox in MB
         sandbox_id (str): Identifier of the sandbox
-        started_at (Union[None, datetime.datetime]): Time when the sandbox was started
+        started_at (datetime.datetime): Time when the sandbox was started
         state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
@@ -32,7 +32,7 @@ class ListedSandbox:
     end_at: datetime.datetime
     memory_mb: int
     sandbox_id: str
-    started_at: Union[None, datetime.datetime]
+    started_at: datetime.datetime
     state: SandboxState
     template_id: str
     alias: Union[Unset, str] = UNSET
@@ -50,11 +50,7 @@ class ListedSandbox:
 
         sandbox_id = self.sandbox_id
 
-        started_at: Union[None, str]
-        if isinstance(self.started_at, datetime.datetime):
-            started_at = self.started_at.isoformat()
-        else:
-            started_at = self.started_at
+        started_at = self.started_at.isoformat()
 
         state: str = self.state
 
@@ -98,20 +94,7 @@ class ListedSandbox:
 
         sandbox_id = d.pop("sandboxID")
 
-        def _parse_started_at(data: object) -> Union[None, datetime.datetime]:
-            if data is None:
-                return data
-            try:
-                if not isinstance(data, str):
-                    raise TypeError()
-                started_at_type_0 = isoparse(data)
-
-                return started_at_type_0
-            except:  # noqa: E722
-                pass
-            return cast(Union[None, datetime.datetime], data)
-
-        started_at = _parse_started_at(d.pop("startedAt"))
+        started_at = isoparse(d.pop("startedAt"))
 
         state = check_sandbox_state(d.pop("state"))
 

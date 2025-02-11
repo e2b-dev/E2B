@@ -254,7 +254,6 @@ components:
           type: string
           format: date-time
           description: Time when the sandbox was started
-          nullable: true
         endAt:
           type: string
           format: date-time

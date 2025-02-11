@@ -425,7 +425,7 @@ export interface components {
        * Format: date-time
        * @description Time when the sandbox was started
        */
-      startedAt: string | null;
+      startedAt: string;
       state: components["schemas"]["SandboxState"];
       /** @description Identifier of the template from which is the sandbox created */
       templateID: string;
