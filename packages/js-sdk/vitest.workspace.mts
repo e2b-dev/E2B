@@ -33,7 +33,7 @@ export default defineWorkspace([
         // https://playwright.dev
       },
       provide: {
-        E2B_API_KEY: env.parsed.E2B_API_KEY,
+        E2B_API_KEY: process.env.E2B_API_KEY || env.parsed.E2B_API_KEY,
       },
     },
   },
