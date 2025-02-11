@@ -11,7 +11,7 @@
     "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json",
     "generate-sdk-reference": "pnpm --if-present --recursive run generate-sdk-reference"
   },
-  "packageManager": "pnpm@8.7.6",
+  "packageManager": "pnpm@9.15.5",
   "dependencies": {
     "@changesets/cli": "^2.27.12",
     "@changesets/read": "^0.6.2"
