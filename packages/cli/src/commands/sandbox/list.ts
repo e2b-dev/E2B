@@ -8,12 +8,13 @@ import { handleE2BRequestError } from '../../utils/errors'
 export const listCommand = new commander.Command('list')
   .description('list all running sandboxes')
   .alias('ls')
-  .action(async () => {
+  .option('-s, --state <state>', 'filter by state', (value) => value.split(','))
+  .action(async (options) => {
     try {
-      const sandboxes = await listSandboxes()
+      const sandboxes = await listSandboxes({ state: options.state })
 
       if (!sandboxes?.length) {
-        console.log('No running sandboxes.')
+        console.log('No sandboxes found')
       } else {
         const table = new tablePrinter.Table({
           title: 'Running sandboxes',
@@ -84,13 +85,24 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-export async function listSandboxes(): Promise<
+type ListSandboxesOptions = {
+  state?: e2b.components['schemas']['SandboxState'][]
+}
+
+export async function listSandboxes({
+  state,
+}: ListSandboxesOptions = {}): Promise<
   e2b.components['schemas']['ListedSandbox'][]
 > {
   ensureAPIKey()
 
   const signal = connectionConfig.getSignal()
-  const res = await client.api.GET('/sandboxes', { signal })
+  const res = await client.api.GET('/sandboxes', {
+    params: {
+      query: { state },
+    },
+    signal,
+  })
 
   handleE2BRequestError(res.error, 'Error getting running sandboxes')
 

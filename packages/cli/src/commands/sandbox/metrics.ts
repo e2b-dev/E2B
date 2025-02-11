@@ -66,7 +66,7 @@ export const metricsCommand = new commander.Command('metrics')
           console.log(`\nMetrics for sandbox ${asBold(sandboxID)}:`)
         }
 
-        const isRunningPromise = listSandboxes()
+        const isRunningPromise = listSandboxes({ state: ['running'] })
           .then((r) => r.find((s) => s.sandboxID === getShortID(sandboxID)))
           .then((s) => !!s)
 

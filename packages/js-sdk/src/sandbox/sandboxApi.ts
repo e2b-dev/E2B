@@ -20,7 +20,7 @@ export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Filter the list of sandboxes by state.
    */
-  state?: Array<'running' | 'paused'>
+  state?: Array<'running' | 'paused'> | undefined
 }
 
 /**
@@ -121,8 +121,7 @@ export class SandboxApi {
 
     const res = await client.api.GET('/sandboxes', {
       params: {
-        query: { query },
-        state: opts?.state,
+        query: { query, state: opts?.state },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
