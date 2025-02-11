@@ -9,9 +9,15 @@ export const listCommand = new commander.Command('list')
   .description('list all running sandboxes')
   .alias('ls')
   .option('-s, --state <state>', 'filter by state', (value) => value.split(','))
+  .option('-f, --filters <filters>', 'filter by metadata', (value) =>
+    value.replace(/,/g, '&')
+  )
   .action(async (options) => {
     try {
-      const sandboxes = await listSandboxes({ state: options.state })
+      const sandboxes = await listSandboxes({
+        state: options.state,
+        filters: options.filters,
+      })
 
       if (!sandboxes?.length) {
         console.log('No sandboxes found')
@@ -87,10 +93,12 @@ export const listCommand = new commander.Command('list')
 
 type ListSandboxesOptions = {
   state?: e2b.components['schemas']['SandboxState'][]
+  filters?: string
 }
 
 export async function listSandboxes({
   state,
+  filters,
 }: ListSandboxesOptions = {}): Promise<
   e2b.components['schemas']['ListedSandbox'][]
 > {
@@ -99,7 +107,7 @@ export async function listSandboxes({
   const signal = connectionConfig.getSignal()
   const res = await client.api.GET('/sandboxes', {
     params: {
-      query: { state },
+      query: { state, query: filters },
     },
     signal,
   })
