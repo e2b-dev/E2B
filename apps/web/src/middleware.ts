@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { replaceUrls } from '@/utils/replaceUrls'
-import {
-  landingPageHostname,
-  landingPageFramerHostname,
-} from '@/app/hostnames'
+import { landingPageHostname, landingPageFramerHostname } from '@/app/hostnames'
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   if (req.method !== 'GET') return NextResponse.next()
@@ -45,6 +42,10 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     url.hostname = landingPageHostname
   }
 
+  if (url.pathname.startsWith('/category')) {
+    url.hostname = landingPageHostname
+  }
+
   // TODO: Not on the new landing page hosting yet
   if (url.pathname.startsWith('/ai-agents')) {
     url.hostname = landingPageFramerHostname
@@ -69,6 +70,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 export const config = {
   matcher: [
     '/',
+    '/category/:path*',
     '/blog/:path*',
     '/changelog/:path*',
     '/ai-agents/:path*',
@@ -78,4 +80,3 @@ export const config = {
     '/cookbook/:path*',
   ],
 }
-
