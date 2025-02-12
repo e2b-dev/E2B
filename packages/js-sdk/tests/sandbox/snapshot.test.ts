@@ -1,4 +1,5 @@
 import { assert, onTestFinished } from 'vitest'
+import { randomBytes } from 'crypto'
 
 import { Sandbox } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
@@ -173,5 +174,27 @@ sandboxTest.skipIf(isDebug)(
     onTestFinished(() => {
       sandbox.commands.kill(cmd.pid)
     })
+  }
+)
+
+sandboxTest.skipIf(isDebug)(
+  'pause and resume a sandbox while flushing the filesystem cache',
+  async ({ sandbox }) => {
+    const testPath = '/home/user/test'
+    const testContent = randomBytes(512).toString('hex')
+
+    await sandbox.files.write(testPath, testContent)
+
+    // sync: from the man page: flush file system buffers. Force changed blocks to disk, update the super block
+    // echo 3 > /proc/sys/vm/drop_cache: from the kernel docs: this will cause the kernel to free pagecache, dentries and inodes
+    await sandbox.commands.run('sync && echo 3 | sudo tee /proc/sys/vm/drop_caches')
+
+    await sandbox.pause()
+
+    const resumedSbx = await Sandbox.resume(sandbox.sandboxId)
+
+    const contentAfter = await resumedSbx.files.read(testPath)
+
+    assert.equal(contentAfter, testContent)
   }
 )
