@@ -16,8 +16,9 @@ sandboxTest.skipIf(isDebug)('kill non-existing sandbox', async () => {
 
 sandboxTest.skipIf(isDebug)('kill paused sandboxes', async ({ sandbox }) => {
   const pausedSandbox = await sandbox.pause()
-  await Sandbox.kill(pausedSandbox)
   const pausedSandboxId = pausedSandbox.split('-')[0] + '-' + '00000000'
+
+  await Sandbox.kill(pausedSandbox)
 
   const list = await Sandbox.list()
   expect(list.length).toBeGreaterThan(0)
