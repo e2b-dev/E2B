@@ -19,9 +19,9 @@ def test_kill_non_existing_sandbox():
 @pytest.mark.skip_debug()
 def test_kill_paused_sandbox(sandbox: Sandbox):
     paused_sandbox = sandbox.pause()
-    paused_sandbox_id = paused_sandbox.split("-")[0] + "-" + "00000000"
-
     assert Sandbox.kill(paused_sandbox) == True
 
     list = Sandbox.list()
+    paused_sandbox_id = paused_sandbox.split("-")[0] + "-" + "00000000"
+
     assert paused_sandbox_id not in [s.sandbox_id for s in list]
