@@ -50,4 +50,4 @@ async def test_auto_pause(template):
     try:
         assert await sbx_resumed.files.read("test.txt") == "test"
     finally:
-        await sbx_resumed.pause()
+        await sbx_resumed.kill()

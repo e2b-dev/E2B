@@ -2,7 +2,7 @@ from e2b import Sandbox
 
 
 def test_connect(template):
-    sbx = Sandbox(template, timeout=10)
+    sbx = Sandbox(template=template, timeout=10, auto_pause=True)
     try:
         assert sbx.is_running()
 

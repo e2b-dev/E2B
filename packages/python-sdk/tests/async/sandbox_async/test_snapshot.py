@@ -17,7 +17,7 @@ async def test_snapshot(template):
         await sbx.connect(sandbox_id, auto_pause=True)
         assert await sbx.is_running()
     finally:
-        await sbx.pause()
+        await sbx.kill()
 
 
 @pytest.mark.skip_debug()
@@ -37,4 +37,4 @@ async def test_resume_with_auto_pause(template):
     try:
         assert await sbx_resumed2.files.read('test.txt') == 'test'
     finally:
-        await sbx_resumed2.pause()
+        await sbx_resumed2.kill()

@@ -405,6 +405,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         )
 
         return cls(
+            auto_pause=auto_pause,
             sandbox_id=sandbox_id,
             api_key=api_key,
             domain=domain,

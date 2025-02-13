@@ -37,4 +37,4 @@ def test_resume_with_auto_pause(template):
     try:
         assert sbx_resumed2.files.read('test.txt') == 'test'
     finally:
-        sbx_resumed2.pause()
+        sbx_resumed2.kill()

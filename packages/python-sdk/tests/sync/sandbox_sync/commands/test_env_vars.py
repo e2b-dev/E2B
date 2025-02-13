@@ -10,7 +10,7 @@ def test_command_envs(sandbox: Sandbox):
 
 @pytest.mark.skip_debug()
 def test_sandbox_envs(template: str):
-    sandbox = Sandbox(template, envs={"FOO": "bar"})
+    sandbox = Sandbox(template=template, envs={"FOO": "bar"}, auto_pause=True)
     try:
         cmd = sandbox.commands.run("echo $FOO")
         assert cmd.stdout.strip() == "bar"
