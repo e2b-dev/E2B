@@ -171,14 +171,14 @@ export class Sandbox extends SandboxApi {
     templateOrOpts?: SandboxOpts | string,
     opts?: SandboxOpts
   ): Promise<InstanceType<S>> {
-    if (!opts?.autoPause) {
-      throw new Error('autoPause must be set to true when creating a sandbox')
-    }
-
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
         ? { template: templateOrOpts, sandboxOpts: opts }
         : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+
+    if (!sandboxOpts?.autoPause) {
+      throw new Error('autoPause must be set to true when creating a sandbox')
+    }
 
     const config = new ConnectionConfig(sandboxOpts)
 
