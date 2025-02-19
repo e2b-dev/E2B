@@ -39,11 +39,13 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   }
 
   if (url.pathname.startsWith('/blog')) {
-    url.hostname = landingPageHostname
-  }
+    const segments = url.pathname.split('/')
 
-  if (url.pathname.startsWith('/category')) {
     url.hostname = landingPageHostname
+
+    if (segments[2] === 'category') {
+      url.pathname = segments.slice(2).join('/')
+    }
   }
 
   // TODO: Not on the new landing page hosting yet
@@ -70,7 +72,6 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 export const config = {
   matcher: [
     '/',
-    '/category/:path*',
     '/blog/:path*',
     '/changelog/:path*',
     '/ai-agents/:path*',
