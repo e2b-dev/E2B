@@ -10,6 +10,8 @@ import {
   changelogFramerHostname,
 } from '@/app/hostnames'
 
+export const dynamic = 'force-static'
+
 type ChangeFrequency =
   | 'always'
   | 'hourly'
@@ -60,7 +62,7 @@ type Sitemap = {
 async function getXmlData(url: string): Promise<Sitemap> {
   const parser = new XMLParser()
 
-  const response = await fetch(url, { cache: 'no-cache' })
+  const response = await fetch(url)
 
   if (!response.ok) {
     return { urlset: { url: [] } }
