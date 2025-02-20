@@ -351,7 +351,7 @@ export const buildCommand = new commander.Command('build')
         process.stdout.write('\n')
 
         console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${
+        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64,linux/arm64 -t docker.${
           connectionConfig.domain
         }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
           dockerBuildArgs
