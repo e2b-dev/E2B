@@ -59,10 +59,22 @@ export interface PtyCreateOpts
 }
 
 /**
+ * Options for connecting to a command.
+ */
+export type PtyConnectOpts = Pick<
+  PtyCreateOpts,
+  'onData' | 'timeoutMs'
+> &
+  Pick<ConnectionOpts, 'requestTimeoutMs'>
+
+
+/**
  * Module for interacting with PTYs (pseudo-terminals) in the sandbox.
  */
 export class Pty {
   private readonly rpc: Client<typeof ProcessService>
+
+  private readonly defaultPtyConnectionTimeout = 60_000 // 60 seconds
 
   constructor(
     private readonly transport: Transport,
@@ -110,7 +122,7 @@ export class Pty {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? 60_000,
+        timeoutMs: opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
       }
     )
 
@@ -127,6 +139,66 @@ export class Pty {
         undefined,
         undefined,
         opts.onData
+      )
+    } catch (err) {
+      throw handleRpcError(err)
+    }
+  }
+
+  /**
+   * Connect to a running PTY.
+   *
+   * @param pid process ID of the PTY to connect to. You can get the list of running PTYs using {@link Pty.list}.
+   * @param opts connection options.
+   * 
+   * @returns handle to interact with the PTY.
+   */
+  async connect(
+    pid: number,
+    opts?: PtyConnectOpts
+  ): Promise<CommandHandle> {
+    const requestTimeoutMs =
+      opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
+    const controller = new AbortController()
+
+    const reqTimeout = requestTimeoutMs
+      ? setTimeout(() => {
+        controller.abort()
+      }, requestTimeoutMs)
+      : undefined
+
+    const events = this.rpc.connect(
+      {
+        process: {
+          selector: {
+            case: 'pid',
+            value: pid,
+          },
+        },
+      },
+      {
+        signal: controller.signal,
+        headers: {
+          [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
+        },
+        timeoutMs: opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
+      }
+    )
+
+    try {
+      const pid = await handleProcessStartEvent(events)
+
+      clearTimeout(reqTimeout)
+
+      return new CommandHandle(
+        pid,
+        () => controller.abort(),
+        () => this.kill(pid),
+        events,
+        undefined,
+        undefined,
+        opts?.onData
       )
     } catch (err) {
       throw handleRpcError(err)
