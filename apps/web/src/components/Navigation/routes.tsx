@@ -484,7 +484,7 @@ const sdkRefNameMap = {
 }
 
 export const sdkRefRoutes: VersionedNavGroup[] = (
-  sdkRefRoutesJson as VersionedNavGroup[]
+  sdkRefRoutesJson as unknown as VersionedNavGroup[]
 )
   .sort((a, b) => {
     const order = {
