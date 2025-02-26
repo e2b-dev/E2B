@@ -7,11 +7,11 @@ import { asBold, asPrimary } from './utils/format'
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
 
-const authErrorBox = boxen.default(
+const authErrorBox =(keyName: string) => boxen.default(
   `You must be logged in to use this command. Run ${asBold('e2b auth login')}.
 
 If you are seeing this message in CI/CD you may need to set the ${asBold(
-    'E2B_ACCESS_TOKEN'
+    `${keyName}`
   )} environment variable.
 Visit ${asPrimary(
     'https://e2b.dev/docs/getting-started/api-key'
@@ -34,7 +34,7 @@ export function ensureAPIKey() {
   }
 
   if (!apiKey) {
-    console.error(authErrorBox)
+    console.error(authErrorBox('E2B_API_KEY'))
     process.exit(1)
   } else {
     return apiKey
@@ -58,7 +58,7 @@ export function ensureAccessToken() {
   }
 
   if (!accessToken) {
-    console.error(authErrorBox)
+    console.error(authErrorBox('E2B_ACCESS_TOKEN'))
     process.exit(1)
   } else {
     return accessToken
