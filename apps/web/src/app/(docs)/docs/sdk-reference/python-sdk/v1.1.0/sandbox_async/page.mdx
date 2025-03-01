@@ -1,307 +1,6 @@
 
 
 
-## SandboxApi
-
-```python
-class SandboxApi(SandboxApiBase)
-```
-
-
-### list
-
-```python
-@classmethod
-async def list(cls,
-               api_key: Optional[str] = None,
-               domain: Optional[str] = None,
-               debug: Optional[bool] = None,
-               request_timeout: Optional[float] = None) -> List[SandboxInfo]
-```
-
-List all running sandboxes.
-
-**Arguments**:
-
-- `api_key`: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-List of running sandboxes
-
-
-
-
-## AsyncWatchHandle
-
-```python
-class AsyncWatchHandle()
-```
-
-Handle for watching a directory in the sandbox filesystem.
-
-Use `.stop()` to stop watching the directory.
-
-
-### stop
-
-```python
-async def stop()
-```
-
-Stop watching the directory.
-
-
-
-
-## Filesystem
-
-```python
-class Filesystem()
-```
-
-Module for interacting with the filesystem in the sandbox.
-
-
-### read
-
-```python
-@overload
-async def read(path: str,
-               format: Literal["text"] = "text",
-               user: Username = "user",
-               request_timeout: Optional[float] = None) -> str
-```
-
-Read file content as a `str`.
-
-**Arguments**:
-
-- `path`: Path to the file
-- `user`: Run the operation as this user
-- `format`: Format of the file content—`text` by default
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-File content as a `str`
-
-
-### read
-
-```python
-@overload
-async def read(path: str,
-               format: Literal["bytes"],
-               user: Username = "user",
-               request_timeout: Optional[float] = None) -> bytearray
-```
-
-Read file content as a `bytearray`.
-
-**Arguments**:
-
-- `path`: Path to the file
-- `user`: Run the operation as this user
-- `format`: Format of the file content—`bytes`
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-File content as a `bytearray`
-
-
-### read
-
-```python
-@overload
-async def read(
-        path: str,
-        format: Literal["stream"],
-        user: Username = "user",
-        request_timeout: Optional[float] = None) -> AsyncIterator[bytes]
-```
-
-Read file content as a `AsyncIterator[bytes]`.
-
-**Arguments**:
-
-- `path`: Path to the file
-- `user`: Run the operation as this user
-- `format`: Format of the file content—`stream`
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-File content as an `AsyncIterator[bytes]`
-
-
-### write
-
-```python
-async def write(path: str,
-                data: Union[str, bytes, IO],
-                user: Username = "user",
-                request_timeout: Optional[float] = None) -> EntryInfo
-```
-
-Write content to a file on the path.
-
-Writing to a file that doesn't exist creates the file.
-
-Writing to a file that already exists overwrites the file.
-
-Writing to a file at path that doesn't exist creates the necessary directories.
-
-**Arguments**:
-
-- `path`: Path to the file
-- `data`: Data to write to the file, can be a `str`, `bytes`, or `IO`.
-- `user`: Run the operation as this user
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-Information about the written file
-
-
-### list
-
-```python
-async def list(path: str,
-               user: Username = "user",
-               request_timeout: Optional[float] = None) -> List[EntryInfo]
-```
-
-List entries in a directory.
-
-**Arguments**:
-
-- `path`: Path to the directory
-- `user`: Run the operation as this user
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-List of entries in the directory
-
-
-### exists
-
-```python
-async def exists(path: str,
-                 user: Username = "user",
-                 request_timeout: Optional[float] = None) -> bool
-```
-
-Check if a file or a directory exists.
-
-**Arguments**:
-
-- `path`: Path to a file or a directory
-- `user`: Run the operation as this user
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-`True` if the file or directory exists, `False` otherwise
-
-
-### remove
-
-```python
-async def remove(path: str,
-                 user: Username = "user",
-                 request_timeout: Optional[float] = None) -> None
-```
-
-Remove a file or a directory.
-
-**Arguments**:
-
-- `path`: Path to a file or a directory
-- `user`: Run the operation as this user
-- `request_timeout`: Timeout for the request in **seconds**
-
-
-### rename
-
-```python
-async def rename(old_path: str,
-                 new_path: str,
-                 user: Username = "user",
-                 request_timeout: Optional[float] = None) -> EntryInfo
-```
-
-Rename a file or directory.
-
-**Arguments**:
-
-- `old_path`: Path to the file or directory to rename
-- `new_path`: New path to the file or directory
-- `user`: Run the operation as this user
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-Information about the renamed file or directory
-
-
-### make\_dir
-
-```python
-async def make_dir(path: str,
-                   user: Username = "user",
-                   request_timeout: Optional[float] = None) -> bool
-```
-
-Create a new directory and all directories along the way if needed on the specified path.
-
-**Arguments**:
-
-- `path`: Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
-- `user`: Run the operation as this user
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-`True` if the directory was created, `False` if the directory already exists
-
-
-### watch\_dir
-
-```python
-async def watch_dir(path: str,
-                    on_event: OutputHandler[FilesystemEvent],
-                    on_exit: Optional[OutputHandler[Exception]] = None,
-                    user: Username = "user",
-                    request_timeout: Optional[float] = None,
-                    timeout: Optional[float] = 60,
-                    recursive: bool = False) -> AsyncWatchHandle
-```
-
-Watch directory for filesystem events.
-
-**Arguments**:
-
-- `path`: Path to a directory to watch
-- `on_event`: Callback to call on each event in the directory
-- `on_exit`: Callback to call when the watching ends
-- `user`: Run the operation as this user
-- `request_timeout`: Timeout for the request in **seconds**
-- `timeout`: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time
-- `recursive`: Watch directory recursively
-
-**Returns**:
-
-`AsyncWatchHandle` object for stopping watching directory
-
-
-
-
-
-
 ## AsyncCommandHandle
 
 ```python
@@ -923,4 +622,305 @@ Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro us
 - `sandbox_id`: Sandbox ID
 - `timeout`: Timeout for the sandbox in **seconds**
 - `request_timeout`: Timeout for the request in **seconds**
+
+
+
+
+## Filesystem
+
+```python
+class Filesystem()
+```
+
+Module for interacting with the filesystem in the sandbox.
+
+
+### read
+
+```python
+@overload
+async def read(path: str,
+               format: Literal["text"] = "text",
+               user: Username = "user",
+               request_timeout: Optional[float] = None) -> str
+```
+
+Read file content as a `str`.
+
+**Arguments**:
+
+- `path`: Path to the file
+- `user`: Run the operation as this user
+- `format`: Format of the file content—`text` by default
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+File content as a `str`
+
+
+### read
+
+```python
+@overload
+async def read(path: str,
+               format: Literal["bytes"],
+               user: Username = "user",
+               request_timeout: Optional[float] = None) -> bytearray
+```
+
+Read file content as a `bytearray`.
+
+**Arguments**:
+
+- `path`: Path to the file
+- `user`: Run the operation as this user
+- `format`: Format of the file content—`bytes`
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+File content as a `bytearray`
+
+
+### read
+
+```python
+@overload
+async def read(
+        path: str,
+        format: Literal["stream"],
+        user: Username = "user",
+        request_timeout: Optional[float] = None) -> AsyncIterator[bytes]
+```
+
+Read file content as a `AsyncIterator[bytes]`.
+
+**Arguments**:
+
+- `path`: Path to the file
+- `user`: Run the operation as this user
+- `format`: Format of the file content—`stream`
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+File content as an `AsyncIterator[bytes]`
+
+
+### write
+
+```python
+async def write(path: str,
+                data: Union[str, bytes, IO],
+                user: Username = "user",
+                request_timeout: Optional[float] = None) -> EntryInfo
+```
+
+Write content to a file on the path.
+
+Writing to a file that doesn't exist creates the file.
+
+Writing to a file that already exists overwrites the file.
+
+Writing to a file at path that doesn't exist creates the necessary directories.
+
+**Arguments**:
+
+- `path`: Path to the file
+- `data`: Data to write to the file, can be a `str`, `bytes`, or `IO`.
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+Information about the written file
+
+
+### list
+
+```python
+async def list(path: str,
+               user: Username = "user",
+               request_timeout: Optional[float] = None) -> List[EntryInfo]
+```
+
+List entries in a directory.
+
+**Arguments**:
+
+- `path`: Path to the directory
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+List of entries in the directory
+
+
+### exists
+
+```python
+async def exists(path: str,
+                 user: Username = "user",
+                 request_timeout: Optional[float] = None) -> bool
+```
+
+Check if a file or a directory exists.
+
+**Arguments**:
+
+- `path`: Path to a file or a directory
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`True` if the file or directory exists, `False` otherwise
+
+
+### remove
+
+```python
+async def remove(path: str,
+                 user: Username = "user",
+                 request_timeout: Optional[float] = None) -> None
+```
+
+Remove a file or a directory.
+
+**Arguments**:
+
+- `path`: Path to a file or a directory
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+
+### rename
+
+```python
+async def rename(old_path: str,
+                 new_path: str,
+                 user: Username = "user",
+                 request_timeout: Optional[float] = None) -> EntryInfo
+```
+
+Rename a file or directory.
+
+**Arguments**:
+
+- `old_path`: Path to the file or directory to rename
+- `new_path`: New path to the file or directory
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+Information about the renamed file or directory
+
+
+### make\_dir
+
+```python
+async def make_dir(path: str,
+                   user: Username = "user",
+                   request_timeout: Optional[float] = None) -> bool
+```
+
+Create a new directory and all directories along the way if needed on the specified path.
+
+**Arguments**:
+
+- `path`: Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`True` if the directory was created, `False` if the directory already exists
+
+
+### watch\_dir
+
+```python
+async def watch_dir(path: str,
+                    on_event: OutputHandler[FilesystemEvent],
+                    on_exit: Optional[OutputHandler[Exception]] = None,
+                    user: Username = "user",
+                    request_timeout: Optional[float] = None,
+                    timeout: Optional[float] = 60,
+                    recursive: bool = False) -> AsyncWatchHandle
+```
+
+Watch directory for filesystem events.
+
+**Arguments**:
+
+- `path`: Path to a directory to watch
+- `on_event`: Callback to call on each event in the directory
+- `on_exit`: Callback to call when the watching ends
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+- `timeout`: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time
+- `recursive`: Watch directory recursively
+
+**Returns**:
+
+`AsyncWatchHandle` object for stopping watching directory
+
+
+
+
+## AsyncWatchHandle
+
+```python
+class AsyncWatchHandle()
+```
+
+Handle for watching a directory in the sandbox filesystem.
+
+Use `.stop()` to stop watching the directory.
+
+
+### stop
+
+```python
+async def stop()
+```
+
+Stop watching the directory.
+
+
+
+
+## SandboxApi
+
+```python
+class SandboxApi(SandboxApiBase)
+```
+
+
+### list
+
+```python
+@classmethod
+async def list(cls,
+               api_key: Optional[str] = None,
+               domain: Optional[str] = None,
+               debug: Optional[bool] = None,
+               request_timeout: Optional[float] = None) -> List[SandboxInfo]
+```
+
+List all running sandboxes.
+
+**Arguments**:
+
+- `api_key`: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+List of running sandboxes
+
+
 
