@@ -18,7 +18,7 @@ const authErrorBox = (keyName: string) => {
         )} environment variable.
     Visit ${asPrimary(
           'https://e2b.dev/dashboard?tab=keys'
-        )} to get the access token.`,
+        )} to get the API key.`,
         {
           width: 70,
           float: 'center',
