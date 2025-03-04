@@ -55,7 +55,7 @@ class ConnectionConfig:
             self.request_timeout = REQUEST_TIMEOUT
 
         self.api_url = (
-            "http://localhost:3000" if self.debug else f"https://api.{self.domain}"
+            "http://localhost:3000" if self.debug else self.domain
         )
 
     @staticmethod
