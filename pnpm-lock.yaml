@@ -159,9 +159,6 @@ importers:
       next-themes:
         specifier: ^0.2.1
         version: 0.2.1(next@14.2.21(@babel/core@7.25.8)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      posthog-js:
-        specifier: ^1.148.0
-        version: 1.148.0
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -404,7 +401,7 @@ importers:
         version: 3.0.5(@types/node@18.18.6)(@vitest/browser@3.0.5)(jiti@2.4.2)(msw@2.7.0(@types/node@18.18.6)(typescript@5.5.3))(terser@5.38.0)(yaml@2.5.1)
       vitest-browser-react:
         specifier: ^0.0.4
-        version: 0.0.4(@types/react-dom@18.3.1)(@types/react@18.3.11)(@vitest/browser@3.0.5(@types/node@18.18.6)(bufferutil@4.0.8)(playwright@1.48.0)(typescript@5.5.3)(utf-8-validate@6.0.3)(vite@6.1.0(@types/node@18.18.6)(jiti@2.4.2)(terser@5.38.0)(yaml@2.5.1))(vitest@3.0.5))(react-dom@18.2.0(react@18.3.1))(react@18.3.1)(vitest@3.0.5(@types/node@18.18.6)(@vitest/browser@3.0.5)(jiti@2.4.2)(msw@2.7.0(@types/node@18.18.6)(typescript@5.5.3))(terser@5.38.0)(yaml@2.5.1))
+        version: 0.0.4(@types/react-dom@18.3.1)(@types/react@18.3.11)(@vitest/browser@3.0.5)(react-dom@18.2.0(react@18.3.1))(react@18.3.1)(vitest@3.0.5)
 
   packages/python-sdk: {}
 
@@ -4172,9 +4169,6 @@ packages:
       picomatch:
         optional: true
 
-  fflate@0.4.8:
-    resolution: {integrity: sha512-FJqqoDBR00Mdj9ppamLa/Y7vxm+PRmNWA67N846RvsoYVMKB4q3y/de5PA7gUmRMYK/8CMz2GDZQmCRN1wBcWA==}
-
   figures@5.0.0:
     resolution: {integrity: sha512-ej8ksPF4x6e5wvK9yevct0UCXh8TTFlWGVLlgjZuoBH1HwjIfKE/IdL5mq89sFA7zELi1VhKpmtDnrs7zWyeyg==}
     engines: {node: '>=14'}
@@ -5909,12 +5903,6 @@ packages:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
 
-  posthog-js@1.148.0:
-    resolution: {integrity: sha512-nydf+aret26YViDBwH7DdN/c8dmCzQGNQ1yredeE47UlbpJ3J/iTgskNdmGJIofFcdSagcwAE/FF7s++YfTtvg==}
-
-  preact@10.22.1:
-    resolution: {integrity: sha512-jRYbDDgMpIb5LHq3hkI0bbl+l/TQ9UnkdQ0ww+lp+4MMOdqaUYdFc5qeyP+IV8FAd/2Em7drVPeKdQxsiWCf/A==}
-
   prebuild-install@7.1.1:
     resolution: {integrity: sha512-jAXscXWMcCK8GgCoHOfIr0ODh5ai8mj63L2nWrjuAgXE6tDyYGnx4/8o/rCgU+B4JSyZBKbeZqzhtwtC3ovxjw==}
     engines: {node: '>=10'}
@@ -7132,9 +7120,6 @@ packages:
   web-streams-polyfill@4.0.0-beta.3:
     resolution: {integrity: sha512-QW95TCTaHmsYfHDybGMwO5IJIM93I/6vTRk+daHTWFPhwh+C8Cg7j7XyKrwrj8Ib6vYXe0ocYNrmzY4xAAN6ug==}
     engines: {node: '>= 14'}
-
-  web-vitals@4.2.2:
-    resolution: {integrity: sha512-nYfoOqb4EmElljyXU2qdeE76KsvoHdftQKY4DzA9Aw8DervCg2bG634pHLrJ/d6+B4mE3nWTSJv8Mo7B2mbZkw==}
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -11513,7 +11498,7 @@ snapshots:
       debug: 4.4.0(supports-color@9.4.0)
       enhanced-resolve: 5.18.1
       eslint: 8.57.1
-      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.28.1)(eslint@8.57.1))(eslint@8.57.1)
+      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0)(eslint@8.57.1)
       eslint-plugin-import: 2.28.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-typescript@3.6.0)(eslint@8.57.1)
       fast-glob: 3.3.2
       get-tsconfig: 4.7.0
@@ -11525,7 +11510,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-module-utils@2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.28.1)(eslint@8.57.1))(eslint@8.57.1):
+  eslint-module-utils@2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0)(eslint@8.57.1):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -11546,7 +11531,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.28.1)(eslint@8.57.1))(eslint@8.57.1)
+      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0)(eslint@8.57.1)
       has: 1.0.3
       is-core-module: 2.13.0
       is-glob: 4.0.3
@@ -11829,8 +11814,6 @@ snapshots:
   fdir@6.4.0(picomatch@4.0.2):
     optionalDependencies:
       picomatch: 4.0.2
-
-  fflate@0.4.8: {}
 
   figures@5.0.0:
     dependencies:
@@ -13955,14 +13938,6 @@ snapshots:
     dependencies:
       xtend: 4.0.2
 
-  posthog-js@1.148.0:
-    dependencies:
-      fflate: 0.4.8
-      preact: 10.22.1
-      web-vitals: 4.2.2
-
-  preact@10.22.1: {}
-
   prebuild-install@7.1.1:
     dependencies:
       detect-libc: 2.0.2
@@ -15291,7 +15266,7 @@ snapshots:
       terser: 5.38.0
       yaml: 2.5.1
 
-  vitest-browser-react@0.0.4(@types/react-dom@18.3.1)(@types/react@18.3.11)(@vitest/browser@3.0.5(@types/node@18.18.6)(bufferutil@4.0.8)(playwright@1.48.0)(typescript@5.5.3)(utf-8-validate@6.0.3)(vite@6.1.0(@types/node@18.18.6)(jiti@2.4.2)(terser@5.38.0)(yaml@2.5.1))(vitest@3.0.5))(react-dom@18.2.0(react@18.3.1))(react@18.3.1)(vitest@3.0.5(@types/node@18.18.6)(@vitest/browser@3.0.5)(jiti@2.4.2)(msw@2.7.0(@types/node@18.18.6)(typescript@5.5.3))(terser@5.38.0)(yaml@2.5.1)):
+  vitest-browser-react@0.0.4(@types/react-dom@18.3.1)(@types/react@18.3.11)(@vitest/browser@3.0.5)(react-dom@18.2.0(react@18.3.1))(react@18.3.1)(vitest@3.0.5):
     dependencies:
       '@vitest/browser': 3.0.5(@types/node@18.18.6)(bufferutil@4.0.8)(playwright@1.48.0)(typescript@5.5.3)(utf-8-validate@6.0.3)(vite@6.1.0(@types/node@18.18.6)(jiti@2.4.2)(terser@5.38.0)(yaml@2.5.1))(vitest@3.0.5)
       react: 18.3.1
@@ -15354,8 +15329,6 @@ snapshots:
       defaults: 1.0.4
 
   web-streams-polyfill@4.0.0-beta.3: {}
-
-  web-vitals@4.2.2: {}
 
   webidl-conversions@3.0.1: {}
 

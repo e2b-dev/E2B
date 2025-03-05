@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { forwardRef, useEffect } from 'react'
 
-import { Auth } from '@/components/Auth'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
 import { Logo } from '@/components/Logo'
 import {
@@ -61,7 +60,6 @@ export const Header = forwardRef(function Header({ className }, ref) {
   const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8])
 
   const pathname = usePathname()
-  const isAuth = pathname?.startsWith('/auth')
 
   useEffect(() => {
     fetch(config.github.api)
@@ -104,11 +102,6 @@ export const Header = forwardRef(function Header({ className }, ref) {
             href="/docs"
             title="Documentation"
           />
-          <DocumentationTypeLink
-            pathname={pathname}
-            href="/dashboard"
-            title="Dashboard"
-          />
         </div>
       </div>
 
@@ -124,30 +117,20 @@ export const Header = forwardRef(function Header({ className }, ref) {
             href="/docs"
             title="Documentation"
           />
-          <DocumentationTypeLink
-            pathname={pathname}
-            href="/dashboard"
-            title="Dashboard"
-          />
         </div>
       </div>
-      {!isAuth && (
-        <div className="flex items-center gap-4">
-          <nav className="hidden md:block">
-            <ul role="list" className="flex items-center gap-4">
-              <TopLevelNavItem
-                href={config.github.url}
-                stat={githubStars}
-                statType="githubStars"
-                icon={<GitHubIcon className="h-5 w-5 fill-current" />}
-              />
-            </ul>
-          </nav>
-          <div className="hidden min-[540px]:contents">
-            <Auth />
-          </div>
-        </div>
-      )}
+      <div className="flex items-center gap-4">
+        <nav className="hidden md:block">
+          <ul role="list" className="flex items-center gap-4">
+            <TopLevelNavItem
+              href={config.github.url}
+              stat={githubStars}
+              statType="githubStars"
+              icon={<GitHubIcon className="h-5 w-5 fill-current" />}
+            />
+          </ul>
+        </nav>
+      </div>
     </motion.div>
   )
 })
