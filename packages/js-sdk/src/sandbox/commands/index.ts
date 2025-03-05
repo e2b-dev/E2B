@@ -63,6 +63,10 @@ export interface CommandStartOpts extends CommandRequestOpts {
    */
   onStderr?: (data: string) => void | Promise<void>
   /**
+  * Callback for stdout output.
+  */
+  onData?: (data: Uint8Array) => void | Promise<void>
+  /**
    * Timeout for the command in **milliseconds**.
    * 
    * @default 60_000 // 60 seconds
@@ -75,7 +79,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
  */
 export type CommandConnectOpts = Pick<
   CommandStartOpts,
-  'onStderr' | 'onStdout' | 'timeoutMs'
+  'onStderr' | 'onStdout' | 'onData' | 'timeoutMs'
 > &
   CommandRequestOpts
 
@@ -283,7 +287,7 @@ export class Commands {
         events,
         opts?.onStdout,
         opts?.onStderr,
-        undefined
+        opts?.onData
       )
     } catch (err) {
       throw handleRpcError(err)
@@ -370,7 +374,7 @@ export class Commands {
         events,
         opts?.onStdout,
         opts?.onStderr,
-        undefined
+        opts?.onData
       )
     } catch (err) {
       throw handleRpcError(err)
