@@ -10,7 +10,7 @@ function E2BTest() {
 
   useEffect(() => {
     const getText = async () => {
-      const sandbox = await Sandbox.create()
+      const sandbox = await Sandbox.create({autoPause: true})
 
       try {
         await sandbox.commands.run('echo "Hello World" > hello.txt')

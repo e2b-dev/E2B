@@ -102,7 +102,7 @@ class ApiClient(AuthenticatedClient):
 
     def _log_response(self, response: Response):
         if response.status_code >= 400:
-            logger.error(f"Response {response.status_code}")
+            logger.info(f"Response {response.status_code}")
         else:
             logger.info(f"Response {response.status_code}")
 
@@ -114,6 +114,6 @@ class AsyncApiClient(ApiClient):
 
     async def _log_response(self, response: Response):
         if response.status_code >= 400:
-            logger.error(f"Response {response.status_code}")
+            logger.info(f"Response {response.status_code}")
         else:
             logger.info(f"Response {response.status_code}")
