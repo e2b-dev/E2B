@@ -12,18 +12,24 @@ T = TypeVar("T", bound="ResumedSandbox")
 class ResumedSandbox:
     """
     Attributes:
+        auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
     """
 
+    auto_pause: Union[Unset, bool] = False
     timeout: Union[Unset, int] = 15
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        auto_pause = self.auto_pause
+
         timeout = self.timeout
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
+        if auto_pause is not UNSET:
+            field_dict["autoPause"] = auto_pause
         if timeout is not UNSET:
             field_dict["timeout"] = timeout
 
@@ -32,9 +38,12 @@ class ResumedSandbox:
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         d = src_dict.copy()
+        auto_pause = d.pop("autoPause", UNSET)
+
         timeout = d.pop("timeout", UNSET)
 
         resumed_sandbox = cls(
+            auto_pause=auto_pause,
             timeout=timeout,
         )
 

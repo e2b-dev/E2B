@@ -1,10 +1,12 @@
 from typing import Literal, cast
 
-NodeStatus = Literal["draining", "ready"]
+NodeStatus = Literal["connecting", "draining", "ready", "unhealthy"]
 
 NODE_STATUS_VALUES: set[NodeStatus] = {
+    "connecting",
     "draining",
     "ready",
+    "unhealthy",
 }
 
 

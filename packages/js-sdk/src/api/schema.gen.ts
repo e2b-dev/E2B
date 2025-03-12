@@ -15,6 +15,10 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    /** @description Cursor to start the list from */
+                    nextPageCursor?: string;
+                    /** @description Maximum number of items to return per page */
+                    pageSize?: number;
                     /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
                     query?: string;
                     /** @description Filter sandboxes by one or more states */
@@ -406,6 +410,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all running sandboxes with metrics */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
+                    query?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned all running sandboxes with metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RunningSandboxWithMetrics"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/templates": {
         parameters: {
             query?: never;
@@ -683,6 +729,8 @@ export interface components {
             endAt: string;
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
+            /** @description Pagination cursor of the sandbox */
+            paginationCursor?: string;
             /** @description Identifier of the sandbox */
             sandboxID: string;
             /**
@@ -700,6 +748,11 @@ export interface components {
          */
         MemoryMB: number;
         NewSandbox: {
+            /**
+             * @description Automatically pauses the sandbox after the timeout
+             * @default false
+             */
+            autoPause: boolean;
             envVars?: components["schemas"]["EnvVars"];
             metadata?: components["schemas"]["SandboxMetadata"];
             /** @description Identifier of the required template */
@@ -722,6 +775,11 @@ export interface components {
              * @description Amount of allocated memory in MiB
              */
             allocatedMemoryMiB: number;
+            /**
+             * Format: uint64
+             * @description Number of sandbox create fails
+             */
+            createFails: number;
             /** @description Identifier of the node */
             nodeID: string;
             /**
@@ -729,11 +787,21 @@ export interface components {
              * @description Number of sandboxes running on the node
              */
             sandboxCount: number;
+            /**
+             * Format: int
+             * @description Number of starting Sandboxes
+             */
+            sandboxStartingCount: number;
             status: components["schemas"]["NodeStatus"];
         };
         NodeDetail: {
             /** @description List of cached builds id on the node */
             cachedBuilds: string[];
+            /**
+             * Format: uint64
+             * @description Number of sandbox create fails
+             */
+            createFails: number;
             /** @description Identifier of the node */
             nodeID: string;
             /** @description List of sandboxes running on the node */
@@ -744,17 +812,46 @@ export interface components {
          * @description Status of the node
          * @enum {string}
          */
-        NodeStatus: "ready" | "draining";
+        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy";
         NodeStatusChange: {
             status: components["schemas"]["NodeStatus"];
         };
         ResumedSandbox: {
+            /**
+             * @description Automatically pauses the sandbox after the timeout
+             * @default false
+             */
+            autoPause: boolean;
             /**
              * Format: int32
              * @description Time to live for the sandbox in seconds.
              * @default 15
              */
             timeout: number;
+        };
+        RunningSandboxWithMetrics: {
+            /** @description Alias of the template */
+            alias?: string;
+            /** @description Identifier of the client */
+            clientID: string;
+            cpuCount: components["schemas"]["CPUCount"];
+            /**
+             * Format: date-time
+             * @description Time when the sandbox will expire
+             */
+            endAt: string;
+            memoryMB: components["schemas"]["MemoryMB"];
+            metadata?: components["schemas"]["SandboxMetadata"];
+            metrics?: components["schemas"]["SandboxMetric"][];
+            /** @description Identifier of the sandbox */
+            sandboxID: string;
+            /**
+             * Format: date-time
+             * @description Time when the sandbox was started
+             */
+            startedAt: string;
+            /** @description Identifier of the template from which is the sandbox created */
+            templateID: string;
         };
         Sandbox: {
             /** @description Alias of the template */

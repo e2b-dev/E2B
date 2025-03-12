@@ -10,6 +10,7 @@ from .node_status_change import NodeStatusChange
 from .post_sandboxes_sandbox_id_refreshes_body import PostSandboxesSandboxIDRefreshesBody
 from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
 from .resumed_sandbox import ResumedSandbox
+from .running_sandbox_with_metrics import RunningSandboxWithMetrics
 from .sandbox import Sandbox
 from .sandbox_log import SandboxLog
 from .sandbox_logs import SandboxLogs
@@ -34,6 +35,7 @@ __all__ = (
     "PostSandboxesSandboxIDRefreshesBody",
     "PostSandboxesSandboxIDTimeoutBody",
     "ResumedSandbox",
+    "RunningSandboxWithMetrics",
     "Sandbox",
     "SandboxLog",
     "SandboxLogs",

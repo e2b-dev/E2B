@@ -1,18 +1,21 @@
 import datetime
-from typing import Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
-from ..models.sandbox_state import SandboxState, check_sandbox_state
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="ListedSandbox")
+if TYPE_CHECKING:
+    from ..models.sandbox_metric import SandboxMetric
+
+
+T = TypeVar("T", bound="RunningSandboxWithMetrics")
 
 
 @_attrs_define
-class ListedSandbox:
+class RunningSandboxWithMetrics:
     """
     Attributes:
         client_id (str): Identifier of the client
@@ -21,11 +24,10 @@ class ListedSandbox:
         memory_mb (int): Memory for the sandbox in MB
         sandbox_id (str): Identifier of the sandbox
         started_at (datetime.datetime): Time when the sandbox was started
-        state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
-        pagination_cursor (Union[Unset, str]): Pagination cursor of the sandbox
+        metrics (Union[Unset, list['SandboxMetric']]):
     """
 
     client_id: str
@@ -34,11 +36,10 @@ class ListedSandbox:
     memory_mb: int
     sandbox_id: str
     started_at: datetime.datetime
-    state: SandboxState
     template_id: str
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
-    pagination_cursor: Union[Unset, str] = UNSET
+    metrics: Union[Unset, list["SandboxMetric"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -54,15 +55,18 @@ class ListedSandbox:
 
         started_at = self.started_at.isoformat()
 
-        state: str = self.state
-
         template_id = self.template_id
 
         alias = self.alias
 
         metadata = self.metadata
 
-        pagination_cursor = self.pagination_cursor
+        metrics: Union[Unset, list[dict[str, Any]]] = UNSET
+        if not isinstance(self.metrics, Unset):
+            metrics = []
+            for metrics_item_data in self.metrics:
+                metrics_item = metrics_item_data.to_dict()
+                metrics.append(metrics_item)
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -74,7 +78,6 @@ class ListedSandbox:
                 "memoryMB": memory_mb,
                 "sandboxID": sandbox_id,
                 "startedAt": started_at,
-                "state": state,
                 "templateID": template_id,
             }
         )
@@ -82,13 +85,15 @@ class ListedSandbox:
             field_dict["alias"] = alias
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
-        if pagination_cursor is not UNSET:
-            field_dict["paginationCursor"] = pagination_cursor
+        if metrics is not UNSET:
+            field_dict["metrics"] = metrics
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
+        from ..models.sandbox_metric import SandboxMetric
+
         d = src_dict.copy()
         client_id = d.pop("clientID")
 
@@ -102,32 +107,34 @@ class ListedSandbox:
 
         started_at = isoparse(d.pop("startedAt"))
 
-        state = check_sandbox_state(d.pop("state"))
-
         template_id = d.pop("templateID")
 
         alias = d.pop("alias", UNSET)
 
         metadata = d.pop("metadata", UNSET)
 
-        pagination_cursor = d.pop("paginationCursor", UNSET)
+        metrics = []
+        _metrics = d.pop("metrics", UNSET)
+        for metrics_item_data in _metrics or []:
+            metrics_item = SandboxMetric.from_dict(metrics_item_data)
 
-        listed_sandbox = cls(
+            metrics.append(metrics_item)
+
+        running_sandbox_with_metrics = cls(
             client_id=client_id,
             cpu_count=cpu_count,
             end_at=end_at,
             memory_mb=memory_mb,
             sandbox_id=sandbox_id,
             started_at=started_at,
-            state=state,
             template_id=template_id,
             alias=alias,
             metadata=metadata,
-            pagination_cursor=pagination_cursor,
+            metrics=metrics,
         )
 
-        listed_sandbox.additional_properties = d
-        return listed_sandbox
+        running_sandbox_with_metrics.additional_properties = d
+        return running_sandbox_with_metrics
 
     @property
     def additional_keys(self) -> list[str]:

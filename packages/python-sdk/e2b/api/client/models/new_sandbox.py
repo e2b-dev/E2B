@@ -13,12 +13,14 @@ class NewSandbox:
     """
     Attributes:
         template_id (str): Identifier of the required template
+        auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         env_vars (Union[Unset, Any]):
         metadata (Union[Unset, Any]):
         timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
     """
 
     template_id: str
+    auto_pause: Union[Unset, bool] = False
     env_vars: Union[Unset, Any] = UNSET
     metadata: Union[Unset, Any] = UNSET
     timeout: Union[Unset, int] = 15
@@ -26,6 +28,8 @@ class NewSandbox:
 
     def to_dict(self) -> dict[str, Any]:
         template_id = self.template_id
+
+        auto_pause = self.auto_pause
 
         env_vars = self.env_vars
 
@@ -40,6 +44,8 @@ class NewSandbox:
                 "templateID": template_id,
             }
         )
+        if auto_pause is not UNSET:
+            field_dict["autoPause"] = auto_pause
         if env_vars is not UNSET:
             field_dict["envVars"] = env_vars
         if metadata is not UNSET:
@@ -54,6 +60,8 @@ class NewSandbox:
         d = src_dict.copy()
         template_id = d.pop("templateID")
 
+        auto_pause = d.pop("autoPause", UNSET)
+
         env_vars = d.pop("envVars", UNSET)
 
         metadata = d.pop("metadata", UNSET)
@@ -62,6 +70,7 @@ class NewSandbox:
 
         new_sandbox = cls(
             template_id=template_id,
+            auto_pause=auto_pause,
             env_vars=env_vars,
             metadata=metadata,
             timeout=timeout,
