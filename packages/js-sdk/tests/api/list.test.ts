@@ -1,10 +1,15 @@
 import { assert } from 'vitest'
 
-import { Sandbox } from '../../src'
+import { Sandbox, SandboxInfo } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)('list sandboxes', async ({ sandbox }) => {
-  const sandboxes = await Sandbox.list()
+  const sandboxesList = await Sandbox.list()
+  const sandboxes: SandboxInfo[] = []
+  for await (const sbx of sandboxesList) {
+    sandboxes.push(sbx)
+  }
+
   assert.isAtLeast(sandboxes.length, 1)
   assert.include(
     sandboxes.map((s) => s.sandboxId),
@@ -28,7 +33,12 @@ sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
   try {
     const sbx = await Sandbox.create({ metadata: { uniqueId: uniqueId } })
     try {
-      const sandboxes = await Sandbox.list({ filters: { uniqueId } })
+      const sandboxesList = await Sandbox.list({ filters: { uniqueId } })
+      const sandboxes: SandboxInfo[] = []
+      for await (const sbx of sandboxesList) {
+        sandboxes.push(sbx)
+      }
+
       assert.equal(sandboxes.length, 1)
       assert.equal(sandboxes[0].sandboxId, sbx.sandboxId)
     } finally {
@@ -42,7 +52,11 @@ sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
 sandboxTest.skipIf(isDebug)('list paused sandboxes', async ({ sandbox }) => {
   const pausedSandbox = await sandbox.pause()
   const pausedSandboxId = pausedSandbox.split('-')[0] + '-' + '00000000'
-  const sandboxes = await Sandbox.list({ state: ['paused'] })
+  const sandboxesList = await Sandbox.list({ state: ['paused'] })
+  const sandboxes: SandboxInfo[] = []
+  for await (const sbx of sandboxesList) {
+    sandboxes.push(sbx)
+  }
 
   assert.isAtLeast(sandboxes.length, 1)
   assert.include(

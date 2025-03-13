@@ -34,9 +34,11 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> List[SandboxInfo]:
+        page_size: int = 1000,
+        next_page_cursor: Optional[str] = None,
+    ):
         """
-        List all running sandboxes.
+        List all running sandboxes with automatic pagination.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param filters: Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
@@ -44,8 +46,10 @@ class SandboxApi(SandboxApiBase):
         :param domain: Domain to use for the request, only relevant for self-hosted environments
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
+        :param page_size: Number of sandboxes to return per page
+        :param next_page_cursor: Cursor to the next page
 
-        :return: List of running sandboxes
+        :yields: SandboxInfo objects one at a time
         """
         config = ConnectionConfig(
             api_key=api_key,
@@ -54,42 +58,52 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
-        query = UNSET
-        if filters:
-            filters = {
-                urllib.parse.quote(k): urllib.parse.quote(v) for k, v in filters.items()
-            }
-            query = urllib.parse.urlencode(filters)
+        has_next_page = True
+        current_cursor = next_page_cursor
 
-        async with AsyncApiClient(config) as api_client:
-            res = await get_sandboxes.asyncio_detailed(
-                client=api_client,
-                query=query,
-                state=state or UNSET,
-            )
+        while has_next_page:
+            # Convert filters to the format expected by the API
+            query = UNSET
+            if filters:
+                filters = {
+                    urllib.parse.quote(k): urllib.parse.quote(v) for k, v in filters.items()
+                }
+                query = urllib.parse.urlencode(filters)
 
-        if res.status_code >= 300:
-            raise handle_api_exception(res)
+            async with AsyncApiClient(config) as api_client:
+                res = await get_sandboxes.asyncio_detailed(
+                    client=api_client,
+                    query=query,
+                    state=state or UNSET,
+                    page_size=page_size,
+                    next_page_cursor=current_cursor,
+                )
 
-        if res.parsed is None:
-            return []
+                if res.status_code >= 300:
+                    raise handle_api_exception(res)
 
-        return [
-            SandboxInfo(
-                sandbox_id=SandboxApi._get_sandbox_id(
-                    sandbox.sandbox_id,
-                    sandbox.client_id,
-                ),
-                template_id=sandbox.template_id,
-                name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                metadata=(
-                    sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                ),
-                started_at=sandbox.started_at,
-                state=sandbox.state,
-            )
-            for sandbox in res.parsed
-        ]
+                if res.parsed is None:
+                    return
+
+                # Get pagination info from headers
+                has_next_page = res.headers.get("x-has-next-page") == "true"
+                current_cursor = res.headers.get("x-next-page-cursor")
+
+                # Yield each sandbox in current page
+                for sandbox in res.parsed:
+                    yield SandboxInfo(
+                        sandbox_id=SandboxApi._get_sandbox_id(
+                            sandbox.sandbox_id,
+                            sandbox.client_id,
+                        ),
+                        template_id=sandbox.template_id,
+                        name=sandbox.alias if isinstance(sandbox.alias, str) else None,
+                        metadata=(
+                            sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
+                        ),
+                        started_at=sandbox.started_at,
+                        state=sandbox.state,
+                    )
 
     @classmethod
     async def _cls_kill(

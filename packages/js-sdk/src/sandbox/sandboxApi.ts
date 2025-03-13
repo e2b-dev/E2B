@@ -9,7 +9,7 @@ import { NotFoundError, TemplateError } from '../errors'
 export interface SandboxApiOpts
   extends Partial<
     Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
-  > {}
+  > { }
 
 export interface SandboxListOpts extends SandboxApiOpts {
   /**
@@ -21,6 +21,16 @@ export interface SandboxListOpts extends SandboxApiOpts {
    * Filter the list of sandboxes by state.
    */
   state?: Array<'running' | 'paused'> | undefined
+
+  /**
+   * Number of sandboxes to return per page.
+   */
+  pageSize?: number
+
+  /**
+   * Cursor to the next page.
+   */
+  nextPageCursor?: string
 }
 
 /**
@@ -59,7 +69,7 @@ export interface SandboxInfo {
 }
 
 export class SandboxApi {
-  protected constructor() {}
+  protected constructor() { }
 
   /**
    * Kill the sandbox specified by sandbox ID.
@@ -104,46 +114,67 @@ export class SandboxApi {
    *
    * @returns list of running sandboxes.
    */
-  static async list(opts?: SandboxListOpts): Promise<SandboxInfo[]> {
-    const config = new ConnectionConfig(opts)
+  static async *list({
+    pageSize = 1000,
+    nextPageCursor,
+    filters,
+    state,
+    requestTimeoutMs,
+  }: SandboxListOpts = {}): AsyncGenerator<SandboxInfo> {
+    const config = new ConnectionConfig({ requestTimeoutMs })
     const client = new ApiClient(config)
 
-    let query = undefined
-    if (opts?.filters) {
-      const encodedPairs: Record<string, string> = Object.fromEntries(
-        Object.entries(opts.filters).map(([key, value]) => [
-          encodeURIComponent(key),
-          encodeURIComponent(value),
-        ])
-      )
-      query = new URLSearchParams(encodedPairs).toString()
+    let hasNextPage = true
+    let currentCursor = nextPageCursor
+
+    while (hasNextPage) {
+      let query = undefined
+      if (filters) {
+        const encodedPairs: Record<string, string> = Object.fromEntries(
+          Object.entries(filters).map(([key, value]) => [
+            encodeURIComponent(key),
+            encodeURIComponent(value),
+          ])
+        )
+        query = new URLSearchParams(encodedPairs).toString()
+      }
+
+      const res = await client.api.GET('/sandboxes', {
+        params: {
+          query: {
+            query,
+            state,
+            pageSize,
+            nextPageCursor: currentCursor,
+          },
+        },
+        signal: config.getSignal(requestTimeoutMs),
+      })
+
+      const err = handleApiError(res)
+      if (err) {
+        throw err
+      }
+
+      // Get pagination info from headers
+      hasNextPage = res.response.headers.get('x-has-next-page') === 'true'
+      currentCursor = res.response.headers.get('x-next-page-cursor') || undefined
+
+      // Yield each sandbox in current page
+      for (const sandbox of res.data ?? []) {
+        yield {
+          sandboxId: this.getSandboxId({
+            sandboxId: sandbox.sandboxID,
+            clientId: sandbox.clientID,
+          }),
+          templateId: sandbox.templateID,
+          ...(sandbox.alias && { name: sandbox.alias }),
+          metadata: sandbox.metadata ?? {},
+          startedAt: new Date(sandbox.startedAt),
+          state: sandbox.state,
+        }
+      }
     }
-
-    const res = await client.api.GET('/sandboxes', {
-      params: {
-        query: { query, state: opts?.state },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    return (
-      res.data?.map((sandbox: components['schemas']['ListedSandbox']) => ({
-        sandboxId: this.getSandboxId({
-          sandboxId: sandbox.sandboxID,
-          clientId: sandbox.clientID,
-        }),
-        templateId: sandbox.templateID,
-        ...(sandbox.alias && { name: sandbox.alias }),
-        metadata: sandbox.metadata ?? {},
-        startedAt: new Date(sandbox.startedAt),
-        state: sandbox.state,
-      })) ?? []
-    )
   }
 
   /**
@@ -278,6 +309,7 @@ export class SandboxApi {
       },
       body: {
         timeout: this.timeoutToSeconds(timeoutMs),
+        autoPause: false,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -319,6 +351,7 @@ export class SandboxApi {
         metadata: opts?.metadata,
         envVars: opts?.envs,
         timeout: this.timeoutToSeconds(timeoutMs),
+        autoPause: false,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -338,7 +371,7 @@ export class SandboxApi {
       )
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
     return {

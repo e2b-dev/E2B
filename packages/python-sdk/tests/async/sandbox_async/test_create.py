@@ -20,7 +20,7 @@ async def test_metadata(template):
     )
 
     try:
-        sbxs = await AsyncSandbox.list()
+        sbxs = [sbx async for sbx in AsyncSandbox.list()]
 
         for sbx_info in sbxs:
             if sbx.sandbox_id == sbx_info.sandbox_id:

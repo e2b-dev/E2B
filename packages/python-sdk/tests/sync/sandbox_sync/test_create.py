@@ -18,7 +18,7 @@ def test_metadata(template):
     sbx = Sandbox(template, timeout=5, metadata={"test-key": "test-value"})
 
     try:
-        sbxs = Sandbox.list()
+        sbxs = [sandbox for sandbox in Sandbox.list()]
 
         for sbx_info in sbxs:
             if sbx.sandbox_id == sbx_info.sandbox_id:
