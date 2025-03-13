@@ -23,14 +23,14 @@ export interface SandboxListOpts extends SandboxApiOpts {
   state?: Array<'running' | 'paused'> | undefined
 
   /**
-   * Number of sandboxes to return per page.
+   * Number of sandboxes to return.
    */
-  pageSize?: number
+  limit?: number
 
   /**
    * Cursor to the next page.
    */
-  nextPageCursor?: string
+  cursor?: string
 }
 
 /**
@@ -114,65 +114,82 @@ export class SandboxApi {
    *
    * @returns list of running sandboxes.
    */
-  static async *list({
-    pageSize = 1000,
-    nextPageCursor,
-    filters,
-    state,
-    requestTimeoutMs,
-  }: SandboxListOpts = {}): AsyncGenerator<SandboxInfo> {
+  static async list(opts: SandboxListOpts = {}): Promise<{
+    sandboxes: SandboxInfo[],
+    hasMoreItems: boolean,
+    cursor: string | undefined,
+    iterator: AsyncGenerator<SandboxInfo>
+  }> {
+    const { filters, state, limit, cursor, requestTimeoutMs } = opts
     const config = new ConnectionConfig({ requestTimeoutMs })
     const client = new ApiClient(config)
 
-    let hasNextPage = true
-    let currentCursor = nextPageCursor
+    let query = undefined
+    if (filters) {
+      const encodedPairs: Record<string, string> = Object.fromEntries(
+        Object.entries(filters).map(([key, value]) => [
+          encodeURIComponent(key),
+          encodeURIComponent(value),
+        ])
+      )
+      query = new URLSearchParams(encodedPairs).toString()
+    }
 
-    while (hasNextPage) {
-      let query = undefined
-      if (filters) {
-        const encodedPairs: Record<string, string> = Object.fromEntries(
-          Object.entries(filters).map(([key, value]) => [
-            encodeURIComponent(key),
-            encodeURIComponent(value),
-          ])
-        )
-        query = new URLSearchParams(encodedPairs).toString()
-      }
-
-      const res = await client.api.GET('/sandboxes', {
-        params: {
-          query: {
-            query,
-            state,
-            pageSize,
-            nextPageCursor: currentCursor,
-          },
+    const res = await client.api.GET('/sandboxes', {
+      params: {
+        query: {
+          query,
+          state,
+          limit,
+          cursor,
         },
-        signal: config.getSignal(requestTimeoutMs),
+      },
+      signal: config.getSignal(requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    const hasMoreItems = res.response.headers.get('x-has-more-items') === 'true'
+    const nextCursor = res.response.headers.get('x-cursor') || undefined
+
+    const sandboxes = (res.data ?? []).map(sandbox => ({
+      sandboxId: this.getSandboxId({
+        sandboxId: sandbox.sandboxID,
+        clientId: sandbox.clientID,
+      }),
+      templateId: sandbox.templateID,
+      ...(sandbox.alias && { name: sandbox.alias }),
+      metadata: sandbox.metadata ?? {},
+      startedAt: new Date(sandbox.startedAt),
+      state: sandbox.state,
+    }))
+
+    return {
+      sandboxes,
+      hasMoreItems,
+      cursor: nextCursor,
+      iterator: this.listIterator({ limit, cursor: nextCursor, filters, state, requestTimeoutMs })
+    }
+  }
+
+  private static async *listIterator(options: SandboxListOpts = {}): AsyncGenerator<SandboxInfo> {
+    let nextPage = true
+    let nextCursor = options.cursor
+
+    while (nextPage) {
+      const { sandboxes, hasMoreItems, cursor } = await this.list({
+        ...options,
+        cursor: nextCursor,
       })
 
-      const err = handleApiError(res)
-      if (err) {
-        throw err
-      }
+      nextPage = hasMoreItems
+      nextCursor = cursor
 
-      // Get pagination info from headers
-      hasNextPage = res.response.headers.get('x-has-next-page') === 'true'
-      currentCursor = res.response.headers.get('x-next-page-cursor') || undefined
-
-      // Yield each sandbox in current page
-      for (const sandbox of res.data ?? []) {
-        yield {
-          sandboxId: this.getSandboxId({
-            sandboxId: sandbox.sandboxID,
-            clientId: sandbox.clientID,
-          }),
-          templateId: sandbox.templateID,
-          ...(sandbox.alias && { name: sandbox.alias }),
-          metadata: sandbox.metadata ?? {},
-          startedAt: new Date(sandbox.startedAt),
-          state: sandbox.state,
-        }
+      for (const sandbox of sandboxes) {
+        yield sandbox
       }
     }
   }

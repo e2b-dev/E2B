@@ -16,9 +16,9 @@ export interface paths {
             parameters: {
                 query?: {
                     /** @description Cursor to start the list from */
-                    nextPageCursor?: string;
+                    cursor?: string;
                     /** @description Maximum number of items to return per page */
-                    pageSize?: number;
+                    limit?: number;
                     /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
                     query?: string;
                     /** @description Filter sandboxes by one or more states */
@@ -729,8 +729,6 @@ export interface components {
             endAt: string;
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
-            /** @description Pagination cursor of the sandbox */
-            paginationCursor?: string;
             /** @description Identifier of the sandbox */
             sandboxID: string;
             /**

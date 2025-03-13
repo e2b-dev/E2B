@@ -1,6 +1,6 @@
 import { test, assert } from 'vitest'
 
-import { Sandbox, SandboxInfo } from '../../src'
+import { Sandbox } from '../../src'
 import { template, isDebug } from '../setup.js'
 
 test.skipIf(isDebug)('create', async () => {
@@ -21,14 +21,9 @@ test.skipIf(isDebug)('metadata', async () => {
   }
 
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000, metadata })
-
   try {
-    const sbxsList = await Sandbox.list()
-    const sbxs: SandboxInfo[] = []
-    for await (const sbx of sbxsList) {
-      sbxs.push(sbx)
-    }
-    const sbxInfo = sbxs.find((s) => s.sandboxId === sbx.sandboxId)
+    const { sandboxes } = await Sandbox.list()
+    const sbxInfo = sandboxes.find((s) => s.sandboxId === sbx.sandboxId)
 
     assert.deepEqual(sbxInfo?.metadata, metadata)
   } finally {

@@ -25,7 +25,6 @@ class ListedSandbox:
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
-        pagination_cursor (Union[Unset, str]): Pagination cursor of the sandbox
     """
 
     client_id: str
@@ -38,7 +37,6 @@ class ListedSandbox:
     template_id: str
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
-    pagination_cursor: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -62,8 +60,6 @@ class ListedSandbox:
 
         metadata = self.metadata
 
-        pagination_cursor = self.pagination_cursor
-
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -82,8 +78,6 @@ class ListedSandbox:
             field_dict["alias"] = alias
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
-        if pagination_cursor is not UNSET:
-            field_dict["paginationCursor"] = pagination_cursor
 
         return field_dict
 
@@ -110,8 +104,6 @@ class ListedSandbox:
 
         metadata = d.pop("metadata", UNSET)
 
-        pagination_cursor = d.pop("paginationCursor", UNSET)
-
         listed_sandbox = cls(
             client_id=client_id,
             cpu_count=cpu_count,
@@ -123,7 +115,6 @@ class ListedSandbox:
             template_id=template_id,
             alias=alias,
             metadata=metadata,
-            pagination_cursor=pagination_cursor,
         )
 
         listed_sandbox.additional_properties = d

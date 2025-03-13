@@ -14,8 +14,8 @@ def _get_kwargs(
     *,
     query: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
-    next_page_cursor: Union[Unset, str] = UNSET,
-    page_size: Union[Unset, int] = 100,
+    cursor: Union[Unset, str] = UNSET,
+    limit: Union[Unset, int] = 1000,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -30,9 +30,9 @@ def _get_kwargs(
 
     params["state"] = json_state
 
-    params["nextPageCursor"] = next_page_cursor
+    params["cursor"] = cursor
 
-    params["pageSize"] = page_size
+    params["limit"] = limit
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -88,16 +88,16 @@ def sync_detailed(
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
-    next_page_cursor: Union[Unset, str] = UNSET,
-    page_size: Union[Unset, int] = 100,
+    cursor: Union[Unset, str] = UNSET,
+    limit: Union[Unset, int] = 1000,
 ) -> Response[Union[Any, list["ListedSandbox"]]]:
     """List all sandboxes
 
     Args:
         query (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
-        next_page_cursor (Union[Unset, str]):
-        page_size (Union[Unset, int]):  Default: 100.
+        cursor (Union[Unset, str]):
+        limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -110,8 +110,8 @@ def sync_detailed(
     kwargs = _get_kwargs(
         query=query,
         state=state,
-        next_page_cursor=next_page_cursor,
-        page_size=page_size,
+        cursor=cursor,
+        limit=limit,
     )
 
     response = client.get_httpx_client().request(
@@ -126,16 +126,16 @@ def sync(
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
-    next_page_cursor: Union[Unset, str] = UNSET,
-    page_size: Union[Unset, int] = 100,
+    cursor: Union[Unset, str] = UNSET,
+    limit: Union[Unset, int] = 1000,
 ) -> Optional[Union[Any, list["ListedSandbox"]]]:
     """List all sandboxes
 
     Args:
         query (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
-        next_page_cursor (Union[Unset, str]):
-        page_size (Union[Unset, int]):  Default: 100.
+        cursor (Union[Unset, str]):
+        limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -149,8 +149,8 @@ def sync(
         client=client,
         query=query,
         state=state,
-        next_page_cursor=next_page_cursor,
-        page_size=page_size,
+        cursor=cursor,
+        limit=limit,
     ).parsed
 
 
@@ -159,16 +159,16 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
-    next_page_cursor: Union[Unset, str] = UNSET,
-    page_size: Union[Unset, int] = 100,
+    cursor: Union[Unset, str] = UNSET,
+    limit: Union[Unset, int] = 1000,
 ) -> Response[Union[Any, list["ListedSandbox"]]]:
     """List all sandboxes
 
     Args:
         query (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
-        next_page_cursor (Union[Unset, str]):
-        page_size (Union[Unset, int]):  Default: 100.
+        cursor (Union[Unset, str]):
+        limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -181,8 +181,8 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         query=query,
         state=state,
-        next_page_cursor=next_page_cursor,
-        page_size=page_size,
+        cursor=cursor,
+        limit=limit,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -195,16 +195,16 @@ async def asyncio(
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
-    next_page_cursor: Union[Unset, str] = UNSET,
-    page_size: Union[Unset, int] = 100,
+    cursor: Union[Unset, str] = UNSET,
+    limit: Union[Unset, int] = 1000,
 ) -> Optional[Union[Any, list["ListedSandbox"]]]:
     """List all sandboxes
 
     Args:
         query (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
-        next_page_cursor (Union[Unset, str]):
-        page_size (Union[Unset, int]):  Default: 100.
+        cursor (Union[Unset, str]):
+        limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -219,7 +219,7 @@ async def asyncio(
             client=client,
             query=query,
             state=state,
-            next_page_cursor=next_page_cursor,
-            page_size=page_size,
+            cursor=cursor,
+            limit=limit,
         )
     ).parsed

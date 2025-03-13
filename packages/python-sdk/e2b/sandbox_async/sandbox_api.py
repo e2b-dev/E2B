@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Generator
 
 from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.api.sandboxes import (
@@ -24,21 +24,29 @@ from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
 from packaging.version import Version
 
 
+class ListSandboxesResponse:
+    def __init__(self, sandboxes: List[SandboxInfo], has_more_items: bool, cursor: Optional[str], iterator: Generator[SandboxInfo, None, None]):
+        self.sandboxes = sandboxes
+        self.has_more_items = has_more_items
+        self.cursor = cursor
+        self.iterator = iterator
+
+
 class SandboxApi(SandboxApiBase):
     @classmethod
     async def list(
         cls,
         api_key: Optional[str] = None,
         filters: Optional[Dict[str, str]] = None,
-        state: Optional[list[SandboxState]] = None,
+        state: Optional[List[SandboxState]] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-        page_size: int = 1000,
-        next_page_cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
     ):
         """
-        List all running sandboxes with automatic pagination.
+        List sandboxes with pagination.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param filters: Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
@@ -46,10 +54,10 @@ class SandboxApi(SandboxApiBase):
         :param domain: Domain to use for the request, only relevant for self-hosted environments
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
-        :param page_size: Number of sandboxes to return per page
-        :param next_page_cursor: Cursor to the next page
+        :param limit: Maximum number of sandboxes to return
+        :param cursor: Cursor for pagination
 
-        :yields: SandboxInfo objects one at a time
+        :returns: Dictionary containing sandboxes list, pagination info and iterator
         """
         config = ConnectionConfig(
             api_key=api_key,
@@ -58,52 +66,101 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
-        has_next_page = True
-        current_cursor = next_page_cursor
+        query = UNSET
+        if filters:
+            filters = {
+                urllib.parse.quote(k): urllib.parse.quote(v) for k, v in filters.items()
+            }
+            query = urllib.parse.urlencode(filters)
 
-        while has_next_page:
-            # Convert filters to the format expected by the API
-            query = UNSET
-            if filters:
-                filters = {
-                    urllib.parse.quote(k): urllib.parse.quote(v) for k, v in filters.items()
-                }
-                query = urllib.parse.urlencode(filters)
+        async with AsyncApiClient(config) as api_client:
+            res = await get_sandboxes.asyncio_detailed(
+                client=api_client,
+                query=query,
+                state=state or UNSET,
+                limit=limit,
+                cursor=cursor,
+            )
 
-            async with AsyncApiClient(config) as api_client:
-                res = await get_sandboxes.asyncio_detailed(
-                    client=api_client,
-                    query=query,
-                    state=state or UNSET,
-                    page_size=page_size,
-                    next_page_cursor=current_cursor,
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                return ListSandboxesResponse(
+                    sandboxes=[],
+                    has_more_items=False,
+                    cursor=None,
+                    iterator=cls._list_iterator(filters=filters, state=state, api_key=api_key, domain=domain, debug=debug, request_timeout=request_timeout)
                 )
 
-                if res.status_code >= 300:
-                    raise handle_api_exception(res)
+            has_more_items = res.headers.get("x-has-more-items") == "true"
+            next_cursor = res.headers.get("x-cursor")
 
-                if res.parsed is None:
-                    return
+            sandboxes = [
+                SandboxInfo(
+                    sandbox_id=SandboxApi._get_sandbox_id(
+                        sandbox.sandbox_id,
+                        sandbox.client_id,
+                    ),
+                    template_id=sandbox.template_id,
+                    name=sandbox.alias if isinstance(sandbox.alias, str) else None,
+                    metadata=(
+                        sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
+                    ),
+                    started_at=sandbox.started_at,
+                    state=sandbox.state,
+                )
+                for sandbox in res.parsed
+            ]
 
-                # Get pagination info from headers
-                has_next_page = res.headers.get("x-has-next-page") == "true"
-                current_cursor = res.headers.get("x-next-page-cursor")
+            return ListSandboxesResponse(
+                sandboxes=sandboxes,
+                has_more_items=has_more_items,
+                cursor=next_cursor,
+                iterator=cls._list_iterator(
+                    limit=limit,
+                    cursor=next_cursor,
+                    filters=filters,
+                    state=state,
+                    api_key=api_key,
+                    domain=domain,
+                    debug=debug,
+                    request_timeout=request_timeout
+                )
+            )
 
-                # Yield each sandbox in current page
-                for sandbox in res.parsed:
-                    yield SandboxInfo(
-                        sandbox_id=SandboxApi._get_sandbox_id(
-                            sandbox.sandbox_id,
-                            sandbox.client_id,
-                        ),
-                        template_id=sandbox.template_id,
-                        name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                        metadata=(
-                            sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                        ),
-                        started_at=sandbox.started_at,
-                        state=sandbox.state,
-                    )
+    @classmethod
+    async def _list_iterator(
+        cls,
+        filters: Optional[Dict[str, str]] = None,
+        state: Optional[List[SandboxState]] = None,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ):
+        next_page = True
+        next_cursor = cursor
+
+        while next_page:
+            result = await cls.list(
+                filters=filters,
+                state=state,
+                api_key=api_key,
+                domain=domain,
+                debug=debug,
+                request_timeout=request_timeout,
+                limit=limit,
+                cursor=next_cursor,
+            )
+
+            next_page = result.has_more_items
+            next_cursor = result.cursor
+
+            for sandbox in result.sandboxes:
+                yield sandbox
 
     @classmethod
     async def _cls_kill(

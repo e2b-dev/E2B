@@ -45,19 +45,14 @@ export const killCommand = new commander.Command('kill')
       }
 
       if (all) {
-        const sandboxes = await e2b.Sandbox.list({ apiKey })
-        const sandboxesArray: SandboxInfo[] = []
-        for await (const sbx of sandboxes) {
-          sandboxesArray.push(sbx)
-        }
-
-        if (sandboxesArray.length === 0) {
+        const { sandboxes } = await e2b.Sandbox.list({ apiKey })
+        if (sandboxes.length === 0) {
           console.log('No sandboxes found')
           process.exit(0)
         }
 
         await Promise.all(
-          sandboxesArray.map((sandbox) => killSandbox(sandbox.sandboxId, apiKey))
+          sandboxes.map((sandbox) => killSandbox(sandbox.sandboxId, apiKey))
         )
       } else {
         await killSandbox(sandboxID, apiKey)

@@ -14,7 +14,7 @@ sandbox.keep_alive(60)
 running_sandboxes = Sandbox.list(state=['running'])
 
 # Find the sandbox by metadata
-for running_sandbox in running_sandboxes:
+for running_sandbox in running_sandboxes.sandboxes:
     if running_sandbox.metadata.get("user_id", "") == 'uniqueID':
         sandbox = Sandbox.reconnect(running_sandbox.sandbox_id)
         break

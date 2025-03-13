@@ -7,8 +7,8 @@ from e2b import AsyncSandbox
 async def test_kill_existing_sandbox(async_sandbox: AsyncSandbox):
     assert await AsyncSandbox.kill(async_sandbox.sandbox_id) == True
 
-    list = [sandbox async for sandbox in AsyncSandbox.list()]
-    assert async_sandbox.sandbox_id not in [s.sandbox_id for s in list]
+    list = await AsyncSandbox.list()
+    assert async_sandbox.sandbox_id not in [s.sandbox_id for s in list.sandboxes]
 
 
 @pytest.mark.skip_debug()
