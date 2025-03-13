@@ -18,8 +18,8 @@ const sandbox = await Sandbox.create({
   },
 })
 
-const runningSandboxes = await Sandbox.list() // $HighlightLine
-const runningSandbox = runningSandboxes[0]
+const runningSandboxes = await Sandbox.list({ state: ['running'] }) // $HighlightLine
+const runningSandbox = runningSandboxes.sandboxes[0]
 console.log('Running sandbox metadata:', runningSandbox.metadata)
 console.log('Running sandbox id:', runningSandbox.sandboxId)
 console.log('Running sandbox started at:', runningSandbox.startedAt)
@@ -34,8 +34,8 @@ sandbox = Sandbox({
   },
 })
 
-running_sandboxes = sandbox.list() # $HighlightLine
-running_sandbox = running_sandboxes[0]
+running_sandboxes = sandbox.list(state=['running']) # $HighlightLine
+running_sandbox = running_sandboxes.sandboxes[0]
 print('Running sandbox metadata:', running_sandbox.metadata)
 print('Running sandbox id:', running_sandbox.sandbox_id)
 print('Running sandbox started at:', running_sandbox.started_at)
@@ -86,7 +86,8 @@ const sandbox = await Sandbox.create({
 })
 
 // List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
-const runningSandboxes = await Sandbox.list({
+const { sandboxes } = await Sandbox.list({
+    state: ['running'],
     filters: { userId: '123', env: 'dev' } // $HighlightLine
 })
 ```
@@ -103,7 +104,9 @@ sandbox = Sandbox(
 )
 
 # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
-running_sandboxes = Sandbox.list(filters={
+running_sandboxes = Sandbox.list(
+  state=['running'],
+  filters={
     "userId": "123", "env": "dev" # $HighlightLine
 })
 ```
