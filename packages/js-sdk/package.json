@@ -54,8 +54,8 @@
     "playwright": "^1.48.0",
     "react": "^18.3.1",
     "tsup": "^8.3.6",
-    "typedoc": "^0.26.8",
-    "typedoc-plugin-markdown": "^4.2.7",
+    "typedoc": "0.26.8",
+    "typedoc-plugin-markdown": "4.2.7",
     "typescript": "^5.4.5",
     "vitest": "^3.0.5",
     "vitest-browser-react": "^0.0.4"
