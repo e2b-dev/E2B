@@ -130,3 +130,4 @@ jobs:
           SLACK_MESSAGE: ":here-we-go-again: :bob-the-destroyer: We need :fix-parrot: ASAP :pray:"
           SLACK_TITLE: Release Failed
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: "#monitoring-releases"
