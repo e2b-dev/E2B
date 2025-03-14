@@ -16,6 +16,21 @@ export interface SandboxListOpts extends SandboxApiOpts {
    * Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
    */
   filters?: Record<string, string>
+
+  /**
+   * Filter the list of sandboxes by state.
+   */
+  state?: Array<'running' | 'paused'> | undefined
+
+  /**
+   * Number of sandboxes to return.
+   */
+  limit?: number
+
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
 }
 
 /**
@@ -46,6 +61,11 @@ export interface SandboxInfo {
    * Sandbox start time.
    */
   startedAt: Date
+
+  /**
+   * Sandbox state.
+   */
+  state: 'running' | 'paused'
 }
 
 export class SandboxApi {
@@ -94,22 +114,37 @@ export class SandboxApi {
    *
    * @returns list of running sandboxes.
    */
-  static async list(
-      opts?: SandboxListOpts): Promise<SandboxInfo[]> {
-    const config = new ConnectionConfig(opts)
+  static async list(opts: SandboxListOpts = {}): Promise<{
+    sandboxes: SandboxInfo[],
+    hasMoreItems: boolean,
+    nextToken: string | undefined,
+    iterator: AsyncGenerator<SandboxInfo>
+  }> {
+    const { filters, state, limit, nextToken, requestTimeoutMs } = opts
+    const config = new ConnectionConfig({ requestTimeoutMs })
     const client = new ApiClient(config)
 
     let query = undefined
-    if (opts?.filters) {
-      const encodedPairs: Record<string, string> = Object.fromEntries(Object.entries(opts.filters).map(([key, value]) => [encodeURIComponent(key),encodeURIComponent(value)]))
+    if (filters) {
+      const encodedPairs: Record<string, string> = Object.fromEntries(
+        Object.entries(filters).map(([key, value]) => [
+          encodeURIComponent(key),
+          encodeURIComponent(value),
+        ])
+      )
       query = new URLSearchParams(encodedPairs).toString()
     }
 
     const res = await client.api.GET('/sandboxes', {
-        params: {
-          query: {query},
+      params: {
+        query: {
+          query,
+          state,
+          limit,
+          nextToken,
         },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      },
+      signal: config.getSignal(requestTimeoutMs),
     })
 
     const err = handleApiError(res)
@@ -117,18 +152,46 @@ export class SandboxApi {
       throw err
     }
 
-    return (
-      res.data?.map((sandbox: components['schemas']['RunningSandbox']) => ({
-        sandboxId: this.getSandboxId({
-          sandboxId: sandbox.sandboxID,
-          clientId: sandbox.clientID,
-        }),
-        templateId: sandbox.templateID,
-        ...(sandbox.alias && { name: sandbox.alias }),
-        metadata: sandbox.metadata ?? {},
-        startedAt: new Date(sandbox.startedAt),
-      })) ?? []
-    )
+    const nextPageToken = res.response.headers.get('x-next-token') || undefined
+    const hasMoreItems = !!nextPageToken
+
+    const sandboxes = (res.data ?? []).map(sandbox => ({
+      sandboxId: this.getSandboxId({
+        sandboxId: sandbox.sandboxID,
+        clientId: sandbox.clientID,
+      }),
+      templateId: sandbox.templateID,
+      ...(sandbox.alias && { name: sandbox.alias }),
+      metadata: sandbox.metadata ?? {},
+      startedAt: new Date(sandbox.startedAt),
+      state: sandbox.state,
+    }))
+
+    return {
+      sandboxes,
+      hasMoreItems,
+      nextToken: nextPageToken,
+      iterator: this.listIterator({ limit, nextToken: nextPageToken, filters, state, requestTimeoutMs })
+    }
+  }
+
+  private static async *listIterator(options: SandboxListOpts = {}): AsyncGenerator<SandboxInfo> {
+    let nextPage = true
+    let token = options.nextToken
+
+    while (nextPage) {
+      const { sandboxes, hasMoreItems, nextToken } = await this.list({
+        ...options,
+        nextToken: token,
+      })
+
+      nextPage = hasMoreItems
+      token = nextToken
+
+      for (const sandbox of sandboxes) {
+        yield sandbox
+      }
+    }
   }
 
   /**
@@ -207,13 +270,13 @@ export class SandboxApi {
   }
 
   /**
- * Pause the sandbox specified by sandbox ID.
- *
- * @param sandboxId sandbox ID.
- * @param opts connection options.
- *
- * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
- */
+   * Pause the sandbox specified by sandbox ID.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   */
   protected static async pauseSandbox(
     sandboxId: string,
     opts?: SandboxApiOpts
@@ -247,7 +310,6 @@ export class SandboxApi {
     return true
   }
 
-
   protected static async resumeSandbox(
     sandboxId: string,
     timeoutMs: number,
@@ -264,6 +326,7 @@ export class SandboxApi {
       },
       body: {
         timeout: this.timeoutToSeconds(timeoutMs),
+        autoPause: false,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -305,6 +368,7 @@ export class SandboxApi {
         metadata: opts?.metadata,
         envVars: opts?.envs,
         timeout: this.timeoutToSeconds(timeoutMs),
+        autoPause: false,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })

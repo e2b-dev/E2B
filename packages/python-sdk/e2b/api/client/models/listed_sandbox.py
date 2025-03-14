@@ -1,17 +1,18 @@
 import datetime
-from typing import Any, Dict, List, Type, TypeVar, Union
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
+from ..models.sandbox_state import SandboxState, check_sandbox_state
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="RunningSandbox")
+T = TypeVar("T", bound="ListedSandbox")
 
 
 @_attrs_define
-class RunningSandbox:
+class ListedSandbox:
     """
     Attributes:
         client_id (str): Identifier of the client
@@ -20,6 +21,7 @@ class RunningSandbox:
         memory_mb (int): Memory for the sandbox in MB
         sandbox_id (str): Identifier of the sandbox
         started_at (datetime.datetime): Time when the sandbox was started
+        state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
@@ -31,12 +33,13 @@ class RunningSandbox:
     memory_mb: int
     sandbox_id: str
     started_at: datetime.datetime
+    state: SandboxState
     template_id: str
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
-    additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         client_id = self.client_id
 
         cpu_count = self.cpu_count
@@ -49,13 +52,15 @@ class RunningSandbox:
 
         started_at = self.started_at.isoformat()
 
+        state: str = self.state
+
         template_id = self.template_id
 
         alias = self.alias
 
         metadata = self.metadata
 
-        field_dict: Dict[str, Any] = {}
+        field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
@@ -65,6 +70,7 @@ class RunningSandbox:
                 "memoryMB": memory_mb,
                 "sandboxID": sandbox_id,
                 "startedAt": started_at,
+                "state": state,
                 "templateID": template_id,
             }
         )
@@ -76,7 +82,7 @@ class RunningSandbox:
         return field_dict
 
     @classmethod
-    def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
+    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         d = src_dict.copy()
         client_id = d.pop("clientID")
 
@@ -90,29 +96,32 @@ class RunningSandbox:
 
         started_at = isoparse(d.pop("startedAt"))
 
+        state = check_sandbox_state(d.pop("state"))
+
         template_id = d.pop("templateID")
 
         alias = d.pop("alias", UNSET)
 
         metadata = d.pop("metadata", UNSET)
 
-        running_sandbox = cls(
+        listed_sandbox = cls(
             client_id=client_id,
             cpu_count=cpu_count,
             end_at=end_at,
             memory_mb=memory_mb,
             sandbox_id=sandbox_id,
             started_at=started_at,
+            state=state,
             template_id=template_id,
             alias=alias,
             metadata=metadata,
         )
 
-        running_sandbox.additional_properties = d
-        return running_sandbox
+        listed_sandbox.additional_properties = d
+        return listed_sandbox
 
     @property
-    def additional_keys(self) -> List[str]:
+    def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
     def __getitem__(self, key: str) -> Any:

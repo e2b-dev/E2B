@@ -1,5 +1,5 @@
 import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -29,7 +29,7 @@ class Template:
         spawn_count (int): Number of times the template was used
         template_id (str): Identifier of the template
         updated_at (datetime.datetime): Time when the template was last updated
-        aliases (Union[Unset, List[str]]): Aliases of the template
+        aliases (Union[Unset, list[str]]): Aliases of the template
     """
 
     build_count: int
@@ -43,10 +43,10 @@ class Template:
     spawn_count: int
     template_id: str
     updated_at: datetime.datetime
-    aliases: Union[Unset, List[str]] = UNSET
-    additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
+    aliases: Union[Unset, list[str]] = UNSET
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         from ..models.team_user import TeamUser
 
         build_count = self.build_count
@@ -57,7 +57,7 @@ class Template:
 
         created_at = self.created_at.isoformat()
 
-        created_by: Union[Dict[str, Any], None]
+        created_by: Union[None, dict[str, Any]]
         if isinstance(self.created_by, TeamUser):
             created_by = self.created_by.to_dict()
         else:
@@ -75,11 +75,11 @@ class Template:
 
         updated_at = self.updated_at.isoformat()
 
-        aliases: Union[Unset, List[str]] = UNSET
+        aliases: Union[Unset, list[str]] = UNSET
         if not isinstance(self.aliases, Unset):
             aliases = self.aliases
 
-        field_dict: Dict[str, Any] = {}
+        field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
@@ -102,7 +102,7 @@ class Template:
         return field_dict
 
     @classmethod
-    def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
+    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         from ..models.team_user import TeamUser
 
         d = src_dict.copy()
@@ -141,7 +141,7 @@ class Template:
 
         updated_at = isoparse(d.pop("updatedAt"))
 
-        aliases = cast(List[str], d.pop("aliases", UNSET))
+        aliases = cast(list[str], d.pop("aliases", UNSET))
 
         template = cls(
             build_count=build_count,
@@ -162,7 +162,7 @@ class Template:
         return template
 
     @property
-    def additional_keys(self) -> List[str]:
+    def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
     def __getitem__(self, key: str) -> Any:

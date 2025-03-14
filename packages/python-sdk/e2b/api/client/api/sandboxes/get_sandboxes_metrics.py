@@ -5,16 +5,24 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.listed_sandbox import ListedSandbox
-from ...types import Response
+from ...models.running_sandbox_with_metrics import RunningSandboxWithMetrics
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    sandbox_id: str,
+    *,
+    query: Union[Unset, str] = UNSET,
 ) -> dict[str, Any]:
+    params: dict[str, Any] = {}
+
+    params["query"] = query
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": f"/sandboxes/{sandbox_id}",
+        "url": "/sandboxes/metrics",
+        "params": params,
     }
 
     return _kwargs
@@ -22,17 +30,22 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Any, ListedSandbox]]:
+) -> Optional[Union[Any, list["RunningSandboxWithMetrics"]]]:
     if response.status_code == 200:
-        response_200 = ListedSandbox.from_dict(response.json())
+        response_200 = []
+        _response_200 = response.json()
+        for response_200_item_data in _response_200:
+            response_200_item = RunningSandboxWithMetrics.from_dict(response_200_item_data)
+
+            response_200.append(response_200_item)
 
         return response_200
+    if response.status_code == 400:
+        response_400 = cast(Any, None)
+        return response_400
     if response.status_code == 401:
         response_401 = cast(Any, None)
         return response_401
-    if response.status_code == 404:
-        response_404 = cast(Any, None)
-        return response_404
     if response.status_code == 500:
         response_500 = cast(Any, None)
         return response_500
@@ -44,7 +57,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, ListedSandbox]]:
+) -> Response[Union[Any, list["RunningSandboxWithMetrics"]]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -54,25 +67,25 @@ def _build_response(
 
 
 def sync_detailed(
-    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[Any, ListedSandbox]]:
-    """Get a sandbox by id
+    query: Union[Unset, str] = UNSET,
+) -> Response[Union[Any, list["RunningSandboxWithMetrics"]]]:
+    """List all running sandboxes with metrics
 
     Args:
-        sandbox_id (str):
+        query (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, ListedSandbox]]
+        Response[Union[Any, list['RunningSandboxWithMetrics']]]
     """
 
     kwargs = _get_kwargs(
-        sandbox_id=sandbox_id,
+        query=query,
     )
 
     response = client.get_httpx_client().request(
@@ -83,49 +96,49 @@ def sync_detailed(
 
 
 def sync(
-    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[Any, ListedSandbox]]:
-    """Get a sandbox by id
+    query: Union[Unset, str] = UNSET,
+) -> Optional[Union[Any, list["RunningSandboxWithMetrics"]]]:
+    """List all running sandboxes with metrics
 
     Args:
-        sandbox_id (str):
+        query (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, ListedSandbox]
+        Union[Any, list['RunningSandboxWithMetrics']]
     """
 
     return sync_detailed(
-        sandbox_id=sandbox_id,
         client=client,
+        query=query,
     ).parsed
 
 
 async def asyncio_detailed(
-    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[Any, ListedSandbox]]:
-    """Get a sandbox by id
+    query: Union[Unset, str] = UNSET,
+) -> Response[Union[Any, list["RunningSandboxWithMetrics"]]]:
+    """List all running sandboxes with metrics
 
     Args:
-        sandbox_id (str):
+        query (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, ListedSandbox]]
+        Response[Union[Any, list['RunningSandboxWithMetrics']]]
     """
 
     kwargs = _get_kwargs(
-        sandbox_id=sandbox_id,
+        query=query,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -134,26 +147,26 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[Any, ListedSandbox]]:
-    """Get a sandbox by id
+    query: Union[Unset, str] = UNSET,
+) -> Optional[Union[Any, list["RunningSandboxWithMetrics"]]]:
+    """List all running sandboxes with metrics
 
     Args:
-        sandbox_id (str):
+        query (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, ListedSandbox]
+        Union[Any, list['RunningSandboxWithMetrics']]
     """
 
     return (
         await asyncio_detailed(
-            sandbox_id=sandbox_id,
             client=client,
+            query=query,
         )
     ).parsed

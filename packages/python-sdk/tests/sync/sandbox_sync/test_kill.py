@@ -8,4 +8,4 @@ def test_kill(sandbox: Sandbox):
     sandbox.kill()
 
     list = Sandbox.list()
-    assert sandbox.sandbox_id not in [s.sandbox_id for s in list]
+    assert sandbox.sandbox_id not in [s.sandbox_id for s in list.sandboxes]
