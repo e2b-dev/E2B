@@ -14,7 +14,7 @@ def _get_kwargs(
     *,
     query: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
-    cursor: Union[Unset, str] = UNSET,
+    next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 1000,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
@@ -30,7 +30,7 @@ def _get_kwargs(
 
     params["state"] = json_state
 
-    params["cursor"] = cursor
+    params["nextToken"] = next_token
 
     params["limit"] = limit
 
@@ -88,7 +88,7 @@ def sync_detailed(
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
-    cursor: Union[Unset, str] = UNSET,
+    next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 1000,
 ) -> Response[Union[Any, list["ListedSandbox"]]]:
     """List all sandboxes
@@ -96,7 +96,7 @@ def sync_detailed(
     Args:
         query (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
-        cursor (Union[Unset, str]):
+        next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
@@ -110,7 +110,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         query=query,
         state=state,
-        cursor=cursor,
+        next_token=next_token,
         limit=limit,
     )
 
@@ -126,7 +126,7 @@ def sync(
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
-    cursor: Union[Unset, str] = UNSET,
+    next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 1000,
 ) -> Optional[Union[Any, list["ListedSandbox"]]]:
     """List all sandboxes
@@ -134,7 +134,7 @@ def sync(
     Args:
         query (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
-        cursor (Union[Unset, str]):
+        next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
@@ -149,7 +149,7 @@ def sync(
         client=client,
         query=query,
         state=state,
-        cursor=cursor,
+        next_token=next_token,
         limit=limit,
     ).parsed
 
@@ -159,7 +159,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
-    cursor: Union[Unset, str] = UNSET,
+    next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 1000,
 ) -> Response[Union[Any, list["ListedSandbox"]]]:
     """List all sandboxes
@@ -167,7 +167,7 @@ async def asyncio_detailed(
     Args:
         query (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
-        cursor (Union[Unset, str]):
+        next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
@@ -181,7 +181,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         query=query,
         state=state,
-        cursor=cursor,
+        next_token=next_token,
         limit=limit,
     )
 
@@ -195,7 +195,7 @@ async def asyncio(
     client: AuthenticatedClient,
     query: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
-    cursor: Union[Unset, str] = UNSET,
+    next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 1000,
 ) -> Optional[Union[Any, list["ListedSandbox"]]]:
     """List all sandboxes
@@ -203,7 +203,7 @@ async def asyncio(
     Args:
         query (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
-        cursor (Union[Unset, str]):
+        next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 1000.
 
     Raises:
@@ -219,7 +219,7 @@ async def asyncio(
             client=client,
             query=query,
             state=state,
-            cursor=cursor,
+            next_token=next_token,
             limit=limit,
         )
     ).parsed

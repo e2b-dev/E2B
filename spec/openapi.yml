@@ -601,7 +601,7 @@ paths:
               $ref: "#/components/schemas/SandboxState"
           style: form
           explode: false
-        - name: cursor
+        - name: nextToken
           in: query
           description: Cursor to start the list from
           required: false

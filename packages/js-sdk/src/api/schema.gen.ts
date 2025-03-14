@@ -15,10 +15,10 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Cursor to start the list from */
-                    cursor?: string;
                     /** @description Maximum number of items to return per page */
                     limit?: number;
+                    /** @description Cursor to start the list from */
+                    nextToken?: string;
                     /** @description A query used to filter the sandboxes (e.g. "user=abc&app=prod"). Query and each key and values must be URL encoded. */
                     query?: string;
                     /** @description Filter sandboxes by one or more states */

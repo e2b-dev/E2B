@@ -28,9 +28,9 @@ export interface SandboxListOpts extends SandboxApiOpts {
   limit?: number
 
   /**
-   * Cursor to the next page.
+   * Token to the next page.
    */
-  cursor?: string
+  nextToken?: string
 }
 
 /**
@@ -117,10 +117,10 @@ export class SandboxApi {
   static async list(opts: SandboxListOpts = {}): Promise<{
     sandboxes: SandboxInfo[],
     hasMoreItems: boolean,
-    cursor: string | undefined,
+    nextToken: string | undefined,
     iterator: AsyncGenerator<SandboxInfo>
   }> {
-    const { filters, state, limit, cursor, requestTimeoutMs } = opts
+    const { filters, state, limit, nextToken, requestTimeoutMs } = opts
     const config = new ConnectionConfig({ requestTimeoutMs })
     const client = new ApiClient(config)
 
@@ -141,7 +141,7 @@ export class SandboxApi {
           query,
           state,
           limit,
-          cursor,
+          nextToken,
         },
       },
       signal: config.getSignal(requestTimeoutMs),
@@ -152,8 +152,8 @@ export class SandboxApi {
       throw err
     }
 
-    const hasMoreItems = res.response.headers.get('x-has-more-items') === 'true'
-    const nextCursor = res.response.headers.get('x-cursor') || undefined
+    const nextPageToken = res.response.headers.get('x-next-token') || undefined
+    const hasMoreItems = !!nextPageToken
 
     const sandboxes = (res.data ?? []).map(sandbox => ({
       sandboxId: this.getSandboxId({
@@ -170,23 +170,23 @@ export class SandboxApi {
     return {
       sandboxes,
       hasMoreItems,
-      cursor: nextCursor,
-      iterator: this.listIterator({ limit, cursor: nextCursor, filters, state, requestTimeoutMs })
+      nextToken: nextPageToken,
+      iterator: this.listIterator({ limit, nextToken: nextPageToken, filters, state, requestTimeoutMs })
     }
   }
 
   private static async *listIterator(options: SandboxListOpts = {}): AsyncGenerator<SandboxInfo> {
     let nextPage = true
-    let nextCursor = options.cursor
+    let token = options.nextToken
 
     while (nextPage) {
-      const { sandboxes, hasMoreItems, cursor } = await this.list({
+      const { sandboxes, hasMoreItems, nextToken } = await this.list({
         ...options,
-        cursor: nextCursor,
+        nextToken: token,
       })
 
       nextPage = hasMoreItems
-      nextCursor = cursor
+      token = nextToken
 
       for (const sandbox of sandboxes) {
         yield sandbox

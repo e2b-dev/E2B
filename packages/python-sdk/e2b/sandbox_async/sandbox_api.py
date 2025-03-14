@@ -25,10 +25,10 @@ from packaging.version import Version
 
 
 class ListSandboxesResponse:
-    def __init__(self, sandboxes: List[SandboxInfo], has_more_items: bool, cursor: Optional[str], iterator: Generator[SandboxInfo, None, None]):
+    def __init__(self, sandboxes: List[SandboxInfo], has_more_items: bool, next_token: Optional[str], iterator: Generator[SandboxInfo, None, None]):
         self.sandboxes = sandboxes
         self.has_more_items = has_more_items
-        self.cursor = cursor
+        self.next_token = next_token
         self.iterator = iterator
 
 
@@ -43,7 +43,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         limit: Optional[int] = None,
-        cursor: Optional[str] = None,
+        next_token: Optional[str] = None,
     ):
         """
         List sandboxes with pagination.
@@ -55,9 +55,9 @@ class SandboxApi(SandboxApiBase):
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
         :param limit: Maximum number of sandboxes to return
-        :param cursor: Cursor for pagination
+        :param next_token: Token for pagination
 
-        :returns: Dictionary containing sandboxes list, pagination info and iterator
+        :returns: ListSandboxesResponse containing sandboxes list, pagination info and iterator
         """
         config = ConnectionConfig(
             api_key=api_key,
@@ -79,7 +79,7 @@ class SandboxApi(SandboxApiBase):
                 query=query,
                 state=state or UNSET,
                 limit=limit,
-                cursor=cursor,
+                next_token=next_token,
             )
 
             if res.status_code >= 300:
@@ -89,12 +89,12 @@ class SandboxApi(SandboxApiBase):
                 return ListSandboxesResponse(
                     sandboxes=[],
                     has_more_items=False,
-                    cursor=None,
+                    next_token=None,
                     iterator=cls._list_iterator(filters=filters, state=state, api_key=api_key, domain=domain, debug=debug, request_timeout=request_timeout)
                 )
 
-            has_more_items = res.headers.get("x-has-more-items") == "true"
-            next_cursor = res.headers.get("x-cursor")
+            token = res.headers.get("x-next-token")
+            has_more_items = bool(token)
 
             sandboxes = [
                 SandboxInfo(
@@ -116,10 +116,10 @@ class SandboxApi(SandboxApiBase):
             return ListSandboxesResponse(
                 sandboxes=sandboxes,
                 has_more_items=has_more_items,
-                cursor=next_cursor,
+                next_token=token,
                 iterator=cls._list_iterator(
                     limit=limit,
-                    cursor=next_cursor,
+                    next_token=token,
                     filters=filters,
                     state=state,
                     api_key=api_key,
@@ -139,10 +139,10 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         limit: Optional[int] = None,
-        cursor: Optional[str] = None,
+        next_token: Optional[str] = None,
     ):
         next_page = True
-        next_cursor = cursor
+        token = next_token
 
         while next_page:
             result = await cls.list(
@@ -153,11 +153,11 @@ class SandboxApi(SandboxApiBase):
                 debug=debug,
                 request_timeout=request_timeout,
                 limit=limit,
-                cursor=next_cursor,
+                next_token=token,
             )
 
             next_page = result.has_more_items
-            next_cursor = result.cursor
+            token = result.next_token
 
             for sandbox in result.sandboxes:
                 yield sandbox
