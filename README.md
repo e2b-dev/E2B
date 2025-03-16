@@ -72,3 +72,13 @@ Visit [E2B documentation](https://e2b.dev/docs).
 
 ### 5. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
+
+## Self-hosting
+
+Read the [self-hosting guide](https://github.com/e2b-dev/infra/blob/main/self-host.md) to learn how to set up the [E2B infrastructure](https://github.com/e2b-dev/infra) on your own. The infrastructure is deployed using Terraform. The process is not perfect yet, but we are working on it.
+
+Supported cloud providers:
+- 🟢 GCP
+- 🚧 AWS
+- [ ] Azure
+- [ ] General linux machine
