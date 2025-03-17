@@ -1,24 +1,30 @@
 from http import HTTPStatus
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import httpx
 
-from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.post_sandboxes_sandbox_id_refreshes_body import PostSandboxesSandboxIDRefreshesBody
-from ...types import Response
+from ...types import Response, UNSET
+from ... import errors
+
+from ...models.post_sandboxes_sandbox_id_refreshes_body import (
+    PostSandboxesSandboxIDRefreshesBody,
+)
+from typing import cast
 
 
 def _get_kwargs(
     sandbox_id: str,
     *,
     body: PostSandboxesSandboxIDRefreshesBody,
-) -> Dict[str, Any]:
-    headers: Dict[str, Any] = {}
+) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
 
-    _kwargs: Dict[str, Any] = {
+    _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": f"/sandboxes/{sandbox_id}/refreshes",
+        "url": "/sandboxes/{sandbox_id}/refreshes".format(
+            sandbox_id=sandbox_id,
+        ),
     }
 
     _body = body.to_dict()
@@ -30,12 +36,14 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Any]:
-    if response.status_code == HTTPStatus.NO_CONTENT:
+def _parse_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[Any]:
+    if response.status_code == 204:
         return None
-    if response.status_code == HTTPStatus.UNAUTHORIZED:
+    if response.status_code == 401:
         return None
-    if response.status_code == HTTPStatus.NOT_FOUND:
+    if response.status_code == 404:
         return None
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -43,7 +51,9 @@ def _parse_response(*, client: Union[AuthenticatedClient, Client], response: htt
         return None
 
 
-def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[Any]:
+def _build_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[Any]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,

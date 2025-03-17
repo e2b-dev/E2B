@@ -369,6 +369,11 @@ export interface components {
      */
     MemoryMB: number;
     NewSandbox: {
+      /**
+       * @description Automatically pauses the sandbox after the timeout
+       * @default false
+       */
+      autoPause?: boolean;
       envVars?: components["schemas"]["EnvVars"];
       metadata?: components["schemas"]["SandboxMetadata"];
       /** @description Identifier of the required template */
@@ -381,6 +386,11 @@ export interface components {
       timeout?: number;
     };
     ResumedSandbox: {
+      /**
+       * @description Automatically pauses the sandbox after the timeout
+       * @default false
+       */
+      autoPause?: boolean;
       /**
        * Format: int32
        * @description Time to live for the sandbox in seconds.

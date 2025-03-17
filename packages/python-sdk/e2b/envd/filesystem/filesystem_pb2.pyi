@@ -142,6 +142,7 @@ class WatchDirResponse(_message.Message):
     class KeepAlive(_message.Message):
         __slots__ = ()
         def __init__(self) -> None: ...
+
     START_FIELD_NUMBER: _ClassVar[int]
     FILESYSTEM_FIELD_NUMBER: _ClassVar[int]
     KEEPALIVE_FIELD_NUMBER: _ClassVar[int]

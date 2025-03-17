@@ -141,6 +141,7 @@ class SandboxApi(SandboxApiBase):
         cls,
         template: str,
         timeout: int,
+        auto_pause: bool,
         metadata: Optional[Dict[str, str]] = None,
         env_vars: Optional[Dict[str, str]] = None,
         api_key: Optional[str] = None,
@@ -162,6 +163,7 @@ class SandboxApi(SandboxApiBase):
                     metadata=metadata or {},
                     timeout=timeout,
                     env_vars=env_vars or {},
+                    auto_pause=auto_pause,
                 ),
                 client=api_client,
             )
@@ -198,6 +200,7 @@ class SandboxApi(SandboxApiBase):
         cls,
         sandbox_id: str,
         timeout: int,
+        auto_pause: bool,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -214,7 +217,7 @@ class SandboxApi(SandboxApiBase):
             res = await post_sandboxes_sandbox_id_resume.asyncio_detailed(
                 sandbox_id,
                 client=api_client,
-                body=ResumedSandbox(timeout=timeout),
+                body=ResumedSandbox(timeout=timeout, auto_pause=auto_pause),
             )
 
             if res.status_code == 404:
