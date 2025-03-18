@@ -129,12 +129,14 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         if self.connection_config.debug:
             self._sandbox_id = "debug_sandbox_id"
+            self._envd_version = None
         elif sandbox_id is not None:
             self._sandbox_id = sandbox_id
+            self._envd_version = None
         else:
             template = template or self.default_template
             timeout = timeout or self.default_sandbox_timeout
-            self._sandbox_id = SandboxApi._create_sandbox(
+            response = SandboxApi._create_sandbox(
                 template=template,
                 api_key=api_key,
                 timeout=timeout,
@@ -144,6 +146,8 @@ class Sandbox(SandboxSetup, SandboxApi):
                 debug=debug,
                 request_timeout=request_timeout,
             )
+            self._sandbox_id = response.sandbox_id
+            self._envd_version = response.envd_version
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
 
@@ -155,6 +159,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         self._filesystem = Filesystem(
             self.envd_api_url,
+            self._envd_version,
             self.connection_config,
             self._transport._pool,
             self._envd_api,
@@ -230,6 +235,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         # Another code block
         same_sandbox = Sandbox.connect(sandbox_id)
+        ```
         """
         return cls(
             sandbox_id=sandbox_id,

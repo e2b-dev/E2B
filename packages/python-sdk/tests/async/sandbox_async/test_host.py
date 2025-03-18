@@ -1,7 +1,6 @@
-import httpx
-import pytest
+import asyncio
 
-from time import sleep
+import httpx
 
 from e2b import AsyncSandbox
 
@@ -13,12 +12,16 @@ async def test_ping_server(async_sandbox: AsyncSandbox, debug):
     )
 
     try:
-        sleep(1)
         host = async_sandbox.get_host(8000)
 
+        status_code = None
         async with httpx.AsyncClient() as client:
-            res = await client.get(f"{'http' if debug else 'https'}://{host}")
-            assert res.status_code == 200
-
+            for _ in range(20):
+                res = await client.get(f"{'http' if debug else 'https'}://{host}")
+                status_code = res.status_code
+                if res.status_code == 200:
+                    break
+                await asyncio.sleep(0.5)
+        assert status_code == 200
     finally:
         await cmd.kill()

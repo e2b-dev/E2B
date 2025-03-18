@@ -10,8 +10,16 @@ sandboxTest('ping server in sandbox', async ({ sandbox }) => {
 
     const host = sandbox.getHost(8000)
 
-    const res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
+    let res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
 
+    for (let i = 0; i < 20; i++) {
+      if (res.status === 200) {
+        break
+      }
+
+      res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
+      await wait(500)
+    }
     assert.equal(res.status, 200)
   } finally {
     try {
@@ -20,4 +28,4 @@ sandboxTest('ping server in sandbox', async ({ sandbox }) => {
       console.error(e)
     }
   }
-})
+}, 60_000 )

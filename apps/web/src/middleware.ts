@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { replaceUrls } from '@/utils/replaceUrls'
-import {
-  landingPageHostname,
-  landingPageFramerHostname,
-  blogFramerHostname,
-  changelogFramerHostname,
-} from '@/app/hostnames'
+import { landingPageHostname, landingPageFramerHostname } from '@/app/hostnames'
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   if (req.method !== 'GET') return NextResponse.next()
@@ -35,25 +30,27 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     url.hostname = landingPageHostname
   }
 
+  if (url.pathname.startsWith('/cookbook')) {
+    url.hostname = landingPageHostname
+  }
+
+  if (url.pathname.startsWith('/changelog')) {
+    url.hostname = landingPageHostname
+  }
+
+  if (url.pathname.startsWith('/blog')) {
+    const segments = url.pathname.split('/')
+
+    url.hostname = landingPageHostname
+
+    if (segments[2] === 'category') {
+      url.pathname = segments.slice(2).join('/')
+    }
+  }
+
   // TODO: Not on the new landing page hosting yet
   if (url.pathname.startsWith('/ai-agents')) {
     url.hostname = landingPageFramerHostname
-  }
-
-  if (url.pathname === '/blog' || url.pathname === '/blog/') {
-    url.pathname = '/'
-    url.hostname = blogFramerHostname
-  }
-  if (url.pathname.startsWith('/blog')) {
-    url.hostname = blogFramerHostname
-  }
-
-  if (url.pathname === '/changelog' || url.pathname === '/changelog/') {
-    url.pathname = '/'
-    url.hostname = changelogFramerHostname
-  }
-  if (url.pathname.startsWith('/changelog')) {
-    url.hostname = changelogFramerHostname
   }
 
   const res = await fetch(url.toString(), { ...req })
@@ -80,7 +77,7 @@ export const config = {
     '/ai-agents/:path*',
     '/privacy/:path*',
     '/terms/:path*',
-    '/pricing/:path*'
+    '/pricing/:path*',
+    '/cookbook/:path*',
   ],
 }
-

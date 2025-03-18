@@ -1,6 +1,13 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
@@ -13,31 +20,38 @@ export type Team = {
   is_default: boolean
   email: string
   apiKeys: string[]
+  is_blocked: boolean
+  blocked_reason: string
 }
 
+interface APIKey {
+  api_key: string
+}
 interface UserTeam {
-  id: string;
-  name: string;
-  is_default: boolean;
-  tier: string;
-  email: string;
-  team_api_keys: { api_key: string; }[];
+  is_default: boolean
+  teams: {
+    tier: string
+    email: string
+    team_api_keys: { api_key: string }[]
+    id: string
+    name: string
+    is_blocked: boolean
+    blocked_reason: string
+  }
 }
 
-export type E2BUser = (User & {
-  teams: Team[];
-  accessToken: string;
-  defaultTeamId: string;
-})
+export type E2BUser = User & {
+  teams: Team[]
+  accessToken: string
+  defaultTeamId: string
+}
 
 type UserContextType = {
-  isLoading: boolean;
-  session: Session | null;
-  user:
-  | E2BUser
-  | null;
-  error: Error | null;
-  wasUpdated: boolean | null;
+  isLoading: boolean
+  session: Session | null
+  user: E2BUser | null
+  error: Error | null
+  wasUpdated: boolean | null
 }
 
 export const UserContext = createContext(undefined)
@@ -110,21 +124,37 @@ export const CustomUserContextProvider = (props) => {
       if (!session) return
       if (!session.user.id) return
 
-      // @ts-ignore
-      const { data: userTeams, teamsError } = await supabase
+      const { data: userTeams, error: teamsError } = await supabase
         .from('users_teams')
-        .select('teams (id, name, is_default, tier, email, team_api_keys (api_key))')
+        .select(
+          'is_default, teams (id, name, tier, is_blocked, blocked_reason, email, team_api_keys (api_key))'
+        )
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
 
       if (teamsError) Sentry.captureException(teamsError)
-      // TODO: Adjust when user can be part of multiple teams
-      // @ts-ignore
-      const teams = userTeams?.map(userTeam => userTeam.teams).map((team: UserTeam) => ({
-        ...team,
-        apiKeys: team.team_api_keys.map(apiKey => apiKey.api_key)
-      } as Team))
 
-      const defaultTeam = teams?.find(team => team.is_default)
+      if (userTeams === undefined || userTeams === null) {
+        console.log('No user teams found')
+        Sentry.captureEvent({ message: 'No user teams found' })
+        return
+      }
+
+      const typedUserTeams = userTeams as unknown as UserTeam[]
+      const teams: Team[] = typedUserTeams.map((userTeam: UserTeam): Team => {
+        return {
+          id: userTeam.teams.id,
+          name: userTeam.teams.name,
+          tier: userTeam.teams.tier,
+          is_default: userTeam.is_default,
+          email: userTeam.teams.email,
+          apiKeys: userTeam.teams.team_api_keys.map(
+            (apiKey: APIKey) => apiKey.api_key
+          ),
+          is_blocked: userTeam.teams.is_blocked,
+          blocked_reason: userTeam.teams.blocked_reason,
+        }
+      })
+      const defaultTeam = teams?.find((team) => team.is_default)
 
       if (!defaultTeam) {
         console.error('No default team found for user', session?.user.id)

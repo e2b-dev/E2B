@@ -87,20 +87,39 @@ async function requestTemplateRebuild(
 }
 
 async function triggerTemplateBuild(templateID: string, buildID: string) {
-  const res = await client.api.POST(
-    '/templates/{templateID}/builds/{buildID}',
-    {
-      params: {
-        path: {
-          templateID,
-          buildID,
-        },
-      },
-    }
-  )
+  let res
+  const maxRetries = 3
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      res = await client.api.POST(
+        '/templates/{templateID}/builds/{buildID}',
+        {
+          params: {
+            path: {
+              templateID,
+              buildID,
+            },
+          },
+        }
+      )
 
-  handleE2BRequestError(res.error, 'Error triggering template build')
-  return res.data
+      break
+    } catch (e) {
+      // If the build and push takes more than 10 minutes the connection gets automatically closed by load balancer
+      // and the request fails with UND_ERR_SOCKET error. In this case we just need to retry the request.
+      if ((e instanceof TypeError) && (((e as TypeError).cause) as any)?.code !== 'UND_ERR_SOCKET') {
+        console.error(e)
+        console.log('Retrying...')
+      }
+    }
+  }
+
+  if (!res) {
+    throw new Error('Error triggering template build')
+  }
+
+  handleE2BRequestError(res?.error, 'Error triggering template build')
+  return res?.data
 }
 
 export const buildCommand = new commander.Command('build')
@@ -331,14 +350,16 @@ export const buildCommand = new commander.Command('build')
         }
         process.stdout.write('\n')
 
-        console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${
-          connectionConfig.domain
-        }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
+        const cmd = `docker build . \\
+   -f ${dockerfileRelativePath} \\
+   --pull --platform linux/amd64 \\
+   -t docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
           dockerBuildArgs
         )
-          .map(([key, value]) => `--build-arg="${key}=${value}"`)
-          .join(' ')}`
+            .map(([key, value]) => `--build-arg="${key}=${value}"`)
+            .join(' \\ \n   ')}`
+        console.log(`Building docker image with the following command:\n${asBold(cmd)}\n`)
+
         child_process.execSync(cmd, {
           stdio: 'inherit',
           cwd: root,
@@ -347,12 +368,13 @@ export const buildCommand = new commander.Command('build')
             DOCKER_CLI_HINTS: 'false',
           },
         })
-        console.log('Docker image built.\n')
+        console.log('> Docker image built.\n')
 
-        console.log('Pushing docker image...')
+        const pushCmd = `docker push docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`
+        console.log(`Pushing docker image with the following command:\n${asBold(pushCmd)}\n`)
         try {
           child_process.execSync(
-            `docker push docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`,
+            pushCmd,
             {
               stdio: 'inherit',
               cwd: root,
@@ -367,13 +389,13 @@ export const buildCommand = new commander.Command('build')
             root
           )
         }
-        console.log('Docker image pushed.\n')
+        console.log('> Docker image pushed.\n')
 
         console.log('Triggering build...')
         await triggerBuild(templateID, template.buildID)
 
         console.log(
-          `Triggered build for the sandbox template ${asFormattedSandboxTemplate(
+          `> Triggered build for the sandbox template ${asFormattedSandboxTemplate(
             template
           )} `
         )
@@ -424,16 +446,14 @@ async function waitForBuildFinish(
 sandbox = Sandbox("${aliases?.length ? aliases[0] : template.templateID}")
 
 # Create async sandbox
-sandbox = await AsyncSandbox.create("${
-          aliases?.length ? aliases[0] : template.templateID
-        }")`)
+sandbox = await AsyncSandbox.create("${aliases?.length ? aliases[0] : template.templateID
+          }")`)
 
         const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
 
 // Create sandbox
-const sandbox = await Sandbox.create('${
-          aliases?.length ? aliases[0] : template.templateID
-        }')`)
+const sandbox = await Sandbox.create('${aliases?.length ? aliases[0] : template.templateID
+          }')`)
 
         const examplesMessage = `You can now use the template to create custom sandboxes.\nLearn more on ${asPrimary(
           'https://e2b.dev/docs'

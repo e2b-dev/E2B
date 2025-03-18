@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 
 import {
+  ArrowUpRight,
   BarChart,
   CreditCard,
   FileText,
@@ -27,6 +28,7 @@ import { PersonalContent } from '@/components/Dashboard/Personal'
 import { TemplatesContent } from '@/components/Dashboard/Templates'
 import { SandboxesContent } from '@/components/Dashboard/Sandboxes'
 import { DeveloperContent } from '@/components/Dashboard/Developer'
+import { Button } from '@/components/Button'
 
 function redirectToCurrentURL() {
   const url = typeof window !== 'undefined' ? window.location.href : undefined
@@ -87,13 +89,9 @@ const Dashboard = ({ user }) => {
   const [teams, setTeams] = useState<Team[]>([])
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
 
-  const apiUrlState = useLocalStorage(
-    'apiUrl',
-    process.env.NEXT_PUBLIC_API_URL || ''
-  )
-  const billingUrlState = useLocalStorage(
-    'billingUrl',
-    process.env.NEXT_PUBLIC_BILLING_API_URL || ''
+  const domainState = useLocalStorage(
+    'e2bDomain',
+    process.env.NEXT_PUBLIC_DOMAIN || ''
   )
 
   const initialTab =
@@ -153,11 +151,25 @@ const Dashboard = ({ user }) => {
           currentTeam={currentTeam}
           setCurrentTeam={setCurrentTeam}
           setTeams={setTeams}
+          domainState={domainState}
         />
         <div className="flex-1 md:pl-10 pb-16">
-          <h2 className="text-2xl mb-2 font-bold">
-            {selectedItem[0].toUpperCase() + selectedItem.slice(1)}
-          </h2>
+          <div className="flex flex-col  w-full">
+            <h2 className="text-2xl mb-2 font-bold">
+              {selectedItem[0].toUpperCase() + selectedItem.slice(1)}
+            </h2>
+            {currentTeam.is_blocked && (
+              <Button
+                onClick={() => setSelectedItem('usage')}
+                variant="desctructive"
+                className="mb-3 dark:ring-0 w-fit dark:bg-red-900/20 whitespace-break-spaces rounded-lg h-8 items-center text-xs"
+              >
+                Usage is blocked: {currentTeam.blocked_reason}.
+                <ArrowUpRight className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+
           <div className="border border-white/5 w-full h-[1px] mb-10" />
           <MainContent
             selectedItem={selectedItem}
@@ -166,8 +178,7 @@ const Dashboard = ({ user }) => {
             teams={teams}
             setTeams={setTeams}
             setCurrentTeam={setCurrentTeam}
-            apiUrlState={apiUrlState}
-            billingUrlState={billingUrlState}
+            domainState={domainState}
           />
         </div>
       </>
@@ -183,6 +194,7 @@ const Sidebar = ({
   currentTeam,
   setCurrentTeam,
   setTeams,
+  domainState,
 }) => (
   <div className="md:h-full md:w-48 space-y-2 pb-10 md:pb-0">
     <AccountSelector
@@ -191,6 +203,7 @@ const Sidebar = ({
       currentTeam={currentTeam}
       setCurrentTeam={setCurrentTeam}
       setTeams={setTeams}
+      domainState={domainState}
     />
 
     <div className="flex flex-row justify-center space-x-4 md:space-x-0 md:space-y-2 md:flex-col">
@@ -230,16 +243,18 @@ const MenuItem = ({
   onClick: () => void
 }) => (
   <div
-    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${selected ? 'bg-[#995100]' : ''
-      }`}
+    className={`flex w-fit md:w-full hover:bg-[#995100]  hover:cursor-pointer rounded-lg items-center p-2 space-x-2 ${
+      selected ? 'bg-[#995100]' : ''
+    }`}
     onClick={onClick}
   >
     <Icon width={20} height={20} />
     <p
-      className={`${!label || !window.matchMedia('(min-width: 768)').matches
+      className={`${
+        !label || !window.matchMedia('(min-width: 768)').matches
           ? 'sr-only sm:not-sr-only'
           : ''
-        }`}
+      }`}
     >
       {label[0].toUpperCase() + label.slice(1)}
     </p>
@@ -253,8 +268,7 @@ function MainContent({
   teams,
   setTeams,
   setCurrentTeam,
-  apiUrlState,
-  billingUrlState,
+  domainState,
 }: {
   selectedItem: MenuLabel
   user: E2BUser
@@ -262,34 +276,29 @@ function MainContent({
   teams: Team[]
   setTeams: (teams: Team[]) => void
   setCurrentTeam: (team: Team) => void
-  apiUrlState: [string, (value: string) => void]
-  billingUrlState: [string, (value: string) => void]
+  domainState: [string, (value: string) => void]
 }) {
   switch (selectedItem) {
     case 'personal':
-      return <PersonalContent user={user} billingUrl={billingUrlState[0]} />
+      return <PersonalContent user={user} domain={domainState[0]} />
     case 'keys':
       return (
-        <KeysContent
-          currentTeam={team}
-          user={user}
-          billingUrl={billingUrlState[0]}
-        />
+        <KeysContent currentTeam={team} user={user} domain={domainState[0]} />
       )
     case 'sandboxes':
-      return <SandboxesContent team={team} apiUrl={apiUrlState[0]} />
+      return <SandboxesContent team={team} domain={domainState[0]} />
     case 'templates':
       return (
         <TemplatesContent
           user={user}
           teamId={team.id}
-          apiUrl={apiUrlState[0]}
+          domain={domainState[0]}
         />
       )
     case 'usage':
-      return <UsageContent team={team} billingUrl={billingUrlState[0]} />
+      return <UsageContent team={team} domain={domainState[0]} />
     case 'billing':
-      return <BillingContent team={team} billingUrl={billingUrlState[0]} />
+      return <BillingContent team={team} domain={domainState[0]} />
     case 'team':
       return (
         <TeamContent
@@ -298,15 +307,11 @@ function MainContent({
           teams={teams}
           setTeams={setTeams}
           setCurrentTeam={setCurrentTeam}
-          billingUrl={billingUrlState[0]}
+          domain={domainState[0]}
         />
       )
     case 'developer':
-      return (
-        <DeveloperContent
-          apiUrlState={apiUrlState}
-        />
-      )
+      return <DeveloperContent domainState={domainState} />
     default:
       return <ErrorContent />
   }

@@ -7,6 +7,7 @@ If the LLM doesn't support tool use, you can, for example, prompt the LLM to out
 - [OpenAI](#openai)
 - [Anthropic](#anthropic)
 - [Mistral](#mistral)
+- [Groq](#groq)
 - [Vercel AI SDK](#vercel-ai-sdk)
 - [CrewAI](#crewai)
 - [LangChain](#langchain)
@@ -370,6 +371,46 @@ final_response = client.chat.complete(
 )
 
 print(final_response.choices[0].message.content)
+```
+</CodeGroup>
+
+---
+
+## Groq
+<CodeGroup>
+```python
+
+# pip install groq e2b-code-interpreter
+import os
+from groq import Groq
+from e2b_code_interpreter import Sandbox
+
+api_key = os.environ["GROQ_API_KEY"]
+
+# Create Groq client
+client = Groq(api_key=api_key)
+system_prompt = "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
+prompt = "Calculate how many r's are in the word 'strawberry.'"
+
+# Send the prompt to the model
+response = client.chat.completions.create(
+    model="llama3-70b-8192",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": prompt},
+    ]
+)
+
+# Extract the code from the response
+code = response.choices[0].message.content
+
+# Execute code in E2B Sandbox
+with Sandbox() as sandbox:
+    execution = sandbox.run_code(code)
+    result = execution.text
+
+print(result)
+
 ```
 </CodeGroup>
 

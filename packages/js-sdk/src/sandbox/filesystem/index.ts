@@ -18,9 +18,16 @@ import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
-import { FileType as FsFileType, Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_pb'
+import {
+  FileType as FsFileType,
+  Filesystem as FilesystemService,
+} from '../../envd/filesystem/filesystem_pb'
 
 import { FilesystemEvent, WatchHandle } from './watchHandle'
+
+import { compareVersions } from 'compare-versions'
+import { TemplateError } from '../../errors'
+import { ENVD_VERSION_RECURSIVE_WATCH } from '../../envd/versions'
 
 /**
  * Sandbox filesystem object information.
@@ -95,6 +102,10 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * Callback to call when the watch operation stops.
    */
   onExit?: (err?: Error) => void | Promise<void>
+  /**
+   * Watch the directory recursively
+   */
+  recursive?: boolean
 }
 
 /**
@@ -104,6 +115,7 @@ export class Filesystem {
   private readonly rpc: Client<typeof FilesystemService>
 
   private readonly defaultWatchTimeout = 60_000 // 60 seconds
+  private readonly defaultWatchRecursive = false
 
   constructor(
     transport: Transport,
@@ -225,11 +237,23 @@ export class Filesystem {
    *
    * @returns information about the written file
    */
-  async write(path: string, data: string | ArrayBuffer | Blob | ReadableStream, opts?: FilesystemRequestOpts): Promise<EntryInfo>
-  async write(files: WriteEntry[], opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
+  async write(
+    path: string,
+    data: string | ArrayBuffer | Blob | ReadableStream,
+    opts?: FilesystemRequestOpts
+  ): Promise<EntryInfo>
+  async write(
+    files: WriteEntry[],
+    opts?: FilesystemRequestOpts
+  ): Promise<EntryInfo[]>
   async write(
     pathOrFiles: string | WriteEntry[],
-    dataOrOpts?: string | ArrayBuffer | Blob | ReadableStream | FilesystemRequestOpts,
+    dataOrOpts?:
+      | string
+      | ArrayBuffer
+      | Blob
+      | ReadableStream
+      | FilesystemRequestOpts,
     opts?: FilesystemRequestOpts
   ): Promise<EntryInfo | EntryInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
@@ -247,13 +271,27 @@ export class Filesystem {
         ? {
             path: pathOrFiles,
             writeOpts: opts as FilesystemRequestOpts,
-            writeFiles: [{ data: dataOrOpts as string | ArrayBuffer | Blob | ReadableStream }],
+            writeFiles: [
+              {
+                data: dataOrOpts as
+                  | string
+                  | ArrayBuffer
+                  | Blob
+                  | ReadableStream,
+              },
+            ],
           }
-        : { path: undefined, writeOpts: dataOrOpts as FilesystemRequestOpts, writeFiles: pathOrFiles as WriteEntry[] }
+        : {
+            path: undefined,
+            writeOpts: dataOrOpts as FilesystemRequestOpts,
+            writeFiles: pathOrFiles as WriteEntry[],
+          }
 
     if (writeFiles.length === 0) return [] as EntryInfo[]
 
-    const blobs = await Promise.all(writeFiles.map((f) => new Response(f.data).blob()))
+    const blobs = await Promise.all(
+      writeFiles.map((f) => new Response(f.data).blob())
+    )
 
     const res = await this.envdApi.api.POST('/files', {
       params: {
@@ -370,7 +408,11 @@ export class Filesystem {
    *
    * @returns information about renamed file or directory.
    */
-  async rename(oldPath: string, newPath: string, opts?: FilesystemRequestOpts): Promise<EntryInfo> {
+  async rename(
+    oldPath: string,
+    newPath: string,
+    opts?: FilesystemRequestOpts
+  ): Promise<EntryInfo> {
     try {
       const res = await this.rpc.move(
         {
@@ -465,18 +507,33 @@ export class Filesystem {
       onExit?: (err?: Error) => void | Promise<void>
     }
   ): Promise<WatchHandle> {
-    const requestTimeoutMs = opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+    if (
+      opts?.recursive &&
+      this.envdApi.version &&
+      compareVersions(this.envdApi.version, ENVD_VERSION_RECURSIVE_WATCH) < 0
+    ) {
+      throw new TemplateError(
+        'You need to update the template to use recursive watching. ' +
+          'You can do this by running `e2b template build` in the directory with the template.'
+      )
+    }
+
+    const requestTimeoutMs =
+      opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-        controller.abort()
-      }, requestTimeoutMs)
+          controller.abort()
+        }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.watchDir(
-      { path },
+      {
+        path,
+        recursive: opts?.recursive ?? this.defaultWatchRecursive,
+      },
       {
         headers: {
           ...authenticationHeader(opts?.user),
@@ -492,7 +549,12 @@ export class Filesystem {
 
       clearTimeout(reqTimeout)
 
-      return new WatchHandle(() => controller.abort(), events, onEvent, opts?.onExit)
+      return new WatchHandle(
+        () => controller.abort(),
+        events,
+        onEvent,
+        opts?.onExit
+      )
     } catch (err) {
       throw handleRpcError(err)
     }

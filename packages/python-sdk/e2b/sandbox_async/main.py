@@ -31,6 +31,7 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
 
 class AsyncSandboxOpts(TypedDict):
     sandbox_id: str
+    envd_version: Optional[str]
     connection_config: ConnectionConfig
 
 
@@ -103,6 +104,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         self._connection_config = opts["connection_config"]
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
+        self._envd_version = opts["envd_version"]
 
         self._transport = AsyncTransportWithLogger(limits=self._limits)
         self._envd_api = httpx.AsyncClient(
@@ -112,6 +114,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         self._filesystem = Filesystem(
             self.envd_api_url,
+            self._envd_version,
             self.connection_config,
             self._transport._pool,
             self._envd_api,
@@ -198,10 +201,11 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             request_timeout=request_timeout,
         )
 
-        sandbox_id = (
-            "debug_sandbox_id"
-            if connection_config.debug
-            else await SandboxApi._create_sandbox(
+        if connection_config.debug:
+            sandbox_id = "debug_sandbox_id"
+            envd_version = None
+        else:
+            response = await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
                 api_key=api_key,
                 timeout=timeout or cls.default_sandbox_timeout,
@@ -211,10 +215,12 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
                 request_timeout=request_timeout,
                 env_vars=envs,
             )
-        )
+            sandbox_id = response.sandbox_id
+            envd_version = response.envd_version
 
         return cls(
             sandbox_id=sandbox_id,
+            envd_version=envd_version,
             connection_config=connection_config,
         )
 
@@ -251,6 +257,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         return cls(
             sandbox_id=sandbox_id,
+            envd_version=None,
             connection_config=connection_config,
         )
 

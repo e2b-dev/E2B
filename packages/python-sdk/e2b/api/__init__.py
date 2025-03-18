@@ -1,5 +1,6 @@
 import json
 import logging
+from dataclasses import dataclass
 
 from typing import Optional, Union
 from httpx import HTTPTransport, AsyncHTTPTransport
@@ -15,6 +16,12 @@ from e2b.exceptions import (
 from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SandboxCreateResponse:
+    sandbox_id: str
+    envd_version: str
 
 
 def handle_api_exception(e: Response):

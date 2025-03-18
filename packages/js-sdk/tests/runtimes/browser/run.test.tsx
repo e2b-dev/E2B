@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { expect, inject, test } from 'vitest'
 import { render } from 'vitest-browser-react'
 import React from 'react'
 import { useEffect, useState } from 'react'
@@ -10,7 +10,7 @@ function E2BTest() {
 
   useEffect(() => {
     const getText = async () => {
-      const sandbox = await Sandbox.create()
+      const sandbox = await Sandbox.create({apiKey: inject('E2B_API_KEY')})
 
       try {
         await sandbox.commands.run('echo "Hello World" > hello.txt')
@@ -36,6 +36,4 @@ test(
         timeout: 30_000,
       }
     )
-  },
-  { timeout: 40_000 }
-)
+  }, 40_000)
