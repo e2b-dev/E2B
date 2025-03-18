@@ -497,13 +497,14 @@ console.log(text)
 
 <CodeGroup>
 ```python
-# pip install crewai crewai[tools] e2b-code-interpreter
-from crewai_tools import tool
+# pip install crewai e2b-code-interpreter
+from crewai.tools import tool
 from crewai import Agent, Task, Crew, LLM
 from e2b_code_interpreter import Sandbox
 
-@tool("Python interpreter tool")
-def execute_python(code: str):
+# Update tool definition using the decorator
+@tool("Python Interpreter")  
+def execute_python(code: str) -> str:
     """
     Execute Python code and return the results.
     """
