@@ -11,14 +11,14 @@ async def test_port_closed(template):
         assert await sbx.is_running()
 
         good_port = 8002
-        # Start a Python HTTP server on port 8000
+        # Start a Python HTTP server on port 8002
         await sbx.commands.run(
             f"python -m http.server {good_port}",
             background=True,
         )
         await asyncio.sleep(1)  # Wait for server to start
 
-        # Test good port (8000)
+        # Test good port (8002)
         good_host = sbx.get_host(good_port)
         async with httpx.AsyncClient() as client:
             for _ in range(20):

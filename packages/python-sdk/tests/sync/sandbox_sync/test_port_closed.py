@@ -11,14 +11,14 @@ def test_port_closed(template):
         assert sbx.is_running()
 
         good_port = 8004
-        # Start a Python HTTP server on port 8000
+        # Start a Python HTTP server on port 8004
         sbx.commands.run(
             f"python -m http.server {good_port}",
             background=True,
         )
         time.sleep(1)  # Wait for server to start
 
-        # Test good port (8000)
+        # Test good port (8004)
         good_host = sbx.get_host(good_port)
         with httpx.Client() as client:
             for _ in range(10):
