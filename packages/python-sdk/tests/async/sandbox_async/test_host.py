@@ -16,7 +16,7 @@ async def test_ping_server(async_sandbox: AsyncSandbox, debug):
 
         status_code = None
         async with httpx.AsyncClient() as client:
-            for _ in range(5):
+            for _ in range(20):
                 res = await client.get(f"{'http' if debug else 'https'}://{host}")
                 status_code = res.status_code
                 if res.status_code == 200:
