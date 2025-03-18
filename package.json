@@ -6,21 +6,22 @@
     "publish": "changeset publish && pnpm run -r postPublish",
     "test": "pnpm test --recursive --if-present",
     "dev:web": "pnpm --prefix apps/web run dev",
-    "dev:build": "pnpm --prefix apps/web run build",
+    "build:web": "pnpm --prefix apps/web run build",
+    "start:web": "pnpm --prefix apps/web run start",
     "rm-node-modules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
     "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json",
     "generate-sdk-reference": "pnpm --if-present --recursive run generate-sdk-reference"
   },
-  "packageManager": "pnpm@8.7.6",
+  "packageManager": "pnpm@9.15.5",
   "dependencies": {
-    "@changesets/cli": "^2.26.2",
-    "@changesets/read": "^0.5.9"
+    "@changesets/cli": "^2.27.12",
+    "@changesets/read": "^0.6.2"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.7.2",
     "@typescript-eslint/parser": "^6.7.2",
     "changeset": "^0.2.6",
-    "eslint": "^8.49.0",
+    "eslint": "^8.57.1",
     "eslint-plugin-unused-imports": "^3.0.0"
   },
   "engines": {

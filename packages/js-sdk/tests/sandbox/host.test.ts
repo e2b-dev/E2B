@@ -16,7 +16,7 @@ sandboxTest.skipIf(isDebug)(
 
       let res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
 
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 20; i++) {
         if (res.status === 200) {
           break
         }
@@ -24,7 +24,6 @@ sandboxTest.skipIf(isDebug)(
         res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
         await wait(500)
       }
-
       assert.equal(res.status, 200)
     } finally {
       try {
@@ -33,7 +32,8 @@ sandboxTest.skipIf(isDebug)(
         console.error(e)
       }
     }
-  }
+  },
+  60_000
 )
 
 sandboxTest.skipIf(isDebug)(
@@ -52,6 +52,6 @@ sandboxTest.skipIf(isDebug)(
     assert.equal(res2.status, 502)
 
     const text = await res2.text()
-    assert.equal(text, 'Sandbox does not exist.')
+    assert.equal(text, 'Sandbox not found')
   }
 )

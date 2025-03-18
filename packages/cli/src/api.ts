@@ -7,24 +7,40 @@ import { asBold, asPrimary } from './utils/format'
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
 
-const authErrorBox = boxen.default(
-  `You must be logged in to use this command. Run ${asBold('e2b auth login')}.
+const authErrorBox = (keyName: string) => {
+  let link
+  let msg
+  switch (keyName) {
+    case 'E2B_API_KEY':
+      link = 'https://e2b.dev/dashboard?tab=keys'
+      msg = 'API key'
+
+    case 'E2B_ACCESS_TOKEN':
+      link = 'https://e2b.dev/dashboard?tab=personal'
+      msg = 'access token'
+  }
+  // throwing error in default in switch statement results in unreachable code,
+  // so we need to check if link and msg are defined here instead
+  if (!link || !msg) {
+    throw new Error(`Unknown key name: ${keyName}`)
+  }
+  return boxen.default(
+    `You must be logged in to use this command. Run ${asBold('e2b auth login')}.
 
 If you are seeing this message in CI/CD you may need to set the ${asBold(
-    'E2B_ACCESS_TOKEN'
-  )} environment variable.
-Visit ${asPrimary(
-    'https://e2b.dev/docs/getting-started/api-key'
-  )} to get the access token.`,
-  {
-    width: 70,
-    float: 'center',
-    padding: 0.5,
-    margin: 1,
-    borderStyle: 'round',
-    borderColor: 'redBright',
-  }
-)
+      `${keyName}`
+    )} environment variable.
+Visit ${asPrimary(link)} to get the ${msg}.`,
+    {
+      width: 70,
+      float: 'center',
+      padding: 0.5,
+      margin: 1,
+      borderStyle: 'round',
+      borderColor: 'redBright',
+    }
+  )
+}
 
 export function ensureAPIKey() {
   // If apiKey is not already set (either from env var or from user config), try to get it from config file
@@ -34,7 +50,7 @@ export function ensureAPIKey() {
   }
 
   if (!apiKey) {
-    console.error(authErrorBox)
+    console.error(authErrorBox('E2B_API_KEY'))
     process.exit(1)
   } else {
     return apiKey
@@ -58,7 +74,7 @@ export function ensureAccessToken() {
   }
 
   if (!accessToken) {
-    console.error(authErrorBox)
+    console.error(authErrorBox('E2B_ACCESS_TOKEN'))
     process.exit(1)
   } else {
     return accessToken
