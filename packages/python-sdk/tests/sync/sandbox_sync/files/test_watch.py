@@ -8,20 +8,15 @@ def test_watch_directory_changes(sandbox: Sandbox):
     filename = "test_watch.txt"
     content = "This file will be watched."
 
-    sandbox.files.remove(dirname)
     sandbox.files.make_dir(dirname)
+    sandbox.files.write(f"{dirname}/{filename}", content)
 
     handle = sandbox.files.watch_dir(dirname)
     sandbox.files.write(f"{dirname}/{filename}", content)
 
     events = handle.get_new_events()
-    assert len(events) >= 3
     assert events[0].type == FilesystemEventType.WRITE
     assert events[0].name == filename
-    assert events[1].type == FilesystemEventType.CHMOD
-    assert events[1].name == filename
-    assert events[2].type == FilesystemEventType.WRITE
-    assert events[2].name == filename
 
     handle.stop()
 

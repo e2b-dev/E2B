@@ -502,7 +502,7 @@ export class Filesystem {
   async watchDir(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: FilesystemRequestOpts & {
+    opts?: WatchOpts & {
       timeout?: number
       onExit?: (err?: Error) => void | Promise<void>
     }
