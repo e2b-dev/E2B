@@ -397,7 +397,7 @@ export const buildCommand = new commander.Command('build')
         console.log(
           `> Triggered build for the sandbox template ${asFormattedSandboxTemplate(
             template
-          )} buildID: ${template.buildID}`
+          )} with build ID: ${template.buildID}`
         )
 
         console.log('Waiting for build to finish...')
