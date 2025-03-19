@@ -269,23 +269,23 @@ export class Filesystem {
     const { path, writeOpts, writeFiles } =
       typeof pathOrFiles === 'string'
         ? {
-            path: pathOrFiles,
-            writeOpts: opts as FilesystemRequestOpts,
-            writeFiles: [
-              {
-                data: dataOrOpts as
-                  | string
-                  | ArrayBuffer
-                  | Blob
-                  | ReadableStream,
-              },
-            ],
-          }
+          path: pathOrFiles,
+          writeOpts: opts as FilesystemRequestOpts,
+          writeFiles: [
+            {
+              data: dataOrOpts as
+                | string
+                | ArrayBuffer
+                | Blob
+                | ReadableStream,
+            },
+          ],
+        }
         : {
-            path: undefined,
-            writeOpts: dataOrOpts as FilesystemRequestOpts,
-            writeFiles: pathOrFiles as WriteEntry[],
-          }
+          path: undefined,
+          writeOpts: dataOrOpts as FilesystemRequestOpts,
+          writeFiles: pathOrFiles as WriteEntry[],
+        }
 
     if (writeFiles.length === 0) return [] as EntryInfo[]
 
@@ -508,13 +508,12 @@ export class Filesystem {
     }
   ): Promise<WatchHandle> {
     if (
-      opts?.recursive &&
       this.envdApi.version &&
       compareVersions(this.envdApi.version, ENVD_VERSION_RECURSIVE_WATCH) < 0
     ) {
       throw new TemplateError(
         'You need to update the template to use recursive watching. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
 
@@ -525,14 +524,14 @@ export class Filesystem {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
+        controller.abort()
+      }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.watchDir(
       {
         path,
-        recursive: opts?.recursive ?? this.defaultWatchRecursive,
+        recursive: this.defaultWatchRecursive,
       },
       {
         headers: {
@@ -540,7 +539,7 @@ export class Filesystem {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? this.defaultWatchTimeout,
+        timeoutMs: this.defaultWatchTimeout,
       }
     )
 
