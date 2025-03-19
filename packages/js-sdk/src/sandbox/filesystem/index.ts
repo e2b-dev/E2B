@@ -7,20 +7,23 @@ import {
 } from '@connectrpc/connect'
 import {
   ConnectionConfig,
-  defaultUsername,
-  Username,
   ConnectionOpts,
-  KEEPALIVE_PING_INTERVAL_SEC,
+  defaultUsername,
   KEEPALIVE_PING_HEADER,
+  KEEPALIVE_PING_INTERVAL_SEC,
+  Username,
 } from '../../connectionConfig'
 
 import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
-import { FileType as FsFileType, Filesystem as FilesystemService } from '../../envd/filesystem/filesystem_pb'
+import {
+  FileType as FsFileType,
+  Filesystem as FilesystemService,
+} from '../../envd/filesystem/filesystem_pb'
 
-import { WatchHandle, FilesystemEvent } from './watchHandle'
+import { FilesystemEvent, WatchHandle } from './watchHandle'
 
 import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../../errors'
@@ -56,6 +59,11 @@ export const enum FileType {
    * Filesystem object is a directory.
    */
   DIR = 'dir',
+}
+
+export type WriteEntry = {
+  path: string
+  data: string | ArrayBuffer | Blob | ReadableStream
 }
 
 function mapFileType(fileType: FsFileType) {
@@ -233,22 +241,75 @@ export class Filesystem {
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream,
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo> {
-    const blob = await new Response(data).blob()
+  ): Promise<EntryInfo>
+  async write(
+    files: WriteEntry[],
+    opts?: FilesystemRequestOpts
+  ): Promise<EntryInfo[]>
+  async write(
+    pathOrFiles: string | WriteEntry[],
+    dataOrOpts?:
+      | string
+      | ArrayBuffer
+      | Blob
+      | ReadableStream
+      | FilesystemRequestOpts,
+    opts?: FilesystemRequestOpts
+  ): Promise<EntryInfo | EntryInfo[]> {
+    if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
+      throw new Error('Path or files are required')
+    }
+
+    if (typeof pathOrFiles === 'string' && Array.isArray(dataOrOpts)) {
+      throw new Error(
+        'Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files.'
+      )
+    }
+
+    const { path, writeOpts, writeFiles } =
+      typeof pathOrFiles === 'string'
+        ? {
+            path: pathOrFiles,
+            writeOpts: opts as FilesystemRequestOpts,
+            writeFiles: [
+              {
+                data: dataOrOpts as
+                  | string
+                  | ArrayBuffer
+                  | Blob
+                  | ReadableStream,
+              },
+            ],
+          }
+        : {
+            path: undefined,
+            writeOpts: dataOrOpts as FilesystemRequestOpts,
+            writeFiles: pathOrFiles as WriteEntry[],
+          }
+
+    if (writeFiles.length === 0) return [] as EntryInfo[]
+
+    const blobs = await Promise.all(
+      writeFiles.map((f) => new Response(f.data).blob())
+    )
 
     const res = await this.envdApi.api.POST('/files', {
       params: {
         query: {
           path,
-          username: opts?.user || defaultUsername,
+          username: writeOpts?.user || defaultUsername,
         },
       },
       bodySerializer() {
-        const fd = new FormData()
+        return blobs.reduce((fd, blob, i) => {
+          // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
+          // the directory path information must not be used.
+          // BUT in our case we need to use the directory path information with a custom
+          // muktipart part name getter in envd.
+          fd.append('file', blob, writeFiles[i].path)
 
-        fd.append('file', blob)
-
-        return fd
+          return fd
+        }, new FormData())
       },
       body: {},
       headers: {
@@ -262,12 +323,12 @@ export class Filesystem {
       throw err
     }
 
-    const files = res.data
-    if (!files || files.length === 0) {
+    const files = res.data as EntryInfo[]
+    if (!files) {
       throw new Error('Expected to receive information about written file')
     }
 
-    return files[0] as EntryInfo
+    return files.length === 1 && path ? files[0] : files
   }
 
   /**
@@ -441,12 +502,19 @@ export class Filesystem {
   async watchDir(
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
-    opts?: WatchOpts
+    opts?: FilesystemRequestOpts & {
+      timeout?: number
+      onExit?: (err?: Error) => void | Promise<void>
+    }
   ): Promise<WatchHandle> {
-    if (opts?.recursive && this.envdApi.version && compareVersions(this.envdApi.version, ENVD_VERSION_RECURSIVE_WATCH) < 0) {
+    if (
+      opts?.recursive &&
+      this.envdApi.version &&
+      compareVersions(this.envdApi.version, ENVD_VERSION_RECURSIVE_WATCH) < 0
+    ) {
       throw new TemplateError(
         'You need to update the template to use recursive watching. ' +
-        'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
 
@@ -457,8 +525,8 @@ export class Filesystem {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-        controller.abort()
-      }, requestTimeoutMs)
+          controller.abort()
+        }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.watchDir(
