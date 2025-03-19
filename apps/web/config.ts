@@ -4,6 +4,6 @@ export const config = {
     api: 'https://api.github.com/repos/e2b-dev/e2b',
   },
   twitter: {
-    url: 'https://twitter.com/e2b_dev',
+    url: 'https://x.com/e2b',
   },
 }
