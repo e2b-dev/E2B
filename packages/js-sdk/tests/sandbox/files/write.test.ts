@@ -1,8 +1,8 @@
 import path from 'path'
 import { assert, onTestFinished } from 'vitest'
 
-import { WriteEntry } from '../../../src/sandbox/filesystem/index.js'
-import { sandboxTest } from '../../setup.js'
+import { WriteEntry } from '../../../src/sandbox/filesystem'
+import { isDebug, sandboxTest } from '../../setup.js'
 
 sandboxTest('write file', async ({ sandbox }) => {
   const filename = 'test_write.txt'
@@ -70,10 +70,10 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   assert.isTrue(Array.isArray(info))
   assert.equal(info[0].name, 'one_test_file.txt')
   assert.equal(info[0].type, 'file')
-  assert.equal(info[0].path, `/home/user/one_test_file.txt`)
+  assert.equal(info[0].path, '/home/user/one_test_file.txt')
 
   // Attempt to write with multiple files in array
-  let files: WriteEntry[] = []
+  const files: WriteEntry[] = []
 
   for (let i = 0; i < 10; i++) {
     let path = ''
@@ -83,7 +83,9 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
       path = `/home/user/multi_test_file${i}.txt`
     }
 
-    onTestFinished(async () => await sandbox.files.remove(path))
+    if (isDebug) {
+      onTestFinished(async () => await sandbox.files.remove(path))
+    }
 
     files.push({
       path: path,
