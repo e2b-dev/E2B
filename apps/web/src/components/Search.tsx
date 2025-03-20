@@ -25,8 +25,6 @@ import clsx from 'clsx'
 import { type Result } from '@/mdx/search.mjs'
 import { DialogAnimated } from '@/components/DialogAnimated'
 import { docRoutes } from './Navigation/routes'
-import { usePostHog } from 'posthog-js/react'
-import { useDebounceCallback } from 'usehooks-ts'
 
 type EmptyObject = Record<string, never>
 
@@ -40,28 +38,12 @@ type Autocomplete = AutocompleteApi<
 function useAutocomplete({ close }: { close: () => void }) {
   const id = useId()
   const router = useRouter()
-  const posthog = usePostHog()
   const [autocompleteState, setAutocompleteState] = useState<
     AutocompleteState<Result> | EmptyObject
   >({})
 
-  const captureSearchEvent = useDebounceCallback(
-    (query: string, results_count: number) => {
-      // return when length <= one, because this occurs when query is
-      // erased & last event on debounce stack is let through with 1 char
-      if (query.length <= 1) return
-
-      posthog.capture('searched docs', {
-        query,
-        results_count,
-      })
-    },
-    500
-  )
-
   const navigate = ({
     itemUrl,
-    state,
   }: {
     itemUrl?: string
     state: AutocompleteState<Result>
@@ -71,11 +53,6 @@ function useAutocomplete({ close }: { close: () => void }) {
     }
 
     itemUrl = itemUrl.replace('(docs)/', '')
-
-    posthog.capture('selected docs search result', {
-      query: state.query,
-      selected_url: itemUrl,
-    })
 
     router.push(itemUrl)
 
@@ -99,13 +76,6 @@ function useAutocomplete({ close }: { close: () => void }) {
       defaultActiveItemId: 0,
       onStateChange({ state }) {
         setAutocompleteState(state)
-
-        if (state.query && state.status === 'loading') {
-          captureSearchEvent(
-            state.query,
-            state.collections[0]?.items.length || 0
-          )
-        }
       },
       shouldPanelOpen({ state }) {
         return state.query !== ''
