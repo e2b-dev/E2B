@@ -15,7 +15,7 @@ export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
    */
-  filters?: Record<string, string>
+  metadata?: Record<string, string>
 }
 
 /**
@@ -99,15 +99,15 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    let query = undefined
-    if (opts?.filters) {
-      const encodedPairs: Record<string, string> = Object.fromEntries(Object.entries(opts.filters).map(([key, value]) => [encodeURIComponent(key),encodeURIComponent(value)]))
-      query = new URLSearchParams(encodedPairs).toString()
+    let metadata = undefined
+    if (opts?.metadata) {
+      const encodedPairs: Record<string, string> = Object.fromEntries(Object.entries(opts.metadata).map(([key, value]) => [encodeURIComponent(key),encodeURIComponent(value)]))
+      metadata = new URLSearchParams(encodedPairs).toString()
     }
 
     const res = await client.api.GET('/sandboxes', {
         params: {
-          query: {query},
+          query: {metadata},
         },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -185,6 +185,7 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body: {
+        autoPause: false,
         templateID: template,
         metadata: opts?.metadata,
         envVars: opts?.envs,

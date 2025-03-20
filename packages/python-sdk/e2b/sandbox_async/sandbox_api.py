@@ -21,7 +21,7 @@ class SandboxApi(SandboxApiBase):
     async def list(
         cls,
         api_key: Optional[str] = None,
-        filters: Optional[Dict[str, str]] = None,
+        metadata: Optional[Dict[str, str]] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -44,17 +44,17 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
-        query = None
-        if filters:
-            filters = {
-                urllib.parse.quote(k): urllib.parse.quote(v) for k, v in filters.items()
+        if metadata:
+            quoted_metadata = {
+                urllib.parse.quote(k): urllib.parse.quote(v)
+                for k, v in metadata.items()
             }
-            query = urllib.parse.urlencode(filters)
+            metadata = urllib.parse.urlencode(quoted_metadata)
 
         async with AsyncApiClient(config) as api_client:
             res = await get_sandboxes.asyncio_detailed(
                 client=api_client,
-                query=query,
+                metadata=metadata,
             )
 
         if res.status_code >= 300:

@@ -19,7 +19,7 @@ async def test_list_sandboxes_with_filter(async_sandbox: AsyncSandbox):
     sbx = await AsyncSandbox.create(metadata={"unique_id": unique_id})
     try:
         # There's an extra sandbox created by the test runner
-        sandboxes = await AsyncSandbox.list(filters={"unique_id": unique_id})
+        sandboxes = await AsyncSandbox.list(metadata={"unique_id": unique_id})
         assert len(sandboxes) == 1
         assert sandboxes[0].metadata["unique_id"] == unique_id
     finally:

@@ -21,14 +21,14 @@ sandboxTest.skipIf(isDebug)('list sandboxes', async ({ sandbox }) => {
   }
 })
 
-sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
+sandboxTest.skipIf(isDebug)('list sandboxes with metadata filter', async () => {
   const uniqueId = Date.now().toString()
   // Create an extra sandbox with a uniqueId
   const extraSbx = await Sandbox.create({ })
   try {
     const sbx = await Sandbox.create({metadata: {uniqueId: uniqueId}})
     try {
-      const sandboxes = await Sandbox.list({filters: {uniqueId}})
+      const sandboxes = await Sandbox.list({metadata: {uniqueId}})
       assert.equal(sandboxes.length, 1)
       assert.equal(sandboxes[0].sandboxId, sbx.sandboxId)
     } finally {

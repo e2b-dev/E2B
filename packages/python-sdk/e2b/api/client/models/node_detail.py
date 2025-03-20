@@ -17,12 +17,14 @@ class NodeDetail:
     """
     Attributes:
         cached_builds (list[str]): List of cached builds id on the node
+        create_fails (int): Number of sandbox create fails
         node_id (str): Identifier of the node
         sandboxes (list['RunningSandbox']): List of sandboxes running on the node
         status (NodeStatus): Status of the node
     """
 
     cached_builds: list[str]
+    create_fails: int
     node_id: str
     sandboxes: list["RunningSandbox"]
     status: NodeStatus
@@ -30,6 +32,8 @@ class NodeDetail:
 
     def to_dict(self) -> dict[str, Any]:
         cached_builds = self.cached_builds
+
+        create_fails = self.create_fails
 
         node_id = self.node_id
 
@@ -45,6 +49,7 @@ class NodeDetail:
         field_dict.update(
             {
                 "cachedBuilds": cached_builds,
+                "createFails": create_fails,
                 "nodeID": node_id,
                 "sandboxes": sandboxes,
                 "status": status,
@@ -60,6 +65,8 @@ class NodeDetail:
         d = src_dict.copy()
         cached_builds = cast(list[str], d.pop("cachedBuilds"))
 
+        create_fails = d.pop("createFails")
+
         node_id = d.pop("nodeID")
 
         sandboxes = []
@@ -73,6 +80,7 @@ class NodeDetail:
 
         node_detail = cls(
             cached_builds=cached_builds,
+            create_fails=create_fails,
             node_id=node_id,
             sandboxes=sandboxes,
             status=status,

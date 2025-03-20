@@ -23,7 +23,7 @@ class SandboxApi(SandboxApiBase):
     def list(
         cls,
         api_key: Optional[str] = None,
-        filters: Optional[Dict[str, str]] = None,
+        metadata: Optional[Dict[str, str]] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -32,7 +32,7 @@ class SandboxApi(SandboxApiBase):
         List all running sandboxes.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param filters: Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
+        :param metadata: Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
         :param domain: Domain to use for the request, only relevant for self-hosted environments
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
@@ -47,17 +47,17 @@ class SandboxApi(SandboxApiBase):
         )
 
         # Convert filters to the format expected by the API
-        query = None
-        if filters:
-            filters = {
-                urllib.parse.quote(k): urllib.parse.quote(v) for k, v in filters.items()
+        if metadata:
+            quoted_metadata = {
+                urllib.parse.quote(k): urllib.parse.quote(v)
+                for k, v in metadata.items()
             }
-            query = urllib.parse.urlencode(filters)
+            metadata = urllib.parse.urlencode(quoted_metadata)
 
         with ApiClient(
             config, transport=HTTPTransport(limits=SandboxApiBase._limits)
         ) as api_client:
-            res = get_sandboxes.sync_detailed(client=api_client, query=query)
+            res = get_sandboxes.sync_detailed(client=api_client, metadata=metadata)
 
             if res.status_code >= 300:
                 raise handle_api_exception(res)

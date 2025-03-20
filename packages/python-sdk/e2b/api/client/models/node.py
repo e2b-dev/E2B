@@ -14,15 +14,19 @@ class Node:
     Attributes:
         allocated_cpu (int): Number of allocated CPU cores
         allocated_memory_mi_b (int): Amount of allocated memory in MiB
+        create_fails (int): Number of sandbox create fails
         node_id (str): Identifier of the node
         sandbox_count (int): Number of sandboxes running on the node
+        sandbox_starting_count (int): Number of starting Sandboxes
         status (NodeStatus): Status of the node
     """
 
     allocated_cpu: int
     allocated_memory_mi_b: int
+    create_fails: int
     node_id: str
     sandbox_count: int
+    sandbox_starting_count: int
     status: NodeStatus
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -31,9 +35,13 @@ class Node:
 
         allocated_memory_mi_b = self.allocated_memory_mi_b
 
+        create_fails = self.create_fails
+
         node_id = self.node_id
 
         sandbox_count = self.sandbox_count
+
+        sandbox_starting_count = self.sandbox_starting_count
 
         status = self.status.value
 
@@ -43,8 +51,10 @@ class Node:
             {
                 "allocatedCPU": allocated_cpu,
                 "allocatedMemoryMiB": allocated_memory_mi_b,
+                "createFails": create_fails,
                 "nodeID": node_id,
                 "sandboxCount": sandbox_count,
+                "sandboxStartingCount": sandbox_starting_count,
                 "status": status,
             }
         )
@@ -58,17 +68,23 @@ class Node:
 
         allocated_memory_mi_b = d.pop("allocatedMemoryMiB")
 
+        create_fails = d.pop("createFails")
+
         node_id = d.pop("nodeID")
 
         sandbox_count = d.pop("sandboxCount")
+
+        sandbox_starting_count = d.pop("sandboxStartingCount")
 
         status = NodeStatus(d.pop("status"))
 
         node = cls(
             allocated_cpu=allocated_cpu,
             allocated_memory_mi_b=allocated_memory_mi_b,
+            create_fails=create_fails,
             node_id=node_id,
             sandbox_count=sandbox_count,
+            sandbox_starting_count=sandbox_starting_count,
             status=status,
         )
 
