@@ -84,7 +84,9 @@ const sandbox = await Sandbox.create({
 
 // List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
 const runningSandboxes = await Sandbox.list({
-    metadata: { userId: '123', env: 'dev' } // $HighlightLine
+  query: {
+    metadata: { userId: '123', env: 'dev' }, // $HighlightLine
+  },
 })
 ```
 ```python
@@ -93,15 +95,20 @@ from e2b_code_interpreter import Sandbox
 # Create sandbox with metadata.
 sandbox = Sandbox(
     metadata={
-        "env": "dev", # $HighlightLine
-        "app": "my-app", # $HighlightLine
-        "user_id": "123", # $HighlightLine
+        'env": "dev",  # $HighlightLine
+        "app": "my-app",  # $HighlightLine
+        "user_id": "123",  # $HighlightLine
     },
 )
 
 # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
-running_sandboxes = Sandbox.list(metadata={
-    "userId": "123", "env": "dev" # $HighlightLine
-})
+running_sandboxes = Sandbox.list(
+    query=SandboxQuery(
+        metadata={
+            "userId": "123",  # $HighlightLine
+            "env": "dev",  # $HighlightLine
+        }
+    ),
+)
 ```
 </CodeGroup>
