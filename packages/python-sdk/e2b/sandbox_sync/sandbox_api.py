@@ -4,7 +4,7 @@ from httpx import HTTPTransport
 from typing import Optional, Dict, List, Tuple
 from packaging.version import Version
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery
 from e2b.exceptions import TemplateException
 from e2b.api import ApiClient, SandboxCreateResponse
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
@@ -23,7 +23,7 @@ class SandboxApi(SandboxApiBase):
     def list(
         cls,
         api_key: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
+        query: Optional[SandboxQuery] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -32,7 +32,7 @@ class SandboxApi(SandboxApiBase):
         List all running sandboxes.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param metadata: Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
+        :param query: Filter the list of sandboxes, e.g. by metadata `metadata={"key": "value"}`, if there are multiple filters they are combined with AND.
         :param domain: Domain to use for the request, only relevant for self-hosted environments
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
@@ -47,12 +47,14 @@ class SandboxApi(SandboxApiBase):
         )
 
         # Convert filters to the format expected by the API
-        if metadata:
-            quoted_metadata = {
-                urllib.parse.quote(k): urllib.parse.quote(v)
-                for k, v in metadata.items()
-            }
-            metadata = urllib.parse.urlencode(quoted_metadata)
+        metadata = None
+        if query:
+            if query.metadata:
+                quoted_metadata = {
+                    urllib.parse.quote(k): urllib.parse.quote(v)
+                    for k, v in query.metadata.items()
+                }
+                metadata = urllib.parse.urlencode(quoted_metadata)
 
         with ApiClient(
             config, transport=HTTPTransport(limits=SandboxApiBase._limits)

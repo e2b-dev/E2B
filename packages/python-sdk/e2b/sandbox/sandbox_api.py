@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Dict
+from typing import Optional, Dict, TypedDict
 from datetime import datetime
 from httpx import Limits
 
@@ -19,6 +19,14 @@ class SandboxInfo:
     """Saved sandbox metadata."""
     started_at: datetime
     """Sandbox start time."""
+
+
+@dataclass
+class SandboxQuery:
+    """Query parameters for listing sandboxes."""
+
+    metadata: Optional[dict[str, str]] = None
+    """Filter sandboxes by metadata."""
 
 
 class SandboxApiBase(ABC):
