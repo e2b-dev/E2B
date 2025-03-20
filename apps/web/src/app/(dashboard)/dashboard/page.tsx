@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 
 import {
+  ArrowUpRight,
   BarChart,
   CreditCard,
   FileText,
@@ -27,6 +28,7 @@ import { PersonalContent } from '@/components/Dashboard/Personal'
 import { TemplatesContent } from '@/components/Dashboard/Templates'
 import { SandboxesContent } from '@/components/Dashboard/Sandboxes'
 import { DeveloperContent } from '@/components/Dashboard/Developer'
+import { Button } from '@/components/Button'
 
 function redirectToCurrentURL() {
   const url = typeof window !== 'undefined' ? window.location.href : undefined
@@ -149,11 +151,25 @@ const Dashboard = ({ user }) => {
           currentTeam={currentTeam}
           setCurrentTeam={setCurrentTeam}
           setTeams={setTeams}
+          domainState={domainState}
         />
         <div className="flex-1 md:pl-10 pb-16">
-          <h2 className="text-2xl mb-2 font-bold">
-            {selectedItem[0].toUpperCase() + selectedItem.slice(1)}
-          </h2>
+          <div className="flex flex-col  w-full">
+            <h2 className="text-2xl mb-2 font-bold">
+              {selectedItem[0].toUpperCase() + selectedItem.slice(1)}
+            </h2>
+            {currentTeam.is_blocked && (
+              <Button
+                onClick={() => setSelectedItem('usage')}
+                variant="desctructive"
+                className="mb-3 dark:ring-0 w-fit dark:bg-red-900/20 whitespace-break-spaces rounded-lg h-8 items-center text-xs"
+              >
+                Usage is blocked: {currentTeam.blocked_reason}.
+                <ArrowUpRight className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+
           <div className="border border-white/5 w-full h-[1px] mb-10" />
           <MainContent
             selectedItem={selectedItem}
@@ -178,6 +194,7 @@ const Sidebar = ({
   currentTeam,
   setCurrentTeam,
   setTeams,
+  domainState,
 }) => (
   <div className="md:h-full md:w-48 space-y-2 pb-10 md:pb-0">
     <AccountSelector
@@ -186,6 +203,7 @@ const Sidebar = ({
       currentTeam={currentTeam}
       setCurrentTeam={setCurrentTeam}
       setTeams={setTeams}
+      domainState={domainState}
     />
 
     <div className="flex flex-row justify-center space-x-4 md:space-x-0 md:space-y-2 md:flex-col">

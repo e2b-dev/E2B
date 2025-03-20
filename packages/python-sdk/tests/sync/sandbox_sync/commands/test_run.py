@@ -49,3 +49,10 @@ def test_run_with_timeout(sandbox):
 def test_run_with_too_short_timeout(sandbox):
     with pytest.raises(TimeoutException):
         sandbox.commands.run("sleep 10", timeout=2)
+
+
+def test_run_with_too_short_timeout_iterating(sandbox):
+    cmd = sandbox.commands.run("sleep 10", timeout=2, background=True)
+    with pytest.raises(TimeoutException):
+        for _ in cmd:
+            pass
