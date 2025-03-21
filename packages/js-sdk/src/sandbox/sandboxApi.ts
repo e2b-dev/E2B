@@ -9,13 +9,13 @@ import { TemplateError } from '../errors'
 export interface SandboxApiOpts
   extends Partial<
     Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
-  > {}
+  > { }
 
 export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
    */
-  query?: {metadata?: Record<string, string>}
+  query?: { metadata?: Record<string, string> }
 }
 
 /**
@@ -46,10 +46,15 @@ export interface SandboxInfo {
    * Sandbox start time.
    */
   startedAt: Date
+
+  /**
+    * Sandbox end time.
+    */
+  endAt: Date
 }
 
 export class SandboxApi {
-  protected constructor() {}
+  protected constructor() { }
 
   /**
    * Kill the sandbox specified by sandbox ID.
@@ -95,7 +100,7 @@ export class SandboxApi {
    * @returns list of running sandboxes.
    */
   static async list(
-      opts?: SandboxListOpts): Promise<SandboxInfo[]> {
+    opts?: SandboxListOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -108,9 +113,9 @@ export class SandboxApi {
     }
 
     const res = await client.api.GET('/sandboxes', {
-        params: {
-          query: {metadata},
-        },
+      params: {
+        query: { metadata },
+      },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
@@ -129,8 +134,55 @@ export class SandboxApi {
         ...(sandbox.alias && { name: sandbox.alias }),
         metadata: sandbox.metadata ?? {},
         startedAt: new Date(sandbox.startedAt),
+        endAt: new Date(sandbox.endAt),
       })) ?? []
     )
+  }
+
+  /**
+   * Get running sandbox.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns running sandbox.
+   */
+  static async getInfo(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<SandboxInfo> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/sandboxes/{sandboxID}', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    if (!res.data) {
+      throw new Error('Sandbox not found')
+    }
+
+    return {
+      sandboxId: this.getSandboxId({
+        sandboxId: res.data.sandboxID,
+        clientId: res.data.clientID,
+      }),
+      templateId: res.data.templateID,
+      ...(res.data.alias && { name: res.data.alias }),
+      metadata: res.data.metadata ?? {},
+      startedAt: new Date(res.data.startedAt),
+      endAt: new Date(res.data.endAt),
+    }
   }
 
   /**
@@ -211,7 +263,7 @@ export class SandboxApi {
       )
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
     return {

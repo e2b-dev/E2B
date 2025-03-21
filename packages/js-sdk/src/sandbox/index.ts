@@ -106,9 +106,8 @@ export class Sandbox extends SandboxApi {
 
     this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
+      }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -185,11 +184,11 @@ export class Sandbox extends SandboxApi {
 
     if (config.debug) {
       return new this({ sandboxId: 'debug_sandbox_id', ...config }) as InstanceType<S>
-      } else {
-       const sandbox = await this.createSandbox(
-          template,
-          sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-          sandboxOpts
+    } else {
+      const sandbox = await this.createSandbox(
+        template,
+        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+        sandboxOpts
       )
       return new this({ ...sandbox, ...config }) as InstanceType<S>
     }
@@ -355,5 +354,19 @@ export class Sandbox extends SandboxApi {
     }
 
     return url.toString()
+  }
+
+  /**
+  * Get the info of the sandbox.
+  *
+  * @param opts connection options.
+  *
+  * @returns info of the sandbox.
+  */
+  async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    return await Sandbox.getInfo(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
   }
 }
