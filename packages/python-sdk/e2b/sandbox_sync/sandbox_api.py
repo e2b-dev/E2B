@@ -9,6 +9,7 @@ from e2b.exceptions import TemplateException
 from e2b.api import ApiClient, SandboxCreateResponse
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
 from e2b.api.client.api.sandboxes import (
+    get_sandboxes_sandbox_id,
     post_sandboxes_sandbox_id_timeout,
     get_sandboxes,
     delete_sandboxes_sandbox_id,
@@ -84,27 +85,58 @@ class SandboxApi(SandboxApiBase):
                 for sandbox in res.parsed
             ]
         
-    def get_info(  # type: ignore
-        self,
+    @classmethod
+    def get_info(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
     ) -> SandboxInfo:
         """
-        Get sandbox info.
+        Get the sandbox info.
+        :param sandbox_id: Sandbox ID
+        :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param domain: Domain to use for the request, defaults to `E2B_DOMAIN` environment variable
+        :param debug: Debug mode, defaults to `E2B_DEBUG` environment variable
         :param request_timeout: Timeout for the request in **seconds**
         :return: Sandbox info
         """
-
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
-
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
-
-        return SandboxApi.get_info(
-            sandbox_id=self.sandbox_id,
-            **self.connection_config.__dict__,
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
         )
+
+        with ApiClient(
+            config, transport=HTTPTransport(limits=SandboxApiBase._limits)
+        ) as api_client:
+            res = get_sandboxes_sandbox_id.sync_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                raise Exception("Body of the request is None")
+
+            return SandboxInfo(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    res.parsed.sandbox_id,
+                    res.parsed.client_id,
+                ),
+                template_id=res.parsed.template_id,
+                name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
+                metadata=(
+                    res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
+                ),
+                started_at=res.parsed.started_at,
+                end_at=res.parsed.end_at,
+            )
 
     @classmethod
     def _cls_kill(
