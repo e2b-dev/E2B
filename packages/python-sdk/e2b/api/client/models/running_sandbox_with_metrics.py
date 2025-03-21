@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -7,11 +7,15 @@ from dateutil.parser import isoparse
 
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="RunningSandbox")
+if TYPE_CHECKING:
+    from ..models.sandbox_metric import SandboxMetric
+
+
+T = TypeVar("T", bound="RunningSandboxWithMetrics")
 
 
 @_attrs_define
-class RunningSandbox:
+class RunningSandboxWithMetrics:
     """
     Attributes:
         client_id (str): Identifier of the client
@@ -23,6 +27,7 @@ class RunningSandbox:
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
+        metrics (Union[Unset, list['SandboxMetric']]):
     """
 
     client_id: str
@@ -34,6 +39,7 @@ class RunningSandbox:
     template_id: str
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
+    metrics: Union[Unset, list["SandboxMetric"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -55,6 +61,13 @@ class RunningSandbox:
 
         metadata = self.metadata
 
+        metrics: Union[Unset, list[dict[str, Any]]] = UNSET
+        if not isinstance(self.metrics, Unset):
+            metrics = []
+            for metrics_item_data in self.metrics:
+                metrics_item = metrics_item_data.to_dict()
+                metrics.append(metrics_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -72,11 +85,15 @@ class RunningSandbox:
             field_dict["alias"] = alias
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
+        if metrics is not UNSET:
+            field_dict["metrics"] = metrics
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
+        from ..models.sandbox_metric import SandboxMetric
+
         d = src_dict.copy()
         client_id = d.pop("clientID")
 
@@ -96,7 +113,14 @@ class RunningSandbox:
 
         metadata = d.pop("metadata", UNSET)
 
-        running_sandbox = cls(
+        metrics = []
+        _metrics = d.pop("metrics", UNSET)
+        for metrics_item_data in _metrics or []:
+            metrics_item = SandboxMetric.from_dict(metrics_item_data)
+
+            metrics.append(metrics_item)
+
+        running_sandbox_with_metrics = cls(
             client_id=client_id,
             cpu_count=cpu_count,
             end_at=end_at,
@@ -106,10 +130,11 @@ class RunningSandbox:
             template_id=template_id,
             alias=alias,
             metadata=metadata,
+            metrics=metrics,
         )
 
-        running_sandbox.additional_properties = d
-        return running_sandbox
+        running_sandbox_with_metrics.additional_properties = d
+        return running_sandbox_with_metrics
 
     @property
     def additional_keys(self) -> list[str]:

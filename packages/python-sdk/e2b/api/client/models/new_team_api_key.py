@@ -1,36 +1,29 @@
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-if TYPE_CHECKING:
-    from ..models.sandbox_log import SandboxLog
-
-
-T = TypeVar("T", bound="SandboxLogs")
+T = TypeVar("T", bound="NewTeamAPIKey")
 
 
 @_attrs_define
-class SandboxLogs:
+class NewTeamAPIKey:
     """
     Attributes:
-        logs (list['SandboxLog']): Logs of the sandbox
+        name (str): Name of the API key
     """
 
-    logs: list["SandboxLog"]
+    name: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        logs = []
-        for logs_item_data in self.logs:
-            logs_item = logs_item_data.to_dict()
-            logs.append(logs_item)
+        name = self.name
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "logs": logs,
+                "name": name,
             }
         )
 
@@ -38,22 +31,15 @@ class SandboxLogs:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
-        from ..models.sandbox_log import SandboxLog
-
         d = src_dict.copy()
-        logs = []
-        _logs = d.pop("logs")
-        for logs_item_data in _logs:
-            logs_item = SandboxLog.from_dict(logs_item_data)
+        name = d.pop("name")
 
-            logs.append(logs_item)
-
-        sandbox_logs = cls(
-            logs=logs,
+        new_team_api_key = cls(
+            name=name,
         )
 
-        sandbox_logs.additional_properties = d
-        return sandbox_logs
+        new_team_api_key.additional_properties = d
+        return new_team_api_key
 
     @property
     def additional_keys(self) -> list[str]:

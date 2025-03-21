@@ -15,8 +15,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description A list of filters with key-value pairs (e.g. user:abc, app:prod). */
-                    filter?: string[];
+                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
+                    metadata?: string;
                 };
                 header?: never;
                 path?: never;
@@ -168,6 +168,47 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["SandboxLogs"];
+                    };
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sandboxes/{sandboxID}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get sandbox metrics */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the sandbox metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxMetric"][];
                     };
                 };
                 401: components["responses"]["401"];
@@ -357,6 +398,48 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sandboxes/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all running sandboxes with metrics */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
+                    metadata?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned all running sandboxes with metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RunningSandboxWithMetrics"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -615,6 +698,48 @@ export interface components {
          * @description CPU cores for the sandbox
          */
         CPUCount: number;
+        CreatedAccessToken: {
+            /**
+             * Format: date-time
+             * @description Timestamp of access token creation
+             */
+            createdAt: string;
+            /**
+             * Format: uuid
+             * @description Identifier of the access token
+             */
+            id: string;
+            /** @description Name of the access token */
+            name: string;
+            /** @description Raw value of the access token */
+            token: string;
+            /** @description Mask of the access token */
+            tokenMask: string;
+        };
+        CreatedTeamAPIKey: {
+            /**
+             * Format: date-time
+             * @description Timestamp of API key creation
+             */
+            createdAt: string;
+            createdBy: components["schemas"]["TeamUser"] | null;
+            /**
+             * Format: uuid
+             * @description Identifier of the API key
+             */
+            id: string;
+            /** @description Raw value of the API key */
+            key: string;
+            /** @description Mask of the API key */
+            keyMask: string;
+            /**
+             * Format: date-time
+             * @description Last time this API key was used
+             */
+            lastUsed: string | null;
+            /** @description Name of the API key */
+            name: string;
+        };
         EnvVars: {
             [key: string]: string;
         };
@@ -632,7 +757,16 @@ export interface components {
          * @description Memory for the sandbox in MB
          */
         MemoryMB: number;
+        NewAccessToken: {
+            /** @description Name of the access token */
+            name: string;
+        };
         NewSandbox: {
+            /**
+             * @description Automatically pauses the sandbox after the timeout
+             * @default false
+             */
+            autoPause: boolean;
             envVars?: components["schemas"]["EnvVars"];
             metadata?: components["schemas"]["SandboxMetadata"];
             /** @description Identifier of the required template */
@@ -643,6 +777,10 @@ export interface components {
              * @default 15
              */
             timeout: number;
+        };
+        NewTeamAPIKey: {
+            /** @description Name of the API key */
+            name: string;
         };
         Node: {
             /**
@@ -655,6 +793,11 @@ export interface components {
              * @description Amount of allocated memory in MiB
              */
             allocatedMemoryMiB: number;
+            /**
+             * Format: uint64
+             * @description Number of sandbox create fails
+             */
+            createFails: number;
             /** @description Identifier of the node */
             nodeID: string;
             /**
@@ -662,11 +805,21 @@ export interface components {
              * @description Number of sandboxes running on the node
              */
             sandboxCount: number;
+            /**
+             * Format: int
+             * @description Number of starting Sandboxes
+             */
+            sandboxStartingCount: number;
             status: components["schemas"]["NodeStatus"];
         };
         NodeDetail: {
             /** @description List of cached builds id on the node */
             cachedBuilds: string[];
+            /**
+             * Format: uint64
+             * @description Number of sandbox create fails
+             */
+            createFails: number;
             /** @description Identifier of the node */
             nodeID: string;
             /** @description List of sandboxes running on the node */
@@ -677,11 +830,16 @@ export interface components {
          * @description Status of the node
          * @enum {string}
          */
-        NodeStatus: "ready" | "draining";
+        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy";
         NodeStatusChange: {
             status: components["schemas"]["NodeStatus"];
         };
         ResumedSandbox: {
+            /**
+             * @description Automatically pauses the sandbox after the timeout
+             * @default false
+             */
+            autoPause: boolean;
             /**
              * Format: int32
              * @description Time to live for the sandbox in seconds.
@@ -702,6 +860,30 @@ export interface components {
             endAt: string;
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
+            /** @description Identifier of the sandbox */
+            sandboxID: string;
+            /**
+             * Format: date-time
+             * @description Time when the sandbox was started
+             */
+            startedAt: string;
+            /** @description Identifier of the template from which is the sandbox created */
+            templateID: string;
+        };
+        RunningSandboxWithMetrics: {
+            /** @description Alias of the template */
+            alias?: string;
+            /** @description Identifier of the client */
+            clientID: string;
+            cpuCount: components["schemas"]["CPUCount"];
+            /**
+             * Format: date-time
+             * @description Time when the sandbox will expire
+             */
+            endAt: string;
+            memoryMB: components["schemas"]["MemoryMB"];
+            metadata?: components["schemas"]["SandboxMetadata"];
+            metrics?: components["schemas"]["SandboxMetric"][];
             /** @description Identifier of the sandbox */
             sandboxID: string;
             /**
@@ -741,6 +923,34 @@ export interface components {
         SandboxMetadata: {
             [key: string]: string;
         };
+        /** @description Metric entry with timestamp and line */
+        SandboxMetric: {
+            /**
+             * Format: int32
+             * @description Number of CPU cores
+             */
+            cpuCount: number;
+            /**
+             * Format: float
+             * @description CPU usage percentage
+             */
+            cpuUsedPct: number;
+            /**
+             * Format: int64
+             * @description Total memory in MiB
+             */
+            memTotalMiB: number;
+            /**
+             * Format: int64
+             * @description Memory used in MiB
+             */
+            memUsedMiB: number;
+            /**
+             * Format: date-time
+             * @description Timestamp of the metric entry
+             */
+            timestamp: string;
+        };
         Team: {
             /** @description API key for the team */
             apiKey: string;
@@ -750,6 +960,28 @@ export interface components {
             name: string;
             /** @description Identifier of the team */
             teamID: string;
+        };
+        TeamAPIKey: {
+            /**
+             * Format: date-time
+             * @description Timestamp of API key creation
+             */
+            createdAt: string;
+            createdBy: components["schemas"]["TeamUser"] | null;
+            /**
+             * Format: uuid
+             * @description Identifier of the API key
+             */
+            id: string;
+            /** @description Mask of the API key */
+            keyMask: string;
+            /**
+             * Format: date-time
+             * @description Last time this API key was used
+             */
+            lastUsed: string | null;
+            /** @description Name of the API key */
+            name: string;
         };
         TeamUser: {
             /** @description Email of the user */
@@ -810,7 +1042,7 @@ export interface components {
              * @description Status of the template
              * @enum {string}
              */
-            status: "building" | "ready" | "error";
+            status: "building" | "waiting" | "ready" | "error";
             /** @description Identifier of the template */
             templateID: string;
         };
@@ -829,6 +1061,10 @@ export interface components {
         TemplateUpdateRequest: {
             /** @description Whether the template is public or only accessible by the team */
             public?: boolean;
+        };
+        UpdateTeamAPIKey: {
+            /** @description New name for the API key */
+            name: string;
         };
     };
     responses: {
@@ -879,6 +1115,8 @@ export interface components {
         };
     };
     parameters: {
+        accessTokenID: string;
+        apiKeyID: string;
         buildID: string;
         nodeID: string;
         sandboxID: string;

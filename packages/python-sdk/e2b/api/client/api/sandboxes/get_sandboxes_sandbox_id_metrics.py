@@ -5,44 +5,39 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.new_sandbox import NewSandbox
-from ...models.sandbox import Sandbox
+from ...models.sandbox_metric import SandboxMetric
 from ...types import Response
 
 
 def _get_kwargs(
-    *,
-    body: NewSandbox,
+    sandbox_id: str,
 ) -> dict[str, Any]:
-    headers: dict[str, Any] = {}
-
     _kwargs: dict[str, Any] = {
-        "method": "post",
-        "url": "/sandboxes",
+        "method": "get",
+        "url": f"/sandboxes/{sandbox_id}/metrics",
     }
 
-    _body = body.to_dict()
-
-    _kwargs["json"] = _body
-    headers["Content-Type"] = "application/json"
-
-    _kwargs["headers"] = headers
     return _kwargs
 
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Any, Sandbox]]:
-    if response.status_code == 201:
-        response_201 = Sandbox.from_dict(response.json())
+) -> Optional[Union[Any, list["SandboxMetric"]]]:
+    if response.status_code == 200:
+        response_200 = []
+        _response_200 = response.json()
+        for response_200_item_data in _response_200:
+            response_200_item = SandboxMetric.from_dict(response_200_item_data)
 
-        return response_201
-    if response.status_code == 400:
-        response_400 = cast(Any, None)
-        return response_400
+            response_200.append(response_200_item)
+
+        return response_200
     if response.status_code == 401:
         response_401 = cast(Any, None)
         return response_401
+    if response.status_code == 404:
+        response_404 = cast(Any, None)
+        return response_404
     if response.status_code == 500:
         response_500 = cast(Any, None)
         return response_500
@@ -54,7 +49,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, Sandbox]]:
+) -> Response[Union[Any, list["SandboxMetric"]]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -64,25 +59,25 @@ def _build_response(
 
 
 def sync_detailed(
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
-) -> Response[Union[Any, Sandbox]]:
-    """Create a sandbox from the template
+) -> Response[Union[Any, list["SandboxMetric"]]]:
+    """Get sandbox metrics
 
     Args:
-        body (NewSandbox):
+        sandbox_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, Sandbox]]
+        Response[Union[Any, list['SandboxMetric']]]
     """
 
     kwargs = _get_kwargs(
-        body=body,
+        sandbox_id=sandbox_id,
     )
 
     response = client.get_httpx_client().request(
@@ -93,49 +88,49 @@ def sync_detailed(
 
 
 def sync(
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
-) -> Optional[Union[Any, Sandbox]]:
-    """Create a sandbox from the template
+) -> Optional[Union[Any, list["SandboxMetric"]]]:
+    """Get sandbox metrics
 
     Args:
-        body (NewSandbox):
+        sandbox_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, Sandbox]
+        Union[Any, list['SandboxMetric']]
     """
 
     return sync_detailed(
+        sandbox_id=sandbox_id,
         client=client,
-        body=body,
     ).parsed
 
 
 async def asyncio_detailed(
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
-) -> Response[Union[Any, Sandbox]]:
-    """Create a sandbox from the template
+) -> Response[Union[Any, list["SandboxMetric"]]]:
+    """Get sandbox metrics
 
     Args:
-        body (NewSandbox):
+        sandbox_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, Sandbox]]
+        Response[Union[Any, list['SandboxMetric']]]
     """
 
     kwargs = _get_kwargs(
-        body=body,
+        sandbox_id=sandbox_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -144,26 +139,26 @@ async def asyncio_detailed(
 
 
 async def asyncio(
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
-) -> Optional[Union[Any, Sandbox]]:
-    """Create a sandbox from the template
+) -> Optional[Union[Any, list["SandboxMetric"]]]:
+    """Get sandbox metrics
 
     Args:
-        body (NewSandbox):
+        sandbox_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, Sandbox]
+        Union[Any, list['SandboxMetric']]
     """
 
     return (
         await asyncio_detailed(
+            sandbox_id=sandbox_id,
             client=client,
-            body=body,
         )
     ).parsed

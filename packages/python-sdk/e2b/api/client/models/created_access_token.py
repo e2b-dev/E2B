@@ -1,35 +1,52 @@
+import datetime
 from typing import Any, TypeVar
 from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
-T = TypeVar("T", bound="TeamUser")
+T = TypeVar("T", bound="CreatedAccessToken")
 
 
 @_attrs_define
-class TeamUser:
+class CreatedAccessToken:
     """
     Attributes:
-        email (str): Email of the user
-        id (UUID): Identifier of the user
+        created_at (datetime.datetime): Timestamp of access token creation
+        id (UUID): Identifier of the access token
+        name (str): Name of the access token
+        token (str): Raw value of the access token
+        token_mask (str): Mask of the access token
     """
 
-    email: str
+    created_at: datetime.datetime
     id: UUID
+    name: str
+    token: str
+    token_mask: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        email = self.email
+        created_at = self.created_at.isoformat()
 
         id = str(self.id)
+
+        name = self.name
+
+        token = self.token
+
+        token_mask = self.token_mask
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "email": email,
+                "createdAt": created_at,
                 "id": id,
+                "name": name,
+                "token": token,
+                "tokenMask": token_mask,
             }
         )
 
@@ -38,17 +55,26 @@ class TeamUser:
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         d = src_dict.copy()
-        email = d.pop("email")
+        created_at = isoparse(d.pop("createdAt"))
 
         id = UUID(d.pop("id"))
 
-        team_user = cls(
-            email=email,
+        name = d.pop("name")
+
+        token = d.pop("token")
+
+        token_mask = d.pop("tokenMask")
+
+        created_access_token = cls(
+            created_at=created_at,
             id=id,
+            name=name,
+            token=token,
+            token_mask=token_mask,
         )
 
-        team_user.additional_properties = d
-        return team_user
+        created_access_token.additional_properties = d
+        return created_access_token
 
     @property
     def additional_keys(self) -> list[str]:
