@@ -82,6 +82,20 @@ const nextConfig = {
       ],
     }
   },
+  async redirects() {
+    return [
+      {
+        source: '/docs/sandbox-templates/overview',
+        destination: '/docs/sandbox-template',
+        permanent: true,
+      },
+      {
+        source: '/docs/sandbox-templates',
+        destination: '/docs/sandbox-template',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default withSearch(
