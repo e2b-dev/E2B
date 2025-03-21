@@ -9,7 +9,7 @@ def test_ping_server(sandbox, debug):
     try:
         host = sandbox.get_host(8001)
         status_code = None
-        for _ in range(5):
+        for _ in range(20):
             res = httpx.get(f"{'http' if debug else 'https'}://{host}")
             status_code = res.status_code
             if res.status_code == 200:

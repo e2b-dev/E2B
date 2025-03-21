@@ -12,7 +12,7 @@ sandboxTest('ping server in sandbox', async ({ sandbox }) => {
 
     let res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       if (res.status === 200) {
         break
       }

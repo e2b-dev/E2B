@@ -19,7 +19,7 @@ test.skipIf(isDebug)('closed port in SDK', async () => {
 
   let res2 = await fetch(`${isDebug ? 'http' : 'https'}://${goodHost}`)
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 20; i++) {
     if (res2.status === 200) {
       break
     }
@@ -62,7 +62,7 @@ test.skipIf(isDebug)('closed port in browser  ', async () => {
 
   let res2 = await fetch(`${isDebug ? 'http' : 'https'}://${goodHost}`)
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 20; i++) {
     if (res2.status === 200) {
       break
     }
