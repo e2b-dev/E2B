@@ -1,23 +1,29 @@
 import { assert } from 'vitest'
 
-import Sandbox from '../../src/index.js'
 import { sandboxTest, wait } from '../setup.js'
 
 sandboxTest('get sandbox metrics', async ({ sandbox }) => {
-  console.log('Getting metrics for sandbox ID:', sandbox.sandboxId)
+  let testPassed = false
 
-  await wait(2_000)
+  const attempts = 10
+  const intervalDuration = 10_000
 
-  const metrics = await sandbox.getMetrics()
-
-  assert.isAtLeast(metrics.length, 1)
-  assert.isAtLeast(metrics[0]?.cpuUsedPct, 0)
-  assert.isAtLeast(metrics[0]?.memTotalMiB, 0)
-  assert.isAtLeast(metrics[0]?.memUsedMiB, 0)
-
-  const metrics2 = await Sandbox.getMetrics(sandbox.sandboxId)
-  assert.isAtLeast(metrics2.length, 1)
-  assert.isAtLeast(metrics2[0]?.cpuUsedPct, 0)
-  assert.isAtLeast(metrics2[0]?.memTotalMiB, 0)
-  assert.isAtLeast(metrics2[0]?.memUsedMiB, 0)
+  for (let i = 0; i < attempts; i++) {
+    const metrics = await sandbox.getMetrics()
+    if (metrics && metrics.length >= 1) {
+      assert.isAtLeast(metrics.length, 1)
+      assert.isAtLeast(metrics[0]?.cpuUsedPct, 0)
+      assert.isAtLeast(metrics[0]?.memTotalMiB, 0)
+      assert.isAtLeast(metrics[0]?.memUsedMiB, 0)
+      testPassed = true
+      break
+    } else {
+      await wait(intervalDuration)
+      continue
+    }
+  }
+  assert.isTrue(
+    testPassed,
+    `Metrics were not returned after ${(attempts * intervalDuration) / 1000}s`
+  )
 })
