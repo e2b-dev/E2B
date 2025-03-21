@@ -56,6 +56,37 @@ sandbox.set_timeout(30)
 ```
 </CodeGroup>
 
+## Retrieve sandbox information
+
+You can retrieve sandbox information by calling the `getInfo` method in JavaScript or `get_info` method in Python.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with and keep it running for 60 seconds.
+const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
+
+// Retrieve sandbox information.
+const info = await sandbox.getInfo()
+
+// Retrieve sandbox expiration date.
+const expirationDate = info.endAt
+console.log(expirationDate)
+```
+
+```python
+from e2b_code_interpreter import Sandbox
+
+# Create sandbox with and keep it running for 60 seconds.
+sandbox = Sandbox(timeout=60)
+
+# Retrieve sandbox expiration date.
+expiration_date = sandbox.get_info().end_at
+print(expiration_date)
+```
+</CodeGroup>
+
 ## Shutdown sandbox
 
 You can shutdown the sandbox any time even before the timeout is up by calling the `kill` method.
