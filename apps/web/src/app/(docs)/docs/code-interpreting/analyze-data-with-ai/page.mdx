@@ -462,7 +462,7 @@ with open("../dataset.csv", "rb") as f:
 
 def run_ai_generated_code(ai_generated_code: str):
     print('Running the code in the sandbox....')
-    execution = sbx.notebook.exec_cell(ai_generated_code)
+    execution = sbx.run_code(ai_generated_code)
     print('Code execution finished!')
 
     # First let's check if the code ran successfully.
