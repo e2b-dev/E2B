@@ -7,6 +7,8 @@ import {
   useMemo,
   useRef,
   useState,
+  type FC,
+  type PropsWithChildren,
 } from 'react'
 import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
@@ -54,13 +56,13 @@ type UserContextType = {
   wasUpdated: boolean | null
 }
 
-export const UserContext = createContext(undefined)
+export const UserContext = createContext<UserContextType | undefined>(undefined)
 
-export const CustomUserContextProvider = (props) => {
+export const CustomUserContextProvider: FC<PropsWithChildren> = ({ children }) => {
   const supabase = createPagesBrowserClient()
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<any>()
-  const [error, setError] = useState<any>(null)
+  const [error, setError] = useState<Error | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const mounted = useRef<boolean>(false)
 
@@ -215,7 +217,7 @@ export const CustomUserContextProvider = (props) => {
     }
   }, [isLoading, user, session, error])
 
-  return <UserContext.Provider value={value} {...props} />
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>
 }
 
 export const useUser = (): UserContextType => {
