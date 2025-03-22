@@ -1,7 +1,8 @@
-from typing import Optional, Dict, List, Tuple
+import urllib.parse
+from typing import Optional, Dict, List
 from packaging.version import Version
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery
 from e2b.exceptions import TemplateException
 from e2b.api import AsyncApiClient, SandboxCreateResponse
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
@@ -20,6 +21,7 @@ class SandboxApi(SandboxApiBase):
     async def list(
         cls,
         api_key: Optional[str] = None,
+        query: Optional[SandboxQuery] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
@@ -28,6 +30,9 @@ class SandboxApi(SandboxApiBase):
         List all running sandboxes.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param query: Filter the list of sandboxes, e.g. by metadata `SandboxQuery(metadata={"key": "value"})`, if there are multiple filters they are combined with AND.
+        :param domain: Domain to use for the request, only relevant for self-hosted environments
+        :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: List of running sandboxes
@@ -39,32 +44,43 @@ class SandboxApi(SandboxApiBase):
             request_timeout=request_timeout,
         )
 
+        # Convert filters to the format expected by the API
+        metadata = None
+        if query:
+            if query.metadata:
+                quoted_metadata = {
+                    urllib.parse.quote(k): urllib.parse.quote(v)
+                    for k, v in query.metadata.items()
+                }
+                metadata = urllib.parse.urlencode(quoted_metadata)
+
         async with AsyncApiClient(config) as api_client:
             res = await get_sandboxes.asyncio_detailed(
                 client=api_client,
+                metadata=metadata,
             )
 
-            if res.status_code >= 300:
-                raise handle_api_exception(res)
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
 
-            if res.parsed is None:
-                return []
+        if res.parsed is None:
+            return []
 
-            return [
-                SandboxInfo(
-                    sandbox_id=SandboxApi._get_sandbox_id(
-                        sandbox.sandbox_id,
-                        sandbox.client_id,
-                    ),
-                    template_id=sandbox.template_id,
-                    name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                    metadata=(
-                        sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                    ),
-                    started_at=sandbox.started_at,
-                )
-                for sandbox in res.parsed
-            ]
+        return [
+            SandboxInfo(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    sandbox.sandbox_id,
+                    sandbox.client_id,
+                ),
+                template_id=sandbox.template_id,
+                name=sandbox.alias if isinstance(sandbox.alias, str) else None,
+                metadata=(
+                    sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
+                ),
+                started_at=sandbox.started_at,
+            )
+            for sandbox in res.parsed
+        ]
 
     @classmethod
     async def _cls_kill(

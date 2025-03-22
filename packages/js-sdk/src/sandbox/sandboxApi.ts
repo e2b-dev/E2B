@@ -11,6 +11,13 @@ export interface SandboxApiOpts
     Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
   > {}
 
+export interface SandboxListOpts extends SandboxApiOpts {
+  /**
+   * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
+   */
+  query?: {metadata?: Record<string, string>}
+}
+
 /**
  * Information about a sandbox.
  */
@@ -87,11 +94,23 @@ export class SandboxApi {
    *
    * @returns list of running sandboxes.
    */
-  static async list(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
+  static async list(
+      opts?: SandboxListOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
+    let metadata = undefined
+    if (opts?.query) {
+      if (opts.query.metadata) {
+        const encodedPairs: Record<string, string> = Object.fromEntries(Object.entries(opts.query.metadata).map(([key, value]) => [encodeURIComponent(key), encodeURIComponent(value)]))
+        metadata = new URLSearchParams(encodedPairs).toString()
+      }
+    }
+
     const res = await client.api.GET('/sandboxes', {
+        params: {
+          query: {metadata},
+        },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
@@ -168,6 +187,7 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body: {
+        autoPause: false,
         templateID: template,
         metadata: opts?.metadata,
         envVars: opts?.envs,
