@@ -73,6 +73,60 @@ const nextConfig = {
   },
   async rewrites() {
     return {
+      beforeFiles: [
+        {
+          source: '/',
+          destination: '/index.html',
+        },
+        {
+          source: '/blog',
+          destination: '/blog.html',
+        },
+        {
+          source: '/blog/:path*',
+          destination: '/blog/:path*.html',
+        },
+        {
+          source: '/changelog',
+          destination: '/changelog.html',
+        },
+        {
+          source: '/changelog/:path*',
+          destination: '/changelog/:path*.html',
+        },
+        {
+          source: '/privacy',
+          destination: '/privacy.html',
+        },
+        {
+          source: '/privacy/:path*',
+          destination: '/privacy/:path*.html',
+        },
+        {
+          source: '/terms',
+          destination: '/terms.html',
+        },
+        {
+          source: '/terms/:path*',
+          destination: '/terms/:path*.html',
+        },
+        {
+          source: '/pricing',
+          destination: '/pricing.html',
+        },
+        {
+          source: '/pricing/:path*',
+          destination: '/pricing/:path*.html',
+        },
+        {
+          source: '/cookbook',
+          destination: '/cookbook.html',
+        },
+        {
+          source: '/cookbook/:path*',
+          destination: '/cookbook/:path*.html',
+        }
+      ],
       afterFiles: [
         {
           source: '/ingest/:path*',

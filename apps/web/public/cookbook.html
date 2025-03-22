@@ -1,0 +1,634 @@
+<!DOCTYPE html><!--  Last Published: Sat Mar 22 2025 18:00:32 GMT+0000 (Coordinated Universal Time)  -->
+<html data-wf-page="67598e7d0db74c9a9a96d93d" data-wf-site="6717bb6618f6a40d53ac2929" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Cookbook — E2B</title>
+  <meta content="Add code interpreting in your AI apps and AI agents." name="description">
+  <meta content="Cookbook — E2B" property="og:title">
+  <meta content="Add code interpreting in your AI apps and AI agents." property="og:description">
+  <meta content="https://cdn.prod.website-files.com/6717bb6618f6a40d53ac2929/6751a1cb33c1e000eaf3874c_e2b-share-image.png" property="og:image">
+  <meta content="Cookbook — E2B" property="twitter:title">
+  <meta content="Add code interpreting in your AI apps and AI agents." property="twitter:description">
+  <meta content="https://cdn.prod.website-files.com/6717bb6618f6a40d53ac2929/6751a1cb33c1e000eaf3874c_e2b-share-image.png" property="twitter:image">
+  <meta property="og:type" content="website">
+  <meta content="summary_large_image" name="twitter:card">
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <link href="css/normalize.css" rel="stylesheet" type="text/css">
+  <link href="css/components.css" rel="stylesheet" type="text/css">
+  <link href="css/e2b-dev.css" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" type="text/javascript"></script>
+  <script type="text/javascript">WebFont.load({  google: {    families: ["IBM Plex Sans:regular,500,600,700"]  }});</script>
+  <script type="text/javascript">!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
+  <link href="images/favicon.png" rel="shortcut icon" type="image/x-icon">
+  <link href="images/webclip.png" rel="apple-touch-icon">
+  <link href="/cookbook" rel="canonical">
+  <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-SCSZ10RP74"></script>
+  <script type="text/javascript">window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('set', 'developer_id.dZGVlNj', true);gtag('config', 'G-SCSZ10RP74');</script><!--  Google Tag Manager  -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!=='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-K2W3LVD2');</script>
+  <!--  End Google Tag Manager  -->
+  <!--  Posthog  -->
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_wFQaw8bTo25uDwJ4wbCE0ZhlhzcSMgcehs8kLcdvCSp',{api_host:'https://app.posthog.com'})
+</script>
+  <style>
+body {
+  font-feature-settings: "ss02";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body {
+  font-feature-settings: "ss03";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.unselectable {
+-webkit-touch-callout: none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+}
+</style>
+  <!--  Disable scrolling  -->
+  <script defer="" src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-scrolldisable@1/scrolldisable.js"></script>
+  <script tr-color-vars="content-primary,content-secondary,content-tertiary,content-quad,content-on-black,content-dark80,content-dark60,content-dark40,content-dark20,cta-primary,cta-primary-hover,stroke-primary,stroke-primary-hover,stroke-codesnippet,stroke-on-black,stroke-img-outline,bg-primary,bg-secondary,bg-tertiary,bg-codesnippet,brand-jsts-text,brand-jsts-bg,brand-python-text,brand-python-bg" duration="0.25" ease="power1.out">
+(function colorModeToggle() {
+  function attr(defaultVal, attrVal) {
+    const defaultValType = typeof defaultVal;
+    if (typeof attrVal !== "string" || attrVal.trim() === "") return defaultVal;
+    if (attrVal === "true" && defaultValType === "boolean") return true;
+    if (attrVal === "false" && defaultValType === "boolean") return false;
+    if (isNaN(attrVal) && defaultValType === "string") return attrVal;
+    if (!isNaN(attrVal) && defaultValType === "number") return +attrVal;
+    return defaultVal;
+  }
+  const htmlElement = document.documentElement;
+  const computed = getComputedStyle(htmlElement);
+  let toggleEl;
+  let togglePressed = "false";
+  let previousTheme = "light"; // Default previous theme
+  let isDarkGlobal = false;    // We'll store the final chosen theme state here
+  const scriptTag = document.querySelector("[tr-color-vars]");
+  if (!scriptTag) {
+    console.warn("Script tag with tr-color-vars attribute not found");
+    return;
+  }
+  let colorModeDuration = attr(0.5, scriptTag.getAttribute("duration"));
+  let colorModeEase = attr("power1.out", scriptTag.getAttribute("ease"));
+  const cssVariables = scriptTag.getAttribute("tr-color-vars");
+  if (!cssVariables.length) {
+    console.warn("Value of tr-color-vars attribute not found");
+    return;
+  }
+  let lightColors = {};
+  let darkColors = {};
+  cssVariables.split(",").forEach(function (item) {
+    let lightValue = computed.getPropertyValue(`--color--${item}`);
+    let darkValue = computed.getPropertyValue(`--dark--${item}`);
+    if (lightValue.length) {
+      if (!darkValue.length) darkValue = lightValue;
+      lightColors[`--color--${item}`] = lightValue;
+      darkColors[`--color--${item}`] = darkValue;
+    }
+  });
+  if (!Object.keys(lightColors).length) {
+    console.warn("No variables found matching tr-color-vars attribute value");
+    return;
+  }
+  function setColors(colorObject, animate) {
+    if (typeof gsap !== "undefined" && animate) {
+      gsap.to(htmlElement, {
+        ...colorObject,
+        duration: colorModeDuration,
+        ease: colorModeEase,
+      });
+    } else {
+      Object.keys(colorObject).forEach(function (key) {
+        htmlElement.style.setProperty(key, colorObject[key]);
+      });
+    }
+  }
+  function toggleBgDottedFilter(isDark) {
+    const bgDottedElements = document.querySelectorAll(".bg-dotted");
+    bgDottedElements.forEach((el) => {
+      el.style.filter = isDark ? "invert(1)" : "none";
+    });
+  }
+  function applyThemeBasedOnPreference(isDark, animate = false) {
+    isDarkGlobal = isDark;
+    if (isDark) {
+      htmlElement.classList.add("dark-mode");
+      setColors(darkColors, animate);
+      togglePressed = "true";
+      previousTheme = "dark";
+    } else {
+      htmlElement.classList.remove("dark-mode");
+      setColors(lightColors, animate);
+      togglePressed = "false";
+      previousTheme = "light";
+    }
+  }
+  function initializeTheme() {
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const storagePreference = localStorage.getItem("dark-mode");
+    const isDark = storagePreference !== null ? storagePreference === "true" : systemPrefersDark;
+    applyThemeBasedOnPreference(isDark, false);
+    togglePressed = isDark ? "true" : "false";
+  }
+  function goDark(dark, animate) {
+    localStorage.setItem("dark-mode", dark ? "true" : "false");
+    applyThemeBasedOnPreference(dark, animate);
+    // We'll call toggleBgDottedFilter after DOM is loaded
+  }
+  function checkPreference(e) {
+    applyThemeBasedOnPreference(e.matches);
+  }
+  const colorPreference = window.matchMedia("(prefers-color-scheme: dark)");
+  colorPreference.addEventListener("change", (e) => {
+    checkPreference(e);
+  });
+  // Initialize theme immediately (no waiting for DOMContentLoaded)
+  initializeTheme();
+  window.addEventListener("DOMContentLoaded", () => {
+    // Now that the DOM is fully loaded, we can safely invert bg-dotted if needed
+    toggleBgDottedFilter(isDarkGlobal);
+    toggleEl = document.querySelectorAll("[tr-color-toggle]");
+    toggleEl.forEach((element) => {
+      element.setAttribute("aria-label", "View Dark Mode");
+      element.setAttribute("role", "button");
+      element.setAttribute("aria-pressed", togglePressed);
+    });
+    document.addEventListener("click", (e) => {
+      const targetElement = e.target.closest("[tr-color-toggle]");
+      if (targetElement) {
+        const isDark = htmlElement.classList.contains("dark-mode");
+        goDark(!isDark, true);
+        // After switching theme post-load, elements already in DOM so this is safe
+        toggleBgDottedFilter(!isDark);
+      }
+    });
+  });
+})();
+</script>
+  <script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const mainSection = document.getElementById("main");
+    const headerDivider = document.querySelector(".header-divider");
+    // Function to check the position of #main and update the divider opacity
+    function checkPosition() {
+      const rect = mainSection.getBoundingClientRect();
+      if (rect.top <= 50) {
+        headerDivider.style.opacity = "1"; // Show the divider
+      } else {
+        headerDivider.style.opacity = "0"; // Hide the divider
+      }
+    }
+    // Check position once on page load
+    checkPosition();
+    // Listen to scroll events to update as you scroll
+    window.addEventListener("scroll", checkPosition);
+  });
+</script>
+  <!--  Custom right click  -->
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Select the div that triggers the contextual menu and the menu itself
+    const triggerDiv = document.getElementById("right-click-menu");
+    const contextMenu = document.querySelector(".logo-right-click");
+    // Function to toggle the visibility of the contextual menu
+    function toggleContextMenu(event) {
+      event.preventDefault(); // Prevent any default action
+      const menuVisible = !contextMenu.classList.contains("hidden");
+      // Hide the menu if it's already visible
+      if (menuVisible) {
+        contextMenu.classList.add("hidden");
+      } else {
+        // Position the menu relative to the click and show it
+        contextMenu.classList.remove("hidden");
+      }
+    }
+    // Hide the contextual menu when clicking outside
+    function hideContextMenu() {
+      contextMenu.classList.add("hidden");
+    }
+    // Add event listeners
+    triggerDiv.addEventListener("contextmenu", toggleContextMenu); // Right-click opens menu
+    document.addEventListener("click", hideContextMenu); // Click outside closes menu
+    // Stop clicks on the menu itself from hiding it
+    contextMenu.addEventListener("click", function (event) {
+      event.stopPropagation();
+    });
+  });
+</script>
+  <!--  [Attributes by Finsweet] CMS Load  -->
+  <script async="" src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmsload@1/cmsload.js"></script>
+  <!--  [Attributes by Finsweet] CMS Nest  -->
+  <script async="" src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmsnest@1/cmsnest.js"></script>
+  <!--  [Attributes by Finsweet] CMS Filter  -->
+  <script async="" src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmsfilter@1/cmsfilter.js"></script>
+  <style>
+.hp-cookbook-item-wrap {
+  transform: translate(0, 0);
+  transition: transform 0.15s ease;
+}
+@media (min-width: 992px) {
+  .hp-cookbook-item-wrap:hover {
+    transform: translate(-4px, -4px);
+  }
+}
+</style>
+</head>
+<body>
+  <div class="w-embed w-iframe"><!--  Google Tag Manager (noscript)  -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns?id=GTM-K2W3LVD2" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!--  End Google Tag Manager (noscript)  -->
+  </div>
+  <div class="header">
+    <div class="toast-msg-bar">
+      <div class="toast-msg-wrap">
+        <div class="toast-msg-star">
+          <div class="label on-black toast-msg-star-1">*<span class="label brand">*</span>*</div>
+          <div class="label on-black toast-msg-star-2"><span class="label brand">*</span>*<span class="label brand">*</span></div>
+        </div>
+        <a href="https://x.com/mlejva/status/1846568274009698402" target="_blank" class="toast-msg w-inline-block">
+          <div class="label on-black center">we just closed a new funding round of <span class="label brand">$11.5M</span> LED by Decibel</div>
+          <div class="toast-msg-divider"></div>
+          <div class="label on-black">LEARN MORE →</div>
+        </a>
+        <div class="toast-msg-star">
+          <div class="label on-black toast-msg-star-1">*<span class="label brand">*</span>*</div>
+          <div class="label on-black toast-msg-star-2"><span class="label brand">*</span>*<span class="label brand">*</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="header-wrap-out">
+      <div fs-scrolldisable-element="smart-nav" data-animation="default" data-collapse="medium" data-duration="1" data-easing="ease" data-easing2="ease" role="banner" class="navbar w-nav">
+        <div class="navbar-container w-container">
+          <div id="w-node-_9edbb656-9d1b-0e60-5e5a-b499e2f80eeb-7dfb0612" class="navbar-menu-button w-nav-button">
+            <div class="icon-24 menu-open w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 12H20" stroke="currentColor" stroke-width="2"></path>
+                <path d="M4 16H20" stroke="currentColor" stroke-width="2"></path>
+                <path d="M4 8H20" stroke="currentColor" stroke-width="2"></path>
+              </svg></div>
+            <div class="icon-24 menu-close w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M13.4116 11.9971L18.3656 7.04312L16.9514 5.62891L11.9974 10.5829L7.04703 5.63256L5.63281 7.04677L10.5832 11.9971L5.6377 16.9426L7.05191 18.3568L11.9974 13.4113L16.9465 18.3605L18.3607 16.9463L13.4116 11.9971Z" fill="currentColor"></path>
+              </svg></div>
+          </div>
+          <div id="w-node-_6f395481-6352-fe11-0c0b-f1987dfb0647-7dfb0612" class="navbar-logo">
+            <a id="right-click-menu" ms-code-context-item="1" aria-label="logo" href="/" class="logo w-node-_6f395481-6352-fe11-0c0b-f1987dfb0648-7dfb0612 w-inline-block">
+              <div class="logo-shape w-embed"><svg width="26" height="28" viewbox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M21.8458 19.3029C21.6671 19.3029 21.5555 19.4963 21.6448 19.6511L23.5141 22.889C23.6175 23.0681 23.4528 23.2828 23.253 23.2293L17.5836 21.7101C17.3359 21.6437 17.0813 21.7907 17.0149 22.0384L15.4958 27.7079C15.4422 27.9077 15.1739 27.943 15.0705 27.7639L13.2008 24.5254C13.1115 24.3707 12.8881 24.3707 12.7987 24.5254L10.929 27.7639C10.8256 27.943 10.5573 27.9077 10.5038 27.7079L8.9846 22.0384C8.91824 21.7907 8.66365 21.6437 8.41597 21.7101L2.74652 23.2293C2.54675 23.2828 2.38199 23.0681 2.4854 22.889L4.35472 19.6511C4.44406 19.4963 4.33238 19.3029 4.15368 19.3029L0.415222 19.3028C0.208406 19.3028 0.104834 19.0528 0.251077 18.9066L4.40145 14.7563C4.58277 14.5749 4.58277 14.281 4.40145 14.0997L0.251079 9.94927C0.104837 9.80302 0.208414 9.55297 0.415232 9.55297L4.15328 9.55302C4.33198 9.55302 4.44368 9.35957 4.35433 9.20481L2.4854 5.96763C2.38199 5.78852 2.54676 5.5738 2.74652 5.62733L8.41597 7.14652C8.66365 7.21288 8.91824 7.0659 8.98461 6.81822L10.5038 1.14869C10.5573 0.948918 10.8256 0.913592 10.929 1.0927L12.7987 4.33116C12.8881 4.48593 13.1114 4.48593 13.2008 4.33116L15.0705 1.0927C15.1739 0.913592 15.4422 0.948917 15.4957 1.14869L17.0149 6.81822C17.0813 7.0659 17.3359 7.21288 17.5835 7.14652L23.253 5.62733C23.4528 5.5738 23.6175 5.78852 23.5141 5.96763L21.6452 9.20481C21.5558 9.35957 21.6675 9.55302 21.8462 9.55302L25.5844 9.55297C25.7912 9.55297 25.8948 9.80302 25.7486 9.94927L21.5982 14.0997C21.4169 14.281 21.4169 14.5749 21.5982 14.7563L25.7486 18.9066C25.8948 19.0528 25.7912 19.3028 25.5844 19.3028L21.8458 19.3029ZM20.419 10.404C20.5869 10.236 20.4241 9.9541 20.1947 10.0156L15.1461 11.3684C14.8984 11.4348 14.6438 11.2878 14.5775 11.0401L13.224 5.98888C13.1625 5.75947 12.837 5.75947 12.7755 5.98888L11.422 11.0401C11.3557 11.2878 11.1011 11.4348 10.8534 11.3684L5.80496 10.0156C5.57555 9.95414 5.41278 10.2361 5.58072 10.404L9.27643 14.0997C9.45774 14.281 9.45774 14.575 9.27643 14.7563L5.57985 18.4528C5.41191 18.6208 5.57467 18.9027 5.80409 18.8412L10.8534 17.4882C11.1011 17.4218 11.3557 17.5688 11.422 17.8165L12.7755 22.8677C12.837 23.0972 13.1625 23.0972 13.224 22.8677L14.5775 17.8165C14.6439 17.5688 14.8984 17.4218 15.1461 17.4882L20.1956 18.8413C20.425 18.9027 20.5878 18.6208 20.4198 18.4529L16.7232 14.7563C16.5419 14.575 16.5419 14.281 16.7232 14.0997L20.419 10.404Z" fill="currentColor"></path>
+                </svg></div>
+            </a>
+            <div class="logo-right-click hidden">
+              <div class="icon-right-click-arrow w-embed"><svg width="10" height="5" viewbox="0 0 10 5" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 0L10 5H0L5 0Z" fill="black" style="fill:black;fill-opacity:1;"></path>
+                </svg></div>
+              <div class="logo-right-click-menu">
+                <a href="https://drive.google.com/drive/folders/1g2qqdm65_Dqp-OWF5apKBrCiS__lbtK0?usp=drive_link" target="_blank" class="logo-right-click-menu-item w-inline-block">
+                  <div class="icon-24 right-click-menu-icon w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 14.9167V6.75" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                      <path d="M8.5 11.417L12 14.917L15.5 11.417" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                      <path d="M16.0846 17.25H7.91797" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg></div>
+                  <div class="label on-black">Download logo (SVG/PNG)</div>
+                </a>
+                <div class="logo-right-click-divider"></div>
+                <a href="mailto:vasek@e2b.dev" class="logo-right-click-menu-item w-inline-block">
+                  <div class="icon-24 right-click-menu-icon w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M16.666 7.3335H7.33268C6.68835 7.3335 6.16602 7.85583 6.16602 8.50016V15.5002C6.16602 16.1445 6.68835 16.6668 7.33268 16.6668H16.666C17.3103 16.6668 17.8327 16.1445 17.8327 15.5002V8.50016C17.8327 7.85583 17.3103 7.3335 16.666 7.3335Z" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                      <path d="M17.8327 9.0835L12.6002 12.4085C12.4201 12.5213 12.2119 12.5812 11.9993 12.5812C11.7868 12.5812 11.5786 12.5213 11.3985 12.4085L6.16602 9.0835" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg></div>
+                  <div class="label on-black">Email CEO</div>
+                </a>
+              </div>
+            </div>
+          </div>
+          <nav role="navigation" id="w-node-_9edbb656-9d1b-0e60-5e5a-b499e2f80ee4-7dfb0612" class="navbar-menu w-nav-menu">
+            <div class="navbar-menu-primary">
+              <a href="/" class="navbar-item w-inline-block">
+                <div class="label navbar-link">Product</div>
+              </a>
+              <link rel="prefetch" href="/">
+              <a href="pricing" class="navbar-item w-inline-block">
+                <div class="label navbar-link">Pricing</div>
+              </a>
+              <link rel="prefetch" href="/pricing">
+              <a href="changelog" class="navbar-item w-inline-block">
+                <div class="label navbar-link">Changelog</div>
+              </a>
+              <link rel="prefetch" href="/changelog">
+              <a href="cookbook" aria-current="page" class="navbar-item w-inline-block w--current">
+                <div class="label navbar-link">Cookbook</div>
+              </a>
+              <a href="/docs" class="navbar-item w-inline-block">
+                <div class="label navbar-link">Docs</div>
+              </a>
+              <a href="/blog" class="navbar-item w-inline-block">
+                <div class="label navbar-link">Blog</div>
+              </a>
+              <a href="/careers" class="navbar-item hide-desktop w-inline-block">
+                <div class="label navbar-link">Careers</div>
+              </a>
+            </div>
+            <div id="w-node-_6f395481-6352-fe11-0c0b-f1987dfb065b-7dfb0612" class="navbar-menu-secondary">
+              <div class="nav-careers">
+                <a href="http://e2b.dev/careers" class="navbar-item w-inline-block">
+                  <div class="label navbar-link">CAREERS</div>
+                </a>
+              </div>
+              <div class="nav-divider"></div>
+              <div id="w-node-_6f395481-6352-fe11-0c0b-f1987dfb0661-7dfb0612" class="nav-social">
+                <a aria-label="github link" href="https://github.com/e2b-dev" target="_blank" class="w-inline-block">
+                  <div class="icon-24 w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M12 4.6499C7.85775 4.6499 4.5 8.0129 4.5 12.1627C4.5 15.4814 6.64875 18.2977 9.62925 19.2907C10.0042 19.3597 10.1407 19.1279 10.1407 18.9284C10.1407 18.7507 10.1348 18.2774 10.131 17.6512C8.0445 18.1049 7.60425 16.6439 7.60425 16.6439C7.26375 15.7754 6.77175 15.5444 6.77175 15.5444C6.09075 15.0794 6.8235 15.0884 6.8235 15.0884C7.57575 15.1409 7.97175 15.8624 7.97175 15.8624C8.64075 17.0099 9.7275 16.6784 10.1542 16.4864C10.2232 16.0012 10.4167 15.6704 10.6313 15.4829C8.96625 15.2932 7.215 14.6482 7.215 11.7697C7.215 10.9499 7.5075 10.2787 7.98675 9.75365C7.9095 9.5639 7.65225 8.79965 8.06025 7.76615C8.06025 7.76615 8.69025 7.56365 10.1227 8.53565C10.7346 8.36879 11.3658 8.2838 12 8.2829C12.6375 8.2859 13.2787 8.36915 13.878 8.53565C15.3097 7.56365 15.9382 7.7654 15.9382 7.7654C16.3477 8.79965 16.0898 9.5639 16.0133 9.75365C16.4932 10.2787 16.7843 10.9499 16.7843 11.7697C16.7843 14.6557 15.03 15.2909 13.3597 15.4769C13.629 15.7087 13.8682 16.1669 13.8682 16.8682C13.8682 17.8717 13.8593 18.6824 13.8593 18.9284C13.8593 19.1294 13.9943 19.3634 14.3752 19.2899C15.8687 18.789 17.167 17.8314 18.0866 16.5524C19.0062 15.2735 19.5006 13.7379 19.5 12.1627C19.5 8.0129 16.1415 4.6499 12 4.6499Z" fill="currentColor"></path>
+                    </svg></div>
+                </a>
+                <a aria-label="discord link" href="https://discord.com/invite/U7KEcGErtQ" target="_blank" class="w-inline-block">
+                  <div class="icon-24 w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M17.1599 7.97777C15.9482 6.99847 14.229 6.81787 14.229 6.81787L14.1996 7.96937C12.8143 7.96937 11.3849 7.96937 9.99961 7.96937L9.99191 6.88997C9.99191 6.88997 8.25171 6.99847 7.02321 7.99107C6.38131 8.58677 5.09961 12.0721 5.09961 15.0849C5.09961 15.1381 5.11291 15.1899 5.13951 15.2361C6.02501 16.7992 8.43931 17.208 8.98881 17.2255C8.99231 17.2262 8.99511 17.2262 8.99861 17.2262C9.09591 17.2262 9.19881 17.187 9.24431 17.1002L9.79241 16.0607C9.34021 15.9459 8.87331 15.8094 8.36441 15.6288C7.99971 15.4993 7.81001 15.0989 7.93951 14.7349C8.06901 14.3709 8.47011 14.1812 8.83341 14.31C11.3016 15.1878 12.7702 15.1871 15.3749 14.3065C15.7424 14.184 16.1393 14.3793 16.2625 14.7454C16.3864 15.1115 16.1897 15.5091 15.8236 15.633C15.314 15.8052 14.8492 15.9368 14.3991 16.0488L14.9542 17.1009C14.9997 17.1877 15.1033 17.2269 15.1999 17.2269C15.2034 17.2269 15.2062 17.2269 15.2097 17.2262C15.7599 17.2087 18.1742 16.7992 19.059 15.2361C19.0863 15.1899 19.0996 15.1381 19.0996 15.0842C19.0996 12.0721 17.8179 8.58677 17.1599 7.97777ZM10.0276 13.561C9.44731 13.561 8.97761 12.9359 8.97761 12.1638C8.97761 11.3924 9.44731 10.7666 10.0276 10.7666C10.61 10.6896 11.065 11.3917 11.0776 12.1638C11.0776 12.9359 10.6079 13.561 10.0276 13.561ZM14.1968 13.5778C13.6165 13.5778 13.1468 12.9513 13.1468 12.1778C13.1468 11.4043 13.6165 10.7778 14.1968 10.7778C14.7771 10.7778 15.2468 11.4043 15.2468 12.1778C15.2468 12.9513 14.7771 13.5778 14.1968 13.5778Z" fill="currentColor"></path>
+                    </svg></div>
+                </a>
+                <a aria-label="linkedin link" href="https://www.linkedin.com/company/e2b-dev/" target="_blank" class="w-inline-block">
+                  <div class="icon-24 w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M17.9665 5H6.03347C5.75938 5 5.49651 5.10888 5.3027 5.3027C5.10888 5.49651 5 5.75938 5 6.03347V17.9665C5 18.2406 5.10888 18.5035 5.3027 18.6973C5.49651 18.8911 5.75938 19 6.03347 19H17.9665C18.2406 19 18.5035 18.8911 18.6973 18.6973C18.8911 18.5035 19 18.2406 19 17.9665V6.03347C19 5.75938 18.8911 5.49651 18.6973 5.3027C18.5035 5.10888 18.2406 5 17.9665 5ZM9.17278 16.9262H7.06792V10.2403H9.17278V16.9262ZM8.11889 9.31375C7.88013 9.31241 7.64712 9.24036 7.44926 9.10672C7.25141 8.97307 7.09757 8.78381 7.00718 8.56282C6.91678 8.34183 6.89388 8.09901 6.94135 7.86502C6.98883 7.63102 7.10455 7.41633 7.27392 7.24804C7.4433 7.07975 7.65873 6.96541 7.89302 6.91944C8.12732 6.87346 8.36998 6.89793 8.59039 6.98974C8.81079 7.08155 8.99906 7.2366 9.13144 7.43531C9.26381 7.63402 9.33435 7.86749 9.33417 8.10625C9.33642 8.2661 9.30647 8.42477 9.24609 8.5728C9.18572 8.72083 9.09616 8.85519 8.98275 8.96787C8.86934 9.08055 8.73441 9.16925 8.586 9.22867C8.43758 9.28809 8.27872 9.31703 8.11889 9.31375ZM16.9311 16.9321H14.8272V13.2794C14.8272 12.2022 14.3693 11.8697 13.7782 11.8697C13.154 11.8697 12.5415 12.3403 12.5415 13.3067V16.9321H10.4367V10.2451H12.4608V11.1717H12.4881C12.6913 10.7604 13.4029 10.0575 14.4889 10.0575C15.6633 10.0575 16.9321 10.7546 16.9321 12.7963L16.9311 16.9321Z" fill="currentColor"></path>
+                    </svg></div>
+                </a>
+                <a aria-label="x link" href="https://x.com/e2b" target="_blank" class="w-inline-block">
+                  <div class="icon-24 w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M13.3021 10.8029L17.5685 5.84351L17.7862 5.59053H17.4524H16.4233H16.353L16.3072 5.64379L12.6657 9.87668L9.76624 5.65694L9.72061 5.59053H9.64004H6.16602H5.87501L6.03981 5.83037L10.5278 12.362L6.04994 17.5668L5.83228 17.8198H6.16602H7.19527H7.26553L7.31135 17.7666L11.1641 13.288L14.2325 17.7534L14.2781 17.8198H14.3587H17.8327H18.1237L17.9589 17.58L13.3021 10.8029ZM14.9226 16.774L11.8527 12.3829V12.3826L11.8251 12.3431L11.3636 11.6831L11.3636 11.683L7.86001 6.67158H9.06721L11.9848 10.845L11.9848 10.845L12.4463 11.5051L12.4463 11.5051L16.1299 16.774H14.9226Z" fill="currentColor" stroke="currentColor" stroke-width="0.30625"></path>
+                    </svg></div>
+                </a>
+              </div>
+              <div class="nav-divider"></div>
+              <div tr-color-toggle="" id="w-node-_6f395481-6352-fe11-0c0b-f1987dfb066b-7dfb0612" class="nav-switch">
+                <div class="icon-24 switch-dark w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 6C11.2044 6.79565 10.7574 7.87478 10.7574 9C10.7574 10.1252 11.2044 11.2043 12 12C12.7957 12.7956 13.8748 13.2426 15 13.2426C16.1252 13.2426 17.2044 12.7956 18 12C18 13.1867 17.6481 14.3467 16.9888 15.3334C16.3295 16.3201 15.3925 17.0892 14.2961 17.5433C13.1997 17.9974 11.9933 18.1162 10.8295 17.8847C9.66557 17.6532 8.59648 17.0818 7.75736 16.2426C6.91825 15.4035 6.3468 14.3344 6.11529 13.1705C5.88378 12.0067 6.0026 10.8003 6.45673 9.7039C6.91085 8.60754 7.67989 7.67047 8.66658 7.01118C9.65328 6.35189 10.8133 6 12 6Z" fill="currentColor" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </svg></div>
+                <div class="icon-24 switch-light w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 4C12.2761 4 12.5 4.22386 12.5 4.5V6C12.5 6.27614 12.2761 6.5 12 6.5C11.7239 6.5 11.5 6.27614 11.5 6V4.5C11.5 4.22386 11.7239 4 12 4ZM12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5ZM12.5 18C12.5 17.7239 12.2761 17.5 12 17.5C11.7239 17.5 11.5 17.7239 11.5 18V19.5C11.5 19.7761 11.7239 20 12 20C12.2761 20 12.5 19.7761 12.5 19.5V18ZM6.34371 6.34469C6.53897 6.14943 6.85556 6.14943 7.05082 6.34469L8.10832 7.40219C8.30358 7.59745 8.30358 7.91403 8.10832 8.1093C7.91306 8.30456 7.59647 8.30456 7.40121 8.1093L6.34371 7.0518C6.14845 6.85653 6.14845 6.53995 6.34371 6.34469ZM16.5987 15.8916C16.4034 15.6963 16.0868 15.6963 15.8916 15.8916C15.6963 16.0868 15.6963 16.4034 15.8916 16.5987L16.9491 17.6562C17.1443 17.8514 17.4609 17.8514 17.6562 17.6562C17.8514 17.4609 17.8514 17.1443 17.6562 16.9491L16.5987 15.8916ZM4 12C4 11.7239 4.22386 11.5 4.5 11.5H6C6.27614 11.5 6.5 11.7239 6.5 12C6.5 12.2761 6.27614 12.5 6 12.5H4.5C4.22386 12.5 4 12.2761 4 12ZM18 11.5C17.7239 11.5 17.5 11.7239 17.5 12C17.5 12.2761 17.7239 12.5 18 12.5H19.5C19.7761 12.5 20 12.2761 20 12C20 11.7239 19.7761 11.5 19.5 11.5H18ZM8.10832 15.8916C8.30358 16.0868 8.30358 16.4034 8.10832 16.5987L7.05082 17.6562C6.85556 17.8514 6.53897 17.8514 6.34371 17.6562C6.14845 17.4609 6.14845 17.1443 6.34371 16.9491L7.40121 15.8916C7.59647 15.6963 7.91306 15.6963 8.10832 15.8916ZM17.6562 7.05082C17.8514 6.85556 17.8514 6.53897 17.6562 6.34371C17.4609 6.14845 17.1443 6.14845 16.9491 6.34371L15.8916 7.40121C15.6963 7.59647 15.6963 7.91306 15.8916 8.10832C16.0868 8.30358 16.4034 8.30358 16.5987 8.10832L17.6562 7.05082Z" fill="currentColor"></path>
+                  </svg></div>
+                <div class="label switch-mode">Light/DARK</div>
+              </div>
+              <div id="w-node-_6f395481-6352-fe11-0c0b-f1987dfb066e-7dfb0612" class="wrap-buttons-small">
+                <a href="/auth/sign-up" class="button small primary mobile-w100 w-button">SIGN UP</a>
+                <a href="/auth/sign-in" class="button small secondary mobile-w100 w-button">SIGN IN</a>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <div class="header-divider"></div>
+  </div>
+  <div class="page">
+    <div id="main" class="main no-border">
+      <div class="page-cover-plain">
+        <div class="s-cover-title">
+          <div class="h-pricing">
+            <h1 class="h2 glitch s-1">COOKBOOK</h1>
+            <h1 class="h2 glitch s-2">PRIC1NG</h1>
+            <h1 class="h2 glitch s-3">PRI€ING</h1>
+            <h1 class="h2 glitch s-4">P–ICING</h1>
+            <h1 class="h2 glitch s-5">PRI$ING</h1>
+          </div>
+          <div class="p perex">Production use cases &amp; full fledged apps.<br>Get inspired by our cookbook.</div>
+        </div>
+      </div>
+      <div class="s-cookbook-container">
+        <div class="s-cookbook-sidebar">
+          <div class="s-cookbook-sidebar-form-block w-form">
+            <form id="wf-form-Cookbook-Filter" name="wf-form-Cookbook-Filter" data-name="Cookbook Filter" method="get" fs-cmsfilter-element="filters" class="s-cookbook-sidebar-form" data-wf-page-id="67598e7d0db74c9a9a96d93d" data-wf-element-id="ae5978c8-71f5-bd5d-9b13-68e0b283e85d">
+              <div class="s-cookbook-search-wrap">
+                <div class="icon-24 float-search w-embed"><svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7.44455 11.8891C9.89921 11.8891 11.8891 9.89921 11.8891 7.44455C11.8891 4.98989 9.89921 3 7.44455 3C4.98989 3 3 4.98989 3 7.44455C3 9.89921 4.98989 11.8891 7.44455 11.8891Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M13.0003 13.0003L10.6113 10.6113" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </svg></div><input class="s-cookbook-search w-input" maxlength="256" name="field" fs-cmsfilter-field="tag, name" data-name="Field" placeholder="Search" type="text" id="field">
+              </div>
+              <div class="s-cookbook-sidebar-content">
+                <div class="s-cookbook-sidebar-section all"><label class="filter-item w-radio">
+                    <div class="w-form-formradioinput w-form-formradioinput--inputType-custom radio-button w-radio-input w--redirected-checked"></div><input type="radio" name="radio" fs-cmsfilter-active="tag" data-name="Radio" style="opacity:0;position:absolute;z-index:-1" checked="" value="Radio"><span fs-cmsfilter-element="clear" class="radio-button-label w-form-label">All</span>
+                  </label></div>
+                <div class="s-cookbook-sidebar-section">
+                  <div class="label tertiary">Language/Framework</div>
+                  <div class="sidebar-section-links"><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 6" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path fill-rule="evenodd" clip-rule="evenodd" d="M2 2H22V22H2V2ZM18.7285 14.5417C18.6958 14.2123 18.5556 13.9563 18.3079 13.7739C18.0601 13.5915 17.7239 13.5003 17.2992 13.5003C17.0106 13.5003 16.7669 13.5411 16.5682 13.6228C16.3694 13.7018 16.217 13.812 16.1108 13.9536C16.0073 14.0952 15.9556 14.2558 15.9556 14.4355C15.9502 14.5852 15.9815 14.7159 16.0495 14.8275C16.1203 14.9392 16.217 15.0358 16.3395 15.1175C16.462 15.1965 16.6036 15.2659 16.7642 15.3258C16.9248 15.3829 17.0964 15.432 17.2788 15.4728L18.0302 15.6525C18.395 15.7342 18.7299 15.8431 19.0348 15.9792C19.3397 16.1153 19.6038 16.2827 19.8271 16.4815C20.0503 16.6802 20.2232 16.9144 20.3457 17.1839C20.4709 17.4534 20.5349 17.7624 20.5376 18.1109C20.5349 18.6228 20.4042 19.0665 20.1456 19.4422C19.8897 19.8152 19.5194 20.1052 19.0348 20.3121C18.5529 20.5163 17.9717 20.6184 17.291 20.6184C16.6158 20.6184 16.0278 20.5149 15.5268 20.308C15.0286 20.1011 14.6393 19.7948 14.3588 19.3892C14.0811 18.9808 13.9355 18.4757 13.9219 17.8741H15.633C15.652 18.1545 15.7324 18.3886 15.8739 18.5765C16.0182 18.7616 16.2102 18.9018 16.4498 18.9971C16.6921 19.0897 16.9657 19.136 17.2706 19.136C17.5701 19.136 17.8301 19.0924 18.0506 19.0053C18.2739 18.9182 18.4467 18.797 18.5692 18.6418C18.6918 18.4866 18.753 18.3083 18.753 18.1068C18.753 17.919 18.6972 17.7611 18.5856 17.6331C18.4767 17.5052 18.3161 17.3963 18.1037 17.3064C17.8941 17.2166 17.6368 17.1349 17.3319 17.0614L16.4212 16.8327C15.716 16.6612 15.1593 16.393 14.7509 16.0282C14.3425 15.6634 14.1397 15.1719 14.1424 14.5539C14.1397 14.0475 14.2744 13.6051 14.5467 13.2267C14.8217 12.8483 15.1987 12.5529 15.6779 12.3405C16.1571 12.1282 16.7016 12.022 17.3114 12.022C17.9322 12.022 18.474 12.1282 18.9368 12.3405C19.4023 12.5529 19.7644 12.8483 20.0231 13.2267C20.2817 13.6051 20.4151 14.0435 20.4233 14.5417H18.7285ZM13.1888 12.1362H11.4409V17.9679C11.4409 18.2347 11.4014 18.4593 11.3225 18.6417C11.2435 18.8241 11.1278 18.963 10.9754 19.0583C10.8256 19.1509 10.6419 19.1971 10.4241 19.1971C10.2171 19.1971 10.0375 19.1563 9.88499 19.0746C9.73525 18.9902 9.61682 18.8704 9.5297 18.7152C9.4453 18.5573 9.40038 18.3681 9.39493 18.1476H7.63481C7.63209 18.703 7.75052 19.1645 7.9901 19.532C8.22969 19.8968 8.55367 20.1691 8.96205 20.3488C9.37315 20.5257 9.83054 20.6142 10.3342 20.6142C10.9005 20.6142 11.3974 20.5067 11.8248 20.2916C12.2522 20.0765 12.5857 19.7702 12.8253 19.3727C13.0676 18.9752 13.1888 18.507 13.1888 17.9679V12.1362Z" fill="currentColor"></path>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">JS</span>
+                    </label><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 6" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path fill-rule="evenodd" clip-rule="evenodd" d="M9.76708 3.17437C10.3861 3.06581 11.0896 3.00354 11.8262 3.00015C12.5629 2.99675 13.331 3.05224 14.0712 3.17437C15.2406 3.36755 16.2258 4.23703 16.2258 5.3945V9.46143C16.2258 10.654 15.2693 11.6318 14.0712 11.6318H9.76708C8.30573 11.6318 7.07512 12.8753 7.07512 14.285V16.2363H5.59353C4.34117 16.2363 3.60966 15.3354 3.30335 14.0709C2.89016 12.3723 2.9077 11.3571 3.30335 9.73023C3.64636 8.31094 4.74296 7.56486 5.99532 7.56486H7.61251H11.9217V6.80946H7.61251V5.3945C7.61251 4.162 7.94358 3.49367 9.76708 3.17437ZM10.3045 5.1257C10.3045 4.67548 9.94098 4.30933 9.49588 4.30933C9.04917 4.30933 8.68728 4.67548 8.68728 5.1257C8.68728 5.57432 9.04917 5.93709 9.49588 5.93709C9.94098 5.93709 10.3045 5.57432 10.3045 5.1257ZM17.0686 9.76229V7.86572H18.6858C19.9398 7.86572 20.5309 8.7954 20.8404 10.0311C21.2711 11.7473 21.2903 13.0339 20.8404 14.3718C20.4049 15.6714 19.9382 16.5372 18.6858 16.5372H16.5312H12.2271V17.2899H16.5312V18.7075C16.5312 19.94 15.4615 20.5666 14.3767 20.8779C12.7446 21.3473 11.4366 21.2754 10.0725 20.8779C8.93346 20.5458 7.91797 19.865 7.91797 18.7075V14.6406C7.91797 13.4704 8.89357 12.4703 10.0725 12.4703H14.3767C15.8109 12.4703 17.0686 11.2327 17.0686 9.76229ZM15.4565 18.9763C15.4565 18.5277 15.0946 18.1649 14.6479 18.1649C14.2028 18.1649 13.8393 18.5277 13.8393 18.9763C13.8393 19.4266 14.2028 19.7927 14.6479 19.7927C15.0946 19.7927 15.4565 19.4266 15.4565 18.9763Z" fill="currentColor"></path>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">Python</span>
+                    </label><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 6" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M18.1096 21.1465C16.3615 22.3171 14.2596 23 12 23C5.92892 23 1 18.0711 1 12C1 5.92892 5.92892 1 12 1C18.0711 1 23 5.92892 23 12C23 15.2844 21.5572 18.2342 19.2719 20.2509L9.45075 7.6H7.6V16.3963H9.08042V9.48008L18.1096 21.1465ZM15.0553 13.3246L16.5219 15.2138V7.6H15.0553V13.3246Z" fill="currentColor"></path>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">Next.js</span>
+                    </label><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 6" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <g clip-path="url(#clip0_118_6240)">
+                            <path d="M19.2 9.66904C19.6713 10.1404 19.6713 10.9073 19.2 11.3787L18.1442 12.4174L18.1334 12.3579C18.0564 11.931 17.8534 11.5436 17.547 11.2372C17.3162 11.0069 17.0435 10.8366 16.7361 10.7312C16.5453 10.923 16.4404 11.1742 16.4404 11.4387C16.4404 11.4923 16.4453 11.548 16.4551 11.6036C16.6244 11.6646 16.7741 11.7587 16.9 11.8846C17.3713 12.3559 17.3713 13.1229 16.9 13.5942L15.9808 14.5134C15.7452 14.7491 15.4358 14.8667 15.126 14.8667C14.8162 14.8667 14.5069 14.7491 14.2712 14.5134C13.7999 14.0421 13.7999 13.2751 14.2712 12.8038L15.327 11.7656L15.3378 11.8251C15.4144 12.251 15.6173 12.6384 15.9247 12.9453C16.156 13.1766 16.4121 13.3303 16.719 13.4352L16.7756 13.3786C16.9473 13.2068 17.0415 12.9785 17.0415 12.735C17.0415 12.6809 17.0366 12.6267 17.0274 12.5735C16.8503 12.515 16.7044 12.4316 16.5717 12.2988C16.3804 12.1076 16.2614 11.8631 16.2282 11.5924C16.2257 11.5728 16.2243 11.5538 16.2223 11.5343C16.196 11.1815 16.3233 10.8371 16.5717 10.5892L17.4909 9.67001C17.7187 9.44216 18.0222 9.31628 18.3457 9.31628C18.6692 9.31628 18.9726 9.44168 19.2005 9.67001L19.2 9.66904ZM24 12.0988C24 15.4619 21.2638 18.1976 17.9012 18.1976H6.0988C2.73617 18.1976 0 15.4619 0 12.0988C0 8.73568 2.73617 6 6.0988 6H17.9012C21.2643 6 24 8.73617 24 12.0988ZM11.7536 15.1575C11.8497 15.0409 11.4057 14.7125 11.315 14.592C11.1306 14.3919 11.1296 14.1041 11.0052 13.8704C10.7007 13.1649 10.3509 12.4647 9.86152 11.8675C9.34434 11.2142 8.70616 10.6736 8.14556 10.0603C7.72938 9.63245 7.61813 9.02305 7.25074 8.56296C6.7443 7.815 5.143 7.61106 4.90831 8.66737C4.90929 8.70055 4.89904 8.72153 4.87026 8.74251C4.74048 8.83667 4.62484 8.9445 4.52775 9.07477C4.29014 9.40557 4.25355 9.96666 4.55019 10.2638C4.55995 10.1072 4.56532 9.95934 4.68925 9.84712C4.91856 10.0437 5.26497 10.1135 5.53088 9.96666C6.11832 10.8054 5.97195 11.9656 6.43838 12.8692C6.56719 13.0829 6.69697 13.301 6.86237 13.4884C6.99654 13.6972 7.46005 13.9436 7.48738 14.1368C7.49226 14.4686 7.45322 14.8311 7.67083 15.1087C7.77329 15.3165 7.52153 15.5254 7.31856 15.4995C7.05509 15.5356 6.73356 15.3224 6.50279 15.4536C6.42131 15.5419 6.26176 15.4444 6.1915 15.5668C6.16711 15.6302 6.03537 15.7195 6.11393 15.7805C6.20126 15.7142 6.28225 15.6449 6.39984 15.6844C6.38227 15.78 6.4579 15.7937 6.51791 15.8215C6.51596 15.8864 6.4779 15.9528 6.52767 16.0079C6.58573 15.9493 6.62037 15.8664 6.71258 15.842C7.01899 16.2504 7.33076 15.4287 7.99382 15.7986C7.85916 15.7917 7.73962 15.8088 7.64887 15.9196C7.62643 15.9445 7.6074 15.9737 7.64692 16.0059C8.00455 15.7752 8.0026 16.085 8.23485 15.9898C8.41342 15.8966 8.59101 15.78 8.80325 15.8132C8.59687 15.8727 8.58858 16.0386 8.46758 16.1787C8.44708 16.2001 8.43732 16.2245 8.46123 16.2601C8.88961 16.224 8.92474 16.0816 9.27067 15.9069C9.52877 15.7493 9.78589 16.1313 10.0094 15.9137C10.0586 15.8664 10.126 15.8825 10.1869 15.8762C10.1089 15.46 9.25066 15.9523 9.26432 15.3941C9.54048 15.2063 9.47705 14.8467 9.49559 14.5564C9.81321 14.7325 10.1665 14.835 10.4777 15.0033C10.6348 15.257 10.8812 15.5922 11.2096 15.5702C11.2184 15.5449 11.2262 15.5224 11.2355 15.4966C11.335 15.5136 11.4628 15.5795 11.5175 15.4536C11.6663 15.6093 11.8849 15.6015 12.0795 15.5615C12.2235 15.4444 11.8087 15.2775 11.7531 15.157L11.7536 15.1575ZM20.4681 10.5238C20.4681 9.95593 20.2475 9.42265 19.847 9.02208C19.4464 8.62151 18.9131 8.40098 18.3447 8.40098C17.7763 8.40098 17.243 8.62151 16.8424 9.02208L15.9232 9.94129C15.7086 10.156 15.5456 10.4082 15.4387 10.6907L15.4324 10.7068L15.4158 10.7117C15.0821 10.8146 14.7879 10.9913 14.5415 11.2376L13.6223 12.1569C12.7943 12.9853 12.7943 14.3329 13.6223 15.1609C14.0229 15.5615 14.5561 15.782 15.1241 15.782C15.692 15.782 16.2257 15.5615 16.6263 15.1609L17.5455 14.2417C17.7592 14.028 17.9212 13.7767 18.0281 13.4947L18.0344 13.4786L18.051 13.4732C18.3789 13.3727 18.6814 13.1902 18.9268 12.9453L19.846 12.0261C20.2466 11.6255 20.4671 11.0923 20.4671 10.5238H20.4681ZM8.41049 14.47C8.33145 14.7784 8.30559 15.3038 7.90453 15.319C7.87136 15.4971 8.02797 15.5639 8.16995 15.5068C8.31096 15.4419 8.3778 15.558 8.42513 15.6737C8.64273 15.7054 8.96475 15.601 8.97695 15.3434C8.652 15.156 8.55149 14.7998 8.41 14.47H8.41049Z" fill="currentColor"></path>
+                          </g>
+                          <defs>
+                            <clippath id="clip0_118_6240">
+                              <rect width="100%" height="100%" fill="white"></rect>
+                            </clippath>
+                          </defs>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">LangChain</span>
+                    </label><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 6" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <g clip-path="url(#clip0_118_6262)">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M6.09883 6H17.9011C21.2641 6 24 8.74544 24 12.12C24 15.4946 21.2641 18.24 17.9011 18.24H6.09883C2.73582 18.24 0 15.4946 0 12.12C0 8.74544 2.73582 6 6.09883 6ZM11.5176 15.4869C11.6657 15.6427 11.8851 15.635 12.0793 15.5946L12.0813 15.5956C12.1715 15.5222 12.0433 15.4293 11.9209 15.3406C11.8474 15.2874 11.7761 15.2356 11.7551 15.1906C11.8229 15.1079 11.6225 14.9203 11.4664 14.7742C11.4009 14.7129 11.3433 14.6589 11.3165 14.623C11.2055 14.5022 11.1609 14.3496 11.1159 14.1962C11.0862 14.0945 11.0563 13.9923 11.0068 13.8986C10.7018 13.1906 10.3526 12.4884 9.86298 11.8891C9.54831 11.4908 9.1892 11.1341 8.82994 10.7773C8.59832 10.5472 8.3667 10.3171 8.14683 10.0758C7.92064 9.8423 7.78451 9.55463 7.64814 9.26647C7.53398 9.02523 7.41967 8.78366 7.25224 8.57325C6.74525 7.82292 5.1446 7.61802 4.90986 8.6781C4.9108 8.71081 4.90023 8.73197 4.87138 8.75314C4.74151 8.84837 4.62607 8.95611 4.52892 9.08694C4.29131 9.41881 4.25475 9.98156 4.55104 10.2798C4.55147 10.2734 4.55189 10.267 4.55231 10.2606C4.5622 10.1101 4.57146 9.9693 4.69052 9.86132C4.91949 10.0585 5.26675 10.1287 5.53224 9.98156C5.85234 10.4407 5.95431 10.9959 6.05666 11.5528C6.14188 12.0168 6.22735 12.4821 6.43937 12.8944C6.44377 12.9017 6.44811 12.909 6.45251 12.9163C6.57713 13.1237 6.70378 13.3346 6.86361 13.5158C6.92167 13.6058 7.04086 13.703 7.15986 13.7999C7.31687 13.9279 7.47354 14.0556 7.48885 14.1661C7.48959 14.2142 7.48934 14.2629 7.48915 14.312C7.48791 14.6022 7.48663 14.9028 7.67263 15.1415C7.77552 15.3503 7.52351 15.56 7.32053 15.534C7.20924 15.5494 7.08767 15.5201 6.96695 15.491C6.80174 15.4512 6.63816 15.4117 6.50479 15.4878C6.46737 15.5283 6.41365 15.5298 6.35963 15.5312C6.29559 15.5329 6.2312 15.5346 6.19309 15.6014C6.18528 15.6212 6.16702 15.6436 6.14801 15.6669C6.10623 15.7181 6.06101 15.7735 6.11517 15.8159C6.12006 15.8122 6.1249 15.8085 6.12969 15.8048C6.2118 15.7421 6.29006 15.6824 6.40091 15.7197C6.38614 15.8015 6.43903 15.8235 6.49191 15.8454C6.50109 15.8492 6.51032 15.8531 6.51921 15.8572C6.51867 15.8762 6.51492 15.8954 6.51116 15.9145C6.50228 15.9599 6.49359 16.0045 6.52884 16.0438C6.54558 16.0268 6.56039 16.0077 6.5752 15.9885C6.61149 15.9416 6.64798 15.8945 6.71355 15.8774C6.85773 16.07 7.00299 15.99 7.18529 15.8897C7.39089 15.7764 7.64354 15.6373 7.99485 15.8341C7.8602 15.8274 7.73992 15.8437 7.64952 15.9553C7.6274 15.9804 7.60814 16.0092 7.64759 16.0419C7.85546 15.9072 7.94192 15.9556 8.02334 16.0012C8.0821 16.0341 8.13819 16.0655 8.23536 16.0255C8.25832 16.0136 8.28128 16.0012 8.30429 15.9888C8.46036 15.9046 8.61861 15.8192 8.80387 15.8486C8.66547 15.8885 8.61624 15.9762 8.56252 16.072C8.53591 16.1193 8.50826 16.1686 8.46817 16.2151C8.44698 16.2362 8.43736 16.2613 8.4614 16.2968C8.75119 16.2727 8.8607 16.1993 9.00863 16.1C9.07919 16.0527 9.15854 15.9994 9.27042 15.9428C9.39411 15.8667 9.51774 15.9154 9.63758 15.9626C9.76758 16.0138 9.8931 16.0632 10.0092 15.9496C10.0459 15.915 10.0919 15.9146 10.1377 15.9142C10.1544 15.914 10.171 15.9139 10.1872 15.912C10.151 15.7185 9.94716 15.7208 9.74023 15.7231C9.50091 15.7257 9.25743 15.7285 9.26464 15.4282C9.48703 15.2763 9.4891 15.0127 9.49103 14.7636C9.49152 14.7034 9.49197 14.6441 9.49552 14.5874C9.65911 14.6786 9.83212 14.7499 10.004 14.8207C10.1658 14.8874 10.3266 14.9537 10.4777 15.0357C10.6355 15.2897 10.8817 15.6263 11.2097 15.6042C11.2184 15.5783 11.2261 15.5561 11.2357 15.5302C11.2546 15.5335 11.2746 15.5385 11.2949 15.5436C11.381 15.5655 11.4732 15.5888 11.5176 15.4869ZM17.9469 12.6009C18.1368 12.7904 18.3944 12.8968 18.663 12.8968C18.9316 12.8968 19.1893 12.7904 19.3792 12.6009C19.5691 12.4114 19.6758 12.1544 19.6758 11.8864C19.6758 11.6185 19.5691 11.3615 19.3792 11.172C19.1893 10.9825 18.9316 10.8761 18.663 10.8761C18.5373 10.8761 18.4139 10.8994 18.2988 10.9437L17.7183 10.0963L17.3137 10.3735L17.8972 11.2253C17.7384 11.4082 17.6502 11.6428 17.6502 11.8864C17.6502 12.1544 17.757 12.4114 17.9469 12.6009ZM16.1295 9.85675C16.2716 9.92697 16.4283 9.96292 16.5868 9.9617C16.8032 9.96003 17.0134 9.88927 17.1865 9.75979C17.3596 9.63031 17.4867 9.44891 17.5489 9.24218C17.6112 9.03545 17.6055 8.81424 17.5326 8.61099C17.4597 8.40774 17.3235 8.23313 17.1439 8.11273C17.0122 8.0245 16.8617 7.96834 16.7043 7.94876C16.5469 7.9292 16.3871 7.94676 16.2378 8.00006C16.0885 8.05336 15.9538 8.14089 15.8446 8.25562C15.7354 8.37034 15.6547 8.50904 15.6091 8.66056C15.5634 8.81207 15.5541 8.97216 15.5818 9.12794C15.6095 9.28371 15.6735 9.43082 15.7686 9.55741C15.8637 9.68399 15.9873 9.78653 16.1295 9.85675ZM16.1295 15.7238C16.2716 15.794 16.4283 15.8299 16.5868 15.8287C16.8032 15.827 17.0134 15.7563 17.1865 15.6268C17.3596 15.4973 17.4867 15.3159 17.5489 15.1092C17.6112 14.9025 17.6055 14.6812 17.5326 14.478C17.4597 14.2747 17.3235 14.1001 17.1439 13.9797C17.0122 13.8915 16.8617 13.8353 16.7043 13.8157C16.5469 13.7962 16.3871 13.8138 16.2378 13.867C16.0885 13.9204 15.9538 14.0079 15.8446 14.1226C15.7354 14.2374 15.6547 14.3761 15.6091 14.5275C15.5634 14.6791 15.5541 14.8392 15.5818 14.9949C15.6095 15.1507 15.6735 15.2978 15.7686 15.4244C15.8637 15.551 15.9873 15.6535 16.1295 15.7238ZM17.0606 12.1377V11.6353H15.5105C15.4715 11.483 15.3971 11.3419 15.2933 11.2234L15.8765 10.3594L15.4524 10.0781L14.8692 10.9421C14.7623 10.9035 14.6496 10.8831 14.5359 10.8819C14.2681 10.8819 14.0113 10.9877 13.8219 11.1761C13.6325 11.3645 13.5261 11.6201 13.5261 11.8865C13.5261 12.1529 13.6325 12.4084 13.8219 12.5969C14.0113 12.7853 14.2681 12.8911 14.5359 12.8911C14.6496 12.8899 14.7623 12.8695 14.8692 12.8308L15.4524 13.6948L15.8714 13.4135L15.2933 12.5496C15.3971 12.431 15.4715 12.2899 15.5105 12.1377H17.0606Z" fill="currentColor"></path>
+                          </g>
+                          <defs>
+                            <clippath id="clip0_118_6262">
+                              <rect width="100%" height="100%" fill="white"></rect>
+                            </clippath>
+                          </defs>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">LangGraph</span>
+                    </label></div>
+                </div>
+                <div class="s-cookbook-sidebar-section">
+                  <div class="label tertiary">LLM Providers</div>
+                  <div class="sidebar-section-links"><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 7" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M7.33875 4.69428C5.53475 4.69428 3.96267 5.86761 2.87367 7.54786C1.64533 9.44078 1 11.8929 1 14.245C1 14.8922 1.06417 15.4999 1.1925 16.0536C1.25551 16.3216 1.33667 16.585 1.43542 16.8419C1.52998 17.0832 1.64371 17.3164 1.7755 17.5395C2.4135 18.6019 3.442 19.3059 5.06908 19.3059C6.44133 19.3059 7.48267 18.6909 8.70367 17.0656C9.40033 16.1379 9.75233 15.5751 11.1448 13.1056L11.8378 11.8782L12.0083 11.5803C12.0642 11.6719 12.1192 11.7599 12.176 11.8553L14.1487 15.1507C14.8123 16.2599 15.6749 17.4937 16.4128 18.1885C17.3717 19.0933 18.2388 19.3069 19.2178 19.3069C20.2033 19.3069 20.9375 18.9814 21.4683 18.5341C21.7646 18.2811 22.0157 17.9795 22.2108 17.6422C22.7076 16.7814 23 15.6924 23 14.2093C23 11.7159 22.3758 9.29869 21.0897 7.38011C19.9145 5.62744 18.3791 4.69428 16.7667 4.69428C15.8069 4.69428 14.8527 5.12236 13.9681 5.89328C13.3704 6.41578 12.8158 7.07578 12.2997 7.77244C11.6672 6.97036 11.076 6.35436 10.5049 5.88778C9.42142 5.00228 8.38283 4.69336 7.33875 4.69336V4.69428ZM16.6521 6.57619C17.7035 6.57619 18.6577 7.27103 19.3947 8.40861C20.4324 10.0109 20.9045 12.254 20.9045 14.2753C20.9045 15.6943 20.5672 16.9336 19.2188 16.9336C18.6871 16.9336 18.2773 16.7228 17.6934 16.0133C17.2388 15.4624 16.4623 14.2918 15.0974 12.0184L14.5318 11.0761C14.1642 10.4612 13.7806 9.856 13.3814 9.26111C13.4456 9.16119 13.5107 9.05578 13.5748 8.96136C14.6015 7.43328 15.5154 6.57619 16.6521 6.57619ZM7.30117 7.08311C8.46075 7.08311 9.18767 7.80819 9.75325 8.40861C10.0347 8.70836 10.4288 9.20703 10.8844 9.85603L9.94942 11.2915C9.2555 12.3576 8.22425 14.0571 7.34883 15.268C6.25708 16.7796 5.68967 16.9336 5.07 16.9336C4.58967 16.9336 4.1185 16.7164 3.80225 16.2058C3.56117 15.8153 3.37692 15.1699 3.37692 14.3303C3.37692 12.2944 3.95442 10.1732 4.89858 8.74961C5.31475 8.11986 5.78225 7.62578 6.30383 7.34436C6.60901 7.17477 6.95204 7.08492 7.30117 7.08311Z" fill="currentColor"></path>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">Meta</span>
+                    </label><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 7" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M20.6812 10.1859C21.141 8.82399 20.9827 7.33208 20.2473 6.09331C19.1413 4.19326 16.9181 3.21574 14.7468 3.67575C13.7808 2.60198 12.393 1.99134 10.9381 2.00009C8.71859 1.99509 6.74932 3.40512 6.0665 5.48892C4.6407 5.77705 3.40998 6.65769 2.6898 7.90584C1.57563 9.80088 1.82963 12.1897 3.31814 13.8147C2.85828 15.1766 3.01664 16.6685 3.75202 17.9073C4.85796 19.8073 7.08123 20.7849 9.25255 20.3249C10.2179 21.3986 11.6063 22.0093 13.0612 21.9999C15.282 22.0055 17.2519 20.5942 17.9347 18.5086C19.3605 18.2204 20.5912 17.3398 21.3114 16.0916C22.4243 14.1966 22.1697 11.8097 20.6818 10.1846L20.6812 10.1859ZM13.0625 20.693C12.1738 20.6942 11.313 20.3874 10.6309 19.8255C10.6619 19.8092 10.7157 19.7798 10.7506 19.7586L14.7867 17.4585C14.9931 17.3429 15.1198 17.126 15.1186 16.8917V11.2772L16.8243 12.2491C16.8427 12.2578 16.8547 12.2753 16.8573 12.2953V16.9448C16.8547 19.0123 15.1578 20.6886 13.0625 20.693ZM4.90166 17.2535C4.45638 16.4948 4.29612 15.6054 4.44877 14.7422C4.47855 14.7597 4.53112 14.7916 4.56849 14.8129L8.60458 17.1129C8.80917 17.231 9.06253 17.231 9.26776 17.1129L14.1951 14.3054V16.2491C14.1963 16.2691 14.1868 16.2885 14.171 16.301L10.0912 18.6254C8.27394 19.658 5.95312 19.0442 4.9023 17.2535H4.90166ZM3.83943 8.56023C4.28282 7.80022 4.98274 7.21895 5.81631 6.91707C5.81631 6.95145 5.81441 7.01208 5.81441 7.05458V11.6553C5.81314 11.8891 5.93982 12.1059 6.14568 12.2216L11.073 15.0285L9.3672 16.0004C9.3501 16.0116 9.32856 16.0135 9.30956 16.0054L5.22914 13.6791C3.41568 12.6428 2.79368 10.3534 3.8388 8.56086L3.83943 8.56023ZM17.8543 11.7784L12.927 8.97087L14.6327 7.9996C14.6498 7.98835 14.6714 7.98647 14.6904 7.9946L18.7708 10.319C20.5874 11.3547 21.2101 13.6478 20.1605 15.4404C19.7165 16.1991 19.0172 16.7804 18.1843 17.0829V12.3447C18.1862 12.1109 18.0601 11.8947 17.8549 11.7784H17.8543ZM19.5518 9.25712C19.522 9.239 19.4695 9.20775 19.4321 9.1865L15.396 6.88645C15.1914 6.76832 14.938 6.76832 14.7328 6.88645L9.80552 9.69401V7.75022C9.80425 7.73022 9.81376 7.71084 9.82959 7.69834L13.9094 5.37579C15.7266 4.34139 18.05 4.95703 19.0976 6.75082C19.5404 7.50834 19.7006 8.39523 19.5505 9.25712H19.5518ZM8.87821 12.7216L7.1718 11.7497C7.15343 11.7409 7.1414 11.7234 7.13887 11.7034V7.05395C7.14013 4.98391 8.84211 3.30637 10.94 3.30762C11.8274 3.30762 12.6863 3.61513 13.3685 4.17514C13.3374 4.19139 13.2842 4.22077 13.2487 4.24202L9.21265 6.54206C9.00616 6.65769 8.87948 6.87395 8.88074 7.10833L8.87821 12.7203V12.7216ZM9.80489 10.7503L11.9997 9.49963L14.1944 10.7497V13.2503L11.9997 14.5004L9.80489 13.2503V10.7503Z" fill="currentColor"></path>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">OpenAI</span>
+                    </label><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 7" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M13.5225 5.12646L18.9978 18.8597H22.0004L16.5251 5.12646H13.5225Z" fill="currentColor"></path>
+                          <path d="M7.17076 13.4252L9.04426 8.59899L10.9178 13.4252H7.17076ZM7.47451 5.12646L2 18.8597H5.06101L6.18064 15.9757H11.9081L13.0275 18.8597H16.0885L10.614 5.12646H7.47451Z" fill="currentColor"></path>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">Anthropic</span>
+                    </label><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 7" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="3.25" y="3.25" width="3.5" height="3.5" fill="var(--color--content-primary)"></rect>
+                          <rect x="3.25" y="6.75" width="7" height="3.5" fill="var(--color--content-dark80)"></rect>
+                          <rect x="3.25" y="13.75" width="3.5" height="3.5" fill="var(--color--content-dark40)"></rect>
+                          <rect x="3.25" y="17.25" width="3.5" height="3.5" fill="var(--color--content-dark20)"></rect>
+                          <rect x="3.25" y="10.25" width="17.5" height="3.5" fill="var(--color--content-dark60)"></rect>
+                          <rect x="10.25" y="13.75" width="3.5" height="3.5" fill="var(--color--content-dark40)"></rect>
+                          <rect x="13.75" y="6.75" width="7" height="3.5" fill="var(--color--content-dark80)"></rect>
+                          <rect x="17.25" y="13.75" width="3.5" height="3.5" fill="var(--color--content-dark40)"></rect>
+                          <rect x="17.25" y="17.25" width="3.5" height="3.5" fill="var(--color--content-dark20)"></rect>
+                          <rect x="17.25" y="3.25" width="3.5" height="3.5" fill="var(--color--content-primary)"></rect>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">Mistral</span>
+                    </label><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 7" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <mask id="path-1-outside-1_396_7684" maskunits="userSpaceOnUse" x="0.995117" y="6.0415" width="22" height="12" fill="black">
+                            <rect fill="white" x="0.995117" y="6.0415" width="22" height="12"></rect>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M11.9857 13.996C11.4306 13.996 10.9324 13.6665 10.72 13.1562L8.15906 7.04133H9.65794L11.9944 12.6351L14.3287 7.04133H15.8276L13.2513 13.1584C13.0378 13.6665 12.5408 13.996 11.9857 13.996ZM15.3272 16.9184C14.7743 16.9184 14.2784 16.591 14.0637 16.0852C13.8481 15.575 13.9597 14.9925 14.3495 14.5973L19.0137 9.87286L19.5962 11.2469L15.3261 15.564L21.4126 15.5301L21.9951 16.9042L15.3283 16.9206L15.3261 16.9184H15.3272ZM2.57755 15.5276L1.99507 16.9017L1.99726 16.8995L8.66399 16.9149C9.21471 16.9149 9.71289 16.5886 9.92747 16.0817C10.1443 15.5725 10.0315 14.9879 9.64173 14.5937L4.97753 9.8693L4.39505 11.2434L8.66399 15.5616L2.57755 15.5276Z"></path>
+                          </mask>
+                          <path fill-rule="evenodd" clip-rule="evenodd" d="M11.9857 13.996C11.4306 13.996 10.9324 13.6665 10.72 13.1562L8.15906 7.04133H9.65794L11.9944 12.6351L14.3287 7.04133H15.8276L13.2513 13.1584C13.0378 13.6665 12.5408 13.996 11.9857 13.996ZM15.3272 16.9184C14.7743 16.9184 14.2784 16.591 14.0637 16.0852C13.8481 15.575 13.9597 14.9925 14.3495 14.5973L19.0137 9.87286L19.5962 11.2469L15.3261 15.564L21.4126 15.5301L21.9951 16.9042L15.3283 16.9206L15.3261 16.9184H15.3272ZM2.57755 15.5276L1.99507 16.9017L1.99726 16.8995L8.66399 16.9149C9.21471 16.9149 9.71289 16.5886 9.92747 16.0817C10.1443 15.5725 10.0315 14.9879 9.64173 14.5937L4.97753 9.8693L4.39505 11.2434L8.66399 15.5616L2.57755 15.5276Z" fill="currentColor"></path>
+                          <path d="M10.72 13.1562L11.0431 13.0217L11.0428 13.021L10.72 13.1562ZM8.15906 7.04133V6.69133H7.63302L7.83623 7.17653L8.15906 7.04133ZM9.65794 7.04133L9.9809 6.90643L9.89106 6.69133H9.65794V7.04133ZM11.9944 12.6351L11.6715 12.77L11.9946 13.5435L12.3174 12.7699L11.9944 12.6351ZM14.3287 7.04133V6.69133H14.0955L14.0057 6.90654L14.3287 7.04133ZM15.8276 7.04133L16.1502 7.17718L16.3548 6.69133H15.8276V7.04133ZM13.2513 13.1584L12.9288 13.0226L12.9287 13.0228L13.2513 13.1584ZM14.0637 16.0852L13.7414 16.2215L13.7415 16.2219L14.0637 16.0852ZM14.3495 14.5973L14.1004 14.3514L14.1003 14.3515L14.3495 14.5973ZM19.0137 9.87286L19.336 9.73626L19.1319 9.25493L18.7646 9.62696L19.0137 9.87286ZM19.5962 11.2469L19.845 11.4931L20.0099 11.3263L19.9184 11.1103L19.5962 11.2469ZM15.3261 15.564L15.0773 15.3179L14.483 15.9188L15.3281 15.914L15.3261 15.564ZM21.4126 15.5301L21.7348 15.3935L21.6438 15.1788L21.4106 15.1801L21.4126 15.5301ZM21.9951 16.9042L21.9959 17.2542L22.523 17.2529L22.3173 16.7676L21.9951 16.9042ZM15.3283 16.9206L15.0809 17.1682L15.1838 17.271L15.3292 17.2706L15.3283 16.9206ZM15.3261 16.9184V16.5684H14.4806L15.0787 17.166L15.3261 16.9184ZM1.99507 16.9017L1.67283 16.7651L2.24109 17.1507L1.99507 16.9017ZM2.57755 15.5276L2.5795 15.1777L2.34632 15.1764L2.25531 15.391L2.57755 15.5276ZM1.99726 16.8995L1.99807 16.5495L1.85384 16.5492L1.75125 16.6506L1.99726 16.8995ZM8.66399 16.9149L8.66319 17.2649H8.66399V16.9149ZM9.92747 16.0817L9.60545 15.9445L9.60516 15.9452L9.92747 16.0817ZM9.64173 14.5937L9.39266 14.8396L9.39286 14.8398L9.64173 14.5937ZM4.97753 9.8693L5.2266 9.62341L4.85932 9.25139L4.65529 9.7327L4.97753 9.8693ZM4.39505 11.2434L4.07281 11.1068L3.98129 11.3227L4.14615 11.4894L4.39505 11.2434ZM8.66399 15.5616L8.66204 15.9116L9.50681 15.9163L8.91289 15.3155L8.66399 15.5616ZM10.3969 13.2908C10.6642 13.9329 11.2908 14.346 11.9857 14.346V13.646C11.5704 13.646 11.2006 13.4001 11.0431 13.0217L10.3969 13.2908ZM7.83623 7.17653L10.3972 13.2914L11.0428 13.021L8.48189 6.90613L7.83623 7.17653ZM9.65794 6.69133H8.15906V7.39133H9.65794V6.69133ZM12.3174 12.5002L9.9809 6.90643L9.33498 7.17623L11.6715 12.77L12.3174 12.5002ZM14.0057 6.90654L11.6714 12.5003L12.3174 12.7699L14.6517 7.17612L14.0057 6.90654ZM15.8276 6.69133H14.3287V7.39133H15.8276V6.69133ZM13.5739 13.2943L16.1502 7.17718L15.505 6.90548L12.9288 13.0226L13.5739 13.2943ZM11.9857 14.346C12.6808 14.346 13.3055 13.9328 13.574 13.294L12.9287 13.0228C12.7701 13.4001 12.4008 13.646 11.9857 13.646V14.346ZM13.7415 16.2219C14.0114 16.8579 14.6348 17.2684 15.3272 17.2684V16.5684C14.9139 16.5684 14.5453 16.3242 14.3859 15.9485L13.7415 16.2219ZM14.1003 14.3515C13.6112 14.8474 13.4705 15.5806 13.7414 16.2215L14.3861 15.949C14.2257 15.5693 14.3082 15.1376 14.5987 14.843L14.1003 14.3515ZM18.7646 9.62696L14.1004 14.3514L14.5986 14.8431L19.2628 10.1188L18.7646 9.62696ZM19.9184 11.1103L19.336 9.73626L18.6915 10.0095L19.2739 11.3835L19.9184 11.1103ZM15.575 15.8102L19.845 11.4931L19.3473 11.0008L15.0773 15.3179L15.575 15.8102ZM21.4106 15.1801L15.3242 15.2141L15.3281 15.914L21.4145 15.8801L21.4106 15.1801ZM22.3173 16.7676L21.7348 15.3935L21.0903 15.6667L21.6728 17.0408L22.3173 16.7676ZM15.3292 17.2706L21.9959 17.2542L21.9942 16.5542L15.3275 16.5706L15.3292 17.2706ZM15.0787 17.166L15.0809 17.1682L15.5757 16.673L15.5735 16.6708L15.0787 17.166ZM15.3272 16.5684H15.3261V17.2684H15.3272V16.5684ZM2.31732 17.0383L2.89979 15.6642L2.25531 15.391L1.67283 16.7651L2.31732 17.0383ZM1.75125 16.6506L1.74906 16.6528L2.24109 17.1507L2.24327 17.1485L1.75125 16.6506ZM8.66479 16.5649L1.99807 16.5495L1.99646 17.2495L8.66319 17.2648L8.66479 16.5649ZM9.60516 15.9452C9.44605 16.3211 9.07587 16.5649 8.66399 16.5649V17.2649C9.35354 17.2649 9.97973 16.8561 10.2498 16.2181L9.60516 15.9452ZM9.39286 14.8398C9.68324 15.1335 9.76628 15.5668 9.60545 15.9445L10.2495 16.2188C10.5223 15.5782 10.3798 14.8423 9.8906 14.3476L9.39286 14.8398ZM4.72846 10.1152L9.39266 14.8396L9.8908 14.3478L5.2266 9.62341L4.72846 10.1152ZM4.71729 11.38L5.29977 10.0059L4.65529 9.7327L4.07281 11.1068L4.71729 11.38ZM8.91289 15.3155L4.64396 10.9973L4.14615 11.4894L8.41509 15.8076L8.91289 15.3155ZM2.5756 15.8776L8.66204 15.9116L8.66594 15.2116L2.5795 15.1777L2.5756 15.8776Z" fill="currentColor" mask="url(#path-1-outside-1_396_7684)"></path>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">Fireworks AI</span>
+                    </label><label class="filter-item w-radio"><input type="radio" name="radio" data-name="Radio 8" class="w-form-formradioinput radio-button w-radio-input" value="Radio">
+                      <div class="icon-20 radio-button-icon w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path fill-rule="evenodd" clip-rule="evenodd" d="M4 2C2.89543 2 2 2.89543 2 4V20C2 21.1046 2.89543 22 4 22H20C21.1046 22 22 21.1046 22 20V4C22 2.89543 21.1046 2 20 2H4ZM7.625 19.5C9.35089 19.5 10.75 18.1009 10.75 16.375C10.75 14.6491 9.35089 13.25 7.625 13.25C5.89911 13.25 4.5 14.6491 4.5 16.375C4.5 18.1009 5.89911 19.5 7.625 19.5ZM19.5 16.375C19.5 18.1009 18.1009 19.5 16.375 19.5C14.6491 19.5 13.25 18.1009 13.25 16.375C13.25 14.6491 14.6491 13.25 16.375 13.25C18.1009 13.25 19.5 14.6491 19.5 16.375ZM16.375 10.75C18.1009 10.75 19.5 9.35089 19.5 7.625C19.5 5.89911 18.1009 4.5 16.375 4.5C14.6491 4.5 13.25 5.89911 13.25 7.625C13.25 9.35089 14.6491 10.75 16.375 10.75Z" fill="currentColor"></path>
+                          <circle cx="7.625" cy="7.625" r="3.125" fill="white" fill-opacity="0.4"></circle>
+                        </svg></div><span fs-cmsfilter-element="any" fs-cmsfilter-field="tag" class="radio-button-label w-form-label">Together AI</span>
+                    </label></div>
+                </div>
+                <div class="custom-code-filter w-embed">
+                  <style>
+/* Rule for the first class */
+    .radio-button.w--redirected-checked ~ .radio-button-label {
+        color: var(--color--text-primary);
+        opacity: 100%
+    }
+/* Hover effect: changes only the label's opacity, not the item itself */
+.filter-item:hover .radio-button-label,
+.filter-item:hover .icon-20.radio-button-icon{
+    opacity: 1;
+}
+/* Override for active item: keeps the label's opacity at 100% */
+.filter-item.fs-cmsfilter_active .radio-button-label,
+.filter-item.fs-cmsfilter_active .icon-20.radio-button-icon{
+    opacity: 1 !important;
+}
+</style>
+                </div>
+                <a href="https://cookbook-suggestion-e2b.zapier.app/" target="_blank" class="button medium secondary full-width w-button">+ Suggest new</a>
+              </div>
+            </form>
+            <div class="w-form-done"></div>
+            <div class="w-form-fail"></div>
+          </div>
+        </div>
+        <div class="s-cookbook-list cookbook-page">
+          <div class="cookbook-collection cookbook-page w-dyn-list">
+            <div fs-cmsload-element="list" fs-cmsnest-element="list" fs-cmsfilter-element="list" role="list" class="cookbook-collection-list w-dyn-items">
+              <div role="listitem" class="cookbook-item w-dyn-item">
+                <a href="#" class="hide">Text Link</a>
+                <a aria-label="cookbook post" href="#" class="hp-cookbook-item-wrap w-inline-block">
+                  <h2 fs-cmsfilter-field="name" class="h5-2 w-dyn-bind-empty"></h2>
+                  <div fs-cmsfilter-element="any" fs-cmsfilter-field="language" class="p small">Example · Github</div>
+                  <div class="hp-cookbook-item-tags-wrap">
+                    <div class="tag brand">
+                      <div class="label on-black keep-white">NEW</div>
+                    </div>
+                    <div fs-cmsnest-collection="cookbooktags" fs-cmsnest-element="nest-target" class="hp-collection-item-tags"></div>
+                  </div>
+                  <div class="icon-12 float-cookbook w-embed"><svg width="12" height="12" viewbox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9.364 6.50581H8.412V4.79781L8.496 3.88781L8.454 3.87381L7.558 4.88181L2.672 9.76781L2 9.09581L6.886 4.20981L7.894 3.31381L7.88 3.27181L6.97 3.35581H5.262V2.40381H9.364V6.50581Z" fill="currentColor"></path>
+                    </svg></div>
+                </a>
+                <div class="bg-dotted"></div>
+              </div>
+            </div>
+            <div role="navigation" aria-label="List" class="w-pagination-wrapper pagination">
+              <a href="#" aria-label="Previous Page" class="w-pagination-previous previous"><svg class="w-pagination-previous-icon" height="12px" width="12px" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 12 12" transform="translate(0, 1)">
+                  <path fill="none" stroke="currentColor" fill-rule="evenodd" d="M8 10L4 6l4-4"></path>
+                </svg>
+                <div class="w-inline-block">Previous</div>
+              </a>
+              <a fs-cmsload-mode="load-under" href="#" aria-label="Next Page" class="w-pagination-next button-cookbook-link">
+                <div class="label">LOAD MORE</div>
+              </a>
+              <div class="bg-dotted"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="footer-wrap">
+      <div class="footer-columns">
+        <div class="footer-column">
+          <div class="h5-2">Site</div>
+          <div class="footer-column-links">
+            <a href="/" class="p small link-none">Product</a>
+            <a href="pricing" class="p small link-none">Pricing</a>
+            <a href="https://github.com/e2b-dev/e2b-cookbook" class="p small link-none">Cookbook</a>
+            <a href="changelog" class="p small link-none">Changelog</a>
+            <a href="/docs?ref=footer" class="p small link-none">Docs</a>
+            <a href="/blog" class="p small link-none">Blog</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <div class="h5-2">Company</div>
+          <div class="footer-column-links">
+            <a href="http://e2b.dev/careers" class="p small link-none">Careers</a>
+            <a href="mailto:hello@e2b.dev" class="p small link-none">Contact</a>
+            <a href="privacy" class="p small link-none">Privacy Policy</a>
+            <a href="terms" class="p small link-none">Terms of Service</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <div class="h5-2">Social</div>
+          <div class="footer-column-links">
+            <a href="https://github.com/e2b-dev" target="_blank" class="p small link-none">Github</a>
+            <a href="https://x.com/e2b" target="_blank" class="p small link-none">X</a>
+            <a href="https://discord.com/invite/U7KEcGErtQ" target="_blank" class="p small link-none">Discord</a>
+            <a href="https://www.linkedin.com/company/e2b-dev/" target="_blank" class="p small link-none">LinkedIn</a>
+          </div>
+        </div>
+        <div id="w-node-c5335d45-0e2f-776e-390d-577355c12f21-55c12ef6" class="footer-column">
+          <div class="h5-2">Status</div>
+          <div class="footer-column-links">
+            <a href="https://status.e2b.dev/" target="_blank" class="p small link-none">Check system status</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-copyright">
+        <div class="p small">©2025 ✶ FoundryLabs, Inc.</div>
+      </div>
+    </div>
+  </div>
+  <div class="hide">
+    <div fs-cmsfilter-element="empty" class="s-cookbook-empty">
+      <div class="h5-2 cookbook-empty">No results found.<br>Try a different keyword.</div>
+      <div class="p small">Didn&#x27;t find what you were looking for?<br></div>
+      <a href="https://cookbook-suggestion-e2b.zapier.app/" target="_blank" class="button medium secondary w-button">+ Suggest new</a>
+    </div>
+    <div class="cms-nest-wrapper w-dyn-list">
+      <div fs-cmsnest-collection="cookbooktags" fs-cmsnest-element="nest-source" role="list" class="cms-nest-list w-dyn-items">
+        <div role="listitem" class="cms-nest-item w-dyn-item">
+          <div class="tag primary">
+            <div fs-cmsfilter-field="tag" class="label tertiary w-dyn-bind-empty"></div>
+            <div class="hide">
+              <a href="#">Text Link</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="w-dyn-empty">
+        <div>No items found.</div>
+      </div>
+    </div>
+  </div>
+  <script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=6717bb6618f6a40d53ac2929" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+  <script src="js/e2b-dev.js" type="text/javascript"></script>
+</body>
+</html>

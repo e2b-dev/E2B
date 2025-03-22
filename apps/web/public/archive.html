@@ -1,0 +1,482 @@
+<!DOCTYPE html><!--  Last Published: Sat Mar 22 2025 18:00:32 GMT+0000 (Coordinated Universal Time)  -->
+<html data-wf-page="674f2a235db7b2a97b35731c" data-wf-site="6717bb6618f6a40d53ac2929" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Archive — E2B</title>
+  <meta content="Add code interpreting in your AI apps and AI agents." name="description">
+  <meta content="Archive — E2B" property="og:title">
+  <meta content="Add code interpreting in your AI apps and AI agents." property="og:description">
+  <meta content="Archive — E2B" property="twitter:title">
+  <meta content="Add code interpreting in your AI apps and AI agents." property="twitter:description">
+  <meta property="og:type" content="website">
+  <meta content="summary_large_image" name="twitter:card">
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <link href="css/normalize.css" rel="stylesheet" type="text/css">
+  <link href="css/components.css" rel="stylesheet" type="text/css">
+  <link href="css/e2b-dev.css" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" type="text/javascript"></script>
+  <script type="text/javascript">WebFont.load({  google: {    families: ["IBM Plex Sans:regular,500,600,700"]  }});</script>
+  <script type="text/javascript">!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
+  <link href="images/favicon.png" rel="shortcut icon" type="image/x-icon">
+  <link href="images/webclip.png" rel="apple-touch-icon">
+  <link href="/archive" rel="canonical">
+  <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-SCSZ10RP74"></script>
+  <script type="text/javascript">window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('set', 'developer_id.dZGVlNj', true);gtag('config', 'G-SCSZ10RP74');</script><!--  Google Tag Manager  -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!=='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-K2W3LVD2');</script>
+  <!--  End Google Tag Manager  -->
+  <!--  Posthog  -->
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_wFQaw8bTo25uDwJ4wbCE0ZhlhzcSMgcehs8kLcdvCSp',{api_host:'https://app.posthog.com'})
+</script>
+  <style>
+body {
+  font-feature-settings: "ss02";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body {
+  font-feature-settings: "ss03";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.unselectable {
+-webkit-touch-callout: none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+}
+</style>
+  <!--  Disable scrolling  -->
+  <script defer="" src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-scrolldisable@1/scrolldisable.js"></script>
+  <script tr-color-vars="content-primary,content-secondary,content-tertiary,content-quad,content-on-black,content-dark80,content-dark60,content-dark40,content-dark20,cta-primary,cta-primary-hover,stroke-primary,stroke-primary-hover,stroke-codesnippet,stroke-on-black,stroke-img-outline,bg-primary,bg-secondary,bg-tertiary,bg-codesnippet,brand-jsts-text,brand-jsts-bg,brand-python-text,brand-python-bg" duration="0.25" ease="power1.out">
+(function colorModeToggle() {
+  function attr(defaultVal, attrVal) {
+    const defaultValType = typeof defaultVal;
+    if (typeof attrVal !== "string" || attrVal.trim() === "") return defaultVal;
+    if (attrVal === "true" && defaultValType === "boolean") return true;
+    if (attrVal === "false" && defaultValType === "boolean") return false;
+    if (isNaN(attrVal) && defaultValType === "string") return attrVal;
+    if (!isNaN(attrVal) && defaultValType === "number") return +attrVal;
+    return defaultVal;
+  }
+  const htmlElement = document.documentElement;
+  const computed = getComputedStyle(htmlElement);
+  let toggleEl;
+  let togglePressed = "false";
+  let previousTheme = "light"; // Default previous theme
+  let isDarkGlobal = false;    // We'll store the final chosen theme state here
+  const scriptTag = document.querySelector("[tr-color-vars]");
+  if (!scriptTag) {
+    console.warn("Script tag with tr-color-vars attribute not found");
+    return;
+  }
+  let colorModeDuration = attr(0.5, scriptTag.getAttribute("duration"));
+  let colorModeEase = attr("power1.out", scriptTag.getAttribute("ease"));
+  const cssVariables = scriptTag.getAttribute("tr-color-vars");
+  if (!cssVariables.length) {
+    console.warn("Value of tr-color-vars attribute not found");
+    return;
+  }
+  let lightColors = {};
+  let darkColors = {};
+  cssVariables.split(",").forEach(function (item) {
+    let lightValue = computed.getPropertyValue(`--color--${item}`);
+    let darkValue = computed.getPropertyValue(`--dark--${item}`);
+    if (lightValue.length) {
+      if (!darkValue.length) darkValue = lightValue;
+      lightColors[`--color--${item}`] = lightValue;
+      darkColors[`--color--${item}`] = darkValue;
+    }
+  });
+  if (!Object.keys(lightColors).length) {
+    console.warn("No variables found matching tr-color-vars attribute value");
+    return;
+  }
+  function setColors(colorObject, animate) {
+    if (typeof gsap !== "undefined" && animate) {
+      gsap.to(htmlElement, {
+        ...colorObject,
+        duration: colorModeDuration,
+        ease: colorModeEase,
+      });
+    } else {
+      Object.keys(colorObject).forEach(function (key) {
+        htmlElement.style.setProperty(key, colorObject[key]);
+      });
+    }
+  }
+  function toggleBgDottedFilter(isDark) {
+    const bgDottedElements = document.querySelectorAll(".bg-dotted");
+    bgDottedElements.forEach((el) => {
+      el.style.filter = isDark ? "invert(1)" : "none";
+    });
+  }
+  function applyThemeBasedOnPreference(isDark, animate = false) {
+    isDarkGlobal = isDark;
+    if (isDark) {
+      htmlElement.classList.add("dark-mode");
+      setColors(darkColors, animate);
+      togglePressed = "true";
+      previousTheme = "dark";
+    } else {
+      htmlElement.classList.remove("dark-mode");
+      setColors(lightColors, animate);
+      togglePressed = "false";
+      previousTheme = "light";
+    }
+  }
+  function initializeTheme() {
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const storagePreference = localStorage.getItem("dark-mode");
+    const isDark = storagePreference !== null ? storagePreference === "true" : systemPrefersDark;
+    applyThemeBasedOnPreference(isDark, false);
+    togglePressed = isDark ? "true" : "false";
+  }
+  function goDark(dark, animate) {
+    localStorage.setItem("dark-mode", dark ? "true" : "false");
+    applyThemeBasedOnPreference(dark, animate);
+    // We'll call toggleBgDottedFilter after DOM is loaded
+  }
+  function checkPreference(e) {
+    applyThemeBasedOnPreference(e.matches);
+  }
+  const colorPreference = window.matchMedia("(prefers-color-scheme: dark)");
+  colorPreference.addEventListener("change", (e) => {
+    checkPreference(e);
+  });
+  // Initialize theme immediately (no waiting for DOMContentLoaded)
+  initializeTheme();
+  window.addEventListener("DOMContentLoaded", () => {
+    // Now that the DOM is fully loaded, we can safely invert bg-dotted if needed
+    toggleBgDottedFilter(isDarkGlobal);
+    toggleEl = document.querySelectorAll("[tr-color-toggle]");
+    toggleEl.forEach((element) => {
+      element.setAttribute("aria-label", "View Dark Mode");
+      element.setAttribute("role", "button");
+      element.setAttribute("aria-pressed", togglePressed);
+    });
+    document.addEventListener("click", (e) => {
+      const targetElement = e.target.closest("[tr-color-toggle]");
+      if (targetElement) {
+        const isDark = htmlElement.classList.contains("dark-mode");
+        goDark(!isDark, true);
+        // After switching theme post-load, elements already in DOM so this is safe
+        toggleBgDottedFilter(!isDark);
+      }
+    });
+  });
+})();
+</script>
+  <script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const mainSection = document.getElementById("main");
+    const headerDivider = document.querySelector(".header-divider");
+    // Function to check the position of #main and update the divider opacity
+    function checkPosition() {
+      const rect = mainSection.getBoundingClientRect();
+      if (rect.top <= 50) {
+        headerDivider.style.opacity = "1"; // Show the divider
+      } else {
+        headerDivider.style.opacity = "0"; // Hide the divider
+      }
+    }
+    // Check position once on page load
+    checkPosition();
+    // Listen to scroll events to update as you scroll
+    window.addEventListener("scroll", checkPosition);
+  });
+</script>
+  <!--  Custom right click  -->
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Select the div that triggers the contextual menu and the menu itself
+    const triggerDiv = document.getElementById("right-click-menu");
+    const contextMenu = document.querySelector(".logo-right-click");
+    // Function to toggle the visibility of the contextual menu
+    function toggleContextMenu(event) {
+      event.preventDefault(); // Prevent any default action
+      const menuVisible = !contextMenu.classList.contains("hidden");
+      // Hide the menu if it's already visible
+      if (menuVisible) {
+        contextMenu.classList.add("hidden");
+      } else {
+        // Position the menu relative to the click and show it
+        contextMenu.classList.remove("hidden");
+      }
+    }
+    // Hide the contextual menu when clicking outside
+    function hideContextMenu() {
+      contextMenu.classList.add("hidden");
+    }
+    // Add event listeners
+    triggerDiv.addEventListener("contextmenu", toggleContextMenu); // Right-click opens menu
+    document.addEventListener("click", hideContextMenu); // Click outside closes menu
+    // Stop clicks on the menu itself from hiding it
+    contextMenu.addEventListener("click", function (event) {
+      event.stopPropagation();
+    });
+  });
+</script>
+  <!--  Disable scrolling  -->
+  <script defer="" src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-scrolldisable@1/scrolldisable.js"></script>
+</head>
+<body>
+  <div class="w-embed w-iframe"><!--  Google Tag Manager (noscript)  -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns?id=GTM-K2W3LVD2" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!--  End Google Tag Manager (noscript)  -->
+  </div>
+  <div class="w-embed">
+    <style>
+.w-code-block {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+pre.w-code-block code {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+</style>
+  </div>
+  <div class="header">
+    <div class="toast-msg-bar">
+      <div class="toast-msg-wrap">
+        <div class="toast-msg-star">
+          <div class="label on-black toast-msg-star-1">*<span class="label brand">*</span>*</div>
+          <div class="label on-black toast-msg-star-2"><span class="label brand">*</span>*<span class="label brand">*</span></div>
+        </div>
+        <a href="https://x.com/mlejva/status/1846568274009698402" target="_blank" class="toast-msg w-inline-block">
+          <div class="label on-black center">we just closed a new funding round of <span class="label brand">$11.5M</span> LED by Decibel</div>
+          <div class="toast-msg-divider"></div>
+          <div class="label on-black">LEARN MORE →</div>
+        </a>
+        <div class="toast-msg-star">
+          <div class="label on-black toast-msg-star-1">*<span class="label brand">*</span>*</div>
+          <div class="label on-black toast-msg-star-2"><span class="label brand">*</span>*<span class="label brand">*</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="header-wrap-out">
+      <div fs-scrolldisable-element="smart-nav" data-animation="default" data-collapse="medium" data-duration="0" data-easing="linear" data-easing2="linear" role="banner" class="navbar w-nav">
+        <div class="navbar-container w-container">
+          <div id="w-node-e015f672-7798-b079-9444-8dad8f72c3bc-7b35731c" class="navbar-menu-button w-nav-button">
+            <div class="icon-24 menu-open w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 12H20" stroke="currentColor" stroke-width="2"></path>
+                <path d="M4 16H20" stroke="currentColor" stroke-width="2"></path>
+                <path d="M4 8H20" stroke="currentColor" stroke-width="2"></path>
+              </svg></div>
+            <div class="icon-24 menu-close w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M13.4116 11.9971L18.3656 7.04312L16.9514 5.62891L11.9974 10.5829L7.04703 5.63256L5.63281 7.04677L10.5832 11.9971L5.6377 16.9426L7.05191 18.3568L11.9974 13.4113L16.9465 18.3605L18.3607 16.9463L13.4116 11.9971Z" fill="currentColor"></path>
+              </svg></div>
+          </div>
+          <div id="w-node-e015f672-7798-b079-9444-8dad8f72c3bf-7b35731c" class="navbar-logo">
+            <a id="right-click-menu" ms-code-context-item="1" aria-label="logo" href="/" class="logo w-node-e015f672-7798-b079-9444-8dad8f72c3c0-7b35731c w-inline-block">
+              <div class="logo-shape w-embed"><svg width="26" height="28" viewbox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M21.8458 19.3029C21.6671 19.3029 21.5555 19.4963 21.6448 19.6511L23.5141 22.889C23.6175 23.0681 23.4528 23.2828 23.253 23.2293L17.5836 21.7101C17.3359 21.6437 17.0813 21.7907 17.0149 22.0384L15.4958 27.7079C15.4422 27.9077 15.1739 27.943 15.0705 27.7639L13.2008 24.5254C13.1115 24.3707 12.8881 24.3707 12.7987 24.5254L10.929 27.7639C10.8256 27.943 10.5573 27.9077 10.5038 27.7079L8.9846 22.0384C8.91824 21.7907 8.66365 21.6437 8.41597 21.7101L2.74652 23.2293C2.54675 23.2828 2.38199 23.0681 2.4854 22.889L4.35472 19.6511C4.44406 19.4963 4.33238 19.3029 4.15368 19.3029L0.415222 19.3028C0.208406 19.3028 0.104834 19.0528 0.251077 18.9066L4.40145 14.7563C4.58277 14.5749 4.58277 14.281 4.40145 14.0997L0.251079 9.94927C0.104837 9.80302 0.208414 9.55297 0.415232 9.55297L4.15328 9.55302C4.33198 9.55302 4.44368 9.35957 4.35433 9.20481L2.4854 5.96763C2.38199 5.78852 2.54676 5.5738 2.74652 5.62733L8.41597 7.14652C8.66365 7.21288 8.91824 7.0659 8.98461 6.81822L10.5038 1.14869C10.5573 0.948918 10.8256 0.913592 10.929 1.0927L12.7987 4.33116C12.8881 4.48593 13.1114 4.48593 13.2008 4.33116L15.0705 1.0927C15.1739 0.913592 15.4422 0.948917 15.4957 1.14869L17.0149 6.81822C17.0813 7.0659 17.3359 7.21288 17.5835 7.14652L23.253 5.62733C23.4528 5.5738 23.6175 5.78852 23.5141 5.96763L21.6452 9.20481C21.5558 9.35957 21.6675 9.55302 21.8462 9.55302L25.5844 9.55297C25.7912 9.55297 25.8948 9.80302 25.7486 9.94927L21.5982 14.0997C21.4169 14.281 21.4169 14.5749 21.5982 14.7563L25.7486 18.9066C25.8948 19.0528 25.7912 19.3028 25.5844 19.3028L21.8458 19.3029ZM20.419 10.404C20.5869 10.236 20.4241 9.9541 20.1947 10.0156L15.1461 11.3684C14.8984 11.4348 14.6438 11.2878 14.5775 11.0401L13.224 5.98888C13.1625 5.75947 12.837 5.75947 12.7755 5.98888L11.422 11.0401C11.3557 11.2878 11.1011 11.4348 10.8534 11.3684L5.80496 10.0156C5.57555 9.95414 5.41278 10.2361 5.58072 10.404L9.27643 14.0997C9.45774 14.281 9.45774 14.575 9.27643 14.7563L5.57985 18.4528C5.41191 18.6208 5.57467 18.9027 5.80409 18.8412L10.8534 17.4882C11.1011 17.4218 11.3557 17.5688 11.422 17.8165L12.7755 22.8677C12.837 23.0972 13.1625 23.0972 13.224 22.8677L14.5775 17.8165C14.6439 17.5688 14.8984 17.4218 15.1461 17.4882L20.1956 18.8413C20.425 18.9027 20.5878 18.6208 20.4198 18.4529L16.7232 14.7563C16.5419 14.575 16.5419 14.281 16.7232 14.0997L20.419 10.404Z" fill="currentColor"></path>
+                </svg></div>
+            </a>
+            <div class="logo-right-click hidden">
+              <div class="icon-right-click-arrow w-embed"><svg width="10" height="5" viewbox="0 0 10 5" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 0L10 5H0L5 0Z" fill="black" style="fill:black;fill-opacity:1;"></path>
+                </svg></div>
+              <div class="logo-right-click-menu">
+                <a href="http://e2b.dev" class="logo-right-click-menu-item w-inline-block">
+                  <div class="icon-24 right-click-menu-icon w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 14.9167V6.75" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                      <path d="M8.5 11.417L12 14.917L15.5 11.417" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                      <path d="M16.0846 17.25H7.91797" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg></div>
+                  <div class="label on-black">Download LOGO (SVG/PNG)</div>
+                </a>
+                <div class="logo-right-click-divider"></div>
+                <a href="mailto:vasek@e2b.dev" class="logo-right-click-menu-item w-inline-block">
+                  <div class="icon-24 right-click-menu-icon w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M16.666 7.3335H7.33268C6.68835 7.3335 6.16602 7.85583 6.16602 8.50016V15.5002C6.16602 16.1445 6.68835 16.6668 7.33268 16.6668H16.666C17.3103 16.6668 17.8327 16.1445 17.8327 15.5002V8.50016C17.8327 7.85583 17.3103 7.3335 16.666 7.3335Z" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                      <path d="M17.8327 9.0835L12.6002 12.4085C12.4201 12.5213 12.2119 12.5812 11.9993 12.5812C11.7868 12.5812 11.5786 12.5213 11.3985 12.4085L6.16602 9.0835" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg></div>
+                  <div class="label on-black">Email CEO</div>
+                </a>
+                <div class="logo-right-click-divider"></div>
+                <a href="https://sandbox.company/" target="_blank" class="logo-right-click-menu-item w-inline-block">
+                  <div class="icon-24 right-click-menu-icon w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M15.5 8.5L8.5 15.5" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                      <path d="M10.832 8.5H15.4987V13.1667" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg></div>
+                  <div class="label on-black">The SBX Co.</div>
+                </a>
+              </div>
+            </div>
+          </div>
+          <nav role="navigation" id="w-node-e015f672-7798-b079-9444-8dad8f72c3d3-7b35731c" class="navbar-menu w-nav-menu">
+            <div class="navbar-menu-primary">
+              <a href="/" class="navbar-item w-inline-block">
+                <div class="label navbar-link">Product</div>
+              </a>
+              <link rel="prefetch" href="/">
+              <a href="pricing" class="navbar-item w-inline-block">
+                <div class="label navbar-link">Pricing</div>
+              </a>
+              <link rel="prefetch" href="/pricing">
+              <a href="/changelog" class="navbar-item w-inline-block">
+                <div class="label navbar-link">Changelog</div>
+              </a>
+              <a href="/docs" class="navbar-item w-inline-block">
+                <div class="label navbar-link">Docs</div>
+              </a>
+              <a href="/blog" class="navbar-item w-inline-block">
+                <div class="label navbar-link">Blog</div>
+              </a>
+              <a href="/careers" class="navbar-item hide-desktop w-inline-block">
+                <div class="label navbar-link">Careers</div>
+              </a>
+            </div>
+            <div id="w-node-e015f672-7798-b079-9444-8dad8f72c3e7-7b35731c" class="navbar-menu-secondary">
+              <div class="nav-careers">
+                <a href="http://e2b.dev/careers" class="navbar-item w-inline-block">
+                  <div class="label navbar-link">CAREERS</div>
+                </a>
+              </div>
+              <div class="nav-divider"></div>
+              <div id="w-node-e015f672-7798-b079-9444-8dad8f72c3ed-7b35731c" class="nav-social">
+                <a aria-label="github link" href="https://github.com/e2b-dev" target="_blank" class="w-inline-block">
+                  <div class="icon-24 w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M12 4.6499C7.85775 4.6499 4.5 8.0129 4.5 12.1627C4.5 15.4814 6.64875 18.2977 9.62925 19.2907C10.0042 19.3597 10.1407 19.1279 10.1407 18.9284C10.1407 18.7507 10.1348 18.2774 10.131 17.6512C8.0445 18.1049 7.60425 16.6439 7.60425 16.6439C7.26375 15.7754 6.77175 15.5444 6.77175 15.5444C6.09075 15.0794 6.8235 15.0884 6.8235 15.0884C7.57575 15.1409 7.97175 15.8624 7.97175 15.8624C8.64075 17.0099 9.7275 16.6784 10.1542 16.4864C10.2232 16.0012 10.4167 15.6704 10.6313 15.4829C8.96625 15.2932 7.215 14.6482 7.215 11.7697C7.215 10.9499 7.5075 10.2787 7.98675 9.75365C7.9095 9.5639 7.65225 8.79965 8.06025 7.76615C8.06025 7.76615 8.69025 7.56365 10.1227 8.53565C10.7346 8.36879 11.3658 8.2838 12 8.2829C12.6375 8.2859 13.2787 8.36915 13.878 8.53565C15.3097 7.56365 15.9382 7.7654 15.9382 7.7654C16.3477 8.79965 16.0898 9.5639 16.0133 9.75365C16.4932 10.2787 16.7843 10.9499 16.7843 11.7697C16.7843 14.6557 15.03 15.2909 13.3597 15.4769C13.629 15.7087 13.8682 16.1669 13.8682 16.8682C13.8682 17.8717 13.8593 18.6824 13.8593 18.9284C13.8593 19.1294 13.9943 19.3634 14.3752 19.2899C15.8687 18.789 17.167 17.8314 18.0866 16.5524C19.0062 15.2735 19.5006 13.7379 19.5 12.1627C19.5 8.0129 16.1415 4.6499 12 4.6499Z" fill="currentColor"></path>
+                    </svg></div>
+                </a>
+                <a aria-label="discord link" href="https://discord.com/invite/U7KEcGErtQ" target="_blank" class="w-inline-block">
+                  <div class="icon-24 w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M17.1599 7.97777C15.9482 6.99847 14.229 6.81787 14.229 6.81787L14.1996 7.96937C12.8143 7.96937 11.3849 7.96937 9.99961 7.96937L9.99191 6.88997C9.99191 6.88997 8.25171 6.99847 7.02321 7.99107C6.38131 8.58677 5.09961 12.0721 5.09961 15.0849C5.09961 15.1381 5.11291 15.1899 5.13951 15.2361C6.02501 16.7992 8.43931 17.208 8.98881 17.2255C8.99231 17.2262 8.99511 17.2262 8.99861 17.2262C9.09591 17.2262 9.19881 17.187 9.24431 17.1002L9.79241 16.0607C9.34021 15.9459 8.87331 15.8094 8.36441 15.6288C7.99971 15.4993 7.81001 15.0989 7.93951 14.7349C8.06901 14.3709 8.47011 14.1812 8.83341 14.31C11.3016 15.1878 12.7702 15.1871 15.3749 14.3065C15.7424 14.184 16.1393 14.3793 16.2625 14.7454C16.3864 15.1115 16.1897 15.5091 15.8236 15.633C15.314 15.8052 14.8492 15.9368 14.3991 16.0488L14.9542 17.1009C14.9997 17.1877 15.1033 17.2269 15.1999 17.2269C15.2034 17.2269 15.2062 17.2269 15.2097 17.2262C15.7599 17.2087 18.1742 16.7992 19.059 15.2361C19.0863 15.1899 19.0996 15.1381 19.0996 15.0842C19.0996 12.0721 17.8179 8.58677 17.1599 7.97777ZM10.0276 13.561C9.44731 13.561 8.97761 12.9359 8.97761 12.1638C8.97761 11.3924 9.44731 10.7666 10.0276 10.7666C10.61 10.6896 11.065 11.3917 11.0776 12.1638C11.0776 12.9359 10.6079 13.561 10.0276 13.561ZM14.1968 13.5778C13.6165 13.5778 13.1468 12.9513 13.1468 12.1778C13.1468 11.4043 13.6165 10.7778 14.1968 10.7778C14.7771 10.7778 15.2468 11.4043 15.2468 12.1778C15.2468 12.9513 14.7771 13.5778 14.1968 13.5778Z" fill="currentColor"></path>
+                    </svg></div>
+                </a>
+                <a aria-label="linkedin link" href="https://www.linkedin.com/company/e2b-dev/" target="_blank" class="w-inline-block">
+                  <div class="icon-24 w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M17.9665 5H6.03347C5.75938 5 5.49651 5.10888 5.3027 5.3027C5.10888 5.49651 5 5.75938 5 6.03347V17.9665C5 18.2406 5.10888 18.5035 5.3027 18.6973C5.49651 18.8911 5.75938 19 6.03347 19H17.9665C18.2406 19 18.5035 18.8911 18.6973 18.6973C18.8911 18.5035 19 18.2406 19 17.9665V6.03347C19 5.75938 18.8911 5.49651 18.6973 5.3027C18.5035 5.10888 18.2406 5 17.9665 5ZM9.17278 16.9262H7.06792V10.2403H9.17278V16.9262ZM8.11889 9.31375C7.88013 9.31241 7.64712 9.24036 7.44926 9.10672C7.25141 8.97307 7.09757 8.78381 7.00718 8.56282C6.91678 8.34183 6.89388 8.09901 6.94135 7.86502C6.98883 7.63102 7.10455 7.41633 7.27392 7.24804C7.4433 7.07975 7.65873 6.96541 7.89302 6.91944C8.12732 6.87346 8.36998 6.89793 8.59039 6.98974C8.81079 7.08155 8.99906 7.2366 9.13144 7.43531C9.26381 7.63402 9.33435 7.86749 9.33417 8.10625C9.33642 8.2661 9.30647 8.42477 9.24609 8.5728C9.18572 8.72083 9.09616 8.85519 8.98275 8.96787C8.86934 9.08055 8.73441 9.16925 8.586 9.22867C8.43758 9.28809 8.27872 9.31703 8.11889 9.31375ZM16.9311 16.9321H14.8272V13.2794C14.8272 12.2022 14.3693 11.8697 13.7782 11.8697C13.154 11.8697 12.5415 12.3403 12.5415 13.3067V16.9321H10.4367V10.2451H12.4608V11.1717H12.4881C12.6913 10.7604 13.4029 10.0575 14.4889 10.0575C15.6633 10.0575 16.9321 10.7546 16.9321 12.7963L16.9311 16.9321Z" fill="currentColor"></path>
+                    </svg></div>
+                </a>
+                <a aria-label="x link" href="https://x.com/e2b_dev" target="_blank" class="w-inline-block">
+                  <div class="icon-24 w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M13.3021 10.8029L17.5685 5.84351L17.7862 5.59053H17.4524H16.4233H16.353L16.3072 5.64379L12.6657 9.87668L9.76624 5.65694L9.72061 5.59053H9.64004H6.16602H5.87501L6.03981 5.83037L10.5278 12.362L6.04994 17.5668L5.83228 17.8198H6.16602H7.19527H7.26553L7.31135 17.7666L11.1641 13.288L14.2325 17.7534L14.2781 17.8198H14.3587H17.8327H18.1237L17.9589 17.58L13.3021 10.8029ZM14.9226 16.774L11.8527 12.3829V12.3826L11.8251 12.3431L11.3636 11.6831L11.3636 11.683L7.86001 6.67158H9.06721L11.9848 10.845L11.9848 10.845L12.4463 11.5051L12.4463 11.5051L16.1299 16.774H14.9226Z" fill="currentColor" stroke="currentColor" stroke-width="0.30625"></path>
+                    </svg></div>
+                </a>
+              </div>
+              <div class="nav-divider"></div>
+              <div tr-color-toggle="" id="w-node-e015f672-7798-b079-9444-8dad8f72c3f7-7b35731c" class="nav-switch">
+                <div class="icon-24 switch-dark w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 6C11.2044 6.79565 10.7574 7.87478 10.7574 9C10.7574 10.1252 11.2044 11.2043 12 12C12.7957 12.7956 13.8748 13.2426 15 13.2426C16.1252 13.2426 17.2044 12.7956 18 12C18 13.1867 17.6481 14.3467 16.9888 15.3334C16.3295 16.3201 15.3925 17.0892 14.2961 17.5433C13.1997 17.9974 11.9933 18.1162 10.8295 17.8847C9.66557 17.6532 8.59648 17.0818 7.75736 16.2426C6.91825 15.4035 6.3468 14.3344 6.11529 13.1705C5.88378 12.0067 6.0026 10.8003 6.45673 9.7039C6.91085 8.60754 7.67989 7.67047 8.66658 7.01118C9.65328 6.35189 10.8133 6 12 6Z" fill="currentColor" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </svg></div>
+                <div class="icon-24 switch-light w-embed"><svg width="24" height="24" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 4C12.2761 4 12.5 4.22386 12.5 4.5V6C12.5 6.27614 12.2761 6.5 12 6.5C11.7239 6.5 11.5 6.27614 11.5 6V4.5C11.5 4.22386 11.7239 4 12 4ZM12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5ZM12.5 18C12.5 17.7239 12.2761 17.5 12 17.5C11.7239 17.5 11.5 17.7239 11.5 18V19.5C11.5 19.7761 11.7239 20 12 20C12.2761 20 12.5 19.7761 12.5 19.5V18ZM6.34371 6.34469C6.53897 6.14943 6.85556 6.14943 7.05082 6.34469L8.10832 7.40219C8.30358 7.59745 8.30358 7.91403 8.10832 8.1093C7.91306 8.30456 7.59647 8.30456 7.40121 8.1093L6.34371 7.0518C6.14845 6.85653 6.14845 6.53995 6.34371 6.34469ZM16.5987 15.8916C16.4034 15.6963 16.0868 15.6963 15.8916 15.8916C15.6963 16.0868 15.6963 16.4034 15.8916 16.5987L16.9491 17.6562C17.1443 17.8514 17.4609 17.8514 17.6562 17.6562C17.8514 17.4609 17.8514 17.1443 17.6562 16.9491L16.5987 15.8916ZM4 12C4 11.7239 4.22386 11.5 4.5 11.5H6C6.27614 11.5 6.5 11.7239 6.5 12C6.5 12.2761 6.27614 12.5 6 12.5H4.5C4.22386 12.5 4 12.2761 4 12ZM18 11.5C17.7239 11.5 17.5 11.7239 17.5 12C17.5 12.2761 17.7239 12.5 18 12.5H19.5C19.7761 12.5 20 12.2761 20 12C20 11.7239 19.7761 11.5 19.5 11.5H18ZM8.10832 15.8916C8.30358 16.0868 8.30358 16.4034 8.10832 16.5987L7.05082 17.6562C6.85556 17.8514 6.53897 17.8514 6.34371 17.6562C6.14845 17.4609 6.14845 17.1443 6.34371 16.9491L7.40121 15.8916C7.59647 15.6963 7.91306 15.6963 8.10832 15.8916ZM17.6562 7.05082C17.8514 6.85556 17.8514 6.53897 17.6562 6.34371C17.4609 6.14845 17.1443 6.14845 16.9491 6.34371L15.8916 7.40121C15.6963 7.59647 15.6963 7.91306 15.8916 8.10832C16.0868 8.30358 16.4034 8.30358 16.5987 8.10832L17.6562 7.05082Z" fill="currentColor"></path>
+                  </svg></div>
+                <div class="label switch-mode">Light/DARK</div>
+              </div>
+              <div id="w-node-e015f672-7798-b079-9444-8dad8f72c3fc-7b35731c" class="wrap-buttons-small">
+                <a href="/auth/sign-up" class="button small primary mobile-w100 w-button">SIGN UP</a>
+                <a href="/auth/sign-in" class="button small secondary mobile-w100 w-button">SIGN IN</a>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <div class="header-divider"></div>
+  </div>
+  <div class="use-case-item center">
+    <div class="use-case-item-box">
+      <div class="use-case-img">
+        <div class="img-adv-reas">
+          <div class="img-adv-reas-lines1 w-embed"><svg width="77" height="42" viewbox="0 0 77 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M63.6178 26V25.124H66.0178V18.368H65.9338L63.8218 20.336L63.2338 19.7L65.4538 17.624H67.0258V25.124H69.2338V26H63.6178ZM8.01131 31.624H10.8553C11.5753 31.624 12.1393 31.82 12.5473 32.212C12.9553 32.604 13.1593 33.128 13.1593 33.784C13.1593 34.288 13.0353 34.684 12.7873 34.972C12.5473 35.26 12.2353 35.464 11.8513 35.584V35.62C12.3233 35.732 12.7113 35.944 13.0153 36.256C13.3193 36.56 13.4713 37.004 13.4713 37.588C13.4713 37.924 13.4153 38.24 13.3033 38.536C13.1913 38.832 13.0313 39.088 12.8233 39.304C12.6233 39.52 12.3833 39.692 12.1033 39.82C11.8313 39.94 11.5353 40 11.2153 40H8.01131V31.624ZM10.9153 39.124C11.3793 39.124 11.7433 39.02 12.0073 38.812C12.2713 38.604 12.4033 38.284 12.4033 37.852V37.36C12.4033 36.936 12.2713 36.62 12.0073 36.412C11.7433 36.196 11.3793 36.088 10.9153 36.088H9.01931V39.124H10.9153ZM10.7473 35.26C11.1713 35.26 11.5033 35.168 11.7433 34.984C11.9833 34.792 12.1033 34.504 12.1033 34.12V33.652C12.1033 33.268 11.9833 32.98 11.7433 32.788C11.5033 32.596 11.1713 32.5 10.7473 32.5H9.01931V35.26H10.7473Z" fill="var(--color--content-primary)"></path>
+              <path d="M12.7273 12L12.0193 9.612H9.07931L8.37131 12H7.32731L9.89531 3.624H11.2273L13.7953 12H12.7273ZM10.6033 4.692H10.4953L9.31931 8.736H11.7793L10.6033 4.692Z" fill="var(--color--brand)"></path>
+              <path d="M20.5 8.5H38.5V22.5M20.5 36.5H38.5V22.5M38.5 22.5H56.5" stroke="var(--color--content-primary)"></path>
+              <path d="M20.5 8.5H38.5V22.5H56.5" stroke="var(--color--brand)" style="stroke:var(--color--brand)"></path>
+            </svg></div>
+          <div class="img-adv-reas-lines2 w-embed"><svg width="77" height="42" viewbox="0 0 77 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.7273 12L12.0193 9.612H9.07931L8.37131 12H7.32731L9.89531 3.624H11.2273L13.7953 12H12.7273ZM10.6033 4.692H10.4953L9.31931 8.736H11.7793L10.6033 4.692ZM63.6178 26V25.124H66.0178V18.368H65.9338L63.8218 20.336L63.2338 19.7L65.4538 17.624H67.0258V25.124H69.2338V26H63.6178Z" fill="var(--color--content-primary)"></path>
+              <path d="M8.01131 31.624H10.8553C11.5753 31.624 12.1393 31.82 12.5473 32.212C12.9553 32.604 13.1593 33.128 13.1593 33.784C13.1593 34.288 13.0353 34.684 12.7873 34.972C12.5473 35.26 12.2353 35.464 11.8513 35.584V35.62C12.3233 35.732 12.7113 35.944 13.0153 36.256C13.3193 36.56 13.4713 37.004 13.4713 37.588C13.4713 37.924 13.4153 38.24 13.3033 38.536C13.1913 38.832 13.0313 39.088 12.8233 39.304C12.6233 39.52 12.3833 39.692 12.1033 39.82C11.8313 39.94 11.5353 40 11.2153 40H8.01131V31.624ZM10.9153 39.124C11.3793 39.124 11.7433 39.02 12.0073 38.812C12.2713 38.604 12.4033 38.284 12.4033 37.852V37.36C12.4033 36.936 12.2713 36.62 12.0073 36.412C11.7433 36.196 11.3793 36.088 10.9153 36.088H9.01931V39.124H10.9153ZM10.7473 35.26C11.1713 35.26 11.5033 35.168 11.7433 34.984C11.9833 34.792 12.1033 34.504 12.1033 34.12V33.652C12.1033 33.268 11.9833 32.98 11.7433 32.788C11.5033 32.596 11.1713 32.5 10.7473 32.5H9.01931V35.26H10.7473Z" fill="var(--color--brand)"></path>
+              <path d="M20.5 8.5H38.5V22.5M20.5 36.5H38.5V22.5M38.5 22.5H56.5" stroke="var(--color--content-primary)"></path>
+              <path d="M20.5 36.5H38.5V22.5H56.5" stroke="var(--color--brand)"></path>
+            </svg></div>
+          <div class="img-adv-reas-lines3 w-embed"><svg width="77" height="42" viewbox="0 0 77 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.7273 12L12.0193 9.612H9.07931L8.37131 12H7.32731L9.89531 3.624H11.2273L13.7953 12H12.7273ZM10.6033 4.692H10.4953L9.31931 8.736H11.7793L10.6033 4.692ZM66.1978 26.144C65.6858 26.144 65.2458 26.048 64.8778 25.856C64.5098 25.656 64.2058 25.372 63.9658 25.004C63.7258 24.636 63.5498 24.184 63.4378 23.648C63.3258 23.112 63.2698 22.5 63.2698 21.812C63.2698 21.132 63.3258 20.524 63.4378 19.988C63.5498 19.444 63.7258 18.988 63.9658 18.62C64.2058 18.252 64.5098 17.972 64.8778 17.78C65.2458 17.58 65.6858 17.48 66.1978 17.48C66.7098 17.48 67.1498 17.58 67.5178 17.78C67.8858 17.972 68.1898 18.252 68.4298 18.62C68.6698 18.988 68.8458 19.444 68.9578 19.988C69.0698 20.524 69.1258 21.132 69.1258 21.812C69.1258 22.5 69.0698 23.112 68.9578 23.648C68.8458 24.184 68.6698 24.636 68.4298 25.004C68.1898 25.372 67.8858 25.656 67.5178 25.856C67.1498 26.048 66.7098 26.144 66.1978 26.144ZM66.1978 18.356C65.8618 18.356 65.5738 18.424 65.3338 18.56C65.0938 18.688 64.8978 18.872 64.7458 19.112C64.6018 19.352 64.4938 19.644 64.4218 19.988C64.3498 20.332 64.3138 20.712 64.3138 21.128V22.496C64.3138 22.632 64.3178 22.768 64.3258 22.904C64.3338 23.032 64.3458 23.156 64.3618 23.276L67.8298 19.484C67.6938 19.124 67.4898 18.848 67.2178 18.656C66.9538 18.456 66.6138 18.356 66.1978 18.356ZM66.1978 25.268C66.5338 25.268 66.8218 25.204 67.0618 25.076C67.3018 24.94 67.4938 24.752 67.6378 24.512C67.7898 24.272 67.9018 23.984 67.9738 23.648C68.0458 23.304 68.0818 22.92 68.0818 22.496V21.128C68.0818 20.992 68.0778 20.86 68.0698 20.732C68.0618 20.596 68.0498 20.468 68.0338 20.348L64.5658 24.14C64.7018 24.5 64.9018 24.78 65.1658 24.98C65.4378 25.172 65.7818 25.268 66.1978 25.268ZM8.01131 31.624H10.8553C11.5753 31.624 12.1393 31.82 12.5473 32.212C12.9553 32.604 13.1593 33.128 13.1593 33.784C13.1593 34.288 13.0353 34.684 12.7873 34.972C12.5473 35.26 12.2353 35.464 11.8513 35.584V35.62C12.3233 35.732 12.7113 35.944 13.0153 36.256C13.3193 36.56 13.4713 37.004 13.4713 37.588C13.4713 37.924 13.4153 38.24 13.3033 38.536C13.1913 38.832 13.0313 39.088 12.8233 39.304C12.6233 39.52 12.3833 39.692 12.1033 39.82C11.8313 39.94 11.5353 40 11.2153 40H8.01131V31.624ZM10.9153 39.124C11.3793 39.124 11.7433 39.02 12.0073 38.812C12.2713 38.604 12.4033 38.284 12.4033 37.852V37.36C12.4033 36.936 12.2713 36.62 12.0073 36.412C11.7433 36.196 11.3793 36.088 10.9153 36.088H9.01931V39.124H10.9153ZM10.7473 35.26C11.1713 35.26 11.5033 35.168 11.7433 34.984C11.9833 34.792 12.1033 34.504 12.1033 34.12V33.652C12.1033 33.268 11.9833 32.98 11.7433 32.788C11.5033 32.596 11.1713 32.5 10.7473 32.5H9.01931V35.26H10.7473Z" fill="var(--color--content-primary)"></path>
+              <path d="M20.5 8.5H38.5V22.5M20.5 36.5H38.5V22.5M38.5 22.5H56.5" stroke="var(--color--content-primary)"></path>
+            </svg></div>
+          <div class="img-adv-reas-lines4 w-embed"><svg width="77" height="42" viewbox="0 0 77 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M63.6178 26V25.124H66.0178V18.368H65.9338L63.8218 20.336L63.2338 19.7L65.4538 17.624H67.0258V25.124H69.2338V26H63.6178ZM8.01131 31.624H10.8553C11.5753 31.624 12.1393 31.82 12.5473 32.212C12.9553 32.604 13.1593 33.128 13.1593 33.784C13.1593 34.288 13.0353 34.684 12.7873 34.972C12.5473 35.26 12.2353 35.464 11.8513 35.584V35.62C12.3233 35.732 12.7113 35.944 13.0153 36.256C13.3193 36.56 13.4713 37.004 13.4713 37.588C13.4713 37.924 13.4153 38.24 13.3033 38.536C13.1913 38.832 13.0313 39.088 12.8233 39.304C12.6233 39.52 12.3833 39.692 12.1033 39.82C11.8313 39.94 11.5353 40 11.2153 40H8.01131V31.624ZM10.9153 39.124C11.3793 39.124 11.7433 39.02 12.0073 38.812C12.2713 38.604 12.4033 38.284 12.4033 37.852V37.36C12.4033 36.936 12.2713 36.62 12.0073 36.412C11.7433 36.196 11.3793 36.088 10.9153 36.088H9.01931V39.124H10.9153ZM10.7473 35.26C11.1713 35.26 11.5033 35.168 11.7433 34.984C11.9833 34.792 12.1033 34.504 12.1033 34.12V33.652C12.1033 33.268 11.9833 32.98 11.7433 32.788C11.5033 32.596 11.1713 32.5 10.7473 32.5H9.01931V35.26H10.7473Z" fill="var(--color--content-primary)"></path>
+              <path d="M12.7273 12L12.0193 9.612H9.07931L8.37131 12H7.32731L9.89531 3.624H11.2273L13.7953 12H12.7273ZM10.6033 4.692H10.4953L9.31931 8.736H11.7793L10.6033 4.692Z" fill="var(--color--brand)"></path>
+              <path d="M20.5 8.5H38.5V22.5M20.5 36.5H38.5V22.5M38.5 22.5H56.5" stroke="var(--color--content-primary)"></path>
+              <path d="M20.5 8.5H38.5V22.5H56.5" stroke="var(--color--brand)" style="stroke:var(--color--brand)"></path>
+            </svg></div>
+          <div class="img-adv-reas-lines5 w-embed"><svg width="77" height="42" viewbox="0 0 77 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.7273 12L12.0193 9.612H9.07931L8.37131 12H7.32731L9.89531 3.624H11.2273L13.7953 12H12.7273ZM10.6033 4.692H10.4953L9.31931 8.736H11.7793L10.6033 4.692ZM66.1978 26.144C65.6858 26.144 65.2458 26.048 64.8778 25.856C64.5098 25.656 64.2058 25.372 63.9658 25.004C63.7258 24.636 63.5498 24.184 63.4378 23.648C63.3258 23.112 63.2698 22.5 63.2698 21.812C63.2698 21.132 63.3258 20.524 63.4378 19.988C63.5498 19.444 63.7258 18.988 63.9658 18.62C64.2058 18.252 64.5098 17.972 64.8778 17.78C65.2458 17.58 65.6858 17.48 66.1978 17.48C66.7098 17.48 67.1498 17.58 67.5178 17.78C67.8858 17.972 68.1898 18.252 68.4298 18.62C68.6698 18.988 68.8458 19.444 68.9578 19.988C69.0698 20.524 69.1258 21.132 69.1258 21.812C69.1258 22.5 69.0698 23.112 68.9578 23.648C68.8458 24.184 68.6698 24.636 68.4298 25.004C68.1898 25.372 67.8858 25.656 67.5178 25.856C67.1498 26.048 66.7098 26.144 66.1978 26.144ZM66.1978 18.356C65.8618 18.356 65.5738 18.424 65.3338 18.56C65.0938 18.688 64.8978 18.872 64.7458 19.112C64.6018 19.352 64.4938 19.644 64.4218 19.988C64.3498 20.332 64.3138 20.712 64.3138 21.128V22.496C64.3138 22.632 64.3178 22.768 64.3258 22.904C64.3338 23.032 64.3458 23.156 64.3618 23.276L67.8298 19.484C67.6938 19.124 67.4898 18.848 67.2178 18.656C66.9538 18.456 66.6138 18.356 66.1978 18.356ZM66.1978 25.268C66.5338 25.268 66.8218 25.204 67.0618 25.076C67.3018 24.94 67.4938 24.752 67.6378 24.512C67.7898 24.272 67.9018 23.984 67.9738 23.648C68.0458 23.304 68.0818 22.92 68.0818 22.496V21.128C68.0818 20.992 68.0778 20.86 68.0698 20.732C68.0618 20.596 68.0498 20.468 68.0338 20.348L64.5658 24.14C64.7018 24.5 64.9018 24.78 65.1658 24.98C65.4378 25.172 65.7818 25.268 66.1978 25.268ZM8.01131 31.624H10.8553C11.5753 31.624 12.1393 31.82 12.5473 32.212C12.9553 32.604 13.1593 33.128 13.1593 33.784C13.1593 34.288 13.0353 34.684 12.7873 34.972C12.5473 35.26 12.2353 35.464 11.8513 35.584V35.62C12.3233 35.732 12.7113 35.944 13.0153 36.256C13.3193 36.56 13.4713 37.004 13.4713 37.588C13.4713 37.924 13.4153 38.24 13.3033 38.536C13.1913 38.832 13.0313 39.088 12.8233 39.304C12.6233 39.52 12.3833 39.692 12.1033 39.82C11.8313 39.94 11.5353 40 11.2153 40H8.01131V31.624ZM10.9153 39.124C11.3793 39.124 11.7433 39.02 12.0073 38.812C12.2713 38.604 12.4033 38.284 12.4033 37.852V37.36C12.4033 36.936 12.2713 36.62 12.0073 36.412C11.7433 36.196 11.3793 36.088 10.9153 36.088H9.01931V39.124H10.9153ZM10.7473 35.26C11.1713 35.26 11.5033 35.168 11.7433 34.984C11.9833 34.792 12.1033 34.504 12.1033 34.12V33.652C12.1033 33.268 11.9833 32.98 11.7433 32.788C11.5033 32.596 11.1713 32.5 10.7473 32.5H9.01931V35.26H10.7473Z" fill="var(--color--content-primary)"></path>
+              <path d="M20.5 8.5H38.5V22.5M20.5 36.5H38.5V22.5M38.5 22.5H56.5" stroke="var(--color--content-primary)"></path>
+            </svg></div>
+          <div class="img-adv-reas-lines6 w-embed"><svg width="77" height="42" viewbox="0 0 77 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.7273 12L12.0193 9.612H9.07931L8.37131 12H7.32731L9.89531 3.624H11.2273L13.7953 12H12.7273ZM10.6033 4.692H10.4953L9.31931 8.736H11.7793L10.6033 4.692ZM63.6178 26V25.124H66.0178V18.368H65.9338L63.8218 20.336L63.2338 19.7L65.4538 17.624H67.0258V25.124H69.2338V26H63.6178Z" fill="var(--color--content-primary)"></path>
+              <path d="M8.01131 31.624H10.8553C11.5753 31.624 12.1393 31.82 12.5473 32.212C12.9553 32.604 13.1593 33.128 13.1593 33.784C13.1593 34.288 13.0353 34.684 12.7873 34.972C12.5473 35.26 12.2353 35.464 11.8513 35.584V35.62C12.3233 35.732 12.7113 35.944 13.0153 36.256C13.3193 36.56 13.4713 37.004 13.4713 37.588C13.4713 37.924 13.4153 38.24 13.3033 38.536C13.1913 38.832 13.0313 39.088 12.8233 39.304C12.6233 39.52 12.3833 39.692 12.1033 39.82C11.8313 39.94 11.5353 40 11.2153 40H8.01131V31.624ZM10.9153 39.124C11.3793 39.124 11.7433 39.02 12.0073 38.812C12.2713 38.604 12.4033 38.284 12.4033 37.852V37.36C12.4033 36.936 12.2713 36.62 12.0073 36.412C11.7433 36.196 11.3793 36.088 10.9153 36.088H9.01931V39.124H10.9153ZM10.7473 35.26C11.1713 35.26 11.5033 35.168 11.7433 34.984C11.9833 34.792 12.1033 34.504 12.1033 34.12V33.652C12.1033 33.268 11.9833 32.98 11.7433 32.788C11.5033 32.596 11.1713 32.5 10.7473 32.5H9.01931V35.26H10.7473Z" fill="var(--color--brand)"></path>
+              <path d="M20.5 8.5H38.5V22.5M20.5 36.5H38.5V22.5M38.5 22.5H56.5" stroke="var(--color--content-primary)"></path>
+              <path d="M20.5 36.5H38.5V22.5H56.5" stroke="var(--color--brand)"></path>
+            </svg></div>
+        </div>
+        <div class="uc-desktop w-embed"><svg width="80" height="72" viewbox="0 0 80 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0.5" y="0.5" width="79" height="71" stroke="currentColor"></rect>
+            <rect x="0.5" y="0.5" width="79" height="8" stroke="currentColor"></rect>
+            <path d="M11 3H78V4H11V3Z" fill="currentColor"></path>
+            <path d="M11 5H78V6H11V5Z" fill="currentColor"></path>
+            <path d="M2 3H4V4H2V3Z" fill="currentColor"></path>
+            <path d="M2 5H4V6H2V5Z" fill="currentColor"></path>
+            <path d="M7.50156 5.072L6.26156 6.32L5.74156 5.8L6.98956 4.56L5.74156 3.32L6.26156 2.8L7.50156 4.048L8.74156 2.8L9.26156 3.32L8.01356 4.56L9.26156 5.8L8.74156 6.32L7.50156 5.072Z" fill="currentColor"></path>
+          </svg></div>
+      </div>
+      <div class="use-case-title">
+        <h3 class="h3">Advanced Reasoning</h3>
+        <div class="p small centred">Improve LLM’s reasoning by converting questions to code. The ultimate calculator for LLM.</div>
+      </div>
+      <a href="#" class="button medium primary w-button">See docs</a>
+    </div>
+  </div>
+  <div class="rtb-blog-detail w-richtext">
+    <h1>Heading 1</h1>
+    <h2>Heading 2</h2>
+    <h3>Heading 3</h3>
+    <h4>Heading 4</h4>
+    <h5>Heading 5</h5>
+    <h6>Heading 6</h6>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+    <p>Quote author</p>
+    <pre contenteditable="false" class="w-code-block" style="display:block;overflow-x:auto;background:#2b2b2b;color:#f8f8f2;padding:0.5em"><code class="language-python" style="white-space:pre"><span style="color:#dcc6e0">import</span><span> os
+</span><span></span><span style="color:#dcc6e0">import</span><span> openai
+</span><span></span><span style="color:#dcc6e0">from</span><span> dotenv </span><span style="color:#dcc6e0">import</span><span> load_dotenv
+</span>load_dotenv()</code></pre>
+    <blockquote>Block quote</blockquote>
+    <p>Ordered list</p>
+    <ol role="list">
+      <li>Item 1</li>
+      <li>Item 2</li>
+      <li>Item 3</li>
+    </ol>
+    <p>Unordered list</p>
+    <ul role="list">
+      <li>Item A</li>
+      <li>Item B</li>
+      <li>Item C</li>
+    </ul>
+    <p>
+      <a href="https://university.webflow.com/lesson/add-and-nest-text-links-in-webflow">Text link</a>
+    </p>
+    <p><strong>Bold text</strong></p>
+    <p><em>Emphasis</em></p>
+    <p><sup>Superscript</sup></p>
+  </div>
+  <p class="p quote-author">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p>
+  <script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=6717bb6618f6a40d53ac2929" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+  <script src="js/e2b-dev.js" type="text/javascript"></script>
+</body>
+</html>

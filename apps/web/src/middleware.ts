@@ -71,13 +71,16 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 // We should probably filter all /, /blog and /changelog paths here and decide what to do with them in the middleware body.
 export const config = {
   matcher: [
-    '/',
+    '/ai-agents/:path*',
+
+    // NOTE: currently disabled because we handle these rewrites for /public folder in next.config.mjs
+
+    /*'/',
     '/blog/:path*',
     '/changelog/:path*',
-    '/ai-agents/:path*',
     '/privacy/:path*',
     '/terms/:path*',
     '/pricing/:path*',
-    '/cookbook/:path*',
+    '/cookbook/:path*', */
   ],
 }
