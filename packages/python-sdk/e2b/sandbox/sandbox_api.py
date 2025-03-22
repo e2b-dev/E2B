@@ -19,6 +19,8 @@ class SandboxInfo:
     """Saved sandbox metadata."""
     started_at: datetime
     """Sandbox start time."""
+    end_at: datetime
+    """Sandbox end time."""
 
 
 @dataclass
