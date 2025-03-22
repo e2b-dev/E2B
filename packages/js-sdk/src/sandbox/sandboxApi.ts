@@ -9,13 +9,13 @@ import { NotFoundError, TemplateError } from '../errors'
 export interface SandboxApiOpts
   extends Partial<
     Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
-  > { }
+  > {}
 
 export interface SandboxListOpts extends SandboxApiOpts {
   /**
-   * Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
+   * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
    */
-  filters?: Record<string, string>
+  query?: { metadata?: Record<string, string> }
 }
 
 /**
@@ -49,7 +49,7 @@ export interface SandboxInfo {
 }
 
 export class SandboxApi {
-  protected constructor() { }
+  protected constructor() {}
 
   /**
    * Kill the sandbox specified by sandbox ID.
@@ -94,21 +94,27 @@ export class SandboxApi {
    *
    * @returns list of running sandboxes.
    */
-  static async list(
-      opts?: SandboxListOpts): Promise<SandboxInfo[]> {
+  static async list(opts?: SandboxListOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    let query = undefined
-    if (opts?.filters) {
-      const encodedPairs: Record<string, string> = Object.fromEntries(Object.entries(opts.filters).map(([key, value]) => [encodeURIComponent(key),encodeURIComponent(value)]))
-      query = new URLSearchParams(encodedPairs).toString()
+    let metadata = undefined
+    if (opts?.query) {
+      if (opts.query.metadata) {
+        const encodedPairs: Record<string, string> = Object.fromEntries(
+          Object.entries(opts.query.metadata).map(([key, value]) => [
+            encodeURIComponent(key),
+            encodeURIComponent(value),
+          ])
+        )
+        metadata = new URLSearchParams(encodedPairs).toString()
+      }
     }
 
     const res = await client.api.GET('/sandboxes', {
-        params: {
-          query: {query},
-        },
+      params: {
+        query: { metadata },
+      },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
@@ -207,13 +213,13 @@ export class SandboxApi {
   }
 
   /**
- * Pause the sandbox specified by sandbox ID.
- *
- * @param sandboxId sandbox ID.
- * @param opts connection options.
- *
- * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
- */
+   * Pause the sandbox specified by sandbox ID.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   */
   protected static async pauseSandbox(
     sandboxId: string,
     opts?: SandboxApiOpts
@@ -246,7 +252,6 @@ export class SandboxApi {
 
     return true
   }
-
 
   protected static async resumeSandbox(
     sandboxId: string,
@@ -301,6 +306,7 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body: {
+        autoPause: false,
         templateID: template,
         metadata: opts?.metadata,
         envVars: opts?.envs,
@@ -324,7 +330,7 @@ export class SandboxApi {
       )
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
-        'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
     return {

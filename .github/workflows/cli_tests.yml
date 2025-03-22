@@ -2,6 +2,9 @@ name: Test CLI
 
 on:
   workflow_call:
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read

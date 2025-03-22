@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Type, TypeVar
+from typing import Any, TypeVar
+from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -11,19 +12,19 @@ class TeamUser:
     """
     Attributes:
         email (str): Email of the user
-        id (str): Identifier of the user
+        id (UUID): Identifier of the user
     """
 
     email: str
-    id: str
-    additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
+    id: UUID
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         email = self.email
 
-        id = self.id
+        id = str(self.id)
 
-        field_dict: Dict[str, Any] = {}
+        field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
@@ -35,11 +36,11 @@ class TeamUser:
         return field_dict
 
     @classmethod
-    def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
+    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         d = src_dict.copy()
         email = d.pop("email")
 
-        id = d.pop("id")
+        id = UUID(d.pop("id"))
 
         team_user = cls(
             email=email,
@@ -50,7 +51,7 @@ class TeamUser:
         return team_user
 
     @property
-    def additional_keys(self) -> List[str]:
+    def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
     def __getitem__(self, key: str) -> Any:
