@@ -3,7 +3,7 @@
 import { PostHogProvider as OriginalPostHogProvider } from 'posthog-js/react'
 import posthog from 'posthog-js'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useEffect } from 'react'
+import { type ReactNode, useEffect } from 'react'
 import { useUser } from './useUser'
 
 export function maybeInit() {
@@ -25,8 +25,10 @@ export function maybeInit() {
 
 maybeInit()
 
+type Props = { children?: ReactNode }
+
 // Based on https://posthog.com/tutorials/nextjs-app-directory-analytics
-export function PostHogProvider({ children }) {
+export function PostHogProvider({ children }: Props) {
   return (
     <OriginalPostHogProvider
       client={process.env.NEXT_PUBLIC_POSTHOG_KEY ? posthog : undefined}

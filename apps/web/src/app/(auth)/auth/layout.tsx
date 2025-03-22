@@ -1,6 +1,9 @@
 import { Footer } from '@/components/Footer'
+import { type ReactNode } from 'react'
 
-export default async function Layout({ children }) {
+type Props = { children?: ReactNode }
+
+export default async function Layout({ children }: Props) {
   return (
     <div className="pt-12">
       {children}

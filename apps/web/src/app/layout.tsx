@@ -7,7 +7,7 @@ import { Providers } from '@/app/providers'
 import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'
 import Canonical from '@/components/Navigation/canonical'
-import { Suspense } from 'react'
+import { type ReactNode, Suspense } from 'react'
 import { Header } from '@/components/Header'
 import glob from 'fast-glob'
 import { Section } from '@/components/SectionProvider'
@@ -29,7 +29,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({ children }) {
+type Props = { children?: ReactNode }
+
+export default async function RootLayout({ children }: Props) {
   const pages = await glob('**/*.mdx', { cwd: 'src/app/(docs)/docs' })
   const allSectionsEntries = (await Promise.all(
     pages.map(async (filename) => [
