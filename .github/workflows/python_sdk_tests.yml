@@ -5,6 +5,9 @@ on:
     secrets:
       E2B_API_KEY:
         required: true
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
