@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { type ReactNode, useEffect } from 'react'
 import { ThemeProvider, useTheme } from 'next-themes'
 import { CustomUserContextProvider } from '@/utils/useUser'
 import { PostHogProvider } from '@/utils/usePostHog'
@@ -29,7 +29,9 @@ function ThemeWatcher() {
   return null
 }
 
-export function Providers({ children }) {
+type Props = { children?: ReactNode }
+
+export function Providers({ children }: Props) {
   return (
     // Make the dark theme the default theme.
     <ThemeProvider
@@ -37,7 +39,7 @@ export function Providers({ children }) {
       disableTransitionOnChange
       forcedTheme="dark"
     >
-      <ThemeWatcher/>
+      <ThemeWatcher />
       <CustomUserContextProvider>
         <PostHogProvider>{children}</PostHogProvider>
       </CustomUserContextProvider>
