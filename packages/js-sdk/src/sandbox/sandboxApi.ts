@@ -140,12 +140,12 @@ export class SandboxApi {
   }
 
   /**
-   * Get running sandbox.
+   * Get sandbox information.
    *
    * @param sandboxId sandbox ID.
    * @param opts connection options.
    *
-   * @returns running sandbox.
+   * @returns sandbox information.
    */
   static async getInfo(
     sandboxId: string,
