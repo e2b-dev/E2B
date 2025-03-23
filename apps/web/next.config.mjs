@@ -44,6 +44,8 @@ function getFilesHash(rootPath) {
 
 const codeSnippetsDir = path.resolve('./src/code')
 
+const landingPageUrl = 'https://www.e2b-landing-page.com'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
@@ -73,6 +75,38 @@ const nextConfig = {
   },
   async rewrites() {
     return {
+      beforeFiles: [
+        ...(process.env.NODE_ENV === 'development' && [
+          {
+            source: '/',
+            destination: `${landingPageUrl}/`,
+          },
+        ]),
+        {
+          source: '/terms/:path*',
+          destination: `${landingPageUrl}/terms/:path*`,
+        },
+        {
+          source: '/privacy/:path*',
+          destination: `${landingPageUrl}/privacy/:path*`,
+        },
+        {
+          source: '/pricing/:path*',
+          destination: `${landingPageUrl}/pricing/:path*`,
+        },
+        {
+          source: '/cookbook/:path*',
+          destination: `${landingPageUrl}/cookbook/:path*`,
+        },
+        {
+          source: '/changelog/:path*',
+          destination: `${landingPageUrl}/changelog/:path*`,
+        },
+        {
+          source: '/blog/:path*',
+          destination: `${landingPageUrl}/blog/:path*`,
+        },
+      ],
       afterFiles: [
         {
           source: '/ingest/:path*',
