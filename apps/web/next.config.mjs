@@ -76,12 +76,10 @@ const nextConfig = {
   async rewrites() {
     return {
       beforeFiles: [
-        ...(process.env.NODE_ENV === 'development' && [
-          {
-            source: '/',
-            destination: `${landingPageUrl}/`,
-          },
-        ]),
+        {
+          source: '/',
+          destination: `${landingPageUrl}/`,
+        },
         {
           source: '/terms/:path*',
           destination: `${landingPageUrl}/terms/:path*`,
