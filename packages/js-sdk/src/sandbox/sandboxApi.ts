@@ -9,7 +9,7 @@ import { TemplateError } from '../errors'
 export interface SandboxApiOpts
   extends Partial<
     Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
-  > { }
+  > {}
 
 export interface SandboxListOpts extends SandboxApiOpts {
   /**
@@ -48,13 +48,13 @@ export interface SandboxInfo {
   startedAt: Date
 
   /**
-    * Sandbox end time.
-    */
+   * Sandbox expiration date.
+   */
   endAt: Date
 }
 
 export class SandboxApi {
-  protected constructor() { }
+  protected constructor() {}
 
   /**
    * Kill the sandbox specified by sandbox ID.
@@ -99,15 +99,19 @@ export class SandboxApi {
    *
    * @returns list of running sandboxes.
    */
-  static async list(
-    opts?: SandboxListOpts): Promise<SandboxInfo[]> {
+  static async list(opts?: SandboxListOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
     let metadata = undefined
     if (opts?.query) {
       if (opts.query.metadata) {
-        const encodedPairs: Record<string, string> = Object.fromEntries(Object.entries(opts.query.metadata).map(([key, value]) => [encodeURIComponent(key), encodeURIComponent(value)]))
+        const encodedPairs: Record<string, string> = Object.fromEntries(
+          Object.entries(opts.query.metadata).map(([key, value]) => [
+            encodeURIComponent(key),
+            encodeURIComponent(value),
+          ])
+        )
         metadata = new URLSearchParams(encodedPairs).toString()
       }
     }
@@ -140,7 +144,7 @@ export class SandboxApi {
   }
 
   /**
-   * Get sandbox information.
+   * Get sandbox information like sandbox id, template, metadata, started at/end at date.
    *
    * @param sandboxId sandbox ID.
    * @param opts connection options.
@@ -263,7 +267,7 @@ export class SandboxApi {
       )
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
-        'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
     return {
@@ -271,7 +275,7 @@ export class SandboxApi {
         sandboxId: res.data!.sandboxID,
         clientId: res.data!.clientID,
       }),
-      envdVersion: res.data!.envdVersion
+      envdVersion: res.data!.envdVersion,
     }
   }
 

@@ -106,8 +106,9 @@ export class Sandbox extends SandboxApi {
 
     this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
-    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
-      }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${
+      this.connectionConfig.debug ? 'http' : 'https'
+    }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -121,7 +122,7 @@ export class Sandbox extends SandboxApi {
         logger: opts?.logger,
       },
       {
-        version: opts?.envdVersion
+        version: opts?.envdVersion,
       }
     )
     this.files = new Filesystem(
@@ -183,7 +184,10 @@ export class Sandbox extends SandboxApi {
     const config = new ConnectionConfig(sandboxOpts)
 
     if (config.debug) {
-      return new this({ sandboxId: 'debug_sandbox_id', ...config }) as InstanceType<S>
+      return new this({
+        sandboxId: 'debug_sandbox_id',
+        ...config,
+      }) as InstanceType<S>
     } else {
       const sandbox = await this.createSandbox(
         template,
@@ -357,12 +361,12 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-  * Get the info of the sandbox.
-  *
-  * @param opts connection options.
-  *
-  * @returns info of the sandbox.
-  */
+   * Get sandbox information like sandbox id, template, metadata, started at/end at date.
+   *
+   * @param opts connection options.
+   *
+   * @returns information about the sandbox
+   */
   async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     return await Sandbox.getInfo(this.sandboxId, {
       ...this.connectionConfig,

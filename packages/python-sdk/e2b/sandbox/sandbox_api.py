@@ -20,7 +20,7 @@ class SandboxInfo:
     started_at: datetime
     """Sandbox start time."""
     end_at: datetime
-    """Sandbox end time."""
+    """Sandbox expiration date."""
 
 
 @dataclass
