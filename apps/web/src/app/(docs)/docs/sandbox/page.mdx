@@ -70,9 +70,16 @@ const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
 // Retrieve sandbox information.
 const info = await sandbox.getInfo()
 
-// Retrieve sandbox expiration date.
-const expirationDate = info.endAt
-console.log(expirationDate)
+console.log(info)
+
+// {
+//   "sandboxId": "iiny0783cype8gmoawzmx-ce30bc46",
+//   "templateId": "rki5dems9wqfm4r03t7g",
+//   "name": "base",
+//   "metadata": {},
+//   "startedAt": "2025-03-24T15:37:58.076Z",
+//   "endAt": "2025-03-24T15:42:58.076Z"
+// }
 ```
 
 ```python
@@ -81,9 +88,18 @@ from e2b_code_interpreter import Sandbox
 # Create sandbox with and keep it running for 60 seconds.
 sandbox = Sandbox(timeout=60)
 
-# Retrieve sandbox expiration date.
-expiration_date = sandbox.get_info().end_at
-print(expiration_date)
+# Retrieve sandbox information.
+info = sandbox.get_info()
+
+print(info)
+
+# SandboxInfo(sandbox_id='ig6f1yt6idvxkxl562scj-419ff533',
+#   template_id='u7nqkmpn3jjf1tvftlsu',
+#   name='base',
+#   metadata={},
+#   started_at=datetime.datetime(2025, 3, 24, 15, 42, 59, 255612, tzinfo=tzutc()),
+#   end_at=datetime.datetime(2025, 3, 24, 15, 47, 59, 255612, tzinfo=tzutc())
+# )
 ```
 </CodeGroup>
 
