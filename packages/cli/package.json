@@ -73,7 +73,7 @@
     "command-exists": "^1.2.9",
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
-    "e2b": "^1.1.0",
+    "e2b": "^1.2.1",
     "inquirer": "^9.2.12",
     "open": "^9.1.0",
     "strip-ansi": "^7.1.0",
