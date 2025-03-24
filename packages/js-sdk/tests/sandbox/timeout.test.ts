@@ -19,5 +19,10 @@ sandboxTest.skipIf(isDebug)('shorten then lenghten timeout', async ({ sandbox })
 
   await wait(6000)
 
-  await sandbox.isRunning()
+  expect(await sandbox.isRunning()).toBeTruthy()
+})
+
+sandboxTest.skipIf(isDebug)('get sandbox timeout', async ({ sandbox }) => {
+  const { endAt } = await sandbox.getInfo()
+  expect(endAt).toBeInstanceOf(Date)
 })
