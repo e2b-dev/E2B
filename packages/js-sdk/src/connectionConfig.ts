@@ -25,7 +25,7 @@ export interface ConnectionOpts {
   /**
    * Domain to use for the API.
    * 
-   * @default E2B_DOMAIN // environment variable or `e2b.dev`
+   * @default E2B_DOMAIN // environment variable or `e2b.app`
    */
   domain?: string
   /**
@@ -74,7 +74,7 @@ export class ConnectionConfig {
   }
 
   private static get domain() {
-    return getEnvVar('E2B_DOMAIN') || 'e2b.dev'
+    return getEnvVar('E2B_DOMAIN') || 'e2b.app'
   }
 
   private static get debug() {

@@ -15,7 +15,7 @@ class ConnectionConfig:
 
     @staticmethod
     def _domain():
-        return os.getenv("E2B_DOMAIN", "e2b.dev")
+        return os.getenv("E2B_DOMAIN", "e2b.app")
 
     @staticmethod
     def _debug():
