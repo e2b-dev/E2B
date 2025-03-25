@@ -26,7 +26,7 @@ async def test_write_binary_file(async_sandbox: AsyncSandbox):
     filename = "test_write.txt"
     text = "This is a test binary file."
     # equivalent to `open("path/to/local/file", "rb")`
-    content = io.BufferedReader(io.BytesIO(text.encode("utf-8")))
+    content = io.BytesIO(text.encode('utf-8'))
 
     info = await async_sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
