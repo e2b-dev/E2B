@@ -1,7 +1,9 @@
+import io
+
 from e2b import AsyncSandbox
 from e2b.sandbox_async.filesystem.filesystem import EntryInfo
 
-async def test_write_file(async_sandbox: AsyncSandbox):
+async def test_write_text_file(async_sandbox: AsyncSandbox):
     filename = "test_write.txt"
     content = "This is a test file."
 
@@ -19,6 +21,21 @@ async def test_write_file(async_sandbox: AsyncSandbox):
 
     read_content = await async_sandbox.files.read(filename)
     assert read_content == content
+
+async def test_write_binary_file(async_sandbox: AsyncSandbox):
+    filename = "test_write.txt"
+    text = "This is a test binary file."
+    # equivalent to `open("path/to/local/file", "rb")`
+    content = io.BufferedReader(io.BytesIO(text.encode("utf-8")))
+
+    info = await async_sandbox.files.write(filename, content)
+    assert info.path == f"/home/user/{filename}"
+
+    exists = await async_sandbox.files.exists(filename)
+    assert exists
+
+    read_content = await async_sandbox.files.read(filename)
+    assert read_content == text
 
 async def test_write_multiple_files(async_sandbox: AsyncSandbox):
     # Attempt to write with empty files array

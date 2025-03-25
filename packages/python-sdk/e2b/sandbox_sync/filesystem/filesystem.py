@@ -1,4 +1,4 @@
-from io import TextIOBase
+from io import TextIOBase, BufferedReader
 from typing import IO, Iterator, List, Literal, Optional, overload, Union
 from e2b.sandbox.filesystem.filesystem import WriteEntry
 
@@ -202,7 +202,7 @@ class Filesystem:
             file_path, file_data = file['path'], file['data']
             if isinstance(file_data, str) or isinstance(file_data, bytes):
                 httpx_files.append(('file', (file_path, file_data)))
-            elif isinstance(file_data, TextIOBase):
+            elif isinstance(file_data, TextIOBase) or isinstance(file_data, BufferedReader):
                 httpx_files.append(('file', (file_path, file_data.read())))
             else:
                 raise ValueError(f"Unsupported data type for file {file_path}")
