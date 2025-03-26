@@ -3,6 +3,44 @@
     "silent": true
   },
   "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "https://www.e2b-landing-page.com/"
+    },
+    {
+      "source": "/terms/:path*",
+      "destination": "https://www.e2b-landing-page.com/terms/:path*"
+    },
+    {
+      "source": "/privacy/:path*",
+      "destination": "https://www.e2b-landing-page.com/privacy/:path*"
+    },
+    {
+      "source": "/pricing/:path*",
+      "destination": "https://www.e2b-landing-page.com/pricing/:path*"
+    },
+    {
+      "source": "/cookbook/:path*",
+      "destination": "https://www.e2b-landing-page.com/cookbook/:path*"
+    },
+    {
+      "source": "/changelog/:path*",
+      "destination": "https://www.e2b-landing-page.com/changelog/:path*"
+    },
+    {
+      "source": "/blog/:path*",
+      "destination": "https://www.e2b-landing-page.com/blog/:path*"
+    },
+    {
+      "source": "/blog/category/:path*",
+      "destination": "https://www.e2b-landing-page.com/category/:path*"
+    },
+    {
+      "source": "/ingest/:path*",
+      "destination": "https://app.posthog.com/:path*"
+    }
+  ],
   "redirects": [
     {
       "source": "/careers",
