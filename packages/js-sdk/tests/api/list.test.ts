@@ -11,31 +11,17 @@ sandboxTest.skipIf(isDebug)('list sandboxes', async ({ sandbox }) => {
     sandboxes.map((s) => s.sandboxId),
     sandbox.sandboxId
   )
-
-  // Check that sandboxes are sorted by startedAt in descending order (newest first)
-  // for (let i = 0; i < sandboxes.length - 1; i++) {
-  //   assert.isAtLeast(
-  //     new Date(sandboxes[i + 1].startedAt).getTime(),
-  //     new Date(sandboxes[i].startedAt).getTime(),
-  //     'Sandboxes should be sorted by startedAt in descending order'
-  //   )
-  // }
 })
 
 sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
   const uniqueId = Date.now().toString()
-  // Create an extra sandbox with a uniqueId
-  const extraSbx = await Sandbox.create({})
-  try {
-    const sbx = await Sandbox.create({ metadata: { uniqueId: uniqueId } })
-    try {
-      const { sandboxes } = await Sandbox.list({ filters: { uniqueId } })
+  const extraSbx = await Sandbox.create({ metadata: { uniqueId } })
 
-      assert.equal(sandboxes.length, 1)
-      assert.equal(sandboxes[0].sandboxId, sbx.sandboxId)
-    } finally {
-      await sbx.kill()
-    }
+  try {
+    const { sandboxes } = await Sandbox.list({ filters: { uniqueId } })
+
+    assert.equal(sandboxes.length, 1)
+    assert.equal(sandboxes[0].sandboxId, extraSbx.sandboxId)
   } finally {
     await extraSbx.kill()
   }
@@ -81,45 +67,49 @@ sandboxTest.skipIf(isDebug)(
   async ({ sandbox }) => {
     const extraSbx = await Sandbox.create()
 
-    const { sandboxes, hasMoreItems, nextToken } = await Sandbox.list({
-      state: ['running'],
-      limit: 1,
-    })
+    try {
+      const { sandboxes, hasMoreItems, nextToken } = await Sandbox.list({
+        state: ['running'],
+        limit: 1,
+      })
 
-    // check first page
-    assert.equal(sandboxes.length, 1)
-    assert.equal(sandboxes[0].state, 'running')
-    assert.isTrue(hasMoreItems)
-    assert.notEqual(nextToken, undefined)
+      // check first page
+      assert.equal(sandboxes.length, 1)
+      assert.equal(sandboxes[0].state, 'running')
+      assert.isTrue(hasMoreItems)
+      assert.notEqual(nextToken, undefined)
 
-    // new sandbox should be on first page
-    assert.include(
-      sandboxes.map((s) => s.sandboxId),
-      extraSbx.sandboxId
-    )
+      // new sandbox should be on first page
+      assert.include(
+        sandboxes.map((s) => s.sandboxId),
+        extraSbx.sandboxId
+      )
 
-    // fetch second page
-    const {
-      sandboxes: sandboxes2,
-      hasMoreItems: hasMoreItems2,
-      nextToken: nextToken2,
-    } = await Sandbox.list({
-      state: ['running'],
-      nextToken: nextToken,
-      limit: 1,
-    })
+      // fetch second page
+      const {
+        sandboxes: sandboxes2,
+        hasMoreItems: hasMoreItems2,
+        nextToken: nextToken2,
+      } = await Sandbox.list({
+        state: ['running'],
+        nextToken: nextToken,
+        limit: 1,
+      })
 
-    // check second page
-    assert.equal(sandboxes2.length, 1)
-    assert.equal(sandboxes2[0].state, 'running')
-    assert.isFalse(hasMoreItems2)
-    assert.equal(nextToken2, undefined)
+      // check second page
+      assert.equal(sandboxes2.length, 1)
+      assert.equal(sandboxes2[0].state, 'running')
+      assert.isFalse(hasMoreItems2)
+      assert.equal(nextToken2, undefined)
 
-    // past sandbox should be on second page
-    assert.include(
-      sandboxes2.map((s) => s.sandboxId),
-      sandbox.sandboxId
-    )
+      // past sandbox should be on second page
+      assert.include(
+        sandboxes2.map((s) => s.sandboxId),
+        sandbox.sandboxId
+      )
+    } finally {
+      await extraSbx.kill()
+    }
   }
 )
 

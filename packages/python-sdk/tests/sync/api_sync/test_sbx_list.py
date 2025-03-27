@@ -16,10 +16,14 @@ def test_list_sandboxes(sandbox: Sandbox):
 @pytest.mark.skip_debug()
 def test_list_sandboxes_with_filter(sandbox: Sandbox):
     unique_id = "".join(random.choices(string.ascii_letters, k=5))
-    Sandbox(metadata={"unique_id": unique_id})
-    sandboxes = Sandbox.list(filters={"unique_id": unique_id})
-    assert len(sandboxes.sandboxes) == 1
-    assert sandboxes.sandboxes[0].metadata["unique_id"] == unique_id
+    extra_sbx = Sandbox(metadata={"unique_id": unique_id})
+    try:
+        # There's an extra sandbox created by the test runner
+        sandboxes = Sandbox.list(filters={"unique_id": unique_id})
+        assert len(sandboxes.sandboxes) == 1
+        assert sandboxes.sandboxes[0].metadata["unique_id"] == unique_id
+    finally:
+        extra_sbx.kill()
 
 @pytest.mark.skip_debug()
 def test_list_paused_sandboxes(sandbox: Sandbox):
@@ -44,22 +48,24 @@ def test_list_sandboxes_with_limit(sandbox: Sandbox):
 @pytest.mark.skip_debug()
 def test_paginate_running_sandboxes(sandbox: Sandbox):
     extra_sbx = Sandbox()
-
     # Check first page
-    sandboxes = Sandbox.list(state=["running"], limit=1)
-    assert len(sandboxes.sandboxes) == 1
-    assert sandboxes.sandboxes[0].state == "running"
-    assert sandboxes.has_more_items is True
-    assert sandboxes.next_token is not None
-    assert extra_sbx.sandbox_id in [sbx.sandbox_id for sbx in sandboxes.sandboxes]
+    try:
+        sandboxes = Sandbox.list(state=["running"], limit=1)
+        assert len(sandboxes.sandboxes) == 1
+        assert sandboxes.sandboxes[0].state == "running"
+        assert sandboxes.has_more_items is True
+        assert sandboxes.next_token is not None
+        assert extra_sbx.sandbox_id in [sbx.sandbox_id for sbx in sandboxes.sandboxes]
 
-    # Check second page
-    sandboxes2 = Sandbox.list(state=["running"], next_token=sandboxes.next_token, limit=1)
-    assert len(sandboxes2.sandboxes) == 1
-    assert sandboxes2.sandboxes[0].state == "running"
-    assert sandboxes2.has_more_items is False
-    assert sandboxes2.next_token is None
-    assert sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes2.sandboxes]
+        # Check second page
+        sandboxes2 = Sandbox.list(state=["running"], next_token=sandboxes.next_token, limit=1)
+        assert len(sandboxes2.sandboxes) == 1
+        assert sandboxes2.sandboxes[0].state == "running"
+        assert sandboxes2.has_more_items is False
+        assert sandboxes2.next_token is None
+        assert sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes2.sandboxes]
+    finally:
+        extra_sbx.kill()
 
 @pytest.mark.skip_debug()
 def test_paginate_paused_sandboxes(sandbox: Sandbox):
