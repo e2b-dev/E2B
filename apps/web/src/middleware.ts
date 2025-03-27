@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { replaceUrls } from '@/utils/replaceUrls'
 import { landingPageHostname, landingPageFramerHostname } from '@/app/hostnames'
+import { replaceUrls } from '@/utils/replaceUrls'
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   if (req.method !== 'GET') return NextResponse.next()
@@ -48,23 +48,34 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     }
   }
 
+  const headers = new Headers(req.headers)
+
   // TODO: Not on the new landing page hosting yet
   if (url.pathname.startsWith('/ai-agents')) {
     url.hostname = landingPageFramerHostname
+
+    const res = await fetch(url.toString(), {
+      ...req,
+      headers,
+      redirect: 'follow',
+    })
+
+    const htmlBody = await res.text()
+
+    // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
+    const modifiedHtmlBody = replaceUrls(htmlBody, url.pathname, 'href="', '">')
+
+    return new NextResponse(modifiedHtmlBody, {
+      status: res.status,
+      statusText: res.statusText,
+      headers: res.headers,
+      url: req.url,
+    })
   }
 
-  const res = await fetch(url.toString(), { ...req })
-
-  const htmlBody = await res.text()
-
-  // !!! NOTE: Replace has intentionally not completed quotes to catch the rest of the path !!!
-  const modifiedHtmlBody = replaceUrls(htmlBody, url.pathname, 'href="', '">')
-
-  return new NextResponse(modifiedHtmlBody, {
-    status: res.status,
-    statusText: res.statusText,
-    headers: res.headers,
-    url: req.url,
+  return NextResponse.rewrite(url.toString(), {
+    ...req,
+    headers,
   })
 }
 

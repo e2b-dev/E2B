@@ -122,7 +122,7 @@ export class Sandbox extends SandboxApi {
         logger: opts?.logger,
       },
       {
-        version: opts?.envdVersion
+        version: opts?.envdVersion,
       }
     )
     this.files = new Filesystem(
@@ -184,12 +184,15 @@ export class Sandbox extends SandboxApi {
     const config = new ConnectionConfig(sandboxOpts)
 
     if (config.debug) {
-      return new this({ sandboxId: 'debug_sandbox_id', ...config }) as InstanceType<S>
-      } else {
-       const sandbox = await this.createSandbox(
-          template,
-          sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-          sandboxOpts
+      return new this({
+        sandboxId: 'debug_sandbox_id',
+        ...config,
+      }) as InstanceType<S>
+    } else {
+      const sandbox = await this.createSandbox(
+        template,
+        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+        sandboxOpts
       )
       return new this({ ...sandbox, ...config }) as InstanceType<S>
     }
@@ -355,5 +358,19 @@ export class Sandbox extends SandboxApi {
     }
 
     return url.toString()
+  }
+
+  /**
+   * Get sandbox information like sandbox id, template, metadata, started at/end at date.
+   *
+   * @param opts connection options.
+   *
+   * @returns information about the sandbox
+   */
+  async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    return await Sandbox.getInfo(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
   }
 }
