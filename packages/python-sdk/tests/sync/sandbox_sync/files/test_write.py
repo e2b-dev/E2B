@@ -1,6 +1,8 @@
+import io
+
 from e2b.sandbox.filesystem.filesystem import EntryInfo
 
-def test_write_file(sandbox):
+def test_write_text_file(sandbox):
     filename = "test_write.txt"
     content = "This is a test file."
 
@@ -18,6 +20,21 @@ def test_write_file(sandbox):
 
     read_content = sandbox.files.read(filename)
     assert read_content == content
+
+def test_write_binary_file(sandbox):
+    filename = "test_write.txt"
+    text = "This is a test binary file."
+    # equivalent to `open("path/to/local/file", "rb")`
+    content = io.BytesIO(text.encode('utf-8'))
+
+    info = sandbox.files.write(filename, content)
+    assert info.path == f"/home/user/{filename}"
+
+    exists = sandbox.files.exists(filename)
+    assert exists
+
+    read_content = sandbox.files.read(filename)
+    assert read_content == text
 
 def test_write_multiple_files(sandbox):
     # Attempt to write with empty files array
