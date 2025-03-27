@@ -153,6 +153,7 @@ export function TemplatesContent({
             <TableHead>RAM MiB</TableHead>
             <TableHead>Created by</TableHead>
             <TableHead>Created at</TableHead>
+            <TableHead>Updated at</TableHead>
             <TableHead></TableHead>
           </TableRow>
         </TableHeader>
@@ -190,6 +191,9 @@ export function TemplatesContent({
                 <TableCell>{template.createdBy?.email}</TableCell>
                 <TableCell>
                   {new Date(template.createdAt).toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  {new Date(template.updatedAt).toLocaleString()}
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>

@@ -12,7 +12,7 @@ from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
-from e2b.sandbox_async.sandbox_api import SandboxApi
+from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
 
@@ -369,5 +369,27 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         await SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
+            **self.connection_config.__dict__,
+        )
+
+    async def get_info(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox id, template, metadata, started at/end at date.
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Sandbox info
+        """
+
+        config_dict = self.connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
+        return await SandboxApi.get_info(
+            sandbox_id=self.sandbox_id,
             **self.connection_config.__dict__,
         )
