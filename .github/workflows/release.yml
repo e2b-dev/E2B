@@ -54,40 +54,52 @@ jobs:
     if: needs.is_release.outputs.release == 'true'
     runs-on: ubuntu-latest
     outputs:
-      js-sdk: ${{ steps.filter.outputs.js-sdk }}
-      python-sdk: ${{ steps.filter.outputs.python-sdk }}
-      cli: ${{ steps.filter.outputs.cli }}
+      js-sdk: ${{ steps.js.outputs.release }}
+      python-sdk: ${{ steps.python.outputs.release }}
+      cli: ${{ steps.cli.outputs.release }}
     steps:
-      - name: Checkout repository
+      - name: Checkout Repo
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
-      - name: Get the last release
-        id: last_release
-        uses: cardinalby/git-get-release-action@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        id: pnpm-install
         with:
-          latest: true
-          prerelease: false
-          draft: false
+          version: 9.5
 
-      - name: Find changes since the last release
-        uses: dorny/paths-filter@v2
-        id: filter
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
-          base: ${{ steps.last_release.outputs.tag_name }}
-          filters: |
-            js-sdk:
-              - 'packages/js-sdk/src/**'
-              - '.github/workflows/js_sdk_tests.yml'
-            python-sdk:
-              - 'packages/python-sdk/e2b/**'
-              - '.github/workflows/python_sdk_tests.yml'
-            cli:
-              - 'packages/cli/src/**'
-              - '.github/workflows/cli_tests.yml'
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Configure pnpm
+        run: |
+          pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check JavasScript SDK Release
+        id: js
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "e2b")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Python SDK Release
+        id: python
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/python-sdk")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check CLI Release
+        id: cli
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/cli")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
   python-tests:
     name: Python SDK Tests
