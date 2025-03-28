@@ -356,7 +356,7 @@ export const buildCommand = new commander.Command('build')
    -t docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
           dockerBuildArgs
         )
-            .map(([key, value]) => `--build-arg="${key}=${value}"`)
+            .map(([key, value]) => `--build-arg "${key}=${value}"`)
             .join(' \\ \n   ')}`
         console.log(`Building docker image with the following command:\n${asBold(cmd)}\n`)
 
