@@ -144,7 +144,7 @@ export class SandboxApi {
   }
 
   /**
-   * Get sandbox information like sandbox id, template, metadata, started at/end at date.
+   * Get sandbox information like sandbox ID, template, metadata, started at/end at date.
    *
    * @param sandboxId sandbox ID.
    * @param opts connection options.
