@@ -16,6 +16,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     'https://e2b.dev/docs/',
     0.8
   )
+    // Filter out legacy docs pages
+    .filter((entry) => !entry.url.includes('/docs/legacy'))
 
   // Deduplicate URLs, keeping the entry with highest priority
   const urlMap = new Map<string, MetadataRoute.Sitemap[0]>()
