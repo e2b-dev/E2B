@@ -5,7 +5,7 @@ to create a changeset run `npx changeset`
 
 # Enter Nix development shell 
 
-install nix 
+install nix and enable flakes
 
 ```
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
