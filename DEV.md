@@ -13,5 +13,7 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 
 enter the dev shell 
 ```
-nix develop 
+nix develop --command zsh
+# or
+nix develop --command bash
 ```
