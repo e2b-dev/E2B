@@ -87,7 +87,7 @@ class ApiClient(AuthenticatedClient):
 
         headers = {
             **default_headers,
-            **config.headers,
+            **(config.headers or {}),
         }
 
         super().__init__(
