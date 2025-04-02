@@ -268,6 +268,7 @@ export class SandboxApi {
         },
       },
       body: {
+        autoPause: false,
         timeout: this.timeoutToSeconds(timeoutMs),
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
