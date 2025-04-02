@@ -38,6 +38,14 @@ class SandboxMetrics:
     """Total memory available"""
 
 
+@dataclass
+class SandboxQuery:
+    """Query parameters for listing sandboxes."""
+
+    metadata: Optional[dict[str, str]] = None
+    """Filter sandboxes by metadata."""
+
+
 class SandboxApiBase(ABC):
     _limits = Limits(
         max_keepalive_connections=10,

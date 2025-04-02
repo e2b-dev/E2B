@@ -27,29 +27,22 @@ sandboxTest.skipIf(isDebug)(
       envs: { TEST_VAR: 'sfisback' },
     })
 
-    try {
-      const cmd = await sandbox.commands.run('echo "$TEST_VAR"')
+    const cmd = await sandbox.commands.run('echo "$TEST_VAR"')
 
-      assert.equal(cmd.exitCode, 0)
-      assert.equal(cmd.stdout.trim(), 'sfisback')
-    } catch {
-      sandbox.kill()
-    }
+    assert.equal(cmd.exitCode, 0)
+    assert.equal(cmd.stdout.trim(), 'sfisback')
 
     await sandbox.pause()
+
     assert.isFalse(await sandbox.isRunning())
 
     await Sandbox.resume(sandbox.sandboxId)
     assert.isTrue(await sandbox.isRunning())
 
-    try {
-      const cmd = await sandbox.commands.run('echo "$TEST_VAR"')
+    const cmd2 = await sandbox.commands.run('echo "$TEST_VAR"')
 
-      assert.equal(cmd.exitCode, 0)
-      assert.equal(cmd.stdout.trim(), 'sfisback')
-    } finally {
-      await sandbox.kill()
-    }
+    assert.equal(cmd2.exitCode, 0)
+    assert.equal(cmd2.stdout.trim(), 'sfisback')
   }
 )
 
@@ -103,10 +96,6 @@ sandboxTest.skipIf(isDebug)(
 
     assert.isObject(processInfo)
     assert.equal(processInfo.pid, expectedPid)
-
-    onTestFinished(() => {
-      sandbox.commands.kill(expectedPid)
-    })
   }
 )
 
@@ -139,10 +128,6 @@ sandboxTest.skipIf(isDebug)(
     assert.isTrue(exists2)
     const readContent2 = await sandbox.files.read(filename)
     assert.equal(readContent2.trim(), 'done')
-
-    onTestFinished(() => {
-      sandbox.commands.kill(cmd.pid)
-    })
   }
 )
 
@@ -169,9 +154,5 @@ sandboxTest.skipIf(isDebug)(
     url = await sandbox.getHost(8000)
     const response2 = await fetch(`https://${url}`)
     assert.equal(response2.status, 200)
-
-    onTestFinished(() => {
-      sandbox.commands.kill(cmd.pid)
-    })
   }
 )
