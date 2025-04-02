@@ -85,6 +85,11 @@ class ApiClient(AuthenticatedClient):
         auth_header_name = "X-API-KEY" if require_api_key else "Authorization"
         prefix = "" if require_api_key else "Bearer"
 
+        headers = {
+            **default_headers,
+            **config.headers,
+        }
+
         super().__init__(
             base_url=config.api_url,
             httpx_args={
@@ -94,9 +99,7 @@ class ApiClient(AuthenticatedClient):
                 },
                 "transport": transport,
             },
-            headers={
-                **default_headers,
-            },
+            headers=headers,
             token=token,
             auth_header_name=auth_header_name,
             prefix=prefix,
