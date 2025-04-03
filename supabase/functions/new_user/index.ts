@@ -36,6 +36,7 @@ function sendToLoops(body: any) {
   })
 }
 
+
 function createHubspotContact(userData: {
   id: string
   email: string
