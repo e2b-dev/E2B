@@ -36,13 +36,13 @@ function sendToLoops(body: any) {
   })
 }
 
-
 function createHubspotContact(userData: {
   id: string
   email: string
   raw_user_meta_data?: {
     full_name?: string
     name?: string
+    is_fragments_user?: boolean
   }
 }) {
   const name =
@@ -62,13 +62,19 @@ function createHubspotContact(userData: {
     }
   }
 
+  // For HubSpot checkbox fields, we need to pass "true" or "false" as strings
+  const isFragmentsUser = userData.raw_user_meta_data?.is_fragments_user
+    ? 'true'
+    : 'false'
+
   // Map Supabase user data to HubSpot properties
   const hubspotContactData = {
     properties: {
-      db_user_id: userData.id,
       email: userData.email,
       firstname: firstName,
       lastname: lastName,
+      db_user_id: userData.id,
+      db_is_fragments_user: isFragmentsUser,
     },
   }
 
