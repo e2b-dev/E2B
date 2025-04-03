@@ -16,7 +16,7 @@ permissions:
 jobs:
   test:
     name: Build and test SDK
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/create-github-app-token@v1
         id: app-token
@@ -32,7 +32,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: '3.9'
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
@@ -78,10 +78,15 @@ jobs:
       - name: Generate SDK reference
         id: sdk-ref
         run: pnpm run --recursive generate-ref
-              
+
       - name: Show docs file structure
-        run: tree ./sdk-reference
-  
+        run: |
+          if [ -d "./sdk-reference" ]; then
+            tree ./sdk-reference
+          else
+            echo "sdk-reference directory does not exist"
+          fi
+
       - name: Update lock file
         run: pnpm i --no-link --no-frozen-lockfile
 

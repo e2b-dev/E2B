@@ -5,9 +5,7 @@ import Script from 'next/script'
 import { Providers } from '@/app/providers'
 
 import '@/styles/tailwind.css'
-import { PostHogAnalytics } from '@/utils/usePostHog'
 import Canonical from '@/components/Navigation/canonical'
-import { Suspense } from 'react'
 import { Header } from '@/components/Header'
 import glob from 'fast-glob'
 import { Section } from '@/components/SectionProvider'
@@ -27,6 +25,15 @@ export const metadata: Metadata = {
     title: 'E2B - Code Interpreting for AI apps',
     description: 'Open-source secure sandboxes for AI code execution',
   },
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'chatlio-widget': any
+    }
+  }
 }
 
 export default async function RootLayout({ children }) {
@@ -71,9 +78,6 @@ export default async function RootLayout({ children }) {
             <Header />
             {children}
           </Layout>
-          <Suspense>
-            <PostHogAnalytics />
-          </Suspense>
           <Analytics />
         </Providers>
       </body>
