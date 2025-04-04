@@ -26,6 +26,7 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> List[SandboxInfo]:
         """
         List all running sandboxes.
@@ -35,6 +36,7 @@ class SandboxApi(SandboxApiBase):
         :param domain: Domain to use for the request, only relevant for self-hosted environments
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
+        :param headers: Additional headers to send with the request
 
         :return: List of running sandboxes
         """
@@ -43,6 +45,7 @@ class SandboxApi(SandboxApiBase):
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            headers=headers,
         )
 
         # Convert filters to the format expected by the API
@@ -92,6 +95,7 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> SandboxInfo:
         """
         Get the sandbox info.
@@ -100,6 +104,8 @@ class SandboxApi(SandboxApiBase):
         :param domain: Domain to use for the request, defaults to `E2B_DOMAIN` environment variable
         :param debug: Debug mode, defaults to `E2B_DEBUG` environment variable
         :param request_timeout: Timeout for the request in **seconds**
+        :param headers: Additional headers to send with the request
+
         :return: Sandbox info
         """
         config = ConnectionConfig(
@@ -107,6 +113,7 @@ class SandboxApi(SandboxApiBase):
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            headers=headers,
         )
 
         async with AsyncApiClient(config) as api_client:
@@ -143,12 +150,14 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> bool:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            headers=headers,
         )
 
         if config.debug:
@@ -178,12 +187,14 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> None:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            headers=headers,
         )
 
         if config.debug:
@@ -211,12 +222,14 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            headers=headers,
         )
 
         async with AsyncApiClient(config) as api_client:
