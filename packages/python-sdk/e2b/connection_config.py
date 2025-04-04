@@ -1,6 +1,6 @@
 import os
 
-from typing import Literal, Optional
+from typing import Literal, Optional, Dict
 
 REQUEST_TIMEOUT: float = 30.0  # 30 seconds
 
@@ -36,11 +36,13 @@ class ConnectionConfig:
         api_key: Optional[str] = None,
         access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ):
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug or ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
+        self.headers = headers
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,
