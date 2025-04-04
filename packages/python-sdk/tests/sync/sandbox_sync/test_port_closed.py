@@ -49,6 +49,6 @@ def test_port_closed(template):
             cleaned_sbx_id = sbx.sandbox_id.split("-")[0]
             assert resp["error"] == "The sandbox is running but port is not open"
             assert cleaned_sbx_id == resp["sandboxId"]
-            assert resp["port"] == f":{bad_port}"
+            assert resp["port"] == bad_port
     finally:
         sbx.kill()

@@ -43,7 +43,7 @@ test.skipIf(isDebug)('closed port in SDK', async () => {
 
   assert.equal(resp.error, 'The sandbox is running but port is not open')
   assert.equal(cleanedSbxId, resp.sandboxId)
-  assert.equal(resp.port, `:${badPort}`)
+  assert.equal(resp.port, badPort)
 })
 
 test.skipIf(isDebug)('closed port in browser  ', async () => {
