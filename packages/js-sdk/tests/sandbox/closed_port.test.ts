@@ -41,7 +41,7 @@ test.skipIf(isDebug)('closed port in SDK', async () => {
   const resp = JSON.parse(resp_text)
   const [cleanedSbxId] = sbx.sandboxId.split('-')
 
-  assert.equal(resp.error, 'The sandbox is running but port is not open')
+  assert.equal(resp.message, 'The sandbox is running but port is not open')
   assert.equal(cleanedSbxId, resp.sandboxId)
   assert.equal(resp.port, badPort)
 })
