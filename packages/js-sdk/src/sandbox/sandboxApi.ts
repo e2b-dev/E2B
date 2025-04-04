@@ -16,6 +16,21 @@ export interface SandboxListOpts extends SandboxApiOpts {
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
    */
   query?: { metadata?: Record<string, string> }
+
+  /**
+   * Filter the list of sandboxes by state.
+   */
+  state?: Array<'running' | 'paused'> | undefined
+
+  /**
+   * Number of sandboxes to return.
+   */
+  limit?: number
+
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
 }
 
 /**
@@ -46,6 +61,11 @@ export interface SandboxInfo {
    * Sandbox start time.
    */
   startedAt: Date
+
+  /**
+   * Sandbox state.
+   */
+  state: 'running' | 'paused'
 }
 
 export class SandboxApi {
@@ -88,21 +108,27 @@ export class SandboxApi {
   }
 
   /**
-   * List all running sandboxes.
+   * List all sandboxes.
    *
    * @param opts connection options.
    *
-   * @returns list of running sandboxes.
+   * @returns list of sandboxes.
    */
-  static async list(opts?: SandboxListOpts): Promise<SandboxInfo[]> {
-    const config = new ConnectionConfig(opts)
+  static async list(opts: SandboxListOpts = {}): Promise<{
+    sandboxes: SandboxInfo[]
+    hasMoreItems: boolean
+    nextToken: string | undefined
+    iterator: AsyncGenerator<SandboxInfo>
+  }> {
+    const { query, state, limit, nextToken, requestTimeoutMs } = opts
+    const config = new ConnectionConfig({ requestTimeoutMs })
     const client = new ApiClient(config)
 
     let metadata = undefined
-    if (opts?.query) {
-      if (opts.query.metadata) {
+    if (query) {
+      if (query.metadata) {
         const encodedPairs: Record<string, string> = Object.fromEntries(
-          Object.entries(opts.query.metadata).map(([key, value]) => [
+          Object.entries(query.metadata).map(([key, value]) => [
             encodeURIComponent(key),
             encodeURIComponent(value),
           ])
@@ -111,11 +137,16 @@ export class SandboxApi {
       }
     }
 
-    const res = await client.api.GET('/sandboxes', {
+    const res = await client.api.GET('/v2/sandboxes', {
       params: {
-        query: { metadata },
+        query: {
+          metadata,
+          state,
+          limit,
+          nextToken,
+        },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(requestTimeoutMs),
     })
 
     const err = handleApiError(res)
@@ -123,18 +154,54 @@ export class SandboxApi {
       throw err
     }
 
-    return (
-      res.data?.map((sandbox: components['schemas']['RunningSandbox']) => ({
-        sandboxId: this.getSandboxId({
-          sandboxId: sandbox.sandboxID,
-          clientId: sandbox.clientID,
-        }),
-        templateId: sandbox.templateID,
-        ...(sandbox.alias && { name: sandbox.alias }),
-        metadata: sandbox.metadata ?? {},
-        startedAt: new Date(sandbox.startedAt),
-      })) ?? []
-    )
+    const nextPageToken = res.response.headers.get('x-next-token') || undefined
+    const hasMoreItems = !!nextPageToken
+
+    const sandboxes = (res.data ?? []).map((sandbox) => ({
+      sandboxId: this.getSandboxId({
+        sandboxId: sandbox.sandboxID,
+        clientId: sandbox.clientID,
+      }),
+      templateId: sandbox.templateID,
+      ...(sandbox.alias && { name: sandbox.alias }),
+      metadata: sandbox.metadata ?? {},
+      startedAt: new Date(sandbox.startedAt),
+      state: sandbox.state,
+    }))
+
+    return {
+      sandboxes,
+      hasMoreItems,
+      nextToken: nextPageToken,
+      iterator: this.listIterator({
+        limit,
+        nextToken: nextPageToken,
+        query,
+        state,
+        requestTimeoutMs,
+      }),
+    }
+  }
+
+  private static async *listIterator(
+    options: SandboxListOpts = {}
+  ): AsyncGenerator<SandboxInfo> {
+    let nextPage = true
+    let token = options.nextToken
+
+    while (nextPage) {
+      const { sandboxes, hasMoreItems, nextToken } = await this.list({
+        ...options,
+        nextToken: token,
+      })
+
+      nextPage = hasMoreItems
+      token = nextToken
+
+      for (const sandbox of sandboxes) {
+        yield sandbox
+      }
+    }
   }
 
   /**

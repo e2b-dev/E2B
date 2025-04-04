@@ -5,9 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.post_sandboxes_sandbox_id_refreshes_body import (
-    PostSandboxesSandboxIDRefreshesBody,
-)
+from ...models.post_sandboxes_sandbox_id_refreshes_body import PostSandboxesSandboxIDRefreshesBody
 from ...types import Response
 
 
@@ -45,9 +43,7 @@ def _parse_response(*, client: Union[AuthenticatedClient, Client], response: htt
         return None
 
 
-def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Any]:
+def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[Any]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,

@@ -12,28 +12,28 @@ To connect to a running sandbox, you first need to retrieve its ID. You can do t
 import { Sandbox } from "@e2b/code-interpreter"
 
 // Get all running sandboxes
-const runningSandboxes = await Sandbox.list() // $HighlightLine
+const { sandboxes } = await Sandbox.list({ state: ['running'] }) // $HighlightLine
 
-if (runningSandboxes.length === 0) {
+if (sandboxes.length === 0) {
   throw new Error("No running sandboxes found")
 }
 
 // Get the ID of the sandbox you want to connect to
-const sandboxId = runningSandboxes[0].sandboxId
+const sandboxId = sandboxes[0].sandboxId
 ```
 
 ```python
 from e2b_code_interpreter import Sandbox
 
 # Get all running sandboxes
-running_sandboxes = Sandbox.list() # $HighlightLine
+running_sandboxes = Sandbox.list(state=['running']) # $HighlightLine
 
 # Get the ID of the sandbox you want to connect to
-if len(running_sandboxes) == 0:
+if len(running_sandboxes.sandboxes) == 0:
   raise Exception("No running sandboxes found")
 
 # Get the ID of the sandbox you want to connect to
-sandbox_id = running_sandboxes[0].sandbox_id
+sandbox_id = running_sandboxes.sandboxes[0].sandbox_id
 ```
 </CodeGroup>
 
@@ -46,14 +46,14 @@ Now that you have the sandbox ID, you can connect to the sandbox using the `Sand
 import { Sandbox } from "@e2b/code-interpreter"
 
 // Get all running sandboxes
-const runningSandboxes = await Sandbox.list()
+const { sandboxes } = await Sandbox.list({ state: ['running'] })
 
-if (runningSandboxes.length === 0) {
+if (sandboxes.length === 0) {
   throw new Error("No running sandboxes found")
 }
 
 // Get the ID of the sandbox you want to connect to
-const sandboxId = runningSandboxes[0].sandboxId
+const sandboxId = sandboxes[0].sandboxId
 
 // Connect to the sandbox
 const sandbox = await Sandbox.connect(sandboxId) // $HighlightLine
@@ -65,13 +65,13 @@ const sandbox = await Sandbox.connect(sandboxId) // $HighlightLine
 from e2b_code_interpreter import Sandbox
 
 # Get all running sandboxes
-running_sandboxes = Sandbox.list()
+running_sandboxes = Sandbox.list(state=['running'])
 
 # Get the ID of the sandbox you want to connect to
-if len(running_sandboxes) == 0:
+if len(running_sandboxes.sandboxes) == 0:
   raise Exception("No running sandboxes found")
 
-sandbox_id = running_sandboxes[0].sandbox_id
+sandbox_id = running_sandboxes.sandboxes[0].sandbox_id
 
 # Connect to the sandbox
 sandbox = Sandbox.connect(sandbox_id) # $HighlightLine

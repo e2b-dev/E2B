@@ -23,8 +23,8 @@ test.skipIf(isDebug)('metadata', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000, metadata })
 
   try {
-    const sbxs = await Sandbox.list()
-    const sbxInfo = sbxs.find((s) => s.sandboxId === sbx.sandboxId)
+    const { sandboxes } = await Sandbox.list()
+    const sbxInfo = sandboxes.find((s) => s.sandboxId === sbx.sandboxId)
 
     assert.deepEqual(sbxInfo?.metadata, metadata)
   } finally {

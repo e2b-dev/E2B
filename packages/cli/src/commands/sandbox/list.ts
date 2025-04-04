@@ -8,12 +8,19 @@ import { handleE2BRequestError } from '../../utils/errors'
 export const listCommand = new commander.Command('list')
   .description('list all running sandboxes')
   .alias('ls')
-  .action(async () => {
+  .option('-s, --state <state>', 'filter by state', (value) => value.split(','))
+  .option('-m, --metadata <metadata>', 'filter by metadata', (value) =>
+    value.replace(/,/g, '&')
+  )
+  .action(async (options) => {
     try {
-      const sandboxes = await listSandboxes()
+      const sandboxes = await listSandboxes({
+        state: options.state,
+        metadata: options.metadata,
+      })
 
       if (!sandboxes?.length) {
-        console.log('No running sandboxes.')
+        console.log('No sandboxes found')
       } else {
         const table = new tablePrinter.Table({
           title: 'Running sandboxes',
@@ -28,6 +35,7 @@ export const listCommand = new commander.Command('list')
             { name: 'alias', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
             { name: 'endAt', alignment: 'left', title: 'End at' },
+            { name: 'state', alignment: 'left', title: 'State' },
             { name: 'cpuCount', alignment: 'left', title: 'vCPUs' },
             { name: 'memoryMB', alignment: 'left', title: 'RAM MiB' },
             { name: 'metadata', alignment: 'left', title: 'Metadata' },
@@ -39,6 +47,8 @@ export const listCommand = new commander.Command('list')
               sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,
               startedAt: new Date(sandbox.startedAt).toLocaleString(),
               endAt: new Date(sandbox.endAt).toLocaleString(),
+              state:
+                sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
               metadata: JSON.stringify(sandbox.metadata),
             }))
             .sort(
@@ -81,13 +91,26 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-export async function listSandboxes(): Promise<
-  e2b.components['schemas']['RunningSandbox'][]
+type ListSandboxesOptions = {
+  state?: e2b.components['schemas']['SandboxState'][]
+  metadata?: string
+}
+
+export async function listSandboxes({
+  state,
+  metadata,
+}: ListSandboxesOptions = {}): Promise<
+  e2b.components['schemas']['ListedSandbox'][]
 > {
   ensureAPIKey()
 
   const signal = connectionConfig.getSignal()
-  const res = await client.api.GET('/sandboxes', { signal })
+  const res = await client.api.GET('/v2/sandboxes', {
+    params: {
+      query: { state, metadata },
+    },
+    signal,
+  })
 
   handleE2BRequestError(res.error, 'Error getting running sandboxes')
 
