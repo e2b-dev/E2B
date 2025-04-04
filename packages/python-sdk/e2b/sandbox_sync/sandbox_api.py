@@ -56,7 +56,7 @@ class SandboxApi(SandboxApiBase):
         List sandboxes with pagination.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param query: Filter the list of sandboxes by metadata, e.g. `{"key": "value"}`, if there are multiple filters they are combined with AND.
+        :param query: Filter the list of sandboxes by metadata, e.g. `SandboxQuery(metadata={"key": "value"})`, if there are multiple filters they are combined with AND.
         :param state: Filter the list of sandboxes by state, e.g. `['paused', 'running']`
         :param limit: Maximum number of sandboxes to return
         :param next_token: Token for pagination

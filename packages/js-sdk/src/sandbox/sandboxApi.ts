@@ -157,17 +157,19 @@ export class SandboxApi {
     const nextPageToken = res.response.headers.get('x-next-token') || undefined
     const hasMoreItems = !!nextPageToken
 
-    const sandboxes = (res.data ?? []).map((sandbox) => ({
-      sandboxId: this.getSandboxId({
-        sandboxId: sandbox.sandboxID,
-        clientId: sandbox.clientID,
-      }),
-      templateId: sandbox.templateID,
-      ...(sandbox.alias && { name: sandbox.alias }),
-      metadata: sandbox.metadata ?? {},
-      startedAt: new Date(sandbox.startedAt),
-      state: sandbox.state,
-    }))
+    const sandboxes = (res.data ?? []).map(
+      (sandbox: components['schemas']['ListedSandbox']) => ({
+        sandboxId: this.getSandboxId({
+          sandboxId: sandbox.sandboxID,
+          clientId: sandbox.clientID,
+        }),
+        templateId: sandbox.templateID,
+        ...(sandbox.alias && { name: sandbox.alias }),
+        metadata: sandbox.metadata ?? {},
+        startedAt: new Date(sandbox.startedAt),
+        state: sandbox.state,
+      })
+    )
 
     return {
       sandboxes,
