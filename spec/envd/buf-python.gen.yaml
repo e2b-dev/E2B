@@ -8,7 +8,7 @@ plugins:
       - pyi_out=../../packages/python-sdk/e2b/envd
   - name: connect-python
     out: ../../packages/python-sdk/e2b/envd
-    path: ../../packages/connect-python/bin/protoc-gen-connect-python
+    path: /go/bin/protoc-gen-connect-python
 
 managed:
   enabled: true
