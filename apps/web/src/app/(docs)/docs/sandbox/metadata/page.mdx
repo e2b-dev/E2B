@@ -23,12 +23,12 @@ const sandbox = await Sandbox.create({
 })
 
 // List running sandboxes and access metadata.
-const runningSandboxes = await Sandbox.list()
+const { sandboxes } = await Sandbox.list({ state: ['running'] })
 // Will print:
 // {
 //   'userId': '123',
 // }
-console.log(runningSandboxes[0].metadata)
+console.log(sandboxes[0].metadata)
 ```
 ```python
 from e2b_code_interpreter import Sandbox
@@ -41,12 +41,12 @@ sandbox = Sandbox(
 )
 
 # List running sandboxes and access metadata.
-running_sandboxes = Sandbox.list()
+running_sandboxes = Sandbox.list(state=['running'])
 # Will print:
 # {
 #   'userId': '123',
 # }
-print(running_sandboxes[0].metadata)
+print(running_sandboxes.sandboxes[0].metadata)
 ```
 </CodeGroup>
 

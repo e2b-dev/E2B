@@ -3,7 +3,7 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.template_build_status import TemplateBuildStatus
+from ..models.template_build_status import TemplateBuildStatus, check_template_build_status
 
 T = TypeVar("T", bound="TemplateBuild")
 
@@ -29,7 +29,7 @@ class TemplateBuild:
 
         logs = self.logs
 
-        status = self.status.value
+        status: str = self.status
 
         template_id = self.template_id
 
@@ -53,7 +53,7 @@ class TemplateBuild:
 
         logs = cast(list[str], d.pop("logs"))
 
-        status = TemplateBuildStatus(d.pop("status"))
+        status = check_template_build_status(d.pop("status"))
 
         template_id = d.pop("templateID")
 

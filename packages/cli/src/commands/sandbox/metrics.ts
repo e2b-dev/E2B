@@ -66,7 +66,7 @@ export const metricsCommand = new commander.Command('metrics')
           console.log(`\nMetrics for sandbox ${asBold(sandboxID)}:`)
         }
 
-        const isRunningPromise = listSandboxes()
+        const isRunningPromise = listSandboxes({ state: ['running'] })
           .then((r) => r.find((s) => s.sandboxID === getShortID(sandboxID)))
           .then((s) => !!s)
 
@@ -146,12 +146,13 @@ function printMetric(
     console.log(
       JSON.stringify({
         timestamp: new Date(timestamp).toISOString(),
+        level,
         ...metric,
       })
     )
   } else {
     const time = `[${new Date(timestamp).toISOString().replace(/T/, ' ')}]`
-    delete metric['timestamp']
+    delete metric['level']
     console.log(
       `${asTimestamp(time)} ${level} ` +
         util.inspect(metric, {

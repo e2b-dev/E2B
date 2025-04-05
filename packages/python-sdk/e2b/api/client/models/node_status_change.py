@@ -3,7 +3,7 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.node_status import NodeStatus
+from ..models.node_status import NodeStatus, check_node_status
 
 T = TypeVar("T", bound="NodeStatusChange")
 
@@ -19,7 +19,7 @@ class NodeStatusChange:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        status = self.status.value
+        status: str = self.status
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -34,7 +34,7 @@ class NodeStatusChange:
     @classmethod
     def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         d = src_dict.copy()
-        status = NodeStatus(d.pop("status"))
+        status = check_node_status(d.pop("status"))
 
         node_status_change = cls(
             status=status,
