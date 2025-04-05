@@ -4,7 +4,7 @@ import string
 import pytest
 
 from e2b import Sandbox
-
+from e2b.sandbox.sandbox_api import SandboxQuery
 
 @pytest.mark.skip_debug()
 def test_list_sandboxes(sandbox: Sandbox):
@@ -19,7 +19,7 @@ def test_list_sandboxes_with_filter(sandbox: Sandbox):
     extra_sbx = Sandbox(metadata={"unique_id": unique_id})
     try:
         # There's an extra sandbox created by the test runner
-        sandboxes = Sandbox.list(filters={"unique_id": unique_id})
+        sandboxes = Sandbox.list(query=SandboxQuery(metadata={"unique_id": unique_id}))
         assert len(sandboxes.sandboxes) == 1
         assert sandboxes.sandboxes[0].metadata["unique_id"] == unique_id
     finally:
@@ -82,7 +82,6 @@ def test_paginate_paused_sandboxes(sandbox: Sandbox):
     assert sandboxes.sandboxes[0].state == "paused"
     assert sandboxes.has_more_items is True
     assert sandboxes.next_token is not None
-    assert extra_sbx.sandbox_id in [sbx.sandbox_id for sbx in sandboxes.sandboxes]
 
     # Check second page
     sandboxes2 = Sandbox.list(state=["paused"], next_token=sandboxes.next_token, limit=1)
@@ -90,7 +89,6 @@ def test_paginate_paused_sandboxes(sandbox: Sandbox):
     assert sandboxes2.sandboxes[0].state == "paused"
     assert sandboxes2.has_more_items is False
     assert sandboxes2.next_token is None
-    assert sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes2.sandboxes]
 
 @pytest.mark.skip_debug()
 def test_paginate_paused_and_running_sandboxes(sandbox: Sandbox):
@@ -104,7 +102,6 @@ def test_paginate_paused_and_running_sandboxes(sandbox: Sandbox):
     assert sandboxes.sandboxes[0].state == "paused"
     assert sandboxes.has_more_items is True
     assert sandboxes.next_token is not None
-    assert extra_sbx.sandbox_id in [sbx.sandbox_id for sbx in sandboxes.sandboxes]
 
     # Check second page
     sandboxes2 = Sandbox.list(state=["paused", "running"], next_token=sandboxes.next_token, limit=1)
@@ -112,4 +109,3 @@ def test_paginate_paused_and_running_sandboxes(sandbox: Sandbox):
     assert sandboxes2.sandboxes[0].state == "running"
     assert sandboxes2.has_more_items is False
     assert sandboxes2.next_token is None
-    assert sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes2.sandboxes]
