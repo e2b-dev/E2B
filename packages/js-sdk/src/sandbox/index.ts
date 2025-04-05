@@ -114,6 +114,17 @@ export class Sandbox extends SandboxApi {
       baseUrl: this.envdApiUrl,
       useBinaryFormat: false,
       interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
+      fetch: (url, options) => {
+        // Patch fetch to always use redirect: "follow"
+        // connect-web doesn't allow to configure redirect option - https://github.com/connectrpc/connect-es/pull/1082
+        // connect-web package uses redirect: "error" which is not supported in edge runtimes
+        // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
+        options = {
+          ...(options ?? {}),
+          redirect: 'follow',
+        }
+        return fetch(url, options)
+      },
     })
 
     this.envdApi = new EnvdApiClient(
