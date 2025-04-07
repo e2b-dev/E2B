@@ -21,6 +21,7 @@ def test_shorten_then_lengthen_timeout(sandbox):
     sleep(6)
     sandbox.is_running()
 
+
 @pytest.mark.skip_debug()
 def test_get_timeout(sandbox):
     info = sandbox.get_info()

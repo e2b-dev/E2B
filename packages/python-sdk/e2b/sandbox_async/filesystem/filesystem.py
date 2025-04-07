@@ -169,7 +169,7 @@ class Filesystem:
         """
         Writes multiple files.
 
-        :param files: list of files to write 
+        :param files: list of files to write
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :return: Information about the written files
@@ -180,7 +180,7 @@ class Filesystem:
         path_or_files: Union[str, List[WriteEntry]],
         data_or_user: Union[str, bytes, IO, Username] = "user",
         user_or_request_timeout: Optional[Union[float, Username]] = None,
-        request_timeout_or_none: Optional[float] = None
+        request_timeout_or_none: Optional[float] = None,
     ) -> Union[EntryInfo, List[EntryInfo]]:
         """
         Writes content to a file on the path.
@@ -191,31 +191,43 @@ class Filesystem:
         path, write_files, user, request_timeout = None, [], "user", None
         if isinstance(path_or_files, str):
             if isinstance(data_or_user, list):
-                raise Exception("Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files.")
-            path, write_files, user, request_timeout = \
-                path_or_files, [{"path": path_or_files, "data": data_or_user}], user_or_request_timeout or "user", request_timeout_or_none
+                raise Exception(
+                    "Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files."
+                )
+            path, write_files, user, request_timeout = (
+                path_or_files,
+                [{"path": path_or_files, "data": data_or_user}],
+                user_or_request_timeout or "user",
+                request_timeout_or_none,
+            )
         else:
             if path_or_files is None:
                 raise Exception("Path or files are required")
-            path, write_files, user, request_timeout = \
-                None, path_or_files, data_or_user, user_or_request_timeout
+            path, write_files, user, request_timeout = (
+                None,
+                path_or_files,
+                data_or_user,
+                user_or_request_timeout,
+            )
 
         # Prepare the files for the multipart/form-data request
         httpx_files = []
         for file in write_files:
-            file_path, file_data = file['path'], file['data']
+            file_path, file_data = file["path"], file["data"]
             if isinstance(file_data, str) or isinstance(file_data, bytes):
-                httpx_files.append(('file', (file_path, file_data)))
-            elif isinstance(file_data,IOBase):
-                httpx_files.append(('file', (file_path, file_data.read())))
+                httpx_files.append(("file", (file_path, file_data)))
+            elif isinstance(file_data, IOBase):
+                httpx_files.append(("file", (file_path, file_data.read())))
             else:
                 raise ValueError(f"Unsupported data type for file {file_path}")
-        
+
         # Allow passing empty list of files
-        if len(httpx_files) == 0: return []
+        if len(httpx_files) == 0:
+            return []
 
         params = {"username": user}
-        if path is not None: params["path"] = path
+        if path is not None:
+            params["path"] = path
 
         r = await self._envd_api.post(
             ENVD_API_FILES_ROUTE,
@@ -238,7 +250,6 @@ class Filesystem:
             return EntryInfo(**file)
         else:
             return [EntryInfo(**file) for file in write_files]
-
 
     async def list(
         self,

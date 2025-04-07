@@ -87,7 +87,7 @@ class SandboxApi(SandboxApiBase):
                 )
                 for sandbox in res.parsed
             ]
-        
+
     @classmethod
     def get_info(
         cls,

@@ -365,7 +365,7 @@ class Sandbox(SandboxSetup, SandboxApi):
     def get_info(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
-     ) -> SandboxInfo:
+    ) -> SandboxInfo:
         """
         Get sandbox information like sandbox ID, template, metadata, started at/end at date.
         :param request_timeout: Timeout for the request in **seconds**
