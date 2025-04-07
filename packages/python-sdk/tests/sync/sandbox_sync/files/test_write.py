@@ -2,6 +2,7 @@ import io
 
 from e2b.sandbox.filesystem.filesystem import EntryInfo
 
+
 def test_write_text_file(sandbox):
     filename = "test_write.txt"
     content = "This is a test file."
@@ -21,11 +22,12 @@ def test_write_text_file(sandbox):
     read_content = sandbox.files.read(filename)
     assert read_content == content
 
+
 def test_write_binary_file(sandbox):
     filename = "test_write.txt"
     text = "This is a test binary file."
     # equivalent to `open("path/to/local/file", "rb")`
-    content = io.BytesIO(text.encode('utf-8'))
+    content = io.BytesIO(text.encode("utf-8"))
 
     info = sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
@@ -35,6 +37,7 @@ def test_write_binary_file(sandbox):
 
     read_content = sandbox.files.read(filename)
     assert read_content == text
+
 
 def test_write_multiple_files(sandbox):
     # Attempt to write with empty files array
@@ -50,12 +53,20 @@ def test_write_multiple_files(sandbox):
 
     # Attempt to write with path and file array
     try:
-        sandbox.files.write("/path/to/file", [{ "path": "one_test_file.txt", "data": "This is a test file." }])
+        sandbox.files.write(
+            "/path/to/file",
+            [{"path": "one_test_file.txt", "data": "This is a test file."}],
+        )
     except Exception as e:
-        assert "Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files." in str(e)
+        assert (
+            "Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files."
+            in str(e)
+        )
 
     # Attempt to write with one file in array
-    info = sandbox.files.write([{ "path": "one_test_file.txt", "data": "This is a test file." }])
+    info = sandbox.files.write(
+        [{"path": "one_test_file.txt", "data": "This is a test file."}]
+    )
     assert isinstance(info, list)
     assert len(info) == 1
     info = info[0]
@@ -85,6 +96,7 @@ def test_write_multiple_files(sandbox):
 
         read_content = sandbox.files.read(info.path)
         assert read_content == files[i]["data"]
+
 
 def test_overwrite_file(sandbox):
     filename = "test_overwrite.txt"
