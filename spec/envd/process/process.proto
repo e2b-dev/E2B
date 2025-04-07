@@ -28,7 +28,7 @@ message PTY {
 message ProcessConfig {
     string cmd = 1;
     repeated string args = 2;
-    
+
     map<string, string> envs = 3;
     optional string cwd = 4;
 }
@@ -45,7 +45,7 @@ message ListResponse {
     repeated ProcessInfo processes = 1;
 }
 
-message StartRequest {    
+message StartRequest {
     ProcessConfig process = 1;
     optional PTY pty = 2;
     optional string tag = 3;
@@ -66,11 +66,11 @@ message ProcessEvent {
         EndEvent end = 3;
         KeepAlive keepalive = 4;
     }
-    
+
     message StartEvent {
         uint32 pid = 1;
     }
-    
+
     message DataEvent {
         oneof output {
             bytes stdout = 1;
@@ -78,7 +78,7 @@ message ProcessEvent {
             bytes pty = 3;
         }
     }
-    
+
     message EndEvent {
         sint32 exit_code = 1;
         bool exited = 2;
