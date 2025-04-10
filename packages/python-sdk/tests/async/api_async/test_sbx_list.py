@@ -198,3 +198,14 @@ async def test_paginate_running_and_paused_sandboxes(async_sandbox: AsyncSandbox
     finally:
         await sandbox1.kill()
         await sandbox2.kill()
+
+@pytest.mark.skip_debug()
+async def test_paginate_iterator(async_sandbox: AsyncSandbox):
+    sandboxes = await AsyncSandbox.list()
+    sandboxes_list = []
+
+    async for sbx in sandboxes.iterator:
+        sandboxes_list.append(sbx)
+
+    assert len(sandboxes_list) > 0
+    assert async_sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes_list]

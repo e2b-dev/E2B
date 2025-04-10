@@ -197,3 +197,14 @@ def test_paginate_running_and_paused_sandboxes(sandbox: Sandbox):
     finally:
         sandbox1.kill()
         sandbox2.kill()
+
+@pytest.mark.skip_debug()
+def test_paginate_iterator(sandbox: Sandbox):
+    sandboxes = Sandbox.list()
+    sandboxes_list = []
+
+    for sbx in sandboxes.iterator:
+        sandboxes_list.append(sbx)
+
+    assert len(sandboxes_list) > 0
+    assert sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes_list]

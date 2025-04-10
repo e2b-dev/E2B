@@ -1,6 +1,6 @@
 import { assert } from 'vitest'
 
-import { Sandbox } from '../../src'
+import { Sandbox, SandboxInfo } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)('list sandboxes', async ({ sandbox }) => {
@@ -222,3 +222,15 @@ sandboxTest.skipIf(isDebug)(
     }
   }
 )
+
+sandboxTest.skipIf(isDebug)('paginate iterator', async ({ sandbox }) => {
+  const { iterator } = await Sandbox.list()
+  const sandboxes: SandboxInfo[] = []
+
+  for await (const sbx of iterator) {
+    sandboxes.push(sbx)
+  }
+
+  assert.isAtLeast(sandboxes.length, 1)
+  assert.isTrue(sandboxes.some((s) => s.sandboxId === sandbox.sandboxId))
+})
