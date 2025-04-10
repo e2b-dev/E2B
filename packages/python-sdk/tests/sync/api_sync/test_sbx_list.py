@@ -1,5 +1,6 @@
 import random
 import string
+import time
 
 import pytest
 
@@ -9,103 +10,192 @@ from e2b.sandbox.sandbox_api import SandboxQuery
 @pytest.mark.skip_debug()
 def test_list_sandboxes(sandbox: Sandbox):
     sandboxes = Sandbox.list()
-    assert len(sandboxes.sandboxes) > 0
+    assert len(sandboxes.sandboxes) >= 1
     assert sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes.sandboxes]
 
 
 @pytest.mark.skip_debug()
-def test_list_sandboxes_with_filter(sandbox: Sandbox):
-    unique_id = "".join(random.choices(string.ascii_letters, k=5))
+def test_list_sandboxes_with_filter():
+    unique_id = str(int(time.time()))
     extra_sbx = Sandbox(metadata={"unique_id": unique_id})
+    
     try:
-        # There's an extra sandbox created by the test runner
         sandboxes = Sandbox.list(query=SandboxQuery(metadata={"unique_id": unique_id}))
         assert len(sandboxes.sandboxes) == 1
-        assert sandboxes.sandboxes[0].metadata["unique_id"] == unique_id
+        assert sandboxes.sandboxes[0].sandbox_id == extra_sbx.sandbox_id
     finally:
         extra_sbx.kill()
 
-@pytest.mark.skip_debug()
-def test_list_paused_sandboxes(sandbox: Sandbox):
-    paused_sandbox = sandbox.pause()
-    paused_sandbox_id = paused_sandbox.split("-")[0] + "-" + "00000000"
-    sandboxes = Sandbox.list(state=["paused"])
-    assert len(sandboxes.sandboxes) > 0
-    assert paused_sandbox_id in [sbx.sandbox_id for sbx in sandboxes.sandboxes]
 
 @pytest.mark.skip_debug()
 def test_list_running_sandboxes(sandbox: Sandbox):
-    sandboxes = Sandbox.list(state=["running"])
-    assert len(sandboxes.sandboxes) > 0
-    assert sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes.sandboxes]
+    extra_sbx = Sandbox(metadata={"sandbox_type": "test"})
+    
+    try:
+        sandboxes = Sandbox.list(
+            state=["running"],
+            query=SandboxQuery(metadata={"sandbox_type": "test"})
+        )
+        assert len(sandboxes.sandboxes) >= 1
+        
+        # Verify our running sandbox is in the list
+        found = any(
+            s.sandbox_id == extra_sbx.sandbox_id and s.state == "running"
+            for s in sandboxes.sandboxes
+        )
+        assert found is True
+    finally:
+        extra_sbx.kill()
+
 
 @pytest.mark.skip_debug()
-def test_list_sandboxes_with_limit(sandbox: Sandbox):
-    sandboxes = Sandbox.list(limit=1)
-    assert len(sandboxes.sandboxes) == 1
-    assert sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes.sandboxes]
+def test_list_paused_sandboxes(sandbox: Sandbox):
+    # Create and pause a sandbox
+    extra_sbx = Sandbox(metadata={"sandbox_type": "test"})
+    extra_sbx.pause()
+    
+    try:
+        sandboxes = Sandbox.list(
+            state=["paused"],
+            query=SandboxQuery(metadata={"sandbox_type": "test"})
+        )
+        assert len(sandboxes.sandboxes) >= 1
+        
+        # Verify our paused sandbox is in the list
+        paused_sandbox_id = extra_sbx.sandbox_id.split('-')[0]
+        found = any(
+            s.sandbox_id.startswith(paused_sandbox_id) and s.state == "paused"
+            for s in sandboxes.sandboxes
+        )
+        assert found is True
+    finally:
+        extra_sbx.kill()
+
 
 @pytest.mark.skip_debug()
 def test_paginate_running_sandboxes(sandbox: Sandbox):
-    extra_sbx = Sandbox()
-    # Check first page
+    # Create two sandboxes
+    sandbox1 = Sandbox(metadata={"sandbox_type": "test"})
+    sandbox2 = Sandbox(metadata={"sandbox_type": "test"})
+    
     try:
-        sandboxes = Sandbox.list(state=["running"], limit=1)
+        # Test pagination with limit
+        sandboxes = Sandbox.list(
+            limit=1,
+            state=["running"],
+            query=SandboxQuery(metadata={"sandbox_type": "test"})
+        )
+        
+        # Check first page
         assert len(sandboxes.sandboxes) == 1
         assert sandboxes.sandboxes[0].state == "running"
         assert sandboxes.has_more_items is True
         assert sandboxes.next_token is not None
-        assert extra_sbx.sandbox_id in [sbx.sandbox_id for sbx in sandboxes.sandboxes]
-
+        assert sandboxes.sandboxes[0].sandbox_id == sandbox2.sandbox_id
+        
+        # Get second page using the next token
+        sandboxes2 = Sandbox.list(
+            limit=1,
+            next_token=sandboxes.next_token,
+            state=["running"],
+            query=SandboxQuery(metadata={"sandbox_type": "test"})
+        )
+        
         # Check second page
-        sandboxes2 = Sandbox.list(state=["running"], next_token=sandboxes.next_token, limit=1)
         assert len(sandboxes2.sandboxes) == 1
         assert sandboxes2.sandboxes[0].state == "running"
         assert sandboxes2.has_more_items is False
         assert sandboxes2.next_token is None
-        assert sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes2.sandboxes]
+        assert sandboxes2.sandboxes[0].sandbox_id == sandbox1.sandbox_id
     finally:
-        extra_sbx.kill()
+        sandbox1.kill()
+        sandbox2.kill()
+
 
 @pytest.mark.skip_debug()
 def test_paginate_paused_sandboxes(sandbox: Sandbox):
-    # Pause the current sandbox
-    sandbox.pause()
+    # Create two paused sandboxes
+    sandbox1 = Sandbox(metadata={"sandbox_type": "test"})
+    sandbox1_id = sandbox1.sandbox_id.split('-')[0]
+    sandbox1.pause()
 
-    # Create and pause a new sandbox
-    extra_sbx = Sandbox()
-    extra_sbx.pause()
+    sandbox2 = Sandbox(metadata={"sandbox_type": "test"})
+    sandbox2_id = sandbox2.sandbox_id.split('-')[0]
+    sandbox2.pause()
 
-    # Check first page
-    sandboxes = Sandbox.list(state=["paused"], limit=1)
-    assert len(sandboxes.sandboxes) == 1
-    assert sandboxes.sandboxes[0].state == "paused"
-    assert sandboxes.has_more_items is True
-    assert sandboxes.next_token is not None
+    try:
+        # Test pagination with limit
+        sandboxes = Sandbox.list(
+            limit=1,
+            state=["paused"],
+            query=SandboxQuery(metadata={"sandbox_type": "test"})
+        )
 
-    # Check second page
-    sandboxes2 = Sandbox.list(state=["paused"], next_token=sandboxes.next_token, limit=1)
-    assert len(sandboxes2.sandboxes) == 1
-    assert sandboxes2.sandboxes[0].state == "paused"
-    assert sandboxes2.has_more_items is False
-    assert sandboxes2.next_token is None
+        # Check first page
+        assert len(sandboxes.sandboxes) == 1
+        assert sandboxes.sandboxes[0].state == "paused"
+        assert sandboxes.has_more_items is True
+        assert sandboxes.next_token is not None
+        assert sandboxes.sandboxes[0].sandbox_id.startswith(sandbox2_id) is True
+        
+        # Get second page using the next token
+        sandboxes2 = Sandbox.list(
+            limit=1,
+            next_token=sandboxes.next_token,
+            state=["paused"],
+            query=SandboxQuery(metadata={"sandbox_type": "test"})
+        )
+
+        # Check second page
+        assert len(sandboxes2.sandboxes) == 1
+        assert sandboxes2.sandboxes[0].state == "paused"
+        assert sandboxes2.has_more_items is False
+        assert sandboxes2.next_token is None
+        assert sandboxes2.sandboxes[0].sandbox_id.startswith(sandbox1_id) is True
+    finally:
+        sandbox1.kill()
+        sandbox2.kill()
+
 
 @pytest.mark.skip_debug()
-def test_paginate_paused_and_running_sandboxes(sandbox: Sandbox):
-    # Create and pause a new sandbox
-    extra_sbx = Sandbox()
-    extra_sbx.pause()
-
-    # Check first page
-    sandboxes = Sandbox.list(state=["paused", "running"], limit=1)
-    assert len(sandboxes.sandboxes) == 1
-    assert sandboxes.sandboxes[0].state == "paused"
-    assert sandboxes.has_more_items is True
-    assert sandboxes.next_token is not None
-
-    # Check second page
-    sandboxes2 = Sandbox.list(state=["paused", "running"], next_token=sandboxes.next_token, limit=1)
-    assert len(sandboxes2.sandboxes) == 1
-    assert sandboxes2.sandboxes[0].state == "running"
-    assert sandboxes2.has_more_items is False
-    assert sandboxes2.next_token is None
+def test_paginate_running_and_paused_sandboxes(sandbox: Sandbox):
+    # Create two sandboxes
+    sandbox1 = Sandbox(metadata={"sandbox_type": "test"})
+    sandbox2 = Sandbox(metadata={"sandbox_type": "test"})
+    sandbox2_id = sandbox2.sandbox_id.split('-')[0]
+    
+    # Pause the second sandbox
+    sandbox2.pause()
+    
+    try:
+        # Test pagination with limit
+        sandboxes = Sandbox.list(
+            limit=1,
+            state=["running", "paused"],
+            query=SandboxQuery(metadata={"sandbox_type": "test"})
+        )
+        
+        # Check first page
+        assert len(sandboxes.sandboxes) == 1
+        assert sandboxes.sandboxes[0].state == "paused"
+        assert sandboxes.has_more_items is True
+        assert sandboxes.next_token is not None
+        assert sandboxes.sandboxes[0].sandbox_id.startswith(sandbox2_id) is True
+        
+        # Get second page using the next token
+        sandboxes2 = Sandbox.list(
+            limit=1,
+            next_token=sandboxes.next_token,
+            state=["running", "paused"],
+            query=SandboxQuery(metadata={"sandbox_type": "test"})
+        )
+        
+        # Check second page
+        assert len(sandboxes2.sandboxes) == 1
+        assert sandboxes2.sandboxes[0].state == "running"
+        assert sandboxes2.has_more_items is False
+        assert sandboxes2.next_token is None
+        assert sandboxes2.sandboxes[0].sandbox_id == sandbox1.sandbox_id
+    finally:
+        sandbox1.kill()
+        sandbox2.kill()
