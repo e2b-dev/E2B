@@ -63,9 +63,6 @@ Running sandbox template id: 3e4rngfa34txe0gxc1zf
 
 
 ## Filtering sandboxes
-<Note>
-This feature is in a private beta.
-</Note>
 
 You can filter sandboxes by specifying <Link href="/docs/sandbox/metadata">Metadata</Link> key value pairs.
 Specifying multiple key value pairs will return sandboxes that match all of them.
@@ -88,7 +85,9 @@ const sandbox = await Sandbox.create({
 // List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
 const { sandboxes } = await Sandbox.list({
     state: ['running'],
-    filters: { userId: '123', env: 'dev' } // $HighlightLine
+    query: {
+      metadata: { userId: '123', env: 'dev' }, // $HighlightLine
+    },
 })
 ```
 ```python
@@ -106,8 +105,12 @@ sandbox = Sandbox(
 # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
 running_sandboxes = Sandbox.list(
   state=['running'],
-  filters={
-    "userId": "123", "env": "dev" # $HighlightLine
-})
+  query=SandboxQuery(
+      metadata={
+          "userId": "123",  # $HighlightLine
+          "env": "dev",  # $HighlightLine
+      }
+  ),
+)
 ```
 </CodeGroup>
