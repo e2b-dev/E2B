@@ -21,14 +21,19 @@ def _get_kwargs(
 
     params["metadata"] = metadata
 
-    json_state: Union[Unset, list[str]] = UNSET
+    # Handle state parameter correctly by passing it as multiple instances of the same parameter name
     if not isinstance(state, Unset):
-        json_state = []
+        # Create a list of tuples for the state parameter
+        state_params = []
         for state_item_data in state:
             state_item: str = state_item_data
-            json_state.append(state_item)
-
-    params["state"] = json_state
+            state_params.append(("state", state_item))
+        
+        # Add the state parameters to the params dictionary
+        for key, value in state_params:
+            if key not in params:
+                params[key] = []
+            params[key].append(value)
 
     params["nextToken"] = next_token
 
