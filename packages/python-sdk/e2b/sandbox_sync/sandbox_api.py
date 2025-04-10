@@ -51,7 +51,7 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> List[SandboxInfo]:
+    ) -> ListSandboxesResponse:
         """
         List sandboxes with pagination.
 
