@@ -21,19 +21,10 @@ def _get_kwargs(
 
     params["metadata"] = metadata
 
-    # Handle state parameter correctly by passing it as multiple instances of the same parameter name
+    # Handle state parameter correctly by joining values into a comma-separated string
     if not isinstance(state, Unset):
-        # Create a list of tuples for the state parameter
-        state_params = []
-        for state_item_data in state:
-            state_item: str = state_item_data
-            state_params.append(("state", state_item))
-        
-        # Add the state parameters to the params dictionary
-        for key, value in state_params:
-            if key not in params:
-                params[key] = []
-            params[key].append(value)
+        state_values = [str(state_item) for state_item in state]
+        params["state"] = ",".join(state_values)
 
     params["nextToken"] = next_token
 
