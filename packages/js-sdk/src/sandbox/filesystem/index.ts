@@ -339,10 +339,16 @@ export class Filesystem {
    *
    * @returns list of entries in the sandbox filesystem directory.
    */
-  async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
+  async list(
+    path: string,
+    opts?: FilesystemRequestOpts & { depth?: number }
+  ): Promise<EntryInfo[]> {
     try {
       const res = await this.rpc.listDir(
-        { path },
+        {
+          path,
+          depth: opts?.depth ?? 1,
+        },
         {
           headers: authenticationHeader(opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
