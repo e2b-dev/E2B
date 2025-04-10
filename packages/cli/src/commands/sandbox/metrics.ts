@@ -146,13 +146,12 @@ function printMetric(
     console.log(
       JSON.stringify({
         timestamp: new Date(timestamp).toISOString(),
-        level,
         ...metric,
       })
     )
   } else {
     const time = `[${new Date(timestamp).toISOString().replace(/T/, ' ')}]`
-    delete metric['level']
+    delete metric['timestamp']
     console.log(
       `${asTimestamp(time)} ${level} ` +
         util.inspect(metric, {
