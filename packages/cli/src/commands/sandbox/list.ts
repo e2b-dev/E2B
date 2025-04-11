@@ -1,6 +1,6 @@
 import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
-import * as e2b from 'e2b'
+import { components } from 'e2b'
 
 import { ensureAPIKey, client, connectionConfig } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -12,9 +12,15 @@ export const listCommand = new commander.Command('list')
   .option('-m, --metadata <metadata>', 'filter by metadata', (value) =>
     value.replace(/,/g, '&')
   )
+  .option(
+    '-l, --limit <limit>',
+    'limit the number of sandboxes returned',
+    (value) => parseInt(value)
+  )
   .action(async (options) => {
     try {
       const sandboxes = await listSandboxes({
+        limit: options.limit,
         state: options.state,
         metadata: options.metadata,
       })
@@ -92,27 +98,50 @@ export const listCommand = new commander.Command('list')
   })
 
 type ListSandboxesOptions = {
-  state?: e2b.components['schemas']['SandboxState'][]
+  limit?: number
+  state?: components['schemas']['SandboxState'][]
   metadata?: string
 }
 
 export async function listSandboxes({
+  limit,
   state,
   metadata,
 }: ListSandboxesOptions = {}): Promise<
-  e2b.components['schemas']['ListedSandbox'][]
+  components['schemas']['ListedSandbox'][]
 > {
   ensureAPIKey()
 
   const signal = connectionConfig.getSignal()
-  const res = await client.api.GET('/v2/sandboxes', {
-    params: {
-      query: { state, metadata },
-    },
-    signal,
-  })
 
-  handleE2BRequestError(res.error, 'Error getting running sandboxes')
+  let hasMoreItems = true
+  let nextToken: string | undefined
+  let remainingLimit: number | undefined = limit
 
-  return res.data
+  const sandboxes: components['schemas']['ListedSandbox'][] = []
+
+  while (hasMoreItems && (!limit || (remainingLimit && remainingLimit > 0))) {
+    const res = await client.api.GET('/v2/sandboxes', {
+      params: {
+        query: {
+          state,
+          metadata,
+          nextToken,
+          limit: remainingLimit,
+        },
+      },
+      signal,
+    })
+
+    handleE2BRequestError(res.error, 'Error getting running sandboxes')
+
+    nextToken = res.response.headers.get('x-next-token') || undefined
+    hasMoreItems = !!nextToken
+    sandboxes.push(...res.data)
+    if (limit && remainingLimit) {
+      remainingLimit -= res.data.length
+    }
+  }
+
+  return sandboxes
 }

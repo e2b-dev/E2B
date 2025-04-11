@@ -3,7 +3,7 @@ import * as commander from 'commander'
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
 import * as e2b from 'e2b'
-import { SandboxInfo } from 'e2b'
+import { listSandboxes } from './list'
 
 async function killSandbox(sandboxID: string, apiKey: string) {
   const killed = await e2b.Sandbox.kill(sandboxID, { apiKey })
@@ -45,14 +45,14 @@ export const killCommand = new commander.Command('kill')
       }
 
       if (all) {
-        const { sandboxes } = await e2b.Sandbox.list({ apiKey })
+        const sandboxes = await listSandboxes()
         if (sandboxes.length === 0) {
           console.log('No sandboxes found')
           process.exit(0)
         }
 
         await Promise.all(
-          sandboxes.map((sandbox) => killSandbox(sandbox.sandboxId, apiKey))
+          sandboxes.map((sandbox) => killSandbox(sandbox.sandboxID, apiKey))
         )
       } else {
         await killSandbox(sandboxID, apiKey)
