@@ -12,7 +12,7 @@ To connect to a running sandbox, you first need to retrieve its ID. You can do t
 import { Sandbox } from "@e2b/code-interpreter"
 
 // Get all running sandboxes
-const { sandboxes } = await Sandbox.list({ state: ['running'] }) // $HighlightLine
+const { sandboxes } = await Sandbox.list({ query: { state: ['running'] } }) // $HighlightLine
 
 if (sandboxes.length === 0) {
   throw new Error("No running sandboxes found")
@@ -46,7 +46,7 @@ Now that you have the sandbox ID, you can connect to the sandbox using the `Sand
 import { Sandbox } from "@e2b/code-interpreter"
 
 // Get all running sandboxes
-const { sandboxes } = await Sandbox.list({ state: ['running'] })
+const { sandboxes } = await Sandbox.list({ query: { state: ['running'] } })
 
 if (sandboxes.length === 0) {
   throw new Error("No running sandboxes found")

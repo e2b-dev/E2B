@@ -133,7 +133,7 @@ import { Sandbox } from '@e2b/code-interpreter'
 // import { Sandbox } from '@e2b/desktop'
 
 // List all paused sandboxes
-const { sandboxes } = await Sandbox.list({ state: ['paused'] }) // $HighlightLine
+const { sandboxes } = await Sandbox.list({ query: { state: ['paused'] } }) // $HighlightLine
 console.log('Paused sandboxes', sandboxes) // $HighlightLine
 ```
 ```python

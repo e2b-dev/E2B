@@ -18,7 +18,7 @@ const sandbox = await Sandbox.create({
   },
 })
 
-const runningSandboxes = await Sandbox.list({ state: ['running'] }) // $HighlightLine
+const runningSandboxes = await Sandbox.list({ query: { state: ['running'] } }) // $HighlightLine
 const runningSandbox = runningSandboxes.sandboxes[0]
 console.log('Running sandbox metadata:', runningSandbox.metadata)
 console.log('Running sandbox id:', runningSandbox.sandboxId)
@@ -84,8 +84,8 @@ const sandbox = await Sandbox.create({
 
 // List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
 const { sandboxes } = await Sandbox.list({
-    state: ['running'],
     query: {
+      state: ['running'],
       metadata: { userId: '123', env: 'dev' }, // $HighlightLine
     },
 })

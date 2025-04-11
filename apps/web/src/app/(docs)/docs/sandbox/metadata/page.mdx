@@ -23,7 +23,7 @@ const sandbox = await Sandbox.create({
 })
 
 // List running sandboxes and access metadata.
-const { sandboxes } = await Sandbox.list({ state: ['running'] })
+const { sandboxes } = await Sandbox.list({ query: { state: ['running'] } })
 // Will print:
 // {
 //   'userId': '123',
