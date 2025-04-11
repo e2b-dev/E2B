@@ -20,7 +20,7 @@ def test_metadata(template):
     try:
         sbxs = Sandbox.list()
 
-        for sbx_info in sbxs:
+        for sbx_info in sbxs.sandboxes:
             if sbx.sandbox_id == sbx_info.sandbox_id:
                 assert sbx_info.metadata is not None
                 assert sbx_info.metadata["test-key"] == "test-value"

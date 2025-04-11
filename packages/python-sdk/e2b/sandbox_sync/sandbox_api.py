@@ -1,16 +1,16 @@
 import urllib.parse
-
+from typing import Dict, List, Optional, Generator
+from dataclasses import dataclass
 from httpx import HTTPTransport
-from typing import Optional, Dict, List, Tuple
 from packaging.version import Version
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery
+from e2b.sandbox.sandbox_api import ListSandboxesResponse, SandboxInfo, SandboxApiBase
 from e2b.exceptions import TemplateException
-from e2b.api import ApiClient, SandboxCreateResponse
+from e2b.api import ApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
 from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
-    get_sandboxes,
+    get_v2_sandboxes,
     get_sandboxes_sandbox_id_metrics,
     post_sandboxes,
     post_sandboxes_sandbox_id_pause,
@@ -19,9 +19,11 @@ from e2b.api.client.api.sandboxes import (
 )
 from e2b.api.client.models import (
     NewSandbox,
+    SandboxState,
     PostSandboxesSandboxIDTimeoutBody,
     ResumedSandbox,
 )
+from e2b.api.client.types import UNSET
 from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import NotFoundException, TemplateException
 from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
@@ -30,25 +32,39 @@ from packaging.version import Version
 
 
 class SandboxApi(SandboxApiBase):
+    @dataclass
+    class SandboxQuery:
+        """Query parameters for listing sandboxes."""
+
+        metadata: Optional[dict[str, str]] = None
+        """Filter sandboxes by metadata."""
+
+        state: Optional[List[SandboxState]] = None
+        """Filter sandboxes by state."""
+
     @classmethod
     def list(
         cls,
         api_key: Optional[str] = None,
         query: Optional[SandboxQuery] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> List[SandboxInfo]:
+    ) -> ListSandboxesResponse:
         """
-        List all running sandboxes.
+        List sandboxes with pagination.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param query: Filter the list of sandboxes, e.g. by metadata `SandboxQuery(metadata={"key": "value"})`, if there are multiple filters they are combined with AND.
+        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxQuery(metadata={"key": "value"})` or `SandboxQuery(state=["paused", "running"])`
+        :param limit: Maximum number of sandboxes to return
+        :param next_token: Token for pagination
         :param domain: Domain to use for the request, only relevant for self-hosted environments
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
 
-        :return: List of running sandboxes
+        :returns: ListSandboxesResponse containing sandboxes list, pagination info and iterator
         """
         config = ConnectionConfig(
             api_key=api_key,
@@ -70,29 +86,78 @@ class SandboxApi(SandboxApiBase):
         with ApiClient(
             config, transport=HTTPTransport(limits=SandboxApiBase._limits)
         ) as api_client:
-            res = get_sandboxes.sync_detailed(client=api_client, metadata=metadata)
+            res = get_v2_sandboxes.sync_detailed(
+                client=api_client,
+                metadata=metadata,
+                state=query.state or UNSET,
+                limit=limit,
+                next_token=next_token,
+            )
 
             if res.status_code >= 300:
                 raise handle_api_exception(res)
 
             if res.parsed is None:
-                return []
-
-            return [
-                SandboxInfo(
-                    sandbox_id=SandboxApi._get_sandbox_id(
-                        sandbox.sandbox_id,
-                        sandbox.client_id,
-                    ),
-                    template_id=sandbox.template_id,
-                    name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                    metadata=(
-                        sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                    ),
-                    started_at=sandbox.started_at,
+                return ListSandboxesResponse(
+                    sandboxes=[],
+                    has_more_items=False,
+                    next_token=None,
+                    iterator=cls._list_iterator(query=query, api_key=api_key, domain=domain, debug=debug, request_timeout=request_timeout)
                 )
+
+            token = res.headers.get("x-next-token")
+            has_more_items = bool(token)
+
+            sandboxes = [
+                SandboxInfo.from_listed_sandbox(sandbox)
                 for sandbox in res.parsed
             ]
+
+            return ListSandboxesResponse(
+                sandboxes=sandboxes,
+                has_more_items=has_more_items,
+                next_token=token,
+                iterator=cls._list_iterator(
+                    limit=limit,
+                    next_token=token,
+                    query=query,
+                    api_key=api_key,
+                    domain=domain,
+                    debug=debug,
+                    request_timeout=request_timeout
+                )
+            )
+
+    @classmethod
+    def _list_iterator(
+        cls,
+        query: Optional[SandboxQuery] = None,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+    ) -> Generator[SandboxInfo, None, None]:
+        next_page = True
+        token = next_token
+
+        while next_page:
+            result = cls.list(
+                query=query,
+                api_key=api_key,
+                domain=domain,
+                debug=debug,
+                request_timeout=request_timeout,
+                limit=limit,
+                next_token=token,
+            )
+
+            next_page = result.has_more_items
+            token = result.next_token
+
+            for sandbox in result.sandboxes:
+                yield sandbox
 
     @classmethod
     def _cls_kill(

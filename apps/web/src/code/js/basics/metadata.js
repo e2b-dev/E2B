@@ -10,9 +10,9 @@ await sandbox.keepAlive(60_000)
 
 // Later, can be even from another process
 // List all running sandboxes
-const runningSandboxes = await Sandbox.list()
+const { sandboxes } = await Sandbox.list({ state: ['running'] })
 // Find the sandbox by metadata
-const found = runningSandboxes.find(s => s.metadata?.userID === 'uniqueID')
+const found = sandboxes.find(s => s.metadata?.userID === 'uniqueID')
 if (found) {
   // Sandbox found, we can reconnect to it
   const sandbox = await Sandbox.reconnect(found.sandboxID)
