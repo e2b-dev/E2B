@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import urllib.parse
-from typing import Dict, List, Optional, Generator
+from typing import Dict, List, Optional, AsyncGenerator
 from packaging.version import Version
 
 from e2b.sandbox.sandbox_api import ListSandboxesResponse, SandboxInfo, SandboxApiBase
@@ -134,7 +134,7 @@ class SandboxApi(SandboxApiBase):
         request_timeout: Optional[float] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
-    ) -> Generator[SandboxInfo, None, None]:
+    ) -> AsyncGenerator[SandboxInfo, None]:
         next_page = True
         token = next_token
 
