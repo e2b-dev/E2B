@@ -34,7 +34,7 @@ sandbox = Sandbox({
   },
 })
 
-running_sandboxes = sandbox.list(Sandbox.SandboxQuery(state=['running'])) # $HighlightLine
+running_sandboxes = Sandbox.list(Sandbox.SandboxQuery(state=['running'])) # $HighlightLine
 running_sandbox = running_sandboxes.sandboxes[0]
 print('Running sandbox metadata:', running_sandbox.metadata)
 print('Running sandbox id:', running_sandbox.sandbox_id)
@@ -105,7 +105,7 @@ sandbox = Sandbox(
 # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
 running_sandboxes = Sandbox.list(
   state=['running'],
-  query=SandboxQuery(
+  query=Sandbox.SandboxQuery(
       metadata={
           "userId": "123",  # $HighlightLine
           "env": "dev",  # $HighlightLine
