@@ -35,11 +35,10 @@ def test_list_running_sandboxes(sandbox: Sandbox):
         assert len(sandboxes.sandboxes) >= 1
         
         # Verify our running sandbox is in the list
-        found = any(
+        assert any(
             s.sandbox_id == extra_sbx.sandbox_id and s.state == "running"
             for s in sandboxes.sandboxes
         )
-        assert found is True
     finally:
         extra_sbx.kill()
 
@@ -58,11 +57,10 @@ def test_list_paused_sandboxes(sandbox: Sandbox):
         
         # Verify our paused sandbox is in the list
         paused_sandbox_id = extra_sbx.sandbox_id.split('-')[0]
-        found = any(
+        assert any(
             s.sandbox_id.startswith(paused_sandbox_id) and s.state == "paused"
             for s in sandboxes.sandboxes
         )
-        assert found is True
     finally:
         extra_sbx.kill()
 
