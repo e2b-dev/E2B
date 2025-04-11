@@ -8,9 +8,15 @@ import { handleE2BRequestError } from '../../utils/errors'
 export const listCommand = new commander.Command('list')
   .description('list all running sandboxes')
   .alias('ls')
-  .option('-s, --state <state>', 'filter by state', (value) => value.split(','))
-  .option('-m, --metadata <metadata>', 'filter by metadata', (value) =>
-    value.replace(/,/g, '&')
+  .option(
+    '-s, --state <state>',
+    'filter by state, eg. running, stopped',
+    (value) => value.split(',')
+  )
+  .option(
+    '-m, --metadata <metadata>',
+    'filter by metadata, eg. key1=value1',
+    (value) => value.replace(/,/g, '&')
   )
   .option(
     '-l, --limit <limit>',
