@@ -1,11 +1,12 @@
 from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Generator, List, Optional
 
 from httpx import Limits
 
 from e2b.api.client.models.sandbox_state import SandboxState
+from e2b.api.client.models.listed_sandbox import ListedSandbox
 
 @dataclass
 class SandboxInfo:
@@ -23,6 +24,30 @@ class SandboxInfo:
     """Sandbox start time."""
     state: SandboxState
     """Sandbox state."""
+
+    @staticmethod
+    def from_listed_sandbox(listed_sandbox: ListedSandbox) -> "SandboxInfo":
+        return SandboxInfo(
+            sandbox_id=SandboxApiBase._get_sandbox_id(
+                listed_sandbox.sandbox_id,
+                listed_sandbox.client_id,
+            ),
+            template_id=listed_sandbox.template_id,
+            name=listed_sandbox.alias if isinstance(listed_sandbox.alias, str) else None,
+            metadata=(
+                listed_sandbox.metadata if isinstance(listed_sandbox.metadata, dict) else {}
+            ),
+            started_at=listed_sandbox.started_at,
+            state=listed_sandbox.state,
+        )
+    
+
+class ListSandboxesResponse:
+    def __init__(self, sandboxes: List[SandboxInfo], has_more_items: bool, next_token: Optional[str], iterator: Generator[SandboxInfo, None, None]):
+        self.sandboxes = sandboxes
+        self.has_more_items = has_more_items
+        self.next_token = next_token
+        self.iterator = iterator
 
 
 @dataclass

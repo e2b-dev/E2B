@@ -3,7 +3,7 @@ import urllib.parse
 from typing import Dict, List, Optional, Generator
 from packaging.version import Version
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase
+from e2b.sandbox.sandbox_api import ListSandboxesResponse, SandboxInfo, SandboxApiBase
 from e2b.exceptions import TemplateException
 from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
@@ -29,12 +29,6 @@ from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
 from packaging.version import Version
 from e2b.api import handle_api_exception
 
-class ListSandboxesResponse:
-    def __init__(self, sandboxes: List[SandboxInfo], has_more_items: bool, next_token: Optional[str], iterator: Generator[SandboxInfo, None, None]):
-        self.sandboxes = sandboxes
-        self.has_more_items = has_more_items
-        self.next_token = next_token
-        self.iterator = iterator
 
 class SandboxApi(SandboxApiBase):
     @dataclass
@@ -111,19 +105,7 @@ class SandboxApi(SandboxApiBase):
             token = res.headers.get("x-next-token")
             has_more_items = bool(token)
             sandboxes = [
-                SandboxInfo(
-                    sandbox_id=SandboxApi._get_sandbox_id(
-                        sandbox.sandbox_id,
-                        sandbox.client_id,
-                    ),
-                    template_id=sandbox.template_id,
-                    name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                    metadata=(
-                        sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                    ),
-                    started_at=sandbox.started_at,
-                    state=sandbox.state,
-                )
+                SandboxInfo.from_listed_sandbox(sandbox)
                 for sandbox in res.parsed
             ]
 
@@ -152,7 +134,7 @@ class SandboxApi(SandboxApiBase):
         request_timeout: Optional[float] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
-    ):
+    ) -> Generator[SandboxInfo, None, None]:
         next_page = True
         token = next_token
 
