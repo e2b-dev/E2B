@@ -47,9 +47,7 @@ class EntryInfo:
     """
 
 
-dataclass
-
-
+@dataclass
 class WriteEntry:
     """
     Contains path and data of the file to be written to the filesystem.
