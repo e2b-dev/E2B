@@ -6,7 +6,9 @@ import { Sandbox } from '../../src'
 sandboxTest.skipIf(isDebug)('kill existing sandbox', async ({ sandbox }) => {
   await Sandbox.kill(sandbox.sandboxId)
 
-  const { sandboxes } = await Sandbox.list()
+  const { sandboxes } = await Sandbox.list({
+    query: { state: ['running'] },
+  })
   expect(sandboxes.map((s) => s.sandboxId)).not.toContain(sandbox.sandboxId)
 })
 

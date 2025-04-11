@@ -6,6 +6,9 @@ import { sandboxTest, isDebug } from '../setup.js'
 sandboxTest.skipIf(isDebug)('kill', async ({ sandbox }) => {
   await sandbox.kill()
 
-  const { sandboxes } = await Sandbox.list()
+  const { sandboxes } = await Sandbox.list({
+    query: { state: ['running'] },
+  })
+
   expect(sandboxes.map((s) => s.sandboxId)).not.toContain(sandbox.sandboxId)
 })

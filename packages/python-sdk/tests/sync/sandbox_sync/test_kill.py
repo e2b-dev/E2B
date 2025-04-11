@@ -7,5 +7,5 @@ from e2b import Sandbox
 def test_kill(sandbox: Sandbox):
     sandbox.kill()
 
-    list = Sandbox.list()
+    list = Sandbox.list(query=Sandbox.SandboxQuery(state=["running"]))
     assert sandbox.sandbox_id not in [s.sandbox_id for s in list.sandboxes]

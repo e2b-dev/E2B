@@ -33,8 +33,7 @@ sandboxTest.skipIf(isDebug)('list running sandboxes', async ({ sandbox }) => {
 
   try {
     const { sandboxes } = await Sandbox.list({
-      state: ['running'],
-      query: { metadata: { sandboxType: 'test' } },
+      query: { metadata: { sandboxType: 'test' }, state: ['running'] },
     })
 
     assert.isAtLeast(sandboxes.length, 1)
@@ -56,8 +55,7 @@ sandboxTest.skipIf(isDebug)('list paused sandboxes', async ({ sandbox }) => {
 
   try {
     const { sandboxes } = await Sandbox.list({
-      state: ['paused'],
-      query: { metadata: { sandboxType: 'test' } },
+      query: { metadata: { sandboxType: 'test' }, state: ['paused'] },
     })
 
     assert.isAtLeast(sandboxes.length, 1)
@@ -84,8 +82,7 @@ sandboxTest.skipIf(isDebug)(
       // Test pagination with limit
       const { sandboxes, hasMoreItems, nextToken } = await Sandbox.list({
         limit: 1,
-        state: ['running'],
-        query: { metadata: { sandboxType: 'test' } },
+        query: { metadata: { sandboxType: 'test' }, state: ['running'] },
       })
 
       // Check first page
@@ -103,8 +100,7 @@ sandboxTest.skipIf(isDebug)(
       } = await Sandbox.list({
         limit: 1,
         nextToken: nextToken,
-        state: ['running'],
-        query: { metadata: { sandboxType: 'test' } },
+        query: { metadata: { sandboxType: 'test' }, state: ['running'] },
       })
 
       // Check second page
@@ -136,8 +132,7 @@ sandboxTest.skipIf(isDebug)(
       // Test pagination with limit
       const { sandboxes, hasMoreItems, nextToken } = await Sandbox.list({
         limit: 1,
-        state: ['paused'],
-        query: { metadata: { sandboxType: 'test' } },
+        query: { metadata: { sandboxType: 'test' }, state: ['paused'] },
       })
 
       // Check first page
@@ -155,8 +150,7 @@ sandboxTest.skipIf(isDebug)(
       } = await Sandbox.list({
         limit: 1,
         nextToken: nextToken,
-        state: ['paused'],
-        query: { metadata: { sandboxType: 'test' } },
+        query: { metadata: { sandboxType: 'test' }, state: ['paused'] },
       })
 
       // Check second page
@@ -187,8 +181,10 @@ sandboxTest.skipIf(isDebug)(
       // Test pagination with limit
       const { sandboxes, hasMoreItems, nextToken } = await Sandbox.list({
         limit: 1,
-        state: ['running', 'paused'],
-        query: { metadata: { sandboxType: 'test' } },
+        query: {
+          metadata: { sandboxType: 'test' },
+          state: ['running', 'paused'],
+        },
       })
 
       // Check first page
@@ -206,8 +202,10 @@ sandboxTest.skipIf(isDebug)(
       } = await Sandbox.list({
         limit: 1,
         nextToken: nextToken,
-        state: ['running', 'paused'],
-        query: { metadata: { sandboxType: 'test' } },
+        query: {
+          metadata: { sandboxType: 'test' },
+          state: ['running', 'paused'],
+        },
       })
 
       // Check second page

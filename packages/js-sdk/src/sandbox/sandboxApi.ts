@@ -15,12 +15,13 @@ export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
    */
-  query?: { metadata?: Record<string, string> }
-
-  /**
-   * Filter the list of sandboxes by state.
-   */
-  state?: Array<'running' | 'paused'> | undefined
+  query?: {
+    metadata?: Record<string, string>
+    /**
+     * Filter the list of sandboxes by state.
+     */
+    state?: Array<'running' | 'paused'>
+  }
 
   /**
    * Number of sandboxes to return.
@@ -120,7 +121,7 @@ export class SandboxApi {
     nextToken: string | undefined
     iterator: AsyncGenerator<SandboxInfo>
   }> {
-    const { query, state, limit, nextToken, requestTimeoutMs } = opts
+    const { query, limit, nextToken, requestTimeoutMs } = opts
     const config = new ConnectionConfig({ requestTimeoutMs })
     const client = new ApiClient(config)
 
@@ -141,7 +142,7 @@ export class SandboxApi {
       params: {
         query: {
           metadata,
-          state,
+          state: query?.state,
           limit,
           nextToken,
         },
@@ -179,7 +180,6 @@ export class SandboxApi {
         limit,
         nextToken: nextPageToken,
         query,
-        state,
         requestTimeoutMs,
       }),
     }
