@@ -26,7 +26,7 @@ const sandboxId = sandboxes[0].sandboxId
 from e2b_code_interpreter import Sandbox
 
 # Get all running sandboxes
-running_sandboxes = Sandbox.list(state=['running']) # $HighlightLine
+running_sandboxes = Sandbox.list(Sandbox.SandboxQuery(state=['running'])) # $HighlightLine
 
 # Get the ID of the sandbox you want to connect to
 if len(running_sandboxes.sandboxes) == 0:
@@ -65,7 +65,7 @@ const sandbox = await Sandbox.connect(sandboxId) // $HighlightLine
 from e2b_code_interpreter import Sandbox
 
 # Get all running sandboxes
-running_sandboxes = Sandbox.list(state=['running'])
+running_sandboxes = Sandbox.list(Sandbox.SandboxQuery(state=['running']))
 
 # Get the ID of the sandbox you want to connect to
 if len(running_sandboxes.sandboxes) == 0:

@@ -7,7 +7,7 @@ from e2b import AsyncSandbox
 async def test_kill_existing_sandbox(async_sandbox: AsyncSandbox):
     assert await AsyncSandbox.kill(async_sandbox.sandbox_id) == True
 
-    list = await AsyncSandbox.list(state=["running"])
+    list = await AsyncSandbox.list(query=AsyncSandbox.SandboxQuery(state=["running"]))
     assert async_sandbox.sandbox_id not in [s.sandbox_id for s in list.sandboxes]
 
 

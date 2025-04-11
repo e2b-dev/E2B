@@ -145,7 +145,7 @@ from e2b import Sandbox
 # from e2b_desktop import Sandbox
 
 # List all paused sandboxes
-sandboxes = Sandbox.list(state=['paused']) # $HighlightLine
+sandboxes = Sandbox.list(Sandbox.SandboxQuery(state=['paused'])) # $HighlightLine
 print('Paused sandboxes', sandboxes.sandboxes) # $HighlightLine
 ```
 </CodeGroup>

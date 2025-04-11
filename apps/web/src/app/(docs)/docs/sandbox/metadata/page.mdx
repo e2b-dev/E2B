@@ -41,7 +41,7 @@ sandbox = Sandbox(
 )
 
 # List running sandboxes and access metadata.
-running_sandboxes = Sandbox.list(state=['running'])
+running_sandboxes = Sandbox.list(Sandbox.SandboxQuery(state=['running']))
 # Will print:
 # {
 #   'userId': '123',

@@ -11,7 +11,7 @@ sandbox.keep_alive(60)
 
 # Later, can be even from another process
 # List all running sandboxes
-running_sandboxes = Sandbox.list(state=['running'])
+running_sandboxes = Sandbox.list(Sandbox.SandboxQuery(state=['running']))
 
  # Find the sandbox by metadata
 for running_sandbox in running_sandboxes.sandboxes:

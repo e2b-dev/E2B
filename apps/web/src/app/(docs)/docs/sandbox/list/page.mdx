@@ -34,7 +34,7 @@ sandbox = Sandbox({
   },
 })
 
-running_sandboxes = sandbox.list(state=['running']) # $HighlightLine
+running_sandboxes = sandbox.list(Sandbox.SandboxQuery(state=['running'])) # $HighlightLine
 running_sandbox = running_sandboxes.sandboxes[0]
 print('Running sandbox metadata:', running_sandbox.metadata)
 print('Running sandbox id:', running_sandbox.sandbox_id)
