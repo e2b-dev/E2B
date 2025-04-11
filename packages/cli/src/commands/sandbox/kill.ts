@@ -45,7 +45,9 @@ export const killCommand = new commander.Command('kill')
       }
 
       if (all) {
-        const sandboxes = await listSandboxes()
+        const sandboxes = await listSandboxes({
+          state: ['running'],
+        })
         if (sandboxes.length === 0) {
           console.log('No sandboxes found')
           process.exit(0)
