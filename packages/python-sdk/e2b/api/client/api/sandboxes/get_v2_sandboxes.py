@@ -22,7 +22,7 @@ def _get_kwargs(
     params["metadata"] = metadata
 
     # Handle state parameter correctly by joining values into a comma-separated string
-    if not isinstance(state, Unset):
+    if not isinstance(state, Unset) and state is not None:
         state_values = [str(state_item) for state_item in state]
         params["state"] = ",".join(state_values)
 

@@ -1,4 +1,4 @@
-from e2b import Sandbox
+from e2b import Sandbox, SandboxListQuery
 
 sandbox = Sandbox(
     template='base',
@@ -11,7 +11,7 @@ sandbox.keep_alive(60)
 
 # Later, can be even from another process
 # List all running sandboxes
-running_sandboxes = Sandbox.list(Sandbox.SandboxQuery(state=['running']))
+running_sandboxes = Sandbox.list(SandboxListQuery(state=['running']))
 
  # Find the sandbox by metadata
 for running_sandbox in running_sandboxes.sandboxes:

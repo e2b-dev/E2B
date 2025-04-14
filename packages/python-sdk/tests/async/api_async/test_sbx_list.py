@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from e2b import AsyncSandbox
+from e2b import AsyncSandbox, SandboxListQuery
 
 
 @pytest.mark.skip_debug()
@@ -18,7 +18,7 @@ async def test_list_sandboxes_with_filter():
     extra_sbx = await AsyncSandbox.create(metadata={"unique_id": unique_id})
     
     try:
-        sandboxes = await AsyncSandbox.list(query=AsyncSandbox.SandboxQuery(metadata={"unique_id": unique_id}))
+        sandboxes = await AsyncSandbox.list(query=SandboxListQuery(metadata={"unique_id": unique_id}))
         assert len(sandboxes.sandboxes) == 1
         assert sandboxes.sandboxes[0].sandbox_id == extra_sbx.sandbox_id
     finally:
@@ -31,7 +31,7 @@ async def test_list_running_sandboxes(async_sandbox: AsyncSandbox):
     
     try:
         sandboxes = await AsyncSandbox.list(
-            query=AsyncSandbox.SandboxQuery(state=["running"], metadata={"sandbox_type": "test"})
+            query=SandboxListQuery(state=["running"], metadata={"sandbox_type": "test"})
         )
         assert len(sandboxes.sandboxes) >= 1
         
@@ -52,7 +52,7 @@ async def test_list_paused_sandboxes(async_sandbox: AsyncSandbox):
     
     try:
         sandboxes = await AsyncSandbox.list(
-            query=AsyncSandbox.SandboxQuery(state=["paused"], metadata={"sandbox_type": "test"})
+            query=SandboxListQuery(state=["paused"], metadata={"sandbox_type": "test"})
         )
         assert len(sandboxes.sandboxes) >= 1
         
@@ -75,7 +75,7 @@ async def test_paginate_running_sandboxes(async_sandbox: AsyncSandbox):
     try:
         # Test pagination with limit
         sandboxes = await AsyncSandbox.list(
-            query=AsyncSandbox.SandboxQuery(state=["running"], metadata={"sandbox_type": "test"}),
+            query=SandboxListQuery(state=["running"], metadata={"sandbox_type": "test"}),
             limit=1
         )
         
@@ -88,7 +88,7 @@ async def test_paginate_running_sandboxes(async_sandbox: AsyncSandbox):
         
         # Get second page using the next token
         sandboxes2 = await AsyncSandbox.list(
-            query=AsyncSandbox.SandboxQuery(state=["running"], metadata={"sandbox_type": "test"}),
+            query=SandboxListQuery(state=["running"], metadata={"sandbox_type": "test"}),
             limit=1,
             next_token=sandboxes.next_token
         )
@@ -118,7 +118,7 @@ async def test_paginate_paused_sandboxes(async_sandbox: AsyncSandbox):
     try:
         # Test pagination with limit
         sandboxes = await AsyncSandbox.list(
-            query=AsyncSandbox.SandboxQuery(state=["paused"], metadata={"sandbox_type": "test"}),
+            query=SandboxListQuery(state=["paused"], metadata={"sandbox_type": "test"}),
             limit=1
         )
 
@@ -131,7 +131,7 @@ async def test_paginate_paused_sandboxes(async_sandbox: AsyncSandbox):
         
         # Get second page using the next token
         sandboxes2 = await AsyncSandbox.list(
-            query=AsyncSandbox.SandboxQuery(state=["paused"], metadata={"sandbox_type": "test"}),
+            query=SandboxListQuery(state=["paused"], metadata={"sandbox_type": "test"}),
             limit=1,
             next_token=sandboxes.next_token
         )
@@ -160,7 +160,7 @@ async def test_paginate_running_and_paused_sandboxes(async_sandbox: AsyncSandbox
     try:
         # Test pagination with limit
         sandboxes = await AsyncSandbox.list(
-            query=AsyncSandbox.SandboxQuery(state=["running", "paused"], metadata={"sandbox_type": "test"}),
+            query=SandboxListQuery(state=["running", "paused"], metadata={"sandbox_type": "test"}),
             limit=1
         )
         
@@ -173,7 +173,7 @@ async def test_paginate_running_and_paused_sandboxes(async_sandbox: AsyncSandbox
         
         # Get second page using the next token
         sandboxes2 = await AsyncSandbox.list(
-            query=AsyncSandbox.SandboxQuery(state=["running", "paused"], metadata={"sandbox_type": "test"}),
+            query=SandboxListQuery(state=["running", "paused"], metadata={"sandbox_type": "test"}),
             limit=1,
             next_token=sandboxes.next_token
         )

@@ -41,7 +41,7 @@ from .exceptions import (
     NotEnoughSpaceException,
     TemplateException,
 )
-from .sandbox.sandbox_api import SandboxInfo
+from .sandbox.sandbox_api import SandboxInfo, SandboxListQuery
 from .sandbox.commands.main import ProcessInfo
 from .sandbox.commands.command_handle import (
     CommandResult,

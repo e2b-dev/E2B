@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 import urllib.parse
 from typing import Dict, List, Optional, AsyncGenerator
 from packaging.version import Version
 
-from e2b.sandbox.sandbox_api import ListSandboxesResponse, SandboxInfo, SandboxApiBase
+from e2b.sandbox.sandbox_api import ListSandboxesResponse, SandboxInfo, SandboxApiBase, SandboxListQuery
 from e2b.exceptions import TemplateException
 from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
@@ -18,7 +17,6 @@ from e2b.api.client.api.sandboxes import (
 )
 from e2b.api.client.models import (
     NewSandbox,
-    SandboxState,
     PostSandboxesSandboxIDTimeoutBody,
     ResumedSandbox,
 )
@@ -31,21 +29,11 @@ from e2b.api import handle_api_exception
 
 
 class SandboxApi(SandboxApiBase):
-    @dataclass
-    class SandboxQuery:
-        """Query parameters for listing sandboxes."""
-
-        metadata: Optional[dict[str, str]] = None
-        """Filter sandboxes by metadata."""
-
-        state: Optional[List[SandboxState]] = None
-        """Filter sandboxes by state."""
-
     @classmethod
     async def list(
         cls,
         api_key: Optional[str] = None,
-        query: Optional[SandboxQuery] = None,
+        query: Optional[SandboxListQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         domain: Optional[str] = None,
@@ -56,7 +44,7 @@ class SandboxApi(SandboxApiBase):
         List sandboxes with pagination.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxQuery(metadata={"key": "value"})` or `SandboxQuery(state=["paused", "running"])`
+        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=["paused", "running"])`
         :param limit: Maximum number of sandboxes to return
         :param next_token: Token for pagination
         :param domain: Domain to use for the request, only relevant for self-hosted environments
@@ -86,7 +74,7 @@ class SandboxApi(SandboxApiBase):
             res = await get_v2_sandboxes.asyncio_detailed(
                 client=api_client,
                 metadata=metadata,
-                state=query.state or UNSET,
+                state=query.state if query else UNSET,
                 limit=limit,
                 next_token=next_token,
             )
@@ -127,7 +115,7 @@ class SandboxApi(SandboxApiBase):
     @classmethod
     async def _list_iterator(
         cls,
-        query: Optional[SandboxQuery] = None,
+        query: Optional[SandboxListQuery] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,

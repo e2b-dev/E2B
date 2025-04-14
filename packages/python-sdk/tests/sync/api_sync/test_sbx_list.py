@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from e2b import Sandbox
+from e2b import Sandbox, SandboxListQuery
 
 @pytest.mark.skip_debug()
 def test_list_sandboxes(sandbox: Sandbox):
@@ -17,7 +17,7 @@ def test_list_sandboxes_with_filter():
     extra_sbx = Sandbox(metadata={"unique_id": unique_id})
     
     try:
-        sandboxes = Sandbox.list(query=Sandbox.SandboxQuery(metadata={"unique_id": unique_id}))
+        sandboxes = Sandbox.list(query=SandboxListQuery(metadata={"unique_id": unique_id}))
         assert len(sandboxes.sandboxes) == 1
         assert sandboxes.sandboxes[0].sandbox_id == extra_sbx.sandbox_id
     finally:
@@ -30,7 +30,7 @@ def test_list_running_sandboxes(sandbox: Sandbox):
     
     try:
         sandboxes = Sandbox.list(
-            query=Sandbox.SandboxQuery(metadata={"sandbox_type": "test"}, state=["running"])
+            query=SandboxListQuery(metadata={"sandbox_type": "test"}, state=["running"])
         )
         assert len(sandboxes.sandboxes) >= 1
         
@@ -51,7 +51,7 @@ def test_list_paused_sandboxes(sandbox: Sandbox):
     
     try:
         sandboxes = Sandbox.list(
-            query=Sandbox.SandboxQuery(metadata={"sandbox_type": "test"}, state=["paused"])
+            query=SandboxListQuery(metadata={"sandbox_type": "test"}, state=["paused"])
         )
         assert len(sandboxes.sandboxes) >= 1
         
@@ -74,7 +74,7 @@ def test_paginate_running_sandboxes(sandbox: Sandbox):
     try:
         # Test pagination with limit
         sandboxes = Sandbox.list(
-            query=Sandbox.SandboxQuery(metadata={"sandbox_type": "test"}, state=["running"]),
+            query=SandboxListQuery(metadata={"sandbox_type": "test"}, state=["running"]),
             limit=1
         )
         
@@ -87,7 +87,7 @@ def test_paginate_running_sandboxes(sandbox: Sandbox):
         
         # Get second page using the next token
         sandboxes2 = Sandbox.list(
-            query=Sandbox.SandboxQuery(metadata={"sandbox_type": "test"}, state=["running"]),
+            query=SandboxListQuery(metadata={"sandbox_type": "test"}, state=["running"]),
             limit=1,
             next_token=sandboxes.next_token
         )
@@ -117,7 +117,7 @@ def test_paginate_paused_sandboxes(sandbox: Sandbox):
     try:
         # Test pagination with limit
         sandboxes = Sandbox.list(
-            query=Sandbox.SandboxQuery(metadata={"sandbox_type": "test"}, state=["paused"]),
+            query=SandboxListQuery(metadata={"sandbox_type": "test"}, state=["paused"]),
             limit=1
         )
 
@@ -130,7 +130,7 @@ def test_paginate_paused_sandboxes(sandbox: Sandbox):
         
         # Get second page using the next token
         sandboxes2 = Sandbox.list(
-            query=Sandbox.SandboxQuery(metadata={"sandbox_type": "test"}, state=["paused"]),
+            query=SandboxListQuery(metadata={"sandbox_type": "test"}, state=["paused"]),
             limit=1,
             next_token=sandboxes.next_token
         )
@@ -159,7 +159,7 @@ def test_paginate_running_and_paused_sandboxes(sandbox: Sandbox):
     try:
         # Test pagination with limit
         sandboxes = Sandbox.list(
-            query=Sandbox.SandboxQuery(metadata={"sandbox_type": "test"}, state=["running", "paused"]),
+            query=SandboxListQuery(metadata={"sandbox_type": "test"}, state=["running", "paused"]),
             limit=1
         )
         
@@ -172,7 +172,7 @@ def test_paginate_running_and_paused_sandboxes(sandbox: Sandbox):
         
         # Get second page using the next token
         sandboxes2 = Sandbox.list(
-            query=Sandbox.SandboxQuery(metadata={"sandbox_type": "test"}, state=["running", "paused"]),
+            query=SandboxListQuery(metadata={"sandbox_type": "test"}, state=["running", "paused"]),
             limit=1,
             next_token=sandboxes.next_token
         )

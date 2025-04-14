@@ -40,14 +40,31 @@ class SandboxInfo:
             started_at=listed_sandbox.started_at,
             state=listed_sandbox.state,
         )
-    
 
+@dataclass
 class ListSandboxesResponse:
-    def __init__(self, sandboxes: List[SandboxInfo], has_more_items: bool, next_token: Optional[str], iterator: Generator[SandboxInfo, None, None]):
-        self.sandboxes = sandboxes
-        self.has_more_items = has_more_items
-        self.next_token = next_token
-        self.iterator = iterator
+    """List of sandboxes."""
+    sandboxes: List[SandboxInfo]
+
+    """Whether there are more sandboxes to fetch."""
+    has_more_items: bool
+
+    """Next token to fetch more sandboxes."""
+    next_token: Optional[str]
+
+    """Iterator to fetch sandboxes."""
+    iterator: Generator[SandboxInfo, None, None]
+
+
+@dataclass
+class SandboxListQuery:
+    """Query parameters for listing sandboxes."""
+    metadata: Optional[dict[str, str]] = None
+
+    """Filter sandboxes by metadata."""
+    state: Optional[List[SandboxState]] = None
+
+    """Filter sandboxes by state."""
 
 
 @dataclass
