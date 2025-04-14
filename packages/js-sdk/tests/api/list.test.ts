@@ -106,17 +106,17 @@ sandboxTest.skipIf(isDebug)(
       // Check first page
       assert.equal(sandboxes.length, 1)
       assert.equal(sandboxes[0].state, 'running')
-      assert.isTrue(paginator.hasNextItems)
+      assert.isTrue(paginator.hasMoreItems)
       assert.notEqual(paginator.nextToken, undefined)
       assert.equal(sandboxes[0].sandboxId, extraSbx.sandboxId)
 
-      // Get second page using the next token
+      // Get second page
       const sandboxes2 = await paginator.nextItems()
 
       // Check second page
       assert.equal(sandboxes2.length, 1)
       assert.equal(sandboxes2[0].state, 'running')
-      assert.isFalse(paginator.hasNextItems)
+      assert.isFalse(paginator.hasMoreItems)
       assert.equal(paginator.nextToken, undefined)
       assert.equal(sandboxes2[0].sandboxId, sandbox.sandboxId)
     } finally {
@@ -147,17 +147,17 @@ sandboxTest.skipIf(isDebug)(
       // Check first page
       assert.equal(sandboxes.length, 1)
       assert.equal(sandboxes[0].state, 'paused')
-      assert.isTrue(paginator.hasNextItems)
+      assert.isTrue(paginator.hasMoreItems)
       assert.notEqual(paginator.nextToken, undefined)
       assert.equal(sandboxes[0].sandboxId.startsWith(extraSbxId), true)
 
-      // Get second page using the next token
+      // Get second page
       const sandboxes2 = await paginator.nextItems()
 
       // Check second page
       assert.equal(sandboxes2.length, 1)
       assert.equal(sandboxes2[0].state, 'paused')
-      assert.isFalse(paginator.hasNextItems)
+      assert.isFalse(paginator.hasMoreItems)
       assert.equal(paginator.nextToken, undefined)
       assert.equal(sandboxes2[0].sandboxId.startsWith(extraSbxId), true)
     } finally {
@@ -190,17 +190,17 @@ sandboxTest.skipIf(isDebug)(
       // Check first page
       assert.equal(sandboxes.length, 1)
       assert.equal(sandboxes[0].state, 'paused')
-      assert.isTrue(paginator.hasNextItems)
+      assert.isTrue(paginator.hasMoreItems)
       assert.notEqual(paginator.nextToken, undefined)
       assert.equal(sandboxes[0].sandboxId.startsWith(extraSbxId), true)
 
-      // Get second page using the next token
+      // Get second page
       const sandboxes2 = await paginator.nextItems()
 
       // Check second page
       assert.equal(sandboxes2.length, 1)
       assert.equal(sandboxes2[0].state, 'running')
-      assert.isFalse(paginator.hasNextItems)
+      assert.isFalse(paginator.hasMoreItems)
       assert.equal(paginator.nextToken, undefined)
       assert.equal(sandboxes2[0].sandboxId, sandbox.sandboxId)
     } finally {
@@ -217,7 +217,7 @@ sandboxTest.skipIf(isDebug)(
     })
     const sandboxes: SandboxInfo[] = []
 
-    while (paginator.hasNextItems) {
+    while (paginator.hasMoreItems) {
       const sbxs = await paginator.nextItems()
       sandboxes.push(...sbxs)
     }

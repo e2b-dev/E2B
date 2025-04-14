@@ -76,17 +76,17 @@ def test_paginate_running_sandboxes(sandbox: Sandbox, sandbox_type: str):
         # Check first page
         assert len(sandboxes) == 1
         assert sandboxes[0].state == "running"
-        assert paginator.has_next_items is True
+        assert paginator.has_more_items is True
         assert paginator.next_token is not None
         assert sandboxes[0].sandbox_id == extra_sbx.sandbox_id
         
-        # Get second page using the next token
+        # Get second page
         sandboxes = paginator.next_items()
         
         # Check second page
         assert len(sandboxes) == 1
         assert sandboxes[0].state == "running"
-        assert paginator.has_next_items is False
+        assert paginator.has_more_items is False
         assert paginator.next_token is None
         assert sandboxes[0].sandbox_id == sandbox.sandbox_id
     finally:
@@ -115,17 +115,17 @@ def test_paginate_paused_sandboxes(sandbox: Sandbox, sandbox_type: str):
         # Check first page
         assert len(sandboxes) == 1
         assert sandboxes[0].state == "paused"
-        assert paginator.has_next_items is True
+        assert paginator.has_more_items is True
         assert paginator.next_token is not None
         assert sandboxes[0].sandbox_id.startswith(extra_sbx_id) is True
         
-        # Get second page using the next token
+        # Get second page
         sandboxes = paginator.next_items()
 
         # Check second page
         assert len(sandboxes) == 1
         assert sandboxes[0].state == "paused"
-        assert paginator.has_next_items is False
+        assert paginator.has_more_items is False
         assert paginator.next_token is None
         assert sandboxes[0].sandbox_id.startswith(sandbox_id) is True
     finally:
@@ -151,17 +151,17 @@ def test_paginate_running_and_paused_sandboxes(sandbox: Sandbox, sandbox_type: s
         # Check first page
         assert len(sandboxes) == 1
         assert sandboxes[0].state == "paused"
-        assert paginator.has_next_items is True
+        assert paginator.has_more_items is True
         assert paginator.next_token is not None
         assert sandboxes[0].sandbox_id.startswith(extra_sbx_id) is True
         
-        # Get second page using the next token
+        # Get second page
         sandboxes = paginator.next_items()
         
         # Check second page
         assert len(sandboxes) == 1
         assert sandboxes[0].state == "running"
-        assert paginator.has_next_items is False
+        assert paginator.has_more_items is False
         assert paginator.next_token is None
         assert sandboxes[0].sandbox_id == sandbox.sandbox_id
     finally:
@@ -172,7 +172,7 @@ def test_paginate_iterator(sandbox: Sandbox, sandbox_type: str):
     paginator = Sandbox.list(query=SandboxListQuery(metadata={"sandbox_type": sandbox_type}))
     sandboxes_list = []
 
-    while paginator.has_next_items:
+    while paginator.has_more_items:
         sandboxes = paginator.next_items()
         sandboxes_list.extend(sandboxes)
 

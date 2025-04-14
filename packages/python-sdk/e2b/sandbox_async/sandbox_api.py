@@ -45,19 +45,19 @@ class SandboxPaginator:
         self.debug = debug
         self.request_timeout = request_timeout
         self.limit = limit
-        self._has_next_items = True
+        self._has_more_items = True
         self._next_token = next_token
 
     @property
-    def has_next_items(self) -> bool:
-        return self._has_next_items
+    def has_more_items(self) -> bool:
+        return self._has_more_items
 
     @property
     def next_token(self) -> Optional[str]:
         return self._next_token
 
     async def next_items(self) -> List[SandboxInfo]:
-        if not self.has_next_items:
+        if not self.has_more_items:
             raise Exception("No more items to fetch")
 
         config = ConnectionConfig(
@@ -89,7 +89,7 @@ class SandboxPaginator:
                 raise handle_api_exception(res)
 
             self._next_token = res.headers.get("x-next-token")
-            self._has_next_items = bool(self._next_token)
+            self._has_more_items = bool(self._next_token)
 
             if res.parsed is None:
                 return []
