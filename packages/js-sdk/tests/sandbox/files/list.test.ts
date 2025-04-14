@@ -13,48 +13,87 @@ sandboxTest('list directory', async ({ sandbox }) => {
   await sandbox.files.makeDir(`${parentDirName}/subdir2/subdir2_1`)
   await sandbox.files.makeDir(`${parentDirName}/subdir2/subdir2_2`)
 
-  // explicit depth 0 (should default to 1)
-  const files0 = await sandbox.files.list(parentDirName, { depth: 0 })
-  console.log(files0)
-  assert.equal(files0.length, 2)
-  assert.equal(files0[0].name, 'subdir1')
-  assert.equal(files0[1].name, 'subdir2')
+  const testCases = [
+    {
+      name: 'explicit depth 0 (should default to 1)',
+      depth: 0,
+      expectedLen: 2,
+      expectedFiles: ['subdir1', 'subdir2'],
+    },
+    {
+      name: 'default depth (1)',
+      depth: undefined,
+      expectedLen: 2,
+      expectedFiles: ['subdir1', 'subdir2'],
+    },
+    {
+      name: 'explicit depth 1',
+      depth: 1,
+      expectedLen: 2,
+      expectedFiles: ['subdir1', 'subdir2'],
+    },
+    {
+      name: 'explicit depth 2',
+      depth: 2,
+      expectedLen: 6,
+      expectedFiles: [
+        'subdir1',
+        'subdir1_1',
+        'subdir1_2',
+        'subdir2',
+        'subdir2_1',
+        'subdir2_2',
+      ],
+    },
+    {
+      name: 'explicit depth 3 (should be the same as depth 2)',
+      depth: 3,
+      expectedLen: 6,
+      expectedFiles: [
+        'subdir1',
+        'subdir1_1',
+        'subdir1_2',
+        'subdir2',
+        'subdir2_1',
+        'subdir2_2',
+      ],
+    },
+    {
+      name: 'negative depth should error',
+      depth: -1,
+      expectedLen: 0,
+      expectedFiles: [],
+      expectError: 'invalid_argument',
+    },
+  ]
 
-  // default depth (1)
-  const files = await sandbox.files.list(parentDirName)
-  console.log(files)
-  assert.equal(files.length, 2)
-  assert.equal(files[0].name, 'subdir1')
-  assert.equal(files[1].name, 'subdir2')
+  for (const testCase of testCases) {
+    if (testCase.expectError) {
+      try {
+        await sandbox.files.list(
+          parentDirName,
+          testCase.depth !== undefined ? { depth: testCase.depth } : undefined
+        )
+        assert.fail('Expected error but none was thrown')
+      } catch (err) {
+        assert.ok(
+          err.message.includes(testCase.expectError),
+          `expected error message to include "${testCase.expectError}"`
+        )
+        continue
+      }
+    } else {
+      const files = await sandbox.files.list(
+        parentDirName,
+        testCase.depth !== undefined ? { depth: testCase.depth } : undefined
+      )
+      assert.equal(files.length, testCase.expectedLen)
 
-  // explicit depth 1
-  const files1 = await sandbox.files.list(parentDirName, { depth: 1 })
-  console.log(files1)
-  assert.equal(files1.length, 2)
-  assert.equal(files1[0].name, 'subdir1')
-  assert.equal(files1[1].name, 'subdir2')
-
-  // explicit depth 2
-  const files2 = await sandbox.files.list(parentDirName, { depth: 2 })
-  console.log(files2)
-  assert.equal(files2.length, 6)
-  assert.equal(files2[0].name, 'subdir1')
-  assert.equal(files2[1].name, 'subdir1_1')
-  assert.equal(files2[2].name, 'subdir1_2')
-  assert.equal(files2[3].name, 'subdir2')
-  assert.equal(files2[4].name, 'subdir2_1')
-  assert.equal(files2[5].name, 'subdir2_2')
-
-  // explicit depth 3 (should be the same as depth 2)
-  const files3 = await sandbox.files.list(parentDirName, { depth: 3 })
-  console.log(files3)
-  assert.equal(files3.length, 6)
-  assert.equal(files3[0].name, 'subdir1')
-  assert.equal(files3[1].name, 'subdir1_1')
-  assert.equal(files3[2].name, 'subdir1_2')
-  assert.equal(files3[3].name, 'subdir2')
-  assert.equal(files3[4].name, 'subdir2_1')
-  assert.equal(files3[5].name, 'subdir2_2')
+      for (let i = 0; i < testCase.expectedFiles.length; i++) {
+        assert.equal(files[i].name, testCase.expectedFiles[i])
+      }
+    }
+  }
 
   onTestFinished(() => {
     sandbox.files.remove(parentDirName)
