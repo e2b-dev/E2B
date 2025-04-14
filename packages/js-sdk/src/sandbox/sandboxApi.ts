@@ -71,21 +71,21 @@ export interface SandboxInfo {
 
 export class SandboxPaginator {
   private options: SandboxListOpts
-  private HasNextItems: boolean
-  private NextToken: string | undefined
+  private _hasNextItems: boolean
+  private _nextToken: string | undefined
 
   constructor(options: SandboxListOpts = {}) {
     this.options = options
-    this.HasNextItems = true
-    this.NextToken = undefined
+    this._hasNextItems = true
+    this._nextToken = undefined
   }
 
   get hasNextItems(): boolean {
-    return this.HasNextItems
+    return this._hasNextItems
   }
 
   get nextToken(): string | undefined {
-    return this.NextToken
+    return this._nextToken
   }
 
   /**
@@ -132,8 +132,8 @@ export class SandboxPaginator {
       throw err
     }
 
-    this.NextToken = res.response.headers.get('x-next-token') || undefined
-    this.HasNextItems = !!this.NextToken
+    this._nextToken = res.response.headers.get('x-next-token') || undefined
+    this._hasNextItems = !!this._nextToken
 
     return (res.data ?? []).map(
       (sandbox: components['schemas']['ListedSandbox']) => ({
