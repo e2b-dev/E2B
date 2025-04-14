@@ -103,10 +103,14 @@ class EntryInfo(_message.Message):
     ) -> None: ...
 
 class ListDirRequest(_message.Message):
-    __slots__ = ("path",)
+    __slots__ = ("path", "depth")
     PATH_FIELD_NUMBER: _ClassVar[int]
+    DEPTH_FIELD_NUMBER: _ClassVar[int]
     path: str
-    def __init__(self, path: _Optional[str] = ...) -> None: ...
+    depth: int
+    def __init__(
+        self, path: _Optional[str] = ..., depth: _Optional[int] = ...
+    ) -> None: ...
 
 class ListDirResponse(_message.Message):
     __slots__ = ("entries",)
