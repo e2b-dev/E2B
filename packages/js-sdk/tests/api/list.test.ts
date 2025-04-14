@@ -3,86 +3,99 @@ import { assert } from 'vitest'
 import { Sandbox, SandboxInfo } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
-sandboxTest.skipIf(isDebug)('list sandboxes', async ({ sandbox }) => {
-  const { sandboxes } = await Sandbox.list()
-
-  assert.isAtLeast(sandboxes.length, 1)
-
-  const found = sandboxes.some((s) => s.sandboxId === sandbox.sandboxId)
-  assert.isTrue(found)
-})
-
-sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
-  const uniqueId = Date.now().toString()
-  const extraSbx = await Sandbox.create({ metadata: { uniqueId } })
-
-  try {
+sandboxTest.skipIf(isDebug)(
+  'list sandboxes',
+  async ({ sandbox, sandboxType }) => {
     const { sandboxes } = await Sandbox.list({
-      query: { metadata: { uniqueId } },
-    })
-
-    assert.equal(sandboxes.length, 1)
-    assert.equal(sandboxes[0].sandboxId, extraSbx.sandboxId)
-  } finally {
-    await extraSbx.kill()
-  }
-})
-
-sandboxTest.skipIf(isDebug)('list running sandboxes', async ({ sandbox }) => {
-  const extraSbx = await Sandbox.create({ metadata: { sandboxType: 'test' } })
-
-  try {
-    const { sandboxes } = await Sandbox.list({
-      query: { metadata: { sandboxType: 'test' }, state: ['running'] },
+      query: { metadata: { sandboxType } },
     })
 
     assert.isAtLeast(sandboxes.length, 1)
 
-    // Verify our running sandbox is in the list
-    const found = sandboxes.some(
-      (s) => s.sandboxId === extraSbx.sandboxId && s.state === 'running'
-    )
+    const found = sandboxes.some((s) => s.sandboxId === sandbox.sandboxId)
     assert.isTrue(found)
-  } finally {
-    await extraSbx.kill()
   }
-})
+)
 
-sandboxTest.skipIf(isDebug)('list paused sandboxes', async ({ sandbox }) => {
-  // Create and pause a sandbox
-  const extraSbx = await Sandbox.create({ metadata: { sandboxType: 'test' } })
-  await extraSbx.pause()
+sandboxTest.skipIf(isDebug)(
+  'list sandboxes with filter',
+  async ({ sandboxType }) => {
+    const uniqueId = Date.now().toString()
+    const extraSbx = await Sandbox.create({ metadata: { uniqueId } })
 
-  try {
-    const { sandboxes } = await Sandbox.list({
-      query: { metadata: { sandboxType: 'test' }, state: ['paused'] },
-    })
+    try {
+      const { sandboxes } = await Sandbox.list({
+        query: { metadata: { uniqueId } },
+      })
 
-    assert.isAtLeast(sandboxes.length, 1)
-
-    // Verify our paused sandbox is in the list
-    const pausedSandboxId = extraSbx.sandboxId.split('-')[0]
-    const found = sandboxes.some(
-      (s) => s.sandboxId.startsWith(pausedSandboxId) && s.state === 'paused'
-    )
-    assert.isTrue(found)
-  } finally {
-    await extraSbx.kill()
+      assert.equal(sandboxes.length, 1)
+      assert.equal(sandboxes[0].sandboxId, extraSbx.sandboxId)
+    } finally {
+      await extraSbx.kill()
+    }
   }
-})
+)
+
+sandboxTest.skipIf(isDebug)(
+  'list running sandboxes',
+  async ({ sandboxType }) => {
+    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+
+    try {
+      const { sandboxes } = await Sandbox.list({
+        query: { metadata: { sandboxType }, state: ['running'] },
+      })
+
+      assert.isAtLeast(sandboxes.length, 1)
+
+      // Verify our running sandbox is in the list
+      const found = sandboxes.some(
+        (s) => s.sandboxId === extraSbx.sandboxId && s.state === 'running'
+      )
+      assert.isTrue(found)
+    } finally {
+      await extraSbx.kill()
+    }
+  }
+)
+
+sandboxTest.skipIf(isDebug)(
+  'list paused sandboxes',
+  async ({ sandboxType }) => {
+    // Create and pause a sandbox
+    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    await extraSbx.pause()
+
+    try {
+      const { sandboxes } = await Sandbox.list({
+        query: { metadata: { sandboxType }, state: ['paused'] },
+      })
+
+      assert.isAtLeast(sandboxes.length, 1)
+
+      // Verify our paused sandbox is in the list
+      const pausedSandboxId = extraSbx.sandboxId.split('-')[0]
+      const found = sandboxes.some(
+        (s) => s.sandboxId.startsWith(pausedSandboxId) && s.state === 'paused'
+      )
+      assert.isTrue(found)
+    } finally {
+      await extraSbx.kill()
+    }
+  }
+)
 
 sandboxTest.skipIf(isDebug)(
   'paginate running sandboxes',
-  async ({ sandbox }) => {
-    // Create two sandboxes
-    const sandbox1 = await Sandbox.create({ metadata: { sandboxType: 'test' } })
-    const sandbox2 = await Sandbox.create({ metadata: { sandboxType: 'test' } })
+  async ({ sandbox, sandboxType }) => {
+    // Create extra sandboxes
+    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
 
     try {
       // Test pagination with limit
       const { sandboxes, hasMoreItems, nextToken } = await Sandbox.list({
         limit: 1,
-        query: { metadata: { sandboxType: 'test' }, state: ['running'] },
+        query: { metadata: { sandboxType }, state: ['running'] },
       })
 
       // Check first page
@@ -90,7 +103,7 @@ sandboxTest.skipIf(isDebug)(
       assert.equal(sandboxes[0].state, 'running')
       assert.isTrue(hasMoreItems)
       assert.notEqual(nextToken, undefined)
-      assert.equal(sandboxes[0].sandboxId, sandbox2.sandboxId)
+      assert.equal(sandboxes[0].sandboxId, extraSbx.sandboxId)
 
       // Get second page using the next token
       const {
@@ -100,7 +113,7 @@ sandboxTest.skipIf(isDebug)(
       } = await Sandbox.list({
         limit: 1,
         nextToken: nextToken,
-        query: { metadata: { sandboxType: 'test' }, state: ['running'] },
+        query: { metadata: { sandboxType }, state: ['running'] },
       })
 
       // Check second page
@@ -108,31 +121,29 @@ sandboxTest.skipIf(isDebug)(
       assert.equal(sandboxes2[0].state, 'running')
       assert.isFalse(hasMoreItems2)
       assert.equal(nextToken2, undefined)
-      assert.equal(sandboxes2[0].sandboxId, sandbox1.sandboxId)
+      assert.equal(sandboxes2[0].sandboxId, sandbox.sandboxId)
     } finally {
-      await sandbox1.kill()
-      await sandbox2.kill()
+      await extraSbx.kill()
     }
   }
 )
 
 sandboxTest.skipIf(isDebug)(
   'paginate paused sandboxes',
-  async ({ sandbox }) => {
-    // Create two paused sandboxes
-    const sandbox1 = await Sandbox.create({ metadata: { sandboxType: 'test' } })
-    const sandbox1Id = sandbox1.sandboxId.split('-')[0]
-    await sandbox1.pause()
+  async ({ sandbox, sandboxType }) => {
+    const sandboxId = sandbox.sandboxId.split('-')[0]
+    await sandbox.pause()
 
-    const sandbox2 = await Sandbox.create({ metadata: { sandboxType: 'test' } })
-    const sandbox2Id = sandbox2.sandboxId.split('-')[0]
-    await sandbox2.pause()
+    // Create extra paused sandbox
+    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    await extraSbx.pause()
+    const extraSbxId = extraSbx.sandboxId.split('-')[0]
 
     try {
       // Test pagination with limit
       const { sandboxes, hasMoreItems, nextToken } = await Sandbox.list({
         limit: 1,
-        query: { metadata: { sandboxType: 'test' }, state: ['paused'] },
+        query: { metadata: { sandboxType }, state: ['paused'] },
       })
 
       // Check first page
@@ -140,7 +151,7 @@ sandboxTest.skipIf(isDebug)(
       assert.equal(sandboxes[0].state, 'paused')
       assert.isTrue(hasMoreItems)
       assert.notEqual(nextToken, undefined)
-      assert.equal(sandboxes[0].sandboxId.startsWith(sandbox2Id), true)
+      assert.equal(sandboxes[0].sandboxId.startsWith(extraSbxId), true)
 
       // Get second page using the next token
       const {
@@ -158,31 +169,29 @@ sandboxTest.skipIf(isDebug)(
       assert.equal(sandboxes2[0].state, 'paused')
       assert.isFalse(hasMoreItems2)
       assert.equal(nextToken2, undefined)
-      assert.equal(sandboxes2[0].sandboxId.startsWith(sandbox1Id), true)
+      assert.equal(sandboxes2[0].sandboxId.startsWith(extraSbxId), true)
     } finally {
-      await sandbox1.kill()
-      await sandbox2.kill()
+      await extraSbx.kill()
     }
   }
 )
 
 sandboxTest.skipIf(isDebug)(
   'paginate running and paused sandboxes',
-  async ({ sandbox }) => {
-    // Create two sandboxes
-    const sandbox1 = await Sandbox.create({ metadata: { sandboxType: 'test' } })
-    const sandbox2 = await Sandbox.create({ metadata: { sandboxType: 'test' } })
-    const sandbox2Id = sandbox2.sandboxId.split('-')[0]
+  async ({ sandbox, sandboxType }) => {
+    // Create extra sandbox
+    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    const extraSbxId = extraSbx.sandboxId.split('-')[0]
 
-    // Pause the second sandbox
-    await sandbox2.pause()
+    // Pause the extra sandbox
+    await extraSbx.pause()
 
     try {
       // Test pagination with limit
       const { sandboxes, hasMoreItems, nextToken } = await Sandbox.list({
         limit: 1,
         query: {
-          metadata: { sandboxType: 'test' },
+          metadata: { sandboxType },
           state: ['running', 'paused'],
         },
       })
@@ -192,7 +201,7 @@ sandboxTest.skipIf(isDebug)(
       assert.equal(sandboxes[0].state, 'paused')
       assert.isTrue(hasMoreItems)
       assert.notEqual(nextToken, undefined)
-      assert.equal(sandboxes[0].sandboxId.startsWith(sandbox2Id), true)
+      assert.equal(sandboxes[0].sandboxId.startsWith(extraSbxId), true)
 
       // Get second page using the next token
       const {
@@ -213,10 +222,9 @@ sandboxTest.skipIf(isDebug)(
       assert.equal(sandboxes2[0].state, 'running')
       assert.isFalse(hasMoreItems2)
       assert.equal(nextToken2, undefined)
-      assert.equal(sandboxes2[0].sandboxId, sandbox1.sandboxId)
+      assert.equal(sandboxes2[0].sandboxId, sandbox.sandboxId)
     } finally {
-      await sandbox1.kill()
-      await sandbox2.kill()
+      await extraSbx.kill()
     }
   }
 )
