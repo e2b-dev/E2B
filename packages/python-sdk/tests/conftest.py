@@ -1,9 +1,15 @@
 import os
 from logging import warning
+import uuid
 
 import pytest
 import pytest_asyncio
 from e2b import AsyncSandbox, Sandbox
+
+
+@pytest.fixture(scope="session")
+def sandbox_type():
+    return f"test_{uuid.uuid4()}"
 
 
 @pytest.fixture()
@@ -12,8 +18,8 @@ def template():
 
 
 @pytest.fixture()
-def sandbox(template, debug):
-    sandbox = Sandbox(template)
+def sandbox(template, debug, sandbox_type):
+    sandbox = Sandbox(template, metadata={"sandbox_type": sandbox_type})
 
     try:
         sandbox_id = sandbox.pause()
@@ -30,8 +36,8 @@ def sandbox(template, debug):
 
 
 @pytest_asyncio.fixture
-async def async_sandbox(template, debug):
-    sandbox = await AsyncSandbox.create(template)
+async def async_sandbox(template, debug, sandbox_type):
+    sandbox = await AsyncSandbox.create(template, metadata={"sandbox_type": sandbox_type})
 
     try:
         sandbox_id = await sandbox.pause()
