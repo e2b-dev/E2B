@@ -77,7 +77,7 @@ export class SandboxPaginator {
   constructor(options: SandboxListOpts = {}) {
     this.options = options
     this._hasNextItems = true
-    this._nextToken = undefined
+    this._nextToken = options.nextToken
   }
 
   get hasNextItems(): boolean {
