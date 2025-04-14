@@ -1,10 +1,11 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.error import Error
 from ...types import Response
 
 
@@ -19,22 +20,33 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Any]:
+def _parse_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[Union[Any, Error]]:
     if response.status_code == 204:
-        return None
+        response_204 = cast(Any, None)
+        return response_204
     if response.status_code == 401:
-        return None
+        response_401 = Error.from_dict(response.json())
+
+        return response_401
     if response.status_code == 404:
-        return None
+        response_404 = Error.from_dict(response.json())
+
+        return response_404
     if response.status_code == 500:
-        return None
+        response_500 = Error.from_dict(response.json())
+
+        return response_500
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
-def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[Any]:
+def _build_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[Union[Any, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -47,7 +59,7 @@ def sync_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Any]:
+) -> Response[Union[Any, Error]]:
     """Kill a sandbox
 
     Args:
@@ -58,7 +70,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any]
+        Response[Union[Any, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -72,11 +84,11 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio_detailed(
+def sync(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Any]:
+) -> Optional[Union[Any, Error]]:
     """Kill a sandbox
 
     Args:
@@ -87,7 +99,31 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any]
+        Union[Any, Error]
+    """
+
+    return sync_detailed(
+        sandbox_id=sandbox_id,
+        client=client,
+    ).parsed
+
+
+async def asyncio_detailed(
+    sandbox_id: str,
+    *,
+    client: AuthenticatedClient,
+) -> Response[Union[Any, Error]]:
+    """Kill a sandbox
+
+    Args:
+        sandbox_id (str):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[Union[Any, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -97,3 +133,29 @@ async def asyncio_detailed(
     response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
+
+async def asyncio(
+    sandbox_id: str,
+    *,
+    client: AuthenticatedClient,
+) -> Optional[Union[Any, Error]]:
+    """Kill a sandbox
+
+    Args:
+        sandbox_id (str):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Union[Any, Error]
+    """
+
+    return (
+        await asyncio_detailed(
+            sandbox_id=sandbox_id,
+            client=client,
+        )
+    ).parsed

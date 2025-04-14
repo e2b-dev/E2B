@@ -8,7 +8,10 @@ import { TemplateError } from '../errors'
  */
 export interface SandboxApiOpts
   extends Partial<
-    Pick<ConnectionOpts, 'apiKey' | 'debug' | 'domain' | 'requestTimeoutMs'>
+    Pick<
+      ConnectionOpts,
+      'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
+    >
   > {}
 
 export interface SandboxListOpts extends SandboxApiOpts {
