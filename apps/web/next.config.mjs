@@ -47,13 +47,13 @@ const codeSnippetsDir = path.resolve('./src/code')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
-  basePath: '',
+/*   basePath: '',
   assetPrefix:
     process.env.NODE_ENV === 'production'
       ? `https://${
           process.env.DASHBOARD_PROXY_DOMAIN ?? process.env.VERCEL_URL
         }`
-      : undefined,
+      : undefined, */
   headers: async () => [
     {
       source: '/:path*',
