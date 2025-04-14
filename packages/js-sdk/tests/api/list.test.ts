@@ -106,7 +106,7 @@ sandboxTest.skipIf(isDebug)(
       // Check first page
       assert.equal(sandboxes.length, 1)
       assert.equal(sandboxes[0].state, 'running')
-      assert.isTrue(paginator.hasMoreItems)
+      assert.isTrue(paginator.hasNext)
       assert.notEqual(paginator.nextToken, undefined)
       assert.equal(sandboxes[0].sandboxId, extraSbx.sandboxId)
 
@@ -116,7 +116,7 @@ sandboxTest.skipIf(isDebug)(
       // Check second page
       assert.equal(sandboxes2.length, 1)
       assert.equal(sandboxes2[0].state, 'running')
-      assert.isFalse(paginator.hasMoreItems)
+      assert.isFalse(paginator.hasNext)
       assert.equal(paginator.nextToken, undefined)
       assert.equal(sandboxes2[0].sandboxId, sandbox.sandboxId)
     } finally {
@@ -147,7 +147,7 @@ sandboxTest.skipIf(isDebug)(
       // Check first page
       assert.equal(sandboxes.length, 1)
       assert.equal(sandboxes[0].state, 'paused')
-      assert.isTrue(paginator.hasMoreItems)
+      assert.isTrue(paginator.hasNext)
       assert.notEqual(paginator.nextToken, undefined)
       assert.equal(sandboxes[0].sandboxId.startsWith(extraSbxId), true)
 
@@ -157,7 +157,7 @@ sandboxTest.skipIf(isDebug)(
       // Check second page
       assert.equal(sandboxes2.length, 1)
       assert.equal(sandboxes2[0].state, 'paused')
-      assert.isFalse(paginator.hasMoreItems)
+      assert.isFalse(paginator.hasNext)
       assert.equal(paginator.nextToken, undefined)
       assert.equal(sandboxes2[0].sandboxId.startsWith(extraSbxId), true)
     } finally {
@@ -190,7 +190,7 @@ sandboxTest.skipIf(isDebug)(
       // Check first page
       assert.equal(sandboxes.length, 1)
       assert.equal(sandboxes[0].state, 'paused')
-      assert.isTrue(paginator.hasMoreItems)
+      assert.isTrue(paginator.hasNext)
       assert.notEqual(paginator.nextToken, undefined)
       assert.equal(sandboxes[0].sandboxId.startsWith(extraSbxId), true)
 
@@ -200,7 +200,7 @@ sandboxTest.skipIf(isDebug)(
       // Check second page
       assert.equal(sandboxes2.length, 1)
       assert.equal(sandboxes2[0].state, 'running')
-      assert.isFalse(paginator.hasMoreItems)
+      assert.isFalse(paginator.hasNext)
       assert.equal(paginator.nextToken, undefined)
       assert.equal(sandboxes2[0].sandboxId, sandbox.sandboxId)
     } finally {
@@ -217,7 +217,7 @@ sandboxTest.skipIf(isDebug)(
     })
     const sandboxes: SandboxInfo[] = []
 
-    while (paginator.hasMoreItems) {
+    while (paginator.hasNext) {
       const sbxs = await paginator.nextItems()
       sandboxes.push(...sbxs)
     }

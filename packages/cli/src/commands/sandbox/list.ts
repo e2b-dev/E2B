@@ -120,13 +120,13 @@ export async function listSandboxes({
 
   const signal = connectionConfig.getSignal()
 
-  let hasMoreItems = true
+  let hasNext = true
   let nextToken: string | undefined
   let remainingLimit: number | undefined = limit
 
   const sandboxes: components['schemas']['ListedSandbox'][] = []
 
-  while (hasMoreItems && (!limit || (remainingLimit && remainingLimit > 0))) {
+  while (hasNext && (!limit || (remainingLimit && remainingLimit > 0))) {
     const res = await client.api.GET('/v2/sandboxes', {
       params: {
         query: {
@@ -142,7 +142,7 @@ export async function listSandboxes({
     handleE2BRequestError(res.error, 'Error getting running sandboxes')
 
     nextToken = res.response.headers.get('x-next-token') || undefined
-    hasMoreItems = !!nextToken
+    hasNext = !!nextToken
     sandboxes.push(...res.data)
     if (limit && remainingLimit) {
       remainingLimit -= res.data.length

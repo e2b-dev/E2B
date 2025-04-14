@@ -76,7 +76,7 @@ async def test_paginate_running_sandboxes(async_sandbox: AsyncSandbox, sandbox_t
         # Check first page
         assert len(sandboxes) == 1
         assert sandboxes[0].state == "running"
-        assert paginator.has_more_items is True
+        assert paginator.has_next is True
         assert paginator.next_token is not None
         assert sandboxes[0].sandbox_id == extra_sbx.sandbox_id
         
@@ -86,7 +86,7 @@ async def test_paginate_running_sandboxes(async_sandbox: AsyncSandbox, sandbox_t
         # Check second page
         assert len(sandboxes2) == 1
         assert sandboxes2[0].state == "running"
-        assert paginator.has_more_items is False
+        assert paginator.has_next is False
         assert paginator.next_token is None
         assert sandboxes2[0].sandbox_id == async_sandbox.sandbox_id
     finally:
@@ -114,7 +114,7 @@ async def test_paginate_paused_sandboxes(async_sandbox: AsyncSandbox, sandbox_ty
         # Check first page
         assert len(sandboxes) == 1
         assert sandboxes[0].state == "paused"
-        assert paginator.has_more_items is True
+        assert paginator.has_next is True
         assert paginator.next_token is not None
         assert sandboxes[0].sandbox_id.startswith(extra_sbx_id) is True
         
@@ -124,7 +124,7 @@ async def test_paginate_paused_sandboxes(async_sandbox: AsyncSandbox, sandbox_ty
         # Check second page
         assert len(sandboxes2) == 1
         assert sandboxes2[0].state == "paused"
-        assert paginator.has_more_items is False
+        assert paginator.has_next is False
         assert paginator.next_token is None
         assert sandboxes2[0].sandbox_id.startswith(sandbox_id) is True
     finally:
@@ -149,7 +149,7 @@ async def test_paginate_running_and_paused_sandboxes(async_sandbox: AsyncSandbox
         # Check first page
         assert len(sandboxes) == 1
         assert sandboxes[0].state == "paused"
-        assert paginator.has_more_items is True
+        assert paginator.has_next is True
         assert paginator.next_token is not None
         assert sandboxes[0].sandbox_id.startswith(extra_sbx_id) is True
         
@@ -159,7 +159,7 @@ async def test_paginate_running_and_paused_sandboxes(async_sandbox: AsyncSandbox
         # Check second page
         assert len(sandboxes2) == 1
         assert sandboxes2[0].state == "running"
-        assert paginator.has_more_items is False
+        assert paginator.has_next is False
         assert paginator.next_token is None
         assert sandboxes2[0].sandbox_id == async_sandbox.sandbox_id
     finally:
@@ -171,7 +171,7 @@ async def test_paginate_iterator(async_sandbox: AsyncSandbox, sandbox_type: str)
     paginator = AsyncSandbox.list(query=SandboxListQuery(metadata={"sandbox_type": sandbox_type}))
     sandboxes_list = []
 
-    while paginator.has_more_items:
+    while paginator.has_next:
         sandboxes = await paginator.next_items()
         sandboxes_list.extend(sandboxes)
 

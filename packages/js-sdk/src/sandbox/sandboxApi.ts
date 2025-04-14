@@ -71,17 +71,17 @@ export interface SandboxInfo {
 
 export class SandboxPaginator {
   private options: SandboxListOpts
-  private _hasMoreItems: boolean
+  private _hasNext: boolean
   private _nextToken: string | undefined
 
   constructor(options: SandboxListOpts = {}) {
     this.options = options
-    this._hasMoreItems = true
+    this._hasNext = true
     this._nextToken = options.nextToken
   }
 
-  get hasMoreItems(): boolean {
-    return this._hasMoreItems
+  get hasNext(): boolean {
+    return this._hasNext
   }
 
   get nextToken(): string | undefined {
@@ -94,7 +94,7 @@ export class SandboxPaginator {
    * @throws Error if there are no more items to fetch
    */
   async nextItems(): Promise<SandboxInfo[]> {
-    if (!this.hasMoreItems) {
+    if (!this.hasNext) {
       throw new Error('No more items to fetch')
     }
 
@@ -133,7 +133,7 @@ export class SandboxPaginator {
     }
 
     this._nextToken = res.response.headers.get('x-next-token') || undefined
-    this._hasMoreItems = !!this._nextToken
+    this._hasNext = !!this._nextToken
 
     return (res.data ?? []).map(
       (sandbox: components['schemas']['ListedSandbox']) => ({
