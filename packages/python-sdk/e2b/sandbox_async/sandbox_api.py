@@ -28,7 +28,7 @@ from packaging.version import Version
 from e2b.api import handle_api_exception
 
 
-class SandboxPaginator:
+class AsyncSandboxPaginator:
     def __init__(
         self,
         query: Optional[SandboxListQuery] = None,
@@ -111,7 +111,7 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> SandboxPaginator:
+    ) -> AsyncSandboxPaginator:
         """
         List sandboxes with pagination.
 
@@ -125,7 +125,7 @@ class SandboxApi(SandboxApiBase):
 
         :returns: SandboxPaginator
         """
-        return SandboxPaginator(
+        return AsyncSandboxPaginator(
             query=query,
             api_key=api_key,
             domain=domain,
