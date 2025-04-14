@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Generator, List, Optional
+from typing import Dict, List, Optional
 
 from httpx import Limits
 
@@ -40,20 +40,6 @@ class SandboxInfo:
             started_at=listed_sandbox.started_at,
             state=listed_sandbox.state,
         )
-
-@dataclass
-class ListSandboxesResponse:
-    """List of sandboxes."""
-    sandboxes: List[SandboxInfo]
-
-    """Whether there are more sandboxes to fetch."""
-    has_more_items: bool
-
-    """Next token to fetch more sandboxes."""
-    next_token: Optional[str]
-
-    """Iterator to fetch sandboxes."""
-    iterator: Generator[SandboxInfo, None, None]
 
 
 @dataclass

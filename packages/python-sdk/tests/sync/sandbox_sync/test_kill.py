@@ -7,5 +7,6 @@ from e2b import Sandbox, SandboxListQuery
 def test_kill(sandbox: Sandbox, sandbox_type: str):
     sandbox.kill()
 
-    list = Sandbox.list(query=SandboxListQuery(state=["running"], metadata={"sandbox_type": sandbox_type}))
-    assert sandbox.sandbox_id not in [s.sandbox_id for s in list.sandboxes]
+    paginator = Sandbox.list(query=SandboxListQuery(state=["running"], metadata={"sandbox_type": sandbox_type}))
+    sandboxes = paginator.next_items()
+    assert sandbox.sandbox_id not in [s.sandbox_id for s in sandboxes]

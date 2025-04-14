@@ -1,8 +1,8 @@
 import urllib.parse
-from typing import Dict, List, Optional, AsyncGenerator
+from typing import Dict, List, Optional
 from packaging.version import Version
 
-from e2b.sandbox.sandbox_api import ListSandboxesResponse, SandboxInfo, SandboxApiBase, SandboxListQuery
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxListQuery
 from e2b.exceptions import TemplateException
 from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
@@ -28,6 +28,78 @@ from packaging.version import Version
 from e2b.api import handle_api_exception
 
 
+class SandboxPaginator:
+    def __init__(
+        self,
+        query: Optional[SandboxListQuery] = None,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+    ):
+        self.query = query
+        self.api_key = api_key
+        self.domain = domain
+        self.debug = debug
+        self.request_timeout = request_timeout
+        self.limit = limit
+        self._has_next_items = True
+        self._next_token = next_token
+
+    @property
+    def has_next_items(self) -> bool:
+        return self._has_next_items
+
+    @property
+    def next_token(self) -> Optional[str]:
+        return self._next_token
+
+    async def next_items(self) -> List[SandboxInfo]:
+        if not self.has_next_items:
+            raise Exception("No more items to fetch")
+
+        config = ConnectionConfig(
+            api_key=self.api_key,
+            domain=self.domain,
+            debug=self.debug,
+            request_timeout=self.request_timeout,
+        )
+
+        # Convert filters to the format expected by the API
+        metadata = None
+        if self.query and self.query.metadata:
+            quoted_metadata = {
+                urllib.parse.quote(k): urllib.parse.quote(v)
+                for k, v in self.query.metadata.items()
+            }
+            metadata = urllib.parse.urlencode(quoted_metadata)
+
+        async with AsyncApiClient(config) as api_client:
+            res = await get_v2_sandboxes.asyncio_detailed(
+                client=api_client,
+                metadata=metadata,
+                state=self.query.state if self.query else UNSET,
+                limit=self.limit,
+                next_token=self._next_token,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            self._next_token = res.headers.get("x-next-token")
+            self._has_next_items = bool(self._next_token)
+
+            if res.parsed is None:
+                return []
+
+            return [
+                SandboxInfo.from_listed_sandbox(sandbox)
+                for sandbox in res.parsed
+            ]
+
+
 class SandboxApi(SandboxApiBase):
     @classmethod
     async def list(
@@ -39,7 +111,7 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> ListSandboxesResponse:
+    ) -> SandboxPaginator:
         """
         List sandboxes with pagination.
 
@@ -51,97 +123,17 @@ class SandboxApi(SandboxApiBase):
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
 
-        :returns: ListSandboxesResponse containing sandboxes list, pagination info and iterator
+        :returns: SandboxPaginator
         """
-        config = ConnectionConfig(
+        return SandboxPaginator(
+            query=query,
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            limit=limit,
+            next_token=next_token,
         )
-
-        # Convert filters to the format expected by the API
-        metadata = None
-        if query:
-            if query.metadata:
-                quoted_metadata = {
-                    urllib.parse.quote(k): urllib.parse.quote(v)
-                    for k, v in query.metadata.items()
-                }
-                metadata = urllib.parse.urlencode(quoted_metadata)
-
-        async with AsyncApiClient(config) as api_client:
-            res = await get_v2_sandboxes.asyncio_detailed(
-                client=api_client,
-                metadata=metadata,
-                state=query.state if query else UNSET,
-                limit=limit,
-                next_token=next_token,
-            )
-
-            if res.status_code >= 300:
-                raise handle_api_exception(res)
-
-            if res.parsed is None:
-                return ListSandboxesResponse(
-                    sandboxes=[],
-                    has_more_items=False,
-                    next_token=None,
-                    iterator=cls._list_iterator(query=query, api_key=api_key, domain=domain, debug=debug, request_timeout=request_timeout)
-                )
-
-            token = res.headers.get("x-next-token")
-            has_more_items = bool(token)
-            sandboxes = [
-                SandboxInfo.from_listed_sandbox(sandbox)
-                for sandbox in res.parsed
-            ]
-
-            return ListSandboxesResponse(
-                sandboxes=sandboxes,
-                has_more_items=has_more_items,
-                next_token=token,
-                iterator=cls._list_iterator(
-                    limit=limit,
-                    next_token=token,
-                    query=query,
-                    api_key=api_key,
-                    domain=domain,
-                    debug=debug,
-                    request_timeout=request_timeout
-                )
-            )
-
-    @classmethod
-    async def _list_iterator(
-        cls,
-        query: Optional[SandboxListQuery] = None,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
-        debug: Optional[bool] = None,
-        request_timeout: Optional[float] = None,
-        limit: Optional[int] = None,
-        next_token: Optional[str] = None,
-    ) -> AsyncGenerator[SandboxInfo, None]:
-        next_page = True
-        token = next_token
-
-        while next_page:
-            result = await cls.list(
-                query=query,
-                api_key=api_key,
-                domain=domain,
-                debug=debug,
-                request_timeout=request_timeout,
-                limit=limit,
-                next_token=token,
-            )
-
-            next_page = result.has_more_items
-            token = result.next_token
-
-            for sandbox in result.sandboxes:
-                yield sandbox
 
     @classmethod
     async def _cls_kill(
