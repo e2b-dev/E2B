@@ -20,7 +20,7 @@ async def test_metadata(template):
     )
 
     try:
-        paginator = await AsyncSandbox.list(query=SandboxListQuery(metadata={"test-key": "test-value"}))
+        paginator = AsyncSandbox.list(query=SandboxListQuery(metadata={"test-key": "test-value"}))
         sandboxes = await paginator.next_items()
 
         for sbx_info in sandboxes:

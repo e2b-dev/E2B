@@ -102,7 +102,7 @@ class SandboxPaginator:
 
 class SandboxApi(SandboxApiBase):
     @classmethod
-    async def list(
+    def list(
         cls,
         api_key: Optional[str] = None,
         query: Optional[SandboxListQuery] = None,
