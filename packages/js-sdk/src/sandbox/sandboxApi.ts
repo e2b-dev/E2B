@@ -69,6 +69,88 @@ export interface SandboxInfo {
   state: 'running' | 'paused'
 }
 
+export class SandboxPaginator {
+  private options: SandboxListOpts
+  private HasNextItems: boolean
+  private NextToken: string | undefined
+
+  constructor(options: SandboxListOpts = {}) {
+    this.options = options
+    this.HasNextItems = true
+    this.NextToken = undefined
+  }
+
+  get hasNextItems(): boolean {
+    return this.HasNextItems
+  }
+
+  get nextToken(): string | undefined {
+    return this.NextToken
+  }
+
+  /**
+   * Get the next page of sandboxes.
+   *
+   * @throws Error if there are no more items to fetch
+   */
+  async nextItems(): Promise<SandboxInfo[]> {
+    if (!this.hasNextItems) {
+      throw new Error('No more items to fetch')
+    }
+
+    const { query, limit, requestTimeoutMs } = this.options
+    const config = new ConnectionConfig({ requestTimeoutMs })
+    const client = new ApiClient(config)
+
+    let metadata = undefined
+    if (query) {
+      if (query.metadata) {
+        const encodedPairs: Record<string, string> = Object.fromEntries(
+          Object.entries(query.metadata).map(([key, value]) => [
+            encodeURIComponent(key),
+            encodeURIComponent(value),
+          ])
+        )
+        metadata = new URLSearchParams(encodedPairs).toString()
+      }
+    }
+
+    const res = await client.api.GET('/v2/sandboxes', {
+      params: {
+        query: {
+          metadata,
+          state: query?.state,
+          limit,
+          nextToken: this.nextToken,
+        },
+      },
+      signal: config.getSignal(requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    this.NextToken = res.response.headers.get('x-next-token') || undefined
+    this.HasNextItems = !!this.NextToken
+
+    return (res.data ?? []).map(
+      (sandbox: components['schemas']['ListedSandbox']) => ({
+        sandboxId: SandboxApi.getSandboxId({
+          sandboxId: sandbox.sandboxID,
+          clientId: sandbox.clientID,
+        }),
+        templateId: sandbox.templateID,
+        ...(sandbox.alias && { name: sandbox.alias }),
+        metadata: sandbox.metadata ?? {},
+        startedAt: new Date(sandbox.startedAt),
+        state: sandbox.state,
+      })
+    )
+  }
+}
+
 export class SandboxApi {
   protected constructor() {}
 
@@ -113,97 +195,10 @@ export class SandboxApi {
    *
    * @param opts connection options.
    *
-   * @returns list of sandboxes.
+   * @returns paginator for listing sandboxes.
    */
-  static async list(opts: SandboxListOpts = {}): Promise<{
-    sandboxes: SandboxInfo[]
-    hasMoreItems: boolean
-    nextToken: string | undefined
-    iterator: AsyncGenerator<SandboxInfo>
-  }> {
-    const { query, limit, nextToken, requestTimeoutMs } = opts
-    const config = new ConnectionConfig({ requestTimeoutMs })
-    const client = new ApiClient(config)
-
-    let metadata = undefined
-    if (query) {
-      if (query.metadata) {
-        const encodedPairs: Record<string, string> = Object.fromEntries(
-          Object.entries(query.metadata).map(([key, value]) => [
-            encodeURIComponent(key),
-            encodeURIComponent(value),
-          ])
-        )
-        metadata = new URLSearchParams(encodedPairs).toString()
-      }
-    }
-
-    const res = await client.api.GET('/v2/sandboxes', {
-      params: {
-        query: {
-          metadata,
-          state: query?.state,
-          limit,
-          nextToken,
-        },
-      },
-      signal: config.getSignal(requestTimeoutMs),
-    })
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    const nextPageToken = res.response.headers.get('x-next-token') || undefined
-    const hasMoreItems = !!nextPageToken
-
-    const sandboxes = (res.data ?? []).map(
-      (sandbox: components['schemas']['ListedSandbox']) => ({
-        sandboxId: this.getSandboxId({
-          sandboxId: sandbox.sandboxID,
-          clientId: sandbox.clientID,
-        }),
-        templateId: sandbox.templateID,
-        ...(sandbox.alias && { name: sandbox.alias }),
-        metadata: sandbox.metadata ?? {},
-        startedAt: new Date(sandbox.startedAt),
-        state: sandbox.state,
-      })
-    )
-
-    return {
-      sandboxes,
-      hasMoreItems,
-      nextToken: nextPageToken,
-      iterator: this.listIterator({
-        limit,
-        nextToken: nextPageToken,
-        query,
-        requestTimeoutMs,
-      }),
-    }
-  }
-
-  private static async *listIterator(
-    options: SandboxListOpts = {}
-  ): AsyncGenerator<SandboxInfo> {
-    let nextPage = true
-    let token = options.nextToken
-
-    while (nextPage) {
-      const { sandboxes, hasMoreItems, nextToken } = await this.list({
-        ...options,
-        nextToken: token,
-      })
-
-      nextPage = hasMoreItems
-      token = nextToken
-
-      for (const sandbox of sandboxes) {
-        yield sandbox
-      }
-    }
+  static list(opts: SandboxListOpts = {}): SandboxPaginator {
+    return new SandboxPaginator(opts)
   }
 
   /**
@@ -416,7 +411,7 @@ export class SandboxApi {
     return Math.ceil(timeout / 1000)
   }
 
-  private static getSandboxId({
+  static getSandboxId({
     sandboxId,
     clientId,
   }: {
