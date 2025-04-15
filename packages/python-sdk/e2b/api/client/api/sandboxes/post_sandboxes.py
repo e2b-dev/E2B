@@ -3,11 +3,12 @@ from typing import Any, Optional, Union
 
 import httpx
 
+from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.new_sandbox import NewSandbox
 from ...models.sandbox import Sandbox
-from typing import cast
+from ...types import Response
 
 
 def _get_kwargs(

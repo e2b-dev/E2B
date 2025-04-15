@@ -3,6 +3,7 @@ from typing import Any, Optional, Union, cast
 
 import httpx
 
+from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...types import Response
@@ -13,9 +14,7 @@ def _get_kwargs(
 ) -> dict[str, Any]:
     _kwargs: dict[str, Any] = {
         "method": "delete",
-        "url": "/sandboxes/{sandbox_id}".format(
-            sandbox_id=sandbox_id,
-        ),
+        "url": f"/sandboxes/{sandbox_id}",
     }
 
     return _kwargs

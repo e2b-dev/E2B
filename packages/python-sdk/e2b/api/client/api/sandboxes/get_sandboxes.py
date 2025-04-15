@@ -3,6 +3,7 @@ from typing import Any, Optional, Union
 
 import httpx
 
+from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.running_sandbox import RunningSandbox

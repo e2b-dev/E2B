@@ -3,6 +3,7 @@ from typing import Any, Optional, Union, cast
 
 import httpx
 
+from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.post_sandboxes_sandbox_id_timeout_body import (
@@ -20,9 +21,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/sandboxes/{sandbox_id}/timeout".format(
-            sandbox_id=sandbox_id,
-        ),
+        "url": f"/sandboxes/{sandbox_id}/timeout",
     }
 
     _body = body.to_dict()

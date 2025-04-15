@@ -27,7 +27,7 @@ def test_resume_with_auto_pause(template):
 
     timeout = 1
     sbx_resumed = Sandbox.connect(sbx.sandbox_id, timeout=timeout, auto_pause=True)
-    sbx_resumed.files.write('test.txt', 'test')
+    sbx_resumed.files.write("test.txt", "test")
 
     # Wait for the sandbox to pause and create snapshot
     sleep(timeout + 5)
@@ -35,6 +35,6 @@ def test_resume_with_auto_pause(template):
     sbx_resumed2 = Sandbox.connect(sbx.sandbox_id, timeout=timeout, auto_pause=True)
 
     try:
-        assert sbx_resumed2.files.read('test.txt') == 'test'
+        assert sbx_resumed2.files.read("test.txt") == "test"
     finally:
         sbx_resumed2.kill()

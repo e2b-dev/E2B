@@ -3,12 +3,11 @@ from typing import Any, Optional, Union
 
 import httpx
 
+from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.sandbox_logs import SandboxLogs
-from ...types import UNSET, Unset
-from typing import cast
-from typing import Union
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
@@ -27,9 +26,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/sandboxes/{sandbox_id}/logs".format(
-            sandbox_id=sandbox_id,
-        ),
+        "url": f"/sandboxes/{sandbox_id}/logs",
         "params": params,
     }
 
