@@ -58,10 +58,12 @@ from .sandbox.filesystem.watch_handle import (
 from .sandbox.filesystem.filesystem import EntryInfo, FileType
 
 from .sandbox_sync.main import Sandbox
+from .sandbox_sync.sandbox_api import SandboxPaginator
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.commands.command_handle import CommandHandle
 
 from .sandbox_async.utils import OutputHandler
 from .sandbox_async.main import AsyncSandbox
+from .sandbox_async.sandbox_api import AsyncSandboxPaginator
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
