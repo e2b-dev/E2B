@@ -327,12 +327,11 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body: {
-        autoPause: false,
+        autoPause: autoPause,
         templateID: template,
         metadata: opts?.metadata,
         envVars: opts?.envs,
         timeout: this.timeoutToSeconds(timeoutMs),
-        autoPause: autoPause,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
