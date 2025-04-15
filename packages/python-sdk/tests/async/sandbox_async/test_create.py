@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import AsyncSandbox
+from e2b import AsyncSandbox, SandboxListQuery
 
 
 @pytest.mark.skip_debug()
@@ -20,9 +20,10 @@ async def test_metadata(template):
     )
 
     try:
-        sbxs = await AsyncSandbox.list()
+        paginator = AsyncSandbox.list(query=SandboxListQuery(metadata={"test-key": "test-value"}))
+        sandboxes = await paginator.next_items()
 
-        for sbx_info in sbxs:
+        for sbx_info in sandboxes:
             if sbx.sandbox_id == sbx_info.sandbox_id:
                 assert sbx_info.metadata is not None
                 assert sbx_info.metadata["test-key"] == "test-value"

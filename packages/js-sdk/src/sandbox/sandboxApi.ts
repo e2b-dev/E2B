@@ -15,7 +15,23 @@ export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
    */
-  query?: { metadata?: Record<string, string> }
+  query?: {
+    metadata?: Record<string, string>
+    /**
+     * Filter the list of sandboxes by state.
+     */
+    state?: Array<'running' | 'paused'>
+  }
+
+  /**
+   * Number of sandboxes to return.
+   */
+  limit?: number
+
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
 }
 
 /**
@@ -46,6 +62,93 @@ export interface SandboxInfo {
    * Sandbox start time.
    */
   startedAt: Date
+
+  /**
+   * Sandbox state.
+   */
+  state: 'running' | 'paused'
+}
+
+export class SandboxPaginator {
+  private options: SandboxListOpts
+  private _hasNext: boolean
+  private _nextToken: string | undefined
+
+  constructor(options: SandboxListOpts = {}) {
+    this.options = options
+    this._hasNext = true
+    this._nextToken = options.nextToken
+  }
+
+  get hasNext(): boolean {
+    return this._hasNext
+  }
+
+  get nextToken(): string | undefined {
+    return this._nextToken
+  }
+
+  /**
+   * Get the next page of sandboxes.
+   *
+   * @throws Error if there are no more items to fetch
+   */
+  async nextItems(): Promise<SandboxInfo[]> {
+    if (!this.hasNext) {
+      throw new Error('No more items to fetch')
+    }
+
+    const { query, limit, requestTimeoutMs } = this.options
+    const config = new ConnectionConfig({ requestTimeoutMs })
+    const client = new ApiClient(config)
+
+    let metadata = undefined
+    if (query) {
+      if (query.metadata) {
+        const encodedPairs: Record<string, string> = Object.fromEntries(
+          Object.entries(query.metadata).map(([key, value]) => [
+            encodeURIComponent(key),
+            encodeURIComponent(value),
+          ])
+        )
+        metadata = new URLSearchParams(encodedPairs).toString()
+      }
+    }
+
+    const res = await client.api.GET('/v2/sandboxes', {
+      params: {
+        query: {
+          metadata,
+          state: query?.state,
+          limit,
+          nextToken: this.nextToken,
+        },
+      },
+      signal: config.getSignal(requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    this._nextToken = res.response.headers.get('x-next-token') || undefined
+    this._hasNext = !!this._nextToken
+
+    return (res.data ?? []).map(
+      (sandbox: components['schemas']['ListedSandbox']) => ({
+        sandboxId: SandboxApi.getSandboxId({
+          sandboxId: sandbox.sandboxID,
+          clientId: sandbox.clientID,
+        }),
+        templateId: sandbox.templateID,
+        ...(sandbox.alias && { name: sandbox.alias }),
+        metadata: sandbox.metadata ?? {},
+        startedAt: new Date(sandbox.startedAt),
+        state: sandbox.state,
+      })
+    )
+  }
 }
 
 export class SandboxApi {
@@ -88,53 +191,14 @@ export class SandboxApi {
   }
 
   /**
-   * List all running sandboxes.
+   * List all sandboxes.
    *
    * @param opts connection options.
    *
-   * @returns list of running sandboxes.
+   * @returns paginator for listing sandboxes.
    */
-  static async list(opts?: SandboxListOpts): Promise<SandboxInfo[]> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    let metadata = undefined
-    if (opts?.query) {
-      if (opts.query.metadata) {
-        const encodedPairs: Record<string, string> = Object.fromEntries(
-          Object.entries(opts.query.metadata).map(([key, value]) => [
-            encodeURIComponent(key),
-            encodeURIComponent(value),
-          ])
-        )
-        metadata = new URLSearchParams(encodedPairs).toString()
-      }
-    }
-
-    const res = await client.api.GET('/sandboxes', {
-      params: {
-        query: { metadata },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    return (
-      res.data?.map((sandbox: components['schemas']['RunningSandbox']) => ({
-        sandboxId: this.getSandboxId({
-          sandboxId: sandbox.sandboxID,
-          clientId: sandbox.clientID,
-        }),
-        templateId: sandbox.templateID,
-        ...(sandbox.alias && { name: sandbox.alias }),
-        metadata: sandbox.metadata ?? {},
-        startedAt: new Date(sandbox.startedAt),
-      })) ?? []
-    )
+  static list(opts: SandboxListOpts = {}): SandboxPaginator {
+    return new SandboxPaginator(opts)
   }
 
   /**
@@ -347,7 +411,7 @@ export class SandboxApi {
     return Math.ceil(timeout / 1000)
   }
 
-  private static getSandboxId({
+  static getSandboxId({
     sandboxId,
     clientId,
   }: {

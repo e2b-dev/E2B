@@ -1,10 +1,12 @@
 from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from httpx import Limits
 
+from e2b.api.client.models.sandbox_state import SandboxState
+from e2b.api.client.models.listed_sandbox import ListedSandbox
 
 @dataclass
 class SandboxInfo:
@@ -20,6 +22,35 @@ class SandboxInfo:
     """Saved sandbox metadata."""
     started_at: datetime
     """Sandbox start time."""
+    state: SandboxState
+    """Sandbox state."""
+
+    @staticmethod
+    def from_listed_sandbox(listed_sandbox: ListedSandbox) -> "SandboxInfo":
+        return SandboxInfo(
+            sandbox_id=SandboxApiBase._get_sandbox_id(
+                listed_sandbox.sandbox_id,
+                listed_sandbox.client_id,
+            ),
+            template_id=listed_sandbox.template_id,
+            name=listed_sandbox.alias if isinstance(listed_sandbox.alias, str) else None,
+            metadata=(
+                listed_sandbox.metadata if isinstance(listed_sandbox.metadata, dict) else {}
+            ),
+            started_at=listed_sandbox.started_at,
+            state=listed_sandbox.state,
+        )
+
+
+@dataclass
+class SandboxListQuery:
+    """Query parameters for listing sandboxes."""
+    metadata: Optional[dict[str, str]] = None
+
+    """Filter sandboxes by metadata."""
+    state: Optional[List[SandboxState]] = None
+
+    """Filter sandboxes by state."""
 
 
 @dataclass
@@ -36,14 +67,6 @@ class SandboxMetrics:
     """Memory usage in bytes."""
     mem_total_mib: int
     """Total memory available"""
-
-
-@dataclass
-class SandboxQuery:
-    """Query parameters for listing sandboxes."""
-
-    metadata: Optional[dict[str, str]] = None
-    """Filter sandboxes by metadata."""
 
 
 class SandboxApiBase(ABC):
