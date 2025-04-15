@@ -10,6 +10,7 @@ async def test_start(template):
     sbx = await AsyncSandbox.create(template=template, timeout=5, auto_pause=True)
     try:
         assert await sbx.is_running()
+        assert sbx._envd_version is not None
     finally:
         await sbx.kill()
 

@@ -1,5 +1,6 @@
 import json
 import logging
+from dataclasses import dataclass
 
 from typing import Optional, Union
 from httpx import HTTPTransport, AsyncHTTPTransport
@@ -15,6 +16,12 @@ from e2b.exceptions import (
 from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SandboxCreateResponse:
+    sandbox_id: str
+    envd_version: str
 
 
 def handle_api_exception(e: Response):
@@ -78,6 +85,11 @@ class ApiClient(AuthenticatedClient):
         auth_header_name = "X-API-KEY" if require_api_key else "Authorization"
         prefix = "" if require_api_key else "Bearer"
 
+        headers = {
+            **default_headers,
+            **(config.headers or {}),
+        }
+
         super().__init__(
             base_url=config.api_url,
             httpx_args={
@@ -87,9 +99,7 @@ class ApiClient(AuthenticatedClient):
                 },
                 "transport": transport,
             },
-            headers={
-                **default_headers,
-            },
+            headers=headers,
             token=token,
             auth_header_name=auth_header_name,
             prefix=prefix,

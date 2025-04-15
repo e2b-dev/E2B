@@ -1,4 +1,5 @@
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING
+from collections.abc import Mapping
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -16,28 +17,28 @@ T = TypeVar("T", bound="Sandbox")
 class Sandbox:
     """
     Attributes:
-        template_id (str): Identifier of the template from which is the sandbox created
-        sandbox_id (str): Identifier of the sandbox
         client_id (str): Identifier of the client
         envd_version (str): Version of the envd running in the sandbox
+        sandbox_id (str): Identifier of the sandbox
+        template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
     """
 
-    template_id: str
-    sandbox_id: str
     client_id: str
     envd_version: str
+    sandbox_id: str
+    template_id: str
     alias: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        template_id = self.template_id
-
-        sandbox_id = self.sandbox_id
-
         client_id = self.client_id
 
         envd_version = self.envd_version
+
+        sandbox_id = self.sandbox_id
+
+        template_id = self.template_id
 
         alias = self.alias
 
@@ -45,10 +46,10 @@ class Sandbox:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "templateID": template_id,
-                "sandboxID": sandbox_id,
                 "clientID": client_id,
                 "envdVersion": envd_version,
+                "sandboxID": sandbox_id,
+                "templateID": template_id,
             }
         )
         if alias is not UNSET:
@@ -57,23 +58,23 @@ class Sandbox:
         return field_dict
 
     @classmethod
-    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
-        d = src_dict.copy()
-        template_id = d.pop("templateID")
-
-        sandbox_id = d.pop("sandboxID")
-
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
         client_id = d.pop("clientID")
 
         envd_version = d.pop("envdVersion")
 
+        sandbox_id = d.pop("sandboxID")
+
+        template_id = d.pop("templateID")
+
         alias = d.pop("alias", UNSET)
 
         sandbox = cls(
-            template_id=template_id,
-            sandbox_id=sandbox_id,
             client_id=client_id,
             envd_version=envd_version,
+            sandbox_id=sandbox_id,
+            template_id=template_id,
             alias=alias,
         )
 

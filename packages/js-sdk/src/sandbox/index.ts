@@ -1,6 +1,10 @@
 import { createConnectTransport } from '@connectrpc/connect-web'
 
-import { ConnectionConfig, ConnectionOpts, defaultUsername } from '../connectionConfig'
+import {
+  ConnectionConfig,
+  ConnectionOpts,
+  defaultUsername,
+} from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
@@ -101,25 +105,43 @@ export class Sandbox extends SandboxApi {
   constructor(
     opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata' | 'autoPause'> & {
       sandboxId: string
+      envdVersion?: string
     }
   ) {
     super()
 
     this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
-    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
-      }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${
+      this.connectionConfig.debug ? 'http' : 'https'
+    }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
       useBinaryFormat: false,
       interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
+      fetch: (url, options) => {
+        // Patch fetch to always use redirect: "follow"
+        // connect-web doesn't allow to configure redirect option - https://github.com/connectrpc/connect-es/pull/1082
+        // connect-web package uses redirect: "error" which is not supported in edge runtimes
+        // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
+        options = {
+          ...(options ?? {}),
+          redirect: 'follow',
+        }
+        return fetch(url, options)
+      },
     })
 
-    this.envdApi = new EnvdApiClient({
-      apiUrl: this.envdApiUrl,
-      logger: opts?.logger,
-    })
+    this.envdApi = new EnvdApiClient(
+      {
+        apiUrl: this.envdApiUrl,
+        logger: opts?.logger,
+      },
+      {
+        version: opts?.envdVersion,
+      }
+    )
     this.files = new Filesystem(
       rpcTransport,
       this.envdApi,
@@ -182,23 +204,26 @@ export class Sandbox extends SandboxApi {
 
     const config = new ConnectionConfig(sandboxOpts)
 
-    const sandboxId = config.debug
-      ? 'debug_sandbox_id'
-      : await this.createSandbox(
+    if (config.debug) {
+      return new this({
+        sandboxId: 'debug_sandbox_id',
+        ...config,
+      }) as InstanceType<S>
+    } else {
+      const sandbox = await this.createSandbox(
         template,
         sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
         sandboxOpts?.autoPause ?? this.defaultSandboxAutoPause,
         sandboxOpts
       )
-
-    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
-    return sbx
+      return new this({ ...sandbox, ...config }) as InstanceType<S>
+    }
   }
 
   /**
    * Connect to or resume an existing sandbox.
    * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
-   * 
+   *
    * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
    * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
    * If the sandbox is running, the timeout will be updated to the new value (or default).
@@ -214,7 +239,9 @@ export class Sandbox extends SandboxApi {
     opts: Omit<SandboxOpts, 'metadata' | 'envs'>
   ): Promise<InstanceType<S>> {
     if (!opts.autoPause) {
-      throw new Error('autoPause must be set to true when connecting to a sandbox')
+      throw new Error(
+        'autoPause must be set to true when connecting to a sandbox'
+      )
     }
 
     const timeoutMs = opts?.timeoutMs ?? this.defaultSandboxTimeoutMs
@@ -352,7 +379,10 @@ export class Sandbox extends SandboxApi {
    * @returns sandbox ID that can be used to resume the sandbox.
    */
   async pause(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>): Promise<string> {
-    await Sandbox.pauseSandbox(this.sandboxId, { ...this.connectionConfig, ...opts })
+    await Sandbox.pauseSandbox(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
 
     return this.sandboxId
   }
@@ -389,5 +419,19 @@ export class Sandbox extends SandboxApi {
     }
 
     return url.toString()
+  }
+
+  /**
+   * Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+   *
+   * @param opts connection options.
+   *
+   * @returns information about the sandbox
+   */
+  async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    return await Sandbox.getInfo(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
   }
 }

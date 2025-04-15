@@ -16,6 +16,21 @@ components:
       type: http
       scheme: bearer
       bearerFormat: access_token
+    # Generated code uses security schemas in the alphabetical order.
+    # In order to check first the token, and then the team (so we can already use the user),
+    # there is a 1 and 2 present in the names of the security schemas.
+    Supabase1TokenAuth:
+      type: apiKey
+      in: header
+      name: X-Supabase-Token
+    Supabase2TeamAuth:
+      type: apiKey
+      in: header
+      name: X-Supabase-Team
+    AdminTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Admin-Token
 
   parameters:
     templateID:
@@ -36,6 +51,24 @@ components:
       required: true
       schema:
         type: string
+    nodeID:
+      name: nodeID
+      in: path
+      required: true
+      schema:
+        type: string
+    apiKeyID:
+      name: apiKeyID
+      in: path
+      required: true
+      schema:
+        type: string
+    accessTokenID:
+      name: accessTokenID
+      in: path
+      required: true
+      schema:
+        type: string
 
   responses:
     "400":
@@ -52,6 +85,12 @@ components:
             $ref: "#/components/schemas/Error"
     "404":
       description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "409":
+      description: Conflict
       content:
         application/json:
           schema:
@@ -89,6 +128,25 @@ components:
         isDefault:
           type: boolean
           description: Whether the team is the default team
+
+    TeamUser:
+      required:
+        - id
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the user
+        email:
+          type: string
+          description: Email of the user
+
+    TemplateUpdateRequest:
+      properties:
+        public:
+          type: boolean
+          description: Whether the template is public or only accessible by the team
 
     CPUCount:
       type: integer
@@ -137,6 +195,36 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SandboxLog"
+
+    SandboxMetric:
+      description: Metric entry with timestamp and line
+      required:
+        - timestamp
+        - cpuCount
+        - cpuUsedPct
+        - memUsedMiB
+        - memTotalMiB
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the metric entry
+        cpuCount:
+          type: integer
+          format: int32
+          description: Number of CPU cores
+        cpuUsedPct:
+          type: number
+          format: float
+          description: CPU usage percentage
+        memUsedMiB:
+          type: integer
+          format: int64
+          description: Memory used in MiB
+        memTotalMiB:
+          type: integer
+          format: int64
+          description: Total memory in MiB
 
     Sandbox:
       required:
@@ -198,6 +286,47 @@ components:
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
 
+    RunningSandboxWithMetrics:
+      required:
+        - templateID
+        - sandboxID
+        - clientID
+        - startedAt
+        - cpuCount
+        - memoryMB
+        - endAt
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template from which is the sandbox created
+        alias:
+          type: string
+          description: Alias of the template
+        sandboxID:
+          type: string
+          description: Identifier of the sandbox
+        clientID:
+          type: string
+          description: Identifier of the client
+        startedAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox was started
+        endAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox will expire
+        cpuCount:
+          $ref: "#/components/schemas/CPUCount"
+        memoryMB:
+          $ref: "#/components/schemas/MemoryMB"
+        metadata:
+          $ref: "#/components/schemas/SandboxMetadata"
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxMetric"
+
     NewSandbox:
       required:
         - templateID
@@ -240,6 +369,12 @@ components:
         - cpuCount
         - memoryMB
         - public
+        - createdAt
+        - updatedAt
+        - createdBy
+        - lastSpawnedAt
+        - spawnCount
+        - buildCount
       properties:
         templateID:
           type: string
@@ -259,6 +394,30 @@ components:
           description: Aliases of the template
           items:
             type: string
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the template was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Time when the template was last updated
+        createdBy:
+          allOf:
+            - $ref: "#/components/schemas/TeamUser"
+          nullable: true
+        lastSpawnedAt:
+          type: string
+          format: date-time
+          description: Time when the template was last used
+        spawnCount:
+          type: integer
+          format: int64
+          description: Number of times the template was used
+        buildCount:
+          type: integer
+          format: int32
+          description: Number of times the template was built
 
     TemplateBuildRequest:
       required:
@@ -305,8 +464,209 @@ components:
           description: Status of the template
           enum:
             - building
+            - waiting
             - ready
             - error
+
+    NodeStatus:
+      type: string
+      description: Status of the node
+      enum:
+        - ready
+        - draining
+        - connecting
+        - unhealthy
+
+    NodeStatusChange:
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/NodeStatus"
+
+    Node:
+      required:
+        - nodeID
+        - status
+        - sandboxCount
+        - allocatedCPU
+        - allocatedMemoryMiB
+        - createFails
+        - sandboxStartingCount
+      properties:
+        nodeID:
+          type: string
+          description: Identifier of the node
+        status:
+          $ref: "#/components/schemas/NodeStatus"
+        sandboxCount:
+          type: integer
+          format: int32
+          description: Number of sandboxes running on the node
+        allocatedCPU:
+          type: integer
+          format: int32
+          description: Number of allocated CPU cores
+        allocatedMemoryMiB:
+          type: integer
+          format: int32
+          description: Amount of allocated memory in MiB
+        createFails:
+          type: integer
+          format: uint64
+          description: Number of sandbox create fails
+        sandboxStartingCount:
+          type: integer
+          format: int
+          description: Number of starting Sandboxes
+
+    NodeDetail:
+      required:
+        - nodeID
+        - status
+        - sandboxes
+        - cachedBuilds
+        - createFails
+      properties:
+        nodeID:
+          type: string
+          description: Identifier of the node
+        status:
+          $ref: "#/components/schemas/NodeStatus"
+        sandboxes:
+          type: array
+          description: List of sandboxes running on the node
+          items:
+            $ref: "#/components/schemas/RunningSandbox"
+        cachedBuilds:
+          type: array
+          description: List of cached builds id on the node
+          items:
+            type: string
+        createFails:
+          type: integer
+          format: uint64
+          description: Number of sandbox create fails
+
+    CreatedAccessToken:
+      required:
+        - id
+        - name
+        - token
+        - tokenMask
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the access token
+        name:
+          type: string
+          description: Name of the access token
+        token:
+          type: string
+          description: Raw value of the access token
+        tokenMask:
+          type: string
+          description: Mask of the access token
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp of access token creation
+
+    NewAccessToken:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the access token
+
+    TeamAPIKey:
+      required:
+        - id
+        - name
+        - keyMask
+        - createdAt
+        - createdBy
+        - lastUsed
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the API key
+        name:
+          type: string
+          description: Name of the API key
+        keyMask:
+          type: string
+          description: Mask of the API key
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp of API key creation
+        createdBy:
+          allOf:
+            - $ref: "#/components/schemas/TeamUser"
+          nullable: true
+        lastUsed:
+          type: string
+          format: date-time
+          description: Last time this API key was used
+          nullable: true
+
+    CreatedTeamAPIKey:
+      required:
+        - id
+        - name
+        - key
+        - keyMask
+        - createdAt
+        - createdBy
+        - lastUsed
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the API key
+        name:
+          type: string
+          description: Name of the API key
+        key:
+          type: string
+          description: Raw value of the API key
+        keyMask:
+          type: string
+          description: Mask of the API key
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp of API key creation
+        createdBy:
+          allOf:
+            - $ref: "#/components/schemas/TeamUser"
+          nullable: true
+        lastUsed:
+          type: string
+          format: date-time
+          description: Last time this API key was used
+          nullable: true
+
+    NewTeamAPIKey:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the API key
+
+    UpdateTeamAPIKey:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: New name for the API key
 
     Error:
       required:
@@ -325,6 +685,8 @@ tags:
   - name: templates
   - name: sandboxes
   - name: auth
+  - name: access-tokens
+  - name: api-keys
 
 paths:
   /health:
@@ -342,6 +704,7 @@ paths:
       tags: [auth]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       responses:
         "200":
           description: Successfully returned all teams
@@ -363,6 +726,15 @@ paths:
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - name: metadata
+          in: query
+          description: Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded.
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Successfully returned all running sandboxes
@@ -384,6 +756,8 @@ paths:
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       requestBody:
         required: true
         content:
@@ -404,12 +778,44 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /sandboxes/metrics:
+    get:
+      description: List all running sandboxes with metrics
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: metadata
+          in: query
+          description: Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded.
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully returned all running sandboxes with metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/RunningSandboxWithMetrics"
+        "401":
+          $ref: "#/components/responses/401"
+        "400":
+          $ref: "#/components/responses/400"
+        "500":
+          $ref: "#/components/responses/500"
+
   /sandboxes/{sandboxID}/logs:
     get:
       description: Get sandbox logs
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
         - in: query
@@ -441,12 +847,64 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /sandboxes/{sandboxID}/metrics:
+    get:
+      description: Get sandbox metrics
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "200":
+          description: Successfully returned the sandbox metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SandboxMetric"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+
   /sandboxes/{sandboxID}:
+    get:
+      description: Get a sandbox by id
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "200":
+          description: Successfully returned the sandbox
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunningSandbox"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
     delete:
       description: Kill a sandbox
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
       responses:
@@ -466,6 +924,8 @@ paths:
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
       responses:
@@ -486,6 +946,8 @@ paths:
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
       requestBody:
@@ -515,6 +977,8 @@ paths:
       description: Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       tags: [sandboxes]
       requestBody:
         content:
@@ -546,6 +1010,8 @@ paths:
       description: Refresh the sandbox extending its time to live
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       tags: [sandboxes]
       requestBody:
         content:
@@ -574,6 +1040,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - in: query
           required: false
@@ -600,6 +1067,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       requestBody:
         required: true
         content:
@@ -625,6 +1093,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
       requestBody:
@@ -650,11 +1119,35 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
       responses:
         "204":
           description: The template was deleted successfully
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+    patch:
+      description: Update template
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateUpdateRequest"
+      responses:
+        "200":
+          description: The template was updated successfully
+        "400":
+          $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
         "500":
@@ -666,6 +1159,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
         - $ref: "#/components/parameters/buildID"
@@ -683,6 +1177,7 @@ paths:
       tags: [templates]
       security:
         - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
       parameters:
         - $ref: "#/components/parameters/templateID"
         - $ref: "#/components/parameters/buildID"
@@ -701,6 +1196,198 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TemplateBuild"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /nodes:
+    get:
+      description: List all nodes
+      tags: [admin]
+      security:
+        - AdminTokenAuth: []
+      responses:
+        "200":
+          description: Successfully returned all nodes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Node"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /nodes/{nodeID}:
+    get:
+      description: Get node info
+      tags: [admin]
+      security:
+        - AdminTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/nodeID"
+      responses:
+        "200":
+          description: Successfully returned the node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NodeDetail"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+    post:
+      description: Change status of a node
+      tags: [admin]
+      security:
+        - AdminTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/nodeID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NodeStatusChange"
+      responses:
+        "204":
+          description: The node status was changed successfully
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /access-tokens:
+    post:
+      description: Create a new access token
+      tags: [access-tokens]
+      security:
+        - Supabase1TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewAccessToken"
+      responses:
+        "201":
+          description: Access token created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedAccessToken"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /access-tokens/{accessTokenID}:
+    delete:
+      description: Delete an access token
+      tags: [access-tokens]
+      security:
+        - Supabase1TokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/accessTokenID"
+      responses:
+        "204":
+          description: Access token deleted successfully
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /api-keys:
+    get:
+      description: List all team API keys
+      tags: [api-keys]
+      security:
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      responses:
+        "200":
+          description: Successfully returned all team API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamAPIKey"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+    post:
+      description: Create a new team API key
+      tags: [api-keys]
+      security:
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewTeamAPIKey"
+      responses:
+        "201":
+          description: Team API key created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedTeamAPIKey"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /api-keys/{apiKeyID}:
+    patch:
+      description: Update a team API key
+      tags: [api-keys]
+      security:
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/apiKeyID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTeamAPIKey"
+      responses:
+        "200":
+          description: Team API key updated successfully
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      description: Delete a team API key
+      tags: [api-keys]
+      security:
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/apiKeyID"
+      responses:
+        "204":
+          description: Team API key deleted successfully
         "401":
           $ref: "#/components/responses/401"
         "404":

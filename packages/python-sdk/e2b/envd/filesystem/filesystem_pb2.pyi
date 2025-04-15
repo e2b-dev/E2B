@@ -117,10 +117,12 @@ class ListDirResponse(_message.Message):
     ) -> None: ...
 
 class WatchDirRequest(_message.Message):
-    __slots__ = ("path",)
+    __slots__ = ("path", "recursive")
     PATH_FIELD_NUMBER: _ClassVar[int]
+    RECURSIVE_FIELD_NUMBER: _ClassVar[int]
     path: str
-    def __init__(self, path: _Optional[str] = ...) -> None: ...
+    recursive: bool
+    def __init__(self, path: _Optional[str] = ..., recursive: bool = ...) -> None: ...
 
 class FilesystemEvent(_message.Message):
     __slots__ = ("name", "type")
@@ -157,10 +159,12 @@ class WatchDirResponse(_message.Message):
     ) -> None: ...
 
 class CreateWatcherRequest(_message.Message):
-    __slots__ = ("path",)
+    __slots__ = ("path", "recursive")
     PATH_FIELD_NUMBER: _ClassVar[int]
+    RECURSIVE_FIELD_NUMBER: _ClassVar[int]
     path: str
-    def __init__(self, path: _Optional[str] = ...) -> None: ...
+    recursive: bool
+    def __init__(self, path: _Optional[str] = ..., recursive: bool = ...) -> None: ...
 
 class CreateWatcherResponse(_message.Message):
     __slots__ = ("watcher_id",)

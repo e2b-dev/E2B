@@ -1,5 +1,5 @@
 import ssl
-from typing import Any, Union, Optional
+from typing import Any, Optional, Union
 
 from attrs import define, field, evolve
 import httpx

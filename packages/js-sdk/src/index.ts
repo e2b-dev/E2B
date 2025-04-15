@@ -1,26 +1,23 @@
 export { ApiClient } from './api'
 export type { components, paths } from './api'
 
+export { ConnectionConfig } from './connectionConfig'
+export type { ConnectionOpts, Username } from './connectionConfig'
 export {
   AuthenticationError,
-  SandboxError,
-  TimeoutError,
-  NotFoundError,
-  NotEnoughSpaceError,
   InvalidArgumentError,
+  NotEnoughSpaceError,
+  NotFoundError,
+  SandboxError,
   TemplateError,
+  TimeoutError,
 } from './errors'
-export { ConnectionConfig } from './connectionConfig'
 export type { Logger } from './logs'
-export type { ConnectionOpts, Username } from './connectionConfig'
 
-export { FilesystemEventType } from './sandbox/filesystem/watchHandle'
-export type {
-  FilesystemEvent,
-  WatchHandle,
-} from './sandbox/filesystem/watchHandle'
-export type { EntryInfo, Filesystem, WatchOpts } from './sandbox/filesystem'
 export { FileType } from './sandbox/filesystem'
+export type { EntryInfo, Filesystem } from './sandbox/filesystem'
+export { FilesystemEventType } from './sandbox/filesystem/watchHandle'
+export type { FilesystemEvent, WatchHandle } from './sandbox/filesystem/watchHandle'
 
 export { CommandExitError } from './sandbox/commands/commandHandle'
 export type {
@@ -41,8 +38,8 @@ export type {
   Pty,
 } from './sandbox/commands'
 
-export type { SandboxInfo } from './sandbox/sandboxApi'
 export type { SandboxOpts } from './sandbox'
-import { Sandbox } from './sandbox'
+export type { SandboxInfo } from './sandbox/sandboxApi'
 export { Sandbox }
+import { Sandbox } from './sandbox'
 export default Sandbox

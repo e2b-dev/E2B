@@ -7,6 +7,7 @@ If the LLM doesn't support tool use, you can, for example, prompt the LLM to out
 - [OpenAI](#openai)
 - [Anthropic](#anthropic)
 - [Mistral](#mistral)
+- [Groq](#groq)
 - [Vercel AI SDK](#vercel-ai-sdk)
 - [CrewAI](#crewai)
 - [LangChain](#langchain)
@@ -375,6 +376,46 @@ print(final_response.choices[0].message.content)
 
 ---
 
+## Groq
+<CodeGroup>
+```python
+
+# pip install groq e2b-code-interpreter
+import os
+from groq import Groq
+from e2b_code_interpreter import Sandbox
+
+api_key = os.environ["GROQ_API_KEY"]
+
+# Create Groq client
+client = Groq(api_key=api_key)
+system_prompt = "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
+prompt = "Calculate how many r's are in the word 'strawberry.'"
+
+# Send the prompt to the model
+response = client.chat.completions.create(
+    model="llama3-70b-8192",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": prompt},
+    ]
+)
+
+# Extract the code from the response
+code = response.choices[0].message.content
+
+# Execute code in E2B Sandbox
+with Sandbox() as sandbox:
+    execution = sandbox.run_code(code)
+    result = execution.text
+
+print(result)
+
+```
+</CodeGroup>
+
+---
+
 ## Vercel AI SDK
 Vercel's [AI SDK](https://sdk.vercel.ai) offers support for multiple different LLM providers through a unified JavaScript interface that's easy to use.
 
@@ -456,13 +497,14 @@ console.log(text)
 
 <CodeGroup>
 ```python
-# pip install crewai crewai[tools] e2b-code-interpreter
-from crewai_tools import tool
+# pip install crewai e2b-code-interpreter
+from crewai.tools import tool
 from crewai import Agent, Task, Crew, LLM
 from e2b_code_interpreter import Sandbox
 
-@tool("Python interpreter tool")
-def execute_python(code: str):
+# Update tool definition using the decorator
+@tool("Python Interpreter")  
+def execute_python(code: str) -> str:
     """
     Execute Python code and return the results.
     """
