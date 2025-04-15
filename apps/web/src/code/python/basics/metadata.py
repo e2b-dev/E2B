@@ -11,10 +11,13 @@ sandbox.keep_alive(60)
 
 # Later, can be even from another process
 # List all running sandboxes
-running_sandboxes = Sandbox.list(SandboxListQuery(state=['running']))
+paginator = Sandbox.list(SandboxListQuery(state=['running']))
 
- # Find the sandbox by metadata
-for running_sandbox in running_sandboxes.sandboxes:
+# Get the first page of running sandboxes
+running_sandboxes = paginator.next_items()
+
+# Find the sandbox by metadata
+for running_sandbox in running_sandboxes:
     if running_sandbox.metadata.get("user_id", "") == 'uniqueID':
         sandbox = Sandbox.reconnect(running_sandbox.sandbox_id)
         break
