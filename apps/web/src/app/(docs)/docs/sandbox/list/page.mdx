@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
-# List running sandboxes
+# List sandboxes
 
-You can list all running sandboxes using the `Sandbox.list()` method.
+You can list sandboxes using the `Sandbox.list()` method.
 
 <Note>
 Once you have information about running sandbox, you can [connect](/docs/sandbox/connect) to it using the `Sandbox.connect()` method.
@@ -91,6 +91,7 @@ const runningSandboxes = await Sandbox.list({
 ```
 ```python
 from e2b_code_interpreter import Sandbox
+from e2b.sandbox.sandbox_api import SandboxQuery
 
 # Create sandbox with metadata.
 sandbox = Sandbox(
@@ -110,5 +111,184 @@ running_sandboxes = Sandbox.list(
         }
     ),
 )
+```
+</CodeGroup>
+
+## Changes in the Beta SDKs
+
+<Note>
+If you're using the [beta version of the SDK](/docs/sandbox/persistence#1-installing-the-beta-version-of-the-sdks), the `Sandbox.list()` method was updated.
+</Note>
+
+### Listing sandboxes
+
+The `Sandbox.list()` method now returns a paginator that you can use to iterate over all sandboxes.
+
+<CodeGroup>
+```js
+import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+const paginator = Sandbox.list() // $HighlightLine
+
+// Get the first page of sandboxes (running and paused)
+const sandboxes = await paginator.nextItems() // $HighlightLine
+
+// Loop over all sandboxes
+const sandboxes: SandboxInfo[] = []
+while (paginator.hasNext) {
+  const items = await paginator.nextItems()
+  sandboxes.push(...items)
+}
+```
+```python
+from e2b_code_interpreter import Sandbox, SandboxInfo
+
+sandbox = Sandbox()
+
+paginator = sandbox.list() # $HighlightLine
+
+# Get the first page of sandboxes (running and paused)
+sandboxes = paginator.next_items() # $HighlightLine
+
+# Loop over all sandboxes
+sandboxes: list[SandboxInfo] = []
+while paginator.has_next:
+  items = paginator.next_items()
+  sandboxes.extend(items)
+```
+</CodeGroup>
+
+
+### Filtering sandboxes
+
+You can filter sandboxes by state...
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with metadata.
+const sandbox = await Sandbox.create()
+
+// List all sandboxes that are running or paused.
+const paginator = Sandbox.list({
+  query: {
+    state: ['running', 'paused'], // $HighlightLine
+  },
+})
+
+const sandboxes = await paginator.nextItems() // $HighlightLine
+```
+```python
+from e2b_code_interpreter import Sandbox, SandboxListQuery
+
+# Create sandbox with metadata.
+sandbox = Sandbox()
+
+# List running sandboxes that are running or paused.
+paginator = Sandbox.list(
+    query=SandboxListQuery(
+        state=['running', 'paused'], // $HighlightLine
+    ),
+)
+
+# Get the first page of sandboxes (running and paused)
+sandboxes = paginator.next_items() # $HighlightLine
+```
+</CodeGroup>
+
+...and by metadata
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with metadata.
+const sandbox = await Sandbox.create({
+  metadata: {
+    env: 'dev', // $HighlightLine
+    app: 'my-app', // $HighlightLine
+    userId: '123', // $HighlightLine
+  },
+})
+
+// List all sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
+const paginator = Sandbox.list({
+  query: {
+    metadata: { userId: '123', env: 'dev' }, // $HighlightLine
+  },
+})
+
+const sandboxes = await paginator.nextItems() // $HighlightLine
+```
+```python
+from e2b_code_interpreter import Sandbox, SandboxListQuery
+
+# Create sandbox with metadata.
+sandbox = Sandbox(
+    metadata={
+        "env": "dev",  # $HighlightLine
+        "app": "my-app",  # $HighlightLine
+        "user_id": "123",  # $HighlightLine
+    },
+)
+
+# List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
+paginator = Sandbox.list(
+    query=SandboxListQuery(
+        metadata={
+            "userId": "123",  # $HighlightLine
+            "env": "dev",  # $HighlightLine
+        }
+    ),
+)
+
+# Get the first page of sandboxes (running and paused)
+sandboxes = paginator.next_items() # $HighlightLine
+```
+</CodeGroup>
+
+### Advanced pagination
+
+You can set custom per-page limit (default 1000) and offset (specified by `nextToken` or `next_token`).
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const paginator = Sandbox.list({
+  limit: 10, // $HighlightLine
+  nextToken: '<base64-encoded-token>', // $HighlightLine
+})
+
+// Additional paginator properties
+// Next page is available
+paginator.hasNext
+
+// Next page token
+paginator.nextToken
+
+// Fetch the next page
+await paginator.nextItems()
+```
+```python
+from e2b_code_interpreter import Sandbox, SandboxListQuery
+
+paginator = Sandbox.list(
+    limit=10, # $HighlightLine
+    next_token='<base64-encoded-token>', # $HighlightLine
+)
+
+# Additional paginator properties
+# Next page is available
+paginator.has_next
+
+# Next page token
+paginator.next_token
+
+# Fetch the next page
+paginator.next_items()
 ```
 </CodeGroup>

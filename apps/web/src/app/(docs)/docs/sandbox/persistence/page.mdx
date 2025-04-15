@@ -3,8 +3,8 @@
 <Note>
 Sandbox persistence is currently in public beta:
 1. You'll need to install the [beta version of the SDKs](#1-installing-the-beta-version-of-the-sdks).
-1. Consider [some limitations](#limitations-while-in-beta).
-1. The persistence is free for all users during the beta.
+2. Consider [some limitations](#limitations-while-in-beta).
+3. The persistence is free for all users during the beta.
 </Note>
 
 The sandbox persistence allows you to pause your sandbox and resume it later from the same state it was in when you paused it.
@@ -26,13 +26,13 @@ npm i @e2b/code-interpreter@beta
 ```
 
 ```bash {{ language: 'python' }}
-pip install e2b-code-interpreter==1.2.0b1
+pip install e2b-code-interpreter==1.0.4b
 #
 # or use Core: https://github.com/e2b-dev/e2b
-# pip install e2b==1.2.0b1
+# pip install e2b==1.1.0.b
 #
 # or use Desktop: https://github.com/e2b-dev/desktop
-# pip install e2b-desktop==1.2.0b1
+# pip install e2b-desktop==1.1.0.b
 ```
 </CodeGroup>
 
@@ -124,6 +124,101 @@ print('Sandbox paused', sandbox_id)
 # Resume the sandbox from the same state
 same_sbx = Sandbox.resume(sandbox_id) # $HighlightLine
 print('Sandbox resumed', same_sbx.sandbox_id) # $HighlightLine
+```
+</CodeGroup>
+
+## 4. Listing paused sandboxes
+You can list all paused sandboxes by calling the `Sandbox.list` method by supplying the `state` parameter.
+
+<CodeGroup>
+```js
+import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
+// or use Core: https://github.com/e2b-dev/e2b
+// import { Sandbox, SandboxInfo } from 'e2b'
+//
+// or use Desktop: https://github.com/e2b-dev/desktop
+// import { Sandbox, SandboxInfo } from '@e2b/desktop'
+
+// List all paused sandboxes
+const paginator = Sandbox.list({ query: { state: ['paused'] } }) // $HighlightLine
+
+// Get the first page of paused sandboxes
+const sandboxes = await paginator.nextItems() // $HighlightLine
+
+// Get all paused sandboxes
+const sandboxes: SandboxInfo[] = []
+while (paginator.hasNext) {
+  const items = await paginator.nextItems()
+  sandboxes.push(...items)
+}
+```
+```python
+from e2b_code_interpreter import Sandbox, SandboxListQuery
+# or use Core: https://github.com/e2b-dev/e2b
+# from e2b import Sandbox, SandboxListQuery
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# from e2b_desktop import Sandbox, SandboxInfo, SandboxListQuery
+
+# List all paused sandboxes
+paginator = Sandbox.list(SandboxListQuery(state=['paused'])) # $HighlightLine
+
+# Get the first page of paused sandboxes
+sandboxes = paginator.next_items() # $HighlightLine
+
+# Get all paused sandboxes
+sandboxes: list[SandboxInfo] = []
+while paginator.has_next:
+  items = paginator.next_items()
+  sandboxes.extend(items)
+```
+</CodeGroup>
+
+## 5. Removing paused sandboxes
+
+You can remove paused sandboxes by calling the `kill` method on the Sandbox instance.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+// or use Core: https://github.com/e2b-dev/e2b
+// import { Sandbox } from 'e2b'
+//
+// or use Desktop: https://github.com/e2b-dev/desktop
+// import { Sandbox } from '@e2b/desktop'
+
+const sbx = await Sandbox.create()
+console.log('Sandbox created', sbx.sandboxId)
+
+// Pause the sandbox
+// You can save the sandbox ID in your database
+// to resume the sandbox later
+const sandboxId = await sbx.pause()
+
+// Remove the sandbox
+await sbx.kill() // $HighlightLine
+
+// Remove sandbox by id
+await Sandbox.kill(sandboxId) // $HighlightLine
+```
+```python
+from e2b import Sandbox
+# or use Core: https://github.com/e2b-dev/e2b
+# from e2b import Sandbox
+#
+# or use Desktop: https://github.com/e2b-dev/desktop
+# from e2b_desktop import Sandbox
+
+sbx = Sandbox()
+
+# Pause the sandbox
+sandbox_id = sbx.pause()
+
+# Remove the sandbox
+sbx.kill() # $HighlightLine
+
+# Remove sandbox by id
+Sandbox.kill(sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 

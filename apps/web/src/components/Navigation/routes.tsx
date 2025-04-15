@@ -294,7 +294,7 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/environment-variables',
       },
       {
-        title: 'List running sandboxes',
+        title: 'List sandboxes',
         href: '/docs/sandbox/list',
       },
       {
