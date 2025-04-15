@@ -3,8 +3,8 @@
 <Note>
 Sandbox persistence is currently in public beta:
 1. You'll need to install the [beta version of the SDKs](#1-installing-the-beta-version-of-the-sdks).
-2. Consider [some limitations](#limitations-while-in-beta).
-3. The persistence is free for all users during the beta.
+1. Consider [some limitations](#limitations-while-in-beta).
+1. The persistence is free for all users during the beta.
 </Note>
 
 The sandbox persistence allows you to pause your sandbox and resume it later from the same state it was in when you paused it.
@@ -124,84 +124,6 @@ print('Sandbox paused', sandbox_id)
 # Resume the sandbox from the same state
 same_sbx = Sandbox.resume(sandbox_id) # $HighlightLine
 print('Sandbox resumed', same_sbx.sandbox_id) # $HighlightLine
-```
-</CodeGroup>
-
-## 4. Listing paused sandboxes
-You can list all paused sandboxes by calling the `Sandbox.list` method by supplying the `state` parameter.
-
-<CodeGroup>
-```js
-import { Sandbox } from '@e2b/code-interpreter'
-// or use Core: https://github.com/e2b-dev/e2b
-// import { Sandbox } from 'e2b'
-//
-// or use Desktop: https://github.com/e2b-dev/desktop
-// import { Sandbox } from '@e2b/desktop'
-
-// List all paused sandboxes
-const { sandboxes } = await Sandbox.list({ query: { state: ['paused'] } }) // $HighlightLine
-console.log('Paused sandboxes', sandboxes) // $HighlightLine
-```
-```python
-from e2b import Sandbox
-# or use Core: https://github.com/e2b-dev/e2b
-# from e2b import Sandbox
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# from e2b_desktop import Sandbox
-
-# List all paused sandboxes
-sandboxes = Sandbox.list(Sandbox.SandboxQuery(state=['paused'])) # $HighlightLine
-print('Paused sandboxes', sandboxes.sandboxes) # $HighlightLine
-```
-</CodeGroup>
-
-## 5. Removing paused sandboxes
-
-You can remove paused (and running!) sandboxes by calling the `kill` method on the Sandbox instance.
-
-<CodeGroup>
-```js
-import { Sandbox } from '@e2b/code-interpreter'
-// or use Core: https://github.com/e2b-dev/e2b
-// import { Sandbox } from 'e2b'
-//
-// or use Desktop: https://github.com/e2b-dev/desktop
-// import { Sandbox } from '@e2b/desktop'
-
-const sbx = await Sandbox.create()
-console.log('Sandbox created', sbx.sandboxId)
-
-// Pause the sandbox
-// You can save the sandbox ID in your database
-// to resume the sandbox later
-const sandboxId = await sbx.pause()
-
-// Remove the sandbox
-await sbx.kill() // $HighlightLine
-
-// Remove sandbox by id
-await Sandbox.kill(sandboxId) // $HighlightLine
-```
-```python
-from e2b import Sandbox
-# or use Core: https://github.com/e2b-dev/e2b
-# from e2b import Sandbox
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# from e2b_desktop import Sandbox
-
-sbx = Sandbox()
-
-# Pause the sandbox
-sandbox_id = sbx.pause()
-
-# Remove the sandbox
-sbx.kill() # $HighlightLine
-
-# Remove sandbox by id
-Sandbox.kill(sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
