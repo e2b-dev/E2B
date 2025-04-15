@@ -83,8 +83,6 @@ jobs:
         run: |
           git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/code-interpreter -b generate-api-reference-for-code-interpreter-sdk-e2b-1235
           cd code-interpreter
-          # This command configures git sparse-checkout to only fetch/checkout the 'sdk-reference' directory
-          # from the cloned repository, saving bandwidth and disk space by not downloading other directories
           git sparse-checkout set sdk-reference
           cp -r sdk-reference/* ../apps/web/src/app/\(docs\)/docs/sdk-reference/
           cd ..
