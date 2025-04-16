@@ -85,6 +85,12 @@ export interface FilesystemRequestOpts
    * This affects the resolution of relative paths and ownership of the created filesystem objects.
    */
   user?: Username
+  /**
+   * Depth of the directory to list.
+   *
+   * @default 1
+   */
+  depth?: number
 }
 
 /**
@@ -339,10 +345,7 @@ export class Filesystem {
    *
    * @returns list of entries in the sandbox filesystem directory.
    */
-  async list(
-    path: string,
-    opts?: FilesystemRequestOpts & { depth?: number }
-  ): Promise<EntryInfo[]> {
+  async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
     try {
       const res = await this.rpc.listDir(
         {
