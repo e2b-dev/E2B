@@ -2,7 +2,7 @@
 
 <Note>
 Sandbox persistence is currently in public beta:
-1. You'll need to install the [beta version of the SDKs](#1-installing-the-beta-version-of-the-sdks).
+1. You'll need to install the [beta version of the SDKs](/docs/sandbox/installing-beta-sdks).
 2. Consider [some limitations](#limitations-while-in-beta).
 3. The persistence is free for all users during the beta.
 </Note>
@@ -11,33 +11,7 @@ The sandbox persistence allows you to pause your sandbox and resume it later fro
 
 This includes not only state of the sandbox's filesystem but also the sandbox's memory. This means all running processes, loaded variables, data, etc.
 
-## 1. Installing the beta version of the SDKs
-To use the sandbox persistence, you need to install the beta version of the SDKs.
-
-<CodeGroup>
-```bash {{ language: 'js' }}
-npm i @e2b/code-interpreter@beta
-#
-# or use Core: https://github.com/e2b-dev/e2b
-# npm i e2b@beta
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# npm i @e2b/desktop@beta
-```
-
-```bash {{ language: 'python' }}
-pip install e2b-code-interpreter==1.2.0b1
-#
-# or use Core: https://github.com/e2b-dev/e2b
-# pip install e2b==1.2.0b2
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# pip install e2b-desktop==1.2.0b1
-```
-</CodeGroup>
-
-
-## 2. Pausing sandbox
+## Pausing sandbox
 When you pause a sandbox, both the sandbox's filesystem and memory state will be saved. This includes all the files in the sandbox's filesystem and all the running processes, loaded variables, data, etc.
 
 <CodeGroup>
@@ -78,7 +52,7 @@ print('Sandbox paused', sandbox_id) # $HighlightLine
 </CodeGroup>
 
 
-## 3. Resuming sandbox
+## Resuming sandbox
 When you resume a sandbox, it will be in the same state it was in when you paused it.
 This means that all the files in the sandbox's filesystem will be restored and all the running processes, loaded variables, data, etc. will be restored.
 
@@ -127,7 +101,7 @@ print('Sandbox resumed', same_sbx.sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
-## 4. Listing paused sandboxes
+## Listing paused sandboxes
 You can list all paused sandboxes by calling the `Sandbox.list` method by supplying the `state` parameter.
 
 <CodeGroup>
@@ -174,7 +148,7 @@ while paginator.has_next:
 ```
 </CodeGroup>
 
-## 5. Removing paused sandboxes
+## Removing paused sandboxes
 
 You can remove paused sandboxes by calling the `kill` method on the Sandbox instance.
 
