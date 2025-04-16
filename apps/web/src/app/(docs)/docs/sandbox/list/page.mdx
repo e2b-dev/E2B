@@ -190,7 +190,7 @@ sandbox = Sandbox()
 # List running sandboxes that are running or paused.
 paginator = Sandbox.list(
     query=SandboxListQuery(
-        state=['running', 'paused'], // $HighlightLine
+        state=['running', 'paused'], # $HighlightLine
     ),
 )
 
