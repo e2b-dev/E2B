@@ -51,8 +51,8 @@ const nextConfig = {
   assetPrefix:
     // our production next app is proxied by our dashboard next app.
     // to make assets load correctly after proxying, we need to specify the proxied domain here.
-    process.env.VERCEL_ENV === 'production'
-      ? `https://e2b-docs.vercel.app`
+    process.env.VERCEL_ENV === 'production' && process.env.PRODUCTION_URL
+      ? process.env.PRODUCTION_URL
       : undefined,
   headers: async () => [
     {
