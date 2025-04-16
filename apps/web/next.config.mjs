@@ -49,11 +49,9 @@ const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '',
   assetPrefix:
-    process.env.NODE_ENV === 'production'
+    process.env.VERCEL_ENV === 'production'
       ? `https://${
-          process.env.VERCEL_ENV === 'production'
-            ? process.env.VERCEL_PROJECT_PRODUCTION_URL
-            : ( process.env.VERCEL_BRANCH_URL ?? process.env.VERCEL_URL )
+             process.env.VERCEL_PROJECT_PRODUCTION_URL
         }`
       : undefined,
   headers: async () => [
