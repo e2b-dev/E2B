@@ -49,10 +49,10 @@ const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '',
   assetPrefix:
+    // our production next app is proxied by our dashboard next app.
+    // to make assets load correctly after proxying, we need to specify the proxied domain here.
     process.env.VERCEL_ENV === 'production'
-      ? `https://${
-             process.env.VERCEL_PROJECT_PRODUCTION_URL
-        }`
+      ? `https://e2b-docs.vercel.app`
       : undefined,
   headers: async () => [
     {
