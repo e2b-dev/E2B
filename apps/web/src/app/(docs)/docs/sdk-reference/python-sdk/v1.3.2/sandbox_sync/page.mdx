@@ -1,335 +1,6 @@
 
 
 
-## CommandHandle
-
-```python
-class CommandHandle()
-```
-
-Command execution handle.
-
-It provides methods for waiting for the command to finish, retrieving stdout/stderr, and killing the command.
-
-
-### pid
-
-```python
-@property
-def pid()
-```
-
-Command process ID.
-
-
-### \_\_iter\_\_
-
-```python
-def __iter__()
-```
-
-Iterate over the command output.
-
-**Returns**:
-
-Generator of command outputs
-
-
-### disconnect
-
-```python
-def disconnect() -> None
-```
-
-Disconnect from the command.
-
-The command is not killed, but SDK stops receiving events from the command.
-You can reconnect to the command using `sandbox.commands.connect` method.
-
-
-### wait
-
-```python
-def wait(on_pty: Optional[Callable[[PtyOutput], None]] = None,
-         on_stdout: Optional[Callable[[str], None]] = None,
-         on_stderr: Optional[Callable[[str], None]] = None) -> CommandResult
-```
-
-Wait for the command to finish and returns the result.
-
-If the command exits with a non-zero exit code, it throws a `CommandExitException`.
-
-**Arguments**:
-
-- `on_pty`: Callback for pty output
-- `on_stdout`: Callback for stdout output
-- `on_stderr`: Callback for stderr output
-
-**Returns**:
-
-`CommandResult` result of command execution
-
-
-### kill
-
-```python
-def kill() -> bool
-```
-
-Kills the command.
-
-It uses `SIGKILL` signal to kill the command.
-
-**Returns**:
-
-Whether the command was killed successfully
-
-
-
-
-## Pty
-
-```python
-class Pty()
-```
-
-Module for interacting with PTYs (pseudo-terminals) in the sandbox.
-
-
-### kill
-
-```python
-def kill(pid: int, request_timeout: Optional[float] = None) -> bool
-```
-
-Kill PTY.
-
-**Arguments**:
-
-- `pid`: Process ID of the PTY
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-`true` if the PTY was killed, `false` if the PTY was not found
-
-
-### send\_stdin
-
-```python
-def send_stdin(pid: int,
-               data: bytes,
-               request_timeout: Optional[float] = None) -> None
-```
-
-Send input to a PTY.
-
-**Arguments**:
-
-- `pid`: Process ID of the PTY
-- `data`: Input data to send
-- `request_timeout`: Timeout for the request in **seconds**
-
-
-### create
-
-```python
-def create(size: PtySize,
-           user: Username = "user",
-           cwd: Optional[str] = None,
-           envs: Optional[Dict[str, str]] = None,
-           timeout: Optional[float] = 60,
-           request_timeout: Optional[float] = None) -> CommandHandle
-```
-
-Start a new PTY (pseudo-terminal).
-
-**Arguments**:
-
-- `size`: Size of the PTY
-- `user`: User to use for the PTY
-- `cwd`: Working directory for the PTY
-- `envs`: Environment variables for the PTY
-- `timeout`: Timeout for the PTY in **seconds**
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-Handle to interact with the PTY
-
-
-### resize
-
-```python
-def resize(pid: int,
-           size: PtySize,
-           request_timeout: Optional[float] = None) -> None
-```
-
-Resize PTY.
-
-Call this when the terminal window is resized and the number of columns and rows has changed.
-
-**Arguments**:
-
-- `pid`: Process ID of the PTY
-- `size`: New size of the PTY
-- `request_timeout`: Timeout for the request in **seconds**s
-
-
-
-
-## Commands
-
-```python
-class Commands()
-```
-
-Module for executing commands in the sandbox.
-
-
-### list
-
-```python
-def list(request_timeout: Optional[float] = None) -> List[ProcessInfo]
-```
-
-Lists all running commands and PTY sessions.
-
-**Arguments**:
-
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-List of running commands and PTY sessions
-
-
-### kill
-
-```python
-def kill(pid: int, request_timeout: Optional[float] = None) -> bool
-```
-
-Kills a running command specified by its process ID.
-
-It uses `SIGKILL` signal to kill the command.
-
-**Arguments**:
-
-- `pid`: Process ID of the command. You can get the list of processes using `sandbox.commands.list()`
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-`True` if the command was killed, `False` if the command was not found
-
-
-### send\_stdin
-
-```python
-def send_stdin(pid: int, data: str, request_timeout: Optional[float] = None)
-```
-
-Send data to command stdin.
-
-:param pid Process ID of the command. You can get the list of processes using `sandbox.commands.list()`.
-:param data: Data to send to the command
-:param request_timeout: Timeout for the request in **seconds**
-
-
-
-### run
-
-```python
-@overload
-def run(cmd: str,
-        background: Union[Literal[False], None] = None,
-        envs: Optional[Dict[str, str]] = None,
-        user: Username = "user",
-        cwd: Optional[str] = None,
-        on_stdout: Optional[Callable[[str], None]] = None,
-        on_stderr: Optional[Callable[[str], None]] = None,
-        timeout: Optional[float] = 60,
-        request_timeout: Optional[float] = None) -> CommandResult
-```
-
-Start a new command and wait until it finishes executing.
-
-**Arguments**:
-
-- `cmd`: Command to execute
-- `background`: **`False` if the command should be executed in the foreground**, `True` if the command should be executed in the background
-- `envs`: Environment variables used for the command
-- `user`: User to run the command as
-- `cwd`: Working directory to run the command
-- `on_stdout`: Callback for command stdout output
-- `on_stderr`: Callback for command stderr output
-- `timeout`: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-`CommandResult` result of the command execution
-
-
-### run
-
-```python
-@overload
-def run(cmd: str,
-        background: Literal[True],
-        envs: Optional[Dict[str, str]] = None,
-        user: Username = "user",
-        cwd: Optional[str] = None,
-        on_stdout: None = None,
-        on_stderr: None = None,
-        timeout: Optional[float] = 60,
-        request_timeout: Optional[float] = None) -> CommandHandle
-```
-
-Start a new command and return a handle to interact with it.
-
-**Arguments**:
-
-- `cmd`: Command to execute
-- `background`: `False` if the command should be executed in the foreground, **`True` if the command should be executed in the background**
-- `envs`: Environment variables used for the command
-- `user`: User to run the command as
-- `cwd`: Working directory to run the command
-- `timeout`: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-`CommandHandle` handle to interact with the running command
-
-
-### connect
-
-```python
-def connect(pid: int,
-            timeout: Optional[float] = 60,
-            request_timeout: Optional[float] = None)
-```
-
-Connects to a running command.
-
-You can use `CommandHandle.wait()` to wait for the command to finish and get execution results.
-
-**Arguments**:
-
-- `pid`: Process ID of the command to connect to. You can get the list of processes using `sandbox.commands.list()`
-- `timeout`: Timeout for the connection in **seconds**. Using `0` will not limit the connection time
-- `request_timeout`: Timeout for the request in **seconds**
-
-**Returns**:
-
-`CommandHandle` handle to interact with the running command
-
-
-
-
 ## SandboxApi
 
 ```python
@@ -665,7 +336,7 @@ Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro us
 def get_info(request_timeout: Optional[float] = None) -> SandboxInfo
 ```
 
-Get sandbox information like sandbox id, template, metadata, started at/end at date.
+Get sandbox information like sandbox ID, template, metadata, started at/end at date.
 
 **Arguments**:
 
@@ -678,39 +349,331 @@ Sandbox info
 
 
 
-## WatchHandle
+## Commands
 
 ```python
-class WatchHandle()
+class Commands()
 ```
 
-Handle for watching filesystem events.
-It is used to get the latest events that have occurred in the watched directory.
-
-Use `.stop()` to stop watching the directory.
+Module for executing commands in the sandbox.
 
 
-### stop
+### list
 
 ```python
-def stop()
+def list(request_timeout: Optional[float] = None) -> List[ProcessInfo]
 ```
 
-Stop watching the directory.
-After you stop the watcher you won't be able to get the events anymore.
+Lists all running commands and PTY sessions.
 
+**Arguments**:
 
-### get\_new\_events
-
-```python
-def get_new_events() -> List[FilesystemEvent]
-```
-
-Get the latest events that have occurred in the watched directory since the last call, or from the beginning of the watching, up until now.
+- `request_timeout`: Timeout for the request in **seconds**
 
 **Returns**:
 
-List of filesystem events
+List of running commands and PTY sessions
+
+
+### kill
+
+```python
+def kill(pid: int, request_timeout: Optional[float] = None) -> bool
+```
+
+Kills a running command specified by its process ID.
+
+It uses `SIGKILL` signal to kill the command.
+
+**Arguments**:
+
+- `pid`: Process ID of the command. You can get the list of processes using `sandbox.commands.list()`
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`True` if the command was killed, `False` if the command was not found
+
+
+### send\_stdin
+
+```python
+def send_stdin(pid: int, data: str, request_timeout: Optional[float] = None)
+```
+
+Send data to command stdin.
+
+:param pid Process ID of the command. You can get the list of processes using `sandbox.commands.list()`.
+:param data: Data to send to the command
+:param request_timeout: Timeout for the request in **seconds**
+
+
+
+### run
+
+```python
+@overload
+def run(cmd: str,
+        background: Union[Literal[False], None] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Username = "user",
+        cwd: Optional[str] = None,
+        on_stdout: Optional[Callable[[str], None]] = None,
+        on_stderr: Optional[Callable[[str], None]] = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None) -> CommandResult
+```
+
+Start a new command and wait until it finishes executing.
+
+**Arguments**:
+
+- `cmd`: Command to execute
+- `background`: **`False` if the command should be executed in the foreground**, `True` if the command should be executed in the background
+- `envs`: Environment variables used for the command
+- `user`: User to run the command as
+- `cwd`: Working directory to run the command
+- `on_stdout`: Callback for command stdout output
+- `on_stderr`: Callback for command stderr output
+- `timeout`: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`CommandResult` result of the command execution
+
+
+### run
+
+```python
+@overload
+def run(cmd: str,
+        background: Literal[True],
+        envs: Optional[Dict[str, str]] = None,
+        user: Username = "user",
+        cwd: Optional[str] = None,
+        on_stdout: None = None,
+        on_stderr: None = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None) -> CommandHandle
+```
+
+Start a new command and return a handle to interact with it.
+
+**Arguments**:
+
+- `cmd`: Command to execute
+- `background`: `False` if the command should be executed in the foreground, **`True` if the command should be executed in the background**
+- `envs`: Environment variables used for the command
+- `user`: User to run the command as
+- `cwd`: Working directory to run the command
+- `timeout`: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`CommandHandle` handle to interact with the running command
+
+
+### connect
+
+```python
+def connect(pid: int,
+            timeout: Optional[float] = 60,
+            request_timeout: Optional[float] = None)
+```
+
+Connects to a running command.
+
+You can use `CommandHandle.wait()` to wait for the command to finish and get execution results.
+
+**Arguments**:
+
+- `pid`: Process ID of the command to connect to. You can get the list of processes using `sandbox.commands.list()`
+- `timeout`: Timeout for the connection in **seconds**. Using `0` will not limit the connection time
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`CommandHandle` handle to interact with the running command
+
+
+
+
+## CommandHandle
+
+```python
+class CommandHandle()
+```
+
+Command execution handle.
+
+It provides methods for waiting for the command to finish, retrieving stdout/stderr, and killing the command.
+
+
+### pid
+
+```python
+@property
+def pid()
+```
+
+Command process ID.
+
+
+### \_\_iter\_\_
+
+```python
+def __iter__()
+```
+
+Iterate over the command output.
+
+**Returns**:
+
+Generator of command outputs
+
+
+### disconnect
+
+```python
+def disconnect() -> None
+```
+
+Disconnect from the command.
+
+The command is not killed, but SDK stops receiving events from the command.
+You can reconnect to the command using `sandbox.commands.connect` method.
+
+
+### wait
+
+```python
+def wait(on_pty: Optional[Callable[[PtyOutput], None]] = None,
+         on_stdout: Optional[Callable[[str], None]] = None,
+         on_stderr: Optional[Callable[[str], None]] = None) -> CommandResult
+```
+
+Wait for the command to finish and returns the result.
+
+If the command exits with a non-zero exit code, it throws a `CommandExitException`.
+
+**Arguments**:
+
+- `on_pty`: Callback for pty output
+- `on_stdout`: Callback for stdout output
+- `on_stderr`: Callback for stderr output
+
+**Returns**:
+
+`CommandResult` result of command execution
+
+
+### kill
+
+```python
+def kill() -> bool
+```
+
+Kills the command.
+
+It uses `SIGKILL` signal to kill the command.
+
+**Returns**:
+
+Whether the command was killed successfully
+
+
+
+
+## Pty
+
+```python
+class Pty()
+```
+
+Module for interacting with PTYs (pseudo-terminals) in the sandbox.
+
+
+### kill
+
+```python
+def kill(pid: int, request_timeout: Optional[float] = None) -> bool
+```
+
+Kill PTY.
+
+**Arguments**:
+
+- `pid`: Process ID of the PTY
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`true` if the PTY was killed, `false` if the PTY was not found
+
+
+### send\_stdin
+
+```python
+def send_stdin(pid: int,
+               data: bytes,
+               request_timeout: Optional[float] = None) -> None
+```
+
+Send input to a PTY.
+
+**Arguments**:
+
+- `pid`: Process ID of the PTY
+- `data`: Input data to send
+- `request_timeout`: Timeout for the request in **seconds**
+
+
+### create
+
+```python
+def create(size: PtySize,
+           user: Username = "user",
+           cwd: Optional[str] = None,
+           envs: Optional[Dict[str, str]] = None,
+           timeout: Optional[float] = 60,
+           request_timeout: Optional[float] = None) -> CommandHandle
+```
+
+Start a new PTY (pseudo-terminal).
+
+**Arguments**:
+
+- `size`: Size of the PTY
+- `user`: User to use for the PTY
+- `cwd`: Working directory for the PTY
+- `envs`: Environment variables for the PTY
+- `timeout`: Timeout for the PTY in **seconds**
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+Handle to interact with the PTY
+
+
+### resize
+
+```python
+def resize(pid: int,
+           size: PtySize,
+           request_timeout: Optional[float] = None) -> None
+```
+
+Resize PTY.
+
+Call this when the terminal window is resized and the number of columns and rows has changed.
+
+**Arguments**:
+
+- `pid`: Process ID of the PTY
+- `size`: New size of the PTY
+- `request_timeout`: Timeout for the request in **seconds**s
 
 
 
@@ -976,4 +939,41 @@ Watch directory for filesystem events.
 **Returns**:
 
 `WatchHandle` object for stopping watching directory
+
+
+
+
+## WatchHandle
+
+```python
+class WatchHandle()
+```
+
+Handle for watching filesystem events.
+It is used to get the latest events that have occurred in the watched directory.
+
+Use `.stop()` to stop watching the directory.
+
+
+### stop
+
+```python
+def stop()
+```
+
+Stop watching the directory.
+After you stop the watcher you won't be able to get the events anymore.
+
+
+### get\_new\_events
+
+```python
+def get_new_events() -> List[FilesystemEvent]
+```
+
+Get the latest events that have occurred in the watched directory since the last call, or from the beginning of the watching, up until now.
+
+**Returns**:
+
+List of filesystem events
 

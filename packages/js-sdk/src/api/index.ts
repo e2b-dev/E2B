@@ -58,6 +58,7 @@ class ApiClient {
         ...(config.accessToken && {
           Authorization: `Bearer ${config.accessToken}`,
         }),
+        ...config.headers,
       },
     })
 

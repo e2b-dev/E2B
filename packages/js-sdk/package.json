@@ -1,6 +1,6 @@
 {
   "name": "e2b",
-  "version": "1.2.1",
+  "version": "1.2.5",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -46,7 +46,7 @@
     "@typescript-eslint/eslint-plugin": "^7.11.0",
     "@typescript-eslint/parser": "^7.11.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "@vitest/browser": "^3.0.5",
+    "@vitest/browser": "^3.1.1",
     "dotenv": "^16.4.5",
     "knip": "^5.43.6",
     "npm-check-updates": "^16.14.20",
@@ -57,8 +57,8 @@
     "typedoc": "0.26.8",
     "typedoc-plugin-markdown": "4.2.7",
     "typescript": "^5.4.5",
-    "vitest": "^3.0.5",
-    "vitest-browser-react": "^0.0.4"
+    "vitest": "^3.1.1",
+    "vitest-browser-react": "^0.1.1"
   },
   "files": [
     "dist",

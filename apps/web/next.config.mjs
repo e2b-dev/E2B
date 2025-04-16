@@ -71,17 +71,6 @@ const nextConfig = {
     config.cache.version = config.cache.version + delimiter + codeFilesHash
     return config
   },
-  async rewrites() {
-    return {
-      afterFiles: [
-        {
-          source: '/ingest/:path*',
-          destination: 'https://app.posthog.com/:path*',
-          // BEWARE: setting basePath will break the analytics proxy
-        },
-      ],
-    }
-  },
   async redirects() {
     return [
       {

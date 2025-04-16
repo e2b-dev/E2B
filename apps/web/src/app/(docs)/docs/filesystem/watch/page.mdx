@@ -2,6 +2,11 @@
 
 You can watch a directory for changes using the `files.watchDir()` method in JavaScript and `files.watch_dir()` method in Python.
 
+<Note>
+Since events are tracked asynchronously, their delivery may be delayed.
+It's recommended not to collect or close watcher immediately after making a change.
+</Note>
+
 <CodeGroup>
 ```js
 import { Sandbox, FilesystemEventType } from '@e2b/code-interpreter'
