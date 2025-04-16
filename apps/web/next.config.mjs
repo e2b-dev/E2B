@@ -51,7 +51,9 @@ const nextConfig = {
   assetPrefix:
     process.env.NODE_ENV === 'production'
       ? `https://${
-          process.env.DASHBOARD_PROXY_DOMAIN ?? process.env.VERCEL_URL
+          process.env.VERCEL_ENV === 'production'
+            ? process.env.VERCEL_PROJECT_PRODUCTION_URL
+            : ( process.env.VERCEL_BRANCH_URL ?? process.env.VERCEL_URL )
         }`
       : undefined,
   headers: async () => [
