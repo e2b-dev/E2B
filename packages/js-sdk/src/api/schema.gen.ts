@@ -811,6 +811,10 @@ export interface components {
              * @description Time when the sandbox will expire
              */
             endAt: string;
+            /** @description Access token used for envd communication */
+            envdAccessToken?: string;
+            /** @description Version of the envd running in the sandbox */
+            envdVersion?: string;
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             /** @description Identifier of the sandbox */

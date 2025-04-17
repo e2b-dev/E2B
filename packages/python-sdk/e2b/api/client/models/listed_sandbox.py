@@ -25,6 +25,8 @@ class ListedSandbox:
         state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
+        envd_access_token (Union[Unset, str]): Access token used for envd communication
+        envd_version (Union[Unset, str]): Version of the envd running in the sandbox
         metadata (Union[Unset, Any]):
     """
 
@@ -37,6 +39,8 @@ class ListedSandbox:
     state: SandboxState
     template_id: str
     alias: Union[Unset, str] = UNSET
+    envd_access_token: Union[Unset, str] = UNSET
+    envd_version: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -59,6 +63,10 @@ class ListedSandbox:
 
         alias = self.alias
 
+        envd_access_token = self.envd_access_token
+
+        envd_version = self.envd_version
+
         metadata = self.metadata
 
         field_dict: dict[str, Any] = {}
@@ -77,6 +85,10 @@ class ListedSandbox:
         )
         if alias is not UNSET:
             field_dict["alias"] = alias
+        if envd_access_token is not UNSET:
+            field_dict["envdAccessToken"] = envd_access_token
+        if envd_version is not UNSET:
+            field_dict["envdVersion"] = envd_version
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
 
@@ -103,6 +115,10 @@ class ListedSandbox:
 
         alias = d.pop("alias", UNSET)
 
+        envd_access_token = d.pop("envdAccessToken", UNSET)
+
+        envd_version = d.pop("envdVersion", UNSET)
+
         metadata = d.pop("metadata", UNSET)
 
         listed_sandbox = cls(
@@ -115,6 +131,8 @@ class ListedSandbox:
             state=state,
             template_id=template_id,
             alias=alias,
+            envd_access_token=envd_access_token,
+            envd_version=envd_version,
             metadata=metadata,
         )
 
