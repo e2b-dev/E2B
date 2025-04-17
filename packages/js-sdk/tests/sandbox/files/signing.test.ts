@@ -86,3 +86,12 @@ test('test upload file with missing signing', async () => {
 
     await sbx.kill()
 })
+
+test('test command run withing secured sbx', async () => {
+    const sbx = await Sandbox.create(template, { timeoutMs: timeout, secure: true })
+    const response = await sbx.commands.run('echo Hello World!')
+
+    assert.equal(response.stdout, 'Hello World!\n')
+})
+
+
