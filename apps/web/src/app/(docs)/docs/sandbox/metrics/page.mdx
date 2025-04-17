@@ -6,41 +6,19 @@ This feature is in a private beta.
 
 The sandbox metrics allows you to get information about the sandbox's CPU and memory usage.
 
-## 1. Installation
+## Installation
 
-To get sandbox metrics, you need to install the beta version of the SDKs and CLI.
+To get sandbox metrics, you need to install the beta version of the SDKs and CLI:
 
-### 1.1. Installing the beta version of the SDKs
+- [Installing beta SDKs](/docs/sandbox/installing-beta-sdks)
 
-<CodeGroup isTerminalCommand>
-```bash {{ language: 'js' }}
-npm i @e2b/code-interpreter@beta
-#
-# or use Core: https://github.com/e2b-dev/e2b
-# npm i e2b@beta
-```
+- [Installing beta CLI](/docs/cli#beta-cli)
 
-```bash {{ language: 'python' }}
-pip install e2b-code-interpreter==1.2.0b1
-#
-# or use Core: https://github.com/e2b-dev/e2b
-# pip install e2b==1.2.0b1
-```
-</CodeGroup>
-
-### 1.2. Installing the beta version of the CLI
-
-<CodeGroup isTerminalCommand>
-```bash {{ language: 'bash' }}
-npm i -g @e2b/cli@beta
-```
-</CodeGroup>
-
-## 2. Getting sandbox metrics
+## Getting sandbox metrics
 Getting the metrics of a sandbox returns an array of timestamped metrics containing CPU and memory usage information.
 The metrics are collected at the start of the sandbox, then every 2 seconds, and finally right before the sandbox is deleted.
 
-### 2.1. Getting sandbox metrics using the SDKs
+### Getting sandbox metrics using the SDKs
 
 <CodeGroup>
 ```js
@@ -106,7 +84,7 @@ print('Sandbox metrics', metrics)
 ```
 </CodeGroup>
 
-### 2.2. Getting sandbox metrics using the CLI
+### Getting sandbox metrics using the CLI
 <CodeGroup isTerminalCommand>
 ```bash
 e2b sandbox metrics <sandbox_id>  # $HighlightLine
