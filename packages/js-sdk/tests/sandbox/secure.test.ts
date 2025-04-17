@@ -35,3 +35,11 @@ test('test access file with signing', async () => {
 
     await sbx.kill()
 })
+
+test('try to re-connect to sandbox', async () => {
+    const sbx = await Sandbox.create(template, { timeoutMs: timeout, secure: true })
+    const sbxReconnect = await Sandbox.connect(sbx.sandboxId)
+
+    await sbxReconnect.files.write('hello.txt', 'hello world')
+    await sbxReconnect.kill()
+})

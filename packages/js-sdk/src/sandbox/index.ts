@@ -254,11 +254,10 @@ export class Sandbox extends SandboxApi {
     opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
   ): Promise<InstanceType<S>> {
     const config = new ConnectionConfig(opts)
-    //const info = await this.getInfo(sandboxId, opts)
+    const info = await this.getInfo(sandboxId, opts)
 
     return new this(
-      //  { sandboxId, envdAccessToken: info.envdAccessToken, envdVersion: info.envdVersion, ...config }
-        { sandboxId, ...config }
+        { sandboxId, envdAccessToken: info.envdAccessToken, envdVersion: info.envdVersion, ...config }
     ) as InstanceType<S>
   }
 
