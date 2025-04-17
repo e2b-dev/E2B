@@ -1,4 +1,4 @@
-# List running sandboxes
+# List sandboxes
 
 You can list all running sandboxes using the following command:
 
@@ -7,3 +7,45 @@ You can list all running sandboxes using the following command:
 e2b sandbox list
 ```
 </CodeGroup>
+
+## Changes in the Beta CLI
+
+<Note>
+If you're using the [beta version of the CLI](/docs/cli#beta-cli), the `sandbox list` command was updated.
+</Note>
+
+### List all sandboxes
+
+To list all sandboxes, use the following command:
+
+```bash
+e2b sandbox list
+```
+
+This will return all sandboxes, both running and paused.
+
+### Filter by state
+
+To filter the sandboxes by their state you can specify the `--state` flag, which can either be "**running**", "**paused**" or both.
+
+```bash
+e2b sandbox list --state running,paused
+```
+
+### Filter by metadata
+
+To filter the sandboxes by their metadata, use the `--metadata` flag.
+
+```bash
+e2b sandbox list --metadata key1=value1,key2=value2
+```
+
+### List limit
+
+To limit the amount of sandboxes returned by the command, use the `--limit` flag.
+
+```bash
+e2b sandbox list --limit 10
+```
+
+By default, the command will return all sandboxes.

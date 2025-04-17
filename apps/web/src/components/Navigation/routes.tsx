@@ -294,7 +294,7 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/environment-variables',
       },
       {
-        title: 'List running sandboxes',
+        title: 'List sandboxes',
         href: '/docs/sandbox/list',
       },
       {
@@ -304,6 +304,10 @@ export const docRoutes: NavGroup[] = [
       {
         title: 'Internet access',
         href: '/docs/sandbox/internet-access',
+      },
+      {
+        title: 'Installing beta SDKs',
+        href: '/docs/sandbox/installing-beta-sdks',
       },
       // {
       //   title: '* Request timeouts',
@@ -422,7 +426,7 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/cli/auth',
       },
       {
-        title: 'List running sandboxes',
+        title: 'List sandboxes',
         href: '/docs/cli/list-sandboxes',
       },
       {
