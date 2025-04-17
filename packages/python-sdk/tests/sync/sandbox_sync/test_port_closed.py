@@ -6,7 +6,7 @@ from e2b import Sandbox
 
 
 def test_port_closed(template):
-    sbx = Sandbox(template, timeout=60)
+    sbx = Sandbox(template=template, auto_pause=True, timeout=60)
     try:
         assert sbx.is_running()
 

@@ -4,7 +4,7 @@ from packaging.version import Version
 
 from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery
 from e2b.exceptions import TemplateException
-from e2b.api import AsyncApiClient, SandboxCreateResponse
+from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,

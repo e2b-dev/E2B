@@ -6,7 +6,7 @@ from e2b import AsyncSandbox
 
 
 async def test_port_closed(template):
-    sbx = await AsyncSandbox.create(template, timeout=60)
+    sbx = await AsyncSandbox.create(template=template, auto_pause=True, timeout=60)
     try:
         assert await sbx.is_running()
 

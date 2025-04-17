@@ -17,7 +17,7 @@ async def test_list_sandboxes(async_sandbox: AsyncSandbox):
 @pytest.mark.skip_debug()
 async def test_list_sandboxes_with_filter(async_sandbox: AsyncSandbox):
     unique_id = "".join(random.choices(string.ascii_letters, k=5))
-    sbx = await AsyncSandbox.create(metadata={"unique_id": unique_id})
+    sbx = await AsyncSandbox.create(metadata={"unique_id": unique_id}, auto_pause=True)
     try:
         # There's an extra sandbox created by the test runner
         sandboxes = await AsyncSandbox.list(
