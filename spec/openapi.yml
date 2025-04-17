@@ -284,6 +284,12 @@ components:
           type: string
           format: date-time
           description: Time when the sandbox will expire
+        envdVersion:
+          type: string
+          description: Version of the envd running in the sandbox
+        envdAccessToken:
+          type: string
+          description: Access token used for envd communication
         cpuCount:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
