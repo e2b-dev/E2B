@@ -41,6 +41,16 @@ export interface SandboxInfo {
   name?: string
 
   /**
+   * Envd access token.
+   */
+  envdAccessToken?: string
+
+  /**
+   * Envd version.
+   */
+  envdVersion?: string
+
+  /**
    * Saved sandbox metadata.
    */
   metadata: Record<string, string>
@@ -187,6 +197,8 @@ export class SandboxApi {
       templateId: res.data.templateID,
       ...(res.data.alias && { name: res.data.alias }),
       metadata: res.data.metadata ?? {},
+      envdVersion: res.data.envdVersion,
+      envdAccessToken: res.data.envdAccessToken,
       startedAt: new Date(res.data.startedAt),
       endAt: new Date(res.data.endAt),
     }
@@ -236,10 +248,12 @@ export class SandboxApi {
     opts?: SandboxApiOpts & {
       metadata?: Record<string, string>
       envs?: Record<string, string>
+      secure?: boolean
     }
   ): Promise<{
     sandboxId: string
     envdVersion: string
+    envdAccessToken?: string
   }> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -251,6 +265,7 @@ export class SandboxApi {
         metadata: opts?.metadata,
         envVars: opts?.envs,
         timeout: this.timeoutToSeconds(timeoutMs),
+        secure: opts?.secure,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -273,12 +288,14 @@ export class SandboxApi {
           'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
+
     return {
       sandboxId: this.getSandboxId({
         sandboxId: res.data!.sandboxID,
         clientId: res.data!.clientID,
       }),
       envdVersion: res.data!.envdVersion,
+      envdAccessToken: res.data!.envdAccessToken
     }
   }
 

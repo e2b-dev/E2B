@@ -10,6 +10,7 @@ import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import { SandboxApi } from './sandboxApi'
+import crypto from 'crypto'
 
 /**
  * Options for creating a new Sandbox.
@@ -21,6 +22,7 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default {}
    */
   metadata?: Record<string, string>
+
   /**
    * Custom environment variables for the sandbox.
    *
@@ -30,6 +32,7 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default {}
    */
   envs?: Record<string, string>
+
   /**
    * Timeout for the sandbox in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
@@ -37,6 +40,13 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
+
+  /**
+   * Secure all traffic coming to the sandbox controller with auth token
+   *
+   * @default false
+   */
+  secure?: boolean
 }
 
 /**
@@ -86,6 +96,7 @@ export class Sandbox extends SandboxApi {
 
   protected readonly connectionConfig: ConnectionConfig
   private readonly envdApiUrl: string
+  private readonly envdAccessToken?: string
   private readonly envdApi: EnvdApiClient
 
   /**
@@ -100,15 +111,16 @@ export class Sandbox extends SandboxApi {
     opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & {
       sandboxId: string
       envdVersion?: string
+      envdAccessToken?: string
     }
   ) {
     super()
 
     this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+
+    this.envdAccessToken = opts.envdAccessToken
+    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -119,10 +131,18 @@ export class Sandbox extends SandboxApi {
         // connect-web doesn't allow to configure redirect option - https://github.com/connectrpc/connect-es/pull/1082
         // connect-web package uses redirect: "error" which is not supported in edge runtimes
         // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
+
+        const headers = new Headers(options?.headers)
+        if (this.envdAccessToken) {
+          headers.append('X-Access-Token', this.envdAccessToken)
+        }
+
         options = {
           ...(options ?? {}),
+          headers: headers,
           redirect: 'follow',
         }
+
         return fetch(url, options)
       },
     })
@@ -131,6 +151,8 @@ export class Sandbox extends SandboxApi {
       {
         apiUrl: this.envdApiUrl,
         logger: opts?.logger,
+        accessToken: this.envdAccessToken,
+        headers: this.envdAccessToken ? { 'X-Access-Token': this.envdAccessToken } : { },
       },
       {
         version: opts?.envdVersion,
@@ -193,7 +215,6 @@ export class Sandbox extends SandboxApi {
         : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
 
     const config = new ConnectionConfig(sandboxOpts)
-
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
@@ -233,9 +254,12 @@ export class Sandbox extends SandboxApi {
     opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
   ): Promise<InstanceType<S>> {
     const config = new ConnectionConfig(opts)
+    //const info = await this.getInfo(sandboxId, opts)
 
-    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
-    return sbx
+    return new this(
+      //  { sandboxId, envdAccessToken: info.envdAccessToken, envdVersion: info.envdVersion, ...config }
+        { sandboxId, ...config }
+    ) as InstanceType<S>
   }
 
   /**
@@ -344,10 +368,36 @@ export class Sandbox extends SandboxApi {
    *
    * @param path the directory where to upload the file, defaults to user's home directory.
    *
+   * @param useSignature URL will be signed with the access token, this can be used for uploading files to the sandbox from a different environment (e.g. browser).
+   *
+   * @param signatureExpirationInSeconds URL will be signed with the access token, this can be used for uploading files to the sandbox from a different environment (e.g. browser).
+   *
    * @returns URL for uploading file.
    */
-  uploadUrl(path?: string) {
-    return this.fileUrl(path)
+  uploadUrl(path?: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
+    if (!this.envdAccessToken && (useSignature != undefined || signatureExpirationInSeconds != undefined)) {
+      throw new Error('Signature can be used only when sandbox is spawned with secure option.')
+    }
+
+    if (useSignature == undefined && signatureExpirationInSeconds != undefined) {
+      throw new Error('Signature expiration can be used only when signature is set to true.')
+    }
+
+   const fileUrl = this.fileUrl(path, defaultUsername)
+
+    if (useSignature) {
+      const url = new URL(fileUrl)
+      const sig = this.getSignature(path ?? '', 'write', defaultUsername, signatureExpirationInSeconds)
+
+      url.searchParams.set('signature', sig.signature)
+      if (sig.expiration) {
+        url.searchParams.set('signature_expiration', sig.expiration.toString())
+      }
+
+      return url.toString()
+    }
+
+    return fileUrl
   }
 
   /**
@@ -355,15 +405,40 @@ export class Sandbox extends SandboxApi {
    *
    * @param path path to the file to download.
    *
+   * @param useSignature URL will be signed with the access token, this can be used for uploading files to the sandbox from a different environment (e.g. browser).
+   *
+   * @param signatureExpirationInSeconds URL will be signed with the access token, this can be used for uploading files to the sandbox from a different environment (e.g. browser).
+   *
    * @returns URL for downloading file.
    */
-  downloadUrl(path: string) {
-    return this.fileUrl(path)
+  downloadUrl(path: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
+    if (!this.envdAccessToken && (useSignature != undefined || signatureExpirationInSeconds != undefined)) {
+      throw new Error('Signature can be used only when sandbox is spawned with secure option.')
+    }
+
+    if (useSignature == undefined && signatureExpirationInSeconds != undefined) {
+      throw new Error('Signature expiration can be used only when signature is set to true.')
+    }
+
+    const fileUrl = this.fileUrl(path, defaultUsername)
+
+    if (useSignature) {
+      const url = new URL(fileUrl)
+      const sig = this.getSignature(path, 'read', defaultUsername, signatureExpirationInSeconds)
+      url.searchParams.set('signature', sig.signature)
+      if (sig.expiration) {
+        url.searchParams.set('signature_expiration', sig.expiration.toString())
+      }
+
+      return url.toString()
+    }
+
+    return fileUrl
   }
 
-  private fileUrl(path?: string) {
+  private fileUrl(path?: string, username?:  string) {
     const url = new URL('/files', this.envdApiUrl)
-    url.searchParams.set('username', defaultUsername)
+    url.searchParams.set('username', username ?? defaultUsername)
     if (path) {
       url.searchParams.set('path', path)
     }
@@ -383,5 +458,30 @@ export class Sandbox extends SandboxApi {
       ...this.connectionConfig,
       ...opts,
     })
+  }
+
+  private getSignature(filePath: string, fileOperation: 'read' | 'write', user: string, expirationInSeconds?: number): { signature: string; expiration: number | null } {
+    if (!this.envdAccessToken) {
+      throw new Error('Access token is not set and signature cannot be generated!')
+    }
+
+    // expiration is unix timestamp
+    const signatureExpiration = expirationInSeconds ? Math.floor(Date.now() / 1000) + expirationInSeconds : null
+    let signatureRaw: string
+
+    if (signatureExpiration === undefined || signatureExpiration === null) {
+      signatureRaw = `${filePath}:${fileOperation}:${user}:${this.envdAccessToken}`
+    } else {
+      signatureRaw = `${filePath}:${fileOperation}:${user}:${this.envdAccessToken}:${signatureExpiration.toString()}`
+    }
+
+    const buff = Buffer.from(signatureRaw, 'utf8')
+    const hash = crypto.createHash('sha256').update(buff).digest()
+    const signature =  'v1_' + hash.toString('base64').replace(/=+$/, '')
+
+    return {
+        signature: signature,
+        expiration: signatureExpiration
+    }
   }
 }
