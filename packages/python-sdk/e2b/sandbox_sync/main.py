@@ -170,7 +170,6 @@ class Sandbox(SandboxSetup, SandboxApi):
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
-            self._envd_version,
             self.connection_config,
             self._transport._pool,
             self._envd_api,

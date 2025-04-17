@@ -116,7 +116,6 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
-            self._envd_version,
             self.connection_config,
             self._transport._pool,
             self._envd_api,
@@ -214,11 +213,6 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             envd_version = None
         else:
             response = await SandboxApi._create_sandbox(
-        if connection_config.debug:
-            sandbox_id = "debug_sandbox_id"
-            envd_version = None
-        else:
-            response = await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
                 api_key=api_key,
                 timeout=timeout or cls.default_sandbox_timeout,
@@ -236,7 +230,6 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         return cls(
             sandbox_id=sandbox_id,
-            envd_version=envd_version,
             envd_version=envd_version,
             connection_config=connection_config,
         )
@@ -325,7 +318,6 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             sandbox_id=sandbox_id,
             envd_version=None,
             connection_config=connection_config,
-            envd_version=None,
         )
 
     async def __aenter__(self):

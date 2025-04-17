@@ -34,11 +34,9 @@ class SandboxApi(SandboxApiBase):
         cls,
         api_key: Optional[str] = None,
         query: Optional[SandboxQuery] = None,
-        query: Optional[SandboxQuery] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-        headers: Optional[Dict[str, str]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> List[SandboxInfo]:
         """
@@ -75,8 +73,6 @@ class SandboxApi(SandboxApiBase):
                     for k, v in query.metadata.items()
                 }
                 metadata = urllib.parse.urlencode(quoted_metadata)
-            headers=headers,
-        )
 
         # Convert filters to the format expected by the API
         metadata = None
@@ -112,7 +108,6 @@ class SandboxApi(SandboxApiBase):
                         sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
                     ),
                     started_at=sandbox.started_at,
-                    end_at=sandbox.end_at,
                     end_at=sandbox.end_at,
                 )
                 for sandbox in res.parsed
@@ -241,14 +236,12 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
-        headers: Optional[Dict[str, str]] = None,
     ) -> bool:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
-            headers=headers,
             headers=headers,
         )
 
@@ -282,14 +275,12 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
-        headers: Optional[Dict[str, str]] = None,
     ) -> None:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
-            headers=headers,
             headers=headers,
         )
 
@@ -321,8 +312,6 @@ class SandboxApi(SandboxApiBase):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-        headers: Optional[Dict[str, str]] = None,
-    ) -> SandboxCreateResponse:
         headers: Optional[Dict[str, str]] = None,
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(

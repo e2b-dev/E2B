@@ -37,11 +37,9 @@ class SandboxApi(SandboxApiBase):
         cls,
         api_key: Optional[str] = None,
         query: Optional[SandboxQuery] = None,
-        query: Optional[SandboxQuery] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-        headers: Optional[Dict[str, str]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> List[SandboxInfo]:
         """
@@ -77,8 +75,7 @@ class SandboxApi(SandboxApiBase):
                     for k, v in query.metadata.items()
                 }
                 metadata = urllib.parse.urlencode(quoted_metadata)
-            headers=headers,
-        )
+            headers = (headers,)
 
         # Convert filters to the format expected by the API
         metadata = None
@@ -94,7 +91,6 @@ class SandboxApi(SandboxApiBase):
             res = await get_sandboxes.asyncio_detailed(
                 client=api_client,
                 metadata=metadata,
-                metadata=metadata,
             )
 
         if res.status_code >= 300:
@@ -107,22 +103,6 @@ class SandboxApi(SandboxApiBase):
         if res.parsed is None:
             return []
 
-        return [
-            SandboxInfo(
-                sandbox_id=SandboxApi._get_sandbox_id(
-                    sandbox.sandbox_id,
-                    sandbox.client_id,
-                ),
-                template_id=sandbox.template_id,
-                name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                metadata=(
-                    sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                ),
-                started_at=sandbox.started_at,
-                end_at=sandbox.end_at,
-            )
-            for sandbox in res.parsed
-        ]
         return [
             SandboxInfo(
                 sandbox_id=SandboxApi._get_sandbox_id(
@@ -259,14 +239,12 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
-        headers: Optional[Dict[str, str]] = None,
     ) -> bool:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
-            headers=headers,
             headers=headers,
         )
 
@@ -298,14 +276,12 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
-        headers: Optional[Dict[str, str]] = None,
     ) -> None:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
-            headers=headers,
             headers=headers,
         )
 
@@ -337,14 +313,11 @@ class SandboxApi(SandboxApiBase):
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> SandboxCreateResponse:
-        headers: Optional[Dict[str, str]] = None,
-    ) -> SandboxCreateResponse:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
-            headers=headers,
             headers=headers,
         )
 
@@ -378,12 +351,6 @@ class SandboxApi(SandboxApiBase):
                     "You can do this by running `e2b template build` in the directory with the template."
                 )
 
-            return SandboxCreateResponse(
-                sandbox_id=SandboxApi._get_sandbox_id(
-                    res.parsed.sandbox_id,
-                    res.parsed.client_id,
-                ),
-                envd_version=res.parsed.envd_version,
             return SandboxCreateResponse(
                 sandbox_id=SandboxApi._get_sandbox_id(
                     res.parsed.sandbox_id,
