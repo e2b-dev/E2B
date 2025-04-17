@@ -135,6 +135,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         if self.connection_config.debug:
             self._sandbox_id = "debug_sandbox_id"
             self._envd_version = None
+            self._envd_version = None
         elif sandbox_id is not None:
             self._sandbox_id = sandbox_id
             self._envd_version = None
@@ -155,6 +156,8 @@ class Sandbox(SandboxSetup, SandboxApi):
             )
             self._sandbox_id = response.sandbox_id
             self._envd_version = response.envd_version
+            self._sandbox_id = response.sandbox_id
+            self._envd_version = response.envd_version
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
 
@@ -166,6 +169,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         self._filesystem = Filesystem(
             self.envd_api_url,
+            self._envd_version,
             self._envd_version,
             self.connection_config,
             self._transport._pool,
@@ -254,6 +258,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         # Another code block
         same_sandbox = Sandbox.connect(sandbox_id)
+        ```
         """
         if not auto_pause:
             raise ValueError("auto_pause must be True")
@@ -414,6 +419,27 @@ class Sandbox(SandboxSetup, SandboxApi):
         SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
+            **self.connection_config.__dict__,
+        )
+
+    def get_info(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Sandbox info
+        """
+        config_dict = self.connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
+        return SandboxApi.get_info(
+            sandbox_id=self.sandbox_id,
             **self.connection_config.__dict__,
         )
 

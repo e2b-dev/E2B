@@ -1,9 +1,13 @@
 import random
 import string
 
+import random
+import string
+
 import pytest
 
 from e2b import AsyncSandbox
+from e2b.sandbox.sandbox_api import SandboxQuery
 from e2b.sandbox.sandbox_api import SandboxQuery
 
 

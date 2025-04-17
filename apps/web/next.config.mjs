@@ -49,10 +49,10 @@ const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '',
   assetPrefix:
-    process.env.NODE_ENV === 'production'
-      ? `https://${
-          process.env.DASHBOARD_PROXY_DOMAIN ?? process.env.VERCEL_URL
-        }`
+    // our production next app is proxied by our dashboard next app.
+    // to make assets load correctly after proxying, we need to specify the proxied domain here.
+    process.env.VERCEL_ENV === 'production' && process.env.PRODUCTION_URL
+      ? process.env.PRODUCTION_URL
       : undefined,
   headers: async () => [
     {

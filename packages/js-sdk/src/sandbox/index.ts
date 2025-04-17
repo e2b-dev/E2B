@@ -213,7 +213,6 @@ export class Sandbox extends SandboxApi {
       const sandbox = await this.createSandbox(
         template,
         sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-        sandboxOpts?.autoPause ?? this.defaultSandboxAutoPause,
         sandboxOpts
       )
       return new this({ ...sandbox, ...config }) as InstanceType<S>

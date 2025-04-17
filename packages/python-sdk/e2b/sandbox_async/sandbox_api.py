@@ -1,12 +1,15 @@
 import urllib.parse
+import urllib.parse
 from typing import Optional, Dict, List
 from packaging.version import Version
 
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery
 from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery
 from e2b.exceptions import TemplateException
 from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
 from e2b.api.client.api.sandboxes import (
+    get_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id,
     post_sandboxes_sandbox_id_timeout,
     get_sandboxes,
@@ -34,9 +37,11 @@ class SandboxApi(SandboxApiBase):
         cls,
         api_key: Optional[str] = None,
         query: Optional[SandboxQuery] = None,
+        query: Optional[SandboxQuery] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> List[SandboxInfo]:
         """
@@ -46,7 +51,11 @@ class SandboxApi(SandboxApiBase):
         :param query: Filter the list of sandboxes, e.g. by metadata `SandboxQuery(metadata={"key": "value"})`, if there are multiple filters they are combined with AND.
         :param domain: Domain to use for the request, only relevant for self-hosted environments
         :param debug: Enable debug mode, all requested are then sent to localhost
+        :param query: Filter the list of sandboxes, e.g. by metadata `SandboxQuery(metadata={"key": "value"})`, if there are multiple filters they are combined with AND.
+        :param domain: Domain to use for the request, only relevant for self-hosted environments
+        :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
+        :param headers: Additional headers to send with the request
         :param headers: Additional headers to send with the request
 
         :return: List of running sandboxes
@@ -68,19 +77,52 @@ class SandboxApi(SandboxApiBase):
                     for k, v in query.metadata.items()
                 }
                 metadata = urllib.parse.urlencode(quoted_metadata)
+            headers=headers,
+        )
+
+        # Convert filters to the format expected by the API
+        metadata = None
+        if query:
+            if query.metadata:
+                quoted_metadata = {
+                    urllib.parse.quote(k): urllib.parse.quote(v)
+                    for k, v in query.metadata.items()
+                }
+                metadata = urllib.parse.urlencode(quoted_metadata)
 
         async with AsyncApiClient(config) as api_client:
             res = await get_sandboxes.asyncio_detailed(
                 client=api_client,
                 metadata=metadata,
+                metadata=metadata,
             )
 
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
         if res.status_code >= 300:
             raise handle_api_exception(res)
 
         if res.parsed is None:
             return []
+        if res.parsed is None:
+            return []
 
+        return [
+            SandboxInfo(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    sandbox.sandbox_id,
+                    sandbox.client_id,
+                ),
+                template_id=sandbox.template_id,
+                name=sandbox.alias if isinstance(sandbox.alias, str) else None,
+                metadata=(
+                    sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
+                ),
+                started_at=sandbox.started_at,
+                end_at=sandbox.end_at,
+            )
+            for sandbox in res.parsed
+        ]
         return [
             SandboxInfo(
                 sandbox_id=SandboxApi._get_sandbox_id(
@@ -154,6 +196,61 @@ class SandboxApi(SandboxApiBase):
             )
 
     @classmethod
+    async def get_info(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> SandboxInfo:
+        """
+        Get the sandbox info.
+        :param sandbox_id: Sandbox ID
+        :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param domain: Domain to use for the request, defaults to `E2B_DOMAIN` environment variable
+        :param debug: Debug mode, defaults to `E2B_DEBUG` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+        :param headers: Additional headers to send with the request
+
+        :return: Sandbox info
+        """
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+            headers=headers,
+        )
+
+        async with AsyncApiClient(config) as api_client:
+            res = await get_sandboxes_sandbox_id.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                raise Exception("Body of the request is None")
+
+            return SandboxInfo(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    res.parsed.sandbox_id,
+                    res.parsed.client_id,
+                ),
+                template_id=res.parsed.template_id,
+                name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
+                metadata=(
+                    res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
+                ),
+                started_at=res.parsed.started_at,
+                end_at=res.parsed.end_at,
+            )
+
+    @classmethod
     async def _cls_kill(
         cls,
         sandbox_id: str,
@@ -162,12 +259,14 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> bool:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            headers=headers,
             headers=headers,
         )
 
@@ -199,12 +298,14 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> None:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            headers=headers,
             headers=headers,
         )
 
@@ -236,11 +337,14 @@ class SandboxApi(SandboxApiBase):
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> SandboxCreateResponse:
+        headers: Optional[Dict[str, str]] = None,
+    ) -> SandboxCreateResponse:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            headers=headers,
             headers=headers,
         )
 
@@ -274,6 +378,12 @@ class SandboxApi(SandboxApiBase):
                     "You can do this by running `e2b template build` in the directory with the template."
                 )
 
+            return SandboxCreateResponse(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    res.parsed.sandbox_id,
+                    res.parsed.client_id,
+                ),
+                envd_version=res.parsed.envd_version,
             return SandboxCreateResponse(
                 sandbox_id=SandboxApi._get_sandbox_id(
                     res.parsed.sandbox_id,
