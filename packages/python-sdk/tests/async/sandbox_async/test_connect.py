@@ -4,7 +4,7 @@ from e2b import AsyncSandbox
 
 
 async def test_connect(template):
-    sbx = await AsyncSandbox.create(True, template, timeout=10)
+    sbx = await AsyncSandbox.create(template=template, timeout=10, auto_pause=True)
     try:
         assert await sbx.is_running()
 

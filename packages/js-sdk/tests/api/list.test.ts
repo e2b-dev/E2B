@@ -1,22 +1,52 @@
 import { assert } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { sandboxTest } from '../setup.js'
+import { isDebug, sandboxTest, template } from '../setup.js'
 
-sandboxTest.skipIf(true)('list sandboxes', async ({ sandbox }) => {
+sandboxTest.skipIf(isDebug)('list sandboxes', async ({ sandbox }) => {
   const sandboxes = await Sandbox.list()
   assert.isAtLeast(sandboxes.length, 1)
   assert.include(
     sandboxes.map((s) => s.sandboxId),
     sandbox.sandboxId
   )
+})
 
-  // Check that sandboxes are sorted by startedAt in descending order (newest first)
-  for (let i = 0; i < sandboxes.length - 1; i++) {
-    assert.isAtLeast(
-      new Date(sandboxes[i + 1].startedAt).getTime(),
-      new Date(sandboxes[i].startedAt).getTime(),
-      'Sandboxes should be sorted by startedAt in descending order'
-    )
+sandboxTest.skipIf(isDebug)('list sandboxes with metadata filter', async () => {
+  const uniqueId = Date.now().toString()
+  // Create an extra sandbox with a uniqueId
+  const extraSbx = await Sandbox.create(template, {
+    autoPause: true,
+    timeoutMs: 60_000,
+  })
+  try {
+    const sbx = await Sandbox.create(template, {
+      autoPause: true,
+      timeoutMs: 60_000,
+      metadata: { uniqueId },
+    })
+    try {
+      const sandboxes = await Sandbox.list({
+        query: { metadata: { uniqueId } },
+      })
+      assert.equal(sandboxes.length, 1)
+      assert.equal(sandboxes[0].sandboxId, sbx.sandboxId)
+    } finally {
+      await sbx.kill()
+    }
+  } finally {
+    await extraSbx.kill()
   }
 })
+
+sandboxTest.skipIf(isDebug)(
+  'list sandboxes empty filter',
+  async ({ sandbox }) => {
+    const sandboxes = await Sandbox.list()
+    assert.isAtLeast(sandboxes.length, 1)
+    assert.include(
+      sandboxes.map((s) => s.sandboxId),
+      sandbox.sandboxId
+    )
+  }
+)

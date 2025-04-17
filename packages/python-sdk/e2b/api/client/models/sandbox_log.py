@@ -1,14 +1,10 @@
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING
+import datetime
+from collections.abc import Mapping
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-
-from ..types import UNSET, Unset
-
 from dateutil.parser import isoparse
-from typing import cast
-import datetime
-
 
 T = TypeVar("T", bound="SandboxLog")
 
@@ -18,40 +14,40 @@ class SandboxLog:
     """Log entry with timestamp and line
 
     Attributes:
-        timestamp (datetime.datetime): Timestamp of the log entry
         line (str): Log line content
+        timestamp (datetime.datetime): Timestamp of the log entry
     """
 
-    timestamp: datetime.datetime
     line: str
+    timestamp: datetime.datetime
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        timestamp = self.timestamp.isoformat()
-
         line = self.line
+
+        timestamp = self.timestamp.isoformat()
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "timestamp": timestamp,
                 "line": line,
+                "timestamp": timestamp,
             }
         )
 
         return field_dict
 
     @classmethod
-    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
-        d = src_dict.copy()
-        timestamp = isoparse(d.pop("timestamp"))
-
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
         line = d.pop("line")
 
+        timestamp = isoparse(d.pop("timestamp"))
+
         sandbox_log = cls(
-            timestamp=timestamp,
             line=line,
+            timestamp=timestamp,
         )
 
         sandbox_log.additional_properties = d

@@ -1,16 +1,12 @@
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING
+import datetime
+from collections.abc import Mapping
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-
-from ..types import UNSET, Unset
-
-from ..types import UNSET, Unset
 from dateutil.parser import isoparse
-from typing import cast
-from typing import Union
-import datetime
 
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="RunningSandbox")
 
@@ -19,42 +15,42 @@ T = TypeVar("T", bound="RunningSandbox")
 class RunningSandbox:
     """
     Attributes:
-        template_id (str): Identifier of the template from which is the sandbox created
-        sandbox_id (str): Identifier of the sandbox
         client_id (str): Identifier of the client
-        started_at (datetime.datetime): Time when the sandbox was started
-        end_at (datetime.datetime): Time when the sandbox will expire
         cpu_count (int): CPU cores for the sandbox
+        end_at (datetime.datetime): Time when the sandbox will expire
         memory_mb (int): Memory for the sandbox in MB
+        sandbox_id (str): Identifier of the sandbox
+        started_at (datetime.datetime): Time when the sandbox was started
+        template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
     """
 
-    template_id: str
-    sandbox_id: str
     client_id: str
-    started_at: datetime.datetime
-    end_at: datetime.datetime
     cpu_count: int
+    end_at: datetime.datetime
     memory_mb: int
+    sandbox_id: str
+    started_at: datetime.datetime
+    template_id: str
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        template_id = self.template_id
-
-        sandbox_id = self.sandbox_id
-
         client_id = self.client_id
-
-        started_at = self.started_at.isoformat()
-
-        end_at = self.end_at.isoformat()
 
         cpu_count = self.cpu_count
 
+        end_at = self.end_at.isoformat()
+
         memory_mb = self.memory_mb
+
+        sandbox_id = self.sandbox_id
+
+        started_at = self.started_at.isoformat()
+
+        template_id = self.template_id
 
         alias = self.alias
 
@@ -64,13 +60,13 @@ class RunningSandbox:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "templateID": template_id,
-                "sandboxID": sandbox_id,
                 "clientID": client_id,
-                "startedAt": started_at,
-                "endAt": end_at,
                 "cpuCount": cpu_count,
+                "endAt": end_at,
                 "memoryMB": memory_mb,
+                "sandboxID": sandbox_id,
+                "startedAt": started_at,
+                "templateID": template_id,
             }
         )
         if alias is not UNSET:
@@ -81,34 +77,34 @@ class RunningSandbox:
         return field_dict
 
     @classmethod
-    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
-        d = src_dict.copy()
-        template_id = d.pop("templateID")
-
-        sandbox_id = d.pop("sandboxID")
-
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
         client_id = d.pop("clientID")
-
-        started_at = isoparse(d.pop("startedAt"))
-
-        end_at = isoparse(d.pop("endAt"))
 
         cpu_count = d.pop("cpuCount")
 
+        end_at = isoparse(d.pop("endAt"))
+
         memory_mb = d.pop("memoryMB")
+
+        sandbox_id = d.pop("sandboxID")
+
+        started_at = isoparse(d.pop("startedAt"))
+
+        template_id = d.pop("templateID")
 
         alias = d.pop("alias", UNSET)
 
         metadata = d.pop("metadata", UNSET)
 
         running_sandbox = cls(
-            template_id=template_id,
-            sandbox_id=sandbox_id,
             client_id=client_id,
-            started_at=started_at,
-            end_at=end_at,
             cpu_count=cpu_count,
+            end_at=end_at,
             memory_mb=memory_mb,
+            sandbox_id=sandbox_id,
+            started_at=started_at,
+            template_id=template_id,
             alias=alias,
             metadata=metadata,
         )

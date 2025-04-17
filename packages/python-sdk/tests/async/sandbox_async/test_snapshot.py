@@ -26,15 +26,19 @@ async def test_resume_with_auto_pause(template):
     await sbx.pause()
 
     timeout = 1
-    sbx_resumed = await AsyncSandbox.connect(sbx.sandbox_id, timeout=timeout, auto_pause=True)
-    await sbx_resumed.files.write('test.txt', 'test')
+    sbx_resumed = await AsyncSandbox.connect(
+        sbx.sandbox_id, timeout=timeout, auto_pause=True
+    )
+    await sbx_resumed.files.write("test.txt", "test")
 
     # Wait for the sandbox to pause and create snapshot
     sleep(timeout + 5)
 
-    sbx_resumed2 = await AsyncSandbox.connect(sbx.sandbox_id, timeout=timeout, auto_pause=True)
+    sbx_resumed2 = await AsyncSandbox.connect(
+        sbx.sandbox_id, timeout=timeout, auto_pause=True
+    )
 
     try:
-        assert await sbx_resumed2.files.read('test.txt') == 'test'
+        assert await sbx_resumed2.files.read("test.txt") == "test"
     finally:
         await sbx_resumed2.kill()

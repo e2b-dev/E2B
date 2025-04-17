@@ -2,7 +2,7 @@
 
 from collections.abc import MutableMapping
 from http import HTTPStatus
-from typing import BinaryIO, Generic, Optional, TypeVar, Literal
+from typing import BinaryIO, Generic, Literal, Optional, TypeVar
 
 from attrs import define
 

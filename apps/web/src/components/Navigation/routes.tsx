@@ -281,6 +281,11 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/persistence',
       },
       {
+        title: 'Metrics',
+        tag: Tag.New,
+        href: '/docs/sandbox/metrics',
+      },
+      {
         title: 'Metadata',
         href: '/docs/sandbox/metadata',
       },
@@ -313,6 +318,10 @@ export const docRoutes: NavGroup[] = [
       {
         title: 'Sandbox customization',
         href: '/docs/sandbox-template',
+      },
+      {
+        title: 'Start command',
+        href: '/docs/sandbox-template/start-cmd',
       },
       {
         title: 'Customize CPU & RAM',
@@ -426,6 +435,15 @@ export const docRoutes: NavGroup[] = [
     title: 'Troubleshooting',
     items: [
       {
+        title: 'SDKs',
+        links: [
+          {
+            title: 'Vercel Edge Runtime and Cloudflare Workers',
+            href: '/docs/troubleshooting/sdks/workers-edge-runtime',
+          },
+        ],
+      },
+      {
         title: 'Templates',
         links: [
           {
@@ -466,7 +484,7 @@ const sdkRefNameMap = {
 }
 
 export const sdkRefRoutes: VersionedNavGroup[] = (
-  sdkRefRoutesJson as VersionedNavGroup[]
+  sdkRefRoutesJson as unknown as VersionedNavGroup[]
 )
   .sort((a, b) => {
     const order = {

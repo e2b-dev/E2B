@@ -87,20 +87,39 @@ async function requestTemplateRebuild(
 }
 
 async function triggerTemplateBuild(templateID: string, buildID: string) {
-  const res = await client.api.POST(
-    '/templates/{templateID}/builds/{buildID}',
-    {
-      params: {
-        path: {
-          templateID,
-          buildID,
+  let res
+  const maxRetries = 3
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      res = await client.api.POST('/templates/{templateID}/builds/{buildID}', {
+        params: {
+          path: {
+            templateID,
+            buildID,
+          },
         },
-      },
-    }
-  )
+      })
 
-  handleE2BRequestError(res.error, 'Error triggering template build')
-  return res.data
+      break
+    } catch (e) {
+      // If the build and push takes more than 10 minutes the connection gets automatically closed by load balancer
+      // and the request fails with UND_ERR_SOCKET error. In this case we just need to retry the request.
+      if (
+        e instanceof TypeError &&
+        ((e as TypeError).cause as any)?.code !== 'UND_ERR_SOCKET'
+      ) {
+        console.error(e)
+        console.log('Retrying...')
+      }
+    }
+  }
+
+  if (!res) {
+    throw new Error('Error triggering template build')
+  }
+
+  handleE2BRequestError(res?.error, 'Error triggering template build')
+  return res?.data
 }
 
 export const buildCommand = new commander.Command('build')
@@ -331,14 +350,23 @@ export const buildCommand = new commander.Command('build')
         }
         process.stdout.write('\n')
 
-        console.log('Building docker image...')
-        const cmd = `docker build . -f ${dockerfileRelativePath} --pull --platform linux/amd64 -t docker.${
-          connectionConfig.domain
-        }/e2b/custom-envs/${templateID}:${template.buildID} ${Object.entries(
-          dockerBuildArgs
+        const buildArgs = Object.entries(dockerBuildArgs)
+          .map(([key, value]) => `--build-arg "${key}=${value}"`)
+          .join(' ')
+
+        const cmd = [
+          'docker build',
+          `-f ${dockerfileRelativePath}`,
+          '--pull --platform linux/amd64',
+          `-t docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`,
+          buildArgs,
+          '.',
+        ].join(' ')
+
+        console.log(
+          `Building docker image with the following command:\n${asBold(cmd)}\n`
         )
-          .map(([key, value]) => `--build-arg="${key}=${value}"`)
-          .join(' ')}`
+
         child_process.execSync(cmd, {
           stdio: 'inherit',
           cwd: root,
@@ -347,17 +375,19 @@ export const buildCommand = new commander.Command('build')
             DOCKER_CLI_HINTS: 'false',
           },
         })
-        console.log('Docker image built.\n')
+        console.log('> Docker image built.\n')
 
-        console.log('Pushing docker image...')
+        const pushCmd = `docker push docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`
+        console.log(
+          `Pushing docker image with the following command:\n${asBold(
+            pushCmd
+          )}\n`
+        )
         try {
-          child_process.execSync(
-            `docker push docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`,
-            {
-              stdio: 'inherit',
-              cwd: root,
-            }
-          )
+          child_process.execSync(pushCmd, {
+            stdio: 'inherit',
+            cwd: root,
+          })
         } catch (err: any) {
           await buildWithProxy(
             userConfig,
@@ -367,15 +397,15 @@ export const buildCommand = new commander.Command('build')
             root
           )
         }
-        console.log('Docker image pushed.\n')
+        console.log('> Docker image pushed.\n')
 
         console.log('Triggering build...')
         await triggerBuild(templateID, template.buildID)
 
         console.log(
-          `Triggered build for the sandbox template ${asFormattedSandboxTemplate(
+          `> Triggered build for the sandbox template ${asFormattedSandboxTemplate(
             template
-          )} `
+          )} with build ID: ${template.buildID}`
         )
 
         console.log('Waiting for build to finish...')

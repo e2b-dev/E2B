@@ -1,11 +1,8 @@
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-
-from ..types import UNSET, Unset
-
-from typing import cast
 
 if TYPE_CHECKING:
     from ..models.sandbox_log import SandboxLog
@@ -25,8 +22,6 @@ class SandboxLogs:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.sandbox_log import SandboxLog
-
         logs = []
         for logs_item_data in self.logs:
             logs_item = logs_item_data.to_dict()
@@ -43,10 +38,10 @@ class SandboxLogs:
         return field_dict
 
     @classmethod
-    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.sandbox_log import SandboxLog
 
-        d = src_dict.copy()
+        d = dict(src_dict)
         logs = []
         _logs = d.pop("logs")
         for logs_item_data in _logs:

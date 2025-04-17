@@ -1,13 +1,10 @@
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING
+from collections.abc import Mapping
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
-
-from ..types import UNSET, Unset
-from typing import Union
-
 
 T = TypeVar("T", bound="ResumedSandbox")
 
@@ -16,39 +13,39 @@ T = TypeVar("T", bound="ResumedSandbox")
 class ResumedSandbox:
     """
     Attributes:
-        timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
+        timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
     """
 
-    timeout: Union[Unset, int] = 15
     auto_pause: Union[Unset, bool] = False
+    timeout: Union[Unset, int] = 15
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        timeout = self.timeout
-
         auto_pause = self.auto_pause
+
+        timeout = self.timeout
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
-        if timeout is not UNSET:
-            field_dict["timeout"] = timeout
         if auto_pause is not UNSET:
             field_dict["autoPause"] = auto_pause
+        if timeout is not UNSET:
+            field_dict["timeout"] = timeout
 
         return field_dict
 
     @classmethod
-    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
-        d = src_dict.copy()
-        timeout = d.pop("timeout", UNSET)
-
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
         auto_pause = d.pop("autoPause", UNSET)
 
+        timeout = d.pop("timeout", UNSET)
+
         resumed_sandbox = cls(
-            timeout=timeout,
             auto_pause=auto_pause,
+            timeout=timeout,
         )
 
         resumed_sandbox.additional_properties = d

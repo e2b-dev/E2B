@@ -34,7 +34,6 @@ class PTY(_message.Message):
         def __init__(
             self, cols: _Optional[int] = ..., rows: _Optional[int] = ...
         ) -> None: ...
-
     SIZE_FIELD_NUMBER: _ClassVar[int]
     size: PTY.Size
     def __init__(self, size: _Optional[_Union[PTY.Size, _Mapping]] = ...) -> None: ...
@@ -51,7 +50,6 @@ class ProcessConfig(_message.Message):
         def __init__(
             self, key: _Optional[str] = ..., value: _Optional[str] = ...
         ) -> None: ...
-
     CMD_FIELD_NUMBER: _ClassVar[int]
     ARGS_FIELD_NUMBER: _ClassVar[int]
     ENVS_FIELD_NUMBER: _ClassVar[int]
@@ -171,7 +169,6 @@ class ProcessEvent(_message.Message):
     class KeepAlive(_message.Message):
         __slots__ = ()
         def __init__(self) -> None: ...
-
     START_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     END_FIELD_NUMBER: _ClassVar[int]
@@ -252,7 +249,6 @@ class StreamInputRequest(_message.Message):
     class KeepAlive(_message.Message):
         __slots__ = ()
         def __init__(self) -> None: ...
-
     START_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     KEEPALIVE_FIELD_NUMBER: _ClassVar[int]

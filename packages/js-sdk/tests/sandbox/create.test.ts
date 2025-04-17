@@ -7,6 +7,8 @@ test.skipIf(isDebug)('create', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000, autoPause: true })
   try {
     const isRunning = await sbx.isRunning()
+    // @ts-ignore It's only for testing
+    assert.isDefined(sbx.envdApi.version)
     assert.isTrue(isRunning)
   } finally {
     await sbx.kill()
