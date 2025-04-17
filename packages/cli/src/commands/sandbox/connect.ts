@@ -35,13 +35,16 @@ async function connectToSandbox({
   apiKey: string
   sandboxID: string
 }) {
-  const sandbox = await e2b.Sandbox.connect(sandboxID, { apiKey })
+  const sandbox = await e2b.Sandbox.connect(sandboxID, {
+    apiKey,
+    autoPause: true,
+  })
 
   console.log(
-    `Terminal connecting to sandbox ${asPrimary(`${sandbox.sandboxId}`)}`,
+    `Terminal connecting to sandbox ${asPrimary(`${sandbox.sandboxId}`)}`
   )
   await spawnConnectedTerminal(sandbox)
   console.log(
-    `Closing terminal connection to sandbox ${asPrimary(sandbox.sandboxId)}`,
+    `Closing terminal connection to sandbox ${asPrimary(sandbox.sandboxId)}`
   )
 }
