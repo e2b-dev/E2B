@@ -426,7 +426,7 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/cli/auth',
       },
       {
-        title: 'List running sandboxes',
+        title: 'List sandboxes',
         href: '/docs/cli/list-sandboxes',
       },
       {
