@@ -26,7 +26,7 @@ import {
 import { FilesystemEvent, WatchHandle } from './watchHandle'
 
 import { compareVersions } from 'compare-versions'
-import { TemplateError } from '../../errors'
+import { InvalidArgumentError, TemplateError } from '../../errors'
 import { ENVD_VERSION_RECURSIVE_WATCH } from '../../envd/versions'
 
 /**
@@ -85,12 +85,6 @@ export interface FilesystemRequestOpts
    * This affects the resolution of relative paths and ownership of the created filesystem objects.
    */
   user?: Username
-  /**
-   * Depth of the directory to list.
-   *
-   * @default 1
-   */
-  depth?: number
 }
 
 /**
@@ -341,16 +335,25 @@ export class Filesystem {
    * List entries in a directory.
    *
    * @param path path to the directory.
+   * @param depth depth of the directory to list.
    * @param opts connection options.
    *
    * @returns list of entries in the sandbox filesystem directory.
    */
-  async list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]> {
+  async list(
+    path: string,
+    depth?: number,
+    opts?: FilesystemRequestOpts
+  ): Promise<EntryInfo[]> {
+    if (typeof depth === 'number' && depth < 0) {
+      throw new InvalidArgumentError('depth should be a positive number')
+    }
+
     try {
       const res = await this.rpc.listDir(
         {
           path,
-          depth: opts?.depth ?? 1,
+          depth: depth ?? 1,
         },
         {
           headers: authenticationHeader(opts?.user),
