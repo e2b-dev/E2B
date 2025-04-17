@@ -12,10 +12,6 @@ export interface SandboxApiOpts
       ConnectionOpts,
       'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
     >
-    Pick<
-      ConnectionOpts,
-      'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
-    >
   > {}
 
 export interface SandboxListOpts extends SandboxApiOpts {
@@ -60,11 +56,6 @@ export interface SandboxInfo {
    * Sandbox start time.
    */
   startedAt: Date
-
-  /**
-   * Sandbox expiration date.
-   */
-  endAt: Date
 
   /**
    * Sandbox expiration date.
@@ -119,7 +110,6 @@ export class SandboxApi {
    * @returns list of running sandboxes.
    */
   static async list(opts?: SandboxListOpts): Promise<SandboxInfo[]> {
-  static async list(opts?: SandboxListOpts): Promise<SandboxInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -136,23 +126,7 @@ export class SandboxApi {
       }
     }
 
-    let metadata = undefined
-    if (opts?.query) {
-      if (opts.query.metadata) {
-        const encodedPairs: Record<string, string> = Object.fromEntries(
-          Object.entries(opts.query.metadata).map(([key, value]) => [
-            encodeURIComponent(key),
-            encodeURIComponent(value),
-          ])
-        )
-        metadata = new URLSearchParams(encodedPairs).toString()
-      }
-    }
-
     const res = await client.api.GET('/sandboxes', {
-      params: {
-        query: { metadata },
-      },
       params: {
         query: { metadata },
       },
@@ -175,55 +149,8 @@ export class SandboxApi {
         metadata: sandbox.metadata ?? {},
         startedAt: new Date(sandbox.startedAt),
         endAt: new Date(sandbox.endAt),
-        endAt: new Date(sandbox.endAt),
       })) ?? []
     )
-  }
-
-  /**
-   * Get sandbox information like sandbox ID, template, metadata, started at/end at date.
-   *
-   * @param sandboxId sandbox ID.
-   * @param opts connection options.
-   *
-   * @returns sandbox information.
-   */
-  static async getInfo(
-    sandboxId: string,
-    opts?: SandboxApiOpts
-  ): Promise<SandboxInfo> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.GET('/sandboxes/{sandboxID}', {
-      params: {
-        path: {
-          sandboxID: sandboxId,
-        },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Sandbox not found')
-    }
-
-    return {
-      sandboxId: this.getSandboxId({
-        sandboxId: res.data.sandboxID,
-        clientId: res.data.clientID,
-      }),
-      templateId: res.data.templateID,
-      ...(res.data.alias && { name: res.data.alias }),
-      metadata: res.data.metadata ?? {},
-      startedAt: new Date(res.data.startedAt),
-      endAt: new Date(res.data.endAt),
-    }
   }
 
   /**
@@ -398,10 +325,6 @@ export class SandboxApi {
       metadata?: Record<string, string>
       envs?: Record<string, string>
     }
-  ): Promise<{
-    sandboxId: string
-    envdVersion: string
-  }> {
   ): Promise<{
     sandboxId: string
     envdVersion: string
