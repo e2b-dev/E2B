@@ -6,7 +6,7 @@ dotenv.config()
 
 const start = Date.now()
 console.log('creating sandbox')
-const sbx = await Sandbox.create('k1urqpinffy6bcost93w', { timeoutMs: 10000 })
+const sbx = await Sandbox.create({ timeoutMs: 10000, autoPause: true })
 console.log('sandbox created', Date.now() - start)
 console.log(sbx.sandboxId)
 
@@ -31,7 +31,7 @@ console.log(sbx.sandboxId)
 
 const resumeStart = Date.now()
 console.log('resuming sandbox')
-const resumed = await Sandbox.resume(sbx.sandboxId, { timeoutMs: 10000 })
+const resumed = await Sandbox.connect(sbx.sandboxId, { timeoutMs: 10000, autoPause: true })
 console.log('sandbox resumed', Date.now() - resumeStart)
 
 const content = await resumed.files.read('/home/user/test.txt')

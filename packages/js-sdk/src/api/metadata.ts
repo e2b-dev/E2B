@@ -57,5 +57,9 @@ export function getEnvVar(name: string) {
     return Deno.env.get(name)
   }
 
+  if (typeof process === 'undefined') {
+    return ''
+  }
+
   return process.env[name]
 }

@@ -37,6 +37,11 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
+  /**
+   * Automatically pause the sandbox after the timeout expires.
+   *
+   */
+  autoPause: true
 }
 
 /**
@@ -63,6 +68,7 @@ export interface SandboxOpts extends ConnectionOpts {
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
   protected static readonly defaultSandboxTimeoutMs = 300_000
+  protected static readonly defaultSandboxAutoPause = false
 
   /**
    * Module for interacting with the sandbox filesystem
@@ -97,27 +103,45 @@ export class Sandbox extends SandboxApi {
    * @access protected
    */
   constructor(
-    opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & {
+    opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata' | 'autoPause'> & {
       sandboxId: string
+      envdVersion?: string
     }
   ) {
     super()
 
     this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
-    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
-      }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${
+      this.connectionConfig.debug ? 'http' : 'https'
+    }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
       useBinaryFormat: false,
       interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
+      fetch: (url, options) => {
+        // Patch fetch to always use redirect: "follow"
+        // connect-web doesn't allow to configure redirect option - https://github.com/connectrpc/connect-es/pull/1082
+        // connect-web package uses redirect: "error" which is not supported in edge runtimes
+        // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
+        options = {
+          ...(options ?? {}),
+          redirect: 'follow',
+        }
+        return fetch(url, options)
+      },
     })
 
-    this.envdApi = new EnvdApiClient({
-      apiUrl: this.envdApiUrl,
-      logger: opts?.logger,
-    })
+    this.envdApi = new EnvdApiClient(
+      {
+        apiUrl: this.envdApiUrl,
+        logger: opts?.logger,
+      },
+      {
+        version: opts?.envdVersion,
+      }
+    )
     this.files = new Filesystem(
       rpcTransport,
       this.envdApi,
@@ -142,7 +166,7 @@ export class Sandbox extends SandboxApi {
    */
   static async create<S extends typeof Sandbox>(
     this: S,
-    opts?: SandboxOpts
+    opts: SandboxOpts
   ): Promise<InstanceType<S>>
 
   /**
@@ -162,7 +186,7 @@ export class Sandbox extends SandboxApi {
   static async create<S extends typeof Sandbox>(
     this: S,
     template: string,
-    opts?: SandboxOpts
+    opts: SandboxOpts
   ): Promise<InstanceType<S>>
   static async create<S extends typeof Sandbox>(
     this: S,
@@ -174,68 +198,77 @@ export class Sandbox extends SandboxApi {
         ? { template: templateOrOpts, sandboxOpts: opts }
         : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
 
+    if (!sandboxOpts?.autoPause) {
+      throw new Error('autoPause must be set to true when creating a sandbox')
+    }
+
     const config = new ConnectionConfig(sandboxOpts)
 
-    const sandboxId = config.debug
-      ? 'debug_sandbox_id'
-      : await this.createSandbox(
+    if (config.debug) {
+      return new this({
+        sandboxId: 'debug_sandbox_id',
+        ...config,
+      }) as InstanceType<S>
+    } else {
+      const sandbox = await this.createSandbox(
         template,
         sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
         sandboxOpts
       )
-
-    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
-    return sbx
+      return new this({ ...sandbox, ...config }) as InstanceType<S>
+    }
   }
 
   /**
-   * Connect to an existing sandbox.
+   * Connect to or resume an existing sandbox.
    * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
    *
-   * @param sandboxId sandbox ID.
-   * @param opts connection options.
-   *
-   * @returns sandbox instance for the existing sandbox.
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.create()
-   * const sandboxId = sandbox.sandboxId
-   *
-   * // Connect to the same sandbox.
-   * const sameSandbox = await Sandbox.connect(sandboxId)
-   * ```
-   */
-  static async connect<S extends typeof Sandbox>(
-    this: S,
-    sandboxId: string,
-    opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
-  ): Promise<InstanceType<S>> {
-    const config = new ConnectionConfig(opts)
-
-    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
-    return sbx
-  }
-
-  /**
-   * Resume the sandbox.
-   * 
    * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
    * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
+   * If the sandbox is running, the timeout will be updated to the new value (or default).
    *
    * @param sandboxId sandbox ID.
    * @param opts connection options.
    *
    * @returns a running sandbox instance.
    */
-  static async resume<S extends typeof Sandbox>(
+  static async connect<S extends typeof Sandbox>(
     this: S,
     sandboxId: string,
-    opts?: Omit<SandboxOpts, 'metadata' | 'envs'>
+    opts: Omit<SandboxOpts, 'metadata' | 'envs'>
   ): Promise<InstanceType<S>> {
-    await Sandbox.resumeSandbox(sandboxId, opts?.timeoutMs ?? this.defaultSandboxTimeoutMs, opts)
+    if (!opts.autoPause) {
+      throw new Error(
+        'autoPause must be set to true when connecting to a sandbox'
+      )
+    }
 
-    return await this.connect(sandboxId, opts)
+    const timeoutMs = opts?.timeoutMs ?? this.defaultSandboxTimeoutMs
+
+    // Temporary solution (02/12/2025),
+    // Options discussed:
+    //   # 1. No set - never sure how long the sandbox will be running
+    // 2. Always set the timeout in code - the user can't just connect to the sandbox
+    //       without changing the timeout, round trip to the server time
+    // 3. Set the timeout in resume on backend - side effect on error
+    // 4. Create new endpoint for connect
+    try {
+      await Sandbox.setTimeout(sandboxId, timeoutMs, opts)
+    } catch (err) {
+      // Sandbox is not running or found, ignore the error
+    }
+
+    await Sandbox.resumeSandbox(
+      sandboxId,
+      timeoutMs,
+      opts.autoPause ?? this.defaultSandboxAutoPause,
+      opts
+    )
+
+    const config = new ConnectionConfig(opts)
+
+    const sbx = new this({ sandboxId, ...config }) as InstanceType<S>
+    return sbx
   }
 
   /**
@@ -300,7 +333,7 @@ export class Sandbox extends SandboxApi {
 
   /**
    * Set the timeout of the sandbox.
-   * After the timeout expires the sandbox will be automatically killed.
+   * After the timeout expires the sandbox will be automatically paused.
    *
    * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.setTimeout`.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
@@ -345,7 +378,10 @@ export class Sandbox extends SandboxApi {
    * @returns sandbox ID that can be used to resume the sandbox.
    */
   async pause(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>): Promise<string> {
-    await Sandbox.pauseSandbox(this.sandboxId, { ...this.connectionConfig, ...opts })
+    await Sandbox.pauseSandbox(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
 
     return this.sandboxId
   }
@@ -382,5 +418,19 @@ export class Sandbox extends SandboxApi {
     }
 
     return url.toString()
+  }
+
+  /**
+   * Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+   *
+   * @param opts connection options.
+   *
+   * @returns information about the sandbox
+   */
+  async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    return await Sandbox.getInfo(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
   }
 }

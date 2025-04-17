@@ -3,10 +3,10 @@
 * @jakubno @ValentaTomas
 
 # Web
-apps/web @jakubno @mishushakov
+apps/web @jakubno @ben-fornefeld
 apps/web/src/app/(docs)/docs @mlejva
 apps/web/src/app/(docs)/docs/sdk-reference @0div
 
 # SDKs
-packages @jakubno @ValentaTomas
+packages @jakubno @ValentaTomas @mishushakov
 packages/connect-python @ValentaTomas

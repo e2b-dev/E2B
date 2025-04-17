@@ -12,20 +12,20 @@ export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
 export interface ConnectionOpts {
   /**
    * E2B API key to use for authentication.
-   * 
+   *
    * @default E2B_API_KEY // environment variable
    */
   apiKey?: string
   /**
    * E2B access token to use for authentication.
-   * 
+   *
    * @default E2B_ACCESS_TOKEN // environment variable
    */
   accessToken?: string
   /**
    * Domain to use for the API.
-   * 
-   * @default E2B_DOMAIN // environment variable or `e2b.dev`
+   *
+   * @default E2B_DOMAIN // environment variable or `e2b.app`
    */
   domain?: string
   /**
@@ -36,14 +36,19 @@ export interface ConnectionOpts {
   debug?: boolean
   /**
    * Timeout for requests to the API in **milliseconds**.
-   * 
-   * @default 60_000 // 60 seconds
+   *
+   * @default 30_000 // 30 seconds
    */
   requestTimeoutMs?: number
   /**
    * Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, {@link console}.
    */
   logger?: Logger
+
+  /**
+   * Additional headers to send with the request.
+   */
+  headers?: Record<string, string>
 }
 
 /**
@@ -60,6 +65,8 @@ export class ConnectionConfig {
   readonly apiKey?: string
   readonly accessToken?: string
 
+  readonly headers?: Record<string, string>
+
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.debug = opts?.debug || ConnectionConfig.debug
@@ -67,6 +74,7 @@ export class ConnectionConfig {
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
+    this.headers = opts?.headers
 
     this.apiUrl = this.debug
       ? 'http://localhost:3000'
@@ -74,7 +82,7 @@ export class ConnectionConfig {
   }
 
   private static get domain() {
-    return getEnvVar('E2B_DOMAIN') || 'e2b.dev'
+    return getEnvVar('E2B_DOMAIN') || 'e2b.app'
   }
 
   private static get debug() {
@@ -100,6 +108,5 @@ export class ConnectionConfig {
  * User used for the operation in the sandbox.
  */
 export type Username = 'root' | 'user'
-
 
 export const defaultUsername: Username = 'user'

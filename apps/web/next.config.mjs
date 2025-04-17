@@ -31,7 +31,7 @@ function getFilesHash(rootPath) {
     shasum.update(delimiter)
   }
 
-  fsWalk.walkSync(rootPath, { stats: true }).forEach(e => {
+  fsWalk.walkSync(rootPath, { stats: true }).forEach((e) => {
     if (!e.stats.isDirectory()) {
       if (e.path.includes('/node_modules/')) return // ignore node_modules which may contain symlinks
       const content = fs.readFileSync(e.path, 'utf8')
@@ -48,22 +48,43 @@ const codeSnippetsDir = path.resolve('./src/code')
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '',
-  webpack: config => {
+  assetPrefix:
+    // our production next app is proxied by our dashboard next app.
+    // to make assets load correctly after proxying, we need to specify the proxied domain here.
+    process.env.VERCEL_ENV === 'production' && process.env.PRODUCTION_URL
+      ? process.env.PRODUCTION_URL
+      : undefined,
+  headers: async () => [
+    {
+      source: '/:path*',
+      headers: [
+        {
+          // config to prevent the browser from rendering the page inside a frame or iframe and avoid clickjacking http://en.wikipedia.org/wiki/Clickjacking
+          key: 'X-Frame-Options',
+          value: 'SAMEORIGIN',
+        },
+      ],
+    },
+  ],
+  webpack: (config) => {
     const codeFilesHash = getFilesHash(codeSnippetsDir)
     config.cache.version = config.cache.version + delimiter + codeFilesHash
     return config
   },
-  async rewrites() {
-    return {
-      afterFiles: [
-        {
-          source: '/ingest/:path*',
-          destination: 'https://app.posthog.com/:path*',
-          // BEWARE: setting basePath will break the analytics proxy
-        },
-      ]
-    }
-  }
+  async redirects() {
+    return [
+      {
+        source: '/docs/sandbox-templates/overview',
+        destination: '/docs/sandbox-template',
+        permanent: true,
+      },
+      {
+        source: '/docs/sandbox-templates',
+        destination: '/docs/sandbox-template',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default withSearch(
@@ -81,7 +102,7 @@ export default withSearch(
         tunnelRoute: '/monitoring',
         hideSourceMaps: true,
         disableLogger: true,
-      },
-    ),
-  ),
+      }
+    )
+  )
 )

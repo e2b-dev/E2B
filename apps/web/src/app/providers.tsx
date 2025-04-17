@@ -2,8 +2,6 @@
 
 import { useEffect } from 'react'
 import { ThemeProvider, useTheme } from 'next-themes'
-import { CustomUserContextProvider } from '@/utils/useUser'
-import { PostHogProvider } from '@/utils/usePostHog'
 
 function ThemeWatcher() {
   const { resolvedTheme, setTheme } = useTheme()
@@ -37,10 +35,8 @@ export function Providers({ children }) {
       disableTransitionOnChange
       forcedTheme="dark"
     >
-      <ThemeWatcher/>
-      <CustomUserContextProvider>
-        <PostHogProvider>{children}</PostHogProvider>
-      </CustomUserContextProvider>
+      <ThemeWatcher />
+      {children}
     </ThemeProvider>
   )
 }

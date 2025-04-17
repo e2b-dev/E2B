@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { forwardRef, useEffect } from 'react'
 
-import { Auth } from '@/components/Auth'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
 import { Logo } from '@/components/Logo'
 import {
@@ -61,8 +60,6 @@ export const Header = forwardRef(function Header({ className }, ref) {
   const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8])
 
   const pathname = usePathname()
-  // const isDocs = pathname?.startsWith('/docs')
-  const isAuth = pathname?.startsWith('/auth')
 
   useEffect(() => {
     fetch(config.github.api)
@@ -91,10 +88,9 @@ export const Header = forwardRef(function Header({ className }, ref) {
         className={clsx(
           'absolute inset-x-0 top-full h-px transition',
           (isInsideMobileNavigation || !mobileNavIsOpen) &&
-          'bg-zinc-900/7.5 dark:bg-white/7.5'
+            'bg-zinc-900/7.5 dark:bg-white/7.5'
         )}
       />
-
       {/* Desktop logo */}
       <div className="relative top-1 hidden items-center justify-start lg:flex gap-4">
         <Link href="/" aria-label="Home">
@@ -106,14 +102,8 @@ export const Header = forwardRef(function Header({ className }, ref) {
             href="/docs"
             title="Documentation"
           />
-          <DocumentationTypeLink
-            pathname={pathname}
-            href="/dashboard"
-            title="Dashboard"
-          />
         </div>
       </div>
-      {/* {isDocs && <Search />} */}
 
       {/* Mobile logo + burger menu */}
       <div className="flex items-center gap-5 lg:hidden">
@@ -127,31 +117,20 @@ export const Header = forwardRef(function Header({ className }, ref) {
             href="/docs"
             title="Documentation"
           />
-          <DocumentationTypeLink
-            pathname={pathname}
-            href="/dashboard"
-            title="Dashboard"
-          />
         </div>
       </div>
-
-      {!isAuth && (
-        <div className="flex items-center gap-4">
-          <nav className="hidden md:block">
-            <ul role="list" className="flex items-center gap-4">
-              <TopLevelNavItem
-                href={config.github.url}
-                stat={githubStars}
-                statType="githubStars"
-                icon={<GitHubIcon className="h-5 w-5 fill-current" />}
-              />
-            </ul>
-          </nav>
-          <div className="hidden min-[540px]:contents">
-            <Auth />
-          </div>
-        </div>
-      )}
+      <div className="flex items-center gap-4">
+        <nav className="hidden md:block">
+          <ul role="list" className="flex items-center gap-4">
+            <TopLevelNavItem
+              href={config.github.url}
+              stat={githubStars}
+              statType="githubStars"
+              icon={<GitHubIcon className="h-5 w-5 fill-current" />}
+            />
+          </ul>
+        </nav>
+      </div>
     </motion.div>
   )
 })

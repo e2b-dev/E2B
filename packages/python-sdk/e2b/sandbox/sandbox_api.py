@@ -19,6 +19,16 @@ class SandboxInfo:
     """Saved sandbox metadata."""
     started_at: datetime
     """Sandbox start time."""
+    end_at: datetime
+    """Sandbox expiration date."""
+
+
+@dataclass
+class SandboxQuery:
+    """Query parameters for listing sandboxes."""
+
+    metadata: Optional[dict[str, str]] = None
+    """Filter sandboxes by metadata."""
 
 
 class SandboxApiBase(ABC):

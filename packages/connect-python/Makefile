@@ -21,9 +21,7 @@ upload: clean
 
 
 bin/$(plugin): $(wildcard cmd/$(plugin)/*.go) pyproject.toml Makefile
-	go build -o $@ \
-	  -ldflags "-w -s" \
-	  ./cmd/$(plugin)
+	go install -ldflags "-w -s" ./cmd/$(plugin)
 
 .PHONY: dev fmt lint upload clean build
 

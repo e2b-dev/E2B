@@ -12,7 +12,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
   template,
   sandbox: [
     async ({ }, use) => {
-      const sandbox = await Sandbox.create(template)
+      const sandbox = await Sandbox.create(template, { autoPause: true })
       try {
         await use(sandbox)
       } finally {
@@ -32,6 +32,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
 })
 
 export const isDebug = process.env.E2B_DEBUG !== undefined
+export const isIntegrationTest = process.env.E2B_INTEGRATION_TEST !== undefined
 
 export async function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))

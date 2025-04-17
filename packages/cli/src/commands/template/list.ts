@@ -32,6 +32,7 @@ export const listCommand = new commander.Command('list')
         const table = new tablePrinter.Table({
           title: 'Sandbox templates',
           columns: [
+            { name: 'visibility', alignment: 'left', title: 'Access' },
             { name: 'templateID', alignment: 'left', title: 'Template ID' },
             {
               name: 'aliases',
@@ -42,11 +43,23 @@ export const listCommand = new commander.Command('list')
             },
             { name: 'cpuCount', alignment: 'right', title: 'vCPUs' },
             { name: 'memoryMB', alignment: 'right', title: 'RAM MiB' },
+            { name: 'createdBy', alignment: 'right', title: 'Created by' },
+            { name: 'createdAt', alignment: 'right', title: 'Created at' },
           ],
-          disabledColumns: ['public', 'buildID'],
+          disabledColumns: [
+            'public',
+            'buildID',
+            'buildCount',
+            'lastSpawnedAt',
+            'spawnCount',
+            'updatedAt',
+          ],
           rows: templates.map((template) => ({
             ...template,
+            visibility: template.public ? 'Public' : 'Private',
             aliases: listAliases(template.aliases),
+            createdBy: template.createdBy?.email,
+            createdAt: new Date(template.createdAt).toLocaleDateString(),
           })),
           style: {
             headerTop: {

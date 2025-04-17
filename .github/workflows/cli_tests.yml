@@ -2,6 +2,9 @@ name: Test CLI
 
 on:
   workflow_call:
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -12,7 +15,7 @@ jobs:
       run:
         working-directory: ./packages/cli
     name: Build CLI
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
