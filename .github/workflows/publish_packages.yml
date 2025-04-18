@@ -81,7 +81,7 @@ jobs:
 
       - name: Clone Remote Code Interpreter SDK reference
         run: |
-          git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/code-interpreter -b generate-api-reference-for-code-interpreter-sdk-e2b-1235
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/code-interpreter
           cd code-interpreter
           git sparse-checkout set sdk-reference
           cp -r sdk-reference/* ../apps/web/src/app/\(docs\)/docs/sdk-reference/
@@ -90,7 +90,7 @@ jobs:
 
       - name: Clone Remote Desktop SDK reference
         run: |
-          git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/desktop -b generate-api-reference-for-desktop-sdk-e2b-1236
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/desktop
           cd desktop
           git sparse-checkout set sdk-reference
           cp -r sdk-reference/* ../apps/web/src/app/\(docs\)/docs/sdk-reference/
