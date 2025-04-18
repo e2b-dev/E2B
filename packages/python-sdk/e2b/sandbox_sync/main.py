@@ -277,6 +277,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> bool:
         """
         Kill the sandbox specified by sandbox ID.
@@ -284,6 +285,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         :param sandbox_id: Sandbox ID
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param request_timeout: Timeout for the request in **seconds**
+        :param proxy: Proxy to use for the request
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
@@ -336,6 +338,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> None:
         """
         Set the timeout of the sandbox specified by sandbox ID.
@@ -348,6 +351,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         :param timeout: Timeout for the sandbox in **seconds**
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param request_timeout: Timeout for the request in **seconds**
+        :param proxy: Proxy to use for the request
         """
         ...
 
