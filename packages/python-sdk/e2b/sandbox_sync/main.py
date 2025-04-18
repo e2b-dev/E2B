@@ -89,8 +89,8 @@ class Sandbox(SandboxSetup, SandboxApi):
 
     def __init__(
         self,
-        auto_pause: Literal[True],
         template: Optional[str] = None,
+        auto_pause: Optional[bool] = None,
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
@@ -116,9 +116,6 @@ class Sandbox(SandboxSetup, SandboxApi):
         :return: sandbox instance for the new sandbox
         """
         super().__init__()
-
-        if not auto_pause:
-            raise ValueError("auto_pause must be True")
 
         if sandbox_id and (metadata is not None or template is not None):
             raise SandboxException(
@@ -226,7 +223,7 @@ class Sandbox(SandboxSetup, SandboxApi):
     def connect(
         cls,
         sandbox_id: str,
-        auto_pause: Literal[True],
+        auto_pause: Optional[bool] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -260,8 +257,6 @@ class Sandbox(SandboxSetup, SandboxApi):
         same_sandbox = Sandbox.connect(sandbox_id)
         ```
         """
-        if not auto_pause:
-            raise ValueError("auto_pause must be True")
 
         timeout = timeout or cls.default_sandbox_timeout
         auto_pause = auto_pause or cls.default_sandbox_auto_pause

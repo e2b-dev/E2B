@@ -171,8 +171,8 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
     @classmethod
     async def create(
         cls,
-        auto_pause: Literal[True],
         template: Optional[str] = None,
+        auto_pause: Optional[bool] = None,
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
@@ -198,9 +198,6 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-
-        if not auto_pause:
-            raise ValueError("auto_pause must be True")
 
         connection_config = ConnectionConfig(
             api_key=api_key,
@@ -239,7 +236,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
     async def connect(
         cls,
         sandbox_id: str,
-        auto_pause: Literal[True],
+        auto_pause: Optional[bool] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -272,9 +269,6 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         # Another code block
         same_sandbox = await AsyncSandbox.connect(sandbox_id)
         """
-
-        if not auto_pause:
-            raise ValueError("auto_pause must be True")
 
         timeout = timeout or cls.default_sandbox_timeout
         auto_pause = auto_pause or cls.default_sandbox_auto_pause
