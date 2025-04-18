@@ -61,7 +61,8 @@ class SandboxApi(SandboxApiBase):
                 metadata = urllib.parse.urlencode(quoted_metadata)
 
         with ApiClient(
-            config, transport=HTTPTransport(limits=SandboxApiBase._limits)
+            config,
+            limits=SandboxApiBase._limits,
         ) as api_client:
             res = get_sandboxes.sync_detailed(client=api_client, metadata=metadata)
 
@@ -118,7 +119,8 @@ class SandboxApi(SandboxApiBase):
         )
 
         with ApiClient(
-            config, transport=HTTPTransport(limits=SandboxApiBase._limits)
+            config,
+            limits=SandboxApiBase._limits,
         ) as api_client:
             res = get_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
@@ -168,7 +170,8 @@ class SandboxApi(SandboxApiBase):
             return True
 
         with ApiClient(
-            config, transport=HTTPTransport(limits=SandboxApiBase._limits)
+            config,
+            limits=SandboxApiBase._limits,
         ) as api_client:
             res = delete_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
@@ -207,7 +210,8 @@ class SandboxApi(SandboxApiBase):
             return
 
         with ApiClient(
-            config, transport=HTTPTransport(limits=SandboxApiBase._limits)
+            config,
+            limits=SandboxApiBase._limits,
         ) as api_client:
             res = post_sandboxes_sandbox_id_timeout.sync_detailed(
                 sandbox_id,
@@ -240,7 +244,8 @@ class SandboxApi(SandboxApiBase):
         )
 
         with ApiClient(
-            config, transport=HTTPTransport(limits=SandboxApiBase._limits)
+            config,
+            limits=SandboxApiBase._limits
         ) as api_client:
             res = post_sandboxes.sync_detailed(
                 body=NewSandbox(

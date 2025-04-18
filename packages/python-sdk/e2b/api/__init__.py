@@ -2,8 +2,8 @@ import json
 import logging
 from dataclasses import dataclass
 
-from typing import Optional, Union
-from httpx import HTTPTransport, AsyncHTTPTransport
+from typing import Optional
+from httpx import Limits
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
@@ -50,7 +50,7 @@ class ApiClient(AuthenticatedClient):
         config: ConnectionConfig,
         require_api_key: bool = True,
         require_access_token: bool = False,
-        transport: Optional[Union[HTTPTransport, AsyncHTTPTransport]] = None,
+        limits: Optional[Limits] = None,
         *args,
         **kwargs,
     ):
@@ -97,7 +97,7 @@ class ApiClient(AuthenticatedClient):
                     "request": [self._log_request],
                     "response": [self._log_response],
                 },
-                "transport": transport,
+                "limits": limits,
             },
             headers=headers,
             token=token,
