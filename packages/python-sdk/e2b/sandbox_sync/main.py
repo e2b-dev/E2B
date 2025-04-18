@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional, overload
+from typing import Dict, List, Literal, Optional, overload
 
 import httpx
 from e2b.connection_config import ConnectionConfig
@@ -10,7 +10,7 @@ from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
-from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxMetrics
+from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo, SandboxMetrics
 from packaging.version import Version
 
 logger = logging.getLogger(__name__)

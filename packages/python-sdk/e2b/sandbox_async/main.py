@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional, TypedDict, overload
+from typing import Dict, List, Literal, Optional, TypedDict, overload
 
 import httpx
 from e2b.connection_config import ConnectionConfig
