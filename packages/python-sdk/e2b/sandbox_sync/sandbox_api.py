@@ -28,6 +28,7 @@ from e2b.exceptions import NotFoundException, TemplateException
 from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
 from httpx import HTTPTransport
 from packaging.version import Version
+from e2b.api.client.models import Error
 
 
 class SandboxPaginator:
@@ -83,13 +84,13 @@ class SandboxPaginator:
         ) as api_client:
             res = get_v2_sandboxes.sync_detailed(
                 client=api_client,
-                metadata=metadata,
-                state=self.query.state if self.query else UNSET,
-                limit=self.limit,
-                next_token=self._next_token,
+                metadata=metadata if metadata else UNSET,
+                state=self.query.state if self.query and self.query.state else UNSET,
+                limit=self.limit if self.limit else UNSET,
+                next_token=self._next_token if self._next_token else UNSET,
             )
 
-            if res.status_code >= 300:
+            if res.status_code >= 300 or isinstance(res.parsed, Error):
                 raise handle_api_exception(res)
 
             self._next_token = res.headers.get("x-next-token")
@@ -166,6 +167,63 @@ class SandboxApi(SandboxApiBase):
 
             for sandbox in result.next_items():
                 yield sandbox
+
+    @classmethod
+    def get_info(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> SandboxInfo:
+        """
+        Get the sandbox info.
+        :param sandbox_id: Sandbox ID
+        :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param domain: Domain to use for the request, defaults to `E2B_DOMAIN` environment variable
+        :param debug: Debug mode, defaults to `E2B_DEBUG` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+        :param headers: Additional headers to send with the request
+
+        :return: Sandbox info
+        """
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+            headers=headers,
+        )
+
+        with ApiClient(
+            config, transport=HTTPTransport(limits=SandboxApiBase._limits)
+        ) as api_client:
+            res = get_sandboxes_sandbox_id.sync_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code >= 300 or isinstance(res.parsed, Error):
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                raise Exception("Body of the request is None")
+
+            return SandboxInfo(
+                sandbox_id=SandboxApi._get_sandbox_id(
+                    res.parsed.sandbox_id,
+                    res.parsed.client_id,
+                ),
+                template_id=res.parsed.template_id,
+                name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
+                metadata=(
+                    res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
+                ),
+                started_at=res.parsed.started_at,
+                state=res.parsed.state,
+            )
 
     @classmethod
     def _cls_kill(
@@ -266,7 +324,7 @@ class SandboxApi(SandboxApiBase):
                 client=api_client,
             )
 
-            if res.status_code >= 300:
+            if res.status_code >= 300 or isinstance(res.parsed, Error):
                 raise handle_api_exception(res)
 
             if res.parsed is None:
@@ -319,7 +377,7 @@ class SandboxApi(SandboxApiBase):
                 client=api_client,
             )
 
-            if res.status_code >= 300:
+            if res.status_code >= 300 or isinstance(res.parsed, Error):
                 raise handle_api_exception(res)
 
             if res.parsed is None:

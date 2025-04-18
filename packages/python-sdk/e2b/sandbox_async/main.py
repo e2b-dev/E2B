@@ -10,7 +10,7 @@ from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
-from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxMetrics
+from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo, SandboxMetrics
 from packaging.version import Version
 from typing_extensions import Unpack
 
@@ -497,11 +497,34 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)
+        config_dict.pop("headers", None)
 
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
 
         return await SandboxApi._cls_get_metrics(
+            sandbox_id=self.sandbox_id,
+            **self.connection_config.__dict__,
+        )
+
+    async def get_info(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Sandbox info
+        """
+
+        config_dict = self.connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
+        return await SandboxApi.get_info(
             sandbox_id=self.sandbox_id,
             **self.connection_config.__dict__,
         )

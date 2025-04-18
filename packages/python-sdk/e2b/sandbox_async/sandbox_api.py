@@ -30,6 +30,7 @@ from e2b.exceptions import TemplateException, NotFoundException
 from e2b.sandbox.sandbox_api import SandboxApiBase, SandboxInfo, SandboxMetrics
 from packaging.version import Version
 from e2b.api import handle_api_exception
+from e2b.api.client.models import Error
 
 
 class AsyncSandboxPaginator:
@@ -83,13 +84,12 @@ class AsyncSandboxPaginator:
         async with AsyncApiClient(config) as api_client:
             res = await get_v2_sandboxes.asyncio_detailed(
                 client=api_client,
-                metadata=metadata,
-                state=self.query.state if self.query else UNSET,
-                limit=self.limit,
-                next_token=self._next_token,
+                metadata=metadata if metadata else UNSET,
+                limit=self.limit if self.limit else UNSET,
+                next_token=self._next_token if self._next_token else UNSET,
             )
 
-            if res.status_code >= 300:
+            if res.status_code >= 300 or isinstance(res.parsed, Error):
                 raise handle_api_exception(res)
 
             self._next_token = res.headers.get("x-next-token")
@@ -173,7 +173,7 @@ class SandboxApi(SandboxApiBase):
                 client=api_client,
             )
 
-            if res.status_code >= 300:
+            if res.status_code >= 300 or isinstance(res.parsed, Error):
                 raise handle_api_exception(res)
 
             if res.parsed is None:
@@ -190,7 +190,7 @@ class SandboxApi(SandboxApiBase):
                     res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
                 ),
                 started_at=res.parsed.started_at,
-                end_at=res.parsed.end_at,
+                state=res.parsed.state,
             )
 
     @classmethod
@@ -228,7 +228,7 @@ class SandboxApi(SandboxApiBase):
                 client=api_client,
             )
 
-            if res.status_code >= 300:
+            if res.status_code >= 300 or isinstance(res.parsed, Error):
                 raise handle_api_exception(res)
 
             if res.parsed is None:
@@ -245,7 +245,7 @@ class SandboxApi(SandboxApiBase):
                     res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
                 ),
                 started_at=res.parsed.started_at,
-                end_at=res.parsed.end_at,
+                state=res.parsed.state,
             )
 
     @classmethod
@@ -343,7 +343,7 @@ class SandboxApi(SandboxApiBase):
                 client=api_client,
             )
 
-            if res.status_code >= 300:
+            if res.status_code >= 300 or isinstance(res.parsed, Error):
                 raise handle_api_exception(res)
 
             if res.parsed is None:
@@ -394,7 +394,7 @@ class SandboxApi(SandboxApiBase):
                 client=api_client,
             )
 
-            if res.status_code >= 300:
+            if res.status_code >= 300 or isinstance(res.parsed, Error):
                 raise handle_api_exception(res)
 
             if res.parsed is None:
